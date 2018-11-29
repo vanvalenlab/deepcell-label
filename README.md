@@ -5,7 +5,7 @@ Curation tools for segmentation and tracking data for use with DeepCell.
 
 To navigate through frames - back one frame = a or left arrow | forward one frame = d or right arrow
 
-All edit operations are from->to 
+All edit operations are from -> to 
 
 r -> replace
 c -> create
