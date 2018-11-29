@@ -3,7 +3,7 @@ Curation tools for segmentation and tracking data for use with DeepCell.
 
 ## Getting Started
 
-To navigate through frames: 
+To navigate through frames: /n
 Back one frame = a or left arrow 
 Forward one frame = d or right arrow
 
@@ -18,6 +18,6 @@ w -> watershed
 esc -> cancel operation
 space bar -> enter
 
-tab -> switch been annotations and raw images
+tab -> switch between annotations and raw images
 scroll wheel -> change image contrast
 
