@@ -7,17 +7,16 @@ To navigate through frames:
 Back one frame = a or &larr;  
 Forward one frame = d or &rarr;  
 
-All edit operations are from -> to 
+All edit operations are from &rarr; to  
 
-r -> replace
-c -> create
-p -> parent
-s -> swap
-s -> save
-w -> watershed
-esc -> cancel operation
-space bar -> enter
+r &rarr; replace  
+c &rarr; create  
+p &rarr; parent  
+s &rarr; swap  
+s &rarr; save  
+w &rarr; watershed  
+esc &rarr; cancel operation  
+space bar &rarr; enter  
 
-tab -> switch between annotations and raw images
-scroll wheel -> change image contrast
-
+tab &rarr; switch between annotations and raw images  
+scroll wheel &rarr; change image contrast  
