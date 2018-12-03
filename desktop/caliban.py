@@ -1,78 +1,40 @@
-import matplotlib.pyplot as plt
+from mode import Mode
+
+import json
 import numpy as np
-import pickle
+import matplotlib.pyplot as plt
+import os
+import pathlib
 import pyglet
 import pyglet.gl as gl
 import pyglet.window.key as key
+import shutil
 import sys
+import tarfile
 import tempfile
 
+from io import BytesIO
 from skimage.morphology import watershed
 from skimage.measure import regionprops
 
 gl.glEnable(gl.GL_TEXTURE_2D)
 
-class Mode:
-    def __init__(self, kind, **info):
-        self.kind = kind
-        self.info = info
-
-    def __getattr__(self, attrib):
-        if attrib in self.info:
-            return self.info[attrib]
-        raise AttributeError("Mode {} has no attribute '{}'".format(self, attrib))
-
-    def __str__(self):
-        return ("Mode('{}', ".format(self.kind) +
-                ", ".join("{}={}".format(k, v) for k, v in self.info.items()) + ")")
-
-    def render(self):
-        if self.kind is None:
-            return ''
-        answer = "(SPACE=YES / ESC=NO)"
-
-        if self.kind == "SELECTED":
-            return "\nSELECTED {}".format(self.label)
-        elif self.kind == "MULTIPLE":
-            return "\nSELECTED {}, {}".format(self.label_1, self.label_2)
-        elif self.kind == "QUESTION":
-            if self.action == "SAVE":
-                return ("\nsave current movie?\n {}".format(answer))
-            elif self.action == "REPLACE":
-                return ("\nreplace {} with ".format(self.label_2)
-                        + "{}?\n {}".format(self.label_1, answer))
-            elif self.action == "SWAP":
-                return ("\nswap {} & {}?\n {}".format(self.label_2, self.label_1, answer))
-            elif self.action == "PARENT":
-                return ("\nmake {} a daughter of ".format(self.label_2)
-                        + "{}\n {}".format(self.label_1, answer))
-            elif self.action == "NEW TRACK":
-                return ("\nnew track cell:{}/frame:{}?".format(self.label, self.frame)
-                        + "\n {}".format(answer))
-            elif self.action == "WATERSHED":
-                return ("\nperform watershed to split {}".format(self.label_1))
-        else:
-            return ''
-
-
-    @staticmethod
-    def none():
-        return Mode(None)
 
 class TrackReview:
-    def __init__(self, filename, trial):
+    def __init__(self, filename, lineage, raw, tracked):
         self.filename = filename
-        self.trial = trial
+        self.tracks = lineage
+        self.raw = raw
+        self.tracked = tracked
+
         self.sidebar_width = 300
 
         # label should appear first
-        self.track_keys = ["label", *sorted(set(trial["tracks"][1]) - {"label"})]
-        self.num_tracks = len(trial["tracks"])
+        self.track_keys = ["label", *sorted(set(self.tracks[1]) - {"label"})]
+        self.num_tracks = max(self.tracks) + 1
 
-        self.num_frames, height, width, _ = trial['X'].shape
- #       self.window = pyglet.window.Window(width * 2 + self.sidebar_width,
- #                                          height * 2)
-        self.window = pyglet.window.Window(fullscreen=True)
+        self.num_frames, height, width, _ = raw.shape
+        self.window = pyglet.window.Window(resizable=True)
         self.window.on_draw = self.on_draw
         self.window.on_key_press = self.on_key_press
         self.window.on_mouse_motion = self.on_mouse_motion
@@ -90,12 +52,15 @@ class TrackReview:
 
     def on_mouse_press(self, x, y, button, modifiers):
         if self.mode.kind is None:
-            frame = self.trial['y'][self.current_frame]
+            frame = self.tracked[self.current_frame]
             label = int(frame[self.y, self.x])
             if label != 0:
-                self.mode = Mode("SELECTED", label=label, frame=self.current_frame, y_location=self.y, x_location=self.x)
+                self.mode = Mode("SELECTED",
+                                 label=label,
+                                 frame=self.current_frame,
+                                 y_location=self.y, x_location=self.x)
         elif self.mode.kind == "SELECTED":
-            frame = self.trial['y'][self.current_frame]
+            frame = self.tracked[self.current_frame]
             label = int(frame[self.y, self.x])
             if label != 0:
                 self.mode = Mode("MULTIPLE",
@@ -112,7 +77,7 @@ class TrackReview:
         if self.max_intensity == None:
             self.max_intensity = np.max(self.get_current_frame())
         else:
-            self.max_intensity = max(self.max_intensity + scroll_y, 0)
+            self.max_intensity = max(self.max_intensity - 2 * scroll_y, 2)
 
     def on_mouse_motion(self, x, y, dx, dy):
         x -= self.sidebar_width
@@ -139,7 +104,7 @@ class TrackReview:
             self.current_frame = max(self.current_frame - offset, 0)
         elif symbol in {key.RIGHT, key.D}:
             self.current_frame = min(self.current_frame + offset, self.num_frames - 1)
-        elif symbol == key.TAB:
+        elif symbol == key.Z:
             self.draw_raw = not self.draw_raw
         else:
             self.mode_handle(symbol)
@@ -161,14 +126,14 @@ class TrackReview:
             if self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
                                  action="SWAP", **self.mode.info)
+            elif self.mode.kind is None:
+                self.mode = Mode("QUESTION",
+                                 action="SAVE")
         if symbol == key.W:
             if self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
-                                 action="WATERSHED", **self.mode.info) 
+                                 action="WATERSHED", **self.mode.info)
 
-            elif self.mode.kind is None:
-                self.mode = Mode("QUESTION", 
-                                 action="SAVE")
 
         if symbol == key.SPACE:
             if self.mode.kind == "QUESTION":
@@ -188,9 +153,9 @@ class TrackReview:
 
     def get_current_frame(self):
         if self.draw_raw:
-            return self.trial['X'][self.current_frame]
+            return self.raw[self.current_frame]
         else:
-            return self.trial['y'][self.current_frame]
+            return self.tracked[self.current_frame]
 
     def draw_line(self):
         pyglet.graphics.draw(4, pyglet.gl.GL_LINES,
@@ -202,17 +167,18 @@ class TrackReview:
 
     def draw_label(self):
         # always use segmented output for label, not raw
-        frame = self.trial['y'][self.current_frame]
+        frame = self.tracked[self.current_frame]
         label = int(frame[self.y, self.x])
         if label != 0:
-            track = self.trial["tracks"][label].copy()
+            track = self.tracks[label].copy()
             frames = list(map(list, consecutive(track["frames"])))
             frames = '[' + ', '.join(["{}".format(a[0])
                                 if len(a) == 1 else "{}-{}".format(a[0], a[-1])
                                 for a in frames]) + ']'
 
             track["frames"] = frames
-            text = '\n'.join("{:10} {}".format(k+':', track[k]) for k in self.track_keys)
+            text = '\n'.join("{:10} {}".format(k+':', track[k])
+                             for k in self.track_keys)
         else:
             text = ''
 
@@ -273,12 +239,12 @@ class TrackReview:
             raise ValueError("new_track cannot be called on the first frame")
 
         # replace frame labels
-        for frame in self.trial["y"][start_frame:]:
+        for frame in self.tracked[start_frame:]:
             frame[frame == old_label] = new_label
 
         # replace fields
-        track_old = self.trial["tracks"][old_label]
-        track_new = self.trial["tracks"][new_label] = {}
+        track_old = self.tracks[old_label]
+        track_new = self.tracks[new_label] = {}
 
         idx = track_old["frames"].index(start_frame)
         frames_before, frames_after = track_old["frames"][:idx], track_old["frames"][idx:]
@@ -298,14 +264,13 @@ class TrackReview:
 
 
     def action_watershed(self):
-
         # Pull the label that is being split and find a new valid label
         current_label = self.mode.label_1
         new_label = self.num_tracks + 1
 
-        # Locally store the frames to work on 
-        img_raw = self.trial['X'][self.current_frame]
-        img_ann = self.trial['y'][self.current_frame]
+        # Locally store the frames to work on
+        img_raw = self.raw[self.current_frame]
+        img_ann = self.tracked[self.current_frame]
 
         # Pull the 2 seed locations and store locally
         # define a new seeds labeled img that is the same size as raw/annotaiton imgs
@@ -317,7 +282,7 @@ class TrackReview:
         # define the bounding box to apply the transform on and select appropriate sections of 3 inputs (raw, seeds, annotation mask)
         props = regionprops(np.int32(img_ann == current_label))
         minr, minc, maxr, maxc = props[0].bbox
-        
+
         # store these subsections to run the watershed on
         img_sub_raw = np.copy(img_raw[minr:maxr, minc:maxc])
         img_sub_ann = np.copy(img_ann[minr:maxr, minc:maxc])
@@ -329,10 +294,10 @@ class TrackReview:
 
         # reintegrate subsection into original mask
         img_ann[minr:maxr, minc:maxc] = img_sub_ann
-        self.trial['y'][self.current_frame] = img_ann
-        
+        self.tracked[self.current_frame] = img_ann
+
         # current label doesn't change, but add the neccesary bookkeeping for the new track
-        track_new = self.trial["tracks"][new_label] = {}
+        track_new = self.tracks[new_label] = {}
         track_new["label"] = new_label
         track_new["frames"] = [self.current_frame]
         track_new["parent"] = None
@@ -343,16 +308,16 @@ class TrackReview:
 
     def action_swap(self):
         def relabel(old_label, new_label):
-            for frame in self.trial["y"]:
+            for frame in self.tracked:
                 frame[frame == old_label] = new_label
 
             # replace fields
-            track_new = self.trial["tracks"][new_label] = self.trial["tracks"][old_label]
+            track_new = self.tracks[new_label] = self.tracks[old_label]
             track_new["label"] = new_label
-            del self.trial["tracks"][old_label]
+            del self.tracks[old_label]
 
             for d in track_new["daughters"]:
-                self.trial["tracks"][d]["parent"] = new_label
+                self.tracks[d]["parent"] = new_label
 
         relabel(self.mode.label_1, -1)
         relabel(self.mode.label_2, self.mode.label_1)
@@ -364,8 +329,8 @@ class TrackReview:
         """
         label_1, label_2, frame_div = self.mode.label_1, self.mode.label_2, self.mode.frame_2
 
-        track_1 = self.trial["tracks"][label_1]
-        track_2 = self.trial["tracks"][label_2]
+        track_1 = self.tracks[label_1]
+        track_2 = self.tracks[label_2]
 
         track_1["daughters"].append(label_2)
         track_2["parent"] = label_1
@@ -380,23 +345,23 @@ class TrackReview:
 
 
         # replace arrays
-        for frame in self.trial["y"]:
+        for frame in self.tracked:
             frame[frame == label_2] = label_1
 
         # replace fields
-        track_1 = self.trial["tracks"][label_1]
-        track_2 = self.trial["tracks"][label_2]
+        track_1 = self.tracks[label_1]
+        track_2 = self.tracks[label_2]
 
         for d in track_1["daughters"]:
-            self.trial["tracks"][d]["parent"] = None
+            self.tracks[d]["parent"] = None
 
-        track_1["frames"].extend(track_2["frames"])
+        track_1["frames"] = sorted(set(track_1["frames"] + track_2["frames"]))
         track_1["daughters"] = track_2["daughters"]
         track_1["frame_div"] = track_2["frame_div"]
         track_1["capped"] = track_2["capped"]
 
-        del self.trial["tracks"][label_2]
-        for _, track in self.trial["tracks"].items():
+        del self.tracks[label_2]
+        for _, track in self.tracks.items():
             try:
                 track["daughters"].remove(label_2)
             except ValueError:
@@ -409,18 +374,61 @@ class TrackReview:
             pass
 
     def save(self):
-        with open(self.filename, "wb") as out:
-            pickle.dump(self.trial, out)
+        backup_file = self.filename + "_original.trk"
+        if not os.path.exists(backup_file):
+            shutil.copyfile(self.filename + ".trk", backup_file)
+
+        with tarfile.open(self.filename + ".trk", "w") as trks:
+            with tempfile.NamedTemporaryFile("w") as lineage_file:
+                json.dump(self.lineage, lineage_file, indent=1)
+                lineage_file.flush()
+                trks.add(lineage_file.name, "lineage.json")
+
+            with tempfile.NamedTemporaryFile() as raw_file:
+                np.save(self.raw_file, raw)
+                raw_file.flush()
+                trks.add(raw_file.name, "raw.npy")
+
+            with tempfile.NamedTemporaryFile() as tracked_file:
+                np.save(self.tracked_file, tracked)
+                tracked_file.flush()
+                trks.add(tracked_file.name, "tracked.npy")
 
 
 def consecutive(data, stepsize=1):
     return np.split(data, np.where(np.diff(data) != stepsize)[0]+1)
 
 
+def load_trk(filename):
+    with tarfile.open(filename, "r") as trks:
+        # trks.extractfile opens a file in bytes mode, json can't use bytes.
+        lineage = json.loads(
+                trks.extractfile(
+                    trks.getmember("lineage.json")).read().decode())
+
+        # numpy can't read these from disk...
+        array_file = BytesIO()
+        array_file.write(trks.extractfile("raw.npy").read())
+        array_file.seek(0)
+        raw = np.load(array_file)
+        array_file.close()
+
+        array_file = BytesIO()
+        array_file.write(trks.extractfile("tracked.npy").read())
+        array_file.seek(0)
+        tracked = np.load(array_file)
+        array_file.close()
+
+    # JSON only allows strings as keys, so we convert them back to ints here
+    lineage = {int(k): v for k, v in lineage.items()}
+
+    return {"lineage": lineage, "raw": raw, "tracked": tracked}
+
+
 def review(filename):
-    with open(filename, "rb") as trial:
-        trial = pickle.load(trial)
-    track_review = TrackReview(filename, trial)
+    track_review = TrackReview(str(pathlib.Path(filename).with_suffix('')),
+            **load_trk(filename))
+
 
 if __name__ == "__main__":
     review(sys.argv[1])
