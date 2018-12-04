@@ -380,7 +380,7 @@ class TrackReview:
 
         with tarfile.open(self.filename + ".trk", "w") as trks:
             with tempfile.NamedTemporaryFile("w") as lineage_file:
-                json.dump(self.lineage, lineage_file, indent=1)
+                json.dump(self.tracks, lineage_file, indent=1)
                 lineage_file.flush()
                 trks.add(lineage_file.name, "lineage.json")
 
