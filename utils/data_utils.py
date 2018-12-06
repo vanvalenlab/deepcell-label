@@ -90,9 +90,11 @@ def trks_to_trk_folder(trks_filename, dirname):
 
     trks = load_trks(trks_filename)
     num_batches = len(trks["lineages"])
+    num_zeros = len(str(num_batches))
     for i, (lineage, raw, tracked) in enumerate(zip(trks["lineages"],
                                       trks["raw"],
                                       trks["tracked"])):
+        i = str(i).zfill(num_zeros)
         save_trk(os.path.join(dirname, "batch_{}.trk".format(i)),
                  lineage,
                  raw,

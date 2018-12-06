@@ -21,6 +21,8 @@ gl.glEnable(gl.GL_TEXTURE_2D)
 
 
 class TrackReview:
+    possible_keys = {"label", "daughters", "frames", "parent", "frame_div",
+                     "capped"}
     def __init__(self, filename, lineage, raw, tracked):
         self.filename = filename
         self.tracks = lineage
@@ -29,7 +31,15 @@ class TrackReview:
 
         self.sidebar_width = 300
 
-        # label should appear first
+        # if not all of these keys are present, actions are not supported
+        self.incomplete = {*self.tracks[1]} < TrackReview.possible_keys
+
+        if self.incomplete:
+            print("Incomplete trk file loaded. Missing keys: {}".format(
+                TrackReview.possible_keys - {*self.tracks[1]}))
+            print("Actions will not be supported")
+
+        # `label` should appear first
         self.track_keys = ["label", *sorted(set(self.tracks[1]) - {"label"})]
         self.num_tracks = max(self.tracks) + 1
 
@@ -51,6 +61,14 @@ class TrackReview:
         pyglet.app.run()
 
     def on_mouse_press(self, x, y, button, modifiers):
+        if self.incomplete:
+            print()
+            print("This .trk file is incomplete.")
+            print("Missing keys: {}".format(
+                TrackReview.possible_keys - {*self.tracks[1]}))
+            print("Actions will not be supported.")
+            return
+
         if self.mode.kind is None:
             frame = self.tracked[self.current_frame]
             label = int(frame[self.y, self.x])
@@ -385,12 +403,12 @@ class TrackReview:
                 trks.add(lineage_file.name, "lineage.json")
 
             with tempfile.NamedTemporaryFile() as raw_file:
-                np.save(self.raw_file, raw)
+                np.save(raw_file, self.raw)
                 raw_file.flush()
                 trks.add(raw_file.name, "raw.npy")
 
             with tempfile.NamedTemporaryFile() as tracked_file:
-                np.save(self.tracked_file, tracked)
+                np.save(tracked_file, self.tracked)
                 tracked_file.flush()
                 trks.add(tracked_file.name, "tracked.npy")
 
