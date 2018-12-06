@@ -385,12 +385,12 @@ class TrackReview:
                 trks.add(lineage_file.name, "lineage.json")
 
             with tempfile.NamedTemporaryFile() as raw_file:
-                np.save(self.raw_file, raw)
+                np.save(raw_file, self.raw)
                 raw_file.flush()
                 trks.add(raw_file.name, "raw.npy")
 
             with tempfile.NamedTemporaryFile() as tracked_file:
-                np.save(self.tracked_file, tracked)
+                np.save(tracked_file, self.tracked)
                 tracked_file.flush()
                 trks.add(tracked_file.name, "tracked.npy")
 
