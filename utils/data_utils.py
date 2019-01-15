@@ -74,7 +74,7 @@ def trk_folder_to_trks(dirname, trks_filename):
     tracked = []
 
     for filename in os.listdir(dirname):
-        trk = load_trk(filename)
+        trk = load_trk(os.path.join(dirname, filename))
         lineages.append(trk["lineage"])
         raw.append(trk["raw"])
         tracked.append(trk["tracked"])

@@ -16,6 +16,7 @@ import tempfile
 from io import BytesIO
 from skimage.morphology import watershed
 from skimage.measure import regionprops
+from skimage.exposure import rescale_intensity
 
 gl.glEnable(gl.GL_TEXTURE_2D)
 
@@ -306,9 +307,14 @@ class TrackReview:
         img_sub_ann = np.copy(img_ann[minr:maxr, minc:maxc])
         img_sub_seeds = np.copy(seeds_labeled[minr:maxr, minc:maxc])
 
+        # contrast adjust the raw image to assist the transform
+        img_sub_raw_scaled = rescale_intensity(img_sub_raw)
+
         # apply watershed transform to the subsections
-        ws = watershed(-img_sub_raw, img_sub_seeds, mask=img_sub_ann.astype(bool))
-        img_sub_ann = ws
+        ws = watershed(-img_sub_raw_scaled, img_sub_seeds, mask=img_sub_ann.astype(bool))
+
+        cell_loc = np.where(img_sub_ann == current_label)
+        img_sub_ann[cell_loc] = ws[cell_loc]
 
         # reintegrate subsection into original mask
         img_ann[minr:maxr, minc:maxc] = img_sub_ann
