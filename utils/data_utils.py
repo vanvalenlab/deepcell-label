@@ -6,6 +6,12 @@ import os
 import pathlib
 import tarfile
 import tempfile
+import re
+
+def sorted_nicely(l):
+    convert = lambda text: int(text) if text.isdigit() else text
+    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
+    return sorted(l, key=alphanum_key)
 
 def generate_lineage(tracked, daughters):
     """
@@ -73,13 +79,16 @@ def trk_folder_to_trks(dirname, trks_filename):
     raw = []
     tracked = []
 
-    for filename in os.listdir(dirname):
+    file_list = os.listdir(dirname)
+    file_list_sorted = sorted_nicely(file_list)
+
+    for filename in file_list_sorted:
         trk = load_trk(os.path.join(dirname, filename))
         lineages.append(trk["lineage"])
         raw.append(trk["raw"])
         tracked.append(trk["tracked"])
 
-    save_triks(trks_filename, lineages, raw, tracked)
+    save_trks(trks_filename, lineages, raw, tracked)
 
 
 def trks_to_trk_folder(trks_filename, dirname):
