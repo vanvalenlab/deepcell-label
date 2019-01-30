@@ -299,7 +299,7 @@ class TrackReview:
         seeds_labeled[self.mode.y2_location, self.mode.x2_location]=new_label
 
         # define the bounding box to apply the transform on and select appropriate sections of 3 inputs (raw, seeds, annotation mask)
-        props = regionprops(np.int32(img_ann == current_label))
+        props = regionprops(np.squeeze(np.int32(img_ann == current_label)))
         minr, minc, maxr, maxc = props[0].bbox
 
         # store these subsections to run the watershed on
