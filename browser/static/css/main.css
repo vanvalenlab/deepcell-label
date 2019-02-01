@@ -1,0 +1,51 @@
+body {
+  color: white;
+  background-color: black;
+}
+
+td {
+  padding-left: 10px;
+}
+
+#container {
+  margin: 0 auto;
+  margin-top: 100px;
+  outline: 1px solid green;
+  width: 1000px;
+}
+
+#maintable {
+  width: 900px;
+  height: 500px;
+  /* outline: 1px dashed blue; */
+}
+
+#log {
+  font-family: monospace;
+  font-size: 14pt;
+  /* outline: 10px dashed red; */
+  height: 90%;
+}
+
+#logcol {
+  outline: 1px dashed black;
+}
+
+#frames {
+  width: 300px;
+  word-wrap: break-word;         /* All browsers since IE 5.5+ */
+  overflow-wrap: break-word;
+}
+
+#canvas {
+  outline:1px solid red;
+}
+
+#hidden_canvas {
+  display: none;
+}
+
+#canvascol {
+  /* outline:1px dashed red; */
+}
+
