@@ -58,6 +58,7 @@ class TrackReview:
         self.x = 0
         self.y = 0
         self.mode = Mode.none()
+        self.adjustment = 0
 
         pyglet.app.run()
 
@@ -93,10 +94,14 @@ class TrackReview:
                                  x2_location = self.x)
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
-        if self.max_intensity == None:
-            self.max_intensity = np.max(self.get_current_frame())
+        if self.draw_raw:
+            if self.max_intensity == None:
+                self.max_intensity = np.max(self.get_current_frame())
+            else:
+                self.max_intensity = max(self.max_intensity - 2 * scroll_y, 2)
         else:
-            self.max_intensity = max(self.max_intensity - 2 * scroll_y, 2)
+            if self.num_tracks + (self.adjustment - 2 * scroll_y) >= 0:
+                self.adjustment = self.adjustment - 2 * scroll_y
 
     def on_mouse_motion(self, x, y, dx, dy):
         x -= self.sidebar_width
@@ -231,7 +236,7 @@ class TrackReview:
             else:
                 plt.imsave(file, frame[:, :, 0],
                            vmin=0,
-                           vmax=self.num_tracks,
+                           vmax=self.num_tracks + self.adjustment,
                            cmap="cubehelix",
                            format="png")
             image = pyglet.image.load("frame.png", file)
