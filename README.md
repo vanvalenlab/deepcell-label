@@ -1,5 +1,6 @@
-# Caliban
-Curation tools for segmentation and tracking data for use with DeepCell.
+# Caliban: Data Curation Tools for DeepCell.
+
+Caliban is a segmentation and tracking tool used for human-in-the-loop data curation. It displays lineage data along with raw and annotated images. The output files prepare this information as training data for DeepCell.
 
 ## Getting Started
 
@@ -18,5 +19,5 @@ w &rarr; watershed
 esc &rarr; cancel operation  
 space bar &rarr; enter  
 
-tab &rarr; switch between annotations and raw images  
-scroll wheel &rarr; change image contrast  
+z &rarr; switch between annotations and raw images  
+scroll wheel &rarr; change image contrast
