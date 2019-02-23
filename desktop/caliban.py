@@ -20,6 +20,7 @@ from skimage.exposure import rescale_intensity
 
 gl.glEnable(gl.GL_TEXTURE_2D)
 
+
 class TrackReview:
     possible_keys = {"label", "daughters", "frames", "parent", "frame_div",
                      "capped"}
@@ -42,6 +43,7 @@ class TrackReview:
         # `label` should appear first
         self.track_keys = ["label", *sorted(set(self.tracks[1]) - {"label"})]
         self.num_tracks = max(self.tracks) + 1
+
         self.num_frames, self.height, self.width, _ = raw.shape
         self.window = pyglet.window.Window(resizable=True)
         self.window.set_minimum_size(self.width + self.sidebar_width, self.height + 20)
@@ -50,6 +52,7 @@ class TrackReview:
         self.window.on_mouse_motion = self.on_mouse_motion
         self.window.on_mouse_scroll = self.on_mouse_scroll
         self.window.on_mouse_press = self.on_mouse_press
+
         self.current_frame = 0
         self.draw_raw = False
         self.max_intensity = None
@@ -223,7 +226,6 @@ class TrackReview:
         text += self.mode.render()
 
         info_label = pyglet.text.Label(text, font_name="monospace",
-                                       font_size=12,
                                        anchor_x="left", anchor_y="bottom",
                                        width=self.sidebar_width,
                                        multiline=True,
@@ -231,7 +233,6 @@ class TrackReview:
 
         frame_label = pyglet.text.Label("frame: {}".format(self.current_frame),
                                         font_name="monospace",
-                                        font_size=12,
                                         anchor_x="left", anchor_y="top",
                                         width=self.sidebar_width,
                                         multiline=True,
