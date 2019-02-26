@@ -70,8 +70,9 @@ class TrackReview:
         self.track_keys = ["label", *sorted(set(self.tracks[1]) - {"label"})]
         self.num_tracks = max(self.tracks) + 1
 
-        self.num_frames, height, width, _ = raw.shape
+        self.num_frames, self.height, self.width, _ = raw.shape
         self.window = pyglet.window.Window(resizable=True)
+        self.window.set_minimum_size(self.width + self.sidebar_width, self.height + 20)
         self.window.on_draw = self.on_draw
         self.window.on_key_press = self.on_key_press
         self.window.on_mouse_motion = self.on_mouse_motion
@@ -85,6 +86,7 @@ class TrackReview:
         self.y = 0
         self.mode = Mode.none()
         self.adjustment = 0
+        self.scale_factor = 1
 
         pyglet.app.run()
 
@@ -131,19 +133,34 @@ class TrackReview:
 
     def on_mouse_motion(self, x, y, dx, dy):
         x -= self.sidebar_width
-        frame = self.get_current_frame()
-        height, width = frame.shape[:2]
-        x //= 2
-        y = height - y // 2
+        x //= self.scale_factor
+        y = self.height - y // self.scale_factor
 
-        if 0 <= x < width and 0 <= y < height:
+        if 0 <= x < self.width and 0 <= y < self.height:
             self.x, self.y = x, y
 
     def on_draw(self):
         self.window.clear()
+        self.scale_screen()
         self.draw_current_frame()
         self.draw_line()
         self.draw_label()
+
+    def scale_screen(self):
+        #Scales sidebar width
+        if self.window.width - self.width * self.scale_factor > 300:
+            self.sidebar_width = self.window.width - self.width * self.scale_factor
+
+        #Determine whether to base scale factor on width or height 
+        if self.height < self.width:
+            self.scale_factor = self.window.height // self.height
+            if self.window.width < self.sidebar_width + self.width * self.scale_factor:
+                self.window.set_size(self.sidebar_width + self.width * self.scale_factor, self.window.height)
+
+        elif self.height >= self.width:
+            self.scale_factor = self.window.width // self.width
+            if self.window.height < self.height * self.scale_factor:
+                self.window.set_size(self.window.height, self.height * self.scale_factor)
 
     def on_key_press(self, symbol, modifiers):
         # Set scroll speed (through sequential frames) with offset
@@ -267,10 +284,9 @@ class TrackReview:
                            format="png")
             image = pyglet.image.load("frame.png", file)
 
-            height, width, _ = frame.shape
             sprite = pyglet.sprite.Sprite(image, x=self.sidebar_width, y=0)
-            sprite.update(scale_x=2,
-                          scale_y=2)
+            sprite.update(scale_x=self.scale_factor,
+                          scale_y=self.scale_factor)
 
             gl.glTexParameteri(gl.GL_TEXTURE_2D,
                                gl.GL_TEXTURE_MAG_FILTER,
