@@ -33,7 +33,7 @@ launch_xvfb() {
     local timeout=${XVFB_TIMEOUT:-5}
 
     # Start and wait for either Xvfb to be fully up or we hit the timeout.
-    log_i $DISPLAY
+    log_i "Running: Xvfb" $DISPLAY -screen $screen $resolution
     Xvfb ${DISPLAY} -screen ${screen} ${resolution} &
     local loopCount=0
     until xdpyinfo -display ${DISPLAY} > /dev/null 2>&1
