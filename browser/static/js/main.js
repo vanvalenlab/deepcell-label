@@ -277,7 +277,7 @@ function action(action, info) {
 }
 
 function start_caliban() {
-  load_file("track_review_HEK_500_400.pk");
+  load_file("batch_0.trk");
   prepare_canvas();
   fetch_and_render_frame();
 }

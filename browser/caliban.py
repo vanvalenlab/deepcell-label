@@ -1,24 +1,28 @@
+from io import BytesIO
 from imgutils import pngify
 from matplotlib.colors import hsv_to_rgb, LinearSegmentedColormap
 from random import random
 
 import copy
+import json
 import matplotlib
 import numpy as np
 import os
-import pickle
 import random
+import tarfile
 import tempfile
-
-
-def consecutive(data, stepsize=1):
-    return np.split(data, np.where(np.diff(data) != stepsize)[0]+1)
 
 
 class TrackReview:
     def __init__(self, filename):
         self.trial = self.load(filename)
-        self.tracks = self.trial["tracks"]
+
+        # lineages is a list of dictionaries. There should be only a single one
+        # when using a .trk file
+        if len(self.trial["lineages"]) != 1:
+            raise ValueError("Input file has multiple trials/lineages.")
+
+        self.tracks = self.trial["lineages"][0]
         self.num_tracks = max(self.tracks) + 1
         self.max_frames = self.trial["X"].shape[0]
         self.dimensions = self.trial["X"].shape[1:3][::-1]
@@ -72,8 +76,7 @@ class TrackReview:
                          cmap=self.color_map)
 
     def load(self, filename):
-        with open(os.path.join("../data", filename), "rb") as file:
-            return pickle.load(file)
+        return load_trks(os.path.join("../data/", filename))
 
     def action(self, action_type, info):
         if action_type == "set_parent":
@@ -194,3 +197,50 @@ class TrackReview:
 
         self.color_map = self.random_colormap()
 
+
+def consecutive(data, stepsize=1):
+    return np.split(data, np.where(np.diff(data) != stepsize)[0]+1)
+
+
+# copied from:
+# vanvalenlab/deepcell-tf/blob/master/deepcell/utils/tracking_utils.py
+def load_trks(filename):
+    """Load a trk/trks file.
+    Args:
+        trks_file: full path to the file including .trk/.trks
+    Returns:
+        A dictionary with raw, tracked, and lineage data
+    """
+    with tarfile.open(filename, 'r') as trks:
+
+        # numpy can't read these from disk...
+        array_file = BytesIO()
+        array_file.write(trks.extractfile('raw.npy').read())
+        array_file.seek(0)
+        raw = np.load(array_file)
+        array_file.close()
+
+        array_file = BytesIO()
+        array_file.write(trks.extractfile('tracked.npy').read())
+        array_file.seek(0)
+        tracked = np.load(array_file)
+        array_file.close()
+
+        # trks.extractfile opens a file in bytes mode, json can't use bytes.
+        __, file_extension = os.path.splitext(filename)
+
+        if file_extension == '.trks':
+            trk_data = trks.getmember('lineages.json')
+            lineages = json.loads(trks.extractfile(trk_data).read().decode())
+            # JSON only allows strings as keys, so convert them back to ints
+            for i, tracks in enumerate(lineages):
+                lineages[i] = {int(k): v for k, v in tracks.items()}
+
+        elif file_extension == '.trk':
+            trk_data = trks.getmember('lineage.json')
+            lineage = json.loads(trks.extractfile(trk_data).read().decode())
+            # JSON only allows strings as keys, so convert them back to ints
+            lineages = []
+            lineages.append({int(k): v for k, v in lineage.items()})
+
+    return {'lineages': lineages, 'X': raw, 'y': tracked}
