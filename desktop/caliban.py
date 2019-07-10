@@ -333,6 +333,7 @@ class TrackReview:
         # Pull the label that is being split and find a new valid label
         current_label = self.mode.label_1
         new_label = self.num_tracks + 1
+        self.num_tracks += 1
 
         # Locally store the frames to work on
         img_raw = self.raw[self.current_frame]
