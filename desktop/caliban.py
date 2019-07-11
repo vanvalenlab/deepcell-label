@@ -181,6 +181,10 @@ class TrackReview:
             if self.mode.kind == "SELECTED":
                 self.mode = Mode("QUESTION",
                                  action="NEW TRACK", **self.mode.info)
+        if symbol == key.X:
+            if self.mode.kind == "SELECTED":
+                self.mode = Mode("QUESTION",
+                                 action="DELETE", **self.mode.info)
         if symbol == key.P:
             if self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
@@ -216,6 +220,8 @@ class TrackReview:
                     self.action_swap()
                 elif self.mode.action == "WATERSHED":
                     self.action_watershed()
+                elif self.mode.action == "DELETE":
+                    self.action_delete()
                 self.mode = Mode.none()
 
     def get_current_frame(self):
@@ -443,6 +449,29 @@ class TrackReview:
             track_1["daughters"].remove(label_2)
         except ValueError:
             pass
+
+    def action_delete(self):
+        """
+        Deletes label from current frame only
+        """
+        selected_label, current_frame = self.mode.label, self.mode.frame
+
+        # Set frame labels to 0
+        for frame in self.tracked[current_frame]:
+            frame[frame == selected_label] = 0
+
+        # Removes current frame from list of frames cell appears in
+        selected_track = self.tracks[selected_label]
+        selected_track["frames"].remove(current_frame)
+
+        # Deletes lineage data if current frame is only frame cell appears in
+        if not selected_track["frames"]:
+            del self.tracks[selected_label]
+            for _, track in self.tracks.items():
+                try:
+                    track["daughters"].remove(selected_label)
+                except ValueError:
+                    pass
 
     def save(self):
         backup_file = self.filename + "_original.trk"

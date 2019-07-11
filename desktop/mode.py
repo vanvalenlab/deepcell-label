@@ -63,6 +63,8 @@ class Mode:
                         + "\n {}".format(answer))
             elif self.action == "WATERSHED":
                 return ("\nperform watershed to split {}".format(self.label_1))
+            elif self.action == "DELETE":
+                return ("\ndelete {} from frame {}?\n {}".format(self.label, self.frame, answer))
         else:
             return ''
 
