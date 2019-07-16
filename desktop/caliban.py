@@ -153,12 +153,14 @@ class TrackReview:
 
         #Determine whether to base scale factor on width or height 
         if self.height < self.width:
-            self.scale_factor = self.window.height // self.height
+            if self.window.height // self.height > 0:
+                self.scale_factor = self.window.height // self.height
             if self.window.width < self.sidebar_width + self.width * self.scale_factor:
                 self.window.set_size(self.sidebar_width + self.width * self.scale_factor, self.window.height)
 
         elif self.height >= self.width:
-            self.scale_factor = self.window.width // self.width
+            if self.window.width // self.width > 0:
+                self.scale_factor = self.window.width // self.width
             if self.window.height < self.height * self.scale_factor:
                 self.window.set_size(self.window.height, self.height * self.scale_factor)
 
