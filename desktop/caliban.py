@@ -68,7 +68,7 @@ class TrackReview:
 
         # `label` should appear first
         self.track_keys = ["label", *sorted(set(self.tracks[1]) - {"label"})]
-        self.num_tracks = max(self.tracks) + 1
+        self.num_tracks = max(self.tracks)
 
         self.num_frames, self.height, self.width, _ = raw.shape
         self.window = pyglet.window.Window(resizable=True)
@@ -161,8 +161,8 @@ class TrackReview:
             else:
                 self.max_intensity = max(self.max_intensity - 2 * scroll_y, 2)
         else:
-            if self.num_tracks + (self.adjustment - 2 * scroll_y) >= 0:
-                self.adjustment = self.adjustment - 2 * scroll_y
+            if self.num_tracks + (self.adjustment - 1 * scroll_y) > 0:
+                self.adjustment = self.adjustment - 1 * scroll_y
 
     def on_mouse_motion(self, x, y, dx, dy):
         x -= self.sidebar_width
