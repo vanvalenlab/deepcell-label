@@ -87,6 +87,9 @@ class TrackReview:
         self.mode = Mode.none()
         self.adjustment = 0
         self.scale_factor = 1
+        self.highlight = False
+        self.highlighted_cell_one = -1
+        self.highlighted_cell_two = -1
 
         pyglet.app.run()
 
@@ -107,10 +110,18 @@ class TrackReview:
                                  label=label,
                                  frame=self.current_frame,
                                  y_location=self.y, x_location=self.x)
+                self.highlighted_cell_one = label
+                self.highlighted_cell_two = -1
+            else:
+                self.mode = Mode.none()
+                self.highlighted_cell_one = -1
+                self.highlighted_cell_two = -1
         elif self.mode.kind == "SELECTED":
             frame = self.tracked[self.current_frame]
             label = int(frame[self.y, self.x])
             if label != 0:
+                self.highlighted_cell_one = self.mode.label
+                self.highlighted_cell_two = label
                 self.mode = Mode("MULTIPLE",
                                  label_1=self.mode.label,
                                  frame_1=self.mode.frame,
@@ -120,6 +131,28 @@ class TrackReview:
                                  frame_2=self.current_frame,
                                  y2_location = self.y,
                                  x2_location = self.x)
+            else:
+                self.mode = Mode.none()
+                self.highlighted_cell_one = -1
+                self.highlighted_cell_two = -1
+        elif self.mode.kind == "MULTIPLE":
+            frame = self.tracked[self.current_frame]
+            label = int(frame[self.y, self.x])
+            if label != 0:
+                self.highlighted_cell_two = label
+                self.mode = Mode("MULTIPLE",
+                                 label_1=self.mode.label_1,
+                                 frame_1=self.mode.frame_1,
+                                 y1_location = self.mode.y1_location,
+                                 x1_location = self.mode.x1_location,
+                                 label_2=label,
+                                 frame_2=self.current_frame,
+                                 y2_location = self.y,
+                                 x2_location = self.x)
+            else:
+                self.mode = Mode.none()
+                self.highlighted_cell_one = -1
+                self.highlighted_cell_two = -1
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self.draw_raw:
@@ -167,6 +200,8 @@ class TrackReview:
         offset = 5 if modifiers & key.MOD_SHIFT else 1
         if symbol == key.ESCAPE:
             self.mode = Mode.none()
+            self.highlighted_cell_one = -1
+            self.highlighted_cell_two = -1
         elif symbol in {key.LEFT, key.A}:
             self.current_frame = max(self.current_frame - offset, 0)
         elif symbol in {key.RIGHT, key.D}:
@@ -200,7 +235,20 @@ class TrackReview:
             if self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
                                  action="WATERSHED", **self.mode.info)
-
+        if symbol == key.H:
+            self.highlight = not self.highlight
+        if symbol == key.EQUAL:
+            if self.mode.kind == "SELECTED":
+                if self.highlighted_cell_one < self.num_tracks:
+                    self.highlighted_cell_one += 1
+                elif self.highlighted_cell_one == self.num_tracks:
+                    self.highlighted_cell_one = 1
+        if symbol == key.MINUS:
+            if self.mode.kind == "SELECTED":
+                if self.highlighted_cell_one > 1:
+                    self.highlighted_cell_one -= 1
+                elif self.highlighted_cell_one == 1:
+                    self.highlighted_cell_one = self.num_tracks
 
         if symbol == key.SPACE:
             if self.mode.kind == "QUESTION":
@@ -217,6 +265,8 @@ class TrackReview:
                 elif self.mode.action == "WATERSHED":
                     self.action_watershed()
                 self.mode = Mode.none()
+                self.highlighted_cell_one = -1
+                self.highlighted_cell_two = -1
 
     def get_current_frame(self):
         if self.draw_raw:
@@ -257,7 +307,18 @@ class TrackReview:
                                        multiline=True,
                                        x=5, y=5, color=[255]*4)
 
-        frame_label = pyglet.text.Label("frame: {}".format(self.current_frame),
+        highlight_text = ""
+        if self.highlight:
+            if self.highlighted_cell_two != -1:
+                highlight_text = "highlight: on\nhighlighted cell 1: {}\nhighlighted cell 2: {}".format(self.highlighted_cell_one, self.highlighted_cell_two)
+            elif self.highlighted_cell_one != -1:
+                highlight_text = "highlight: on\nhighlighted cell: {}".format(self.highlighted_cell_one)
+            else:
+                highlight_text = "highlight: on"
+        else:
+            highlight_text = "highlight: off"
+
+        frame_label = pyglet.text.Label("frame: {}\n{}".format(self.current_frame, highlight_text),
                                         font_name="monospace",
                                         anchor_x="left", anchor_y="top",
                                         width=self.sidebar_width,
@@ -270,6 +331,16 @@ class TrackReview:
 
     def draw_current_frame(self):
         frame = self.get_current_frame()
+        cmap = plt.get_cmap("cubehelix")
+        cmap.set_bad('red')
+
+        if self.highlight:
+            if self.mode.kind == "SELECTED":
+                frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
+            elif self.mode.kind == "MULTIPLE":
+                frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
+                frame = np.ma.masked_equal(frame, self.highlighted_cell_two)
+
         with tempfile.TemporaryFile() as file:
             if self.draw_raw:
                 plt.imsave(file, frame[:, :, 0],
@@ -280,7 +351,7 @@ class TrackReview:
                 plt.imsave(file, frame[:, :, 0],
                            vmin=0,
                            vmax=self.num_tracks + self.adjustment,
-                           cmap="cubehelix",
+                           cmap=cmap,
                            format="png")
             image = pyglet.image.load("frame.png", file)
 
