@@ -228,6 +228,9 @@ class TrackReview:
             if self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
                                  action="SWAP", **self.mode.info)
+            elif self.mode.kind == "QUESTION" and self.mode.action == "SWAP":
+                self.action_single_swap()
+                self.mode = Mode.none()
             elif self.mode.kind is None:
                 self.mode = Mode("QUESTION",
                                  action="SAVE")
@@ -451,6 +454,23 @@ class TrackReview:
     def action_swap(self):
         def relabel(old_label, new_label):
             for frame in self.tracked:
+                frame[frame == old_label] = new_label
+
+            # replace fields
+            track_new = self.tracks[new_label] = self.tracks[old_label]
+            track_new["label"] = new_label
+            del self.tracks[old_label]
+
+            for d in track_new["daughters"]:
+                self.tracks[d]["parent"] = new_label
+
+        relabel(self.mode.label_1, -1)
+        relabel(self.mode.label_2, self.mode.label_1)
+        relabel(-1, self.mode.label_2)
+
+    def action_single_swap(self):
+        def relabel(old_label, new_label):
+            for frame in self.tracked[self.current_frame]:
                 frame[frame == old_label] = new_label
 
             # replace fields
