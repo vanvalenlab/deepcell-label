@@ -494,11 +494,28 @@ def load_trk(filename):
     lineage = {int(k): v for k, v in lineage.items()}
 
     return {"lineage": lineage, "raw": raw, "tracked": tracked}
-
+    
+def load_npz(filename):
+    npz = np.load(filename)
+    try:
+        raw_stack = npz['raw']
+        annotation_stack = npz['annotations']
+    except:
+        raw_stack = npz[npz.files[0]]
+        annotation_stack = npz[npz.files[1]]
+        
+    return {"raw": raw_stack, "annotated": annotation_stack}
+    
 
 def review(filename):
-    track_review = TrackReview(str(pathlib.Path(filename).with_suffix('')),
+    filetype = os.path.splitext(filename)[1]
+    if filetype == '.trk':
+        track_review = TrackReview(str(pathlib.Path(filename).with_suffix('')),
             **load_trk(filename))
+    if filetype == '.npz':
+        zstack_review = ZStackReview(str(pathlib.Path(filename).with_suffix('')),
+            **load_npz(filename))
+            
 
 
 if __name__ == "__main__":
