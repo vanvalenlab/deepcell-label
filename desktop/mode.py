@@ -54,7 +54,8 @@ class Mode:
                 return ("\nreplace {} with ".format(self.label_2)
                         + "{}?\n {}".format(self.label_1, answer))
             elif self.action == "SWAP":
-                return ("\nswap {} & {}?\n {}".format(self.label_2, self.label_1, answer))
+                return ("\nswap {} & {}?\n{}".format(self.label_2, self.label_1, 
+                'SPACE = SWAP IN ALL FRAMES\nS = SWAP IN THIS FRAME ONLY\nESC = CANCEL SWAP'))
             elif self.action == "PARENT":
                 return ("\nmake {} a daughter of ".format(self.label_2)
                         + "{}\n {}".format(self.label_1, answer))

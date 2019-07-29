@@ -616,8 +616,14 @@ class ZStackReview:
             if self.mode.kind is None:
                 self.mode = Mode("QUESTION",
                                  action="SAVE")
-            if self.mode.kind == "QUESTION" and self.mode.action == "CREATE NEW":
+            elif self.mode.kind == "QUESTION" and self.mode.action == "CREATE NEW":
                 self.action_new_single_cell()
+                self.mode = Mode.none()
+            elif self.mode.kind == "MULTIPLE":
+                self.mode = Mode("QUESTION",
+                                 action="SWAP", **self.mode.info)
+            elif self.mode.kind == "QUESTION" and self.mode.action == "SWAP":
+                self.action_swap_single_frame()
                 self.mode = Mode.none()
         
         if symbol == key.R:
@@ -635,6 +641,8 @@ class ZStackReview:
                     self.action_replace()
                 elif self.mode.action == "CREATE NEW":
                     self.action_new_cell_stack()
+                elif self.mode.action == "SWAP":
+                    self.action_swap_all()
                 elif self.mode.action == "WATERSHED":
                     self.action_watershed()
                 elif self.mode.action == "SAVE":
@@ -781,7 +789,6 @@ class ZStackReview:
         self.cell_info[new_label].update({'slices': ''})
         
         np.append(self.cell_ids, new_label)
-       
             
     def action_replace(self):
         """
@@ -796,6 +803,36 @@ class ZStackReview:
         # update cell_info dict
         del self.cell_info[label_2]
         self.cell_ids = np.delete(self.cell_ids, np.where(self.cell_ids == label_2))
+        
+    def action_swap_all(self):
+        label_1 = self.mode.label_1
+        label_2 = self.mode.label_2
+        
+        for frame in range(self.annotated.shape[0]):
+            ann_img = self.annotated[frame]
+            ann_img = np.where(ann_img == label_1, -1, ann_img)
+            ann_img = np.where(ann_img == label_2, label_1, ann_img)
+            ann_img = np.where(ann_img == -1, label_2, ann_img)
+            self.annotated[frame] = ann_img
+            
+        #update cell_info
+        cell_info_1 = self.cell_info[label_1].copy()
+        cell_info_2 = self.cell_info[label_2].copy()
+        self.cell_info[label_1].update({'frames': cell_info_2['frames']})
+        self.cell_info[label_2].update({'frames': cell_info_1['frames']})
+        
+    def action_swap_single_frame(self):
+        label_1 = self.mode.label_1
+        label_2 = self.mode.label_2
+        
+        frame = self.current_frame
+        
+        ann_img = self.annotated[frame]
+        ann_img = np.where(ann_img == label_1, -1, ann_img)
+        ann_img = np.where(ann_img == label_2, label_1, ann_img)
+        ann_img = np.where(ann_img == -1, label_2, ann_img)
+        
+        self.annotated[frame] = ann_img
 
     def action_watershed(self):
         # Pull the label that is being split and find a new valid label
