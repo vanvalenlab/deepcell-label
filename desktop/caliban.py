@@ -918,7 +918,7 @@ class ZStackReview:
         '''
         img_ann = self.annotated[self.current_frame]
         
-        filled_img_ann = flood_fill(img_ann, self.hole_fill_seed, self.mode.label)
+        filled_img_ann = flood_fill(img_ann, self.hole_fill_seed, self.mode.label, connectivity = 1)
         self.annotated[self.current_frame] = filled_img_ann
                 
     def save(self):
