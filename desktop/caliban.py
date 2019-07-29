@@ -630,6 +630,12 @@ class ZStackReview:
             if self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
                                  action="REPLACE", **self.mode.info)
+                                 
+        if symbol == key.X:
+            if self.mode.kind == "SELECTED":
+                self.mode = Mode("QUESTION",
+                                action="DELETE", **self.mode.info)
+        
         if symbol == key.W:
             if self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
@@ -643,6 +649,8 @@ class ZStackReview:
                     self.action_new_cell_stack()
                 elif self.mode.action == "SWAP":
                     self.action_swap_all()
+                elif self.mode.action == "DELETE":
+                    self.action_delete_mask()
                 elif self.mode.action == "WATERSHED":
                     self.action_watershed()
                 elif self.mode.action == "SAVE":
@@ -714,7 +722,6 @@ class ZStackReview:
                 plt.imsave(file, frame[:,:],
                 #plt.imsave(file, frame[:, :, 0],
                            vmin=0,
-                           #change to a value based on max value in zstack
                            vmax= self.num_cells + self.adjustment,
                            cmap="cubehelix",
                            format="png")
@@ -883,6 +890,27 @@ class ZStackReview:
         self.num_cells += 1
         
         label = self.mode.label
+        
+    def action_delete_mask(self):
+        '''
+        remove selected annotation from frame, replacing with zeros
+        '''
+        
+        label = self.mode.label
+        frame = self.current_frame
+        
+        ann_img = self.annotated[frame]
+        ann_img = np.where(ann_img == label, 0, ann_img)
+        
+        self.annotated[frame] = ann_img
+        
+        #update cell_info
+        if self.cell_info[label]['frames'] == [frame]:
+            del self.cell_info[label]
+        else:
+            old_frames = self.cell_info[label]['frames']
+            updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame)))
+            self.cell_info[label].update({'frames': updated_frames})
         
     def action_fill_hole(self):
         '''
