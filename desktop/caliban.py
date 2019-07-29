@@ -455,24 +455,28 @@ class TrackReview:
         Deletes label from current frame only
         """
         selected_label, current_frame = self.mode.label, self.mode.frame
-
-        # Set frame labels to 0
-        for frame in self.tracked[current_frame]:
-            frame[frame == selected_label] = 0
+        
+        # Set selected label to 0 in current frames
+        ann_img = self.tracked[current_frame]
+        ann_img = np.where(ann_img == selected_label, 0, ann_img)
+        self.tracked[current_frame] = ann_img
 
         # Removes current frame from list of frames cell appears in
         selected_track = self.tracks[selected_label]
         selected_track["frames"].remove(current_frame)
 
         # Deletes lineage data if current frame is only frame cell appears in
-        if not selected_track["frames"]:
-            del self.tracks[selected_label]
+        if selected_track["frames"] == []:
+            del self.tracks[selected_label] 
+            # If deleting lineage data, remove parent/daughter entries
             for _, track in self.tracks.items():
                 try:
                     track["daughters"].remove(selected_label)
                 except ValueError:
                     pass
-
+                if track["parent"] == selected_label:
+                    track["parent"] = None
+                    
     def save(self):
         backup_file = self.filename + "_original.trk"
         if not os.path.exists(backup_file):
