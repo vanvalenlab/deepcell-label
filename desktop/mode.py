@@ -61,8 +61,16 @@ class Mode:
             elif self.action == "NEW TRACK":
                 return ("\nnew track cell:{}/frame:{}?".format(self.label, self.frame)
                         + "\n {}".format(answer))
+            elif self.action == "CREATE NEW":
+                return ("".format(self.label, self.frame)
+                        + "\n {}".format("(S=SINGLE FRAME / SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)"))
             elif self.action == "WATERSHED":
-                return ("\nperform watershed to split {}".format(self.label_1))
+                return ("\nperform watershed to split {}?\n{}".format(self.label_1, answer))
+            #elif self.action == "FILL HOLE":
+             #   return ("\nfill hole in cell {}?\n{}".format(self.label, answer))
+        elif self.kind == "PROMPT":
+            if self.action == "FILL HOLE":
+                return('\nselect hole to fill in cell {}'.format(self.label))
         else:
             return ''
 
