@@ -147,20 +147,11 @@ class TrackReview:
         self.draw_label()
 
     def scale_screen(self):
-        #Scales sidebar width
-        if self.window.width - self.width * self.scale_factor > 300:
-            self.sidebar_width = self.window.width - self.width * self.scale_factor
-
+        #User can resize window and images will expand to fill space if possible
         #Determine whether to base scale factor on width or height 
-        if self.height < self.width:
-            self.scale_factor = self.window.height // self.height
-            if self.window.width < self.sidebar_width + self.width * self.scale_factor:
-                self.window.set_size(self.sidebar_width + self.width * self.scale_factor, self.window.height)
-
-        elif self.height >= self.width:
-            self.scale_factor = self.window.width // self.width
-            if self.window.height < self.height * self.scale_factor:
-                self.window.set_size(self.window.height, self.height * self.scale_factor)
+        y_scale = self.window.height // self.height
+        x_scale = (self.window.width - 300) // self.width
+        self.scale_factor = min(y_scale, x_scale)
 
     def on_key_press(self, symbol, modifiers):
         # Set scroll speed (through sequential frames) with offset
