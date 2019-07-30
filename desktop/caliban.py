@@ -181,6 +181,10 @@ class TrackReview:
             if self.mode.kind == "SELECTED":
                 self.mode = Mode("QUESTION",
                                  action="NEW TRACK", **self.mode.info)
+        if symbol == key.X:
+            if self.mode.kind == "SELECTED":
+                self.mode = Mode("QUESTION",
+                                 action="DELETE", **self.mode.info)
         if symbol == key.P:
             if self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
@@ -216,6 +220,8 @@ class TrackReview:
                     self.action_swap()
                 elif self.mode.action == "WATERSHED":
                     self.action_watershed()
+                elif self.mode.action == "DELETE":
+                    self.action_delete()
                 self.mode = Mode.none()
 
     def get_current_frame(self):
@@ -445,6 +451,33 @@ class TrackReview:
         except ValueError:
             pass
 
+    def action_delete(self):
+        """
+        Deletes label from current frame only
+        """
+        selected_label, current_frame = self.mode.label, self.mode.frame
+        
+        # Set selected label to 0 in current frames
+        ann_img = self.tracked[current_frame]
+        ann_img = np.where(ann_img == selected_label, 0, ann_img)
+        self.tracked[current_frame] = ann_img
+
+        # Removes current frame from list of frames cell appears in
+        selected_track = self.tracks[selected_label]
+        selected_track["frames"].remove(current_frame)
+
+        # Deletes lineage data if current frame is only frame cell appears in
+        if selected_track["frames"] == []:
+            del self.tracks[selected_label] 
+            # If deleting lineage data, remove parent/daughter entries
+            for _, track in self.tracks.items():
+                try:
+                    track["daughters"].remove(selected_label)
+                except ValueError:
+                    pass
+                if track["parent"] == selected_label:
+                    track["parent"] = None
+                    
     def save(self):
         backup_file = self.filename + "_original.trk"
         if not os.path.exists(backup_file):
