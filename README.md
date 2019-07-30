@@ -15,6 +15,7 @@ c &rarr; create
 p &rarr; parent  
 s &rarr; swap  
 s &rarr; save  
+x &rarr; delete cell mask in frame  
 w &rarr; watershed  
 esc &rarr; cancel operation  
 space bar &rarr; enter  
