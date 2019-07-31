@@ -619,6 +619,9 @@ class ZStackReview:
             elif self.mode.kind == "QUESTION" and self.mode.action == "CREATE NEW":
                 self.action_new_single_cell()
                 self.mode = Mode.none()
+            elif self.mode.kind == "QUESTION" and self.mode.action == "PREDICT":
+                self.action_predict_single()
+                self.mode = Mode.none()
             elif self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
                                  action="SWAP", **self.mode.info)
@@ -927,6 +930,22 @@ class ZStackReview:
         
         filled_img_ann = flood_fill(img_ann, self.hole_fill_seed, self.mode.label, connectivity = 1)
         self.annotated[self.current_frame] = filled_img_ann
+        
+    def action_predict_single(self):
+        '''
+        predicts zstack relationship for current frame based on previous frame
+        useful for finetuning corrections one frame at a time
+        '''
+        
+        annotated = self.annotated
+        current_slice = self.current_frame
+        if current_slice > 0:
+            prev_slice = current_slice - 1
+            img = self.annotated[prev_slice]
+            next_img = self.annotated[current_slice]
+            updated_slice = predict_zstack_cell_ids(img, next_img)
+            self.annotated[current_slice] = updated_slice
+        
         
     def action_predict_zstack(self):
         '''
