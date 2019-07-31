@@ -222,6 +222,9 @@ class TrackReview:
             if self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
                                  action="SWAP", **self.mode.info)
+            elif self.mode.kind == "QUESTION" and self.mode.action == "SWAP":
+                self.action_single_swap()
+                self.mode = Mode.none()
             elif self.mode.kind is None:
                 self.mode = Mode("QUESTION",
                                  action="SAVE")
@@ -463,6 +466,22 @@ class TrackReview:
         relabel(self.mode.label_1, -1)
         relabel(self.mode.label_2, self.mode.label_1)
         relabel(-1, self.mode.label_2)
+
+    def action_single_swap(self):
+        '''
+        swap annotation labels in one frame but do not change lineage info
+        '''
+        label_1 = self.mode.label_1
+        label_2 = self.mode.label_2
+        
+        frame = self.current_frame
+        
+        ann_img = self.tracked[frame]
+        ann_img = np.where(ann_img == label_1, -1, ann_img)
+        ann_img = np.where(ann_img == label_2, label_1, ann_img)
+        ann_img = np.where(ann_img == -1, label_2, ann_img)
+        
+        self.tracked[frame] = ann_img
 
     def action_parent(self):
         """
