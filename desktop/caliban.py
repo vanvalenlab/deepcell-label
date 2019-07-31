@@ -469,21 +469,20 @@ class TrackReview:
         relabel(-1, self.mode.label_2)
 
     def action_single_swap(self):
-        def relabel(old_label, new_label):
-            for frame in self.tracked[self.current_frame]:
-                frame[frame == old_label] = new_label
-
-            # replace fields
-            track_new = self.tracks[new_label] = self.tracks[old_label]
-            track_new["label"] = new_label
-            del self.tracks[old_label]
-
-            for d in track_new["daughters"]:
-                self.tracks[d]["parent"] = new_label
-
-        relabel(self.mode.label_1, -1)
-        relabel(self.mode.label_2, self.mode.label_1)
-        relabel(-1, self.mode.label_2)
+        '''
+        swap annotation labels in one frame but do not change lineage info
+        '''
+        label_1 = self.mode.label_1
+        label_2 = self.mode.label_2
+        
+        frame = self.current_frame
+        
+        ann_img = self.tracked[frame]
+        ann_img = np.where(ann_img == label_1, -1, ann_img)
+        ann_img = np.where(ann_img == label_2, label_1, ann_img)
+        ann_img = np.where(ann_img == -1, label_2, ann_img)
+        
+        self.tracked[frame] = ann_img
 
     def action_parent(self):
         """
