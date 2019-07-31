@@ -70,7 +70,8 @@ class Mode:
                 "SPACE = CONFIRM DELETION\nESC = CANCEL DELETION"))
             elif self.action == "WATERSHED":
                 return ("\nperform watershed to split {}?\n{}".format(self.label_1, answer))
-
+            elif self.action == "PREDICT":
+                return ("Predict cell ids for zstack?\n{}".format(answer))
         elif self.kind == "PROMPT":
             if self.action == "FILL HOLE":
                 return('\nselect hole to fill in cell {}'.format(self.label))

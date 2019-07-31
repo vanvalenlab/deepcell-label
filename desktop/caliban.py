@@ -625,6 +625,11 @@ class ZStackReview:
             elif self.mode.kind == "QUESTION" and self.mode.action == "SWAP":
                 self.action_swap_single_frame()
                 self.mode = Mode.none()
+                
+        if symbol == key.P:
+            if self.mode.kind is None:
+                self.mode = Mode("QUESTION",
+                                action="PREDICT", **self.mode.info)
         
         if symbol == key.R:
             if self.mode.kind == "MULTIPLE":
@@ -645,6 +650,8 @@ class ZStackReview:
             if self.mode.kind == "QUESTION":
                 if self.mode.action == "REPLACE":
                     self.action_replace()
+                elif self.mode.action == "PREDICT":
+                    self.action_predict_zstack()
                 elif self.mode.action == "CREATE NEW":
                     self.action_new_cell_stack()
                 elif self.mode.action == "SWAP":
@@ -920,6 +927,35 @@ class ZStackReview:
         
         filled_img_ann = flood_fill(img_ann, self.hole_fill_seed, self.mode.label, connectivity = 1)
         self.annotated[self.current_frame] = filled_img_ann
+        
+    def action_predict_zstack(self):
+        '''
+        use location of cells in image to predict which annotations are
+        different slices of the same cell
+        '''
+        
+        annotated = self.annotated
+        
+        for zslice in range(self.annotated.shape[0] -1):
+            img = self.annotated[zslice]
+            next_img = self.annotated[zslice + 1]
+            predicted_next = predict_zstack_cell_ids(img, next_img)
+            self.annotated[zslice + 1] = predicted_next
+
+        #remake cell_info dict based on new annotations            
+        self.cell_ids = np.unique(annotated)[np.nonzero(np.unique(annotated))]
+        self.num_cells = max(self.cell_ids)
+        self.cell_info = {}
+        for cell in self.cell_ids:
+            self.cell_info[cell] = {}
+            self.cell_info[cell]['label'] = str(cell)
+            self.cell_info[cell]['frames'] = [] 
+            
+            for frame in range(self.annotated.shape[0]):
+                if cell in annotated[frame,:,:]:
+                    self.cell_info[cell]['frames'].append(frame)
+            self.cell_info[cell]['slices'] = ''
+
                 
     def save(self):
         save_file = self.filename + "_save_version_{}.npz".format(self.save_version)
@@ -928,6 +964,94 @@ class ZStackReview:
 
 def consecutive(data, stepsize=1):
     return np.split(data, np.where(np.diff(data) != stepsize)[0]+1)
+    
+    
+def predict_zstack_cell_ids(img, next_img):
+
+    #create np array that can hold all pairings between cells in one
+    #image and cells in next image
+    iou = np.zeros((np.max(img)+1, np.max(next_img)+1))
+    
+    vals = np.unique(img)
+    cells = vals[np.nonzero(vals)]
+    
+    next_vals = np.unique(next_img)
+    next_cells = next_vals[np.nonzero(next_vals)]
+
+    #calculate IOUs
+    for i in cells:
+        for j in next_cells:
+            intersection = np.logical_and(img==i,next_img==j)
+            union = np.logical_or(img==i,next_img==j)
+            iou[i,j] = intersection.sum(axis=(0,1)) / union.sum(axis=(0,1))
+    
+    #relabel cells appropriately
+    
+    #relabeled_next holds cells as they get relabeled appropriately
+    relabeled_next = np.zeros(next_img.shape, dtype = np.uint16)
+    max_indices = np.argmax(iou, axis = 0)
+    
+    #put cells that into new image if they've been matched with another cell
+    
+    #keep track of which cells don't have matches
+    unmatched_cells = []
+    #don't reuse cells (if multiple cells in next_img match one particular cell)
+    used_cells = []
+    
+    #next_cell ranges between 0 and max(next_img)
+    #matched_cell is which cell in img matched that cell in next_img the best
+    for next_cell, matched_cell in enumerate(max_indices):
+        
+        if matched_cell not in used_cells:
+            
+            #add it to the relabeled image
+            relabeled_next = np.where(next_img == next_cell, matched_cell, relabeled_next)
+            
+            #don't add background to used_cells
+            if matched_cell != 0:
+                used_cells = np.append(used_cells, matched_cell)
+        
+        elif matched_cell in used_cells:
+            #skip that pairing, add next_cell to unmatched_cells
+            unmatched_cells = np.append(unmatched_cells, next_cell)
+        
+        #if the cell in next_img didn't match anything (and is not the background):
+        if matched_cell == 0 and next_cell !=0:
+            unmatched_cells = np.append(unmatched_cells, next_cell)
+    
+    #retire cell labels from being used if cell in img matches only background in next_img
+    retire_indices = np.argmax(iou, axis =1)
+    retired_cells = []
+    
+    for current_cell, matched_cell in enumerate(retire_indices):
+        if matched_cell == 0 and current_cell != 0:
+            retired_cells = np.append(retired_cells, current_cell)
+    
+    #figure out which labels we should use to label remaining, unmatched cells
+    relabeled_values = np.unique(relabeled_next)[np.nonzero(np.unique(relabeled_next))]
+    
+    #allowed_values = labels from next_cells that haven't been used in relabeled_next already
+    allowed_values = np.setdiff1d(next_cells, relabeled_values)
+    
+    #stringent_allowed = allowed_values that haven't been retired
+    stringent_allowed =np.setdiff1d(allowed_values, retired_cells)
+    
+    #stringent_allowed does not generate enough labels to account for any new cells that appear
+    #so create new labels by adding to the max number of cells
+    #only make as many new labels as needed
+    current_max = max(np.max(cells), np.max(next_cells)) + 1
+    
+    for additional_needed in range(len(next_cells)-len(relabeled_values)-len(stringent_allowed)):
+        stringent_allowed = np.append(stringent_allowed, current_max)
+        current_max += 1
+    
+    #replace each unmatched cell with a value from the stringent_allowed list,
+    #add that relabeled cell to relabeled_next
+    for reassigned_cell in range(len(stringent_allowed)):
+        relabeled_next = np.where(next_img == unmatched_cells[reassigned_cell],
+                                 stringent_allowed[reassigned_cell], relabeled_next)
+
+    return relabeled_next
 
 
 def load_trk(filename):
