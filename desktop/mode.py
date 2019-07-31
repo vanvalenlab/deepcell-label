@@ -51,18 +51,17 @@ class Mode:
             if self.action == "SAVE":
                 return ("\nsave current movie?\n {}".format(answer))
             elif self.action == "REPLACE":
-                return ("\nreplace {} with ".format(self.label_2)
-                        + "{}?\n {}".format(self.label_1, answer))
+                return ("\nreplace {} with {}?\n {}".format(self.label_2, self.label_1, answer))
             elif self.action == "SWAP":
                 return ("\nswap {} & {}?\n {}".format(self.label_2, self.label_1, "(S=SINGLE FRAME / SPACE=ALL FRAMES / ESC=NO)"))
             elif self.action == "PARENT":
-                return ("\nmake {} a daughter of ".format(self.label_2)
-                        + "{}\n {}".format(self.label_1, answer))
+                return ("\nmake {} a daughter of {}?\n {}".format(self.label_2, self.label_1, answer))
             elif self.action == "NEW TRACK":
-                return ("\nnew track cell:{}/frame:{}?".format(self.label, self.frame)
-                        + "\n {}".format(answer))
+                return ("\ncreate new track from {} on frame {}?\n {}".format(self.label, self.frame, answer))
             elif self.action == "WATERSHED":
-                return ("\nperform watershed to split {}".format(self.label_1))
+                return ("\nperform watershed to split {}?\n {}".format(self.label_1, answer))
+            elif self.action == "DELETE":
+                return ("\ndelete {} from frame {}?\n {}".format(self.label, self.frame, answer))
         else:
             return ''
 

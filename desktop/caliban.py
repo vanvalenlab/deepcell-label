@@ -112,10 +112,6 @@ class TrackReview:
                                  y_location=self.y, x_location=self.x)
                 self.highlighted_cell_one = label
                 self.highlighted_cell_two = -1
-            else:
-                self.mode = Mode.none()
-                self.highlighted_cell_one = -1
-                self.highlighted_cell_two = -1
         elif self.mode.kind == "SELECTED":
             frame = self.tracked[self.current_frame]
             label = int(frame[self.y, self.x])
@@ -131,10 +127,12 @@ class TrackReview:
                                  frame_2=self.current_frame,
                                  y2_location = self.y,
                                  x2_location = self.x)
+            #deselect cells if click on background 
             else:
                 self.mode = Mode.none()
                 self.highlighted_cell_one = -1
                 self.highlighted_cell_two = -1
+        #if already have two cells selected, click again to reselect the second cell
         elif self.mode.kind == "MULTIPLE":
             frame = self.tracked[self.current_frame]
             label = int(frame[self.y, self.x])
@@ -149,6 +147,7 @@ class TrackReview:
                                  frame_2=self.current_frame,
                                  y2_location = self.y,
                                  x2_location = self.x)
+            #deselect cells if click on background                 
             else:
                 self.mode = Mode.none()
                 self.highlighted_cell_one = -1
@@ -180,20 +179,11 @@ class TrackReview:
         self.draw_label()
 
     def scale_screen(self):
-        #Scales sidebar width
-        if self.window.width - self.width * self.scale_factor > 300:
-            self.sidebar_width = self.window.width - self.width * self.scale_factor
-
+        #User can resize window and images will expand to fill space if possible
         #Determine whether to base scale factor on width or height 
-        if self.height < self.width:
-            self.scale_factor = self.window.height // self.height
-            if self.window.width < self.sidebar_width + self.width * self.scale_factor:
-                self.window.set_size(self.sidebar_width + self.width * self.scale_factor, self.window.height)
-
-        elif self.height >= self.width:
-            self.scale_factor = self.window.width // self.width
-            if self.window.height < self.height * self.scale_factor:
-                self.window.set_size(self.window.height, self.height * self.scale_factor)
+        y_scale = self.window.height // self.height
+        x_scale = (self.window.width - 300) // self.width
+        self.scale_factor = min(y_scale, x_scale)
 
     def on_key_press(self, symbol, modifiers):
         # Set scroll speed (through sequential frames) with offset
@@ -216,6 +206,10 @@ class TrackReview:
             if self.mode.kind == "SELECTED":
                 self.mode = Mode("QUESTION",
                                  action="NEW TRACK", **self.mode.info)
+        if symbol == key.X:
+            if self.mode.kind == "SELECTED":
+                self.mode = Mode("QUESTION",
+                                 action="DELETE", **self.mode.info)
         if symbol == key.P:
             if self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
@@ -238,8 +232,10 @@ class TrackReview:
             if self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
                                  action="WATERSHED", **self.mode.info)
+        #no prompt needed to toggle highlight mode
         if symbol == key.H:
             self.highlight = not self.highlight
+        #cycle through highlighted cells
         if symbol == key.EQUAL:
             if self.mode.kind == "SELECTED":
                 if self.highlighted_cell_one < self.num_tracks:
@@ -267,6 +263,8 @@ class TrackReview:
                     self.action_swap()
                 elif self.mode.action == "WATERSHED":
                     self.action_watershed()
+                elif self.mode.action == "DELETE":
+                    self.action_delete()
                 self.mode = Mode.none()
                 self.highlighted_cell_one = -1
                 self.highlighted_cell_two = -1
@@ -407,6 +405,7 @@ class TrackReview:
         # Pull the label that is being split and find a new valid label
         current_label = self.mode.label_1
         new_label = self.num_tracks + 1
+        self.num_tracks += 1
 
         # Locally store the frames to work on
         img_raw = self.raw[self.current_frame]
@@ -534,6 +533,33 @@ class TrackReview:
         except ValueError:
             pass
 
+    def action_delete(self):
+        """
+        Deletes label from current frame only
+        """
+        selected_label, current_frame = self.mode.label, self.mode.frame
+        
+        # Set selected label to 0 in current frames
+        ann_img = self.tracked[current_frame]
+        ann_img = np.where(ann_img == selected_label, 0, ann_img)
+        self.tracked[current_frame] = ann_img
+
+        # Removes current frame from list of frames cell appears in
+        selected_track = self.tracks[selected_label]
+        selected_track["frames"].remove(current_frame)
+
+        # Deletes lineage data if current frame is only frame cell appears in
+        if selected_track["frames"] == []:
+            del self.tracks[selected_label] 
+            # If deleting lineage data, remove parent/daughter entries
+            for _, track in self.tracks.items():
+                try:
+                    track["daughters"].remove(selected_label)
+                except ValueError:
+                    pass
+                if track["parent"] == selected_label:
+                    track["parent"] = None
+                    
     def save(self):
         backup_file = self.filename + "_original.trk"
         if not os.path.exists(backup_file):
