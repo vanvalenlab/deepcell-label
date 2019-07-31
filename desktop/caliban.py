@@ -112,10 +112,6 @@ class TrackReview:
                                  y_location=self.y, x_location=self.x)
                 self.highlighted_cell_one = label
                 self.highlighted_cell_two = -1
-            else:
-                self.mode = Mode.none()
-                self.highlighted_cell_one = -1
-                self.highlighted_cell_two = -1
         elif self.mode.kind == "SELECTED":
             frame = self.tracked[self.current_frame]
             label = int(frame[self.y, self.x])
@@ -131,10 +127,12 @@ class TrackReview:
                                  frame_2=self.current_frame,
                                  y2_location = self.y,
                                  x2_location = self.x)
+            #deselect cells if click on background 
             else:
                 self.mode = Mode.none()
                 self.highlighted_cell_one = -1
                 self.highlighted_cell_two = -1
+        #if already have two cells selected, click again to reselect the second cell
         elif self.mode.kind == "MULTIPLE":
             frame = self.tracked[self.current_frame]
             label = int(frame[self.y, self.x])
@@ -149,6 +147,7 @@ class TrackReview:
                                  frame_2=self.current_frame,
                                  y2_location = self.y,
                                  x2_location = self.x)
+            #deselect cells if click on background                 
             else:
                 self.mode = Mode.none()
                 self.highlighted_cell_one = -1
@@ -235,8 +234,10 @@ class TrackReview:
             if self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
                                  action="WATERSHED", **self.mode.info)
+        #no prompt needed to toggle highlight mode
         if symbol == key.H:
             self.highlight = not self.highlight
+        #cycle through highlighted cells
         if symbol == key.EQUAL:
             if self.mode.kind == "SELECTED":
                 if self.highlighted_cell_one < self.num_tracks:
