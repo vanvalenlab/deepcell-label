@@ -470,35 +470,37 @@ class ZStackReview:
         self.filename = filename
         self.raw = raw
         self.annotated = annotated
-
+        
+        self.feature = 0
+        self.feature_max = self.annotated.shape[-1]
+        self.channel = 0
+        self.num_frames, self.height, self.width, self.channel_max = raw.shape
+        
         self.sidebar_width = 300
         
         #create a dictionary that has frame information about each cell
         #analogous to .trk lineage but do not need relationships between cells included
-        self.cell_ids = np.unique(annotated)[np.nonzero(np.unique(annotated))]
-        self.num_cells = max(self.cell_ids)
+        self.cell_ids = {}
+        self.num_cells = {}
         self.cell_info = {}
-        for cell in self.cell_ids:
-            self.cell_info[cell] = {}
-            self.cell_info[cell]['label'] = str(cell)
-            self.cell_info[cell]['frames'] = [] 
+        
+        for feature in range(self.feature_max):
+            annotated = self.annotated[:,:,:,feature]
+            self.cell_ids[feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))]
+            self.num_cells[feature] = max(self.cell_ids[feature])
+            self.cell_info[feature] = {}
+            for cell in self.cell_ids[feature]:
+                self.cell_info[feature][cell] = {}
+                self.cell_info[feature][cell]['label'] = str(cell)
+                self.cell_info[feature][cell]['frames'] = [] 
             
-            for frame in range(self.annotated.shape[0]):
-                if cell in annotated[frame,:,:]:
-                    self.cell_info[cell]['frames'].append(frame)
-            self.cell_info[cell]['slices'] = ''
+                for frame in range(self.annotated.shape[0]):
+                    if cell in annotated[frame,:,:]:
+                        self.cell_info[feature][cell]['frames'].append(frame)
+                self.cell_info[feature][cell]['slices'] = ''
 
         #don't display 'frames' just 'slices' (updated on_draw)
-        self.display_info = [*sorted(set(self.cell_info[1]) - {'frames'})]
-        
-        # `label` should appear first
-        
-#        self.track_keys = ["label", *sorted(set(self.tracks[1]) - {"label"})]
-#        self.num_tracks = max(self.tracks) + 1
-        try:    
-            self.num_frames, self.height, self.width, _ = raw.shape
-        except:
-            self.num_frames, self.height, self.width = raw.shape
+        self.display_info = [*sorted(set(self.cell_info[0][1]) - {'frames'})]
             
         self.window = pyglet.window.Window(resizable=True)
         self.window.set_minimum_size(self.width + self.sidebar_width, self.height + 20)
@@ -510,11 +512,15 @@ class ZStackReview:
 
         self.current_frame = 0
         self.draw_raw = False
-        self.max_intensity = None
+        self.max_intensity = {}
+        for channel in range(self.channel_max):
+            self.max_intensity[channel] = None
         self.x = 0
         self.y = 0
         self.mode = Mode.none()
-        self.adjustment = 0
+        self.adjustment = {}
+        for feature in range(self.feature_max):
+            self.adjustment[feature] = 0
         self.scale_factor = 1
         
         self.hole_fill_seed = None
@@ -526,7 +532,7 @@ class ZStackReview:
 
         if self.mode.kind is None:
             frame = self.annotated[self.current_frame]
-            label = int(frame[self.y, self.x])
+            label = int(frame[self.y, self.x, self.feature])
             if label != 0:
                 self.mode = Mode("SELECTED",
                                  label=label,
@@ -534,7 +540,7 @@ class ZStackReview:
                                  y_location=self.y, x_location=self.x)
         elif self.mode.kind == "SELECTED":
             frame = self.annotated[self.current_frame]
-            label = int(frame[self.y, self.x])
+            label = int(frame[self.y, self.x, self.feature])
             if label != 0:
                 self.mode = Mode("MULTIPLE",
                                  label_1=self.mode.label,
@@ -547,7 +553,7 @@ class ZStackReview:
                                  x2_location = self.x)
         elif self.mode.kind == "PROMPT" and self.mode.action == "FILL HOLE":
             frame = self.annotated[self.current_frame]
-            label = int(frame[self.y, self.x])
+            label = int(frame[self.y, self.x, self.feature])
             if label == 0:
                 self.hole_fill_seed = (self.y, self.x)
             if self.hole_fill_seed is not None:
@@ -556,13 +562,13 @@ class ZStackReview:
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self.draw_raw:
-            if self.max_intensity == None:
-                self.max_intensity = np.max(self.get_current_frame())
+            if self.max_intensity[self.channel] == None:
+                self.max_intensity[self.channel] = np.max(self.get_current_frame()[:,:,self.channel])
             else:
-                self.max_intensity = max(self.max_intensity - 2 * scroll_y, 2)
+                self.max_intensity[self.channel] = max(self.max_intensity[self.channel] - 2 * scroll_y, 2)
         else:
-            if self.num_cells + (self.adjustment - 1 * scroll_y) > 0:
-                self.adjustment = self.adjustment - 1 * scroll_y
+            if self.num_cells[self.feature] + (self.adjustment[self.feature] - 1 * scroll_y) > 0:
+                self.adjustment[self.feature] = self.adjustment[self.feature] - 1 * scroll_y
 
     def on_mouse_motion(self, x, y, dx, dy):
         x -= self.sidebar_width
@@ -603,11 +609,23 @@ class ZStackReview:
     def mode_handle(self, symbol):
 
         if symbol == key.C:
+            #cycle through channels but only if nothing is selected
+            if self.mode.kind is None:
+                if self.channel + 1== self.channel_max:
+                    self.channel = 0
+                else:
+                    self.channel += 1
             if self.mode.kind == "SELECTED":
                 self.mode = Mode("QUESTION",
                                 action="CREATE NEW", **self.mode.info)
                                 
         if symbol == key.F:
+            #cycle through features but only if nothing is selected
+            if self.mode.kind is None:
+                if self.feature + 1 == self.feature_max:
+                    self.feature = 0
+                else:
+                    self.feature +=1
             if self.mode.kind == "SELECTED":
                 self.mode = Mode("PROMPT",
                                 action="FILL HOLE", **self.mode.info)
@@ -683,32 +701,34 @@ class ZStackReview:
 
     def draw_label(self):
         # always use segmented output for label, not raw
-        frame = self.annotated[self.current_frame]
+        frame = self.annotated[self.current_frame,:,:,self.feature]
         label = int(frame[self.y, self.x])
         if label != 0:
-            cell_info = self.cell_info[label].copy()
+            cell_info = self.cell_info[self.feature][label].copy()
 
             slices = list(map(list, consecutive(cell_info['frames'])))
             slices = '[' + ', '.join(["{}".format(a[0])
                                 if len(a) == 1 else "{}-{}".format(a[0], a[-1])
                                 for a in slices]) + ']'
                                 
-            self.cell_info[label].update({'slices' : slices})
+            self.cell_info[self.feature][label].update({'slices' : slices})
 
-            text = '\n'.join("{:10}{}".format(str(k)+':', self.cell_info[label][k])
+            text = '\n'.join("{:10}{}".format(str(k)+':', self.cell_info[self.feature][label][k])
                               for k in self.display_info)
         else:
             text = ''
 
         text += self.mode.render()
 
-        info_label = pyglet.text.Label(text, font_name="monospace",
+        cell_info_label = pyglet.text.Label(text, font_name="monospace",
                                        anchor_x="left", anchor_y="bottom",
                                        width=self.sidebar_width,
                                        multiline=True,
                                        x=5, y=5, color=[255]*4)
 
-        frame_label = pyglet.text.Label("frame: {}".format(self.current_frame),
+        frame_label = pyglet.text.Label("frame: {}\n".format(self.current_frame)
+                                        + "channel: {}\n".format(self.channel)
+                                        + "feature: {}".format(self.feature),
                                         font_name="monospace",
                                         anchor_x="left", anchor_y="top",
                                         width=self.sidebar_width,
@@ -716,23 +736,21 @@ class ZStackReview:
                                         x=5, y=self.window.height - 5,
                                         color=[255]*4)
 
-        info_label.draw()
+        cell_info_label.draw()
         frame_label.draw()
 
     def draw_current_frame(self):
         frame = self.get_current_frame()
         with tempfile.TemporaryFile() as file:
             if self.draw_raw:
-                plt.imsave(file, frame[:,:],
-                #plt.imsave(file, frame[:, :, 0],
-                           vmax=self.max_intensity,
+                plt.imsave(file, frame[:,:,self.channel],
+                           vmax=self.max_intensity[self.channel],
                            cmap="cubehelix",
                            format="png")
             else:
-                plt.imsave(file, frame[:,:],
-                #plt.imsave(file, frame[:, :, 0],
+                plt.imsave(file, frame[:,:,self.feature],
                            vmin=0,
-                           vmax= self.num_cells + self.adjustment,
+                           vmax= self.num_cells[self.feature] + self.adjustment[self.feature],
                            cmap="cubehelix",
                            format="png")
             image = pyglet.image.load("frame.png", file)
@@ -751,61 +769,61 @@ class ZStackReview:
         Create new label in just one frame
         """
         old_label, single_frame = self.mode.label, self.mode.frame
-        new_label = self.num_cells + 1
-        self.num_cells += 1
+        new_label = self.num_cells[self.feature] + 1
+        self.num_cells[self.feature] += 1
 
         # replace frame labels
-        frame = self.annotated[single_frame]
+        frame = self.annotated[single_frame,:,:,self.feature]
         frame[frame == old_label] = new_label
 
         # replace fields
-        old_label_frames = self.cell_info[old_label]['frames']
+        old_label_frames = self.cell_info[self.feature][old_label]['frames']
         if old_label_frames == [single_frame]:
-            del self.cell_info[old_label]
+            del self.cell_info[self.feature][old_label]
         else:
             updated_frames = np.delete(old_label_frames, np.where(old_label_frames == np.int64(single_frame)))
-            self.cell_info[old_label].update({'frames': updated_frames})
+            self.cell_info[self.feature][old_label].update({'frames': updated_frames})
             
-        self.cell_info.update({new_label: {}})
-        self.cell_info[new_label].update({'label': str(new_label)})
-        self.cell_info[new_label].update({'frames': [single_frame]})
-        self.cell_info[new_label].update({'slices': ''})
+        self.cell_info[self.feature].update({new_label: {}})
+        self.cell_info[self.feature][new_label].update({'label': str(new_label)})
+        self.cell_info[self.feature][new_label].update({'frames': [single_frame]})
+        self.cell_info[self.feature][new_label].update({'slices': ''})
         
-        np.append(self.cell_ids, new_label)
+        np.append(self.cell_ids[self.feature], new_label)
         
     def action_new_cell_stack(self):          
         """
         Creates new cell label and replaces original label with it in all subsequent frames
         """
         old_label, start_frame = self.mode.label, self.mode.frame
-        new_label = self.num_cells + 1
-        self.num_cells += 1
+        new_label = self.num_cells[self.feature] + 1
+        self.num_cells[self.feature] += 1
 
         # replace frame labels
-        for frame in self.annotated[start_frame:]:
+        for frame in self.annotated[start_frame:,:,:,self.feature]:
             frame[frame == old_label] = new_label
             
         # replace fields
-        old_label_frames = self.cell_info[old_label]['frames']
+        old_label_frames = self.cell_info[self.feature][old_label]['frames']
         new_label_frames = []
         
         for frame in range(self.annotated.shape[0]):
-            if new_label in self.annotated[frame,:,:]:
+            if new_label in self.annotated[frame,:,:,self.feature]:
                 new_label_frames.append(frame)
 
         updated_old_label_frames = np.setdiff1d(old_label_frames, new_label_frames)
 
         if updated_old_label_frames == []:
-            del self.cell_info[old_label]
+            del self.cell_info[self.feature][old_label]
         else:
-            self.cell_info[old_label].update({'frames': updated_old_label_frames})     
+            self.cell_info[self.feature][old_label].update({'frames': updated_old_label_frames})     
             
-        self.cell_info.update({new_label: {}})
-        self.cell_info[new_label].update({'label': str(new_label)})
-        self.cell_info[new_label].update({'frames': new_label_frames})
-        self.cell_info[new_label].update({'slices': ''})
+        self.cell_info[self.feature].update({new_label: {}})
+        self.cell_info[self.feature][new_label].update({'label': str(new_label)})
+        self.cell_info[self.feature][new_label].update({'frames': new_label_frames})
+        self.cell_info[self.feature][new_label].update({'slices': ''})
         
-        np.append(self.cell_ids, new_label)
+        np.append(self.cell_ids[self.feature], new_label)
             
     def action_replace(self):
         """
@@ -814,29 +832,30 @@ class ZStackReview:
         label_1, label_2 = self.mode.label_1, self.mode.label_2
 
         # replace arrays
-        for frame in self.annotated:
+        for frame in self.annotated[:,:,:,self.feature]:
             frame[frame == label_2] = label_1
             
         # update cell_info dict
-        del self.cell_info[label_2]
-        self.cell_ids = np.delete(self.cell_ids, np.where(self.cell_ids == label_2))
+        del self.cell_info[self.feature][label_2]
+        self.cell_ids[self.feature] = np.delete(self.cell_ids[self.feature],
+                                      np.where(self.cell_ids[self.feature] == label_2))
         
     def action_swap_all(self):
         label_1 = self.mode.label_1
         label_2 = self.mode.label_2
         
         for frame in range(self.annotated.shape[0]):
-            ann_img = self.annotated[frame]
+            ann_img = self.annotated[frame,:,:,self.feature]
             ann_img = np.where(ann_img == label_1, -1, ann_img)
             ann_img = np.where(ann_img == label_2, label_1, ann_img)
             ann_img = np.where(ann_img == -1, label_2, ann_img)
-            self.annotated[frame] = ann_img
+            self.annotated[frame,:,:,self.feature] = ann_img
             
         #update cell_info
-        cell_info_1 = self.cell_info[label_1].copy()
-        cell_info_2 = self.cell_info[label_2].copy()
-        self.cell_info[label_1].update({'frames': cell_info_2['frames']})
-        self.cell_info[label_2].update({'frames': cell_info_1['frames']})
+        cell_info_1 = self.cell_info[self.feature][label_1].copy()
+        cell_info_2 = self.cell_info[self.feature][label_2].copy()
+        self.cell_info[self.feature][label_1].update({'frames': cell_info_2['frames']})
+        self.cell_info[self.feature][label_2].update({'frames': cell_info_1['frames']})
         
     def action_swap_single_frame(self):
         label_1 = self.mode.label_1
@@ -844,21 +863,21 @@ class ZStackReview:
         
         frame = self.current_frame
         
-        ann_img = self.annotated[frame]
+        ann_img = self.annotated[frame,:,:,self.feature]
         ann_img = np.where(ann_img == label_1, -1, ann_img)
         ann_img = np.where(ann_img == label_2, label_1, ann_img)
         ann_img = np.where(ann_img == -1, label_2, ann_img)
         
-        self.annotated[frame] = ann_img
+        self.annotated[frame,:,:,self.feature] = ann_img
 
     def action_watershed(self):
         # Pull the label that is being split and find a new valid label
         current_label = self.mode.label_1
-        new_label = self.num_cells + 1
+        new_label = self.num_cells[self.feature] + 1
 
         # Locally store the frames to work on
-        img_raw = self.raw[self.current_frame]
-        img_ann = self.annotated[self.current_frame]
+        img_raw = self.raw[self.current_frame,:,:,self.channel]
+        img_ann = self.annotated[self.current_frame,:,:,self.feature]
 
         # Pull the 2 seed locations and store locally
         # define a new seeds labeled img that is the same size as raw/annotaiton imgs
@@ -887,19 +906,17 @@ class ZStackReview:
 
         # reintegrate subsection into original mask
         img_ann[minr:maxr, minc:maxc] = img_sub_ann
-        self.annotated[self.current_frame] = img_ann
+        self.annotated[self.current_frame,:,:,self.feature] = img_ann
         
         #update cell_info dict
-        self.cell_info.update({new_label: {}})
-        self.cell_info[new_label].update({'label': str(new_label)})
-        self.cell_info[new_label].update({'frames': [self.current_frame]})
-        self.cell_info[new_label].update({'slices': ''})
+        self.cell_info[self.feature].update({new_label: {}})
+        self.cell_info[self.feature][new_label].update({'label': str(new_label)})
+        self.cell_info[self.feature][new_label].update({'frames': [self.current_frame]})
+        self.cell_info[self.feature][new_label].update({'slices': ''})
         
-        np.append(self.cell_ids, new_label)
+        np.append(self.cell_ids[self.feature], new_label)
         
-        self.num_cells += 1
-        
-        label = self.mode.label
+        self.num_cells[self.feature] += 1
         
     def action_delete_mask(self):
         '''
@@ -909,27 +926,27 @@ class ZStackReview:
         label = self.mode.label
         frame = self.current_frame
         
-        ann_img = self.annotated[frame]
+        ann_img = self.annotated[frame,:,:,self.feature]
         ann_img = np.where(ann_img == label, 0, ann_img)
         
-        self.annotated[frame] = ann_img
+        self.annotated[frame,:,:,self.feature] = ann_img
         
         #update cell_info
-        if self.cell_info[label]['frames'] == [frame]:
-            del self.cell_info[label]
+        if self.cell_info[self.feature][label]['frames'] == [frame]:
+            del self.cell_info[self.feature][label]
         else:
-            old_frames = self.cell_info[label]['frames']
+            old_frames = self.cell_info[self.feature][label]['frames']
             updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame)))
-            self.cell_info[label].update({'frames': updated_frames})
+            self.cell_info[self.feature][label].update({'frames': updated_frames})
         
     def action_fill_hole(self):
         '''
         fill a "hole" in a cell annotation with the cell label
         '''
-        img_ann = self.annotated[self.current_frame]
+        img_ann = self.annotated[self.current_frame,:,:,self.feature]
         
         filled_img_ann = flood_fill(img_ann, self.hole_fill_seed, self.mode.label, connectivity = 1)
-        self.annotated[self.current_frame] = filled_img_ann
+        self.annotated[self.current_frame,:,:,self.feature] = filled_img_ann
         
     def action_predict_single(self):
         '''
@@ -937,15 +954,28 @@ class ZStackReview:
         useful for finetuning corrections one frame at a time
         '''
         
-        annotated = self.annotated
+        annotated = self.annotated[:,:,:,self.feature]
         current_slice = self.current_frame
         if current_slice > 0:
             prev_slice = current_slice - 1
-            img = self.annotated[prev_slice]
-            next_img = self.annotated[current_slice]
+            img = self.annotated[prev_slice,:,:,self.feature]
+            next_img = self.annotated[current_slice,:,:,self.feature]
             updated_slice = predict_zstack_cell_ids(img, next_img)
-            self.annotated[current_slice] = updated_slice
+            self.annotated[current_slice,:,:,self.feature] = updated_slice
         
+        #update cell_info
+        self.cell_ids[self.feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))]
+        self.num_cells[self.feature] = max(self.cell_ids[self.feature])
+        self.cell_info[self.feature] = {}
+        for cell in self.cell_ids[self.feature]:
+            self.cell_info[self.feature][cell] = {}
+            self.cell_info[self.feature][cell]['label'] = str(cell)
+            self.cell_info[self.feature][cell]['frames'] = [] 
+            
+            for frame in range(self.annotated.shape[0]):
+                if cell in annotated[frame,:,:]:
+                    self.cell_info[self.feature][cell]['frames'].append(frame)
+            self.cell_info[self.feature][cell]['slices'] = ''
         
     def action_predict_zstack(self):
         '''
@@ -953,27 +983,28 @@ class ZStackReview:
         different slices of the same cell
         '''
         
-        annotated = self.annotated
+        annotated = self.annotated[:,:,:,self.feature]
         
         for zslice in range(self.annotated.shape[0] -1):
-            img = self.annotated[zslice]
-            next_img = self.annotated[zslice + 1]
+            img = self.annotated[zslice,:,:,self.feature]
+            
+            next_img = self.annotated[zslice + 1,:,:,self.feature]
             predicted_next = predict_zstack_cell_ids(img, next_img)
-            self.annotated[zslice + 1] = predicted_next
+            self.annotated[zslice + 1,:,:,self.feature] = predicted_next
 
         #remake cell_info dict based on new annotations            
-        self.cell_ids = np.unique(annotated)[np.nonzero(np.unique(annotated))]
-        self.num_cells = max(self.cell_ids)
-        self.cell_info = {}
-        for cell in self.cell_ids:
-            self.cell_info[cell] = {}
-            self.cell_info[cell]['label'] = str(cell)
-            self.cell_info[cell]['frames'] = [] 
+        self.cell_ids[self.feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))]
+        self.num_cells[self.feature] = max(self.cell_ids[self.feature])
+        self.cell_info[self.feature] = {}
+        for cell in self.cell_ids[self.feature]:
+            self.cell_info[self.feature][cell] = {}
+            self.cell_info[self.feature][cell]['label'] = str(cell)
+            self.cell_info[self.feature][cell]['frames'] = [] 
             
             for frame in range(self.annotated.shape[0]):
                 if cell in annotated[frame,:,:]:
-                    self.cell_info[cell]['frames'].append(frame)
-            self.cell_info[cell]['slices'] = ''
+                    self.cell_info[self.feature][cell]['frames'].append(frame)
+            self.cell_info[self.feature][cell]['slices'] = ''
 
                 
     def save(self):
@@ -989,13 +1020,22 @@ def predict_zstack_cell_ids(img, next_img):
 
     #create np array that can hold all pairings between cells in one
     #image and cells in next image
+   
     iou = np.zeros((np.max(img)+1, np.max(next_img)+1))
     
     vals = np.unique(img)
     cells = vals[np.nonzero(vals)]
     
+    #nothing to predict off of
+    if len(cells) == 0:
+        return next_img
+    
     next_vals = np.unique(next_img)
     next_cells = next_vals[np.nonzero(next_vals)]
+    
+    #no values to reassign
+    if len(next_cells) == 0:
+        return next_img
 
     #calculate IOUs
     for i in cells:
@@ -1058,6 +1098,7 @@ def predict_zstack_cell_ids(img, next_img):
     #stringent_allowed does not generate enough labels to account for any new cells that appear
     #so create new labels by adding to the max number of cells
     #only make as many new labels as needed
+    
     current_max = max(np.max(cells), np.max(next_cells)) + 1
     
     for additional_needed in range(len(next_cells)-len(relabeled_values)-len(stringent_allowed)):
@@ -1066,8 +1107,9 @@ def predict_zstack_cell_ids(img, next_img):
     
     #replace each unmatched cell with a value from the stringent_allowed list,
     #add that relabeled cell to relabeled_next
-    for reassigned_cell in range(len(stringent_allowed)):
-        relabeled_next = np.where(next_img == unmatched_cells[reassigned_cell],
+    if len(unmatched_cells) > 0:
+        for reassigned_cell in range(len(stringent_allowed)):
+            relabeled_next = np.where(next_img == unmatched_cells[reassigned_cell],
                                  stringent_allowed[reassigned_cell], relabeled_next)
 
     return relabeled_next
