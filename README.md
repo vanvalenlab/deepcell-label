@@ -22,24 +22,42 @@ Files can be edited using keyboard operations.
 
 **Edit Operations:**
 
-*r* - replace
+### In viewing mode:
 
-*c* - create
+*click* - click on a cell label to select it. Up to two cells can be selected at one time.
 
-*p* - parent
+*r* - replace: relabel all instances of a selected cell label with a second selected cell label; replaces lineage data in a trk file
 
-*s* - swap  
+*c* - create: relabel selected cell with an unused label
 
-*x* - delete cell mask in frame
+*p* - parent: assign parent/daughter relationship to pair of selected cells in trk file
 
-*w* - watershed
+*p* - predict: predict zstack relationships in npz when no cells are selected
+
+*s* - swap: swap labels and lineage information between two selected cells  
+
+*x* - delete: remove selected cell mask in frame
+
+*w* - watershed: call watershed transform to split one cell label into two
 
 
 *esc* - cancel operation  
 *space bar* - confirm operation
+*s* - confirm operation in a single frame, when applicable
 
 You can also use *esc* or click on the black background to return back to a state where no cells are selected.
 
+### In edit mode:
+
+Most keybinds are disabled in edit mode.
+
+Edit mode focuses on using an adjustable brush to modify annotations on a pixel level, rather than using operations that apply to every instance of a label within a frame or set of frames. The brush tool will only make changes to the currently selected value. Ie, a brush set to edit cell 5 will only add or erase "5" to the annotated image. 
+
+*-/=* increment value that brush is applying
+
+*&larr; &rarr;* - change size of brush tool
+
+*x* - toggle eraser mode
 
 
 **Viewing Options:**
@@ -48,15 +66,22 @@ You can also use *esc* or click on the black background to return back to a stat
           (once highlight mode is on, use *-/=* to decrement/increment selected cell label number)
    
     
-*z* - switch between annotations and raw images  
+*z* - switch between annotations and raw images
 
-*scroll wheel* - change image contrast
+*f* - cycle between different annotations when no cells are selected
+
+*c* - cycle between different channels when no cells are selected
+
+*e* - toggle edit mode 
+
+*scroll wheel* - change image or annotation contrast
 
 
 **To Save:**
 
 Once done, use the following key to save the changed file. 
 The tool will also save the original file in the same folder.
+In npz mode, a new npz file will be saved with a version number.
 
 *s* - save
 
