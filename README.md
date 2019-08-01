@@ -16,7 +16,7 @@ To navigate through frames:
 Back one frame = a or &larr;  
 Forward one frame = d or &rarr;  
 
-All edit operations are from &rarr; to  
+Possible Edit Operations:
 
 r - replace  
 c - create  
@@ -24,16 +24,27 @@ p - parent
 s - swap  
 s - save  
 x - delete cell mask in frame  
-w - watershed  
-esc - cancel operation  
-space bar - enter  
+w - watershed
+
+After pressing an edit operation key, the application will prompt a confirmation question. 
+Use the following operations to confirm or cancel:
+
+'esc' - cancel operation  
+'space bar' - confirm operation
+
+You can also use 'esc' or click on the black background to return back to a state where no cells are selected.
+
+
 
 z - switch between annotations and raw images  
 scroll wheel - change image contrast
 
 ## Instructions for Running Caliban in a Docker Container
 
-[EDITING IN PROGRESS] 
+In addition to having Docker, you will also need to have a VNC viewer to view the application inside the container. 
+
+To install one, you can go to http://realvnc.com to download a free VNC viewer.
+[Direct Link to Download Page](https://www.realvnc.com/en/connect/download/viewer/)
 
 ### Build a Docker Container
 
