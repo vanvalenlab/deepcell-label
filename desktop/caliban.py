@@ -475,6 +475,7 @@ class ZStackReview:
         self.feature = 0
         self.feature_max = self.annotated.shape[-1]
         self.channel = 0
+        
         self.num_frames, self.height, self.width, self.channel_max = raw.shape
         
         self.sidebar_width = 300
@@ -575,8 +576,8 @@ class ZStackReview:
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         
         x -= self.sidebar_width
-        x //= self.scale_factor
-        y = self.height - y // self.scale_factor
+        x //= max(self.scale_factor, 1)
+        y = self.height - y // max(self.scale_factor, 1)
 
         if 0 <= x < self.width and 0 <= y < self.height:
             self.x, self.y = x, y        
@@ -657,8 +658,8 @@ class ZStackReview:
 
     def on_mouse_motion(self, x, y, dx, dy):
         x -= self.sidebar_width
-        x //= self.scale_factor
-        y = self.height - y // self.scale_factor
+        x //= max(self.scale_factor, 1)
+        y = self.height - y // max(self.scale_factor,1)
 
         if 0 <= x < self.width and 0 <= y < self.height:
             self.x, self.y = x, y
