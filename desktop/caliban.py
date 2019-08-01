@@ -69,7 +69,7 @@ class TrackReview:
 
         # `label` should appear first
         self.track_keys = ["label", *sorted(set(self.tracks[1]) - {"label"})]
-        self.num_tracks = max(self.tracks) + 1
+        self.num_tracks = max(self.tracks)
 
         self.num_frames, self.height, self.width, _ = raw.shape
         self.window = pyglet.window.Window(resizable=True)
@@ -88,6 +88,9 @@ class TrackReview:
         self.mode = Mode.none()
         self.adjustment = 0
         self.scale_factor = 1
+        self.highlight = False
+        self.highlighted_cell_one = -1
+        self.highlighted_cell_two = -1
 
         pyglet.app.run()
 
@@ -108,10 +111,14 @@ class TrackReview:
                                  label=label,
                                  frame=self.current_frame,
                                  y_location=self.y, x_location=self.x)
+                self.highlighted_cell_one = label
+                self.highlighted_cell_two = -1
         elif self.mode.kind == "SELECTED":
             frame = self.tracked[self.current_frame]
             label = int(frame[self.y, self.x])
             if label != 0:
+                self.highlighted_cell_one = self.mode.label
+                self.highlighted_cell_two = label
                 self.mode = Mode("MULTIPLE",
                                  label_1=self.mode.label,
                                  frame_1=self.mode.frame,
@@ -121,6 +128,31 @@ class TrackReview:
                                  frame_2=self.current_frame,
                                  y2_location = self.y,
                                  x2_location = self.x)
+            #deselect cells if click on background 
+            else:
+                self.mode = Mode.none()
+                self.highlighted_cell_one = -1
+                self.highlighted_cell_two = -1
+        #if already have two cells selected, click again to reselect the second cell
+        elif self.mode.kind == "MULTIPLE":
+            frame = self.tracked[self.current_frame]
+            label = int(frame[self.y, self.x])
+            if label != 0:
+                self.highlighted_cell_two = label
+                self.mode = Mode("MULTIPLE",
+                                 label_1=self.mode.label_1,
+                                 frame_1=self.mode.frame_1,
+                                 y1_location = self.mode.y1_location,
+                                 x1_location = self.mode.x1_location,
+                                 label_2=label,
+                                 frame_2=self.current_frame,
+                                 y2_location = self.y,
+                                 x2_location = self.x)
+            #deselect cells if click on background                 
+            else:
+                self.mode = Mode.none()
+                self.highlighted_cell_one = -1
+                self.highlighted_cell_two = -1
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self.draw_raw:
@@ -129,8 +161,8 @@ class TrackReview:
             else:
                 self.max_intensity = max(self.max_intensity - 2 * scroll_y, 2)
         else:
-            if self.num_tracks + (self.adjustment - 2 * scroll_y) >= 0:
-                self.adjustment = self.adjustment - 2 * scroll_y
+            if self.num_tracks + (self.adjustment - 1 * scroll_y) > 0:
+                self.adjustment = self.adjustment - 1 * scroll_y
 
     def on_mouse_motion(self, x, y, dx, dy):
         x -= self.sidebar_width
@@ -148,26 +180,19 @@ class TrackReview:
         self.draw_label()
 
     def scale_screen(self):
-        #Scales sidebar width
-        if self.window.width - self.width * self.scale_factor > 300:
-            self.sidebar_width = self.window.width - self.width * self.scale_factor
-
+        #User can resize window and images will expand to fill space if possible
         #Determine whether to base scale factor on width or height 
-        if self.height < self.width:
-            self.scale_factor = self.window.height // self.height
-            if self.window.width < self.sidebar_width + self.width * self.scale_factor:
-                self.window.set_size(self.sidebar_width + self.width * self.scale_factor, self.window.height)
-
-        elif self.height >= self.width:
-            self.scale_factor = self.window.width // self.width
-            if self.window.height < self.height * self.scale_factor:
-                self.window.set_size(self.window.height, self.height * self.scale_factor)
+        y_scale = self.window.height // self.height
+        x_scale = (self.window.width - 300) // self.width
+        self.scale_factor = min(y_scale, x_scale)
 
     def on_key_press(self, symbol, modifiers):
         # Set scroll speed (through sequential frames) with offset
         offset = 5 if modifiers & key.MOD_SHIFT else 1
         if symbol == key.ESCAPE:
             self.mode = Mode.none()
+            self.highlighted_cell_one = -1
+            self.highlighted_cell_two = -1
         elif symbol in {key.LEFT, key.A}:
             self.current_frame = max(self.current_frame - offset, 0)
         elif symbol in {key.RIGHT, key.D}:
@@ -182,6 +207,10 @@ class TrackReview:
             if self.mode.kind == "SELECTED":
                 self.mode = Mode("QUESTION",
                                  action="NEW TRACK", **self.mode.info)
+        if symbol == key.X:
+            if self.mode.kind == "SELECTED":
+                self.mode = Mode("QUESTION",
+                                 action="DELETE", **self.mode.info)
         if symbol == key.P:
             if self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
@@ -194,6 +223,9 @@ class TrackReview:
             if self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
                                  action="SWAP", **self.mode.info)
+            elif self.mode.kind == "QUESTION" and self.mode.action == "SWAP":
+                self.action_single_swap()
+                self.mode = Mode.none()
             elif self.mode.kind is None:
                 self.mode = Mode("QUESTION",
                                  action="SAVE")
@@ -201,7 +233,22 @@ class TrackReview:
             if self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
                                  action="WATERSHED", **self.mode.info)
-
+        #no prompt needed to toggle highlight mode
+        if symbol == key.H:
+            self.highlight = not self.highlight
+        #cycle through highlighted cells
+        if symbol == key.EQUAL:
+            if self.mode.kind == "SELECTED":
+                if self.highlighted_cell_one < self.num_tracks:
+                    self.highlighted_cell_one += 1
+                elif self.highlighted_cell_one == self.num_tracks:
+                    self.highlighted_cell_one = 1
+        if symbol == key.MINUS:
+            if self.mode.kind == "SELECTED":
+                if self.highlighted_cell_one > 1:
+                    self.highlighted_cell_one -= 1
+                elif self.highlighted_cell_one == 1:
+                    self.highlighted_cell_one = self.num_tracks
 
         if symbol == key.SPACE:
             if self.mode.kind == "QUESTION":
@@ -217,7 +264,11 @@ class TrackReview:
                     self.action_swap()
                 elif self.mode.action == "WATERSHED":
                     self.action_watershed()
+                elif self.mode.action == "DELETE":
+                    self.action_delete()
                 self.mode = Mode.none()
+                self.highlighted_cell_one = -1
+                self.highlighted_cell_two = -1
 
     def get_current_frame(self):
         if self.draw_raw:
@@ -258,7 +309,18 @@ class TrackReview:
                                        multiline=True,
                                        x=5, y=5, color=[255]*4)
 
-        frame_label = pyglet.text.Label("frame: {}".format(self.current_frame),
+        highlight_text = ""
+        if self.highlight:
+            if self.highlighted_cell_two != -1:
+                highlight_text = "highlight: on\nhighlighted cell 1: {}\nhighlighted cell 2: {}".format(self.highlighted_cell_one, self.highlighted_cell_two)
+            elif self.highlighted_cell_one != -1:
+                highlight_text = "highlight: on\nhighlighted cell: {}".format(self.highlighted_cell_one)
+            else:
+                highlight_text = "highlight: on"
+        else:
+            highlight_text = "highlight: off"
+
+        frame_label = pyglet.text.Label("frame: {}\n{}".format(self.current_frame, highlight_text),
                                         font_name="monospace",
                                         anchor_x="left", anchor_y="top",
                                         width=self.sidebar_width,
@@ -271,6 +333,16 @@ class TrackReview:
 
     def draw_current_frame(self):
         frame = self.get_current_frame()
+        cmap = plt.get_cmap("cubehelix")
+        cmap.set_bad('red')
+
+        if self.highlight:
+            if self.mode.kind == "SELECTED":
+                frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
+            elif self.mode.kind == "MULTIPLE":
+                frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
+                frame = np.ma.masked_equal(frame, self.highlighted_cell_two)
+
         with tempfile.TemporaryFile() as file:
             if self.draw_raw:
                 plt.imsave(file, frame[:, :, 0],
@@ -281,7 +353,7 @@ class TrackReview:
                 plt.imsave(file, frame[:, :, 0],
                            vmin=0,
                            vmax=self.num_tracks + self.adjustment,
-                           cmap="cubehelix",
+                           cmap=cmap,
                            format="png")
             image = pyglet.image.load("frame.png", file)
 
@@ -334,6 +406,7 @@ class TrackReview:
         # Pull the label that is being split and find a new valid label
         current_label = self.mode.label_1
         new_label = self.num_tracks + 1
+        self.num_tracks += 1
 
         # Locally store the frames to work on
         img_raw = self.raw[self.current_frame]
@@ -395,6 +468,22 @@ class TrackReview:
         relabel(self.mode.label_2, self.mode.label_1)
         relabel(-1, self.mode.label_2)
 
+    def action_single_swap(self):
+        '''
+        swap annotation labels in one frame but do not change lineage info
+        '''
+        label_1 = self.mode.label_1
+        label_2 = self.mode.label_2
+        
+        frame = self.current_frame
+        
+        ann_img = self.tracked[frame]
+        ann_img = np.where(ann_img == label_1, -1, ann_img)
+        ann_img = np.where(ann_img == label_2, label_1, ann_img)
+        ann_img = np.where(ann_img == -1, label_2, ann_img)
+        
+        self.tracked[frame] = ann_img
+
     def action_parent(self):
         """
         label_1 gave birth to label_2
@@ -445,10 +534,45 @@ class TrackReview:
         except ValueError:
             pass
 
+    def action_delete(self):
+        """
+        Deletes label from current frame only
+        """
+        selected_label, current_frame = self.mode.label, self.mode.frame
+        
+        # Set selected label to 0 in current frames
+        ann_img = self.tracked[current_frame]
+        ann_img = np.where(ann_img == selected_label, 0, ann_img)
+        self.tracked[current_frame] = ann_img
+
+        # Removes current frame from list of frames cell appears in
+        selected_track = self.tracks[selected_label]
+        selected_track["frames"].remove(current_frame)
+
+        # Deletes lineage data if current frame is only frame cell appears in
+        if selected_track["frames"] == []:
+            del self.tracks[selected_label] 
+            # If deleting lineage data, remove parent/daughter entries
+            for _, track in self.tracks.items():
+                try:
+                    track["daughters"].remove(selected_label)
+                except ValueError:
+                    pass
+                if track["parent"] == selected_label:
+                    track["parent"] = None
+                    
     def save(self):
         backup_file = self.filename + "_original.trk"
         if not os.path.exists(backup_file):
             shutil.copyfile(self.filename + ".trk", backup_file)
+
+        # clear any empty tracks before saving file
+        empty_tracks = []
+        for key in self.tracks:
+        	if not self.tracks[key]['frames']:
+        		empty_tracks.append(self.tracks[key]['label'])
+        for track in empty_tracks:
+        	del self.tracks[track]
 
         with tarfile.open(self.filename + ".trk", "w") as trks:
             with tempfile.NamedTemporaryFile("w") as lineage_file:

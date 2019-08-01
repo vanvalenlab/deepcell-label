@@ -51,16 +51,14 @@ class Mode:
             if self.action == "SAVE":
                 return ("\nsave current movie?\n {}".format(answer))
             elif self.action == "REPLACE":
-                return ("\nreplace {} with ".format(self.label_2)
-                        + "{}?\n {}".format(self.label_1, answer))
+                return ("\nreplace {} with {}?\n {}".format(self.label_2, self.label_1, answer))
             elif self.action == "SWAP":
                 return ("\nswap {} & {}?\n{}".format(self.label_2, self.label_1, 
                 'SPACE = SWAP IN ALL FRAMES\nS = SWAP IN THIS FRAME ONLY\nESC = CANCEL SWAP'))
-            elif self.action == "PARENT":
-                return ("\nmake {} a daughter of ".format(self.label_2)
-                        + "{}\n {}".format(self.label_1, answer))
+            elif sel.action == "PARENT":
+                return ("\nmake {} a daughter of {}?\n {}".format(self.label_2, self.label_1, answer))
             elif self.action == "NEW TRACK":
-                return ("\nnew track cell:{}/frame:{}?".format(self.label, self.frame)
+                return ("\ncreate new track from {} on frame {}?\n {}".format(self.label, self.frame, answer))
                         + "\n {}".format(answer))
             elif self.action == "CREATE NEW":
                 return ("".format(self.label, self.frame)
@@ -75,6 +73,7 @@ class Mode:
         elif self.kind == "PROMPT":
             if self.action == "FILL HOLE":
                 return('\nselect hole to fill in cell {}'.format(self.label))
+
         else:
             return ''
 
