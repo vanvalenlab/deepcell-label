@@ -13,28 +13,30 @@ python3 caliban.py [input file location]
 ## Tools Guide
 Files can be edited using keyboard operations.
 
-To navigate through frames:  
-Back one frame = a or &larr;  
-Forward one frame = d or &rarr;  
+**Navigation through Frames:**
+
+*a or &larr;* - Back one frame  
+
+*d or &rarr;* - Forward one frame
 
 
 **Edit Operations:**
 
-***r*** - replace
+*r* - replace
 
-***c*** - create
+*c* - create
 
-***p*** - parent
+*p* - parent
 
-***s*** - swap  
+*s* - swap  
 
-***x*** - delete cell mask in frame
+*x* - delete cell mask in frame
 
-***w*** - watershed
+*w* - watershed
 
 
-***esc*** - cancel operation  
-***space bar*** - confirm operation
+*esc* - cancel operation  
+*space bar* - confirm operation
 
 You can also use *esc* or click on the black background to return back to a state where no cells are selected.
 
@@ -42,13 +44,13 @@ You can also use *esc* or click on the black background to return back to a stat
 
 **Viewing Options:**
 
-***h*** - switch between highlighted mode and normal mode
-          (once highlight mode is on, use ***-/=*** to decrement/increment selected cell label number)
+*h* - switch between highlighted mode and normal mode
+          (once highlight mode is on, use *-/=* to decrement/increment selected cell label number)
    
     
-***z*** - switch between annotations and raw images  
+*z* - switch between annotations and raw images  
 
-***scroll wheel*** - change image contrast
+*scroll wheel* - change image contrast
 
 
 **To Save:**
@@ -56,7 +58,7 @@ You can also use *esc* or click on the black background to return back to a stat
 Once done, use the following key to save the changed file. 
 The tool will also save the original file in the same folder.
 
-***s*** - save
+*s* - save
 
 
 ## Instructions for Running Caliban in a Docker Container
