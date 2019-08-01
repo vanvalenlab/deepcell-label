@@ -41,6 +41,7 @@ import tempfile
 
 from io import BytesIO
 from skimage.morphology import watershed, flood_fill
+from skimage.draw import circle
 from skimage.measure import regionprops
 from skimage.exposure import rescale_intensity
 
@@ -509,6 +510,7 @@ class ZStackReview:
         self.window.on_mouse_motion = self.on_mouse_motion
         self.window.on_mouse_scroll = self.on_mouse_scroll
         self.window.on_mouse_press = self.on_mouse_press
+        self.window.on_mouse_drag = self.on_mouse_drag
 
         self.current_frame = 0
         self.draw_raw = False
@@ -521,7 +523,16 @@ class ZStackReview:
         self.adjustment = {}
         for feature in range(self.feature_max):
             self.adjustment[feature] = 0
+        self.dtype_raw = raw.dtype
         self.scale_factor = 1
+        
+        cursor = self.window.get_system_mouse_cursor(self.window.CURSOR_CROSSHAIR)
+        self.window.set_mouse_cursor(cursor)
+        
+        self.edit_mode = False
+        self.edit_value = 1
+        self.brush_size = 1
+        self.erase = False
         
         self.hole_fill_seed = None
         self.save_version = 0
@@ -529,43 +540,117 @@ class ZStackReview:
         pyglet.app.run()
         
     def on_mouse_press(self, x, y, button, modifiers):
+        
+        if not self.edit_mode:
+            if self.mode.kind is None:
+                frame = self.annotated[self.current_frame]
+                label = int(frame[self.y, self.x, self.feature])
+                if label != 0:
+                    self.mode = Mode("SELECTED",
+                                     label=label,
+                                     frame=self.current_frame,
+                                     y_location=self.y, x_location=self.x)
+            elif self.mode.kind == "SELECTED":
+                frame = self.annotated[self.current_frame]
+                label = int(frame[self.y, self.x, self.feature])
+                if label != 0:
+                    self.mode = Mode("MULTIPLE",
+                                     label_1=self.mode.label,
+                                     frame_1=self.mode.frame,
+                                     y1_location = self.mode.y_location,
+                                     x1_location = self.mode.x_location,
+                                     label_2=label,
+                                     frame_2=self.current_frame,
+                                     y2_location = self.y,
+                                     x2_location = self.x)
+            elif self.mode.kind == "PROMPT" and self.mode.action == "FILL HOLE":
+                frame = self.annotated[self.current_frame]
+                label = int(frame[self.y, self.x, self.feature])
+                if label == 0:
+                    self.hole_fill_seed = (self.y, self.x)
+                if self.hole_fill_seed is not None:
+                    self.action_fill_hole()
+                    self.mode = Mode.none()
+                    
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        
+        x -= self.sidebar_width
+        x //= self.scale_factor
+        y = self.height - y // self.scale_factor
 
-        if self.mode.kind is None:
-            frame = self.annotated[self.current_frame]
-            label = int(frame[self.y, self.x, self.feature])
-            if label != 0:
-                self.mode = Mode("SELECTED",
-                                 label=label,
-                                 frame=self.current_frame,
-                                 y_location=self.y, x_location=self.x)
-        elif self.mode.kind == "SELECTED":
-            frame = self.annotated[self.current_frame]
-            label = int(frame[self.y, self.x, self.feature])
-            if label != 0:
-                self.mode = Mode("MULTIPLE",
-                                 label_1=self.mode.label,
-                                 frame_1=self.mode.frame,
-                                 y1_location = self.mode.y_location,
-                                 x1_location = self.mode.x_location,
-                                 label_2=label,
-                                 frame_2=self.current_frame,
-                                 y2_location = self.y,
-                                 x2_location = self.x)
-        elif self.mode.kind == "PROMPT" and self.mode.action == "FILL HOLE":
-            frame = self.annotated[self.current_frame]
-            label = int(frame[self.y, self.x, self.feature])
-            if label == 0:
-                self.hole_fill_seed = (self.y, self.x)
-            if self.hole_fill_seed is not None:
-                self.action_fill_hole()
-                self.mode = Mode.none()
+        if 0 <= x < self.width and 0 <= y < self.height:
+            self.x, self.y = x, y        
+        
+        if self.edit_mode:
+            #if buttons & mouse.LEFT:
+            annotated = self.annotated[self.current_frame,:,:,self.feature]
+            
+            #self.x and self.y are different from the mouse's x and y
+            x_loc = self.x
+            y_loc = self.y
+
+            brush_area = circle(y_loc, x_loc, self.brush_size, (self.height,self.width))
+            
+            in_original = np.any(np.isin(annotated, self.edit_value))
+            in_original_all = np.any(np.isin(self.annotated[:,:,:,self.feature], self.edit_value))
+            #do not overwrite or erase labels other than the one you're editing
+            if not self.erase:
+                annotated_draw = np.where(annotated==0, self.edit_value, annotated)
+                annotated[brush_area] = annotated_draw[brush_area]
+            else:
+                annotated_erase = np.where(annotated==self.edit_value, 0, annotated)
+                annotated[brush_area] = annotated_erase[brush_area]        
+            
+            #when to add in info to cell_info dict
+
+            in_modified = np.any(np.isin(annotated, self.edit_value))
+            in_modified_all = np.any(np.isin(self.annotated[:,:,:,self.feature], self.edit_value))
+            
+            #cell deletion
+            if in_original and not in_modified:
+                frame = self.current_frame
+                old_frames = self.cell_info[self.feature][self.edit_value]['frames']
+                updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame)))
+                self.cell_info[self.feature][self.edit_value].update({'frames': updated_frames})
+                
+                if not in_modified_all:
+                    print('deleted cell from movie')
+                    del self.cell_info[self.feature][self.edit_value]
+            
+            #cell addition
+            elif in_modified and not in_original:
+                new_label = self.edit_value
+                if not in_original_all:
+                    self.cell_info[self.feature].update({new_label: {}})
+                    self.cell_info[self.feature][new_label].update({'label': str(new_label)})
+                    self.cell_info[self.feature][new_label].update({'frames': [self.current_frame]})
+                    self.cell_info[self.feature][new_label].update({'slices': ''})
+                    
+                    np.append(self.cell_ids[self.feature], new_label)
+                    
+                    self.num_cells[self.feature] += 1
+                else:
+                    old_frames = self.cell_info[self.feature][new_label]['frames']
+                    updated_frames = np.append(old_frames, self.current_frame)
+                    updated_frames = np.unique(updated_frames).tolist()
+                    self.cell_info[self.feature][new_label].update({'frames': updated_frames})
+                        
+            self.annotated[self.current_frame,:,:,self.feature] = annotated
+            
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self.draw_raw:
-            if self.max_intensity[self.channel] == None:
+            if self.max_intensity[self.channel] is None:
+                current_frame = self.get_current_frame()
+                max_val = np.max(current_frame[:,:,self.channel])
                 self.max_intensity[self.channel] = np.max(self.get_current_frame()[:,:,self.channel])
             else:
-                self.max_intensity[self.channel] = max(self.max_intensity[self.channel] - 2 * scroll_y, 2)
+                if self.dtype_raw == 'float32':
+                    raw_adjust = 500
+                else:
+                    raw_adjust = 2
+                self.max_intensity[self.channel] = max(self.max_intensity[self.channel] - raw_adjust * scroll_y, 2)
+                
         else:
             if self.num_cells[self.feature] + (self.adjustment[self.feature] - 1 * scroll_y) > 0:
                 self.adjustment[self.feature] = self.adjustment[self.feature] - 1 * scroll_y
@@ -577,6 +662,7 @@ class ZStackReview:
 
         if 0 <= x < self.width and 0 <= y < self.height:
             self.x, self.y = x, y
+            
 
     def on_draw(self):
         self.window.clear()
@@ -595,16 +681,31 @@ class ZStackReview:
     def on_key_press(self, symbol, modifiers):
         # Set scroll speed (through sequential frames) with offset
         offset = 5 if modifiers & key.MOD_SHIFT else 1
-        if symbol == key.ESCAPE:
-            self.mode = Mode.none()
-        elif symbol in {key.LEFT, key.A}:
-            self.current_frame = max(self.current_frame - offset, 0)
-        elif symbol in {key.RIGHT, key.D}:
-            self.current_frame = min(self.current_frame + offset, self.num_frames - 1)
-        elif symbol == key.Z:
-            self.draw_raw = not self.draw_raw
+        if not self.edit_mode:
+            if symbol == key.ESCAPE:
+                self.mode = Mode.none()
+            elif symbol in {key.LEFT, key.A}:
+                self.current_frame = max(self.current_frame - offset, 0)
+            elif symbol in {key.RIGHT, key.D}:
+                self.current_frame = min(self.current_frame + offset, self.num_frames - 1)
+            elif symbol == key.Z:
+                self.draw_raw = not self.draw_raw
+            else:
+                self.mode_handle(symbol)
         else:
-            self.mode_handle(symbol)
+            if symbol == key.E:
+                self.edit_mode = not self.edit_mode
+            if symbol == key.EQUAL:
+                self.edit_value += 1
+            if symbol == key.MINUS:
+                self.edit_value = max(self.edit_value - 1, 1)
+            if symbol == key.X:
+                self.erase = not self.erase
+            if symbol == key.LEFT:
+                self.brush_size = max(self.brush_size -1, 1)
+            if symbol == key.RIGHT:
+                self.brush_size = min(self.brush_size + 1, self.height, self.width)
+            
 
     def mode_handle(self, symbol):
 
@@ -618,6 +719,11 @@ class ZStackReview:
             if self.mode.kind == "SELECTED":
                 self.mode = Mode("QUESTION",
                                 action="CREATE NEW", **self.mode.info)
+                                
+        if symbol == key.E:
+            #toggle edit mode only if nothing is selected
+            if self.mode.kind is None:
+                self.edit_mode = not self.edit_mode
                                 
         if symbol == key.F:
             #cycle through features but only if nothing is selected
@@ -726,9 +832,36 @@ class ZStackReview:
                                        multiline=True,
                                        x=5, y=5, color=[255]*4)
 
+        if self.edit_mode:
+            edit_mode = "on"
+            brush_size_display = "brush size: {}".format(self.brush_size)
+            edit_label_display = "editing label: {}".format(self.edit_value)
+            if self.erase:
+                erase_mode = "on"
+            else:
+                erase_mode = "off"
+            draw_or_erase = "eraser mode: {}".format(erase_mode)
+
+            edit_label = pyglet.text.Label('{}\n{}\n{}'.format(brush_size_display,
+                                                        edit_label_display,
+                                                        draw_or_erase),
+                                            font_name='monospace',
+                                            anchor_x='left', anchor_y='center',
+                                            width=self.sidebar_width,
+                                            multiline=True,
+                                            x=5, y=self.window.height//2,
+                                            color=[255]*4)            
+            edit_label.draw()
+        
+        else:
+            edit_mode = "off"
+            
+
+
         frame_label = pyglet.text.Label("frame: {}\n".format(self.current_frame)
                                         + "channel: {}\n".format(self.channel)
-                                        + "feature: {}".format(self.feature),
+                                        + "feature: {}\n".format(self.feature)
+                                        + "edit mode: {}".format(edit_mode),
                                         font_name="monospace",
                                         anchor_x="left", anchor_y="top",
                                         width=self.sidebar_width,
@@ -738,31 +871,70 @@ class ZStackReview:
 
         cell_info_label.draw()
         frame_label.draw()
-
+        
     def draw_current_frame(self):
         frame = self.get_current_frame()
-        with tempfile.TemporaryFile() as file:
-            if self.draw_raw:
-                plt.imsave(file, frame[:,:,self.channel],
-                           vmax=self.max_intensity[self.channel],
-                           cmap="cubehelix",
-                           format="png")
-            else:
-                plt.imsave(file, frame[:,:,self.feature],
-                           vmin=0,
-                           vmax= self.num_cells[self.feature] + self.adjustment[self.feature],
-                           cmap="cubehelix",
-                           format="png")
-            image = pyglet.image.load("frame.png", file)
-
+        if not self.edit_mode:
+            with tempfile.TemporaryFile() as file:
+                if self.draw_raw:
+                    plt.imsave(file, frame[:,:,self.channel],
+                               vmax=self.max_intensity[self.channel],
+                               cmap="cubehelix",
+                               format="png")
+                else:
+                    plt.imsave(file, frame[:,:,self.feature],
+                               vmin=0,
+                               vmax= self.num_cells[self.feature] + self.adjustment[self.feature],
+                               cmap="cubehelix",
+                               format="png")
+                image = pyglet.image.load("frame.png", file)
+            
             sprite = pyglet.sprite.Sprite(image, x=self.sidebar_width, y=0)
+
             sprite.update(scale_x=self.scale_factor,
                           scale_y=self.scale_factor)
-
+                          
             gl.glTexParameteri(gl.GL_TEXTURE_2D,
                                gl.GL_TEXTURE_MAG_FILTER,
                                gl.GL_NEAREST)
             sprite.draw()
+
+        elif self.edit_mode:
+        
+            current_raw = self.raw[self.current_frame,:,:,self.channel]
+            current_ann = self.annotated[self.current_frame,:,:,self.feature]
+            with tempfile.TemporaryFile() as raw_file:
+                plt.imsave(raw_file, current_raw,
+                            vmax=self.max_intensity[self.channel],
+                            cmap='Greys',
+                            format='png')
+                raw_img = pyglet.image.load('raw_file.png', raw_file)
+            with tempfile.TemporaryFile() as ann_file:
+                plt.imsave(ann_file, current_ann,
+                            vmax=self.num_cells[self.feature] + self.adjustment[self.feature],
+                            cmap='gist_stern',
+                            format='png')
+                ann_img = pyglet.image.load('ann_file.png', ann_file)
+                
+            raw_sprite = pyglet.sprite.Sprite(raw_img, x=self.sidebar_width, y=0)
+            ann_sprite = pyglet.sprite.Sprite(ann_img, x=self.sidebar_width, y=0)
+
+            raw_sprite.opacity = 128
+            ann_sprite.opacity = 128
+                
+            raw_sprite.update(scale_x=self.scale_factor,
+                            scale_y=self.scale_factor)
+                
+            ann_sprite.update(scale_x=self.scale_factor,
+                            scale_y=self.scale_factor)
+            
+                                
+            raw_sprite.draw()
+            ann_sprite.draw()
+            gl.glTexParameteri(gl.GL_TEXTURE_2D,
+                               gl.GL_TEXTURE_MAG_FILTER,
+                               gl.GL_NEAREST)
+
             
     def action_new_single_cell(self):
         """
