@@ -25,7 +25,7 @@ Files can be edited using keyboard operations.
 
 ### Edit Operations:
 
-**In viewing mode:**
+Caliban's default setting allows operations to be carried out quickly and easily on existing segmentations. The actions that can modify cell labels and/or lineage information are:
 
 *click* - click on a cell label to select it. Up to two cells can be selected at one time.
 
@@ -45,16 +45,16 @@ Files can be edited using keyboard operations.
 
 
 *esc* - cancel operation  
-*space bar* - confirm operation
+*space bar* - confirm operation  
 *s* - confirm operation in a single frame, when applicable
 
 You can also use *esc* or click on the black background to return back to a state where no cells are selected.
 
-**In edit mode:**
+**In annotation mode:**
 
-Most keybinds are disabled in edit mode.
+Most keybinds are disabled in annotation mode.
 
-Edit mode focuses on using an adjustable brush to modify annotations on a pixel level, rather than using operations that apply to every instance of a label within a frame or set of frames. The brush tool will only make changes to the currently selected value. Ie, a brush set to edit cell 5 will only add or erase "5" to the annotated image. 
+Annotation mode focuses on using an adjustable brush to modify annotations on a pixel level, rather than using operations that apply to every instance of a label within a frame or set of frames. The brush tool will only make changes to the currently selected value. Ie, a brush set to edit cell 5 will only add or erase "5" to the annotated image. 
 
 *-/=* increment value that brush is applying
 
@@ -75,7 +75,7 @@ Edit mode focuses on using an adjustable brush to modify annotations on a pixel 
 
 *c* - cycle between different channels when no cells are selected
 
-*e* - toggle edit mode 
+*e* - toggle annotation mode 
 
 *scroll wheel* - change image or annotation contrast
 
