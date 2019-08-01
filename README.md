@@ -23,9 +23,13 @@ Forward one frame = d or &rarr;
 ***r*** - replace
 
 ***c*** - create
+
 ***p*** - parent
-***s*** - swap   
+
+***s*** - swap  
+
 ***x*** - delete cell mask in frame
+
 ***w*** - watershed
 
 
