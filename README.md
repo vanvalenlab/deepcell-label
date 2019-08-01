@@ -10,19 +10,22 @@ cd desktop
 python3 caliban.py [input file location]
 ```
 
+**Accepted file types:**
+Caliban can open .trk files or .npz files. .npz files must contain two zipped files corresponding to raw images and annotated images. If the files are not named 'raw' and 'annotated', the first file in the .npz will be opened as the raw images. Raw and annotated images must both be in 4D arrays in the shape (frames, y, x, channels or features).
+
 ## Tools Guide
 Files can be edited using keyboard operations.
 
-**Navigation through Frames:**
+### Navigation through Frames:
 
 *a or &larr;* - Back one frame  
 
 *d or &rarr;* - Forward one frame
 
 
-**Edit Operations:**
+### Edit Operations:
 
-### In viewing mode:
+**In viewing mode:**
 
 *click* - click on a cell label to select it. Up to two cells can be selected at one time.
 
@@ -47,7 +50,7 @@ Files can be edited using keyboard operations.
 
 You can also use *esc* or click on the black background to return back to a state where no cells are selected.
 
-### In edit mode:
+**In edit mode:**
 
 Most keybinds are disabled in edit mode.
 
@@ -60,7 +63,7 @@ Edit mode focuses on using an adjustable brush to modify annotations on a pixel 
 *x* - toggle eraser mode
 
 
-**Viewing Options:**
+### Viewing Options:
 
 *h* - switch between highlighted mode and normal mode
           (once highlight mode is on, use *-/=* to decrement/increment selected cell label number)
@@ -77,7 +80,7 @@ Edit mode focuses on using an adjustable brush to modify annotations on a pixel 
 *scroll wheel* - change image or annotation contrast
 
 
-**To Save:**
+### To Save:
 
 Once done, use the following key to save the changed file. 
 The tool will also save the original file in the same folder.
