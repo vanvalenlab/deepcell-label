@@ -16,28 +16,41 @@ To navigate through frames:
 Back one frame = a or &larr;  
 Forward one frame = d or &rarr;  
 
-Possible Edit Operations:
+**Edit Operations:**
 
-r - replace  
-c - create  
-p - parent  
-s - swap  
-s - save  
-x - delete cell mask in frame  
-w - watershed
+Overview:
+***r*** - replace 
+***c*** - create  
+***p*** - parent  
+***s*** - swap    
+***x*** - delete cell mask in frame  
+***w*** - watershed
 
 After pressing an edit operation key, the application will prompt a confirmation question. 
 Use the following operations to confirm or cancel:
 
-'esc' - cancel operation  
-'space bar' - confirm operation
+***esc*** - cancel operation  
+***space bar*** - confirm operation
 
-You can also use 'esc' or click on the black background to return back to a state where no cells are selected.
+You can also use *esc* or click on the black background to return back to a state where no cells are selected.
 
+**Viewing Options:**
 
+***h*** - switch between highlighted mode and normal mode
 
-z - switch between annotations and raw images  
-scroll wheel - change image contrast
+   Once highlight mode is on, use ***-/=*** to decrement/increment selected cell label number
+   
+    
+***z*** - switch between annotations and raw images  
+
+***scroll wheel*** - change image contrast
+
+**To Save:**
+
+Once done, use the following key to save the changed file. 
+The tool will also save the original file in the same folder.
+
+***s*** - save
 
 ## Instructions for Running Caliban in a Docker Container
 
@@ -50,9 +63,8 @@ To install one, you can go to http://realvnc.com to download a free VNC viewer.
 
 ```bash
 git clone https://github.com/vanvalenlab/caliban.git
-cd Caliban
-cd mcaliban
-docker build -t mcaliban .
+cd caliban
+docker build -t caliban .
 ```
 ### Run the New Docker Image
 
@@ -61,7 +73,7 @@ docker run \
 -p 5900:5900 \
 -v $PWD/desktop:/usr/src/app/desktop  \
 --privileged \
-mcaliban:latest
+caliban:latest
 ```
 This will launch a new Docker container and run Xvfb, Fluxbox, and a VNC server. To access the container’s display, point a VNC client to 127.0.0.1.
 
