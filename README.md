@@ -6,6 +6,7 @@ Caliban is a segmentation and tracking tool used for human-in-the-loop data cura
 ```bash
 git clone https://github.com/vanvalenlab/caliban.git
 cd caliban
+cd desktop
 python3 caliban.py [input file location]
 ```
 
@@ -16,34 +17,35 @@ To navigate through frames:
 Back one frame = a or &larr;  
 Forward one frame = d or &rarr;  
 
+
 **Edit Operations:**
 
-Overview:
-***r*** - replace 
-***c*** - create  
-***p*** - parent  
-***s*** - swap    
-***x*** - delete cell mask in frame  
+***r*** - replace
+
+***c*** - create
+***p*** - parent
+***s*** - swap   
+***x*** - delete cell mask in frame
 ***w*** - watershed
 
-After pressing an edit operation key, the application will prompt a confirmation question. 
-Use the following operations to confirm or cancel:
 
 ***esc*** - cancel operation  
 ***space bar*** - confirm operation
 
 You can also use *esc* or click on the black background to return back to a state where no cells are selected.
 
+
+
 **Viewing Options:**
 
 ***h*** - switch between highlighted mode and normal mode
-
-   Once highlight mode is on, use ***-/=*** to decrement/increment selected cell label number
+          (once highlight mode is on, use ***-/=*** to decrement/increment selected cell label number)
    
     
 ***z*** - switch between annotations and raw images  
 
 ***scroll wheel*** - change image contrast
+
 
 **To Save:**
 
@@ -51,6 +53,7 @@ Once done, use the following key to save the changed file.
 The tool will also save the original file in the same folder.
 
 ***s*** - save
+
 
 ## Instructions for Running Caliban in a Docker Container
 
