@@ -53,15 +53,27 @@ class Mode:
             elif self.action == "REPLACE":
                 return ("\nreplace {} with {}?\n {}".format(self.label_2, self.label_1, answer))
             elif self.action == "SWAP":
-                return ("\nswap {} & {}?\n {}".format(self.label_2, self.label_1, "(S=SINGLE FRAME / SPACE=ALL FRAMES / ESC=NO)"))
-            elif self.action == "PARENT":
+                return ("\nswap {} & {}?\n{}".format(self.label_2, self.label_1, 
+                'SPACE = SWAP IN ALL FRAMES\nS = SWAP IN THIS FRAME ONLY\nESC = CANCEL SWAP'))
+            elif sel.action == "PARENT":
                 return ("\nmake {} a daughter of {}?\n {}".format(self.label_2, self.label_1, answer))
             elif self.action == "NEW TRACK":
                 return ("\ncreate new track from {} on frame {}?\n {}".format(self.label, self.frame, answer))
-            elif self.action == "WATERSHED":
-                return ("\nperform watershed to split {}?\n {}".format(self.label_1, answer))
+                        + "\n {}".format(answer))
+            elif self.action == "CREATE NEW":
+                return ("".format(self.label, self.frame)
+                        + "\n {}".format("(S=SINGLE FRAME / SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)"))
             elif self.action == "DELETE":
-                return ("\ndelete {} from frame {}?\n {}".format(self.label, self.frame, answer))
+                return ('Delete label {} in frame {}?\n{}'.format(self.label, self.frame,
+                "SPACE = CONFIRM DELETION\nESC = CANCEL DELETION"))
+            elif self.action == "WATERSHED":
+                return ("\nperform watershed to split {}?\n{}".format(self.label_1, answer))
+            elif self.action == "PREDICT":
+                return ("Predict cell ids for zstack?\nS=PREDICT THIS FRAME\nSPACE=PREDICT ALL FRAMES\nESC=CANCEL PREDICTION")
+        elif self.kind == "PROMPT":
+            if self.action == "FILL HOLE":
+                return('\nselect hole to fill in cell {}'.format(self.label))
+
         else:
             return ''
 
