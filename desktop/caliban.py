@@ -650,6 +650,10 @@ class ZStackReview:
             self.adjustment[feature] = 0
         self.dtype_raw = raw.dtype
         self.scale_factor = 1
+
+        self.highlight = False
+        self.highlighted_cell_one = -1
+        self.highlighted_cell_two = -1
         
         cursor = self.window.get_system_mouse_cursor(self.window.CURSOR_CROSSHAIR)
         self.window.set_mouse_cursor(cursor)
@@ -675,6 +679,8 @@ class ZStackReview:
                                      label=label,
                                      frame=self.current_frame,
                                      y_location=self.y, x_location=self.x)
+                    self.highlighted_cell_one = label
+                    self.highlighted_cell_two = -1                                     
             elif self.mode.kind == "SELECTED":
                 frame = self.annotated[self.current_frame]
                 label = int(frame[self.y, self.x, self.feature])
@@ -688,6 +694,8 @@ class ZStackReview:
                                      frame_2=self.current_frame,
                                      y2_location = self.y,
                                      x2_location = self.x)
+                    self.highlighted_cell_one = self.mode.label_1
+                    self.highlighted_cell_two = label                                     
             elif self.mode.kind == "PROMPT" and self.mode.action == "FILL HOLE":
                 frame = self.annotated[self.current_frame]
                 label = int(frame[self.y, self.x, self.feature])
@@ -808,11 +816,15 @@ class ZStackReview:
         offset = 5 if modifiers & key.MOD_SHIFT else 1
         if not self.edit_mode:
             if symbol == key.ESCAPE:
+                self.highlighted_cell_one = -1
+                self.highlighted_cell_two = -1
                 self.mode = Mode.none()
             elif symbol in {key.LEFT, key.A}:
                 self.current_frame = max(self.current_frame - offset, 0)
             elif symbol in {key.RIGHT, key.D}:
                 self.current_frame = min(self.current_frame + offset, self.num_frames - 1)
+            elif symbol == key.H:
+                self.highlight = not self.highlight
             elif symbol == key.Z:
                 self.draw_raw = not self.draw_raw
             else:
@@ -897,6 +909,19 @@ class ZStackReview:
             if self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
                                  action="WATERSHED", **self.mode.info)
+                                 
+        if symbol == key.EQUAL:
+            if self.mode.kind == "SELECTED":
+                if self.highlighted_cell_one < self.num_cells[self.feature]:
+                    self.highlighted_cell_one += 1
+                elif self.highlighted_cell_one == self.num_cells[self.feature]:
+                    self.highlighted_cell_one = 1
+        if symbol == key.MINUS:
+            if self.mode.kind == "SELECTED":
+                if self.highlighted_cell_one > 1:
+                    self.highlighted_cell_one -= 1
+                elif self.highlighted_cell_one == 1:
+                    self.highlighted_cell_one = self.num_cells[self.feature]
 
         if symbol == key.SPACE:
             if self.mode.kind == "QUESTION":
@@ -977,16 +1002,29 @@ class ZStackReview:
                                             x=5, y=self.window.height//2,
                                             color=[255]*4)            
             edit_label.draw()
+            
+            
+            highlight_text = ""
         
         else:
             edit_mode = "off"
+            if self.highlight:
+                if self.highlighted_cell_two != -1:
+                    highlight_text = "highlight: on\nhighlighted cell 1: {}\nhighlighted cell 2: {}".format(self.highlighted_cell_one, self.highlighted_cell_two)
+                elif self.highlighted_cell_one != -1:
+                    highlight_text = "highlight: on\nhighlighted cell: {}".format(self.highlighted_cell_one)
+                else:
+                    highlight_text = "highlight: on"
+            else:
+                highlight_text = "highlight: off"
             
 
 
         frame_label = pyglet.text.Label("frame: {}\n".format(self.current_frame)
                                         + "channel: {}\n".format(self.channel)
                                         + "feature: {}\n".format(self.feature)
-                                        + "edit mode: {}".format(edit_mode),
+                                        + "edit mode: {}\n".format(edit_mode)
+                                        + "{}".format(highlight_text),
                                         font_name="monospace",
                                         anchor_x="left", anchor_y="top",
                                         width=self.sidebar_width,
@@ -999,7 +1037,19 @@ class ZStackReview:
         
     def draw_current_frame(self):
         frame = self.get_current_frame()
+
         if not self.edit_mode:
+
+            cmap = plt.get_cmap("cubehelix")
+            cmap.set_bad('red')
+
+            if self.highlight:
+                if self.mode.kind == "SELECTED":
+                    frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
+                elif self.mode.kind == "MULTIPLE":
+                    frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
+                    frame = np.ma.masked_equal(frame, self.highlighted_cell_two)
+
             with tempfile.TemporaryFile() as file:
                 if self.draw_raw:
                     plt.imsave(file, frame[:,:,self.channel],
@@ -1010,7 +1060,7 @@ class ZStackReview:
                     plt.imsave(file, frame[:,:,self.feature],
                                vmin=0,
                                vmax= self.num_cells[self.feature] + self.adjustment[self.feature],
-                               cmap="cubehelix",
+                               cmap=cmap,
                                format="png")
                 image = pyglet.image.load("frame.png", file)
             
