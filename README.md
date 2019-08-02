@@ -108,7 +108,7 @@ docker build -t caliban .
 ```bash
 docker run \
 -p 5900:5900 \
--v $PWD/desktop:/usr/src/app/desktop  \
+-v $PWD/caliban/desktop:/usr/src/app/desktop  \
 --privileged \
 caliban:latest
 ```
@@ -125,4 +125,12 @@ Next, enter the following into the terminal and Caliban will start:
 cd desktop
 python3 caliban.py [input file location]
 ```
+
+To see an immediate example with a sample .trk file, you can run 
+
+```bash
+cd desktop
+python3 caliban.py examples/trackfile1.trk
+```
+
 
