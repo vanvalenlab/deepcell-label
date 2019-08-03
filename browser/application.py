@@ -1,16 +1,37 @@
 from caliban import TrackReview
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, redirect, url_for
+import sys
 
 import base64
 import copy
+import os
 import numpy as np
 import traceback
+import boto3, botocore
 
-app = Flask(__name__)
+from werkzeug.utils import secure_filename
+
+
+
+
+application = Flask(__name__)
 track_review = None
+application.config.from_object("config")
 
+@application.route("/", methods=["POST"])
+def upload_file():
+ 
+    filename = gfilename
 
-@app.route("/action/<action_type>", methods=["POST"])
+ 
+    if filename:
+        track_review.action_save_track()
+        return "success!"
+
+    else:
+        return redirect("/")
+
+@application.route("/action/<action_type>", methods=["POST"])
 def action(action_type):
     info = {k: int(v) for k, v in request.values.to_dict().items()}
     try:
@@ -21,14 +42,14 @@ def action(action_type):
 
     return jsonify({"tracks_changed": True, "frames_changed": True})
 
-@app.route("/tracks")
+@application.route("/tracks")
 def get_tracks():
     return jsonify({
         "tracks": track_review.readable_tracks,
         })
 
 
-@app.route("/frame/<frame>")
+@application.route("/frame/<frame>")
 def get_frame(frame):
     frame = int(frame)
     img = track_review.get_frame(frame, raw=False)
@@ -42,12 +63,13 @@ def get_frame(frame):
 
     return jsonify(payload)
 
-
-@app.route("/load/<filename>", methods=["POST"])
+@application.route("/load/<filename>", methods=["POST"])
 def load(filename):
+    global gfilename
     global track_review
-    print(f"Loading track at {filename}")
+    print(f"Loading track at {filename}", file=sys.stderr)
     track_review = TrackReview(filename)
+    gfilename = filename
 
     return jsonify({
         "max_frames": track_review.max_frames,
@@ -55,18 +77,20 @@ def load(filename):
         "dimensions": track_review.dimensions
         })
 
+@application.route('/', methods=['GET', 'POST'])
+def form():
+    return render_template('form.html')
 
-@app.route("/")
-def root():
-    return render_template('index.html')
+@application.route('/tool', methods=['GET', 'POST'])
+def tool():
+    print(f"{request.form['filename']} is routing", file=sys.stderr)
 
+    return render_template('index.html', filename=request.form['filename'])
 
 def main():
-    app.jinja_env.auto_reload = True
-    app.config['TEMPLATES_AUTO_RELOAD'] = True
-    app.run('0.0.0.0', port=5000)
-
+    application.jinja_env.auto_reload = True
+    application.config['TEMPLATES_AUTO_RELOAD'] = True
+    application.run('0.0.0.0', port=5000)
 
 if __name__ == "__main__":
     main()
-

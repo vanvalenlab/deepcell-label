@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>caliban tool</title>
+      <style>
+        form {
+          width: 420px;
+        }
+        div {
+          margin-bottom: 20px;
+        }
+        label {
+          display: inline-block;
+          width: 240px;
+          text-align: right;
+          padding-right: 10px;
+        }
+        button, input {
+          float: right;
+        }
+      </style>
+    </head>
+    <body>
+      <form method="POST" action="{{ url_for('tool') }}">
+        <div>
+          <label for="say">Name of desired trk file to edit</label>
+          <input name="filename" id="filename" value="">
+        </div>
+
+        <div>
+          <button>Go to Caliban</button>
+        </div>
+      </form>
+    </body>
+  </html>

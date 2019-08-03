@@ -1,6 +1,8 @@
 # Caliban Browser Version
 
-This is an outdated version of caliban that ran off of the browser.
+[TO BE UPDATED]
+
+This is an version of Caliban that runs on a Flask application.
 
 The `caliban.py` file is essentially the same as the one in the `desktop/`
 folder, but is now outdated.
