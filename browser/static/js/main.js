@@ -15,13 +15,13 @@ class Mode {
     this.highlighted_cells = {}
     this.highlighted_cell_one = -1;
     this.highlighted_cell_two = -1;
-    this.highlighted_cells = {"cell_one":this.highlighted_cell_one, "cell_two": this.highlighted_cell_two, "decrease": -1, "increase": -1};
-      action("change_highlighted_cells", this.highlighted_cells);
+    this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
+                              "cell_two": this.highlighted_cell_two};
+    action("change_highlighted_cells", this.highlighted_cells);
   }
 
   handle_key(key) {
 
-    
     if(key === "h") {
         action("change_highlight", this.info);
         this.clear();
@@ -31,6 +31,23 @@ class Mode {
       if (key === "c") {
         action("new_track", this.info);
         this.clear();
+      }
+
+      if (key === "=") {
+        this.update_highlighted_cells(-1, 1)
+        this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
+                                  "cell_two": this.highlighted_cell_two};
+
+        action("change_highlighted_cells", this.highlighted_cells);
+        
+      }
+
+      if (key === "-") {
+        this.update_highlighted_cells(1, -1)
+        this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
+                                  "cell_two": this.highlighted_cell_two};
+
+        action("change_highlighted_cells", this.highlighted_cells);
       }
 
     }
@@ -57,63 +74,55 @@ class Mode {
       }
       if (key === "=") {
         this.update_highlighted_cells(-1, 1)
-        this.highlighted_cells = {"cell_one":this.highlighted_cell_one, "cell_two": this.highlighted_cell_two, "decrease": -1, "increase": 1};
+        this.highlighted_cells = {"cell_one": this.highlighted_cell_one, 
+                                  "cell_two": this.highlighted_cell_two};
+
         action("change_highlighted_cells", this.highlighted_cells);
       }
 
       if (key === "-") {
         this.update_highlighted_cells(1, -1)
-        this.highlighted_cells = {"cell_one":this.highlighted_cell_one, "cell_two": this.highlighted_cell_two, "decrease": 1, "increase": -1};
+        this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
+                                  "cell_two": this.highlighted_cell_two};
+
         action("change_highlighted_cells", this.highlighted_cells);
       }
-
     }
   }
 
   update_highlighted_cells(decrease, increase) {
-  
-    if (this.highlighted_cell_two != -1){
-      if (increase){
-        if (this.highlighted_cell_two < num_tracks){
-          this.highlighted_cell_two += 1;
-        }
-        else{
 
-          this.highlighted_cell_two = 1;
+    if (this.highlighted_cell_one != -1) {
+      if (increase == 1) {
+        if (this.highlighted_cell_one < num_tracks) {
+          this.highlighted_cell_one += 1;
+        } else {
+          this.highlighted_cell_one = 1;
         }
-      }
-      else if (decrease){
-        if (this.highlighted_cell_two > 1){
-
-          this.highlighted_cell_two -= 1;
+      } else if (decrease == 1) {
+        if (this.highlighted_cell_one > 1) {
+          this.highlighted_cell_one -= 1;
+        } else {
+          this.highlighted_cell_one = num_tracks;
         }
-        else{
-          this.highlighted_cell_two = num_tracks;
-        }
+      }  
+    } 
 
-      }
-        
-
+    if (this.kind === Modes.single) {
+      this.info.label = this.highlighted_cell_one;
+      console.log(this.info.label)
+    } else if (this.kind === Modes.multiple) {
+      this.info.label_1 = this.highlighted_cell_one;
+      this.info.label_2 = this.highlighted_cell_two;
     }
-      
-
-
-
   }
 
-
-
-
   click() {
-
-
     if (current_label === 0) {
       this.highlighted_cell_one = -1;
       this.highlighted_cell_two = -1;
       this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
-                                "cell_two":this.highlighted_cell_two, 
-                                "decrease": -1, 
-                                "increase": -1};
+                                "cell_two":this.highlighted_cell_two};
       action("change_highlighted_cells", this.highlighted_cells);
       this.clear();
       return;
@@ -126,20 +135,18 @@ class Mode {
       this.highlighted_cell_one = current_label;
       this.highlighted_cell_two = -1;
       this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
-                                "cell_two": this.highlighted_cell_two, 
-                                "decrease": -1, 
-                                "increase": -1};
+                                "cell_two": this.highlighted_cell_two};
       action("change_highlighted_cells", this.highlighted_cells);
       temp_x = mouse_x
       temp_y = mouse_y
 
-    }
-    else if (this.kind === Modes.single) {
+    } else if (this.kind === Modes.single) {
       this.kind = Modes.multiple;
 
       this.highlighted_cell_one = this.info.label;
       this.highlighted_cell_two = current_label;
-      this.highlighted_cells = {"cell_one":this.highlighted_cell_one, "cell_two": this.highlighted_cell_two, "decrease": -1, "increase": -1};
+      this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
+                                "cell_two": this.highlighted_cell_two};
       action("change_highlighted_cells", this.highlighted_cells);
 
       if (this.info.label == current_label) {
@@ -156,6 +163,27 @@ class Mode {
                     "label_2": current_label, 
                     "frame_2": current_frame};
       }
+    } else if (this.kind  === Modes.multiple) {
+      this.highlighted_cell_one = this.info.label_1;
+      this.highlighted_cell_two = current_label;
+      this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
+                                "cell_two": this.highlighted_cell_two};
+      action("change_highlighted_cells", this.highlighted_cells);
+
+      if (this.info.label_1 == current_label) {
+        this.info = {"label_1": this.info.label_1, 
+                    "label_2": current_label, 
+                    "frame": current_frame, 
+                    "x1_location": temp_x, 
+                    "y1_location": temp_y, 
+                    "x2_location": mouse_x, 
+                    "y2_location": mouse_y};
+      } else {
+        this.info = {"label_1": this.info.label_1, 
+                    "frame_1": this.info.frame_1, 
+                    "label_2": current_label, 
+                    "frame_2": current_frame};
+      }
     }
   }
 
@@ -164,18 +192,16 @@ class Mode {
       return "";
     }
     if (this.kind === Modes.single) {
-
       return "SELECTED " + this.info.label;
     }
     if (this.kind === Modes.multiple) {
-      return "SELECTED " + this.info.label_1 + ", " + this.info.label_2;
+      return "SELECTED " + this.info.label_2 + ", " + this.info.label_1;
     }
     if (this.kind === Modes.question) {
       return "question?";
     }
   }
 }
-
 
 var Modes = Object.freeze({
   "none": 1,
@@ -202,7 +228,6 @@ var raw_image = undefined;
 var seg_image = undefined;
 var mouse_x = 0;
 var mouse_y = 0;
-
 
 function contrast_image(img, contrast) {
   let d = img.data;
@@ -232,8 +257,10 @@ function render_log() {
 
   if (current_highlight == true) {
     $('#highlight').html("ON");
+
   } else {
     $('#highlight').html("OFF");
+
   }
 
   if (current_label !== 0) {
@@ -254,11 +281,6 @@ function render_log() {
 }
 
 function render_frame() {
-
-  // if(current_highlight) {
-  //     action("change_highlight", this.info);
-  // }
-
 
   let ctx = $('#hidden_canvas').get(0).getContext("2d");
   ctx.imageSmoothingEnabled = false;
@@ -417,5 +439,3 @@ function start_caliban(filename) {
   prepare_canvas();
   fetch_and_render_frame();
 }
-
-

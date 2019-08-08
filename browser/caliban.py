@@ -21,9 +21,8 @@ from skimage.morphology import watershed
 from skimage.measure import regionprops
 from skimage.exposure import rescale_intensity
 
-# Withheld keys and secret code currently prevents the application from successfully retrieving files from S3 bucket.
-S3_KEY ='WITHELD'
-S3_SECRET ='WITHELD'
+S3_KEY ='AKIAZC5RJJOUTN23MDWZ'
+S3_SECRET ='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'
 S3_BUCKET = 'caliban-output'
 
 # ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'trk'])
@@ -37,6 +36,193 @@ s3 = boto3.client(
     aws_access_key_id=S3_KEY,
     aws_secret_access_key=S3_SECRET
 )
+
+class ZStackReview:
+    def __init__(self, filename):
+        self.filename = filename
+        self.trial = self.load(filename)
+
+        # # lineages is a list of dictionaries. There should be only a single one
+        # # when using a .trk file
+        # if len(self.trial["lineages"]) != 1:
+        #     raise ValueError("Input file has multiple trials/lineages.")
+
+        #self.tracks = self.trial["lineages"][0]
+
+        self.raw = self.trial["raw"]
+        self.annotated = self.trial["annotated"]
+
+        self.feature = 0
+        self.feature_mac = self.annotated.shape[-1]
+        self.channel = 0
+
+        self.num_frames, self.height, self.width, self.channel_max = raw.shape
+        
+        self.sidebar_width = 300
+        
+        #create a dictionary that has frame information about each cell
+        #analogous to .trk lineage but do not need relationships between cells included
+        self.cell_ids = {}
+        self.num_cells = {}
+        self.cell_info = {}
+        
+        for feature in range(self.feature_max):
+            annotated = self.annotated[:,:,:,feature]
+            self.cell_ids[feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))]
+            self.num_cells[feature] = max(self.cell_ids[feature])
+            self.cell_info[feature] = {}
+            for cell in self.cell_ids[feature]:
+                self.cell_info[feature][cell] = {}
+                self.cell_info[feature][cell]['label'] = str(cell)
+                self.cell_info[feature][cell]['frames'] = [] 
+            
+                for frame in range(self.annotated.shape[0]):
+                    if cell in annotated[frame,:,:]:
+                        self.cell_info[feature][cell]['frames'].append(frame)
+                self.cell_info[feature][cell]['slices'] = ''
+
+        #don't display 'frames' just 'slices' (updated on_draw)
+        self.display_info = [*sorted(set(self.cell_info[0][1]) - {'frames'})]
+
+        self.current_frame = 0
+        self.draw_raw = False
+        self.max_intensity = {}
+        for channel in range(self.channel_max):
+            self.max_intensity[channel] = None
+        self.x = 0
+        self.y = 0
+        self.adjustment = {}
+        for feature in range(self.feature_max):
+            self.adjustment[feature] = 0
+        self.dtype_raw = raw.dtype
+        self.scale_factor = 1
+        
+        self.edit_mode = False
+        self.edit_value = 1
+        self.brush_size = 1
+        self.erase = False
+        
+        self.hole_fill_seed = None
+        self.save_version = 0
+
+        # self.num_tracks = max(self.tracks)
+        # self.max_frames = self.trial["raw"].shape[0]
+        self.dimensions = self.trial["raw"].shape[1:3][::-1]
+        self.color_map = self.random_colormap()
+
+        # self.highlight = False
+        # self.highlight_cell_one = -1
+        # self.highlight_cell_two = -1
+
+    def random_colormap(self):
+        max_val = max(self.tracks)
+
+        # this is a random map from [0, max_val - 1] -> [1, max_val]
+        shuffle_idx = list(range(1, max_val + 1))
+        # check if workers really prefer this
+        #random.shuffle(shuffle_idx)
+
+        shuffle_idx = [shuffle_idx[i] * .8 for i in range(max_val)]
+
+        colors = [(0, 0, 0), * (list(hsv_to_rgb([shuffle_idx[i] / max_val, 1, 1]))
+                             for i in range(max_val))]
+
+        return LinearSegmentedColormap.from_list('new_map',
+                                                 colors,
+                                                 N=max_val + 1)
+    @property
+    def readable_tracks(self):
+        """
+        Preprocesses tracks for presentation on browser. For example,
+        simplifying track['frames'] into something like [0-29] instead of
+        [0,1,2,3,...].
+        """
+        cell_info = self.cell_info[self.feature][label].copy()
+
+        slices = list(map(list, consecutive(cell_info['frames'])))
+        slices = '[' + ', '.join(["{}".format(a[0])
+                            if len(a) == 1 else "{}-{}".format(a[0], a[-1])
+                            for a in slices]) + ']'
+                            
+        self.cell_info[self.feature][label].update({'slices' : slices})
+
+        text = '\n'.join("{:10}{}".format(str(k)+':', self.cell_info[self.feature][label][k])
+                          for k in self.display_info)
+
+        return text
+
+    @property
+    def png_colormap(self):
+        return {str(self.color_map(v, bytes=True)): int(v)
+                  for v in range(max(self.tracks) + 1)}
+
+    def get_frame(self, frame, raw):
+        if raw:
+            frame = self.trial["raw"][frame][:,:,0]
+            return pngify(imgarr=frame, 
+                          vmin=0, 
+                          vmax=None, 
+                          cmap="cubehelix")
+        else:
+
+            frame = self.trial["annotated"][frame][:,:,0]
+            self.color_map.set_bad('red')
+        
+            print(self.highlight_cell_one)
+            print(self.highlight_cell_two)
+            if (self.highlight):
+                if (self.highlight_cell_one != -1):
+                    frame = np.ma.masked_equal(frame, self.highlight_cell_one)
+                if (self.highlight_cell_two != -1):
+                    frame = np.ma.masked_equal(frame, self.highlight_cell_two)
+
+            return pngify(imgarr=frame,
+                         vmin=0,
+                         vmax=self.num_tracks,
+                         cmap=self.color_map)
+
+    def load(self, filename):
+        global original_filename
+        original_filename = filename
+ 
+        s3 = boto3.client('s3')
+        response = s3.get_object(Bucket="caliban-input", Key=filename)
+        return load_npz(response['Body'].read())
+
+    def load_npz(file):
+        npz = file
+        try:
+            raw_stack = npz['raw']
+            annotation_stack = npz['annotated']
+        except:
+            raw_stack = npz[npz.files[0]]
+            annotation_stack = npz[npz.files[1]]
+            
+        return {"raw": raw_stack, "annotated": annotation_stack}
+
+    def action(self, action_type, info):
+
+        if action_type == "set_parent":
+            self.action_set_parent(**info)
+        elif action_type == "replace":
+            self.action_replace(**info)
+        elif action_type == "new_track":
+            self.action_new_track(**info)
+        elif action_type == "swap_tracks":
+            self.action_swap_tracks(**info)
+        elif action_type == "save_track":
+            self.action_save_track(**info)
+        elif action_type == "watershed":
+            self.action_watershed(**info)
+
+        elif action_type == "delete_cell":
+            self.action_delete(**info)
+        elif action_type == "change_highlight":
+            self.highlight = not self.highlight
+        elif action_type == "change_highlighted_cells":
+            self.action_change_highlighted_cells(**info)
+        else:
+            raise ValueError("Invalid action '{}'".format(action_type))
 
 
 class TrackReview:
@@ -152,31 +338,53 @@ class TrackReview:
             self.highlight = not self.highlight
         elif action_type == "change_highlighted_cells":
             self.action_change_highlighted_cells(**info)
+        
         else:
             raise ValueError("Invalid action '{}'".format(action_type))
 
 
-    def action_change_highlighted_cells(self, cell_one, cell_two, decrease, increase):
+
+    def action_change_highlighted_cells(self, cell_one, cell_two):
         self.highlight_cell_one = cell_one
         self.highlight_cell_two = cell_two
 
-        if (self.highlight_cell_two != -1):
-            if increase != -1:
-                if (self.highlight_cell_two < self.num_tracks):
-                    self.highlight_cell_two += 1
-                else:
-                    self.highlight_cell_two = 1
-            elif decrease != -1:
-                if (self.highlight_cell_two > 1):
-                    self.highlight_cell_two -= 1
-                else:
-                    self.highlight_cell_two = self.num_tracks
+    def action_change_highlighted_cells2(self, cell_one, cell_two, decrease, increase):
+        print("test")
+        # self.highlight_cell_one = cell_one
+        # self.highlight_cell_two = cell_two
+
+        # if(self.highlight_cell_two != 1):
+        #     if increase != -1:
+        #         if (self.highlight_cell_one < self.num_tracks):
+        #             self.highlight_cell_one += 1
+        #         else:
+        #             self.highlight_cell_one = 1
+        #     elif decrease != -1:
+        #         if (self.highlight_cell_one > 1):
+        #             self.highlight_cell_one -= 1
+        #         else:
+        #             self.highlight_cell_one = self.num_tracks
+
+
+        # else:
+        #     if increase != -1:
+        #         if (self.highlight_cell_two < self.num_tracks):
+        #             self.highlight_cell_two += 1
+        #         else:
+        #             self.highlight_cell_two = 1
+        #     elif decrease != -1:
+        #         if (self.highlight_cell_two > 1):
+        #             self.highlight_cell_two -= 1
+        #         else:
+        #             self.highlight_cell_two = self.num_tracks
 
     def action_watershed(self, label_1, label_2, frame, x1_location, y1_location, x2_location, y2_location):
 
         # Pull the label that is being split and find a new valid label
         current_label = label_1
         new_label = self.num_tracks + 1
+      
+
 
         # Locally store the frames to work on
         img_raw = self.trial["raw"][frame]
@@ -436,4 +644,3 @@ def load_trks(trkfile):
                 lineages.append({int(k): v for k, v in lineage.items()})
 
         return {'lineages': lineages, 'raw': raw, 'tracked': tracked}
-
