@@ -1,4 +1,4 @@
-from caliban import TrackReview
+from caliban import TrackReview, ZStackReview
 from flask import Flask, jsonify, render_template, request, redirect, url_for
 import sys
 
@@ -16,7 +16,12 @@ from werkzeug.utils import secure_filename
 
 application = Flask(__name__)
 track_review = None
+global track_status 
+track_status = -1
 application.config.from_object("config")
+
+TRACK_EXTENSIONS = set(['trk', 'trks'])
+ZSTACK_EXTENSIONS = set(['npz'])
 
 @application.route("/", methods=["POST"])
 def upload_file():
@@ -51,15 +56,32 @@ def get_tracks():
 
 @application.route("/frame/<frame>")
 def get_frame(frame):
-    frame = int(frame)
-    img = track_review.get_frame(frame, raw=False)
-    raw = track_review.get_frame(frame, raw=True)
 
-    payload = {
-            'raw': f'data:image/png;base64,{base64.encodebytes(raw.read()).decode()}',
-            'cmap': track_review.png_colormap,
-            'segmented': f'data:image/png;base64,{base64.encodebytes(img.read()).decode()}',
-            }
+
+    frame = int(frame)
+
+    if "." in gfilename and gfilename.split(".")[1].lower() in TRACK_EXTENSIONS:
+
+        img = track_review.get_frame(frame, raw=False)
+        raw = track_review.get_frame(frame, raw=True)
+
+        payload = {
+                'raw': f'data:image/png;base64,{base64.encodebytes(raw.read()).decode()}',
+                'cmap': track_review.png_colormap,
+                'segmented': f'data:image/png;base64,{base64.encodebytes(img.read()).decode()}',
+                }
+
+
+    if "." in gfilename and gfilename.split(".")[1].lower() in ZSTACK_EXTENSIONS:
+
+        img = zstack_review.get_frame(frame, raw=False)
+        raw = zstack_review.get_frame(frame, raw=True)
+
+        payload = {
+                'raw': f'data:image/png;base64,{base64.encodebytes(raw.read()).decode()}',
+                'cmap': track_review.png_colormap,
+                'segmented': f'data:image/png;base64,{base64.encodebytes(img.read()).decode()}',
+                }
 
     return jsonify(payload)
 
@@ -67,15 +89,27 @@ def get_frame(frame):
 def load(filename):
     global gfilename
     global track_review
+    global zstack_review
+    
+
     print(f"Loading track at {filename}", file=sys.stderr)
-    track_review = TrackReview(filename)
     gfilename = filename
 
-    return jsonify({
-        "max_frames": track_review.max_frames,
-        "tracks": track_review.readable_tracks,
-        "dimensions": track_review.dimensions
-        })
+    if "." in filename and filename.split(".")[1].lower() in TRACK_EXTENSIONS:
+        track_review = TrackReview(filename)
+        return jsonify({
+            "max_frames": track_review.max_frames,
+            "tracks": track_review.readable_tracks,
+            "dimensions": track_review.dimensions
+            })
+
+    if "." in gfilename and gfilename.split(".")[1].lower() in ZSTACK_EXTENSIONS:
+        zstack_review = ZStackReview(filename)
+        return jsonify({
+            "max_frames": zstack_review.max_frames,
+            "tracks": zstack_review.readable_tracks,
+            "dimensions": zstack_review.dimensions
+            })
 
 @application.route('/', methods=['GET', 'POST'])
 def form():
@@ -83,9 +117,34 @@ def form():
 
 @application.route('/tool', methods=['GET', 'POST'])
 def tool():
-    print(f"{request.form['filename']} is routing", file=sys.stderr)
 
-    return render_template('index.html', filename=request.form['filename'])
+    global track_status
+    global zstack_status
+    filename = request.form['filename']
+
+    track_status = -1
+    zstack_status = -1
+
+    print(f"{request.form['filename']} is routing", file=sys.stderr)
+    print(track_status)
+
+    if "." in filename and filename.split(".")[1].lower() in TRACK_EXTENSIONS:
+
+        return render_template('index_track.html', filename=request.form['filename'])
+
+
+    if "." in filename and filename.split(".")[1].lower() in ZSTACK_EXTENSIONS:
+
+        return render_template('index_zstack.html', filename=request.form['filename'])
+
+
+    return "error"
+
+
+
+    # if zstack_status:
+    #     return render_template('index_zstack.html', filename=request.form['filename'])
+
 
 def main():
     application.jinja_env.auto_reload = True

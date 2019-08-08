@@ -21,8 +21,8 @@ from skimage.morphology import watershed
 from skimage.measure import regionprops
 from skimage.exposure import rescale_intensity
 
-S3_KEY ='AKIAZC5RJJOUTN23MDWZ'
-S3_SECRET ='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'
+S3_KEY =''
+S3_SECRET =''
 S3_BUCKET = 'caliban-output'
 
 # ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'trk'])
@@ -167,9 +167,6 @@ class ZStackReview:
 
             frame = self.trial["annotated"][frame][:,:,0]
             self.color_map.set_bad('red')
-        
-            print(self.highlight_cell_one)
-            print(self.highlight_cell_two)
             if (self.highlight):
                 if (self.highlight_cell_one != -1):
                     frame = np.ma.masked_equal(frame, self.highlight_cell_one)
@@ -296,9 +293,7 @@ class TrackReview:
 
             frame = self.trial["tracked"][frame][:,:,0]
             self.color_map.set_bad('red')
-        
-            print(self.highlight_cell_one)
-            print(self.highlight_cell_two)
+
             if (self.highlight):
                 if (self.highlight_cell_one != -1):
                     frame = np.ma.masked_equal(frame, self.highlight_cell_one)

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>caliban</title>
+    <link rel="stylesheet"
+          type="text/css"
+          href="{{ url_for('static', filename='css/main.css') }}">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script type="text/javascript"
+            src="{{ url_for('static', filename='js/main_track.js') }}"></script>
+  </head>
+
+  <body>
+    <canvas width=600 height=400 id="hidden_canvas"></canvas>
+    <div id="container">
+      <table id="maintable">
+        <tr>
+          <td id="logcol">
+            <table id="log">
+              <tr height="50%" valign="top">
+                <td>frame: </td><td id="frame"></td>
+              </tr>
+              <tr height="100%" valign="top">
+                <td>highlight cells: </td><td id="highlight"></td>
+              </tr>
+              <h1>Caliban</h1>
+            </p>Filename: {{filename}}</p>
+              <form action="/" method="POST" enctype="multipart/form-data">
+                <label for="user_file">Finish and Submit Changed File to Output Bucket</label>
+                <button type="submit">Submit</button>
+              </form>
+              <tr><td>label:</td><td id="label"></td></tr>
+              <tr><td>parent:</td><td id="parent"></td></tr>
+              <tr><td>daughters:</td><td id="daughters"></td></tr>
+              <tr><td>frame_div:</td><td id="frame_div"></td></tr>
+              <tr><td>capped:</td><td id="capped"></td></tr>
+              <tr><td>frames:</td><td><div id="frames"></div></td></tr>
+              <tr>
+                <td>state:</td><td id="mode"></td>
+              </tr>
+            </table>
+          </td>
+          <td id="canvascol">
+            <canvas width=600 height=400 id="canvas"></canvas>
+          </td>
+        </tr>
+      </table>
+    </div>
+  <script>
+
+    var file = "{{filename}}"
+    start_caliban(file);
+
+  </script>
+  </body>
+</html>

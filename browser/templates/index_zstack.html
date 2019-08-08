@@ -7,7 +7,7 @@
           href="{{ url_for('static', filename='css/main.css') }}">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script type="text/javascript"
-            src="{{ url_for('static', filename='js/main.js') }}"></script>
+            src="{{ url_for('static', filename='js/main_zstack.js') }}"></script>
   </head>
 
   <body>
@@ -19,30 +19,22 @@
             <table id="log">
               <tr height="50%" valign="top">
                 <td>frame: </td><td id="frame"></td>
-              </tr>
-              <tr height="100%" valign="top">
-                <td>highlight cells: </td><td id="highlight"></td>
-              </tr>
+                <tr><td>channel: </td><td id="channel"></td></tr>
+                <tr><td>feature: </td><td id="feature"></td></tr>
 
-
+              </tr>
+              
+                <td>edit mode: </td><td id="edit_mode"></td>
               <h1>Caliban</h1>
             </p>Filename: {{filename}}</p>
 
-
               <form action="/" method="POST" enctype="multipart/form-data">
-
                 <label for="user_file">Finish and Submit Changed File to Output Bucket</label>
-
                 <button type="submit">Submit</button>
-
+          
               </form>
-
               <tr><td>label:</td><td id="label"></td></tr>
-              <tr><td>parent:</td><td id="parent"></td></tr>
-              <tr><td>daughters:</td><td id="daughters"></td></tr>
-              <tr><td>frame_div:</td><td id="frame_div"></td></tr>
-              <tr><td>capped:</td><td id="capped"></td></tr>
-              <tr><td>frames:</td><td><div id="frames"></div></td></tr>
+              <tr><td>slices:</td><td><div id="slices"></div></td></tr>
               <tr>
                 <td>state:</td><td id="mode"></td>
               </tr>
@@ -55,10 +47,8 @@
       </table>
     </div>
   <script>
-
     var file = "{{filename}}"
     start_caliban(file);
-
   </script>
   </body>
 </html>
