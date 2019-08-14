@@ -2,13 +2,11 @@
 <html>
   <head>
     <title>caliban</title>
-    <link rel="stylesheet"
-          type="text/css"
-          href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/main_track.js') }}"></script>
-            <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/navigation.css') }}">
-            <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/normalize.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/navigation.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/normalize.css') }}">
   </head>
 
   <body>
@@ -26,10 +24,10 @@
                 <td>highlight cells: </td><td id="highlight"></td>
               </tr>
               <h1>Caliban</h1>
-            </p>Filename: {{filename}}</p>
-              <form action="/" method="POST" enctype="multipart/form-data">
-                <label for="user_file">Finish and Submit Changed File to Output Bucket</label>
-                <button type="submit">Submit</button>
+              </p>Filename: {{filename}}</p>
+              <form class='changed-form' action="/" method="POST" enctype="multipart/form-data">
+                <label class="changed-label" for="user_file">Finish and Submit Changed File to Output Bucket</label>
+                <button type="submit" type="submit">Submit</button>
               </form>
               <tr><td>label:</td><td id="label"></td></tr>
               <tr><td>parent:</td><td id="parent"></td></tr>
@@ -48,11 +46,11 @@
         </tr>
       </table>
     </div>
+  <!-- START CALIBAN FUNCTION CALL -->
   <script>
-
     var file = "{{filename}}"
     start_caliban(file);
-
   </script>
+<!-- END CALIBAN FUNCTION CALL -->
   </body>
 </html>

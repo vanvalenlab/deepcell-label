@@ -2,15 +2,15 @@
 <html>
   <head>
     <title>caliban</title>
-    <link rel="stylesheet"
-          type="text/css"
-          href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-    <script type="text/javascript"
-            src="{{ url_for('static', filename='js/main_zstack.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/main_zstack.js') }}"></script>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/navigation.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/normalize.css') }}">
   </head>
 
   <body>
+    {% include "navigation.html" %}
     <canvas width=600 height=400 id="hidden_canvas"></canvas>
     <div id="container">
       <table id="maintable">
@@ -28,8 +28,8 @@
               <h1>Caliban</h1>
             </p>Filename: {{filename}}</p>
 
-              <form action="/" method="POST" enctype="multipart/form-data">
-                <label for="user_file">Finish and Submit Changed File to Output Bucket</label>
+              <form class='changed-form' action="/" method="POST" enctype="multipart/form-data">
+                <label class="changed-label" for="user_file">Finish and Submit Changed File to Output Bucket</label>
                 <button type="submit">Submit</button>
           
               </form>
@@ -46,9 +46,11 @@
         </tr>
       </table>
     </div>
+<!-- START CALIBAN FUNCTION CALL -->
   <script>
     var file = "{{filename}}"
     start_caliban(file);
   </script>
+<!-- END CALIBAN FUNCTION CALL -->
   </body>
 </html>

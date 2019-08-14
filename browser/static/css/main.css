@@ -1,51 +1,63 @@
 body {
-  color: white;
-  background-color: black;
-}
+    /* font */
+      color: rgba(0, 0, 0, 0.54);
+      font-weight: 500;
+      line-height: 1.16667em;
+      text-transform: uppercase;
+    /* */
+      color: rgba(0, 0, 0, 0.54);
+      background-color: white;
+    }
+    
+    td {
+      padding-left: 10px;
+    }
+    
+    #container {
+      margin: 0 auto;
+      margin-top: 100px;
+      
+      width: 1000px;
+    }
+    
+    #maintable {
+      width: 900px;
+      height: 500px;
+      /* outline: 1px dashed blue; */
+    }
+    
+    .changed-label {
+        text-align: center;
+    }
 
-td {
-  padding-left: 10px;
-}
-
-#container {
-  margin: 0 auto;
-  margin-top: 100px;
-  
-  width: 1000px;
-}
-
-#maintable {
-  width: 900px;
-  height: 500px;
-  /* outline: 1px dashed blue; */
-}
-
-#log {
-  font-family: monospace;
-  font-size: 14pt;
-  /* outline: 10px dashed red; */
-  height: 90%;
-}
-
-#logcol {
-
-}
-
-#frames {
-  width: 300px;
-  word-wrap: break-word;         /* All browsers since IE 5.5+ */
-  overflow-wrap: break-word;
-}
-
-#canvas {
-  outline:1px solid red;
-}
-
-#hidden_canvas {
-  display: none;
-}
-
-#canvascol {
-  /* outline:1px dashed red; */
-}
-
+    #logcol {
+      display: flex;
+      box-sizing: border-box;
+      flex-shrink: 0;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    #frames {
+      width: 300px;
+      word-wrap: break-word;         /* All browsers since IE 5.5+ */
+      overflow-wrap: break-word;
+    }
+    
+    #canvas {
+      border-radius: 1em;
+      box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0, 0, 0, 0.12);
+    }
+    
+    #hidden_canvas {
+      display: none;
+    }
+    
+    #canvascol {
+      /* outline:1px dashed red; */
+    }
+    
+    .submit {
+      display: block;
+    }
