@@ -627,7 +627,9 @@ class ZStackReview:
                 self.cell_info[feature][cell]['slices'] = ''
 
         #don't display 'frames' just 'slices' (updated on_draw)
-        self.display_info = [*sorted(set(self.cell_info[0][1]) - {'frames'})]
+        first_key = list(self.cell_info[0])[0]
+        display_info_types = self.cell_info[0][first_key]
+        self.display_info = [*sorted(set(display_info_types) - {'frames'})]
             
         self.window = pyglet.window.Window(resizable=True)
         self.window.set_minimum_size(self.width + self.sidebar_width, self.height + 20)
