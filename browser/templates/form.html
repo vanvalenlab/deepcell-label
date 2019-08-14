@@ -2,7 +2,7 @@
     <html>
     <head>
       <meta charset="utf-8">
-      <title>caliban tool</title>
+      <title>Caliban</title>
       <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
       <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/navigation.css') }}">
       <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/normalize.css') }}">
@@ -26,14 +26,14 @@
         <div id="container">
             {% include "navigation.html" %}
             <form id="caliban-form" method="POST" action="{{ url_for('tool') }}">
-                <h3 class='call-action'>Begin Using Caliban</h3>
+                <h3 class='call-action'>Caliban</h3>
                 <div class="file-name-input">
-                    <label class="say-label" for="filename">Enter the name of the desired '.trk' file to edit with Caliban:</label>
+                    <label class="say-label" for="filename">Enter name of existing file to edit.</label>
                     <input type="text" name="filename" id="filename" value="RAW264_S0_Batch02.trk">
                 </div>
         
                 <div>
-                    <button>Edit with Caliban</button>
+                    <button>Go to Tool</button>
                 </div>
             </form>
         </div>

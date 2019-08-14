@@ -1,23 +1,21 @@
 from caliban import TrackReview, ZStackReview
 from flask import Flask, jsonify, render_template, request, redirect, url_for
 import sys
-
 import base64
 import copy
 import os
 import numpy as np
 import traceback
 import boto3, botocore
-
 from werkzeug.utils import secure_filename
-
-
-
 
 application = Flask(__name__)
 track_review = None
-global track_status 
-track_status = -1
+zstack_review = None
+track_status = None
+zstack_status = None
+filename = None
+
 application.config.from_object("config")
 
 TRACK_EXTENSIONS = set(['trk', 'trks'])
@@ -25,14 +23,13 @@ ZSTACK_EXTENSIONS = set(['npz'])
 
 @application.route("/", methods=["POST"])
 def upload_file():
- 
-    filename = gfilename
 
- 
-    if filename:
+    if "." in filename and filename.split(".")[1].lower() in TRACK_EXTENSIONS:
         track_review.action_save_track()
         return "success!"
-
+    if "." in filename and filename.split(".")[1].lower() in ZSTACK_EXTENSIONS:
+        zstack_review.action_save_zstack()
+        return "success!"
     else:
         return redirect("/")
 
@@ -40,7 +37,12 @@ def upload_file():
 def action(action_type):
     info = {k: int(v) for k, v in request.values.to_dict().items()}
     try:
-        track_review.action(action_type, info)
+        if "." in filename and filename.split(".")[1].lower() in TRACK_EXTENSIONS:
+            track_review.action(action_type, info)
+
+        if "." in filename and filename.split(".")[1].lower() in ZSTACK_EXTENSIONS:
+            zstack_review.action(action_type, info)
+
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)})
@@ -49,51 +51,50 @@ def action(action_type):
 
 @application.route("/tracks")
 def get_tracks():
-    return jsonify({
-        "tracks": track_review.readable_tracks,
-        })
 
+    if "." in filename and filename.split(".")[1].lower() in TRACK_EXTENSIONS:
+        return jsonify({
+            "tracks": track_review.readable_tracks,
+            })
+    if "." in filename and filename.split(".")[1].lower() in ZSTACK_EXTENSIONS:
+        return jsonify({
+            "tracks": zstack_review.readable_tracks,
+            })
 
 @application.route("/frame/<frame>")
 def get_frame(frame):
-
-
     frame = int(frame)
 
-    if "." in gfilename and gfilename.split(".")[1].lower() in TRACK_EXTENSIONS:
-
+    if "." in filename and filename.split(".")[1].lower() in TRACK_EXTENSIONS:
         img = track_review.get_frame(frame, raw=False)
         raw = track_review.get_frame(frame, raw=True)
-
         payload = {
                 'raw': f'data:image/png;base64,{base64.encodebytes(raw.read()).decode()}',
                 'cmap': track_review.png_colormap,
                 'segmented': f'data:image/png;base64,{base64.encodebytes(img.read()).decode()}',
                 }
 
-
-    if "." in gfilename and gfilename.split(".")[1].lower() in ZSTACK_EXTENSIONS:
-
-        img = zstack_review.get_frame(frame, raw=False)
-        raw = zstack_review.get_frame(frame, raw=True)
+    if "." in filename and filename.split(".")[1].lower() in ZSTACK_EXTENSIONS:
+        img = zstack_review.get_frame(frame, raw=False, edit_background =False)
+        raw = zstack_review.get_frame(frame, raw=True, edit_background=False)
+        edit = zstack_review.get_frame(frame, raw=False, edit_background=True)
 
         payload = {
                 'raw': f'data:image/png;base64,{base64.encodebytes(raw.read()).decode()}',
-                'cmap': track_review.png_colormap,
+                'cmap': zstack_review.png_colormap,
                 'segmented': f'data:image/png;base64,{base64.encodebytes(img.read()).decode()}',
+                'edit_background': f'data:image/png;base64,{base64.encodebytes(edit.read()).decode()}'
                 }
-
     return jsonify(payload)
 
 @application.route("/load/<filename>", methods=["POST"])
 def load(filename):
-    global gfilename
+
     global track_review
     global zstack_review
-    
 
     print(f"Loading track at {filename}", file=sys.stderr)
-    gfilename = filename
+
 
     if "." in filename and filename.split(".")[1].lower() in TRACK_EXTENSIONS:
         track_review = TrackReview(filename)
@@ -103,10 +104,12 @@ def load(filename):
             "dimensions": track_review.dimensions
             })
 
-    if "." in gfilename and gfilename.split(".")[1].lower() in ZSTACK_EXTENSIONS:
+    if "." in filename and filename.split(".")[1].lower() in ZSTACK_EXTENSIONS:
         zstack_review = ZStackReview(filename)
         return jsonify({
             "max_frames": zstack_review.max_frames,
+            "channel_max": zstack_review.channel_max,
+            "feature_max": zstack_review.feature_max,
             "tracks": zstack_review.readable_tracks,
             "dimensions": zstack_review.dimensions
             })
@@ -118,33 +121,21 @@ def form():
 @application.route('/tool', methods=['GET', 'POST'])
 def tool():
 
-    global track_status
-    global zstack_status
+    global filename
+
+
     filename = request.form['filename']
-
-    track_status = -1
-    zstack_status = -1
-
-    print(f"{request.form['filename']} is routing", file=sys.stderr)
-    print(track_status)
+    print(f"{filename} is filename", file=sys.stderr)
 
     if "." in filename and filename.split(".")[1].lower() in TRACK_EXTENSIONS:
-
-        return render_template('index_track.html', filename=request.form['filename'])
-
-
+        return render_template('index_track.html', filename=filename)
     if "." in filename and filename.split(".")[1].lower() in ZSTACK_EXTENSIONS:
+        return render_template('index_zstack.html', filename=filename)
 
-        return render_template('index_zstack.html', filename=request.form['filename'])
-
+    # error_message = "ERROR: {} does not exist in our database. Please try again.".format(filename)
+    # return render_template('form.html', error=error_message)
 
     return "error"
-
-
-
-    # if zstack_status:
-    #     return render_template('index_zstack.html', filename=request.form['filename'])
-
 
 def main():
     application.jinja_env.auto_reload = True

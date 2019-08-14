@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>caliban</title>
+    <title>Caliban</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/main_zstack.js') }}"></script>
@@ -27,19 +27,21 @@
               </tr>
               
                 <td>edit mode: </td><td id="edit_mode"></td>
-              <h1>Caliban</h1>
+                <td id="edit_content"></td>
+
+              <h1>Z-Stack Tool</h1>
             </p>Filename: {{filename}}</p>
 
+              
+              <tr><td>label:</td><td id="label"></td></tr>
+              <tr><td>slices:</td><td><div id="slices"></div></td></tr>
+              <tr><td>state:</td><td id="mode"></td></tr>
+
               <form class='changed-form' action="/" method="POST" enctype="multipart/form-data">
-                <label class="changed-label" for="user_file">Finish and Submit Changed File to Output Bucket</label>
+                <label class="changed-label" for="user_file"></label>
                 <button type="submit">Submit</button>
           
               </form>
-              <tr><td>label:</td><td id="label"></td></tr>
-              <tr><td>slices:</td><td><div id="slices"></div></td></tr>
-              <tr>
-                <td>state:</td><td id="mode"></td>
-              </tr>
             </table>
           </td>
           <td id="canvascol">
