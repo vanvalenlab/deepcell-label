@@ -3,34 +3,39 @@
     <head>
       <meta charset="utf-8">
       <title>caliban tool</title>
-      <style>
-        form {
-          width: 420px;
-        }
-        div {
-          margin-bottom: 20px;
-        }
-        label {
-          display: inline-block;
-          width: 240px;
-          text-align: right;
-          padding-right: 10px;
-        }
-        button, input {
-          float: right;
-        }
-      </style>
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+      <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/navigation.css') }}">
+      <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/normalize.css') }}">
+      <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/form.css') }}">
+      <script>
+        $(function(){
+            //This function allows the input text to automatically resize according to it's length, allowing user to be able to comfortably view the filename they uplaod
+            function resizeInput() {
+                $(this).attr('size', $(this).val().length);
+            }
+
+            $('input[type="text"]')
+            // event handler
+            .keyup(resizeInput)
+            // resize on page load
+            .each(resizeInput);
+        });
+    </script>
     </head>
     <body>
-      <form method="POST" action="{{ url_for('tool') }}">
-        <div>
-          <label for="say">Name of desired trk file to edit</label>
-          <input name="filename" id="filename" value="RAW264_S0_Batch02.trk">
+        <div id="container">
+            {% include "navigation.html" %}
+            <form id="caliban-form" method="POST" action="{{ url_for('tool') }}">
+                <h3 class='call-action'>Begin Using Caliban</h3>
+                <div class="file-name-input">
+                    <label class="say-label" for="filename">Enter the name of the desired '.trk' file to edit with Caliban:</label>
+                    <input type="text" name="filename" id="filename" value="RAW264_S0_Batch02.trk">
+                </div>
+        
+                <div>
+                    <button>Edit with Caliban</button>
+                </div>
+            </form>
         </div>
-
-        <div>
-          <button>Go to Caliban</button>
-        </div>
-      </form>
     </body>
   </html>
