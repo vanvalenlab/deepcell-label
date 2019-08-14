@@ -639,6 +639,7 @@ class ZStackReview:
         self.window.on_mouse_scroll = self.on_mouse_scroll
         self.window.on_mouse_press = self.on_mouse_press
         self.window.on_mouse_drag = self.on_mouse_drag
+        self.window.on_mouse_release = self.on_mouse_release
 
         self.current_frame = 0
         self.draw_raw = False
@@ -665,6 +666,7 @@ class ZStackReview:
         self.edit_value = 1
         self.brush_size = 1
         self.erase = False
+        self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
         
         self.hole_fill_seed = None
         self.save_version = 0
@@ -707,6 +709,57 @@ class ZStackReview:
                 if self.hole_fill_seed is not None:
                     self.action_fill_hole()
                     self.mode = Mode.none()
+
+        elif self.edit_mode:
+            annotated = self.annotated[self.current_frame,:,:,self.feature]
+
+            brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
+
+            in_original = np.any(np.isin(annotated, self.edit_value))
+            in_original_all = np.any(np.isin(self.annotated[:,:,:,self.feature], self.edit_value))
+            #do not overwrite or erase labels other than the one you're editing
+            if not self.erase:
+                annotated_draw = np.where(annotated==0, self.edit_value, annotated)
+                annotated[brush_area] = annotated_draw[brush_area]
+            else:
+                annotated_erase = np.where(annotated==self.edit_value, 0, annotated)
+                annotated[brush_area] = annotated_erase[brush_area]
+            
+            #when to add in info to cell_info dict
+
+            in_modified = np.any(np.isin(annotated, self.edit_value))
+            in_modified_all = np.any(np.isin(self.annotated[:,:,:,self.feature], self.edit_value))
+
+            #cell deletion
+            if in_original and not in_modified:
+                frame = self.current_frame
+                old_frames = self.cell_info[self.feature][self.edit_value]['frames']
+                updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame)))
+                self.cell_info[self.feature][self.edit_value].update({'frames': updated_frames})
+
+                if not in_modified_all:
+                    print('deleted cell from movie')
+                    del self.cell_info[self.feature][self.edit_value]
+
+            #cell addition
+            elif in_modified and not in_original:
+                new_label = self.edit_value
+                if not in_original_all:
+                    self.cell_info[self.feature].update({new_label: {}})
+                    self.cell_info[self.feature][new_label].update({'label': str(new_label)})
+                    self.cell_info[self.feature][new_label].update({'frames': [self.current_frame]})
+                    self.cell_info[self.feature][new_label].update({'slices': ''})
+
+                    np.append(self.cell_ids[self.feature], new_label)
+
+                    self.num_cells[self.feature] += 1
+                else:
+                    old_frames = self.cell_info[self.feature][new_label]['frames']
+                    updated_frames = np.append(old_frames, self.current_frame)
+                    updated_frames = np.unique(updated_frames).tolist()
+                    self.cell_info[self.feature][new_label].update({'frames': updated_frames})
+    
+            self.annotated[self.current_frame,:,:,self.feature] = annotated
                     
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         
@@ -718,7 +771,6 @@ class ZStackReview:
             self.x, self.y = x, y        
         
         if self.edit_mode:
-            #if buttons & mouse.LEFT:
             annotated = self.annotated[self.current_frame,:,:,self.feature]
             
             #self.x and self.y are different from the mouse's x and y
@@ -726,6 +778,9 @@ class ZStackReview:
             y_loc = self.y
 
             brush_area = circle(y_loc, x_loc, self.brush_size, (self.height,self.width))
+            
+            #show where brush has drawn this time
+            self.brush_view[brush_area] = self.edit_value
             
             in_original = np.any(np.isin(annotated, self.edit_value))
             in_original_all = np.any(np.isin(self.annotated[:,:,:,self.feature], self.edit_value))
@@ -773,6 +828,9 @@ class ZStackReview:
                         
             self.annotated[self.current_frame,:,:,self.feature] = annotated
             
+    def on_mouse_release(self, x, y, buttons, modifiers):
+        if self.edit_mode:
+            self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self.draw_raw:
@@ -798,6 +856,12 @@ class ZStackReview:
 
         if 0 <= x < self.width and 0 <= y < self.height:
             self.x, self.y = x, y
+            
+        if self.edit_mode:
+            #display brush size
+            self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
+            brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
+            self.brush_view[brush_area] = self.edit_value
             
 
     def on_draw(self):
@@ -1094,11 +1158,20 @@ class ZStackReview:
                             format='png')
                 ann_img = pyglet.image.load('ann_file.png', ann_file)
                 
+            with tempfile.TemporaryFile() as brush_file:
+                plt.imsave(brush_file, self.brush_view,
+                            vmax = self.num_cells[self.feature] + self.adjustment[self.feature],
+                            cmap='gist_stern',
+                            format='png')
+                brush_img = pyglet.image.load('brush_file.png', brush_file)
+
             raw_sprite = pyglet.sprite.Sprite(raw_img, x=self.sidebar_width, y=0)
             ann_sprite = pyglet.sprite.Sprite(ann_img, x=self.sidebar_width, y=0)
-
+            brush_sprite = pyglet.sprite.Sprite(brush_img, x=self.sidebar_width, y=0)
+            
             raw_sprite.opacity = 128
             ann_sprite.opacity = 128
+            brush_sprite.opacity = 128
                 
             raw_sprite.update(scale_x=self.scale_factor,
                             scale_y=self.scale_factor)
@@ -1106,9 +1179,13 @@ class ZStackReview:
             ann_sprite.update(scale_x=self.scale_factor,
                             scale_y=self.scale_factor)
             
+            brush_sprite.update(scale_x=self.scale_factor,
+                                    scale_y=self.scale_factor)
                                 
             raw_sprite.draw()
             ann_sprite.draw()
+            brush_sprite.draw()
+            
             gl.glTexParameteri(gl.GL_TEXTURE_2D,
                                gl.GL_TEXTURE_MAG_FILTER,
                                gl.GL_NEAREST)
