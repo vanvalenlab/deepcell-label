@@ -591,10 +591,11 @@ class TrackReview:
                 trks.add(tracked_file.name, "tracked.npy")
                 
 class ZStackReview:
-    def __init__(self, filename, raw, annotated):
+    def __init__(self, filename, raw, annotated, save_vars_mode):
         self.filename = filename
         self.raw = raw
         self.annotated = annotated
+        self.save_vars_mode = save_vars_mode
         
         self.feature = 0
         self.feature_max = self.annotated.shape[-1]
@@ -1356,7 +1357,10 @@ class ZStackReview:
                 
     def save(self):
         save_file = self.filename + "_save_version_{}.npz".format(self.save_version)
-        np.savez(save_file, raw = self.raw, annotated = self.annotated)
+        if self.save_vars_mode == 0:
+            np.savez(save_file, raw = self.raw, annotated = self.annotated)
+        else:
+            np.savez(save_file, X = self.raw, y = self.annotated)
         self.save_version += 1
 
 def consecutive(data, stepsize=1):
@@ -1492,11 +1496,17 @@ def load_npz(filename):
     try:
         raw_stack = npz['raw']
         annotation_stack = npz['annotated']
+        save_vars_mode = 0
     except:
-        raw_stack = npz[npz.files[0]]
-        annotation_stack = npz[npz.files[1]]
-        
-    return {"raw": raw_stack, "annotated": annotation_stack}
+        try:
+            raw_stack = npz['X']
+            annotation_stack = npz['y']
+            save_vars_mode = 1
+        except:
+            raw_stack = npz[npz.files[0]]
+            annotation_stack = npz[npz.files[1]]
+            save_vars_mode = 2
+    return {"raw": raw_stack, "annotated": annotation_stack, "save_vars_mode": save_vars_mode}
     
 
 def review(filename):
