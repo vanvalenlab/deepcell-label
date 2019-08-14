@@ -1,0 +1,64 @@
+<button class="accordion">Tool Guide</button>
+<div class="panel">
+    <p>Files can be edited using keyboard operations.</p>
+
+    <p>Navigation through Frames:</p>
+    <p>a or ← - Back one frame</p>
+    
+    <p>d or → - Forward one frame</p>
+    
+    <p>Edit Operations:</p>
+    <p>Caliban's default setting allows operations to be carried out quickly and easily on existing segmentations. The actions that can modify cell labels and/or lineage information are:</p>
+    
+    <p>click - click on a cell label to select it. Up to two cells can be selected at one time.</p>
+    
+    <p>r - replace: relabel all instances of a selected cell label with a second selected cell label; replaces lineage data in a trk file</p>
+    
+    <p>c - create: relabel selected cell with an unused label</p>
+    
+    <p>p - parent: assign parent/daughter relationship to pair of selected cells in trk file</p>
+    
+    <p>p - predict: predict zstack relationships in npz when no cells are selected</p>
+    
+    <p>s - swap: swap labels and lineage information between two selected cells</p>
+    
+    <p>x - delete: remove selected cell mask in frame</p>
+    
+    <p>w - watershed: call watershed transform to split one cell label into two</p>
+    
+    <p>esc - cancel operation</p>
+    <p>space bar - confirm operation</p>
+    <p>s - confirm operation in a single frame, when applicable</p>
+    
+    <p>You can also use esc or click on the black background to return back to a state where no cells are selected.</p>
+    
+    <p>In annotation mode:</p>
+    
+    <p>Most keybinds are disabled in annotation mode.</p>
+    
+    <p>Annotation mode focuses on using an adjustable brush to modify annotations on a pixel level, rather than using operations that apply to every instance of a label within a frame or set of frames. The brush tool will only make changes to the currently selected value. Ie, a brush set to edit cell 5 will only add or erase "5" to the annotated image.</p>
+    
+    <p>-/= increment value that brush is applying</p>
+    
+    <p>← → - change size of brush tool</p>
+    
+    <p>x - toggle eraser mode</p>
+    
+    <p>Viewing Options:</p>
+    <p>h - switch between highlighted mode and normal mode (once highlight mode is on, use -/= to decrement/increment selected cell label number)</p>
+    
+    <p>z - switch between annotations and raw images</p>
+    
+    <p>f - cycle between different annotations when no cells are selected</p>
+    
+    <p>c - cycle between different channels when no cells are selected</p>
+    
+    <p>e - toggle annotation mode</p>
+    
+    <p>scroll wheel - change image or annotation contrast</p>
+    
+    <p>To Save:</p>
+    <p>Once done, use the following key to save the changed file. The tool will also save the original file in the same folder. In npz mode, a new npz file will be saved with a version number.</p>
+    
+    <p>s - save</p>
+</div>

@@ -7,10 +7,12 @@
     <script type="text/javascript" src="{{ url_for('static', filename='js/main_zstack.js') }}"></script>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/navigation.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/normalize.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/infopane.css') }}">
   </head>
 
   <body>
     {% include "navigation.html" %}
+    {% include "infopane.html" %}
     <canvas width=600 height=400 id="hidden_canvas"></canvas>
     <div id="container">
       <table id="maintable">
@@ -51,6 +53,7 @@
     var file = "{{filename}}"
     start_caliban(file);
   </script>
+  <script type="text/javascript" src="{{ url_for('static', filename='js/infopane.js') }}"></script>
 <!-- END CALIBAN FUNCTION CALL -->
   </body>
 </html>
