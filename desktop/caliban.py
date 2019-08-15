@@ -612,19 +612,7 @@ class ZStackReview:
         self.cell_info = {}
         
         for feature in range(self.feature_max):
-            annotated = self.annotated[:,:,:,feature]
-            self.cell_ids[feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))]
-            self.num_cells[feature] = max(self.cell_ids[feature])
-            self.cell_info[feature] = {}
-            for cell in self.cell_ids[feature]:
-                self.cell_info[feature][cell] = {}
-                self.cell_info[feature][cell]['label'] = str(cell)
-                self.cell_info[feature][cell]['frames'] = [] 
-            
-                for frame in range(self.annotated.shape[0]):
-                    if cell in annotated[frame,:,:]:
-                        self.cell_info[feature][cell]['frames'].append(frame)
-                self.cell_info[feature][cell]['slices'] = ''
+            self.create_cell_info(feature)
 
         #don't display 'frames' just 'slices' (updated on_draw)
         first_key = list(self.cell_info[0])[0]
@@ -1391,18 +1379,7 @@ class ZStackReview:
             self.annotated[current_slice,:,:,self.feature] = updated_slice
         
         #update cell_info
-        self.cell_ids[self.feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))]
-        self.num_cells[self.feature] = max(self.cell_ids[self.feature])
-        self.cell_info[self.feature] = {}
-        for cell in self.cell_ids[self.feature]:
-            self.cell_info[self.feature][cell] = {}
-            self.cell_info[self.feature][cell]['label'] = str(cell)
-            self.cell_info[self.feature][cell]['frames'] = [] 
-            
-            for frame in range(self.annotated.shape[0]):
-                if cell in annotated[frame,:,:]:
-                    self.cell_info[self.feature][cell]['frames'].append(frame)
-            self.cell_info[self.feature][cell]['slices'] = ''
+        self.create_cell_info(feature = self.feature)
         
     def action_predict_zstack(self):
         '''
@@ -1420,19 +1397,7 @@ class ZStackReview:
             self.annotated[zslice + 1,:,:,self.feature] = predicted_next
 
         #remake cell_info dict based on new annotations            
-        self.cell_ids[self.feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))]
-        self.num_cells[self.feature] = max(self.cell_ids[self.feature])
-        self.cell_info[self.feature] = {}
-        for cell in self.cell_ids[self.feature]:
-            self.cell_info[self.feature][cell] = {}
-            self.cell_info[self.feature][cell]['label'] = str(cell)
-            self.cell_info[self.feature][cell]['frames'] = [] 
-            
-            for frame in range(self.annotated.shape[0]):
-                if cell in annotated[frame,:,:]:
-                    self.cell_info[self.feature][cell]['frames'].append(frame)
-            self.cell_info[self.feature][cell]['slices'] = ''
-
+        self.create_cell_info(feature = self.feature)
                 
     def save(self):
         save_file = self.filename + "_save_version_{}.npz".format(self.save_version)
@@ -1442,6 +1407,67 @@ class ZStackReview:
             np.savez(save_file, X = self.raw, y = self.annotated)
         self.save_version += 1
 
+
+    def add_cell_info(self, feature, add_label, frame):
+        '''
+        helper function for actions that add a cell to the npz
+        '''
+        #if cell already exists elsewhere in npz:
+        try:
+            old_frames = self.cell_info[feature][add_label]['frames']
+            updated_frames = np.append(old_frames, frame)
+            updated_frames = np.unique(updated_frames).tolist()
+            self.cell_info[feature][add_label].update({'frames': updated_frames})
+        #cell does not exist anywhere in npz:
+        except KeyError:
+            self.cell_info[feature].update({add_label: {}})
+            self.cell_info[feature][add_label].update({'label': str(add_label)})
+            self.cell_info[feature][add_label].update({'frames': [frame]})
+            self.cell_info[feature][add_label].update({'slices': ''})
+            
+            self.cell_ids[feature] = np.append(self.cell_ids[feature], add_label)
+            
+            self.num_cells[feature] += 1
+
+
+    def del_cell_info(self, feature, del_label, frame):
+        '''
+        helper function for actions that remove a cell from the npz
+        '''
+        #remove cell from frame
+        old_frames = self.cell_info[feature][del_label]['frames']
+        updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame))).tolist()
+        self.cell_info[feature][del_label].update({'frames': updated_frames})
+
+        #if that was the last frame, delete the entry for that cell
+        if self.cell_info[feature][del_label]['frames'] == []:
+            del self.cell_info[feature][del_label]
+            
+            #also remove from list of cell_ids
+            ids = self.cell_ids[feature]
+            self.cell_ids[feature] = np.delete(ids, np.where(ids == np.int64(del_label)))        
+
+
+    def create_cell_info(self, feature):
+        '''
+        helper function for actions that make or remake the entire cell info dict
+        '''
+        annotated = self.annotated[:,:,:,feature]
+
+        self.cell_ids[feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))]
+        self.num_cells[feature] = max(self.cell_ids[feature])
+        self.cell_info[feature] = {}
+        for cell in self.cell_ids[feature]:
+            self.cell_info[feature][cell] = {}
+            self.cell_info[feature][cell]['label'] = str(cell)
+            self.cell_info[feature][cell]['frames'] = [] 
+            
+            for frame in range(self.annotated.shape[0]):
+                if cell in annotated[frame,:,:]:
+                    self.cell_info[feature][cell]['frames'].append(frame)
+            self.cell_info[feature][cell]['slices'] = ''
+
+
 def consecutive(data, stepsize=1):
     return np.split(data, np.where(np.diff(data) != stepsize)[0]+1)
     
@@ -1450,7 +1476,6 @@ def predict_zstack_cell_ids(img, next_img):
 
     #create np array that can hold all pairings between cells in one
     #image and cells in next image
-   
     iou = np.zeros((np.max(img)+1, np.max(next_img)+1))
     
     vals = np.unique(img)
