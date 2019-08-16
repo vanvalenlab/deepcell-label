@@ -786,7 +786,7 @@ class ZStackReview:
                 self.max_intensity[self.channel] = max(self.max_intensity[self.channel] - raw_adjust * scroll_y, 2)
                 
         else:
-            if self.num_cells[self.feature] + (self.adjustment[self.feature] - 1 * scroll_y) > 0:
+            if np.max(self.cell_ids[self.feature]) + (self.adjustment[self.feature] - 1 * scroll_y) > 0:
                 self.adjustment[self.feature] = self.adjustment[self.feature] - 1 * scroll_y
 
     def on_mouse_motion(self, x, y, dx, dy):
