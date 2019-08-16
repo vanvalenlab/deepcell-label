@@ -20,6 +20,7 @@ from werkzeug.utils import secure_filename
 import skimage.morphology
 from skimage.morphology import watershed
 from skimage.morphology import flood_fill
+from skimage.draw import circle
 from skimage.measure import regionprops
 from skimage.exposure import rescale_intensity
 
@@ -50,14 +51,17 @@ class ZStackReview:
         self.feature_max = self.annotated.shape[-1]
         self.channel = 0
         self.max_frames, self.height, self.width, self.channel_max = self.raw.shape
-        self.sidebar_width = 300
-        self.max_labels = 0
-        label_count = 0
+        #self.sidebar_width = 300
+  
         #create a dictionary that has frame information about each cell
         #analogous to .trk lineage but do not need relationships between cells included
         self.cell_ids = {}
         self.num_cells = {}
         self.cell_info = {}
+
+        self.current_frame = 0
+        self.brush_size = 1
+        self.edit_value = 1
 
         for feature in range(self.feature_max):
         
@@ -71,7 +75,7 @@ class ZStackReview:
                 self.cell_info[feature][cell] = {}
                 self.cell_info[feature][cell]['label'] = str(cell)
                 self.cell_info[feature][cell]['frames'] = []
-                label_count += 1
+           
                 
                 for frame in range(self.annotated.shape[0]):
                     if cell in annotated[frame,:,:]:
@@ -79,15 +83,9 @@ class ZStackReview:
                 self.cell_info[feature][cell]['slices'] = ''
 
 
-            if label_count > self.max_labels:
-                self.max_labels = label_count
-
-            label_count = 0
-
         #don't display 'frames' just 'slices' (updated on_draw)
         self.display_info = [*sorted(set(self.cell_info[0][1]) - {'frames'})]
 
-        self.current_frame = 0
         self.draw_raw = False
         self.max_intensity = {}
         for channel in range(self.channel_max):
@@ -98,26 +96,14 @@ class ZStackReview:
         for feature in range(self.feature_max):
             self.adjustment[feature] = 0
         self.dtype_raw = self.raw.dtype
-        self.scale_factor = 1
-        
-        self.edit_mode = False
-        self.edit_value = 1
-        self.brush_size = 1
-        self.erase = False
+        self.scale_factor = 2
 
+        self.edit_mode = False
         self.hole_fill_seed = None
         self.fill_label = None
-
         self.save_version = 0
         self.dimensions = self.raw.shape[1:3][::-1]
-
         self.color_map = self.random_colormap()
-
-        print(self.num_cells[0])
-        print(self.num_cells[1])
-        print(self.num_cells[2])
-
-
 
     def random_colormap(self):
         max_val = self.num_cells[self.feature]
@@ -189,6 +175,14 @@ class ZStackReview:
             self.action_change_feature(**info)
         elif action_type == "change_channel":
             self.action_change_channel(**info)
+        elif action_type == "edit_value":
+            self.action_edit_value(**info)
+        elif action_type == "change_edit_mode":
+            self.edit_mode = not self.edit_mode
+        elif action_type == "change_erase":
+            self.action_change_erase(**info)
+        elif action_type == "change_brush_size":
+            self.action_change_brush_size(**info)
         elif action_type == "fill_hole":
             self.action_fill_hole(**info)
         elif action_type == "new_cell_stack":
@@ -209,24 +203,101 @@ class ZStackReview:
             self.action_watershed(**info)
         elif action_type == "delete":
             self.action_delete_mask(**info)
-
+        elif action_type == "handle_draw":
+            self.action_handle_draw(**info)
         else:
             raise ValueError("Invalid action '{}'".format(action_type))
+
+    def action_handle_draw(self, x, y, frame):
+        # x -= self.sidebar_width
+        x //= max(self.scale_factor, 1)
+        y //= max(self.scale_factor, 1)
+
+        if 0 <= x < self.width and 0 <= y < self.height:
+            self.x, self.y = x, y        
+        
+        if self.edit_mode:
+            #if buttons & mouse.LEFT:
+            annotated = self.annotated[frame,:,:,self.feature]
+            
+            #self.x and self.y are different from the mouse's x and y
+            x_loc = self.x
+            y_loc = self.y
+
+            brush_area = circle(y_loc, x_loc, self.brush_size, (self.height,self.width))
+            
+            in_original = np.any(np.isin(annotated, self.edit_value))
+            in_original_all = np.any(np.isin(self.annotated[:,:,:,self.feature], self.edit_value))
+            #do not overwrite or erase labels other than the one you're editing
+            if not self.erase:
+                annotated_draw = np.where(annotated==0, self.edit_value, annotated)
+                annotated[brush_area] = annotated_draw[brush_area]
+            else:
+                annotated_erase = np.where(annotated==self.edit_value, 0, annotated)
+                annotated[brush_area] = annotated_erase[brush_area]        
+            
+            #when to add in info to cell_info dict
+
+            in_modified = np.any(np.isin(annotated, self.edit_value))
+            in_modified_all = np.any(np.isin(self.annotated[:,:,:,self.feature], self.edit_value))
+            
+            #cell deletion
+            if in_original and not in_modified:
+                old_frames = self.cell_info[self.feature][self.edit_value]['frames']
+                updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame)))
+                self.cell_info[self.feature][self.edit_value].update({'frames': updated_frames})
+                
+                if not in_modified_all:
+                    print('deleted cell from movie')
+                    del self.cell_info[self.feature][self.edit_value]
+            
+            #cell addition
+            elif in_modified and not in_original:
+                new_label = self.edit_value
+                if not in_original_all:
+                    self.cell_info[self.feature].update({new_label: {}})
+                    self.cell_info[self.feature][new_label].update({'label': str(new_label)})
+                    self.cell_info[self.feature][new_label].update({'frames': [frame]})
+                    self.cell_info[self.feature][new_label].update({'slices': ''})
+                    
+                    np.append(self.cell_ids[self.feature], new_label)
+                    
+                    self.num_cells[self.feature] += 1
+                else:
+                    old_frames = self.cell_info[self.feature][new_label]['frames']
+                    updated_frames = np.append(old_frames, frame)
+                    updated_frames = np.unique(updated_frames).tolist()
+                    self.cell_info[self.feature][new_label].update({'frames': updated_frames})
+                        
+            self.annotated[frame,:,:,self.feature] = annotated
+
 
     def action_save_zstack(self):
         save_file = self.filename + "_save_version_{}.npz".format(self.save_version)
         np.savez(save_file, raw = self.raw, annotated = self.annotated)
         s3.upload_file(save_file, S3_BUCKET, save_file)
-        
 
     def action_change_feature(self, feature):
         self.feature = feature
         self.color_map = self.random_colormap()
-  
 
     def action_change_channel(self, channel):
         self.channel = channel
         self.color_map = self.random_colormap()
+
+    def action_change_erase(self, erase):
+        # Flask application can only send over literals of base 10; not true/false
+        if (erase == 1):
+            self.erase = True
+        else:
+            self.erase = False
+        
+
+    def action_edit_value(self, edit_value):
+        self.edit_value = edit_value
+
+    def action_change_brush_size(self, brush_size):
+        self.brush_size = brush_size
 
 
     def action_fill_hole(self, label, frame, x_location, y_location):
@@ -236,7 +307,7 @@ class ZStackReview:
         if label != 0:
             self.fill_label = label
         else:
-            self.hole_fill_seed = (int(y_location / 2), int(x_location / 2))
+            self.hole_fill_seed = (int(y_location / self.scale_factor), int(x_location / self.scale_factor))
    
         if self.hole_fill_seed is not None:
             if label == 0:
@@ -246,12 +317,8 @@ class ZStackReview:
                 self.fill_label = None
                 self.hold_fill_seed = None
 
-
-
     def action_new_cell_stack(self, label, frame):
 
-        print(self.cell_info)
-        sys.stdout.flush()
         """
         Creates new cell label and replaces original label with it in all subsequent frames
         """
@@ -347,13 +414,13 @@ class ZStackReview:
         self.cell_info[self.feature][label_1].update({'frames': cell_info_2['frames']})
         self.cell_info[self.feature][label_2].update({'frames': cell_info_1['frames']})
 
-    def action_predict_single(self):
+    def action_predict_single(self, frame):
         '''
         predicts zstack relationship for current frame based on previous frame
         useful for finetuning corrections one frame at a time
         '''
         annotated = self.annotated[:,:,:,self.feature]
-        current_slice = self.current_frame
+        current_slice = frame
         if current_slice > 0:
             prev_slice = current_slice - 1
             img = self.annotated[prev_slice,:,:,self.feature]
@@ -430,8 +497,8 @@ class ZStackReview:
         # define a new seeds labeled img that is the same size as raw/annotaiton imgs
         seeds_labeled = np.zeros(img_ann.shape)
         # create two seed locations
-        seeds_labeled[int(y1_location/2), int(x1_location/2)]=current_label
-        seeds_labeled[int(y2_location/2), int(x2_location/2)]=new_label
+        seeds_labeled[int(y1_location / self.scale_factor), int(x1_location / self.scale_factor)]=current_label
+        seeds_labeled[int(y2_location / self.scale_factor), int(x2_location / self.scale_factor)]=new_label
 
         # define the bounding box to apply the transform on and select appropriate sections of 3 inputs (raw, seeds, annotation mask)
         props = regionprops(np.squeeze(np.int32(img_ann == current_label)))
@@ -457,7 +524,6 @@ class ZStackReview:
         
         #update cell_info dict
         self.cell_info[self.feature].update({new_label: {}})
-
         self.cell_info[self.feature][new_label].update({'label': str(new_label)})
         self.cell_info[self.feature][new_label].update({'frames': [frame]})
         self.cell_info[self.feature][new_label].update({'slices': ''})
@@ -572,13 +638,11 @@ class TrackReview:
     def load(self, filename):
         global original_filename
         original_filename = filename
- 
         s3 = boto3.client('s3')
         response = s3.get_object(Bucket="caliban-input", Key=filename)
         return load_trks(response['Body'].read())
 
     def action(self, action_type, info):
-
         if action_type == "set_parent":
             self.action_set_parent(**info)
         elif action_type == "replace":

@@ -23,16 +23,14 @@
                 <td>frame: </td><td id="frame"></td>
                 <tr><td>channel: </td><td id="channel"></td></tr>
                 <tr><td>feature: </td><td id="feature"></td></tr>
+                <tr><td>edit mode: </td><td id="edit_mode"></td><tr>
+                <tr><td id="edit_brush"></td><tr>
+                <tr><td id="edit_label"></td><tr>
+                <tr><td id="edit_erase"></td><tr>
 
               </tr>
-              
-                <td>edit mode: </td><td id="edit_mode"></td>
-                <td id="edit_content"></td>
-
               <h1>Z-Stack Tool</h1>
             </p>Filename: {{filename}}</p>
-
-              
               <tr><td>label:</td><td id="label"></td></tr>
               <tr><td>slices:</td><td><div id="slices"></div></td></tr>
               <tr><td>state:</td><td id="mode"></td></tr>
@@ -40,12 +38,14 @@
               <form class='changed-form' action="/" method="POST" enctype="multipart/form-data">
                 <label class="changed-label" for="user_file"></label>
                 <button type="submit">Submit</button>
-          
               </form>
             </table>
           </td>
           <td id="canvascol">
             <canvas width=600 height=400 id="canvas"></canvas>
+            <input type="button" value="draw" onclick="use_tool('draw');" />
+            <input type="button" value="erase" onclick="use_tool('erase');" />
+            <div id="output"></div>
           </td>
         </tr>
       </table>

@@ -49,7 +49,6 @@ class Mode {
 
         action("change_highlighted_cells", this.highlighted_cells);
       }
-
     }
     if (this.kind == Modes.multiple) {
       if (key === "r") {
@@ -76,7 +75,6 @@ class Mode {
         this.update_highlighted_cells(-1, 1)
         this.highlighted_cells = {"cell_one": this.highlighted_cell_one, 
                                   "cell_two": this.highlighted_cell_two};
-
         action("change_highlighted_cells", this.highlighted_cells);
       }
 
@@ -84,7 +82,6 @@ class Mode {
         this.update_highlighted_cells(1, -1)
         this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
                                   "cell_two": this.highlighted_cell_two};
-
         action("change_highlighted_cells", this.highlighted_cells);
       }
     }
@@ -107,10 +104,8 @@ class Mode {
         }
       }  
     } 
-
     if (this.kind === Modes.single) {
       this.info.label = this.highlighted_cell_one;
-      console.log(this.info.label)
     } else if (this.kind === Modes.multiple) {
       this.info.label_1 = this.highlighted_cell_one;
       this.info.label_2 = this.highlighted_cell_two;

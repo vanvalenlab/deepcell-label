@@ -6,8 +6,7 @@ class Mode {
     this.channel = 0;
     this.action = "";
     this.prompt = "";
-    this.edit_mode = false;
-    this.erase = false;
+
   }
 
   clear() {
@@ -18,17 +17,32 @@ class Mode {
   }
 
   handle_key(key) {
-    if (this.edit_mode == true) {
+    if (edit_mode) {
       if (key === "=") {
         edit_value += 1;
+        this.info = {"edit_value": edit_value};
+        action("edit_value", this.info);
+        this.clear();
       } else if (key === "-") {
-        Math.max(edit_value - 1, 1);
+        edit_value = Math.max(edit_value - 1, 1);
+        this.info = {"edit_value": edit_value};
+        action("edit_value", this.info);
+        this.clear();
       } else if (key === "x") {
-        erase = !erase;
-      } else if (key === ".") {
-        Math.max(brush_size - 1, 1);
+        erase = -(erase);
+
+        action("change_erase", {"erase": erase});
+        this.clear();
       } else if (key === ",") {
-        Math.min(self.brush_size + 1, dimensions[0], dimensions[1]);
+        brush_size = Math.max(brush_size - 1, 1);
+        this.info = {"brush_size": brush_size};
+        action("change_brush_size", this.info);
+        this.clear();
+      } else if (key === ".") {
+        brush_size = Math.min(self.brush_size + 1, dimensions[0], dimensions[1]);
+        this.info = {"brush_size": brush_size};
+        action("change_brush_size", this.info);
+        this.clear();
       }
 
     }
@@ -49,12 +63,16 @@ class Mode {
         this.prompt = "Predict cell ids for zstack? / S=PREDICT THIS FRAME / SPACE=PREDICT ALL FRAMES / ESC=CANCEL PREDICTION";
 
       } else if (key === "e") {
-        this.edit_mode = !this.edit_mode;
+        rendering_edit = !rendering_edit;
+        edit_mode = !edit_mode
         brush_size = 1;
-        erase = !erase;
         edit_value = 1;
-
-
+        erase = -1
+        action("change_edit_mode", {});
+        action("change_brush_size", {"brush_size": brush_size});
+        action("edit_value", {"edit_value": edit_value});
+        action("change_erase", {"erase": erase});
+        this.clear();
       }
     } else if (this.kind == Modes.single) {
       if (key === "f") {
@@ -62,13 +80,12 @@ class Mode {
                       "frame": current_frame,
                       "x_location": mouse_x,
                       "y_location": mouse_y };
-
         this.kind = Modes.question;
         this.action = "fill_hole";
         action("fill_hole", this.info);
 
-        if (current_label =! 0) {
-          this.prompt = "select hole to fill in";
+        if (current_label != 0) {
+          this.prompt = "Select hole to fill in cell " + current_label;
         } 
       } else if (key === "c") {
         this.kind = Modes.question;
@@ -77,7 +94,7 @@ class Mode {
       } else if (key === "x") {
         this.kind = Modes.question;
         this.action = "delete";
-        this.prompt = "delete label in frame?";
+        this.prompt = "delete label " + this.info.label + " in frame " + this.info.frame + "? " + answer;
       }
     } else if (this.kind == Modes.multiple) {
       if (key === "s") {
@@ -87,11 +104,11 @@ class Mode {
       } else if (key === "r") {
         this.kind = Modes.question;
         this.action = "replace";
-        this.prompt = "replace?";
+        this.prompt = "Replace " + this.info.label_2 + " with " + this.info.label_1 + "? " + answer;
       } else if (key === "w" ) {
         this.kind = Modes.question;
         this.action = "watershed";
-        this.prompt = "watershed?";
+        this.prompt = "Perform watershed to split " + this.info.label_1 + "? " + answer;
       }
     } else if (this.kind == Modes.question) {
       if (key === " ") {
@@ -127,6 +144,13 @@ class Mode {
         }
       }
     }
+  }
+
+  handle_draw(mouse_x, mouse_y) {
+    action("handle_draw", { "x": mouse_x, 
+                  "y": mouse_y,
+                  "frame": current_frame});
+    this.clear()
   }
 
   change_feature(){
@@ -228,7 +252,11 @@ var mouse_y = 0;
 var edit_mode = false;
 var edit_value = undefined;
 var brush_size = undefined;
-var erase = false;
+var erase = undefined;
+var answer = "(SPACE=YES / ESC=NO)";
+var last_mousex = last_mousey = 0;
+var mousedown = false;
+var tooltype = 'draw';
 
 function contrast_image(img, contrast) {
   let d = img.data;
@@ -264,12 +292,24 @@ function render_log() {
 
   if (edit_mode == true) {
     $('#edit_mode').html("ON");
-    
+    $('#edit_brush').text("brush size: " + brush_size);
+    $('#edit_label').text("editing label: " + edit_value);
+
+    if (erase == 1) {
+      $('#edit_erase').text("eraser mode: ON");
+    } else {
+      $('#edit_erase').text("eraser mode: OFF");
+    }
+
   } else {
     $('#edit_mode').html("OFF");
+    $('#edit_brush').text("");
+    $('#edit_label').text("");
+    $('#edit_erase').text("");
   }
 
   if (current_label !== 0) {
+    console.log(current_label.toString());
     let track = tracks[mode.feature][current_label.toString()];
     $('#slices').text(track.slices.toString());
   } else {
@@ -282,7 +322,6 @@ function render_frame() {
   let ctx = $('#hidden_canvas').get(0).getContext("2d");
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
-
   ctx = $('#canvas').get(0).getContext("2d");
   ctx.imageSmoothingEnabled = false;
   if (rendering_raw) {
@@ -293,12 +332,10 @@ function render_frame() {
   } else if (rendering_edit) {
     // add opacity
     ctx.drawImage(edit_image, 0, 0, dimensions[0], dimensions[1]);
-    ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
-
+    //ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
   } else {
     ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
   }
-
   render_log();
 }
 
@@ -324,7 +361,6 @@ function fetch_and_render_frame() {
       raw_image.onload = render_frame;
       edit_image.src = payload.edit_background;
       edit_image.onload = render_frame;
-
     },
     async: true
   });
@@ -340,10 +376,8 @@ function load_file(file) {
       channel_max = payload.channel_max;
       dimensions = [2 * payload.dimensions[0], 2 * payload.dimensions[1]];
       tracks = payload.tracks;
-
       $('#canvas').get(0).width = dimensions[0];
       $('#canvas').get(0).height = dimensions[1];
-
       $('#hidden_canvas').get(0).width = dimensions[0];
       $('#hidden_canvas').get(0).height = dimensions[1];
     },
@@ -375,9 +409,48 @@ function prepare_canvas() {
     mouse_y = evt.offsetY;
     render_log();
   });
+  $('#canvas').mousedown(function(evt) {
+    last_mousex = mouse_x 
+    last_mousey = mouse_y
+    mousedown = true;
+  });
+  $('#canvas').mouseup(function(evt) {
+    mousedown = false;
+  });
+  $('#canvas').mousemove(function(evt) {
+
+    let canvas = document.getElementById('canvas');
+    let ctx = canvas.getContext('2d');
+
+    mousex = evt.offsetX;
+    mousey = evt.offsetY;
+    if (mousedown) {
+
+        mode.handle_draw(mousex, mousey);
+
+        ctx.beginPath();
+        if (tooltype == 'draw') {
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = edit_brush;
+        } else {
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.lineWidth = edit_brush;
+        }
+        ctx.moveTo(last_mousex,last_mousey);
+        ctx.lineTo(mousex,mousey);
+        ctx.lineJoin = ctx.lineCap = 'round';
+        ctx.stroke();
+    }
+    last_mousex = mousex;
+    last_mousey = mousey;
+  });
+
+  use_tool = function(tool) {
+    tooltype = tool; //update the tool
+  }
 
   window.addEventListener('keydown', function(evt) {
-
     if (evt.key === 'z') {
       rendering_raw = !rendering_raw;
       render_frame();
@@ -398,13 +471,11 @@ function prepare_canvas() {
       render_log();
     } else {
       console.log(evt.key);
-      if (evt.key === "e") {
-        edit_mode = !edit_mode;
-        rendering_edit = !rendering_edit;
-      }
       mode.handle_key(evt.key);
     }
   }, false);
+
+
 }
 
 function reload_tracks() {
