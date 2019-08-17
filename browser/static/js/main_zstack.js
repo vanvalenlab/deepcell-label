@@ -306,6 +306,7 @@ function render_log() {
     $('#edit_brush').text("");
     $('#edit_label').text("");
     $('#edit_erase').text("");
+    
   }
 
   if (current_label !== 0) {
@@ -332,7 +333,7 @@ function render_frame() {
   } else if (rendering_edit) {
     // add opacity
     ctx.drawImage(edit_image, 0, 0, dimensions[0], dimensions[1]);
-    //ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
+    ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
   } else {
     ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
   }

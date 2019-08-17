@@ -28,11 +28,6 @@ S3_KEY =''
 S3_SECRET =''
 S3_BUCKET = 'caliban-output'
 
-# ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'trk'])
-
-# def allowed_file(name):
-#     return "." in name and name.split(".")[1].lower() in ALLOWED_EXTENSIONS
-
 # Connect to the s3 service
 s3 = boto3.client(
     "s3",
@@ -291,14 +286,12 @@ class ZStackReview:
             self.erase = True
         else:
             self.erase = False
-        
 
     def action_edit_value(self, edit_value):
         self.edit_value = edit_value
 
     def action_change_brush_size(self, brush_size):
         self.brush_size = brush_size
-
 
     def action_fill_hole(self, label, frame, x_location, y_location):
         '''

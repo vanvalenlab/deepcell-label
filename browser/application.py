@@ -118,6 +118,7 @@ def load(filename):
 def form():
     return render_template('form.html')
 
+# Brings users to the first homepage, where they can input the filename
 @application.route('/tool', methods=['GET', 'POST'])
 def tool():
 
@@ -132,8 +133,21 @@ def tool():
     if "." in filename and filename.split(".")[1].lower() in ZSTACK_EXTENSIONS:
         return render_template('index_zstack.html', filename=filename)
 
-    # error_message = "ERROR: {} does not exist in our database. Please try again.".format(filename)
-    # return render_template('form.html', error=error_message)
+    return "error"
+
+# Directly brings users to the tool page by typing url/filename
+@application.route('/<file>', methods=['GET', 'POST'])
+def shortcut(file):
+
+    global filename
+
+    filename = file
+    print(f"{filename} is filename", file=sys.stderr)
+
+    if "." in filename and filename.split(".")[1].lower() in TRACK_EXTENSIONS:
+        return render_template('index_track.html', filename=filename)
+    if "." in filename and filename.split(".")[1].lower() in ZSTACK_EXTENSIONS:
+        return render_template('index_zstack.html', filename=filename)
 
     return "error"
 
