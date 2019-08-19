@@ -153,6 +153,14 @@ class TrackReview:
                 self.mode = Mode.none()
                 self.highlighted_cell_one = -1
                 self.highlighted_cell_two = -1
+        elif self.mode.kind == "PROMPT" and self.mode.action == "FILL HOLE":
+                frame = self.tracked[self.current_frame]
+                label = int(frame[self.y, self.x])
+                if label == 0:
+                    self.hole_fill_seed = (self.y, self.x)
+                if self.hole_fill_seed is not None:
+                    self.action_fill_hole()
+                    self.mode = Mode.none()
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self.draw_raw:
@@ -207,6 +215,11 @@ class TrackReview:
             if self.mode.kind == "SELECTED":
                 self.mode = Mode("QUESTION",
                                  action="NEW TRACK", **self.mode.info)
+
+        if symbol == key.F:
+            if self.mode.kind == "SELECTED":
+                self.mode = Mode("PROMPT",
+                                action="FILL HOLE", **self.mode.info)
         if symbol == key.X:
             if self.mode.kind == "SELECTED":
                 self.mode = Mode("QUESTION",
@@ -533,6 +546,15 @@ class TrackReview:
             track_1["daughters"].remove(label_2)
         except ValueError:
             pass
+
+    def action_fill_hole(self):
+        '''
+        fill a "hole" in a cell annotation with the cell label
+        '''
+        img_ann = self.tracked[self.current_frame,:,:,0]
+        
+        filled_img_ann = flood_fill(img_ann, self.hole_fill_seed, self.mode.label, connectivity = 1)
+        self.tracked[self.current_frame,:,:,0] = filled_img_ann
 
     def action_delete(self):
         """
