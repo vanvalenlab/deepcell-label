@@ -242,6 +242,9 @@ class TrackReview:
             elif self.mode.kind == "QUESTION" and self.mode.action == "SWAP":
                 self.action_single_swap()
                 self.mode = Mode.none()
+            elif self.mode.kind == "QUESTION" and self.mode.action == "NEW TRACK":
+                self.action_new_single_cell()
+                self.mode = Mode.none()
             elif self.mode.kind is None:
                 self.mode = Mode("QUESTION",
                                  action="SAVE")
@@ -413,6 +416,21 @@ class TrackReview:
         track_old["daughters"] = []
         track_old["frame_div"] = None
         track_old["capped"] = True
+
+    def action_new_single_cell(self):
+        """
+        Create new label in just one frame
+        """
+        old_label, single_frame = self.mode.label, self.mode.frame
+        new_label = self.num_tracks + 1
+
+        # replace frame labels
+        frame = self.tracked[single_frame]
+        frame[frame == old_label] = new_label
+
+        # replace fields
+        self.del_cell_info(del_label = old_label, frame = single_frame)
+        self.add_cell_info(add_label = new_label, frame = single_frame)
 
 
     def action_watershed(self):

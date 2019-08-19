@@ -66,7 +66,8 @@ class Mode:
             elif self.action == "PARENT":
                 return ("\nmake {} a daughter of {}?\n {}".format(self.label_2, self.label_1, answer))
             elif self.action == "NEW TRACK":
-                return ("\ncreate new track from {} on frame {}?\n {}".format(self.label, self.frame, answer) + "\n {}".format(answer))
+                return ("\ncreate new track from {} on frame {}?".format(self.label, self.frame) + 
+                    "\n {}".format("(S=SINGLE FRAME / SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)"))
             elif self.action == "CREATE NEW":
                 return ("".format(self.label, self.frame)
                         + "\n {}".format("(S=SINGLE FRAME / SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)"))
