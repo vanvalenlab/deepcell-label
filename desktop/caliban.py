@@ -596,6 +596,8 @@ class ZStackReview:
         self.raw = raw
         self.annotated = annotated
         self.save_vars_mode = save_vars_mode
+
+        self.lineage = {}
         
         self.feature = 0
         self.feature_max = self.annotated.shape[-1]
@@ -879,11 +881,11 @@ class ZStackReview:
             if self.mode.kind == "SELECTED":
                 self.mode = Mode("PROMPT",
                                 action="FILL HOLE", **self.mode.info)
-                                
+
         if symbol == key.S:
             if self.mode.kind is None:
                 self.mode = Mode("QUESTION",
-                                 action="SAVE")
+                                 action="SAVE", filetype = 'npz')
             elif self.mode.kind == "QUESTION" and self.mode.action == "CREATE NEW":
                 self.action_new_single_cell()
                 self.mode = Mode.none()
@@ -896,6 +898,11 @@ class ZStackReview:
             elif self.mode.kind == "QUESTION" and self.mode.action == "SWAP":
                 self.action_swap_single_frame()
                 self.mode = Mode.none()
+
+        if symbol == key.T:
+            if self.mode.kind == "QUESTION":
+                if self.mode.action == "SAVE":
+                    self.save_as_trk()
                 
         if symbol == key.P:
             if self.mode.kind is None:
@@ -1378,6 +1385,51 @@ class ZStackReview:
                 if cell in annotated[frame,:,:]:
                     self.cell_info[feature][cell]['frames'].append(frame)
             self.cell_info[feature][cell]['slices'] = ''
+
+    def create_lineage(self):
+        for cell in self.cell_ids[self.feature]:
+            self.lineage[str(cell)] = {}
+            cell_info = self.lineage[str(cell)]
+
+            cell_info["label"] = int(cell)
+            cell_info["daughters"] = []
+            cell_info["frame_div"] = None
+            cell_info["parent"] = None
+            cell_info["capped"] = False
+            cell_info["frames"] = self.cell_info[self.feature][cell]['frames']
+
+
+    def save_as_trk(self):
+        '''
+        Take whatever feature and channel are currently selected,
+        create a lineage, and bundle raw, annotated, lineage into trk file
+        '''
+
+        self.create_lineage()
+
+        filename = self.filename + "_c{}_f{}".format(self.channel, self.feature)
+
+        #make sure the image sizes match with what trk opener expects
+        trk_raw = np.zeros((self.num_frames, self.height, self.width,1), dtype = self.raw.dtype)
+        trk_raw[:,:,:,0] = self.raw[:,:,:,self.channel]
+        trk_ann = np.zeros((self.num_frames, self.height, self.width,1), dtype = self.annotated.dtype)
+        trk_ann[:,:,:,0] = self.annotated[:,:,:,self.feature]
+
+        with tarfile.open(filename + ".trk", "w") as trks:
+            with tempfile.NamedTemporaryFile("w") as lineage_file:
+                json.dump(self.lineage, lineage_file, indent=1)
+                lineage_file.flush()
+                trks.add(lineage_file.name, "lineage.json")
+
+            with tempfile.NamedTemporaryFile() as raw_file:
+                np.save(raw_file, trk_raw)
+                raw_file.flush()
+                trks.add(raw_file.name, "raw.npy")
+
+            with tempfile.NamedTemporaryFile() as tracked_file:
+                np.save(tracked_file, trk_ann)
+                tracked_file.flush()
+                trks.add(tracked_file.name, "tracked.npy")
 
 
 def consecutive(data, stepsize=1):

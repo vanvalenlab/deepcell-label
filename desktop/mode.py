@@ -43,13 +43,21 @@ class Mode:
             return ''
         answer = "(SPACE=YES / ESC=NO)"
 
+        try:
+            filetype = self.info['filetype']
+        except KeyError:
+            filetype = ""
+
         if self.kind == "SELECTED":
             return "\nSELECTED {}".format(self.label)
         elif self.kind == "MULTIPLE":
             return "\nSELECTED {}, {}".format(self.label_1, self.label_2)
         elif self.kind == "QUESTION":
             if self.action == "SAVE":
-                return ("\nsave current movie?\n {}".format(answer))
+                if filetype == "npz":
+                    return ("\nSave current movie?\nSPACE=SAVE\nT=SAVE AS .TRK FILE\nESC=CANCEL")
+                else:
+                    return ("\nSave current movie?\nSPACE=SAVE\nESC=CANCEL")
             elif self.action == "REPLACE":
                 return ("\nreplace {} with {}?\n {}".format(self.label_2, self.label_1, answer))
             elif self.action == "SWAP":
