@@ -517,7 +517,12 @@ class TrackReview:
         track_1 = self.tracks[label_1]
         track_2 = self.tracks[label_2]
 
-        track_1["daughters"].append(label_2)
+        #add daughter but don't duplicate entry
+        daughters = track_1["daughters"].copy()
+        daughters.append(label_2)
+        daughters = np.unique(daughters).tolist()
+        track_1["daughters"] = daughters
+
         track_2["parent"] = label_1
         track_1["frame_div"] = frame_div
 
