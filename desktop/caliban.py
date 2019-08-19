@@ -207,6 +207,9 @@ class TrackReview:
             self.current_frame = min(self.current_frame + offset, self.num_frames - 1)
         elif symbol == key.Z:
             self.draw_raw = not self.draw_raw
+        elif symbol == key.H:
+            self.highlight = not self.highlight
+
         else:
             self.mode_handle(symbol)
 
@@ -246,9 +249,6 @@ class TrackReview:
             if self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
                                  action="WATERSHED", **self.mode.info)
-        #no prompt needed to toggle highlight mode
-        if symbol == key.H:
-            self.highlight = not self.highlight
         #cycle through highlighted cells
         if symbol == key.EQUAL:
             if self.mode.kind == "SELECTED":
