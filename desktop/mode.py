@@ -72,7 +72,7 @@ class Mode:
                 return ("".format(self.label, self.frame)
                         + "\n {}".format("(S=SINGLE FRAME / SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)"))
             elif self.action == "DELETE":
-                return ('Delete label {} in frame {}?\n{}'.format(self.label, self.frame,
+                return ('\nDelete label {} in frame {}?\n{}'.format(self.label, self.frame,
                 "SPACE = CONFIRM DELETION\nESC = CANCEL DELETION"))
             elif self.action == "WATERSHED":
                 return ("\nperform watershed to split {}?\n{}".format(self.label_1, answer))
