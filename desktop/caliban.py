@@ -419,7 +419,6 @@ class TrackReview:
         # Pull the label that is being split and find a new valid label
         current_label = self.mode.label_1
         new_label = self.num_tracks + 1
-        self.num_tracks += 1
 
         # Locally store the frames to work on
         img_raw = self.raw[self.current_frame]
@@ -455,13 +454,7 @@ class TrackReview:
         self.tracked[self.current_frame] = img_ann
 
         # current label doesn't change, but add the neccesary bookkeeping for the new track
-        track_new = self.tracks[new_label] = {}
-        track_new["label"] = new_label
-        track_new["frames"] = [self.current_frame]
-        track_new["parent"] = None
-        track_new["daughters"] = []
-        track_new["frame_div"] = None
-        track_new["capped"] = False
+        self.add_cell_info(add_label = new_label, frame = self.current_frame)
 
 
     def action_swap(self):
@@ -562,26 +555,57 @@ class TrackReview:
         """
         selected_label, current_frame = self.mode.label, self.mode.frame
         
-        # Set selected label to 0 in current frames
+        # Set selected label to 0 in current frame
         ann_img = self.tracked[current_frame]
         ann_img = np.where(ann_img == selected_label, 0, ann_img)
         self.tracked[current_frame] = ann_img
 
-        # Removes current frame from list of frames cell appears in
-        selected_track = self.tracks[selected_label]
-        selected_track["frames"].remove(current_frame)
+        self.del_cell_info(del_label = selected_label, frame = current_frame)
 
-        # Deletes lineage data if current frame is only frame cell appears in
-        if selected_track["frames"] == []:
-            del self.tracks[selected_label] 
+    def add_cell_info(self, add_label, frame):
+        '''
+        helper function for actions that add a cell to the trk
+        '''
+        #if cell already exists elsewhere in trk:
+        try:
+            old_frames = self.tracks[add_label]['frames']
+            updated_frames = np.append(old_frames, frame)
+            updated_frames = np.unique(updated_frames).tolist()
+            self.tracks[add_label].update({'frames': updated_frames})
+        #cell does not exist anywhere in trk:
+        except KeyError:
+            self.tracks.update({add_label: {}})
+            self.tracks[add_label].update({'label': int(add_label)})
+            self.tracks[add_label].update({'frames': [frame]})
+            self.tracks[add_label].update({'daughters': []})
+            self.tracks[add_label].update({'frame_div': None})
+            self.tracks[add_label].update({'parent': None})
+            self.tracks[add_label].update({'capped': False})
+            
+            self.num_tracks += 1
+
+    def del_cell_info(self, del_label, frame):
+        '''
+        helper function for actions that remove a cell from the trk
+        '''
+        #remove cell from frame
+        old_frames = self.tracks[del_label]['frames']
+        updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame))).tolist()
+        self.tracks[del_label].update({'frames': updated_frames})
+
+        #if that was the last frame, delete the entry for that cell
+        if self.tracks[del_label]['frames'] == []:
+            del self.tracks[del_label]
+
             # If deleting lineage data, remove parent/daughter entries
             for _, track in self.tracks.items():
                 try:
-                    track["daughters"].remove(selected_label)
+                    track["daughters"].remove(del_label)
                 except ValueError:
                     pass
-                if track["parent"] == selected_label:
+                if track["parent"] == del_label:
                     track["parent"] = None
+
                     
     def save(self):
         backup_file = self.filename + "_original.trk"
