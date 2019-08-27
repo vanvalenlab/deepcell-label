@@ -176,31 +176,43 @@ class TrackReview:
                         self.mode = Mode.none()
 
         elif self.edit_mode:
-            annotated = self.tracked[self.current_frame]
+            if self.mode.kind is None:
+                annotated = self.tracked[self.current_frame]
 
-            brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
+                brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
 
-            in_original = np.any(np.isin(annotated, self.edit_value))
+                in_original = np.any(np.isin(annotated, self.edit_value))
 
-            #do not overwrite or erase labels other than the one you're editing
-            if not self.erase:
-                annotated_draw = np.where(annotated==0, self.edit_value, annotated)
-                annotated[brush_area] = annotated_draw[brush_area]
-            else:
-                annotated_erase = np.where(annotated==self.edit_value, 0, annotated)
-                annotated[brush_area] = annotated_erase[brush_area]
-            
-            in_modified = np.any(np.isin(annotated, self.edit_value))
+                #do not overwrite or erase labels other than the one you're editing
+                if not self.erase:
+                    annotated_draw = np.where(annotated==0, self.edit_value, annotated)
+                    annotated[brush_area] = annotated_draw[brush_area]
+                else:
+                    annotated_erase = np.where(annotated==self.edit_value, 0, annotated)
+                    annotated[brush_area] = annotated_erase[brush_area]
+                
+                in_modified = np.any(np.isin(annotated, self.edit_value))
 
-            #cell deletion
-            if in_original and not in_modified:
-                self.del_cell_info(del_label = self.edit_value, frame = self.current_frame)
+                #cell deletion
+                if in_original and not in_modified:
+                    self.del_cell_info(del_label = self.edit_value, frame = self.current_frame)
 
-            #cell addition
-            elif in_modified and not in_original:
-                self.add_cell_info(add_label = self.edit_value, frame = self.current_frame)
+                #cell addition
+                elif in_modified and not in_original:
+                    self.add_cell_info(add_label = self.edit_value, frame = self.current_frame)
 
-            self.tracked[self.current_frame] = annotated
+                self.tracked[self.current_frame] = annotated
+
+            elif self.mode.kind == "PROMPT" and self.mode.action == "PICK COLOR":
+                frame = self.tracked[self.current_frame]
+                label = int(frame[self.y, self.x, 0])
+                if label == 0:
+                    self.mode = Mode.none()
+                elif label != 0:
+                    self.edit_value = label
+                    self.mode = Mode.none()
+
+
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         
@@ -310,8 +322,6 @@ class TrackReview:
                 self.mode_handle(symbol)
 
         else:
-            if symbol == key.E:
-                self.edit_mode = not self.edit_mode
             if symbol == key.EQUAL:
                 self.edit_value = min(self.edit_value + 1, self.num_tracks)
             if symbol == key.MINUS:
@@ -322,6 +332,8 @@ class TrackReview:
                 self.brush_size = max(self.brush_size -1, 1)
             if symbol == key.RIGHT:
                 self.brush_size = min(self.brush_size + 1, self.height, self.width)
+            else:
+                self.mode_handle(symbol)
 
     def mode_handle(self, symbol):
 
@@ -346,6 +358,9 @@ class TrackReview:
             if self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
                                  action="PARENT", **self.mode.info)
+            elif self.mode.kind is None and self.edit_mode:
+                self.mode = Mode("PROMPT", 
+                                 action = "PICK COLOR", **self.mode.info)
         if symbol == key.R:
             if self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
@@ -360,7 +375,7 @@ class TrackReview:
             elif self.mode.kind == "QUESTION" and self.mode.action == "NEW TRACK":
                 self.action_new_single_cell()
                 self.mode = Mode.none()
-            elif self.mode.kind is None:
+            elif self.mode.kind is None and not self.edit_mode:
                 self.mode = Mode("QUESTION",
                                  action="SAVE")
         if symbol == key.W:
@@ -964,31 +979,41 @@ class ZStackReview:
                     self.mode = Mode.none()
 
         elif self.edit_mode:
-            annotated = self.annotated[self.current_frame,:,:,self.feature]
+            if self.mode.kind is None:
+                annotated = self.annotated[self.current_frame,:,:,self.feature]
 
-            brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
+                brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
 
-            in_original = np.any(np.isin(annotated, self.edit_value))
+                in_original = np.any(np.isin(annotated, self.edit_value))
 
-            #do not overwrite or erase labels other than the one you're editing
-            if not self.erase:
-                annotated_draw = np.where(annotated==0, self.edit_value, annotated)
-                annotated[brush_area] = annotated_draw[brush_area]
-            else:
-                annotated_erase = np.where(annotated==self.edit_value, 0, annotated)
-                annotated[brush_area] = annotated_erase[brush_area]
-            
-            in_modified = np.any(np.isin(annotated, self.edit_value))
+                #do not overwrite or erase labels other than the one you're editing
+                if not self.erase:
+                    annotated_draw = np.where(annotated==0, self.edit_value, annotated)
+                    annotated[brush_area] = annotated_draw[brush_area]
+                else:
+                    annotated_erase = np.where(annotated==self.edit_value, 0, annotated)
+                    annotated[brush_area] = annotated_erase[brush_area]
+                
+                in_modified = np.any(np.isin(annotated, self.edit_value))
 
-            #cell deletion
-            if in_original and not in_modified:
-                self.del_cell_info(feature = self.feature, del_label = self.edit_value, frame = self.current_frame)
+                #cell deletion
+                if in_original and not in_modified:
+                    self.del_cell_info(feature = self.feature, del_label = self.edit_value, frame = self.current_frame)
 
-            #cell addition
-            elif in_modified and not in_original:
-                self.add_cell_info(feature = self.feature, add_label = self.edit_value, frame = self.current_frame)
+                #cell addition
+                elif in_modified and not in_original:
+                    self.add_cell_info(feature = self.feature, add_label = self.edit_value, frame = self.current_frame)
 
-            self.annotated[self.current_frame,:,:,self.feature] = annotated
+                self.annotated[self.current_frame,:,:,self.feature] = annotated
+            elif self.mode.kind == "PROMPT" and self.mode.action == "PICK COLOR":
+                frame = self.annotated[self.current_frame]
+                label = int(frame[self.y, self.x, self.feature])
+                if label == 0:
+                    self.mode = Mode.none()
+                elif label != 0:
+                    self.edit_value = label
+                    self.mode = Mode.none()
+
                     
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         
@@ -1098,8 +1123,6 @@ class ZStackReview:
             else:
                 self.mode_handle(symbol)
         else:
-            if symbol == key.E:
-                self.edit_mode = not self.edit_mode
             if symbol == key.EQUAL:
                 self.edit_value += 1
             if symbol == key.MINUS:
@@ -1110,13 +1133,15 @@ class ZStackReview:
                 self.brush_size = max(self.brush_size -1, 1)
             if symbol == key.RIGHT:
                 self.brush_size = min(self.brush_size + 1, self.height, self.width)
+            else:
+                self.mode_handle(symbol)
             
 
     def mode_handle(self, symbol):
 
         if symbol == key.C:
             #cycle through channels but only if nothing is selected
-            if self.mode.kind is None:
+            if self.mode.kind is None and not self.edit_mode:
                 if self.channel + 1== self.channel_max:
                     self.channel = 0
                 else:
@@ -1132,7 +1157,7 @@ class ZStackReview:
                                 
         if symbol == key.F:
             #cycle through features but only if nothing is selected
-            if self.mode.kind is None:
+            if self.mode.kind is None and not self.edit_mode:
                 if self.feature + 1 == self.feature_max:
                     self.feature = 0
                 else:
@@ -1142,7 +1167,7 @@ class ZStackReview:
                                 action="FILL HOLE", **self.mode.info)
 
         if symbol == key.S:
-            if self.mode.kind is None:
+            if self.mode.kind is None and not self.edit_mode:
                 self.mode = Mode("QUESTION",
                                  action="SAVE", filetype = 'npz')
             elif self.mode.kind == "QUESTION" and self.mode.action == "CREATE NEW":
@@ -1164,9 +1189,11 @@ class ZStackReview:
                     self.save_as_trk()
                 
         if symbol == key.P:
-            if self.mode.kind is None:
+            if self.mode.kind is None and not self.edit_mode:
                 self.mode = Mode("QUESTION",
                                 action="PREDICT", **self.mode.info)
+            elif self.mode.kind is None and self.edit_mode:
+                self.mode = Mode("PROMPT", action = "PICK COLOR", **self.mode.info)
         
         if symbol == key.R:
             if self.mode.kind == "MULTIPLE":
