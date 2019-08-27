@@ -72,6 +72,8 @@ class TrackReview:
         self.num_tracks = max(self.tracks)
 
         self.num_frames, self.height, self.width, _ = raw.shape
+        self.dtype_raw = raw.dtype
+        
         self.window = pyglet.window.Window(resizable=True)
         self.window.set_minimum_size(self.width + self.sidebar_width, self.height + 20)
         self.window.on_draw = self.on_draw
@@ -167,7 +169,8 @@ class TrackReview:
             if self.max_intensity == None:
                 self.max_intensity = np.max(self.get_current_frame())
             else:
-                self.max_intensity = max(self.max_intensity - 2 * scroll_y, 2)
+                raw_adjust = max(int(self.max_intensity * 0.02), 1)
+                self.max_intensity = max(self.max_intensity - raw_adjust * scroll_y, 2)
         else:
             if self.num_tracks + (self.adjustment - 1 * scroll_y) > 0:
                 self.adjustment = self.adjustment - 1 * scroll_y
@@ -850,13 +853,9 @@ class ZStackReview:
                 max_val = np.max(current_frame[:,:,self.channel])
                 self.max_intensity[self.channel] = np.max(self.get_current_frame()[:,:,self.channel])
             else:
-                if self.dtype_raw == 'float32':
-                    raw_adjust = 500
-                else:
-                    raw_adjust = 2
+                raw_adjust = max(int(self.max_intensity[self.channel] * 0.02), 1)
                 self.max_intensity[self.channel] = max(self.max_intensity[self.channel] - raw_adjust * scroll_y, 2)
-                
-        else:
+        else:   
             if np.max(self.cell_ids[self.feature]) + (self.adjustment[self.feature] - 1 * scroll_y) > 0:
                 self.adjustment[self.feature] = self.adjustment[self.feature] - 1 * scroll_y
 
@@ -1136,13 +1135,14 @@ class ZStackReview:
             with tempfile.TemporaryFile() as file:
                 if self.draw_raw:
                     plt.imsave(file, frame[:,:,self.channel],
+                               vmin = 0,
                                vmax=self.max_intensity[self.channel],
                                cmap="cubehelix",
                                format="png")
                 else:
                     plt.imsave(file, frame[:,:,self.feature],
                                vmin=0,
-                               vmax= self.num_cells[self.feature] + self.adjustment[self.feature],
+                               vmax= max(1,np.max(self.cell_ids[self.feature]) + self.adjustment[self.feature]),
                                cmap=cmap,
                                format="png")
                 image = pyglet.image.load("frame.png", file)
