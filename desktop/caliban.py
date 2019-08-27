@@ -81,6 +81,8 @@ class TrackReview:
         self.window.on_mouse_motion = self.on_mouse_motion
         self.window.on_mouse_scroll = self.on_mouse_scroll
         self.window.on_mouse_press = self.on_mouse_press
+        self.window.on_mouse_drag = self.on_mouse_drag
+        self.window.on_mouse_release = self.on_mouse_release
 
         self.current_frame = 0
         self.draw_raw = False
@@ -94,6 +96,14 @@ class TrackReview:
         self.highlighted_cell_one = -1
         self.highlighted_cell_two = -1
 
+        self.hole_fill_seed = None
+
+        self.edit_mode = False
+        self.edit_value = 1
+        self.brush_size = 1
+        self.erase = False
+        self.brush_view = np.zeros(self.tracked[self.current_frame].shape)
+
         pyglet.app.run()
 
     def on_mouse_press(self, x, y, button, modifiers):
@@ -105,64 +115,140 @@ class TrackReview:
             print("Actions will not be supported.")
             return
 
-        if self.mode.kind is None:
-            frame = self.tracked[self.current_frame]
-            label = int(frame[self.y, self.x])
-            if label != 0:
-                self.mode = Mode("SELECTED",
-                                 label=label,
-                                 frame=self.current_frame,
-                                 y_location=self.y, x_location=self.x)
-                self.highlighted_cell_one = label
-                self.highlighted_cell_two = -1
-        elif self.mode.kind == "SELECTED":
-            frame = self.tracked[self.current_frame]
-            label = int(frame[self.y, self.x])
-            if label != 0:
-                self.highlighted_cell_one = self.mode.label
-                self.highlighted_cell_two = label
-                self.mode = Mode("MULTIPLE",
-                                 label_1=self.mode.label,
-                                 frame_1=self.mode.frame,
-                                 y1_location = self.mode.y_location,
-                                 x1_location = self.mode.x_location,
-                                 label_2=label,
-                                 frame_2=self.current_frame,
-                                 y2_location = self.y,
-                                 x2_location = self.x)
-            #deselect cells if click on background 
-            else:
-                self.mode = Mode.none()
-                self.highlighted_cell_one = -1
-                self.highlighted_cell_two = -1
-        #if already have two cells selected, click again to reselect the second cell
-        elif self.mode.kind == "MULTIPLE":
-            frame = self.tracked[self.current_frame]
-            label = int(frame[self.y, self.x])
-            if label != 0:
-                self.highlighted_cell_two = label
-                self.mode = Mode("MULTIPLE",
-                                 label_1=self.mode.label_1,
-                                 frame_1=self.mode.frame_1,
-                                 y1_location = self.mode.y1_location,
-                                 x1_location = self.mode.x1_location,
-                                 label_2=label,
-                                 frame_2=self.current_frame,
-                                 y2_location = self.y,
-                                 x2_location = self.x)
-            #deselect cells if click on background                 
-            else:
-                self.mode = Mode.none()
-                self.highlighted_cell_one = -1
-                self.highlighted_cell_two = -1
-        elif self.mode.kind == "PROMPT" and self.mode.action == "FILL HOLE":
+        if not self.edit_mode:
+            if self.mode.kind is None:
                 frame = self.tracked[self.current_frame]
                 label = int(frame[self.y, self.x])
-                if label == 0:
-                    self.hole_fill_seed = (self.y, self.x)
-                if self.hole_fill_seed is not None:
-                    self.action_fill_hole()
+                if label != 0:
+                    self.mode = Mode("SELECTED",
+                                     label=label,
+                                     frame=self.current_frame,
+                                     y_location=self.y, x_location=self.x)
+                    self.highlighted_cell_one = label
+                    self.highlighted_cell_two = -1
+            elif self.mode.kind == "SELECTED":
+                frame = self.tracked[self.current_frame]
+                label = int(frame[self.y, self.x])
+                if label != 0:
+                    self.highlighted_cell_one = self.mode.label
+                    self.highlighted_cell_two = label
+                    self.mode = Mode("MULTIPLE",
+                                     label_1=self.mode.label,
+                                     frame_1=self.mode.frame,
+                                     y1_location = self.mode.y_location,
+                                     x1_location = self.mode.x_location,
+                                     label_2=label,
+                                     frame_2=self.current_frame,
+                                     y2_location = self.y,
+                                     x2_location = self.x)
+                #deselect cells if click on background 
+                else:
                     self.mode = Mode.none()
+                    self.highlighted_cell_one = -1
+                    self.highlighted_cell_two = -1
+            #if already have two cells selected, click again to reselect the second cell
+            elif self.mode.kind == "MULTIPLE":
+                frame = self.tracked[self.current_frame]
+                label = int(frame[self.y, self.x])
+                if label != 0:
+                    self.highlighted_cell_two = label
+                    self.mode = Mode("MULTIPLE",
+                                     label_1=self.mode.label_1,
+                                     frame_1=self.mode.frame_1,
+                                     y1_location = self.mode.y1_location,
+                                     x1_location = self.mode.x1_location,
+                                     label_2=label,
+                                     frame_2=self.current_frame,
+                                     y2_location = self.y,
+                                     x2_location = self.x)
+                #deselect cells if click on background                 
+                else:
+                    self.mode = Mode.none()
+                    self.highlighted_cell_one = -1
+                    self.highlighted_cell_two = -1
+            elif self.mode.kind == "PROMPT" and self.mode.action == "FILL HOLE":
+                    frame = self.tracked[self.current_frame]
+                    label = int(frame[self.y, self.x])
+                    if label == 0:
+                        self.hole_fill_seed = (self.y, self.x)
+                    if self.hole_fill_seed is not None:
+                        self.action_fill_hole()
+                        self.mode = Mode.none()
+
+        elif self.edit_mode:
+            annotated = self.tracked[self.current_frame]
+
+            brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
+
+            in_original = np.any(np.isin(annotated, self.edit_value))
+
+            #do not overwrite or erase labels other than the one you're editing
+            if not self.erase:
+                annotated_draw = np.where(annotated==0, self.edit_value, annotated)
+                annotated[brush_area] = annotated_draw[brush_area]
+            else:
+                annotated_erase = np.where(annotated==self.edit_value, 0, annotated)
+                annotated[brush_area] = annotated_erase[brush_area]
+            
+            in_modified = np.any(np.isin(annotated, self.edit_value))
+
+            #cell deletion
+            if in_original and not in_modified:
+                self.del_cell_info(del_label = self.edit_value, frame = self.current_frame)
+
+            #cell addition
+            elif in_modified and not in_original:
+                self.add_cell_info(add_label = self.edit_value, frame = self.current_frame)
+
+            self.tracked[self.current_frame] = annotated
+
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        
+        x -= self.sidebar_width
+        x //= max(self.scale_factor, 1)
+        y = self.height - y // max(self.scale_factor, 1)
+
+        if 0 <= x < self.width and 0 <= y < self.height:
+            self.x, self.y = x, y        
+        
+        if self.edit_mode:
+            annotated = self.tracked[self.current_frame]
+            
+            #self.x and self.y are different from the mouse's x and y
+            x_loc = self.x
+            y_loc = self.y
+
+            brush_area = circle(y_loc, x_loc, self.brush_size, (self.height,self.width))
+            
+            #show where brush has drawn this time
+            self.brush_view[brush_area] = self.edit_value
+            
+            in_original = np.any(np.isin(annotated, self.edit_value))
+
+            #do not overwrite or erase labels other than the one you're editing
+            if not self.erase:
+                annotated_draw = np.where(annotated==0, self.edit_value, annotated)
+                annotated[brush_area] = annotated_draw[brush_area]
+            else:
+                annotated_erase = np.where(annotated==self.edit_value, 0, annotated)
+                annotated[brush_area] = annotated_erase[brush_area]        
+            
+            in_modified = np.any(np.isin(annotated, self.edit_value))
+
+            #cell deletion
+            if in_original and not in_modified:
+                self.del_cell_info(del_label = self.edit_value, frame = self.current_frame)
+            
+            #cell addition
+            elif in_modified and not in_original:
+                self.add_cell_info(add_label = self.edit_value, frame = self.current_frame)
+                        
+            self.tracked[self.current_frame] = annotated        
+
+    def on_mouse_release(self, x, y, buttons, modifiers):
+        if self.edit_mode:
+            self.brush_view = np.zeros(self.tracked[self.current_frame].shape)
+
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self.draw_raw:
@@ -183,6 +269,12 @@ class TrackReview:
         if 0 <= x < self.width and 0 <= y < self.height:
             self.x, self.y = x, y
 
+        if self.edit_mode:
+            #display brush size
+            self.brush_view = np.zeros(self.tracked[self.current_frame].shape)
+            brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
+            self.brush_view[brush_area] = self.edit_value
+
     def on_draw(self):
         self.window.clear()
         self.scale_screen()
@@ -200,23 +292,43 @@ class TrackReview:
     def on_key_press(self, symbol, modifiers):
         # Set scroll speed (through sequential frames) with offset
         offset = 5 if modifiers & key.MOD_SHIFT else 1
-        if symbol == key.ESCAPE:
-            self.mode = Mode.none()
-            self.highlighted_cell_one = -1
-            self.highlighted_cell_two = -1
-        elif symbol in {key.LEFT, key.A}:
-            self.current_frame = max(self.current_frame - offset, 0)
-        elif symbol in {key.RIGHT, key.D}:
-            self.current_frame = min(self.current_frame + offset, self.num_frames - 1)
-        elif symbol == key.Z:
-            self.draw_raw = not self.draw_raw
-        elif symbol == key.H:
-            self.highlight = not self.highlight
+        if not self.edit_mode:
+            if symbol == key.ESCAPE:
+                self.mode = Mode.none()
+                self.highlighted_cell_one = -1
+                self.highlighted_cell_two = -1
+            elif symbol in {key.LEFT, key.A}:
+                self.current_frame = max(self.current_frame - offset, 0)
+            elif symbol in {key.RIGHT, key.D}:
+                self.current_frame = min(self.current_frame + offset, self.num_frames - 1)
+            elif symbol == key.Z:
+                self.draw_raw = not self.draw_raw
+            elif symbol == key.H:
+                self.highlight = not self.highlight
+
+            else:
+                self.mode_handle(symbol)
 
         else:
-            self.mode_handle(symbol)
+            if symbol == key.E:
+                self.edit_mode = not self.edit_mode
+            if symbol == key.EQUAL:
+                self.edit_value = min(self.edit_value + 1, self.num_tracks)
+            if symbol == key.MINUS:
+                self.edit_value = max(self.edit_value - 1, 1)
+            if symbol == key.X:
+                self.erase = not self.erase
+            if symbol == key.LEFT:
+                self.brush_size = max(self.brush_size -1, 1)
+            if symbol == key.RIGHT:
+                self.brush_size = min(self.brush_size + 1, self.height, self.width)
 
     def mode_handle(self, symbol):
+
+        if symbol == key.E:
+            #toggle edit mode only if nothing is selected
+            if self.mode.kind is None:
+                self.edit_mode = not self.edit_mode
         if symbol == key.C:
             if self.mode.kind == "SELECTED":
                 self.mode = Mode("QUESTION",
@@ -328,18 +440,46 @@ class TrackReview:
                                        multiline=True,
                                        x=5, y=5, color=[255]*4)
 
-        highlight_text = ""
-        if self.highlight:
-            if self.highlighted_cell_two != -1:
-                highlight_text = "highlight: on\nhighlighted cell 1: {}\nhighlighted cell 2: {}".format(self.highlighted_cell_one, self.highlighted_cell_two)
-            elif self.highlighted_cell_one != -1:
-                highlight_text = "highlight: on\nhighlighted cell: {}".format(self.highlighted_cell_one)
+        if self.edit_mode:
+            edit_mode = "on"
+            brush_size_display = "brush size: {}".format(self.brush_size)
+            edit_label_display = "editing label: {}".format(self.edit_value)
+            if self.erase:
+                erase_mode = "on"
             else:
-                highlight_text = "highlight: on"
-        else:
-            highlight_text = "highlight: off"
+                erase_mode = "off"
+            draw_or_erase = "eraser mode: {}".format(erase_mode)
 
-        frame_label = pyglet.text.Label("frame: {}\n{}".format(self.current_frame, highlight_text),
+            edit_label = pyglet.text.Label('{}\n{}\n{}'.format(brush_size_display,
+                                                        edit_label_display,
+                                                        draw_or_erase),
+                                            font_name='monospace',
+                                            anchor_x='left', anchor_y='center',
+                                            width=self.sidebar_width,
+                                            multiline=True,
+                                            x=5, y=self.window.height//2,
+                                            color=[255]*4)            
+            edit_label.draw()
+            
+            
+            highlight_text = ""
+        
+        else:
+            edit_mode = "off"
+            if self.highlight:
+                if self.highlighted_cell_two != -1:
+                    highlight_text = "highlight: on\nhighlighted cell 1: {}\nhighlighted cell 2: {}".format(self.highlighted_cell_one, self.highlighted_cell_two)
+                elif self.highlighted_cell_one != -1:
+                    highlight_text = "highlight: on\nhighlighted cell: {}".format(self.highlighted_cell_one)
+                else:
+                    highlight_text = "highlight: on"
+            else:
+                highlight_text = "highlight: off"
+
+
+        frame_label = pyglet.text.Label("frame: {}".format(self.current_frame)
+                                    + "\nedit mode: {}".format(edit_mode)
+                                    + "\n{}".format(highlight_text),
                                         font_name="monospace",
                                         anchor_x="left", anchor_y="top",
                                         width=self.sidebar_width,
@@ -355,35 +495,86 @@ class TrackReview:
         cmap = plt.get_cmap("cubehelix")
         cmap.set_bad('red')
 
-        if self.highlight:
-            if self.mode.kind == "SELECTED":
-                frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
-            elif self.mode.kind == "MULTIPLE":
-                frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
-                frame = np.ma.masked_equal(frame, self.highlighted_cell_two)
+        if not self.edit_mode:
 
-        with tempfile.TemporaryFile() as file:
-            if self.draw_raw:
-                plt.imsave(file, frame[:, :, 0],
-                           vmax=self.max_intensity,
-                           cmap="cubehelix",
-                           format="png")
-            else:
-                plt.imsave(file, frame[:, :, 0],
-                           vmin=0,
-                           vmax=self.num_tracks + self.adjustment,
-                           cmap=cmap,
-                           format="png")
-            image = pyglet.image.load("frame.png", file)
+            if self.highlight:
+                if self.mode.kind == "SELECTED":
+                    frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
+                elif self.mode.kind == "MULTIPLE":
+                    frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
+                    frame = np.ma.masked_equal(frame, self.highlighted_cell_two)
 
-            sprite = pyglet.sprite.Sprite(image, x=self.sidebar_width, y=0)
-            sprite.update(scale_x=self.scale_factor,
-                          scale_y=self.scale_factor)
+            with tempfile.TemporaryFile() as file:
+                if self.draw_raw:
+                    plt.imsave(file, frame[:, :, 0],
+                               vmax=self.max_intensity,
+                               cmap="cubehelix",
+                               format="png")
+                else:
+                    plt.imsave(file, frame[:, :, 0],
+                               vmin=0,
+                               vmax=self.num_tracks + self.adjustment,
+                               cmap=cmap,
+                               format="png")
+                image = pyglet.image.load("frame.png", file)
 
+                sprite = pyglet.sprite.Sprite(image, x=self.sidebar_width, y=0)
+                sprite.update(scale_x=self.scale_factor,
+                              scale_y=self.scale_factor)
+
+                gl.glTexParameteri(gl.GL_TEXTURE_2D,
+                                   gl.GL_TEXTURE_MAG_FILTER,
+                                   gl.GL_NEAREST)
+                sprite.draw()
+
+        elif self.edit_mode:
+        
+            current_raw = self.raw[self.current_frame,:,:,0]
+            current_ann = self.tracked[self.current_frame,:,:,0]
+            with tempfile.TemporaryFile() as raw_file:
+                plt.imsave(raw_file, current_raw,
+                            vmax=self.max_intensity,
+                            cmap='Greys',
+                            format='png')
+                raw_img = pyglet.image.load('raw_file.png', raw_file)
+            with tempfile.TemporaryFile() as ann_file:
+                plt.imsave(ann_file, current_ann,
+                            vmax=self.num_tracks + self.adjustment,
+                            cmap='gist_stern',
+                            format='png')
+                ann_img = pyglet.image.load('ann_file.png', ann_file)
+                
+            with tempfile.TemporaryFile() as brush_file:
+                plt.imsave(brush_file, self.brush_view[:,:,0],
+                            vmax = self.num_tracks + self.adjustment,
+                            cmap='gist_stern',
+                            format='png')
+                brush_img = pyglet.image.load('brush_file.png', brush_file)
+
+            raw_sprite = pyglet.sprite.Sprite(raw_img, x=self.sidebar_width, y=0)
+            ann_sprite = pyglet.sprite.Sprite(ann_img, x=self.sidebar_width, y=0)
+            brush_sprite = pyglet.sprite.Sprite(brush_img, x=self.sidebar_width, y=0)
+            
+            raw_sprite.opacity = 128
+            ann_sprite.opacity = 128
+            brush_sprite.opacity = 128
+                
+            raw_sprite.update(scale_x=self.scale_factor,
+                            scale_y=self.scale_factor)
+                
+            ann_sprite.update(scale_x=self.scale_factor,
+                            scale_y=self.scale_factor)
+            
+            brush_sprite.update(scale_x=self.scale_factor,
+                                    scale_y=self.scale_factor)
+                                
+            raw_sprite.draw()
+            ann_sprite.draw()
+            brush_sprite.draw()
+            
             gl.glTexParameteri(gl.GL_TEXTURE_2D,
                                gl.GL_TEXTURE_MAG_FILTER,
                                gl.GL_NEAREST)
-            sprite.draw()
 
     def action_new_track(self):
         """
