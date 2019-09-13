@@ -55,7 +55,7 @@ class Mode:
             elif self.action == "SWAP":
                 return ("\nswap {} & {}?\n{}".format(self.label_2, self.label_1, 
                 'SPACE = SWAP IN ALL FRAMES\nS = SWAP IN THIS FRAME ONLY\nESC = CANCEL SWAP'))
-            elif sel.action == "PARENT":
+            elif self.action == "PARENT":
                 return ("\nmake {} a daughter of {}?\n {}".format(self.label_2, self.label_1, answer))
             elif self.action == "NEW TRACK":
                 return ("\ncreate new track from {} on frame {}?\n {}".format(self.label, self.frame, answer) + "\n {}".format(answer))
