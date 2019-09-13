@@ -300,6 +300,7 @@ class TrackReview:
         y_scale = self.window.height // self.height
         x_scale = (self.window.width - 300) // self.width
         self.scale_factor = min(y_scale, x_scale)
+        self.scale_factor = max(1, self.scale_factor)
 
     def on_key_press(self, symbol, modifiers):
         # Set scroll speed (through sequential frames) with offset
@@ -1103,6 +1104,7 @@ class ZStackReview:
         y_scale = self.window.height // self.height
         x_scale = (self.window.width - 300) // self.width
         self.scale_factor = min(y_scale, x_scale)
+        self.scale_factor = max(1, self.scale_factor)
 
     def on_key_press(self, symbol, modifiers):
         # Set scroll speed (through sequential frames) with offset
