@@ -1190,6 +1190,7 @@ class ZStackReview:
             if self.mode.kind == "QUESTION":
                 if self.mode.action == "SAVE":
                     self.save_as_trk()
+                    self.mode = Mode.none()
                 
         if symbol == key.P:
             if self.mode.kind is None and not self.edit_mode:
