@@ -1787,14 +1787,15 @@ def predict_zstack_cell_ids(img, next_img):
     for next_cell, matched_cell in enumerate(max_indices):
         
         if matched_cell not in used_cells:
-            
-            #add it to the relabeled image
-            relabeled_next = np.where(next_img == next_cell, matched_cell, relabeled_next)
-            
             #don't add background to used_cells
+            #add the matched cell to the relabeled image
             if matched_cell != 0:
+                relabeled_next = np.where(next_img == next_cell, matched_cell, relabeled_next)
+
                 used_cells = np.append(used_cells, matched_cell)
-        
+            elif matched_cell == 0:
+                pass
+
         elif matched_cell in used_cells:
             #skip that pairing, add next_cell to unmatched_cells
             unmatched_cells = np.append(unmatched_cells, next_cell)
