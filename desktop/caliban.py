@@ -739,7 +739,8 @@ class TrackReview:
 
     def action_replace(self):
         """
-        Replacing label_2 with label_1
+        Replacing label_2 with label_1. Overwrites all instances of label_2 in
+        movie, and replaces label_2 lineage information with info from label_1.
         """
         label_1, label_2 = self.mode.label_1, self.mode.label_2
 
@@ -1461,7 +1462,8 @@ class ZStackReview:
             
     def action_replace(self):
         """
-        Replacing label_2 with label_1
+        Replacing label_2 with label_1. Overwrites every label_2 in the npz
+        with label_1 and updates cell_info accordingly.
         """
         label_1, label_2 = self.mode.label_1, self.mode.label_2
 
