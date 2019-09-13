@@ -1198,6 +1198,8 @@ class ZStackReview:
                 self.mode = Mode("PROMPT", action = "PICK COLOR", **self.mode.info)
         
         if symbol == key.R:
+            if self.mode.kind is None and not self.edit_mode:
+                self.mode = Mode("QUESTION", action='RELABEL', **self.mode.info)
             if self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
                                  action="REPLACE", **self.mode.info)
@@ -1231,6 +1233,8 @@ class ZStackReview:
                     self.action_replace()
                 elif self.mode.action == "PREDICT":
                     self.action_predict_zstack()
+                elif self.mode.action == "RELABEL":
+                    self.action_relabel_frame()
                 elif self.mode.action == "CREATE NEW":
                     self.action_new_cell_stack()
                 elif self.mode.action == "SWAP":
@@ -1607,7 +1611,19 @@ class ZStackReview:
 
         #remake cell_info dict based on new annotations            
         self.create_cell_info(feature = self.feature)
-                
+
+    def action_relabel_frame(self):
+        '''
+        relabel cells in the current frame
+        '''
+
+        img = self.annotated[self.current_frame,:,:,self.feature]
+        relabeled_img = relabel_frame(img)
+        self.annotated[self.current_frame,:,:,self.feature] = relabeled_img
+
+        self.create_cell_info(feature=self.feature)
+
+
     def save(self):
         save_file = self.filename + "_save_version_{}.npz".format(self.save_version)
         if self.save_vars_mode == 0:
@@ -1822,6 +1838,22 @@ def predict_zstack_cell_ids(img, next_img):
                                  stringent_allowed[reassigned_cell], relabeled_next)
 
     return relabeled_next
+
+def relabel_frame(img):
+    '''relabel cells in frame starting from 1 without skipping values'''
+    
+    #cells in image to be relabeled
+    cell_list = np.unique(img)
+    cell_list = cell_list[np.nonzero(cell_list)]
+
+    relabeled_cell_list = range(1, len(cell_list)+1)
+
+    relabeled_img = np.zeros(img.shape, dtype = np.uint16)
+    for i, cell in enumerate(cell_list):
+        #print(i, cell, cell_list[i], relabeled_cell_list[i])
+        relabeled_img = np.where(img == cell, relabeled_cell_list[i], relabeled_img)
+
+    return relabeled_img
 
 
 def load_trk(filename):
