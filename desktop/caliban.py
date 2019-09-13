@@ -1067,8 +1067,6 @@ class ZStackReview:
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self.draw_raw:
             if self.max_intensity[self.channel] is None:
-                current_frame = self.get_current_frame()
-                max_val = np.max(current_frame[:,:,self.channel])
                 self.max_intensity[self.channel] = np.max(self.get_current_frame()[:,:,self.channel])
             else:
                 raw_adjust = max(int(self.max_intensity[self.channel] * 0.02), 1)
