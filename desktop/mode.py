@@ -43,13 +43,21 @@ class Mode:
             return ''
         answer = "(SPACE=YES / ESC=NO)"
 
+        try:
+            filetype = self.info['filetype']
+        except KeyError:
+            filetype = ""
+
         if self.kind == "SELECTED":
             return "\nSELECTED {}".format(self.label)
         elif self.kind == "MULTIPLE":
             return "\nSELECTED {}, {}".format(self.label_1, self.label_2)
         elif self.kind == "QUESTION":
             if self.action == "SAVE":
-                return ("\nsave current movie?\n {}".format(answer))
+                if filetype == "npz":
+                    return ("\nSave current movie?\nSPACE=SAVE\nT=SAVE AS .TRK FILE\nESC=CANCEL")
+                else:
+                    return ("\nSave current movie?\nSPACE=SAVE\nESC=CANCEL")
             elif self.action == "REPLACE":
                 return ("\nreplace {} with {}?\n {}".format(self.label_2, self.label_1, answer))
             elif self.action == "SWAP":
@@ -58,20 +66,25 @@ class Mode:
             elif self.action == "PARENT":
                 return ("\nmake {} a daughter of {}?\n {}".format(self.label_2, self.label_1, answer))
             elif self.action == "NEW TRACK":
-                return ("\ncreate new track from {} on frame {}?\n {}".format(self.label, self.frame, answer) + "\n {}".format(answer))
+                return ("\ncreate new track from {} on frame {}?".format(self.label, self.frame) + 
+                    "\n {}".format("(S=SINGLE FRAME / SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)"))
             elif self.action == "CREATE NEW":
                 return ("".format(self.label, self.frame)
                         + "\n {}".format("(S=SINGLE FRAME / SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)"))
             elif self.action == "DELETE":
-                return ('Delete label {} in frame {}?\n{}'.format(self.label, self.frame,
+                return ('\nDelete label {} in frame {}?\n{}'.format(self.label, self.frame,
                 "SPACE = CONFIRM DELETION\nESC = CANCEL DELETION"))
             elif self.action == "WATERSHED":
                 return ("\nperform watershed to split {}?\n{}".format(self.label_1, answer))
             elif self.action == "PREDICT":
                 return ("Predict cell ids for zstack?\nS=PREDICT THIS FRAME\nSPACE=PREDICT ALL FRAMES\nESC=CANCEL PREDICTION")
+            elif self.action == "RELABEL":
+                return ("Relabel cells in this frame?\nSPACE=RELABEL\nESC=CANCEL")
         elif self.kind == "PROMPT":
             if self.action == "FILL HOLE":
                 return('\nselect hole to fill in cell {}'.format(self.label))
+            elif self.action == "PICK COLOR":
+                return('\nclick on a cell to change the brush value to that value')
 
         else:
             return ''

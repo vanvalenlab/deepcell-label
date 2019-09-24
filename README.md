@@ -11,7 +11,7 @@ python3 caliban.py [input file location]
 ```
 
 **Accepted file types:**
-Caliban can open .trk files or .npz files. .npz files must contain two zipped files corresponding to raw images and annotated images. If the files are not named 'raw' and 'annotated', the first file in the .npz will be opened as the raw images. Raw and annotated images must both be in 4D arrays in the shape (frames, y, x, channels or features).
+Caliban can open .trk files or .npz files. .npz files must contain two zipped files corresponding to raw images and annotated images. If the files are not named 'raw' and 'annotated' or 'X' and 'y', the first file in the .npz will be opened as the raw images. Raw and annotated images must both be in 4D arrays in the shape (frames, y, x, channels or features).
 
 ## Tools Guide
 Files can be edited using keyboard operations.
@@ -30,6 +30,8 @@ Caliban's default setting allows operations to be carried out quickly and easily
 *click* - click on a cell label to select it. Up to two cells can be selected at one time.
 
 *r* - replace: relabel all instances of a selected cell label with a second selected cell label; replaces lineage data in a trk file
+
+*r* - relabel: sequentially relabel all cells in frame, starting from 1, when no cells are selected (npz only)
 
 *c* - create: relabel selected cell with an unused label
 
@@ -62,6 +64,8 @@ Annotation mode focuses on using an adjustable brush to modify annotations on a 
 
 *x* - toggle eraser mode
 
+*p* - color picker (click on a label to change the brush value to it)
+
 
 ### Viewing Options:
 
@@ -84,7 +88,7 @@ Annotation mode focuses on using an adjustable brush to modify annotations on a 
 
 Once done, use the following key to save the changed file. 
 The tool will also save the original file in the same folder.
-In npz mode, a new npz file will be saved with a version number.
+In npz mode, a new npz file will be saved with a version number. An npz can be saved as a trk file (select "t" in response to save prompt). This will bundle together the current channel and feature of the npz along with a generated lineage file, which will contain label and frame information and empty parent/daughter entries for each cell. The new trk file can then be edited in Caliban's trk mode to add relationship information.
 
 *s* - save
 
