@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>caliban</title>
+    <title>Caliban</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/main_track.js') }}"></script>
@@ -25,10 +25,10 @@
               <tr height="100%" valign="top">
                 <td>highlight cells: </td><td id="highlight"></td>
               </tr>
-              <h1>Caliban</h1>
+              <h1>Tracking Tool</h1>
               </p>Filename: {{filename}}</p>
               <form class='changed-form' action="/" method="POST" enctype="multipart/form-data">
-                <label class="changed-label" for="user_file">Finish and Submit Changed File to Output Bucket</label>
+                <label class="changed-label" for="user_file"></label>
                 <button type="submit" type="submit">Submit</button>
               </form>
               <tr><td>label:</td><td id="label"></td></tr>

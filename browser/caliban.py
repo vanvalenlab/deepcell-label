@@ -17,18 +17,16 @@ import tempfile
 import boto3
 import sys
 from werkzeug.utils import secure_filename
+import skimage.morphology
 from skimage.morphology import watershed
+from skimage.morphology import flood_fill
+from skimage.draw import circle
 from skimage.measure import regionprops
 from skimage.exposure import rescale_intensity
 
 S3_KEY =''
 S3_SECRET =''
 S3_BUCKET = 'caliban-output'
-
-# ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'trk'])
-
-# def allowed_file(name):
-#     return "." in name and name.split(".")[1].lower() in ALLOWED_EXTENSIONS
 
 # Connect to the s3 service
 s3 = boto3.client(
@@ -39,52 +37,50 @@ s3 = boto3.client(
 
 class ZStackReview:
     def __init__(self, filename):
+
         self.filename = filename
         self.trial = self.load(filename)
-
-        # # lineages is a list of dictionaries. There should be only a single one
-        # # when using a .trk file
-        # if len(self.trial["lineages"]) != 1:
-        #     raise ValueError("Input file has multiple trials/lineages.")
-
-        #self.tracks = self.trial["lineages"][0]
-
         self.raw = self.trial["raw"]
         self.annotated = self.trial["annotated"]
-
         self.feature = 0
-        self.feature_mac = self.annotated.shape[-1]
+        self.feature_max = self.annotated.shape[-1]
         self.channel = 0
-
-        self.num_frames, self.height, self.width, self.channel_max = raw.shape
-        
-        self.sidebar_width = 300
-        
+        self.max_frames, self.height, self.width, self.channel_max = self.raw.shape
+        #self.sidebar_width = 300
+  
         #create a dictionary that has frame information about each cell
         #analogous to .trk lineage but do not need relationships between cells included
         self.cell_ids = {}
         self.num_cells = {}
         self.cell_info = {}
-        
+
+        self.current_frame = 0
+        self.brush_size = 1
+        self.edit_value = 1
+
         for feature in range(self.feature_max):
+        
             annotated = self.annotated[:,:,:,feature]
             self.cell_ids[feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))]
             self.num_cells[feature] = max(self.cell_ids[feature])
             self.cell_info[feature] = {}
+
             for cell in self.cell_ids[feature]:
+                cell = int(cell)
                 self.cell_info[feature][cell] = {}
                 self.cell_info[feature][cell]['label'] = str(cell)
-                self.cell_info[feature][cell]['frames'] = [] 
-            
+                self.cell_info[feature][cell]['frames'] = []
+           
+                
                 for frame in range(self.annotated.shape[0]):
                     if cell in annotated[frame,:,:]:
                         self.cell_info[feature][cell]['frames'].append(frame)
                 self.cell_info[feature][cell]['slices'] = ''
 
+
         #don't display 'frames' just 'slices' (updated on_draw)
         self.display_info = [*sorted(set(self.cell_info[0][1]) - {'frames'})]
 
-        self.current_frame = 0
         self.draw_raw = False
         self.max_intensity = {}
         for channel in range(self.channel_max):
@@ -94,36 +90,24 @@ class ZStackReview:
         self.adjustment = {}
         for feature in range(self.feature_max):
             self.adjustment[feature] = 0
-        self.dtype_raw = raw.dtype
-        self.scale_factor = 1
-        
-        self.edit_mode = False
-        self.edit_value = 1
-        self.brush_size = 1
-        self.erase = False
-        
-        self.hole_fill_seed = None
-        self.save_version = 0
+        self.dtype_raw = self.raw.dtype
+        self.scale_factor = 2
 
-        # self.num_tracks = max(self.tracks)
-        # self.max_frames = self.trial["raw"].shape[0]
-        self.dimensions = self.trial["raw"].shape[1:3][::-1]
+        self.edit_mode = False
+        self.hole_fill_seed = None
+        self.fill_label = None
+        self.save_version = 0
+        self.dimensions = self.raw.shape[1:3][::-1]
         self.color_map = self.random_colormap()
 
-        # self.highlight = False
-        # self.highlight_cell_one = -1
-        # self.highlight_cell_two = -1
-
     def random_colormap(self):
-        max_val = max(self.tracks)
-
+        max_val = self.num_cells[self.feature]
+        #max(self.cell_ids[self.feature])
         # this is a random map from [0, max_val - 1] -> [1, max_val]
         shuffle_idx = list(range(1, max_val + 1))
         # check if workers really prefer this
         #random.shuffle(shuffle_idx)
-
         shuffle_idx = [shuffle_idx[i] * .8 for i in range(max_val)]
-
         colors = [(0, 0, 0), * (list(hsv_to_rgb([shuffle_idx[i] / max_val, 1, 1]))
                              for i in range(max_val))]
 
@@ -137,90 +121,427 @@ class ZStackReview:
         simplifying track['frames'] into something like [0-29] instead of
         [0,1,2,3,...].
         """
-        cell_info = self.cell_info[self.feature][label].copy()
-
-        slices = list(map(list, consecutive(cell_info['frames'])))
-        slices = '[' + ', '.join(["{}".format(a[0])
-                            if len(a) == 1 else "{}-{}".format(a[0], a[-1])
-                            for a in slices]) + ']'
-                            
-        self.cell_info[self.feature][label].update({'slices' : slices})
-
-        text = '\n'.join("{:10}{}".format(str(k)+':', self.cell_info[self.feature][label][k])
-                          for k in self.display_info)
-
-        return text
+        cell_info = copy.deepcopy(self.cell_info)
+        for _, feature in cell_info.items():
+            for _, label in feature.items():
+                slices = list(map(list, consecutive(label['frames'])))
+                slices = '[' + ', '.join(["{}".format(a[0])
+                                if len(a) == 1 else "{}-{}".format(a[0], a[-1])
+                                for a in slices]) + ']'            
+                label["slices"] = slices
+        return cell_info
 
     @property
     def png_colormap(self):
         return {str(self.color_map(v, bytes=True)): int(v)
-                  for v in range(max(self.tracks) + 1)}
+                  for v in range(self.num_cells[self.feature] + 1)}
 
-    def get_frame(self, frame, raw):
+    def get_frame(self, frame, raw, edit_background):
         if raw:
-            frame = self.trial["raw"][frame][:,:,0]
+            frame = self.raw[frame][:,:, self.channel]
             return pngify(imgarr=frame, 
                           vmin=0, 
-                          vmax=None, 
+                          vmax=self.max_intensity[self.channel], 
                           cmap="cubehelix")
+        elif edit_background:
+            frame = self.raw[frame][:,:, self.channel]
+            return pngify(imgarr=frame, 
+                          vmin=0, 
+                          vmax=self.max_intensity[self.channel], 
+                          cmap="Greys")
         else:
-
-            frame = self.trial["annotated"][frame][:,:,0]
-            self.color_map.set_bad('red')
-            if (self.highlight):
-                if (self.highlight_cell_one != -1):
-                    frame = np.ma.masked_equal(frame, self.highlight_cell_one)
-                if (self.highlight_cell_two != -1):
-                    frame = np.ma.masked_equal(frame, self.highlight_cell_two)
-
+            frame = self.annotated[frame][:,:, self.feature]
             return pngify(imgarr=frame,
                          vmin=0,
-                         vmax=self.num_tracks,
+                         vmax=self.num_cells[self.feature] + self.adjustment[self.feature],
                          cmap=self.color_map)
-
+            
     def load(self, filename):
+        
         global original_filename
         original_filename = filename
- 
         s3 = boto3.client('s3')
         response = s3.get_object(Bucket="caliban-input", Key=filename)
         return load_npz(response['Body'].read())
-
-    def load_npz(file):
-        npz = file
-        try:
-            raw_stack = npz['raw']
-            annotation_stack = npz['annotated']
-        except:
-            raw_stack = npz[npz.files[0]]
-            annotation_stack = npz[npz.files[1]]
-            
-        return {"raw": raw_stack, "annotated": annotation_stack}
-
+    
     def action(self, action_type, info):
 
-        if action_type == "set_parent":
-            self.action_set_parent(**info)
+        if action_type == "change_feature":
+            self.action_change_feature(**info)
+        elif action_type == "change_channel":
+            self.action_change_channel(**info)
+        elif action_type == "edit_value":
+            self.action_edit_value(**info)
+        elif action_type == "change_edit_mode":
+            self.edit_mode = not self.edit_mode
+        elif action_type == "change_erase":
+            self.action_change_erase(**info)
+        elif action_type == "change_brush_size":
+            self.action_change_brush_size(**info)
+        elif action_type == "fill_hole":
+            self.action_fill_hole(**info)
+        elif action_type == "new_cell_stack":
+            self.action_new_cell_stack(**info)
+        elif action_type == "new_single_cell":
+            self.action_new_single_cell(**info)
+        elif action_type == "swap_single_frame":
+            self.action_swap_single_frame(**info)
+        elif action_type == "swap_all_frame":
+            self.action_swap_all_frame(**info)
+        elif action_type == "predict_single":
+            self.action_predict_single(**info)
+        elif action_type == "predict_zstack":
+            self.action_predict_zstack(**info)
         elif action_type == "replace":
             self.action_replace(**info)
-        elif action_type == "new_track":
-            self.action_new_track(**info)
-        elif action_type == "swap_tracks":
-            self.action_swap_tracks(**info)
-        elif action_type == "save_track":
-            self.action_save_track(**info)
         elif action_type == "watershed":
             self.action_watershed(**info)
-
-        elif action_type == "delete_cell":
-            self.action_delete(**info)
-        elif action_type == "change_highlight":
-            self.highlight = not self.highlight
-        elif action_type == "change_highlighted_cells":
-            self.action_change_highlighted_cells(**info)
+        elif action_type == "delete":
+            self.action_delete_mask(**info)
+        elif action_type == "handle_draw":
+            self.action_handle_draw(**info)
         else:
             raise ValueError("Invalid action '{}'".format(action_type))
 
+    def action_handle_draw(self, x, y, frame):
+        # x -= self.sidebar_width
+        x //= max(self.scale_factor, 1)
+        y //= max(self.scale_factor, 1)
+
+        if 0 <= x < self.width and 0 <= y < self.height:
+            self.x, self.y = x, y        
+        
+        if self.edit_mode:
+            #if buttons & mouse.LEFT:
+            annotated = self.annotated[frame,:,:,self.feature]
+            
+            #self.x and self.y are different from the mouse's x and y
+            x_loc = self.x
+            y_loc = self.y
+
+            brush_area = circle(y_loc, x_loc, self.brush_size, (self.height,self.width))
+            
+            in_original = np.any(np.isin(annotated, self.edit_value))
+            in_original_all = np.any(np.isin(self.annotated[:,:,:,self.feature], self.edit_value))
+            #do not overwrite or erase labels other than the one you're editing
+            if not self.erase:
+                annotated_draw = np.where(annotated==0, self.edit_value, annotated)
+                annotated[brush_area] = annotated_draw[brush_area]
+            else:
+                annotated_erase = np.where(annotated==self.edit_value, 0, annotated)
+                annotated[brush_area] = annotated_erase[brush_area]        
+            
+            #when to add in info to cell_info dict
+
+            in_modified = np.any(np.isin(annotated, self.edit_value))
+            in_modified_all = np.any(np.isin(self.annotated[:,:,:,self.feature], self.edit_value))
+            
+            #cell deletion
+            if in_original and not in_modified:
+                old_frames = self.cell_info[self.feature][self.edit_value]['frames']
+                updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame)))
+                self.cell_info[self.feature][self.edit_value].update({'frames': updated_frames})
+                
+                if not in_modified_all:
+                    print('deleted cell from movie')
+                    del self.cell_info[self.feature][self.edit_value]
+            
+            #cell addition
+            elif in_modified and not in_original:
+                new_label = self.edit_value
+                if not in_original_all:
+                    self.cell_info[self.feature].update({new_label: {}})
+                    self.cell_info[self.feature][new_label].update({'label': str(new_label)})
+                    self.cell_info[self.feature][new_label].update({'frames': [frame]})
+                    self.cell_info[self.feature][new_label].update({'slices': ''})
+                    
+                    np.append(self.cell_ids[self.feature], new_label)
+                    
+                    self.num_cells[self.feature] += 1
+                else:
+                    old_frames = self.cell_info[self.feature][new_label]['frames']
+                    updated_frames = np.append(old_frames, frame)
+                    updated_frames = np.unique(updated_frames).tolist()
+                    self.cell_info[self.feature][new_label].update({'frames': updated_frames})
+                        
+            self.annotated[frame,:,:,self.feature] = annotated
+
+
+    def action_save_zstack(self):
+        save_file = self.filename + "_save_version_{}.npz".format(self.save_version)
+        np.savez(save_file, raw = self.raw, annotated = self.annotated)
+        s3.upload_file(save_file, S3_BUCKET, save_file)
+
+    def action_change_feature(self, feature):
+        self.feature = feature
+        self.color_map = self.random_colormap()
+
+    def action_change_channel(self, channel):
+        self.channel = channel
+        self.color_map = self.random_colormap()
+
+    def action_change_erase(self, erase):
+        # Flask application can only send over literals of base 10; not true/false
+        if (erase == 1):
+            self.erase = True
+        else:
+            self.erase = False
+
+    def action_edit_value(self, edit_value):
+        self.edit_value = edit_value
+
+    def action_change_brush_size(self, brush_size):
+        self.brush_size = brush_size
+
+    def action_fill_hole(self, label, frame, x_location, y_location):
+        '''
+        fill a "hole" in a cell annotation with the cell label
+        '''
+        if label != 0:
+            self.fill_label = label
+        else:
+            self.hole_fill_seed = (int(y_location / self.scale_factor), int(x_location / self.scale_factor))
+   
+        if self.hole_fill_seed is not None:
+            if label == 0:
+                img_ann = self.annotated[frame,:,:,self.feature]
+                filled_img_ann = flood_fill(img_ann, self.hole_fill_seed, self.fill_label, connectivity = 1)
+                self.annotated[frame,:,:,self.feature] = filled_img_ann
+                self.fill_label = None
+                self.hold_fill_seed = None
+
+    def action_new_cell_stack(self, label, frame):
+
+        """
+        Creates new cell label and replaces original label with it in all subsequent frames
+        """
+        old_label, start_frame = label, frame
+
+        if label != 0:
+
+            new_label = int(self.num_cells[self.feature] + 1)
+            self.num_cells[self.feature] += 1
+
+            # replace frame labels
+            for frame in self.annotated[start_frame:,:,:,self.feature]:
+                frame[frame == old_label] = new_label
+  
+            # replace fields
+            old_label_frames = self.cell_info[self.feature][old_label]['frames']
+            new_label_frames = []
+
+           
+            for frame in range(self.annotated.shape[0]):
+                if new_label in self.annotated[frame,:,:,self.feature]:
+                    new_label_frames.append(frame)   
+
+            updated_old_label_frames = np.setdiff1d(old_label_frames, new_label_frames).tolist()
+       
+            if updated_old_label_frames == []:
+                del self.cell_info[self.feature][old_label]
+            else:
+                self.cell_info[self.feature][old_label].update({'frames': updated_old_label_frames})     
+                
+            self.cell_info[self.feature].update({new_label: {}})
+            self.cell_info[self.feature][new_label].update({'label': str(new_label)})
+            self.cell_info[self.feature][new_label].update({'frames': new_label_frames})
+            self.cell_info[self.feature][new_label].update({'slices': ''})
+            
+            np.append(self.cell_ids[self.feature], new_label).tolist()
+
+            self.color_map = self.random_colormap()
+
+    def action_new_single_cell(self, label, frame):
+        """
+        Create new label in just one frame
+        """
+        old_label, single_frame = label, frame
+
+        new_label = int(self.num_cells[self.feature] + 1)
+        self.num_cells[self.feature] += 1
+
+        # replace frame labels
+        frame = self.annotated[single_frame,:,:,self.feature]
+        frame[frame == old_label] = new_label
+
+        # replace fields
+        old_label_frames = self.cell_info[self.feature][old_label]['frames']
+        if old_label_frames == [single_frame]:
+            del self.cell_info[self.feature][old_label]
+        else:
+            updated_frames = np.delete(old_label_frames, np.where(old_label_frames == np.int64(single_frame))).tolist()
+            self.cell_info[self.feature][old_label].update({'frames': updated_frames})
+            
+        self.cell_info[self.feature].update({new_label: {}})
+        self.cell_info[self.feature][new_label].update({'label': str(new_label)})
+        self.cell_info[self.feature][new_label].update({'frames': [single_frame]})
+        self.cell_info[self.feature][new_label].update({'slices': ''})
+        
+        np.append(self.cell_ids[self.feature], new_label).tolist()
+
+        self.color_map = self.random_colormap()
+
+    def action_swap_single_frame(self, label_1, label_2, frame_1, frame_2):
+        assert(frame_1 == frame_2)
+        frame = frame_1
+        
+        ann_img = self.annotated[frame,:,:,self.feature]
+        ann_img = np.where(ann_img == label_1, -1, ann_img)
+        ann_img = np.where(ann_img == label_2, label_1, ann_img)
+        ann_img = np.where(ann_img == -1, label_2, ann_img)
+        
+        self.annotated[frame,:,:,self.feature] = ann_img
+
+    def action_swap_all_frame(self, label_1, label_2, frame_1, frame_2):
+
+        for frame in range(self.annotated.shape[0]):
+            ann_img = self.annotated[frame,:,:,self.feature]
+            ann_img = np.where(ann_img == label_1, -1, ann_img)
+            ann_img = np.where(ann_img == label_2, label_1, ann_img)
+            ann_img = np.where(ann_img == -1, label_2, ann_img)
+            self.annotated[frame,:,:,self.feature] = ann_img
+            
+        #update cell_info
+        cell_info_1 = self.cell_info[self.feature][label_1].copy()
+        cell_info_2 = self.cell_info[self.feature][label_2].copy()
+        self.cell_info[self.feature][label_1].update({'frames': cell_info_2['frames']})
+        self.cell_info[self.feature][label_2].update({'frames': cell_info_1['frames']})
+
+    def action_predict_single(self, frame):
+        '''
+        predicts zstack relationship for current frame based on previous frame
+        useful for finetuning corrections one frame at a time
+        '''
+        annotated = self.annotated[:,:,:,self.feature]
+        current_slice = frame
+        if current_slice > 0:
+            prev_slice = current_slice - 1
+            img = self.annotated[prev_slice,:,:,self.feature]
+            next_img = self.annotated[current_slice,:,:,self.feature]
+            updated_slice = predict_zstack_cell_ids(img, next_img)
+            self.annotated[current_slice,:,:,self.feature] = updated_slice
+        
+        #update cell_info
+        self.cell_ids[self.feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))].tolist()
+        self.num_cells[self.feature] = int(max(self.cell_ids[self.feature]))
+        self.cell_info[self.feature] = {}
+        for cell in self.cell_ids[self.feature]:
+            self.cell_info[self.feature][cell] = {}
+            self.cell_info[self.feature][cell]['label'] = str(cell)
+            self.cell_info[self.feature][cell]['frames'] = [] 
+            
+            for frame in range(self.annotated.shape[0]):
+                if cell in annotated[frame,:,:]:
+                    self.cell_info[self.feature][cell]['frames'].append(frame)
+            self.cell_info[self.feature][cell]['slices'] = ''
+
+    def action_predict_zstack(self):
+        '''
+        use location of cells in image to predict which annotations are
+        different slices of the same cell
+        '''
+        annotated = self.annotated[:,:,:,self.feature]
+        
+        for zslice in range(self.annotated.shape[0] -1):
+            img = self.annotated[zslice,:,:,self.feature]
+            
+            next_img = self.annotated[zslice + 1,:,:,self.feature]
+            predicted_next = predict_zstack_cell_ids(img, next_img)
+            self.annotated[zslice + 1,:,:,self.feature] = predicted_next
+
+        #remake cell_info dict based on new annotations            
+        self.cell_ids[self.feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))]
+        self.num_cells[self.feature] = max(self.cell_ids[self.feature])
+        self.cell_info[self.feature] = {}
+        for cell in self.cell_ids[self.feature]:
+            cell = int(cell)
+            self.cell_info[self.feature][cell] = {}
+            self.cell_info[self.feature][cell]['label'] = str(cell)
+            self.cell_info[self.feature][cell]['frames'] = [] 
+            
+            for frame in range(self.annotated.shape[0]):
+                if cell in annotated[frame,:,:]:
+                    self.cell_info[self.feature][cell]['frames'].append(frame)
+            self.cell_info[self.feature][cell]['slices'] = ''
+
+    def action_replace(self, label_1, label_2, frame_1, frame_2):
+        """
+        Replacing label_2 with label_1
+        """
+        # replace arrays
+        for frame in self.annotated[:,:,:,self.feature]:
+            frame[frame == label_2] = label_1
+            
+        # update cell_info dict
+        del self.cell_info[self.feature][label_2]
+        self.cell_ids[self.feature] = np.delete(self.cell_ids[self.feature],
+                                      np.where(self.cell_ids[self.feature] == label_2))
+
+    def action_watershed(self, label_1, label_2, frame, x1_location, y1_location, x2_location, y2_location):
+        # Pull the label that is being split and find a new valid label
+        current_label = label_1
+        new_label = int(self.num_cells[self.feature] + 1)
+
+        # Locally store the frames to work on
+        img_raw = self.raw[frame,:,:,self.channel]
+        img_ann = self.annotated[frame,:,:,self.feature]
+
+        # Pull the 2 seed locations and store locally
+        # define a new seeds labeled img that is the same size as raw/annotaiton imgs
+        seeds_labeled = np.zeros(img_ann.shape)
+        # create two seed locations
+        seeds_labeled[int(y1_location / self.scale_factor), int(x1_location / self.scale_factor)]=current_label
+        seeds_labeled[int(y2_location / self.scale_factor), int(x2_location / self.scale_factor)]=new_label
+
+        # define the bounding box to apply the transform on and select appropriate sections of 3 inputs (raw, seeds, annotation mask)
+        props = regionprops(np.squeeze(np.int32(img_ann == current_label)))
+        minr, minc, maxr, maxc = props[0].bbox
+
+        # store these subsections to run the watershed on
+        img_sub_raw = np.copy(img_raw[minr:maxr, minc:maxc])
+        img_sub_ann = np.copy(img_ann[minr:maxr, minc:maxc])
+        img_sub_seeds = np.copy(seeds_labeled[minr:maxr, minc:maxc])
+
+        # contrast adjust the raw image to assist the transform
+        img_sub_raw_scaled = rescale_intensity(img_sub_raw)
+
+        # apply watershed transform to the subsections
+        ws = watershed(-img_sub_raw_scaled, img_sub_seeds, mask=img_sub_ann.astype(bool))
+
+        cell_loc = np.where(img_sub_ann == current_label)
+        img_sub_ann[cell_loc] = ws[cell_loc]
+
+        # reintegrate subsection into original mask
+        img_ann[minr:maxr, minc:maxc] = img_sub_ann
+        self.annotated[frame,:,:,self.feature] = img_ann
+        
+        #update cell_info dict
+        self.cell_info[self.feature].update({new_label: {}})
+        self.cell_info[self.feature][new_label].update({'label': str(new_label)})
+        self.cell_info[self.feature][new_label].update({'frames': [frame]})
+        self.cell_info[self.feature][new_label].update({'slices': ''})
+        
+        np.append(self.cell_ids[self.feature], int(new_label))
+        self.num_cells[self.feature] += 1
+
+    def action_delete_mask(self, label, frame):
+        '''
+        remove selected annotation from frame, replacing with zeros
+        '''
+        
+        ann_img = self.annotated[frame,:,:,self.feature]
+        ann_img = np.where(ann_img == label, 0, ann_img)
+        
+        self.annotated[frame,:,:,self.feature] = ann_img
+        
+        #update cell_info
+        if self.cell_info[self.feature][label]['frames'] == [frame]:
+            del self.cell_info[self.feature][label]
+        else:
+            old_frames = self.cell_info[self.feature][label]['frames']
+            updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame))).tolist()
+            self.cell_info[self.feature][label].update({'frames': updated_frames})
+#_______________________________________________________________________________________________________________
 
 class TrackReview:
     def __init__(self, filename):
@@ -279,6 +600,8 @@ class TrackReview:
 
     @property
     def png_colormap(self):
+        
+
         return {str(self.color_map(v, bytes=True)): int(v)
                   for v in range(max(self.tracks) + 1)}
 
@@ -308,13 +631,11 @@ class TrackReview:
     def load(self, filename):
         global original_filename
         original_filename = filename
- 
         s3 = boto3.client('s3')
         response = s3.get_object(Bucket="caliban-input", Key=filename)
         return load_trks(response['Body'].read())
 
     def action(self, action_type, info):
-
         if action_type == "set_parent":
             self.action_set_parent(**info)
         elif action_type == "replace":
@@ -337,41 +658,9 @@ class TrackReview:
         else:
             raise ValueError("Invalid action '{}'".format(action_type))
 
-
-
     def action_change_highlighted_cells(self, cell_one, cell_two):
         self.highlight_cell_one = cell_one
         self.highlight_cell_two = cell_two
-
-    def action_change_highlighted_cells2(self, cell_one, cell_two, decrease, increase):
-        print("test")
-        # self.highlight_cell_one = cell_one
-        # self.highlight_cell_two = cell_two
-
-        # if(self.highlight_cell_two != 1):
-        #     if increase != -1:
-        #         if (self.highlight_cell_one < self.num_tracks):
-        #             self.highlight_cell_one += 1
-        #         else:
-        #             self.highlight_cell_one = 1
-        #     elif decrease != -1:
-        #         if (self.highlight_cell_one > 1):
-        #             self.highlight_cell_one -= 1
-        #         else:
-        #             self.highlight_cell_one = self.num_tracks
-
-
-        # else:
-        #     if increase != -1:
-        #         if (self.highlight_cell_two < self.num_tracks):
-        #             self.highlight_cell_two += 1
-        #         else:
-        #             self.highlight_cell_two = 1
-        #     elif decrease != -1:
-        #         if (self.highlight_cell_two > 1):
-        #             self.highlight_cell_two -= 1
-        #         else:
-        #             self.highlight_cell_two = self.num_tracks
 
     def action_watershed(self, label_1, label_2, frame, x1_location, y1_location, x2_location, y2_location):
 
@@ -459,7 +748,7 @@ class TrackReview:
             print("Something Happened: ", e, file=sys.stderr)
             raise
 
-        os.remove(file)
+        #os.remove(file)
         return "Success!"
 
     def action_swap_tracks(self, label_1, label_2, frame_1, frame_2):
@@ -573,7 +862,6 @@ class TrackReview:
 
         track_old["frames"] = frames_before
         track_new["frames"] = frames_after
-
         track_new["label"] = new_label
 
         # only add daughters if they aren't in the same frame as the new track
@@ -592,8 +880,123 @@ class TrackReview:
 
         self.color_map = self.random_colormap()
 
+
 def consecutive(data, stepsize=1):
     return np.split(data, np.where(np.diff(data) != stepsize)[0]+1)
+
+def predict_zstack_cell_ids(img, next_img):
+
+    #create np array that can hold all pairings between cells in one
+    #image and cells in next image
+   
+    iou = np.zeros((np.max(img)+1, np.max(next_img)+1))
+    
+    vals = np.unique(img)
+    cells = vals[np.nonzero(vals)]
+    
+    #nothing to predict off of
+    if len(cells) == 0:
+        return next_img
+    
+    next_vals = np.unique(next_img)
+    next_cells = next_vals[np.nonzero(next_vals)]
+    
+    #no values to reassign
+    if len(next_cells) == 0:
+        return next_img
+
+    #calculate IOUs
+    for i in cells:
+        for j in next_cells:
+            intersection = np.logical_and(img==i,next_img==j)
+            union = np.logical_or(img==i,next_img==j)
+            iou[i,j] = intersection.sum(axis=(0,1)) / union.sum(axis=(0,1))
+    
+    #relabel cells appropriately
+    
+    #relabeled_next holds cells as they get relabeled appropriately
+    relabeled_next = np.zeros(next_img.shape, dtype = np.uint16)
+    max_indices = np.argmax(iou, axis = 0)
+    
+    #put cells that into new image if they've been matched with another cell
+    
+    #keep track of which cells don't have matches
+    unmatched_cells = []
+    #don't reuse cells (if multiple cells in next_img match one particular cell)
+    used_cells = []
+    
+    #next_cell ranges between 0 and max(next_img)
+    #matched_cell is which cell in img matched that cell in next_img the best
+    for next_cell, matched_cell in enumerate(max_indices):
+        
+        if matched_cell not in used_cells:
+            
+            #add it to the relabeled image
+            relabeled_next = np.where(next_img == next_cell, matched_cell, relabeled_next)
+            
+            #don't add background to used_cells
+            if matched_cell != 0:
+                used_cells = np.append(used_cells, matched_cell)
+        
+        elif matched_cell in used_cells:
+            #skip that pairing, add next_cell to unmatched_cells
+            unmatched_cells = np.append(unmatched_cells, next_cell)
+        
+        #if the cell in next_img didn't match anything (and is not the background):
+        if matched_cell == 0 and next_cell !=0:
+            unmatched_cells = np.append(unmatched_cells, next_cell)
+    
+    #retire cell labels from being used if cell in img matches only background in next_img
+    retire_indices = np.argmax(iou, axis =1)
+    retired_cells = []
+    
+    for current_cell, matched_cell in enumerate(retire_indices):
+        if matched_cell == 0 and current_cell != 0:
+            retired_cells = np.append(retired_cells, current_cell)
+    
+    #figure out which labels we should use to label remaining, unmatched cells
+    relabeled_values = np.unique(relabeled_next)[np.nonzero(np.unique(relabeled_next))]
+    
+    #allowed_values = labels from next_cells that haven't been used in relabeled_next already
+    allowed_values = np.setdiff1d(next_cells, relabeled_values)
+    
+    #stringent_allowed = allowed_values that haven't been retired
+    stringent_allowed =np.setdiff1d(allowed_values, retired_cells)
+    
+    #stringent_allowed does not generate enough labels to account for any new cells that appear
+    #so create new labels by adding to the max number of cells
+    #only make as many new labels as needed
+    
+    current_max = max(np.max(cells), np.max(next_cells)) + 1
+    
+    for additional_needed in range(len(next_cells)-len(relabeled_values)-len(stringent_allowed)):
+        stringent_allowed = np.append(stringent_allowed, current_max)
+        current_max += 1
+    
+    #replace each unmatched cell with a value from the stringent_allowed list,
+    #add that relabeled cell to relabeled_next
+    if len(unmatched_cells) > 0:
+        for reassigned_cell in range(len(stringent_allowed)):
+            relabeled_next = np.where(next_img == unmatched_cells[reassigned_cell],
+                                 stringent_allowed[reassigned_cell], relabeled_next)
+
+    return relabeled_next
+
+
+
+def load_npz(filename):
+
+    data = BytesIO(filename)
+    npz = np.load(data)
+
+    try:
+        raw_stack = npz['raw']
+        annotation_stack = npz['annotated']
+    except:
+        raw_stack = npz[npz.files[0]]
+        annotation_stack = npz[npz.files[1]]
+        
+    return {"raw": raw_stack, "annotated": annotation_stack}
 
 # copied from:
 # vanvalenlab/deepcell-tf/blob/master/deepcell/utils/tracking_utils.py3
