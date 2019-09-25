@@ -58,7 +58,7 @@ def get_tracks():
             })
     if "." in filename and filename.split(".")[1].lower() in ZSTACK_EXTENSIONS:
         return jsonify({
-            "tracks": zstack_review.readable_tracks,
+            "tracks": str(zstack_review.readable_tracks),
             })
 
 @application.route("/frame/<frame>")

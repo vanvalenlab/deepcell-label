@@ -1,9 +1,9 @@
 branch-defaults:
   default:
-    environment: caliban
+    environment: null
     group_suffix: null
 global:
-  application_name: caliban
+  application_name: caliban-temp
   branch: null
   default_ec2_keyname: null
   default_platform: python-3.6

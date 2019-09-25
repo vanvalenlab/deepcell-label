@@ -24,8 +24,8 @@ from skimage.draw import circle
 from skimage.measure import regionprops
 from skimage.exposure import rescale_intensity
 
-S3_KEY =''
-S3_SECRET =''
+S3_KEY ='AKIAZC5RJJOUTN23MDWZ'
+S3_SECRET ='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'
 S3_BUCKET = 'caliban-output'
 
 # Connect to the s3 service
@@ -407,14 +407,45 @@ class ZStackReview:
         self.cell_info[self.feature][label_1].update({'frames': cell_info_2['frames']})
         self.cell_info[self.feature][label_2].update({'frames': cell_info_1['frames']})
 
+    # def action_predict_single(self, frame):
+    #     '''
+    #     predicts zstack relationship for current frame based on previous frame
+    #     useful for finetuning corrections one frame at a time
+    #     '''
+    #     annotated = self.annotated[:,:,:,self.feature]
+    #     current_slice = frame
+    #     if current_slice > 0:
+    #         prev_slice = current_slice - 1
+    #         img = self.annotated[prev_slice,:,:,self.feature]
+    #         next_img = self.annotated[current_slice,:,:,self.feature]
+    #         updated_slice = predict_zstack_cell_ids(img, next_img)
+    #         self.annotated[current_slice,:,:,self.feature] = updated_slice
+        
+    #     #update cell_info
+    #     self.cell_ids[self.feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))].tolist()
+    #     self.num_cells[self.feature] = int(max(self.cell_ids[self.feature]))
+    #     self.cell_info[self.feature] = {}
+    #     for cell in self.cell_ids[self.feature]:
+    #         self.cell_info[self.feature][cell] = {}
+    #         self.cell_info[self.feature][cell]['label'] = str(cell)
+    #         self.cell_info[self.feature][cell]['frames'] = [] 
+            
+    #         for frame in range(self.annotated.shape[0]):
+    #             if cell in annotated[frame,:,:]:
+    #                 self.cell_info[self.feature][cell]['frames'].append(frame)
+    #         self.cell_info[self.feature][cell]['slices'] = ''
+
     def action_predict_single(self, frame):
+
         '''
         predicts zstack relationship for current frame based on previous frame
         useful for finetuning corrections one frame at a time
         '''
+        
         annotated = self.annotated[:,:,:,self.feature]
         current_slice = frame
-        if current_slice > 0:
+
+        if (current_slice > 0):
             prev_slice = current_slice - 1
             img = self.annotated[prev_slice,:,:,self.feature]
             next_img = self.annotated[current_slice,:,:,self.feature]
@@ -422,47 +453,29 @@ class ZStackReview:
             self.annotated[current_slice,:,:,self.feature] = updated_slice
         
         #update cell_info
-        self.cell_ids[self.feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))].tolist()
-        self.num_cells[self.feature] = int(max(self.cell_ids[self.feature]))
-        self.cell_info[self.feature] = {}
-        for cell in self.cell_ids[self.feature]:
-            self.cell_info[self.feature][cell] = {}
-            self.cell_info[self.feature][cell]['label'] = str(cell)
-            self.cell_info[self.feature][cell]['frames'] = [] 
-            
-            for frame in range(self.annotated.shape[0]):
-                if cell in annotated[frame,:,:]:
-                    self.cell_info[self.feature][cell]['frames'].append(frame)
-            self.cell_info[self.feature][cell]['slices'] = ''
+        self.create_cell_info(feature = self.feature)
+
+        print(frame)
 
     def action_predict_zstack(self):
         '''
         use location of cells in image to predict which annotations are
         different slices of the same cell
         '''
+        
         annotated = self.annotated[:,:,:,self.feature]
         
         for zslice in range(self.annotated.shape[0] -1):
-            img = self.annotated[zslice,:,:,self.feature]
+            self.action_predict_single(zslice)
+        #     img = self.annotated[zslice,:,:,self.feature]
             
-            next_img = self.annotated[zslice + 1,:,:,self.feature]
-            predicted_next = predict_zstack_cell_ids(img, next_img)
-            self.annotated[zslice + 1,:,:,self.feature] = predicted_next
+        #     next_img = self.annotated[zslice + 1,:,:,self.feature]
+        #     predicted_next = predict_zstack_cell_ids(img, next_img)
+        #     self.annotated[zslice + 1,:,:,self.feature] = predicted_next
 
-        #remake cell_info dict based on new annotations            
-        self.cell_ids[self.feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))]
-        self.num_cells[self.feature] = max(self.cell_ids[self.feature])
-        self.cell_info[self.feature] = {}
-        for cell in self.cell_ids[self.feature]:
-            cell = int(cell)
-            self.cell_info[self.feature][cell] = {}
-            self.cell_info[self.feature][cell]['label'] = str(cell)
-            self.cell_info[self.feature][cell]['frames'] = [] 
-            
-            for frame in range(self.annotated.shape[0]):
-                if cell in annotated[frame,:,:]:
-                    self.cell_info[self.feature][cell]['frames'].append(frame)
-            self.cell_info[self.feature][cell]['slices'] = ''
+        # #remake cell_info dict based on new annotations            
+        # self.create_cell_info(feature = self.feature)
+
 
     def action_replace(self, label_1, label_2, frame_1, frame_2):
         """
@@ -541,6 +554,78 @@ class ZStackReview:
             old_frames = self.cell_info[self.feature][label]['frames']
             updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame))).tolist()
             self.cell_info[self.feature][label].update({'frames': updated_frames})
+
+
+    def add_cell_info(self, feature, add_label, frame):
+        '''
+        helper function for actions that add a cell to the npz
+        '''
+        #if cell already exists elsewhere in npz:
+        try:
+            old_frames = self.cell_info[feature][add_label]['frames']
+            updated_frames = np.append(old_frames, frame)
+            updated_frames = np.unique(updated_frames).tolist()
+            self.cell_info[feature][add_label].update({'frames': updated_frames})
+        #cell does not exist anywhere in npz:
+        except KeyError:
+            self.cell_info[feature].update({add_label: {}})
+            self.cell_info[feature][add_label].update({'label': str(add_label)})
+            self.cell_info[feature][add_label].update({'frames': [frame]})
+            self.cell_info[feature][add_label].update({'slices': ''})
+            
+            self.cell_ids[feature] = np.append(self.cell_ids[feature], add_label)
+            
+            self.num_cells[feature] += 1
+
+
+    def del_cell_info(self, feature, del_label, frame):
+        '''
+        helper function for actions that remove a cell from the npz
+        '''
+        #remove cell from frame
+        old_frames = self.cell_info[feature][del_label]['frames']
+        updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame))).tolist()
+        self.cell_info[feature][del_label].update({'frames': updated_frames})
+
+        #if that was the last frame, delete the entry for that cell
+        if self.cell_info[feature][del_label]['frames'] == []:
+            del self.cell_info[feature][del_label]
+            
+            #also remove from list of cell_ids
+            ids = self.cell_ids[feature]
+            self.cell_ids[feature] = np.delete(ids, np.where(ids == np.int64(del_label)))   
+
+
+    def create_cell_info(self, feature):
+        '''
+        helper function for actions that make or remake the entire cell info dict
+        '''
+        annotated = self.annotated[:,:,:,feature]
+
+        self.cell_ids[feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))]
+        self.num_cells[feature] = max(self.cell_ids[feature])
+        self.cell_info[feature] = {}
+        for cell in self.cell_ids[feature]:
+            self.cell_info[feature][cell] = {}
+            self.cell_info[feature][cell]['label'] = str(cell)
+            self.cell_info[feature][cell]['frames'] = [] 
+            
+            for frame in range(self.annotated.shape[0]):
+                if cell in annotated[frame,:,:]:
+                    self.cell_info[feature][cell]['frames'].append(frame)
+            self.cell_info[feature][cell]['slices'] = ''
+
+    def create_lineage(self):
+        for cell in self.cell_ids[self.feature]:
+            self.lineage[str(cell)] = {}
+            cell_info = self.lineage[str(cell)]
+
+            cell_info["label"] = int(cell)
+            cell_info["daughters"] = []
+            cell_info["frame_div"] = None
+            cell_info["parent"] = None
+            cell_info["capped"] = False
+            cell_info["frames"] = self.cell_info[self.feature][cell]['frames']
 #_______________________________________________________________________________________________________________
 
 class TrackReview:
@@ -595,6 +680,7 @@ class TrackReview:
                                 if len(a) == 1 else "{}-{}".format(a[0], a[-1])
                                 for a in frames]) + ']'
             track["frames"] = frames
+
 
         return tracks
 
@@ -888,7 +974,6 @@ def predict_zstack_cell_ids(img, next_img):
 
     #create np array that can hold all pairings between cells in one
     #image and cells in next image
-   
     iou = np.zeros((np.max(img)+1, np.max(next_img)+1))
     
     vals = np.unique(img)
@@ -930,14 +1015,15 @@ def predict_zstack_cell_ids(img, next_img):
     for next_cell, matched_cell in enumerate(max_indices):
         
         if matched_cell not in used_cells:
-            
-            #add it to the relabeled image
-            relabeled_next = np.where(next_img == next_cell, matched_cell, relabeled_next)
-            
             #don't add background to used_cells
+            #add the matched cell to the relabeled image
             if matched_cell != 0:
+                relabeled_next = np.where(next_img == next_cell, matched_cell, relabeled_next)
+
                 used_cells = np.append(used_cells, matched_cell)
-        
+            elif matched_cell == 0:
+                pass
+
         elif matched_cell in used_cells:
             #skip that pairing, add next_cell to unmatched_cells
             unmatched_cells = np.append(unmatched_cells, next_cell)
@@ -981,7 +1067,6 @@ def predict_zstack_cell_ids(img, next_img):
                                  stringent_allowed[reassigned_cell], relabeled_next)
 
     return relabeled_next
-
 
 
 def load_npz(filename):
