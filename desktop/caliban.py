@@ -44,6 +44,9 @@ from skimage.morphology import watershed, flood_fill
 from skimage.draw import circle
 from skimage.measure import regionprops
 from skimage.exposure import rescale_intensity
+from skimage import color, img_as_float
+
+from imageio import imread, imwrite
 
 gl.glEnable(gl.GL_TEXTURE_2D)
 
@@ -102,7 +105,7 @@ class TrackReview:
         self.edit_value = 1
         self.brush_size = 1
         self.erase = False
-        self.brush_view = np.zeros(self.tracked[self.current_frame].shape)
+        self.brush_view = np.zeros(self.tracked[self.current_frame,:,:,0].shape)
 
         pyglet.app.run()
 
@@ -177,7 +180,7 @@ class TrackReview:
 
         elif self.edit_mode:
             if self.mode.kind is None:
-                annotated = self.tracked[self.current_frame]
+                annotated = self.tracked[self.current_frame,:,:,0]
 
                 brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
 
@@ -201,7 +204,7 @@ class TrackReview:
                 elif in_modified and not in_original:
                     self.add_cell_info(add_label = self.edit_value, frame = self.current_frame)
 
-                self.tracked[self.current_frame] = annotated
+                self.tracked[self.current_frame,:,:,0] = annotated
 
             elif self.mode.kind == "PROMPT" and self.mode.action == "PICK COLOR":
                 frame = self.tracked[self.current_frame]
@@ -224,7 +227,7 @@ class TrackReview:
             self.x, self.y = x, y        
         
         if self.edit_mode:
-            annotated = self.tracked[self.current_frame]
+            annotated = self.tracked[self.current_frame,:,:,0]
             
             #self.x and self.y are different from the mouse's x and y
             x_loc = self.x
@@ -255,11 +258,11 @@ class TrackReview:
             elif in_modified and not in_original:
                 self.add_cell_info(add_label = self.edit_value, frame = self.current_frame)
                         
-            self.tracked[self.current_frame] = annotated        
+            self.tracked[self.current_frame,:,:,0] = annotated        
 
     def on_mouse_release(self, x, y, buttons, modifiers):
         if self.edit_mode:
-            self.brush_view = np.zeros(self.tracked[self.current_frame].shape)
+            self.brush_view = np.zeros(self.tracked[self.current_frame,:,:,0].shape)
 
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
@@ -283,7 +286,7 @@ class TrackReview:
 
         if self.edit_mode:
             #display brush size
-            self.brush_view = np.zeros(self.tracked[self.current_frame].shape)
+            self.brush_view = np.zeros(self.tracked[self.current_frame,:,:,0].shape)
             brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
             self.brush_view[brush_area] = self.edit_value
 
@@ -333,6 +336,8 @@ class TrackReview:
                 self.brush_size = max(self.brush_size -1, 1)
             if symbol == key.RIGHT:
                 self.brush_size = min(self.brush_size + 1, self.height, self.width)
+            if symbol == key.Z:
+                self.draw_raw = not self.draw_raw
             else:
                 self.mode_handle(symbol)
 
@@ -545,47 +550,88 @@ class TrackReview:
 
         elif self.edit_mode:
         
-            current_raw = self.raw[self.current_frame,:,:,0]
-            current_ann = self.tracked[self.current_frame,:,:,0]
-            with tempfile.TemporaryFile() as raw_file:
-                plt.imsave(raw_file, current_raw,
-                            vmax=self.max_intensity,
-                            cmap='Greys',
-                            format='png')
-                raw_img = pyglet.image.load('raw_file.png', raw_file)
-            with tempfile.TemporaryFile() as ann_file:
-                plt.imsave(ann_file, current_ann,
-                            vmax=self.num_tracks + self.adjustment,
-                            cmap='gist_stern',
-                            format='png')
-                ann_img = pyglet.image.load('ann_file.png', ann_file)
-                
+            # create pyglet image object so we can display brush location
+            # handle with context manager because we don't need to keep brush_file around for long
             with tempfile.TemporaryFile() as brush_file:
-                plt.imsave(brush_file, self.brush_view[:,:,0],
+                plt.imsave(brush_file, self.brush_view,
                             vmax = self.num_tracks + self.adjustment,
                             cmap='gist_stern',
                             format='png')
                 brush_img = pyglet.image.load('brush_file.png', brush_file)
 
-            raw_sprite = pyglet.sprite.Sprite(raw_img, x=self.sidebar_width, y=0)
-            ann_sprite = pyglet.sprite.Sprite(ann_img, x=self.sidebar_width, y=0)
-            brush_sprite = pyglet.sprite.Sprite(brush_img, x=self.sidebar_width, y=0)
+            # get raw and annotated data
+            current_raw = self.raw[self.current_frame,:,:,0]
+            current_ann = self.tracked[self.current_frame,:,:,0]
+
+            # put raw image data into BytesIO object
+            raw_file = BytesIO()
+
+            plt.imsave(raw_file, current_raw,
+                            vmax=self.max_intensity,
+                            cmap='Greys',
+                            format='png')
+
+            raw_file.seek(0)
             
-            raw_sprite.opacity = 128
-            ann_sprite.opacity = 128
+            #gives us the 'greyscale' image in array format
+            #(the format is RGB even though it is displayed as grey)
+            raw_img = imread(raw_file)
+
+            #don't need to keep the file open once we have the array
+            raw_file.close()
+            raw_RGB = raw_img[:,:,0:3]
+
+            # put annotated image data into BytesIO object
+            ann_file = BytesIO()
+            plt.imsave(ann_file, current_ann,
+                            vmax=self.num_tracks + self.adjustment,
+                            cmap='gist_stern',
+                            format='png')
+
+            ann_file.seek(0)
+
+            #gives us the color image in array format
+            ann_img = imread(ann_file)
+
+            #don't need to keep the file open once we have the array
+            ann_file.close()
+            ann_RGB = ann_img[:,:,0:3]
+            
+            #composite raw image with annotations on top
+            alpha = 0.5
+
+            # Convert the input image and color mask to Hue Saturation Value (HSV)
+            # colorspace
+            img_hsv = color.rgb2hsv(raw_RGB)
+            color_mask_hsv = color.rgb2hsv(ann_RGB)
+
+            # Replace the hue and saturation of the original image
+            # with that of the color mask
+            img_hsv[..., 0] = color_mask_hsv[..., 0]
+            img_hsv[..., 1] = color_mask_hsv[..., 1] * alpha
+
+            img_masked = color.hsv2rgb(img_hsv)
+            img_masked = rescale_intensity(img_masked, out_range = np.uint8)
+            img_masked = img_masked.astype(np.uint8)
+
+            # save img_masked as png so we can load it as a pyglet image
+            file_masked = tempfile.NamedTemporaryFile(suffix = '.png')
+            imwrite(str(file_masked.name), img_masked)
+            comp_img = pyglet.image.load(str(file_masked.name))
+            file_masked.close()
+        
+            composite_sprite = pyglet.sprite.Sprite(comp_img, x = self.sidebar_width, y=0)
+            brush_sprite = pyglet.sprite.Sprite(brush_img, x=self.sidebar_width, y=0)
+
             brush_sprite.opacity = 128
-                
-            raw_sprite.update(scale_x=self.scale_factor,
-                            scale_y=self.scale_factor)
-                
-            ann_sprite.update(scale_x=self.scale_factor,
-                            scale_y=self.scale_factor)
+
+            composite_sprite.update(scale_x=self.scale_factor,
+                                    scale_y=self.scale_factor)
             
             brush_sprite.update(scale_x=self.scale_factor,
                                     scale_y=self.scale_factor)
-                                
-            raw_sprite.draw()
-            ann_sprite.draw()
+
+            composite_sprite.draw()
             brush_sprite.draw()
             
             gl.glTexParameteri(gl.GL_TEXTURE_2D,
@@ -1134,6 +1180,8 @@ class ZStackReview:
                 self.brush_size = max(self.brush_size -1, 1)
             if symbol == key.RIGHT:
                 self.brush_size = min(self.brush_size + 1, self.height, self.width)
+            if symbol == key.Z:
+                self.draw_raw = not self.draw_raw
             else:
                 self.mode_handle(symbol)
             
@@ -1382,22 +1430,9 @@ class ZStackReview:
             sprite.draw()
 
         elif self.edit_mode:
-        
-            current_raw = self.raw[self.current_frame,:,:,self.channel]
-            current_ann = self.annotated[self.current_frame,:,:,self.feature]
-            with tempfile.TemporaryFile() as raw_file:
-                plt.imsave(raw_file, current_raw,
-                            vmax=self.max_intensity[self.channel],
-                            cmap='Greys',
-                            format='png')
-                raw_img = pyglet.image.load('raw_file.png', raw_file)
-            with tempfile.TemporaryFile() as ann_file:
-                plt.imsave(ann_file, current_ann,
-                            vmax=self.num_cells[self.feature] + self.adjustment[self.feature],
-                            cmap='gist_stern',
-                            format='png')
-                ann_img = pyglet.image.load('ann_file.png', ann_file)
-                
+
+            # create pyglet image object so we can display brush location
+            # handle with context manager because we don't need to keep brush_file around for long
             with tempfile.TemporaryFile() as brush_file:
                 plt.imsave(brush_file, self.brush_view,
                             vmax = self.num_cells[self.feature] + self.adjustment[self.feature],
@@ -1405,25 +1440,79 @@ class ZStackReview:
                             format='png')
                 brush_img = pyglet.image.load('brush_file.png', brush_file)
 
-            raw_sprite = pyglet.sprite.Sprite(raw_img, x=self.sidebar_width, y=0)
-            ann_sprite = pyglet.sprite.Sprite(ann_img, x=self.sidebar_width, y=0)
-            brush_sprite = pyglet.sprite.Sprite(brush_img, x=self.sidebar_width, y=0)
+            # get raw and annotated data
+            current_raw = self.raw[self.current_frame,:,:,self.channel]
+            current_ann = self.annotated[self.current_frame,:,:,self.feature]
+
+            # put raw image data into BytesIO object
+            raw_file = BytesIO()
+
+            plt.imsave(raw_file, current_raw,
+                            vmax=self.max_intensity[self.channel],
+                            cmap='Greys',
+                            format='png')
+
+            raw_file.seek(0)
             
-            raw_sprite.opacity = 128
-            ann_sprite.opacity = 128
+            #gives us the 'greyscale' image in array format
+            #(the format is RGB even though it is displayed as grey)
+            raw_img = imread(raw_file)
+
+            #don't need to keep the file open once we have the array
+            raw_file.close()
+            raw_RGB = raw_img[:,:,0:3]
+
+            # put annotated image data into BytesIO object
+            ann_file = BytesIO()
+            plt.imsave(ann_file, current_ann,
+                            vmax=self.num_cells[self.feature] + self.adjustment[self.feature],
+                            cmap='gist_stern',
+                            format='png')
+
+            ann_file.seek(0)
+
+            #gives us the color image in array format
+            ann_img = imread(ann_file)
+
+            #don't need to keep the file open once we have the array
+            ann_file.close()
+            ann_RGB = ann_img[:,:,0:3]
+            
+            #composite raw image with annotations on top
+            alpha = 0.5
+
+            # Convert the input image and color mask to Hue Saturation Value (HSV)
+            # colorspace
+            img_hsv = color.rgb2hsv(raw_RGB)
+            color_mask_hsv = color.rgb2hsv(ann_RGB)
+
+            # Replace the hue and saturation of the original image
+            # with that of the color mask
+            img_hsv[..., 0] = color_mask_hsv[..., 0]
+            img_hsv[..., 1] = color_mask_hsv[..., 1] * alpha
+
+            img_masked = color.hsv2rgb(img_hsv)
+            img_masked = rescale_intensity(img_masked, out_range = np.uint8)
+            img_masked = img_masked.astype(np.uint8)
+
+            # save img_masked as png so we can load it as a pyglet image
+            file_masked = tempfile.NamedTemporaryFile(suffix = '.png')
+            imwrite(str(file_masked.name), img_masked)
+            comp_img = pyglet.image.load(str(file_masked.name))
+            file_masked.close()
+        
+            composite_sprite = pyglet.sprite.Sprite(comp_img, x = self.sidebar_width, y=0)
+            brush_sprite = pyglet.sprite.Sprite(brush_img, x=self.sidebar_width, y=0)
+
             brush_sprite.opacity = 128
-                
-            raw_sprite.update(scale_x=self.scale_factor,
-                            scale_y=self.scale_factor)
-                
-            ann_sprite.update(scale_x=self.scale_factor,
-                            scale_y=self.scale_factor)
+
+            composite_sprite.update(scale_x=self.scale_factor,
+                                    scale_y=self.scale_factor)
             
             brush_sprite.update(scale_x=self.scale_factor,
                                     scale_y=self.scale_factor)
-                                
-            raw_sprite.draw()
-            ann_sprite.draw()
+
+            composite_sprite.draw()
             brush_sprite.draw()
             
             gl.glTexParameteri(gl.GL_TEXTURE_2D,
