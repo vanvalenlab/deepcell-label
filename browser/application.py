@@ -26,10 +26,10 @@ def upload_file():
 
     if "." in filename and filename.split(".")[1].lower() in TRACK_EXTENSIONS:
         track_review.action_save_track()
-        return "success!"
+        return filename
     if "." in filename and filename.split(".")[1].lower() in ZSTACK_EXTENSIONS:
         zstack_review.action_save_zstack()
-        return "success!"
+        return filename
     else:
         return redirect("/")
 
@@ -58,7 +58,7 @@ def get_tracks():
             })
     if "." in filename and filename.split(".")[1].lower() in ZSTACK_EXTENSIONS:
         return jsonify({
-            "tracks": str(zstack_review.readable_tracks),
+            "tracks": zstack_review.readable_tracks,
             })
 
 @application.route("/frame/<frame>")
@@ -66,12 +66,14 @@ def get_frame(frame):
     frame = int(frame)
 
     if "." in filename and filename.split(".")[1].lower() in TRACK_EXTENSIONS:
-        img = track_review.get_frame(frame, raw=False)
-        raw = track_review.get_frame(frame, raw=True)
+        img = track_review.get_frame(frame, raw=False, edit_background =False)
+        raw = track_review.get_frame(frame, raw=True, edit_background=False)
+        edit = track_review.get_frame(frame, raw=False, edit_background=True)
         payload = {
                 'raw': f'data:image/png;base64,{base64.encodebytes(raw.read()).decode()}',
                 'cmap': track_review.png_colormap,
                 'segmented': f'data:image/png;base64,{base64.encodebytes(img.read()).decode()}',
+                'edit_background': f'data:image/png;base64,{base64.encodebytes(edit.read()).decode()}'
                 }
 
     if "." in filename and filename.split(".")[1].lower() in ZSTACK_EXTENSIONS:
@@ -87,11 +89,14 @@ def get_frame(frame):
                 }
     return jsonify(payload)
 
-@application.route("/load/<filename>", methods=["POST"])
-def load(filename):
+@application.route("/load/<fname>", methods=["POST"])
+def load(fname):
 
     global track_review
     global zstack_review
+    global filename
+
+    filename = fname
 
     print(f"Loading track at {filename}", file=sys.stderr)
 
@@ -124,8 +129,10 @@ def tool():
 
     global filename
 
-
     filename = request.form['filename']
+
+
+    #filename = request.form['filename']
     print(f"{filename} is filename", file=sys.stderr)
 
     if "." in filename and filename.split(".")[1].lower() in TRACK_EXTENSIONS:
@@ -135,7 +142,7 @@ def tool():
 
     return "error"
 
-# Directly brings users to the tool page by typing url/filename
+
 @application.route('/<file>', methods=['GET', 'POST'])
 def shortcut(file):
 
@@ -150,6 +157,24 @@ def shortcut(file):
         return render_template('index_zstack.html', filename=filename)
 
     return "error"
+
+# # Directly brings users to the tool page by typing url/filename
+# @application.route('/<file>')
+# def shortcut(file):
+
+#     global filename
+
+#     filename = file
+
+#     #filename = file
+#     print(f"{filename} is filename", file=sys.stderr)
+
+#     if "." in filename and filename.split(".")[1].lower() in TRACK_EXTENSIONS:
+#         return render_template('index_track.html', filename=filename)
+#     if "." in filename and filename.split(".")[1].lower() in ZSTACK_EXTENSIONS:
+#         return render_template('index_zstack.html', filename=filename)
+
+#     return "error"
 
 def main():
     application.jinja_env.auto_reload = True

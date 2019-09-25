@@ -22,9 +22,55 @@ class Mode {
 
   handle_key(key) {
 
+    if (edit_mode) {
+      if (key === "=") {
+        edit_value += 1;
+        this.info = {"edit_value": edit_value};
+        action("edit_value", this.info);
+        this.clear();
+      } else if (key === "-") {
+        edit_value = Math.max(edit_value - 1, 1);
+        this.info = {"edit_value": edit_value};
+        action("edit_value", this.info);
+        this.clear();
+      } else if (key === "x") {
+        erase = -(erase);
+
+        action("change_erase", {"erase": erase});
+        this.clear();
+      } else if (key === ",") {
+        brush_size = Math.max(brush_size - 1, 1);
+        this.info = {"brush_size": brush_size};
+        action("change_brush_size", this.info);
+        this.clear();
+      } else if (key === ".") {
+        brush_size = Math.min(self.brush_size + 1, dimensions[0], dimensions[1]);
+        this.info = {"brush_size": brush_size};
+        action("change_brush_size", this.info);
+        this.clear();
+      }
+
+    }
+
     if(key === "h") {
         action("change_highlight", this.info);
         this.clear();
+    }
+
+    if (this.kind == Modes.none) {
+      if (key === "e") {
+        rendering_edit = !rendering_edit;
+        edit_mode = !edit_mode
+        brush_size = 1;
+        edit_value = 1;
+        erase = -1
+        action("change_edit_mode", {});
+        action("change_brush_size", {"brush_size": brush_size});
+        action("edit_value", {"edit_value": edit_value});
+        action("change_erase", {"erase": erase});
+        this.clear();
+      }
+
     }
 
     if (this.kind == Modes.single) {
@@ -85,6 +131,13 @@ class Mode {
         action("change_highlighted_cells", this.highlighted_cells);
       }
     }
+  }
+
+  handle_draw(mouse_x, mouse_y) {
+    action("handle_draw", { "x": mouse_x, 
+                  "y": mouse_y,
+                  "frame": current_frame});
+    this.clear()
   }
 
   update_highlighted_cells(decrease, increase) {
@@ -209,6 +262,7 @@ var Modes = Object.freeze({
 var temp_x = 0;
 var temp_y = 0;
 var rendering_raw = false;
+var rendering_edit = false;
 var current_contrast = 0;
 var current_frame = 0;
 var current_label = 0;
@@ -221,8 +275,15 @@ var num_tracks = 0;
 var mode = new Mode(Modes.none, {});
 var raw_image = undefined;
 var seg_image = undefined;
+var edit_image = undefined;
 var mouse_x = 0;
 var mouse_y = 0;
+var edit_mode = false;
+var edit_value = undefined;
+var brush_size = undefined;
+var erase = undefined;
+var last_mousex = last_mousey = 0;
+var mousedown = false;
 
 function contrast_image(img, contrast) {
   let d = img.data;
@@ -258,6 +319,27 @@ function render_log() {
 
   }
 
+  if (edit_mode == true) {
+ 
+    $('#edit_mode').html("ON");
+    $('#edit_brush').text("brush size: " + brush_size);
+    $('#edit_label').text("editing label: " + edit_value);
+
+    if (erase == 1) {
+      $('#edit_erase').text("eraser mode: ON");
+    } else {
+      $('#edit_erase').text("eraser mode: OFF");
+    }
+
+  } else {
+    $('#edit_mode').html("OFF");
+    $('#edit_brush').text("");
+    $('#edit_label').text("");
+    $('#edit_erase').text("");
+   
+    
+  }
+
   if (current_label !== 0) {
     let track = tracks[current_label.toString()];
     $('#parent').text(track.parent || "None");
@@ -286,13 +368,21 @@ function render_frame() {
   if (rendering_raw) {
     ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
     image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
-
     contrast_image(image_data, current_contrast);
     ctx.putImageData(image_data, 0, 0);
+  } else if (rendering_edit) {
+    // add opacity
+    
+    
+    ctx.drawImage(edit_image, 0, 0, dimensions[0], dimensions[1]);
+    ctx.save();
+    ctx.globalAlpha = 0.1;
+    ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
+    //ctx.globalCompositeOperation = "lighter";
+    ctx.restore();
   } else {
     ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
   }
-
   render_log();
 }
 
@@ -309,11 +399,17 @@ function fetch_and_render_frame() {
       if (raw_image === undefined) {
         raw_image = new Image();
       }
+      if (edit_image === undefined) {
+        edit_image = new Image();
+      }
+
 
       seg_image.src = payload.segmented;
       seg_image.onload = render_frame;
       raw_image.src = payload.raw;
       raw_image.onload = render_frame;
+      edit_image.src = payload.edit_background;
+      edit_image.onload = render_frame;
 
     },
     async: true
@@ -363,6 +459,29 @@ function prepare_canvas() {
     mouse_x = evt.offsetX;
     mouse_y = evt.offsetY;
     render_log();
+  });
+  $('#canvas').mousedown(function(evt) {
+    last_mousex = mouse_x 
+    last_mousey = mouse_y
+    mousedown = true;
+  });
+  $('#canvas').mouseup(function(evt) {
+    mousedown = false;
+  });
+  $('#canvas').mousemove(function(evt) {
+
+    let canvas = document.getElementById('canvas');
+    let ctx = canvas.getContext('2d');
+
+    mousex = evt.offsetX;
+    mousey = evt.offsetY;
+    if (mousedown) {
+        mode.handle_draw(mousex, mousey);
+
+    }
+      last_mousex = mousex;
+      last_mousey = mousey;
+      
   });
 
   window.addEventListener('keydown', function(evt) {

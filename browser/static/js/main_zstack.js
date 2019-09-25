@@ -119,7 +119,7 @@ class Mode {
           action("swap_all_frame", this.info);
           this.clear();
         } else if (this.action == "predict") {
-          action("predict_zstack", {});
+          action("predict_zstack", this.info);
           this.clear();
         } else if (this.action == "replace") {
           action("replace", this.info);
@@ -256,7 +256,7 @@ var erase = undefined;
 var answer = "(SPACE=YES / ESC=NO)";
 var last_mousex = last_mousey = 0;
 var mousedown = false;
-var tooltype = 'none';
+var tooltype = 'draw';
 
 function contrast_image(img, contrast) {
   let d = img.data;
@@ -291,7 +291,6 @@ function render_log() {
   $('#channel').html(mode.channel);
 
   if (edit_mode == true) {
-    tooltype = 'draw';
     $('#edit_mode').html("ON");
     $('#edit_brush').text("brush size: " + brush_size);
     $('#edit_label').text("editing label: " + edit_value);
@@ -307,7 +306,6 @@ function render_log() {
     $('#edit_brush').text("");
     $('#edit_label').text("");
     $('#edit_erase').text("");
-    tooltype = 'none';
     
   }
 
@@ -334,13 +332,8 @@ function render_frame() {
     ctx.putImageData(image_data, 0, 0);
   } else if (rendering_edit) {
     // add opacity
-    ctx.save();
-    
     ctx.drawImage(edit_image, 0, 0, dimensions[0], dimensions[1]);
-    ctx.globalAlpha = 0.2;
     ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
-    //ctx.globalCompositeOperation = "lighter";
-    ctx.restore();
   } else {
     ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
   }
@@ -432,18 +425,19 @@ function prepare_canvas() {
 
     mousex = evt.offsetX;
     mousey = evt.offsetY;
-    if (mousedown) {
-
-      if (tooltype == 'draw') {
+    if (mousedown && edit_mode) {
 
         mode.handle_draw(mousex, mousey);
 
         ctx.beginPath();
-        
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.strokeStyle = 'black';
-        ctx.lineWidth = edit_brush;
-        
+        if (tooltype == 'draw') {
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = edit_brush;
+        } else {
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.lineWidth = edit_brush;
+        }
         ctx.moveTo(last_mousex,last_mousey);
         ctx.lineTo(mousex,mousey);
         ctx.lineJoin = ctx.lineCap = 'round';
@@ -451,12 +445,11 @@ function prepare_canvas() {
     }
     last_mousex = mousex;
     last_mousey = mousey;
-      }
   });
 
-  // use_tool = function(tool) {
-  //   tooltype = tool; //update the tool
-  // }
+  use_tool = function(tool) {
+    tooltype = tool; //update the tool
+  }
 
   window.addEventListener('keydown', function(evt) {
     if (evt.key === 'z') {
@@ -482,6 +475,8 @@ function prepare_canvas() {
       mode.handle_key(evt.key);
     }
   }, false);
+
+
 }
 
 function reload_tracks() {

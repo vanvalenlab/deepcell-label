@@ -1,64 +1,50 @@
 <button class="accordion">Instructions (Click to expand/collapse)</button>
 <div class="panel">
-    <p>Files can be edited using keyboard operations.</p>
+    <p dir="ltr">The right pane of Caliban displays an image of cells. This can be toggled between the raw image (not shown) and the cell segmentation masks for that image (shown). Each cell value is represented by a different color.&nbsp;</p>
 
-    <p>Navigation through Frames:</p>
-    <p>a or ← - Back one frame</p>
-    
-    <p>d or → - Forward one frame</p>
-    
-    <p>Edit Operations:</p>
-    <p>Caliban's default setting allows operations to be carried out quickly and easily on existing segmentations. The actions that can modify cell labels and/or lineage information are:</p>
-    
-    <p>click - click on a cell label to select it. Up to two cells can be selected at one time.</p>
-    
-    <p>r - replace: relabel all instances of a selected cell label with a second selected cell label; replaces lineage data in a trk file</p>
-    
-    <p>c - create: relabel selected cell with an unused label</p>
-    
-    <p>p - parent: assign parent/daughter relationship to pair of selected cells in trk file</p>
-    
-    <p>p - predict: predict zstack relationships in npz when no cells are selected</p>
-    
-    <p>s - swap: swap labels and lineage information between two selected cells</p>
-    
-    <p>x - delete: remove selected cell mask in frame</p>
-    
-    <p>w - watershed: call watershed transform to split one cell label into two</p>
-    
-    <p>esc - cancel operation</p>
-    <p>space bar - confirm operation</p>
-    <p>s - confirm operation in a single frame, when applicable</p>
-    
-    <p>You can also use esc or click on the black background to return back to a state where no cells are selected.</p>
-    
-    <p>In annotation mode:</p>
-    
-    <p>Most keybinds are disabled in annotation mode.</p>
-    
-    <p>Annotation mode focuses on using an adjustable brush to modify annotations on a pixel level, rather than using operations that apply to every instance of a label within a frame or set of frames. The brush tool will only make changes to the currently selected value. Ie, a brush set to edit cell 5 will only add or erase "5" to the annotated image.</p>
-    
-    <p>-/= increment value that brush is applying</p>
-    
-    <p>← → - change size of brush tool</p>
-    
-    <p>x - toggle eraser mode</p>
-    
-    <p>Viewing Options:</p>
-    <p>h - switch between highlighted mode and normal mode (once highlight mode is on, use -/= to decrement/increment selected cell label number)</p>
-    
-    <p>z - switch between annotations and raw images</p>
-    
-    <p>f - cycle between different annotations when no cells are selected</p>
-    
-    <p>c - cycle between different channels when no cells are selected</p>
-    
-    <p>e - toggle annotation mode</p>
-    
-    <p>scroll wheel - change image or annotation contrast</p>
-    
-    <p>To Save:</p>
-    <p>Once done, use the following key to save the changed file. The tool will also save the original file in the same folder. In npz mode, a new npz file will be saved with a version number.</p>
-    
-    <p>s - save</p>
+    <p dir="ltr">The left pane of Caliban displays information. The frame number you are viewing will always be displayed in the top left corner. When you mouse over a cell in the right pane, the tracking information for that cell will be displayed in the bottom left corner. Cell selections and confirmations will also be displayed in the bottom left corner.</p>
+
+    <h1>Your Task</h1>
+
+    <p>Your job is to go through each frame and make sure that cell lineages and divisions are correct. As you go through each frame, you will notice sometimes that individual cells will change color, two cells masks are identified as with one cell label, along with other mistakes. You will use keyboard operations in order to fix this and ensure that each cell has a unique individual label that is maintained across the frames.</p>
+
+    <h1>The Keyboard Tools</h1>
+
+    <p><strong>Mouse</strong> over a cell mask to see cell label and lineage information.</p>
+
+    <p><strong>Click</strong> on a cell mask to select it.</p>
+
+    <p><strong>esc</strong> | Cancel operation; do this if you click on a cell(s) and want to undo your click.</p>
+
+    <p><strong>z</strong> | Switch between annotations and raw images; use this to check if your masks and labels match up to the actual cell image</p>
+
+    <p><strong>Scroll Wheel</strong> | In raw image mode, scroll up/down to change the brightness of the image.&nbsp;</p>
+
+    <p><strong>h</strong> | Highlight mode; if used, this will highlight the cells that are selected with a red mask.</p>
+
+    <p>To navigate through frames:</p>
+
+    <p><strong>a</strong> | Go back to previous frame</p>
+
+    <p><strong>d</strong> | Go forward to next frame</p>
+
+    <p>________________________________</p>
+
+    <p>Single-Click Edit Operations:</p>
+
+    <p><strong>c</strong> | <em><u>create</u></em>: click on one cell mask (cell C). Hit “c” to create a new cell track starting from that frame.&nbsp;</p>
+
+    <p dir="ltr"><strong>x</strong> | <em><u>delete</u></em>: click on one cell mask (cell A). Hit "x" to delete the mask. This is useful when you have a couple pixels in a frame that represent a cell, but you want to remove that label.</p>
+
+    <p dir="ltr">Two-Click Edit Operations:</p>
+
+    <p><strong>r</strong> | <em><u>replace</u></em>: click on one cell mask (cell A) then another (cell B). Hit “r” to replace all instances of cell B with cell A.</p>
+
+    <p><strong>p</strong> | <em><u>parent</u></em>: click on one cell mask (cell D) then another (cell E). Hit “p” to assign cell D as the parent of cell E. Cell D will now include cell E in its list of daughter cells, and cell E will list cell D as its parent.</p>
+
+    <p dir="ltr"><strong>s&nbsp;</strong>| <em><u>swap</u></em>: click on one cell mask (cell F) then another (cell G). Hit “s” to swap the cell values (does not swap parent/daughter information). This affects all frames of the movie.</p>
+
+    <p dir="ltr"><strong>w</strong> | <em><u>watershed</u></em>: this function is to separate one cell mask (cell H) into two (cell H and cell I). Click on one pixel in a cell mask (cell H), then another pixel in the same cell mask. These points should correspond to the centers of the cells you are trying to separate. You can select these positions while you are looking at the raw channel. The first click should be on the cell that you want to remain cell H. &nbsp;Watershed (currently) does not create a cell track in the same way that “create” does. Do not watershed twice in a row without replacing the watershed cell with an existing cell track first (some exceptions exist).</p>
+
+    <p dir="ltr">Caliban currently doesn’t support an option to reverse an operation, so if a watershed operation is not fixable, you will have to refresh the browser page and start over.&nbsp;</p>
 </div>
