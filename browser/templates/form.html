@@ -25,7 +25,7 @@
     <body>
         <div id="container">
             {% include "navigation.html" %}
-            <form id="caliban-form" method="POST" action="{{ url_for('tool') }}">
+<!--             <form id="caliban-form" method="POST" action="{{ url_for('tool') }}">
                 <h3 class='call-action'>Caliban</h3>
                 <div class="file-name-input">
                     <label class="say-label" for="filename">Enter name of existing file to edit.</label>
@@ -35,6 +35,28 @@
                 <div>
                     <button>Go to Tool</button>
                 </div>
+            </form> -->
+            <p>
+
+
+
+
+
+
+
+
+
+
+              <p>
+            <form id="caliban-form" method="POST" action="{{ url_for('tool') }}">
+              <select name="filename">
+           
+                <option value="RAW264_S0_Batch02.trk">RAW264_S0_Batch02.trk </option>
+                <option value="RAW264_S0_Batch05.trk">RAW264_S0_Batch05.trk</option>
+                <option value="RAW264_S0_Batch06.trk">RAW264_S0_Batch06.trk</option>
+              </select>
+              <br><br>
+              <input type="submit">
             </form>
         </div>
     </body>

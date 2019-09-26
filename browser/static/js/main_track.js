@@ -6,6 +6,8 @@ class Mode {
     this.highlight = false;
     this.highlighted_cell_one = -1;
     this.highlighted_cell_two = -1;
+    this.action = "";
+    this.prompt = "";
 
   }
 
@@ -18,6 +20,8 @@ class Mode {
     this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
                               "cell_two": this.highlighted_cell_two};
     action("change_highlighted_cells", this.highlighted_cells);
+    this.action = "";
+    this.prompt = "";
   }
 
   handle_key(key) {
@@ -74,61 +78,92 @@ class Mode {
     }
 
     if (this.kind == Modes.single) {
-      if (key === "c") {
-        action("new_track", this.info);
-        this.clear();
-      }
+      if (key === "f") {
+        if (current_label != 0) {
+          this.info = { "label": current_label, 
+                      "frame": current_frame,
+                      "x_location": mouse_x,
+                      "y_location": mouse_y };
+          this.kind = Modes.question;
+          this.prompt = "Select hole to fill in cell " + current_label;
+          this.action = "fill_hole";
+          action("fill_hole", this.info);
 
-      if (key === "=") {
+        } else {
+          this.clear();
+        }
+      } else if (key === "c") {
+        this.kind = Modes.question;
+        this.action = "new_track";
+        this.prompt = "CREATE NEW (SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)";
+
+      } else if (key === "=") {
         this.update_highlighted_cells(-1, 1)
         this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
                                   "cell_two": this.highlighted_cell_two};
 
         action("change_highlighted_cells", this.highlighted_cells);
         
-      }
-
-      if (key === "-") {
+      } else if (key === "-") {
         this.update_highlighted_cells(1, -1)
         this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
                                   "cell_two": this.highlighted_cell_two};
 
         action("change_highlighted_cells", this.highlighted_cells);
-      }
-    }
-    if (this.kind == Modes.multiple) {
+      } else if (key === "x") {
+        this.kind = Modes.question;
+        this.action = "delete_cell";
+        this.prompt = "delete label " + this.info.label + " in frame " + this.info.frame + "? " + answer;
+      } 
+    } else if (this.kind == Modes.multiple) {
       if (key === "r") {
-        action("replace", this.info);
-        this.clear();
-      }
-      if (key === "p") {
-        action("set_parent", this.info);
-        this.clear();
-      }
-      if (key === "s") {
-        action("swap_tracks", this.info);
-        this.clear();
-      }
-      if (key === "w") {
-        action("watershed", this.info);
-        this.clear();
-      }
-      if (key === "x") {
-        action("delete_cell", this.info);
-        this.clear();
-      }
-      if (key === "=") {
+        this.kind = Modes.question;
+        this.action = "replace";
+        this.prompt = "Replace " + this.info.label_2 + " with " + this.info.label_1 + "? " + answer;
+      } else if (key === "p") {
+        this.kind = Modes.question;
+        this.action = "set_parent";
+        this.prompt = "Set " + this.info.label_1 + " as parent of " + this.info.label_2 + "? " + answer;
+      } else if (key === "s") {
+        this.kind = Modes.question;
+        this.action = "swap_cells";
+        this.prompt = "SPACE = SWAP IN ALL FRAMES / ESC = CANCEL SWAP";
+      } else if (key === "w") {
+        this.kind = Modes.question;
+        this.action = "watershed";
+        this.prompt = "Perform watershed to split " + this.info.label_1 + "? " + answer;
+      } else if (key === "=") {
         this.update_highlighted_cells(-1, 1)
         this.highlighted_cells = {"cell_one": this.highlighted_cell_one, 
                                   "cell_two": this.highlighted_cell_two};
         action("change_highlighted_cells", this.highlighted_cells);
-      }
-
-      if (key === "-") {
+      } else if (key === "-") {
         this.update_highlighted_cells(1, -1)
         this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
                                   "cell_two": this.highlighted_cell_two};
         action("change_highlighted_cells", this.highlighted_cells);
+      }
+    } else if (this.kind == Modes.question) {
+      if (key === " ") {
+        if (this.action == "new_track") {
+          action("create_all_new", this.info);
+          this.clear();
+        } else if (this.action == "set_parent") {
+          action(this.action, this.info);
+          this.clear();
+        } else if (this.action == "replace") {
+          action(this.action, this.info);
+          this.clear();
+        } else if (this.action == "watershed") {
+          action(this.action, this.info);
+          this.clear();
+        } else if (this.action == "delete_cell") {
+          action(this.action, this.info);
+          this.clear();
+        } else if (this.action == "swap_cells") {
+          action("swap_tracks", this.info);
+          this.clear();
+        }
       }
     }
   }
@@ -166,7 +201,16 @@ class Mode {
   }
 
   click() {
-    if (current_label === 0) {
+    if (this.kind === Modes.question) {
+      if(this.action == "fill_hole" && current_label == 0) {
+        this.info = { "label": current_label, 
+                      "frame": current_frame,
+                      "x_location": mouse_x,
+                      "y_location": mouse_y };
+        action(this.action, this.info);
+        this.clear();
+      }
+    } else if (current_label === 0) {
       this.highlighted_cell_one = -1;
       this.highlighted_cell_two = -1;
       this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
@@ -174,9 +218,7 @@ class Mode {
       action("change_highlighted_cells", this.highlighted_cells);
       this.clear();
       return;
-    }
-
-    if (this.kind === Modes.none) {
+    } else if (this.kind === Modes.none) {
       this.kind = Modes.single;
       this.info = {"label": current_label, 
                   "frame": current_frame};
@@ -185,8 +227,8 @@ class Mode {
       this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
                                 "cell_two": this.highlighted_cell_two};
       action("change_highlighted_cells", this.highlighted_cells);
-      temp_x = mouse_x
-      temp_y = mouse_y
+      temp_x = mouse_x;
+      temp_y = mouse_y;
 
     } else if (this.kind === Modes.single) {
       this.kind = Modes.multiple;
@@ -243,10 +285,10 @@ class Mode {
       return "SELECTED " + this.info.label;
     }
     if (this.kind === Modes.multiple) {
-      return "SELECTED " + this.info.label_2 + ", " + this.info.label_1;
+      return "SELECTED " + this.info.label_1 + ", " + this.info.label_2;
     }
     if (this.kind === Modes.question) {
-      return "question?";
+      return this.prompt;
     }
   }
 }
@@ -284,6 +326,7 @@ var brush_size = undefined;
 var erase = undefined;
 var last_mousex = last_mousey = 0;
 var mousedown = false;
+var answer = "(SPACE=YES / ESC=NO)";
 
 function contrast_image(img, contrast) {
   let d = img.data;
@@ -378,7 +421,6 @@ function render_frame() {
     ctx.save();
     ctx.globalAlpha = 0.1;
     ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
-    //ctx.globalCompositeOperation = "lighter";
     ctx.restore();
   } else {
     ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
