@@ -45,6 +45,7 @@ from skimage.draw import circle
 from skimage.measure import regionprops
 from skimage.exposure import rescale_intensity
 from skimage import color, img_as_float
+from skimage.util import invert
 
 from imageio import imread, imwrite
 
@@ -983,6 +984,7 @@ class ZStackReview:
         self.brush_size = 1
         self.erase = False
         self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
+        self.invert = True
         
         self.hole_fill_seed = None
         self.save_version = 0
@@ -1182,6 +1184,8 @@ class ZStackReview:
                 self.brush_size = min(self.brush_size + 1, self.height, self.width)
             if symbol == key.Z:
                 self.draw_raw = not self.draw_raw
+            if symbol == key.I:
+                self.invert = not self.invert
             else:
                 self.mode_handle(symbol)
             
@@ -1449,7 +1453,7 @@ class ZStackReview:
 
             plt.imsave(raw_file, current_raw,
                             vmax=self.max_intensity[self.channel],
-                            cmap='Greys',
+                            cmap='gray',
                             format='png')
 
             raw_file.seek(0)
@@ -1461,6 +1465,9 @@ class ZStackReview:
             #don't need to keep the file open once we have the array
             raw_file.close()
             raw_RGB = raw_img[:,:,0:3]
+
+            if self.invert:
+                raw_RGB = invert(raw_RGB)
 
             # put annotated image data into BytesIO object
             ann_file = BytesIO()
@@ -1479,7 +1486,7 @@ class ZStackReview:
             ann_RGB = ann_img[:,:,0:3]
             
             #composite raw image with annotations on top
-            alpha = 0.5
+            alpha = 0.6
 
             # Convert the input image and color mask to Hue Saturation Value (HSV)
             # colorspace
