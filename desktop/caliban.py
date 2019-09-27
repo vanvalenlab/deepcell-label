@@ -791,35 +791,38 @@ class TrackReview:
         """
         label_1, label_2 = self.mode.label_1, self.mode.label_2
 
+        #replacing a label with itself crashes Caliban, not good
+        if label_1 == label_2:
+            pass
+        else:
+            # replace arrays
+            for frame in self.tracked:
+                frame[frame == label_2] = label_1
 
-        # replace arrays
-        for frame in self.tracked:
-            frame[frame == label_2] = label_1
+            # replace fields
+            track_1 = self.tracks[label_1]
+            track_2 = self.tracks[label_2]
 
-        # replace fields
-        track_1 = self.tracks[label_1]
-        track_2 = self.tracks[label_2]
+            for d in track_1["daughters"]:
+                self.tracks[d]["parent"] = None
 
-        for d in track_1["daughters"]:
-            self.tracks[d]["parent"] = None
+            track_1["frames"] = sorted(set(track_1["frames"] + track_2["frames"]))
+            track_1["daughters"] = track_2["daughters"]
+            track_1["frame_div"] = track_2["frame_div"]
+            track_1["capped"] = track_2["capped"]
 
-        track_1["frames"] = sorted(set(track_1["frames"] + track_2["frames"]))
-        track_1["daughters"] = track_2["daughters"]
-        track_1["frame_div"] = track_2["frame_div"]
-        track_1["capped"] = track_2["capped"]
+            del self.tracks[label_2]
+            for _, track in self.tracks.items():
+                try:
+                    track["daughters"].remove(label_2)
+                except ValueError:
+                    pass
 
-        del self.tracks[label_2]
-        for _, track in self.tracks.items():
+            # in case label_2 was a daughter of label_1
             try:
-                track["daughters"].remove(label_2)
+                track_1["daughters"].remove(label_2)
             except ValueError:
                 pass
-
-        # in case label_2 was a daughter of label_1
-        try:
-            track_1["daughters"].remove(label_2)
-        except ValueError:
-            pass
 
     def action_fill_hole(self):
         '''
@@ -1565,15 +1568,19 @@ class ZStackReview:
         with label_1 and updates cell_info accordingly.
         """
         label_1, label_2 = self.mode.label_1, self.mode.label_2
-
-        # check each frame
-        for frame in range(self.annotated.shape[0]):
-            annotated = self.annotated[frame,:,:,self.feature]
-            # if label being replaced is present, remove it from image and update cell info dict
-            if np.any(np.isin(annotated, label_2)):
-                annotated[annotated == label_2] = label_1
-                self.add_cell_info(feature = self.feature, add_label = label_1, frame = frame)
-                self.del_cell_info(feature = self.feature, del_label = label_2, frame = frame)
+        
+        #replacing a label with itself crashes Caliban, not good
+        if label_1 == label_2:
+            pass
+        else:
+            # check each frame
+            for frame in range(self.annotated.shape[0]):
+                annotated = self.annotated[frame,:,:,self.feature]
+                # if label being replaced is present, remove it from image and update cell info dict
+                if np.any(np.isin(annotated, label_2)):
+                    annotated[annotated == label_2] = label_1
+                    self.add_cell_info(feature = self.feature, add_label = label_1, frame = frame)
+                    self.del_cell_info(feature = self.feature, del_label = label_2, frame = frame)
 
         
     def action_swap_all(self):
