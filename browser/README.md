@@ -15,5 +15,12 @@ To test the z-stack tool, you can type in the filename
 
 test.npz
 
+## Install Dependencies
+`pip install -r requirements.txt`
+
+## Run the browser application in development mode:
+`export FLASK_APP=application FLASK_ENV=development flask run`
+
+
 
 

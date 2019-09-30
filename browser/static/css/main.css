@@ -37,6 +37,7 @@ body {
       flex-direction: column;
       justify-content: center;
       align-items: center;
+      border-radius: 1em;
     }
     
     #frames {
@@ -56,7 +57,7 @@ body {
     }
     
     #canvascol {
-      /* outline:1px dashed red; */
+      vertical-align: top;
     }
     
     .submit {
