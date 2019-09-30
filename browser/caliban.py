@@ -98,10 +98,17 @@ class ZStackReview:
         self.fill_label = None
         self.save_version = 0
         self.dimensions = self.raw.shape[1:3][::-1]
+
+        self.highlight = False
+        self.highlight_cell_one = -1
+        self.highlight_cell_two = -1
+
         self.color_map = self.random_colormap()
 
     def random_colormap(self):
+
         max_val = self.num_cells[self.feature]
+        print(max_val)
         #max(self.cell_ids[self.feature])
         # this is a random map from [0, max_val - 1] -> [1, max_val]
         shuffle_idx = list(range(1, max_val + 1))
@@ -121,6 +128,7 @@ class ZStackReview:
         simplifying track['frames'] into something like [0-29] instead of
         [0,1,2,3,...].
         """
+        #print(self.cell_info.items())
         cell_info = copy.deepcopy(self.cell_info)
         for _, feature in cell_info.items():
             for _, label in feature.items():
@@ -128,7 +136,10 @@ class ZStackReview:
                 slices = '[' + ', '.join(["{}".format(a[0])
                                 if len(a) == 1 else "{}-{}".format(a[0], a[-1])
                                 for a in slices]) + ']'            
-                label["slices"] = slices
+                label["slices"] = str(slices)
+
+
+        print(cell_info)
         return cell_info
 
     @property
@@ -151,6 +162,16 @@ class ZStackReview:
                           cmap="Greys")
         else:
             frame = self.annotated[frame][:,:, self.feature]
+
+            self.color_map.set_bad('red')
+
+            if (self.highlight):
+                if (self.highlight_cell_one != -1):
+                    frame = np.ma.masked_equal(frame, self.highlight_cell_one)
+                if (self.highlight_cell_two != -1):
+                    frame = np.ma.masked_equal(frame, self.highlight_cell_two)
+
+
             return pngify(imgarr=frame,
                          vmin=0,
                          vmax=self.num_cells[self.feature] + self.adjustment[self.feature],
@@ -200,8 +221,16 @@ class ZStackReview:
             self.action_delete_mask(**info)
         elif action_type == "handle_draw":
             self.action_handle_draw(**info)
+        elif action_type == "change_highlight":
+            self.highlight = not self.highlight
+        elif action_type == "change_highlighted_cells":
+            self.action_change_highlighted_cells(**info)
         else:
             raise ValueError("Invalid action '{}'".format(action_type))
+
+    def action_change_highlighted_cells(self, cell_one, cell_two):
+        self.highlight_cell_one = cell_one
+        self.highlight_cell_two = cell_two
 
     def action_handle_draw(self, x, y, frame):
         # x -= self.sidebar_width
@@ -263,6 +292,7 @@ class ZStackReview:
                     updated_frames = np.append(old_frames, frame)
                     updated_frames = np.unique(updated_frames).tolist()
                     self.cell_info[self.feature][new_label].update({'frames': updated_frames})
+                self.color_map = self.random_colormap()
                         
             self.annotated[frame,:,:,self.feature] = annotated
 
@@ -299,6 +329,7 @@ class ZStackReview:
         '''
         if label != 0:
             self.fill_label = label
+            self.hold_fill_seed = None
         else:
             self.hole_fill_seed = (int(y_location / self.scale_factor), int(x_location / self.scale_factor))
    
@@ -408,6 +439,7 @@ class ZStackReview:
         self.cell_info[self.feature][label_2].update({'frames': cell_info_1['frames']})
 
     def action_predict_single(self, frame):
+
         '''
         predicts zstack relationship for current frame based on previous frame
         useful for finetuning corrections one frame at a time
@@ -420,10 +452,13 @@ class ZStackReview:
             img = self.annotated[prev_slice,:,:,self.feature]
             next_img = self.annotated[current_slice,:,:,self.feature]
             updated_slice = predict_zstack_cell_ids(img, next_img)
-            self.annotated[current_slice,:,:,self.feature] = updated_slice
+            self.annotated[current_slice,:,:,int(self.feature)] = updated_slice
+
         
         #update cell_info
-        self.create_cell_info(feature = self.feature)
+            self.create_cell_info(feature = int(self.feature))
+
+        self.color_map = self.random_colormap()
 
     def action_predict_zstack(self):
         '''
@@ -443,6 +478,7 @@ class ZStackReview:
 
         #remake cell_info dict based on new annotations            
         self.create_cell_info(feature = self.feature)
+        self.color_map = self.random_colormap()
 
     def action_replace(self, label_1, label_2, frame_1, frame_2):
         """
@@ -503,6 +539,7 @@ class ZStackReview:
         
         np.append(self.cell_ids[self.feature], int(new_label))
         self.num_cells[self.feature] += 1
+        self.color_map = self.random_colormap()
 
     def action_delete_mask(self, label, frame):
         '''
@@ -566,19 +603,25 @@ class ZStackReview:
         '''
         helper function for actions that make or remake the entire cell info dict
         '''
+        feature = int(feature)
         annotated = self.annotated[:,:,:,feature]
 
         self.cell_ids[feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))]
-        self.num_cells[feature] = max(self.cell_ids[feature])
+        print(type(self.cell_ids[feature]))
+        self.num_cells[feature] = int(max(self.cell_ids[feature]))
+        print(type(self.num_cells[feature]))
         self.cell_info[feature] = {}
+        print(type(self.cell_info[feature]))
         for cell in self.cell_ids[feature]:
+            cell = int(cell)
+            print(type(cell))
             self.cell_info[feature][cell] = {}
             self.cell_info[feature][cell]['label'] = str(cell)
             self.cell_info[feature][cell]['frames'] = [] 
             
             for frame in range(self.annotated.shape[0]):
                 if cell in annotated[frame,:,:]:
-                    self.cell_info[feature][cell]['frames'].append(frame)
+                    self.cell_info[feature][cell]['frames'].append(int(frame))
             self.cell_info[feature][cell]['slices'] = ''
 
     def create_lineage(self):
@@ -592,6 +635,25 @@ class ZStackReview:
             cell_info["parent"] = None
             cell_info["capped"] = False
             cell_info["frames"] = self.cell_info[self.feature][cell]['frames']
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #_______________________________________________________________________________________________________________
 
@@ -718,7 +780,9 @@ class TrackReview:
             self.action_set_parent(**info)
         elif action_type == "replace":
             self.action_replace(**info)
-        elif action_type == "new_track":
+        # elif action_type == "create_single_new":
+        #     self.action_new_single_cell(**info)
+        elif action_type == "create_all_new":
             self.action_new_track(**info)
         elif action_type == "swap_tracks":
             self.action_swap_tracks(**info)
@@ -738,8 +802,8 @@ class TrackReview:
             self.action_change_brush_size(**info)
         elif action_type == "handle_draw":
             self.action_handle_draw(**info)
-        # elif action_type == "fill_hole":
-        #     self.action_fill_hole(**info)
+        elif action_type == "fill_hole":
+            self.action_fill_hole(**info)
         elif action_type == "change_highlight":
             self.highlight = not self.highlight
         elif action_type == "change_highlighted_cells":
@@ -748,6 +812,19 @@ class TrackReview:
         else:
             raise ValueError("Invalid action '{}'".format(action_type))
 
+    def action_fill_hole(self, label, frame, x_location, y_location):
+
+        if label != 0:
+            self.fill_label = label
+        else:
+            self.hole_fill_seed = int(y_location/self.scale_factor), int(x_location/self.scale_factor)
+        if self.hole_fill_seed is not None:
+            if label == 0:
+                img_ann = self.trial["tracked"][frame,:,:,0]
+                filled_img_ann = flood_fill(img_ann, self.hole_fill_seed, self.fill_label, connectivity = 1)
+                self.trial["tracked"][frame,:,:,0] = filled_img_ann
+                self.fill_label = None
+                self.hold_fill_seed = None
 
     def action_handle_draw(self, x, y, frame):
 
@@ -790,6 +867,8 @@ class TrackReview:
             #cell addition
             elif in_modified and not in_original:
                 self.add_cell_info(add_label = self.edit_value, frame = frame)
+                self.color_map = self.random_colormap()
+
                         
             self.trial["tracked"][frame] = annotated        
 
@@ -865,6 +944,7 @@ class TrackReview:
         track_new["daughters"] = []
         track_new["frame_div"] = None
         track_new["capped"] = False
+        self.color_map = self.random_colormap()
 
 
     def action_save_track(self):
@@ -991,6 +1071,7 @@ class TrackReview:
                     pass
 
     def action_new_track(self, label, frame):
+     
         """
         Replacing label
         """
@@ -1010,6 +1091,8 @@ class TrackReview:
         track_new = self.tracks[new_label] = {}
 
         idx = track_old["frames"].index(start_frame)
+
+      
         frames_before = track_old["frames"][:idx]
         frames_after = track_old["frames"][idx:]
 
@@ -1032,6 +1115,22 @@ class TrackReview:
         track_old["capped"] = True
 
         self.color_map = self.random_colormap()
+
+    # def action_new_single_cell(self, label, frame):
+    #     print("single new cell")
+    #     """
+    #     Create new label in just one frame
+    #     """
+    #     old_label, single_frame = label, frame
+    #     new_label = self.num_tracks + 1
+
+    #     # replace frame labels
+    #     frame = self.trial["tracked"]
+    #     frame[frame == old_label] = new_label
+
+    #     # replace fields
+    #     self.del_cell_info(del_label = old_label, frame = single_frame)
+    #     self.add_cell_info(add_label = new_label, frame = single_frame)
 
 
     def add_cell_info(self, add_label, frame):
