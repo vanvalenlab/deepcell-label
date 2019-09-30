@@ -1280,18 +1280,27 @@ class ZStackReview:
             if self.mode.kind is None and not self.edit_mode:
                 self.mode = Mode("QUESTION",
                                  action="SAVE", filetype = 'npz')
-            elif self.mode.kind == "QUESTION" and self.mode.action == "CREATE NEW":
-                self.action_new_single_cell()
-                self.mode = Mode.none()
-            elif self.mode.kind == "QUESTION" and self.mode.action == "PREDICT":
-                self.action_predict_single()
-                self.mode = Mode.none()
+            
+            # if answering a question, it's for choosing the single frame
+            # version of an action
+            elif self.mode.kind == "QUESTION":
+                if self.mode.action == "CREATE NEW":
+                    self.action_new_single_cell()
+                    self.mode = Mode.none()
+                elif self.mode.action == "PREDICT":
+                    self.action_predict_single()
+                    self.mode = Mode.none()
+                elif self.mode.action == "SWAP":
+                    self.action_swap_single_frame()
+                    self.mode = Mode.none()
+                elif self.mode.action == "REPLACE":
+                    self.action_replace_single()
+                    self.mode = Mode.none()
+                    
             elif self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
                                  action="SWAP", **self.mode.info)
-            elif self.mode.kind == "QUESTION" and self.mode.action == "SWAP":
-                self.action_swap_single_frame()
-                self.mode = Mode.none()
+
 
         if symbol == key.T:
             if self.mode.kind == "QUESTION":
@@ -1619,6 +1628,22 @@ class ZStackReview:
                 self.del_cell_info(feature = self.feature, del_label = old_label, frame = frame)
                 self.add_cell_info(feature = self.feature, add_label = new_label, frame = frame)
     
+    def action_replace_single(self):
+        '''
+        replaces label_2 with label_1, but only in the current frame
+        '''
+        label_1, label_2 = self.mode.label_1, self.mode.label_2
+        
+        #replacing a label with itself crashes Caliban, not good
+        if label_1 == label_2:
+            pass
+        else:
+            annotated = self.annotated[self.current_frame,:,:,self.feature]
+
+            annotated[annotated == label_2] = label_1
+            self.add_cell_info(feature = self.feature, add_label = label_1, frame = self.current_frame)
+            self.del_cell_info(feature = self.feature, del_label = label_2, frame = self.current_frame)
+
             
     def action_replace(self):
         """

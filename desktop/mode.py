@@ -59,10 +59,11 @@ class Mode:
                 else:
                     return ("\nSave current movie?\nSPACE=SAVE\nESC=CANCEL")
             elif self.action == "REPLACE":
-                return ("\nreplace {} with {}?\n {}".format(self.label_2, self.label_1, answer))
+                return ("\nreplace {} with {}?\n {}".format(self.label_2, self.label_1,
+                 '\nSPACE = REPLACE IN ALL FRAMES\nS = REPLACE IN THIS FRAME ONLY\nESC = CANCEL REPLACE'))
             elif self.action == "SWAP":
                 return ("\nswap {} & {}?\n{}".format(self.label_2, self.label_1, 
-                'SPACE = SWAP IN ALL FRAMES\nS = SWAP IN THIS FRAME ONLY\nESC = CANCEL SWAP'))
+                '\nSPACE = SWAP IN ALL FRAMES\nS = SWAP IN THIS FRAME ONLY\nESC = CANCEL SWAP'))
             elif self.action == "PARENT":
                 return ("\nmake {} a daughter of {}?\n {}".format(self.label_2, self.label_1, answer))
             elif self.action == "NEW TRACK":
