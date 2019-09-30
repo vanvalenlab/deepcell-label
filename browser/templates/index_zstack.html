@@ -18,6 +18,47 @@
       <table id="maintable">
         <tr>
           <td id="logcol">
+
+            <h1>Z-Stack Tool</h1>
+            </p>Filename will be given after submit button is pressed.</p>
+
+            <form class='changed-form' action="/" method="POST" enctype="multipart/form-data">
+                <label class="changed-label" for="user_file"></label>
+                <button type="submit">Submit</button>
+            </form>
+
+            <div>
+                <h3 class='frame_status'>frame: </h1> <span id="frame"></span>
+                <h3 class='frame_status'>channel: </h1> <span id="channel"></span>
+                <h3 class='frame_status'>feature: </h1> <span id="feature"></span>    
+                <h3 class='view_mode'>highlight mode: </h1><span id="highlight"></span>
+                <h3 class='view_mode'>edit mode: </h1> <span id="edit_mode"></span> 
+            </div>
+
+            <div>
+                <ul class='view_mode' style="list-style-type:none">
+                  <li id="edit_brush"></li>
+                  <li id="edit_label"></li>
+                  <li id="edit_erase"></li>
+                </ul>
+            </div>
+
+
+
+            <div>
+                <h3 class='cell_info'>label: </h1> <span id="label"></span> 
+                <h3 class='cell_info'>slices: </h1><span id="slices"></span>
+            </div>
+
+            <div>
+                <h3 class="selected_status"> state:</h4><span id="mode"></span>
+            <div>
+
+
+
+<!-- 
+
+
             <table id="log">
               <tr height="50%" valign="top">
                 <td>frame: </td><td id="frame"></td>
@@ -30,17 +71,48 @@
                 <tr><td id="edit_erase"></td><tr>
 
               </tr>
-              <h1>Z-Stack Tool</h1>
-            </p>Filename: {{filename}}</p>
+              
               <tr><td>label:</td><td id="label"></td></tr>
               <tr><td>slices:</td><td><div id="slices"></div></td></tr>
               <tr><td>state:</td><td id="mode"></td></tr>
 
-              <form class='changed-form' action="/" method="POST" enctype="multipart/form-data">
-                <label class="changed-label" for="user_file"></label>
-                <button type="submit">Submit</button>
-              </form>
-            </table>
+              
+
+
+
+
+              
+
+               <div>
+                <ul class='view_mode' style="list-style-type:none">
+                  <li id="edit_brush"></li>
+                  <li id="edit_label"></li>
+                  <li id="edit_erase"></li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 class='cell_info'>label: </h1> <span id="label"></span> 
+                <h3 class='cell_info'>parent cells: </h1><span id="parent"></span>
+                <h3 class='cell_info'>daughters cells: </h1> <span id="daughters"></span> 
+                <h3 class='cell_info'>divisions in frame: </h1> <span id="frame_div"></span>
+                <h3 class='cell_info'>capped: </h1> <span id="capped"></span>
+                <h3 class='cell_info'>frames: </h1> <span id="frames"></span>
+              </div>
+
+              <div>
+                <h3 class="selected_status"> state:</h4><span id="mode"></span>
+              <div>
+
+
+ -->
+
+
+
+
+
+
+         <!--    </table> -->
           </td>
           <td id="canvascol">
             <canvas width=600 height=400 id="canvas"></canvas>
