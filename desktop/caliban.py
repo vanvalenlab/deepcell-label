@@ -1208,34 +1208,39 @@ class ZStackReview:
     def on_key_press(self, symbol, modifiers):
         # Set scroll speed (through sequential frames) with offset
         offset = 5 if modifiers & key.MOD_SHIFT else 1
+        
+        # universal keybinds
+        if symbol in {key.LEFT, key.A}:
+            self.current_frame = max(self.current_frame - offset, 0)
+        elif symbol in {key.RIGHT, key.D}:
+            self.current_frame = min(self.current_frame + offset, self.num_frames - 1)
+        elif symbol == key.Z:
+            self.draw_raw = not self.draw_raw
+
+        # regular mode keybinds
         if not self.edit_mode:
             if symbol == key.ESCAPE:
                 self.highlighted_cell_one = -1
                 self.highlighted_cell_two = -1
                 self.mode = Mode.none()
-            elif symbol in {key.LEFT, key.A}:
-                self.current_frame = max(self.current_frame - offset, 0)
-            elif symbol in {key.RIGHT, key.D}:
-                self.current_frame = min(self.current_frame + offset, self.num_frames - 1)
             elif symbol == key.H:
                 self.highlight = not self.highlight
-            elif symbol == key.Z:
-                self.draw_raw = not self.draw_raw
             else:
                 self.mode_handle(symbol)
+        # edit mode keybinds
         else:
+            if symbol == key.ESCAPE:
+                self.mode = Mode.none()
             if symbol == key.EQUAL:
                 self.edit_value += 1
             if symbol == key.MINUS:
                 self.edit_value = max(self.edit_value - 1, 1)
             if symbol == key.X:
                 self.erase = not self.erase
-            if symbol == key.LEFT:
+            if symbol == key.DOWN:
                 self.brush_size = max(self.brush_size -1, 1)
-            if symbol == key.RIGHT:
+            if symbol == key.UP:
                 self.brush_size = min(self.brush_size + 1, self.height, self.width)
-            if symbol == key.Z:
-                self.draw_raw = not self.draw_raw
             if symbol == key.I:
                 self.invert = not self.invert
             else:
