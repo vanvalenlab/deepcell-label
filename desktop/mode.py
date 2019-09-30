@@ -85,6 +85,8 @@ class Mode:
                 return('\nselect hole to fill in cell {}'.format(self.label))
             elif self.action == "PICK COLOR":
                 return('\nclick on a cell to change the brush value to that value')
+            elif self.action == "DRAW BOX":
+                return('\ndraw a bounding box around the area you want to threshold')
 
         else:
             return ''

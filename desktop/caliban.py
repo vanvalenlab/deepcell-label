@@ -44,7 +44,7 @@ from skimage.morphology import watershed, flood_fill
 from skimage.draw import circle
 from skimage.measure import regionprops
 from skimage.exposure import rescale_intensity
-from skimage import color, img_as_float
+from skimage import color, img_as_float, filters
 from skimage.util import invert
 
 from imageio import imread, imwrite
@@ -987,6 +987,9 @@ class ZStackReview:
         self.brush_size = 1
         self.erase = False
         self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
+        self.show_bounding_box = False
+        self.bbox_corner_start = None
+        self.bbox_corner_end = None
         self.invert = True
         
         self.hole_fill_seed = None
@@ -1066,6 +1069,9 @@ class ZStackReview:
                 elif label != 0:
                     self.edit_value = label
                     self.mode = Mode.none()
+            elif self.mode.kind == "PROMPT" and self.mode.action == "DRAW BOX":
+                self.bbox_corner_start = (self.y, self.x)
+
 
                     
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
@@ -1078,42 +1084,84 @@ class ZStackReview:
             self.x, self.y = x, y        
         
         if self.edit_mode:
-            annotated = self.annotated[self.current_frame,:,:,self.feature]
-            
-            #self.x and self.y are different from the mouse's x and y
-            x_loc = self.x
-            y_loc = self.y
+            if not self.show_bounding_box:
+                annotated = self.annotated[self.current_frame,:,:,self.feature]
+                
+                #self.x and self.y are different from the mouse's x and y
+                x_loc = self.x
+                y_loc = self.y
 
-            brush_area = circle(y_loc, x_loc, self.brush_size, (self.height,self.width))
-            
-            #show where brush has drawn this time
-            self.brush_view[brush_area] = self.edit_value
-            
-            in_original = np.any(np.isin(annotated, self.edit_value))
+                brush_area = circle(y_loc, x_loc, self.brush_size, (self.height,self.width))
+                
+                #show where brush has drawn this time
+                self.brush_view[brush_area] = self.edit_value
+                
+                in_original = np.any(np.isin(annotated, self.edit_value))
 
-            #do not overwrite or erase labels other than the one you're editing
-            if not self.erase:
-                annotated_draw = np.where(annotated==0, self.edit_value, annotated)
-                annotated[brush_area] = annotated_draw[brush_area]
-            else:
-                annotated_erase = np.where(annotated==self.edit_value, 0, annotated)
-                annotated[brush_area] = annotated_erase[brush_area]        
-            
-            in_modified = np.any(np.isin(annotated, self.edit_value))
+                #do not overwrite or erase labels other than the one you're editing
+                if not self.erase:
+                    annotated_draw = np.where(annotated==0, self.edit_value, annotated)
+                    annotated[brush_area] = annotated_draw[brush_area]
+                else:
+                    annotated_erase = np.where(annotated==self.edit_value, 0, annotated)
+                    annotated[brush_area] = annotated_erase[brush_area]        
+                
+                in_modified = np.any(np.isin(annotated, self.edit_value))
 
-            #cell deletion
-            if in_original and not in_modified:
-                self.del_cell_info(feature = self.feature, del_label = self.edit_value, frame = self.current_frame)
-            
-            #cell addition
-            elif in_modified and not in_original:
-                self.add_cell_info(feature = self.feature, add_label = self.edit_value, frame = self.current_frame)
-                        
-            self.annotated[self.current_frame,:,:,self.feature] = annotated
+                #cell deletion
+                if in_original and not in_modified:
+                    self.del_cell_info(feature = self.feature, del_label = self.edit_value, frame = self.current_frame)
+                
+                #cell addition
+                elif in_modified and not in_original:
+                    self.add_cell_info(feature = self.feature, add_label = self.edit_value, frame = self.current_frame)
+                            
+                self.annotated[self.current_frame,:,:,self.feature] = annotated
+            elif self.show_bounding_box:
+                self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
+
+                bbox_corner_live = (self.y, self.x)
+
+                # show a box with self.brush_view
+                top_edge = min(self.bbox_corner_start[0], bbox_corner_live[0])
+                bottom_edge = max(self.bbox_corner_start[0], bbox_corner_live[0])
+                left_edge = min(self.bbox_corner_start[1], bbox_corner_live[1])
+                right_edge = max(self.bbox_corner_start[1], bbox_corner_live[1])
+                
+                self.brush_view[top_edge:bottom_edge, left_edge:right_edge] = self.edit_value
+
             
     def on_mouse_release(self, x, y, buttons, modifiers):
         if self.edit_mode:
-            self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
+            if not self.show_bounding_box:
+                self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
+            elif self.show_bounding_box:
+                #releasing the mouse is the cue to finalize the bounding box
+                self.bbox_corner_end = (self.y, self.x)
+                #send to threshold function
+
+                top_edge = min(self.bbox_corner_start[0], self.y)
+                bottom_edge = max(self.bbox_corner_start[0], self.y)
+                left_edge = min(self.bbox_corner_start[1], self.x)
+                right_edge = max(self.bbox_corner_start[1], self.x)
+
+                if top_edge != bottom_edge and left_edge != right_edge:
+                    threshold_prediction = self.action_threshold_predict(top_edge, bottom_edge, left_edge, right_edge)
+
+                    #put prediction in without overwriting
+                    predict_area = self.annotated[self.current_frame, top_edge:bottom_edge, left_edge:right_edge, self.feature]
+                    safe_overlay = np.where(predict_area == 0, threshold_prediction, predict_area)
+
+                    self.annotated[self.current_frame,top_edge:bottom_edge,left_edge:right_edge,self.feature] = safe_overlay
+
+                # TODO: it would be great if a preview of the prediction was displayed
+                # and then the user confirms that they want to add it to the annotation
+                # otherwise they can cancel it, or adjust the brightness to change the prediction
+                # before confirming. Would probably need more mode handling
+
+                # clear bounding box and Mode
+                self.show_bounding_box = False
+                self.mode = Mode.none()
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self.draw_raw:
@@ -1135,10 +1183,11 @@ class ZStackReview:
             self.x, self.y = x, y
             
         if self.edit_mode:
-            #display brush size
-            self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
-            brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
-            self.brush_view[brush_area] = self.edit_value
+            if not self.show_bounding_box:
+                #display brush size
+                self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
+                brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
+                self.brush_view[brush_area] = self.edit_value
             
 
     def on_draw(self):
@@ -1244,6 +1293,10 @@ class ZStackReview:
                 if self.mode.action == "SAVE":
                     self.save_as_trk()
                     self.mode = Mode.none()
+            if self.mode.kind is None and self.edit_mode:
+                self.mode = Mode("PROMPT", action = "DRAW BOX", **self.mode.info)
+                self.show_bounding_box = True
+                self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
                 
         if symbol == key.P:
             if self.mode.kind is None and not self.edit_mode:
@@ -1654,6 +1707,34 @@ class ZStackReview:
         #update cell_info dict only if new label was created with ws
         if np.any(np.isin(self.annotated[self.current_frame,:,:,self.feature], new_label)):
             self.add_cell_info(feature=self.feature, add_label=new_label, frame = self.current_frame)
+
+    def action_threshold_predict(self, y1, y2, x1, x2):
+        '''
+        thresholds the raw image for annotation prediction within user-determined bounding box
+        '''
+
+        # pull out the selection portion of the raw frame
+        predict_area = self.raw[self.current_frame, y1:y2, x1:x2, self.channel]
+
+        # triangle threshold picked after trying a few on one dataset
+        # may not be the best threshold approach for other datasets!
+        # pick two thresholds to use hysteresis thresholding strategy        
+        threshold = filters.threshold_triangle(image = predict_area)
+        threshold_stringent = 1.10 * threshold
+
+        # use a unique label for predction
+        new_label = self.num_cells[self.feature] + 1
+
+        # try to keep stray pixels from appearing
+        hyst = filters.apply_hysteresis_threshold(image = predict_area, low = threshold, high = threshold_stringent)
+        ann_threshold = np.where(hyst, new_label, 0)
+
+        # don't need to update cell_info unless an annotation has been added
+        if np.any(np.isin(ann_threshold, new_label)):     
+            self.add_cell_info(feature=self.feature, add_label=new_label, frame = self.current_frame)
+
+        return ann_threshold
+
         
     def action_delete_mask(self):
         '''
