@@ -991,6 +991,7 @@ class ZStackReview:
         self.bbox_corner_start = None
         self.bbox_corner_end = None
         self.invert = True
+        self.sobel_on = False
         
         self.hole_fill_seed = None
         self.save_version = 0
@@ -1243,6 +1244,8 @@ class ZStackReview:
                 self.brush_size = min(self.brush_size + 1, self.height, self.width)
             if symbol == key.I:
                 self.invert = not self.invert
+            if symbol == key.K:
+                self.sobel_on = not self.sobel_on
             else:
                 self.mode_handle(symbol)
             
@@ -1296,7 +1299,7 @@ class ZStackReview:
                 elif self.mode.action == "REPLACE":
                     self.action_replace_single()
                     self.mode = Mode.none()
-                    
+
             elif self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
                                  action="SWAP", **self.mode.info)
@@ -1517,6 +1520,10 @@ class ZStackReview:
             # get raw and annotated data
             current_raw = self.raw[self.current_frame,:,:,self.channel]
             current_ann = self.annotated[self.current_frame,:,:,self.feature]
+
+            #try sobel filter here
+            if self.sobel_on:
+                current_raw = filters.sobel(current_raw)
 
             # put raw image data into BytesIO object
             raw_file = BytesIO()
