@@ -987,7 +987,7 @@ class ZStackReview:
         self.brush_size = 1
         self.erase = False
         self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
-        self.show_bounding_box = False
+        self.show_brush = True
         self.bbox_corner_start = None
         self.bbox_corner_end = None
         self.invert = True
@@ -1036,6 +1036,8 @@ class ZStackReview:
                     self.mode = Mode.none()
 
         elif self.edit_mode:
+
+            # draw using brush
             if self.mode.kind is None:
                 annotated = self.annotated[self.current_frame,:,:,self.feature]
 
@@ -1062,6 +1064,8 @@ class ZStackReview:
                     self.add_cell_info(feature = self.feature, add_label = self.edit_value, frame = self.current_frame)
 
                 self.annotated[self.current_frame,:,:,self.feature] = annotated
+
+            # color pick tool
             elif self.mode.kind == "PROMPT" and self.mode.action == "PICK COLOR":
                 frame = self.annotated[self.current_frame]
                 label = int(frame[self.y, self.x, self.feature])
@@ -1070,6 +1074,8 @@ class ZStackReview:
                 elif label != 0:
                     self.edit_value = label
                     self.mode = Mode.none()
+
+            # start drawing bounding box for threshold prediction
             elif self.mode.kind == "PROMPT" and self.mode.action == "DRAW BOX":
                 self.bbox_corner_start = (self.y, self.x)
 
@@ -1085,7 +1091,7 @@ class ZStackReview:
             self.x, self.y = x, y        
         
         if self.edit_mode:
-            if not self.show_bounding_box:
+            if self.show_brush:
                 annotated = self.annotated[self.current_frame,:,:,self.feature]
                 
                 #self.x and self.y are different from the mouse's x and y
@@ -1118,7 +1124,7 @@ class ZStackReview:
                     self.add_cell_info(feature = self.feature, add_label = self.edit_value, frame = self.current_frame)
                             
                 self.annotated[self.current_frame,:,:,self.feature] = annotated
-            elif self.show_bounding_box:
+            elif not self.show_brush and self.mode.action == "DRAW BOX":
                 self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
 
                 bbox_corner_live = (self.y, self.x)
@@ -1134,9 +1140,9 @@ class ZStackReview:
             
     def on_mouse_release(self, x, y, buttons, modifiers):
         if self.edit_mode:
-            if not self.show_bounding_box:
+            if self.show_brush:
                 self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
-            elif self.show_bounding_box:
+            elif not self.show_brush and self.mode.action == "DRAW BOX":
                 #releasing the mouse is the cue to finalize the bounding box
                 self.bbox_corner_end = (self.y, self.x)
                 #send to threshold function
@@ -1161,7 +1167,7 @@ class ZStackReview:
                 # before confirming. Would probably need more mode handling
 
                 # clear bounding box and Mode
-                self.show_bounding_box = False
+                self.show_brush = True
                 self.mode = Mode.none()
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
@@ -1184,7 +1190,7 @@ class ZStackReview:
             self.x, self.y = x, y
             
         if self.edit_mode:
-            if not self.show_bounding_box:
+            if self.show_brush:
                 #display brush size
                 self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
                 brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
@@ -1312,7 +1318,7 @@ class ZStackReview:
                     self.mode = Mode.none()
             if self.mode.kind is None and self.edit_mode:
                 self.mode = Mode("PROMPT", action = "DRAW BOX", **self.mode.info)
-                self.show_bounding_box = True
+                self.show_brush = False
                 self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
                 
         if symbol == key.P:
