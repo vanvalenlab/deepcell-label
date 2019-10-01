@@ -981,6 +981,7 @@ class ZStackReview:
         
         cursor = self.window.get_system_mouse_cursor(self.window.CURSOR_CROSSHAIR)
         self.window.set_mouse_cursor(cursor)
+        self.mouse_visible = True
         
         self.edit_mode = False
         self.edit_value = 1
@@ -1221,6 +1222,11 @@ class ZStackReview:
             self.current_frame = max(self.current_frame - offset, 0)
         elif symbol in {key.RIGHT, key.D}:
             self.current_frame = min(self.current_frame + offset, self.num_frames - 1)
+        elif symbol == key.V:
+            #toggle visibility of cursor - mostly to hide from edit mode
+            #but inconvenient if you can only turn it back on in edit mode
+            self.mouse_visible = not self.mouse_visible
+            self.window.set_mouse_visible(self.mouse_visible)
         elif symbol == key.Z:
             self.draw_raw = not self.draw_raw
 
