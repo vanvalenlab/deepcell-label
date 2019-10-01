@@ -989,8 +989,8 @@ class ZStackReview:
         self.erase = False
         self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
         self.show_brush = True
-        self.bbox_corner_start = None
-        self.bbox_corner_end = None
+        self.predict_seed_1 = None
+        self.predict_seed_2 = None
         self.invert = True
         self.sobel_on = False
         
@@ -1078,7 +1078,7 @@ class ZStackReview:
 
             # start drawing bounding box for threshold prediction
             elif self.mode.kind == "PROMPT" and self.mode.action == "DRAW BOX":
-                self.bbox_corner_start = (self.y, self.x)
+                self.predict_seed_1 = (self.y, self.x)
 
 
                     
@@ -1131,10 +1131,10 @@ class ZStackReview:
                 bbox_corner_live = (self.y, self.x)
 
                 # show a box with self.brush_view
-                top_edge = min(self.bbox_corner_start[0], bbox_corner_live[0])
-                bottom_edge = max(self.bbox_corner_start[0], bbox_corner_live[0])
-                left_edge = min(self.bbox_corner_start[1], bbox_corner_live[1])
-                right_edge = max(self.bbox_corner_start[1], bbox_corner_live[1])
+                top_edge = min(self.predict_seed_1[0], bbox_corner_live[0])
+                bottom_edge = max(self.predict_seed_1[0], bbox_corner_live[0])
+                left_edge = min(self.predict_seed_1[1], bbox_corner_live[1])
+                right_edge = max(self.predict_seed_1[1], bbox_corner_live[1])
                 
                 self.brush_view[top_edge:bottom_edge, left_edge:right_edge] = self.edit_value
 
@@ -1145,13 +1145,13 @@ class ZStackReview:
                 self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
             elif not self.show_brush and self.mode.action == "DRAW BOX":
                 #releasing the mouse is the cue to finalize the bounding box
-                self.bbox_corner_end = (self.y, self.x)
+                self.predict_seed_2 = (self.y, self.x)
                 #send to threshold function
 
-                top_edge = min(self.bbox_corner_start[0], self.y)
-                bottom_edge = max(self.bbox_corner_start[0], self.y)
-                left_edge = min(self.bbox_corner_start[1], self.x)
-                right_edge = max(self.bbox_corner_start[1], self.x)
+                top_edge = min(self.predict_seed_1[0], self.y)
+                bottom_edge = max(self.predict_seed_1[0], self.y)
+                left_edge = min(self.predict_seed_1[1], self.x)
+                right_edge = max(self.predict_seed_1[1], self.x)
 
                 if top_edge != bottom_edge and left_edge != right_edge:
                     threshold_prediction = self.action_threshold_predict(top_edge, bottom_edge, left_edge, right_edge)
