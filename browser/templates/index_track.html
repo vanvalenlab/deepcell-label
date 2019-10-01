@@ -8,6 +8,7 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/navigation.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/normalize.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/infopane.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/footer.css') }}">
   </head>
 
   <body>
@@ -73,5 +74,6 @@
   </script>
   <script type="text/javascript" src="{{ url_for('static', filename='js/infopane.js') }}"></script>
 <!-- END CALIBAN FUNCTION CALL -->
+    {% include "footer.html" %}
   </body>
 </html>

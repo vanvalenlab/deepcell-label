@@ -7,6 +7,7 @@
       <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/navigation.css') }}">
       <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/normalize.css') }}">
       <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/form.css') }}">
+      <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/footer.css') }}">
       <script>
         $(function(){
             //This function allows the input text to automatically resize according to it's length, allowing user to be able to comfortably view the filename they uplaod
@@ -36,9 +37,9 @@
                     <button>Go to Tool</button>
                 </div>
             </form> -->
-            <h3>
+            <p>
               Click on a file that you would like use to see how Caliban works! The .trk files allow you to annotate RAW264 cells across time-lapse frames. The .npz files allow you to annotate organoids across z-stack frames.
-              </h3>
+            </p>
             <form id="caliban-form" method="POST" action="{{ url_for('tool') }}">
               <select name="filename">
            
@@ -51,5 +52,6 @@
               <input type="submit">
             </form>
         </div>
+        {% include "footer.html" %}
     </body>
   </html>
