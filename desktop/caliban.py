@@ -41,9 +41,10 @@ import tempfile
 
 from io import BytesIO
 from skimage.morphology import watershed, flood_fill
-from skimage.draw import circle
+from skimage.draw import circle, line_aa
 from skimage.measure import regionprops
 from skimage.exposure import rescale_intensity
+from skimage.segmentation import active_contour
 from skimage import color, img_as_float, filters
 from skimage.util import invert
 
@@ -988,6 +989,8 @@ class ZStackReview:
         self.brush_size = 1
         self.erase = False
         self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
+        self.predict_coordinates = None
+        self.show_prediction = False
         self.show_brush = True
         self.predict_seed_1 = None
         self.predict_seed_2 = None
@@ -1080,6 +1083,18 @@ class ZStackReview:
             elif self.mode.kind == "PROMPT" and self.mode.action == "DRAW BOX":
                 self.predict_seed_1 = (self.y, self.x)
 
+            # active contour prediction
+            elif self.mode.kind == "PROMPT" and self.mode.action == "START SNAKE":
+                self.show_brush = False
+                self.predict_seed_1 = (self.y, self.x)
+                self.mode = Mode.none()
+                self.mode = Mode("PROMPT", action = "END SNAKE", **self.mode.info)
+            elif self.mode.kind == "PROMPT" and self.mode.action == "END SNAKE":
+                self.predict_seed_2 = (self.y, self.x)
+                if self.predict_seed_2 != self.predict_seed_1:
+                    self.action_show_contour()
+                self.mode = Mode.none()
+                self.show_brush = True
 
                     
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
@@ -1196,7 +1211,16 @@ class ZStackReview:
                 self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
                 brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
                 self.brush_view[brush_area] = self.edit_value
-            
+
+            elif not self.show_brush and self.mode.action == "END SNAKE":
+                self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
+
+                # show contour line as it is being drawn
+                y_start, x_start = self.predict_seed_1
+                y_end, x_end = self.y, self.x
+
+                rr, cc, val = line_aa(y_start, x_start, y_end, x_end)
+                self.brush_view[rr,cc] = val*255
 
     def on_draw(self):
         self.window.clear()
@@ -1220,8 +1244,14 @@ class ZStackReview:
         # universal keybinds
         if symbol in {key.LEFT, key.A}:
             self.current_frame = max(self.current_frame - offset, 0)
+            #clear prediction if you change frames so you aren't working
+            #from the wrong prediction
+            self.show_prediction = False
+            self.predict_coordinates = None
         elif symbol in {key.RIGHT, key.D}:
             self.current_frame = min(self.current_frame + offset, self.num_frames - 1)
+            self.show_prediction = False
+            self.predict_coordinates = None
         elif symbol == key.V:
             #toggle visibility of cursor - mostly to hide from edit mode
             #but inconvenient if you can only turn it back on in edit mode
@@ -1271,9 +1301,14 @@ class ZStackReview:
                     self.channel = 0
                 else:
                     self.channel += 1
-            if self.mode.kind == "SELECTED":
+            elif self.mode.kind == "SELECTED":
                 self.mode = Mode("QUESTION",
                                 action="CREATE NEW", **self.mode.info)
+            elif self.edit_mode:
+                # clear and stop showing prediction view
+                self.show_prediction = False
+                self.predict_coordinates = None
+                self.draw_current_frame()
                                 
         if symbol == key.E:
             #toggle edit mode only if nothing is selected
@@ -1290,6 +1325,9 @@ class ZStackReview:
             if self.mode.kind == "SELECTED":
                 self.mode = Mode("PROMPT",
                                 action="FILL HOLE", **self.mode.info)
+        if symbol == key.L:
+            if self.mode.kind is None and self.edit_mode:
+                self.mode = Mode("PROMPT", action = "START SNAKE", **self.mode.info)
 
         if symbol == key.S:
             if self.mode.kind is None and not self.edit_mode:
@@ -1587,6 +1625,14 @@ class ZStackReview:
             img_hsv[..., 0] = color_mask_hsv[..., 0]
             img_hsv[..., 1] = color_mask_hsv[..., 1] * alpha
 
+            # if we're displaying a prediction preview, it should show up as
+            # contrasting colors (hsv[rr, cc, 0] adjustment) and bright
+            # (saturation high). add to composite img instead of overlaying with sprites
+            if self.show_prediction:
+                rr, cc = self.predict_coordinates
+                img_hsv[rr, cc, 0] = color_mask_hsv[rr, cc, 0] + 0.5
+                img_hsv[rr, cc, 1] = 1
+
             img_masked = color.hsv2rgb(img_hsv)
             img_masked = rescale_intensity(img_masked, out_range = np.uint8)
             img_masked = img_masked.astype(np.uint8)
@@ -1784,6 +1830,41 @@ class ZStackReview:
 
         return ann_threshold
 
+    def action_show_contour(self):
+        '''
+        placeholder for previewing predicted skimage contour between cells
+        for now, just shows that you picked a line to base the contour on
+        '''
+        y_start, x_start = self.predict_seed_1
+        y_end, x_end = self.predict_seed_2
+
+        rr, cc, val = line_aa(y_start, x_start, y_end, x_end)
+
+        self.predict_coordinates = (rr, cc)
+
+        self.show_prediction = True
+        self.draw_current_frame()
+
+        #double the number of points we have to work with for a fuller output snake
+        input_snake = np.array([np.concatenate((cc, cc)), np.concatenate((rr, rr))]).T
+
+        # skimage docs recommend blurring input image but this makes the prediction terrible here
+        # sharpening actually helps a bit
+        snake_predict = active_contour(image = filters.gaussian(self.raw[self.current_frame, :,:, self.channel], 0.3), 
+            snake = input_snake,
+            alpha=0.01, 
+            beta=100, 
+            w_line=-5, 
+            w_edge=0, 
+            gamma=0.01, 
+            bc='fixed', 
+            max_px_move=0.15, 
+            max_iterations=1000, 
+            convergence=0.1)
+
+        self.predict_coordinates = snake_predict.T.astype('int')
+        self.predict_coordinates = (self.predict_coordinates[1], self.predict_coordinates[0])
+        self.draw_current_frame()
         
     def action_delete_mask(self):
         '''

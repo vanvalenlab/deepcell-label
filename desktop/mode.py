@@ -88,6 +88,10 @@ class Mode:
                 return('\nclick on a cell to change the brush value to that value')
             elif self.action == "DRAW BOX":
                 return('\ndraw a bounding box around the area you want to threshold')
+            elif self.action == "START SNAKE":
+                return('\nclick to select a starting point for contour prediction')
+            elif self.action == "END SNAKE":
+                return('\nclick to select an ending point for contour prediction')
 
         else:
             return ''
