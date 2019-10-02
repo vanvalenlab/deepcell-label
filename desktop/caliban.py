@@ -1000,6 +1000,7 @@ class ZStackReview:
         self.invert = True
         self.sobel_on = False
         self.adapthist_on = False
+        self.hide_annotations = False
 
         self.conversion_brush_target = -1
         self.conversion_brush_value = -1
@@ -1392,6 +1393,9 @@ class ZStackReview:
             if symbol == key.J:
                 self.adapthist_on = not self.adapthist_on
 
+            if symbol == key.H:
+                self.hide_annotations = not self.hide_annotations
+
             else:
                 self.mode_handle(symbol)
             
@@ -1685,6 +1689,9 @@ class ZStackReview:
                 current_raw = rescale_intensity(current_raw, in_range = 'image', out_range = 'float')
                 current_raw = equalize_adapthist(current_raw)
 
+            if self.invert:
+                current_raw = invert(current_raw)
+
             # put raw image data into BytesIO object
             raw_file = BytesIO()
 
@@ -1698,60 +1705,62 @@ class ZStackReview:
             #gives us the 'greyscale' image in array format
             #(the format is RGB even though it is displayed as grey)
             raw_img = imread(raw_file)
+            comp_img = pyglet.image.load('comp.png', file = raw_file)
+
 
             #don't need to keep the file open once we have the array
             raw_file.close()
-            raw_RGB = raw_img[:,:,0:3]
 
-            if self.invert:
-                raw_RGB = invert(raw_RGB)
+            # make the composite if you want to see annotation overlay
+            if not self.hide_annotations:
+                raw_RGB = raw_img[:,:,0:3]
 
-            # put annotated image data into BytesIO object
-            ann_file = BytesIO()
-            plt.imsave(ann_file, current_ann,
-                            vmax=self.num_cells[self.feature] + self.adjustment[self.feature],
-                            cmap='gist_stern',
-                            format='png')
+                # put annotated image data into BytesIO object
+                ann_file = BytesIO()
+                plt.imsave(ann_file, current_ann,
+                                vmax=self.num_cells[self.feature] + self.adjustment[self.feature],
+                                cmap='gist_stern',
+                                format='png')
 
-            ann_file.seek(0)
+                ann_file.seek(0)
 
-            #gives us the color image in array format
-            ann_img = imread(ann_file)
+                #gives us the color image in array format
+                ann_img = imread(ann_file)
 
-            #don't need to keep the file open once we have the array
-            ann_file.close()
-            ann_RGB = ann_img[:,:,0:3]
-            
-            #composite raw image with annotations on top
-            alpha = 0.6
+                #don't need to keep the file open once we have the array
+                ann_file.close()
+                ann_RGB = ann_img[:,:,0:3]
+                
+                #composite raw image with annotations on top
+                alpha = 0.6
 
-            # Convert the input image and color mask to Hue Saturation Value (HSV)
-            # colorspace
-            img_hsv = color.rgb2hsv(raw_RGB)
-            color_mask_hsv = color.rgb2hsv(ann_RGB)
+                # Convert the input image and color mask to Hue Saturation Value (HSV)
+                # colorspace
+                img_hsv = color.rgb2hsv(raw_RGB)
+                color_mask_hsv = color.rgb2hsv(ann_RGB)
 
-            # Replace the hue and saturation of the original image
-            # with that of the color mask
-            img_hsv[..., 0] = color_mask_hsv[..., 0]
-            img_hsv[..., 1] = color_mask_hsv[..., 1] * alpha
+                # Replace the hue and saturation of the original image
+                # with that of the color mask
+                img_hsv[..., 0] = color_mask_hsv[..., 0]
+                img_hsv[..., 1] = color_mask_hsv[..., 1] * alpha
 
-            # if we're displaying a prediction preview, it should show up as
-            # contrasting colors (hsv[rr, cc, 0] adjustment) and bright
-            # (saturation high). add to composite img instead of overlaying with sprites
-            if self.show_prediction:
-                rr, cc = self.predict_coordinates
-                img_hsv[rr, cc, 0] = color_mask_hsv[rr, cc, 0] + 0.5
-                img_hsv[rr, cc, 1] = 1
+                # if we're displaying a prediction preview, it should show up as
+                # contrasting colors (hsv[rr, cc, 0] adjustment) and bright
+                # (saturation high). add to composite img instead of overlaying with sprites
+                if self.show_prediction:
+                    rr, cc = self.predict_coordinates
+                    img_hsv[rr, cc, 0] = color_mask_hsv[rr, cc, 0] + 0.5
+                    img_hsv[rr, cc, 1] = 1
 
-            img_masked = color.hsv2rgb(img_hsv)
-            img_masked = rescale_intensity(img_masked, out_range = np.uint8)
-            img_masked = img_masked.astype(np.uint8)
+                img_masked = color.hsv2rgb(img_hsv)
+                img_masked = rescale_intensity(img_masked, out_range = np.uint8)
+                img_masked = img_masked.astype(np.uint8)
 
-            # save img_masked as png so we can load it as a pyglet image
-            file_masked = tempfile.NamedTemporaryFile(suffix = '.png')
-            imwrite(str(file_masked.name), img_masked)
-            comp_img = pyglet.image.load(str(file_masked.name))
-            file_masked.close()
+                # save img_masked as png so we can load it as a pyglet image
+                file_masked = tempfile.NamedTemporaryFile(suffix = '.png')
+                imwrite(str(file_masked.name), img_masked)
+                comp_img = pyglet.image.load(str(file_masked.name))
+                file_masked.close()
         
             composite_sprite = pyglet.sprite.Sprite(comp_img, x = self.sidebar_width, y=0)
             brush_sprite = pyglet.sprite.Sprite(brush_img, x=self.sidebar_width, y=0)
