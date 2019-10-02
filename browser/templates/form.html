@@ -37,9 +37,15 @@
                     <button>Go to Tool</button>
                 </div>
             </form> -->
-            <p>
-              Click on a file that you would like use to see how Caliban works! The .trk files allow you to annotate RAW264 cells across time-lapse frames. The .npz files allow you to annotate organoids across z-stack frames.
-            </p>
+            <div class='form-help'>
+                <h3>
+                    Click on a file that you would like use to see how Caliban works!
+                </h5>
+                <p>The .trk files allow you to annotate RAW264 cells across time-lapse frames.</p>
+                <p>
+                    The .npz files allow you to annotate organoids across z-stack frames.
+                </p>
+            </div>
             <form id="caliban-form" method="POST" action="{{ url_for('tool') }}">
               <select name="filename">
            

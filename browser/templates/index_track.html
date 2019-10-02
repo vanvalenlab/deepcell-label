@@ -16,56 +16,59 @@
     {% include "infopane.html" %}
     <canvas width=600 height=400 id="hidden_canvas"></canvas>
     <div id="container">
-      <table id="maintable">
-        <tr>
-          <td id="logcol">
-            <!-- <table id="log"> -->
-<!--               <tr height="50%" valign="top">
-                
-              </tr> -->
-
-
-              <h1>Tracking Tool</h1>
-              </p>Filename will be given after submit button is pressed.</p>
-              <form class='changed-form' action="/" method="POST" enctype="multipart/form-data">
+        <div id="logcol">
+            <h1>Tracking Tool</h1>
+            </p>Filename will be given after submit button is pressed.</p>
+            <form class='changed-form' action="/" method="POST" enctype="multipart/form-data">
                 <label class="changed-label" for="user_file"></label>
                 <button type="submit" type="submit">Submit</button>
-              </form>
+            </form>
 
-              <div>
-                <h3 class='frame_status'>frame: </h1> <span id="frame"></span> 
-                <h3 class='view_mode'>highlight mode: </h1><span id="highlight"></span>
-                <h3 class='view_mode'>edit mode: </h1> <span id="edit_mode"></span> 
-              </div>
+            <div>
+                <label class='frame_status'>frame:
+                    <span id="frame"></span> 
+                </label>
+                <label class='view_mode'>highlight mode:
+                    <span id="highlight"></span>
+                </label>
+                <label class='view_mode'>edit mode:
+                    <span id="edit_mode"></span> 
+                </label>
+            </div>
 
-               <div>
-                <ul class='view_mode' style="list-style-type:none">
-                  <li id="edit_brush"></li>
-                  <li id="edit_label"></li>
-                  <li id="edit_erase"></li>
-                </ul>
-              </div>
+            <div class='view_mode' style="list-style-type:none">
+                <span id="edit_brush"></span>
+                <span id="edit_label"></span>
+                <span id="edit_erase"></span>
+            </div>
 
-              <div>
-                <h3 class='cell_info'>label: </h1> <span id="label"></span> 
-                <h3 class='cell_info'>parent cells: </h1><span id="parent"></span>
-                <h3 class='cell_info'>daughters cells: </h1> <span id="daughters"></span> 
-                <h3 class='cell_info'>divisions in frame: </h1> <span id="frame_div"></span>
-                <h3 class='cell_info'>capped: </h1> <span id="capped"></span>
-                <h3 class='cell_info'>frames: </h1> <span id="frames"></span>
-              </div>
-
-              <div>
-                <h3 class="selected_status"> state:</h4><span id="mode"></span>
-              <div>
-
-            <!-- </table> -->
-          </td>
-          <td id="canvascol">
+            <div>
+                <label class='cell_info'>label:
+                    <span id="label"></span> 
+                </label>
+                <label class='cell_info'>parent cells:
+                    <span id="parent"></span>
+                </label>
+                <label class='cell_info'>daughters cells:
+                    <span id="daughters"></span> 
+                </label>
+                <label class='cell_info'>divisions in frame:
+                    <span id="frame_div"></span>
+                </label>
+                <label class='cell_info'>capped:
+                    <span id="capped"></span>
+                </label>
+                <label class='cell_info'>frames:
+                    <span id="frames"></span>
+                </label>
+                <label class="selected_status"> state:
+                    <span id="mode"></span>
+                </label>
+            </div>
+        </div>
+        <div id="canvascol">
             <canvas width=600 height=400 id="canvas"></canvas>
-          </td>
-        </tr>
-      </table>
+        </div>
     </div>
   <!-- START CALIBAN FUNCTION CALL -->
   <script>
