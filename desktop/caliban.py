@@ -1641,20 +1641,16 @@ class ZStackReview:
                     frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
                     frame = np.ma.masked_equal(frame, self.highlighted_cell_two)
 
-            with tempfile.TemporaryFile() as file:
-                if self.draw_raw:
-                    plt.imsave(file, frame[:,:,self.channel],
-                               vmin = 0,
-                               vmax=self.max_intensity[self.channel],
-                               cmap=self.cmap_options[self.current_cmap],
-                               format="png")
-                else:
-                    plt.imsave(file, frame[:,:,self.feature],
-                               vmin=0,
-                               vmax= max(1,np.max(self.cell_ids[self.feature]) + self.adjustment[self.feature]),
-                               cmap=cmap,
-                               format="png")
-                image = pyglet.image.load("frame.png", file)
+            if self.draw_raw:
+                image = self.helper_array_to_img(input_array = frame[:,:,self.channel],
+                                                         vmax = self.max_intensity[self.channel],
+                                                         cmap = self.cmap_options[self.current_cmap],
+                                                         output = 'pyglet')
+            else:
+                image = self.helper_array_to_img(input_array = frame[:,:,self.feature],
+                                                        vmax = max(1,np.max(self.cell_ids[self.feature]) + self.adjustment[self.feature]),
+                                                        cmap = cmap,
+                                                        output = 'pyglet')
             
             sprite = pyglet.sprite.Sprite(image, x=self.sidebar_width, y=0)
 
@@ -1670,12 +1666,10 @@ class ZStackReview:
 
             # create pyglet image object so we can display brush location
             # handle with context manager because we don't need to keep brush_file around for long
-            with tempfile.TemporaryFile() as brush_file:
-                plt.imsave(brush_file, self.brush_view,
-                            vmax = self.num_cells[self.feature] + self.adjustment[self.feature],
-                            cmap='gist_stern',
-                            format='png')
-                brush_img = pyglet.image.load('brush_file.png', brush_file)
+            brush_img = self.helper_array_to_img(input_array = self.brush_view,
+                                                        vmax = self.num_cells[self.feature] + self.adjustment[self.feature],
+                                                        cmap = 'gist_stern',
+                                                        output = 'pyglet')
 
             # get raw and annotated data
             current_raw = self.raw[self.current_frame,:,:,self.channel]
@@ -1696,42 +1690,26 @@ class ZStackReview:
                 current_raw = invert(current_raw)
 
             # put raw image data into BytesIO object
-            raw_file = BytesIO()
-
-            plt.imsave(raw_file, current_raw,
-                            vmax=vmax,
-                            cmap='gray',
-                            format='png')
-
-            raw_file.seek(0)
-            
-            #gives us the 'greyscale' image in array format
-            #(the format is RGB even though it is displayed as grey)
-            raw_img = imread(raw_file)
-            comp_img = pyglet.image.load('comp.png', file = raw_file)
-
-
-            #don't need to keep the file open once we have the array
-            raw_file.close()
+            comp_img = self.helper_array_to_img(input_array = current_raw,
+                                                        vmax = vmax,
+                                                        cmap = 'gray',
+                                                        output = 'pyglet')
 
             # make the composite if you want to see annotation overlay
             if not self.hide_annotations:
+
+                raw_img =  self.helper_array_to_img(input_array = current_raw,
+                                    vmax = vmax,
+                                    cmap = 'gray',
+                                    output = 'array')
+                
                 raw_RGB = raw_img[:,:,0:3]
 
-                # put annotated image data into BytesIO object
-                ann_file = BytesIO()
-                plt.imsave(ann_file, current_ann,
-                                vmax=self.num_cells[self.feature] + self.adjustment[self.feature],
-                                cmap='gist_stern',
-                                format='png')
+                ann_img = self.helper_array_to_img(input_array = current_ann,
+                                                    vmax = self.num_cells[self.feature] + self.adjustment[self.feature],
+                                                    cmap = 'gist_stern',
+                                                    output = 'array')
 
-                ann_file.seek(0)
-
-                #gives us the color image in array format
-                ann_img = imread(ann_file)
-
-                #don't need to keep the file open once we have the array
-                ann_file.close()
                 ann_RGB = ann_img[:,:,0:3]
                 
                 #composite raw image with annotations on top
@@ -1759,11 +1737,10 @@ class ZStackReview:
                 img_masked = rescale_intensity(img_masked, out_range = np.uint8)
                 img_masked = img_masked.astype(np.uint8)
 
-                # save img_masked as png so we can load it as a pyglet image
-                file_masked = tempfile.NamedTemporaryFile(suffix = '.png')
-                imwrite(str(file_masked.name), img_masked)
-                comp_img = pyglet.image.load(str(file_masked.name))
-                file_masked.close()
+                comp_img = self.helper_array_to_img(input_array = img_masked,
+                                                    vmax = None,
+                                                    cmap = None,
+                                                    output = 'pyglet')
         
             composite_sprite = pyglet.sprite.Sprite(comp_img, x = self.sidebar_width, y=0)
             brush_sprite = pyglet.sprite.Sprite(brush_img, x=self.sidebar_width, y=0)
@@ -2057,6 +2034,32 @@ class ZStackReview:
         self.annotated[self.current_frame,:,:,self.feature] = relabeled_img
 
         self.create_cell_info(feature=self.feature)
+
+    def helper_array_to_img(self, input_array, vmax, cmap, output):
+        '''
+        takes input array and does file processing (save with pyplot as temp file)
+        creates and returns a pyglet image with that file loaded
+        '''
+        
+        img_file = BytesIO()
+        plt.imsave(img_file, input_array,
+                        vmax=vmax,
+                        cmap=cmap,
+                        format='png')
+
+        img_file.seek(0)
+        if output == 'pyglet':
+            pyglet_img = pyglet.image.load('img_file.png', file = img_file)
+            img_file.close()
+            return pyglet_img
+
+        elif output == 'array':
+            img_array = imread(img_file)
+            img_file.close()
+            return img_array
+
+        else:
+            return None
 
 
     def save(self):
