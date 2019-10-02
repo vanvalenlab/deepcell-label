@@ -979,6 +979,9 @@ class ZStackReview:
         self.highlight = False
         self.highlighted_cell_one = -1
         self.highlighted_cell_two = -1
+
+        self.cmap_options = ['cubehelix', 'gist_yarg', 'gist_gray', 'magma', 'nipy_spectral', 'prism']
+        self.current_cmap = 0
         
         cursor = self.window.get_system_mouse_cursor(self.window.CURSOR_CROSSHAIR)
         self.window.set_mouse_cursor(cursor)
@@ -1322,6 +1325,19 @@ class ZStackReview:
         offset = 5 if modifiers & key.MOD_SHIFT else 1
         
         # universal keybinds
+
+        #cycle through colormaps
+        if modifiers & key.MOD_SHIFT:
+            if symbol == key.UP:
+                if self.current_cmap == len(self.cmap_options) - 1:
+                    self.current_cmap = 0
+                elif self.current_cmap < len(self.cmap_options) -1:
+                    self.current_cmap += 1
+            if symbol == key.DOWN:
+                if self.current_cmap == 0:
+                    self.current_cmap = len(self.cmap_options) - 1
+                elif self.current_cmap > 0:
+                    self.current_cmap -= 1
         if symbol in {key.LEFT, key.A}:
             self.current_frame = max(self.current_frame - offset, 0)
             #clear prediction if you change frames so you aren't working
@@ -1618,7 +1634,7 @@ class ZStackReview:
                     plt.imsave(file, frame[:,:,self.channel],
                                vmin = 0,
                                vmax=self.max_intensity[self.channel],
-                               cmap="cubehelix",
+                               cmap=self.cmap_options[self.current_cmap],
                                format="png")
                 else:
                     plt.imsave(file, frame[:,:,self.feature],
