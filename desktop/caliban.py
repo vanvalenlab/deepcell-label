@@ -1688,6 +1688,9 @@ class ZStackReview:
             if self.adapthist_on:
                 current_raw = rescale_intensity(current_raw, in_range = 'image', out_range = 'float')
                 current_raw = equalize_adapthist(current_raw)
+                vmax = 1
+            elif not self.adapthist_on:
+                vmax = self.max_intensity[self.channel]
 
             if self.invert:
                 current_raw = invert(current_raw)
@@ -1696,7 +1699,7 @@ class ZStackReview:
             raw_file = BytesIO()
 
             plt.imsave(raw_file, current_raw,
-                            vmax=self.max_intensity[self.channel],
+                            vmax=vmax,
                             cmap='gray',
                             format='png')
 
