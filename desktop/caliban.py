@@ -43,7 +43,7 @@ from io import BytesIO
 from skimage.morphology import watershed, flood_fill
 from skimage.draw import circle, line_aa
 from skimage.measure import regionprops
-from skimage.exposure import rescale_intensity
+from skimage.exposure import rescale_intensity, equalize_adapthist
 from skimage.segmentation import active_contour
 from skimage import color, img_as_float, filters
 from skimage.util import invert
@@ -999,6 +999,7 @@ class ZStackReview:
         self.predict_seed_2 = None
         self.invert = True
         self.sobel_on = False
+        self.adapthist_on = False
 
         self.conversion_brush_target = -1
         self.conversion_brush_value = -1
@@ -1378,12 +1379,19 @@ class ZStackReview:
                 self.erase = not self.erase
             if symbol == key.DOWN:
                 self.brush_size = max(self.brush_size -1, 1)
+
             if symbol == key.UP:
                 self.brush_size = min(self.brush_size + 1, self.height, self.width)
+
             if symbol == key.I:
                 self.invert = not self.invert
+
             if symbol == key.K:
                 self.sobel_on = not self.sobel_on
+
+            if symbol == key.J:
+                self.adapthist_on = not self.adapthist_on
+
             else:
                 self.mode_handle(symbol)
             
@@ -1668,10 +1676,14 @@ class ZStackReview:
             # get raw and annotated data
             current_raw = self.raw[self.current_frame,:,:,self.channel]
             current_ann = self.annotated[self.current_frame,:,:,self.feature]
-
+            
             #try sobel filter here
             if self.sobel_on:
                 current_raw = filters.sobel(current_raw)
+            
+            if self.adapthist_on:
+                current_raw = rescale_intensity(current_raw, in_range = 'image', out_range = 'float')
+                current_raw = equalize_adapthist(current_raw)
 
             # put raw image data into BytesIO object
             raw_file = BytesIO()
@@ -1946,8 +1958,7 @@ class ZStackReview:
         #double the number of points we have to work with for a fuller output snake
         input_snake = np.array([np.concatenate((cc, cc)), np.concatenate((rr, rr))]).T
 
-        # skimage docs recommend blurring input image but this makes the prediction terrible here
-        # sharpening actually helps a bit
+        # skimage docs recommend blurring input image, just blur a little
         snake_predict = active_contour(image = filters.gaussian(self.raw[self.current_frame, :,:, self.channel], 0.3), 
             snake = input_snake,
             alpha=0.01, 
