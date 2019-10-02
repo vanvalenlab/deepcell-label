@@ -92,7 +92,15 @@ class Mode:
                 return('\nclick to select a starting point for contour prediction')
             elif self.action == "END SNAKE":
                 return('\nclick to select an ending point for contour prediction')
-
+            elif self.action == "CONVERSION BRUSH TARGET":
+                return('\nclick on the label you want to draw OVER')
+            elif self.action == "CONVERSION BRUSH VALUE":
+                return('\nclick on the label you want to draw WITH')
+        elif self.kind == "DRAW":
+            # return('\nusing conversion brush to replace {} with {}'.format(self.info['conversion_brush_target'], 
+            #     self.info['conversion_brush_value']))
+            return('\nusing conversion brush to replace {} with {}\nuse ESC to leave this mode'.format(self.conversion_brush_target, 
+                self.conversion_brush_value))
         else:
             return ''
 

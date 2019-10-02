@@ -996,6 +996,9 @@ class ZStackReview:
         self.predict_seed_2 = None
         self.invert = True
         self.sobel_on = False
+
+        self.conversion_brush_target = -1
+        self.conversion_brush_value = -1
         
         self.hole_fill_seed = None
         self.save_version = 0
@@ -1069,6 +1072,27 @@ class ZStackReview:
 
                 self.annotated[self.current_frame,:,:,self.feature] = annotated
 
+            if self.mode.kind == "DRAW":
+                # using conversion brush; similar to regular drawing
+                annotated = self.annotated[self.current_frame,:,:,self.feature]
+
+                brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
+
+                in_original = np.any(np.isin(annotated, self.conversion_brush_target))
+
+                #only change conversion brush target
+                annotated_draw = np.where(annotated==self.conversion_brush_target, self.conversion_brush_value, annotated)
+                annotated[brush_area] = annotated_draw[brush_area]
+
+                #check to see if target is still in there
+                in_modified = np.any(np.isin(annotated, self.conversion_brush_target))
+
+                #cell deletion
+                if in_original and not in_modified:
+                    self.del_cell_info(feature = self.feature, del_label = self.edit_value, frame = self.current_frame)
+
+                self.annotated[self.current_frame,:,:,self.feature] = annotated
+
             # color pick tool
             elif self.mode.kind == "PROMPT" and self.mode.action == "PICK COLOR":
                 frame = self.annotated[self.current_frame]
@@ -1078,6 +1102,29 @@ class ZStackReview:
                 elif label != 0:
                     self.edit_value = label
                     self.mode = Mode.none()
+
+            # color picking for conversion brush
+            elif self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH TARGET":
+                # pick the color you will be writing over with conversion brush
+                frame = self.annotated[self.current_frame]
+                label = int(frame[self.y, self.x, self.feature])
+                if label == 0:
+                    pass
+                elif label != 0:
+                    self.conversion_brush_target = label
+                    self.mode.action = "CONVERSION BRUSH VALUE"
+            elif self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH VALUE":
+                # pick the color the conversion brush will be drawing
+                frame = self.annotated[self.current_frame]
+                label = int(frame[self.y, self.x, self.feature])
+                if label == 0:
+                    pass
+                elif label != 0:
+                    self.conversion_brush_value = label
+                    self.mode = Mode.none()
+                    self.mode = Mode("DRAW", action = "CONVERSION",
+                        conversion_brush_target = self.conversion_brush_target,
+                        conversion_brush_value = self.conversion_brush_value)
 
             # start drawing bounding box for threshold prediction
             elif self.mode.kind == "PROMPT" and self.mode.action == "DRAW BOX":
@@ -1107,7 +1154,7 @@ class ZStackReview:
             self.x, self.y = x, y        
         
         if self.edit_mode:
-            if self.show_brush:
+            if self.show_brush and self.mode.kind is None:
                 annotated = self.annotated[self.current_frame,:,:,self.feature]
                 
                 #self.x and self.y are different from the mouse's x and y
@@ -1140,6 +1187,32 @@ class ZStackReview:
                     self.add_cell_info(feature = self.feature, add_label = self.edit_value, frame = self.current_frame)
                             
                 self.annotated[self.current_frame,:,:,self.feature] = annotated
+
+            # conversion brush
+            elif self.mode.kind == "DRAW":
+                # using conversion brush; similar to regular drawing
+                annotated = self.annotated[self.current_frame,:,:,self.feature]
+
+                brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
+
+                self.brush_view[brush_area] = self.conversion_brush_value
+
+                in_original = np.any(np.isin(annotated, self.conversion_brush_target))
+
+                #only change conversion brush target
+                annotated_draw = np.where(annotated==self.conversion_brush_target, self.conversion_brush_value, annotated)
+                annotated[brush_area] = annotated_draw[brush_area]
+                
+                #check to see if target is still in there
+                in_modified = np.any(np.isin(annotated, self.conversion_brush_target))
+
+                #cell deletion
+                if in_original and not in_modified:
+                    self.del_cell_info(feature = self.feature, del_label = self.edit_value, frame = self.current_frame)
+
+                self.annotated[self.current_frame,:,:,self.feature] = annotated
+
+            #dragging the bounding box for threshold prediction
             elif not self.show_brush and self.mode.action == "DRAW BOX":
                 self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
 
@@ -1208,9 +1281,16 @@ class ZStackReview:
         if self.edit_mode:
             if self.show_brush:
                 #display brush size
+
+                #which color to display depends on conversion brush or normal brush
+                if self.mode.kind == "DRAW":
+                    brush_val = self.conversion_brush_value
+                else:
+                    brush_val = self.edit_value
+
                 self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
                 brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
-                self.brush_view[brush_area] = self.edit_value
+                self.brush_view[brush_area] = brush_val
 
             elif not self.show_brush and self.mode.action == "END SNAKE":
                 self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
@@ -1375,9 +1455,11 @@ class ZStackReview:
         if symbol == key.R:
             if self.mode.kind is None and not self.edit_mode:
                 self.mode = Mode("QUESTION", action='RELABEL', **self.mode.info)
-            if self.mode.kind == "MULTIPLE":
+            elif self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
                                  action="REPLACE", **self.mode.info)
+            elif self.mode.kind is None and self.edit_mode:
+                self.mode = Mode("PROMPT", action="CONVERSION BRUSH TARGET", **self.mode.info)
                                  
         if symbol == key.X:
             if self.mode.kind == "SELECTED":
