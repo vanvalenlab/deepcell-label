@@ -40,7 +40,7 @@ import tarfile
 import tempfile
 
 from io import BytesIO
-from skimage.morphology import watershed, flood_fill
+from skimage.morphology import watershed, flood_fill, flood
 from skimage.draw import circle, line_aa
 from skimage.measure import regionprops
 from skimage.exposure import rescale_intensity, equalize_adapthist
@@ -1021,6 +1021,11 @@ class ZStackReview:
                     if label !=0:
                         self.hole_fill_seed = (self.y, self.x)
                         self.mode = Mode("QUESTION", action = "FLOOD CELL")
+                elif modifiers & key.MOD_SHIFT:
+                    if label !=0:
+                        self.hole_fill_seed = (self.y, self.x)
+                        self.mode = Mode("QUESTION", action = "TRIM PIXELS",
+                            label = label)
                 else:
                     if label != 0:
                         self.mode = Mode("SELECTED",
@@ -1575,6 +1580,8 @@ class ZStackReview:
                     self.action_new_cell_stack()
                 elif self.mode.action == "FLOOD CELL":
                     self.action_flood_contiguous()
+                elif self.mode.action == "TRIM PIXELS":
+                    self.action_trim_pixels()
                 elif self.mode.action == "SWAP":
                     self.action_swap_all()
                 elif self.mode.action == "DELETE":
@@ -2014,6 +2021,23 @@ class ZStackReview:
         self.annotated[self.current_frame,:,:,self.feature] = filled_img_ann
 
         self.add_cell_info(feature=self.feature, add_label=new_label, frame = self.current_frame)
+        self.hole_fill_seed = None
+
+    def action_trim_pixels(self):
+        '''
+        get rid of any stray pixels of selected label; pixels of value label
+        that are not connected to the cell selected will be removed from annotation in that frame
+        '''
+
+        label = self.mode.label
+        img_ann = self.annotated[self.current_frame,:,:,self.feature]
+        
+        contig_cell = flood(image = img_ann, seed_point = self.hole_fill_seed)
+
+        img_trimmed = np.where(np.logical_and(np.invert(contig_cell), img_ann == label), 0, img_ann)
+
+        self.annotated[self.current_frame,:,:,self.feature] = img_trimmed
+
         self.hole_fill_seed = None
 
     def action_predict_single(self):
