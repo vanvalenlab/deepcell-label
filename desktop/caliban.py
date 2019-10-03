@@ -966,7 +966,7 @@ class ZStackReview:
         self.draw_raw = False
         self.max_intensity = {}
         for channel in range(self.channel_max):
-            self.max_intensity[channel] = None
+            self.max_intensity[channel] = np.max(self.raw[0,:,:,channel])
         self.x = 0
         self.y = 0
         self.mode = Mode.none()
@@ -992,6 +992,7 @@ class ZStackReview:
         self.brush_size = 1
         self.erase = False
         self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
+        self.composite_view = np.zeros((1,self.height,self.width,3))
         self.predict_coordinates = None
         self.show_prediction = False
         self.show_brush = True
@@ -1077,6 +1078,9 @@ class ZStackReview:
 
                 self.annotated[self.current_frame,:,:,self.feature] = annotated
 
+                if not self.hide_annotations:
+                    self.helper_update_composite()
+
             if self.mode.kind == "DRAW":
                 # using conversion brush; similar to regular drawing
                 annotated = self.annotated[self.current_frame,:,:,self.feature]
@@ -1097,6 +1101,8 @@ class ZStackReview:
                     self.del_cell_info(feature = self.feature, del_label = self.edit_value, frame = self.current_frame)
 
                 self.annotated[self.current_frame,:,:,self.feature] = annotated
+                if not self.hide_annotations:
+                    self.helper_update_composite()
 
             # color pick tool
             elif self.mode.kind == "PROMPT" and self.mode.action == "PICK COLOR":
@@ -1264,6 +1270,12 @@ class ZStackReview:
                 self.show_brush = True
                 self.mode = Mode.none()
 
+            # moved update_composite here from on_mouse_drag as compromise
+            # will still be able to see brush view if drawing, so you aren't drawing blind
+            # threshold predictions will show up also
+            if not self.hide_annotations:
+                self.helper_update_composite()
+
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self.draw_raw:
             if self.max_intensity[self.channel] is None:
@@ -1271,9 +1283,13 @@ class ZStackReview:
             else:
                 raw_adjust = max(int(self.max_intensity[self.channel] * 0.02), 1)
                 self.max_intensity[self.channel] = max(self.max_intensity[self.channel] - raw_adjust * scroll_y, 2)
-        else:   
+
+        elif not self.draw_raw:   
             if np.max(self.cell_ids[self.feature]) + (self.adjustment[self.feature] - 1 * scroll_y) > 0:
                 self.adjustment[self.feature] = self.adjustment[self.feature] - 1 * scroll_y
+        
+        if self.edit_mode and not self.hide_annotations:
+            self.helper_update_composite()
 
     def on_mouse_motion(self, x, y, dx, dy):
         x -= self.sidebar_width
@@ -1340,21 +1356,31 @@ class ZStackReview:
                     self.current_cmap = len(self.cmap_options) - 1
                 elif self.current_cmap > 0:
                     self.current_cmap -= 1
+
         if symbol in {key.LEFT, key.A}:
             self.current_frame = max(self.current_frame - offset, 0)
             #clear prediction if you change frames so you aren't working
             #from the wrong prediction
             self.show_prediction = False
             self.predict_coordinates = None
+            # if you change frames while you've viewing composite, update composite     
+            if self.edit_mode and not self.hide_annotations:
+                self.helper_update_composite()
+        
         elif symbol in {key.RIGHT, key.D}:
             self.current_frame = min(self.current_frame + offset, self.num_frames - 1)
             self.show_prediction = False
             self.predict_coordinates = None
+            # if you change frames while you've viewing composite, update composite     
+            if self.edit_mode and not self.hide_annotations:
+                self.helper_update_composite()
+
         elif symbol == key.V:
             #toggle visibility of cursor - mostly to hide from edit mode
             #but inconvenient if you can only turn it back on in edit mode
             self.mouse_visible = not self.mouse_visible
             self.window.set_mouse_visible(self.mouse_visible)
+
         elif symbol == key.Z:
             self.draw_raw = not self.draw_raw
 
@@ -1386,15 +1412,25 @@ class ZStackReview:
 
             if symbol == key.I:
                 self.invert = not self.invert
+                # if you invert the image while you're viewing composite, update composite
+                if not self.hide_annotations:
+                    self.helper_update_composite()
 
             if symbol == key.K:
                 self.sobel_on = not self.sobel_on
+                if not self.hide_annotations:
+                    self.helper_update_composite()
 
             if symbol == key.J:
                 self.adapthist_on = not self.adapthist_on
+                if not self.hide_annotations:
+                    self.helper_update_composite()
 
             if symbol == key.H:
                 self.hide_annotations = not self.hide_annotations
+                # in case any display changes have been made while hiding annotations
+                if not self.hide_annotations:
+                    self.helper_update_composite()
 
             else:
                 self.mode_handle(symbol)
@@ -1416,12 +1452,13 @@ class ZStackReview:
                 # clear and stop showing prediction view
                 self.show_prediction = False
                 self.predict_coordinates = None
-                self.draw_current_frame()
                                 
         if symbol == key.E:
             #toggle edit mode only if nothing is selected
             if self.mode.kind is None:
                 self.edit_mode = not self.edit_mode
+                if self.edit_mode and not self.hide_annotations:
+                    self.helper_update_composite()
                                 
         if symbol == key.F:
             #cycle through features but only if nothing is selected
@@ -1665,7 +1702,6 @@ class ZStackReview:
         elif self.edit_mode:
 
             # create pyglet image object so we can display brush location
-            # handle with context manager because we don't need to keep brush_file around for long
             brush_img = self.helper_array_to_img(input_array = self.brush_view,
                                                         vmax = self.num_cells[self.feature] + self.adjustment[self.feature],
                                                         cmap = 'gist_stern',
@@ -1673,7 +1709,6 @@ class ZStackReview:
 
             # get raw and annotated data
             current_raw = self.raw[self.current_frame,:,:,self.channel]
-            current_ann = self.annotated[self.current_frame,:,:,self.feature]
             
             #try sobel filter here
             if self.sobel_on:
@@ -1689,55 +1724,15 @@ class ZStackReview:
             if self.invert:
                 current_raw = invert(current_raw)
 
-            # put raw image data into BytesIO object
-            comp_img = self.helper_array_to_img(input_array = current_raw,
+            if self.hide_annotations:
+                comp_img = self.helper_array_to_img(input_array = current_raw,
                                                         vmax = vmax,
                                                         cmap = 'gray',
                                                         output = 'pyglet')
 
-            # make the composite if you want to see annotation overlay
+            # draw the composite if you want to see annotation overlay
             if not self.hide_annotations:
-
-                raw_img =  self.helper_array_to_img(input_array = current_raw,
-                                    vmax = vmax,
-                                    cmap = 'gray',
-                                    output = 'array')
-                
-                raw_RGB = raw_img[:,:,0:3]
-
-                ann_img = self.helper_array_to_img(input_array = current_ann,
-                                                    vmax = self.num_cells[self.feature] + self.adjustment[self.feature],
-                                                    cmap = 'gist_stern',
-                                                    output = 'array')
-
-                ann_RGB = ann_img[:,:,0:3]
-                
-                #composite raw image with annotations on top
-                alpha = 0.6
-
-                # Convert the input image and color mask to Hue Saturation Value (HSV)
-                # colorspace
-                img_hsv = color.rgb2hsv(raw_RGB)
-                color_mask_hsv = color.rgb2hsv(ann_RGB)
-
-                # Replace the hue and saturation of the original image
-                # with that of the color mask
-                img_hsv[..., 0] = color_mask_hsv[..., 0]
-                img_hsv[..., 1] = color_mask_hsv[..., 1] * alpha
-
-                # if we're displaying a prediction preview, it should show up as
-                # contrasting colors (hsv[rr, cc, 0] adjustment) and bright
-                # (saturation high). add to composite img instead of overlaying with sprites
-                if self.show_prediction:
-                    rr, cc = self.predict_coordinates
-                    img_hsv[rr, cc, 0] = color_mask_hsv[rr, cc, 0] + 0.5
-                    img_hsv[rr, cc, 1] = 1
-
-                img_masked = color.hsv2rgb(img_hsv)
-                img_masked = rescale_intensity(img_masked, out_range = np.uint8)
-                img_masked = img_masked.astype(np.uint8)
-
-                comp_img = self.helper_array_to_img(input_array = img_masked,
+                comp_img = self.helper_array_to_img(input_array = self.composite_view,
                                                     vmax = None,
                                                     cmap = None,
                                                     output = 'pyglet')
@@ -1962,6 +1957,9 @@ class ZStackReview:
 
         self.predict_coordinates = snake_predict.T.astype('int')
         self.predict_coordinates = (self.predict_coordinates[1], self.predict_coordinates[0])
+
+        if not self.hide_annotations:
+            self.helper_update_composite()
         self.draw_current_frame()
         
     def action_delete_mask(self):
@@ -2061,6 +2059,84 @@ class ZStackReview:
         else:
             return None
 
+    def helper_make_composite_img(self, base_array, overlay_array, alpha = 0.6):
+        '''
+        takes two arrays and overlays one on top of the other
+        (uses conversion to hsv to make nice gray raw + color annotation
+        overlays). Should work on any two arrays of same size (overlay array
+        should have color in it or there's not really a point) so that it can
+        calculate brush-affected areas quickly. Returns the composite array
+        as rgb array [M,N,3]
+        '''
+
+        # Convert the input image and color mask to Hue Saturation Value (HSV)
+        # colorspace
+        img_hsv = color.rgb2hsv(base_array)
+        color_mask_hsv = color.rgb2hsv(overlay_array)
+
+        # Replace the hue and saturation of the original image
+        # with that of the color mask
+        img_hsv[..., 0] = color_mask_hsv[..., 0]
+        img_hsv[..., 1] = color_mask_hsv[..., 1] * alpha
+
+        # if we're displaying a prediction preview, it should show up as
+        # contrasting colors (hsv[rr, cc, 0] adjustment) and bright
+        # (saturation high). add to composite img instead of overlaying with sprites
+        if self.show_prediction:
+            rr, cc = self.predict_coordinates
+            img_hsv[rr, cc, 0] = color_mask_hsv[rr, cc, 0] + 0.5
+            img_hsv[rr, cc, 1] = 1
+
+        img_masked = color.hsv2rgb(img_hsv)
+        img_masked = rescale_intensity(img_masked, out_range = np.uint8)
+        img_masked = img_masked.astype(np.uint8)
+
+        return img_masked
+
+    def helper_update_composite(self):
+        '''
+        actually generate the raw + annotation composite image.
+        moved to helper function because it does not need to be called whenever
+        draw_current_frame is in edit mode
+        '''
+
+        current_raw = self.raw[self.current_frame,:,:,self.channel]
+        current_ann = self.annotated[self.current_frame,:,:,self.feature]
+        
+        #try sobel filter here
+        if self.sobel_on:
+            current_raw = filters.sobel(current_raw)
+        
+        if self.adapthist_on:
+            current_raw = rescale_intensity(current_raw, in_range = 'image', out_range = 'float')
+            current_raw = equalize_adapthist(current_raw)
+            vmax = 1
+        elif not self.adapthist_on:
+            if self.draw_raw and self.max_intensity[self.channel] is None:
+                self.max_intensity[self.channel] = np.max(self.get_current_frame()[:,:,self.channel])
+            vmax = self.max_intensity[self.channel]
+
+        raw_img =  self.helper_array_to_img(input_array = current_raw,
+                    vmax = vmax,
+                    cmap = 'gray',
+                    output = 'array')
+        
+        raw_RGB = raw_img[:,:,0:3]
+
+        if self.invert:
+            raw_RGB = invert(raw_RGB)
+
+        ann_img = self.helper_array_to_img(input_array = current_ann,
+                                            vmax = self.num_cells[self.feature] + self.adjustment[self.feature],
+                                            cmap = 'gist_stern',
+                                            output = 'array')
+
+        ann_RGB = ann_img[:,:,0:3]
+
+        img_masked = self.helper_make_composite_img(base_array = raw_RGB,
+                                            overlay_array = ann_RGB)
+
+        self.composite_view = img_masked
 
     def save(self):
         save_file = self.filename + "_save_version_{}.npz".format(self.save_version)
