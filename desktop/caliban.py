@@ -1284,8 +1284,10 @@ class ZStackReview:
             if self.max_intensity[self.channel] is None:
                 self.max_intensity[self.channel] = np.max(self.get_current_frame()[:,:,self.channel])
             else:
+                min_intensity = np.min(self.raw[self.current_frame,:,:,self.channel])
                 raw_adjust = max(int(self.max_intensity[self.channel] * 0.02), 1)
-                self.max_intensity[self.channel] = max(self.max_intensity[self.channel] - raw_adjust * scroll_y, 2)
+                self.max_intensity[self.channel] = max(self.max_intensity[self.channel] - raw_adjust * scroll_y,
+                                                        min_intensity + 1)
 
         elif not self.draw_raw:   
             if np.max(self.cell_ids[self.feature]) + (self.adjustment[self.feature] - 1 * scroll_y) > 0:
