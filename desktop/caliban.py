@@ -1928,8 +1928,8 @@ class ZStackReview:
         threshold_stringent = 1.10 * threshold
 
         # use a unique label for predction
-        new_label = self.num_cells[self.feature] + 1
-
+        new_label = np.max(self.cell_ids[self.feature]) + 1
+        
         # try to keep stray pixels from appearing
         hyst = filters.apply_hysteresis_threshold(image = predict_area, low = threshold, high = threshold_stringent)
         ann_threshold = np.where(hyst, new_label, 0)
