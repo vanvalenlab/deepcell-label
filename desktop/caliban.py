@@ -1081,78 +1081,79 @@ class ZStackReview:
                 if not self.hide_annotations:
                     self.helper_update_composite()
 
-            if self.mode.kind == "DRAW":
-                # using conversion brush; similar to regular drawing
-                annotated = self.annotated[self.current_frame,:,:,self.feature]
+            elif self.mode.kind is not None:
 
-                brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
+                if self.mode.kind == "DRAW":
+                    # using conversion brush; similar to regular drawing
+                    annotated = self.annotated[self.current_frame,:,:,self.feature]
 
-                in_original = np.any(np.isin(annotated, self.conversion_brush_target))
+                    brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
 
-                #only change conversion brush target
-                annotated_draw = np.where(annotated==self.conversion_brush_target, self.conversion_brush_value, annotated)
-                annotated[brush_area] = annotated_draw[brush_area]
+                    in_original = np.any(np.isin(annotated, self.conversion_brush_target))
 
-                #check to see if target is still in there
-                in_modified = np.any(np.isin(annotated, self.conversion_brush_target))
+                    #only change conversion brush target
+                    annotated_draw = np.where(annotated==self.conversion_brush_target, self.conversion_brush_value, annotated)
+                    annotated[brush_area] = annotated_draw[brush_area]
 
-                #cell deletion
-                if in_original and not in_modified:
-                    self.del_cell_info(feature = self.feature, del_label = self.edit_value, frame = self.current_frame)
+                    #check to see if target is still in there
+                    in_modified = np.any(np.isin(annotated, self.conversion_brush_target))
 
-                self.annotated[self.current_frame,:,:,self.feature] = annotated
-                if not self.hide_annotations:
-                    self.helper_update_composite()
+                    #cell deletion
+                    if in_original and not in_modified:
+                        self.del_cell_info(feature = self.feature, del_label = self.edit_value, frame = self.current_frame)
 
-            # color pick tool
-            elif self.mode.kind == "PROMPT" and self.mode.action == "PICK COLOR":
-                frame = self.annotated[self.current_frame]
-                label = int(frame[self.y, self.x, self.feature])
-                if label == 0:
+                    self.annotated[self.current_frame,:,:,self.feature] = annotated
+                    if not self.hide_annotations:
+                        self.helper_update_composite()
+
+                # color pick tool
+                elif self.mode.kind == "PROMPT" and self.mode.action == "PICK COLOR":
+                    frame = self.annotated[self.current_frame]
+                    label = int(frame[self.y, self.x, self.feature])
+                    if label == 0:
+                        self.mode = Mode.none()
+                    elif label != 0:
+                        self.edit_value = label
+                        self.mode = Mode.none()
+
+                # color picking for conversion brush
+                elif self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH TARGET":
+                    # pick the color you will be writing over with conversion brush
+                    frame = self.annotated[self.current_frame]
+                    label = int(frame[self.y, self.x, self.feature])
+                    if label == 0:
+                        pass
+                    elif label != 0:
+                        self.conversion_brush_target = label
+                        self.mode = Mode("PROMPT", action = "CONVERSION BRUSH VALUE")
+                elif self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH VALUE":
+                    # pick the color the conversion brush will be drawing
+                    frame = self.annotated[self.current_frame]
+                    label = int(frame[self.y, self.x, self.feature])
+                    if label == 0:
+                        pass
+                    elif label != 0:
+                        self.conversion_brush_value = label
+                        self.mode = Mode.none()
+                        self.mode = Mode("DRAW", action = "CONVERSION",
+                            conversion_brush_target = self.conversion_brush_target,
+                            conversion_brush_value = self.conversion_brush_value)
+
+                # start drawing bounding box for threshold prediction
+                elif self.mode.kind == "PROMPT" and self.mode.action == "DRAW BOX":
+                    self.predict_seed_1 = (self.y, self.x)
+
+                # active contour prediction
+                elif self.mode.kind == "PROMPT" and self.mode.action == "START SNAKE":
+                    self.show_brush = False
+                    self.predict_seed_1 = (self.y, self.x)
+                    self.mode = Mode("PROMPT", action = "END SNAKE")
+                elif self.mode.kind == "PROMPT" and self.mode.action == "END SNAKE":
+                    self.predict_seed_2 = (self.y, self.x)
+                    if self.predict_seed_2 != self.predict_seed_1:
+                        self.action_show_contour()
                     self.mode = Mode.none()
-                elif label != 0:
-                    self.edit_value = label
-                    self.mode = Mode.none()
-
-            # color picking for conversion brush
-            elif self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH TARGET":
-                # pick the color you will be writing over with conversion brush
-                frame = self.annotated[self.current_frame]
-                label = int(frame[self.y, self.x, self.feature])
-                if label == 0:
-                    pass
-                elif label != 0:
-                    self.conversion_brush_target = label
-                    self.mode.action = "CONVERSION BRUSH VALUE"
-            elif self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH VALUE":
-                # pick the color the conversion brush will be drawing
-                frame = self.annotated[self.current_frame]
-                label = int(frame[self.y, self.x, self.feature])
-                if label == 0:
-                    pass
-                elif label != 0:
-                    self.conversion_brush_value = label
-                    self.mode = Mode.none()
-                    self.mode = Mode("DRAW", action = "CONVERSION",
-                        conversion_brush_target = self.conversion_brush_target,
-                        conversion_brush_value = self.conversion_brush_value)
-
-            # start drawing bounding box for threshold prediction
-            elif self.mode.kind == "PROMPT" and self.mode.action == "DRAW BOX":
-                self.predict_seed_1 = (self.y, self.x)
-
-            # active contour prediction
-            elif self.mode.kind == "PROMPT" and self.mode.action == "START SNAKE":
-                self.show_brush = False
-                self.predict_seed_1 = (self.y, self.x)
-                self.mode = Mode.none()
-                self.mode = Mode("PROMPT", action = "END SNAKE", **self.mode.info)
-            elif self.mode.kind == "PROMPT" and self.mode.action == "END SNAKE":
-                self.predict_seed_2 = (self.y, self.x)
-                if self.predict_seed_2 != self.predict_seed_1:
-                    self.action_show_contour()
-                self.mode = Mode.none()
-                self.show_brush = True
+                    self.show_brush = True
 
                     
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
@@ -1199,76 +1200,78 @@ class ZStackReview:
                             
                 self.annotated[self.current_frame,:,:,self.feature] = annotated
 
-            # conversion brush
-            elif self.mode.kind == "DRAW":
-                # using conversion brush; similar to regular drawing
-                annotated = self.annotated[self.current_frame,:,:,self.feature]
+            elif self.mode.kind is not None:
+                # conversion brush
+                if self.mode.kind == "DRAW":
+                    # using conversion brush; similar to regular drawing
+                    annotated = self.annotated[self.current_frame,:,:,self.feature]
 
-                brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
+                    brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
 
-                self.brush_view[brush_area] = self.conversion_brush_value
+                    self.brush_view[brush_area] = self.conversion_brush_value
 
-                in_original = np.any(np.isin(annotated, self.conversion_brush_target))
+                    in_original = np.any(np.isin(annotated, self.conversion_brush_target))
 
-                #only change conversion brush target
-                annotated_draw = np.where(annotated==self.conversion_brush_target, self.conversion_brush_value, annotated)
-                annotated[brush_area] = annotated_draw[brush_area]
-                
-                #check to see if target is still in there
-                in_modified = np.any(np.isin(annotated, self.conversion_brush_target))
+                    #only change conversion brush target
+                    annotated_draw = np.where(annotated==self.conversion_brush_target, self.conversion_brush_value, annotated)
+                    annotated[brush_area] = annotated_draw[brush_area]
+                    
+                    #check to see if target is still in there
+                    in_modified = np.any(np.isin(annotated, self.conversion_brush_target))
 
-                #cell deletion
-                if in_original and not in_modified:
-                    self.del_cell_info(feature = self.feature, del_label = self.edit_value, frame = self.current_frame)
+                    #cell deletion
+                    if in_original and not in_modified:
+                        self.del_cell_info(feature = self.feature, del_label = self.edit_value, frame = self.current_frame)
 
-                self.annotated[self.current_frame,:,:,self.feature] = annotated
+                    self.annotated[self.current_frame,:,:,self.feature] = annotated
 
-            #dragging the bounding box for threshold prediction
-            elif not self.show_brush and self.mode.action == "DRAW BOX":
-                self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
+                #dragging the bounding box for threshold prediction
+                elif not self.show_brush and self.mode.action == "DRAW BOX":
+                    self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
 
-                bbox_corner_live = (self.y, self.x)
+                    bbox_corner_live = (self.y, self.x)
 
-                # show a box with self.brush_view
-                top_edge = min(self.predict_seed_1[0], bbox_corner_live[0])
-                bottom_edge = max(self.predict_seed_1[0], bbox_corner_live[0])
-                left_edge = min(self.predict_seed_1[1], bbox_corner_live[1])
-                right_edge = max(self.predict_seed_1[1], bbox_corner_live[1])
-                
-                self.brush_view[top_edge:bottom_edge, left_edge:right_edge] = self.edit_value
+                    # show a box with self.brush_view
+                    top_edge = min(self.predict_seed_1[0], bbox_corner_live[0])
+                    bottom_edge = max(self.predict_seed_1[0], bbox_corner_live[0])
+                    left_edge = min(self.predict_seed_1[1], bbox_corner_live[1])
+                    right_edge = max(self.predict_seed_1[1], bbox_corner_live[1])
+                    
+                    self.brush_view[top_edge:bottom_edge, left_edge:right_edge] = self.edit_value
 
             
     def on_mouse_release(self, x, y, buttons, modifiers):
         if self.edit_mode:
             if self.show_brush:
                 self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
-            elif not self.show_brush and self.mode.action == "DRAW BOX":
-                #releasing the mouse is the cue to finalize the bounding box
-                self.predict_seed_2 = (self.y, self.x)
-                #send to threshold function
+            if self.mode.kind is not None:
+                if not self.show_brush and self.mode.action == "DRAW BOX":
+                    #releasing the mouse is the cue to finalize the bounding box
+                    self.predict_seed_2 = (self.y, self.x)
+                    #send to threshold function
 
-                top_edge = min(self.predict_seed_1[0], self.y)
-                bottom_edge = max(self.predict_seed_1[0], self.y)
-                left_edge = min(self.predict_seed_1[1], self.x)
-                right_edge = max(self.predict_seed_1[1], self.x)
+                    top_edge = min(self.predict_seed_1[0], self.y)
+                    bottom_edge = max(self.predict_seed_1[0], self.y)
+                    left_edge = min(self.predict_seed_1[1], self.x)
+                    right_edge = max(self.predict_seed_1[1], self.x)
 
-                if top_edge != bottom_edge and left_edge != right_edge:
-                    threshold_prediction = self.action_threshold_predict(top_edge, bottom_edge, left_edge, right_edge)
+                    if top_edge != bottom_edge and left_edge != right_edge:
+                        threshold_prediction = self.action_threshold_predict(top_edge, bottom_edge, left_edge, right_edge)
 
-                    #put prediction in without overwriting
-                    predict_area = self.annotated[self.current_frame, top_edge:bottom_edge, left_edge:right_edge, self.feature]
-                    safe_overlay = np.where(predict_area == 0, threshold_prediction, predict_area)
+                        #put prediction in without overwriting
+                        predict_area = self.annotated[self.current_frame, top_edge:bottom_edge, left_edge:right_edge, self.feature]
+                        safe_overlay = np.where(predict_area == 0, threshold_prediction, predict_area)
 
-                    self.annotated[self.current_frame,top_edge:bottom_edge,left_edge:right_edge,self.feature] = safe_overlay
+                        self.annotated[self.current_frame,top_edge:bottom_edge,left_edge:right_edge,self.feature] = safe_overlay
 
-                # TODO: it would be great if a preview of the prediction was displayed
-                # and then the user confirms that they want to add it to the annotation
-                # otherwise they can cancel it, or adjust the brightness to change the prediction
-                # before confirming. Would probably need more mode handling
+                    # TODO: it would be great if a preview of the prediction was displayed
+                    # and then the user confirms that they want to add it to the annotation
+                    # otherwise they can cancel it, or adjust the brightness to change the prediction
+                    # before confirming. Would probably need more mode handling
 
-                # clear bounding box and Mode
-                self.show_brush = True
-                self.mode = Mode.none()
+                    # clear bounding box and Mode
+                    self.show_brush = True
+                    self.mode = Mode.none()
 
             # moved update_composite here from on_mouse_drag as compromise
             # will still be able to see brush view if drawing, so you aren't drawing blind
@@ -1313,15 +1316,16 @@ class ZStackReview:
                 brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
                 self.brush_view[brush_area] = brush_val
 
-            elif not self.show_brush and self.mode.action == "END SNAKE":
-                self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
+            if self.mode.kind is not None:
+                if not self.show_brush and self.mode.action == "END SNAKE":
+                    self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
 
-                # show contour line as it is being drawn
-                y_start, x_start = self.predict_seed_1
-                y_end, x_end = self.y, self.x
+                    # show contour line as it is being drawn
+                    y_start, x_start = self.predict_seed_1
+                    y_end, x_end = self.y, self.x
 
-                rr, cc, val = line_aa(y_start, x_start, y_end, x_end)
-                self.brush_view[rr,cc] = val*255
+                    rr, cc, val = line_aa(y_start, x_start, y_end, x_end)
+                    self.brush_view[rr,cc] = val*255
 
     def on_draw(self):
         self.window.clear()
@@ -1390,14 +1394,17 @@ class ZStackReview:
                 self.highlighted_cell_one = -1
                 self.highlighted_cell_two = -1
                 self.mode = Mode.none()
+
             elif symbol == key.H:
                 self.highlight = not self.highlight
+
             else:
                 self.mode_handle(symbol)
         # edit mode keybinds
         else:
             if symbol == key.ESCAPE:
                 self.mode = Mode.none()
+                self.show_brush = True
             if symbol == key.EQUAL:
                 self.edit_value += 1
             if symbol == key.MINUS:
@@ -1452,6 +1459,7 @@ class ZStackReview:
                 # clear and stop showing prediction view
                 self.show_prediction = False
                 self.predict_coordinates = None
+                self.helper_update_composite()
                                 
         if symbol == key.E:
             #toggle edit mode only if nothing is selected
@@ -1467,12 +1475,13 @@ class ZStackReview:
                     self.feature = 0
                 else:
                     self.feature +=1
+
             if self.mode.kind == "SELECTED":
                 self.mode = Mode("PROMPT",
                                 action="FILL HOLE", **self.mode.info)
         if symbol == key.L:
             if self.mode.kind is None and self.edit_mode:
-                self.mode = Mode("PROMPT", action = "START SNAKE", **self.mode.info)
+                self.mode = Mode("PROMPT", action = "START SNAKE")
 
         if symbol == key.S:
             if self.mode.kind is None and not self.edit_mode:
