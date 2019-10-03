@@ -72,6 +72,8 @@ class Mode:
             elif self.action == "CREATE NEW":
                 return ("".format(self.label, self.frame)
                         + "\n {}".format("(S=SINGLE FRAME / SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)"))
+            elif self.action == "FLOOD CELL":
+                return('\nSPACE = FLOOD SELECTED CELL WITH NEW LABEL\nESC = CANCEL')
             elif self.action == "DELETE":
                 return ('\nDelete label {} in frame {}?\n{}'.format(self.label, self.frame,
                 "SPACE = CONFIRM DELETION\nESC = CANCEL DELETION"))

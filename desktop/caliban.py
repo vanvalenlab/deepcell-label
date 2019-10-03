@@ -1014,19 +1014,22 @@ class ZStackReview:
     def on_mouse_press(self, x, y, button, modifiers):
         
         if not self.edit_mode:
+            frame = self.annotated[self.current_frame]
+            label = int(frame[self.y, self.x, self.feature])
             if self.mode.kind is None:
-                frame = self.annotated[self.current_frame]
-                label = int(frame[self.y, self.x, self.feature])
-                if label != 0:
-                    self.mode = Mode("SELECTED",
-                                     label=label,
-                                     frame=self.current_frame,
-                                     y_location=self.y, x_location=self.x)
-                    self.highlighted_cell_one = label
-                    self.highlighted_cell_two = -1                                     
+                if modifiers & key.MOD_CTRL:
+                    if label !=0:
+                        self.hole_fill_seed = (self.y, self.x)
+                        self.mode = Mode("QUESTION", action = "FLOOD CELL")
+                else:
+                    if label != 0:
+                        self.mode = Mode("SELECTED",
+                                         label=label,
+                                         frame=self.current_frame,
+                                         y_location=self.y, x_location=self.x)
+                        self.highlighted_cell_one = label
+                        self.highlighted_cell_two = -1                                     
             elif self.mode.kind == "SELECTED":
-                frame = self.annotated[self.current_frame]
-                label = int(frame[self.y, self.x, self.feature])
                 if label != 0:
                     self.mode = Mode("MULTIPLE",
                                      label_1=self.mode.label,
@@ -1040,12 +1043,11 @@ class ZStackReview:
                     self.highlighted_cell_one = self.mode.label_1
                     self.highlighted_cell_two = label                                     
             elif self.mode.kind == "PROMPT" and self.mode.action == "FILL HOLE":
-                frame = self.annotated[self.current_frame]
-                label = int(frame[self.y, self.x, self.feature])
                 if label == 0:
                     self.hole_fill_seed = (self.y, self.x)
                 if self.hole_fill_seed is not None:
                     self.action_fill_hole()
+                    self.hole_fill_seed = None
                     self.mode = Mode.none()
 
         elif self.edit_mode:
@@ -1395,6 +1397,7 @@ class ZStackReview:
             if symbol == key.ESCAPE:
                 self.highlighted_cell_one = -1
                 self.highlighted_cell_two = -1
+                self.hole_fill_seed = None
                 self.mode = Mode.none()
 
             elif symbol == key.H:
@@ -1570,6 +1573,8 @@ class ZStackReview:
                     self.action_relabel_frame()
                 elif self.mode.action == "CREATE NEW":
                     self.action_new_cell_stack()
+                elif self.mode.action == "FLOOD CELL":
+                    self.action_flood_contiguous()
                 elif self.mode.action == "SWAP":
                     self.action_swap_all()
                 elif self.mode.action == "DELETE":
@@ -1996,7 +2001,21 @@ class ZStackReview:
         
         filled_img_ann = flood_fill(img_ann, self.hole_fill_seed, self.mode.label, connectivity = 1)
         self.annotated[self.current_frame,:,:,self.feature] = filled_img_ann
-        
+
+    def action_flood_contiguous(self):
+        '''
+        flood fill a cell with a unique new label; alternative to watershed
+        for fixing duplicate label issue if cells are not touching
+        '''
+        img_ann = self.annotated[self.current_frame,:,:,self.feature]
+        new_label = np.max(self.cell_ids[self.feature]) + 1
+
+        filled_img_ann = flood_fill(img_ann, self.hole_fill_seed, new_label)
+        self.annotated[self.current_frame,:,:,self.feature] = filled_img_ann
+
+        self.add_cell_info(feature=self.feature, add_label=new_label, frame = self.current_frame)
+        self.hole_fill_seed = None
+
     def action_predict_single(self):
         '''
         predicts zstack relationship for current frame based on previous frame
