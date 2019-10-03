@@ -1897,8 +1897,8 @@ class ZStackReview:
         # apply watershed transform to the subsections
         ws = watershed(-img_sub_raw_scaled, img_sub_seeds, mask=img_sub_ann.astype(bool))
 
-        cell_loc = np.where(img_sub_ann == current_label)
-        img_sub_ann[cell_loc] = ws[cell_loc]
+        # only update img_sub_ann where ws has changed label from current_label to new_label
+        img_sub_ann = np.where(np.logical_and(ws == new_label,img_sub_ann == current_label), ws, img_sub_ann)
 
         # reintegrate subsection into original mask
         img_ann[minr:maxr, minc:maxc] = img_sub_ann
