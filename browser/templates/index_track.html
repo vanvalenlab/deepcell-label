@@ -2,9 +2,9 @@
 <html>
   <head>
     <title>Caliban</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/main_track.js') }}"></script>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/navigation.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/normalize.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/infopane.css') }}">
@@ -17,14 +17,16 @@
     <canvas width=600 height=400 id="hidden_canvas"></canvas>
     <div id="container">
         <div id="logcol">
-            <h1>Tracking Tool</h1>
-            </p>Filename will be given after submit button is pressed.</p>
-            <form class='changed-form' action="/" method="POST" enctype="multipart/form-data">
-                <label class="changed-label" for="user_file"></label>
-                <button type="submit" type="submit">Submit</button>
-            </form>
+            <div class="file-input">
+                <h1>Tracking Tool</h1>
+                </p>Filename will be given after submit button is pressed.</p>
+                <form class='changed-form' action="/" method="POST" enctype="multipart/form-data">
+                    <label class="changed-label" for="user_file"></label>
+                    <button type="submit" type="submit">Submit</button>
+                </form>
+            </div>
 
-            <div>
+            <div class="frame-info">
                 <label class='frame_status'>frame:
                     <span id="frame"></span> 
                 </label>
@@ -42,7 +44,7 @@
                 <span id="edit_erase"></span>
             </div>
 
-            <div>
+            <div class="cell-info-block">
                 <label class='cell_info'>label:
                     <span id="label"></span> 
                 </label>
@@ -61,6 +63,9 @@
                 <label class='cell_info'>frames:
                     <span id="frames"></span>
                 </label>
+            </div>
+
+            <div class="image-state">
                 <label class="selected_status"> state:
                     <span id="mode"></span>
                 </label>

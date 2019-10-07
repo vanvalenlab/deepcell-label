@@ -1,12 +1,43 @@
-td {
-    padding-left: 10px;
+.frame-info {
+    padding: 1em;
+}
+
+.file-input {
+    padding: 1em;
+}
+
+.frame-info * {
+    display: block;
+}
+
+.view_mode * {
+    display: block;
+}
+
+.cell-info-block {
+    margin: 1em 1em 1em 0em;
+    padding: 1em;
+    border-radius: 1em;
+    box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0, 0, 0, 0.12);
+}
+
+.image-state {
+    padding: 1em;
+}
+
+.cell-info-block * {
+    display: block;
 }
 
 #container {
     margin: 0 auto;
     margin-top: 100px;
-    
-    width: 1000px;
+    display: flex;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
 }
 
 #maintable {
@@ -18,15 +49,14 @@ td {
 .changed-label {
     text-align: center;
 }
+ #logcol, #canvascol{
+    vertical-align: top;
+ }
 
 #logcol {
-    display: flex;
     box-sizing: border-box;
-    flex-shrink: 0;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
     border-radius: 1em;
+    width: 20em;
 }
 
 #frames {
