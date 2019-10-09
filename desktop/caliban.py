@@ -1021,11 +1021,13 @@ class ZStackReview:
                     if label !=0:
                         self.hole_fill_seed = (self.y, self.x)
                         self.mode = Mode("QUESTION", action = "FLOOD CELL", label = label)
+                        self.highlighted_cell_one = label
                 elif modifiers & key.MOD_SHIFT:
                     if label !=0:
                         self.hole_fill_seed = (self.y, self.x)
                         self.mode = Mode("QUESTION", action = "TRIM PIXELS",
                             label = label)
+                        self.highlighted_cell_one = label
                 else:
                     if label != 0:
                         self.mode = Mode("SELECTED",
@@ -1697,6 +1699,9 @@ class ZStackReview:
             if self.highlight:
                 if self.mode.kind == "SELECTED":
                     frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
+                elif self.mode.kind == "QUESTION":
+                    if self.mode.action == "FLOOD CELL" or self.mode.action == "TRIM PIXELS":
+                        frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
                 elif self.mode.kind == "MULTIPLE":
                     frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
                     frame = np.ma.masked_equal(frame, self.highlighted_cell_two)
