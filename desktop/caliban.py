@@ -1020,7 +1020,7 @@ class ZStackReview:
                 if modifiers & key.MOD_CTRL:
                     if label !=0:
                         self.hole_fill_seed = (self.y, self.x)
-                        self.mode = Mode("QUESTION", action = "FLOOD CELL")
+                        self.mode = Mode("QUESTION", action = "FLOOD CELL", label = label)
                 elif modifiers & key.MOD_SHIFT:
                     if label !=0:
                         self.hole_fill_seed = (self.y, self.x)
@@ -2015,12 +2015,22 @@ class ZStackReview:
         for fixing duplicate label issue if cells are not touching
         '''
         img_ann = self.annotated[self.current_frame,:,:,self.feature]
+        old_label = self.mode.label
         new_label = np.max(self.cell_ids[self.feature]) + 1
+
+        in_original = np.any(np.isin(img_ann, old_label))
 
         filled_img_ann = flood_fill(img_ann, self.hole_fill_seed, new_label)
         self.annotated[self.current_frame,:,:,self.feature] = filled_img_ann
 
+        in_modified = np.any(np.isin(filled_img_ann, old_label))
+
+        # update cell info dicts since labels are changing
         self.add_cell_info(feature=self.feature, add_label=new_label, frame = self.current_frame)
+
+        if in_original and not in_modified:
+            self.del_cell_info(feature = self.feature, del_label = old_label, frame = self.current_frame)
+
         self.hole_fill_seed = None
 
     def action_trim_pixels(self):
