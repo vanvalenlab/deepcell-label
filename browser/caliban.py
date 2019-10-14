@@ -24,9 +24,9 @@ from skimage.draw import circle
 from skimage.measure import regionprops
 from skimage.exposure import rescale_intensity
 
-S3_KEY ='AKIAZC5RJJOUTN23MDWZ'
-S3_SECRET ='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'
-S3_BUCKET = 'caliban-output'
+S3_KEY =''
+S3_SECRET =''
+S3_BUCKET = ''
 
 # Connect to the s3 service
 s3 = boto3.client(
@@ -108,7 +108,7 @@ class ZStackReview:
     def random_colormap(self):
 
         max_val = self.num_cells[self.feature]
-        print(max_val)
+       
         #max(self.cell_ids[self.feature])
         # this is a random map from [0, max_val - 1] -> [1, max_val]
         shuffle_idx = list(range(1, max_val + 1))
@@ -138,8 +138,6 @@ class ZStackReview:
                                 for a in slices]) + ']'            
                 label["slices"] = str(slices)
 
-
-        print(cell_info)
         return cell_info
 
     @property
@@ -607,14 +605,14 @@ class ZStackReview:
         annotated = self.annotated[:,:,:,feature]
 
         self.cell_ids[feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))]
-        print(type(self.cell_ids[feature]))
+
         self.num_cells[feature] = int(max(self.cell_ids[feature]))
-        print(type(self.num_cells[feature]))
+       
         self.cell_info[feature] = {}
-        print(type(self.cell_info[feature]))
+
         for cell in self.cell_ids[feature]:
             cell = int(cell)
-            print(type(cell))
+     
             self.cell_info[feature][cell] = {}
             self.cell_info[feature][cell]['label'] = str(cell)
             self.cell_info[feature][cell]['frames'] = [] 

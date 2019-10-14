@@ -22,17 +22,24 @@
             <h1>Z-Stack Tool</h1>
             </p>Filename will be given after submit button is pressed.</p>
 
-            <form class='changed-form' action="/" method="POST" enctype="multipart/form-data">
-                <label class="changed-label" for="user_file"></label>
-                <button type="submit">Submit</button>
-            </form>
+            <p1 id="submit" onclick="upload() ">CLICK HERE TO SUBMIT</p1>
+            <p>
 
+            </p>
+            <p3 id="give_filename" >
+<!-- 
+            <form class='changed-form' action="" method="POST" enctype="multipart/form-data" >
+                <label class="changed-label" for="user_file"></label>
+               <input type="button" id="btn2" value="Submit!"/>​ 
+                <button type="submit" id="btn2">Submit</button>
+            </form> -->
+<!-- 
             <div>
-                <h3 class='frame_status'>frame: </h1> <span id="frame"></span>
-                <h3 class='frame_status'>channel: </h1> <span id="channel"></span>
-                <h3 class='frame_status'>feature: </h1> <span id="feature"></span>    
-                <h3 class='view_mode'>highlight mode: </h1><span id="highlight"></span>
-                <h3 class='view_mode'>edit mode: </h1> <span id="edit_mode"></span> 
+                <p class='frame_status'>frame: </p> <span id="frame"></span>
+                <p class='frame_status'>channel: </p> <span id="channel"></span>
+                <p class='frame_status'>feature: </p> <span id="feature"></span>    
+                <p class='view_mode'>highlight mode: </p><span id="highlight"></span>
+                <p class='view_mode'>edit mode: </p> <span id="edit_mode"></span> 
             </div>
 
             <div>
@@ -46,13 +53,35 @@
 
 
             <div>
-                <h3 class='cell_info'>label: </h1> <span id="label"></span> 
-                <h3 class='cell_info'>slices: </h1><span id="slices"></span>
+                <p class='cell_info'>label: </p> <span id="label"></span> 
+                <p class='cell_info'>slices: </p><span id="slices"></span>
             </div>
 
             <div>
-                <h3 class="selected_status"> state:</h4><span id="mode"></span>
+                <p class="selected_status"> state:</p><span id="mode"></span>
             <div>
+
+ -->
+<table id="log">
+
+               <tr height="50%" valign="top">
+                <td>frame: </td><td id="frame"></td>
+                <tr><td>channel: </td><td id="channel"></td></tr>
+                <tr><td>feature: </td><td id="feature"></td></tr>
+                <td>highlight cells: </td><td id="highlight"></td>
+                <tr><td>edit mode: </td><td id="edit_mode"></td><tr>
+                <tr><td id="edit_brush"></td><tr>
+                <tr><td id="edit_label"></td><tr>
+                <tr><td id="edit_erase"></td><tr>
+
+
+              <tr><td>label:</td><td id="label"></td></tr>
+              <tr><td>slices:</td><td><div id="slices"></div></td></tr>
+              <tr><td>state:</td><td id="mode"></td></tr>
+
+
+              </tr>
+
 
 
 
@@ -112,7 +141,7 @@
 
 
 
-         <!--    </table> -->
+            </table>
           </td>
           <td id="canvascol">
             <canvas width=600 height=400 id="canvas"></canvas>
@@ -124,9 +153,19 @@
 <!-- START CALIBAN FUNCTION CALL -->
   <script>
     var file = "{{filename}}"
+
+    function upload() {
+      document.getElementById("submit").innerHTML = "";
+      document.getElementById("give_filename").innerHTML = "Loading file to our database... (wait 10-15 seconds)";
+      upload_file();
+      document.getElementById("submit").innerHTML = "Filename to COPY/PASTE: " + file;
+      document.getElementById("give_filename").innerHTML = "";
+    }
+
     start_caliban(file);
   </script>
   <script type="text/javascript" src="{{ url_for('static', filename='js/infopane.js') }}"></script>
 <!-- END CALIBAN FUNCTION CALL -->
+  {% include "footer.html" %}
   </body>
 </html>

@@ -365,6 +365,18 @@ var answer = "(SPACE=YES / ESC=NO)";
 var last_mousex = last_mousey = 0;
 var mousedown = false;
 var tooltype = 'draw';
+var project_id = undefined;
+
+function upload_file() {
+  $.ajax({
+    type:'POST',
+    url:"upload_file/" + project_id,
+    success: function (payload) {
+    },
+    async: false
+  });
+}
+
 
 function contrast_image(img, contrast) {
   let d = img.data;
@@ -463,7 +475,7 @@ function render_frame() {
 function fetch_and_render_frame() {
   $.ajax({
     type: 'GET',
-    url: "frame/" + current_frame,
+    url: "frame/" + current_frame + "/" + project_id,
     success: function(payload) {
       current_cmap = payload.cmap;
       if (seg_image === undefined) {
@@ -497,6 +509,7 @@ function load_file(file) {
       channel_max = payload.channel_max;
       dimensions = [2 * payload.dimensions[0], 2 * payload.dimensions[1]];
       tracks = payload.tracks;
+      project_id = payload.project_id;
       $('#canvas').get(0).width = dimensions[0];
       $('#canvas').get(0).height = dimensions[1];
       $('#hidden_canvas').get(0).width = dimensions[0];
@@ -509,7 +522,8 @@ function load_file(file) {
 async function fetch_frame(frame) {
   return $.ajax({
     type: 'GET',
-    url: "frame/" + frame
+    url: "frame/" + frame + "/" + project_id
+   
   });
 }
 
@@ -604,7 +618,8 @@ function prepare_canvas() {
 function reload_tracks() {
   $.ajax({
     type:'GET',
-    url:"tracks",
+    url:"tracks/" + project_id,
+    data: project_id,
     success: function (payload) {
       tracks = payload.tracks;
     },
@@ -615,7 +630,7 @@ function reload_tracks() {
 function action(action, info) {
   $.ajax({
     type:'POST',
-    url:"action/" + action,
+    url:"action/" + project_id + "/" + action,
     data: info,
     success: function (payload) {
       if (payload.error) {

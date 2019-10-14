@@ -17,14 +17,17 @@
     <canvas width=600 height=400 id="hidden_canvas"></canvas>
     <div id="container">
         <div id="logcol">
-            <div class="file-input">
-                <h1>Tracking Tool</h1>
-                </p>Filename will be given after submit button is pressed.</p>
-                <form class='changed-form' action="/" method="POST" enctype="multipart/form-data">
-                    <label class="changed-label" for="user_file"></label>
-                    <button type="submit" type="submit">Submit</button>
-                </form>
-            </div>
+            <h1>Tracking Tool</h1>
+            </p>Filename will be given after submit button is pressed.</p>
+
+
+            <p1 id="submit" onclick="upload() "><strong>CLICK HERE TO SUBMIT</strong></p1>
+  
+            <p> 
+
+
+            </p>
+            <p3 id="give_filename" >
 
             <div class="frame-info">
                 <label class='frame_status'>frame:
@@ -77,7 +80,18 @@
     </div>
   <!-- START CALIBAN FUNCTION CALL -->
   <script>
-    var file = "{{filename}}"
+    var file = "{{filename}}";
+
+
+    function upload() {
+        document.getElementById("submit").innerHTML = "";
+        document.getElementById("give_filename").innerHTML = "Loading file to our database... (wait 10-15 seconds)";
+        upload_file();
+        document.getElementById("submit").innerHTML = "Filename to COPY/PASTE: " + file;
+        document.getElementById("give_filename").innerHTML = "";
+    }
+
+
     start_caliban(file);
   </script>
   <script type="text/javascript" src="{{ url_for('static', filename='js/infopane.js') }}"></script>
