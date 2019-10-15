@@ -104,24 +104,9 @@ class ZStackReview:
         self.highlight_cell_one = -1
         self.highlight_cell_two = -1
 
-        self.color_map = self.random_colormap()
+        self.color_map = plt.get_cmap('cubehelix')
+        self.color_map.set_bad('red')
 
-    def random_colormap(self):
-
-        max_val = self.num_cells[self.feature]
-       
-        #max(self.cell_ids[self.feature])
-        # this is a random map from [0, max_val - 1] -> [1, max_val]
-        shuffle_idx = list(range(1, max_val + 1))
-        # check if workers really prefer this
-        #random.shuffle(shuffle_idx)
-        shuffle_idx = [shuffle_idx[i] * .8 for i in range(max_val)]
-        colors = [(0, 0, 0), * (list(hsv_to_rgb([shuffle_idx[i] / max_val, 1, 1]))
-                             for i in range(max_val))]
-
-        return LinearSegmentedColormap.from_list('new_map',
-                                                 colors,
-                                                 N=max_val + 1)
     @property
     def readable_tracks(self):
         """
@@ -141,10 +126,6 @@ class ZStackReview:
 
         return cell_info
 
-    @property
-    def png_colormap(self):
-        return {str(self.color_map(v, bytes=True)): int(v)
-                  for v in range(self.num_cells[self.feature] + 1)}
 
     def get_frame(self, frame, raw, edit_background):
         if raw:
@@ -162,8 +143,6 @@ class ZStackReview:
         else:
             frame = self.annotated[frame][:,:, self.feature]
 
-            self.color_map.set_bad('red')
-
             if (self.highlight):
                 if (self.highlight_cell_one != -1):
                     frame = np.ma.masked_equal(frame, self.highlight_cell_one)
@@ -176,6 +155,10 @@ class ZStackReview:
                          vmax=self.num_cells[self.feature] + self.adjustment[self.feature],
                          cmap=self.color_map)
             
+    def get_array(self, frame):
+        frame = self.annotated[frame][:,:,self.feature]
+        return frame
+
     def load(self, filename):
         
         global original_filename
@@ -291,7 +274,6 @@ class ZStackReview:
                     updated_frames = np.append(old_frames, frame)
                     updated_frames = np.unique(updated_frames).tolist()
                     self.cell_info[self.feature][new_label].update({'frames': updated_frames})
-                self.color_map = self.random_colormap()
                         
             self.annotated[frame,:,:,self.feature] = annotated
 
@@ -303,11 +285,9 @@ class ZStackReview:
 
     def action_change_feature(self, feature):
         self.feature = feature
-        self.color_map = self.random_colormap()
 
     def action_change_channel(self, channel):
         self.channel = channel
-        self.color_map = self.random_colormap()
 
     # def action_change_erase(self, erase):
     #     # Flask application can only send over literals of base 10; not true/false
@@ -379,8 +359,6 @@ class ZStackReview:
             
             np.append(self.cell_ids[self.feature], new_label).tolist()
 
-            self.color_map = self.random_colormap()
-
     def action_new_single_cell(self, label, frame):
         """
         Create new label in just one frame
@@ -408,8 +386,6 @@ class ZStackReview:
         self.cell_info[self.feature][new_label].update({'slices': ''})
         
         np.append(self.cell_ids[self.feature], new_label).tolist()
-
-        self.color_map = self.random_colormap()
 
     def action_swap_single_frame(self, label_1, label_2, frame_1, frame_2):
         assert(frame_1 == frame_2)
@@ -457,8 +433,6 @@ class ZStackReview:
         #update cell_info
             self.create_cell_info(feature = int(self.feature))
 
-        self.color_map = self.random_colormap()
-
     def action_predict_zstack(self):
         '''
         use location of cells in image to predict which annotations are
@@ -477,7 +451,6 @@ class ZStackReview:
 
         #remake cell_info dict based on new annotations            
         self.create_cell_info(feature = self.feature)
-        self.color_map = self.random_colormap()
 
     def action_replace(self, label_1, label_2, frame_1, frame_2):
         """
@@ -538,7 +511,6 @@ class ZStackReview:
         
         np.append(self.cell_ids[self.feature], int(new_label))
         self.num_cells[self.feature] += 1
-        self.color_map = self.random_colormap()
 
     def action_delete_mask(self, label, frame):
         '''

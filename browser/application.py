@@ -134,11 +134,12 @@ def get_frame(frame, project_id):
         img = state.get_frame(frame, raw=False, edit_background =False)
         raw = state.get_frame(frame, raw=True, edit_background=False)
         edit = state.get_frame(frame, raw=False, edit_background=True)
+        edit_arr = state.get_array(frame)
         payload = {
                 'raw': f'data:image/png;base64,{base64.encodebytes(raw.read()).decode()}',
-                'cmap': state.png_colormap,
                 'segmented': f'data:image/png;base64,{base64.encodebytes(img.read()).decode()}',
-                'edit_background': f'data:image/png;base64,{base64.encodebytes(edit.read()).decode()}'
+                'edit_background': f'data:image/png;base64,{base64.encodebytes(edit.read()).decode()}',
+                'seg_arr': edit_arr.tolist()
                 }
 
         return jsonify(payload)

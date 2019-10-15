@@ -356,13 +356,13 @@ var current_highlight = false;
 var max_frames = undefined;
 var feature_max = undefined;
 var channel_max = undefined;
-var current_cmap = undefined;
 var dimensions = undefined;
 var tracks = undefined;
 var mode = new Mode(Modes.none, {});
 var raw_image = undefined;
 var seg_image = undefined;
 var edit_image = undefined;
+var seg_array; // declare here so it is global var
 var mouse_x = 0;
 var mouse_y = 0;
 var edit_mode = false;
@@ -399,9 +399,9 @@ function contrast_image(img, contrast) {
 }
 
 function label_under_mouse() {
-  p = $('#hidden_canvas').get(0).getContext('2d').getImageData(mouse_x, mouse_y, 1, 1).data;
-  let label_str = "(" + p[0] + ", " + p[1] + ", " + p[2] + ", 255)";
-  let new_label = current_cmap[label_str];
+  let img_y = Math.floor(mouse_y/2) //image has been scaled by 2x
+  let img_x = Math.floor(mouse_x/2)
+  let new_label = seg_array[img_y][img_x]; //check array value at mouse location
   return new_label;
 }
 
@@ -416,7 +416,6 @@ function render_log() {
   }
 
 
- 
   $('#feature').html(mode.feature);
   $('#channel').html(mode.channel);
 
@@ -448,7 +447,6 @@ function render_log() {
   }
 
   if (current_label !== 0) {
-    console.log(current_label.toString());
     let track = tracks[mode.feature][current_label.toString()];
     $('#slices').text(track.slices.toString());
   } else {
@@ -485,7 +483,6 @@ function fetch_and_render_frame() {
     type: 'GET',
     url: "frame/" + current_frame + "/" + project_id,
     success: function(payload) {
-      current_cmap = payload.cmap;
       if (seg_image === undefined) {
         seg_image = new Image();
       }
@@ -495,6 +492,10 @@ function fetch_and_render_frame() {
       if (edit_image === undefined) {
         edit_image = new Image();
       }
+
+      // load new value of seg_array
+      // array of arrays, contains annotation raw data for frame
+      seg_array = payload.seg_arr;
 
       seg_image.src = payload.segmented;
       seg_image.onload = render_frame;
