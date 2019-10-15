@@ -19,9 +19,15 @@ class Mode {
     this.highlighted_cells = {}
     this.highlighted_cell_one = -1;
     this.highlighted_cell_two = -1;
+
+
     this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
                               "cell_two": this.highlighted_cell_two};
-    action("change_highlighted_cells", this.highlighted_cells);
+
+    if (current_highlight) {
+      action("change_highlighted_cells", this.highlighted_cells);
+    }
+    
     this.action = "";
     this.prompt = "";
   }
@@ -39,9 +45,9 @@ class Mode {
         action("edit_value", this.info);
         this.clear();
       } else if (key === "x") {
-        erase = -(erase);
+        erase = !erase;
 
-        action("change_erase", {"erase": erase});
+        action("change_erase", {});
         this.clear();
       } else if (key === ",") {
         brush_size = Math.max(brush_size - 1, 1);
@@ -81,13 +87,15 @@ class Mode {
       } else if (key === "e") {
         rendering_edit = !rendering_edit;
         edit_mode = !edit_mode
-        brush_size = 1;
-        edit_value = 1;
-        erase = -1
+
+        // took out this part to make less requests to server
+        // brush_size = 1;
+        // edit_value = 1;
+        // erase = -1
         action("change_edit_mode", {});
-        action("change_brush_size", {"brush_size": brush_size});
-        action("edit_value", {"edit_value": edit_value});
-        action("change_erase", {"erase": erase});
+        // action("change_brush_size", {"brush_size": brush_size});
+        // action("edit_value", {"edit_value": edit_value});
+        // action("change_erase", {"erase": erase});
         this.clear();
       }
     } else if (this.kind == Modes.single) {
@@ -358,9 +366,9 @@ var edit_image = undefined;
 var mouse_x = 0;
 var mouse_y = 0;
 var edit_mode = false;
-var edit_value = undefined;
-var brush_size = undefined;
-var erase = undefined;
+var edit_value = 1;
+var brush_size = 1;
+var erase = false;
 var answer = "(SPACE=YES / ESC=NO)";
 var last_mousex = last_mousey = 0;
 var mousedown = false;
@@ -425,7 +433,7 @@ function render_log() {
     $('#edit_brush').text("brush size: " + brush_size);
     $('#edit_label').text("editing label: " + edit_value);
 
-    if (erase == 1) {
+    if (erase) {
       $('#edit_erase').text("eraser mode: ON");
     } else {
       $('#edit_erase').text("eraser mode: OFF");

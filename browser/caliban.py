@@ -57,6 +57,7 @@ class ZStackReview:
         self.current_frame = 0
         self.brush_size = 1
         self.edit_value = 1
+        self.erase = False
 
         for feature in range(self.feature_max):
         
@@ -194,7 +195,7 @@ class ZStackReview:
         elif action_type == "change_edit_mode":
             self.edit_mode = not self.edit_mode
         elif action_type == "change_erase":
-            self.action_change_erase(**info)
+            self.erase = not self.erase
         elif action_type == "change_brush_size":
             self.action_change_brush_size(**info)
         elif action_type == "fill_hole":
@@ -308,12 +309,12 @@ class ZStackReview:
         self.channel = channel
         self.color_map = self.random_colormap()
 
-    def action_change_erase(self, erase):
-        # Flask application can only send over literals of base 10; not true/false
-        if (erase == 1):
-            self.erase = True
-        else:
-            self.erase = False
+    # def action_change_erase(self, erase):
+    #     # Flask application can only send over literals of base 10; not true/false
+    #     if (erase == 1):
+    #         self.erase = True
+    #     else:
+    #         self.erase = False
 
     def action_edit_value(self, edit_value):
         self.edit_value = edit_value
