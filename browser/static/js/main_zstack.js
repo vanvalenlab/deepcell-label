@@ -363,6 +363,7 @@ var raw_image = undefined;
 var seg_image = undefined;
 var edit_image = undefined;
 var seg_array; // declare here so it is global var
+var scale;
 var mouse_x = 0;
 var mouse_y = 0;
 var edit_mode = false;
@@ -399,8 +400,8 @@ function contrast_image(img, contrast) {
 }
 
 function label_under_mouse() {
-  let img_y = Math.floor(mouse_y/2) //image has been scaled by 2x
-  let img_x = Math.floor(mouse_x/2)
+  let img_y = Math.floor(mouse_y/scale) //image has been scaled by 2x
+  let img_x = Math.floor(mouse_x/scale)
   let new_label = seg_array[img_y][img_x]; //check array value at mouse location
   return new_label;
 }
@@ -516,7 +517,8 @@ function load_file(file) {
       max_frames = payload.max_frames;
       feature_max = payload.feature_max;
       channel_max = payload.channel_max;
-      dimensions = [2 * payload.dimensions[0], 2 * payload.dimensions[1]];
+      scale = payload.screen_scale;
+      dimensions = [scale * payload.dimensions[0], scale * payload.dimensions[1]];
       tracks = payload.tracks;
       project_id = payload.project_id;
       $('#canvas').get(0).width = dimensions[0];

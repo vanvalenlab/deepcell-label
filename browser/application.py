@@ -205,7 +205,8 @@ def load(filename):
             "feature_max": zstack_review.feature_max,
             "tracks": zstack_review.readable_tracks,
             "dimensions": zstack_review.dimensions,
-            "project_id": project_id
+            "project_id": project_id,
+            "screen_scale": zstack_review.scale_factor
             })
 
 @application.route('/', methods=['GET', 'POST'])
