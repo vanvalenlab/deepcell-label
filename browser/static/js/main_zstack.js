@@ -84,9 +84,6 @@ class Mode {
     }
 
     if (this.kind == Modes.none) {
-      if(key === "v") {
-        bulk_mode = !bulk_mode;
-      }
 
       if (key === "f") {
         this.change_feature();
@@ -404,7 +401,6 @@ var last_mousex = last_mousey = 0;
 var mousedown = false;
 var tooltype = 'draw';
 var project_id = undefined;
-var bulk_mode = false;
 
 function upload_file() {
   $.ajax({
@@ -477,12 +473,6 @@ function render_log() {
     
   }
 
-  if(bulk_mode === true) {
-    $('#bulk_mode').html("ON");
-  } else {
-    $('#bulk_mode').html("OFF");
-  }
- 
   if (current_label !== 0) {
     let track = tracks[mode.feature][current_label.toString()];
     $('#slices').text(track.slices.toString());
@@ -598,15 +588,13 @@ function prepare_canvas() {
     last_mousey = mouse_y
     mousedown = true;
 
-    if (bulk_mode){
-       if (evt.altKey) {
-          mode.handle_key("altKey");
-          
-        } else if (evt.shiftKey) {
-          mode.handle_key("shiftKey");
-         
-        }
-    }
+     if (evt.altKey) {
+        mode.handle_key("altKey");
+        
+      } else if (evt.shiftKey) {
+        mode.handle_key("shiftKey");
+       
+      }
    
   });
   $('#canvas').mouseup(function(evt) {
