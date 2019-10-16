@@ -507,18 +507,18 @@ class ZStackReview:
     def action_watershed(self, label_1, label_2, frame, x1_location, y1_location, x2_location, y2_location):
         # Pull the label that is being split and find a new valid label
         current_label = label_1
-        new_label = int(self.num_cells[self.feature] + 1)
+        new_label = np.max(self.cell_ids[self.feature]) + 1
 
         # Locally store the frames to work on
         img_raw = self.raw[frame,:,:,self.channel]
         img_ann = self.annotated[frame,:,:,self.feature]
 
         # Pull the 2 seed locations and store locally
-        # define a new seeds labeled img that is the same size as raw/annotaiton imgs
+        # define a new seeds labeled img that is the same size as raw/annotation imgs
         seeds_labeled = np.zeros(img_ann.shape)
         # create two seed locations
-        seeds_labeled[int(y1_location / self.scale_factor), int(x1_location / self.scale_factor)]=current_label
-        seeds_labeled[int(y2_location / self.scale_factor), int(x2_location / self.scale_factor)]=new_label
+        seeds_labeled[int(y1_location/self.scale_factor ), int(x1_location/self.scale_factor)]=current_label
+        seeds_labeled[int(y2_location/self.scale_factor ), int(x2_location/self.scale_factor )]=new_label
 
         # define the bounding box to apply the transform on and select appropriate sections of 3 inputs (raw, seeds, annotation mask)
         props = regionprops(np.squeeze(np.int32(img_ann == current_label)))
@@ -535,21 +535,16 @@ class ZStackReview:
         # apply watershed transform to the subsections
         ws = watershed(-img_sub_raw_scaled, img_sub_seeds, mask=img_sub_ann.astype(bool))
 
-        cell_loc = np.where(img_sub_ann == current_label)
-        img_sub_ann[cell_loc] = ws[cell_loc]
+        # only update img_sub_ann where ws has changed label from current_label to new_label
+        img_sub_ann = np.where(np.logical_and(ws == new_label,img_sub_ann == current_label), ws, img_sub_ann)
 
         # reintegrate subsection into original mask
         img_ann[minr:maxr, minc:maxc] = img_sub_ann
         self.annotated[frame,:,:,self.feature] = img_ann
         
-        #update cell_info dict
-        self.cell_info[self.feature].update({new_label: {}})
-        self.cell_info[self.feature][new_label].update({'label': str(new_label)})
-        self.cell_info[self.feature][new_label].update({'frames': [frame]})
-        self.cell_info[self.feature][new_label].update({'slices': ''})
-        
-        np.append(self.cell_ids[self.feature], int(new_label))
-        self.num_cells[self.feature] += 1
+        #update cell_info dict only if new label was created with ws
+        if np.any(np.isin(self.annotated[frame,:,:,self.feature], new_label)):
+            self.add_cell_info(feature=self.feature, add_label=new_label, frame = frame)
 
     def action_delete_mask(self, label, frame):
         '''
@@ -575,7 +570,7 @@ class ZStackReview:
         '''
         #if cell already exists elsewhere in npz:
         add_label = int(add_label)
-        
+
         try:
             old_frames = self.cell_info[feature][add_label]['frames']
             updated_frames = np.append(old_frames, frame)
