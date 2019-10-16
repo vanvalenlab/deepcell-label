@@ -19,7 +19,7 @@ import sys
 from werkzeug.utils import secure_filename
 import skimage.morphology
 from skimage.morphology import watershed
-from skimage.morphology import flood_fill
+from skimage.morphology import flood_fill, flood
 from skimage.draw import circle
 from skimage.measure import regionprops
 from skimage.exposure import rescale_intensity
@@ -207,12 +207,51 @@ class ZStackReview:
             self.highlight = not self.highlight
         elif action_type == "change_highlighted_cells":
             self.action_change_highlighted_cells(**info)
+        elif action_type == "flood_cell":
+            self.action_flood_contiguous(**info)
+        elif action_type == "trim_pixels":
+            self.action_trim_pixels(**info)
         else:
             raise ValueError("Invalid action '{}'".format(action_type))
 
     def action_change_highlighted_cells(self, cell_one, cell_two):
         self.highlight_cell_one = cell_one
         self.highlight_cell_two = cell_two
+
+    def action_flood_contiguous(self, label, frame, x_location, y_location):
+        '''
+        flood fill a cell with a unique new label; alternative to watershed
+        for fixing duplicate label issue if cells are not touching
+        '''
+        img_ann = self.annotated[frame,:,:,self.feature]
+        old_label = label
+        new_label = np.max(self.cell_ids[self.feature]) + 1
+
+        in_original = np.any(np.isin(img_ann, old_label))
+
+        filled_img_ann = flood_fill(img_ann, (int(y_location/self.scale_factor), int(x_location/self.scale_factor)), new_label)
+        self.annotated[frame,:,:,self.feature] = filled_img_ann
+
+        in_modified = np.any(np.isin(filled_img_ann, old_label))
+
+        # update cell info dicts since labels are changing
+        self.add_cell_info(feature=self.feature, add_label=new_label, frame = frame)
+
+        if in_original and not in_modified:
+            self.del_cell_info(feature = self.feature, del_label = old_label, frame = frame)
+
+        
+
+    def action_trim_pixels(self, label, frame, x_location, y_location):
+        '''
+        get rid of any stray pixels of selected label; pixels of value label
+        that are not connected to the cell selected will be removed from annotation in that frame
+        '''
+
+        img_ann = self.annotated[frame,:,:,self.feature]
+        contig_cell = flood(image = img_ann, seed_point = (int(y_location/self.scale_factor), int(x_location/self.scale_factor)))
+        img_trimmed = np.where(np.logical_and(np.invert(contig_cell), img_ann == label), 0, img_ann)
+        self.annotated[frame,:,:,self.feature] = img_trimmed
 
     def action_handle_draw(self, x, y, frame):
         # x -= self.sidebar_width
@@ -535,6 +574,8 @@ class ZStackReview:
         helper function for actions that add a cell to the npz
         '''
         #if cell already exists elsewhere in npz:
+        add_label = int(add_label)
+        
         try:
             old_frames = self.cell_info[feature][add_label]['frames']
             updated_frames = np.append(old_frames, frame)

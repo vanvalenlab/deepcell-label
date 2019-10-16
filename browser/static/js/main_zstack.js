@@ -61,14 +61,33 @@ class Mode {
         this.clear();
       }
 
-    }
-
-    if(key === "h") {
+    } else if(key === "h") {
         action("change_highlight", this.info);
         this.clear();
+    } else if(key === "shiftKey") {
+      this.kind = Modes.question;
+      this.action = "trim_pixels";
+      this.info = {"label": current_label, 
+                        "frame": current_frame,
+                        "x_location": mouse_x,
+                        "y_location": mouse_y};
+      this.prompt = "SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL";
+     
+    } else if(key === "altKey") {
+      this.kind = Modes.question;
+      this.action = "flood_cell";
+      this.info = {"label": current_label, 
+                        "frame": current_frame,
+                        "x_location": mouse_x,
+                        "y_location": mouse_y}
+      this.prompt = "SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL";
     }
 
     if (this.kind == Modes.none) {
+      if(key === "v") {
+        bulk_mode = !bulk_mode;
+      }
+
       if (key === "f") {
         this.change_feature();
         this.info = {"feature": this.feature};
@@ -180,6 +199,12 @@ class Mode {
           this.clear();
         } else if (this.action == "delete") {
           action("delete", this.info);
+          this.clear();
+        } else if (this.action == "flood_cell") {
+          action("flood_cell", this.info);
+          this.clear();
+        } else if (this.action == "trim_pixels") {
+          action("trim_pixels", this.info);
           this.clear();
         }
       } else if (key === "s") {
@@ -337,6 +362,10 @@ class Mode {
   }
 }
 
+
+
+
+
 var Modes = Object.freeze({
   "none": 1,
   "single": 2,
@@ -375,6 +404,7 @@ var last_mousex = last_mousey = 0;
 var mousedown = false;
 var tooltype = 'draw';
 var project_id = undefined;
+var bulk_mode = false;
 
 function upload_file() {
   $.ajax({
@@ -447,6 +477,12 @@ function render_log() {
     
   }
 
+  if(bulk_mode === true) {
+    $('#bulk_mode').html("ON");
+  } else {
+    $('#bulk_mode').html("OFF");
+  }
+ 
   if (current_label !== 0) {
     let track = tracks[mode.feature][current_label.toString()];
     $('#slices').text(track.slices.toString());
@@ -478,6 +514,8 @@ function render_frame() {
   }
   render_log();
 }
+
+
 
 function fetch_and_render_frame() {
   $.ajax({
@@ -559,6 +597,17 @@ function prepare_canvas() {
     last_mousex = mouse_x 
     last_mousey = mouse_y
     mousedown = true;
+
+    if (bulk_mode){
+       if (evt.altKey) {
+          mode.handle_key("altKey");
+          
+        } else if (evt.shiftKey) {
+          mode.handle_key("shiftKey");
+         
+        }
+    }
+   
   });
   $('#canvas').mouseup(function(evt) {
     mousedown = false;
