@@ -221,9 +221,11 @@ class Mode {
 
 
 
-  handle_draw(mouse_x, mouse_y) {
-    action("handle_draw", { "x": mouse_x, 
-                  "y": mouse_y,
+  handle_draw() {
+    action("handle_draw", { "trace": JSON.stringify(mouse_trace), //stringify array so it doesn't get messed up
+                  "edit_value": edit_value, //we don't update caliban with edit_value, etc each time they change
+                  "brush_size": brush_size, //so we need to pass them in as args
+                  "erase": erase,
                   "frame": current_frame});
     this.clear()
   }
@@ -401,6 +403,7 @@ var last_mousex = last_mousey = 0;
 var mousedown = false;
 var tooltype = 'draw';
 var project_id = undefined;
+let mouse_trace = [];
 
 function upload_file() {
   $.ajax({
@@ -595,10 +598,22 @@ function prepare_canvas() {
         mode.handle_key("shiftKey");
        
       }
-   
+
+    if (edit_mode) {
+      let img_y = Math.floor(mouse_y/scale);
+      let img_x = Math.floor(mouse_x/scale);
+
+      mouse_trace.push([img_y, img_x]);
+    }
   });
   $('#canvas').mouseup(function(evt) {
-    mousedown = false;
+    mousedown = false; //no longer click&drag
+
+    //send click&drag coordinates to caliban.py to update annotations
+    mode.handle_draw();
+
+    mouse_trace = [];
+
   });
   $('#canvas').mousemove(function(evt) {
 
@@ -608,8 +623,15 @@ function prepare_canvas() {
     mousex = evt.offsetX;
     mousey = evt.offsetY;
     if (mousedown && edit_mode) {
+        // save coordinates of where mouse has gone
+        // convert down from scaled coordinates (what the canvas sees)
+        // to the coordinates of the original img array (what caliban sees)
+        let img_y = Math.floor(mouse_y/scale);
+        let img_x = Math.floor(mouse_x/scale);
 
-        mode.handle_draw(mousex, mousey);
+        mouse_trace.push([img_y, img_x]);
+
+
 
         // ctx.beginPath();
         // if (tooltype == 'draw') {
@@ -625,8 +647,8 @@ function prepare_canvas() {
         // ctx.lineJoin = ctx.lineCap = 'round';
         // ctx.stroke();
     }
-    last_mousex = mousex;
-    last_mousey = mousey;
+    last_mousex = mouse_x;
+    last_mousey = mouse_y;
   });
 
   use_tool = function(tool) {
