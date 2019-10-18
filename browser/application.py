@@ -11,6 +11,7 @@ from werkzeug.utils import secure_filename
 import sqlite3
 from sqlite3 import Error
 import pickle
+import json
 
 application = Flask(__name__)
 track_review = None
@@ -50,7 +51,11 @@ def upload_file(project_id):
 
 @application.route("/action/<project_id>/<action_type>", methods=["POST"])
 def action(project_id, action_type):
-    info = {k: int(v) for k, v in request.values.to_dict().items()}
+
+    info = {}
+    for k, v in request.values.to_dict().items():
+        info[k] = json.loads(v)
+
 
     try:
         conn = create_connection(r"caliban.db")
