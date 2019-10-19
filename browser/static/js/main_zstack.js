@@ -590,20 +590,32 @@ async function fetch_frame(frame) {
 
 function prepare_canvas() {
   $('#canvas').click(function(evt) {
+    // bind click events on canvas
+
+    // TODO: make it not select cells while in edit mode
     mode.click();
     render_log();
   });
+
   $('#canvas').on('wheel', function(evt) {
+    // bind mouse scroll events on canvas
     if (rendering_raw) {
+      //contrast adjust raw image
       let delta = - evt.originalEvent.deltaY / 2;
       current_contrast = Math.max(current_contrast + delta, -100);
       render_frame();
     }
   });
+
   $('#canvas').mousemove(function(evt) {
+    // bind what happens when mouse moves across canvas
+
+    // always update mouse_x and mouse_y and use to display
+    // relevant text info:
     mouse_x = evt.offsetX;
     mouse_y = evt.offsetY;
     render_log();
+
   });
   $('#canvas').mousedown(function(evt) {
 
@@ -612,7 +624,7 @@ function prepare_canvas() {
 
     last_mousex = mouse_x 
     last_mousey = mouse_y
-    mousedown = true;
+    mousedown = true; //so we can differentiate mousemove from click&drag
 
      if (evt.altKey) {
         mode.handle_key("altKey");
@@ -629,6 +641,7 @@ function prepare_canvas() {
       mouse_trace.push([img_y, img_x]);
     }
   });
+
   $('#canvas').mouseup(function(evt) {
     //on mouse release, clear image that shows where brush
     //has gone during click&drag
@@ -646,6 +659,7 @@ function prepare_canvas() {
     mouse_trace = [];
 
   });
+
   $('#canvas').mousemove(function(evt) {
     // handle brush preview
 
