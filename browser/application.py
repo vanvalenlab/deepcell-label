@@ -13,37 +13,37 @@ from sqlite3 import Error
 import pickle
 import json
 
+# Create and configure the app
 application = Flask(__name__)
-track_review = None
-zstack_review = None
-track_status = None
-zstack_status = None
-filename = None
-
 application.config.from_object("config")
 
 TRACK_EXTENSIONS = set(['trk', 'trks'])
 ZSTACK_EXTENSIONS = set(['npz'])
 
+
+
 @application.route("/upload_file/<project_id>", methods=["GET", "POST"])
 def upload_file(project_id):
+    ''' Upload .trk/.npz data file to AWS S3 bucket.
+    '''
 
     conn = create_connection(r"caliban.db")
     with conn:
-        cur = conn.cursor()
 
+        # Use id to grab appropriate TrackReview/ZStackReview object from database
+        cur = conn.cursor()
         cur.execute("SELECT * FROM {tn} WHERE {idf}={my_id}".\
         format(tn="projects", idf="id", my_id=project_id))
         id_exists = cur.fetchone()
-
         state = pickle.loads(id_exists[2])
-        
 
+        # Call function in caliban.py to save data file and send to S3 bucket
         if "." in id_exists[1] and id_exists[1].split(".")[1].lower() in TRACK_EXTENSIONS:
             state.action_save_track()
         if "." in id_exists[1] and id_exists[1].split(".")[1].lower() in ZSTACK_EXTENSIONS:
             state.action_save_zstack()
 
+        # Delete id and object from database
         delete_project(conn, project_id)
 
     return redirect("/")
@@ -51,95 +51,85 @@ def upload_file(project_id):
 
 @application.route("/action/<project_id>/<action_type>", methods=["POST"])
 def action(project_id, action_type):
+    ''' Makes an edit operation to the data file and updates the object 
+        in the database.
+    '''
 
+    # obtain 'info' parameter data sent by .js script
     info = {}
     for k, v in request.values.to_dict().items():
         info[k] = json.loads(v)
 
-
     try:
+
+        
         conn = create_connection(r"caliban.db")
         with conn:
-            cur = conn.cursor()
 
+            # Use id to grab appropriate TrackReview/ZStackReview object from database
+            cur = conn.cursor()
             cur.execute("SELECT * FROM {tn} WHERE {idf}={my_id}".\
             format(tn="projects", idf="id", my_id=project_id))
             id_exists = cur.fetchone()
-
             state = pickle.loads(id_exists[2])
+
+            # Perform edit operation on the data file
             state.action(action_type, info)
-            update_task(conn, (id_exists[1], state, project_id))
+
+            # Update object in local database
+            update_object(conn, (id_exists[1], state, project_id))
+
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)})
 
-
-
-    # try:
-    #     if "." in filename and filename.split(".")[1].lower() in TRACK_EXTENSIONS:
-    #         track_review.action(action_type, info)
-
-    #     if "." in filename and filename.split(".")[1].lower() in ZSTACK_EXTENSIONS:
-    #         zstack_review.action(action_type, info)
-
-    # except Exception as e:
-    #     traceback.print_exc()
-    #     return jsonify({"error": str(e)})
-
+    # Send status of operation to .js file
     return jsonify({"tracks_changed": True, "frames_changed": True})
 
 @application.route("/tracks/<project_id>")
 def get_tracks(project_id):
+    ''' Sends track metadata in string form to .js file to present cell info in
+        the browser.
+    '''
     conn = create_connection(r"caliban.db")
     with conn:
-        cur = conn.cursor()
 
+        # Use id to grab appropriate TrackReview/ZStackReview object from database
+        cur = conn.cursor()
         cur.execute("SELECT * FROM {tn} WHERE {idf}={my_id}".\
         format(tn="projects", idf="id", my_id=project_id))
         id_exists = cur.fetchone()
-
         state = pickle.loads(id_exists[2])
-        #state.action(action_type, info)
-
-        #update_task(conn, (id_exists[1], state, project_id))
-
+       
         return jsonify({
                 "tracks": state.readable_tracks
                 })
 
-
-
-
-
-    # if "." in filename and filename.split(".")[1].lower() in TRACK_EXTENSIONS:
-    #     return jsonify({
-    #         "tracks": track_review.readable_tracks,
-    #         })
-    # if "." in filename and filename.split(".")[1].lower() in ZSTACK_EXTENSIONS:
-    #     return jsonify({
-    #         "tracks": zstack_review.readable_tracks,
-    #         })
-
 @application.route("/frame/<frame>/<project_id>")
 def get_frame(frame, project_id):
+    ''' Serves modes of frames as pngs. Sends pngs and color mappings of 
+        cells to .js file.
+    '''
+    
     frame = int(frame)
-
-
-
     conn = create_connection(r"caliban.db")
     with conn:
-        cur = conn.cursor()
 
+        # Use id to grab appropriate TrackReview/ZStackReview object from database
+        cur = conn.cursor()
         cur.execute("SELECT * FROM {tn} WHERE {idf}={my_id}".\
         format(tn="projects", idf="id", my_id=project_id))
         id_exists = cur.fetchone()
-
         state = pickle.loads(id_exists[2])
 
+        # Obtain raw, mask, and edit mode frames
         img = state.get_frame(frame, raw=False, edit_background =False)
         raw = state.get_frame(frame, raw=True, edit_background=False)
         edit = state.get_frame(frame, raw=False, edit_background=True)
+
+        # Obtain color map of the cells
         edit_arr = state.get_array(frame)
+
         payload = {
                 'raw': f'data:image/png;base64,{base64.encodebytes(raw.read()).decode()}',
                 'segmented': f'data:image/png;base64,{base64.encodebytes(img.read()).decode()}',
@@ -149,48 +139,25 @@ def get_frame(frame, project_id):
 
         return jsonify(payload)
 
-
-
-    
-    # if "." in filename and filename.split(".")[1].lower() in TRACK_EXTENSIONS:
-    #     img = track_review.get_frame(frame, raw=False, edit_background =False)
-    #     raw = track_review.get_frame(frame, raw=True, edit_background=False)
-    #     edit = track_review.get_frame(frame, raw=False, edit_background=True)
-    #     payload = {
-    #             'raw': f'data:image/png;base64,{base64.encodebytes(raw.read()).decode()}',
-    #             'cmap': track_review.png_colormap,
-    #             'segmented': f'data:image/png;base64,{base64.encodebytes(img.read()).decode()}',
-    #             'edit_background': f'data:image/png;base64,{base64.encodebytes(edit.read()).decode()}'
-    #             }
-
-    # if "." in filename and filename.split(".")[1].lower() in ZSTACK_EXTENSIONS:
-    #     img = zstack_review.get_frame(frame, raw=False, edit_background =False)
-    #     raw = zstack_review.get_frame(frame, raw=True, edit_background=False)
-    #     edit = zstack_review.get_frame(frame, raw=False, edit_background=True)
-
-    #     payload = {
-    #             'raw': f'data:image/png;base64,{base64.encodebytes(raw.read()).decode()}',
-    #             'cmap': zstack_review.png_colormap,
-    #             'segmented': f'data:image/png;base64,{base64.encodebytes(img.read()).decode()}',
-    #             'edit_background': f'data:image/png;base64,{base64.encodebytes(edit.read()).decode()}'
-    #             }
-    # return jsonify(payload)
-
 @application.route("/load/<filename>", methods=["POST"])
 def load(filename):
+    ''' Initates TrackReview/ZStackReview object and loads object to database. 
+        Sends specific attributes of the object to the .js file.
+    '''
 
-    # global track_review
-    # global zstack_review
     conn = create_connection(r"caliban.db")
     print(f"Loading track at {filename}", file=sys.stderr)
 
-
     if "." in filename and filename.split(".")[1].lower() in TRACK_EXTENSIONS:
+        
+        # Initate TrackReview object and entry in database
         track_review = TrackReview(filename)
         project = (filename, track_review)
         project_id = create_project(conn, project)
         conn.commit()
         conn.close()
+
+        # Send attributes to .js file
         return jsonify({
             "max_frames": track_review.max_frames,
             "tracks": track_review.readable_tracks,
@@ -199,11 +166,15 @@ def load(filename):
             })
 
     if "." in filename and filename.split(".")[1].lower() in ZSTACK_EXTENSIONS:
+        
+        # Initate ZStackReview object and entry in database
         zstack_review = ZStackReview(filename)
         project = (filename, zstack_review)
         project_id = create_project(conn, project)
         conn.commit()
         conn.close()
+
+        # Send attributes to .js file
         return jsonify({
             "max_frames": zstack_review.max_frames,
             "channel_max": zstack_review.channel_max,
@@ -216,11 +187,17 @@ def load(filename):
 
 @application.route('/', methods=['GET', 'POST'])
 def form():
+    ''' Requests HTML landing page to be rendered if user requests for 
+        http://127.0.0.1:5000/.
+    '''
     return render_template('form.html')
 
-# Brings users to the first homepage, where they can input the filename
+
 @application.route('/tool', methods=['GET', 'POST'])
 def tool():
+    ''' Requests HTML caliban tool page to be rendered after user inputs 
+        filename in the landing page.
+    '''
 
     filename = request.form['filename']
     print(f"{filename} is filename", file=sys.stderr)
@@ -232,12 +209,12 @@ def tool():
 
     return "error"
 
-# Directly brings users to the tool page by typing url/filename
 @application.route('/<file>', methods=['GET', 'POST'])
 def shortcut(file):
-
-   
-    # print(f"{filename} is filename", file=sys.stderr)
+    ''' Requests HTML caliban tool page to be rendered if user makes a URL 
+        request to access a specific data file that has been preloaded to the 
+        input S3 bucket (ex. http://127.0.0.1:5000/test.npz).
+    '''
 
     if "." in file and file.split(".")[1].lower() in TRACK_EXTENSIONS:
         return render_template('index_track.html', filename=file)
@@ -246,11 +223,9 @@ def shortcut(file):
 
     return "error"
 
-
-
-
 def create_connection(db_file):
-    """ create a database connection to a SQLite database """
+    ''' Creates a database connection to a SQLite database. 
+    '''
     conn = None
     try:
         conn = sqlite3.connect(db_file)
@@ -260,13 +235,9 @@ def create_connection(db_file):
 
     return conn
 
-
 def create_table(conn, create_table_sql):
-    """ create a table from the create_table_sql statement
-    :param conn: Connection object
-    :param create_table_sql: a CREATE TABLE statement
-    :return:
-    """
+    ''' Create a table from the create_table_sql statement.
+    '''
     try:
         c = conn.cursor()
         c.execute(create_table_sql)
@@ -275,36 +246,27 @@ def create_table(conn, create_table_sql):
 
 
 def create_project(conn, project):
-    """
-    Create a new project into the projects table
-    :param conn:
-    :param project:
-    :return: project id
-    """
+    ''' Create a new project in the database table.
+    '''
     sql = ''' INSERT INTO projects(filename, state)
               VALUES(?, ?) '''
     cur = conn.cursor()
 
-
-
+    # convert object to binary data to be stored as data type BLOB
     state_data = pickle.dumps(project[1], pickle.HIGHEST_PROTOCOL)
-  
-   
+
     cur.execute(sql, (project[0], sqlite3.Binary(state_data)))
     return cur.lastrowid
 
-def update_task(conn, project):
-    """
-    update priority, begin_date, and end date of a task
-    :param conn:
-    :param task:
-    :return: project id
-    """
+def update_object(conn, project):
+    ''' Update filename, state of a project.
+    '''
     sql = ''' UPDATE projects
               SET filename = ? ,
                   state = ? 
               WHERE id = ?'''
 
+    # convert object to binary data to be stored as data type BLOB
     state_data = pickle.dumps(project[1], pickle.HIGHEST_PROTOCOL)
   
     cur = conn.cursor()
@@ -312,29 +274,26 @@ def update_task(conn, project):
     conn.commit()
 
 def delete_project(conn, id):
-    """
-    Delete a task by task id
-    :param conn:  Connection to the SQLite database
-    :param id: id of the task
-    :return:
-    """
+    ''' Delete data object (TrackReview/ZStackReview) by id.
+    '''
     sql = 'DELETE FROM projects WHERE id=?'
     cur = conn.cursor()
     cur.execute(sql, (id,))
     conn.commit()
-    
 
 def main():
+    ''' Runs application and initiates database file if it doesn't exist.
+    '''
     conn = create_connection(r"caliban.db")
     sql_create_projects_table = """ CREATE TABLE IF NOT EXISTS projects (
 
                                         id integer PRIMARY KEY,
                                         filename text NOT NULL,
                                         state blob NOT NULL); """
-
     create_table(conn, sql_create_projects_table)
     conn.commit()    
     conn.close()
+
     application.jinja_env.auto_reload = True
     application.config['TEMPLATES_AUTO_RELOAD'] = True
     application.run('0.0.0.0', port=5000)

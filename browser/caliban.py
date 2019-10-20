@@ -24,9 +24,11 @@ from skimage.draw import circle
 from skimage.measure import regionprops
 from skimage.exposure import rescale_intensity
 
-S3_KEY =''
-S3_SECRET =''
-S3_BUCKET = ''
+from config import S3_KEY, S3_SECRET
+
+# S3_KEY =''
+# S3_SECRET =''
+S3_BUCKET = 'caliban-output'
 
 # Connect to the s3 service
 s3 = boto3.client(
@@ -46,7 +48,6 @@ class ZStackReview:
         self.feature_max = self.annotated.shape[-1]
         self.channel = 0
         self.max_frames, self.height, self.width, self.channel_max = self.raw.shape
-        #self.sidebar_width = 300
   
         #create a dictionary that has frame information about each cell
         #analogous to .trk lineage but do not need relationships between cells included
@@ -114,7 +115,6 @@ class ZStackReview:
         simplifying track['frames'] into something like [0-29] instead of
         [0,1,2,3,...].
         """
-        #print(self.cell_info.items())
         cell_info = copy.deepcopy(self.cell_info)
         for _, feature in cell_info.items():
             for _, label in feature.items():
@@ -614,23 +614,6 @@ class ZStackReview:
             cell_info["parent"] = None
             cell_info["capped"] = False
             cell_info["frames"] = self.cell_info[self.feature][cell]['frames']
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
