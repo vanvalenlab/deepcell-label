@@ -51,7 +51,7 @@ def upload_file(project_id):
 
 @application.route("/action/<project_id>/<action_type>", methods=["POST"])
 def action(project_id, action_type):
-    ''' Makes an edit operation to the data file and updates the object 
+    ''' Make an edit operation to the data file and update the object 
         in the database.
     '''
 
@@ -88,7 +88,7 @@ def action(project_id, action_type):
 
 @application.route("/tracks/<project_id>")
 def get_tracks(project_id):
-    ''' Sends track metadata in string form to .js file to present cell info in
+    ''' Send track metadata in string form to .js file to present cell info in
         the browser.
     '''
     conn = create_connection(r"caliban.db")
@@ -107,7 +107,7 @@ def get_tracks(project_id):
 
 @application.route("/frame/<frame>/<project_id>")
 def get_frame(frame, project_id):
-    ''' Serves modes of frames as pngs. Sends pngs and color mappings of 
+    ''' Serve modes of frames as pngs. Send pngs and color mappings of 
         cells to .js file.
     '''
     
@@ -141,8 +141,8 @@ def get_frame(frame, project_id):
 
 @application.route("/load/<filename>", methods=["POST"])
 def load(filename):
-    ''' Initates TrackReview/ZStackReview object and loads object to database. 
-        Sends specific attributes of the object to the .js file.
+    ''' Initate TrackReview/ZStackReview object and load object to database. 
+        Send specific attributes of the object to the .js file.
     '''
 
     conn = create_connection(r"caliban.db")
@@ -187,7 +187,7 @@ def load(filename):
 
 @application.route('/', methods=['GET', 'POST'])
 def form():
-    ''' Requests HTML landing page to be rendered if user requests for 
+    ''' Request HTML landing page to be rendered if user requests for 
         http://127.0.0.1:5000/.
     '''
     return render_template('form.html')
@@ -195,7 +195,7 @@ def form():
 
 @application.route('/tool', methods=['GET', 'POST'])
 def tool():
-    ''' Requests HTML caliban tool page to be rendered after user inputs 
+    ''' Request HTML caliban tool page to be rendered after user inputs 
         filename in the landing page.
     '''
 
@@ -211,7 +211,7 @@ def tool():
 
 @application.route('/<file>', methods=['GET', 'POST'])
 def shortcut(file):
-    ''' Requests HTML caliban tool page to be rendered if user makes a URL 
+    ''' Request HTML caliban tool page to be rendered if user makes a URL 
         request to access a specific data file that has been preloaded to the 
         input S3 bucket (ex. http://127.0.0.1:5000/test.npz).
     '''
@@ -224,7 +224,7 @@ def shortcut(file):
     return "error"
 
 def create_connection(db_file):
-    ''' Creates a database connection to a SQLite database. 
+    ''' Create a database connection to a SQLite database. 
     '''
     conn = None
     try:

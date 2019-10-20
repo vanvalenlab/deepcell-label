@@ -591,9 +591,11 @@ async function fetch_frame(frame) {
 function prepare_canvas() {
   $('#canvas').click(function(evt) {
     // bind click events on canvas
-
-    // TODO: make it not select cells while in edit mode
-    mode.click();
+  
+    if (!edit_mode) {
+      mode.click();
+    }
+    
     render_log();
   });
 

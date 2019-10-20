@@ -6,20 +6,20 @@ The key operations are identical to the desktop version.
 Please refer to the repository README.md for editing instructions and guide.
 
 
-##Caliban for Developers
+# Caliban for Developers
 
-# Install Dependencies
+## Install Dependencies
 ```bash
 cd browser
 pip install -r requirements.txt
 ```
 
-# Run browser application in development mode
+## Run browser application in development mode
 ```bash
 python3 application.py
 ```
 
-# Structure of Browser Version
+## Structure of Browser Version
 
 Flask is used as an HTTP server that serves the frames as pngs and metadata as JSON. The .js files in the `browser/template` folder are what makes the requests to the Flask server.
 
