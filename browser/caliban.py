@@ -38,9 +38,12 @@ s3 = boto3.client(
 )
 
 class ZStackReview:
-    def __init__(self, filename):
+    def __init__(self, filename, input_bucket, output_bucket, subfolders):
 
         self.filename = filename
+        self.input_bucket = input_bucket
+        self.output_bucket = output_bucket
+        self.subfolders = subfolders
         self.trial = self.load(filename)
         self.raw = self.trial["raw"]
         self.annotated = self.trial["annotated"]
@@ -164,7 +167,9 @@ class ZStackReview:
         global original_filename
         original_filename = filename
         s3 = boto3.client('s3')
-        response = s3.get_object(Bucket="caliban-input", Key=filename)
+        key = self.subfolders
+        print(key)
+        response = s3.get_object(Bucket=self.input_bucket, Key= key)
         return load_npz(response['Body'].read())
     
     def action(self, action_type, info):
@@ -292,7 +297,8 @@ class ZStackReview:
     def action_save_zstack(self):
         save_file = self.filename + "_save_version_{}.npz".format(self.save_version)
         np.savez(save_file, raw = self.raw, annotated = self.annotated)
-        s3.upload_file(save_file, S3_BUCKET, save_file)
+        path = self.subfolders
+        s3.upload_file(save_file, self.output_bucket, path)
 
     def action_change_feature(self, feature):
         self.feature = feature
@@ -620,8 +626,11 @@ class ZStackReview:
 #_______________________________________________________________________________________________________________
 
 class TrackReview:
-    def __init__(self, filename):
+    def __init__(self, filename, input_bucket, output_bucket, subfolders):
         self.filename = filename
+        self.input_bucket = input_bucket
+        self.output_bucket = output_bucket
+        self.subfolders = subfolders
         self.trial = self.load(filename)
 
         # lineages is a list of dictionaries. There should be only a single one
@@ -733,7 +742,7 @@ class TrackReview:
         global original_filename
         original_filename = filename
         s3 = boto3.client('s3')
-        response = s3.get_object(Bucket="caliban-input", Key=filename)
+        response = s3.get_object(Bucket=self.input_bucket, Key=self.subfolders)
         return load_trks(response['Body'].read())
 
     def action(self, action_type, info):
@@ -937,7 +946,7 @@ class TrackReview:
                 tracked_file.flush()
                 trks.add(tracked_file.name, "tracked.npy")
         try:  
-            s3.upload_file(file, S3_BUCKET, file)
+            s3.upload_file(file, self.output_bucket, self.subfolders)
 
         except Exception as e:
             print("Something Happened: ", e, file=sys.stderr)

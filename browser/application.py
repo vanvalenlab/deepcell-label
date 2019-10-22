@@ -12,6 +12,7 @@ import sqlite3
 from sqlite3 import Error
 import pickle
 import json
+import re
 
 # Create and configure the app
 application = Flask(__name__)
@@ -148,10 +149,20 @@ def load(filename):
     conn = create_connection(r"caliban.db")
     print(f"Loading track at {filename}", file=sys.stderr)
 
-    if "." in filename and filename.split(".")[1].lower() in TRACK_EXTENSIONS:
+
+    folders = re.split('__', filename)
+    filename = folders[len(folders) - 1]
+    subfolders = folders[2:len(folders)]
+    
+    subfolders = '/'.join(subfolders)
+
+    input_bucket = folders[0] 
+    output_bucket = folders[1] 
+
+    if '.trk' in filename or '.trks' in filename:
         
         # Initate TrackReview object and entry in database
-        track_review = TrackReview(filename)
+        track_review = TrackReview(filename, input_bucket, output_bucket, subfolders)
         project = (filename, track_review)
         project_id = create_project(conn, project)
         conn.commit()
@@ -165,10 +176,10 @@ def load(filename):
             "project_id": project_id
             })
 
-    if "." in filename and filename.split(".")[1].lower() in ZSTACK_EXTENSIONS:
+    if '.npz' in filename:
         
         # Initate ZStackReview object and entry in database
-        zstack_review = ZStackReview(filename)
+        zstack_review = ZStackReview(filename, input_bucket, output_bucket, subfolders)
         project = (filename, zstack_review)
         project_id = create_project(conn, project)
         conn.commit()
@@ -216,9 +227,9 @@ def shortcut(file):
         input S3 bucket (ex. http://127.0.0.1:5000/test.npz).
     '''
 
-    if "." in file and file.split(".")[1].lower() in TRACK_EXTENSIONS:
+    if '.trk' in file or '.trks' in file:
         return render_template('index_track.html', filename=file)
-    if "." in file and file.split(".")[1].lower() in ZSTACK_EXTENSIONS:
+    if '.npz' in file:
         return render_template('index_zstack.html', filename=file)
 
     return "error"
