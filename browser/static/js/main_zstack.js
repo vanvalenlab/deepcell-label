@@ -34,16 +34,14 @@ class Mode {
 
   handle_key(key) {
     if (edit_mode) {
+      //keybinds to change value of brush
       if (key === "=") {
-        edit_value += 1;
-        this.info = {"edit_value": edit_value};
-        action("edit_value", this.info);
-        this.clear();
+        edit_value += 1; //increase edit_value, no upper limit
+        render_log(); //change display to show new edit_value
       } else if (key === "-") {
-        edit_value = Math.max(edit_value - 1, 1);
-        this.info = {"edit_value": edit_value};
-        action("edit_value", this.info);
-        this.clear();
+        edit_value = Math.max(edit_value - 1, 1); //decrease edit_value, should always be positive number
+        render_log(); //change display to show new edit_value
+
       } else if (key === "x") {
         erase = !erase;
 

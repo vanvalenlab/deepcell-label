@@ -60,7 +60,6 @@ class ZStackReview:
 
         self.current_frame = 0
         self.brush_size = 1
-        self.edit_value = 1
         self.erase = False
 
         for feature in range(self.feature_max):
@@ -178,8 +177,6 @@ class ZStackReview:
             self.action_change_feature(**info)
         elif action_type == "change_channel":
             self.action_change_channel(**info)
-        elif action_type == "edit_value":
-            self.action_edit_value(**info)
         elif action_type == "change_edit_mode":
             self.edit_mode = not self.edit_mode
         elif action_type == "change_erase":
@@ -263,7 +260,7 @@ class ZStackReview:
 
         annotated = self.annotated[frame,:,:,self.feature]
 
-        in_original = np.any(np.isin(annotated, self.edit_value))
+        in_original = np.any(np.isin(annotated, edit_value))
 
         annotated_draw = np.where(annotated==0, edit_value, annotated)
         annotated_erase = np.where(annotated==edit_value, 0, annotated)
@@ -281,7 +278,7 @@ class ZStackReview:
             else:
                 annotated[brush_area] = annotated_erase[brush_area]        
         
-        in_modified = np.any(np.isin(annotated, self.edit_value))
+        in_modified = np.any(np.isin(annotated, edit_value))
         
         #cell deletion
         if in_original and not in_modified:
@@ -313,8 +310,6 @@ class ZStackReview:
     #     else:
     #         self.erase = False
 
-    def action_edit_value(self, edit_value):
-        self.edit_value = edit_value
 
     def action_change_brush_size(self, brush_size):
         self.brush_size = brush_size
