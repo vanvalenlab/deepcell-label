@@ -95,7 +95,6 @@ class ZStackReview:
         self.dtype_raw = self.raw.dtype
         self.scale_factor = 2
 
-        self.edit_mode = False
         self.hole_fill_seed = None
         self.fill_label = None
         self.save_version = 0
@@ -175,8 +174,6 @@ class ZStackReview:
             self.action_change_feature(**info)
         elif action_type == "change_channel":
             self.action_change_channel(**info)
-        elif action_type == "change_edit_mode":
-            self.edit_mode = not self.edit_mode
         elif action_type == "fill_hole":
             self.action_fill_hole(**info)
         elif action_type == "new_cell_stack":

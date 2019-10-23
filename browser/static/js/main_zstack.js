@@ -117,17 +117,9 @@ class Mode {
         this.prompt = "Predict cell ids for zstack? / S=PREDICT THIS FRAME / SPACE=PREDICT ALL FRAMES / ESC=CANCEL PREDICTION";
 
       } else if (key === "e") {
-        edit_mode = !edit_mode
-
-        // took out this part to make less requests to server
-        // brush_size = 1;
-        // edit_value = 1;
-        // erase = -1
-        action("change_edit_mode", {});
-        // action("change_brush_size", {"brush_size": brush_size});
-        // action("edit_value", {"edit_value": edit_value});
-        // action("change_erase", {"erase": erase});
-        this.clear();
+        edit_mode = !edit_mode;
+        render_log();
+        render_frame();
       }
     } else if (this.kind == Modes.single) {
       if (key === "f") {
