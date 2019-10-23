@@ -42,11 +42,13 @@ class Mode {
         edit_value = Math.max(edit_value - 1, 1); //decrease edit_value, should always be positive number
         render_log(); //change display to show new edit_value
 
+      //turn eraser on and off
       } else if (key === "x") {
         erase = !erase;
+        render_log();
+        //note: turning erase off and on changes the justification
+        //of all the other text when render_log is called
 
-        action("change_erase", {});
-        this.clear();
       } else if (key === ",") {
         brush_size = Math.max(brush_size - 1, 1);
         this.info = {"brush_size": brush_size};

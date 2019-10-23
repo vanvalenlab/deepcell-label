@@ -60,7 +60,6 @@ class ZStackReview:
 
         self.current_frame = 0
         self.brush_size = 1
-        self.erase = False
 
         for feature in range(self.feature_max):
         
@@ -179,8 +178,6 @@ class ZStackReview:
             self.action_change_channel(**info)
         elif action_type == "change_edit_mode":
             self.edit_mode = not self.edit_mode
-        elif action_type == "change_erase":
-            self.erase = not self.erase
         elif action_type == "change_brush_size":
             self.action_change_brush_size(**info)
         elif action_type == "fill_hole":
@@ -302,14 +299,6 @@ class ZStackReview:
 
     def action_change_channel(self, channel):
         self.channel = channel
-
-    # def action_change_erase(self, erase):
-    #     # Flask application can only send over literals of base 10; not true/false
-    #     if (erase == 1):
-    #         self.erase = True
-    #     else:
-    #         self.erase = False
-
 
     def action_change_brush_size(self, brush_size):
         self.brush_size = brush_size
