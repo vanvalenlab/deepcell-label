@@ -49,16 +49,32 @@ class Mode {
         //note: turning erase off and on changes the justification
         //of all the other text when render_log is called
 
-      } else if (key === ",") {
+      //keybinds to change brush size
+      } else if (key === ",") { //decrease brush size, should always be > 0
         brush_size = Math.max(brush_size - 1, 1);
-        this.info = {"brush_size": brush_size};
-        action("change_brush_size", this.info);
-        this.clear();
-      } else if (key === ".") {
+        render_log(); //display new brush size
+
+        // update the brush with its new size
+        let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
+        hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1])
+        brush.radius = brush_size * scale;
+        brush.draw(hidden_ctx);
+
+        // redraw the frame with the updated brush preview
+        render_frame();
+
+      } else if (key === ".") { //increase brush size, shouldn't be larger than the image
         brush_size = Math.min(self.brush_size + 1, dimensions[0], dimensions[1]);
-        this.info = {"brush_size": brush_size};
-        action("change_brush_size", this.info);
-        this.clear();
+        render_log(); //display new brush size
+
+        // update the brush with its new size
+        let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
+        hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1])
+        brush.radius = brush_size * scale;
+        brush.draw(hidden_ctx);
+
+        // redraw the frame with the updated brush preview
+        render_frame();
       }
 
     } else if(key === "h") {

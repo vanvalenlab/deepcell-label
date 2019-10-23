@@ -59,7 +59,6 @@ class ZStackReview:
         self.cell_info = {}
 
         self.current_frame = 0
-        self.brush_size = 1
 
         for feature in range(self.feature_max):
         
@@ -178,8 +177,6 @@ class ZStackReview:
             self.action_change_channel(**info)
         elif action_type == "change_edit_mode":
             self.edit_mode = not self.edit_mode
-        elif action_type == "change_brush_size":
-            self.action_change_brush_size(**info)
         elif action_type == "fill_hole":
             self.action_fill_hole(**info)
         elif action_type == "new_cell_stack":
@@ -299,9 +296,6 @@ class ZStackReview:
 
     def action_change_channel(self, channel):
         self.channel = channel
-
-    def action_change_brush_size(self, brush_size):
-        self.brush_size = brush_size
 
     def action_fill_hole(self, label, frame, x_location, y_location):
         '''
