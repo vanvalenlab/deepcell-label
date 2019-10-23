@@ -117,7 +117,6 @@ class Mode {
         this.prompt = "Predict cell ids for zstack? / S=PREDICT THIS FRAME / SPACE=PREDICT ALL FRAMES / ESC=CANCEL PREDICTION";
 
       } else if (key === "e") {
-        rendering_edit = !rendering_edit;
         edit_mode = !edit_mode
 
         // took out this part to make less requests to server
@@ -392,7 +391,6 @@ var Modes = Object.freeze({
 var temp_x = 0;
 var temp_y = 0;
 var rendering_raw = false;
-var rendering_edit = false;
 var current_contrast = 0;
 var current_frame = 0;
 var current_label = 0;
@@ -507,7 +505,7 @@ function render_frame() {
   let ctx = $('#canvas').get(0).getContext("2d");
   ctx.imageSmoothingEnabled = false;
 
-  if (rendering_edit) { // if in edit mode, doesn't matter if raw is true or false
+  if (edit_mode) { // if in edit mode, doesn't matter if raw is true or false
     ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
     ctx.drawImage(edit_image, 0, 0, dimensions[0], dimensions[1]);
     ctx.save(); // save here to store the default globalCompositeOperation
