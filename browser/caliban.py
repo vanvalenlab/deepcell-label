@@ -281,12 +281,15 @@ class ZStackReview:
                     
         self.annotated[frame,:,:,self.feature] = annotated
 
-
     def action_save_zstack(self):
         save_file = self.filename + "_save_version_{}.npz".format(self.save_version)
-        np.savez(save_file, raw = self.raw, annotated = self.annotated)
+
+        # save secure version of data before storing on regular file system
+        file = secure_filename(save_file)
+
+        np.savez(file, raw = self.raw, annotated = self.annotated)
         path = self.subfolders
-        s3.upload_file(save_file, self.output_bucket, path)
+        s3.upload_file(file, self.output_bucket, path)
 
     def action_change_feature(self, feature):
         self.feature = feature
