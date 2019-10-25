@@ -213,10 +213,12 @@ def tool():
     filename = request.form['filename']
     print(f"{filename} is filename", file=sys.stderr)
 
-    if "." in filename and filename.split(".")[1].lower() in TRACK_EXTENSIONS:
-        return render_template('index_track.html', filename=filename)
-    if "." in filename and filename.split(".")[1].lower() in ZSTACK_EXTENSIONS:
-        return render_template('index_zstack.html', filename=filename)
+    file = 'caliban-input__caliban-output__test__' + filename
+
+    if '.trk' in file or '.trks' in file:
+        return render_template('index_track.html', filename=file)
+    if '.npz' in file:
+        return render_template('index_zstack.html', filename=file)
 
     return "error"
 
