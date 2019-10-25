@@ -198,8 +198,8 @@ class ZStackReview:
             self.action_handle_draw(**info)
         elif action_type == "change_highlight":
             self.highlight = not self.highlight
-        elif action_type == "change_highlighted_cells":
-            self.action_change_highlighted_cells(**info)
+        elif action_type == "change_selected_cells":
+            self.action_change_selected_cells(**info)
         elif action_type == "flood_cell":
             self.action_flood_contiguous(**info)
         elif action_type == "trim_pixels":
@@ -207,7 +207,7 @@ class ZStackReview:
         else:
             raise ValueError("Invalid action '{}'".format(action_type))
 
-    def action_change_highlighted_cells(self, cell_one, cell_two):
+    def action_change_selected_cells(self, cell_one, cell_two):
         self.highlight_cell_one = cell_one
         self.highlight_cell_two = cell_two
 
@@ -755,8 +755,8 @@ class TrackReview:
             self.action_fill_hole(**info)
         elif action_type == "change_highlight":
             self.highlight = not self.highlight
-        elif action_type == "change_highlighted_cells":
-            self.action_change_highlighted_cells(**info)
+        elif action_type == "change_selected_cells":
+            self.action_change_selected_cells(**info)
         
         else:
             raise ValueError("Invalid action '{}'".format(action_type))
@@ -839,7 +839,7 @@ class TrackReview:
 
 
 
-    def action_change_highlighted_cells(self, cell_one, cell_two):
+    def action_change_selected_cells(self, cell_one, cell_two):
         self.highlight_cell_one = cell_one
         self.highlight_cell_two = cell_two
 

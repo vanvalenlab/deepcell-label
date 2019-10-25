@@ -19,7 +19,7 @@ class Mode {
     this.highlighted_cell_two = -1;
     this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
                               "cell_two": this.highlighted_cell_two};
-    action("change_highlighted_cells", this.highlighted_cells);
+    action("change_selected_cells", this.highlighted_cells);
     this.action = "";
     this.prompt = "";
   }
@@ -102,14 +102,14 @@ class Mode {
         this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
                                   "cell_two": this.highlighted_cell_two};
 
-        action("change_highlighted_cells", this.highlighted_cells);
+        action("change_selected_cells", this.highlighted_cells);
         
       } else if (key === "-") {
         this.update_highlighted_cells(1, -1)
         this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
                                   "cell_two": this.highlighted_cell_two};
 
-        action("change_highlighted_cells", this.highlighted_cells);
+        action("change_selected_cells", this.highlighted_cells);
       } else if (key === "x") {
         this.kind = Modes.question;
         this.action = "delete_cell";
@@ -136,12 +136,12 @@ class Mode {
         this.update_highlighted_cells(-1, 1)
         this.highlighted_cells = {"cell_one": this.highlighted_cell_one, 
                                   "cell_two": this.highlighted_cell_two};
-        action("change_highlighted_cells", this.highlighted_cells);
+        action("change_selected_cells", this.highlighted_cells);
       } else if (key === "-") {
         this.update_highlighted_cells(1, -1)
         this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
                                   "cell_two": this.highlighted_cell_two};
-        action("change_highlighted_cells", this.highlighted_cells);
+        action("change_selected_cells", this.highlighted_cells);
       }
     } else if (this.kind == Modes.question) {
       if (key === " ") {
@@ -215,7 +215,7 @@ class Mode {
       this.highlighted_cell_two = -1;
       this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
                                 "cell_two":this.highlighted_cell_two};
-      action("change_highlighted_cells", this.highlighted_cells);
+      action("change_selected_cells", this.highlighted_cells);
       this.clear();
       return;
     } else if (this.kind === Modes.none) {
@@ -226,7 +226,7 @@ class Mode {
       this.highlighted_cell_two = -1;
       this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
                                 "cell_two": this.highlighted_cell_two};
-      action("change_highlighted_cells", this.highlighted_cells);
+      action("change_selected_cells", this.highlighted_cells);
       temp_x = mouse_x;
       temp_y = mouse_y;
 
@@ -237,7 +237,7 @@ class Mode {
       this.highlighted_cell_two = current_label;
       this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
                                 "cell_two": this.highlighted_cell_two};
-      action("change_highlighted_cells", this.highlighted_cells);
+      action("change_selected_cells", this.highlighted_cells);
 
       if (this.info.label == current_label) {
         this.info = {"label_1": this.info.label, 
@@ -258,7 +258,7 @@ class Mode {
       this.highlighted_cell_two = current_label;
       this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
                                 "cell_two": this.highlighted_cell_two};
-      action("change_highlighted_cells", this.highlighted_cells);
+      action("change_selected_cells", this.highlighted_cells);
 
       if (this.info.label_1 == current_label) {
         this.info = {"label_1": this.info.label_1, 
