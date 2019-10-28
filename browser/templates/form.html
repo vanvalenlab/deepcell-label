@@ -41,9 +41,9 @@
                 <h3>
                     Click on a file that you would like use to see how Caliban works!
                 </h5>
-                <p>The .trk files allow you to annotate RAW264 cells across time-lapse frames.</p>
+                <p>The .trk files allow you to annotate RAW264 cells across time-lapse frames while preserving relationship information.</p>
                 <p>
-                    The .npz files allow you to annotate organoids across z-stack frames.
+                    The .npz files allow you to annotate different types of data. test.npz is an example of organoid annotation across z-stack frames. test2.npz is an example of untracked HeLa (cytoplasm) in a time-lapse movie.
                 </p>
             </div>
             <form id="caliban-form" method="POST" action="{{ url_for('tool') }}">
@@ -52,7 +52,10 @@
                 <option value="RAW264_S0_Batch02.trk">RAW264_S0_Batch02.trk </option>
                 <option value="RAW264_S0_Batch05.trk">RAW264_S0_Batch05.trk</option>
                 <option value="RAW264_S0_Batch06.trk">RAW264_S0_Batch06.trk</option>
+                <!-- zstack test npz -->
                 <option value="test.npz">test.npz</option>
+                <!-- untracked cytoplasm movie test npz -->
+                <option value="HeLa-S3_cyto_movie_s2b05_all_channels.npz">test2.npz</option>
             
               </select>
               <br><br>
