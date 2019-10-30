@@ -21,7 +21,7 @@ class Mode {
     this.highlighted_cell_two = -1;
 
 
-    this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
+    this.highlighted_cells = {"cell_one": this.highlighted_cell_one, 
                               "cell_two": this.highlighted_cell_two};
 
     if (current_highlight) {
@@ -100,14 +100,20 @@ class Mode {
     }
 
     if (this.kind == Modes.none) {
-
       if (key === "f") {
         this.change_feature();
         this.info = {"feature": this.feature};
         action("change_feature", this.info);
         this.clear();
       } else if (key === "c") {
-        this.change_channel();
+        this.change_channel(true);
+        this.info = {"channel": this.channel};
+        action("change_channel", this.info);
+        this.clear();
+
+        //if shift-c is pressed
+      } else if (key === "C") {
+        this.change_channel(false);
         this.info = {"channel": this.channel};
         action("change_channel", this.info);
         this.clear();
@@ -226,8 +232,6 @@ class Mode {
     }
   }
 
-
-
   handle_draw() {
     action("handle_draw", { "trace": JSON.stringify(mouse_trace), //stringify array so it doesn't get messed up
                   "edit_value": edit_value, //we don't update caliban with edit_value, etc each time they change
@@ -270,12 +274,22 @@ class Mode {
     }
   }
 
-  change_channel(){
-    if (this.channel < channel_max - 1) {
-      this.channel += 1;
+  change_channel(cycle_forward){
+    if (cycle_forward) {
+      if (this.channel < channel_max - 1) {
+        this.channel += 1;
+      } else {
+        this.channel = 0;
+      }
+
     } else {
-      this.channel = 0;
+      if (this.channel > 0) {
+        this.channel -= 1;
+      } else {
+        this.channel = channel_max - 1;
+      }
     }
+    
   }
 
   click() {
@@ -369,9 +383,6 @@ class Mode {
 }
 
 
-
-
-
 var Modes = Object.freeze({
   "none": 1,
   "single": 2,
@@ -422,7 +433,6 @@ function upload_file() {
   });
 }
 
-
 function contrast_image(img, contrast) {
   let d = img.data;
   contrast = (contrast / 100) + 1;
@@ -452,7 +462,6 @@ function render_log() {
     $('#label').html("");
   }
 
-
   $('#feature').html(mode.feature);
   $('#channel').html(mode.channel);
 
@@ -480,7 +489,6 @@ function render_log() {
     $('#edit_brush').text("");
     $('#edit_label').text("");
     $('#edit_erase').text("");
-    
   }
 
   if (current_label !== 0) {
@@ -532,8 +540,6 @@ function render_frame() {
   }  
   render_log();
 }
-
-
 
 function fetch_and_render_frame() {
   $.ajax({
@@ -664,8 +670,6 @@ function prepare_canvas() {
       mode.handle_draw();
     }
 
-    
-
     //update display
 
     mouse_trace = [];
@@ -727,11 +731,8 @@ function prepare_canvas() {
     last_mousey = mouse_y;
   });
 
-  use_tool = function(tool) {
-    tooltype = tool; //update the tool
-  }
-
   window.addEventListener('keydown', function(evt) {
+
     if (evt.key === 'z') {
       rendering_raw = !rendering_raw;
       render_frame();
@@ -754,11 +755,9 @@ function prepare_canvas() {
       if (evt.key === 'h') {
         current_highlight = !current_highlight;
       }
-      mode.handle_key(evt.key);
+        mode.handle_key(evt.key);
     }
   }, false);
-
-
 }
 
 function reload_tracks() {
