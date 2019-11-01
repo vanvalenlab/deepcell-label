@@ -59,10 +59,11 @@ class Mode:
                 else:
                     return ("\nSave current movie?\nSPACE=SAVE\nESC=CANCEL")
             elif self.action == "REPLACE":
-                return ("\nreplace {} with {}?\n {}".format(self.label_2, self.label_1, answer))
+                return ("\nreplace {} with {}?\n {}".format(self.label_2, self.label_1,
+                 '\nSPACE = REPLACE IN ALL FRAMES\nS = REPLACE IN THIS FRAME ONLY\nESC = CANCEL REPLACE'))
             elif self.action == "SWAP":
                 return ("\nswap {} & {}?\n{}".format(self.label_2, self.label_1, 
-                'SPACE = SWAP IN ALL FRAMES\nS = SWAP IN THIS FRAME ONLY\nESC = CANCEL SWAP'))
+                '\nSPACE = SWAP IN ALL FRAMES\nS = SWAP IN THIS FRAME ONLY\nESC = CANCEL SWAP'))
             elif self.action == "PARENT":
                 return ("\nmake {} a daughter of {}?\n {}".format(self.label_2, self.label_1, answer))
             elif self.action == "NEW TRACK":
@@ -71,6 +72,10 @@ class Mode:
             elif self.action == "CREATE NEW":
                 return ("".format(self.label, self.frame)
                         + "\n {}".format("(S=SINGLE FRAME / SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)"))
+            elif self.action == "FLOOD CELL":
+                return('\nSPACE = FLOOD SELECTED CELL WITH NEW LABEL\nESC = CANCEL')
+            elif self.action == "TRIM PIXELS":
+                return('\nSPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL\nESC = CANCEL')
             elif self.action == "DELETE":
                 return ('\nDelete label {} in frame {}?\n{}'.format(self.label, self.frame,
                 "SPACE = CONFIRM DELETION\nESC = CANCEL DELETION"))
@@ -85,7 +90,21 @@ class Mode:
                 return('\nselect hole to fill in cell {}'.format(self.label))
             elif self.action == "PICK COLOR":
                 return('\nclick on a cell to change the brush value to that value')
-
+            elif self.action == "DRAW BOX":
+                return('\ndraw a bounding box around the area you want to threshold')
+            elif self.action == "START SNAKE":
+                return('\nclick to select a starting point for contour prediction')
+            elif self.action == "END SNAKE":
+                return('\nclick to select an ending point for contour prediction')
+            elif self.action == "CONVERSION BRUSH TARGET":
+                return('\nclick on the label you want to draw OVER')
+            elif self.action == "CONVERSION BRUSH VALUE":
+                return('\nclick on the label you want to draw WITH')
+        elif self.kind == "DRAW":
+            # return('\nusing conversion brush to replace {} with {}'.format(self.info['conversion_brush_target'], 
+            #     self.info['conversion_brush_value']))
+            return('\nusing conversion brush to replace {} with {}\nuse ESC to leave this mode'.format(self.conversion_brush_target, 
+                self.conversion_brush_value))
         else:
             return ''
 
