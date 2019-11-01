@@ -52,34 +52,51 @@ Caliban's default setting allows operations to be carried out quickly and easily
 
 You can also use *esc* or click on the black background to return back to a state where no cells are selected.
 
-**In annotation mode:**
+**In annotation (pixel editing) mode:**
 
-Most keybinds are disabled in annotation mode.
+Keybinds in pixel editing mode are different from those in the label-editing mode.
 
 Annotation mode focuses on using an adjustable brush to modify annotations on a pixel level, rather than using operations that apply to every instance of a label within a frame or set of frames. The brush tool will only make changes to the currently selected value. Ie, a brush set to edit cell 5 will only add or erase "5" to the annotated image. 
 
-*-/=* increment value that brush is applying
+*i* - invert greyscale raw image
 
-*&larr; &rarr;* - change size of brush tool
+*k* - apply sobel filter to raw image
+
+*j* - apply adaptive histogram equalization to raw image
+
+*-/=* - increment value that brush is applying
+
+*&darr; &uarr;* - change size of brush tool
 
 *x* - toggle eraser mode
 
 *p* - color picker (click on a label to change the brush value to it)
 
+*r* - turn on "conversion brush" setting, which changes brush behavior so that one label value is overwritten with another label value. No other labels are affected, and conversion brush will not draw on background. After turning on conversion brush, click on cell labels as prompted to set brush values.
+
+*l* - contour prediction for determining inter-cell edges. After turning this on, use two clicks to draw a line that is a guess at where the border between two cells is. Predicted contour points (based on the darkness of the raw image) will be displayed on screen until "c" is selected or the frame is changed. Contour points will not affect the annotation file and are only displayed as a guide to the user.
+
+*t* - threshold to predict annotations based on brightness. After turning this on, click and drag to draw a bounding box around the cell you wish to threshold. Make sure to include some background in the bounding box for accurate threshold predictions. Whatever was thresholded as foreground within the bounding box will be added to the annotation as a new cell with unique label. 
+
 
 ### Viewing Options:
 
-*h* - switch between highlighted mode and normal mode
+*h* - switch between highlighted mode and non-highlighted mode (outside of the pixel editor)
           (once highlight mode is on, use *-/=* to decrement/increment selected cell label number)
-   
+
+*h* - switch between showing and hiding annotation masks in the pixel editor
     
 *z* - switch between annotations and raw images
+
+*v* - switch between showing and hiding cursor
 
 *f* - cycle between different annotations when no cells are selected
 
 *c* - cycle between different channels when no cells are selected
 
-*e* - toggle annotation mode 
+*shift + up/down* - cycle between colormaps for viewing raw images (does not apply to pixel editor)
+
+*e* - toggle annotation mode (when nothing else selected)
 
 *scroll wheel* - change image or annotation contrast
 
