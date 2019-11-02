@@ -75,6 +75,9 @@ class Mode {
 
         // redraw the frame with the updated brush preview
         render_frame();
+      } else if (key === 'n') {//set edit value to something unused
+        edit_value = maxLabelsMap.get(this.feature) + 1; //max value in feature + 1
+        render_log(); //change display to show that value has changed
       }
 
     } else if(key === "h") {
@@ -403,6 +406,7 @@ var feature_max = undefined;
 var channel_max = undefined;
 var dimensions = undefined;
 var tracks = undefined;
+let maxLabelsMap = new Map();
 var mode = new Mode(Modes.none, {});
 var raw_image = undefined;
 var seg_image = undefined;
@@ -581,7 +585,18 @@ function load_file(file) {
       channel_max = payload.channel_max;
       scale = payload.screen_scale;
       dimensions = [scale * payload.dimensions[0], scale * payload.dimensions[1]];
-      tracks = payload.tracks;
+
+      tracks = payload.tracks; //tracks payload is dict
+
+      //for each feature, get list of cell labels that are in that feature
+      //(each is a key in that dict), cast to numbers, then get the maximum
+      //value from each array and store it in a map
+      for (let i = 0; i < Object.keys(tracks).length; i++){
+        let key = Object.keys(tracks)[i]; //the keys are strings
+        //use i as key in this map because it is an int, mode.feature is also int
+        maxLabelsMap.set(i, Math.max(... Object.keys(tracks[key]).map(Number)));
+      };
+
       project_id = payload.project_id;
       $('#canvas').get(0).width = dimensions[0];
       $('#canvas').get(0).height = dimensions[1];
@@ -767,6 +782,11 @@ function reload_tracks() {
     data: project_id,
     success: function (payload) {
       tracks = payload.tracks;
+      //update maxLabelsMap when we get new track info
+      for (let i = 0; i < Object.keys(tracks).length; i++){
+        let key = Object.keys(tracks)[i]; //the keys are strings
+        maxLabelsMap.set(i, Math.max(... Object.keys(tracks[key]).map(Number)));
+      };
     },
     async: false
   });
