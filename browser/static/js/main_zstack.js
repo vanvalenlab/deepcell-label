@@ -248,7 +248,7 @@ class Mode {
 
     if (this.highlighted_cell_one != -1) {
       if (increase == 1) {
-        if (this.highlighted_cell_one < num_tracks) {
+        if (this.highlighted_cell_one < maxLabelsMap.get(this.feature)) {
           this.highlighted_cell_one += 1;
         } else {
           this.highlighted_cell_one = 1;
@@ -257,7 +257,7 @@ class Mode {
         if (this.highlighted_cell_one > 1) {
           this.highlighted_cell_one -= 1;
         } else {
-          this.highlighted_cell_one = num_tracks;
+          this.highlighted_cell_one = maxLabelsMap.get(this.feature);
         }
       }  
     } 
