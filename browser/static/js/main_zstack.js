@@ -21,7 +21,7 @@ class Mode {
     this.highlighted_cell_two = -1;
 
 
-    this.highlighted_cells = {"cell_one": this.highlighted_cell_one, 
+    this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
                               "cell_two": this.highlighted_cell_two};
 
     if (current_highlight) {
@@ -235,6 +235,9 @@ class Mode {
     }
   }
 
+
+
+
   handle_draw() {
     action("handle_draw", { "trace": JSON.stringify(mouse_trace), //stringify array so it doesn't get messed up
                   "edit_value": edit_value, //we don't update caliban with edit_value, etc each time they change
@@ -386,6 +389,9 @@ class Mode {
 }
 
 
+
+
+
 var Modes = Object.freeze({
   "none": 1,
   "single": 2,
@@ -437,6 +443,7 @@ function upload_file() {
   });
 }
 
+
 function contrast_image(img, contrast) {
   let d = img.data;
   contrast = (contrast / 100) + 1;
@@ -465,6 +472,7 @@ function render_log() {
   } else {
     $('#label').html("");
   }
+
 
   $('#feature').html(mode.feature);
   $('#channel').html(mode.channel);
@@ -513,16 +521,16 @@ function render_frame() {
     ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
     ctx.drawImage(edit_image, 0, 0, dimensions[0], dimensions[1]);
     ctx.save(); // save here to store the default globalCompositeOperation
-    ctx.globalCompositeOperation = 'color'; 
+    // ctx.globalCompositeOperation = 'color'; 
+    ctx.globalAlpha = 0.3;
     ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
     ctx.restore(); // we only want compositing in this section, so restore
     // when finished compositing to reset composite setting
 
     // draw brushview on top of cells/annotations
-
     let hidden_canvas = document.getElementById('hidden_canvas');
     ctx.save();
-    ctx.globalAlpha = 0.7;
+    ctx.globalAlpha = 0.2;
     ctx.globalCompositeOperation = 'source-over';
     ctx.drawImage(hidden_canvas, 0,0,dimensions[0],dimensions[1]);
     ctx.restore();
