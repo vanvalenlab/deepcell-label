@@ -78,6 +78,9 @@ class Mode {
       } else if (key === 'n') {//set edit value to something unused
         edit_value = maxLabelsMap.get(this.feature) + 1; //max value in feature + 1
         render_log(); //change display to show that value has changed
+      } else if (key === 'i') {//toggle invert
+        display_invert = !display_invert;
+        render_frame();
       }
 
     } else if(key === "h") {
@@ -403,6 +406,7 @@ var Modes = Object.freeze({
 var temp_x = 0;
 var temp_y = 0;
 var rendering_raw = false;
+let display_invert = true;
 var current_contrast = 0;
 var current_frame = 0;
 var current_label = 0;
@@ -416,7 +420,6 @@ let maxLabelsMap = new Map();
 var mode = new Mode(Modes.none, {});
 var raw_image = undefined;
 var seg_image = undefined;
-var edit_image = undefined;
 var seg_array; // declare here so it is global var
 var scale;
 var mouse_x = 0;
@@ -443,7 +446,8 @@ function upload_file() {
   });
 }
 
-
+// image adjustment functions: take img as input and manipulate data attribute
+// pixel data is 1D array of 8bit RGBA values
 function contrast_image(img, contrast) {
   let d = img.data;
   contrast = (contrast / 100) + 1;
@@ -454,6 +458,27 @@ function contrast_image(img, contrast) {
       d[i + 2] *= contrast;
   }
   return img;
+}
+
+function grayscale(img) {
+  let data = img.data;
+  for (var i = 0; i < data.length; i += 4) {
+      var avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+      data[i]     = avg; // red
+      data[i + 1] = avg; // green
+      data[i + 2] = avg; // blue
+    }
+  return img
+}
+
+function invert(img) {
+  let data = img.data;
+  for (var i = 0; i < data.length; i += 4) {
+    data[i]     = 255 - data[i];     // red
+    data[i + 1] = 255 - data[i + 1]; // green
+    data[i + 2] = 255 - data[i + 2]; // blue
+    }
+  return img
 }
 
 function label_under_mouse() {
@@ -518,10 +543,31 @@ function render_frame() {
   ctx.imageSmoothingEnabled = false;
 
   if (edit_mode) { // if in edit mode, doesn't matter if raw is true or false
+    // start with clean canvas
     ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-    ctx.drawImage(edit_image, 0, 0, dimensions[0], dimensions[1]);
+
+    // start with raw data, adjust, then layer annotations on top
+    ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
+
+    // editing image_data, not the actual raw_image we received from caliban.py
+    let image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+
+    // apply raw contrast adjustment to image data
+    contrast_image(image_data, current_contrast);
+
+    //convert contrast adjusted image data to grayscale
+    grayscale(image_data);
+
+    // invert if needed
+    if (display_invert) {
+      invert(image_data);
+    }
+
+    // draw over original raw image with the adjusted raw
+    ctx.putImageData(image_data, 0, 0);
+
     ctx.save(); // save here to store the default globalCompositeOperation
-    // ctx.globalCompositeOperation = 'color'; 
+    // ctx.globalCompositeOperation = 'color';
     ctx.globalAlpha = 0.3;
     ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
     ctx.restore(); // we only want compositing in this section, so restore
@@ -549,7 +595,7 @@ function render_frame() {
   } else { // draw annotations
     ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
     ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
-  }  
+  }
   render_log();
 }
 
@@ -564,9 +610,6 @@ function fetch_and_render_frame() {
       if (raw_image === undefined) {
         raw_image = new Image();
       }
-      if (edit_image === undefined) {
-        edit_image = new Image();
-      }
 
       // load new value of seg_array
       // array of arrays, contains annotation raw data for frame
@@ -576,8 +619,6 @@ function fetch_and_render_frame() {
       seg_image.onload = render_frame;
       raw_image.src = payload.raw;
       raw_image.onload = render_frame;
-      edit_image.src = payload.edit_background;
-      edit_image.onload = render_frame;
     },
     async: true
   });
