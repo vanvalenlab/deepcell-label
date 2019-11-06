@@ -145,19 +145,18 @@ class Mode {
 
         render_frame();
       }
+
     } else if (this.kind == Modes.single) {
+
+      //hole fill
       if (key === "f") {
-        this.info = { "label": current_label,
-                      "frame": current_frame,
-                      "x_location": mouse_x,
-                      "y_location": mouse_y };
+        this.info = { "label": this.info['label'],
+                      "frame": current_frame};
         this.kind = Modes.question;
         this.action = "fill_hole";
-        action("fill_hole", this.info);
+        this.prompt = "Select hole to fill in cell " + this.info['label'];
+        render_log();
 
-        if (current_label != 0) {
-          this.prompt = "Select hole to fill in cell " + current_label;
-        } 
       } else if (key === "c") {
         this.kind = Modes.question;
         this.action = "create_new";
@@ -286,13 +285,23 @@ class Mode {
   }
 
   click() {
+
+    //hole fill
     if (this.kind === Modes.question) {
+      //don't do action_fill_hole unless background is clicked
+      //don't need to check label != 0 because other click() behavior prevents
+      //label 0 from being selected in the first place
       if(this.action == "fill_hole" && current_label == 0) {
-        this.info = { "label": current_label,
+        //action_fill_hole in caliban.py needs label to fill with, frame to fill in,
+        //and coordinates of hole_fill_seed
+        this.info = { "label": this.info['label'],
                       "frame": current_frame,
                       "x_location": mouse_x,
                       "y_location": mouse_y };
+
+        //sending an action will trigger redraw of image when new info received
         action(this.action, this.info);
+
         this.clear();
       }
     } else if (current_label === 0) {
