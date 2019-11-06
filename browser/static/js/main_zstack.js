@@ -2,8 +2,6 @@ class Mode {
   constructor(kind, info) {
     this.kind = kind;
     this.info = info;
-    this.highlighted_cells = {}
-    this.highlight = false;
     this.highlighted_cell_one = -1;
     this.highlighted_cell_two = -1;
     this.feature = 0;
@@ -16,20 +14,17 @@ class Mode {
   clear() {
     this.kind = Modes.none;
     this.info = {};
-    this.highlighted_cells = {}
     this.highlighted_cell_one = -1;
     this.highlighted_cell_two = -1;
 
-
-    this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
-                              "cell_two": this.highlighted_cell_two};
-
     if (current_highlight) {
-      action("change_selected_cells", this.highlighted_cells);
+      // update img display
+      render_frame();
     }
-    
+
     this.action = "";
     this.prompt = "";
+    render_log();
   }
 
   handle_key(key) {
@@ -83,9 +78,7 @@ class Mode {
         render_frame();
       }
 
-    } else if(key === "h") {
-        action("change_highlight", this.info);
-        this.clear();
+// if not in edit mode, these keybinds apply:
     } else if(key === "shiftKey") {
       this.kind = Modes.question;
       this.action = "trim_pixels";
@@ -132,6 +125,25 @@ class Mode {
         edit_mode = !edit_mode;
         render_log();
         render_frame();
+
+      } else if (key === "-" && this.highlighted_cell_one !== -1) {
+        // allow cycling through highlighted cells to view when nothing selected
+        if (this.highlighted_cell_one === 1) {
+          this.highlighted_cell_one = maxLabelsMap.get(this.feature);
+        } else {
+          this.highlighted_cell_one -=1;
+        }
+        render_frame();
+
+      } else if (key === "=" && this.highlighted_cell_one !== -1) {
+        // allow cycling through highlighted cells to view when nothing selected
+        if (this.highlighted_cell_one === maxLabelsMap.get(this.feature)) {
+          this.highlighted_cell_one = 1;
+        } else {
+          this.highlighted_cell_one +=1;
+        }
+
+        render_frame();
       }
     } else if (this.kind == Modes.single) {
       if (key === "f") {
@@ -154,24 +166,31 @@ class Mode {
         this.kind = Modes.question;
         this.action = "delete";
         this.prompt = "delete label " + this.info.label + " in frame " + this.info.frame + "? " + answer;
+
       } else if (key === "=") {
-        this.update_highlighted_cells(-1, 1)
-        this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
-                                  "cell_two": this.highlighted_cell_two};
-
-        action("change_selected_cells", this.highlighted_cells);
-        
+        if (this.highlighted_cell_one === maxLabelsMap.get(this.feature)) {
+          this.highlighted_cell_one = 1;
+        } else {
+          this.highlighted_cell_one +=1;
+        }
+        // clear info but show new highlighted cell
+        let temp_highlight = this.highlighted_cell_one;
+        this.clear();
+        this.highlighted_cell_one = temp_highlight;
+        render_frame();
       } else if (key === "-") {
-        this.update_highlighted_cells(1, -1)
-        this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
-                                  "cell_two": this.highlighted_cell_two};
+        if (this.highlighted_cell_one === 1) {
+          this.highlighted_cell_one = maxLabelsMap.get(this.feature);
+        } else {
+          this.highlighted_cell_one -=1;
+        }
+        // clear info but show new highlighted cell
+        let temp_highlight = this.highlighted_cell_one;
+        this.clear();
+        this.highlighted_cell_one = temp_highlight;
+        render_frame();
+      }
 
-        action("change_selected_cells", this.highlighted_cells);
-      } else if (key === "x") {
-        this.kind = Modes.question;
-        this.action = "delete_cell";
-        this.prompt = "delete label " + this.info.label + " in frame " + this.info.frame + "? " + answer;
-      } 
     } else if (this.kind == Modes.multiple) {
       if (key === "s") {
         this.kind = Modes.question;
@@ -185,16 +204,6 @@ class Mode {
         this.kind = Modes.question;
         this.action = "watershed";
         this.prompt = "Perform watershed to split " + this.info.label_1 + "? " + answer;
-      } else if (key === "=") {
-        this.update_highlighted_cells(-1, 1)
-        this.highlighted_cells = {"cell_one": this.highlighted_cell_one, 
-                                  "cell_two": this.highlighted_cell_two};
-        action("change_selected_cells", this.highlighted_cells);
-      } else if (key === "-") {
-        this.update_highlighted_cells(1, -1)
-        this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
-                                  "cell_two": this.highlighted_cell_two};
-        action("change_selected_cells", this.highlighted_cells);
       }
     } else if (this.kind == Modes.question) {
       if (key === " ") {
@@ -250,31 +259,6 @@ class Mode {
     this.clear()
   }
 
-  update_highlighted_cells(decrease, increase) {
-
-    if (this.highlighted_cell_one != -1) {
-      if (increase == 1) {
-        if (this.highlighted_cell_one < maxLabelsMap.get(this.feature)) {
-          this.highlighted_cell_one += 1;
-        } else {
-          this.highlighted_cell_one = 1;
-        }
-      } else if (decrease == 1) {
-        if (this.highlighted_cell_one > 1) {
-          this.highlighted_cell_one -= 1;
-        } else {
-          this.highlighted_cell_one = maxLabelsMap.get(this.feature);
-        }
-      }  
-    } 
-    if (this.kind === Modes.single) {
-      this.info.label = this.highlighted_cell_one;
-    } else if (this.kind === Modes.multiple) {
-      this.info.label_1 = this.highlighted_cell_one;
-      this.info.label_2 = this.highlighted_cell_two;
-    }
-  }
-
   change_feature(){
     if (this.feature < feature_max - 1) {
       this.feature += 1;
@@ -314,9 +298,6 @@ class Mode {
     } else if (current_label === 0) {
       this.highlighted_cell_one = -1;
       this.highlighted_cell_two = -1;
-      this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
-                                "cell_two":this.highlighted_cell_two};
-      action("change_selected_cells", this.highlighted_cells);
       this.clear();
       return;
     } else if (this.kind === Modes.none) {
@@ -325,18 +306,15 @@ class Mode {
                     "frame": current_frame };
       this.highlighted_cell_one = current_label;
       this.highlighted_cell_two = -1;
-      this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
-                                "cell_two": this.highlighted_cell_two};
-      action("change_selected_cells", this.highlighted_cells);
+
+      render_frame();
       temp_x = mouse_x;
       temp_y = mouse_y;
     } else if (this.kind === Modes.single) {
       this.kind = Modes.multiple;
       this.highlighted_cell_one = this.info.label;
       this.highlighted_cell_two = current_label;
-      this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
-                                "cell_two": this.highlighted_cell_two};
-      action("change_selected_cells", this.highlighted_cells);
+
       if (this.info.label == current_label) {
         this.info = { "label_1": this.info.label, 
                       "label_2": current_label, 
@@ -351,12 +329,10 @@ class Mode {
                       "label_2": current_label, 
                       "frame_2": current_frame };
       }
+      render_frame();
     } else if (this.kind  === Modes.multiple) {
       this.highlighted_cell_one = this.info.label_1;
       this.highlighted_cell_two = current_label;
-      this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
-                                "cell_two": this.highlighted_cell_two};
-      action("change_selected_cells", this.highlighted_cells);
 
       if (this.info.label_1 == current_label) {
         this.info = {"label_1": this.info.label_1, 
@@ -372,6 +348,7 @@ class Mode {
                     "label_2": current_label, 
                     "frame_2": current_frame};
       }
+      render_frame();
     }
   }
 
@@ -460,6 +437,33 @@ function contrast_image(img, contrast) {
   return img;
 }
 
+function highlight(img, label) {
+  let ann = img.data;
+
+  // use label array to figure out which pixels to recolor
+  for (var j = 0; j < seg_array.length; j += 1){ //y
+    for (var i = 0; i < seg_array[j].length; i += 1){ //x
+      let jlen = seg_array[j].length;
+
+      if (seg_array[j][i] === label){
+        // fill in all pixels affected by scale
+        // k and l get the pixels that are part of the original pixel that has been scaled up
+        for (var k = 0; k < scale; k +=1) {
+          for (var l = 0; l < scale; l +=1) {
+            // location in 1D array based on i,j, and scale
+            pixel_num = (scale*(jlen*(scale*j + l) + i)) + k;
+
+            // set to red by changing RGB values
+            ann[(pixel_num*4)] = 255;
+            ann[(pixel_num*4) + 1] = 0;
+            ann[(pixel_num*4) + 2] = 0;
+          }
+        }
+      }
+    }
+  }
+}
+
 function grayscale(img) {
   let data = img.data;
   for (var i = 0; i < data.length; i += 4) {
@@ -504,10 +508,19 @@ function render_log() {
 
   if (current_highlight == true) {
     $('#highlight').html("ON");
+    if (mode.highlighted_cell_one !== -1) {
+      if (mode.highlighted_cell_two !== -1) {
+        $('#currently_highlighted').html(mode.highlighted_cell_one + " , " + mode.highlighted_cell_two);
+      } else {
+        $('#currently_highlighted').html(mode.highlighted_cell_one);
+      }
+    } else {
+      $('#currently_highlighted').html("none");
+    }
 
   } else {
     $('#highlight').html("OFF");
-
+    $('#currently_highlighted').html("none");
   }
 
   if (edit_mode == true) {
@@ -595,6 +608,12 @@ function render_frame() {
   } else { // draw annotations
     ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
     ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
+    if (current_highlight){
+      let img_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+      highlight(img_data, mode.highlighted_cell_one);
+      highlight(img_data, mode.highlighted_cell_two);
+      ctx.putImageData(img_data, 0, 0)
+    }
   }
   render_log();
 }
@@ -818,6 +837,7 @@ function prepare_canvas() {
     } else {
       if (evt.key === 'h') {
         current_highlight = !current_highlight;
+        render_frame();
       }
         mode.handle_key(evt.key);
     }
