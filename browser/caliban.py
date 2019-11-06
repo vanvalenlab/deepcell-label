@@ -100,8 +100,8 @@ class ZStackReview:
         self.save_version = 0
         self.dimensions = self.raw.shape[1:3][::-1]
 
-        self.color_map = plt.get_cmap('cubehelix')
-        self.color_map.set_bad('red')
+        self.color_map = plt.get_cmap('viridis')
+        self.color_map.set_bad('black')
 
     @property
     def readable_tracks(self):
@@ -137,8 +137,7 @@ class ZStackReview:
                           cmap="Greys")
         else:
             frame = self.annotated[frame][:,:, self.feature]
-
-
+            frame = np.ma.masked_equal(frame, 0)
             return pngify(imgarr=frame,
                          vmin=0,
                          vmax=self.num_cells[self.feature] + self.adjustment[self.feature],
