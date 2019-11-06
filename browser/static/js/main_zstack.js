@@ -82,7 +82,7 @@ class Mode {
     } else if(key === "shiftKey") {
       this.kind = Modes.question;
       this.action = "trim_pixels";
-      this.info = {"label": current_label, 
+      this.info = {"label": current_label,
                         "frame": current_frame,
                         "x_location": mouse_x,
                         "y_location": mouse_y};
@@ -91,7 +91,7 @@ class Mode {
     } else if(key === "altKey") {
       this.kind = Modes.question;
       this.action = "flood_cell";
-      this.info = {"label": current_label, 
+      this.info = {"label": current_label,
                         "frame": current_frame,
                         "x_location": mouse_x,
                         "y_location": mouse_y}
@@ -147,7 +147,7 @@ class Mode {
       }
     } else if (this.kind == Modes.single) {
       if (key === "f") {
-        this.info = { "label": current_label, 
+        this.info = { "label": current_label,
                       "frame": current_frame,
                       "x_location": mouse_x,
                       "y_location": mouse_y };
@@ -282,13 +282,13 @@ class Mode {
         this.channel = channel_max - 1;
       }
     }
-    
+
   }
 
   click() {
     if (this.kind === Modes.question) {
       if(this.action == "fill_hole" && current_label == 0) {
-        this.info = { "label": current_label, 
+        this.info = { "label": current_label,
                       "frame": current_frame,
                       "x_location": mouse_x,
                       "y_location": mouse_y };
@@ -302,7 +302,7 @@ class Mode {
       return;
     } else if (this.kind === Modes.none) {
       this.kind = Modes.single;
-      this.info = { "label": current_label, 
+      this.info = { "label": current_label,
                     "frame": current_frame };
       this.highlighted_cell_one = current_label;
       this.highlighted_cell_two = -1;
@@ -316,17 +316,17 @@ class Mode {
       this.highlighted_cell_two = current_label;
 
       if (this.info.label == current_label) {
-        this.info = { "label_1": this.info.label, 
-                      "label_2": current_label, 
-                      "frame": current_frame, 
-                      "x1_location": temp_x, 
-                      "y1_location": temp_y, 
-                      "x2_location": mouse_x, 
+        this.info = { "label_1": this.info.label,
+                      "label_2": current_label,
+                      "frame": current_frame,
+                      "x1_location": temp_x,
+                      "y1_location": temp_y,
+                      "x2_location": mouse_x,
                       "y2_location": mouse_y };
       } else {
-        this.info = { "label_1": this.info.label, 
-                      "frame_1": this.info.frame, 
-                      "label_2": current_label, 
+        this.info = { "label_1": this.info.label,
+                      "frame_1": this.info.frame,
+                      "label_2": current_label,
                       "frame_2": current_frame };
       }
       render_frame();
@@ -335,17 +335,17 @@ class Mode {
       this.highlighted_cell_two = current_label;
 
       if (this.info.label_1 == current_label) {
-        this.info = {"label_1": this.info.label_1, 
-                    "label_2": current_label, 
-                    "frame": current_frame, 
-                    "x1_location": temp_x, 
-                    "y1_location": temp_y, 
-                    "x2_location": mouse_x, 
+        this.info = {"label_1": this.info.label_1,
+                    "label_2": current_label,
+                    "frame": current_frame,
+                    "x1_location": temp_x,
+                    "y1_location": temp_y,
+                    "x2_location": mouse_x,
                     "y2_location": mouse_y};
       } else {
-        this.info = {"label_1": this.info.label_1, 
-                    "frame_1": this.info.frame_1, 
-                    "label_2": current_label, 
+        this.info = {"label_1": this.info.label_1,
+                    "frame_1": this.info.frame_1,
+                    "label_2": current_label,
                     "frame_2": current_frame};
       }
       render_frame();
@@ -679,18 +679,18 @@ async function fetch_frame(frame) {
   return $.ajax({
     type: 'GET',
     url: "frame/" + frame + "/" + project_id
-   
+
   });
 }
 
 function prepare_canvas() {
   $('#canvas').click(function(evt) {
     // bind click events on canvas
-  
+
     if (!edit_mode) {
       mode.click();
     }
-    
+
     render_log();
   });
 
@@ -719,16 +719,16 @@ function prepare_canvas() {
     mouse_x = evt.offsetX;
     mouse_y = evt.offsetY;
 
-    last_mousex = mouse_x 
+    last_mousex = mouse_x
     last_mousey = mouse_y
     mousedown = true; //so we can differentiate mousemove from click&drag
 
      if (evt.altKey) {
         mode.handle_key("altKey");
-        
+
       } else if (evt.shiftKey) {
         mode.handle_key("shiftKey");
-       
+
       }
 
     if (edit_mode) {
