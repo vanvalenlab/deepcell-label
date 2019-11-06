@@ -33,9 +33,12 @@ class Mode {
       if (key === "=") {
         edit_value += 1; //increase edit_value, no upper limit
         render_log(); //change display to show new edit_value
+        //when value of brush determines color of display, this should be render_frame()
+
       } else if (key === "-") {
         edit_value = Math.max(edit_value - 1, 1); //decrease edit_value, should always be positive number
         render_log(); //change display to show new edit_value
+        //when value of brush determines color of display, this should be render_frame()
 
       //turn eraser on and off
       } else if (key === "x") {
@@ -47,7 +50,6 @@ class Mode {
       //keybinds to change brush size
       } else if (key === ",") { //decrease brush size, should always be > 0
         brush_size = Math.max(brush_size - 1, 1);
-        render_log(); //display new brush size
 
         // update the brush with its new size
         let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
@@ -55,12 +57,11 @@ class Mode {
         brush.radius = brush_size * scale;
         brush.draw(hidden_ctx);
 
-        // redraw the frame with the updated brush preview
+        // redraw the frame with the updated brush preview (also updates info display)
         render_frame();
 
       } else if (key === ".") { //increase brush size, shouldn't be larger than the image
         brush_size = Math.min(self.brush_size + 1, dimensions[0], dimensions[1]);
-        render_log(); //display new brush size
 
         // update the brush with its new size
         let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
@@ -68,11 +69,14 @@ class Mode {
         brush.radius = brush_size * scale;
         brush.draw(hidden_ctx);
 
-        // redraw the frame with the updated brush preview
+        // redraw the frame with the updated brush preview (also updates info display)
         render_frame();
+
       } else if (key === 'n') {//set edit value to something unused
         edit_value = maxLabelsMap.get(this.feature) + 1; //max value in feature + 1
         render_log(); //change display to show that value has changed
+        //when value of brush determines color of display, this should be render_frame()
+
       } else if (key === 'i') {//toggle invert
         display_invert = !display_invert;
         render_frame();
@@ -87,7 +91,8 @@ class Mode {
                         "x_location": mouse_x,
                         "y_location": mouse_y};
       this.prompt = "SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL";
-     
+      render_log();
+
     } else if(key === "altKey") {
       this.kind = Modes.question;
       this.action = "flood_cell";
@@ -96,35 +101,45 @@ class Mode {
                         "x_location": mouse_x,
                         "y_location": mouse_y}
       this.prompt = "SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL";
+      render_log();
+
     }
 
     if (this.kind == Modes.none) {
       if (key === "f") {
         this.change_feature();
         this.info = {"feature": this.feature};
+        //sending an action will trigger redraw of image when new info received
         action("change_feature", this.info);
         this.clear();
+
+        //should also add in a shift-f keybind if we ever want to use more than 1 feature
+
       } else if (key === "c") {
         this.change_channel(true);
         this.info = {"channel": this.channel};
+        //sending an action will trigger redraw of image when new info received
         action("change_channel", this.info);
         this.clear();
 
-        //if shift-c is pressed
+        //if shift-c is pressed, go back a channel
       } else if (key === "C") {
         this.change_channel(false);
         this.info = {"channel": this.channel};
+        //sending an action will trigger redraw of image when new info received
         action("change_channel", this.info);
         this.clear();
+
+        //iou cell identity prediction
       } else if (key === "p") {
         this.kind = Modes.question;
         this.action = "predict";
         this.prompt = "Predict cell ids for zstack? / S=PREDICT THIS FRAME / SPACE=PREDICT ALL FRAMES / ESC=CANCEL PREDICTION";
+        render_log();
 
       } else if (key === "e") {
         edit_mode = !edit_mode;
-        render_log();
-        render_frame();
+        render_frame(); //also renders info display
 
       } else if (key === "-" && this.highlighted_cell_one !== -1) {
         // allow cycling through highlighted cells to view when nothing selected
@@ -133,7 +148,7 @@ class Mode {
         } else {
           this.highlighted_cell_one -=1;
         }
-        render_frame();
+        render_frame(); //redraw to show newly highlighted cell & update info display
 
       } else if (key === "=" && this.highlighted_cell_one !== -1) {
         // allow cycling through highlighted cells to view when nothing selected
@@ -142,8 +157,7 @@ class Mode {
         } else {
           this.highlighted_cell_one +=1;
         }
-
-        render_frame();
+        render_frame(); //redraw to show newly highlighted cell & update info display
       }
 
     } else if (this.kind == Modes.single) {
@@ -161,10 +175,13 @@ class Mode {
         this.kind = Modes.question;
         this.action = "create_new";
         this.prompt = "CREATE NEW(S=SINGLE FRAME / SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)";
+        render_log();
+
       } else if (key === "x") {
         this.kind = Modes.question;
         this.action = "delete";
         this.prompt = "delete label " + this.info.label + " in frame " + this.info.frame + "? " + answer;
+        render_log();
 
       } else if (key === "=") {
         if (this.highlighted_cell_one === maxLabelsMap.get(this.feature)) {
@@ -177,6 +194,7 @@ class Mode {
         this.clear();
         this.highlighted_cell_one = temp_highlight;
         render_frame();
+
       } else if (key === "-") {
         if (this.highlighted_cell_one === 1) {
           this.highlighted_cell_one = maxLabelsMap.get(this.feature);
@@ -195,16 +213,26 @@ class Mode {
         this.kind = Modes.question;
         this.action = "swap_cells";
         this.prompt = "SPACE = SWAP IN ALL FRAMES / S = SWAP IN THIS FRAME ONLY / ESC = CANCEL SWAP";
+        render_log();
+
       } else if (key === "r") {
         this.kind = Modes.question;
         this.action = "replace";
         this.prompt = "Replace " + this.info.label_2 + " with " + this.info.label_1 + "? " + answer;
+        render_log();
+
       } else if (key === "w" ) {
         this.kind = Modes.question;
         this.action = "watershed";
         this.prompt = "Perform watershed to split " + this.info.label_1 + "? " + answer;
+        render_log();
       }
+
     } else if (this.kind == Modes.question) {
+
+      //we don't need to include ESC as an option since it always clears Mode
+      //(it is bound in windowEventListener)
+
       if (key === " ") {
         if (this.action == "create_new"){
           action("new_cell_stack", this.info);
@@ -304,11 +332,15 @@ class Mode {
 
         this.clear();
       }
+
+      //if click on background, same as ESC
     } else if (current_label === 0) {
       this.highlighted_cell_one = -1;
       this.highlighted_cell_two = -1;
       this.clear();
-      return;
+      return; //not sure why we return here
+
+      //select cell
     } else if (this.kind === Modes.none) {
       this.kind = Modes.single;
       this.info = { "label": current_label,
@@ -316,14 +348,17 @@ class Mode {
       this.highlighted_cell_one = current_label;
       this.highlighted_cell_two = -1;
 
-      render_frame();
+      render_frame(); //update highlight view if needed, update info display
       temp_x = mouse_x;
       temp_y = mouse_y;
+
+      //select another cell
     } else if (this.kind === Modes.single) {
       this.kind = Modes.multiple;
       this.highlighted_cell_one = this.info.label;
       this.highlighted_cell_two = current_label;
 
+      //only store click locations if going to watershed (same cell selected twice)
       if (this.info.label == current_label) {
         this.info = { "label_1": this.info.label,
                       "label_2": current_label,
@@ -338,7 +373,9 @@ class Mode {
                       "label_2": current_label,
                       "frame_2": current_frame };
       }
-      render_frame();
+      render_frame(); //update highlight view if needed, update info display
+
+      //reassign second selected cell
     } else if (this.kind  === Modes.multiple) {
       this.highlighted_cell_one = this.info.label_1;
       this.highlighted_cell_two = current_label;
@@ -357,10 +394,11 @@ class Mode {
                     "label_2": current_label,
                     "frame_2": current_frame};
       }
-      render_frame();
+      render_frame(); //update highlight view if needed, update info display
     }
   }
 
+  //shows up in info display as text for "state:"
   render() {
     if (this.kind === Modes.none) {
       return "";
