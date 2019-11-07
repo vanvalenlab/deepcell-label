@@ -61,27 +61,12 @@ class ZStackReview:
         self.current_frame = 0
 
         for feature in range(self.feature_max):
-
-            annotated = self.annotated[:,:,:,feature]
-            self.cell_ids[feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))]
-            self.num_cells[feature] = max(self.cell_ids[feature])
-            self.cell_info[feature] = {}
-
-            for cell in self.cell_ids[feature]:
-                cell = int(cell)
-                self.cell_info[feature][cell] = {}
-                self.cell_info[feature][cell]['label'] = str(cell)
-                self.cell_info[feature][cell]['frames'] = []
-
-
-                for frame in range(self.annotated.shape[0]):
-                    if cell in annotated[frame,:,:]:
-                        self.cell_info[feature][cell]['frames'].append(frame)
-                self.cell_info[feature][cell]['slices'] = ''
-
+            self.create_cell_info(feature)
 
         #don't display 'frames' just 'slices' (updated on_draw)
-        self.display_info = [*sorted(set(self.cell_info[0][1]) - {'frames'})]
+        first_key = list(self.cell_info[0])[0]
+        display_info_types = self.cell_info[0][first_key]
+        self.display_info = [*sorted(set(display_info_types) - {'frames'})]
 
         self.draw_raw = False
         self.max_intensity = {}
@@ -299,66 +284,31 @@ class ZStackReview:
         Creates new cell label and replaces original label with it in all subsequent frames
         """
         old_label, start_frame = label, frame
+        new_label = np.max(self.cell_ids[self.feature]) + 1
 
-        if label != 0:
+        # replace frame labels
+        for frame in self.annotated[start_frame:,:,:,self.feature]:
+            frame[frame == old_label] = new_label
 
-            new_label = int(self.num_cells[self.feature] + 1)
-            self.num_cells[self.feature] += 1
-
-            # replace frame labels
-            for frame in self.annotated[start_frame:,:,:,self.feature]:
-                frame[frame == old_label] = new_label
-
-            # replace fields
-            old_label_frames = self.cell_info[self.feature][old_label]['frames']
-            new_label_frames = []
-
-
-            for frame in range(self.annotated.shape[0]):
-                if new_label in self.annotated[frame,:,:,self.feature]:
-                    new_label_frames.append(frame)
-
-            updated_old_label_frames = np.setdiff1d(old_label_frames, new_label_frames).tolist()
-
-            if updated_old_label_frames == []:
-                del self.cell_info[self.feature][old_label]
-            else:
-                self.cell_info[self.feature][old_label].update({'frames': updated_old_label_frames})
-
-            self.cell_info[self.feature].update({new_label: {}})
-            self.cell_info[self.feature][new_label].update({'label': str(new_label)})
-            self.cell_info[self.feature][new_label].update({'frames': new_label_frames})
-            self.cell_info[self.feature][new_label].update({'slices': ''})
-
-            np.append(self.cell_ids[self.feature], new_label).tolist()
+        for frame in range(self.annotated.shape[0]):
+            if new_label in self.annotated[frame,:,:,self.feature]:
+                self.del_cell_info(feature = self.feature, del_label = old_label, frame = frame)
+                self.add_cell_info(feature = self.feature, add_label = new_label, frame = frame)
 
     def action_new_single_cell(self, label, frame):
         """
         Create new label in just one frame
         """
         old_label, single_frame = label, frame
-
-        new_label = int(self.num_cells[self.feature] + 1)
-        self.num_cells[self.feature] += 1
+        new_label = np.max(self.cell_ids[self.feature]) + 1
 
         # replace frame labels
         frame = self.annotated[single_frame,:,:,self.feature]
         frame[frame == old_label] = new_label
 
         # replace fields
-        old_label_frames = self.cell_info[self.feature][old_label]['frames']
-        if old_label_frames == [single_frame]:
-            del self.cell_info[self.feature][old_label]
-        else:
-            updated_frames = np.delete(old_label_frames, np.where(old_label_frames == np.int64(single_frame))).tolist()
-            self.cell_info[self.feature][old_label].update({'frames': updated_frames})
-
-        self.cell_info[self.feature].update({new_label: {}})
-        self.cell_info[self.feature][new_label].update({'label': str(new_label)})
-        self.cell_info[self.feature][new_label].update({'frames': [single_frame]})
-        self.cell_info[self.feature][new_label].update({'slices': ''})
-
-        np.append(self.cell_ids[self.feature], new_label).tolist()
+        self.del_cell_info(feature = self.feature, del_label = old_label, frame = single_frame)
+        self.add_cell_info(feature = self.feature, add_label = new_label, frame = single_frame)
 
     def action_swap_single_frame(self, label_1, label_2, frame_1, frame_2):
         assert(frame_1 == frame_2)
@@ -415,28 +365,32 @@ class ZStackReview:
         annotated = self.annotated[:,:,:,self.feature]
 
         for zslice in range(self.annotated.shape[0] -1):
-            # if zslice < 13:
-                img = self.annotated[zslice,:,:,self.feature]
+            img = self.annotated[zslice,:,:,self.feature]
 
-                next_img = self.annotated[zslice + 1,:,:,self.feature]
-                predicted_next = predict_zstack_cell_ids(img, next_img)
-                self.annotated[zslice + 1,:,:,self.feature] = predicted_next
+            next_img = self.annotated[zslice + 1,:,:,self.feature]
+            predicted_next = predict_zstack_cell_ids(img, next_img)
+            self.annotated[zslice + 1,:,:,self.feature] = predicted_next
 
         #remake cell_info dict based on new annotations
         self.create_cell_info(feature = self.feature)
 
     def action_replace(self, label_1, label_2, frame_1, frame_2):
         """
-        Replacing label_2 with label_1
+        Replacing label_2 with label_1. frame_1 and frame_2 are unused
+        but get passed to caliban.py from js action()
         """
-        # replace arrays
-        for frame in self.annotated[:,:,:,self.feature]:
-            frame[frame == label_2] = label_1
 
-        # update cell_info dict
-        del self.cell_info[self.feature][label_2]
-        self.cell_ids[self.feature] = np.delete(self.cell_ids[self.feature],
-                                      np.where(self.cell_ids[self.feature] == label_2))
+        # currently don't need to check for label_1 == label_2 because of javascript logic
+        # but this may need to be updated
+
+        # check each frame
+        for frame in range(self.annotated.shape[0]):
+            annotated = self.annotated[frame,:,:,self.feature]
+            # if label being replaced is present, remove it from image and update cell info dict
+            if np.any(np.isin(annotated, label_2)):
+                annotated[annotated == label_2] = label_1
+                self.add_cell_info(feature = self.feature, add_label = label_1, frame = frame)
+                self.del_cell_info(feature = self.feature, del_label = label_2, frame = frame)
 
     def action_watershed(self, label_1, label_2, frame, x1_location, y1_location, x2_location, y2_location):
         # Pull the label that is being split and find a new valid label
@@ -491,12 +445,7 @@ class ZStackReview:
         self.annotated[frame,:,:,self.feature] = ann_img
 
         #update cell_info
-        if self.cell_info[self.feature][label]['frames'] == [frame]:
-            del self.cell_info[self.feature][label]
-        else:
-            old_frames = self.cell_info[self.feature][label]['frames']
-            updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame))).tolist()
-            self.cell_info[self.feature][label].update({'frames': updated_frames})
+        self.del_cell_info(feature = self.feature, del_label = label, frame = frame)
 
     def add_cell_info(self, feature, add_label, frame):
         '''
