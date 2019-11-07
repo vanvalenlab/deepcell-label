@@ -83,26 +83,6 @@ class Mode {
       }
 
 // if not in edit mode, these keybinds apply:
-    } else if(key === "shiftKey" && current_label !== 0) {
-      this.kind = Modes.question;
-      this.action = "trim_pixels";
-      this.info = {"label": current_label,
-                        "frame": current_frame,
-                        "x_location": mouse_x,
-                        "y_location": mouse_y};
-      this.prompt = "SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL";
-      render_log();
-
-    } else if(key === "altKey" && current_label !== 0) {
-      this.kind = Modes.question;
-      this.action = "flood_cell";
-      this.info = {"label": current_label,
-                        "frame": current_frame,
-                        "x_location": mouse_x,
-                        "y_location": mouse_y}
-      this.prompt = "SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL";
-      render_log();
-
     }
 
     if (this.kind == Modes.none) {
@@ -316,7 +296,7 @@ class Mode {
 
   }
 
-  click() {
+  click(evt) {
 
     //hole fill
     if (this.kind === Modes.question) {
@@ -344,17 +324,44 @@ class Mode {
       this.clear();
       return; //not sure why we return here
 
-      //select cell
+      //if nothing selected: shift-, alt-, or normal click
     } else if (this.kind === Modes.none) {
-      this.kind = Modes.single;
-      this.info = { "label": current_label,
-                    "frame": current_frame };
-      this.highlighted_cell_one = current_label;
-      this.highlighted_cell_two = -1;
 
-      render_frame(); //update highlight view if needed, update info display
-      temp_x = mouse_x;
-      temp_y = mouse_y;
+      //shift-click only if nothing else selected
+      if(evt.shiftKey && current_label !== 0) {
+        this.kind = Modes.question;
+        this.action = "trim_pixels";
+        this.info = {"label": current_label,
+                          "frame": current_frame,
+                          "x_location": mouse_x,
+                          "y_location": mouse_y};
+        this.prompt = "SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL";
+        this.highlighted_cell_one = current_label;
+        render_frame();
+
+      //alt-click only if nothing else selected
+      } else if(evt.altKey && current_label !== 0) {
+        this.kind = Modes.question;
+        this.action = "flood_cell";
+        this.info = {"label": current_label,
+                          "frame": current_frame,
+                          "x_location": mouse_x,
+                          "y_location": mouse_y}
+        this.prompt = "SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL";
+        this.highlighted_cell_one = current_label;
+        render_frame();
+
+      } else { //just a normal click
+        this.kind = Modes.single;
+        this.info = { "label": current_label,
+                      "frame": current_frame };
+        this.highlighted_cell_one = current_label;
+        this.highlighted_cell_two = -1;
+
+        render_frame(); //update highlight view if needed, update info display
+        temp_x = mouse_x;
+        temp_y = mouse_y;
+      }
 
       //select another cell
     } else if (this.kind === Modes.single) {
@@ -739,7 +746,7 @@ function prepare_canvas() {
     // bind click events on canvas
 
     if (!edit_mode) {
-      mode.click();
+      mode.click(evt);
     }
 
     render_log();
@@ -773,14 +780,6 @@ function prepare_canvas() {
     last_mousex = mouse_x
     last_mousey = mouse_y
     mousedown = true; //so we can differentiate mousemove from click&drag
-
-     if (evt.altKey) {
-        mode.handle_key("altKey");
-
-      } else if (evt.shiftKey) {
-        mode.handle_key("shiftKey");
-
-      }
 
     if (edit_mode) {
       let img_y = Math.floor(mouse_y/scale);
