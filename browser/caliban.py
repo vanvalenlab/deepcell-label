@@ -164,6 +164,8 @@ class ZStackReview:
             self.action_predict_zstack(**info)
         elif action_type == "replace":
             self.action_replace(**info)
+        elif action_type == "replace_single":
+            self.action_replace_single(**info)
         elif action_type == "watershed":
             self.action_watershed(**info)
         elif action_type == "delete":
@@ -391,6 +393,20 @@ class ZStackReview:
                 annotated[annotated == label_2] = label_1
                 self.add_cell_info(feature = self.feature, add_label = label_1, frame = frame)
                 self.del_cell_info(feature = self.feature, del_label = label_2, frame = frame)
+
+    def action_replace_single(self, label_1, label_2, frame_1, frame_2):
+        '''
+        replaces label_2 with label_1, but only in one frame. Check to make sure frame_1 and
+        frame_2 are the same to prevent weird behavior
+        '''
+        if frame_1 == frame_2:
+            frame = frame_1
+            annotated = self.annotated[frame,:,:,self.feature]
+            # change annotation
+            annotated[annotated == label_2] = label_1
+            # update info
+            self.add_cell_info(feature = self.feature, add_label = label_1, frame = frame)
+            self.del_cell_info(feature = self.feature, del_label = label_2, frame = frame)
 
     def action_watershed(self, label_1, label_2, frame, x1_location, y1_location, x2_location, y2_location):
         # Pull the label that is being split and find a new valid label

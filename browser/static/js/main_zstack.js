@@ -218,7 +218,8 @@ class Mode {
       } else if (key === "r") {
         this.kind = Modes.question;
         this.action = "replace";
-        this.prompt = "Replace " + this.info.label_2 + " with " + this.info.label_1 + "? " + answer;
+        this.prompt = ("Replace " + this.info.label_2 + " with " + this.info.label_1 +
+          "? // SPACE = Replace in all frames / S = Replace in this frame only / ESC = Cancel replace");
         render_log();
 
       } else if (key === "w" ) {
@@ -268,6 +269,9 @@ class Mode {
           this.clear();
         } else if (this.action == "predict") {
           action("predict_single", {"frame": current_frame});
+          this.clear();
+        } else if (this.action == "replace") {
+          action("replace_single", this.info);
           this.clear();
         }
       }
