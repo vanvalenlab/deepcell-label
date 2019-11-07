@@ -83,7 +83,7 @@ class Mode {
       }
 
 // if not in edit mode, these keybinds apply:
-    } else if(key === "shiftKey") {
+    } else if(key === "shiftKey" && current_label !== 0) {
       this.kind = Modes.question;
       this.action = "trim_pixels";
       this.info = {"label": current_label,
@@ -93,7 +93,7 @@ class Mode {
       this.prompt = "SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL";
       render_log();
 
-    } else if(key === "altKey") {
+    } else if(key === "altKey" && current_label !== 0) {
       this.kind = Modes.question;
       this.action = "flood_cell";
       this.info = {"label": current_label,
