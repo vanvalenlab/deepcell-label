@@ -1515,6 +1515,9 @@ class ZStackReview:
                 elif self.mode.action == "REPLACE":
                     self.action_replace_single()
                     self.mode = Mode.none()
+                elif self.mode.action == "RELABEL":
+                    self.action_relabel_frame()
+                    self.mode = Mode.none()
 
             elif self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
@@ -1530,14 +1533,17 @@ class ZStackReview:
                 self.mode = Mode("PROMPT", action = "DRAW BOX", **self.mode.info)
                 self.show_brush = False
                 self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
-                
+
         if symbol == key.P:
             if self.mode.kind is None and not self.edit_mode:
                 self.mode = Mode("QUESTION",
                                 action="PREDICT", **self.mode.info)
+            elif self.mode.kind == "QUESTION" and self.mode.action == "RELABEL":
+                self.action_relabel_preserve()
+                self.mode = Mode.none()
             elif self.mode.kind is None and self.edit_mode:
                 self.mode = Mode("PROMPT", action = "PICK COLOR", **self.mode.info)
-        
+
         if symbol == key.R:
             if self.mode.kind is None and not self.edit_mode:
                 self.mode = Mode("QUESTION", action='RELABEL', **self.mode.info)
@@ -1577,7 +1583,7 @@ class ZStackReview:
                 elif self.mode.action == "PREDICT":
                     self.action_predict_zstack()
                 elif self.mode.action == "RELABEL":
-                    self.action_relabel_frame()
+                    self.action_relabel_all_frames()
                 elif self.mode.action == "CREATE NEW":
                     self.action_new_cell_stack()
                 elif self.mode.action == "FLOOD CELL":
@@ -2101,6 +2107,33 @@ class ZStackReview:
         self.annotated[self.current_frame,:,:,self.feature] = relabeled_img
 
         self.create_cell_info(feature=self.feature)
+
+    def action_relabel_all_frames(self):
+        '''
+        Apply relabel_frame to all frames. Scrambles 3D relationship info
+        if that exists, use relabel_preserve instead in that case!
+        '''
+
+        for frame in range(self.annotated.shape[0]):
+            img = self.annotated[frame,:,:,self.feature]
+            relabeled_img = relabel_frame(img)
+            self.annotated[frame,:,:,self.feature] = relabeled_img
+
+        # changes to cell_info not easily changed with helper add/del functions
+        self.create_cell_info(feature=self.feature)
+
+    def action_relabel_preserve(self):
+        '''
+        Using relabel_frame on all frames at once (in 3D) preserves
+        the 3D relationships between labels. Use this relabeling function
+        if you have tracked or zstack ids to preserve when relabeling.
+        '''
+
+        stack = self.annotated[:,:,:, self.feature]
+        relabeled_stack = relabel_frame(stack)
+        self.annotated[:,:,:, self.feature] = relabeled_stack
+
+        self.create_cell_info(feature = self.feature)
 
     def helper_array_to_img(self, input_array, vmax, cmap, output):
         '''

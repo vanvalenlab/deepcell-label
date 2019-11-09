@@ -84,7 +84,7 @@ class Mode:
             elif self.action == "PREDICT":
                 return ("Predict cell ids for zstack?\nS=PREDICT THIS FRAME\nSPACE=PREDICT ALL FRAMES\nESC=CANCEL PREDICTION")
             elif self.action == "RELABEL":
-                return ("Relabel cells in this frame?\nSPACE=RELABEL\nESC=CANCEL")
+                return ("Relabel cells?\nSPACE=RELABEL ALL FRAMES\nP=PRESERVE 3D INFO\nS=RELABEL THIS FRAME ONLY\nESC=CANCEL")
         elif self.kind == "PROMPT":
             if self.action == "FILL HOLE":
                 return('\nselect hole to fill in cell {}'.format(self.label))
