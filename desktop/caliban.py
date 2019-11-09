@@ -1421,6 +1421,9 @@ class ZStackReview:
                 self.edit_value += 1
             if symbol == key.MINUS:
                 self.edit_value = max(self.edit_value - 1, 1)
+            # set brush to unused label
+            if symbol == key.N:
+                self.edit_value = np.max(self.cell_ids[self.feature]) + 1
             if symbol == key.X:
                 self.erase = not self.erase
             if symbol == key.DOWN:
