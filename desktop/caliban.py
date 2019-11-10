@@ -1537,6 +1537,11 @@ class ZStackReview:
                 self.show_brush = False
                 self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
 
+        if symbol == key.U:
+            if self.mode.kind == "QUESTION" and self.mode.action == "RELABEL":
+                self.action_relabel_unique()
+                self.mode = Mode.none()
+
         if symbol == key.P:
             if self.mode.kind is None and not self.edit_mode:
                 self.mode = Mode("QUESTION",
@@ -2111,6 +2116,24 @@ class ZStackReview:
 
         self.create_cell_info(feature=self.feature)
 
+    def action_relabel_unique(self):
+        '''
+        relabel every cell in every frame with a unique label. Like relabel_all,
+        scrambles 3D relationship info if it exists! Could be useful in cases
+        where a lot of manual assignment is needed/existing prediction not
+        very accurate. Main benefit of this relabeling scheme is to reduce
+        errors from action_replace.
+        '''
+
+        start_val = 1
+        for frame in range(self.annotated.shape[0]):
+            img = self.annotated[frame,:,:,self.feature]
+            relabeled_img = relabel_frame(img, start_val = start_val)
+            start_val = np.max(relabeled_img) + 1
+            self.annotated[frame,:,:,self.feature] = relabeled_img
+
+        self.create_cell_info(feature = self.feature)
+
     def action_relabel_all_frames(self):
         '''
         Apply relabel_frame to all frames. Scrambles 3D relationship info
@@ -2494,14 +2517,14 @@ def predict_zstack_cell_ids(img, next_img, threshold = 0.1):
 
     return relabeled_next
 
-def relabel_frame(img):
+def relabel_frame(img, start_val = 1):
     '''relabel cells in frame starting from 1 without skipping values'''
-    
+
     #cells in image to be relabeled
     cell_list = np.unique(img)
     cell_list = cell_list[np.nonzero(cell_list)]
 
-    relabeled_cell_list = range(1, len(cell_list)+1)
+    relabeled_cell_list = range(start_val, len(cell_list)+start_val)
 
     relabeled_img = np.zeros(img.shape, dtype = np.uint16)
     for i, cell in enumerate(cell_list):
