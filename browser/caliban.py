@@ -1070,11 +1070,22 @@ class TrackReview:
                     track["parent"] = None
 
 
-
 def consecutive(data, stepsize=1):
     return np.split(data, np.where(np.diff(data) != stepsize)[0]+1)
 
-def predict_zstack_cell_ids(img, next_img):
+
+def predict_zstack_cell_ids(img, next_img, threshold = 0.1):
+    '''
+    Predict labels for next_img based on intersection over union (iou)
+    with img. If cells don't meet threshold for iou, they don't count as
+    matching enough to share label with "matching" cell in img. Cells
+    that don't have a match in img (new cells) get a new label so that
+    output relabeled_next does not skip label values (unless label values
+    present in prior image need to be skipped to avoid conflating labels).
+    '''
+
+    # relabel to remove skipped values, keeps subsequent predictions cleaner
+    next_img = relabel_frame(next_img)
 
     #create np array that can hold all pairings between cells in one
     #image and cells in next image
@@ -1105,72 +1116,112 @@ def predict_zstack_cell_ids(img, next_img):
 
     #relabeled_next holds cells as they get relabeled appropriately
     relabeled_next = np.zeros(next_img.shape, dtype = np.uint16)
+
+    #max_indices[cell_from_next_img] -> cell from first image that matches it best
     max_indices = np.argmax(iou, axis = 0)
 
     #put cells that into new image if they've been matched with another cell
 
-    #keep track of which cells don't have matches
+    #keep track of which (next_img)cells don't have matches
+    #this can be if (next_img)cell matched background, or if (next_img)cell matched
+    #a cell already used
     unmatched_cells = []
     #don't reuse cells (if multiple cells in next_img match one particular cell)
-    used_cells = []
+    used_cells_src = []
 
     #next_cell ranges between 0 and max(next_img)
-    #matched_cell is which cell in img matched that cell in next_img the best
+    #matched_cell is which cell in img matched next_cell the best
+
+    # this for loop does the matching between cells
     for next_cell, matched_cell in enumerate(max_indices):
+        #if more than one match, look for best match
+        #otherwise the first match gets linked together, not necessarily reproducible
 
-        if matched_cell not in used_cells:
-            #don't add background to used_cells
-            #add the matched cell to the relabeled image
-            if matched_cell != 0:
-                relabeled_next = np.where(next_img == next_cell, matched_cell, relabeled_next)
+        # matched_cell != 0 prevents adding the background to used_cells_src
+        if matched_cell != 0 and matched_cell not in used_cells_src:
+            bool_matches = np.where(max_indices == matched_cell)
+            count_matches = np.count_nonzero(bool_matches)
+            if count_matches > 1:
+                #for a given cell in img, which next_cell has highest iou
+                matching_next_options = np.argmax(iou, axis =1)
+                best_matched_next = matching_next_options[matched_cell]
 
-                used_cells = np.append(used_cells, matched_cell)
-            elif matched_cell == 0:
-                pass
+                #ignore if best_matched_next is the background
+                if best_matched_next != 0:
+                    if next_cell != best_matched_next:
+                        unmatched_cells = np.append(unmatched_cells, next_cell)
+                        continue
+                    else:
+                        # don't add if bad match
+                        if iou[matched_cell][best_matched_next] > threshold:
+                            relabeled_next = np.where(next_img == best_matched_next, matched_cell, relabeled_next)
 
-        elif matched_cell in used_cells:
+                        # if it's a bad match, we still need to add next_cell back into relabeled next later
+                        elif iou[matched_cell][best_matched_next] <= threshold:
+                            unmatched_cells = np.append(unmatched_cells, best_matched_next)
+
+                        # in either case, we want to be done with the "matched_cell" from img
+                        used_cells_src = np.append(used_cells_src, matched_cell)
+
+            # matched_cell != 0 is still true
+            elif count_matches == 1:
+                #add the matched cell to the relabeled image
+                if iou[matched_cell][next_cell] > threshold:
+                    relabeled_next = np.where(next_img == next_cell, matched_cell, relabeled_next)
+                else:
+                    unmatched_cells = np.append(unmatched_cells, next_cell)
+
+                used_cells_src = np.append(used_cells_src, matched_cell)
+
+        elif matched_cell in used_cells_src and next_cell != 0:
             #skip that pairing, add next_cell to unmatched_cells
             unmatched_cells = np.append(unmatched_cells, next_cell)
 
         #if the cell in next_img didn't match anything (and is not the background):
         if matched_cell == 0 and next_cell !=0:
             unmatched_cells = np.append(unmatched_cells, next_cell)
-
-    #retire cell labels from being used if cell in img matches only background in next_img
-    retire_indices = np.argmax(iou, axis =1)
-    retired_cells = []
-
-    for current_cell, matched_cell in enumerate(retire_indices):
-        if matched_cell == 0 and current_cell != 0:
-            retired_cells = np.append(retired_cells, current_cell)
+            #note: this also puts skipped (nonexistent) labels into unmatched cells, main reason to relabel first
 
     #figure out which labels we should use to label remaining, unmatched cells
+
+    #these are the values that have already been used in relabeled_next
     relabeled_values = np.unique(relabeled_next)[np.nonzero(np.unique(relabeled_next))]
 
-    #allowed_values = labels from next_cells that haven't been used in relabeled_next already
-    allowed_values = np.setdiff1d(next_cells, relabeled_values)
-
-    #stringent_allowed = allowed_values that haven't been retired
-    stringent_allowed =np.setdiff1d(allowed_values, retired_cells)
-
-    #stringent_allowed does not generate enough labels to account for any new cells that appear
-    #so create new labels by adding to the max number of cells
+    #to account for any new cells that appear, create labels by adding to the max number of cells
+    #assumes that these are new cells and that all prev labels have been assigned
     #only make as many new labels as needed
 
-    current_max = max(np.max(cells), np.max(next_cells)) + 1
+    current_max = max(np.max(cells), np.max(relabeled_values)) + 1
 
-    for additional_needed in range(len(next_cells)-len(relabeled_values)-len(stringent_allowed)):
-        stringent_allowed = np.append(stringent_allowed, current_max)
+    stringent_allowed = []
+    for additional_needed in range(len(unmatched_cells)):
+        stringent_allowed.append(current_max)
         current_max += 1
 
     #replace each unmatched cell with a value from the stringent_allowed list,
     #add that relabeled cell to relabeled_next
     if len(unmatched_cells) > 0:
-        for reassigned_cell in range(len(stringent_allowed)):
+        for reassigned_cell in range(len(unmatched_cells)):
             relabeled_next = np.where(next_img == unmatched_cells[reassigned_cell],
                                  stringent_allowed[reassigned_cell], relabeled_next)
 
     return relabeled_next
+
+
+def relabel_frame(img, start_val = 1):
+    '''relabel cells in frame starting from 1 without skipping values'''
+
+    #cells in image to be relabeled
+    cell_list = np.unique(img)
+    cell_list = cell_list[np.nonzero(cell_list)]
+
+    relabeled_cell_list = range(start_val, len(cell_list)+start_val)
+
+    relabeled_img = np.zeros(img.shape, dtype = np.uint16)
+    for i, cell in enumerate(cell_list):
+        relabeled_img = np.where(img == cell, relabeled_cell_list[i], relabeled_img)
+
+    return relabeled_img
 
 
 def load_npz(filename):
