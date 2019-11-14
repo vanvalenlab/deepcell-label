@@ -1,5 +1,6 @@
 import io
 import matplotlib.pyplot as plt
+import numpy as np
 
 def pngify(imgarr, vmin, vmax, cmap):
     out = io.BytesIO()
