@@ -13,14 +13,11 @@ from sqlite3 import Error
 import pickle
 import json
 import re
+from caliban.helpers import is_trk_file, is_npz_file
 
 # Create and configure the app
 application = Flask(__name__)
 application.config.from_object("config")
-
-TRACK_EXTENSIONS = set(['trk', 'trks'])
-ZSTACK_EXTENSIONS = set(['npz'])
-
 
 
 @application.route("/upload_file/<project_id>", methods=["GET", "POST"])
@@ -39,9 +36,9 @@ def upload_file(project_id):
         state = pickle.loads(id_exists[2])
 
         # Call function in caliban.py to save data file and send to S3 bucket
-        if "." in id_exists[1] and id_exists[1].split(".")[1].lower() in TRACK_EXTENSIONS:
+        if is_trk_file(id_exists[1]):
             state.action_save_track()
-        if "." in id_exists[1] and id_exists[1].split(".")[1].lower() in ZSTACK_EXTENSIONS:
+        elif is_npz_file(id_exists[1]):
             state.action_save_zstack()
 
         # Delete id and object from database
@@ -159,8 +156,7 @@ def load(filename):
     input_bucket = folders[0] 
     output_bucket = folders[1] 
 
-    if '.trk' in filename or '.trks' in filename:
-        
+    if is_trk_file(filename):
         # Initate TrackReview object and entry in database
         track_review = TrackReview(filename, input_bucket, output_bucket, subfolders)
         project = (filename, track_review)
@@ -176,8 +172,7 @@ def load(filename):
             "project_id": project_id
             })
 
-    if '.npz' in filename:
-        
+    if is_npz_file(filename):
         # Initate ZStackReview object and entry in database
         zstack_review = ZStackReview(filename, input_bucket, output_bucket, subfolders)
         project = (filename, zstack_review)
@@ -213,12 +208,14 @@ def tool():
     filename = request.form['filename']
     print(f"{filename} is filename", file=sys.stderr)
 
-    file = 'caliban-input__caliban-output__test__' + filename
+    new_filename = 'caliban-input__caliban-output__test__{}'.format(
+        str(filename).lower())
 
-    if '.trk' in file or '.trks' in file:
-        return render_template('index_track.html', filename=file)
-    if '.npz' in file:
-        return render_template('index_zstack.html', filename=file)
+    if is_trk_file(new_filename):
+        return render_template('index_track.html', filename=new_filename)
+    if is_npz_file(new_filename):
+        return render_template('index_zstack.html', filename=new_filename)
+
 
     return "error"
 
@@ -229,10 +226,11 @@ def shortcut(file):
         input S3 bucket (ex. http://127.0.0.1:5000/test.npz).
     '''
 
-    if '.trk' in file or '.trks' in file:
-        return render_template('index_track.html', filename=file)
-    if '.npz' in file:
-        return render_template('index_zstack.html', filename=file)
+    if is_trk_file(filename):
+        return render_template('index_track.html', filename=filename)
+    if is_npz_file(filename):
+        return render_template('index_zstack.html', filename=filename)
+
 
     return "error"
 
