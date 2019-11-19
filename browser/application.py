@@ -153,8 +153,7 @@ def load(filename):
     if is_trk_file(filename):
         # Initate TrackReview object and entry in database
         track_review = TrackReview(filename, input_bucket, output_bucket, subfolders)
-        project = (filename, track_review)
-        project_id = create_project(conn, project)
+        project_id = create_project(conn, filename, track_review)
         conn.commit()
         conn.close()
 
@@ -169,8 +168,7 @@ def load(filename):
     if is_npz_file(filename):
         # Initate ZStackReview object and entry in database
         zstack_review = ZStackReview(filename, input_bucket, output_bucket, subfolders)
-        project = (filename, zstack_review)
-        project_id = create_project(conn, project)
+        project_id = create_project(conn, filename, zstack_review)
         conn.commit()
         conn.close()
 
@@ -257,7 +255,7 @@ def create_table(conn, create_table_sql):
         print(e)
 
 
-def create_project(conn, project):
+def create_project(conn, filename, data):
     ''' Create a new project in the database table.
     '''
     sql = ''' INSERT INTO projects(filename, state)
@@ -265,9 +263,9 @@ def create_project(conn, project):
     cur = conn.cursor()
 
     # convert object to binary data to be stored as data type BLOB
-    state_data = pickle.dumps(project[1], pickle.HIGHEST_PROTOCOL)
+    state_data = pickle.dumps(data, pickle.HIGHEST_PROTOCOL)
 
-    cur.execute(sql, (project[0], sqlite3.Binary(state_data)))
+    cur.execute(sql, (filename, sqlite3.Binary(state_data)))
     return cur.lastrowid
 
 
