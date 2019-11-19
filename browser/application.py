@@ -266,13 +266,13 @@ def create_project(conn, filename, data):
     '''
     sql = ''' INSERT INTO projects(filename, state)
               VALUES(?, ?) '''
-    cur = conn.cursor()
+    cursor = conn.cursor()
 
     # convert object to binary data to be stored as data type BLOB
     state_data = pickle.dumps(data, pickle.HIGHEST_PROTOCOL)
 
-    cur.execute(sql, (filename, sqlite3.Binary(state_data)))
-    return cur.lastrowid
+    cursor.execute(sql, (filename, sqlite3.Binary(state_data)))
+    return cursor.lastrowid
 
 
 def update_object(conn, project):
