@@ -52,7 +52,6 @@ def action(project_id, action_type, frame):
     ''' Make an edit operation to the data file and update the object
         in the database.
     '''
-
     # obtain 'info' parameter data sent by .js script
     info = {k: json.loads(v) for k, v in request.values.to_dict().items()}
     frame = int(frame)
@@ -107,7 +106,6 @@ def get_frame(frame, project_id):
     ''' Serve modes of frames as pngs. Send pngs and color mappings of
         cells to .js file.
     '''
-
     frame = int(frame)
     conn = create_connection(r"caliban.db")
     with conn:
@@ -134,9 +132,10 @@ def get_frame(frame, project_id):
             'raw': f'data:image/png;base64,{encode(raw)}',
             'segmented': f'data:image/png;base64,{encode(img)}',
             'seg_arr': edit_arr.tolist()
-            }
+        }
 
         return jsonify(payload)
+
 
 @application.route("/load/<filename>", methods=["POST"])
 def load(filename):
@@ -172,7 +171,7 @@ def load(filename):
             "dimensions": track_review.dimensions,
             "project_id": project_id,
             "screen_scale": track_review.scale_factor
-            })
+        })
 
     if is_npz_file(filename):
         # Initate ZStackReview object and entry in database
@@ -191,7 +190,8 @@ def load(filename):
             "dimensions": zstack_review.dimensions,
             "project_id": project_id,
             "screen_scale": zstack_review.scale_factor
-            })
+        })
+
 
 @application.route('/', methods=['GET', 'POST'])
 def form():
@@ -206,7 +206,6 @@ def tool():
     ''' Request HTML caliban tool page to be rendered after user inputs
         filename in the landing page.
     '''
-
     filename = request.form['filename']
     print(f"{filename} is filename", file=sys.stderr)
 
@@ -218,11 +217,11 @@ def tool():
     if is_npz_file(new_filename):
         return render_template('index_zstack.html', filename=new_filename)
 
-
     return "error"
 
-@application.route('/<file>', methods=['GET', 'POST'])
-def shortcut(file):
+
+@application.route('/<filename>', methods=['GET', 'POST'])
+def shortcut(filename):
     ''' Request HTML caliban tool page to be rendered if user makes a URL
         request to access a specific data file that has been preloaded to the
         input S3 bucket (ex. http://127.0.0.1:5000/test.npz).
@@ -233,6 +232,9 @@ def shortcut(file):
     if is_npz_file(filename):
         return render_template('index_zstack.html', filename=filename)
 
+    error = {
+        'error': 'invalid file extension: {}'.format(
+            os.path.splitext(filename)[-1])
 
     return "error"
 
@@ -242,11 +244,10 @@ def create_connection(db_file):
     conn = None
     try:
         conn = sqlite3.connect(db_file)
-
     except Error as e:
         print(e)
-
     return conn
+
 
 def create_table(conn, create_table_sql):
     ''' Create a table from the create_table_sql statement.
@@ -270,6 +271,7 @@ def create_project(conn, project):
 
     cur.execute(sql, (project[0], sqlite3.Binary(state_data)))
     return cur.lastrowid
+
 
 def update_object(conn, project):
     ''' Update filename, state of a project.
@@ -319,11 +321,12 @@ def main():
     ''' Runs application and initiates database file if it doesn't exist.
     '''
     conn = create_connection(r"caliban.db")
-    sql_create_projects_table = """ CREATE TABLE IF NOT EXISTS projects (
-
-                                        id integer PRIMARY KEY,
-                                        filename text NOT NULL,
-                                        state blob NOT NULL); """
+    sql_create_projects_table = """
+        CREATE TABLE IF NOT EXISTS projects (
+            id integer PRIMARY KEY,
+            filename text NOT NULL,
+            state blob NOT NULL);
+    """
     create_table(conn, sql_create_projects_table)
     conn.commit()
     conn.close()
