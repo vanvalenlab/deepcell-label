@@ -5,7 +5,6 @@ ALLOWED_EXTENSIONS = set([
     '.png', '.jpg', '.jpeg', '.gif',
 ])
 
-
 def allowed_file(name):
     return os.path.splitext(str(name).lower())[-1] in ALLOWED_EXTENSIONS
 
@@ -32,5 +31,3 @@ def is_npz_file(name):
         bool: True if the file is npz, otherwise False.
     '''
     return os.path.splitext(str(name).lower())[-1] in {'.npz'}
-
-
