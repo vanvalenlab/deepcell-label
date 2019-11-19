@@ -328,7 +328,8 @@ def main():
         CREATE TABLE IF NOT EXISTS projects (
             id integer PRIMARY KEY,
             filename text NOT NULL,
-            state blob NOT NULL);
+            state blob NOT NULL
+        );
     """
     create_table(conn, sql_create_projects_table)
     conn.commit()
