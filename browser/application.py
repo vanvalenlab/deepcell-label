@@ -9,8 +9,7 @@ import sqlite3
 import sys
 import traceback
 
-from flask import Flask, jsonify, render_template, request, redirect, url_for
-from werkzeug.utils import secure_filename
+from flask import Flask, jsonify, render_template, request, redirect
 
 from helpers import is_trk_file, is_npz_file
 from caliban import TrackReview, ZStackReview
