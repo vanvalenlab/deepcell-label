@@ -78,7 +78,7 @@ class TrackReview:
 
         self.num_frames, self.height, self.width, _ = raw.shape
         self.dtype_raw = raw.dtype
-        
+
         self.window = pyglet.window.Window(resizable=True)
         self.window.set_minimum_size(self.width + self.sidebar_width, self.height + 20)
         self.window.on_draw = self.on_draw
@@ -146,7 +146,7 @@ class TrackReview:
                                      frame_2=self.current_frame,
                                      y2_location = self.y,
                                      x2_location = self.x)
-                #deselect cells if click on background 
+                #deselect cells if click on background
                 else:
                     self.mode = Mode.none()
                     self.highlighted_cell_one = -1
@@ -166,7 +166,7 @@ class TrackReview:
                                      frame_2=self.current_frame,
                                      y2_location = self.y,
                                      x2_location = self.x)
-                #deselect cells if click on background                 
+                #deselect cells if click on background
                 else:
                     self.mode = Mode.none()
                     self.highlighted_cell_one = -1
@@ -195,7 +195,7 @@ class TrackReview:
                 else:
                     annotated_erase = np.where(annotated==self.edit_value, 0, annotated)
                     annotated[brush_area] = annotated_erase[brush_area]
-                
+
                 in_modified = np.any(np.isin(annotated, self.edit_value))
 
                 #cell deletion
@@ -220,26 +220,26 @@ class TrackReview:
 
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        
+
         x -= self.sidebar_width
         x //= max(self.scale_factor, 1)
         y = self.height - y // max(self.scale_factor, 1)
 
         if 0 <= x < self.width and 0 <= y < self.height:
-            self.x, self.y = x, y        
-        
+            self.x, self.y = x, y
+
         if self.edit_mode:
             annotated = self.tracked[self.current_frame,:,:,0]
-            
+
             #self.x and self.y are different from the mouse's x and y
             x_loc = self.x
             y_loc = self.y
 
             brush_area = circle(y_loc, x_loc, self.brush_size, (self.height,self.width))
-            
+
             #show where brush has drawn this time
             self.brush_view[brush_area] = self.edit_value
-            
+
             in_original = np.any(np.isin(annotated, self.edit_value))
 
             #do not overwrite or erase labels other than the one you're editing
@@ -248,19 +248,19 @@ class TrackReview:
                 annotated[brush_area] = annotated_draw[brush_area]
             else:
                 annotated_erase = np.where(annotated==self.edit_value, 0, annotated)
-                annotated[brush_area] = annotated_erase[brush_area]        
-            
+                annotated[brush_area] = annotated_erase[brush_area]
+
             in_modified = np.any(np.isin(annotated, self.edit_value))
 
             #cell deletion
             if in_original and not in_modified:
                 self.del_cell_info(del_label = self.edit_value, frame = self.current_frame)
-            
+
             #cell addition
             elif in_modified and not in_original:
                 self.add_cell_info(add_label = self.edit_value, frame = self.current_frame)
-                        
-            self.tracked[self.current_frame,:,:,0] = annotated        
+
+            self.tracked[self.current_frame,:,:,0] = annotated
 
     def on_mouse_release(self, x, y, buttons, modifiers):
         if self.edit_mode:
@@ -301,7 +301,7 @@ class TrackReview:
 
     def scale_screen(self):
         #User can resize window and images will expand to fill space if possible
-        #Determine whether to base scale factor on width or height 
+        #Determine whether to base scale factor on width or height
         y_scale = self.window.height // self.height
         x_scale = (self.window.width - 300) // self.width
         self.scale_factor = min(y_scale, x_scale)
@@ -367,7 +367,7 @@ class TrackReview:
                 self.mode = Mode("QUESTION",
                                  action="PARENT", **self.mode.info)
             elif self.mode.kind is None and self.edit_mode:
-                self.mode = Mode("PROMPT", 
+                self.mode = Mode("PROMPT",
                                  action = "PICK COLOR", **self.mode.info)
         if symbol == key.R:
             if self.mode.kind == "MULTIPLE":
@@ -481,12 +481,12 @@ class TrackReview:
                                             width=self.sidebar_width,
                                             multiline=True,
                                             x=5, y=self.window.height//2,
-                                            color=[255]*4)            
+                                            color=[255]*4)
             edit_label.draw()
-            
-            
+
+
             highlight_text = ""
-        
+
         else:
             edit_mode = "off"
             if self.highlight:
@@ -551,7 +551,7 @@ class TrackReview:
                 sprite.draw()
 
         elif self.edit_mode:
-        
+
             # create pyglet image object so we can display brush location
             # handle with context manager because we don't need to keep brush_file around for long
             with tempfile.TemporaryFile() as brush_file:
@@ -574,7 +574,7 @@ class TrackReview:
                             format='png')
 
             raw_file.seek(0)
-            
+
             #gives us the 'greyscale' image in array format
             #(the format is RGB even though it is displayed as grey)
             raw_img = imread(raw_file)
@@ -598,7 +598,7 @@ class TrackReview:
             #don't need to keep the file open once we have the array
             ann_file.close()
             ann_RGB = ann_img[:,:,0:3]
-            
+
             #composite raw image with annotations on top
             alpha = 0.5
 
@@ -621,7 +621,7 @@ class TrackReview:
             imwrite(str(file_masked.name), img_masked)
             comp_img = pyglet.image.load(str(file_masked.name))
             file_masked.close()
-        
+
             composite_sprite = pyglet.sprite.Sprite(comp_img, x = self.sidebar_width, y=0)
             brush_sprite = pyglet.sprite.Sprite(brush_img, x=self.sidebar_width, y=0)
 
@@ -629,13 +629,13 @@ class TrackReview:
 
             composite_sprite.update(scale_x=self.scale_factor,
                                     scale_y=self.scale_factor)
-            
+
             brush_sprite.update(scale_x=self.scale_factor,
                                     scale_y=self.scale_factor)
 
             composite_sprite.draw()
             brush_sprite.draw()
-            
+
             gl.glTexParameteri(gl.GL_TEXTURE_2D,
                                gl.GL_TEXTURE_MAG_FILTER,
                                gl.GL_NEAREST)
@@ -756,14 +756,14 @@ class TrackReview:
         '''
         label_1 = self.mode.label_1
         label_2 = self.mode.label_2
-        
+
         frame = self.current_frame
-        
+
         ann_img = self.tracked[frame]
         ann_img = np.where(ann_img == label_1, -1, ann_img)
         ann_img = np.where(ann_img == label_2, label_1, ann_img)
         ann_img = np.where(ann_img == -1, label_2, ann_img)
-        
+
         self.tracked[frame] = ann_img
 
     def action_parent(self):
@@ -830,7 +830,7 @@ class TrackReview:
         fill a "hole" in a cell annotation with the cell label
         '''
         img_ann = self.tracked[self.current_frame,:,:,0]
-        
+
         filled_img_ann = flood_fill(img_ann, self.hole_fill_seed, self.mode.label, connectivity = 1)
         self.tracked[self.current_frame,:,:,0] = filled_img_ann
 
@@ -839,7 +839,7 @@ class TrackReview:
         Deletes label from current frame only
         """
         selected_label, current_frame = self.mode.label, self.mode.frame
-        
+
         # Set selected label to 0 in current frame
         ann_img = self.tracked[current_frame]
         ann_img = np.where(ann_img == selected_label, 0, ann_img)
@@ -866,7 +866,7 @@ class TrackReview:
             self.tracks[add_label].update({'frame_div': None})
             self.tracks[add_label].update({'parent': None})
             self.tracks[add_label].update({'capped': False})
-            
+
             self.num_tracks += 1
 
     def del_cell_info(self, del_label, frame):
@@ -891,7 +891,7 @@ class TrackReview:
                 if track["parent"] == del_label:
                     track["parent"] = None
 
-                    
+
     def save(self):
         backup_file = self.filename + "_original.trk"
         if not os.path.exists(backup_file):
@@ -920,7 +920,7 @@ class TrackReview:
                 np.save(tracked_file, self.tracked)
                 tracked_file.flush()
                 trks.add(tracked_file.name, "tracked.npy")
-                
+
 class ZStackReview:
     def __init__(self, filename, raw, annotated, save_vars_mode):
         self.filename = filename
@@ -929,21 +929,21 @@ class ZStackReview:
         self.save_vars_mode = save_vars_mode
 
         self.lineage = {}
-        
+
         self.feature = 0
         self.feature_max = self.annotated.shape[-1]
         self.channel = 0
-        
+
         self.num_frames, self.height, self.width, self.channel_max = raw.shape
-        
+
         self.sidebar_width = 300
-        
+
         #create a dictionary that has frame information about each cell
         #analogous to .trk lineage but do not need relationships between cells included
         self.cell_ids = {}
         self.num_cells = {}
         self.cell_info = {}
-        
+
         for feature in range(self.feature_max):
             self.create_cell_info(feature)
 
@@ -951,7 +951,7 @@ class ZStackReview:
         first_key = list(self.cell_info[0])[0]
         display_info_types = self.cell_info[0][first_key]
         self.display_info = [*sorted(set(display_info_types) - {'frames'})]
-            
+
         self.window = pyglet.window.Window(resizable=True)
         self.window.set_minimum_size(self.width + self.sidebar_width, self.height + 20)
         self.window.on_draw = self.on_draw
@@ -982,11 +982,11 @@ class ZStackReview:
 
         self.cmap_options = ['cubehelix', 'gist_yarg', 'gist_gray', 'magma', 'nipy_spectral', 'prism']
         self.current_cmap = 0
-        
+
         cursor = self.window.get_system_mouse_cursor(self.window.CURSOR_CROSSHAIR)
         self.window.set_mouse_cursor(cursor)
         self.mouse_visible = True
-        
+
         self.edit_mode = False
         self.edit_value = 1
         self.brush_size = 1
@@ -1005,14 +1005,14 @@ class ZStackReview:
 
         self.conversion_brush_target = -1
         self.conversion_brush_value = -1
-        
+
         self.hole_fill_seed = None
         self.save_version = 0
 
         pyglet.app.run()
-        
+
     def on_mouse_press(self, x, y, button, modifiers):
-        
+
         if not self.edit_mode:
             frame = self.annotated[self.current_frame]
             label = int(frame[self.y, self.x, self.feature])
@@ -1035,7 +1035,7 @@ class ZStackReview:
                                          frame=self.current_frame,
                                          y_location=self.y, x_location=self.x)
                         self.highlighted_cell_one = label
-                        self.highlighted_cell_two = -1                                     
+                        self.highlighted_cell_two = -1
             elif self.mode.kind == "SELECTED":
                 if label != 0:
                     self.mode = Mode("MULTIPLE",
@@ -1048,7 +1048,7 @@ class ZStackReview:
                                      y2_location = self.y,
                                      x2_location = self.x)
                     self.highlighted_cell_one = self.mode.label_1
-                    self.highlighted_cell_two = label                                     
+                    self.highlighted_cell_two = label
             elif self.mode.kind == "PROMPT" and self.mode.action == "FILL HOLE":
                 if label == 0:
                     self.hole_fill_seed = (self.y, self.x)
@@ -1074,7 +1074,7 @@ class ZStackReview:
                 else:
                     annotated_erase = np.where(annotated==self.edit_value, 0, annotated)
                     annotated[brush_area] = annotated_erase[brush_area]
-                
+
                 in_modified = np.any(np.isin(annotated, self.edit_value))
 
                 #cell deletion
@@ -1164,29 +1164,29 @@ class ZStackReview:
                     self.mode = Mode.none()
                     self.show_brush = True
 
-                    
+
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        
+
         x -= self.sidebar_width
         x //= max(self.scale_factor, 1)
         y = self.height - y // max(self.scale_factor, 1)
 
         if 0 <= x < self.width and 0 <= y < self.height:
-            self.x, self.y = x, y        
-        
+            self.x, self.y = x, y
+
         if self.edit_mode:
             if self.show_brush and self.mode.kind is None:
                 annotated = self.annotated[self.current_frame,:,:,self.feature]
-                
+
                 #self.x and self.y are different from the mouse's x and y
                 x_loc = self.x
                 y_loc = self.y
 
                 brush_area = circle(y_loc, x_loc, self.brush_size, (self.height,self.width))
-                
+
                 #show where brush has drawn this time
                 self.brush_view[brush_area] = self.edit_value
-                
+
                 in_original = np.any(np.isin(annotated, self.edit_value))
 
                 #do not overwrite or erase labels other than the one you're editing
@@ -1195,18 +1195,18 @@ class ZStackReview:
                     annotated[brush_area] = annotated_draw[brush_area]
                 else:
                     annotated_erase = np.where(annotated==self.edit_value, 0, annotated)
-                    annotated[brush_area] = annotated_erase[brush_area]        
-                
+                    annotated[brush_area] = annotated_erase[brush_area]
+
                 in_modified = np.any(np.isin(annotated, self.edit_value))
 
                 #cell deletion
                 if in_original and not in_modified:
                     self.del_cell_info(feature = self.feature, del_label = self.edit_value, frame = self.current_frame)
-                
+
                 #cell addition
                 elif in_modified and not in_original:
                     self.add_cell_info(feature = self.feature, add_label = self.edit_value, frame = self.current_frame)
-                            
+
                 self.annotated[self.current_frame,:,:,self.feature] = annotated
 
             elif self.mode.kind is not None:
@@ -1224,7 +1224,7 @@ class ZStackReview:
                     #only change conversion brush target
                     annotated_draw = np.where(annotated==self.conversion_brush_target, self.conversion_brush_value, annotated)
                     annotated[brush_area] = annotated_draw[brush_area]
-                    
+
                     #check to see if target is still in there
                     in_modified = np.any(np.isin(annotated, self.conversion_brush_target))
 
@@ -1245,10 +1245,10 @@ class ZStackReview:
                     bottom_edge = max(self.predict_seed_1[0], bbox_corner_live[0])
                     left_edge = min(self.predict_seed_1[1], bbox_corner_live[1])
                     right_edge = max(self.predict_seed_1[1], bbox_corner_live[1])
-                    
+
                     self.brush_view[top_edge:bottom_edge, left_edge:right_edge] = self.edit_value
 
-            
+
     def on_mouse_release(self, x, y, buttons, modifiers):
         if self.edit_mode:
             if self.show_brush:
@@ -1298,10 +1298,10 @@ class ZStackReview:
                 self.max_intensity[self.channel] = max(self.max_intensity[self.channel] - raw_adjust * scroll_y,
                                                         min_intensity + 1)
 
-        elif not self.draw_raw:   
+        elif not self.draw_raw:
             if np.max(self.cell_ids[self.feature]) + (self.adjustment[self.feature] - 1 * scroll_y) > 0:
                 self.adjustment[self.feature] = self.adjustment[self.feature] - 1 * scroll_y
-        
+
         if self.edit_mode and not self.hide_annotations:
             self.helper_update_composite()
 
@@ -1312,7 +1312,7 @@ class ZStackReview:
 
         if 0 <= x < self.width and 0 <= y < self.height:
             self.x, self.y = x, y
-            
+
         if self.edit_mode:
             if self.show_brush:
                 #display brush size
@@ -1347,7 +1347,7 @@ class ZStackReview:
 
     def scale_screen(self):
         #User can resize window and images will expand to fill space if possible
-        #Determine whether to base scale factor on width or height 
+        #Determine whether to base scale factor on width or height
         y_scale = self.window.height // self.height
         x_scale = (self.window.width - 300) // self.width
         self.scale_factor = min(y_scale, x_scale)
@@ -1356,7 +1356,7 @@ class ZStackReview:
     def on_key_press(self, symbol, modifiers):
         # Set scroll speed (through sequential frames) with offset
         offset = 5 if modifiers & key.MOD_SHIFT else 1
-        
+
         # universal keybinds
 
         #cycle through colormaps
@@ -1378,15 +1378,15 @@ class ZStackReview:
             #from the wrong prediction
             self.show_prediction = False
             self.predict_coordinates = None
-            # if you change frames while you've viewing composite, update composite     
+            # if you change frames while you've viewing composite, update composite
             if self.edit_mode and not self.hide_annotations:
                 self.helper_update_composite()
-        
+
         elif symbol in {key.RIGHT, key.D}:
             self.current_frame = min(self.current_frame + offset, self.num_frames - 1)
             self.show_prediction = False
             self.predict_coordinates = None
-            # if you change frames while you've viewing composite, update composite     
+            # if you change frames while you've viewing composite, update composite
             if self.edit_mode and not self.hide_annotations:
                 self.helper_update_composite()
 
@@ -1456,7 +1456,7 @@ class ZStackReview:
 
             else:
                 self.mode_handle(symbol)
-            
+
 
     def mode_handle(self, symbol):
 
@@ -1475,14 +1475,14 @@ class ZStackReview:
                 self.show_prediction = False
                 self.predict_coordinates = None
                 self.helper_update_composite()
-                                
+
         if symbol == key.E:
             #toggle edit mode only if nothing is selected
             if self.mode.kind is None:
                 self.edit_mode = not self.edit_mode
                 if self.edit_mode and not self.hide_annotations:
                     self.helper_update_composite()
-                                
+
         if symbol == key.F:
             #cycle through features but only if nothing is selected
             if self.mode.kind is None and not self.edit_mode:
@@ -1502,7 +1502,7 @@ class ZStackReview:
             if self.mode.kind is None and not self.edit_mode:
                 self.mode = Mode("QUESTION",
                                  action="SAVE", filetype = 'npz')
-            
+
             # if answering a question, it's for choosing the single frame
             # version of an action
             elif self.mode.kind == "QUESTION":
@@ -1560,17 +1560,17 @@ class ZStackReview:
                                  action="REPLACE", **self.mode.info)
             elif self.mode.kind is None and self.edit_mode:
                 self.mode = Mode("PROMPT", action="CONVERSION BRUSH TARGET", **self.mode.info)
-                                 
+
         if symbol == key.X:
             if self.mode.kind == "SELECTED":
                 self.mode = Mode("QUESTION",
                                 action="DELETE", **self.mode.info)
-        
+
         if symbol == key.W:
             if self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
                                  action="WATERSHED", **self.mode.info)
-                                 
+
         if symbol == key.EQUAL:
             if self.mode.kind == "SELECTED":
                 if self.highlighted_cell_one < self.num_cells[self.feature]:
@@ -1633,7 +1633,7 @@ class ZStackReview:
             slices = '[' + ', '.join(["{}".format(a[0])
                                 if len(a) == 1 else "{}-{}".format(a[0], a[-1])
                                 for a in slices]) + ']'
-                                
+
             self.cell_info[self.feature][label].update({'slices' : slices})
 
             text = '\n'.join("{:10}{}".format(str(k)+':', self.cell_info[self.feature][label][k])
@@ -1667,12 +1667,12 @@ class ZStackReview:
                                             width=self.sidebar_width,
                                             multiline=True,
                                             x=5, y=self.window.height//2,
-                                            color=[255]*4)            
+                                            color=[255]*4)
             edit_label.draw()
-            
-            
+
+
             highlight_text = ""
-        
+
         else:
             edit_mode = "off"
             if self.highlight:
@@ -1684,7 +1684,7 @@ class ZStackReview:
                     highlight_text = "highlight: on"
             else:
                 highlight_text = "highlight: off"
-            
+
 
 
         frame_label = pyglet.text.Label("frame: {}\n".format(self.current_frame)
@@ -1701,7 +1701,7 @@ class ZStackReview:
 
         cell_info_label.draw()
         frame_label.draw()
-        
+
     def draw_current_frame(self):
         frame = self.get_current_frame()
 
@@ -1730,12 +1730,12 @@ class ZStackReview:
                                                         vmax = max(1,np.max(self.cell_ids[self.feature]) + self.adjustment[self.feature]),
                                                         cmap = cmap,
                                                         output = 'pyglet')
-            
+
             sprite = pyglet.sprite.Sprite(image, x=self.sidebar_width, y=0)
 
             sprite.update(scale_x=self.scale_factor,
                           scale_y=self.scale_factor)
-                          
+
             gl.glTexParameteri(gl.GL_TEXTURE_2D,
                                gl.GL_TEXTURE_MAG_FILTER,
                                gl.GL_NEAREST)
@@ -1751,11 +1751,11 @@ class ZStackReview:
 
             # get raw and annotated data
             current_raw = self.raw[self.current_frame,:,:,self.channel]
-            
+
             #try sobel filter here
             if self.sobel_on:
                 current_raw = filters.sobel(current_raw)
-            
+
             if self.adapthist_on:
                 current_raw = rescale_intensity(current_raw, in_range = 'image', out_range = 'float')
                 current_raw = equalize_adapthist(current_raw)
@@ -1778,7 +1778,7 @@ class ZStackReview:
                                                     vmax = None,
                                                     cmap = None,
                                                     output = 'pyglet')
-        
+
             composite_sprite = pyglet.sprite.Sprite(comp_img, x = self.sidebar_width, y=0)
             brush_sprite = pyglet.sprite.Sprite(brush_img, x=self.sidebar_width, y=0)
 
@@ -1786,18 +1786,18 @@ class ZStackReview:
 
             composite_sprite.update(scale_x=self.scale_factor,
                                     scale_y=self.scale_factor)
-            
+
             brush_sprite.update(scale_x=self.scale_factor,
                                     scale_y=self.scale_factor)
 
             composite_sprite.draw()
             brush_sprite.draw()
-            
+
             gl.glTexParameteri(gl.GL_TEXTURE_2D,
                                gl.GL_TEXTURE_MAG_FILTER,
                                gl.GL_NEAREST)
 
-            
+
     def action_new_single_cell(self):
         """
         Create new label in just one frame
@@ -1812,8 +1812,8 @@ class ZStackReview:
         # replace fields
         self.del_cell_info(feature = self.feature, del_label = old_label, frame = single_frame)
         self.add_cell_info(feature = self.feature, add_label = new_label, frame = single_frame)
-        
-    def action_new_cell_stack(self):          
+
+    def action_new_cell_stack(self):
         """
         Creates new cell label and replaces original label with it in all subsequent frames
         """
@@ -1822,19 +1822,19 @@ class ZStackReview:
 
         # replace frame labels
         for frame in self.annotated[start_frame:,:,:,self.feature]:
-            frame[frame == old_label] = new_label            
-            
+            frame[frame == old_label] = new_label
+
         for frame in range(self.annotated.shape[0]):
             if new_label in self.annotated[frame,:,:,self.feature]:
                 self.del_cell_info(feature = self.feature, del_label = old_label, frame = frame)
                 self.add_cell_info(feature = self.feature, add_label = new_label, frame = frame)
-    
+
     def action_replace_single(self):
         '''
         replaces label_2 with label_1, but only in the current frame
         '''
         label_1, label_2 = self.mode.label_1, self.mode.label_2
-        
+
         #replacing a label with itself crashes Caliban, not good
         if label_1 == label_2:
             pass
@@ -1845,14 +1845,14 @@ class ZStackReview:
             self.add_cell_info(feature = self.feature, add_label = label_1, frame = self.current_frame)
             self.del_cell_info(feature = self.feature, del_label = label_2, frame = self.current_frame)
 
-            
+
     def action_replace(self):
         """
         Replacing label_2 with label_1. Overwrites every label_2 in the npz
         with label_1 and updates cell_info accordingly.
         """
         label_1, label_2 = self.mode.label_1, self.mode.label_2
-        
+
         #replacing a label with itself crashes Caliban, not good
         if label_1 == label_2:
             pass
@@ -1866,35 +1866,35 @@ class ZStackReview:
                     self.add_cell_info(feature = self.feature, add_label = label_1, frame = frame)
                     self.del_cell_info(feature = self.feature, del_label = label_2, frame = frame)
 
-        
+
     def action_swap_all(self):
         label_1 = self.mode.label_1
         label_2 = self.mode.label_2
-        
+
         for frame in range(self.annotated.shape[0]):
             ann_img = self.annotated[frame,:,:,self.feature]
             ann_img = np.where(ann_img == label_1, -1, ann_img)
             ann_img = np.where(ann_img == label_2, label_1, ann_img)
             ann_img = np.where(ann_img == -1, label_2, ann_img)
             self.annotated[frame,:,:,self.feature] = ann_img
-            
+
         #update cell_info
         cell_info_1 = self.cell_info[self.feature][label_1].copy()
         cell_info_2 = self.cell_info[self.feature][label_2].copy()
         self.cell_info[self.feature][label_1].update({'frames': cell_info_2['frames']})
         self.cell_info[self.feature][label_2].update({'frames': cell_info_1['frames']})
-        
+
     def action_swap_single_frame(self):
         label_1 = self.mode.label_1
         label_2 = self.mode.label_2
-        
+
         frame = self.current_frame
-        
+
         ann_img = self.annotated[frame,:,:,self.feature]
         ann_img = np.where(ann_img == label_1, -1, ann_img)
         ann_img = np.where(ann_img == label_2, label_1, ann_img)
         ann_img = np.where(ann_img == -1, label_2, ann_img)
-        
+
         self.annotated[frame,:,:,self.feature] = ann_img
 
     def action_watershed(self):
@@ -1934,7 +1934,7 @@ class ZStackReview:
         # reintegrate subsection into original mask
         img_ann[minr:maxr, minc:maxc] = img_sub_ann
         self.annotated[self.current_frame,:,:,self.feature] = img_ann
-        
+
         #update cell_info dict only if new label was created with ws
         if np.any(np.isin(self.annotated[self.current_frame,:,:,self.feature], new_label)):
             self.add_cell_info(feature=self.feature, add_label=new_label, frame = self.current_frame)
@@ -1949,19 +1949,19 @@ class ZStackReview:
 
         # triangle threshold picked after trying a few on one dataset
         # may not be the best threshold approach for other datasets!
-        # pick two thresholds to use hysteresis thresholding strategy        
+        # pick two thresholds to use hysteresis thresholding strategy
         threshold = filters.threshold_triangle(image = predict_area)
         threshold_stringent = 1.10 * threshold
 
         # use a unique label for predction
         new_label = np.max(self.cell_ids[self.feature]) + 1
-        
+
         # try to keep stray pixels from appearing
         hyst = filters.apply_hysteresis_threshold(image = predict_area, low = threshold, high = threshold_stringent)
         ann_threshold = np.where(hyst, new_label, 0)
 
         # don't need to update cell_info unless an annotation has been added
-        if np.any(np.isin(ann_threshold, new_label)):     
+        if np.any(np.isin(ann_threshold, new_label)):
             self.add_cell_info(feature=self.feature, add_label=new_label, frame = self.current_frame)
 
         return ann_threshold
@@ -1985,16 +1985,16 @@ class ZStackReview:
         input_snake = np.array([np.concatenate((cc, cc)), np.concatenate((rr, rr))]).T
 
         # skimage docs recommend blurring input image, just blur a little
-        snake_predict = active_contour(image = filters.gaussian(self.raw[self.current_frame, :,:, self.channel], 0.3), 
+        snake_predict = active_contour(image = filters.gaussian(self.raw[self.current_frame, :,:, self.channel], 0.3),
             snake = input_snake,
-            alpha=0.01, 
-            beta=100, 
-            w_line=-5, 
-            w_edge=0, 
-            gamma=0.01, 
-            bc='fixed', 
-            max_px_move=0.15, 
-            max_iterations=1000, 
+            alpha=0.01,
+            beta=100,
+            w_line=-5,
+            w_edge=0,
+            gamma=0.01,
+            bc='fixed',
+            max_px_move=0.15,
+            max_iterations=1000,
             convergence=0.1)
 
         self.predict_coordinates = snake_predict.T.astype('int')
@@ -2003,18 +2003,18 @@ class ZStackReview:
         if not self.hide_annotations:
             self.helper_update_composite()
         self.draw_current_frame()
-        
+
     def action_delete_mask(self):
         '''
         remove selected annotation from frame, replacing with zeros
         '''
-        
+
         label = self.mode.label
         frame = self.current_frame
-        
+
         ann_img = self.annotated[frame,:,:,self.feature]
         ann_img = np.where(ann_img == label, 0, ann_img)
-        
+
         self.annotated[frame,:,:,self.feature] = ann_img
 
         self.del_cell_info(feature = self.feature, del_label = label, frame = frame)
@@ -2024,7 +2024,7 @@ class ZStackReview:
         fill a "hole" in a cell annotation with the cell label
         '''
         img_ann = self.annotated[self.current_frame,:,:,self.feature]
-        
+
         filled_img_ann = flood_fill(img_ann, self.hole_fill_seed, self.mode.label, connectivity = 1)
         self.annotated[self.current_frame,:,:,self.feature] = filled_img_ann
 
@@ -2060,7 +2060,7 @@ class ZStackReview:
 
         label = self.mode.label
         img_ann = self.annotated[self.current_frame,:,:,self.feature]
-        
+
         contig_cell = flood(image = img_ann, seed_point = self.hole_fill_seed)
 
         img_trimmed = np.where(np.logical_and(np.invert(contig_cell), img_ann == label), 0, img_ann)
@@ -2074,7 +2074,7 @@ class ZStackReview:
         predicts zstack relationship for current frame based on previous frame
         useful for finetuning corrections one frame at a time
         '''
-        
+
         annotated = self.annotated[:,:,:,self.feature]
         current_slice = self.current_frame
         if current_slice > 0:
@@ -2083,26 +2083,26 @@ class ZStackReview:
             next_img = self.annotated[current_slice,:,:,self.feature]
             updated_slice = predict_zstack_cell_ids(img, next_img)
             self.annotated[current_slice,:,:,self.feature] = updated_slice
-        
+
         #update cell_info
         self.create_cell_info(feature = self.feature)
-        
+
     def action_predict_zstack(self):
         '''
         use location of cells in image to predict which annotations are
         different slices of the same cell
         '''
-        
+
         annotated = self.annotated[:,:,:,self.feature]
-        
+
         for zslice in range(self.annotated.shape[0] -1):
             img = self.annotated[zslice,:,:,self.feature]
-            
+
             next_img = self.annotated[zslice + 1,:,:,self.feature]
             predicted_next = predict_zstack_cell_ids(img, next_img)
             self.annotated[zslice + 1,:,:,self.feature] = predicted_next
 
-        #remake cell_info dict based on new annotations            
+        #remake cell_info dict based on new annotations
         self.create_cell_info(feature = self.feature)
 
     def action_relabel_frame(self):
@@ -2166,7 +2166,7 @@ class ZStackReview:
         takes input array and does file processing (save with pyplot as temp file)
         creates and returns a pyglet image with that file loaded
         '''
-        
+
         img_file = BytesIO()
         plt.imsave(img_file, input_array,
                         vmax=vmax,
@@ -2230,11 +2230,11 @@ class ZStackReview:
 
         current_raw = self.raw[self.current_frame,:,:,self.channel]
         current_ann = self.annotated[self.current_frame,:,:,self.feature]
-        
+
         #try sobel filter here
         if self.sobel_on:
             current_raw = filters.sobel(current_raw)
-        
+
         if self.adapthist_on:
             current_raw = rescale_intensity(current_raw, in_range = 'image', out_range = 'float')
             current_raw = equalize_adapthist(current_raw)
@@ -2248,7 +2248,7 @@ class ZStackReview:
                     vmax = vmax,
                     cmap = 'gray',
                     output = 'array')
-        
+
         raw_RGB = raw_img[:,:,0:3]
 
         if self.invert:
@@ -2291,9 +2291,9 @@ class ZStackReview:
             self.cell_info[feature][add_label].update({'label': str(add_label)})
             self.cell_info[feature][add_label].update({'frames': [frame]})
             self.cell_info[feature][add_label].update({'slices': ''})
-            
+
             self.cell_ids[feature] = np.append(self.cell_ids[feature], add_label)
-            
+
             self.num_cells[feature] += 1
 
 
@@ -2309,10 +2309,10 @@ class ZStackReview:
         #if that was the last frame, delete the entry for that cell
         if self.cell_info[feature][del_label]['frames'] == []:
             del self.cell_info[feature][del_label]
-            
+
             #also remove from list of cell_ids
             ids = self.cell_ids[feature]
-            self.cell_ids[feature] = np.delete(ids, np.where(ids == np.int64(del_label)))        
+            self.cell_ids[feature] = np.delete(ids, np.where(ids == np.int64(del_label)))
 
 
     def create_cell_info(self, feature):
@@ -2327,8 +2327,8 @@ class ZStackReview:
         for cell in self.cell_ids[feature]:
             self.cell_info[feature][cell] = {}
             self.cell_info[feature][cell]['label'] = str(cell)
-            self.cell_info[feature][cell]['frames'] = [] 
-            
+            self.cell_info[feature][cell]['frames'] = []
+
             for frame in range(self.annotated.shape[0]):
                 if cell in annotated[frame,:,:]:
                     self.cell_info[feature][cell]['frames'].append(frame)
@@ -2558,7 +2558,7 @@ def load_trk(filename):
     lineage = {int(k): v for k, v in lineage.items()}
 
     return {"lineage": lineage, "raw": raw, "tracked": tracked}
-    
+
 def load_npz(filename):
     npz = np.load(filename)
     try:
@@ -2575,7 +2575,7 @@ def load_npz(filename):
             annotation_stack = npz[npz.files[1]]
             save_vars_mode = 2
     return {"raw": raw_stack, "annotated": annotation_stack, "save_vars_mode": save_vars_mode}
-    
+
 
 def review(filename):
     filetype = os.path.splitext(filename)[1]
@@ -2585,7 +2585,7 @@ def review(filename):
     if filetype == '.npz':
         zstack_review = ZStackReview(str(pathlib.Path(filename).with_suffix('')),
             **load_npz(filename))
-            
+
 
 
 if __name__ == "__main__":
