@@ -28,10 +28,7 @@ def upload_file(project_id):
     with conn:
 
         # Use id to grab appropriate TrackReview/ZStackReview object from database
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM {tn} WHERE {idf}={my_id}".\
-        format(tn="projects", idf="id", my_id=project_id))
-        id_exists = cur.fetchone()
+        id_exists = get_project(conn, project_id)
         state = pickle.loads(id_exists[2])
 
         # Call function in caliban.py to save data file and send to S3 bucket
@@ -64,12 +61,9 @@ def action(project_id, action_type):
         with conn:
 
             # Use id to grab appropriate TrackReview/ZStackReview object from database
-            cur = conn.cursor()
-            cur.execute("SELECT * FROM {tn} WHERE {idf}={my_id}".\
-            format(tn="projects", idf="id", my_id=project_id))
-            id_exists = cur.fetchone()
-            state = pickle.loads(id_exists[2])
+            id_exists = get_project(conn, project_id)
 
+            state = pickle.loads(id_exists[2])
             # Perform edit operation on the data file
             state.action(action_type, info)
 
@@ -92,10 +86,7 @@ def get_tracks(project_id):
     with conn:
 
         # Use id to grab appropriate TrackReview/ZStackReview object from database
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM {tn} WHERE {idf}={my_id}".\
-        format(tn="projects", idf="id", my_id=project_id))
-        id_exists = cur.fetchone()
+        id_exists = get_project(conn, project_id)
         state = pickle.loads(id_exists[2])
        
         return jsonify({
@@ -113,10 +104,8 @@ def get_frame(frame, project_id):
     with conn:
 
         # Use id to grab appropriate TrackReview/ZStackReview object from database
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM {tn} WHERE {idf}={my_id}".\
-        format(tn="projects", idf="id", my_id=project_id))
-        id_exists = cur.fetchone()
+        id_exists = get_project(conn, project_id)
+
         state = pickle.loads(id_exists[2])
 
         # Obtain raw, mask, and edit mode frames
@@ -283,13 +272,34 @@ def update_object(conn, project):
     cur.execute(sql, (project[0], sqlite3.Binary(state_data), project[2]))
     conn.commit()
 
-def delete_project(conn, id):
+
+def get_project(conn, project_id):
+    '''Fetches TrackReview/ZStackReview object from database by project_id.
+
+    Args:
+        conn (obj): SQL database connection.
+        project_id (int): The primary key of the projects table.
+
+    Returns:
+        tuple: all data columns matching the project_id.
+    '''
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM {tn} WHERE {idf}={my_id}".format(
+        tn="projects",
+        idf="id",
+        my_id=project_id
+    ))
+    return cur.fetchone()
+
+
+def delete_project(conn, project_id):
     ''' Delete data object (TrackReview/ZStackReview) by id.
     '''
     sql = 'DELETE FROM projects WHERE id=?'
     cur = conn.cursor()
-    cur.execute(sql, (id,))
+    cur.execute(sql, (project_id,))
     conn.commit()
+
 
 def main():
     ''' Runs application and initiates database file if it doesn't exist.
