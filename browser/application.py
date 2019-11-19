@@ -49,21 +49,15 @@ def upload_file(project_id):
 
 @application.route("/action/<project_id>/<action_type>", methods=["POST"])
 def action(project_id, action_type):
-    ''' Make an edit operation to the data file and update the object 
+    ''' Make an edit operation to the data file and update the object
         in the database.
     '''
-
     # obtain 'info' parameter data sent by .js script
-    info = {}
-    for k, v in request.values.to_dict().items():
-        info[k] = json.loads(v)
+    info = {k: json.loads(v) for k, v in request.values.to_dict().items()}
 
     try:
-
-        
         conn = create_connection(r"caliban.db")
         with conn:
-
             # Use id to grab appropriate TrackReview/ZStackReview object from database
             id_exists = get_project(conn, project_id)
             if id_exists is None:
@@ -83,6 +77,7 @@ def action(project_id, action_type):
     # Send status of operation to .js file
     return jsonify({"tracks_changed": True, "frames_changed": True})
 
+
 @application.route("/tracks/<project_id>")
 def get_tracks(project_id):
     ''' Send track metadata in string form to .js file to present cell info in
@@ -90,7 +85,6 @@ def get_tracks(project_id):
     '''
     conn = create_connection(r"caliban.db")
     with conn:
-
         # Use id to grab appropriate TrackReview/ZStackReview object from database
         id_exists = get_project(conn, project_id)
 
@@ -103,14 +97,12 @@ def get_tracks(project_id):
 
 @application.route("/frame/<frame>/<project_id>")
 def get_frame(frame, project_id):
-    ''' Serve modes of frames as pngs. Send pngs and color mappings of 
+    ''' Serve modes of frames as pngs. Send pngs and color mappings of
         cells to .js file.
     '''
-    
     frame = int(frame)
     conn = create_connection(r"caliban.db")
     with conn:
-
         # Use id to grab appropriate TrackReview/ZStackReview object from database
         id_exists = get_project(conn, project_id)
 
@@ -120,7 +112,7 @@ def get_frame(frame, project_id):
         state = pickle.loads(id_exists[2])
 
         # Obtain raw, mask, and edit mode frames
-        img = state.get_frame(frame, raw=False, edit_background =False)
+        img = state.get_frame(frame, raw=False, edit_background=False)
         raw = state.get_frame(frame, raw=True, edit_background=False)
         edit = state.get_frame(frame, raw=False, edit_background=True)
 
@@ -136,9 +128,10 @@ def get_frame(frame, project_id):
 
         return jsonify(payload)
 
+
 @application.route("/load/<filename>", methods=["POST"])
 def load(filename):
-    ''' Initate TrackReview/ZStackReview object and load object to database. 
+    ''' Initate TrackReview/ZStackReview object and load object to database.
         Send specific attributes of the object to the .js file.
     '''
 
@@ -149,11 +142,11 @@ def load(filename):
     folders = re.split('__', filename)
     filename = folders[len(folders) - 1]
     subfolders = folders[2:len(folders)]
-    
+
     subfolders = '/'.join(subfolders)
 
-    input_bucket = folders[0] 
-    output_bucket = folders[1] 
+    input_bucket = folders[0]
+    output_bucket = folders[1]
 
     if is_trk_file(filename):
         # Initate TrackReview object and entry in database
@@ -169,7 +162,7 @@ def load(filename):
             "tracks": track_review.readable_tracks,
             "dimensions": track_review.dimensions,
             "project_id": project_id
-            })
+        })
 
     if is_npz_file(filename):
         # Initate ZStackReview object and entry in database
@@ -188,11 +181,12 @@ def load(filename):
             "dimensions": zstack_review.dimensions,
             "project_id": project_id,
             "screen_scale": zstack_review.scale_factor
-            })
+        })
+
 
 @application.route('/', methods=['GET', 'POST'])
 def form():
-    ''' Request HTML landing page to be rendered if user requests for 
+    ''' Request HTML landing page to be rendered if user requests for
         http://127.0.0.1:5000/.
     '''
     return render_template('form.html')
@@ -200,10 +194,9 @@ def form():
 
 @application.route('/tool', methods=['GET', 'POST'])
 def tool():
-    ''' Request HTML caliban tool page to be rendered after user inputs 
+    ''' Request HTML caliban tool page to be rendered after user inputs
         filename in the landing page.
     '''
-
     filename = request.form['filename']
     print(f"{filename} is filename", file=sys.stderr)
 
@@ -219,9 +212,9 @@ def tool():
     return "error"
 
 @application.route('/<file>', methods=['GET', 'POST'])
-def shortcut(file):
-    ''' Request HTML caliban tool page to be rendered if user makes a URL 
-        request to access a specific data file that has been preloaded to the 
+def shortcut(filename):
+    ''' Request HTML caliban tool page to be rendered if user makes a URL
+        request to access a specific data file that has been preloaded to the
         input S3 bucket (ex. http://127.0.0.1:5000/test.npz).
     '''
 
@@ -230,20 +223,22 @@ def shortcut(file):
     if is_npz_file(filename):
         return render_template('index_zstack.html', filename=filename)
 
+    error = {
+        'error': 'invalid file extension: {}'.format(
+            os.path.splitext(filename)[-1])
 
     return "error"
 
 def create_connection(db_file):
-    ''' Create a database connection to a SQLite database. 
+    ''' Create a database connection to a SQLite database.
     '''
     conn = None
     try:
         conn = sqlite3.connect(db_file)
-       
     except Error as e:
         print(e)
-
     return conn
+
 
 def create_table(conn, create_table_sql):
     ''' Create a table from the create_table_sql statement.
@@ -268,17 +263,18 @@ def create_project(conn, project):
     cur.execute(sql, (project[0], sqlite3.Binary(state_data)))
     return cur.lastrowid
 
+
 def update_object(conn, project):
     ''' Update filename, state of a project.
     '''
     sql = ''' UPDATE projects
               SET filename = ? ,
-                  state = ? 
+                  state = ?
               WHERE id = ?'''
 
     # convert object to binary data to be stored as data type BLOB
     state_data = pickle.dumps(project[1], pickle.HIGHEST_PROTOCOL)
-  
+
     cur = conn.cursor()
     cur.execute(sql, (project[0], sqlite3.Binary(state_data), project[2]))
     conn.commit()
@@ -316,13 +312,14 @@ def main():
     ''' Runs application and initiates database file if it doesn't exist.
     '''
     conn = create_connection(r"caliban.db")
-    sql_create_projects_table = """ CREATE TABLE IF NOT EXISTS projects (
-
-                                        id integer PRIMARY KEY,
-                                        filename text NOT NULL,
-                                        state blob NOT NULL); """
+    sql_create_projects_table = """
+        CREATE TABLE IF NOT EXISTS projects (
+            id integer PRIMARY KEY,
+            filename text NOT NULL,
+            state blob NOT NULL);
+    """
     create_table(conn, sql_create_projects_table)
-    conn.commit()    
+    conn.commit()
     conn.close()
 
     application.jinja_env.auto_reload = True

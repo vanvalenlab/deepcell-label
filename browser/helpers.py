@@ -68,4 +68,4 @@ def upload_file_to_s3(file, bucket_name, acl="public-read"):
         print("Something Happened: ", e)
         return e
 
-    return "{}{}".format(S3_BUCKET, file.filename)
+    return "{}{}".format(S3_BUCKET, filename.filename)
