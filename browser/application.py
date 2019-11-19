@@ -175,6 +175,13 @@ def load(filename):
             "screen_scale": zstack_review.scale_factor
         })
 
+    conn.close()
+    error = {
+        'error': 'invalid file extension: {}'.format(
+            os.path.splitext(filename)[-1])
+    }
+    return jsonify(error), 400
+
 
 @app.route('/', methods=['GET', 'POST'])
 def form():
