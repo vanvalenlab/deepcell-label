@@ -131,6 +131,9 @@ def get_frame(frame, project_id):
 
         # Obtain color map of the cells
         edit_arr = state.get_array(frame)
+
+        encode = lambda x: base64.encodebytes(x.read()).decode()
+
         payload = {
             'raw': f'data:image/png;base64,{encode(raw)}',
             'segmented': f'data:image/png;base64,{encode(img)}',
