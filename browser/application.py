@@ -256,8 +256,8 @@ def create_table(conn, create_table_sql):
     ''' Create a table from the create_table_sql statement.
     '''
     try:
-        c = conn.cursor()
-        c.execute(create_table_sql)
+        cursor = conn.cursor()
+        cursor.execute(create_table_sql)
     except sqlite3.Error as err:
         print(err)
 
