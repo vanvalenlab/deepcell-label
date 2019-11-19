@@ -1,19 +1,18 @@
-from caliban import TrackReview, ZStackReview
-from flask import Flask, jsonify, render_template, request, redirect, url_for
-import sys
+"""Flask application route handlers"""
+
 import base64
-import copy
-import os
-import numpy as np
-import traceback
-import boto3, botocore
-from werkzeug.utils import secure_filename
-import sqlite3
-from sqlite3 import Error
-import pickle
 import json
+import os
+import pickle
 import re
+import sqlite3
+import traceback
+
+from flask import Flask, jsonify, render_template, request, redirect, url_for
+from werkzeug.utils import secure_filename
+
 from caliban.helpers import is_trk_file, is_npz_file
+from caliban import TrackReview, ZStackReview
 
 # Create and configure the app
 application = Flask(__name__)
