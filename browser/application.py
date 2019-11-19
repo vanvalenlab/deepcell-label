@@ -1,4 +1,4 @@
-"""Flask application route handlers"""
+"""Flask app route handlers"""
 
 import base64
 import json
@@ -16,11 +16,11 @@ from caliban.helpers import is_trk_file, is_npz_file
 from caliban import TrackReview, ZStackReview
 
 # Create and configure the app
-application = Flask(__name__)
-application.config.from_object("config")
+app = Flask(__name__)  # pylint: disable=C0103
+app.config.from_object("config")
 
 
-@application.route("/upload_file/<project_id>", methods=["GET", "POST"])
+@app.route("/upload_file/<project_id>", methods=["GET", "POST"])
 def upload_file(project_id):
     ''' Upload .trk/.npz data file to AWS S3 bucket.
     '''
@@ -47,7 +47,7 @@ def upload_file(project_id):
     return redirect("/")
 
 
-@application.route("/action/<project_id>/<action_type>", methods=["POST"])
+@app.route("/action/<project_id>/<action_type>", methods=["POST"])
 def action(project_id, action_type):
     ''' Make an edit operation to the data file and update the object
         in the database.
@@ -78,7 +78,7 @@ def action(project_id, action_type):
     return jsonify({"tracks_changed": True, "frames_changed": True})
 
 
-@application.route("/tracks/<project_id>")
+@app.route("/tracks/<project_id>")
 def get_tracks(project_id):
     ''' Send track metadata in string form to .js file to present cell info in
         the browser.
@@ -95,7 +95,7 @@ def get_tracks(project_id):
     return jsonify({"tracks": state.readable_tracks})
 
 
-@application.route("/frame/<frame>/<project_id>")
+@app.route("/frame/<frame>/<project_id>")
 def get_frame(frame, project_id):
     ''' Serve modes of frames as pngs. Send pngs and color mappings of
         cells to .js file.
@@ -131,7 +131,7 @@ def get_frame(frame, project_id):
         return jsonify(payload)
 
 
-@application.route("/load/<filename>", methods=["POST"])
+@app.route("/load/<filename>", methods=["POST"])
 def load(filename):
     ''' Initate TrackReview/ZStackReview object and load object to database.
         Send specific attributes of the object to the .js file.
@@ -184,7 +184,7 @@ def load(filename):
         })
 
 
-@application.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST'])
 def form():
     ''' Request HTML landing page to be rendered if user requests for
         http://127.0.0.1:5000/.
@@ -192,7 +192,7 @@ def form():
     return render_template('form.html')
 
 
-@application.route('/tool', methods=['GET', 'POST'])
+@app.route('/tool', methods=['GET', 'POST'])
 def tool():
     ''' Request HTML caliban tool page to be rendered after user inputs
         filename in the landing page.
@@ -215,7 +215,7 @@ def tool():
     return jsonify(error), 400
 
 
-@application.route('/<file>', methods=['GET', 'POST'])
+@app.route('/<file>', methods=['GET', 'POST'])
 def shortcut(filename):
     ''' Request HTML caliban tool page to be rendered if user makes a URL
         request to access a specific data file that has been preloaded to the
@@ -314,7 +314,7 @@ def delete_project(conn, project_id):
 
 
 def main():
-    ''' Runs application and initiates database file if it doesn't exist.
+    ''' Runs app and initiates database file if it doesn't exist.
     '''
     conn = create_connection(r"caliban.db")
     sql_create_projects_table = """
@@ -328,9 +328,9 @@ def main():
     conn.commit()
     conn.close()
 
-    application.jinja_env.auto_reload = True
-    application.config['TEMPLATES_AUTO_RELOAD'] = True
-    application.run('0.0.0.0', port=5000)
+    app.jinja_env.auto_reload = True
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
+    app.run('0.0.0.0', port=5000)
 
 if __name__ == "__main__":
     main()
