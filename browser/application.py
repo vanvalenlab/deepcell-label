@@ -23,10 +23,7 @@ app.config.from_object("config")
 def upload_file(project_id):
     ''' Upload .trk/.npz data file to AWS S3 bucket.
     '''
-
-    conn = create_connection(r"caliban.db")
-    with conn:
-
+    with create_connection("caliban.db") as conn:
         # Use id to grab appropriate TrackReview/ZStackReview object from database
         id_exists = get_project(conn, project_id)
         if id_exists is None:
@@ -55,8 +52,7 @@ def action(project_id, action_type):
     info = {k: json.loads(v) for k, v in request.values.to_dict().items()}
 
     try:
-        conn = create_connection(r"caliban.db")
-        with conn:
+        with create_connection("caliban.db") as conn:
             # Use id to grab appropriate TrackReview/ZStackReview object from database
             id_exists = get_project(conn, project_id)
             if id_exists is None:
@@ -82,8 +78,7 @@ def get_tracks(project_id):
     ''' Send track metadata in string form to .js file to present cell info in
         the browser.
     '''
-    conn = create_connection(r"caliban.db")
-    with conn:
+    with create_connection("caliban.db") as conn:
         # Use id to grab appropriate TrackReview/ZStackReview object from database
         id_exists = get_project(conn, project_id)
 
@@ -100,8 +95,7 @@ def get_frame(frame, project_id):
         cells to .js file.
     '''
     frame = int(frame)
-    conn = create_connection(r"caliban.db")
-    with conn:
+    with create_connection("caliban.db") as conn:
         # Use id to grab appropriate TrackReview/ZStackReview object from database
         id_exists = get_project(conn, project_id)
 
@@ -135,10 +129,9 @@ def load(filename):
     ''' Initate TrackReview/ZStackReview object and load object to database.
         Send specific attributes of the object to the .js file.
     '''
+    conn = create_connection("caliban.db")
 
-    conn = create_connection(r"caliban.db")
     print(f"Loading track at {filename}", file=sys.stderr)
-
 
     folders = re.split('__', filename)
     filename = folders[len(folders) - 1]
@@ -315,17 +308,17 @@ def delete_project(conn, project_id):
 def main():
     ''' Runs app and initiates database file if it doesn't exist.
     '''
-    conn = create_connection(r"caliban.db")
-    sql_create_projects_table = """
-        CREATE TABLE IF NOT EXISTS projects (
-            id integer PRIMARY KEY,
-            filename text NOT NULL,
-            state blob NOT NULL
-        );
-    """
-    create_table(conn, sql_create_projects_table)
-    conn.commit()
-    conn.close()
+    with create_connection("caliban.db") as conn:
+        sql_create_projects_table = """
+            CREATE TABLE IF NOT EXISTS projects (
+                id integer PRIMARY KEY,
+                filename text NOT NULL,
+                state blob NOT NULL
+            );
+        """
+        create_table(conn, sql_create_projects_table)
+        conn.commit()
+        conn.close()
 
     app.jinja_env.auto_reload = True
     app.config['TEMPLATES_AUTO_RELOAD'] = True
