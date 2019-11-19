@@ -6,6 +6,7 @@ import os
 import pickle
 import re
 import sqlite3
+import sys
 import traceback
 
 from flask import Flask, jsonify, render_template, request, redirect, url_for
@@ -29,6 +30,9 @@ def upload_file(project_id):
 
         # Use id to grab appropriate TrackReview/ZStackReview object from database
         id_exists = get_project(conn, project_id)
+        if id_exists is None:
+            return jsonify({'error': 'project_id not found'}), 404
+
         state = pickle.loads(id_exists[2])
 
         # Call function in caliban.py to save data file and send to S3 bucket
@@ -58,6 +62,8 @@ def action(project_id, action_type, frame):
         with conn:
             # Use id to grab appropriate TrackReview/ZStackReview object from database
             id_exists = get_project(conn, project_id)
+            if id_exists is None:
+                return jsonify({'error': 'project_id not found'}), 404
 
             state = pickle.loads(id_exists[2])
             # Perform edit operation on the data file
@@ -107,6 +113,9 @@ def get_frame(frame, project_id):
     with conn:
         # Use id to grab appropriate TrackReview/ZStackReview object from database
         id_exists = get_project(conn, project_id)
+        if id_exists is None:
+            return jsonify({'error': 'project_id not found'}), 404
+
         if id_exists is None:
             return jsonify({'error': 'project_id not found'}), 404
 
