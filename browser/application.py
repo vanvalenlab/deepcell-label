@@ -77,7 +77,7 @@ def action(project_id, action_type, frame):
 
     except Exception as e:
         traceback.print_exc()
-        return jsonify({"error": str(e)})
+        return jsonify({"error": str(e)}), 500
 
     if info_changed:
         tracks = state.readable_tracks
@@ -217,7 +217,11 @@ def tool():
     if is_npz_file(new_filename):
         return render_template('index_zstack.html', filename=new_filename)
 
-    return "error"
+    error = {
+        'error': 'invalid file extension: {}'.format(
+            os.path.splitext(filename)[-1])
+    }
+    return jsonify(error), 400
 
 
 @application.route('/<filename>', methods=['GET', 'POST'])
@@ -235,8 +239,9 @@ def shortcut(filename):
     error = {
         'error': 'invalid file extension: {}'.format(
             os.path.splitext(filename)[-1])
+    }
+    return jsonify(error), 400
 
-    return "error"
 
 def create_connection(db_file):
     ''' Create a database connection to a SQLite database.
