@@ -9,14 +9,17 @@ import sqlite3
 import sys
 import traceback
 
+import MySQLdb
+
 from flask import Flask, jsonify, render_template, request, redirect
 
 from helpers import is_trk_file, is_npz_file
 from caliban import TrackReview, ZStackReview
+import config
 
 # Create and configure the app
 app = Flask(__name__)  # pylint: disable=C0103
-app.config.from_object("config")
+app.config.from_object("config")  # TODO: did this break by adding new env vars?
 
 
 @app.route("/upload_file/<project_id>", methods=["GET", "POST"])
@@ -233,13 +236,20 @@ def shortcut(filename):
     return jsonify(error), 400
 
 
-def create_connection(db_file):
+def create_connection(_):
     ''' Create a database connection to a SQLite database.
     '''
     conn = None
     try:
-        conn = sqlite3.connect(db_file)
-    except sqlite3.Error as err:
+        conn = MySQLdb.connect(
+            user=config.MYSQL_USERNAME,
+            host=config.MYSQL_HOSTNAME,
+            port=config.MYSQL_PORT,
+            passwd=config.MYSQL_PASSWORD,
+            db=config.MYSQL_DATABASE,
+            charset='utf8',
+            use_unicode=True)
+    except MySQLdb._exceptions.MySQLError as err:
         print(err)
     return conn
 
@@ -250,7 +260,7 @@ def create_table(conn, create_table_sql):
     try:
         cursor = conn.cursor()
         cursor.execute(create_table_sql)
-    except sqlite3.Error as err:
+    except MySQLdb._exceptions.MySQLError as err:
         print(err)
 
 
