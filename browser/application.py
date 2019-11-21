@@ -18,7 +18,8 @@ from caliban import TrackReview, ZStackReview
 import config
 
 # Create and configure the app
-app = Flask(__name__)  # pylint: disable=C0103
+application = Flask(__name__)  # pylint: disable=C0103
+app = application
 app.config.from_object("config")  # TODO: did this break by adding new env vars?
 
 
