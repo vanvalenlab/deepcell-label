@@ -23,22 +23,25 @@ app.config.from_object("config")
 def upload_file(project_id):
     ''' Upload .trk/.npz data file to AWS S3 bucket.
     '''
-    with create_connection("caliban.db") as conn:
-        # Use id to grab appropriate TrackReview/ZStackReview object from database
-        id_exists = get_project(conn, project_id)
-        if id_exists is None:
-            return jsonify({'error': 'project_id not found'}), 404
+    conn = create_connection("caliban.db")
+    # Use id to grab appropriate TrackReview/ZStackReview object from database
+    id_exists = get_project(conn, project_id)
 
-        state = pickle.loads(id_exists[2])
+    if id_exists is None:
+        conn.close()
+        return jsonify({'error': 'project_id not found'}), 404
 
-        # Call function in caliban.py to save data file and send to S3 bucket
-        if is_trk_file(id_exists[1]):
-            state.action_save_track()
-        elif is_npz_file(id_exists[1]):
-            state.action_save_zstack()
+    state = pickle.loads(id_exists[2])
 
-        # Delete id and object from database
-        delete_project(conn, project_id)
+    # Call function in caliban.py to save data file and send to S3 bucket
+    if is_trk_file(id_exists[1]):
+        state.action_save_track()
+    elif is_npz_file(id_exists[1]):
+        state.action_save_zstack()
+
+    # Delete id and object from database
+    delete_project(conn, project_id)
+    conn.close()
 
     return redirect("/")
 
@@ -53,22 +56,25 @@ def action(project_id, action_type, frame):
     frame = int(frame)
 
     try:
-        with create_connection("caliban.db") as conn:
-            # Use id to grab appropriate TrackReview/ZStackReview object from database
-            id_exists = get_project(conn, project_id)
-            if id_exists is None:
-                return jsonify({'error': 'project_id not found'}), 404
+        conn = create_connection("caliban.db")
+        # Use id to grab appropriate TrackReview/ZStackReview object from database
+        id_exists = get_project(conn, project_id)
 
-            state = pickle.loads(id_exists[2])
-            # Perform edit operation on the data file
-            state.action(action_type, info)
-            frames_changed = state.frames_changed
-            info_changed = state.info_changed
+        if id_exists is None:
+            conn.close()
+            return jsonify({'error': 'project_id not found'}), 404
 
-            state.frames_changed = state.info_changed = False
+        state = pickle.loads(id_exists[2])
+        # Perform edit operation on the data file
+        state.action(action_type, info)
+        frames_changed = state.frames_changed
+        info_changed = state.info_changed
 
-            # Update object in local database
-            update_object(conn, (id_exists[1], state, project_id))
+        state.frames_changed = state.info_changed = False
+
+        # Update object in local database
+        update_object(conn, (id_exists[1], state, project_id))
+        conn.close()
 
     except Exception as e:
         traceback.print_exc()
@@ -102,33 +108,32 @@ def get_frame(frame, project_id):
         cells to .js file.
     '''
     frame = int(frame)
-    with create_connection("caliban.db") as conn:
-        # Use id to grab appropriate TrackReview/ZStackReview object from database
-        id_exists = get_project(conn, project_id)
-        if id_exists is None:
-            return jsonify({'error': 'project_id not found'}), 404
+    conn = create_connection("caliban.db")
+    # Use id to grab appropriate TrackReview/ZStackReview object from database
+    id_exists = get_project(conn, project_id)
+    conn.close()
 
-        if id_exists is None:
-            return jsonify({'error': 'project_id not found'}), 404
+    if id_exists is None:
+        return jsonify({'error': 'project_id not found'}), 404
 
-        state = pickle.loads(id_exists[2])
+    state = pickle.loads(id_exists[2])
 
-        # Obtain raw, mask, and edit mode frames
-        img = state.get_frame(frame, raw=False)
-        raw = state.get_frame(frame, raw=True)
+    # Obtain raw, mask, and edit mode frames
+    img = state.get_frame(frame, raw=False)
+    raw = state.get_frame(frame, raw=True)
 
-        # Obtain color map of the cells
-        edit_arr = state.get_array(frame)
+    # Obtain color map of the cells
+    edit_arr = state.get_array(frame)
 
-        encode = lambda x: base64.encodebytes(x.read()).decode()
+    encode = lambda x: base64.encodebytes(x.read()).decode()
 
-        payload = {
-            'raw': f'data:image/png;base64,{encode(raw)}',
-            'segmented': f'data:image/png;base64,{encode(img)}',
-            'seg_arr': edit_arr.tolist()
-        }
+    payload = {
+        'raw': f'data:image/png;base64,{encode(raw)}',
+        'segmented': f'data:image/png;base64,{encode(img)}',
+        'seg_arr': edit_arr.tolist()
+    }
 
-        return jsonify(payload)
+    return jsonify(payload)
 
 
 @app.route("/load/<filename>", methods=["POST"])
@@ -323,17 +328,17 @@ def delete_project(conn, project_id):
 def main():
     ''' Runs app and initiates database file if it doesn't exist.
     '''
-    with create_connection("caliban.db") as conn:
-        sql_create_projects_table = """
-            CREATE TABLE IF NOT EXISTS projects (
-                id integer PRIMARY KEY,
-                filename text NOT NULL,
-                state blob NOT NULL
-            );
-        """
-        create_table(conn, sql_create_projects_table)
-        conn.commit()
-        conn.close()
+    conn = create_connection("caliban.db")
+    sql_create_projects_table = """
+        CREATE TABLE IF NOT EXISTS projects (
+            id integer PRIMARY KEY,
+            filename text NOT NULL,
+            state blob NOT NULL
+        );
+    """
+    create_table(conn, sql_create_projects_table)
+    conn.commit()
+    conn.close()
 
     app.jinja_env.auto_reload = True
     app.config['TEMPLATES_AUTO_RELOAD'] = True
