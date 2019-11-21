@@ -5,7 +5,6 @@ import json
 import os
 import pickle
 import re
-import sqlite3
 import sys
 import traceback
 
@@ -212,7 +211,7 @@ def tool():
     print(f"{filename} is filename", file=sys.stderr)
 
     new_filename = 'caliban-input__caliban-output__test__{}'.format(
-        str(filename).lower())
+        str(filename))
 
     if is_trk_file(new_filename):
         return render_template('index_track.html', filename=new_filename)
@@ -226,7 +225,7 @@ def tool():
     return jsonify(error), 400
 
 
-@app.route('/<file>', methods=['GET', 'POST'])
+@app.route('/<filename>', methods=['GET', 'POST'])
 def shortcut(filename):
     ''' Request HTML caliban tool page to be rendered if user makes a URL
         request to access a specific data file that has been preloaded to the
@@ -277,13 +276,13 @@ def create_project(conn, filename, data):
     ''' Create a new project in the database table.
     '''
     sql = ''' INSERT INTO projects(filename, state)
-              VALUES(?, ?) '''
+              VALUES(%s, %s) '''
     cursor = conn.cursor()
 
     # convert object to binary data to be stored as data type BLOB
     state_data = pickle.dumps(data, pickle.HIGHEST_PROTOCOL)
 
-    cursor.execute(sql, (filename, sqlite3.Binary(state_data)))
+    cursor.execute(sql, (filename, state_data))
     return cursor.lastrowid
 
 
@@ -291,15 +290,15 @@ def update_object(conn, project):
     ''' Update filename, state of a project.
     '''
     sql = ''' UPDATE projects
-              SET filename = ? ,
-                  state = ?
-              WHERE id = ?'''
+              SET filename = %s ,
+                  state = %s
+              WHERE id = %s'''
 
     # convert object to binary data to be stored as data type BLOB
     state_data = pickle.dumps(project[1], pickle.HIGHEST_PROTOCOL)
 
     cur = conn.cursor()
-    cur.execute(sql, (project[0], sqlite3.Binary(state_data), project[2]))
+    cur.execute(sql, (project[0], state_data, project[2]))
     conn.commit()
 
 
@@ -325,7 +324,7 @@ def get_project(conn, project_id):
 def delete_project(conn, project_id):
     ''' Delete data object (TrackReview/ZStackReview) by id.
     '''
-    sql = 'DELETE FROM projects WHERE id=?'
+    sql = 'DELETE FROM projects WHERE id=%s'
     cur = conn.cursor()
     cur.execute(sql, (project_id,))
     conn.commit()
@@ -337,9 +336,9 @@ def main():
     conn = create_connection("caliban.db")
     sql_create_projects_table = """
         CREATE TABLE IF NOT EXISTS projects (
-            id integer PRIMARY KEY,
+            id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
             filename text NOT NULL,
-            state blob NOT NULL
+            state longblob NOT NULL
         );
     """
     create_table(conn, sql_create_projects_table)
