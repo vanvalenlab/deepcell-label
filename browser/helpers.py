@@ -2,7 +2,7 @@ import os
 
 import boto3
 
-from config import S3_KEY, S3_SECRET, S3_BUCKET
+from config import S3_KEY, S3_SECRET
 
 
 ALLOWED_EXTENSIONS = set([
@@ -68,4 +68,4 @@ def upload_file_to_s3(file, bucket_name, acl="public-read"):
         print("Something Happened: ", e)
         return e
 
-    return "{}{}".format(S3_BUCKET, filename.filename)
+    return "{}{}".format(bucket_name, filename.filename)

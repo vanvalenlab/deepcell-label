@@ -20,6 +20,7 @@ post==2019.4.13
 public==2019.4.13
 pyparsing==2.4.0
 python-dateutil==2.8.0
+python-decouple==3.1
 query-string==2019.4.13
 request==2019.4.13
 s3transfer==0.2.1

@@ -26,10 +26,6 @@ from skimage.exposure import rescale_intensity
 
 from config import S3_KEY, S3_SECRET
 
-# S3_KEY =''
-# S3_SECRET =''
-S3_BUCKET = 'caliban-output'
-
 # Connect to the s3 service
 s3 = boto3.client(
     "s3",
