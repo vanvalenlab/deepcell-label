@@ -17,7 +17,7 @@ class Mode {
     this.highlighted_cells = {}
     this.highlighted_cell_one = -1;
     this.highlighted_cell_two = -1;
-    this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
+    this.highlighted_cells = {"cell_one":this.highlighted_cell_one,
                               "cell_two": this.highlighted_cell_two};
     action("change_selected_cells", this.highlighted_cells);
     this.action = "";
@@ -80,7 +80,7 @@ class Mode {
     if (this.kind == Modes.single) {
       if (key === "f") {
         if (current_label != 0) {
-          this.info = { "label": current_label, 
+          this.info = { "label": current_label,
                       "frame": current_frame,
                       "x_location": mouse_x,
                       "y_location": mouse_y };
@@ -99,14 +99,14 @@ class Mode {
 
       } else if (key === "=") {
         this.update_highlighted_cells(-1, 1)
-        this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
+        this.highlighted_cells = {"cell_one":this.highlighted_cell_one,
                                   "cell_two": this.highlighted_cell_two};
 
         action("change_selected_cells", this.highlighted_cells);
-        
+
       } else if (key === "-") {
         this.update_highlighted_cells(1, -1)
-        this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
+        this.highlighted_cells = {"cell_one":this.highlighted_cell_one,
                                   "cell_two": this.highlighted_cell_two};
 
         action("change_selected_cells", this.highlighted_cells);
@@ -114,7 +114,7 @@ class Mode {
         this.kind = Modes.question;
         this.action = "delete_cell";
         this.prompt = "delete label " + this.info.label + " in frame " + this.info.frame + "? " + answer;
-      } 
+      }
     } else if (this.kind == Modes.multiple) {
       if (key === "r") {
         this.kind = Modes.question;
@@ -134,12 +134,12 @@ class Mode {
         this.prompt = "Perform watershed to split " + this.info.label_1 + "? " + answer;
       } else if (key === "=") {
         this.update_highlighted_cells(-1, 1)
-        this.highlighted_cells = {"cell_one": this.highlighted_cell_one, 
+        this.highlighted_cells = {"cell_one": this.highlighted_cell_one,
                                   "cell_two": this.highlighted_cell_two};
         action("change_selected_cells", this.highlighted_cells);
       } else if (key === "-") {
         this.update_highlighted_cells(1, -1)
-        this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
+        this.highlighted_cells = {"cell_one":this.highlighted_cell_one,
                                   "cell_two": this.highlighted_cell_two};
         action("change_selected_cells", this.highlighted_cells);
       }
@@ -169,7 +169,7 @@ class Mode {
   }
 
   handle_draw(mouse_x, mouse_y) {
-    action("handle_draw", { "x": mouse_x, 
+    action("handle_draw", { "x": mouse_x,
                   "y": mouse_y,
                   "frame": current_frame});
     this.clear()
@@ -190,8 +190,8 @@ class Mode {
         } else {
           this.highlighted_cell_one = num_tracks;
         }
-      }  
-    } 
+      }
+    }
     if (this.kind === Modes.single) {
       this.info.label = this.highlighted_cell_one;
     } else if (this.kind === Modes.multiple) {
@@ -203,7 +203,7 @@ class Mode {
   click() {
     if (this.kind === Modes.question) {
       if(this.action == "fill_hole" && current_label == 0) {
-        this.info = { "label": current_label, 
+        this.info = { "label": current_label,
                       "frame": current_frame,
                       "x_location": mouse_x,
                       "y_location": mouse_y };
@@ -213,18 +213,18 @@ class Mode {
     } else if (current_label === 0) {
       this.highlighted_cell_one = -1;
       this.highlighted_cell_two = -1;
-      this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
+      this.highlighted_cells = {"cell_one":this.highlighted_cell_one,
                                 "cell_two":this.highlighted_cell_two};
       action("change_selected_cells", this.highlighted_cells);
       this.clear();
       return;
     } else if (this.kind === Modes.none) {
       this.kind = Modes.single;
-      this.info = {"label": current_label, 
+      this.info = {"label": current_label,
                   "frame": current_frame};
       this.highlighted_cell_one = current_label;
       this.highlighted_cell_two = -1;
-      this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
+      this.highlighted_cells = {"cell_one":this.highlighted_cell_one,
                                 "cell_two": this.highlighted_cell_two};
       action("change_selected_cells", this.highlighted_cells);
       temp_x = mouse_x;
@@ -235,43 +235,43 @@ class Mode {
 
       this.highlighted_cell_one = this.info.label;
       this.highlighted_cell_two = current_label;
-      this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
+      this.highlighted_cells = {"cell_one":this.highlighted_cell_one,
                                 "cell_two": this.highlighted_cell_two};
       action("change_selected_cells", this.highlighted_cells);
 
       if (this.info.label == current_label) {
-        this.info = {"label_1": this.info.label, 
-                    "label_2": current_label, 
-                    "frame": current_frame, 
-                    "x1_location": temp_x, 
-                    "y1_location": temp_y, 
-                    "x2_location": mouse_x, 
+        this.info = {"label_1": this.info.label,
+                    "label_2": current_label,
+                    "frame": current_frame,
+                    "x1_location": temp_x,
+                    "y1_location": temp_y,
+                    "x2_location": mouse_x,
                     "y2_location": mouse_y};
       } else {
-        this.info = {"label_1": this.info.label, 
-                    "frame_1": this.info.frame, 
-                    "label_2": current_label, 
+        this.info = {"label_1": this.info.label,
+                    "frame_1": this.info.frame,
+                    "label_2": current_label,
                     "frame_2": current_frame};
       }
     } else if (this.kind  === Modes.multiple) {
       this.highlighted_cell_one = this.info.label_1;
       this.highlighted_cell_two = current_label;
-      this.highlighted_cells = {"cell_one":this.highlighted_cell_one, 
+      this.highlighted_cells = {"cell_one":this.highlighted_cell_one,
                                 "cell_two": this.highlighted_cell_two};
       action("change_selected_cells", this.highlighted_cells);
 
       if (this.info.label_1 == current_label) {
-        this.info = {"label_1": this.info.label_1, 
-                    "label_2": current_label, 
-                    "frame": current_frame, 
-                    "x1_location": temp_x, 
-                    "y1_location": temp_y, 
-                    "x2_location": mouse_x, 
+        this.info = {"label_1": this.info.label_1,
+                    "label_2": current_label,
+                    "frame": current_frame,
+                    "x1_location": temp_x,
+                    "y1_location": temp_y,
+                    "x2_location": mouse_x,
                     "y2_location": mouse_y};
       } else {
-        this.info = {"label_1": this.info.label_1, 
-                    "frame_1": this.info.frame_1, 
-                    "label_2": current_label, 
+        this.info = {"label_1": this.info.label_1,
+                    "frame_1": this.info.frame_1,
+                    "label_2": current_label,
                     "frame_2": current_frame};
       }
     }
@@ -374,7 +374,7 @@ function render_log() {
   }
 
   if (edit_mode == true) {
- 
+
     $('#edit_mode').html("ON");
     $('#edit_brush').text("brush size: " + brush_size);
     $('#edit_label').text("editing label: " + edit_value);
@@ -390,8 +390,8 @@ function render_log() {
     $('#edit_brush').text("");
     $('#edit_label').text("");
     $('#edit_erase').text("");
-   
-    
+
+
   }
 
   if (current_label !== 0) {
@@ -426,8 +426,8 @@ function render_frame() {
     ctx.putImageData(image_data, 0, 0);
   } else if (rendering_edit) {
     // add opacity
-    
-    
+
+
     ctx.drawImage(edit_image, 0, 0, dimensions[0], dimensions[1]);
     ctx.save();
     ctx.globalAlpha = 0.1;
@@ -514,7 +514,7 @@ function prepare_canvas() {
     render_log();
   });
   $('#canvas').mousedown(function(evt) {
-    last_mousex = mouse_x 
+    last_mousex = mouse_x
     last_mousey = mouse_y
     mousedown = true;
   });
@@ -534,7 +534,7 @@ function prepare_canvas() {
     }
       last_mousex = mousex;
       last_mousey = mousey;
-      
+
   });
 
   window.addEventListener('keydown', function(evt) {
