@@ -553,6 +553,8 @@ class TrackReview:
         self.output_bucket = output_bucket
         self.subfolders = subfolders
         self.trial = self.load(filename)
+        self.raw = self.trial["raw"]
+        self.tracked = self.trial["tracked"]
 
         # lineages is a list of dictionaries. There should be only a single one
         # when using a .trk file
