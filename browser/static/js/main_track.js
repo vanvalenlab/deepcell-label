@@ -310,7 +310,6 @@ var current_frame = 0;
 var current_label = 0;
 var current_highlight = false;
 var max_frames = undefined;
-var current_cmap = undefined;
 var dimensions = undefined;
 var tracks = undefined;
 var num_tracks = 0;
@@ -318,6 +317,7 @@ var mode = new Mode(Modes.none, {});
 var raw_image = undefined;
 var seg_image = undefined;
 var edit_image = undefined;
+var seg_array;
 var mouse_x = 0;
 var mouse_y = 0;
 var edit_mode = false;
@@ -352,10 +352,9 @@ function contrast_image(img, contrast) {
 }
 
 function label_under_mouse() {
-  p = $('#hidden_canvas').get(0).getContext('2d').getImageData(mouse_x, mouse_y, 1, 1).data;
-  let label_str = "(" + p[0] + ", " + p[1] + ", " + p[2] + ", 255)";
-
-  let new_label = current_cmap[label_str];
+  let img_y = Math.floor(mouse_y/scale) //image has been scaled by 2x
+  let img_x = Math.floor(mouse_x/scale)
+  let new_label = seg_array[img_y][img_x]; //check array value at mouse location
   return new_label;
 }
 
@@ -444,8 +443,6 @@ function fetch_and_render_frame() {
     type: 'GET',
     url: "frame/" + current_frame + "/" + project_id,
     success: function(payload) {
-      current_cmap = payload.cmap;
-
       if (seg_image === undefined) {
         seg_image = new Image();
       }
@@ -456,6 +453,7 @@ function fetch_and_render_frame() {
         edit_image = new Image();
       }
 
+      seg_array = payload.seg_arr;
 
       seg_image.src = payload.segmented;
       seg_image.onload = render_frame;

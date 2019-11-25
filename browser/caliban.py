@@ -568,13 +568,15 @@ class TrackReview:
         self.max_frames = self.trial["raw"].shape[0]
         self.dimensions = self.trial["raw"].shape[1:3][::-1]
         self.height, self.width = self.dimensions
-        self.color_map = self.random_colormap()
 
         self.scale_factor = 2
 
         self.highlight = False
         self.highlight_cell_one = -1
         self.highlight_cell_two = -1
+
+        self.color_map = plt.get_cmap('cubehelix')
+        self.color_map.set_bad('red')
 
         self.current_frame = 0
         self.brush_size = 1
@@ -589,22 +591,6 @@ class TrackReview:
         self.brush_view = np.zeros(self.trial["tracked"][self.current_frame].shape)
 
 
-    def random_colormap(self):
-        max_val = max(self.tracks)
-
-        # this is a random map from [0, max_val - 1] -> [1, max_val]
-        shuffle_idx = list(range(1, max_val + 1))
-        # check if workers really prefer this
-        #random.shuffle(shuffle_idx)
-
-        shuffle_idx = [shuffle_idx[i] * .8 for i in range(max_val)]
-
-        colors = [(0, 0, 0), * (list(hsv_to_rgb([shuffle_idx[i] / max_val, 1, 1]))
-                             for i in range(max_val))]
-
-        return LinearSegmentedColormap.from_list('new_map',
-                                                 colors,
-                                                 N=max_val + 1)
     @property
     def readable_tracks(self):
         """
@@ -623,12 +609,6 @@ class TrackReview:
 
         return tracks
 
-    @property
-    def png_colormap(self):
-
-
-        return {str(self.color_map(v, bytes=True)): int(v)
-                  for v in range(max(self.tracks) + 1)}
 
     def get_frame(self, frame, raw, edit_background):
         self.current_frame = frame
@@ -648,7 +628,6 @@ class TrackReview:
         else:
 
             frame = self.trial["tracked"][frame][:,:,0]
-            self.color_map.set_bad('red')
 
             if (self.highlight):
                 if (self.highlight_cell_one != -1):
@@ -660,6 +639,10 @@ class TrackReview:
                          vmin=0,
                          vmax=self.num_tracks,
                          cmap=self.color_map)
+
+    def get_array(self, frame):
+        frame = self.tracked[frame][:,:,0]
+        return frame
 
     def load(self, filename):
         global original_filename
@@ -761,7 +744,6 @@ class TrackReview:
             #cell addition
             elif in_modified and not in_original:
                 self.add_cell_info(add_label = self.edit_value, frame = frame)
-                self.color_map = self.random_colormap()
 
 
             self.trial["tracked"][frame] = annotated
@@ -838,7 +820,6 @@ class TrackReview:
         track_new["daughters"] = []
         track_new["frame_div"] = None
         track_new["capped"] = False
-        self.color_map = self.random_colormap()
 
 
     def action_save_track(self):
@@ -1008,7 +989,6 @@ class TrackReview:
         track_old["frame_div"] = None
         track_old["capped"] = True
 
-        self.color_map = self.random_colormap()
 
     # def action_new_single_cell(self, label, frame):
     #     print("single new cell")
