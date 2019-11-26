@@ -579,7 +579,6 @@ class TrackReview:
         self.color_map.set_bad('red')
 
         self.current_frame = 0
-        self.brush_size = 1
 
         self.x = 0
         self.y = 0
@@ -670,8 +669,6 @@ class TrackReview:
             self.action_delete(**info)
         elif action_type == "change_edit_mode":
             self.edit_mode = not self.edit_mode
-        elif action_type == "change_brush_size":
-            self.action_change_brush_size(**info)
         elif action_type == "handle_draw":
             self.action_handle_draw(**info)
         elif action_type == "fill_hole":
@@ -731,12 +728,6 @@ class TrackReview:
             self.add_cell_info(add_label = edit_value, frame = frame)
 
         self.trial['tracked'][frame] = annotated
-
-    def action_change_brush_size(self, brush_size):
-        self.brush_size = brush_size
-
-
-
 
     def action_change_selected_cells(self, cell_one, cell_two):
         self.highlight_cell_one = cell_one
