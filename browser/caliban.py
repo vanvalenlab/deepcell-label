@@ -703,52 +703,39 @@ class TrackReview:
                 self.fill_label = None
                 self.hold_fill_seed = None
 
-    def action_handle_draw(self, x, y, frame):
+    def action_handle_draw(self, trace, edit_value, brush_size, erase, frame):
 
-        self.current_frame = frame
+        annotated = self.trial['tracked'][frame]
 
-        x //= max(self.scale_factor, 1)
-        y //= max(self.scale_factor, 1)
+        in_original = np.any(np.isin(annotated, edit_value))
 
-        if 0 <= x < self.width and 0 <= y < self.height:
-            self.x, self.y = x, y
+        annotated_draw = np.where(annotated==0, edit_value, annotated)
+        annotated_erase = np.where(annotated==edit_value, 0, annotated)
 
-        if self.edit_mode:
-            annotated = self.trial["tracked"][frame]
+        for loc in trace:
+            # each element of trace is an array with [y,x] coordinates of array
+            x_loc = loc[1]
+            y_loc = loc[0]
 
-            #self.x and self.y are different from the mouse's x and y
-            x_loc = self.x
-            y_loc = self.y
-
-            brush_area = circle(y_loc, x_loc, self.brush_size, (self.height,self.width))
-
-            #show where brush has drawn this time
-            self.brush_view[brush_area] = self.edit_value
-
-            in_original = np.any(np.isin(annotated, self.edit_value))
+            brush_area = circle(y_loc, x_loc, brush_size, (self.height,self.width))
 
             #do not overwrite or erase labels other than the one you're editing
-            if not self.erase:
-                annotated_draw = np.where(annotated==0, self.edit_value, annotated)
+            if not erase:
                 annotated[brush_area] = annotated_draw[brush_area]
             else:
-                annotated_erase = np.where(annotated==self.edit_value, 0, annotated)
                 annotated[brush_area] = annotated_erase[brush_area]
 
-            in_modified = np.any(np.isin(annotated, self.edit_value))
+        in_modified = np.any(np.isin(annotated, edit_value))
 
-            #cell deletion
-            if in_original and not in_modified:
-                self.del_cell_info(del_label = self.edit_value, frame = frame)
+        # cell deletion
+        if in_original and not in_modified:
+            self.del_cell_info(del_label = edit_value, frame = frame)
 
-            #cell addition
-            elif in_modified and not in_original:
-                self.add_cell_info(add_label = self.edit_value, frame = frame)
+        # cell addition
+        elif in_modified and not in_original:
+            self.add_cell_info(add_label = edit_value, frame = frame)
 
-
-            self.trial["tracked"][frame] = annotated
-
-
+        self.trial['tracked'][frame] = annotated
 
     def action_change_erase(self, erase):
         # Flask application can only send over literals of base 10; not true/false
