@@ -324,6 +324,7 @@ var last_mousex = last_mousey = 0;
 var mousedown = false;
 var answer = "(SPACE=YES / ESC=NO)";
 var project_id = undefined;
+var brush;
 let mouse_trace = [];
 
 function upload_file() {
@@ -409,27 +410,36 @@ function render_log() {
 
 function render_frame() {
 
-  let ctx = $('#hidden_canvas').get(0).getContext("2d");
+  let ctx = $('#canvas').get(0).getContext("2d");
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
 
-  ctx = $('#canvas').get(0).getContext("2d");
-  ctx.imageSmoothingEnabled = false;
-  if (rendering_raw) {
-    ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
-    image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
-    contrast_image(image_data, current_contrast);
-    ctx.putImageData(image_data, 0, 0);
-  } else if (rendering_edit) {
-    // add opacity
-
-
+  if (rendering_edit) {
+    ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
     ctx.drawImage(edit_image, 0, 0, dimensions[0], dimensions[1]);
     ctx.save();
-    ctx.globalAlpha = 0.1;
+    ctx.globalCompositeOperation = 'color';
     ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
     ctx.restore();
-  } else {
+
+    // draw brushview on top of cells/annotations
+
+    let hidden_canvas = document.getElementById('hidden_canvas');
+    ctx.save();
+    ctx.globalAlpha = 0.7;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.drawImage(hidden_canvas, 0, 0, dimensions[0], dimensions[1]);
+    ctx.restore();
+  } else if (rendering_raw) {
+    ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
+    ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
+
+    //contrast image
+    image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+    contrast_image(image_data, current_contrast);
+    //draw contrasted image over the original
+    ctx.putImageData(image_data, 0, 0);
+  } else { //draw annotations
+    ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
     ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
   }
   render_log();
@@ -510,6 +520,10 @@ function prepare_canvas() {
     render_log();
   });
   $('#canvas').mousedown(function(evt) {
+
+    mouse_x = evt.offsetX;
+    mouse_y = evt.offsetY;
+
     last_mousex = mouse_x
     last_mousey = mouse_y
     mousedown = true;
@@ -522,21 +536,53 @@ function prepare_canvas() {
     }
   });
   $('#canvas').mouseup(function(evt) {
+    //on mouse release, clear image that shows where brush
+    //has gone during click&drag
+
     mousedown = false; //no longer click&drag
+    let hidden_canvas = document.getElementById('hidden_canvas');
+    let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
+    hidden_ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
 
     //send click&drag coordinates to caliban.py to update annotations
     mode.handle_draw();
+
+    //update display
+
     //reset mouse_trace
     mouse_trace = [];
 
   });
   $('#canvas').mousemove(function(evt) {
+    // handle brush preview
 
     let canvas = document.getElementById('canvas');
     let ctx = canvas.getContext('2d');
 
+    // hidden canvas is keeping track of the brush
+    let hidden_canvas = document.getElementById('hidden_canvas');
+    let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
+
     mouse_x = evt.offsetX;
     mouse_y = evt.offsetY;
+
+    // don't bother with brush preview updating unless in edit mode
+    if (!mousedown && edit_mode) {
+      //only draw brush where mouse currently is
+      hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1])
+
+      // update brush params
+      brush.x = mouse_x;
+      brush.y = mouse_y;
+
+      // draw brush onto hidden_ctx
+      brush.draw(hidden_ctx);
+
+      // show the updated image (composite + brush preview)
+      // each time the preview changes
+      render_frame();
+
+    }
     if (mousedown && edit_mode) {
       // save coordinates of where mouse has gone
       // convert down from scaled coordinates (what the canvas sees)
@@ -544,7 +590,12 @@ function prepare_canvas() {
       let img_y = Math.floor(mouse_y/scale);
       let img_x = Math.floor(mouse_x/scale);
 
-      mouse_trace.push([img_y, img_x])
+      mouse_trace.push([img_y, img_x]);
+      // update brush params but don't clear the image
+      brush.x = mouse_x;
+      brush.y = mouse_y;
+      brush.draw(hidden_ctx);
+      render_frame();
     }
       last_mousex = mouse_x;
       last_mousey = mouse_y;
@@ -618,4 +669,18 @@ function start_caliban(filename) {
   load_file(filename);
   prepare_canvas();
   fetch_and_render_frame();
+
+  brush = {
+  x: 0,
+  y: 0,
+  radius: 1,
+  color: 'red',
+  draw: function(ctx) {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
+    ctx.closePath();
+    ctx.fillStyle = this.color;
+    ctx.fill();
+    }
+  }
 }
