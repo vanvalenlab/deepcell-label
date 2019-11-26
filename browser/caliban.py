@@ -774,21 +774,22 @@ class TrackReview:
 
         # Pull the label that is being split and find a new valid label
         current_label = label_1
-        new_label = self.num_tracks + 1
-
-
+        new_label = np.max(self.tracks) + 1
 
         # Locally store the frames to work on
         img_raw = self.trial["raw"][frame]
         img_ann = self.trial["tracked"][frame]
 
         # Pull the 2 seed locations and store locally
-        # define a new seeds labeled img that is the same size as raw/annotaiton imgs
+        # define a new seeds labeled img that is the same size as raw/annotation imgs
         seeds_labeled = np.zeros(img_ann.shape)
 
         # create two seed locations
-        seeds_labeled[int(y1_location / 2), int(x1_location / 2)] = current_label
-        seeds_labeled[int(y2_location / 2), int(x2_location / 2)] = new_label
+        seeds_labeled[int(y1_location/self.scale_factor),
+            int(x1_location/self.scale_factor)] = current_label
+
+        seeds_labeled[int(y2_location/self.scale_factor),
+            int(x2_location/self.scale_factor)] = new_label
 
         # define the bounding box to apply the transform on and select appropriate sections of 3 inputs (raw, seeds, annotation mask)
         props = regionprops(np.squeeze(np.int32(img_ann == current_label)))
@@ -805,22 +806,17 @@ class TrackReview:
         # apply watershed transform to the subsections
         ws = watershed(-img_sub_raw_scaled, img_sub_seeds, mask=img_sub_ann.astype(bool))
 
-        cell_loc = np.where(img_sub_ann == current_label)
-        img_sub_ann[cell_loc] = ws[cell_loc]
+        # only update img_sub_ann where ws has changed label from current_label to new_label
+        img_sub_ann = np.where(np.logical_and(ws == new_label,img_sub_ann == current_label),
+            ws, img_sub_ann)
 
         #reintegrate subsection into original mask
         img_ann[minr:maxr, minc:maxc] = img_sub_ann
         self.trial["tracked"][frame] = img_ann
 
-        # current label doesn't change, but add the neccesary bookkeeping for the new track
-        track_new = self.tracks[new_label] = {}
-        track_new["label"] = new_label
-        track_new["frames"] = [frame]
-        track_new["parent"] = None
-        track_new["daughters"] = []
-        track_new["frame_div"] = None
-        track_new["capped"] = False
-
+        #update cell_info dict only if new label was created with ws
+        if np.any(np.isin(self.annotated[frame,:,:,0], new_label)):
+            self.add_cell_info(add_label=new_label, frame = frame)
 
     def action_save_track(self):
 
