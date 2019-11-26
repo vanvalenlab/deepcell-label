@@ -27,16 +27,13 @@ class Mode {
   handle_key(key) {
 
     if (edit_mode) {
+      //keybinds to change value of brush
       if (key === "=") {
-        edit_value += 1;
-        this.info = {"edit_value": edit_value};
-        action("edit_value", this.info);
-        this.clear();
+        edit_value += 1; //increase edit_value, no upper limit
+        render_log(); //update display to show new edit_value
       } else if (key === "-") {
-        edit_value = Math.max(edit_value - 1, 1);
-        this.info = {"edit_value": edit_value};
-        action("edit_value", this.info);
-        this.clear();
+        edit_value = Math.max(edit_value - 1, 1); //decrease edit_value, minimum 1
+        render_log(); //update display to show new edit_value
       } else if (key === "x") {
         erase = -(erase);
 
@@ -66,9 +63,7 @@ class Mode {
         rendering_edit = !rendering_edit;
         edit_mode = !edit_mode
         brush_size = 1;
-        edit_value = 1;
         erase = -1
-        action("change_edit_mode", {});
         action("change_brush_size", {"brush_size": brush_size});
         action("edit_value", {"edit_value": edit_value});
         action("change_erase", {"erase": erase});
@@ -324,7 +319,7 @@ var scale;
 var mouse_x = 0;
 var mouse_y = 0;
 var edit_mode = false;
-var edit_value = undefined;
+var edit_value = 1;
 var brush_size = undefined;
 var erase = undefined;
 var last_mousex = last_mousey = 0;

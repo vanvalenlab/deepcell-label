@@ -580,7 +580,6 @@ class TrackReview:
 
         self.current_frame = 0
         self.brush_size = 1
-        self.edit_value = 1
 
         self.x = 0
         self.y = 0
@@ -669,8 +668,6 @@ class TrackReview:
             self.action_watershed(**info)
         elif action_type == "delete_cell":
             self.action_delete(**info)
-        elif action_type == "edit_value":
-            self.action_edit_value(**info)
         elif action_type == "change_edit_mode":
             self.edit_mode = not self.edit_mode
         elif action_type == "change_erase":
@@ -743,9 +740,6 @@ class TrackReview:
             self.erase = True
         else:
             self.erase = False
-
-    def action_edit_value(self, edit_value):
-        self.edit_value = edit_value
 
     def action_change_brush_size(self, brush_size):
         self.brush_size = brush_size
