@@ -35,10 +35,9 @@ class Mode {
         edit_value = Math.max(edit_value - 1, 1); //decrease edit_value, minimum 1
         render_log(); //update display to show new edit_value
       } else if (key === "x") {
-        erase = -(erase);
-
-        action("change_erase", {"erase": erase});
-        this.clear();
+        //turn eraser on and off
+        erase = !erase;
+        render_log();
       } else if (key === ",") {
         brush_size = Math.max(brush_size - 1, 1);
         this.info = {"brush_size": brush_size};
@@ -66,7 +65,6 @@ class Mode {
         erase = -1
         action("change_brush_size", {"brush_size": brush_size});
         action("edit_value", {"edit_value": edit_value});
-        action("change_erase", {"erase": erase});
         this.clear();
       }
 
@@ -321,7 +319,7 @@ var mouse_y = 0;
 var edit_mode = false;
 var edit_value = 1;
 var brush_size = undefined;
-var erase = undefined;
+var erase = false;
 var last_mousex = last_mousey = 0;
 var mousedown = false;
 var answer = "(SPACE=YES / ESC=NO)";
@@ -377,7 +375,7 @@ function render_log() {
     $('#edit_brush').text("brush size: " + brush_size);
     $('#edit_label').text("editing label: " + edit_value);
 
-    if (erase == 1) {
+    if (erase) {
       $('#edit_erase').text("eraser mode: ON");
     } else {
       $('#edit_erase').text("eraser mode: OFF");

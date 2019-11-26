@@ -670,8 +670,6 @@ class TrackReview:
             self.action_delete(**info)
         elif action_type == "change_edit_mode":
             self.edit_mode = not self.edit_mode
-        elif action_type == "change_erase":
-            self.action_change_erase(**info)
         elif action_type == "change_brush_size":
             self.action_change_brush_size(**info)
         elif action_type == "handle_draw":
@@ -733,13 +731,6 @@ class TrackReview:
             self.add_cell_info(add_label = edit_value, frame = frame)
 
         self.trial['tracked'][frame] = annotated
-
-    def action_change_erase(self, erase):
-        # Flask application can only send over literals of base 10; not true/false
-        if (erase == 1):
-            self.erase = True
-        else:
-            self.erase = False
 
     def action_change_brush_size(self, brush_size):
         self.brush_size = brush_size
