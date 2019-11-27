@@ -62,12 +62,12 @@ class Mode:
                 return ("\nreplace {} with {}?\n {}".format(self.label_2, self.label_1,
                  '\nSPACE = REPLACE IN ALL FRAMES\nS = REPLACE IN THIS FRAME ONLY\nESC = CANCEL REPLACE'))
             elif self.action == "SWAP":
-                return ("\nswap {} & {}?\n{}".format(self.label_2, self.label_1, 
+                return ("\nswap {} & {}?\n{}".format(self.label_2, self.label_1,
                 '\nSPACE = SWAP IN ALL FRAMES\nS = SWAP IN THIS FRAME ONLY\nESC = CANCEL SWAP'))
             elif self.action == "PARENT":
                 return ("\nmake {} a daughter of {}?\n {}".format(self.label_2, self.label_1, answer))
             elif self.action == "NEW TRACK":
-                return ("\ncreate new track from {} on frame {}?".format(self.label, self.frame) + 
+                return ("\ncreate new track from {} on frame {}?".format(self.label, self.frame) +
                     "\n {}".format("(S=SINGLE FRAME / SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)"))
             elif self.action == "CREATE NEW":
                 return ("".format(self.label, self.frame)
@@ -84,7 +84,7 @@ class Mode:
             elif self.action == "PREDICT":
                 return ("Predict cell ids for zstack?\nS=PREDICT THIS FRAME\nSPACE=PREDICT ALL FRAMES\nESC=CANCEL PREDICTION")
             elif self.action == "RELABEL":
-                return ("Relabel cells in this frame?\nSPACE=RELABEL\nESC=CANCEL")
+                return ("Relabel cells?\nSPACE=RELABEL ALL FRAMES\nP=PRESERVE 3D INFO\nS=RELABEL THIS FRAME ONLY\nU=UNIQUELY RELABEL EACH CELL\nESC=CANCEL")
         elif self.kind == "PROMPT":
             if self.action == "FILL HOLE":
                 return('\nselect hole to fill in cell {}'.format(self.label))
@@ -101,9 +101,9 @@ class Mode:
             elif self.action == "CONVERSION BRUSH VALUE":
                 return('\nclick on the label you want to draw WITH')
         elif self.kind == "DRAW":
-            # return('\nusing conversion brush to replace {} with {}'.format(self.info['conversion_brush_target'], 
+            # return('\nusing conversion brush to replace {} with {}'.format(self.info['conversion_brush_target'],
             #     self.info['conversion_brush_value']))
-            return('\nusing conversion brush to replace {} with {}\nuse ESC to leave this mode'.format(self.conversion_brush_target, 
+            return('\nusing conversion brush to replace {} with {}\nuse ESC to leave this mode'.format(self.conversion_brush_target,
                 self.conversion_brush_value))
         else:
             return ''
