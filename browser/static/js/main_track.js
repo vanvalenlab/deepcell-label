@@ -23,7 +23,7 @@ class Mode {
   }
 
   handle_key(key) {
-
+    // EDIT MODE KEYBINDS
     if (edit_mode) {
       //keybinds to change value of brush
       if (key === "=") {
@@ -108,6 +108,7 @@ class Mode {
         this.kind = Modes.question;
         this.action = "new_track";
         this.prompt = "CREATE NEW (SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)";
+        render_log();
 
       } else if (key === "=") {
         if (this.highlighted_cell_one === maxTrack) {
@@ -136,24 +137,29 @@ class Mode {
         this.kind = Modes.question;
         this.action = "delete_cell";
         this.prompt = "delete label " + this.info.label + " in frame " + this.info.frame + "? " + answer;
+        render_log();
       }
     } else if (this.kind == Modes.multiple) {
       if (key === "r") {
         this.kind = Modes.question;
         this.action = "replace";
         this.prompt = "Replace " + this.info.label_2 + " with " + this.info.label_1 + "? " + answer;
+        render_log();
       } else if (key === "p") {
         this.kind = Modes.question;
         this.action = "set_parent";
         this.prompt = "Set " + this.info.label_1 + " as parent of " + this.info.label_2 + "? " + answer;
+        render_log();
       } else if (key === "s") {
         this.kind = Modes.question;
         this.action = "swap_cells";
         this.prompt = "SPACE = SWAP IN ALL FRAMES / ESC = CANCEL SWAP";
+        render_log();
       } else if (key === "w") {
         this.kind = Modes.question;
         this.action = "watershed";
         this.prompt = "Perform watershed to split " + this.info.label_1 + "? " + answer;
+        render_log();
       }
     } else if (this.kind == Modes.question) {
       if (key === " ") {
@@ -179,6 +185,7 @@ class Mode {
       }
     }
   }
+  //end of handle_key
 
   handle_draw() {
     action("handle_draw", { "trace": JSON.stringify(mouse_trace),
@@ -372,7 +379,11 @@ function render_log() {
   current_label = label_under_mouse();
 
   $('#frame').html(current_frame);
-  $('#label').html(current_label);
+  if (current_label !== 0) {
+    $('#label').html(current_label);
+  } else {
+    $('#label').html("");
+  }
 
   if (current_highlight) {
     $('#highlight').html("ON");
