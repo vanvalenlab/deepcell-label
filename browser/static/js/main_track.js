@@ -63,6 +63,13 @@ class Mode {
 
         //redraw the frame with the updated brush preview
         render_frame();
+      } else if (key === 'n') { //set edit value to something unused
+        edit_value = maxTrack + 1;
+        render_log();
+        //when value of brush determines color of brush preview, render_frame instead
+      } else if (key === 'i') { //toggle invert
+        display_invert = !display_invert;
+        render_frame();
       }
 
     } // END OF EDIT MODE KEYBINDS
@@ -292,6 +299,7 @@ var Modes = Object.freeze({
 var temp_x = 0;
 var temp_y = 0;
 var rendering_raw = false;
+let display_invert = true;
 var current_contrast = 0;
 var current_frame = 0;
 var current_label = 0;
@@ -303,7 +311,6 @@ var maxTrack;
 var mode = new Mode(Modes.none, {});
 var raw_image = undefined;
 var seg_image = undefined;
-var edit_image = undefined;
 var seg_array;
 var scale;
 var mouse_x = 0;
@@ -329,6 +336,8 @@ function upload_file() {
   });
 }
 
+// image adjustment functions: take img as input and manipulate data attribute
+// pixel data is 1D array of 8bit RGBA values
 function contrast_image(img, contrast) {
   let d = img.data;
   contrast = (contrast / 100) + 1;
@@ -366,6 +375,27 @@ function highlight(img, label) {
       }
     }
   }
+}
+
+function grayscale(img) {
+  let data = img.data;
+  for (var i = 0; i < data.length; i += 4) {
+      var avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+      data[i]     = avg; // red
+      data[i + 1] = avg; // green
+      data[i + 2] = avg; // blue
+    }
+  return img
+}
+
+function invert(img) {
+  let data = img.data;
+  for (var i = 0; i < data.length; i += 4) {
+    data[i]     = 255 - data[i];     // red
+    data[i + 1] = 255 - data[i + 1]; // green
+    data[i + 2] = 255 - data[i + 2]; // blue
+    }
+  return img
 }
 
 function label_under_mouse() {
@@ -445,7 +475,14 @@ function render_frame() {
 
   if (edit_mode) {
     ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-    ctx.drawImage(edit_image, 0, 0, dimensions[0], dimensions[1]);
+    ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
+    let image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+    contrast_image(image_data, current_contrast);
+    grayscale(image_data);
+    if (display_invert) {
+      invert(image_data);
+    }
+    ctx.putImageData(image_data, 0, 0);
     ctx.save();
     ctx.globalCompositeOperation = 'color';
     ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
@@ -494,9 +531,6 @@ function fetch_and_render_frame() {
       if (raw_image === undefined) {
         raw_image = new Image();
       }
-      if (edit_image === undefined) {
-        edit_image = new Image();
-      }
 
       seg_array = payload.seg_arr;
 
@@ -504,9 +538,6 @@ function fetch_and_render_frame() {
       seg_image.onload = render_frame;
       raw_image.src = payload.raw;
       raw_image.onload = render_frame;
-      edit_image.src = payload.edit_background;
-      edit_image.onload = render_frame;
-
     },
     async: true
   });
@@ -667,7 +698,7 @@ function prepare_canvas() {
     } else if (evt.key === 'h') {
         current_highlight = !current_highlight;
         render_frame();
-    } else if (evt.key === 'e') {
+    } else if (evt.key === 'e' && mode.kind === Modes.none) {
         edit_mode = !edit_mode;
         render_frame();
     } else {
