@@ -67,11 +67,6 @@ class Mode {
 
     } // END OF EDIT MODE KEYBINDS
 
-    if (this.kind == Modes.none) {
-      if (key === "e") {
-        rendering_edit = !rendering_edit;
-        edit_mode = !edit_mode
-        this.clear();
     // nothing selected, not in edit mode
     else if (this.kind == Modes.none) {
       if (key === "-" && this.highlighted_cell_one !== -1) {
@@ -290,7 +285,6 @@ var Modes = Object.freeze({
 var temp_x = 0;
 var temp_y = 0;
 var rendering_raw = false;
-var rendering_edit = false;
 var current_contrast = 0;
 var current_frame = 0;
 var current_label = 0;
@@ -396,8 +390,7 @@ function render_log() {
     $('#currently_highlighted').html("none");
   }
 
-  if (edit_mode == true) {
-
+  if (edit_mode) {
     $('#edit_mode').html("ON");
     $('#edit_brush').text("brush size: " + brush_size);
     $('#edit_label').text("editing label: " + edit_value);
@@ -439,7 +432,7 @@ function render_frame() {
   let ctx = $('#canvas').get(0).getContext("2d");
   ctx.imageSmoothingEnabled = false;
 
-  if (rendering_edit) {
+  if (edit_mode) {
     ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
     ctx.drawImage(edit_image, 0, 0, dimensions[0], dimensions[1]);
     ctx.save();
@@ -455,6 +448,7 @@ function render_frame() {
     ctx.globalCompositeOperation = 'source-over';
     ctx.drawImage(hidden_canvas, 0, 0, dimensions[0], dimensions[1]);
     ctx.restore();
+
   } else if (rendering_raw) {
     ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
     ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
@@ -464,6 +458,7 @@ function render_frame() {
     contrast_image(image_data, current_contrast);
     //draw contrasted image over the original
     ctx.putImageData(image_data, 0, 0);
+
   } else { //draw annotations
     ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
     ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
@@ -538,7 +533,9 @@ async function fetch_frame(frame) {
 
 function prepare_canvas() {
   $('#canvas').click(function(evt) {
-    mode.click();
+    if (!edit_mode) {
+      mode.click(evt);
+    }
     render_log();
   });
   $('#canvas').on('wheel', function(evt) {
@@ -546,7 +543,6 @@ function prepare_canvas() {
       let delta = - evt.originalEvent.deltaY / 2;
       current_contrast = Math.max(current_contrast + delta, -100);
       render_frame();
-
     }
   });
   $('#canvas').mousemove(function(evt) {
@@ -580,8 +576,9 @@ function prepare_canvas() {
     hidden_ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
 
     //send click&drag coordinates to caliban.py to update annotations
-    mode.handle_draw();
-
+    if (edit_mode) {
+      mode.handle_draw();
+    }
     //update display
 
     //reset mouse_trace
@@ -656,10 +653,13 @@ function prepare_canvas() {
     } else if (evt.key === "Escape") {
       mode.clear();
       render_log();
-    } else {
-        if (evt.key === 'h') {
+    } else if (evt.key === 'h') {
         current_highlight = !current_highlight;
-        }
+        render_frame();
+    } else if (evt.key === 'e') {
+        edit_mode = !edit_mode;
+        render_frame();
+    } else {
       mode.handle_key(evt.key);
     }
   }, false);
