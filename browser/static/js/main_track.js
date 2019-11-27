@@ -2,26 +2,24 @@ class Mode {
   constructor(kind, info) {
     this.kind = kind;
     this.info = info;
-    this.highlighted_cells = {}
-    this.highlight = false;
     this.highlighted_cell_one = -1;
     this.highlighted_cell_two = -1;
     this.action = "";
     this.prompt = "";
-
   }
 
   clear() {
     this.kind = Modes.none;
     this.info = {};
-    this.highlighted_cells = {}
     this.highlighted_cell_one = -1;
     this.highlighted_cell_two = -1;
-    this.highlighted_cells = {"cell_one":this.highlighted_cell_one,
-                              "cell_two": this.highlighted_cell_two};
-    action("change_selected_cells", this.highlighted_cells);
+    //reset highlighting in image if this is being shown
+    if (current_highlight) {
+      render_frame();
+    }
     this.action = "";
     this.prompt = "";
+    render_log();
   }
 
   handle_key(key) {
@@ -67,23 +65,36 @@ class Mode {
         render_frame();
       }
 
-    }
-
-    if(key === "h") {
-        action("change_highlight", this.info);
-        this.clear();
-    }
+    } // END OF EDIT MODE KEYBINDS
 
     if (this.kind == Modes.none) {
       if (key === "e") {
         rendering_edit = !rendering_edit;
         edit_mode = !edit_mode
         this.clear();
+    // nothing selected, not in edit mode
+    else if (this.kind == Modes.none) {
+      if (key === "-" && this.highlighted_cell_one !== -1) {
+        //allow cycling through highlighted cells to view, if nothing selected
+        if (this.highlighted_cell_one === 1) {
+          this.highlighted_cell_one = maxTrack;
+        } else {
+          this.highlighted_cell_one -= 1;
+        }
+        render_frame();
+      } else if (key === "=" && this.highlighted_cell_one !== -1) {
+        //allow cycling through highlighted cells to view, if nothing selected
+        if (this.highlighted_cell_one === maxTrack) {
+          this.highlighted_cell_one = 1;
+        } else {
+          this.highlighted_cell_one += 1;
+        }
+        render_frame();
       }
+    // end of "nothing selected" keybinds
+    } else if (this.kind == Modes.single) {
 
-    }
-
-    if (this.kind == Modes.single) {
+      //hole fill
       if (key === "f") {
         if (current_label != 0) {
           this.info = { "label": current_label,
@@ -104,18 +115,28 @@ class Mode {
         this.prompt = "CREATE NEW (SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)";
 
       } else if (key === "=") {
-        this.update_highlighted_cells(-1, 1)
-        this.highlighted_cells = {"cell_one":this.highlighted_cell_one,
-                                  "cell_two": this.highlighted_cell_two};
-
-        action("change_selected_cells", this.highlighted_cells);
+        if (this.highlighted_cell_one === maxTrack) {
+          this.highlighted_cell_one = 1;
+        } else {
+          this.highlighted_cell_one += 1;
+        }
+        // clear info but show new highlighted cell
+        let temp_highlight = this.highlighted_cell_one;
+        this.clear();
+        this.highlighted_cell_one = temp_highlight;
+        render_frame();
 
       } else if (key === "-") {
-        this.update_highlighted_cells(1, -1)
-        this.highlighted_cells = {"cell_one":this.highlighted_cell_one,
-                                  "cell_two": this.highlighted_cell_two};
-
-        action("change_selected_cells", this.highlighted_cells);
+        if (this.highlighted_cell_one === 1) {
+          this.highlighted_cell_one = maxTrack;
+        } else {
+          this.highlighted_cell_one -= 1;
+        }
+        // clear info but show new highlighted cell
+        let temp_highlight = this.highlighted_cell_one;
+        this.clear();
+        this.highlighted_cell_one = temp_highlight;
+        render_frame();
       } else if (key === "x") {
         this.kind = Modes.question;
         this.action = "delete_cell";
@@ -138,16 +159,6 @@ class Mode {
         this.kind = Modes.question;
         this.action = "watershed";
         this.prompt = "Perform watershed to split " + this.info.label_1 + "? " + answer;
-      } else if (key === "=") {
-        this.update_highlighted_cells(-1, 1)
-        this.highlighted_cells = {"cell_one": this.highlighted_cell_one,
-                                  "cell_two": this.highlighted_cell_two};
-        action("change_selected_cells", this.highlighted_cells);
-      } else if (key === "-") {
-        this.update_highlighted_cells(1, -1)
-        this.highlighted_cells = {"cell_one":this.highlighted_cell_one,
-                                  "cell_two": this.highlighted_cell_two};
-        action("change_selected_cells", this.highlighted_cells);
       }
     } else if (this.kind == Modes.question) {
       if (key === " ") {
@@ -183,31 +194,6 @@ class Mode {
     this.clear()
   }
 
-  update_highlighted_cells(decrease, increase) {
-
-    if (this.highlighted_cell_one != -1) {
-      if (increase == 1) {
-        if (this.highlighted_cell_one < num_tracks) {
-          this.highlighted_cell_one += 1;
-        } else {
-          this.highlighted_cell_one = 1;
-        }
-      } else if (decrease == 1) {
-        if (this.highlighted_cell_one > 1) {
-          this.highlighted_cell_one -= 1;
-        } else {
-          this.highlighted_cell_one = num_tracks;
-        }
-      }
-    }
-    if (this.kind === Modes.single) {
-      this.info.label = this.highlighted_cell_one;
-    } else if (this.kind === Modes.multiple) {
-      this.info.label_1 = this.highlighted_cell_one;
-      this.info.label_2 = this.highlighted_cell_two;
-    }
-  }
-
   click() {
     if (this.kind === Modes.question) {
       if(this.action == "fill_hole" && current_label == 0) {
@@ -218,23 +204,20 @@ class Mode {
         action(this.action, this.info);
         this.clear();
       }
+
+      //if click on background, same as ESC
     } else if (current_label === 0) {
       this.highlighted_cell_one = -1;
       this.highlighted_cell_two = -1;
-      this.highlighted_cells = {"cell_one":this.highlighted_cell_one,
-                                "cell_two":this.highlighted_cell_two};
-      action("change_selected_cells", this.highlighted_cells);
       this.clear();
       return;
+
     } else if (this.kind === Modes.none) {
       this.kind = Modes.single;
       this.info = {"label": current_label,
                   "frame": current_frame};
       this.highlighted_cell_one = current_label;
       this.highlighted_cell_two = -1;
-      this.highlighted_cells = {"cell_one":this.highlighted_cell_one,
-                                "cell_two": this.highlighted_cell_two};
-      action("change_selected_cells", this.highlighted_cells);
       temp_x = mouse_x;
       temp_y = mouse_y;
 
@@ -243,9 +226,6 @@ class Mode {
 
       this.highlighted_cell_one = this.info.label;
       this.highlighted_cell_two = current_label;
-      this.highlighted_cells = {"cell_one":this.highlighted_cell_one,
-                                "cell_two": this.highlighted_cell_two};
-      action("change_selected_cells", this.highlighted_cells);
 
       if (this.info.label == current_label) {
         this.info = {"label_1": this.info.label,
@@ -264,9 +244,6 @@ class Mode {
     } else if (this.kind  === Modes.multiple) {
       this.highlighted_cell_one = this.info.label_1;
       this.highlighted_cell_two = current_label;
-      this.highlighted_cells = {"cell_one":this.highlighted_cell_one,
-                                "cell_two": this.highlighted_cell_two};
-      action("change_selected_cells", this.highlighted_cells);
 
       if (this.info.label_1 == current_label) {
         this.info = {"label_1": this.info.label_1,
@@ -283,6 +260,7 @@ class Mode {
                     "frame_2": current_frame};
       }
     }
+    render_frame();
   }
 
   render() {
@@ -320,7 +298,7 @@ var current_highlight = false;
 var max_frames = undefined;
 var dimensions = undefined;
 var tracks = undefined;
-var num_tracks = 0;
+var maxTrack;
 var mode = new Mode(Modes.none, {});
 var raw_image = undefined;
 var seg_image = undefined;
@@ -362,6 +340,33 @@ function contrast_image(img, contrast) {
   return img;
 }
 
+function highlight(img, label) {
+  let ann = img.data;
+
+  // use label array to figure out which pixels to recolor
+  for (var j = 0; j < seg_array.length; j += 1){ //y
+    for (var i = 0; i < seg_array[j].length; i += 1){ //x
+      let jlen = seg_array[j].length;
+
+      if (seg_array[j][i] === label){
+        // fill in all pixels affected by scale
+        // k and l get the pixels that are part of the original pixel that has been scaled up
+        for (var k = 0; k < scale; k +=1) {
+          for (var l = 0; l < scale; l +=1) {
+            // location in 1D array based on i,j, and scale
+            pixel_num = (scale*(jlen*(scale*j + l) + i)) + k;
+
+            // set to red by changing RGB values
+            ann[(pixel_num*4)] = 255;
+            ann[(pixel_num*4) + 1] = 0;
+            ann[(pixel_num*4) + 2] = 0;
+          }
+        }
+      }
+    }
+  }
+}
+
 function label_under_mouse() {
   let img_y = Math.floor(mouse_y/scale)
   let img_x = Math.floor(mouse_x/scale)
@@ -375,12 +380,20 @@ function render_log() {
   $('#frame').html(current_frame);
   $('#label').html(current_label);
 
-  if (current_highlight == true) {
+  if (current_highlight) {
     $('#highlight').html("ON");
-
+    if (mode.highlighted_cell_one !== -1) {
+      if (mode.highlighted_cell_two !== -1) {
+        $('#currently_highlighted').html(mode.highlighted_cell_one + " , " + mode.highlighted_cell_two);
+      } else {
+        $('#currently_highlighted').html(mode.highlighted_cell_one);
+      }
+    } else {
+      $('#currently_highlighted').html("none");
+    }
   } else {
     $('#highlight').html("OFF");
-
+    $('#currently_highlighted').html("none");
   }
 
   if (edit_mode == true) {
@@ -454,6 +467,12 @@ function render_frame() {
   } else { //draw annotations
     ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
     ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
+    if (current_highlight) {
+      let img_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+      highlight(img_data, mode.highlighted_cell_one);
+      highlight(img_data, mode.highlighted_cell_two);
+      ctx.putImageData(img_data, 0, 0);
+    }
   }
   render_log();
 }
@@ -496,6 +515,9 @@ function load_file(file) {
       scale = payload.screen_scale;
       dimensions = [scale * payload.dimensions[0], scale * payload.dimensions[1]];
       tracks = payload.tracks;
+
+      maxTrack = Math.max(... Object.keys(tracks).map(Number));
+
       project_id = payload.project_id;
       $('#canvas').get(0).width = dimensions[0];
       $('#canvas').get(0).height = dimensions[1];
@@ -646,13 +668,11 @@ function prepare_canvas() {
 function reload_tracks() {
   $.ajax({
     type:'GET',
-    url:"tracks" + project_id,
+    url:"tracks/" + project_id,
+    data: project_id,
     success: function (payload) {
       tracks = payload.tracks;
-      var test = Object.keys(tracks)
-      num_tracks = test.length
-
-
+      maxTrack = Math.max(... Object.keys(tracks).map(Number));
     },
     async: false
   });
