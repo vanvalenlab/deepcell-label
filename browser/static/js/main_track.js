@@ -98,19 +98,13 @@ class Mode {
 
       //hole fill
       if (key === "f") {
-        if (current_label != 0) {
-          this.info = { "label": current_label,
-                      "frame": current_frame,
-                      "x_location": mouse_x,
-                      "y_location": mouse_y };
-          this.kind = Modes.question;
-          this.prompt = "Select hole to fill in cell " + current_label;
-          this.action = "fill_hole";
-          action("fill_hole", this.info);
+        this.info = { "label": this.info['label'],
+                      "frame": current_frame};
+        this.kind = Modes.question;
+        this.action = "fill_hole";
+        this.prompt = "Select hole to fill in cell " + this.info['label'];
+        render_log();
 
-        } else {
-          this.clear();
-        }
       } else if (key === "c") {
         this.kind = Modes.question;
         this.action = "new_track";
@@ -206,7 +200,7 @@ class Mode {
   click() {
     if (this.kind === Modes.question) {
       if(this.action == "fill_hole" && current_label == 0) {
-        this.info = { "label": current_label,
+        this.info = { "label": this.info['label'],
                       "frame": current_frame,
                       "x_location": mouse_x,
                       "y_location": mouse_y };

@@ -668,18 +668,19 @@ class TrackReview:
             raise ValueError("Invalid action '{}'".format(action_type))
 
     def action_fill_hole(self, label, frame, x_location, y_location):
-
-        if label != 0:
-            self.fill_label = label
-        else:
-            self.hole_fill_seed = int(y_location/self.scale_factor), int(x_location/self.scale_factor)
-        if self.hole_fill_seed is not None:
-            if label == 0:
-                img_ann = self.trial["tracked"][frame,:,:,0]
-                filled_img_ann = flood_fill(img_ann, self.hole_fill_seed, self.fill_label, connectivity = 1)
-                self.trial["tracked"][frame,:,:,0] = filled_img_ann
-                self.fill_label = None
-                self.hold_fill_seed = None
+        '''
+        fill a "hole" in a cell annotation with the cell label. Doesn't check
+        if annotation at (y,x) is zero (hole to fill) because that logic is handled in
+        javascript. Just takes the click location, scales it to match the actual annotation
+        size, then fills the hole with label (using skimage flood_fill). connectivity = 1
+        prevents hole fill from spilling out into background in some cases
+        '''
+        # rescale click location -> corresponding location in annotation array
+        hole_fill_seed = (y_location // self.scale_factor, x_location // self.scale_factor)
+        # fill hole with label
+        img_ann = self.trial['tracked'][frame,:,:,0]
+        filled_img_ann = flood_fill(img_ann, hole_fill_seed, label, connectivity = 1)
+        self.trial['tracked'][frame,:,:,0] = filled_img_ann
 
     def action_handle_draw(self, trace, edit_value, brush_size, erase, frame):
 
