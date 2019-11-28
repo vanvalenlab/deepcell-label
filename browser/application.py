@@ -121,22 +121,21 @@ def get_frame(frame, project_id):
         cur.execute("SELECT * FROM {tn} WHERE {idf}={my_id}".\
         format(tn="projects", idf="id", my_id=project_id))
         id_exists = cur.fetchone()
+        if id_exists is None:
+            return jsonify({'error': 'project_id not found'}), 404
         state = pickle.loads(id_exists[2])
 
         # Obtain raw, mask, and edit mode frames
-        img = state.get_frame(frame, raw=False, edit_background =False)
-        raw = state.get_frame(frame, raw=True, edit_background=False)
-        edit = state.get_frame(frame, raw=False, edit_background=True)
+        img = state.get_frame(frame, raw=False)
+        raw = state.get_frame(frame, raw=True)
 
         # Obtain color map of the cells
         edit_arr = state.get_array(frame)
-
         payload = {
-                'raw': f'data:image/png;base64,{base64.encodebytes(raw.read()).decode()}',
-                'segmented': f'data:image/png;base64,{base64.encodebytes(img.read()).decode()}',
-                'edit_background': f'data:image/png;base64,{base64.encodebytes(edit.read()).decode()}',
-                'seg_arr': edit_arr.tolist()
-                }
+            'raw': f'data:image/png;base64,{encode(raw)}',
+            'segmented': f'data:image/png;base64,{encode(img)}',
+            'seg_arr': edit_arr.tolist()
+        }
 
         return jsonify(payload)
 

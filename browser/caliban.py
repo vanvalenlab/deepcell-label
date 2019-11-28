@@ -106,20 +106,13 @@ class ZStackReview:
 
         return cell_info
 
-
-    def get_frame(self, frame, raw, edit_background):
+    def get_frame(self, frame, raw):
         if raw:
             frame = self.raw[frame][:,:, self.channel]
             return pngify(imgarr=frame,
                           vmin=0,
                           vmax=self.max_intensity[self.channel],
                           cmap="cubehelix")
-        elif edit_background:
-            frame = self.raw[frame][:,:, self.channel]
-            return pngify(imgarr=frame,
-                          vmin=0,
-                          vmax=self.max_intensity[self.channel],
-                          cmap="Greys")
         else:
             frame = self.annotated[frame][:,:, self.feature]
             frame = np.ma.masked_equal(frame, 0)
@@ -602,7 +595,7 @@ class TrackReview:
         return tracks
 
 
-    def get_frame(self, frame, raw, edit_background):
+    def get_frame(self, frame, raw):
         self.current_frame = frame
         if raw:
             frame = self.raw[frame][:,:,0]
@@ -610,13 +603,6 @@ class TrackReview:
                           vmin=0,
                           vmax=None,
                           cmap="cubehelix")
-        if edit_background:
-            frame = self.trial["raw"][frame][:,:,0]
-            return pngify(imgarr=frame,
-                          vmin=0,
-                          vmax=None,
-                          cmap="Greys")
-
         else:
             frame = self.tracked[frame][:,:,0]
             return pngify(imgarr=frame,
