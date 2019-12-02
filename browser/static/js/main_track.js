@@ -108,7 +108,7 @@ class Mode {
       } else if (key === "c") {
         this.kind = Modes.question;
         this.action = "new_track";
-        this.prompt = "CREATE NEW (SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)";
+        this.prompt = "CREATE NEW (SPACE=ALL SUBSEQUENT FRAMES / S=ONLY THIS FRAME / ESC=CANCEL)";
         render_log();
 
       } else if (key === "=") {
@@ -154,7 +154,7 @@ class Mode {
       } else if (key === "s") {
         this.kind = Modes.question;
         this.action = "swap_cells";
-        this.prompt = "SPACE = SWAP IN ALL FRAMES / ESC = CANCEL SWAP";
+        this.prompt = "SPACE = SWAP IN ALL FRAMES / S = SWAP IN ONLY ONE FRAME / ESC = CANCEL SWAP";
         render_log();
       } else if (key === "w") {
         this.kind = Modes.question;
@@ -187,6 +187,14 @@ class Mode {
           this.clear();
         } else if (this.action === "trim_pixels") {
           action("trim_pixels", this.info);
+          this.clear();
+        }
+      } else if (key === "s") {
+        if (this.action === "new_track") {
+          action("create_single_new", this.info);
+          this.clear();
+        } else if (this.action === "swap_cells") {
+          action("swap_single_frame", this.info);
           this.clear();
         }
       }

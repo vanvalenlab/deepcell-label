@@ -632,6 +632,8 @@ class TrackReview:
             self.action_new_single_cell(**info)
         elif action_type == "create_all_new":
             self.action_new_track(**info)
+        elif action_type == "swap_single_frame":
+            self.action_swap_single_frame(**info)
         elif action_type == "swap_tracks":
             self.action_swap_tracks(**info)
         elif action_type == "save_track":
@@ -820,6 +822,20 @@ class TrackReview:
 
         #os.remove(file)
         return "Success!"
+
+    def action_swap_single_frame(self, label_1, label_2, frame_1, frame_2):
+        '''swap the labels of two cells in one frame, but do not
+        change any of the lineage information'''
+
+        assert(frame_1 == frame_2)
+        frame = frame_1
+
+        ann_img = self.tracked[frame,:,:,0]
+        ann_img = np.where(ann_img == label_1, -1, ann_img)
+        ann_img = np.where(ann_img == label_2, label_1, ann_img)
+        ann_img = np.where(ann_img == -1, label_2, ann_img)
+
+        self.tracked[frame,:,:,0] = ann_img
 
     def action_swap_tracks(self, label_1, label_2, frame_1, frame_2):
         def relabel(old_label, new_label):
