@@ -564,7 +564,7 @@ function render_log() {
   $('#feature').html(mode.feature);
   $('#channel').html(mode.channel);
 
-  if (current_highlight == true) {
+  if (current_highlight) {
     $('#highlight').html("ON");
     if (mode.highlighted_cell_one !== -1) {
       if (mode.highlighted_cell_two !== -1) {
@@ -581,22 +581,26 @@ function render_log() {
     $('#currently_highlighted').html("none");
   }
 
-  if (edit_mode == true) {
+  if (edit_mode) {
     $('#edit_mode').html("ON");
-    $('#edit_brush').text("brush size: " + brush_size);
-    $('#edit_label').text("editing label: " + edit_value);
+    $('#edit_brush_row').css('visibility', 'visible');
+    $('#edit_label_row').css('visibility', 'visible');
+    $('#edit_erase_row').css('visibility', 'visible');
+
+    $('#edit_brush').html(brush_size);
+    $('#edit_label').html(edit_value);
 
     if (erase) {
-      $('#edit_erase').text("eraser mode: ON");
+      $('#edit_erase').html("ON");
     } else {
-      $('#edit_erase').text("eraser mode: OFF");
+      $('#edit_erase').html("OFF");
     }
 
   } else {
     $('#edit_mode').html("OFF");
-    $('#edit_brush').text("");
-    $('#edit_label').text("");
-    $('#edit_erase').text("");
+    $('#edit_brush_row').css('visibility', 'hidden');
+    $('#edit_label_row').css('visibility', 'hidden');
+    $('#edit_erase_row').css('visibility', 'hidden');
   }
 
   if (current_label !== 0) {

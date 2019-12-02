@@ -59,9 +59,21 @@
     width: 20em;
 }
 
-#frames {
-    width: 300px;
-    word-wrap: break-word;         /* All browsers since IE 5.5+ */
+#edit_brush_row, #edit_label_row, #edit_erase_row {
+    visibility: hidden;
+}
+
+#frames, #slices {
+    width: 180px;
+    word-wrap: break-word;          /*All browsers since IE 5.5+*/
+    overflow-wrap: break-word;
+    max-height: 68px;
+    overflow: auto;
+}
+
+#mode {
+    width: 180px;
+    word-wrap: break-word;
     overflow-wrap: break-word;
 }
 
@@ -78,6 +90,9 @@
     vertical-align: top;
 }
 
-.submit {
+#give_filename {
     display: block;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 300px;
 }

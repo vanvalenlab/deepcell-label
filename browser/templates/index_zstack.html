@@ -8,6 +8,7 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/navigation.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/normalize.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/infopane.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/footer.css') }}">
   </head>
 
   <body>
@@ -20,129 +21,33 @@
           <td id="logcol">
 
             <h1>Z-Stack Tool</h1>
-            </p>Filename will be given after submit button is pressed.</p>
+            <p>Filename will be given after submit button is pressed.</p>
 
-            <p1 id="submit" onclick="upload() ">CLICK HERE TO SUBMIT</p1>
-            <p>
-
+            <p id="submit" onclick="upload() ">
+              <strong>CLICK HERE TO SUBMIT</strong>
             </p>
-            <p3 id="give_filename" >
-<!--
-            <form class='changed-form' action="" method="POST" enctype="multipart/form-data" >
-                <label class="changed-label" for="user_file"></label>
-               <input type="button" id="btn2" value="Submit!"/>​
-                <button type="submit" id="btn2">Submit</button>
-            </form> -->
-<!--
-            <div>
-                <p class='frame_status'>frame: </p> <span id="frame"></span>
-                <p class='frame_status'>channel: </p> <span id="channel"></span>
-                <p class='frame_status'>feature: </p> <span id="feature"></span>
-                <p class='view_mode'>highlight mode: </p><span id="highlight"></span>
-                <p class='view_mode'>edit mode: </p> <span id="edit_mode"></span>
-            </div>
 
-            <div>
-                <ul class='view_mode' style="list-style-type:none">
-                  <li id="edit_brush"></li>
-                  <li id="edit_label"></li>
-                  <li id="edit_erase"></li>
-                </ul>
-            </div>
-
-
-
-            <div>
-                <p class='cell_info'>label: </p> <span id="label"></span>
-                <p class='cell_info'>slices: </p><span id="slices"></span>
-            </div>
-
-            <div>
-                <p class="selected_status"> state:</p><span id="mode"></span>
-            <div>
-
- -->
-<table id="log">
-
-               <tr height="50%" valign="top">
-                <td>frame: </td><td id="frame"></td>
-                <tr><td>channel: </td><td id="channel"></td></tr>
-                <tr><td>feature: </td><td id="feature"></td></tr>
-                <td>highlight cells: </td><td id="highlight"></td>
-                <tr><td>highlighted cells: </td><td id="currently_highlighted"></td><tr>
-                <tr><td>edit mode: </td><td id="edit_mode"></td><tr>
-                <tr><td id="edit_brush"></td><tr>
-                <tr><td id="edit_label"></td><tr>
-                <tr><td id="edit_erase"></td><tr>
-
-
-
-              <tr><td>label:</td><td id="label"></td></tr>
-              <tr><td>slices:</td><td><div id="slices"></div></td></tr>
-              <tr><td>state:</td><td id="mode"></td></tr>
-
-
-              </tr>
-
-
-
-
-<!--
-
+            <p id="give_filename" ></p>
 
             <table id="log">
-              <tr height="50%" valign="top">
-                <td>frame: </td><td id="frame"></td>
-                <tr><td>channel: </td><td id="channel"></td></tr>
-                <tr><td>feature: </td><td id="feature"></td></tr>
-                <td>highlight cells: </td><td id="highlight"></td>
-                <tr><td>edit mode: </td><td id="edit_mode"></td><tr>
-                <tr><td id="edit_brush"></td><tr>
-                <tr><td id="edit_label"></td><tr>
-                <tr><td id="edit_erase"></td><tr>
-
+              <tr height="50%" valign="top"><td>frame: </td><td id="frame"></td></tr>
+              <tr><td>channel: </td><td id="channel"></td></tr>
+              <tr><td>feature: </td><td id="feature"></td></tr>
+              <tr><td>highlight cells: </td><td id="highlight"></td></tr>
+              <tr><td>highlighted cells: </td><td id="currently_highlighted"></td></tr>
+              <tr><td>edit mode: </td><td id="edit_mode"></td></tr>
+              <tr id='edit_brush_row'>
+                <td>brush size: </td><td id="edit_brush"></td>
               </tr>
-
+              <tr id='edit_label_row'>
+                <td>editing label: </td><td id="edit_label"></td>
+              </tr>
+              <tr id='edit_erase_row'>
+                <td>eraser: </td><td id="edit_erase"></td>
+              </tr>
               <tr><td>label:</td><td id="label"></td></tr>
               <tr><td>slices:</td><td><div id="slices"></div></td></tr>
               <tr><td>state:</td><td id="mode"></td></tr>
-
-
-
-
-
-
-
-
-               <div>
-                <ul class='view_mode' style="list-style-type:none">
-                  <li id="edit_brush"></li>
-                  <li id="edit_label"></li>
-                  <li id="edit_erase"></li>
-                </ul>
-              </div>
-
-              <div>
-                <h3 class='cell_info'>label: </h1> <span id="label"></span>
-                <h3 class='cell_info'>parent cells: </h1><span id="parent"></span>
-                <h3 class='cell_info'>daughters cells: </h1> <span id="daughters"></span>
-                <h3 class='cell_info'>divisions in frame: </h1> <span id="frame_div"></span>
-                <h3 class='cell_info'>capped: </h1> <span id="capped"></span>
-                <h3 class='cell_info'>frames: </h1> <span id="frames"></span>
-              </div>
-
-              <div>
-                <h3 class="selected_status"> state:</h4><span id="mode"></span>
-              <div>
-
-
- -->
-
-
-
-
-
-
             </table>
           </td>
           <td id="canvascol">
@@ -160,8 +65,8 @@
       document.getElementById("submit").innerHTML = "";
       document.getElementById("give_filename").innerHTML = "Loading file to our database... (wait 10-15 seconds)";
       upload_file();
-      document.getElementById("submit").innerHTML = "Filename to COPY/PASTE: " + file;
-      document.getElementById("give_filename").innerHTML = "";
+      document.getElementById("submit").innerHTML = "";
+      document.getElementById("give_filename").innerHTML = "Filename to COPY/PASTE: " + file;
     }
 
     start_caliban(file);
