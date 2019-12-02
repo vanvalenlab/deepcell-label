@@ -645,9 +645,46 @@ class TrackReview:
             self.action_handle_draw(**info)
         elif action_type == "fill_hole":
             self.action_fill_hole(**info)
+        elif action_type == "flood_cell":
+            self.action_flood_contiguous(**info)
+        elif action_type == "trim_pixels":
+            self.action_trim_pixels(**info)
 
         else:
             raise ValueError("Invalid action '{}'".format(action_type))
+
+    def action_flood_contiguous(self, label, frame, x_location, y_location):
+        '''
+        flood fill a cell with a unique new label; alternative to watershed
+        for fixing duplicate label issue if cells are not touching
+        '''
+        img_ann = self.tracked[frame,:,:,0]
+        old_label = label
+        new_label = max(self.tracks) + 1
+
+        in_original = np.any(np.isin(img_ann, old_label))
+
+        filled_img_ann = flood_fill(img_ann, (int(y_location/self.scale_factor), int(x_location/self.scale_factor)), new_label)
+        self.tracked[frame,:,:,0] = filled_img_ann
+
+        in_modified = np.any(np.isin(filled_img_ann, old_label))
+
+        # update cell info dicts since labels are changing
+        self.add_cell_info(add_label=new_label, frame = frame)
+
+        if in_original and not in_modified:
+            self.del_cell_info(del_label = old_label, frame = frame)
+
+    def action_trim_pixels(self, label, frame, x_location, y_location):
+        '''
+        get rid of any stray pixels of selected label; pixels of value label
+        that are not connected to the cell selected will be removed from annotation in that frame
+        '''
+
+        img_ann = self.tracked[frame,:,:,0]
+        contig_cell = flood(image = img_ann, seed_point = (int(y_location/self.scale_factor), int(x_location/self.scale_factor)))
+        img_trimmed = np.where(np.logical_and(np.invert(contig_cell), img_ann == label), 0, img_ann)
+        self.tracked[frame,:,:,0] = img_trimmed
 
     def action_fill_hole(self, label, frame, x_location, y_location):
         '''

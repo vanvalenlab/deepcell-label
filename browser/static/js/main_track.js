@@ -182,6 +182,12 @@ class Mode {
         } else if (this.action == "swap_cells") {
           action("swap_tracks", this.info);
           this.clear();
+        } else if (this.action === "flood_cell") {
+          action("flood_cell", this.info);
+          this.clear();
+        } else if (this.action === "trim_pixels") {
+          action("trim_pixels", this.info);
+          this.clear();
         }
       }
     }
@@ -197,7 +203,7 @@ class Mode {
     this.clear()
   }
 
-  click() {
+  click(evt) {
     if (this.kind === Modes.question) {
       if(this.action == "fill_hole" && current_label == 0) {
         this.info = { "label": this.info['label'],
@@ -215,7 +221,34 @@ class Mode {
       this.clear();
       return;
 
+    // if nothing selected, shift-, alt-, or normal click:
     } else if (this.kind === Modes.none) {
+      // shift+click
+      if (evt.shiftKey && current_label !== 0) {
+        this.kind = Modes.question;
+        this.action = "trim_pixels";
+        this.info = {"label": current_label,
+                      "frame": current_frame,
+                      "x_location": mouse_x,
+                      "y_location": mouse_y};
+        this.prompt = "SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL";
+        this.highlighted_cell_one = current_label;
+        render_frame();
+
+      // alt+click
+      } else if (evt.altKey && current_label !== 0) {
+        this.kind = Modes.question;
+        this.action = "flood_cell";
+        this.info = {"label": current_label,
+                          "frame": current_frame,
+                          "x_location": mouse_x,
+                          "y_location": mouse_y}
+        this.prompt = "SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL";
+        this.highlighted_cell_one = current_label;
+        render_frame();
+
+      // normal click
+      } else {
       this.kind = Modes.single;
       this.info = {"label": current_label,
                   "frame": current_frame};
@@ -223,7 +256,9 @@ class Mode {
       this.highlighted_cell_two = -1;
       temp_x = mouse_x;
       temp_y = mouse_y;
+      }
 
+    // one label already selected
     } else if (this.kind === Modes.single) {
       this.kind = Modes.multiple;
 
