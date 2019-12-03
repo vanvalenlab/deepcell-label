@@ -184,8 +184,6 @@ class ZStackReview:
         if in_original and not in_modified:
             self.del_cell_info(feature = self.feature, del_label = old_label, frame = frame)
 
-
-
     def action_trim_pixels(self, label, frame, x_location, y_location):
         '''
         get rid of any stray pixels of selected label; pixels of value label
@@ -373,20 +371,23 @@ class ZStackReview:
             annotated = self.annotated[frame,:,:,self.feature]
             # if label being replaced is present, remove it from image and update cell info dict
             if np.any(np.isin(annotated, label_2)):
-                annotated[annotated == label_2] = label_1
+                annotated = np.where(annotated == label_2, label_1, annotated)
+                self.annotated[frame,:,:,self.feature] = annotated
                 self.add_cell_info(feature = self.feature, add_label = label_1, frame = frame)
                 self.del_cell_info(feature = self.feature, del_label = label_2, frame = frame)
 
     def action_replace_single(self, label_1, label_2, frame_1, frame_2):
         '''
         replaces label_2 with label_1, but only in one frame. Check to make sure frame_1 and
-        frame_2 are the same to prevent weird behavior
+        frame_2 are the same to prevent weird behavior. Check to make sure label_1 and label_2
+        aren't the same (replacing is pointless if they're the same label)
         '''
-        if frame_1 == frame_2:
+        if frame_1 == frame_2 and label_1 != label_2:
             frame = frame_1
             annotated = self.annotated[frame,:,:,self.feature]
             # change annotation
-            annotated[annotated == label_2] = label_1
+            annotated = np.where(annotated == label_2, label_1, annotated)
+            self.annotated[frame,:,:,self.feature] = annotated
             # update info
             self.add_cell_info(feature = self.feature, add_label = label_1, frame = frame)
             self.del_cell_info(feature = self.feature, del_label = label_2, frame = frame)
@@ -573,9 +574,7 @@ class TrackReview:
                                 for a in frames]) + ']'
             track["frames"] = frames
 
-
         return tracks
-
 
     def get_frame(self, frame, raw):
         self.current_frame = frame
@@ -859,8 +858,10 @@ class TrackReview:
         Replacing label_2 with label_1
         """
         # replace arrays
-        for frame in self.tracked:
-            frame[frame == label_2] = label_1
+        for frame in range(self.max_frames):
+            annotated = self.tracked[frame]
+            annotated = np.where(annotated == label_2, label_1, annotated)
+            self.tracked[frame] = annotated
 
         # replace fields
         track_1 = self.tracks[label_1]
