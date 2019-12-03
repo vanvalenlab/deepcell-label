@@ -599,13 +599,6 @@ function load_file(file) {
   });
 }
 
-async function fetch_frame(frame) {
-  return $.ajax({
-    type: 'GET',
-    url: "frame/" + frame+ "/" + project_id,
-  });
-}
-
 function prepare_canvas() {
   $('#canvas').click(function(evt) {
     if (!edit_mode) {
