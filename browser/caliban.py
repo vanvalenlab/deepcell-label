@@ -77,6 +77,7 @@ class ZStackReview:
         self.color_map = plt.get_cmap('viridis')
         self.color_map.set_bad('black')
 
+
     @property
     def readable_tracks(self):
         """

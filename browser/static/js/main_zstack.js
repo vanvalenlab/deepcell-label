@@ -453,8 +453,8 @@ var dimensions = undefined;
 var tracks = undefined;
 let maxLabelsMap = new Map();
 var mode = new Mode(Modes.none, {});
-var raw_image = undefined;
-var seg_image = undefined;
+var raw_image = new Image();
+var seg_image = new Image();
 var seg_array; // declare here so it is global var
 var scale;
 var mouse_x = 0;
@@ -685,23 +685,15 @@ function fetch_and_render_frame() {
     type: 'GET',
     url: "frame/" + current_frame + "/" + project_id,
     success: function(payload) {
-      if (seg_image === undefined) {
-        seg_image = new Image();
-      }
-      if (raw_image === undefined) {
-        raw_image = new Image();
-      }
-
       // load new value of seg_array
-      // array of arrays, contains annotation raw data for frame
+      // array of arrays, contains annotation data for frame
       seg_array = payload.seg_arr;
-
       seg_image.src = payload.segmented;
       seg_image.onload = render_frame;
       raw_image.src = payload.raw;
       raw_image.onload = render_frame;
     },
-    async: true
+    async: false
   });
 }
 
