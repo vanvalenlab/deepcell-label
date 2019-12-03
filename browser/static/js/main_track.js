@@ -740,33 +740,28 @@ function prepare_canvas() {
   }, false);
 }
 
-function reload_tracks() {
-  $.ajax({
-    type:'GET',
-    url:"tracks/" + project_id,
-    data: project_id,
-    success: function (payload) {
-      tracks = payload.tracks;
-      maxTrack = Math.max(... Object.keys(tracks).map(Number));
-    },
-    async: false
-  });
-}
-
-function action(action, info) {
+function action(action, info, frame = current_frame) {
   $.ajax({
     type:'POST',
-    url:"action/" + project_id + "/" + action,
+    url:"action/" + project_id + "/" + action + "/" + frame,
     data: info,
     success: function (payload) {
       if (payload.error) {
         alert(payload.error);
       }
-      if (payload.frames_changed) {
-        fetch_and_render_frame();
+      if (payload.imgs) {
+        // load new value of seg_array
+        // array of arrays, contains annotation data for frame
+        seg_array = payload.imgs.seg_arr;
+        seg_image.src = payload.imgs.segmented;
+        raw_image.src = payload.imgs.raw;
       }
-      if (payload.tracks_changed) {
-        reload_tracks();
+      if (payload.tracks) {
+        tracks = payload.tracks;
+        maxTrack = Math.max(... Object.keys(tracks).map(Number));
+      }
+      if (payload.tracks || payload.imgs) {
+        render_frame();
       }
     },
     async: false
