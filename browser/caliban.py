@@ -558,7 +558,7 @@ class TrackReview:
 
         self.max_frames = self.raw.shape[0]
         self.dimensions = self.raw.shape[1:3][::-1]
-        self.height, self.width = self.dimensions
+        self.width, self.height = self.dimensions
 
         self.scale_factor = 2
 
