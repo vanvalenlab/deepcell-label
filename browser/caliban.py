@@ -51,6 +51,7 @@ class ZStackReview:
         self.feature_max = self.annotated.shape[-1]
         self.channel = 0
         self.max_frames, self.height, self.width, self.channel_max = self.raw.shape
+        self.dimensions = (self.width, self.height)
 
         #create a dictionary that has frame information about each cell
         #analogous to .trk lineage but do not need relationships between cells included
@@ -63,27 +64,15 @@ class ZStackReview:
         for feature in range(self.feature_max):
             self.create_cell_info(feature)
 
-        #don't display 'frames' just 'slices' (updated on_draw)
-        first_key = list(self.cell_info[0])[0]
-        display_info_types = self.cell_info[0][first_key]
-        self.display_info = [*sorted(set(display_info_types) - {'frames'})]
-
         self.draw_raw = False
         self.max_intensity = {}
         for channel in range(self.channel_max):
             self.max_intensity[channel] = None
-        self.x = 0
-        self.y = 0
-        self.adjustment = {}
-        for feature in range(self.feature_max):
-            self.adjustment[feature] = 0
+
         self.dtype_raw = self.raw.dtype
         self.scale_factor = 2
 
-        self.hole_fill_seed = None
-        self.fill_label = None
         self.save_version = 0
-        self.dimensions = self.raw.shape[1:3][::-1]
 
         self.color_map = plt.get_cmap('viridis')
         self.color_map.set_bad('black')
@@ -118,7 +107,7 @@ class ZStackReview:
             frame = np.ma.masked_equal(frame, 0)
             return pngify(imgarr=frame,
                          vmin=0,
-                         vmax=self.num_cells[self.feature] + self.adjustment[self.feature],
+                         vmax=self.num_cells[self.feature],
                          cmap=self.color_map)
 
     def get_array(self, frame):
@@ -566,14 +555,6 @@ class TrackReview:
         self.color_map.set_bad('black')
 
         self.current_frame = 0
-
-        self.x = 0
-        self.y = 0
-
-        self.edit_mode = False
-        self.hole_fill_seed = None
-        self.fill_label = None
-        self.brush_view = np.zeros(self.tracked[self.current_frame].shape)
 
 
     @property
