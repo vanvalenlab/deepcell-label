@@ -51,6 +51,7 @@ class ZStackReview:
         self.feature_max = self.annotated.shape[-1]
         self.channel = 0
         self.max_frames, self.height, self.width, self.channel_max = self.raw.shape
+        self.dimensions = (self.width, self.height)
 
         #create a dictionary that has frame information about each cell
         #analogous to .trk lineage but do not need relationships between cells included
@@ -63,30 +64,21 @@ class ZStackReview:
         for feature in range(self.feature_max):
             self.create_cell_info(feature)
 
-        #don't display 'frames' just 'slices' (updated on_draw)
-        first_key = list(self.cell_info[0])[0]
-        display_info_types = self.cell_info[0][first_key]
-        self.display_info = [*sorted(set(display_info_types) - {'frames'})]
-
         self.draw_raw = False
         self.max_intensity = {}
         for channel in range(self.channel_max):
             self.max_intensity[channel] = None
-        self.x = 0
-        self.y = 0
-        self.adjustment = {}
-        for feature in range(self.feature_max):
-            self.adjustment[feature] = 0
+
         self.dtype_raw = self.raw.dtype
         self.scale_factor = 2
 
-        self.hole_fill_seed = None
-        self.fill_label = None
         self.save_version = 0
-        self.dimensions = self.raw.shape[1:3][::-1]
 
         self.color_map = plt.get_cmap('viridis')
         self.color_map.set_bad('black')
+
+        self.frames_changed = False
+        self.info_changed = False
 
     @property
     def readable_tracks(self):
@@ -118,7 +110,7 @@ class ZStackReview:
             frame = np.ma.masked_equal(frame, 0)
             return pngify(imgarr=frame,
                          vmin=0,
-                         vmax=self.num_cells[self.feature] + self.adjustment[self.feature],
+                         vmax=self.num_cells[self.feature],
                          cmap=self.color_map)
 
     def get_array(self, frame):
@@ -194,8 +186,6 @@ class ZStackReview:
         if in_original and not in_modified:
             self.del_cell_info(feature = self.feature, del_label = old_label, frame = frame)
 
-
-
     def action_trim_pixels(self, label, frame, x_location, y_location):
         '''
         get rid of any stray pixels of selected label; pixels of value label
@@ -205,12 +195,17 @@ class ZStackReview:
         img_ann = self.annotated[frame,:,:,self.feature]
         contig_cell = flood(image = img_ann, seed_point = (int(y_location/self.scale_factor), int(x_location/self.scale_factor)))
         img_trimmed = np.where(np.logical_and(np.invert(contig_cell), img_ann == label), 0, img_ann)
-        self.annotated[frame,:,:,self.feature] = img_trimmed
 
+        #check if image changed
+        comparison = np.where(img_trimmed != img_ann)
+        self.frames_changed = np.any(comparison)
+        #this action should never change the cell info
+
+        self.annotated[frame,:,:,self.feature] = img_trimmed
 
     def action_handle_draw(self, trace, edit_value, brush_size, erase, frame):
 
-        annotated = self.annotated[frame,:,:,self.feature]
+        annotated = np.copy(self.annotated[frame,:,:,self.feature])
 
         in_original = np.any(np.isin(annotated, edit_value))
 
@@ -239,6 +234,11 @@ class ZStackReview:
         #cell addition
         elif in_modified and not in_original:
             self.add_cell_info(feature = self.feature, add_label = edit_value, frame = frame)
+
+        #check for image change, in case pixels changed but no new or del cell
+        comparison = np.where(annotated != self.annotated[frame,:,:,self.feature])
+        self.frames_changed = np.any(comparison)
+        #if info changed, self.info_changed set to true with info helper functions
 
         self.annotated[frame,:,:,self.feature] = annotated
 
@@ -272,6 +272,9 @@ class ZStackReview:
         img_ann = self.annotated[frame,:,:,self.feature]
         filled_img_ann = flood_fill(img_ann, hole_fill_seed, label, connectivity = 1)
         self.annotated[frame,:,:,self.feature] = filled_img_ann
+
+        #never changes info but always changes annotation
+        self.frames_changed = True
 
     def action_new_cell_stack(self, label, frame):
 
@@ -316,6 +319,8 @@ class ZStackReview:
 
         self.annotated[frame,:,:,self.feature] = ann_img
 
+        self.frames_changed = self.info_changed = True
+
     def action_swap_all_frame(self, label_1, label_2, frame_1, frame_2):
 
         for frame in range(self.annotated.shape[0]):
@@ -331,6 +336,8 @@ class ZStackReview:
         self.cell_info[self.feature][label_1].update({'frames': cell_info_2['frames']})
         self.cell_info[self.feature][label_2].update({'frames': cell_info_1['frames']})
 
+        self.frames_changed = self.info_changed = True
+
     def action_predict_single(self, frame):
 
         '''
@@ -345,11 +352,15 @@ class ZStackReview:
             img = self.annotated[prev_slice,:,:,self.feature]
             next_img = self.annotated[current_slice,:,:,self.feature]
             updated_slice = predict_zstack_cell_ids(img, next_img)
-            self.annotated[current_slice,:,:,int(self.feature)] = updated_slice
 
+            #check if image changed
+            comparison = np.where(next_img != updated_slice)
+            self.frames_changed = np.any(comparison)
 
-        #update cell_info
-            self.create_cell_info(feature = int(self.feature))
+            #if the image changed, update self.annotated and remake cell info
+            if self.frames_changed:
+                self.annotated[current_slice,:,:,int(self.feature)] = updated_slice
+                self.create_cell_info(feature = int(self.feature))
 
     def action_predict_zstack(self):
         '''
@@ -367,6 +378,7 @@ class ZStackReview:
             self.annotated[zslice + 1,:,:,self.feature] = predicted_next
 
         #remake cell_info dict based on new annotations
+        self.frames_changed = True
         self.create_cell_info(feature = self.feature)
 
     def action_replace(self, label_1, label_2, frame_1, frame_2):
@@ -383,20 +395,23 @@ class ZStackReview:
             annotated = self.annotated[frame,:,:,self.feature]
             # if label being replaced is present, remove it from image and update cell info dict
             if np.any(np.isin(annotated, label_2)):
-                annotated[annotated == label_2] = label_1
+                annotated = np.where(annotated == label_2, label_1, annotated)
+                self.annotated[frame,:,:,self.feature] = annotated
                 self.add_cell_info(feature = self.feature, add_label = label_1, frame = frame)
                 self.del_cell_info(feature = self.feature, del_label = label_2, frame = frame)
 
     def action_replace_single(self, label_1, label_2, frame_1, frame_2):
         '''
         replaces label_2 with label_1, but only in one frame. Check to make sure frame_1 and
-        frame_2 are the same to prevent weird behavior
+        frame_2 are the same to prevent weird behavior. Check to make sure label_1 and label_2
+        aren't the same (replacing is pointless if they're the same label)
         '''
-        if frame_1 == frame_2:
+        if frame_1 == frame_2 and label_1 != label_2:
             frame = frame_1
             annotated = self.annotated[frame,:,:,self.feature]
             # change annotation
-            annotated[annotated == label_2] = label_1
+            annotated = np.where(annotated == label_2, label_1, annotated)
+            self.annotated[frame,:,:,self.feature] = annotated
             # update info
             self.add_cell_info(feature = self.feature, add_label = label_1, frame = frame)
             self.del_cell_info(feature = self.feature, del_label = label_2, frame = frame)
@@ -479,6 +494,8 @@ class ZStackReview:
 
             self.num_cells[feature] += 1
 
+        #if adding cell, frames and info have necessarily changed
+        self.frames_changed = self.info_changed = True
 
     def del_cell_info(self, feature, del_label, frame):
         '''
@@ -497,6 +514,8 @@ class ZStackReview:
             ids = self.cell_ids[feature]
             self.cell_ids[feature] = np.delete(ids, np.where(ids == np.int64(del_label)))
 
+        #if deleting cell, frames and info have necessarily changed
+        self.frames_changed = self.info_changed = True
 
     def create_cell_info(self, feature):
         '''
@@ -522,6 +541,8 @@ class ZStackReview:
                 if cell in annotated[frame,:,:]:
                     self.cell_info[feature][cell]['frames'].append(int(frame))
             self.cell_info[feature][cell]['slices'] = ''
+
+        self.info_changed = True
 
     def create_lineage(self):
         for cell in self.cell_ids[self.feature]:
@@ -567,14 +588,8 @@ class TrackReview:
 
         self.current_frame = 0
 
-        self.x = 0
-        self.y = 0
-
-        self.edit_mode = False
-        self.hole_fill_seed = None
-        self.fill_label = None
-        self.brush_view = np.zeros(self.tracked[self.current_frame].shape)
-
+        self.frames_changed = False
+        self.info_changed = False
 
     @property
     def readable_tracks(self):
@@ -591,9 +606,7 @@ class TrackReview:
                                 for a in frames]) + ']'
             track["frames"] = frames
 
-
         return tracks
-
 
     def get_frame(self, frame, raw):
         self.current_frame = frame
@@ -687,6 +700,10 @@ class TrackReview:
         img_ann = self.tracked[frame,:,:,0]
         contig_cell = flood(image = img_ann, seed_point = (int(y_location/self.scale_factor), int(x_location/self.scale_factor)))
         img_trimmed = np.where(np.logical_and(np.invert(contig_cell), img_ann == label), 0, img_ann)
+
+        comparison = np.where(img_trimmed != img_ann)
+        self.frames_changed = np.any(comparison)
+
         self.tracked[frame,:,:,0] = img_trimmed
 
     def action_fill_hole(self, label, frame, x_location, y_location):
@@ -704,9 +721,11 @@ class TrackReview:
         filled_img_ann = flood_fill(img_ann, hole_fill_seed, label, connectivity = 1)
         self.tracked[frame,:,:,0] = filled_img_ann
 
+        self.frames_changed = True
+
     def action_handle_draw(self, trace, edit_value, brush_size, erase, frame):
 
-        annotated = self.tracked[frame]
+        annotated = np.copy(self.tracked[frame])
 
         in_original = np.any(np.isin(annotated, edit_value))
 
@@ -735,6 +754,9 @@ class TrackReview:
         # cell addition
         elif in_modified and not in_original:
             self.add_cell_info(add_label = edit_value, frame = frame)
+
+        comparison = np.where(annotated != self.tracked[frame])
+        self.frames_changed = np.any(comparison)
 
         self.tracked[frame] = annotated
 
@@ -837,6 +859,8 @@ class TrackReview:
 
         self.tracked[frame,:,:,0] = ann_img
 
+        self.frames_changed = True
+
     def action_swap_tracks(self, label_1, label_2, frame_1, frame_2):
         def relabel(old_label, new_label):
             for frame in self.tracked:
@@ -859,6 +883,8 @@ class TrackReview:
         relabel(label_2, label_1)
         relabel(-1, label_2)
 
+        self.frames_changed = self.info_changed = True
+
     def action_set_parent(self, label_1, label_2, frame_1, frame_2):
         """
         label_1 gave birth to label_2
@@ -872,13 +898,17 @@ class TrackReview:
         track_2["parent"] = label_1
         track_1["frame_div"] = frame_div
 
+        self.info_changed = True
+
     def action_replace(self, label_1, label_2, frame_1, frame_2):
         """
         Replacing label_2 with label_1
         """
         # replace arrays
-        for frame in self.tracked:
-            frame[frame == label_2] = label_1
+        for frame in range(self.max_frames):
+            annotated = self.tracked[frame]
+            annotated = np.where(annotated == label_2, label_1, annotated)
+            self.tracked[frame] = annotated
 
         # replace fields
         track_1 = self.tracks[label_1]
@@ -899,6 +929,8 @@ class TrackReview:
                 track["daughters"].remove(label_2)
             except ValueError:
                 pass
+
+        self.frames_changed = self.info_changed = True
 
     def action_delete(self, label, frame):
         """
@@ -951,6 +983,8 @@ class TrackReview:
             track_old["frame_div"] = None
             track_old["capped"] = True
 
+            self.frames_changed = self.info_changed = True
+
     def action_new_single_cell(self, label, frame):
         """
         Create new label in just one frame
@@ -986,6 +1020,8 @@ class TrackReview:
             self.tracks[add_label].update({'parent': None})
             self.tracks[add_label].update({'capped': False})
 
+        self.frames_changed = self.info_changed = True
+
     def del_cell_info(self, del_label, frame):
         '''
         helper function for actions that remove a cell from the trk
@@ -1007,6 +1043,8 @@ class TrackReview:
                     pass
                 if track["parent"] == del_label:
                     track["parent"] = None
+
+        self.frames_changed = self.info_changed = True
 
 
 def consecutive(data, stepsize=1):

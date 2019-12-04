@@ -453,8 +453,8 @@ var dimensions = undefined;
 var tracks = undefined;
 let maxLabelsMap = new Map();
 var mode = new Mode(Modes.none, {});
-var raw_image = undefined;
-var seg_image = undefined;
+var raw_image = new Image();
+var seg_image = new Image();
 var seg_array; // declare here so it is global var
 var scale;
 var mouse_x = 0;
@@ -685,23 +685,15 @@ function fetch_and_render_frame() {
     type: 'GET',
     url: "frame/" + current_frame + "/" + project_id,
     success: function(payload) {
-      if (seg_image === undefined) {
-        seg_image = new Image();
-      }
-      if (raw_image === undefined) {
-        raw_image = new Image();
-      }
-
       // load new value of seg_array
-      // array of arrays, contains annotation raw data for frame
+      // array of arrays, contains annotation data for frame
       seg_array = payload.seg_arr;
-
       seg_image.src = payload.segmented;
       seg_image.onload = render_frame;
       raw_image.src = payload.raw;
       raw_image.onload = render_frame;
     },
-    async: true
+    async: false
   });
 }
 
@@ -734,14 +726,6 @@ function load_file(file) {
       $('#hidden_canvas').get(0).height = dimensions[1];
     },
     async: false
-  });
-}
-
-async function fetch_frame(frame) {
-  return $.ajax({
-    type: 'GET',
-    url: "frame/" + frame + "/" + project_id
-
   });
 }
 
@@ -898,37 +882,35 @@ function prepare_canvas() {
   }, false);
 }
 
-function reload_tracks() {
-  $.ajax({
-    type:'GET',
-    url:"tracks/" + project_id,
-    data: project_id,
-    success: function (payload) {
-      tracks = payload.tracks;
-      //update maxLabelsMap when we get new track info
-      for (let i = 0; i < Object.keys(tracks).length; i++){
-        let key = Object.keys(tracks)[i]; //the keys are strings
-        maxLabelsMap.set(i, Math.max(... Object.keys(tracks[key]).map(Number)));
-      };
-    },
-    async: false
-  });
-}
-
-function action(action, info) {
+function action(action, info, frame = current_frame) {
   $.ajax({
     type:'POST',
-    url:"action/" + project_id + "/" + action,
+    url:"action/" + project_id + "/" + action + "/" + frame,
     data: info,
     success: function (payload) {
       if (payload.error) {
         alert(payload.error);
       }
-      if (payload.frames_changed) {
-        fetch_and_render_frame();
+      if (payload.imgs) {
+        // load new value of seg_array
+        // array of arrays, contains annotation data for frame
+        seg_array = payload.imgs.seg_arr;
+
+        seg_image.src = payload.imgs.segmented;
+        // seg_image.onload = render_frame;
+        raw_image.src = payload.imgs.raw;
+        // raw_image.onload = render_frame;
       }
-      if (payload.tracks_changed) {
-        reload_tracks();
+      if (payload.tracks) {
+        tracks = payload.tracks;
+      //update maxLabelsMap when we get new track info
+        for (let i = 0; i < Object.keys(tracks).length; i++){
+          let key = Object.keys(tracks)[i]; //the keys are strings
+          maxLabelsMap.set(i, Math.max(... Object.keys(tracks[key]).map(Number)));
+        }
+      }
+      if (payload.tracks || payload.imgs) {
+        render_frame();
       }
     },
     async: false
