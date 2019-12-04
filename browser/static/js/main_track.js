@@ -281,52 +281,40 @@ class Mode {
     this.clear()
   }
 
-  click(evt) {
-    if (this.kind === Modes.question) {
-      if(this.action == "fill_hole" && current_label == 0) {
-        this.info = { "label": this.info['label'],
-                      "frame": current_frame,
-                      "x_location": mouse_x,
-                      "y_location": mouse_y };
-        action(this.action, this.info);
-        this.clear();
-      }
-
-      //if click on background, same as ESC
-    } else if (current_label === 0) {
-      this.highlighted_cell_one = -1;
-      this.highlighted_cell_two = -1;
+  handle_mode_question_click(evt) {
+    if (this.action === "fill_hole" && current_label === 0) {
+      this.info = { "label": this.info['label'],
+                    "frame": current_frame,
+                    "x_location": mouse_x,
+                    "y_location": mouse_y };
+      action(this.action, this.info);
       this.clear();
-      return;
+    }
+  }
 
-    // if nothing selected, shift-, alt-, or normal click:
-    } else if (this.kind === Modes.none) {
+  handle_mode_none_click(evt) {
+    if (evt.shiftKey) {
       // shift+click
-      if (evt.shiftKey && current_label !== 0) {
-        this.kind = Modes.question;
-        this.action = "trim_pixels";
-        this.info = {"label": current_label,
-                      "frame": current_frame,
-                      "x_location": mouse_x,
-                      "y_location": mouse_y};
-        this.prompt = "SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL";
-        this.highlighted_cell_one = current_label;
-        render_frame();
-
+      this.kind = Modes.question;
+      this.action = "trim_pixels";
+      this.info = {"label": current_label,
+                    "frame": current_frame,
+                    "x_location": mouse_x,
+                    "y_location": mouse_y};
+      this.prompt = "SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL";
+      this.highlighted_cell_one = current_label;
+    } else if (evt.altKey) {
       // alt+click
-      } else if (evt.altKey && current_label !== 0) {
-        this.kind = Modes.question;
-        this.action = "flood_cell";
-        this.info = {"label": current_label,
-                          "frame": current_frame,
-                          "x_location": mouse_x,
-                          "y_location": mouse_y}
-        this.prompt = "SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL";
-        this.highlighted_cell_one = current_label;
-        render_frame();
-
+      this.kind = Modes.question;
+      this.action = "flood_cell";
+      this.info = {"label": current_label,
+                        "frame": current_frame,
+                        "x_location": mouse_x,
+                        "y_location": mouse_y}
+      this.prompt = "SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL";
+      this.highlighted_cell_one = current_label;
+    } else {
       // normal click
-      } else {
       this.kind = Modes.single;
       this.info = {"label": current_label,
                   "frame": current_frame};
@@ -334,47 +322,67 @@ class Mode {
       this.highlighted_cell_two = -1;
       temp_x = mouse_x;
       temp_y = mouse_y;
-      }
+    }
+  }
 
-    // one label already selected
+  handle_mode_single_click(evt) {
+    this.kind = Modes.multiple;
+
+    this.highlighted_cell_one = this.info.label;
+    this.highlighted_cell_two = current_label;
+
+    if (this.info.label === current_label) {
+      this.info = {"label_1": this.info.label,
+                  "label_2": current_label,
+                  "frame": current_frame,
+                  "x1_location": temp_x,
+                  "y1_location": temp_y,
+                  "x2_location": mouse_x,
+                  "y2_location": mouse_y};
+    } else {
+      this.info = {"label_1": this.info.label,
+                  "frame_1": this.info.frame,
+                  "label_2": current_label,
+                  "frame_2": current_frame};
+    }
+  }
+
+  handle_mode_multiple_click(evt) {
+    this.highlighted_cell_one = this.info.label_1;
+    this.highlighted_cell_two = current_label;
+
+    if (this.info.label_1 === current_label) {
+      this.info = {"label_1": this.info.label_1,
+                  "label_2": current_label,
+                  "frame": current_frame,
+                  "x1_location": temp_x,
+                  "y1_location": temp_y,
+                  "x2_location": mouse_x,
+                  "y2_location": mouse_y};
+    } else {
+      this.info = {"label_1": this.info.label_1,
+                  "frame_1": this.info.frame_1,
+                  "label_2": current_label,
+                  "frame_2": current_frame};
+    }
+  }
+
+  click(evt) {
+    if (this.kind === Modes.question) {
+      // just hole fill
+      this.handle_mode_question_click(evt);
+    } else if (current_label === 0) {
+      // same as ESC
+      this.clear();
+      return;
+    } else if (this.kind === Modes.none) {
+      // if nothing selected, shift-, alt-, or normal click:
+      this.handle_mode_none_click(evt);
     } else if (this.kind === Modes.single) {
-      this.kind = Modes.multiple;
-
-      this.highlighted_cell_one = this.info.label;
-      this.highlighted_cell_two = current_label;
-
-      if (this.info.label == current_label) {
-        this.info = {"label_1": this.info.label,
-                    "label_2": current_label,
-                    "frame": current_frame,
-                    "x1_location": temp_x,
-                    "y1_location": temp_y,
-                    "x2_location": mouse_x,
-                    "y2_location": mouse_y};
-      } else {
-        this.info = {"label_1": this.info.label,
-                    "frame_1": this.info.frame,
-                    "label_2": current_label,
-                    "frame_2": current_frame};
-      }
+      // one label already selected
+      this.handle_mode_single_click(evt);
     } else if (this.kind  === Modes.multiple) {
-      this.highlighted_cell_one = this.info.label_1;
-      this.highlighted_cell_two = current_label;
-
-      if (this.info.label_1 == current_label) {
-        this.info = {"label_1": this.info.label_1,
-                    "label_2": current_label,
-                    "frame": current_frame,
-                    "x1_location": temp_x,
-                    "y1_location": temp_y,
-                    "x2_location": mouse_x,
-                    "y2_location": mouse_y};
-      } else {
-        this.info = {"label_1": this.info.label_1,
-                    "frame_1": this.info.frame_1,
-                    "label_2": current_label,
-                    "frame_2": current_frame};
-      }
+      this.handle_mode_multiple_click(evt);
     }
     render_frame();
   }
