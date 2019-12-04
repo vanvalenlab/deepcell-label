@@ -106,20 +106,13 @@ class ZStackReview:
 
         return cell_info
 
-
-    def get_frame(self, frame, raw, edit_background):
+    def get_frame(self, frame, raw):
         if raw:
             frame = self.raw[frame][:,:, self.channel]
             return pngify(imgarr=frame,
                           vmin=0,
                           vmax=self.max_intensity[self.channel],
                           cmap="cubehelix")
-        elif edit_background:
-            frame = self.raw[frame][:,:, self.channel]
-            return pngify(imgarr=frame,
-                          vmin=0,
-                          vmax=self.max_intensity[self.channel],
-                          cmap="Greys")
         else:
             frame = self.annotated[frame][:,:, self.feature]
             frame = np.ma.masked_equal(frame, 0)
@@ -553,6 +546,8 @@ class TrackReview:
         self.output_bucket = output_bucket
         self.subfolders = subfolders
         self.trial = self.load(filename)
+        self.raw = self.trial["raw"]
+        self.tracked = self.trial["tracked"]
 
         # lineages is a list of dictionaries. There should be only a single one
         # when using a .trk file
@@ -561,22 +556,16 @@ class TrackReview:
 
         self.tracks = self.trial["lineages"][0]
 
-
-        self.num_tracks = max(self.tracks)
-        self.max_frames = self.trial["raw"].shape[0]
-        self.dimensions = self.trial["raw"].shape[1:3][::-1]
-        self.height, self.width = self.dimensions
-        self.color_map = self.random_colormap()
+        self.max_frames = self.raw.shape[0]
+        self.dimensions = self.raw.shape[1:3][::-1]
+        self.width, self.height = self.dimensions
 
         self.scale_factor = 2
 
-        self.highlight = False
-        self.highlight_cell_one = -1
-        self.highlight_cell_two = -1
+        self.color_map = plt.get_cmap('viridis')
+        self.color_map.set_bad('black')
 
         self.current_frame = 0
-        self.brush_size = 1
-        self.edit_value = 1
 
         self.x = 0
         self.y = 0
@@ -584,25 +573,9 @@ class TrackReview:
         self.edit_mode = False
         self.hole_fill_seed = None
         self.fill_label = None
-        self.brush_view = np.zeros(self.trial["tracked"][self.current_frame].shape)
+        self.brush_view = np.zeros(self.tracked[self.current_frame].shape)
 
 
-    def random_colormap(self):
-        max_val = max(self.tracks)
-
-        # this is a random map from [0, max_val - 1] -> [1, max_val]
-        shuffle_idx = list(range(1, max_val + 1))
-        # check if workers really prefer this
-        #random.shuffle(shuffle_idx)
-
-        shuffle_idx = [shuffle_idx[i] * .8 for i in range(max_val)]
-
-        colors = [(0, 0, 0), * (list(hsv_to_rgb([shuffle_idx[i] / max_val, 1, 1]))
-                             for i in range(max_val))]
-
-        return LinearSegmentedColormap.from_list('new_map',
-                                                 colors,
-                                                 N=max_val + 1)
     @property
     def readable_tracks(self):
         """
@@ -621,43 +594,26 @@ class TrackReview:
 
         return tracks
 
-    @property
-    def png_colormap(self):
 
-
-        return {str(self.color_map(v, bytes=True)): int(v)
-                  for v in range(max(self.tracks) + 1)}
-
-    def get_frame(self, frame, raw, edit_background):
+    def get_frame(self, frame, raw):
         self.current_frame = frame
         if raw:
-            frame = self.trial["raw"][frame][:,:,0]
+            frame = self.raw[frame][:,:,0]
             return pngify(imgarr=frame,
                           vmin=0,
                           vmax=None,
                           cmap="cubehelix")
-        if edit_background:
-            frame = self.trial["raw"][frame][:,:,0]
-            return pngify(imgarr=frame,
-                          vmin=0,
-                          vmax=None,
-                          cmap="Greys")
-
         else:
-
-            frame = self.trial["tracked"][frame][:,:,0]
-            self.color_map.set_bad('red')
-
-            if (self.highlight):
-                if (self.highlight_cell_one != -1):
-                    frame = np.ma.masked_equal(frame, self.highlight_cell_one)
-                if (self.highlight_cell_two != -1):
-                    frame = np.ma.masked_equal(frame, self.highlight_cell_two)
-
+            frame = self.tracked[frame][:,:,0]
+            frame = np.ma.masked_equal(frame, 0)
             return pngify(imgarr=frame,
                          vmin=0,
-                         vmax=self.num_tracks,
+                         vmax=max(self.tracks),
                          cmap=self.color_map)
+
+    def get_array(self, frame):
+        frame = self.tracked[frame][:,:,0]
+        return frame
 
     def load(self, filename):
         global original_filename
@@ -672,10 +628,12 @@ class TrackReview:
             self.action_set_parent(**info)
         elif action_type == "replace":
             self.action_replace(**info)
-        # elif action_type == "create_single_new":
-        #     self.action_new_single_cell(**info)
+        elif action_type == "create_single_new":
+            self.action_new_single_cell(**info)
         elif action_type == "create_all_new":
             self.action_new_track(**info)
+        elif action_type == "swap_single_frame":
+            self.action_swap_single_frame(**info)
         elif action_type == "swap_tracks":
             self.action_swap_tracks(**info)
         elif action_type == "save_track":
@@ -684,127 +642,122 @@ class TrackReview:
             self.action_watershed(**info)
         elif action_type == "delete_cell":
             self.action_delete(**info)
-        elif action_type == "edit_value":
-            self.action_edit_value(**info)
         elif action_type == "change_edit_mode":
             self.edit_mode = not self.edit_mode
-        elif action_type == "change_erase":
-            self.action_change_erase(**info)
-        elif action_type == "change_brush_size":
-            self.action_change_brush_size(**info)
         elif action_type == "handle_draw":
             self.action_handle_draw(**info)
         elif action_type == "fill_hole":
             self.action_fill_hole(**info)
-        elif action_type == "change_highlight":
-            self.highlight = not self.highlight
-        elif action_type == "change_selected_cells":
-            self.action_change_selected_cells(**info)
+        elif action_type == "flood_cell":
+            self.action_flood_contiguous(**info)
+        elif action_type == "trim_pixels":
+            self.action_trim_pixels(**info)
 
         else:
             raise ValueError("Invalid action '{}'".format(action_type))
 
+    def action_flood_contiguous(self, label, frame, x_location, y_location):
+        '''
+        flood fill a cell with a unique new label; alternative to watershed
+        for fixing duplicate label issue if cells are not touching
+        '''
+        img_ann = self.tracked[frame,:,:,0]
+        old_label = label
+        new_label = max(self.tracks) + 1
+
+        in_original = np.any(np.isin(img_ann, old_label))
+
+        filled_img_ann = flood_fill(img_ann, (int(y_location/self.scale_factor), int(x_location/self.scale_factor)), new_label)
+        self.tracked[frame,:,:,0] = filled_img_ann
+
+        in_modified = np.any(np.isin(filled_img_ann, old_label))
+
+        # update cell info dicts since labels are changing
+        self.add_cell_info(add_label=new_label, frame = frame)
+
+        if in_original and not in_modified:
+            self.del_cell_info(del_label = old_label, frame = frame)
+
+    def action_trim_pixels(self, label, frame, x_location, y_location):
+        '''
+        get rid of any stray pixels of selected label; pixels of value label
+        that are not connected to the cell selected will be removed from annotation in that frame
+        '''
+
+        img_ann = self.tracked[frame,:,:,0]
+        contig_cell = flood(image = img_ann, seed_point = (int(y_location/self.scale_factor), int(x_location/self.scale_factor)))
+        img_trimmed = np.where(np.logical_and(np.invert(contig_cell), img_ann == label), 0, img_ann)
+        self.tracked[frame,:,:,0] = img_trimmed
+
     def action_fill_hole(self, label, frame, x_location, y_location):
+        '''
+        fill a "hole" in a cell annotation with the cell label. Doesn't check
+        if annotation at (y,x) is zero (hole to fill) because that logic is handled in
+        javascript. Just takes the click location, scales it to match the actual annotation
+        size, then fills the hole with label (using skimage flood_fill). connectivity = 1
+        prevents hole fill from spilling out into background in some cases
+        '''
+        # rescale click location -> corresponding location in annotation array
+        hole_fill_seed = (y_location // self.scale_factor, x_location // self.scale_factor)
+        # fill hole with label
+        img_ann = self.tracked[frame,:,:,0]
+        filled_img_ann = flood_fill(img_ann, hole_fill_seed, label, connectivity = 1)
+        self.tracked[frame,:,:,0] = filled_img_ann
 
-        if label != 0:
-            self.fill_label = label
-        else:
-            self.hole_fill_seed = int(y_location/self.scale_factor), int(x_location/self.scale_factor)
-        if self.hole_fill_seed is not None:
-            if label == 0:
-                img_ann = self.trial["tracked"][frame,:,:,0]
-                filled_img_ann = flood_fill(img_ann, self.hole_fill_seed, self.fill_label, connectivity = 1)
-                self.trial["tracked"][frame,:,:,0] = filled_img_ann
-                self.fill_label = None
-                self.hold_fill_seed = None
+    def action_handle_draw(self, trace, edit_value, brush_size, erase, frame):
 
-    def action_handle_draw(self, x, y, frame):
+        annotated = self.tracked[frame]
 
-        self.current_frame = frame
+        in_original = np.any(np.isin(annotated, edit_value))
 
-        x //= max(self.scale_factor, 1)
-        y //= max(self.scale_factor, 1)
+        annotated_draw = np.where(annotated==0, edit_value, annotated)
+        annotated_erase = np.where(annotated==edit_value, 0, annotated)
 
-        if 0 <= x < self.width and 0 <= y < self.height:
-            self.x, self.y = x, y
+        for loc in trace:
+            # each element of trace is an array with [y,x] coordinates of array
+            x_loc = loc[1]
+            y_loc = loc[0]
 
-        if self.edit_mode:
-            annotated = self.trial["tracked"][frame]
-
-            #self.x and self.y are different from the mouse's x and y
-            x_loc = self.x
-            y_loc = self.y
-
-            brush_area = circle(y_loc, x_loc, self.brush_size, (self.height,self.width))
-
-            #show where brush has drawn this time
-            self.brush_view[brush_area] = self.edit_value
-
-            in_original = np.any(np.isin(annotated, self.edit_value))
+            brush_area = circle(y_loc, x_loc, brush_size, (self.height,self.width))
 
             #do not overwrite or erase labels other than the one you're editing
-            if not self.erase:
-                annotated_draw = np.where(annotated==0, self.edit_value, annotated)
+            if not erase:
                 annotated[brush_area] = annotated_draw[brush_area]
             else:
-                annotated_erase = np.where(annotated==self.edit_value, 0, annotated)
                 annotated[brush_area] = annotated_erase[brush_area]
 
-            in_modified = np.any(np.isin(annotated, self.edit_value))
+        in_modified = np.any(np.isin(annotated, edit_value))
 
-            #cell deletion
-            if in_original and not in_modified:
-                self.del_cell_info(del_label = self.edit_value, frame = frame)
+        # cell deletion
+        if in_original and not in_modified:
+            self.del_cell_info(del_label = edit_value, frame = frame)
 
-            #cell addition
-            elif in_modified and not in_original:
-                self.add_cell_info(add_label = self.edit_value, frame = frame)
-                self.color_map = self.random_colormap()
+        # cell addition
+        elif in_modified and not in_original:
+            self.add_cell_info(add_label = edit_value, frame = frame)
 
-
-            self.trial["tracked"][frame] = annotated
-
-
-
-    def action_change_erase(self, erase):
-        # Flask application can only send over literals of base 10; not true/false
-        if (erase == 1):
-            self.erase = True
-        else:
-            self.erase = False
-
-    def action_edit_value(self, edit_value):
-        self.edit_value = edit_value
-
-    def action_change_brush_size(self, brush_size):
-        self.brush_size = brush_size
-
-
-
-
-    def action_change_selected_cells(self, cell_one, cell_two):
-        self.highlight_cell_one = cell_one
-        self.highlight_cell_two = cell_two
+        self.tracked[frame] = annotated
 
     def action_watershed(self, label_1, label_2, frame, x1_location, y1_location, x2_location, y2_location):
 
         # Pull the label that is being split and find a new valid label
         current_label = label_1
-        new_label = self.num_tracks + 1
-
-
+        new_label = max(self.tracks) + 1
 
         # Locally store the frames to work on
-        img_raw = self.trial["raw"][frame]
-        img_ann = self.trial["tracked"][frame]
+        img_raw = self.raw[frame]
+        img_ann = self.tracked[frame]
 
         # Pull the 2 seed locations and store locally
-        # define a new seeds labeled img that is the same size as raw/annotaiton imgs
+        # define a new seeds labeled img that is the same size as raw/annotation imgs
         seeds_labeled = np.zeros(img_ann.shape)
 
         # create two seed locations
-        seeds_labeled[int(y1_location / 2), int(x1_location / 2)] = current_label
-        seeds_labeled[int(y2_location / 2), int(x2_location / 2)] = new_label
+        seeds_labeled[int(y1_location/self.scale_factor),
+            int(x1_location/self.scale_factor)] = current_label
+
+        seeds_labeled[int(y2_location/self.scale_factor),
+            int(x2_location/self.scale_factor)] = new_label
 
         # define the bounding box to apply the transform on and select appropriate sections of 3 inputs (raw, seeds, annotation mask)
         props = regionprops(np.squeeze(np.int32(img_ann == current_label)))
@@ -821,23 +774,17 @@ class TrackReview:
         # apply watershed transform to the subsections
         ws = watershed(-img_sub_raw_scaled, img_sub_seeds, mask=img_sub_ann.astype(bool))
 
-        cell_loc = np.where(img_sub_ann == current_label)
-        img_sub_ann[cell_loc] = ws[cell_loc]
+        # only update img_sub_ann where ws has changed label from current_label to new_label
+        img_sub_ann = np.where(np.logical_and(ws == new_label,img_sub_ann == current_label),
+            ws, img_sub_ann)
 
         #reintegrate subsection into original mask
         img_ann[minr:maxr, minc:maxc] = img_sub_ann
-        self.trial["tracked"][frame] = img_ann
+        self.tracked[frame] = img_ann
 
-        # current label doesn't change, but add the neccesary bookkeeping for the new track
-        track_new = self.tracks[new_label] = {}
-        track_new["label"] = new_label
-        track_new["frames"] = [frame]
-        track_new["parent"] = None
-        track_new["daughters"] = []
-        track_new["frame_div"] = None
-        track_new["capped"] = False
-        self.color_map = self.random_colormap()
-
+        #update cell_info dict only if new label was created with ws
+        if np.any(np.isin(self.tracked[frame,:,:,0], new_label)):
+            self.add_cell_info(add_label=new_label, frame = frame)
 
     def action_save_track(self):
 
@@ -858,12 +805,12 @@ class TrackReview:
                 trks.add(lineage_file.name, "lineage.json")
 
             with tempfile.NamedTemporaryFile() as raw_file:
-                np.save(raw_file, self.trial["raw"])
+                np.save(raw_file, self.raw)
                 raw_file.flush()
                 trks.add(raw_file.name, "raw.npy")
 
             with tempfile.NamedTemporaryFile() as tracked_file:
-                np.save(tracked_file, self.trial["tracked"])
+                np.save(tracked_file, self.tracked)
                 tracked_file.flush()
                 trks.add(tracked_file.name, "tracked.npy")
         try:
@@ -876,9 +823,23 @@ class TrackReview:
         #os.remove(file)
         return "Success!"
 
+    def action_swap_single_frame(self, label_1, label_2, frame_1, frame_2):
+        '''swap the labels of two cells in one frame, but do not
+        change any of the lineage information'''
+
+        assert(frame_1 == frame_2)
+        frame = frame_1
+
+        ann_img = self.tracked[frame,:,:,0]
+        ann_img = np.where(ann_img == label_1, -1, ann_img)
+        ann_img = np.where(ann_img == label_2, label_1, ann_img)
+        ann_img = np.where(ann_img == -1, label_2, ann_img)
+
+        self.tracked[frame,:,:,0] = ann_img
+
     def action_swap_tracks(self, label_1, label_2, frame_1, frame_2):
         def relabel(old_label, new_label):
-            for frame in self.trial["tracked"]:
+            for frame in self.tracked:
                 frame[frame == old_label] = new_label
 
             # replace fields
@@ -916,7 +877,7 @@ class TrackReview:
         Replacing label_2 with label_1
         """
         # replace arrays
-        for frame in self.trial["tracked"]:
+        for frame in self.tracked:
             frame[frame == label_2] = label_1
 
         # replace fields
@@ -943,87 +904,67 @@ class TrackReview:
         """
         Deletes label from current frame only
         """
-        selected_label, current_frame = label, frame
-
         # Set frame labels to 0
-        for frame in self.trial["tracked"][current_frame]:
-            frame[frame == selected_label] = 0
+        ann_img = self.tracked[frame]
+        ann_img = np.where(ann_img == label, 0, ann_img)
+        self.tracked[frame] = ann_img
 
-        # Removes current frame from list of frames cell appears in
-        selected_track = self.tracks[selected_label]
-        selected_track["frames"].remove(current_frame)
-
-        # Deletes lineage data if current frame is only frame cell appears in
-        if not selected_track["frames"]:
-            del self.tracks[selected_label]
-            for _, track in self.tracks.items():
-                try:
-                    track["daughters"].remove(selected_label)
-                except ValueError:
-                    pass
+        self.del_cell_info(del_label = label, frame = frame)
 
     def action_new_track(self, label, frame):
 
         """
-        Replacing label
+        Replacing label - create in all subsequent frames
         """
         old_label, start_frame = label, frame
-        new_label = self.num_tracks + 1
-        self.num_tracks += 1
+        new_label = max(self.tracks) + 1
 
-        if start_frame == 0:
-            raise ValueError("new_track cannot be called on the first frame")
+        if start_frame != 0:
+            # replace frame labels
+            for frame in self.tracked[start_frame:]:
+                frame[frame == old_label] = new_label
+
+            # replace fields
+            track_old = self.tracks[old_label]
+            track_new = self.tracks[new_label] = {}
+
+            idx = track_old["frames"].index(start_frame)
+
+            frames_before = track_old["frames"][:idx]
+            frames_after = track_old["frames"][idx:]
+
+            track_old["frames"] = frames_before
+            track_new["frames"] = frames_after
+            track_new["label"] = new_label
+
+            # only add daughters if they aren't in the same frame as the new track
+            track_new["daughters"] = []
+            for d in track_old["daughters"]:
+                if start_frame not in self.tracks[d]["frames"]:
+                    track_new["daughters"].append(d)
+
+            track_new["frame_div"] = track_old["frame_div"]
+            track_new["capped"] = track_old["capped"]
+            track_new["parent"] = None
+
+            track_old["daughters"] = []
+            track_old["frame_div"] = None
+            track_old["capped"] = True
+
+    def action_new_single_cell(self, label, frame):
+        """
+        Create new label in just one frame
+        """
+        old_label = label
+        new_label = max(self.tracks) + 1
 
         # replace frame labels
-        for frame in self.trial["tracked"][start_frame:]:
-            frame[frame == old_label] = new_label
+        self.tracked[frame] = np.where(self.tracked[frame] == old_label,
+            new_label, self.tracked[frame])
 
         # replace fields
-        track_old = self.tracks[old_label]
-        track_new = self.tracks[new_label] = {}
-
-        idx = track_old["frames"].index(start_frame)
-
-
-        frames_before = track_old["frames"][:idx]
-        frames_after = track_old["frames"][idx:]
-
-        track_old["frames"] = frames_before
-        track_new["frames"] = frames_after
-        track_new["label"] = new_label
-
-        # only add daughters if they aren't in the same frame as the new track
-        track_new["daughters"] = []
-        for d in track_old["daughters"]:
-            if start_frame not in self.tracks[d]["frames"]:
-                track_new["daughters"].append(d)
-
-        track_new["frame_div"] = track_old["frame_div"]
-        track_new["capped"] = track_old["capped"]
-        track_new["parent"] = None
-
-        track_old["daughters"] = []
-        track_old["frame_div"] = None
-        track_old["capped"] = True
-
-        self.color_map = self.random_colormap()
-
-    # def action_new_single_cell(self, label, frame):
-    #     print("single new cell")
-    #     """
-    #     Create new label in just one frame
-    #     """
-    #     old_label, single_frame = label, frame
-    #     new_label = self.num_tracks + 1
-
-    #     # replace frame labels
-    #     frame = self.trial["tracked"]
-    #     frame[frame == old_label] = new_label
-
-    #     # replace fields
-    #     self.del_cell_info(del_label = old_label, frame = single_frame)
-    #     self.add_cell_info(add_label = new_label, frame = single_frame)
-
+        self.del_cell_info(del_label = old_label, frame = frame)
+        self.add_cell_info(add_label = new_label, frame = frame)
 
     def add_cell_info(self, add_label, frame):
         '''
@@ -1044,8 +985,6 @@ class TrackReview:
             self.tracks[add_label].update({'frame_div': None})
             self.tracks[add_label].update({'parent': None})
             self.tracks[add_label].update({'capped': False})
-
-            self.num_tracks += 1
 
     def del_cell_info(self, del_label, frame):
         '''

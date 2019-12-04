@@ -16,81 +16,106 @@
     {% include "infopane.html" %}
     <canvas width=600 height=400 id="hidden_canvas"></canvas>
     <div id="container">
-        <div id="logcol">
+      <table id="maintable">
+        <tr>
+          <td id="logcol">
+
             <h1>Tracking Tool</h1>
-            </p>Filename will be given after submit button is pressed.</p>
+            <p>Filename will be given after submit button is pressed.</p>
 
-
-            <p1 id="submit" onclick="upload() "><strong>CLICK HERE TO SUBMIT</strong></p1>
-  
-            <p> 
-
-
+            <p id="submit" onclick="upload() ">
+              <strong>CLICK HERE TO SUBMIT</strong>
             </p>
-            <p3 id="give_filename" >
 
-            <div class="frame-info">
-                <label class='frame_status'>frame:
-                    <span id="frame"></span> 
-                </label>
-                <label class='view_mode'>highlight mode:
-                    <span id="highlight"></span>
-                </label>
-                <label class='view_mode'>edit mode:
-                    <span id="edit_mode"></span> 
-                </label>
-            </div>
+            <p id="give_filename" ></p>
 
-            <div class='view_mode' style="list-style-type:none">
-                <span id="edit_brush"></span>
-                <span id="edit_label"></span>
-                <span id="edit_erase"></span>
-            </div>
+            <table id="log">
+              <tr height="50%" valign="top">
+                <td>frame: </td>
+                <td id="frame"></td>
+              </tr>
 
-            <div class="cell-info-block">
-                <label class='cell_info'>label:
-                    <span id="label"></span> 
-                </label>
-                <label class='cell_info'>parent cells:
-                    <span id="parent"></span>
-                </label>
-                <label class='cell_info'>daughters cells:
-                    <span id="daughters"></span> 
-                </label>
-                <label class='cell_info'>divisions in frame:
-                    <span id="frame_div"></span>
-                </label>
-                <label class='cell_info'>capped:
-                    <span id="capped"></span>
-                </label>
-                <label class='cell_info'>frames:
-                    <span id="frames"></span>
-                </label>
-            </div>
+              <tr>
+                <td>highlight cells: </td>
+                <td id="highlight"></td>
+              </tr>
 
-            <div class="image-state">
-                <label class="selected_status"> state:
-                    <span id="mode"></span>
-                </label>
-            </div>
-        </div>
-        <div id="canvascol">
+              <tr>
+                <td>highlighted cells: </td>
+                <td id="currently_highlighted"></td>
+              </tr>
+
+              <tr>
+                <td>edit mode: </td>
+                <td id="edit_mode"></td>
+              </tr>
+
+              <tr id="edit_brush_row">
+                <td>brush size: </td>
+                <td id="edit_brush"></td>
+              </tr>
+
+              <tr id="edit_label_row">
+                <td>editing label: </td>
+                <td id="edit_label"></td>
+              </tr>
+
+              <tr id="edit_erase_row">
+                <td>eraser: </td>
+                <td id="edit_erase"></td>
+              </tr>
+
+              <tr>
+                <td>label:</td>
+                <td id="label"></td>
+              </tr>
+
+              <tr>
+                <td>parent:</td>
+                <td id="parent"></td>
+              </tr>
+
+              <tr>
+                <td>daughters:</td>
+                <td id="daughters"></td>
+              </tr>
+
+              <tr>
+                <td>frames:</td>
+                <td><div id="frames"></div></td>
+              </tr>
+
+              <tr>
+                <td>capped:</td>
+                <td id="capped"></td>
+              </tr>
+
+              <tr>
+                <td>state:</td>
+                <td id="mode"></td>
+              </tr>
+
+            </table>
+          </td>
+          <td id="canvascol">
             <canvas width=600 height=400 id="canvas"></canvas>
-        </div>
+            <div id="output"></div>
+          </td>
+        </tr>
+      </table>
     </div>
+
   <!-- START CALIBAN FUNCTION CALL -->
   <script>
     var file = "{{filename}}";
-
 
     function upload() {
         document.getElementById("submit").innerHTML = "";
         document.getElementById("give_filename").innerHTML = "Loading file to our database... (wait 10-15 seconds)";
         upload_file();
-        document.getElementById("submit").innerHTML = "Filename to COPY/PASTE: " + file;
-        document.getElementById("give_filename").innerHTML = "";
+        document.getElementById("submit").innerHTML = "";
+        document.getElementById("give_filename").innerHTML = "Filename to COPY/PASTE: " + file;
     }
-
 
     start_caliban(file);
   </script>
