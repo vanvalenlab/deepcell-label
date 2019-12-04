@@ -22,185 +22,254 @@ class Mode {
     render_log();
   }
 
-  handle_key(key) {
-    // EDIT MODE KEYBINDS
-    if (edit_mode) {
-      //keybinds to change value of brush
-      if (key === "=") {
-        edit_value += 1; //increase edit_value, no upper limit
-        render_log(); //update display to show new edit_value
-      } else if (key === "-") {
-        edit_value = Math.max(edit_value - 1, 1); //decrease edit_value, minimum 1
-        render_log(); //update display to show new edit_value
-      } else if (key === "x") {
-        //turn eraser on and off
-        erase = !erase;
-        render_log();
-      //keybinds to change brush size
-      } else if (key === ",") { //decrease brush size, minimum size 1
-        brush_size = Math.max(brush_size - 1, 1);
-        render_log(); //display new brush size in infopane
+  // these keybinds apply regardless of
+  // edit_mode, mode.action, or mode.kind
+  handle_universal_keybind(key) {
+    if (key === 'a') {
+      // go backward one frame
+      current_frame -= 1;
+      if (current_frame < 0) {
+        current_frame = max_frames - 1;
+      }
+      fetch_and_render_frame();
+    } else if (key === 'd') {
+      // go forward one frame
+      current_frame += 1;
+      if (current_frame >= max_frames) {
+        current_frame = 0;
+      }
+      fetch_and_render_frame();
+    } else if (key === "Escape") {
+      // deselect/cancel action/reset highlight
+      mode.clear();
+    } else if (key === 'h') {
+      // toggle highlight
+      current_highlight = !current_highlight;
+      render_frame();
+    } else if (key === 'z') {
+      // toggle rendering_raw
+      rendering_raw = !rendering_raw;
+      render_frame();
+    }
+  }
 
-        //update brush with its new size
-        let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
-        hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1]);
-        brush.radius = brush_size * scale;
-        brush.draw(hidden_ctx);
+  // keybinds that apply when in edit mode
+  // TODO: change brush-size keybinds to up/down
+  handle_edit_keybind(key) {
+    if (key === "e") {
+      // toggle edit mode
+      edit_mode = !edit_mode;
+      render_frame();
+    } if (key === "=") {
+      // increase edit_value, no upper limit
+      // TODO: this probably should have an upper limit,
+      // no reason for this to be unlimited
+      edit_value += 1;
+      render_log();
+    } else if (key === "-") {
+      // decrease edit_value, minimum 1
+      edit_value = Math.max(edit_value - 1, 1);
+      render_log();
+    } else if (key === "x") {
+      //turn eraser on and off
+      erase = !erase;
+      render_log();
+    } else if (key === ",") {
+      // decrease brush size, minimum size 1
+      brush_size = Math.max(brush_size - 1, 1);
 
-        //redraw the frame with the updated brush preview
-        render_frame();
+      // update brush object with its new size
+      let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
+      hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1]);
+      brush.radius = brush_size * scale;
+      brush.draw(hidden_ctx);
 
-      } else if (key === ".") { //increase brush size, shouldn't be larger than the image
-        brush_size = Math.min(self.brush_size + 1,
+      // redraw the frame with the updated brush preview
+      render_frame();
+    } else if (key === ".") {
+      // increase brush size
+      // shouldn't be larger than the image
+      brush_size = Math.min(self.brush_size + 1,
           dimensions[0]/scale, dimensions[1]/scale);
-        render_log(); //display new brush size in infopane
 
-        //update brush with its new size
-        let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
-        hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1]);
-        brush.radius = brush_size * scale;
-        brush.draw(hidden_ctx);
+      //update brush with its new size
+      let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
+      hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1]);
+      brush.radius = brush_size * scale;
+      brush.draw(hidden_ctx);
 
-        //redraw the frame with the updated brush preview
-        render_frame();
-      } else if (key === 'n') { //set edit value to something unused
-        edit_value = maxTrack + 1;
-        render_log();
-        //when value of brush determines color of brush preview, render_frame instead
-      } else if (key === 'i') { //toggle invert
-        display_invert = !display_invert;
-        render_frame();
+      //redraw the frame with the updated brush preview
+      render_frame();
+    } else if (key === 'n') {
+      // set edit value to something unused
+      edit_value = maxTrack + 1;
+      render_log();
+      // when value of brush determines color of brush preview, render_frame instead
+    } else if (key === 'i') {
+      // toggle light/dark inversion of raw img
+      display_invert = !display_invert;
+      render_frame();
+    }
+  }
+
+  // keybinds that apply in bulk mode, nothing selected
+  handle_mode_none_keybind(key) {
+    if (key === "e") {
+      edit_mode = !edit_mode;
+      render_frame();
+    } else if (key === "-" && this.highlighted_cell_one !== -1) {
+      // cycle highlight to prev label
+      if (this.highlighted_cell_one === 1) {
+        this.highlighted_cell_one = maxTrack;
+      } else {
+        this.highlighted_cell_one -= 1;
       }
-
-    } // END OF EDIT MODE KEYBINDS
-
-    // nothing selected, not in edit mode
-    else if (this.kind == Modes.none) {
-      if (key === "-" && this.highlighted_cell_one !== -1) {
-        //allow cycling through highlighted cells to view, if nothing selected
-        if (this.highlighted_cell_one === 1) {
-          this.highlighted_cell_one = maxTrack;
-        } else {
-          this.highlighted_cell_one -= 1;
-        }
-        render_frame();
-      } else if (key === "=" && this.highlighted_cell_one !== -1) {
-        //allow cycling through highlighted cells to view, if nothing selected
-        if (this.highlighted_cell_one === maxTrack) {
-          this.highlighted_cell_one = 1;
-        } else {
-          this.highlighted_cell_one += 1;
-        }
-        render_frame();
+      render_frame();
+    } else if (key === "=" && this.highlighted_cell_one !== -1) {
+      // cycle highlight to next label
+      if (this.highlighted_cell_one === maxTrack) {
+        this.highlighted_cell_one = 1;
+      } else {
+        this.highlighted_cell_one += 1;
       }
-    // end of "nothing selected" keybinds
-    } else if (this.kind == Modes.single) {
+      render_frame();
+    }
+  }
 
-      //hole fill
-      if (key === "f") {
-        this.info = { "label": this.info['label'],
-                      "frame": current_frame};
-        this.kind = Modes.question;
-        this.action = "fill_hole";
-        this.prompt = "Select hole to fill in cell " + this.info['label'];
-        render_log();
+  // keybinds that apply in bulk mode, one selected
+  handle_mode_single_keybind(key) {
+    if (key === "f") {
+      // hole fill
+      this.info = { "label": this.info['label'],
+                    "frame": current_frame};
+      this.kind = Modes.question;
+      this.action = "fill_hole";
+      this.prompt = "Select hole to fill in cell " + this.info['label'];
+      render_log();
+    } else if (key === "c") {
+      // create new
+      this.kind = Modes.question;
+      this.action = "new_track";
+      this.prompt = "CREATE NEW (SPACE=ALL SUBSEQUENT FRAMES / S=ONLY THIS FRAME / ESC=CANCEL)";
+      render_log();
+    } else if (key === "=") {
+      // cycle highlight to next label
+      if (this.highlighted_cell_one === maxTrack) {
+        this.highlighted_cell_one = 1;
+      } else {
+        this.highlighted_cell_one += 1;
+      }
+      // clear info but show new highlighted cell
+      let temp_highlight = this.highlighted_cell_one;
+      this.clear();
+      this.highlighted_cell_one = temp_highlight;
+      render_frame();
+    } else if (key === "-") {
+      // cycle highlight to prev label
+      if (this.highlighted_cell_one === 1) {
+        this.highlighted_cell_one = maxTrack;
+      } else {
+        this.highlighted_cell_one -= 1;
+      }
+      // clear info but show new highlighted cell
+      let temp_highlight = this.highlighted_cell_one;
+      this.clear();
+      this.highlighted_cell_one = temp_highlight;
+      render_frame();
+    } else if (key === "x") {
+      // delete label from frame
+      this.kind = Modes.question;
+      this.action = "delete_cell";
+      this.prompt = "delete label " + this.info.label + " in frame " + this.info.frame + "? " + answer;
+      render_log();
+    }
+  }
 
-      } else if (key === "c") {
-        this.kind = Modes.question;
-        this.action = "new_track";
-        this.prompt = "CREATE NEW (SPACE=ALL SUBSEQUENT FRAMES / S=ONLY THIS FRAME / ESC=CANCEL)";
-        render_log();
+  // keybinds that apply in bulk mode, two selected
+  handle_mode_multiple_keybind(key) {
+    if (key === "r") {
+      // replace
+      this.kind = Modes.question;
+      this.action = "replace";
+      this.prompt = "Replace " + this.info.label_2 + " with " + this.info.label_1 + "? " + answer;
+      render_log();
+    } else if (key === "p") {
+      // set parent
+      this.kind = Modes.question;
+      this.action = "set_parent";
+      this.prompt = "Set " + this.info.label_1 + " as parent of " + this.info.label_2 + "? " + answer;
+      render_log();
+    } else if (key === "s") {
+      // swap
+      this.kind = Modes.question;
+      this.action = "swap_cells";
+      this.prompt = "SPACE = SWAP IN ALL FRAMES / S = SWAP IN ONLY ONE FRAME / ESC = CANCEL SWAP";
+      render_log();
+    } else if (key === "w") {
+      // watershed
+      this.kind = Modes.question;
+      this.action = "watershed";
+      this.prompt = "Perform watershed to split " + this.info.label_1 + "? " + answer;
+      render_log();
+    }
+  }
 
-      } else if (key === "=") {
-        if (this.highlighted_cell_one === maxTrack) {
-          this.highlighted_cell_one = 1;
-        } else {
-          this.highlighted_cell_one += 1;
-        }
-        // clear info but show new highlighted cell
-        let temp_highlight = this.highlighted_cell_one;
+  // keybinds that apply in bulk mode, answering question/prompt
+  handle_mode_question_keybind(key) {
+    if (key === " ") {
+      if (this.action == "new_track") {
+        action("create_all_new", this.info);
         this.clear();
-        this.highlighted_cell_one = temp_highlight;
-        render_frame();
-
-      } else if (key === "-") {
-        if (this.highlighted_cell_one === 1) {
-          this.highlighted_cell_one = maxTrack;
-        } else {
-          this.highlighted_cell_one -= 1;
-        }
-        // clear info but show new highlighted cell
-        let temp_highlight = this.highlighted_cell_one;
+      } else if (this.action == "set_parent") {
+        action(this.action, this.info);
         this.clear();
-        this.highlighted_cell_one = temp_highlight;
-        render_frame();
-      } else if (key === "x") {
-        this.kind = Modes.question;
-        this.action = "delete_cell";
-        this.prompt = "delete label " + this.info.label + " in frame " + this.info.frame + "? " + answer;
-        render_log();
+      } else if (this.action == "replace") {
+        action(this.action, this.info);
+        this.clear();
+      } else if (this.action == "watershed") {
+        action(this.action, this.info);
+        this.clear();
+      } else if (this.action == "delete_cell") {
+        action(this.action, this.info);
+        this.clear();
+      } else if (this.action == "swap_cells") {
+        action("swap_tracks", this.info);
+        this.clear();
+      } else if (this.action === "flood_cell") {
+        action("flood_cell", this.info);
+        this.clear();
+      } else if (this.action === "trim_pixels") {
+        action("trim_pixels", this.info);
+        this.clear();
       }
-    } else if (this.kind == Modes.multiple) {
-      if (key === "r") {
-        this.kind = Modes.question;
-        this.action = "replace";
-        this.prompt = "Replace " + this.info.label_2 + " with " + this.info.label_1 + "? " + answer;
-        render_log();
-      } else if (key === "p") {
-        this.kind = Modes.question;
-        this.action = "set_parent";
-        this.prompt = "Set " + this.info.label_1 + " as parent of " + this.info.label_2 + "? " + answer;
-        render_log();
-      } else if (key === "s") {
-        this.kind = Modes.question;
-        this.action = "swap_cells";
-        this.prompt = "SPACE = SWAP IN ALL FRAMES / S = SWAP IN ONLY ONE FRAME / ESC = CANCEL SWAP";
-        render_log();
-      } else if (key === "w") {
-        this.kind = Modes.question;
-        this.action = "watershed";
-        this.prompt = "Perform watershed to split " + this.info.label_1 + "? " + answer;
-        render_log();
-      }
-    } else if (this.kind == Modes.question) {
-      if (key === " ") {
-        if (this.action == "new_track") {
-          action("create_all_new", this.info);
-          this.clear();
-        } else if (this.action == "set_parent") {
-          action(this.action, this.info);
-          this.clear();
-        } else if (this.action == "replace") {
-          action(this.action, this.info);
-          this.clear();
-        } else if (this.action == "watershed") {
-          action(this.action, this.info);
-          this.clear();
-        } else if (this.action == "delete_cell") {
-          action(this.action, this.info);
-          this.clear();
-        } else if (this.action == "swap_cells") {
-          action("swap_tracks", this.info);
-          this.clear();
-        } else if (this.action === "flood_cell") {
-          action("flood_cell", this.info);
-          this.clear();
-        } else if (this.action === "trim_pixels") {
-          action("trim_pixels", this.info);
-          this.clear();
-        }
-      } else if (key === "s") {
-        if (this.action === "new_track") {
-          action("create_single_new", this.info);
-          this.clear();
-        } else if (this.action === "swap_cells") {
-          action("swap_single_frame", this.info);
-          this.clear();
-        }
+    } else if (key === "s") {
+      if (this.action === "new_track") {
+        action("create_single_new", this.info);
+        this.clear();
+      } else if (this.action === "swap_cells") {
+        action("swap_single_frame", this.info);
+        this.clear();
       }
     }
   }
-  //end of handle_key
+
+  // handle all keypresses
+  handle_key(key) {
+    // universal keybinds always apply
+    // keys a, d, ESC, h are reserved for universal keybinds
+    this.handle_universal_keybind(key);
+    if (edit_mode) {
+      this.handle_edit_keybind(key);
+    } else if (!edit_mode && this.kind === Modes.none) {
+      this.handle_mode_none_keybind(key);
+    } else if (!edit_mode && this.kind === Modes.single) {
+      this.handle_mode_single_keybind(key);
+    } else if (!edit_mode && this.kind === Modes.multiple) {
+      this.handle_mode_multiple_keybind(key);
+    } else if (!edit_mode && this.kind === Modes.question) {
+      this.handle_mode_question_keybind(key);
+    }
+  }
 
   handle_draw() {
     action("handle_draw", { "trace": JSON.stringify(mouse_trace),
@@ -701,35 +770,10 @@ function prepare_canvas() {
       last_mousey = mouse_y;
   });
 
-  window.addEventListener('keydown', function(evt) {
+  // bind keypress
 
-    if (evt.key === 'z') {
-      rendering_raw = !rendering_raw;
-      render_frame();
-    } else if (evt.key === 'd') {
-      current_frame += 1;
-      if (current_frame >= max_frames) {
-        current_frame = 0;
-      }
-      fetch_and_render_frame();
-    } else if (evt.key === 'a') {
-      current_frame -= 1;
-      if (current_frame < 0) {
-        current_frame = max_frames - 1;
-      }
-      fetch_and_render_frame();
-    } else if (evt.key === "Escape") {
-      mode.clear();
-      render_log();
-    } else if (evt.key === 'h') {
-        current_highlight = !current_highlight;
-        render_frame();
-    } else if (evt.key === 'e' && mode.kind === Modes.none) {
-        edit_mode = !edit_mode;
-        render_frame();
-    } else {
-      mode.handle_key(evt.key);
-    }
+  window.addEventListener('keydown', function(evt) {
+    mode.handle_key(evt.key);
   }, false);
 }
 
