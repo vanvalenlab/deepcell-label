@@ -217,22 +217,22 @@ class Mode {
   // keybinds that apply in bulk mode, answering question/prompt
   handle_mode_question_keybind(key) {
     if (key === " ") {
-      if (this.action == "new_track") {
+      if (this.action === "new_track") {
         action("create_all_new", this.info);
         this.clear();
-      } else if (this.action == "set_parent") {
+      } else if (this.action === "set_parent") {
         action(this.action, this.info);
         this.clear();
-      } else if (this.action == "replace") {
+      } else if (this.action === "replace") {
         action(this.action, this.info);
         this.clear();
-      } else if (this.action == "watershed") {
+      } else if (this.action === "watershed") {
         action(this.action, this.info);
         this.clear();
-      } else if (this.action == "delete_cell") {
+      } else if (this.action === "delete_cell") {
         action(this.action, this.info);
         this.clear();
-      } else if (this.action == "swap_cells") {
+      } else if (this.action === "swap_cells") {
         action("swap_tracks", this.info);
         this.clear();
       } else if (this.action === "flood_cell") {
