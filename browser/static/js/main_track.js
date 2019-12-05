@@ -531,16 +531,7 @@ function label_under_mouse() {
   return new_label;
 }
 
-function render_log() {
-  current_label = label_under_mouse();
-
-  $('#frame').html(current_frame);
-  if (current_label !== 0) {
-    $('#label').html(current_label);
-  } else {
-    $('#label').html("");
-  }
-
+function render_highlight_info() {
   if (current_highlight) {
     $('#highlight').html("ON");
     if (mode.highlighted_cell_one !== -1) {
@@ -556,7 +547,9 @@ function render_log() {
     $('#highlight').html("OFF");
     $('#currently_highlighted').html("none");
   }
+}
 
+function render_edit_info() {
   if (edit_mode) {
     $('#edit_mode').html("ON");
     $('#edit_brush_row').css('visibility', 'visible');
@@ -578,8 +571,12 @@ function render_log() {
     $('#edit_label_row').css('visibility', 'hidden');
     $('#edit_erase_row').css('visibility', 'hidden');
   }
+}
 
+function render_cell_info() {
+  current_label = label_under_mouse();
   if (current_label !== 0) {
+    $('#label').html(current_label);
     let track = tracks[current_label.toString()];
     $('#parent').text(track.parent || "None");
     $('#daughters').text("[" + track.daughters.toString() + "]");
@@ -588,11 +585,26 @@ function render_log() {
     $('#capped').text(capped[0].toUpperCase() + capped.substring(1));
     $('#frames').text(track.frames.toString());
   } else {
+    $('#label').html("");
     $('#capped').text("");
+    $('#parent').text("");
     $('#daughters').text("");
     $('#frame_div').text("");
     $('#frames').text("");
   }
+}
+
+function render_log() {
+  // always show current frame
+  $('#frame').html(current_frame);
+
+  render_highlight_info();
+
+  render_edit_info();
+
+  render_cell_info();
+
+  // always show 'state'
   $('#mode').html(mode.render());
 }
 
