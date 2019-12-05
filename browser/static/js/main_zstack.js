@@ -322,117 +322,99 @@ class Mode {
     return currentValue;
   }
 
-  click(evt) {
-
-    //hole fill
-    if (this.kind === Modes.question) {
-      //don't do action_fill_hole unless background is clicked
-      //don't need to check label != 0 because other click() behavior prevents
-      //label 0 from being selected in the first place
-      if(this.action == "fill_hole" && current_label == 0) {
-        //action_fill_hole in caliban.py needs label to fill with, frame to fill in,
-        //and coordinates of hole_fill_seed
-        this.info = { "label": this.info['label'],
-                      "frame": current_frame,
-                      "x_location": mouse_x,
-                      "y_location": mouse_y };
-
-        //sending an action will trigger redraw of image when new info received
-        action(this.action, this.info);
-
-        this.clear();
-      }
-
-      //if click on background, same as ESC
-    } else if (current_label === 0) {
-      this.highlighted_cell_one = -1;
+  handle_mode_none_click(evt) {
+    if (evt.altKey) {
+      // alt+click
+      this.kind = Modes.question;
+      this.action = "flood_cell";
+      this.info = {"label": current_label,
+                        "frame": current_frame,
+                        "x_location": mouse_x,
+                        "y_location": mouse_y}
+      this.prompt = "SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL";
+      this.highlighted_cell_one = current_label;
+    } else if (evt.shiftKey) {
+      // shift+click
+      this.kind = Modes.question;
+      this.action = "trim_pixels";
+      this.info = {"label": current_label,
+                        "frame": current_frame,
+                        "x_location": mouse_x,
+                        "y_location": mouse_y};
+      this.prompt = "SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL";
+      this.highlighted_cell_one = current_label;
+    } else {
+      // normal click
+      this.kind = Modes.single;
+      this.info = { "label": current_label,
+                    "frame": current_frame };
+      this.highlighted_cell_one = current_label;
       this.highlighted_cell_two = -1;
+      temp_x = mouse_x;
+      temp_y = mouse_y;
+    }
+  }
+
+  handle_mode_question_click(evt) {
+    if (this.action === "fill_hole" && current_label === 0) {
+      this.info = { "label": this.info['label'],
+                    "frame": current_frame,
+                    "x_location": mouse_x,
+                    "y_location": mouse_y };
+      action(this.action, this.info);
+      this.clear();
+    }
+  }
+
+  handle_mode_single_click(evt) {
+    this.kind = Modes.multiple;
+
+    this.highlighted_cell_one = this.info.label;
+    this.highlighted_cell_two = current_label;
+
+    this.info = { "label_1": this.info.label,
+                  "label_2": current_label,
+                  "frame_1": this.info.frame,
+                  "frame_2": current_frame,
+                  "x1_location": temp_x,
+                  "y1_location": temp_y,
+                  "x2_location": mouse_x,
+                  "y2_location": mouse_y };
+  }
+
+  handle_mode_multiple_click(evt) {
+    this.highlighted_cell_one = this.info.label_1;
+    this.highlighted_cell_two = current_label;
+
+    this.info = {"label_1": this.info.label_1,
+                "label_2": current_label,
+                "frame_1": this.info.frame_1,
+                "frame_2": current_frame,
+                "x1_location": temp_x,
+                "y1_location": temp_y,
+                "x2_location": mouse_x,
+                "y2_location": mouse_y};
+  }
+
+  click(evt) {
+    if (this.kind === Modes.question) {
+      // just hole fill
+      this.handle_mode_question_click(evt);
+    } else if (current_label === 0) {
+      // same as ESC
       this.clear();
       return; //not sure why we return here
-
-      //if nothing selected: shift-, alt-, or normal click
     } else if (this.kind === Modes.none) {
-
-      //shift-click only if nothing else selected
-      if(evt.shiftKey && current_label !== 0) {
-        this.kind = Modes.question;
-        this.action = "trim_pixels";
-        this.info = {"label": current_label,
-                          "frame": current_frame,
-                          "x_location": mouse_x,
-                          "y_location": mouse_y};
-        this.prompt = "SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL";
-        this.highlighted_cell_one = current_label;
-        render_frame();
-
-      //alt-click only if nothing else selected
-      } else if(evt.altKey && current_label !== 0) {
-        this.kind = Modes.question;
-        this.action = "flood_cell";
-        this.info = {"label": current_label,
-                          "frame": current_frame,
-                          "x_location": mouse_x,
-                          "y_location": mouse_y}
-        this.prompt = "SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL";
-        this.highlighted_cell_one = current_label;
-        render_frame();
-
-      } else { //just a normal click
-        this.kind = Modes.single;
-        this.info = { "label": current_label,
-                      "frame": current_frame };
-        this.highlighted_cell_one = current_label;
-        this.highlighted_cell_two = -1;
-
-        render_frame(); //update highlight view if needed, update info display
-        temp_x = mouse_x;
-        temp_y = mouse_y;
-      }
-
-      //select another cell
+      //if nothing selected: shift-, alt-, or normal click
+      this.handle_mode_none_click(evt);
     } else if (this.kind === Modes.single) {
-      this.kind = Modes.multiple;
-      this.highlighted_cell_one = this.info.label;
-      this.highlighted_cell_two = current_label;
-
-      //only store click locations if going to watershed (same cell selected twice)
-      if (this.info.label == current_label) {
-        this.info = { "label_1": this.info.label,
-                      "label_2": current_label,
-                      "frame": current_frame,
-                      "x1_location": temp_x,
-                      "y1_location": temp_y,
-                      "x2_location": mouse_x,
-                      "y2_location": mouse_y };
-      } else {
-        this.info = { "label_1": this.info.label,
-                      "frame_1": this.info.frame,
-                      "label_2": current_label,
-                      "frame_2": current_frame };
-      }
-      render_frame(); //update highlight view if needed, update info display
-
-      //reassign second selected cell
+      // one label already selected
+      this.handle_mode_single_click(evt);
     } else if (this.kind  === Modes.multiple) {
-      this.highlighted_cell_one = this.info.label_1;
-      this.highlighted_cell_two = current_label;
-
-      if (this.info.label_1 == current_label) {
-        this.info = {"label_1": this.info.label_1,
-                    "label_2": current_label,
-                    "frame": current_frame,
-                    "x1_location": temp_x,
-                    "y1_location": temp_y,
-                    "x2_location": mouse_x,
-                    "y2_location": mouse_y};
-      } else {
-        this.info = {"label_1": this.info.label_1,
-                    "frame_1": this.info.frame_1,
-                    "label_2": current_label,
-                    "frame_2": current_frame};
-      }
-      render_frame(); //update highlight view if needed, update info display
+      // two labels already selected, reselect second label
+      this.handle_mode_multiple_click(evt);
     }
+    render_frame();
   }
 
   //shows up in info display as text for "state:"
