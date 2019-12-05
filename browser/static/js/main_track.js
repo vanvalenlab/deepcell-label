@@ -54,13 +54,12 @@ class Mode {
   }
 
   // keybinds that apply when in edit mode
-  // TODO: change brush-size keybinds to up/down
   handle_edit_keybind(key) {
     if (key === "e") {
       // toggle edit mode
       edit_mode = !edit_mode;
       render_frame();
-    } if (key === "=") {
+    } else if (key === "=") {
       // increase edit_value up to max label + 1 (guaranteed unused)
       edit_value = Math.min(edit_value + 1, maxTrack + 1);
       render_log();
@@ -85,8 +84,7 @@ class Mode {
       // redraw the frame with the updated brush preview
       render_frame();
     } else if (key === "ArrowUp") {
-      // increase brush size
-      // shouldn't be larger than the image
+      // increase brush size, shouldn't be larger than the image
       brush_size = Math.min(self.brush_size + 1,
           dimensions[0]/scale, dimensions[1]/scale);
 
@@ -102,7 +100,7 @@ class Mode {
       // set edit value to something unused
       edit_value = maxTrack + 1;
       render_log();
-      // when value of brush determines color of brush preview, render_frame instead
+      // when value of brush determines color of brush, render_frame instead
     } else if (key === 'i') {
       // toggle light/dark inversion of raw img
       display_invert = !display_invert;
@@ -113,6 +111,7 @@ class Mode {
   // keybinds that apply in bulk mode, nothing selected
   handle_mode_none_keybind(key) {
     if (key === "e") {
+      // toggle edit mode
       edit_mode = !edit_mode;
       render_frame();
     } else if (key === "-" && this.highlighted_cell_one !== -1) {
@@ -274,7 +273,8 @@ class Mode {
   // handle all keypresses
   handle_key(key) {
     // universal keybinds always apply
-    // keys a, d, ESC, h are reserved for universal keybinds
+    // keys a, d, left arrow, right arrow, ESC, h
+    // are reserved for universal keybinds
     this.handle_universal_keybind(key);
     if (edit_mode) {
       this.handle_edit_keybind(key);
