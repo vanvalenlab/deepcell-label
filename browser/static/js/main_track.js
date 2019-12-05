@@ -25,14 +25,14 @@ class Mode {
   // these keybinds apply regardless of
   // edit_mode, mode.action, or mode.kind
   handle_universal_keybind(key) {
-    if (key === 'a') {
+    if (key === 'a' || key === 'ArrowLeft') {
       // go backward one frame
       current_frame -= 1;
       if (current_frame < 0) {
         current_frame = max_frames - 1;
       }
       fetch_and_render_frame();
-    } else if (key === 'd') {
+    } else if (key === 'd' || key === 'ArrowRight') {
       // go forward one frame
       current_frame += 1;
       if (current_frame >= max_frames) {
