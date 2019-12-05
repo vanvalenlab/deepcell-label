@@ -152,18 +152,12 @@ class Mode {
       this.action = "new_track";
       this.prompt = "CREATE NEW (SPACE=ALL SUBSEQUENT FRAMES / S=ONLY THIS FRAME / ESC=CANCEL)";
       render_log();
-    } else if (key === "=") {
-      // cycle highlight to next label
-      if (this.highlighted_cell_one === maxTrack) {
-        this.highlighted_cell_one = 1;
-      } else {
-        this.highlighted_cell_one += 1;
-      }
-      // clear info but show new highlighted cell
-      let temp_highlight = this.highlighted_cell_one;
-      this.clear();
-      this.highlighted_cell_one = temp_highlight;
-      render_frame();
+    } else if (key === "x") {
+      // delete label from frame
+      this.kind = Modes.question;
+      this.action = "delete_cell";
+      this.prompt = "delete label " + this.info.label + " in frame " + this.info.frame + "? " + answer;
+      render_log();
     } else if (key === "-") {
       // cycle highlight to prev label
       if (this.highlighted_cell_one === 1) {
@@ -176,28 +170,34 @@ class Mode {
       this.clear();
       this.highlighted_cell_one = temp_highlight;
       render_frame();
-    } else if (key === "x") {
-      // delete label from frame
-      this.kind = Modes.question;
-      this.action = "delete_cell";
-      this.prompt = "delete label " + this.info.label + " in frame " + this.info.frame + "? " + answer;
-      render_log();
+    } else if (key === "=") {
+      // cycle highlight to next label
+      if (this.highlighted_cell_one === maxTrack) {
+        this.highlighted_cell_one = 1;
+      } else {
+        this.highlighted_cell_one += 1;
+      }
+      // clear info but show new highlighted cell
+      let temp_highlight = this.highlighted_cell_one;
+      this.clear();
+      this.highlighted_cell_one = temp_highlight;
+      render_frame();
     }
   }
 
   // keybinds that apply in bulk mode, two selected
   handle_mode_multiple_keybind(key) {
-    if (key === "r") {
-      // replace
-      this.kind = Modes.question;
-      this.action = "replace";
-      this.prompt = "Replace " + this.info.label_2 + " with " + this.info.label_1 + "? " + answer;
-      render_log();
-    } else if (key === "p") {
+    if (key === "p") {
       // set parent
       this.kind = Modes.question;
       this.action = "set_parent";
       this.prompt = "Set " + this.info.label_1 + " as parent of " + this.info.label_2 + "? " + answer;
+      render_log();
+    } else if (key === "r") {
+      // replace
+      this.kind = Modes.question;
+      this.action = "replace";
+      this.prompt = "Replace " + this.info.label_2 + " with " + this.info.label_1 + "? " + answer;
       render_log();
     } else if (key === "s") {
       // swap
@@ -217,8 +217,17 @@ class Mode {
   // keybinds that apply in bulk mode, answering question/prompt
   handle_mode_question_keybind(key) {
     if (key === " ") {
-      if (this.action === "new_track") {
+      if (this.action === "flood_cell") {
+        action("flood_cell", this.info);
+        this.clear();
+      } else if (this.action === "trim_pixels") {
+        action("trim_pixels", this.info);
+        this.clear();
+      } if (this.action === "new_track") {
         action("create_all_new", this.info);
+        this.clear();
+      } else if (this.action === "delete_cell") {
+        action(this.action, this.info);
         this.clear();
       } else if (this.action === "set_parent") {
         action(this.action, this.info);
@@ -226,20 +235,11 @@ class Mode {
       } else if (this.action === "replace") {
         action(this.action, this.info);
         this.clear();
-      } else if (this.action === "watershed") {
-        action(this.action, this.info);
-        this.clear();
-      } else if (this.action === "delete_cell") {
-        action(this.action, this.info);
-        this.clear();
       } else if (this.action === "swap_cells") {
         action("swap_tracks", this.info);
         this.clear();
-      } else if (this.action === "flood_cell") {
-        action("flood_cell", this.info);
-        this.clear();
-      } else if (this.action === "trim_pixels") {
-        action("trim_pixels", this.info);
+      } else if (this.action === "watershed") {
+        action(this.action, this.info);
         this.clear();
       }
     } else if (key === "s") {
@@ -281,29 +281,8 @@ class Mode {
     this.clear()
   }
 
-  handle_mode_question_click(evt) {
-    if (this.action === "fill_hole" && current_label === 0) {
-      this.info = { "label": this.info['label'],
-                    "frame": current_frame,
-                    "x_location": mouse_x,
-                    "y_location": mouse_y };
-      action(this.action, this.info);
-      this.clear();
-    }
-  }
-
   handle_mode_none_click(evt) {
-    if (evt.shiftKey) {
-      // shift+click
-      this.kind = Modes.question;
-      this.action = "trim_pixels";
-      this.info = {"label": current_label,
-                    "frame": current_frame,
-                    "x_location": mouse_x,
-                    "y_location": mouse_y};
-      this.prompt = "SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL";
-      this.highlighted_cell_one = current_label;
-    } else if (evt.altKey) {
+    if (evt.altKey) {
       // alt+click
       this.kind = Modes.question;
       this.action = "flood_cell";
@@ -312,6 +291,16 @@ class Mode {
                         "x_location": mouse_x,
                         "y_location": mouse_y}
       this.prompt = "SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL";
+      this.highlighted_cell_one = current_label;
+    } else if (evt.shiftKey) {
+      // shift+click
+      this.kind = Modes.question;
+      this.action = "trim_pixels";
+      this.info = {"label": current_label,
+                    "frame": current_frame,
+                    "x_location": mouse_x,
+                    "y_location": mouse_y};
+      this.prompt = "SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL";
       this.highlighted_cell_one = current_label;
     } else {
       // normal click
@@ -322,6 +311,17 @@ class Mode {
       this.highlighted_cell_two = -1;
       temp_x = mouse_x;
       temp_y = mouse_y;
+    }
+  }
+
+  handle_mode_question_click(evt) {
+    if (this.action === "fill_hole" && current_label === 0) {
+      this.info = { "label": this.info['label'],
+                    "frame": current_frame,
+                    "x_location": mouse_x,
+                    "y_location": mouse_y };
+      action(this.action, this.info);
+      this.clear();
     }
   }
 

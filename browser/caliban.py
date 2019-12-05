@@ -637,37 +637,81 @@ class TrackReview:
 
     def action(self, action_type, info):
 
-        if action_type == "set_parent":
-            self.action_set_parent(**info)
-        elif action_type == "replace":
-            self.action_replace(**info)
-        elif action_type == "create_single_new":
-            self.action_new_single_cell(**info)
-        elif action_type == "create_all_new":
-            self.action_new_track(**info)
-        elif action_type == "swap_single_frame":
-            self.action_swap_single_frame(**info)
-        elif action_type == "swap_tracks":
-            self.action_swap_tracks(**info)
-        elif action_type == "save_track":
-            self.action_save_track(**info)
-        elif action_type == "watershed":
-            self.action_watershed(**info)
-        elif action_type == "delete_cell":
-            self.action_delete(**info)
-        elif action_type == "change_edit_mode":
-            self.edit_mode = not self.edit_mode
-        elif action_type == "handle_draw":
+        # edit mode action
+        if action_type == "handle_draw":
             self.action_handle_draw(**info)
-        elif action_type == "fill_hole":
-            self.action_fill_hole(**info)
+
+        # modified click actions
         elif action_type == "flood_cell":
             self.action_flood_contiguous(**info)
         elif action_type == "trim_pixels":
             self.action_trim_pixels(**info)
 
+        # single click actions
+        elif action_type == "fill_hole":
+            self.action_fill_hole(**info)
+        elif action_type == "create_single_new":
+            self.action_new_single_cell(**info)
+        elif action_type == "create_all_new":
+            self.action_new_track(**info)
+        elif action_type == "delete_cell":
+            self.action_delete(**info)
+
+        # multiple click actions
+        elif action_type == "set_parent":
+            self.action_set_parent(**info)
+        elif action_type == "replace":
+            self.action_replace(**info)
+        elif action_type == "swap_single_frame":
+            self.action_swap_single_frame(**info)
+        elif action_type == "swap_tracks":
+            self.action_swap_tracks(**info)
+        elif action_type == "watershed":
+            self.action_watershed(**info)
+
+        # misc
+        elif action_type == "save_track":
+            self.action_save_track(**info)
+
         else:
             raise ValueError("Invalid action '{}'".format(action_type))
+
+    def action_handle_draw(self, trace, edit_value, brush_size, erase, frame):
+
+        annotated = np.copy(self.tracked[frame])
+
+        in_original = np.any(np.isin(annotated, edit_value))
+
+        annotated_draw = np.where(annotated==0, edit_value, annotated)
+        annotated_erase = np.where(annotated==edit_value, 0, annotated)
+
+        for loc in trace:
+            # each element of trace is an array with [y,x] coordinates of array
+            x_loc = loc[1]
+            y_loc = loc[0]
+
+            brush_area = circle(y_loc, x_loc, brush_size, (self.height,self.width))
+
+            #do not overwrite or erase labels other than the one you're editing
+            if not erase:
+                annotated[brush_area] = annotated_draw[brush_area]
+            else:
+                annotated[brush_area] = annotated_erase[brush_area]
+
+        in_modified = np.any(np.isin(annotated, edit_value))
+
+        # cell deletion
+        if in_original and not in_modified:
+            self.del_cell_info(del_label = edit_value, frame = frame)
+
+        # cell addition
+        elif in_modified and not in_original:
+            self.add_cell_info(add_label = edit_value, frame = frame)
+
+        comparison = np.where(annotated != self.tracked[frame])
+        self.frames_changed = np.any(comparison)
+
+        self.tracked[frame] = annotated
 
     def action_flood_contiguous(self, label, frame, x_location, y_location):
         '''
@@ -723,42 +767,160 @@ class TrackReview:
 
         self.frames_changed = True
 
-    def action_handle_draw(self, trace, edit_value, brush_size, erase, frame):
+    def action_new_single_cell(self, label, frame):
+        """
+        Create new label in just one frame
+        """
+        old_label = label
+        new_label = max(self.tracks) + 1
 
-        annotated = np.copy(self.tracked[frame])
+        # replace frame labels
+        self.tracked[frame] = np.where(self.tracked[frame] == old_label,
+            new_label, self.tracked[frame])
 
-        in_original = np.any(np.isin(annotated, edit_value))
+        # replace fields
+        self.del_cell_info(del_label = old_label, frame = frame)
+        self.add_cell_info(add_label = new_label, frame = frame)
 
-        annotated_draw = np.where(annotated==0, edit_value, annotated)
-        annotated_erase = np.where(annotated==edit_value, 0, annotated)
+    def action_new_track(self, label, frame):
 
-        for loc in trace:
-            # each element of trace is an array with [y,x] coordinates of array
-            x_loc = loc[1]
-            y_loc = loc[0]
+        """
+        Replacing label - create in all subsequent frames
+        """
+        old_label, start_frame = label, frame
+        new_label = max(self.tracks) + 1
 
-            brush_area = circle(y_loc, x_loc, brush_size, (self.height,self.width))
+        if start_frame != 0:
+            # replace frame labels
+            for frame in self.tracked[start_frame:]:
+                frame[frame == old_label] = new_label
 
-            #do not overwrite or erase labels other than the one you're editing
-            if not erase:
-                annotated[brush_area] = annotated_draw[brush_area]
-            else:
-                annotated[brush_area] = annotated_erase[brush_area]
+            # replace fields
+            track_old = self.tracks[old_label]
+            track_new = self.tracks[new_label] = {}
 
-        in_modified = np.any(np.isin(annotated, edit_value))
+            idx = track_old["frames"].index(start_frame)
 
-        # cell deletion
-        if in_original and not in_modified:
-            self.del_cell_info(del_label = edit_value, frame = frame)
+            frames_before = track_old["frames"][:idx]
+            frames_after = track_old["frames"][idx:]
 
-        # cell addition
-        elif in_modified and not in_original:
-            self.add_cell_info(add_label = edit_value, frame = frame)
+            track_old["frames"] = frames_before
+            track_new["frames"] = frames_after
+            track_new["label"] = new_label
 
-        comparison = np.where(annotated != self.tracked[frame])
-        self.frames_changed = np.any(comparison)
+            # only add daughters if they aren't in the same frame as the new track
+            track_new["daughters"] = []
+            for d in track_old["daughters"]:
+                if start_frame not in self.tracks[d]["frames"]:
+                    track_new["daughters"].append(d)
 
-        self.tracked[frame] = annotated
+            track_new["frame_div"] = track_old["frame_div"]
+            track_new["capped"] = track_old["capped"]
+            track_new["parent"] = None
+
+            track_old["daughters"] = []
+            track_old["frame_div"] = None
+            track_old["capped"] = True
+
+            self.frames_changed = self.info_changed = True
+
+    def action_delete(self, label, frame):
+        """
+        Deletes label from current frame only
+        """
+        # Set frame labels to 0
+        ann_img = self.tracked[frame]
+        ann_img = np.where(ann_img == label, 0, ann_img)
+        self.tracked[frame] = ann_img
+
+        self.del_cell_info(del_label = label, frame = frame)
+
+    def action_set_parent(self, label_1, label_2, frame_1, frame_2):
+        """
+        label_1 gave birth to label_2
+        """
+        frame_div = frame_2
+
+        track_1 = self.tracks[label_1]
+        track_2 = self.tracks[label_2]
+
+        track_1["daughters"].append(label_2)
+        track_2["parent"] = label_1
+        track_1["frame_div"] = frame_div
+
+        self.info_changed = True
+
+    def action_replace(self, label_1, label_2, frame_1, frame_2):
+        """
+        Replacing label_2 with label_1
+        """
+        # replace arrays
+        for frame in range(self.max_frames):
+            annotated = self.tracked[frame]
+            annotated = np.where(annotated == label_2, label_1, annotated)
+            self.tracked[frame] = annotated
+
+        # replace fields
+        track_1 = self.tracks[label_1]
+        track_2 = self.tracks[label_2]
+
+        for d in track_1["daughters"]:
+            self.tracks[d]["parent"] = None
+
+        track_1["frames"].extend(track_2["frames"])
+        track_1["frames"] = sorted(set(track_1["frames"]))
+        track_1["daughters"] = track_2["daughters"]
+        track_1["frame_div"] = track_2["frame_div"]
+        track_1["capped"] = track_2["capped"]
+
+        del self.tracks[label_2]
+        for _, track in self.tracks.items():
+            try:
+                track["daughters"].remove(label_2)
+            except ValueError:
+                pass
+
+        self.frames_changed = self.info_changed = True
+
+    def action_swap_single_frame(self, label_1, label_2, frame_1, frame_2):
+        '''swap the labels of two cells in one frame, but do not
+        change any of the lineage information'''
+
+        assert(frame_1 == frame_2)
+        frame = frame_1
+
+        ann_img = self.tracked[frame,:,:,0]
+        ann_img = np.where(ann_img == label_1, -1, ann_img)
+        ann_img = np.where(ann_img == label_2, label_1, ann_img)
+        ann_img = np.where(ann_img == -1, label_2, ann_img)
+
+        self.tracked[frame,:,:,0] = ann_img
+
+        self.frames_changed = True
+
+    def action_swap_tracks(self, label_1, label_2, frame_1, frame_2):
+        def relabel(old_label, new_label):
+            for frame in self.tracked:
+                frame[frame == old_label] = new_label
+
+            # replace fields
+            track_new = self.tracks[new_label] = self.tracks[old_label]
+            track_new["label"] = new_label
+            del self.tracks[old_label]
+
+            for d in track_new["daughters"]:
+                self.tracks[d]["parent"] = new_label
+
+            if track_new["parent"] is not None:
+                parent_track = self.tracks[track_new["parent"]]
+                parent_track["daughters"].remove(old_label)
+                parent_track["daughters"].append(new_label)
+
+        relabel(label_1, -1)
+        relabel(label_2, label_1)
+        relabel(-1, label_2)
+
+        self.frames_changed = self.info_changed = True
 
     def action_watershed(self, label_1, label_2, frame, x1_location, y1_location, x2_location, y2_location):
 
@@ -809,8 +971,7 @@ class TrackReview:
             self.add_cell_info(add_label=new_label, frame = frame)
 
     def action_save_track(self):
-
-    # clear any empty tracks before saving file
+        # clear any empty tracks before saving file
         empty_tracks = []
         for key in self.tracks:
             if not self.tracks[key]['frames']:
@@ -844,161 +1005,6 @@ class TrackReview:
 
         #os.remove(file)
         return "Success!"
-
-    def action_swap_single_frame(self, label_1, label_2, frame_1, frame_2):
-        '''swap the labels of two cells in one frame, but do not
-        change any of the lineage information'''
-
-        assert(frame_1 == frame_2)
-        frame = frame_1
-
-        ann_img = self.tracked[frame,:,:,0]
-        ann_img = np.where(ann_img == label_1, -1, ann_img)
-        ann_img = np.where(ann_img == label_2, label_1, ann_img)
-        ann_img = np.where(ann_img == -1, label_2, ann_img)
-
-        self.tracked[frame,:,:,0] = ann_img
-
-        self.frames_changed = True
-
-    def action_swap_tracks(self, label_1, label_2, frame_1, frame_2):
-        def relabel(old_label, new_label):
-            for frame in self.tracked:
-                frame[frame == old_label] = new_label
-
-            # replace fields
-            track_new = self.tracks[new_label] = self.tracks[old_label]
-            track_new["label"] = new_label
-            del self.tracks[old_label]
-
-            for d in track_new["daughters"]:
-                self.tracks[d]["parent"] = new_label
-
-            if track_new["parent"] is not None:
-                parent_track = self.tracks[track_new["parent"]]
-                parent_track["daughters"].remove(old_label)
-                parent_track["daughters"].append(new_label)
-
-        relabel(label_1, -1)
-        relabel(label_2, label_1)
-        relabel(-1, label_2)
-
-        self.frames_changed = self.info_changed = True
-
-    def action_set_parent(self, label_1, label_2, frame_1, frame_2):
-        """
-        label_1 gave birth to label_2
-        """
-        frame_div = frame_2
-
-        track_1 = self.tracks[label_1]
-        track_2 = self.tracks[label_2]
-
-        track_1["daughters"].append(label_2)
-        track_2["parent"] = label_1
-        track_1["frame_div"] = frame_div
-
-        self.info_changed = True
-
-    def action_replace(self, label_1, label_2, frame_1, frame_2):
-        """
-        Replacing label_2 with label_1
-        """
-        # replace arrays
-        for frame in range(self.max_frames):
-            annotated = self.tracked[frame]
-            annotated = np.where(annotated == label_2, label_1, annotated)
-            self.tracked[frame] = annotated
-
-        # replace fields
-        track_1 = self.tracks[label_1]
-        track_2 = self.tracks[label_2]
-
-        for d in track_1["daughters"]:
-            self.tracks[d]["parent"] = None
-
-        track_1["frames"].extend(track_2["frames"])
-        track_1["frames"] = sorted(set(track_1["frames"]))
-        track_1["daughters"] = track_2["daughters"]
-        track_1["frame_div"] = track_2["frame_div"]
-        track_1["capped"] = track_2["capped"]
-
-        del self.tracks[label_2]
-        for _, track in self.tracks.items():
-            try:
-                track["daughters"].remove(label_2)
-            except ValueError:
-                pass
-
-        self.frames_changed = self.info_changed = True
-
-    def action_delete(self, label, frame):
-        """
-        Deletes label from current frame only
-        """
-        # Set frame labels to 0
-        ann_img = self.tracked[frame]
-        ann_img = np.where(ann_img == label, 0, ann_img)
-        self.tracked[frame] = ann_img
-
-        self.del_cell_info(del_label = label, frame = frame)
-
-    def action_new_track(self, label, frame):
-
-        """
-        Replacing label - create in all subsequent frames
-        """
-        old_label, start_frame = label, frame
-        new_label = max(self.tracks) + 1
-
-        if start_frame != 0:
-            # replace frame labels
-            for frame in self.tracked[start_frame:]:
-                frame[frame == old_label] = new_label
-
-            # replace fields
-            track_old = self.tracks[old_label]
-            track_new = self.tracks[new_label] = {}
-
-            idx = track_old["frames"].index(start_frame)
-
-            frames_before = track_old["frames"][:idx]
-            frames_after = track_old["frames"][idx:]
-
-            track_old["frames"] = frames_before
-            track_new["frames"] = frames_after
-            track_new["label"] = new_label
-
-            # only add daughters if they aren't in the same frame as the new track
-            track_new["daughters"] = []
-            for d in track_old["daughters"]:
-                if start_frame not in self.tracks[d]["frames"]:
-                    track_new["daughters"].append(d)
-
-            track_new["frame_div"] = track_old["frame_div"]
-            track_new["capped"] = track_old["capped"]
-            track_new["parent"] = None
-
-            track_old["daughters"] = []
-            track_old["frame_div"] = None
-            track_old["capped"] = True
-
-            self.frames_changed = self.info_changed = True
-
-    def action_new_single_cell(self, label, frame):
-        """
-        Create new label in just one frame
-        """
-        old_label = label
-        new_label = max(self.tracks) + 1
-
-        # replace frame labels
-        self.tracked[frame] = np.where(self.tracked[frame] == old_label,
-            new_label, self.tracked[frame])
-
-        # replace fields
-        self.del_cell_info(del_label = old_label, frame = frame)
-        self.add_cell_info(add_label = new_label, frame = frame)
 
     def add_cell_info(self, add_label, frame):
         '''
