@@ -61,10 +61,8 @@ class Mode {
       edit_mode = !edit_mode;
       render_frame();
     } if (key === "=") {
-      // increase edit_value, no upper limit
-      // TODO: this probably should have an upper limit,
-      // no reason for this to be unlimited
-      edit_value += 1;
+      // increase edit_value up to max label + 1 (guaranteed unused)
+      edit_value = Math.min(edit_value + 1, maxTrack + 1);
       render_log();
     } else if (key === "-") {
       // decrease edit_value, minimum 1
