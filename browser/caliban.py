@@ -835,22 +835,28 @@ class TrackReview:
 
         self.del_cell_info(del_label = label, frame = frame)
 
-    def action_set_parent(self, label_1, label_2, frame_1, frame_2):
+    def action_set_parent(self, label_1, label_2):
         """
         label_1 gave birth to label_2
         """
-        frame_div = frame_2
-
         track_1 = self.tracks[label_1]
         track_2 = self.tracks[label_2]
 
-        track_1["daughters"].append(label_2)
-        track_2["parent"] = label_1
-        track_1["frame_div"] = frame_div
+        last_frame_parent = max(track_1['frames'])
+        first_frame_daughter = min(track_2['frames'])
 
-        self.info_changed = True
+        if last_frame_parent < first_frame_daughter:
+            track_1["daughters"].append(label_2)
+            track_2["parent"] = label_1
 
-    def action_replace(self, label_1, label_2, frame_1, frame_2):
+            if track_1["frame_div"] is None:
+                track_1["frame_div"] = first_frame_daughter
+            else:
+                track_1["frame_div"] = min(track_1["frame_div"], first_frame_daughter)
+
+            self.info_changed = True
+
+    def action_replace(self, label_1, label_2):
         """
         Replacing label_2 with label_1
         """
@@ -882,12 +888,9 @@ class TrackReview:
 
         self.frames_changed = self.info_changed = True
 
-    def action_swap_single_frame(self, label_1, label_2, frame_1, frame_2):
+    def action_swap_single_frame(self, label_1, label_2, frame):
         '''swap the labels of two cells in one frame, but do not
         change any of the lineage information'''
-
-        assert(frame_1 == frame_2)
-        frame = frame_1
 
         ann_img = self.tracked[frame,:,:,0]
         ann_img = np.where(ann_img == label_1, -1, ann_img)
@@ -898,7 +901,7 @@ class TrackReview:
 
         self.frames_changed = True
 
-    def action_swap_tracks(self, label_1, label_2, frame_1, frame_2):
+    def action_swap_tracks(self, label_1, label_2):
         def relabel(old_label, new_label):
             for frame in self.tracked:
                 frame[frame == old_label] = new_label
@@ -922,10 +925,10 @@ class TrackReview:
 
         self.frames_changed = self.info_changed = True
 
-    def action_watershed(self, label_1, label_2, frame, x1_location, y1_location, x2_location, y2_location):
+    def action_watershed(self, label, frame, x1_location, y1_location, x2_location, y2_location):
 
         # Pull the label that is being split and find a new valid label
-        current_label = label_1
+        current_label = label
         new_label = max(self.tracks) + 1
 
         # Locally store the frames to work on

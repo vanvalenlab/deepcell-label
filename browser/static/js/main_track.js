@@ -217,37 +217,57 @@ class Mode {
     if (key === " ") {
       if (this.action === "flood_cell") {
         action("flood_cell", this.info);
-        this.clear();
       } else if (this.action === "trim_pixels") {
         action("trim_pixels", this.info);
-        this.clear();
       } if (this.action === "new_track") {
         action("create_all_new", this.info);
-        this.clear();
       } else if (this.action === "delete_cell") {
         action(this.action, this.info);
-        this.clear();
       } else if (this.action === "set_parent") {
-        action(this.action, this.info);
-        this.clear();
+        if (this.info.label_1 !== this.info.label_2 &&
+          this.info.frame_1 < this.info.frame_2) {
+          let send_info = {"label_1": this.info.label_1,
+                           "label_2": this.info.label_2};
+          action(this.action, send_info);
+        }
       } else if (this.action === "replace") {
-        action(this.action, this.info);
-        this.clear();
+        if (this.info.label_1 !== this.info.label_2) {
+          let send_info = {"label_1": this.info.label_1,
+                           "label_2": this.info.label_2};
+          action(this.action, send_info);
+        }
       } else if (this.action === "swap_cells") {
-        action("swap_tracks", this.info);
-        this.clear();
+        if (this.info.label_1 !== this.info.label_2) {
+          let send_info = {"label_1": this.info.label_1,
+                           "label_2": this.info.label_2}
+          action("swap_tracks", send_info);
+        }
       } else if (this.action === "watershed") {
-        action(this.action, this.info);
-        this.clear();
+        if (this.info.frame_1 === this.info.frame_2 &&
+          this.info.label_1 === this.info.label_2) {
+          this.info.frame = this.info.frame_1;
+          this.info.label = this.info.label_1;
+          delete this.info.frame_1;
+          delete this.info.frame_2;
+          delete this.info.label_1;
+          delete this.info.label_2;
+          action(this.action, this.info);
+        }
       }
+      this.clear();
     } else if (key === "s") {
       if (this.action === "new_track") {
         action("create_single_new", this.info);
-        this.clear();
       } else if (this.action === "swap_cells") {
-        action("swap_single_frame", this.info);
-        this.clear();
+        if (this.info.label_1 !== this.info.label_2 &&
+          this.info.frame_1 === this.info.frame_2) {
+          let send_info = {"label_1": this.info.label_1,
+                           "label_2": this.info.label_2,
+                           "frame": this.info.frame_1};
+          action("swap_single_frame", send_info);
+        }
       }
+      this.clear();
     }
   }
 
@@ -329,40 +349,28 @@ class Mode {
     this.highlighted_cell_one = this.info.label;
     this.highlighted_cell_two = current_label;
 
-    if (this.info.label === current_label) {
-      this.info = {"label_1": this.info.label,
-                  "label_2": current_label,
-                  "frame": current_frame,
-                  "x1_location": temp_x,
-                  "y1_location": temp_y,
-                  "x2_location": mouse_x,
-                  "y2_location": mouse_y};
-    } else {
-      this.info = {"label_1": this.info.label,
-                  "frame_1": this.info.frame,
-                  "label_2": current_label,
-                  "frame_2": current_frame};
-    }
+    this.info = {"label_1": this.info.label,
+                "label_2": current_label,
+                "frame_1": this.info.frame,
+                "frame_2": current_frame,
+                "x1_location": temp_x,
+                "y1_location": temp_y,
+                "x2_location": mouse_x,
+                "y2_location": mouse_y};
   }
 
   handle_mode_multiple_click(evt) {
     this.highlighted_cell_one = this.info.label_1;
     this.highlighted_cell_two = current_label;
 
-    if (this.info.label_1 === current_label) {
-      this.info = {"label_1": this.info.label_1,
-                  "label_2": current_label,
-                  "frame": current_frame,
-                  "x1_location": temp_x,
-                  "y1_location": temp_y,
-                  "x2_location": mouse_x,
-                  "y2_location": mouse_y};
-    } else {
-      this.info = {"label_1": this.info.label_1,
-                  "frame_1": this.info.frame_1,
-                  "label_2": current_label,
-                  "frame_2": current_frame};
-    }
+    this.info = {"label_1": this.info.label_1,
+                "label_2": current_label,
+                "frame_1": this.info.frame_1,
+                "frame_2": current_frame,
+                "x1_location": temp_x,
+                "y1_location": temp_y,
+                "x2_location": mouse_x,
+                "y2_location": mouse_y};
   }
 
   click(evt) {
