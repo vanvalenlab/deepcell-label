@@ -122,26 +122,36 @@ class Mode {
       render_frame();
     } else if (key === "f") {
       // cycle forward one feature, if applicable
-      // TODO: clean up!
-      this.change_feature();
-      this.info = {"feature": this.feature};
-      action("change_feature", this.info);
-      this.clear();
-      //should also add in a shift-f keybind if we ever want to use more than 1 feature
+      if (feature_max > 0) {
+        this.feature = this.increment_value(this.feature, 0, feature_max -1);
+        this.info = {"feature": this.feature};
+        action("change_feature", this.info);
+        this.clear();
+      }
+    } else if (key === "F") {
+      // cycle backward one feature, if applicable
+      if (feature_max > 0) {
+        this.feature = this.decrement_value(this.feature, 0, feature_max -1);
+        this.info = {"feature": this.feature};
+        action("change_feature", this.info);
+        this.clear();
+      }
     } else if (key === "c") {
       // cycle forward one channel, if applicable
-      // TODO: clean up!
-      this.change_channel(true);
-      this.info = {"channel": this.channel};
-      action("change_channel", this.info);
-      this.clear();
+      if (channel_max > 0) {
+        this.channel = this.increment_value(this.channel, 0, channel_max -1);
+        this.info = {"channel": this.channel};
+        action("change_channel", this.info);
+        this.clear();
+      }
     } else if (key === "C") {
       // cycle backward one channel, if applicable
-      // TODO: clean up!
-      this.change_channel(false);
-      this.info = {"channel": this.channel};
-      action("change_channel", this.info);
-      this.clear();
+      if (channel_max > 0) {
+        this.channel = this.decrement_value(this.channel, 0, channel_max -1);
+        this.info = {"channel": this.channel};
+        action("change_channel", this.info);
+        this.clear();
+      }
     } else if (key === "p") {
       //iou cell identity prediction
       this.kind = Modes.question;
@@ -150,19 +160,13 @@ class Mode {
       render_log();
     } else if (key === "-" && this.highlighted_cell_one !== -1) {
       // cycle highlight to prev label
-      if (this.highlighted_cell_one === 1) {
-        this.highlighted_cell_one = maxLabelsMap.get(this.feature);
-      } else {
-        this.highlighted_cell_one -=1;
-      }
+      this.highlighted_cell_one = this.decrement_value(this.highlighted_cell_one,
+          1, maxLabelsMap.get(this.feature));
       render_frame();
     } else if (key === "=" && this.highlighted_cell_one !== -1) {
       // cycle highlight to next label
-      if (this.highlighted_cell_one === maxLabelsMap.get(this.feature)) {
-        this.highlighted_cell_one = 1;
-      } else {
-        this.highlighted_cell_one +=1;
-      }
+      this.highlighted_cell_one = this.increment_value(this.highlighted_cell_one,
+          1, maxLabelsMap.get(this.feature));
       render_frame();
     }
   }
@@ -191,11 +195,8 @@ class Mode {
       render_log();
     } else if (key === "-") {
       // cycle highlight to prev label
-      if (this.highlighted_cell_one === 1) {
-        this.highlighted_cell_one = maxLabelsMap.get(this.feature);
-      } else {
-        this.highlighted_cell_one -=1;
-      }
+      this.highlighted_cell_one = this.decrement_value(this.highlighted_cell_one,
+          1, maxLabelsMap.get(this.feature));
       // clear info but show new highlighted cell
       let temp_highlight = this.highlighted_cell_one;
       this.clear();
@@ -203,11 +204,8 @@ class Mode {
       render_frame();
     } else if (key === "=") {
       // cycle highlight to next label
-      if (this.highlighted_cell_one === maxLabelsMap.get(this.feature)) {
-        this.highlighted_cell_one = 1;
-      } else {
-        this.highlighted_cell_one +=1;
-      }
+      this.highlighted_cell_one = this.increment_value(this.highlighted_cell_one,
+          1, maxLabelsMap.get(this.feature));
       // clear info but show new highlighted cell
       let temp_highlight = this.highlighted_cell_one;
       this.clear();
@@ -304,30 +302,24 @@ class Mode {
     this.clear()
   }
 
-  change_feature(){
-    if (this.feature < feature_max - 1) {
-      this.feature += 1;
+  // helper function to increment value but cycle around if needed
+  increment_value(currentValue, minValue, maxValue) {
+    if (currentValue < maxValue) {
+      currentValue += 1;
     } else {
-      this.feature = 0;
+      currentValue = minValue;
     }
+    return currentValue;
   }
 
-  change_channel(cycle_forward){
-    if (cycle_forward) {
-      if (this.channel < channel_max - 1) {
-        this.channel += 1;
-      } else {
-        this.channel = 0;
-      }
-
+  // helper function to decrement value but cycle around if needed
+  decrement_value(currentValue, minValue, maxValue) {
+    if (currentValue > minValue) {
+      currentValue -= 1;
     } else {
-      if (this.channel > 0) {
-        this.channel -= 1;
-      } else {
-        this.channel = channel_max - 1;
-      }
+      currentValue = maxValue;
     }
-
+    return currentValue;
   }
 
   click(evt) {
