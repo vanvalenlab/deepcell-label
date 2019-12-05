@@ -696,9 +696,8 @@ function load_file(file) {
 
 // adjust current_contrast upon mouse scroll
 function handle_scroll(evt) {
-  // only adjust when rendering_raw
-  // (adjustment is only applied to raw)
-  if (rendering_raw) {
+  // adjust contrast whenever we can see raw
+  if (rendering_raw || edit_mode) {
     let delta = - evt.originalEvent.deltaY / 2;
     current_contrast = Math.max(current_contrast + delta, -100);
     render_frame();
