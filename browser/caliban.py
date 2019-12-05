@@ -254,9 +254,11 @@ class ZStackReview:
 
     def action_change_feature(self, feature):
         self.feature = feature
+        self.frames_changed = True
 
     def action_change_channel(self, channel):
         self.channel = channel
+        self.frames_changed = True
 
     def action_fill_hole(self, label, frame, x_location, y_location):
         '''
