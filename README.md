@@ -70,6 +70,8 @@ Annotation mode focuses on using an adjustable brush to modify annotations on a 
 
 *x* - toggle eraser mode
 
+*n* - change brush label to an unusued label, so that a new cell can be created with a unique id
+
 *p* - color picker (click on a label to change the brush value to it)
 
 *r* - turn on "conversion brush" setting, which changes brush behavior so that one label value is overwritten with another label value. No other labels are affected, and conversion brush will not draw on background. After turning on conversion brush, click on cell labels as prompted to set brush values.
