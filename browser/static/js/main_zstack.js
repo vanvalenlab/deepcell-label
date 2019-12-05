@@ -267,6 +267,7 @@ class Mode {
                   "brush_size": brush_size, //so we need to pass them in as args
                   "erase": erase,
                   "frame": current_frame});
+    mouse_trace = [];
     this.clear()
   }
 
@@ -464,8 +465,7 @@ var edit_value = 1;
 var brush_size = 1;
 var erase = false;
 var answer = "(SPACE=YES / ESC=NO)";
-var last_mousex = last_mousey = 0;
-var mousedown = false;
+let mousedown = false;
 var tooltype = 'draw';
 var project_id = undefined;
 var brush;
@@ -729,128 +729,97 @@ function load_file(file) {
   });
 }
 
-function prepare_canvas() {
-  $('#canvas').click(function(evt) {
-    // bind click events on canvas
+// adjust current_contrast upon mouse scroll
+function handle_scroll(evt) {
+  // adjust contrast whenever we can see raw
+  if (rendering_raw || edit_mode) {
+    let delta = - evt.originalEvent.deltaY / 2;
+    current_contrast = Math.max(current_contrast + delta, -100);
+    render_frame();
+  }
+}
 
-    if (!edit_mode) {
-      mode.click(evt);
-    }
+// handle pressing mouse button (treats this as the beginning
+// of click&drag, since clicks are handled by Mode.click)
+function handle_mousedown(evt) {
+  mousedown = true;
+  mouse_x = evt.offsetX;
+  mouse_y = evt.offsetY;
+  // begin drawing
+  if (edit_mode) {
+    let img_y = Math.floor(mouse_y/scale);
+    let img_x = Math.floor(mouse_x/scale);
+    mouse_trace.push([img_y, img_x]);
+  }
+}
 
-    render_log();
-  });
+// handles mouse movement, whether or not mouse button is held down
+function handle_mousemove(evt) {
+  // update displayed info depending on where mouse is
+  mouse_x = evt.offsetX;
+  mouse_y = evt.offsetY;
+  render_log();
 
-  $('#canvas').on('wheel', function(evt) {
-    // bind mouse scroll events on canvas
-    if (rendering_raw) {
-      //contrast adjust raw image
-      let delta = - evt.originalEvent.deltaY / 2;
-      current_contrast = Math.max(current_contrast + delta, -100);
-      render_frame();
-    }
-  });
-
-  $('#canvas').mousemove(function(evt) {
-    // bind what happens when mouse moves across canvas
-
-    // always update mouse_x and mouse_y and use to display
-    // relevant text info:
-    mouse_x = evt.offsetX;
-    mouse_y = evt.offsetY;
-    render_log();
-
-  });
-  $('#canvas').mousedown(function(evt) {
-
-    mouse_x = evt.offsetX;
-    mouse_y = evt.offsetY;
-
-    last_mousex = mouse_x
-    last_mousey = mouse_y
-    mousedown = true; //so we can differentiate mousemove from click&drag
-
-    if (edit_mode) {
-      let img_y = Math.floor(mouse_y/scale);
-      let img_x = Math.floor(mouse_x/scale);
-
-      mouse_trace.push([img_y, img_x]);
-    }
-  });
-
-  $('#canvas').mouseup(function(evt) {
-    //on mouse release, clear image that shows where brush
-    //has gone during click&drag
-
-    mousedown = false; //no longer click&drag
-    let hidden_canvas = document.getElementById('hidden_canvas');
-    let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
-    hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1]);
-
-    //send click&drag coordinates to caliban.py to update annotations
-    if(edit_mode) {
-      mode.handle_draw();
-    }
-
-    //update display
-
-    mouse_trace = [];
-
-  });
-
-  $('#canvas').mousemove(function(evt) {
-    // handle brush preview
-
-
-    let canvas = document.getElementById('canvas');
-    let ctx = canvas.getContext('2d');
-
+  // update brush preview
+  if (edit_mode) {
     // hidden canvas is keeping track of the brush
     let hidden_canvas = document.getElementById('hidden_canvas');
     let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
-
-    mouse_x = evt.offsetX;
-    mouse_y = evt.offsetY;
-
-    // don't bother with brush preview updating unless in edit mode
-    if (!mousedown && edit_mode) {
-      //only draw brush where mouse currently is
+    if (mousedown) {
+      // update mouse_trace
+      let img_y = Math.floor(mouse_y/scale);
+      let img_x = Math.floor(mouse_x/scale);
+      mouse_trace.push([img_y, img_x]);
+    } else {
       hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1])
-
-      // update brush params
-      brush.x = mouse_x;
-      brush.y = mouse_y;
-      brush.radius = brush_size * scale;
-      // update brush color?
-
-      // draw brush onto hidden_ctx
-      brush.draw(hidden_ctx);
-
-      // show the updated image (composite + brush preview)
-      // each time the preview changes
-      render_frame();
-
     }
+    brush.x = mouse_x;
+    brush.y = mouse_y;
+    brush.draw(hidden_ctx);
+    render_frame();
+  }
+}
 
-    if (mousedown && edit_mode) {
-        // save coordinates of where mouse has gone
-        // convert down from scaled coordinates (what the canvas sees)
-        // to the coordinates of the original img array (what caliban sees)
-        let img_y = Math.floor(mouse_y/scale);
-        let img_x = Math.floor(mouse_x/scale);
+// handles end of click&drag (different from click())
+function handle_mouseup(evt) {
+  mousedown = false;
+  if (edit_mode) {
+    //send click&drag coordinates to caliban.py to update annotations
+    mode.handle_draw();
+    // reset brush preview
+    let hidden_canvas = document.getElementById('hidden_canvas');
+    let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
+    hidden_ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
+  }
+}
 
-        mouse_trace.push([img_y, img_x]);
-
-        // update brush params but don't clear the image
-        brush.x = mouse_x;
-        brush.y = mouse_y;
-        brush.radius = brush_size * scale;
-        brush.draw(hidden_ctx);
-
-        render_frame();
+function prepare_canvas() {
+  // bind click on canvas
+  $('#canvas').click(function(evt) {
+    if (!edit_mode) {
+      mode.click(evt);
     }
-    last_mousex = mouse_x;
-    last_mousey = mouse_y;
+    render_log();
   });
+  // bind scroll wheel
+  $('#canvas').on('wheel', function(evt) {
+    // adjusts contrast of raw when scrolled
+    handle_scroll(evt);
+  });
+  // mousedown for click&drag/handle_draw DIFFERENT FROM CLICK
+  $('#canvas').mousedown(function(evt) {
+    handle_mousedown(evt);
+  });
+  // bind mouse movement
+  $('#canvas').mousemove(function(evt) {
+    // handle brush preview
+    handle_mousemove(evt);
+  });
+  // bind mouse button release (end of click&drag)
+  $('#canvas').mouseup(function(evt) {
+    handle_mouseup(evt);
+  });
+
 
   window.addEventListener('keydown', function(evt) {
 
