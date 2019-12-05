@@ -69,10 +69,10 @@ class Mode {
       edit_value = Math.max(edit_value - 1, 1);
       render_log();
     } else if (key === "x") {
-      //turn eraser on and off
+      // turn eraser on and off
       erase = !erase;
       render_log();
-    } else if (key === ",") {
+    } else if (key === "ArrowDown") {
       // decrease brush size, minimum size 1
       brush_size = Math.max(brush_size - 1, 1);
 
@@ -84,19 +84,19 @@ class Mode {
 
       // redraw the frame with the updated brush preview
       render_frame();
-    } else if (key === ".") {
+    } else if (key === "ArrowUp") {
       // increase brush size
       // shouldn't be larger than the image
       brush_size = Math.min(self.brush_size + 1,
           dimensions[0]/scale, dimensions[1]/scale);
 
-      //update brush with its new size
+      // update brush with its new size
       let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
       hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1]);
       brush.radius = brush_size * scale;
       brush.draw(hidden_ctx);
 
-      //redraw the frame with the updated brush preview
+      // redraw the frame with the updated brush preview
       render_frame();
     } else if (key === 'n') {
       // set edit value to something unused
