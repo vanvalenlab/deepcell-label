@@ -590,54 +590,68 @@ function render_log() {
   $('#mode').html(mode.render());
 }
 
-function render_frame() {
+function render_edit(ctx) {
+  let hidden_canvas = document.getElementById('hidden_canvas');
 
+  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
+  ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
+  let image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+
+  // adjust underlying raw image
+  contrast_image(image_data, current_contrast);
+  grayscale(image_data);
+  if (display_invert) {
+    invert(image_data);
+  }
+  ctx.putImageData(image_data, 0, 0);
+  ctx.save();
+  ctx.globalCompositeOperation = 'color';
+  ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
+  ctx.restore();
+
+  // draw brushview on top of cells/annotations
+  ctx.save();
+  ctx.globalAlpha = 0.7;
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.drawImage(hidden_canvas, 0, 0, dimensions[0], dimensions[1]);
+  ctx.restore();
+}
+
+function render_raw(ctx) {
+  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
+  ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
+
+  // contrast image
+  image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+  contrast_image(image_data, current_contrast);
+  // draw contrasted image over the original
+  ctx.putImageData(image_data, 0, 0);
+}
+
+function render_annotations(ctx) {
+  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
+  ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
+  if (current_highlight) {
+    let img_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+    highlight(img_data, mode.highlighted_cell_one);
+    highlight(img_data, mode.highlighted_cell_two);
+    ctx.putImageData(img_data, 0, 0);
+  }
+}
+
+function render_frame() {
   let ctx = $('#canvas').get(0).getContext("2d");
   ctx.imageSmoothingEnabled = false;
 
   if (edit_mode) {
-    ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-    ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
-    let image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
-    contrast_image(image_data, current_contrast);
-    grayscale(image_data);
-    if (display_invert) {
-      invert(image_data);
-    }
-    ctx.putImageData(image_data, 0, 0);
-    ctx.save();
-    ctx.globalCompositeOperation = 'color';
-    ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
-    ctx.restore();
-
-    // draw brushview on top of cells/annotations
-
-    let hidden_canvas = document.getElementById('hidden_canvas');
-    ctx.save();
-    ctx.globalAlpha = 0.7;
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.drawImage(hidden_canvas, 0, 0, dimensions[0], dimensions[1]);
-    ctx.restore();
-
+    // edit mode (annotations overlaid on raw + brush preview)
+    render_edit(ctx);
   } else if (rendering_raw) {
-    ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-    ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
-
-    //contrast image
-    image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
-    contrast_image(image_data, current_contrast);
-    //draw contrasted image over the original
-    ctx.putImageData(image_data, 0, 0);
-
-  } else { //draw annotations
-    ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-    ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
-    if (current_highlight) {
-      let img_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
-      highlight(img_data, mode.highlighted_cell_one);
-      highlight(img_data, mode.highlighted_cell_two);
-      ctx.putImageData(img_data, 0, 0);
-    }
+    // draw raw image
+    render_raw(ctx);
+  } else {
+    // draw annotations
+    render_annotations(ctx);
   }
   render_log();
 }
