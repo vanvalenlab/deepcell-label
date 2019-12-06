@@ -635,70 +635,69 @@ function render_info_display() {
   $('#mode').html(mode.render());
 }
 
-function render_frame() {
+function render_edit(ctx) {
+  let hidden_canvas = document.getElementById('hidden_canvas');
 
+  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
+  ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
+  let image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+
+  // adjust underlying raw image
+  contrast_image(image_data, current_contrast);
+  grayscale(image_data);
+  if (display_invert) {
+    invert(image_data);
+  }
+  ctx.putImageData(image_data, 0, 0);
+  ctx.save();
+  // ctx.globalCompositeOperation = 'color';
+  ctx.globalAlpha = 0.3;
+  ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
+  ctx.restore();
+
+  // draw brushview on top of cells/annotations
+  ctx.save();
+  ctx.globalAlpha = 0.2;
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.drawImage(hidden_canvas, 0,0,dimensions[0],dimensions[1]);
+  ctx.restore();
+}
+
+function render_raw(ctx) {
+  ctx.clearRect(0, 0, dimensions, dimensions[1]);
+  ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
+
+  // contrast image
+  image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+  contrast_image(image_data, current_contrast);
+  // draw contrasted image over the original
+  ctx.putImageData(image_data, 0, 0);
+}
+
+function render_annotations(ctx) {
+  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
+  ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
+  if (current_highlight){
+    let img_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+    highlight(img_data, mode.highlighted_cell_one);
+    highlight(img_data, mode.highlighted_cell_two);
+    ctx.putImageData(img_data, 0, 0)
+  }
+}
+
+function render_frame() {
   let ctx = $('#canvas').get(0).getContext("2d");
   ctx.imageSmoothingEnabled = false;
 
-  if (edit_mode) { // if in edit mode, doesn't matter if raw is true or false
-    // start with clean canvas
-    ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-
-    // start with raw data, adjust, then layer annotations on top
-    ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
-
-    // editing image_data, not the actual raw_image we received from caliban.py
-    let image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
-
-    // apply raw contrast adjustment to image data
-    contrast_image(image_data, current_contrast);
-
-    //convert contrast adjusted image data to grayscale
-    grayscale(image_data);
-
-    // invert if needed
-    if (display_invert) {
-      invert(image_data);
-    }
-
-    // draw over original raw image with the adjusted raw
-    ctx.putImageData(image_data, 0, 0);
-
-    ctx.save(); // save here to store the default globalCompositeOperation
-    // ctx.globalCompositeOperation = 'color';
-    ctx.globalAlpha = 0.3;
-    ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
-    ctx.restore(); // we only want compositing in this section, so restore
-    // when finished compositing to reset composite setting
-
-    // draw brushview on top of cells/annotations
-    let hidden_canvas = document.getElementById('hidden_canvas');
-    ctx.save();
-    ctx.globalAlpha = 0.2;
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.drawImage(hidden_canvas, 0,0,dimensions[0],dimensions[1]);
-    ctx.restore();
-
-  } else if (rendering_raw) { // if not edit, check whether drawing raw
-    ctx.clearRect(0, 0, dimensions, dimensions[1]);
-    ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
-
-    //contrast image
-    image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
-    contrast_image(image_data, current_contrast);
-
-    //draw contrasted image over the original
-    ctx.putImageData(image_data, 0, 0);
-
-  } else { // draw annotations
-    ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-    ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
-    if (current_highlight){
-      let img_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
-      highlight(img_data, mode.highlighted_cell_one);
-      highlight(img_data, mode.highlighted_cell_two);
-      ctx.putImageData(img_data, 0, 0)
-    }
+  if (edit_mode) {
+    // edit mode (annotations overlaid on raw + brush preview)
+    render_edit(ctx);
+  } else if (rendering_raw) {
+    // draw raw image
+    render_raw(ctx);
+  } else {
+    // draw annotations
+    render_annotations(ctx);
   }
   render_info_display();
 }
