@@ -325,31 +325,25 @@ class ZStackReview:
         #update cell_info
         self.del_cell_info(feature = self.feature, del_label = label, frame = frame)
 
-    def action_replace_single(self, label_1, label_2, frame_1, frame_2):
+    def action_replace_single(self, label_1, label_2, frame):
         '''
-        replaces label_2 with label_1, but only in one frame. Check to make sure frame_1 and
-        frame_2 are the same to prevent weird behavior. Check to make sure label_1 and label_2
-        aren't the same (replacing is pointless if they're the same label)
+        replaces label_2 with label_1, but only in one frame. Frontend checks
+        to make sure labels are different and were selected within same frames
+        before sending action
         '''
-        if frame_1 == frame_2 and label_1 != label_2:
-            frame = frame_1
-            annotated = self.annotated[frame,:,:,self.feature]
-            # change annotation
-            annotated = np.where(annotated == label_2, label_1, annotated)
-            self.annotated[frame,:,:,self.feature] = annotated
-            # update info
-            self.add_cell_info(feature = self.feature, add_label = label_1, frame = frame)
-            self.del_cell_info(feature = self.feature, del_label = label_2, frame = frame)
+        annotated = self.annotated[frame,:,:,self.feature]
+        # change annotation
+        annotated = np.where(annotated == label_2, label_1, annotated)
+        self.annotated[frame,:,:,self.feature] = annotated
+        # update info
+        self.add_cell_info(feature = self.feature, add_label = label_1, frame = frame)
+        self.del_cell_info(feature = self.feature, del_label = label_2, frame = frame)
 
-    def action_replace(self, label_1, label_2, frame_1, frame_2):
+    def action_replace(self, label_1, label_2):
         """
-        Replacing label_2 with label_1. frame_1 and frame_2 are unused
-        but get passed to caliban.py from js action()
+        Replacing label_2 with label_1. Frontend checks to make sure these labels
+        are different before sending action
         """
-
-        # currently don't need to check for label_1 == label_2 because of javascript logic
-        # but this may need to be updated
-
         # check each frame
         for frame in range(self.annotated.shape[0]):
             annotated = self.annotated[frame,:,:,self.feature]
@@ -360,9 +354,7 @@ class ZStackReview:
                 self.add_cell_info(feature = self.feature, add_label = label_1, frame = frame)
                 self.del_cell_info(feature = self.feature, del_label = label_2, frame = frame)
 
-    def action_swap_single_frame(self, label_1, label_2, frame_1, frame_2):
-        assert(frame_1 == frame_2)
-        frame = frame_1
+    def action_swap_single_frame(self, label_1, label_2, frame):
 
         ann_img = self.annotated[frame,:,:,self.feature]
         ann_img = np.where(ann_img == label_1, -1, ann_img)
@@ -373,7 +365,7 @@ class ZStackReview:
 
         self.frames_changed = self.info_changed = True
 
-    def action_swap_all_frame(self, label_1, label_2, frame_1, frame_2):
+    def action_swap_all_frame(self, label_1, label_2):
 
         for frame in range(self.annotated.shape[0]):
             ann_img = self.annotated[frame,:,:,self.feature]
@@ -390,9 +382,9 @@ class ZStackReview:
 
         self.frames_changed = self.info_changed = True
 
-    def action_watershed(self, label_1, label_2, frame, x1_location, y1_location, x2_location, y2_location):
+    def action_watershed(self, label, frame, x1_location, y1_location, x2_location, y2_location):
         # Pull the label that is being split and find a new valid label
-        current_label = label_1
+        current_label = label
         new_label = np.max(self.cell_ids[self.feature]) + 1
 
         # Locally store the frames to work on

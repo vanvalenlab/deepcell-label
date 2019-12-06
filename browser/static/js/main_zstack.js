@@ -244,29 +244,58 @@ class Mode {
         action("flood_cell", this.info);
       } else if (this.action === "trim_pixels") {
         action("trim_pixels", this.info);
-      } else if (this.action === "create_new"){
+      } else if (this.action === "create_new") {
         action("new_cell_stack", this.info);
       } else if (this.action === "delete") {
         action("delete", this.info);
       } else if (this.action === "predict") {
         action("predict_zstack", this.info);
       } else if (this.action === "replace") {
-        action("replace", this.info);
+        if (this.info.label_1 !== this.info.label_2) {
+          let send_info = {"label_1": this.info.label_1,
+                          "label_2": this.info.label_2};
+          action("replace", send_info);
+        }
       } else if (this.action === "swap_cells") {
-        action("swap_all_frame", this.info);
+        if (this.info.label_1 !== this.info.label_2) {
+          let send_info = {"label_1": this.info.label_1,
+                          "label_2": this.info.label_2};
+          action("swap_all_frame", send_info);
+        }
       } else if (this.action === "watershed") {
-        action("watershed", this.info);
+        if (this.info.label_1 === this.info.label_2 &&
+            this.info.frame_1 === this.info.frame_2) {
+          this.info.frame = this.info.frame_1;
+          this.info.label = this.info.label_1;
+          delete this.info.frame_1;
+          delete this.info.frame_2;
+          delete this.info.label_1;
+          delete this.info.label_2;
+          action(this.action, this.info);
+        }
       }
       this.clear();
     } else if (key === "s") {
-      if(this.action === "create_new"){
+      if(this.action === "create_new") {
         action("new_single_cell", this.info);
       } else if (this.action === "predict") {
         action("predict_single", {"frame": current_frame});
       } else if (this.action === "replace") {
-        action("replace_single", this.info);
-      } else if (this.action === "swap_cells"){
-        action("swap_single_frame", this.info);
+        if (this.info.label_1 !== this.info.label_2 &&
+            this.info.frame_1 === this.info.frame_2) {
+          let send_info = {"label_1": this.info.label_1,
+                            "label_2": this.info.label_2,
+                            "frame": this.info.frame_1};
+          action("replace_single", send_info);
+        }
+      } else if (this.action === "swap_cells") {
+        if (this.info.label_1 !== this.info.label_2 &&
+            this.info.frame_1 === this.info.frame_2) {
+          let send_info = {"label_1": this.info.label_1,
+                            "label_2": this.info.label_2,
+                            "frame": this.info.frame_1};
+          action("swap_single_frame", send_info);
+        }
       }
       this.clear();
     }
