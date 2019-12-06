@@ -24,7 +24,7 @@ class Mode {
 
     this.action = "";
     this.prompt = "";
-    render_log();
+    render_info_display();
   }
 
   // these keybinds apply regardless of
@@ -68,15 +68,15 @@ class Mode {
       // increase edit_value up to max label + 1 (guaranteed unused)
       edit_value = Math.min(edit_value + 1,
           maxLabelsMap.get(this.feature) + 1);
-      render_log();
+      render_info_display();
     } else if (key === "-") {
       // decrease edit_value, minimum 1
       edit_value = Math.max(edit_value - 1, 1);
-      render_log();
+      render_info_display();
     } else if (key === "x") {
       // turn eraser on and off
       erase = !erase;
-      render_log();
+      render_info_display();
     } else if (key === "ArrowDown") {
       // decrease brush size, minimum size 1
       brush_size = Math.max(brush_size - 1, 1);
@@ -105,7 +105,7 @@ class Mode {
     } else if (key === 'n') {
       // set edit value to something unused
       edit_value = maxLabelsMap.get(this.feature) + 1;
-      render_log();
+      render_info_display();
       // when value of brush determines color of brush, render_frame instead
     } else if (key === 'i') {
       // toggle light/dark inversion of raw img
@@ -157,7 +157,7 @@ class Mode {
       this.kind = Modes.question;
       this.action = "predict";
       this.prompt = "Predict cell ids for zstack? / S=PREDICT THIS FRAME / SPACE=PREDICT ALL FRAMES / ESC=CANCEL PREDICTION";
-      render_log();
+      render_info_display();
     } else if (key === "-" && this.highlighted_cell_one !== -1) {
       // cycle highlight to prev label
       this.highlighted_cell_one = this.decrement_value(this.highlighted_cell_one,
@@ -180,19 +180,19 @@ class Mode {
       this.kind = Modes.question;
       this.action = "fill_hole";
       this.prompt = "Select hole to fill in cell " + this.info['label'];
-      render_log();
+      render_info_display();
     } else if (key === "c") {
       // create new
       this.kind = Modes.question;
       this.action = "create_new";
       this.prompt = "CREATE NEW(S=SINGLE FRAME / SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)";
-      render_log();
+      render_info_display();
     } else if (key === "x") {
       // delete label from frame
       this.kind = Modes.question;
       this.action = "delete";
       this.prompt = "delete label " + this.info.label + " in frame " + this.info.frame + "? " + answer;
-      render_log();
+      render_info_display();
     } else if (key === "-") {
       // cycle highlight to prev label
       this.highlighted_cell_one = this.decrement_value(this.highlighted_cell_one,
@@ -222,19 +222,19 @@ class Mode {
       this.action = "replace";
       this.prompt = ("Replace " + this.info.label_2 + " with " + this.info.label_1 +
         "? // SPACE = Replace in all frames / S = Replace in this frame only / ESC = Cancel replace");
-      render_log();
+      render_info_display();
     } else if (key === "s") {
       // swap
       this.kind = Modes.question;
       this.action = "swap_cells";
       this.prompt = "SPACE = SWAP IN ALL FRAMES / S = SWAP IN THIS FRAME ONLY / ESC = CANCEL SWAP";
-      render_log();
+      render_info_display();
     } else if (key === "w" ) {
       // watershed
       this.kind = Modes.question;
       this.action = "watershed";
       this.prompt = "Perform watershed to split " + this.info.label_1 + "? " + answer;
-      render_log();
+      render_info_display();
     }
   }
 
@@ -619,7 +619,7 @@ function render_cell_info() {
 }
 
 // updates html display of side info panel
-function render_log() {
+function render_info_display() {
   // always show current frame, feature, channel
   $('#frame').html(current_frame);
   $('#feature').html(mode.feature);
@@ -700,7 +700,7 @@ function render_frame() {
       ctx.putImageData(img_data, 0, 0)
     }
   }
-  render_log();
+  render_info_display();
 }
 
 function fetch_and_render_frame() {
@@ -781,7 +781,7 @@ function handle_mousemove(evt) {
   // update displayed info depending on where mouse is
   mouse_x = evt.offsetX;
   mouse_y = evt.offsetY;
-  render_log();
+  render_info_display();
 
   // update brush preview
   if (edit_mode) {
@@ -822,7 +822,7 @@ function prepare_canvas() {
     if (!edit_mode) {
       mode.click(evt);
     }
-    render_log();
+    render_info_display();
   });
   // bind scroll wheel
   $('#canvas').on('wheel', function(evt) {

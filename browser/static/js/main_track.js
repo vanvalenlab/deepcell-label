@@ -19,7 +19,7 @@ class Mode {
     }
     this.action = "";
     this.prompt = "";
-    render_log();
+    render_info_display();
   }
 
   // these keybinds apply regardless of
@@ -62,15 +62,15 @@ class Mode {
     } else if (key === "=") {
       // increase edit_value up to max label + 1 (guaranteed unused)
       edit_value = Math.min(edit_value + 1, maxTrack + 1);
-      render_log();
+      render_info_display();
     } else if (key === "-") {
       // decrease edit_value, minimum 1
       edit_value = Math.max(edit_value - 1, 1);
-      render_log();
+      render_info_display();
     } else if (key === "x") {
       // turn eraser on and off
       erase = !erase;
-      render_log();
+      render_info_display();
     } else if (key === "ArrowDown") {
       // decrease brush size, minimum size 1
       brush_size = Math.max(brush_size - 1, 1);
@@ -99,7 +99,7 @@ class Mode {
     } else if (key === 'n') {
       // set edit value to something unused
       edit_value = maxTrack + 1;
-      render_log();
+      render_info_display();
       // when value of brush determines color of brush, render_frame instead
     } else if (key === 'i') {
       // toggle light/dark inversion of raw img
@@ -142,19 +142,19 @@ class Mode {
       this.kind = Modes.question;
       this.action = "fill_hole";
       this.prompt = "Select hole to fill in cell " + this.info['label'];
-      render_log();
+      render_info_display();
     } else if (key === "c") {
       // create new
       this.kind = Modes.question;
       this.action = "new_track";
       this.prompt = "CREATE NEW (SPACE=ALL SUBSEQUENT FRAMES / S=ONLY THIS FRAME / ESC=CANCEL)";
-      render_log();
+      render_info_display();
     } else if (key === "x") {
       // delete label from frame
       this.kind = Modes.question;
       this.action = "delete_cell";
       this.prompt = "delete label " + this.info.label + " in frame " + this.info.frame + "? " + answer;
-      render_log();
+      render_info_display();
     } else if (key === "-") {
       // cycle highlight to prev label
       if (this.highlighted_cell_one === 1) {
@@ -189,25 +189,25 @@ class Mode {
       this.kind = Modes.question;
       this.action = "set_parent";
       this.prompt = "Set " + this.info.label_1 + " as parent of " + this.info.label_2 + "? " + answer;
-      render_log();
+      render_info_display();
     } else if (key === "r") {
       // replace
       this.kind = Modes.question;
       this.action = "replace";
       this.prompt = "Replace " + this.info.label_2 + " with " + this.info.label_1 + "? " + answer;
-      render_log();
+      render_info_display();
     } else if (key === "s") {
       // swap
       this.kind = Modes.question;
       this.action = "swap_cells";
       this.prompt = "SPACE = SWAP IN ALL FRAMES / S = SWAP IN ONLY ONE FRAME / ESC = CANCEL SWAP";
-      render_log();
+      render_info_display();
     } else if (key === "w") {
       // watershed
       this.kind = Modes.question;
       this.action = "watershed";
       this.prompt = "Perform watershed to split " + this.info.label_1 + "? " + answer;
-      render_log();
+      render_info_display();
     }
   }
 
@@ -594,7 +594,8 @@ function render_cell_info() {
   }
 }
 
-function render_log() {
+// updates html display of side info panel
+function render_info_display() {
   // always show current frame
   $('#frame').html(current_frame);
 
@@ -671,7 +672,7 @@ function render_frame() {
     // draw annotations
     render_annotations(ctx);
   }
-  render_log();
+  render_info_display();
 }
 
 function fetch_and_render_frame() {
@@ -743,7 +744,7 @@ function handle_mousemove(evt) {
   // update displayed info depending on where mouse is
   mouse_x = evt.offsetX;
   mouse_y = evt.offsetY;
-  render_log();
+  render_info_display();
 
   // update brush preview
   if (edit_mode) {
@@ -784,7 +785,7 @@ function prepare_canvas() {
     if (!edit_mode) {
       mode.click(evt);
     }
-    render_log();
+    render_info_display();
   });
   // bind scroll wheel
   $('#canvas').on('wheel', function(evt) {
