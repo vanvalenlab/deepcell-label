@@ -551,9 +551,15 @@ function invert(img) {
 }
 
 function label_under_mouse() {
-  let img_y = Math.floor(mouse_y/scale) //image has been scaled by 2x
-  let img_x = Math.floor(mouse_x/scale)
-  let new_label = seg_array[img_y][img_x]; //check array value at mouse location
+  let img_y = Math.floor(mouse_y/scale);
+  let img_x = Math.floor(mouse_x/scale);
+  let new_label;
+  if (img_y >= 0 && img_y < seg_array.length &&
+      img_x >= 0 && img_x < seg_array[0].length) {
+    new_label = seg_array[img_y][img_x]; //check array value at mouse location
+  } else {
+    new_label = 0;
+  }
   return new_label;
 }
 
