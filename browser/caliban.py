@@ -853,6 +853,9 @@ class TrackReview:
 
         if last_frame_parent < first_frame_daughter:
             track_1["daughters"].append(label_2)
+            daughters = np.unique(track_1["daughters"]).tolist()
+            track_1["daughters"] = daughters
+
             track_2["parent"] = label_1
 
             if track_1["frame_div"] is None:
