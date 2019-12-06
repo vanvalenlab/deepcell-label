@@ -18,8 +18,7 @@ class Mode {
     this.highlighted_cell_two = -1;
 
     if (current_highlight) {
-      // update img display
-      render_frame();
+      render_image_display();
     }
 
     this.action = "";
@@ -50,11 +49,11 @@ class Mode {
     } else if (key === 'h') {
       // toggle highlight
       current_highlight = !current_highlight;
-      render_frame();
+      render_image_display();
     } else if (key === 'z') {
       // toggle rendering_raw
       rendering_raw = !rendering_raw;
-      render_frame();
+      render_image_display();
     }
   }
 
@@ -63,7 +62,7 @@ class Mode {
     if (key === "e") {
       // toggle edit mode
       edit_mode = !edit_mode;
-      render_frame();
+      render_image_display();
     } else if (key === "=") {
       // increase edit_value up to max label + 1 (guaranteed unused)
       edit_value = Math.min(edit_value + 1,
@@ -88,7 +87,7 @@ class Mode {
       brush.draw(hidden_ctx);
 
       // redraw the frame with the updated brush preview
-      render_frame();
+      render_image_display();
     } else if (key === "ArrowUp") {
       //increase brush size, shouldn't be larger than the image
       brush_size = Math.min(self.brush_size + 1,
@@ -101,16 +100,16 @@ class Mode {
       brush.draw(hidden_ctx);
 
       // redraw the frame with the updated brush preview
-      render_frame();
+      render_image_display();
     } else if (key === 'n') {
       // set edit value to something unused
       edit_value = maxLabelsMap.get(this.feature) + 1;
       render_info_display();
-      // when value of brush determines color of brush, render_frame instead
+      // when value of brush determines color of brush, render_image instead
     } else if (key === 'i') {
       // toggle light/dark inversion of raw img
       display_invert = !display_invert;
-      render_frame();
+      render_image_display();
     }
   }
 
@@ -119,7 +118,7 @@ class Mode {
     if (key === "e") {
       // toggle edit mode
       edit_mode = !edit_mode;
-      render_frame();
+      render_image_display();
     } else if (key === "f") {
       // cycle forward one feature, if applicable
       if (feature_max > 0) {
@@ -162,12 +161,12 @@ class Mode {
       // cycle highlight to prev label
       this.highlighted_cell_one = this.decrement_value(this.highlighted_cell_one,
           1, maxLabelsMap.get(this.feature));
-      render_frame();
+      render_image_display();
     } else if (key === "=" && this.highlighted_cell_one !== -1) {
       // cycle highlight to next label
       this.highlighted_cell_one = this.increment_value(this.highlighted_cell_one,
           1, maxLabelsMap.get(this.feature));
-      render_frame();
+      render_image_display();
     }
   }
 
@@ -201,7 +200,7 @@ class Mode {
       let temp_highlight = this.highlighted_cell_one;
       this.clear();
       this.highlighted_cell_one = temp_highlight;
-      render_frame();
+      render_image_display();
     } else if (key === "=") {
       // cycle highlight to next label
       this.highlighted_cell_one = this.increment_value(this.highlighted_cell_one,
@@ -210,7 +209,7 @@ class Mode {
       let temp_highlight = this.highlighted_cell_one;
       this.clear();
       this.highlighted_cell_one = temp_highlight;
-      render_frame();
+      render_image_display();
     }
   }
 
@@ -414,7 +413,7 @@ class Mode {
       // two labels already selected, reselect second label
       this.handle_mode_multiple_click(evt);
     }
-    render_frame();
+    render_image_display();
   }
 
   //shows up in info display as text for "state:"
@@ -635,7 +634,7 @@ function render_info_display() {
   $('#mode').html(mode.render());
 }
 
-function render_edit(ctx) {
+function render_edit_image(ctx) {
   let hidden_canvas = document.getElementById('hidden_canvas');
 
   ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
@@ -663,7 +662,7 @@ function render_edit(ctx) {
   ctx.restore();
 }
 
-function render_raw(ctx) {
+function render_raw_image(ctx) {
   ctx.clearRect(0, 0, dimensions, dimensions[1]);
   ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
 
@@ -674,7 +673,7 @@ function render_raw(ctx) {
   ctx.putImageData(image_data, 0, 0);
 }
 
-function render_annotations(ctx) {
+function render_annotation_image(ctx) {
   ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
   ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
   if (current_highlight){
@@ -685,19 +684,19 @@ function render_annotations(ctx) {
   }
 }
 
-function render_frame() {
+function render_image_display() {
   let ctx = $('#canvas').get(0).getContext("2d");
   ctx.imageSmoothingEnabled = false;
 
   if (edit_mode) {
     // edit mode (annotations overlaid on raw + brush preview)
-    render_edit(ctx);
+    render_edit_image(ctx);
   } else if (rendering_raw) {
     // draw raw image
-    render_raw(ctx);
+    render_raw_image(ctx);
   } else {
     // draw annotations
-    render_annotations(ctx);
+    render_annotation_image(ctx);
   }
   render_info_display();
 }
@@ -711,9 +710,9 @@ function fetch_and_render_frame() {
       // array of arrays, contains annotation data for frame
       seg_array = payload.seg_arr;
       seg_image.src = payload.segmented;
-      seg_image.onload = render_frame;
+      seg_image.onload = render_image_display;
       raw_image.src = payload.raw;
-      raw_image.onload = render_frame;
+      raw_image.onload = render_image_display;
     },
     async: false
   });
@@ -757,7 +756,7 @@ function handle_scroll(evt) {
   if (rendering_raw || edit_mode) {
     let delta = - evt.originalEvent.deltaY / 2;
     current_contrast = Math.max(current_contrast + delta, -100);
-    render_frame();
+    render_image_display();
   }
 }
 
@@ -798,7 +797,7 @@ function handle_mousemove(evt) {
     brush.x = mouse_x;
     brush.y = mouse_y;
     brush.draw(hidden_ctx);
-    render_frame();
+    render_image_display();
   }
 }
 
@@ -875,7 +874,7 @@ function action(action, info, frame = current_frame) {
         }
       }
       if (payload.tracks || payload.imgs) {
-        render_frame();
+        render_image_display();
       }
     },
     async: false
