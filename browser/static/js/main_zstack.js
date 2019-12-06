@@ -119,22 +119,6 @@ class Mode {
       // toggle edit mode
       edit_mode = !edit_mode;
       render_image_display();
-    } else if (key === "f") {
-      // cycle forward one feature, if applicable
-      if (feature_max > 0) {
-        this.feature = this.increment_value(this.feature, 0, feature_max -1);
-        this.info = {"feature": this.feature};
-        action("change_feature", this.info);
-        this.clear();
-      }
-    } else if (key === "F") {
-      // cycle backward one feature, if applicable
-      if (feature_max > 0) {
-        this.feature = this.decrement_value(this.feature, 0, feature_max -1);
-        this.info = {"feature": this.feature};
-        action("change_feature", this.info);
-        this.clear();
-      }
     } else if (key === "c") {
       // cycle forward one channel, if applicable
       if (channel_max > 0) {
@@ -149,6 +133,22 @@ class Mode {
         this.channel = this.decrement_value(this.channel, 0, channel_max -1);
         this.info = {"channel": this.channel};
         action("change_channel", this.info);
+        this.clear();
+      }
+    } else if (key === "f") {
+      // cycle forward one feature, if applicable
+      if (feature_max > 0) {
+        this.feature = this.increment_value(this.feature, 0, feature_max -1);
+        this.info = {"feature": this.feature};
+        action("change_feature", this.info);
+        this.clear();
+      }
+    } else if (key === "F") {
+      // cycle backward one feature, if applicable
+      if (feature_max > 0) {
+        this.feature = this.decrement_value(this.feature, 0, feature_max -1);
+        this.info = {"feature": this.feature};
+        action("change_feature", this.info);
         this.clear();
       }
     } else if (key === "p") {
