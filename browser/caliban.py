@@ -17,6 +17,7 @@ import tempfile
 import boto3
 import sys
 from werkzeug.utils import secure_filename
+from skimage import filters
 import skimage.morphology
 from skimage.morphology import watershed
 from skimage.morphology import flood_fill, flood
@@ -135,9 +136,11 @@ class ZStackReview:
         elif action_type == "change_feature":
             self.action_change_feature(**info)
 
-        # edit mode action
+        # edit mode actions
         elif action_type == "handle_draw":
             self.action_handle_draw(**info)
+        elif action_type == "threshold":
+            self.action_threshold(**info)
 
         # modified click actions
         elif action_type == "flood_cell":
@@ -222,6 +225,38 @@ class ZStackReview:
         #if info changed, self.info_changed set to true with info helper functions
 
         self.annotated[frame,:,:,self.feature] = annotated
+
+    def action_threshold(self, y1, x1, y2, x2, frame, label):
+        '''
+        thresholds the raw image for annotation prediction within user-determined bounding box
+        '''
+        top_edge = min(y1, y2)
+        bottom_edge = max(y1, y2)
+        left_edge = min(x1, x2)
+        right_edge = max(x1, x2)
+
+        # pull out the selection portion of the raw frame
+        predict_area = self.raw[frame, top_edge:bottom_edge, left_edge:right_edge, self.channel]
+
+        # triangle threshold picked after trying a few on one dataset
+        # may not be the best threshold approach for other datasets!
+        # pick two thresholds to use hysteresis thresholding strategy
+        threshold = filters.threshold_triangle(image = predict_area)
+        threshold_stringent = 1.10 * threshold
+
+        # try to keep stray pixels from appearing
+        hyst = filters.apply_hysteresis_threshold(image = predict_area, low = threshold, high = threshold_stringent)
+        ann_threshold = np.where(hyst, label, 0)
+
+        #put prediction in without overwriting
+        predict_area = self.annotated[frame, top_edge:bottom_edge, left_edge:right_edge, self.feature]
+        safe_overlay = np.where(predict_area == 0, ann_threshold, predict_area)
+
+        self.annotated[frame,top_edge:bottom_edge,left_edge:right_edge,self.feature] = safe_overlay
+
+        # don't need to update cell_info unless an annotation has been added
+        if np.any(np.isin(self.annotated[frame,:,:,self.feature], label)):
+            self.add_cell_info(feature=self.feature, add_label=label, frame = frame)
 
     def action_flood_contiguous(self, label, frame, x_location, y_location):
         '''
