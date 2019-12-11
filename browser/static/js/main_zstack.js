@@ -17,6 +17,7 @@ class Mode {
     this.highlighted_cell_one = -1;
     this.highlighted_cell_two = -1;
 
+    thresholding = false;
 
     this.action = "";
     this.prompt = "";
@@ -136,6 +137,14 @@ class Mode {
     } else if (key === 'i') {
       // toggle light/dark inversion of raw img
       display_invert = !display_invert;
+      render_image_display();
+    } else if (key === 't') {
+      // prompt thresholding with bounding box
+      this.kind = Modes.question;
+      this.action = "start_threshold";
+      this.prompt = "Click and drag to create a bounding box around the area you want to threshold";
+      thresholding = true;
+      clear_hidden_ctx();
       render_image_display();
     }
   }
@@ -354,7 +363,31 @@ class Mode {
                   "erase": erase,
                   "frame": current_frame});
     mouse_trace = [];
-    this.clear()
+    this.clear();
+  }
+
+  handle_threshold(evt) {
+    thresholding = false;
+    let end_y = evt.offsetY;
+    let end_x = evt.offsetX;
+
+    let threshold_start_y = Math.floor(box_start_y / scale);
+    let threshold_start_x = Math.floor(box_start_x / scale);
+    let threshold_end_y = Math.floor(end_y / scale);
+    let threshold_end_x = Math.floor(end_x / scale);
+
+    if (threshold_start_y !== threshold_end_y &&
+        threshold_start_x !== threshold_end_x) {
+
+      action("threshold", {"y1": threshold_start_y,
+                          "x1": threshold_start_x,
+                          "y2": threshold_end_y,
+                          "x2": threshold_end_x,
+                          "frame": current_frame,
+                          "label": maxLabelsMap.get(this.feature) + 1});
+    }
+    this.clear();
+    render_image_display();
   }
 
   // helper function to increment value but cycle around if needed
@@ -532,6 +565,9 @@ var tooltype = 'draw';
 var project_id = undefined;
 var brush;
 let mouse_trace = [];
+let thresholding = false;
+let box_start_x;
+let box_start_y;
 let hidden_ctx;
 
 function upload_file() {
@@ -830,9 +866,36 @@ function handle_mousedown(evt) {
   if (edit_mode) {
     let img_y = Math.floor(mouse_y/scale);
     let img_x = Math.floor(mouse_x/scale);
-    mouse_trace.push([img_y, img_x]);
+    if (thresholding) {
+      box_start_x = mouse_x;
+      box_start_y = mouse_y;
+      mode.action = "draw_threshold_box";
+    } else {
+      mouse_trace.push([img_y, img_x]);
+    }
   }
 }
+
+function helper_brush_draw(hidden_ctx) {
+  if (mousedown) {
+    // update mouse_trace
+    let img_y = Math.floor(mouse_y/scale);
+    let img_x = Math.floor(mouse_x/scale);
+    mouse_trace.push([img_y, img_x]);
+  } else {
+    clear_hidden_ctx();
+  }
+  brush.x = mouse_x;
+  brush.y = mouse_y;
+  brush.draw(hidden_ctx);
+}
+
+function helper_box_draw(hidden_ctx, start_y, start_x, end_y, end_x) {
+  clear_hidden_ctx();
+  hidden_ctx.fillStyle = 'red';
+  hidden_ctx.fillRect(start_x, start_y, (end_x - start_x), (end_y - start_y));
+}
+
 
 // handles mouse movement, whether or not mouse button is held down
 function handle_mousemove(evt) {
@@ -846,29 +909,33 @@ function handle_mousemove(evt) {
     // hidden canvas is keeping track of the brush
     let hidden_canvas = document.getElementById('hidden_canvas');
     let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
-    if (mousedown) {
-      // update mouse_trace
-      let img_y = Math.floor(mouse_y/scale);
-      let img_x = Math.floor(mouse_x/scale);
-      mouse_trace.push([img_y, img_x]);
-    } else {
-      hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1])
+    if (!thresholding) {
+      helper_brush_draw(hidden_ctx);
+    } else if (thresholding && mode.action === "start_threshold") {
+      clear_hidden_ctx();
+    } else if (thresholding && mode.action === "draw_threshold_box") {
+      helper_box_draw(hidden_ctx, box_start_y, box_start_x, mouse_y, mouse_x);
     }
-    brush.x = mouse_x;
-    brush.y = mouse_y;
-    brush.draw(hidden_ctx);
     render_image_display();
   }
 }
+
 
 // handles end of click&drag (different from click())
 function handle_mouseup(evt) {
   mousedown = false;
   if (edit_mode) {
-    //send click&drag coordinates to caliban.py to update annotations
-    mode.handle_draw();
+    if (thresholding) {
+      mode.handle_threshold(evt);
+    } else {
+      //send click&drag coordinates to caliban.py to update annotations
+      mode.handle_draw();
+    }
     // reset brush preview
     clear_hidden_ctx();
+    brush.x = evt.offsetX;
+    brush.y = evt.offsetY;
+    brush.draw(hidden_ctx);
   }
 }
 
