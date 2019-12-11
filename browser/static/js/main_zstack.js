@@ -60,6 +60,38 @@ class Mode {
       // toggle edit mode
       edit_mode = !edit_mode;
       render_image_display();
+    } else if (key === "c") {
+      // cycle forward one channel, if applicable
+      if (channel_max > 1) {
+        this.channel = this.increment_value(this.channel, 0, channel_max -1);
+        this.info = {"channel": this.channel};
+        action("change_channel", this.info);
+        this.clear();
+      }
+    } else if (key === "C") {
+      // cycle backward one channel, if applicable
+      if (channel_max > 1) {
+        this.channel = this.decrement_value(this.channel, 0, channel_max -1);
+        this.info = {"channel": this.channel};
+        action("change_channel", this.info);
+        this.clear();
+      }
+    } else if (key === "f") {
+      // cycle forward one feature, if applicable
+      if (feature_max > 1) {
+        this.feature = this.increment_value(this.feature, 0, feature_max -1);
+        this.info = {"feature": this.feature};
+        action("change_feature", this.info);
+        this.clear();
+      }
+    } else if (key === "F") {
+      // cycle backward one feature, if applicable
+      if (feature_max > 1) {
+        this.feature = this.decrement_value(this.feature, 0, feature_max -1);
+        this.info = {"feature": this.feature};
+        action("change_feature", this.info);
+        this.clear();
+      }
     } else if (key === "=") {
       // increase edit_value up to max label + 1 (guaranteed unused)
       edit_value = Math.min(edit_value + 1,
@@ -116,7 +148,7 @@ class Mode {
       render_image_display();
     } else if (key === "c") {
       // cycle forward one channel, if applicable
-      if (channel_max > 0) {
+      if (channel_max > 1) {
         this.channel = this.increment_value(this.channel, 0, channel_max -1);
         this.info = {"channel": this.channel};
         action("change_channel", this.info);
@@ -124,7 +156,7 @@ class Mode {
       }
     } else if (key === "C") {
       // cycle backward one channel, if applicable
-      if (channel_max > 0) {
+      if (channel_max > 1) {
         this.channel = this.decrement_value(this.channel, 0, channel_max -1);
         this.info = {"channel": this.channel};
         action("change_channel", this.info);
@@ -132,7 +164,7 @@ class Mode {
       }
     } else if (key === "f") {
       // cycle forward one feature, if applicable
-      if (feature_max > 0) {
+      if (feature_max > 1) {
         this.feature = this.increment_value(this.feature, 0, feature_max -1);
         this.info = {"feature": this.feature};
         action("change_feature", this.info);
@@ -140,7 +172,7 @@ class Mode {
       }
     } else if (key === "F") {
       // cycle backward one feature, if applicable
-      if (feature_max > 0) {
+      if (feature_max > 1) {
         this.feature = this.decrement_value(this.feature, 0, feature_max -1);
         this.info = {"feature": this.feature};
         action("change_feature", this.info);
