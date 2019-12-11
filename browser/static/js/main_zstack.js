@@ -97,10 +97,12 @@ class Mode {
       // increase edit_value up to max label + 1 (guaranteed unused)
       edit_value = Math.min(edit_value + 1,
           maxLabelsMap.get(this.feature) + 1);
+      update_seg_highlight();
       render_info_display();
     } else if (key === "-") {
       // decrease edit_value, minimum 1
       edit_value = Math.max(edit_value - 1, 1);
+      update_seg_highlight();
       render_info_display();
     } else if (key === "x") {
       // turn eraser on and off
@@ -132,6 +134,7 @@ class Mode {
     } else if (key === 'n') {
       // set edit value to something unused
       edit_value = maxLabelsMap.get(this.feature) + 1;
+      update_seg_highlight();
       render_info_display();
       // when value of brush determines color of brush, render_image instead
     } else if (key === 'i') {
@@ -550,7 +553,9 @@ var tracks;
 let maxLabelsMap = new Map();
 var mode = new Mode(Modes.none, {});
 var raw_image = new Image();
+raw_image.onload = render_image_display;
 var seg_image = new Image();
+seg_image.onload = update_seg_highlight;
 var seg_array; // declare here so it is global var
 var scale;
 var mouse_x = 0;
@@ -569,6 +574,8 @@ let thresholding = false;
 let box_start_x;
 let box_start_y;
 let hidden_ctx;
+const adjusted_seg = new Image();
+adjusted_seg.onload = render_image_display;
 
 function upload_file() {
   $.ajax({
@@ -658,16 +665,19 @@ function label_under_mouse() {
 function render_highlight_info() {
   if (current_highlight) {
     $('#highlight').html("ON");
-    if (mode.highlighted_cell_one !== -1) {
-      if (mode.highlighted_cell_two !== -1) {
-        $('#currently_highlighted').html(mode.highlighted_cell_one + " , " + mode.highlighted_cell_two);
-      } else {
-        $('#currently_highlighted').html(mode.highlighted_cell_one);
-      }
+    if (edit_mode) {
+      $('#currently_highlighted').html(edit_value)
     } else {
-      $('#currently_highlighted').html("none");
+      if (mode.highlighted_cell_one !== -1) {
+        if (mode.highlighted_cell_two !== -1) {
+          $('#currently_highlighted').html(mode.highlighted_cell_one + " , " + mode.highlighted_cell_two);
+        } else {
+          $('#currently_highlighted').html(mode.highlighted_cell_one);
+        }
+      } else {
+        $('#currently_highlighted').html("none");
+      }
     }
-
   } else {
     $('#highlight').html("OFF");
     $('#currently_highlighted').html("none");
@@ -731,22 +741,46 @@ function clear_hidden_ctx() {
   hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1]);
 }
 
+// apply highlight to edit_value in seg_image, save resulting
+// image as src of adjusted_seg to use to render edit (if needed)
+// additional hidden canvas is used to prevent image flickering
+function update_seg_highlight() {
+  let canvas = document.getElementById('hidden_seg_canvas');
+  let ctx = $('#hidden_seg_canvas').get(0).getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+
+  // draw seg_image so we can extract image data
+  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
+  ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
+  let seg_img_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+  highlight(seg_img_data, edit_value);
+  ctx.putImageData(seg_img_data, 0, 0);
+  // once this new src is loaded, displayed image will be rerendered
+  adjusted_seg.src = canvas.toDataURL();
+}
+
 function render_edit_image(ctx) {
   ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
   ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
-  let image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+  let raw_image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
 
   // adjust underlying raw image
-  contrast_image(image_data, current_contrast);
-  grayscale(image_data);
+  contrast_image(raw_image_data, current_contrast);
+  grayscale(raw_image_data);
   if (display_invert) {
-    invert(image_data);
+    invert(raw_image_data);
   }
-  ctx.putImageData(image_data, 0, 0);
+  ctx.putImageData(raw_image_data, 0, 0);
+
+  // draw segmentations, highlighted version if highlight is on
   ctx.save();
   // ctx.globalCompositeOperation = 'color';
   ctx.globalAlpha = 0.3;
-  ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
+  if (current_highlight) {
+    ctx.drawImage(adjusted_seg, 0, 0, dimensions[0], dimensions[1]);
+  } else {
+    ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
+  }
   ctx.restore();
 
   // draw brushview on top of cells/annotations
@@ -772,7 +806,7 @@ function render_raw_image(ctx) {
 function render_annotation_image(ctx) {
   ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
   ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
-  if (current_highlight){
+  if (current_highlight) {
     let img_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
     highlight(img_data, mode.highlighted_cell_one);
     highlight(img_data, mode.highlighted_cell_two);
@@ -806,9 +840,7 @@ function fetch_and_render_frame() {
       // array of arrays, contains annotation data for frame
       seg_array = payload.seg_arr;
       seg_image.src = payload.segmented;
-      seg_image.onload = render_image_display;
       raw_image.src = payload.raw;
-      raw_image.onload = render_image_display;
     },
     async: false
   });
@@ -841,6 +873,8 @@ function load_file(file) {
       $('#canvas').get(0).height = dimensions[1];
       $('#hidden_canvas').get(0).width = dimensions[0];
       $('#hidden_canvas').get(0).height = dimensions[1];
+      $('#hidden_seg_canvas').get(0).width = dimensions[0];
+      $('#hidden_seg_canvas').get(0).height = dimensions[1];
     },
     async: false
   });
@@ -986,9 +1020,7 @@ function action(action, info, frame = current_frame) {
         seg_array = payload.imgs.seg_arr;
 
         seg_image.src = payload.imgs.segmented;
-        // seg_image.onload = render_frame;
         raw_image.src = payload.imgs.raw;
-        // raw_image.onload = render_frame;
       }
       if (payload.tracks) {
         tracks = payload.tracks;
@@ -1010,6 +1042,7 @@ function start_caliban(filename) {
   load_file(filename);
   prepare_canvas();
   fetch_and_render_frame();
+  update_seg_highlight();
 
   brush = {
   x: 0,
