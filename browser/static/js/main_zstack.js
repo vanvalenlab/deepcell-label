@@ -141,6 +141,11 @@ class Mode {
       // toggle light/dark inversion of raw img
       display_invert = !display_invert;
       render_image_display();
+    } else if (key === 'p') {
+      this.kind = Modes.prompt;
+      this.action = "pick_color";
+      this.prompt = "Click on a label to change the brush value to that value.";
+      render_info_display();
     } else if (key === 't') {
       // prompt thresholding with bounding box
       this.kind = Modes.question;
@@ -346,7 +351,7 @@ class Mode {
     // keys a, d, left arrow, right arrow, ESC, h
     // are reserved for universal keybinds
     this.handle_universal_keybind(key);
-    if (edit_mode) {
+    if (edit_mode && this.kind === Modes.none) {
       this.handle_edit_keybind(key);
     } else if (!edit_mode && this.kind === Modes.none) {
       this.handle_mode_none_keybind(key);
@@ -446,7 +451,7 @@ class Mode {
     }
   }
 
-  handle_mode_question_click(evt) {
+  handle_mode_prompt_click(evt) {
     if (this.action === "fill_hole" && current_label === 0) {
       this.info = { "label": this.info.label,
                     "frame": current_frame,
@@ -454,6 +459,10 @@ class Mode {
                     "y_location": mouse_y };
       action(this.action, this.info);
       this.clear();
+    } else if (this.action === "pick_color" && current_label !== 0) {
+      edit_value = current_label;
+      this.clear();
+      update_seg_highlight();
     }
   }
 
@@ -488,9 +497,9 @@ class Mode {
   }
 
   click(evt) {
-    if (this.kind === Modes.question) {
-      // just hole fill
-      this.handle_mode_question_click(evt);
+    if (this.kind === Modes.prompt) {
+      // hole fill or color picking options
+      this.handle_mode_prompt_click(evt);
     } else if (current_label === 0) {
       // same as ESC
       this.clear();
@@ -498,14 +507,16 @@ class Mode {
     } else if (this.kind === Modes.none) {
       //if nothing selected: shift-, alt-, or normal click
       this.handle_mode_none_click(evt);
+      render_image_display();
     } else if (this.kind === Modes.single) {
       // one label already selected
       this.handle_mode_single_click(evt);
+      render_image_display();
     } else if (this.kind  === Modes.multiple) {
       // two labels already selected, reselect second label
       this.handle_mode_multiple_click(evt);
+      render_image_display();
     }
-    render_image_display();
   }
 
   //shows up in info display as text for "state:"
@@ -519,7 +530,7 @@ class Mode {
     if (this.kind === Modes.multiple) {
       return "SELECTED " + this.info.label_1 + ", " + this.info.label_2;
     }
-    if (this.kind === Modes.question) {
+    if (this.kind === Modes.question || this.kind === Modes.prompt) {
       return this.prompt;
     }
   }
@@ -534,7 +545,8 @@ var Modes = Object.freeze({
   "single": 2,
   "multiple": 3,
   "question": 4,
-  "info": 5
+  "info": 5,
+  "prompt": 6
 });
 
 var temp_x = 0;
@@ -893,19 +905,21 @@ function handle_scroll(evt) {
 // handle pressing mouse button (treats this as the beginning
 // of click&drag, since clicks are handled by Mode.click)
 function handle_mousedown(evt) {
-  mousedown = true;
-  mouse_x = evt.offsetX;
-  mouse_y = evt.offsetY;
-  // begin drawing
-  if (edit_mode) {
-    let img_y = Math.floor(mouse_y/scale);
-    let img_x = Math.floor(mouse_x/scale);
-    if (thresholding) {
-      box_start_x = mouse_x;
-      box_start_y = mouse_y;
-      mode.action = "draw_threshold_box";
-    } else {
-      mouse_trace.push([img_y, img_x]);
+  if (mode.kind !== Modes.prompt) {
+    mousedown = true;
+    mouse_x = evt.offsetX;
+    mouse_y = evt.offsetY;
+    // begin drawing
+    if (edit_mode) {
+      let img_y = Math.floor(mouse_y/scale);
+      let img_x = Math.floor(mouse_x/scale);
+      if (thresholding) {
+        box_start_x = mouse_x;
+        box_start_y = mouse_y;
+        mode.action = "draw_threshold_box";
+      } else {
+        mouse_trace.push([img_y, img_x]);
+      }
     }
   }
 }
@@ -930,7 +944,6 @@ function helper_box_draw(hidden_ctx, start_y, start_x, end_y, end_x) {
   hidden_ctx.fillRect(start_x, start_y, (end_x - start_x), (end_y - start_y));
 }
 
-
 // handles mouse movement, whether or not mouse button is held down
 function handle_mousemove(evt) {
   // update displayed info depending on where mouse is
@@ -954,32 +967,32 @@ function handle_mousemove(evt) {
   }
 }
 
-
 // handles end of click&drag (different from click())
 function handle_mouseup(evt) {
-  mousedown = false;
-  if (edit_mode) {
-    if (thresholding) {
-      mode.handle_threshold(evt);
-    } else {
-      //send click&drag coordinates to caliban.py to update annotations
-      mode.handle_draw();
+  if (mode.kind !== Modes.prompt) {
+    mousedown = false;
+    if (edit_mode) {
+      if (thresholding) {
+        mode.handle_threshold(evt);
+      } else {
+        //send click&drag coordinates to caliban.py to update annotations
+        mode.handle_draw();
+      }
+      // reset brush preview
+      clear_hidden_ctx();
+      brush.x = evt.offsetX;
+      brush.y = evt.offsetY;
+      brush.draw(hidden_ctx);
     }
-    // reset brush preview
-    clear_hidden_ctx();
-    brush.x = evt.offsetX;
-    brush.y = evt.offsetY;
-    brush.draw(hidden_ctx);
   }
 }
 
 function prepare_canvas() {
   // bind click on canvas
   $('#canvas').click(function(evt) {
-    if (!edit_mode) {
+    if (!edit_mode || mode.kind === Modes.prompt) {
       mode.click(evt);
     }
-    render_info_display();
   });
   // bind scroll wheel
   $('#canvas').on('wheel', function(evt) {
