@@ -201,11 +201,11 @@ class Mode {
   handle_mode_single_keybind(key) {
     if (key === "f") {
       //hole fill
-      this.info = { "label": this.info['label'],
+      this.info = { "label": this.info.label,
                     "frame": current_frame};
       this.kind = Modes.question;
       this.action = "fill_hole";
-      this.prompt = "Select hole to fill in cell " + this.info['label'];
+      this.prompt = "Select hole to fill in cell " + this.info.label;
       render_info_display();
     } else if (key === "c") {
       // create new
@@ -385,7 +385,7 @@ class Mode {
       this.info = {"label": current_label,
                         "frame": current_frame,
                         "x_location": mouse_x,
-                        "y_location": mouse_y}
+                        "y_location": mouse_y};
       this.prompt = "SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL";
       this.highlighted_cell_one = current_label;
     } else if (evt.shiftKey) {
@@ -412,7 +412,7 @@ class Mode {
 
   handle_mode_question_click(evt) {
     if (this.action === "fill_hole" && current_label === 0) {
-      this.info = { "label": this.info['label'],
+      this.info = { "label": this.info.label,
                     "frame": current_frame,
                     "x_location": mouse_x,
                     "y_location": mouse_y };
@@ -593,7 +593,7 @@ function grayscale(img) {
       data[i + 1] = avg; // green
       data[i + 2] = avg; // blue
     }
-  return img
+  return img;
 }
 
 function invert(img) {
@@ -603,7 +603,7 @@ function invert(img) {
     data[i + 1] = 255 - data[i + 1]; // green
     data[i + 2] = 255 - data[i + 2]; // blue
     }
-  return img
+  return img;
 }
 
 function label_under_mouse() {
@@ -740,7 +740,7 @@ function render_annotation_image(ctx) {
     let img_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
     highlight(img_data, mode.highlighted_cell_one);
     highlight(img_data, mode.highlighted_cell_two);
-    ctx.putImageData(img_data, 0, 0)
+    ctx.putImageData(img_data, 0, 0);
   }
 }
 
@@ -798,7 +798,7 @@ function load_file(file) {
         let key = Object.keys(tracks)[i]; //the keys are strings
         //use i as key in this map because it is an int, mode.feature is also int
         maxLabelsMap.set(i, Math.max(... Object.keys(tracks[key]).map(Number)));
-      };
+      }
 
       project_id = payload.project_id;
       $('#canvas').get(0).width = dimensions[0];
