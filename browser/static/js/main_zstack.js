@@ -17,13 +17,10 @@ class Mode {
     this.highlighted_cell_one = -1;
     this.highlighted_cell_two = -1;
 
-    if (current_highlight) {
-      render_image_display();
-    }
 
     this.action = "";
     this.prompt = "";
-    render_info_display();
+    render_image_display();
   }
 
   // these keybinds apply regardless of
