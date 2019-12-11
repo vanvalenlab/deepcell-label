@@ -81,8 +81,7 @@ class Mode {
       brush_size = Math.max(brush_size - 1, 1);
 
       // update the brush with its new size
-      let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
-      hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1])
+      clear_hidden_ctx();
       brush.radius = brush_size * scale;
       brush.draw(hidden_ctx);
 
@@ -94,8 +93,7 @@ class Mode {
           dimensions[0]/scale, dimensions[1]/scale);
 
       // update the brush with its new size
-      let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
-      hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1])
+      clear_hidden_ctx();
       brush.radius = brush_size * scale;
       brush.draw(hidden_ctx);
 
@@ -505,6 +503,7 @@ var tooltype = 'draw';
 var project_id = undefined;
 var brush;
 let mouse_trace = [];
+let hidden_ctx;
 
 function upload_file() {
   $.ajax({
@@ -663,9 +662,11 @@ function render_info_display() {
   $('#mode').html(mode.render());
 }
 
-function render_edit_image(ctx) {
-  let hidden_canvas = document.getElementById('hidden_canvas');
+function clear_hidden_ctx() {
+  hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1]);
+}
 
+function render_edit_image(ctx) {
   ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
   ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
   let image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
@@ -687,6 +688,7 @@ function render_edit_image(ctx) {
   ctx.save();
   ctx.globalAlpha = 0.2;
   ctx.globalCompositeOperation = 'source-over';
+  let hidden_canvas = document.getElementById('hidden_canvas');
   ctx.drawImage(hidden_canvas, 0,0,dimensions[0],dimensions[1]);
   ctx.restore();
 }
@@ -837,9 +839,7 @@ function handle_mouseup(evt) {
     //send click&drag coordinates to caliban.py to update annotations
     mode.handle_draw();
     // reset brush preview
-    let hidden_canvas = document.getElementById('hidden_canvas');
-    let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
-    hidden_ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
+    clear_hidden_ctx();
   }
 }
 
@@ -928,4 +928,5 @@ function start_caliban(filename) {
     ctx.fill();
     }
   }
+  hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
 }
