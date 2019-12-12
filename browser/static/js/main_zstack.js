@@ -181,6 +181,7 @@ class Mode {
     if (key === "e") {
       // toggle edit mode
       edit_mode = !edit_mode;
+      helper_brush_draw();
       render_image_display();
     } else if (key === "c") {
       // cycle forward one channel, if applicable
@@ -966,7 +967,7 @@ function handle_mousedown(evt) {
   }
 }
 
-function helper_brush_draw(hidden_ctx) {
+function helper_brush_draw() {
   if (mousedown) {
     // update mouse_trace
     let img_y = Math.floor(mouse_y/scale);
@@ -980,7 +981,7 @@ function helper_brush_draw(hidden_ctx) {
   brush.draw(hidden_ctx);
 }
 
-function helper_box_draw(hidden_ctx, start_y, start_x, end_y, end_x) {
+function helper_box_draw(start_y, start_x, end_y, end_x) {
   clear_hidden_ctx();
   hidden_ctx.fillStyle = 'red';
   hidden_ctx.fillRect(start_x, start_y, (end_x - start_x), (end_y - start_y));
@@ -996,14 +997,12 @@ function handle_mousemove(evt) {
   // update brush preview
   if (edit_mode) {
     // hidden canvas is keeping track of the brush
-    let hidden_canvas = document.getElementById('hidden_canvas');
-    let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
     if (!thresholding) {
-      helper_brush_draw(hidden_ctx);
+      helper_brush_draw();
     } else if (thresholding && mode.action === "start_threshold") {
       clear_hidden_ctx();
     } else if (thresholding && mode.action === "draw_threshold_box") {
-      helper_box_draw(hidden_ctx, box_start_y, box_start_x, mouse_y, mouse_x);
+      helper_box_draw(box_start_y, box_start_x, mouse_y, mouse_x);
     }
     render_image_display();
   }
