@@ -187,14 +187,14 @@ class ZStackReview:
         self.feature = feature
         self.frames_changed = True
 
-    def action_handle_draw(self, trace, edit_value, brush_size, erase, frame):
+    def action_handle_draw(self, trace, target_value, brush_value, brush_size, erase, frame):
 
         annotated = np.copy(self.annotated[frame,:,:,self.feature])
 
-        in_original = np.any(np.isin(annotated, edit_value))
+        in_original = np.any(np.isin(annotated, brush_value))
 
-        annotated_draw = np.where(annotated==0, edit_value, annotated)
-        annotated_erase = np.where(annotated==edit_value, 0, annotated)
+        annotated_draw = np.where(annotated==target_value, brush_value, annotated)
+        annotated_erase = np.where(annotated==brush_value, target_value, annotated)
 
         for loc in trace:
             # each element of trace is an array with [y,x] coordinates of array
@@ -209,15 +209,15 @@ class ZStackReview:
             else:
                 annotated[brush_area] = annotated_erase[brush_area]
 
-        in_modified = np.any(np.isin(annotated, edit_value))
+        in_modified = np.any(np.isin(annotated, brush_value))
 
         #cell deletion
         if in_original and not in_modified:
-            self.del_cell_info(feature = self.feature, del_label = edit_value, frame = frame)
+            self.del_cell_info(feature = self.feature, del_label = brush_value, frame = frame)
 
         #cell addition
         elif in_modified and not in_original:
-            self.add_cell_info(feature = self.feature, add_label = edit_value, frame = frame)
+            self.add_cell_info(feature = self.feature, add_label = brush_value, frame = frame)
 
         #check for image change, in case pixels changed but no new or del cell
         comparison = np.where(annotated != self.annotated[frame,:,:,self.feature])

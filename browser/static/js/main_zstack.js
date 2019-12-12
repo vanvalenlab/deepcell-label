@@ -18,6 +18,7 @@ class Mode {
     this.highlighted_cell_two = -1;
 
     thresholding = false;
+    target_value = 0;
 
     this.action = "";
     this.prompt = "";
@@ -52,6 +53,50 @@ class Mode {
       // toggle rendering_raw
       rendering_raw = !rendering_raw;
       render_image_display();
+    }
+  }
+
+  // keybinds that always apply in edit mode
+  // (invert, change brush size)
+  handle_universal_edit_keybind(key) {
+    if (key === "ArrowDown") {
+      // decrease brush size, minimum size 1
+      brush_size = Math.max(brush_size - 1, 1);
+
+      // update the brush with its new size
+      clear_hidden_ctx();
+      brush.radius = brush_size * scale;
+      brush.draw(hidden_ctx);
+
+      // redraw the frame with the updated brush preview
+      render_image_display();
+    } else if (key === "ArrowUp") {
+      //increase brush size, shouldn't be larger than the image
+      brush_size = Math.min(self.brush_size + 1,
+          dimensions[0]/scale, dimensions[1]/scale);
+
+      // update the brush with its new size
+      clear_hidden_ctx();
+      brush.radius = brush_size * scale;
+      brush.draw(hidden_ctx);
+
+      // redraw the frame with the updated brush preview
+      render_image_display();
+    } else if (key === 'i') {
+      // toggle light/dark inversion of raw img
+      display_invert = !display_invert;
+      render_image_display();
+    } else if (key === 'n') {
+      // set edit value to something unused
+      edit_value = maxLabelsMap.get(this.feature) + 1;
+      update_seg_highlight();
+      if (this.kind === Modes.prompt) {
+        erase = false;
+        this.prompt = "Now drawing over label " + target_value + " with label " + edit_value
+            + ". Use ESC to leave this mode.";
+        this.kind = Modes.drawing;
+      }
+      render_info_display();
     }
   }
 
@@ -108,43 +153,17 @@ class Mode {
       // turn eraser on and off
       erase = !erase;
       render_info_display();
-    } else if (key === "ArrowDown") {
-      // decrease brush size, minimum size 1
-      brush_size = Math.max(brush_size - 1, 1);
-
-      // update the brush with its new size
-      clear_hidden_ctx();
-      brush.radius = brush_size * scale;
-      brush.draw(hidden_ctx);
-
-      // redraw the frame with the updated brush preview
-      render_image_display();
-    } else if (key === "ArrowUp") {
-      //increase brush size, shouldn't be larger than the image
-      brush_size = Math.min(self.brush_size + 1,
-          dimensions[0]/scale, dimensions[1]/scale);
-
-      // update the brush with its new size
-      clear_hidden_ctx();
-      brush.radius = brush_size * scale;
-      brush.draw(hidden_ctx);
-
-      // redraw the frame with the updated brush preview
-      render_image_display();
-    } else if (key === 'n') {
-      // set edit value to something unused
-      edit_value = maxLabelsMap.get(this.feature) + 1;
-      update_seg_highlight();
-      render_info_display();
-      // when value of brush determines color of brush, render_image instead
-    } else if (key === 'i') {
-      // toggle light/dark inversion of raw img
-      display_invert = !display_invert;
-      render_image_display();
     } else if (key === 'p') {
+      // color picker
       this.kind = Modes.prompt;
       this.action = "pick_color";
       this.prompt = "Click on a label to change the brush value to that value.";
+      render_info_display();
+    } else if (key === 'r') {
+      // conversion brush
+      this.kind = Modes.prompt;
+      this.action = "pick_target";
+      this.prompt = "First, click on the label you want to overwrite.";
       render_info_display();
     } else if (key === 't') {
       // prompt thresholding with bounding box
@@ -351,6 +370,9 @@ class Mode {
     // keys a, d, left arrow, right arrow, ESC, h
     // are reserved for universal keybinds
     this.handle_universal_keybind(key);
+    if (edit_mode) {
+      this.handle_universal_edit_keybind(key);
+    }
     if (edit_mode && this.kind === Modes.none) {
       this.handle_edit_keybind(key);
     } else if (!edit_mode && this.kind === Modes.none) {
@@ -366,12 +388,15 @@ class Mode {
 
   handle_draw() {
     action("handle_draw", { "trace": JSON.stringify(mouse_trace), //stringify array so it doesn't get messed up
-                  "edit_value": edit_value, //we don't update caliban with edit_value, etc each time they change
+                  "target_value": target_value, //value that we're overwriting
+                  "brush_value": edit_value, //we don't update caliban with edit_value, etc each time they change
                   "brush_size": brush_size, //so we need to pass them in as args
                   "erase": erase,
                   "frame": current_frame});
     mouse_trace = [];
-    this.clear();
+    if (this.kind !== Modes.drawing) {
+      this.clear();
+    }
   }
 
   handle_threshold(evt) {
@@ -459,10 +484,25 @@ class Mode {
                     "y_location": mouse_y };
       action(this.action, this.info);
       this.clear();
-    } else if (this.action === "pick_color" && current_label !== 0) {
+    } else if (this.action === "pick_color"
+          && current_label !== 0
+          && current_label !== target_value) {
       edit_value = current_label;
-      this.clear();
       update_seg_highlight();
+      if (target_value !== 0) {
+        erase = false;
+        this.prompt = "Now drawing over label " + target_value + " with label " + edit_value
+            + ". Use ESC to leave this mode.";
+        this.kind = Modes.drawing;
+        render_info_display();
+      } else {
+        this.clear();
+      }
+    } else if (this.action === "pick_target" && current_label !== 0) {
+      target_value = current_label;
+      this.action = "pick_color";
+      this.prompt = "Click on the label you want to draw with, or press 'n' to draw with an unused label.";
+      render_info_display();
     }
   }
 
@@ -530,7 +570,7 @@ class Mode {
     if (this.kind === Modes.multiple) {
       return "SELECTED " + this.info.label_1 + ", " + this.info.label_2;
     }
-    if (this.kind === Modes.question || this.kind === Modes.prompt) {
+    if (this.kind === Modes.question || this.kind === Modes.prompt || this.kind === Modes.drawing) {
       return this.prompt;
     }
   }
@@ -546,7 +586,8 @@ var Modes = Object.freeze({
   "multiple": 3,
   "question": 4,
   "info": 5,
-  "prompt": 6
+  "prompt": 6,
+  "drawing": 7
 });
 
 var temp_x = 0;
@@ -573,7 +614,8 @@ var scale;
 var mouse_x = 0;
 var mouse_y = 0;
 var edit_mode = false;
-var edit_value = 1;
+let edit_value = 1;
+let target_value = 0;
 var brush_size = 1;
 var erase = false;
 var answer = "(SPACE=YES / ESC=NO)";
