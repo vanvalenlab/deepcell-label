@@ -12,9 +12,9 @@
 
     <p><strong>Mouse</strong> over a cell mask to see cell label and lineage information.</p>
 
-    <p><strong>Scroll Wheel</strong> | In raw image mode, scroll up/down to change the brightness of the image.&nbsp;</p>
+    <p><strong>Scroll Wheel</strong> | In raw image or edit mode, scroll up/down to change the brightness of the image.&nbsp;</p>
 
-    <p><strong>z</strong> | Switch between annotations and raw images; use this to check if your masks and labels match up to the actual cell image. In edit mode, does not change display, but allows you to adjust display of raw image with scroll wheel.</p>
+    <p><strong>z</strong> | Switch between annotations and raw images; use this to check if your masks and labels match up to the actual cell image.</p>
 
     <p><strong>e</strong> | Toggle between whole-label and pixel-editing modes. Note: this will not toggle between modes if anything is selected.</p>
 
@@ -22,9 +22,9 @@
 
     <p><em>To navigate through frames:</em></p>
 
-    <p><strong>a</strong> | Go back to previous frame</p>
+    <p><strong>a</strong> or <strong>left arrow key</strong> | Go back to previous frame</p>
 
-    <p><strong>d</strong> | Go forward to next frame</p>
+    <p><strong>d</strong> or <strong>right arrow key</strong> | Go forward to next frame</p>
 
     <h3><em>Whole-label mode (default)</em></h3>
 
@@ -35,6 +35,8 @@
     <p><strong>Click</strong> on a cell mask to select it.</p>
 
     <p><strong>h</strong> | Highlight mode; if used, this will highlight the cells that are selected with a red mask.</p>
+
+    <p><strong>p</strong> | Predict relationships (npz files only); if used, this will reassign labels across frames. Does not detect cell divisions in timelapse movies.</p>
 
     <p><em>Single-Click Edit Operations:</em></p>
 
@@ -50,7 +52,7 @@
 
     <p><strong>r</strong> | <em><u>replace</u></em>: click on one cell mask (cell A) then another (cell B). Hit “r” to replace all instances of cell B with cell A.</p>
 
-    <!-- <p><strong>p</strong> | <em><u>parent</u></em>: click on one cell mask (cell D) then another (cell E). Hit “p” to assign cell D as the parent of cell E. Cell D will now include cell E in its list of daughter cells, and cell E will list cell D as its parent.</p> -->
+    <p><strong>p</strong> | <em><u>parent</u></em> (tracked files only): click on one cell mask (cell D) then another (cell E). Hit “p” to assign cell D as the parent of cell E. Cell D will now include cell E in its list of daughter cells, and cell E will list cell D as its parent.</p>
 
     <p dir="ltr"><strong>s&nbsp;</strong>| <em><u>swap</u></em>: click on one cell mask (cell F) then another (cell G). Hit “s” to swap the cell values (does not swap parent/daughter information). This affects all frames of the movie.</p>
 
@@ -66,9 +68,9 @@
 
     <p><em>To change the size of the brush:</em></p>
 
-    <p><strong>, (comma)</strong> | Decrease the brush size</p>
+    <p><strong>down arrow key</strong> | Decrease the brush size</p>
 
-    <p><strong>. (period)</strong> | Increase the brush size</p>
+    <p><strong>up arrow key</strong> | Increase the brush size</p>
 
     <p><em>To change the value of the brush:</em></p>
 

@@ -129,79 +129,60 @@ class ZStackReview:
 
     def action(self, action_type, info):
 
-        if action_type == "change_feature":
-            self.action_change_feature(**info)
-        elif action_type == "change_channel":
+        # change displayed channel or feature
+        if action_type == "change_channel":
             self.action_change_channel(**info)
-        elif action_type == "fill_hole":
-            self.action_fill_hole(**info)
-        elif action_type == "new_cell_stack":
-            self.action_new_cell_stack(**info)
-        elif action_type == "new_single_cell":
-            self.action_new_single_cell(**info)
-        elif action_type == "swap_single_frame":
-            self.action_swap_single_frame(**info)
-        elif action_type == "swap_all_frame":
-            self.action_swap_all_frame(**info)
-        elif action_type == "predict_single":
-            self.action_predict_single(**info)
-        elif action_type == "predict_zstack":
-            self.action_predict_zstack(**info)
-        elif action_type == "replace":
-            self.action_replace(**info)
-        elif action_type == "replace_single":
-            self.action_replace_single(**info)
-        elif action_type == "watershed":
-            self.action_watershed(**info)
-        elif action_type == "delete":
-            self.action_delete_mask(**info)
+        elif action_type == "change_feature":
+            self.action_change_feature(**info)
+
+        # edit mode action
         elif action_type == "handle_draw":
             self.action_handle_draw(**info)
+
+        # modified click actions
         elif action_type == "flood_cell":
             self.action_flood_contiguous(**info)
         elif action_type == "trim_pixels":
             self.action_trim_pixels(**info)
+
+        # single click actions
+        elif action_type == "fill_hole":
+            self.action_fill_hole(**info)
+        elif action_type == "new_single_cell":
+            self.action_new_single_cell(**info)
+        elif action_type == "new_cell_stack":
+            self.action_new_cell_stack(**info)
+        elif action_type == "delete":
+            self.action_delete_mask(**info)
+
+        # multiple click actions
+        elif action_type == "replace_single":
+            self.action_replace_single(**info)
+        elif action_type == "replace":
+            self.action_replace(**info)
+        elif action_type == "swap_single_frame":
+            self.action_swap_single_frame(**info)
+        elif action_type == "swap_all_frame":
+            self.action_swap_all_frame(**info)
+        elif action_type == "watershed":
+            self.action_watershed(**info)
+
+        # misc
+        elif action_type == "predict_single":
+            self.action_predict_single(**info)
+        elif action_type == "predict_zstack":
+            self.action_predict_zstack(**info)
+
         else:
             raise ValueError("Invalid action '{}'".format(action_type))
 
-    def action_flood_contiguous(self, label, frame, x_location, y_location):
-        '''
-        flood fill a cell with a unique new label; alternative to watershed
-        for fixing duplicate label issue if cells are not touching
-        '''
-        img_ann = self.annotated[frame,:,:,self.feature]
-        old_label = label
-        new_label = np.max(self.cell_ids[self.feature]) + 1
+    def action_change_channel(self, channel):
+        self.channel = channel
+        self.frames_changed = True
 
-        in_original = np.any(np.isin(img_ann, old_label))
-
-        filled_img_ann = flood_fill(img_ann, (int(y_location/self.scale_factor), int(x_location/self.scale_factor)), new_label)
-        self.annotated[frame,:,:,self.feature] = filled_img_ann
-
-        in_modified = np.any(np.isin(filled_img_ann, old_label))
-
-        # update cell info dicts since labels are changing
-        self.add_cell_info(feature=self.feature, add_label=new_label, frame = frame)
-
-        if in_original and not in_modified:
-            self.del_cell_info(feature = self.feature, del_label = old_label, frame = frame)
-
-    def action_trim_pixels(self, label, frame, x_location, y_location):
-        '''
-        get rid of any stray pixels of selected label; pixels of value label
-        that are not connected to the cell selected will be removed from annotation in that frame
-        '''
-
-        img_ann = self.annotated[frame,:,:,self.feature]
-        contig_cell = flood(image = img_ann, seed_point = (int(y_location/self.scale_factor), int(x_location/self.scale_factor)))
-        img_trimmed = np.where(np.logical_and(np.invert(contig_cell), img_ann == label), 0, img_ann)
-
-        #check if image changed
-        comparison = np.where(img_trimmed != img_ann)
-        self.frames_changed = np.any(comparison)
-        #this action should never change the cell info
-
-        self.annotated[frame,:,:,self.feature] = img_trimmed
+    def action_change_feature(self, feature):
+        self.feature = feature
+        self.frames_changed = True
 
     def action_handle_draw(self, trace, edit_value, brush_size, erase, frame):
 
@@ -242,21 +223,44 @@ class ZStackReview:
 
         self.annotated[frame,:,:,self.feature] = annotated
 
-    def action_save_zstack(self):
-        save_file = self.filename + "_save_version_{}.npz".format(self.save_version)
+    def action_flood_contiguous(self, label, frame, x_location, y_location):
+        '''
+        flood fill a cell with a unique new label; alternative to watershed
+        for fixing duplicate label issue if cells are not touching
+        '''
+        img_ann = self.annotated[frame,:,:,self.feature]
+        old_label = label
+        new_label = np.max(self.cell_ids[self.feature]) + 1
 
-        # save secure version of data before storing on regular file system
-        file = secure_filename(save_file)
+        in_original = np.any(np.isin(img_ann, old_label))
 
-        np.savez(file, raw = self.raw, annotated = self.annotated)
-        path = self.subfolders
-        s3.upload_file(file, self.output_bucket, path)
+        filled_img_ann = flood_fill(img_ann, (int(y_location/self.scale_factor), int(x_location/self.scale_factor)), new_label)
+        self.annotated[frame,:,:,self.feature] = filled_img_ann
 
-    def action_change_feature(self, feature):
-        self.feature = feature
+        in_modified = np.any(np.isin(filled_img_ann, old_label))
 
-    def action_change_channel(self, channel):
-        self.channel = channel
+        # update cell info dicts since labels are changing
+        self.add_cell_info(feature=self.feature, add_label=new_label, frame = frame)
+
+        if in_original and not in_modified:
+            self.del_cell_info(feature = self.feature, del_label = old_label, frame = frame)
+
+    def action_trim_pixels(self, label, frame, x_location, y_location):
+        '''
+        get rid of any stray pixels of selected label; pixels of value label
+        that are not connected to the cell selected will be removed from annotation in that frame
+        '''
+
+        img_ann = self.annotated[frame,:,:,self.feature]
+        contig_cell = flood(image = img_ann, seed_point = (int(y_location/self.scale_factor), int(x_location/self.scale_factor)))
+        img_trimmed = np.where(np.logical_and(np.invert(contig_cell), img_ann == label), 0, img_ann)
+
+        #check if image changed
+        comparison = np.where(img_trimmed != img_ann)
+        self.frames_changed = np.any(comparison)
+        #this action should never change the cell info
+
+        self.annotated[frame,:,:,self.feature] = img_trimmed
 
     def action_fill_hole(self, label, frame, x_location, y_location):
         '''
@@ -276,6 +280,21 @@ class ZStackReview:
         #never changes info but always changes annotation
         self.frames_changed = True
 
+    def action_new_single_cell(self, label, frame):
+        """
+        Create new label in just one frame
+        """
+        old_label, single_frame = label, frame
+        new_label = np.max(self.cell_ids[self.feature]) + 1
+
+        # replace frame labels
+        frame = self.annotated[single_frame,:,:,self.feature]
+        frame[frame == old_label] = new_label
+
+        # replace fields
+        self.del_cell_info(feature = self.feature, del_label = old_label, frame = single_frame)
+        self.add_cell_info(feature = self.feature, add_label = new_label, frame = single_frame)
+
     def action_new_cell_stack(self, label, frame):
 
         """
@@ -293,24 +312,49 @@ class ZStackReview:
                 self.del_cell_info(feature = self.feature, del_label = old_label, frame = frame)
                 self.add_cell_info(feature = self.feature, add_label = new_label, frame = frame)
 
-    def action_new_single_cell(self, label, frame):
+    def action_delete_mask(self, label, frame):
+        '''
+        remove selected annotation from frame, replacing with zeros
+        '''
+
+        ann_img = self.annotated[frame,:,:,self.feature]
+        ann_img = np.where(ann_img == label, 0, ann_img)
+
+        self.annotated[frame,:,:,self.feature] = ann_img
+
+        #update cell_info
+        self.del_cell_info(feature = self.feature, del_label = label, frame = frame)
+
+    def action_replace_single(self, label_1, label_2, frame):
+        '''
+        replaces label_2 with label_1, but only in one frame. Frontend checks
+        to make sure labels are different and were selected within same frames
+        before sending action
+        '''
+        annotated = self.annotated[frame,:,:,self.feature]
+        # change annotation
+        annotated = np.where(annotated == label_2, label_1, annotated)
+        self.annotated[frame,:,:,self.feature] = annotated
+        # update info
+        self.add_cell_info(feature = self.feature, add_label = label_1, frame = frame)
+        self.del_cell_info(feature = self.feature, del_label = label_2, frame = frame)
+
+    def action_replace(self, label_1, label_2):
         """
-        Create new label in just one frame
+        Replacing label_2 with label_1. Frontend checks to make sure these labels
+        are different before sending action
         """
-        old_label, single_frame = label, frame
-        new_label = np.max(self.cell_ids[self.feature]) + 1
+        # check each frame
+        for frame in range(self.annotated.shape[0]):
+            annotated = self.annotated[frame,:,:,self.feature]
+            # if label being replaced is present, remove it from image and update cell info dict
+            if np.any(np.isin(annotated, label_2)):
+                annotated = np.where(annotated == label_2, label_1, annotated)
+                self.annotated[frame,:,:,self.feature] = annotated
+                self.add_cell_info(feature = self.feature, add_label = label_1, frame = frame)
+                self.del_cell_info(feature = self.feature, del_label = label_2, frame = frame)
 
-        # replace frame labels
-        frame = self.annotated[single_frame,:,:,self.feature]
-        frame[frame == old_label] = new_label
-
-        # replace fields
-        self.del_cell_info(feature = self.feature, del_label = old_label, frame = single_frame)
-        self.add_cell_info(feature = self.feature, add_label = new_label, frame = single_frame)
-
-    def action_swap_single_frame(self, label_1, label_2, frame_1, frame_2):
-        assert(frame_1 == frame_2)
-        frame = frame_1
+    def action_swap_single_frame(self, label_1, label_2, frame):
 
         ann_img = self.annotated[frame,:,:,self.feature]
         ann_img = np.where(ann_img == label_1, -1, ann_img)
@@ -321,7 +365,7 @@ class ZStackReview:
 
         self.frames_changed = self.info_changed = True
 
-    def action_swap_all_frame(self, label_1, label_2, frame_1, frame_2):
+    def action_swap_all_frame(self, label_1, label_2):
 
         for frame in range(self.annotated.shape[0]):
             ann_img = self.annotated[frame,:,:,self.feature]
@@ -337,6 +381,48 @@ class ZStackReview:
         self.cell_info[self.feature][label_2].update({'frames': cell_info_1['frames']})
 
         self.frames_changed = self.info_changed = True
+
+    def action_watershed(self, label, frame, x1_location, y1_location, x2_location, y2_location):
+        # Pull the label that is being split and find a new valid label
+        current_label = label
+        new_label = np.max(self.cell_ids[self.feature]) + 1
+
+        # Locally store the frames to work on
+        img_raw = self.raw[frame,:,:,self.channel]
+        img_ann = self.annotated[frame,:,:,self.feature]
+
+        # Pull the 2 seed locations and store locally
+        # define a new seeds labeled img that is the same size as raw/annotation imgs
+        seeds_labeled = np.zeros(img_ann.shape)
+        # create two seed locations
+        seeds_labeled[int(y1_location/self.scale_factor ), int(x1_location/self.scale_factor)]=current_label
+        seeds_labeled[int(y2_location/self.scale_factor ), int(x2_location/self.scale_factor )]=new_label
+
+        # define the bounding box to apply the transform on and select appropriate sections of 3 inputs (raw, seeds, annotation mask)
+        props = regionprops(np.squeeze(np.int32(img_ann == current_label)))
+        minr, minc, maxr, maxc = props[0].bbox
+
+        # store these subsections to run the watershed on
+        img_sub_raw = np.copy(img_raw[minr:maxr, minc:maxc])
+        img_sub_ann = np.copy(img_ann[minr:maxr, minc:maxc])
+        img_sub_seeds = np.copy(seeds_labeled[minr:maxr, minc:maxc])
+
+        # contrast adjust the raw image to assist the transform
+        img_sub_raw_scaled = rescale_intensity(img_sub_raw)
+
+        # apply watershed transform to the subsections
+        ws = watershed(-img_sub_raw_scaled, img_sub_seeds, mask=img_sub_ann.astype(bool))
+
+        # only update img_sub_ann where ws has changed label from current_label to new_label
+        img_sub_ann = np.where(np.logical_and(ws == new_label,img_sub_ann == current_label), ws, img_sub_ann)
+
+        # reintegrate subsection into original mask
+        img_ann[minr:maxr, minc:maxc] = img_sub_ann
+        self.annotated[frame,:,:,self.feature] = img_ann
+
+        #update cell_info dict only if new label was created with ws
+        if np.any(np.isin(self.annotated[frame,:,:,self.feature], new_label)):
+            self.add_cell_info(feature=self.feature, add_label=new_label, frame = frame)
 
     def action_predict_single(self, frame):
 
@@ -381,95 +467,15 @@ class ZStackReview:
         self.frames_changed = True
         self.create_cell_info(feature = self.feature)
 
-    def action_replace(self, label_1, label_2, frame_1, frame_2):
-        """
-        Replacing label_2 with label_1. frame_1 and frame_2 are unused
-        but get passed to caliban.py from js action()
-        """
+    def action_save_zstack(self):
+        save_file = self.filename + "_save_version_{}.npz".format(self.save_version)
 
-        # currently don't need to check for label_1 == label_2 because of javascript logic
-        # but this may need to be updated
+        # save secure version of data before storing on regular file system
+        file = secure_filename(save_file)
 
-        # check each frame
-        for frame in range(self.annotated.shape[0]):
-            annotated = self.annotated[frame,:,:,self.feature]
-            # if label being replaced is present, remove it from image and update cell info dict
-            if np.any(np.isin(annotated, label_2)):
-                annotated = np.where(annotated == label_2, label_1, annotated)
-                self.annotated[frame,:,:,self.feature] = annotated
-                self.add_cell_info(feature = self.feature, add_label = label_1, frame = frame)
-                self.del_cell_info(feature = self.feature, del_label = label_2, frame = frame)
-
-    def action_replace_single(self, label_1, label_2, frame_1, frame_2):
-        '''
-        replaces label_2 with label_1, but only in one frame. Check to make sure frame_1 and
-        frame_2 are the same to prevent weird behavior. Check to make sure label_1 and label_2
-        aren't the same (replacing is pointless if they're the same label)
-        '''
-        if frame_1 == frame_2 and label_1 != label_2:
-            frame = frame_1
-            annotated = self.annotated[frame,:,:,self.feature]
-            # change annotation
-            annotated = np.where(annotated == label_2, label_1, annotated)
-            self.annotated[frame,:,:,self.feature] = annotated
-            # update info
-            self.add_cell_info(feature = self.feature, add_label = label_1, frame = frame)
-            self.del_cell_info(feature = self.feature, del_label = label_2, frame = frame)
-
-    def action_watershed(self, label_1, label_2, frame, x1_location, y1_location, x2_location, y2_location):
-        # Pull the label that is being split and find a new valid label
-        current_label = label_1
-        new_label = np.max(self.cell_ids[self.feature]) + 1
-
-        # Locally store the frames to work on
-        img_raw = self.raw[frame,:,:,self.channel]
-        img_ann = self.annotated[frame,:,:,self.feature]
-
-        # Pull the 2 seed locations and store locally
-        # define a new seeds labeled img that is the same size as raw/annotation imgs
-        seeds_labeled = np.zeros(img_ann.shape)
-        # create two seed locations
-        seeds_labeled[int(y1_location/self.scale_factor ), int(x1_location/self.scale_factor)]=current_label
-        seeds_labeled[int(y2_location/self.scale_factor ), int(x2_location/self.scale_factor )]=new_label
-
-        # define the bounding box to apply the transform on and select appropriate sections of 3 inputs (raw, seeds, annotation mask)
-        props = regionprops(np.squeeze(np.int32(img_ann == current_label)))
-        minr, minc, maxr, maxc = props[0].bbox
-
-        # store these subsections to run the watershed on
-        img_sub_raw = np.copy(img_raw[minr:maxr, minc:maxc])
-        img_sub_ann = np.copy(img_ann[minr:maxr, minc:maxc])
-        img_sub_seeds = np.copy(seeds_labeled[minr:maxr, minc:maxc])
-
-        # contrast adjust the raw image to assist the transform
-        img_sub_raw_scaled = rescale_intensity(img_sub_raw)
-
-        # apply watershed transform to the subsections
-        ws = watershed(-img_sub_raw_scaled, img_sub_seeds, mask=img_sub_ann.astype(bool))
-
-        # only update img_sub_ann where ws has changed label from current_label to new_label
-        img_sub_ann = np.where(np.logical_and(ws == new_label,img_sub_ann == current_label), ws, img_sub_ann)
-
-        # reintegrate subsection into original mask
-        img_ann[minr:maxr, minc:maxc] = img_sub_ann
-        self.annotated[frame,:,:,self.feature] = img_ann
-
-        #update cell_info dict only if new label was created with ws
-        if np.any(np.isin(self.annotated[frame,:,:,self.feature], new_label)):
-            self.add_cell_info(feature=self.feature, add_label=new_label, frame = frame)
-
-    def action_delete_mask(self, label, frame):
-        '''
-        remove selected annotation from frame, replacing with zeros
-        '''
-
-        ann_img = self.annotated[frame,:,:,self.feature]
-        ann_img = np.where(ann_img == label, 0, ann_img)
-
-        self.annotated[frame,:,:,self.feature] = ann_img
-
-        #update cell_info
-        self.del_cell_info(feature = self.feature, del_label = label, frame = frame)
+        np.savez(file, raw = self.raw, annotated = self.annotated)
+        path = self.subfolders
+        s3.upload_file(file, self.output_bucket, path)
 
     def add_cell_info(self, feature, add_label, frame):
         '''
@@ -637,37 +643,81 @@ class TrackReview:
 
     def action(self, action_type, info):
 
-        if action_type == "set_parent":
-            self.action_set_parent(**info)
-        elif action_type == "replace":
-            self.action_replace(**info)
-        elif action_type == "create_single_new":
-            self.action_new_single_cell(**info)
-        elif action_type == "create_all_new":
-            self.action_new_track(**info)
-        elif action_type == "swap_single_frame":
-            self.action_swap_single_frame(**info)
-        elif action_type == "swap_tracks":
-            self.action_swap_tracks(**info)
-        elif action_type == "save_track":
-            self.action_save_track(**info)
-        elif action_type == "watershed":
-            self.action_watershed(**info)
-        elif action_type == "delete_cell":
-            self.action_delete(**info)
-        elif action_type == "change_edit_mode":
-            self.edit_mode = not self.edit_mode
-        elif action_type == "handle_draw":
+        # edit mode action
+        if action_type == "handle_draw":
             self.action_handle_draw(**info)
-        elif action_type == "fill_hole":
-            self.action_fill_hole(**info)
+
+        # modified click actions
         elif action_type == "flood_cell":
             self.action_flood_contiguous(**info)
         elif action_type == "trim_pixels":
             self.action_trim_pixels(**info)
 
+        # single click actions
+        elif action_type == "fill_hole":
+            self.action_fill_hole(**info)
+        elif action_type == "create_single_new":
+            self.action_new_single_cell(**info)
+        elif action_type == "create_all_new":
+            self.action_new_track(**info)
+        elif action_type == "delete_cell":
+            self.action_delete(**info)
+
+        # multiple click actions
+        elif action_type == "set_parent":
+            self.action_set_parent(**info)
+        elif action_type == "replace":
+            self.action_replace(**info)
+        elif action_type == "swap_single_frame":
+            self.action_swap_single_frame(**info)
+        elif action_type == "swap_tracks":
+            self.action_swap_tracks(**info)
+        elif action_type == "watershed":
+            self.action_watershed(**info)
+
+        # misc
+        elif action_type == "save_track":
+            self.action_save_track(**info)
+
         else:
             raise ValueError("Invalid action '{}'".format(action_type))
+
+    def action_handle_draw(self, trace, edit_value, brush_size, erase, frame):
+
+        annotated = np.copy(self.tracked[frame])
+
+        in_original = np.any(np.isin(annotated, edit_value))
+
+        annotated_draw = np.where(annotated==0, edit_value, annotated)
+        annotated_erase = np.where(annotated==edit_value, 0, annotated)
+
+        for loc in trace:
+            # each element of trace is an array with [y,x] coordinates of array
+            x_loc = loc[1]
+            y_loc = loc[0]
+
+            brush_area = circle(y_loc, x_loc, brush_size, (self.height,self.width))
+
+            #do not overwrite or erase labels other than the one you're editing
+            if not erase:
+                annotated[brush_area] = annotated_draw[brush_area]
+            else:
+                annotated[brush_area] = annotated_erase[brush_area]
+
+        in_modified = np.any(np.isin(annotated, edit_value))
+
+        # cell deletion
+        if in_original and not in_modified:
+            self.del_cell_info(del_label = edit_value, frame = frame)
+
+        # cell addition
+        elif in_modified and not in_original:
+            self.add_cell_info(add_label = edit_value, frame = frame)
+
+        comparison = np.where(annotated != self.tracked[frame])
+        self.frames_changed = np.any(comparison)
+
+        self.tracked[frame] = annotated
 
     def action_flood_contiguous(self, label, frame, x_location, y_location):
         '''
@@ -723,47 +773,171 @@ class TrackReview:
 
         self.frames_changed = True
 
-    def action_handle_draw(self, trace, edit_value, brush_size, erase, frame):
+    def action_new_single_cell(self, label, frame):
+        """
+        Create new label in just one frame
+        """
+        old_label = label
+        new_label = max(self.tracks) + 1
 
-        annotated = np.copy(self.tracked[frame])
+        # replace frame labels
+        self.tracked[frame] = np.where(self.tracked[frame] == old_label,
+            new_label, self.tracked[frame])
 
-        in_original = np.any(np.isin(annotated, edit_value))
+        # replace fields
+        self.del_cell_info(del_label = old_label, frame = frame)
+        self.add_cell_info(add_label = new_label, frame = frame)
 
-        annotated_draw = np.where(annotated==0, edit_value, annotated)
-        annotated_erase = np.where(annotated==edit_value, 0, annotated)
+    def action_new_track(self, label, frame):
 
-        for loc in trace:
-            # each element of trace is an array with [y,x] coordinates of array
-            x_loc = loc[1]
-            y_loc = loc[0]
+        """
+        Replacing label - create in all subsequent frames
+        """
+        old_label, start_frame = label, frame
+        new_label = max(self.tracks) + 1
 
-            brush_area = circle(y_loc, x_loc, brush_size, (self.height,self.width))
+        if start_frame != 0:
+            # replace frame labels
+            for frame in self.tracked[start_frame:]:
+                frame[frame == old_label] = new_label
 
-            #do not overwrite or erase labels other than the one you're editing
-            if not erase:
-                annotated[brush_area] = annotated_draw[brush_area]
+            # replace fields
+            track_old = self.tracks[old_label]
+            track_new = self.tracks[new_label] = {}
+
+            idx = track_old["frames"].index(start_frame)
+
+            frames_before = track_old["frames"][:idx]
+            frames_after = track_old["frames"][idx:]
+
+            track_old["frames"] = frames_before
+            track_new["frames"] = frames_after
+            track_new["label"] = new_label
+
+            # only add daughters if they aren't in the same frame as the new track
+            track_new["daughters"] = []
+            for d in track_old["daughters"]:
+                if start_frame not in self.tracks[d]["frames"]:
+                    track_new["daughters"].append(d)
+
+            track_new["frame_div"] = track_old["frame_div"]
+            track_new["capped"] = track_old["capped"]
+            track_new["parent"] = None
+
+            track_old["daughters"] = []
+            track_old["frame_div"] = None
+            track_old["capped"] = True
+
+            self.frames_changed = self.info_changed = True
+
+    def action_delete(self, label, frame):
+        """
+        Deletes label from current frame only
+        """
+        # Set frame labels to 0
+        ann_img = self.tracked[frame]
+        ann_img = np.where(ann_img == label, 0, ann_img)
+        self.tracked[frame] = ann_img
+
+        self.del_cell_info(del_label = label, frame = frame)
+
+    def action_set_parent(self, label_1, label_2):
+        """
+        label_1 gave birth to label_2
+        """
+        track_1 = self.tracks[label_1]
+        track_2 = self.tracks[label_2]
+
+        last_frame_parent = max(track_1['frames'])
+        first_frame_daughter = min(track_2['frames'])
+
+        if last_frame_parent < first_frame_daughter:
+            track_1["daughters"].append(label_2)
+            daughters = np.unique(track_1["daughters"]).tolist()
+            track_1["daughters"] = daughters
+
+            track_2["parent"] = label_1
+
+            if track_1["frame_div"] is None:
+                track_1["frame_div"] = first_frame_daughter
             else:
-                annotated[brush_area] = annotated_erase[brush_area]
+                track_1["frame_div"] = min(track_1["frame_div"], first_frame_daughter)
 
-        in_modified = np.any(np.isin(annotated, edit_value))
+            self.info_changed = True
 
-        # cell deletion
-        if in_original and not in_modified:
-            self.del_cell_info(del_label = edit_value, frame = frame)
+    def action_replace(self, label_1, label_2):
+        """
+        Replacing label_2 with label_1
+        """
+        # replace arrays
+        for frame in range(self.max_frames):
+            annotated = self.tracked[frame]
+            annotated = np.where(annotated == label_2, label_1, annotated)
+            self.tracked[frame] = annotated
 
-        # cell addition
-        elif in_modified and not in_original:
-            self.add_cell_info(add_label = edit_value, frame = frame)
+        # replace fields
+        track_1 = self.tracks[label_1]
+        track_2 = self.tracks[label_2]
 
-        comparison = np.where(annotated != self.tracked[frame])
-        self.frames_changed = np.any(comparison)
+        for d in track_1["daughters"]:
+            self.tracks[d]["parent"] = None
 
-        self.tracked[frame] = annotated
+        track_1["frames"].extend(track_2["frames"])
+        track_1["frames"] = sorted(set(track_1["frames"]))
+        track_1["daughters"] = track_2["daughters"]
+        track_1["frame_div"] = track_2["frame_div"]
+        track_1["capped"] = track_2["capped"]
 
-    def action_watershed(self, label_1, label_2, frame, x1_location, y1_location, x2_location, y2_location):
+        del self.tracks[label_2]
+        for _, track in self.tracks.items():
+            try:
+                track["daughters"].remove(label_2)
+            except ValueError:
+                pass
+
+        self.frames_changed = self.info_changed = True
+
+    def action_swap_single_frame(self, label_1, label_2, frame):
+        '''swap the labels of two cells in one frame, but do not
+        change any of the lineage information'''
+
+        ann_img = self.tracked[frame,:,:,0]
+        ann_img = np.where(ann_img == label_1, -1, ann_img)
+        ann_img = np.where(ann_img == label_2, label_1, ann_img)
+        ann_img = np.where(ann_img == -1, label_2, ann_img)
+
+        self.tracked[frame,:,:,0] = ann_img
+
+        self.frames_changed = True
+
+    def action_swap_tracks(self, label_1, label_2):
+        def relabel(old_label, new_label):
+            for frame in self.tracked:
+                frame[frame == old_label] = new_label
+
+            # replace fields
+            track_new = self.tracks[new_label] = self.tracks[old_label]
+            track_new["label"] = new_label
+            del self.tracks[old_label]
+
+            for d in track_new["daughters"]:
+                self.tracks[d]["parent"] = new_label
+
+            if track_new["parent"] is not None:
+                parent_track = self.tracks[track_new["parent"]]
+                parent_track["daughters"].remove(old_label)
+                parent_track["daughters"].append(new_label)
+
+        relabel(label_1, -1)
+        relabel(label_2, label_1)
+        relabel(-1, label_2)
+
+        self.frames_changed = self.info_changed = True
+
+    def action_watershed(self, label, frame, x1_location, y1_location, x2_location, y2_location):
 
         # Pull the label that is being split and find a new valid label
-        current_label = label_1
+        current_label = label
         new_label = max(self.tracks) + 1
 
         # Locally store the frames to work on
@@ -809,8 +983,7 @@ class TrackReview:
             self.add_cell_info(add_label=new_label, frame = frame)
 
     def action_save_track(self):
-
-    # clear any empty tracks before saving file
+        # clear any empty tracks before saving file
         empty_tracks = []
         for key in self.tracks:
             if not self.tracks[key]['frames']:
@@ -844,161 +1017,6 @@ class TrackReview:
 
         #os.remove(file)
         return "Success!"
-
-    def action_swap_single_frame(self, label_1, label_2, frame_1, frame_2):
-        '''swap the labels of two cells in one frame, but do not
-        change any of the lineage information'''
-
-        assert(frame_1 == frame_2)
-        frame = frame_1
-
-        ann_img = self.tracked[frame,:,:,0]
-        ann_img = np.where(ann_img == label_1, -1, ann_img)
-        ann_img = np.where(ann_img == label_2, label_1, ann_img)
-        ann_img = np.where(ann_img == -1, label_2, ann_img)
-
-        self.tracked[frame,:,:,0] = ann_img
-
-        self.frames_changed = True
-
-    def action_swap_tracks(self, label_1, label_2, frame_1, frame_2):
-        def relabel(old_label, new_label):
-            for frame in self.tracked:
-                frame[frame == old_label] = new_label
-
-            # replace fields
-            track_new = self.tracks[new_label] = self.tracks[old_label]
-            track_new["label"] = new_label
-            del self.tracks[old_label]
-
-            for d in track_new["daughters"]:
-                self.tracks[d]["parent"] = new_label
-
-            if track_new["parent"] is not None:
-                parent_track = self.tracks[track_new["parent"]]
-                parent_track["daughters"].remove(old_label)
-                parent_track["daughters"].append(new_label)
-
-        relabel(label_1, -1)
-        relabel(label_2, label_1)
-        relabel(-1, label_2)
-
-        self.frames_changed = self.info_changed = True
-
-    def action_set_parent(self, label_1, label_2, frame_1, frame_2):
-        """
-        label_1 gave birth to label_2
-        """
-        frame_div = frame_2
-
-        track_1 = self.tracks[label_1]
-        track_2 = self.tracks[label_2]
-
-        track_1["daughters"].append(label_2)
-        track_2["parent"] = label_1
-        track_1["frame_div"] = frame_div
-
-        self.info_changed = True
-
-    def action_replace(self, label_1, label_2, frame_1, frame_2):
-        """
-        Replacing label_2 with label_1
-        """
-        # replace arrays
-        for frame in range(self.max_frames):
-            annotated = self.tracked[frame]
-            annotated = np.where(annotated == label_2, label_1, annotated)
-            self.tracked[frame] = annotated
-
-        # replace fields
-        track_1 = self.tracks[label_1]
-        track_2 = self.tracks[label_2]
-
-        for d in track_1["daughters"]:
-            self.tracks[d]["parent"] = None
-
-        track_1["frames"].extend(track_2["frames"])
-        track_1["frames"] = sorted(set(track_1["frames"]))
-        track_1["daughters"] = track_2["daughters"]
-        track_1["frame_div"] = track_2["frame_div"]
-        track_1["capped"] = track_2["capped"]
-
-        del self.tracks[label_2]
-        for _, track in self.tracks.items():
-            try:
-                track["daughters"].remove(label_2)
-            except ValueError:
-                pass
-
-        self.frames_changed = self.info_changed = True
-
-    def action_delete(self, label, frame):
-        """
-        Deletes label from current frame only
-        """
-        # Set frame labels to 0
-        ann_img = self.tracked[frame]
-        ann_img = np.where(ann_img == label, 0, ann_img)
-        self.tracked[frame] = ann_img
-
-        self.del_cell_info(del_label = label, frame = frame)
-
-    def action_new_track(self, label, frame):
-
-        """
-        Replacing label - create in all subsequent frames
-        """
-        old_label, start_frame = label, frame
-        new_label = max(self.tracks) + 1
-
-        if start_frame != 0:
-            # replace frame labels
-            for frame in self.tracked[start_frame:]:
-                frame[frame == old_label] = new_label
-
-            # replace fields
-            track_old = self.tracks[old_label]
-            track_new = self.tracks[new_label] = {}
-
-            idx = track_old["frames"].index(start_frame)
-
-            frames_before = track_old["frames"][:idx]
-            frames_after = track_old["frames"][idx:]
-
-            track_old["frames"] = frames_before
-            track_new["frames"] = frames_after
-            track_new["label"] = new_label
-
-            # only add daughters if they aren't in the same frame as the new track
-            track_new["daughters"] = []
-            for d in track_old["daughters"]:
-                if start_frame not in self.tracks[d]["frames"]:
-                    track_new["daughters"].append(d)
-
-            track_new["frame_div"] = track_old["frame_div"]
-            track_new["capped"] = track_old["capped"]
-            track_new["parent"] = None
-
-            track_old["daughters"] = []
-            track_old["frame_div"] = None
-            track_old["capped"] = True
-
-            self.frames_changed = self.info_changed = True
-
-    def action_new_single_cell(self, label, frame):
-        """
-        Create new label in just one frame
-        """
-        old_label = label
-        new_label = max(self.tracks) + 1
-
-        # replace frame labels
-        self.tracked[frame] = np.where(self.tracked[frame] == old_label,
-            new_label, self.tracked[frame])
-
-        # replace fields
-        self.del_cell_info(del_label = old_label, frame = frame)
-        self.add_cell_info(add_label = new_label, frame = frame)
 
     def add_cell_info(self, add_label, frame):
         '''

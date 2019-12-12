@@ -15,192 +15,279 @@ class Mode {
     this.highlighted_cell_two = -1;
     //reset highlighting in image if this is being shown
     if (current_highlight) {
-      render_frame();
+      render_image_display();
     }
     this.action = "";
     this.prompt = "";
-    render_log();
+    render_info_display();
   }
 
-  handle_key(key) {
-    // EDIT MODE KEYBINDS
-    if (edit_mode) {
-      //keybinds to change value of brush
-      if (key === "=") {
-        edit_value += 1; //increase edit_value, no upper limit
-        render_log(); //update display to show new edit_value
-      } else if (key === "-") {
-        edit_value = Math.max(edit_value - 1, 1); //decrease edit_value, minimum 1
-        render_log(); //update display to show new edit_value
-      } else if (key === "x") {
-        //turn eraser on and off
-        erase = !erase;
-        render_log();
-      //keybinds to change brush size
-      } else if (key === ",") { //decrease brush size, minimum size 1
-        brush_size = Math.max(brush_size - 1, 1);
-        render_log(); //display new brush size in infopane
-
-        //update brush with its new size
-        let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
-        hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1]);
-        brush.radius = brush_size * scale;
-        brush.draw(hidden_ctx);
-
-        //redraw the frame with the updated brush preview
-        render_frame();
-
-      } else if (key === ".") { //increase brush size, shouldn't be larger than the image
-        brush_size = Math.min(self.brush_size + 1,
-          dimensions[0]/scale, dimensions[1]/scale);
-        render_log(); //display new brush size in infopane
-
-        //update brush with its new size
-        let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
-        hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1]);
-        brush.radius = brush_size * scale;
-        brush.draw(hidden_ctx);
-
-        //redraw the frame with the updated brush preview
-        render_frame();
-      } else if (key === 'n') { //set edit value to something unused
-        edit_value = maxTrack + 1;
-        render_log();
-        //when value of brush determines color of brush preview, render_frame instead
-      } else if (key === 'i') { //toggle invert
-        display_invert = !display_invert;
-        render_frame();
+  // these keybinds apply regardless of
+  // edit_mode, mode.action, or mode.kind
+  handle_universal_keybind(key) {
+    if (key === 'a' || key === 'ArrowLeft') {
+      // go backward one frame
+      current_frame -= 1;
+      if (current_frame < 0) {
+        current_frame = max_frames - 1;
       }
-
-    } // END OF EDIT MODE KEYBINDS
-
-    // nothing selected, not in edit mode
-    else if (this.kind == Modes.none) {
-      if (key === "-" && this.highlighted_cell_one !== -1) {
-        //allow cycling through highlighted cells to view, if nothing selected
-        if (this.highlighted_cell_one === 1) {
-          this.highlighted_cell_one = maxTrack;
-        } else {
-          this.highlighted_cell_one -= 1;
-        }
-        render_frame();
-      } else if (key === "=" && this.highlighted_cell_one !== -1) {
-        //allow cycling through highlighted cells to view, if nothing selected
-        if (this.highlighted_cell_one === maxTrack) {
-          this.highlighted_cell_one = 1;
-        } else {
-          this.highlighted_cell_one += 1;
-        }
-        render_frame();
+      fetch_and_render_frame();
+    } else if (key === 'd' || key === 'ArrowRight') {
+      // go forward one frame
+      current_frame += 1;
+      if (current_frame >= max_frames) {
+        current_frame = 0;
       }
-    // end of "nothing selected" keybinds
-    } else if (this.kind == Modes.single) {
-
-      //hole fill
-      if (key === "f") {
-        this.info = { "label": this.info['label'],
-                      "frame": current_frame};
-        this.kind = Modes.question;
-        this.action = "fill_hole";
-        this.prompt = "Select hole to fill in cell " + this.info['label'];
-        render_log();
-
-      } else if (key === "c") {
-        this.kind = Modes.question;
-        this.action = "new_track";
-        this.prompt = "CREATE NEW (SPACE=ALL SUBSEQUENT FRAMES / S=ONLY THIS FRAME / ESC=CANCEL)";
-        render_log();
-
-      } else if (key === "=") {
-        if (this.highlighted_cell_one === maxTrack) {
-          this.highlighted_cell_one = 1;
-        } else {
-          this.highlighted_cell_one += 1;
-        }
-        // clear info but show new highlighted cell
-        let temp_highlight = this.highlighted_cell_one;
-        this.clear();
-        this.highlighted_cell_one = temp_highlight;
-        render_frame();
-
-      } else if (key === "-") {
-        if (this.highlighted_cell_one === 1) {
-          this.highlighted_cell_one = maxTrack;
-        } else {
-          this.highlighted_cell_one -= 1;
-        }
-        // clear info but show new highlighted cell
-        let temp_highlight = this.highlighted_cell_one;
-        this.clear();
-        this.highlighted_cell_one = temp_highlight;
-        render_frame();
-      } else if (key === "x") {
-        this.kind = Modes.question;
-        this.action = "delete_cell";
-        this.prompt = "delete label " + this.info.label + " in frame " + this.info.frame + "? " + answer;
-        render_log();
-      }
-    } else if (this.kind == Modes.multiple) {
-      if (key === "r") {
-        this.kind = Modes.question;
-        this.action = "replace";
-        this.prompt = "Replace " + this.info.label_2 + " with " + this.info.label_1 + "? " + answer;
-        render_log();
-      } else if (key === "p") {
-        this.kind = Modes.question;
-        this.action = "set_parent";
-        this.prompt = "Set " + this.info.label_1 + " as parent of " + this.info.label_2 + "? " + answer;
-        render_log();
-      } else if (key === "s") {
-        this.kind = Modes.question;
-        this.action = "swap_cells";
-        this.prompt = "SPACE = SWAP IN ALL FRAMES / S = SWAP IN ONLY ONE FRAME / ESC = CANCEL SWAP";
-        render_log();
-      } else if (key === "w") {
-        this.kind = Modes.question;
-        this.action = "watershed";
-        this.prompt = "Perform watershed to split " + this.info.label_1 + "? " + answer;
-        render_log();
-      }
-    } else if (this.kind == Modes.question) {
-      if (key === " ") {
-        if (this.action == "new_track") {
-          action("create_all_new", this.info);
-          this.clear();
-        } else if (this.action == "set_parent") {
-          action(this.action, this.info);
-          this.clear();
-        } else if (this.action == "replace") {
-          action(this.action, this.info);
-          this.clear();
-        } else if (this.action == "watershed") {
-          action(this.action, this.info);
-          this.clear();
-        } else if (this.action == "delete_cell") {
-          action(this.action, this.info);
-          this.clear();
-        } else if (this.action == "swap_cells") {
-          action("swap_tracks", this.info);
-          this.clear();
-        } else if (this.action === "flood_cell") {
-          action("flood_cell", this.info);
-          this.clear();
-        } else if (this.action === "trim_pixels") {
-          action("trim_pixels", this.info);
-          this.clear();
-        }
-      } else if (key === "s") {
-        if (this.action === "new_track") {
-          action("create_single_new", this.info);
-          this.clear();
-        } else if (this.action === "swap_cells") {
-          action("swap_single_frame", this.info);
-          this.clear();
-        }
-      }
+      fetch_and_render_frame();
+    } else if (key === "Escape") {
+      // deselect/cancel action/reset highlight
+      mode.clear();
+    } else if (key === 'h') {
+      // toggle highlight
+      current_highlight = !current_highlight;
+      render_image_display();
+    } else if (key === 'z') {
+      // toggle rendering_raw
+      rendering_raw = !rendering_raw;
+      render_image_display();
     }
   }
-  //end of handle_key
+
+  // keybinds that apply when in edit mode
+  handle_edit_keybind(key) {
+    if (key === "e") {
+      // toggle edit mode
+      edit_mode = !edit_mode;
+      render_image_display();
+    } else if (key === "=") {
+      // increase edit_value up to max label + 1 (guaranteed unused)
+      edit_value = Math.min(edit_value + 1, maxTrack + 1);
+      render_info_display();
+    } else if (key === "-") {
+      // decrease edit_value, minimum 1
+      edit_value = Math.max(edit_value - 1, 1);
+      render_info_display();
+    } else if (key === "x") {
+      // turn eraser on and off
+      erase = !erase;
+      render_info_display();
+    } else if (key === "ArrowDown") {
+      // decrease brush size, minimum size 1
+      brush_size = Math.max(brush_size - 1, 1);
+
+      // update brush object with its new size
+      let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
+      hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1]);
+      brush.radius = brush_size * scale;
+      brush.draw(hidden_ctx);
+
+      // redraw the frame with the updated brush preview
+      render_image_display();
+    } else if (key === "ArrowUp") {
+      // increase brush size, shouldn't be larger than the image
+      brush_size = Math.min(self.brush_size + 1,
+          dimensions[0]/scale, dimensions[1]/scale);
+
+      // update brush with its new size
+      let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
+      hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1]);
+      brush.radius = brush_size * scale;
+      brush.draw(hidden_ctx);
+
+      // redraw the frame with the updated brush preview
+      render_image_display();
+    } else if (key === 'n') {
+      // set edit value to something unused
+      edit_value = maxTrack + 1;
+      render_info_display();
+      // when value of brush determines color of brush, render_image instead
+    } else if (key === 'i') {
+      // toggle light/dark inversion of raw img
+      display_invert = !display_invert;
+      render_image_display();
+    }
+  }
+
+  // keybinds that apply in bulk mode, nothing selected
+  handle_mode_none_keybind(key) {
+    if (key === "e") {
+      // toggle edit mode
+      edit_mode = !edit_mode;
+      render_image_display();
+    } else if (key === "-" && this.highlighted_cell_one !== -1) {
+      // cycle highlight to prev label
+      if (this.highlighted_cell_one === 1) {
+        this.highlighted_cell_one = maxTrack;
+      } else {
+        this.highlighted_cell_one -= 1;
+      }
+      render_image_display();
+    } else if (key === "=" && this.highlighted_cell_one !== -1) {
+      // cycle highlight to next label
+      if (this.highlighted_cell_one === maxTrack) {
+        this.highlighted_cell_one = 1;
+      } else {
+        this.highlighted_cell_one += 1;
+      }
+      render_image_display();
+    }
+  }
+
+  // keybinds that apply in bulk mode, one selected
+  handle_mode_single_keybind(key) {
+    if (key === "f") {
+      // hole fill
+      this.info = { "label": this.info['label'],
+                    "frame": current_frame};
+      this.kind = Modes.question;
+      this.action = "fill_hole";
+      this.prompt = "Select hole to fill in cell " + this.info['label'];
+      render_info_display();
+    } else if (key === "c") {
+      // create new
+      this.kind = Modes.question;
+      this.action = "new_track";
+      this.prompt = "CREATE NEW (SPACE=ALL SUBSEQUENT FRAMES / S=ONLY THIS FRAME / ESC=CANCEL)";
+      render_info_display();
+    } else if (key === "x") {
+      // delete label from frame
+      this.kind = Modes.question;
+      this.action = "delete_cell";
+      this.prompt = "delete label " + this.info.label + " in frame " + this.info.frame + "? " + answer;
+      render_info_display();
+    } else if (key === "-") {
+      // cycle highlight to prev label
+      if (this.highlighted_cell_one === 1) {
+        this.highlighted_cell_one = maxTrack;
+      } else {
+        this.highlighted_cell_one -= 1;
+      }
+      // clear info but show new highlighted cell
+      let temp_highlight = this.highlighted_cell_one;
+      this.clear();
+      this.highlighted_cell_one = temp_highlight;
+      render_image_display();
+    } else if (key === "=") {
+      // cycle highlight to next label
+      if (this.highlighted_cell_one === maxTrack) {
+        this.highlighted_cell_one = 1;
+      } else {
+        this.highlighted_cell_one += 1;
+      }
+      // clear info but show new highlighted cell
+      let temp_highlight = this.highlighted_cell_one;
+      this.clear();
+      this.highlighted_cell_one = temp_highlight;
+      render_image_display();
+    }
+  }
+
+  // keybinds that apply in bulk mode, two selected
+  handle_mode_multiple_keybind(key) {
+    if (key === "p") {
+      // set parent
+      this.kind = Modes.question;
+      this.action = "set_parent";
+      this.prompt = "Set " + this.info.label_1 + " as parent of " + this.info.label_2 + "? " + answer;
+      render_info_display();
+    } else if (key === "r") {
+      // replace
+      this.kind = Modes.question;
+      this.action = "replace";
+      this.prompt = "Replace " + this.info.label_2 + " with " + this.info.label_1 + "? " + answer;
+      render_info_display();
+    } else if (key === "s") {
+      // swap
+      this.kind = Modes.question;
+      this.action = "swap_cells";
+      this.prompt = "SPACE = SWAP IN ALL FRAMES / S = SWAP IN ONLY ONE FRAME / ESC = CANCEL SWAP";
+      render_info_display();
+    } else if (key === "w") {
+      // watershed
+      this.kind = Modes.question;
+      this.action = "watershed";
+      this.prompt = "Perform watershed to split " + this.info.label_1 + "? " + answer;
+      render_info_display();
+    }
+  }
+
+  // keybinds that apply in bulk mode, answering question/prompt
+  handle_mode_question_keybind(key) {
+    if (key === " ") {
+      if (this.action === "flood_cell") {
+        action("flood_cell", this.info);
+      } else if (this.action === "trim_pixels") {
+        action("trim_pixels", this.info);
+      } if (this.action === "new_track") {
+        action("create_all_new", this.info);
+      } else if (this.action === "delete_cell") {
+        action(this.action, this.info);
+      } else if (this.action === "set_parent") {
+        if (this.info.label_1 !== this.info.label_2 &&
+          this.info.frame_1 < this.info.frame_2) {
+          let send_info = {"label_1": this.info.label_1,
+                           "label_2": this.info.label_2};
+          action(this.action, send_info);
+        }
+      } else if (this.action === "replace") {
+        if (this.info.label_1 !== this.info.label_2) {
+          let send_info = {"label_1": this.info.label_1,
+                           "label_2": this.info.label_2};
+          action(this.action, send_info);
+        }
+      } else if (this.action === "swap_cells") {
+        if (this.info.label_1 !== this.info.label_2) {
+          let send_info = {"label_1": this.info.label_1,
+                           "label_2": this.info.label_2}
+          action("swap_tracks", send_info);
+        }
+      } else if (this.action === "watershed") {
+        if (this.info.frame_1 === this.info.frame_2 &&
+          this.info.label_1 === this.info.label_2) {
+          this.info.frame = this.info.frame_1;
+          this.info.label = this.info.label_1;
+          delete this.info.frame_1;
+          delete this.info.frame_2;
+          delete this.info.label_1;
+          delete this.info.label_2;
+          action(this.action, this.info);
+        }
+      }
+      this.clear();
+    } else if (key === "s") {
+      if (this.action === "new_track") {
+        action("create_single_new", this.info);
+      } else if (this.action === "swap_cells") {
+        if (this.info.label_1 !== this.info.label_2 &&
+          this.info.frame_1 === this.info.frame_2) {
+          let send_info = {"label_1": this.info.label_1,
+                           "label_2": this.info.label_2,
+                           "frame": this.info.frame_1};
+          action("swap_single_frame", send_info);
+        }
+      }
+      this.clear();
+    }
+  }
+
+  // handle all keypresses
+  handle_key(key) {
+    // universal keybinds always apply
+    // keys a, d, left arrow, right arrow, ESC, h
+    // are reserved for universal keybinds
+    this.handle_universal_keybind(key);
+    if (edit_mode) {
+      this.handle_edit_keybind(key);
+    } else if (!edit_mode && this.kind === Modes.none) {
+      this.handle_mode_none_keybind(key);
+    } else if (!edit_mode && this.kind === Modes.single) {
+      this.handle_mode_single_keybind(key);
+    } else if (!edit_mode && this.kind === Modes.multiple) {
+      this.handle_mode_multiple_keybind(key);
+    } else if (!edit_mode && this.kind === Modes.question) {
+      this.handle_mode_question_keybind(key);
+    }
+  }
 
   handle_draw() {
     action("handle_draw", { "trace": JSON.stringify(mouse_trace),
@@ -208,55 +295,33 @@ class Mode {
                   "brush_size": brush_size,
                   "erase": erase,
                   "frame": current_frame});
+    mouse_trace = [];
     this.clear()
   }
 
-  click(evt) {
-    if (this.kind === Modes.question) {
-      if(this.action == "fill_hole" && current_label == 0) {
-        this.info = { "label": this.info['label'],
-                      "frame": current_frame,
-                      "x_location": mouse_x,
-                      "y_location": mouse_y };
-        action(this.action, this.info);
-        this.clear();
-      }
-
-      //if click on background, same as ESC
-    } else if (current_label === 0) {
-      this.highlighted_cell_one = -1;
-      this.highlighted_cell_two = -1;
-      this.clear();
-      return;
-
-    // if nothing selected, shift-, alt-, or normal click:
-    } else if (this.kind === Modes.none) {
-      // shift+click
-      if (evt.shiftKey && current_label !== 0) {
-        this.kind = Modes.question;
-        this.action = "trim_pixels";
-        this.info = {"label": current_label,
-                      "frame": current_frame,
-                      "x_location": mouse_x,
-                      "y_location": mouse_y};
-        this.prompt = "SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL";
-        this.highlighted_cell_one = current_label;
-        render_frame();
-
+  handle_mode_none_click(evt) {
+    if (evt.altKey) {
       // alt+click
-      } else if (evt.altKey && current_label !== 0) {
-        this.kind = Modes.question;
-        this.action = "flood_cell";
-        this.info = {"label": current_label,
-                          "frame": current_frame,
-                          "x_location": mouse_x,
-                          "y_location": mouse_y}
-        this.prompt = "SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL";
-        this.highlighted_cell_one = current_label;
-        render_frame();
-
+      this.kind = Modes.question;
+      this.action = "flood_cell";
+      this.info = {"label": current_label,
+                        "frame": current_frame,
+                        "x_location": mouse_x,
+                        "y_location": mouse_y}
+      this.prompt = "SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL";
+      this.highlighted_cell_one = current_label;
+    } else if (evt.shiftKey) {
+      // shift+click
+      this.kind = Modes.question;
+      this.action = "trim_pixels";
+      this.info = {"label": current_label,
+                    "frame": current_frame,
+                    "x_location": mouse_x,
+                    "y_location": mouse_y};
+      this.prompt = "SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL";
+      this.highlighted_cell_one = current_label;
+    } else {
       // normal click
-      } else {
       this.kind = Modes.single;
       this.info = {"label": current_label,
                   "frame": current_frame};
@@ -264,49 +329,68 @@ class Mode {
       this.highlighted_cell_two = -1;
       temp_x = mouse_x;
       temp_y = mouse_y;
-      }
-
-    // one label already selected
-    } else if (this.kind === Modes.single) {
-      this.kind = Modes.multiple;
-
-      this.highlighted_cell_one = this.info.label;
-      this.highlighted_cell_two = current_label;
-
-      if (this.info.label == current_label) {
-        this.info = {"label_1": this.info.label,
-                    "label_2": current_label,
-                    "frame": current_frame,
-                    "x1_location": temp_x,
-                    "y1_location": temp_y,
-                    "x2_location": mouse_x,
-                    "y2_location": mouse_y};
-      } else {
-        this.info = {"label_1": this.info.label,
-                    "frame_1": this.info.frame,
-                    "label_2": current_label,
-                    "frame_2": current_frame};
-      }
-    } else if (this.kind  === Modes.multiple) {
-      this.highlighted_cell_one = this.info.label_1;
-      this.highlighted_cell_two = current_label;
-
-      if (this.info.label_1 == current_label) {
-        this.info = {"label_1": this.info.label_1,
-                    "label_2": current_label,
-                    "frame": current_frame,
-                    "x1_location": temp_x,
-                    "y1_location": temp_y,
-                    "x2_location": mouse_x,
-                    "y2_location": mouse_y};
-      } else {
-        this.info = {"label_1": this.info.label_1,
-                    "frame_1": this.info.frame_1,
-                    "label_2": current_label,
-                    "frame_2": current_frame};
-      }
     }
-    render_frame();
+  }
+
+  handle_mode_question_click(evt) {
+    if (this.action === "fill_hole" && current_label === 0) {
+      this.info = { "label": this.info['label'],
+                    "frame": current_frame,
+                    "x_location": mouse_x,
+                    "y_location": mouse_y };
+      action(this.action, this.info);
+      this.clear();
+    }
+  }
+
+  handle_mode_single_click(evt) {
+    this.kind = Modes.multiple;
+
+    this.highlighted_cell_one = this.info.label;
+    this.highlighted_cell_two = current_label;
+
+    this.info = {"label_1": this.info.label,
+                "label_2": current_label,
+                "frame_1": this.info.frame,
+                "frame_2": current_frame,
+                "x1_location": temp_x,
+                "y1_location": temp_y,
+                "x2_location": mouse_x,
+                "y2_location": mouse_y};
+  }
+
+  handle_mode_multiple_click(evt) {
+    this.highlighted_cell_one = this.info.label_1;
+    this.highlighted_cell_two = current_label;
+
+    this.info = {"label_1": this.info.label_1,
+                "label_2": current_label,
+                "frame_1": this.info.frame_1,
+                "frame_2": current_frame,
+                "x1_location": temp_x,
+                "y1_location": temp_y,
+                "x2_location": mouse_x,
+                "y2_location": mouse_y};
+  }
+
+  click(evt) {
+    if (this.kind === Modes.question) {
+      // just hole fill
+      this.handle_mode_question_click(evt);
+    } else if (current_label === 0) {
+      // same as ESC
+      this.clear();
+      return;
+    } else if (this.kind === Modes.none) {
+      // if nothing selected, shift-, alt-, or normal click:
+      this.handle_mode_none_click(evt);
+    } else if (this.kind === Modes.single) {
+      // one label already selected
+      this.handle_mode_single_click(evt);
+    } else if (this.kind  === Modes.multiple) {
+      this.handle_mode_multiple_click(evt);
+    }
+    render_image_display();
   }
 
   render() {
@@ -356,8 +440,7 @@ var edit_mode = false;
 var edit_value = 1;
 var brush_size = 1;
 var erase = false;
-var last_mousex = last_mousey = 0;
-var mousedown = false;
+let mousedown = false;
 var answer = "(SPACE=YES / ESC=NO)";
 var project_id = undefined;
 var brush;
@@ -436,22 +519,19 @@ function invert(img) {
 }
 
 function label_under_mouse() {
-  let img_y = Math.floor(mouse_y/scale)
-  let img_x = Math.floor(mouse_x/scale)
-  let new_label = seg_array[img_y][img_x]; //check array value at mouse location
+  let img_y = Math.floor(mouse_y/scale);
+  let img_x = Math.floor(mouse_x/scale);
+  let new_label;
+  if (img_y >= 0 && img_y < seg_array.length &&
+      img_x >= 0 && img_x < seg_array[0].length) {
+    new_label = seg_array[img_y][img_x]; //check array value at mouse location
+  } else {
+    new_label = 0;
+  }
   return new_label;
 }
 
-function render_log() {
-  current_label = label_under_mouse();
-
-  $('#frame').html(current_frame);
-  if (current_label !== 0) {
-    $('#label').html(current_label);
-  } else {
-    $('#label').html("");
-  }
-
+function render_highlight_info() {
   if (current_highlight) {
     $('#highlight').html("ON");
     if (mode.highlighted_cell_one !== -1) {
@@ -467,7 +547,9 @@ function render_log() {
     $('#highlight').html("OFF");
     $('#currently_highlighted').html("none");
   }
+}
 
+function render_edit_info() {
   if (edit_mode) {
     $('#edit_mode').html("ON");
     $('#edit_brush_row').css('visibility', 'visible');
@@ -489,8 +571,12 @@ function render_log() {
     $('#edit_label_row').css('visibility', 'hidden');
     $('#edit_erase_row').css('visibility', 'hidden');
   }
+}
 
+function render_cell_info() {
+  current_label = label_under_mouse();
   if (current_label !== 0) {
+    $('#label').html(current_label);
     let track = tracks[current_label.toString()];
     $('#parent').text(track.parent || "None");
     $('#daughters').text("[" + track.daughters.toString() + "]");
@@ -499,64 +585,94 @@ function render_log() {
     $('#capped').text(capped[0].toUpperCase() + capped.substring(1));
     $('#frames').text(track.frames.toString());
   } else {
+    $('#label').html("");
     $('#capped').text("");
+    $('#parent').text("");
     $('#daughters').text("");
     $('#frame_div').text("");
     $('#frames').text("");
   }
+}
+
+// updates html display of side info panel
+function render_info_display() {
+  // always show current frame
+  $('#frame').html(current_frame);
+
+  render_highlight_info();
+
+  render_edit_info();
+
+  render_cell_info();
+
+  // always show 'state'
   $('#mode').html(mode.render());
 }
 
-function render_frame() {
+function render_edit_image(ctx) {
+  let hidden_canvas = document.getElementById('hidden_canvas');
 
+  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
+  ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
+  let image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+
+  // adjust underlying raw image
+  contrast_image(image_data, current_contrast);
+  grayscale(image_data);
+  if (display_invert) {
+    invert(image_data);
+  }
+  ctx.putImageData(image_data, 0, 0);
+  ctx.save();
+  ctx.globalCompositeOperation = 'color';
+  ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
+  ctx.restore();
+
+  // draw brushview on top of cells/annotations
+  ctx.save();
+  ctx.globalAlpha = 0.7;
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.drawImage(hidden_canvas, 0, 0, dimensions[0], dimensions[1]);
+  ctx.restore();
+}
+
+function render_raw_image(ctx) {
+  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
+  ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
+
+  // contrast image
+  image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+  contrast_image(image_data, current_contrast);
+  // draw contrasted image over the original
+  ctx.putImageData(image_data, 0, 0);
+}
+
+function render_annotation_image(ctx) {
+  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
+  ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
+  if (current_highlight) {
+    let img_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+    highlight(img_data, mode.highlighted_cell_one);
+    highlight(img_data, mode.highlighted_cell_two);
+    ctx.putImageData(img_data, 0, 0);
+  }
+}
+
+function render_image_display() {
   let ctx = $('#canvas').get(0).getContext("2d");
   ctx.imageSmoothingEnabled = false;
 
   if (edit_mode) {
-    ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-    ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
-    let image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
-    contrast_image(image_data, current_contrast);
-    grayscale(image_data);
-    if (display_invert) {
-      invert(image_data);
-    }
-    ctx.putImageData(image_data, 0, 0);
-    ctx.save();
-    ctx.globalCompositeOperation = 'color';
-    ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
-    ctx.restore();
-
-    // draw brushview on top of cells/annotations
-
-    let hidden_canvas = document.getElementById('hidden_canvas');
-    ctx.save();
-    ctx.globalAlpha = 0.7;
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.drawImage(hidden_canvas, 0, 0, dimensions[0], dimensions[1]);
-    ctx.restore();
-
+    // edit mode (annotations overlaid on raw + brush preview)
+    render_edit_image(ctx);
   } else if (rendering_raw) {
-    ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-    ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
-
-    //contrast image
-    image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
-    contrast_image(image_data, current_contrast);
-    //draw contrasted image over the original
-    ctx.putImageData(image_data, 0, 0);
-
-  } else { //draw annotations
-    ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-    ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
-    if (current_highlight) {
-      let img_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
-      highlight(img_data, mode.highlighted_cell_one);
-      highlight(img_data, mode.highlighted_cell_two);
-      ctx.putImageData(img_data, 0, 0);
-    }
+    // draw raw image
+    render_raw_image(ctx);
+  } else {
+    // draw annotations
+    render_annotation_image(ctx);
   }
-  render_log();
+  render_info_display();
 }
 
 function fetch_and_render_frame() {
@@ -568,9 +684,9 @@ function fetch_and_render_frame() {
       // array of arrays, contains annotation data for frame
       seg_array = payload.seg_arr;
       seg_image.src = payload.segmented;
-      seg_image.onload = render_frame;
+      seg_image.onload = render_image_display;
       raw_image.src = payload.raw;
-      raw_image.onload = render_frame;
+      raw_image.onload = render_image_display;
     },
     async: false
   });
@@ -599,137 +715,99 @@ function load_file(file) {
   });
 }
 
+// adjust current_contrast upon mouse scroll
+function handle_scroll(evt) {
+  // adjust contrast whenever we can see raw
+  if (rendering_raw || edit_mode) {
+    let delta = - evt.originalEvent.deltaY / 2;
+    current_contrast = Math.max(current_contrast + delta, -100);
+    render_image_display();
+  }
+}
+
+// handle pressing mouse button (treats this as the beginning
+// of click&drag, since clicks are handled by Mode.click)
+function handle_mousedown(evt) {
+  mousedown = true;
+  mouse_x = evt.offsetX;
+  mouse_y = evt.offsetY;
+  // begin drawing
+  if (edit_mode) {
+    let img_y = Math.floor(mouse_y/scale);
+    let img_x = Math.floor(mouse_x/scale);
+    mouse_trace.push([img_y, img_x]);
+  }
+}
+
+// handles mouse movement, whether or not mouse button is held down
+function handle_mousemove(evt) {
+  // update displayed info depending on where mouse is
+  mouse_x = evt.offsetX;
+  mouse_y = evt.offsetY;
+  render_info_display();
+
+  // update brush preview
+  if (edit_mode) {
+    // hidden canvas is keeping track of the brush
+    let hidden_canvas = document.getElementById('hidden_canvas');
+    let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
+    if (mousedown) {
+      // update mouse_trace
+      let img_y = Math.floor(mouse_y/scale);
+      let img_x = Math.floor(mouse_x/scale);
+      mouse_trace.push([img_y, img_x]);
+    } else {
+      hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1])
+    }
+    brush.x = mouse_x;
+    brush.y = mouse_y;
+    brush.draw(hidden_ctx);
+    render_image_display();
+  }
+}
+
+// handles end of click&drag (different from click())
+function handle_mouseup(evt) {
+  mousedown = false;
+  if (edit_mode) {
+    //send click&drag coordinates to caliban.py to update annotations
+    mode.handle_draw();
+    // reset brush preview
+    let hidden_canvas = document.getElementById('hidden_canvas');
+    let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
+    hidden_ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
+  }
+}
+
 function prepare_canvas() {
+  // bind click
   $('#canvas').click(function(evt) {
     if (!edit_mode) {
       mode.click(evt);
     }
-    render_log();
+    render_info_display();
   });
+  // bind scroll wheel
   $('#canvas').on('wheel', function(evt) {
-    if (rendering_raw) {
-      let delta = - evt.originalEvent.deltaY / 2;
-      current_contrast = Math.max(current_contrast + delta, -100);
-      render_frame();
-    }
+    // adjusts contrast of raw when scrolled
+    handle_scroll(evt);
   });
-  $('#canvas').mousemove(function(evt) {
-    mouse_x = evt.offsetX;
-    mouse_y = evt.offsetY;
-    render_log();
-  });
+  // mousedown for click&drag/handle_draw DIFFERENT FROM CLICK
   $('#canvas').mousedown(function(evt) {
-
-    mouse_x = evt.offsetX;
-    mouse_y = evt.offsetY;
-
-    last_mousex = mouse_x
-    last_mousey = mouse_y
-    mousedown = true;
-
-    if (edit_mode) {
-      let img_y = Math.floor(mouse_y/scale);
-      let img_x = Math.floor(mouse_x/scale);
-
-      mouse_trace.push([img_y, img_x]);
-    }
+    handle_mousedown(evt);
   });
-  $('#canvas').mouseup(function(evt) {
-    //on mouse release, clear image that shows where brush
-    //has gone during click&drag
-
-    mousedown = false; //no longer click&drag
-    let hidden_canvas = document.getElementById('hidden_canvas');
-    let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
-    hidden_ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-
-    //send click&drag coordinates to caliban.py to update annotations
-    if (edit_mode) {
-      mode.handle_draw();
-    }
-    //update display
-
-    //reset mouse_trace
-    mouse_trace = [];
-
-  });
+  // bind mouse movement
   $('#canvas').mousemove(function(evt) {
     // handle brush preview
-
-    let canvas = document.getElementById('canvas');
-    let ctx = canvas.getContext('2d');
-
-    // hidden canvas is keeping track of the brush
-    let hidden_canvas = document.getElementById('hidden_canvas');
-    let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
-
-    mouse_x = evt.offsetX;
-    mouse_y = evt.offsetY;
-
-    // don't bother with brush preview updating unless in edit mode
-    if (!mousedown && edit_mode) {
-      //only draw brush where mouse currently is
-      hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1])
-
-      // update brush params
-      brush.x = mouse_x;
-      brush.y = mouse_y;
-
-      // draw brush onto hidden_ctx
-      brush.draw(hidden_ctx);
-
-      // show the updated image (composite + brush preview)
-      // each time the preview changes
-      render_frame();
-
-    }
-    if (mousedown && edit_mode) {
-      // save coordinates of where mouse has gone
-      // convert down from scaled coordinates (what the canvas sees)
-      // to the coordinates of the original img array (what caliban sees)
-      let img_y = Math.floor(mouse_y/scale);
-      let img_x = Math.floor(mouse_x/scale);
-
-      mouse_trace.push([img_y, img_x]);
-      // update brush params but don't clear the image
-      brush.x = mouse_x;
-      brush.y = mouse_y;
-      brush.draw(hidden_ctx);
-      render_frame();
-    }
-      last_mousex = mouse_x;
-      last_mousey = mouse_y;
+    handle_mousemove(evt);
   });
-
+  // bind mouse button release (end of click&drag)
+  $('#canvas').mouseup(function(evt) {
+    handle_mouseup(evt);
+  });
+  // bind keypress
   window.addEventListener('keydown', function(evt) {
-
-    if (evt.key === 'z') {
-      rendering_raw = !rendering_raw;
-      render_frame();
-    } else if (evt.key === 'd') {
-      current_frame += 1;
-      if (current_frame >= max_frames) {
-        current_frame = 0;
-      }
-      fetch_and_render_frame();
-    } else if (evt.key === 'a') {
-      current_frame -= 1;
-      if (current_frame < 0) {
-        current_frame = max_frames - 1;
-      }
-      fetch_and_render_frame();
-    } else if (evt.key === "Escape") {
-      mode.clear();
-      render_log();
-    } else if (evt.key === 'h') {
-        current_highlight = !current_highlight;
-        render_frame();
-    } else if (evt.key === 'e' && mode.kind === Modes.none) {
-        edit_mode = !edit_mode;
-        render_frame();
-    } else {
-      mode.handle_key(evt.key);
-    }
+    mode.handle_key(evt.key);
   }, false);
 }
 
@@ -754,7 +832,7 @@ function action(action, info, frame = current_frame) {
         maxTrack = Math.max(... Object.keys(tracks).map(Number));
       }
       if (payload.tracks || payload.imgs) {
-        render_frame();
+        render_image_display();
       }
     },
     async: false
