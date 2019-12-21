@@ -111,7 +111,7 @@ class ZStackReview:
             frame = np.ma.masked_equal(frame, 0)
             return pngify(imgarr=frame,
                          vmin=0,
-                         vmax=self.num_cells[self.feature],
+                         vmax=np.max(self.cell_ids[self.feature]),
                          cmap=self.color_map)
 
     def get_array(self, frame):
