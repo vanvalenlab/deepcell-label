@@ -240,7 +240,7 @@ class Mode {
       //hole fill
       this.info = { "label": this.info.label,
                     "frame": current_frame};
-      this.kind = Modes.question;
+      this.kind = Modes.prompt;
       this.action = "fill_hole";
       this.prompt = "Select hole to fill in cell " + this.info.label;
       render_info_display();
