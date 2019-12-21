@@ -1259,10 +1259,14 @@ def load_npz(filename):
     data = BytesIO(filename)
     npz = np.load(data)
 
-    try:
+    if 'y' in npz.files:
+        raw_stack = npz['X']
+        annotation_stack = npz['y']
+
+    elif 'raw' in npz.files:
         raw_stack = npz['raw']
         annotation_stack = npz['annotated']
-    except:
+    else:
         raw_stack = npz[npz.files[0]]
         annotation_stack = npz[npz.files[1]]
 
