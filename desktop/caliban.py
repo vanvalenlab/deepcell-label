@@ -1067,13 +1067,7 @@ class ZStackReview:
 
                 # color pick tool
                 elif self.mode.kind == "PROMPT" and self.mode.action == "PICK COLOR":
-                    frame = self.annotated[self.current_frame]
-                    label = int(frame[self.y, self.x, self.feature])
-                    if label == 0:
-                        self.mode = Mode.none()
-                    elif label != 0:
-                        self.edit_value = label
-                        self.mode = Mode.none()
+                    self.handle_color_pick_helper()
 
                 # color picking for conversion brush
                 elif self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH TARGET":
@@ -1102,6 +1096,23 @@ class ZStackReview:
                 elif self.mode.kind == "PROMPT" and self.mode.action == "DRAW BOX":
                     self.predict_seed_1 = (self.y, self.x)
 
+    def handle_color_pick_helper(self):
+        '''
+        Takes the label clicked on, sets self.edit_value to that label, and then
+        exits color-picking mode. Doesn't change anything if click on background
+        but still exits color-picking mode.
+
+        Uses:
+            self.annotated, self.current_frame, self.y, self.x, and self.feature
+                to determine which label was clicked on
+            self.edit_value (modifies stored value)
+            self.mode (resets to Mode.none())
+        '''
+        # which label was clicked on
+        label = int(self.annotated[self.current_frame, self.y, self.x, self.feature])
+        if label != 0:
+            self.edit_value = label
+        self.mode = Mode.none()
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
 
