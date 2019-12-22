@@ -1071,27 +1071,9 @@ class ZStackReview:
 
                 # color picking for conversion brush
                 elif self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH TARGET":
-                    # pick the color you will be writing over with conversion brush
-                    frame = self.annotated[self.current_frame]
-                    label = int(frame[self.y, self.x, self.feature])
-                    if label == 0:
-                        pass
-                    elif label != 0:
-                        self.conversion_brush_target = label
-                        self.mode = Mode("PROMPT", action = "CONVERSION BRUSH VALUE")
+                    self.pick_conversion_target_helper()
                 elif self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH VALUE":
-                    # pick the color the conversion brush will be drawing
-                    frame = self.annotated[self.current_frame]
-                    label = int(frame[self.y, self.x, self.feature])
-                    if label == 0:
-                        pass
-                    elif label != 0:
-                        self.conversion_brush_value = label
-                        self.mode = Mode.none()
-                        self.mode = Mode("DRAW", action = "CONVERSION",
-                            conversion_brush_target = self.conversion_brush_target,
-                            conversion_brush_value = self.conversion_brush_value)
-
+                    self.pick_conversion_value_helper()
                 # start drawing bounding box for threshold prediction
                 elif self.mode.kind == "PROMPT" and self.mode.action == "DRAW BOX":
                     self.predict_seed_1 = (self.y, self.x)
@@ -1113,6 +1095,50 @@ class ZStackReview:
         if label != 0:
             self.edit_value = label
         self.mode = Mode.none()
+
+    def pick_conversion_target_helper(self):
+        '''
+        Click on a label while setting up conversion brush to choose "target"
+        (label that will be overwritten by the conversion brush). Nothing happens
+        if background is clicked on (remain in conversion brush target-picking mode,
+        as opposed to normal color-picking). When color is picked, move to next
+        step in setting conversion brush.
+
+        Uses:
+            self.annotated, self.current_frame, self.y, self.x, and self.feature
+                to determine which label was clicked on
+            self.conversion_brush_target to store clicked value
+            self.mode to move to next step of conversion brush setting
+        '''
+        # which label was clicked on
+        label = int(self.annotated[self.current_frame, self.y, self.x, self.feature])
+        if label != 0:
+            self.conversion_brush_target = label
+            # once value is set, move to setting next value
+            self.mode = Mode("PROMPT", action = "CONVERSION BRUSH VALUE")
+
+    def pick_conversion_value_helper(self):
+        '''
+        Click on a label while setting up conversion brush to choose "value"
+        (label that will be drawn by the conversion brush). Nothing happens
+        if background is clicked on (remain in conversion brush value-picking mode,
+        as with conversion brush target-picking). After label is picked, conversion
+        brush is set and will be in use.
+
+        Uses:
+            self.annotated, self.current_frame, self.y, self.x, and self.feature
+                to determine which label was clicked on
+            self.conversion_brush_value to store clicked value
+            self.mode to enter use of conversion brush
+        '''
+        # which label was clicked on
+        label = int(self.annotated[self.current_frame, self.y, self.x, self.feature])
+        if label != 0:
+            self.conversion_brush_value = label
+            # once value is set, turn on conversion brush
+            self.mode = Mode("DRAW", action = "CONVERSION",
+                conversion_brush_target = self.conversion_brush_target,
+                conversion_brush_value = self.conversion_brush_value)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
 
