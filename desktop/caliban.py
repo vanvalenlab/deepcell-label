@@ -2257,40 +2257,42 @@ class ZStackReview:
         '''
         helper function for actions that add a cell to the npz
         '''
-        #if cell already exists elsewhere in npz:
-        try:
-            old_frames = self.cell_info[feature][add_label]['frames']
-            updated_frames = np.append(old_frames, frame)
-            updated_frames = np.unique(updated_frames).tolist()
-            self.cell_info[feature][add_label].update({'frames': updated_frames})
-        #cell does not exist anywhere in npz:
-        except KeyError:
-            self.cell_info[feature].update({add_label: {}})
-            self.cell_info[feature][add_label].update({'label': str(add_label)})
-            self.cell_info[feature][add_label].update({'frames': [frame]})
-            self.cell_info[feature][add_label].update({'slices': ''})
+        if add_label != 0:
+            #if cell already exists elsewhere in npz:
+            try:
+                old_frames = self.cell_info[feature][add_label]['frames']
+                updated_frames = np.append(old_frames, frame)
+                updated_frames = np.unique(updated_frames).tolist()
+                self.cell_info[feature][add_label].update({'frames': updated_frames})
+            #cell does not exist anywhere in npz:
+            except KeyError:
+                self.cell_info[feature].update({add_label: {}})
+                self.cell_info[feature][add_label].update({'label': str(add_label)})
+                self.cell_info[feature][add_label].update({'frames': [frame]})
+                self.cell_info[feature][add_label].update({'slices': ''})
 
-            self.cell_ids[feature] = np.append(self.cell_ids[feature], add_label)
+                self.cell_ids[feature] = np.append(self.cell_ids[feature], add_label)
 
-            self.num_cells[feature] += 1
+                self.num_cells[feature] += 1
 
 
     def del_cell_info(self, feature, del_label, frame):
         '''
         helper function for actions that remove a cell from the npz
         '''
-        #remove cell from frame
-        old_frames = self.cell_info[feature][del_label]['frames']
-        updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame))).tolist()
-        self.cell_info[feature][del_label].update({'frames': updated_frames})
+        if del_label != 0:
+            #remove cell from frame
+            old_frames = self.cell_info[feature][del_label]['frames']
+            updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame))).tolist()
+            self.cell_info[feature][del_label].update({'frames': updated_frames})
 
-        #if that was the last frame, delete the entry for that cell
-        if self.cell_info[feature][del_label]['frames'] == []:
-            del self.cell_info[feature][del_label]
+            #if that was the last frame, delete the entry for that cell
+            if self.cell_info[feature][del_label]['frames'] == []:
+                del self.cell_info[feature][del_label]
 
-            #also remove from list of cell_ids
-            ids = self.cell_ids[feature]
-            self.cell_ids[feature] = np.delete(ids, np.where(ids == np.int64(del_label)))
+                #also remove from list of cell_ids
+                ids = self.cell_ids[feature]
+                self.cell_ids[feature] = np.delete(ids, np.where(ids == np.int64(del_label)))
 
 
     def create_cell_info(self, feature):
