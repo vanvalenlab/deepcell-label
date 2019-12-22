@@ -1159,6 +1159,12 @@ class ZStackReview:
         if self.edit_mode:
             if self.show_brush:
                 self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
+                brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
+                if self.mode.kind == "DRAW":
+                    self.brush_view[brush_area] = self.conversion_brush_value
+                else:
+                    self.brush_view[brush_area] = self.edit_value
+
             if self.mode.kind is not None:
                 if not self.show_brush and self.mode.action == "DRAW BOX":
                     #releasing the mouse is the cue to finalize the bounding box
