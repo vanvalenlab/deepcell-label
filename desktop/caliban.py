@@ -1009,59 +1009,40 @@ class ZStackReview:
         pyglet.app.run()
 
     def on_mouse_press(self, x, y, button, modifiers):
+        '''
+        Overwrite pyglet default window on_mouse_press event.
+        Takes x, y, button, modifiers as params (there are what the
+        window sends to this event when it is triggered by mouse press),
+        but x, y, and button are not used in this custom event.
+        Mouse press behavior changes depending on edit mode, mode.kind,
+        and mode.action. Helper functions are used for the different modes
+        of behavior. self.x and self.y are used for mouse position and are
+        updated when the mouse moves.
+
+        Uses:
+            self.edit_mode, self.mode.kind, self.mode.action to determine
+                what the response to mouse press should be
+            self.annotated, self.current_frame, self.y, self.x, self.feature
+                to determine which label was clicked on
+            helper functions to handle specific cases
+            self.predict_seed_1 to set corner of thresholding box
+        '''
 
         if not self.edit_mode:
-            frame = self.annotated[self.current_frame]
-            label = int(frame[self.y, self.x, self.feature])
+            label = int(self.annotated[self.current_frame, self.y, self.x, self.feature])
             if self.mode.kind is None:
-                if modifiers & key.MOD_CTRL:
-                    if label !=0:
-                        self.hole_fill_seed = (self.y, self.x)
-                        self.mode = Mode("QUESTION", action = "FLOOD CELL", label = label)
-                        self.highlighted_cell_one = label
-                elif modifiers & key.MOD_SHIFT:
-                    if label !=0:
-                        self.hole_fill_seed = (self.y, self.x)
-                        self.mode = Mode("QUESTION", action = "TRIM PIXELS",
-                            label = label)
-                        self.highlighted_cell_one = label
-                else:
-                    if label != 0:
-                        self.mode = Mode("SELECTED",
-                                         label=label,
-                                         frame=self.current_frame,
-                                         y_location=self.y, x_location=self.x)
-                        self.highlighted_cell_one = label
-                        self.highlighted_cell_two = -1
+                self.mouse_press_none_helper(modifiers, label)
             elif self.mode.kind == "SELECTED":
-                if label != 0:
-                    self.mode = Mode("MULTIPLE",
-                                     label_1=self.mode.label,
-                                     frame_1=self.mode.frame,
-                                     y1_location = self.mode.y_location,
-                                     x1_location = self.mode.x_location,
-                                     label_2=label,
-                                     frame_2=self.current_frame,
-                                     y2_location = self.y,
-                                     x2_location = self.x)
-                    self.highlighted_cell_one = self.mode.label_1
-                    self.highlighted_cell_two = label
-            elif self.mode.kind == "PROMPT" and self.mode.action == "FILL HOLE":
-                if label == 0:
-                    self.hole_fill_seed = (self.y, self.x)
-                if self.hole_fill_seed is not None:
-                    self.action_fill_hole()
-                    self.hole_fill_seed = None
-                    self.mode = Mode.none()
+                self.mouse_press_selected_helper(label)
+            elif self.mode.kind == "PROMPT":
+                self.mouse_press_prompt_helper(label)
 
         elif self.edit_mode:
-
             # draw using brush
             if self.mode.kind is None:
                 self.handle_draw_helper()
-
             elif self.mode.kind is not None:
-
+                # conversion brush
                 if self.mode.kind == "DRAW":
                     self.handle_draw_helper()
 
@@ -1074,9 +1055,88 @@ class ZStackReview:
                     self.pick_conversion_target_helper()
                 elif self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH VALUE":
                     self.pick_conversion_value_helper()
+
                 # start drawing bounding box for threshold prediction
                 elif self.mode.kind == "PROMPT" and self.mode.action == "DRAW BOX":
                     self.predict_seed_1 = (self.y, self.x)
+
+    def mouse_press_none_helper(self, modifiers, label):
+        '''
+        Handles mouse presses when not in edit mode and nothing is selected.
+        With modifiers (keys held down), can trigger ctrl-click to flood label,
+        shift-click to trim pixels, or normal click to select label.
+
+        Uses:
+            modifiers from mouse press event to determine if special click
+            label from click location (determined in on_mouse_press)
+            self.y and self.x to determine self.hole_fill_seed (special click functions)
+                or to add to self.mode.info as y_location and x_location
+            self.mode to prompt special click confirmation or to select label
+            self.highlighted_cell_one to update highlight info with label
+        '''
+        if label != 0:
+            if modifiers & key.MOD_CTRL:
+                self.hole_fill_seed = (self.y, self.x)
+                self.mode = Mode("QUESTION", action = "FLOOD CELL", label = label)
+            elif modifiers & key.MOD_SHIFT:
+                self.hole_fill_seed = (self.y, self.x)
+                self.mode = Mode("QUESTION", action = "TRIM PIXELS", label = label)
+            else:
+                self.mode = Mode("SELECTED",
+                                 label=label,
+                                 frame=self.current_frame,
+                                 y_location=self.y, x_location=self.x)
+            self.highlighted_cell_one = label
+
+    def mouse_press_selected_helper(self, label):
+        '''
+        Handles mouse presses when not in edit mode and when one label has already
+        been selected. Modifies self.mode to include info about both labels that have
+        been selected.
+
+        Uses:
+            label from click location (determined in on_mouse_press)
+            self.mode to store info about both selected labels
+            self.highlighted_cell_one and self.highlighted_cell_two to update
+                highlights appropriately; update cell_one because user could have
+                changed highlight with cycling after selecting first label
+                (note: this should change soon so that cycling the highlight deselects
+                whatever label is selected, as in browser caliban)
+        '''
+        if label != 0:
+            self.mode = Mode("MULTIPLE",
+                             label_1=self.mode.label,
+                             frame_1=self.mode.frame,
+                             y1_location = self.mode.y_location,
+                             x1_location = self.mode.x_location,
+                             label_2=label,
+                             frame_2=self.current_frame,
+                             y2_location = self.y,
+                             x2_location = self.x)
+            self.highlighted_cell_one = self.mode.label_1
+            self.highlighted_cell_two = label
+
+    def mouse_press_prompt_helper(self, label):
+        '''
+        Handles mouse presses when not in edit mode and in response to a
+        prompt (currently, hole fill is the only action with this pattern).
+        Only fills hole if user has clicked on an empty/background pixel (label is 0).
+        If appropriate pixel is clicked on, action_fill_hole is called before
+        resetting the hole_fill_seed and self.mode.
+
+        Uses:
+            self.mode.action to determine what response to mouse press should be
+            label from click location (determined in on_mouse_press) to check if
+                action should be carried out
+            self.hole_fill_seed to store start point for action_fill_hole
+            self.mode to clear action info once action has finished
+        '''
+        if self.mode.action == "FILL HOLE":
+            if label == 0:
+                self.hole_fill_seed = (self.y, self.x)
+                self.action_fill_hole()
+                self.hole_fill_seed = None
+                self.mode = Mode.none()
 
     def handle_color_pick_helper(self):
         '''
