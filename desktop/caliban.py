@@ -1061,59 +1061,12 @@ class ZStackReview:
 
             # draw using brush
             if self.mode.kind is None:
-                annotated = self.annotated[self.current_frame,:,:,self.feature]
-
-                brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
-
-                in_original = np.any(np.isin(annotated, self.edit_value))
-
-                #do not overwrite or erase labels other than the one you're editing
-                if not self.erase:
-                    annotated_draw = np.where(annotated==0, self.edit_value, annotated)
-                    annotated[brush_area] = annotated_draw[brush_area]
-                else:
-                    annotated_erase = np.where(annotated==self.edit_value, 0, annotated)
-                    annotated[brush_area] = annotated_erase[brush_area]
-
-                in_modified = np.any(np.isin(annotated, self.edit_value))
-
-                #cell deletion
-                if in_original and not in_modified:
-                    self.del_cell_info(feature = self.feature, del_label = self.edit_value, frame = self.current_frame)
-
-                #cell addition
-                elif in_modified and not in_original:
-                    self.add_cell_info(feature = self.feature, add_label = self.edit_value, frame = self.current_frame)
-
-                self.annotated[self.current_frame,:,:,self.feature] = annotated
-
-                if not self.hide_annotations:
-                    self.helper_update_composite()
+                self.handle_draw_helper()
 
             elif self.mode.kind is not None:
 
                 if self.mode.kind == "DRAW":
-                    # using conversion brush; similar to regular drawing
-                    annotated = self.annotated[self.current_frame,:,:,self.feature]
-
-                    brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
-
-                    in_original = np.any(np.isin(annotated, self.conversion_brush_target))
-
-                    #only change conversion brush target
-                    annotated_draw = np.where(annotated==self.conversion_brush_target, self.conversion_brush_value, annotated)
-                    annotated[brush_area] = annotated_draw[brush_area]
-
-                    #check to see if target is still in there
-                    in_modified = np.any(np.isin(annotated, self.conversion_brush_target))
-
-                    #cell deletion
-                    if in_original and not in_modified:
-                        self.del_cell_info(feature = self.feature, del_label = self.edit_value, frame = self.current_frame)
-
-                    self.annotated[self.current_frame,:,:,self.feature] = annotated
-                    if not self.hide_annotations:
-                        self.helper_update_composite()
+                    self.handle_draw_helper()
 
                 # color pick tool
                 elif self.mode.kind == "PROMPT" and self.mode.action == "PICK COLOR":
@@ -1176,63 +1129,20 @@ class ZStackReview:
 
         if self.edit_mode:
             if self.show_brush and self.mode.kind is None:
-                annotated = self.annotated[self.current_frame,:,:,self.feature]
-
-                #self.x and self.y are different from the mouse's x and y
-                x_loc = self.x
-                y_loc = self.y
-
-                brush_area = circle(y_loc, x_loc, self.brush_size, (self.height,self.width))
-
                 #show where brush has drawn this time
+                brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
                 self.brush_view[brush_area] = self.edit_value
 
-                in_original = np.any(np.isin(annotated, self.edit_value))
-
-                #do not overwrite or erase labels other than the one you're editing
-                if not self.erase:
-                    annotated_draw = np.where(annotated==0, self.edit_value, annotated)
-                    annotated[brush_area] = annotated_draw[brush_area]
-                else:
-                    annotated_erase = np.where(annotated==self.edit_value, 0, annotated)
-                    annotated[brush_area] = annotated_erase[brush_area]
-
-                in_modified = np.any(np.isin(annotated, self.edit_value))
-
-                #cell deletion
-                if in_original and not in_modified:
-                    self.del_cell_info(feature = self.feature, del_label = self.edit_value, frame = self.current_frame)
-
-                #cell addition
-                elif in_modified and not in_original:
-                    self.add_cell_info(feature = self.feature, add_label = self.edit_value, frame = self.current_frame)
-
-                self.annotated[self.current_frame,:,:,self.feature] = annotated
+                self.handle_draw_helper()
 
             elif self.mode.kind is not None:
                 # conversion brush
                 if self.mode.kind == "DRAW":
-                    # using conversion brush; similar to regular drawing
-                    annotated = self.annotated[self.current_frame,:,:,self.feature]
-
+                    # update brush preview to show path brush has taken
                     brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
-
                     self.brush_view[brush_area] = self.conversion_brush_value
 
-                    in_original = np.any(np.isin(annotated, self.conversion_brush_target))
-
-                    #only change conversion brush target
-                    annotated_draw = np.where(annotated==self.conversion_brush_target, self.conversion_brush_value, annotated)
-                    annotated[brush_area] = annotated_draw[brush_area]
-
-                    #check to see if target is still in there
-                    in_modified = np.any(np.isin(annotated, self.conversion_brush_target))
-
-                    #cell deletion
-                    if in_original and not in_modified:
-                        self.del_cell_info(feature = self.feature, del_label = self.edit_value, frame = self.current_frame)
-
-                    self.annotated[self.current_frame,:,:,self.feature] = annotated
+                    self.handle_draw_helper()
 
                 #dragging the bounding box for threshold prediction
                 elif not self.show_brush and self.mode.action == "DRAW BOX":
@@ -1287,6 +1197,74 @@ class ZStackReview:
             # threshold predictions will show up also
             if not self.hide_annotations:
                 self.helper_update_composite()
+
+    def handle_draw_helper(self):
+        '''
+        Carries out brush drawing on annotation in edit mode. Handles both conversion brush
+        and normal drawing or erasing. Does not update the composite image so this can be called
+        either by mouse_press or mouse_drag.
+
+        brush_val is what the brush is drawing *with*, while editing_val is what the brush is
+        drawing *over*. In normal drawing mode, brush_val is whatever the brush is set to, while
+        editing_val is the background (0).
+
+        Uses:
+            self.mode.kind to determine if drawing normally or using conversion brush
+            self.edit_value and self.erase if using normal brush
+            self.conversion_brush_target and self.conversion_brush_value if using conversion brush
+            self.annotated, self.current_frame, self.feature to get frame to modify
+            self.x and self.y to center brush
+            self.brush_size to create skimage.draw.circle with that radius
+            self.height and self.width to limit boundaries of brush (skimage.draw.circle)
+
+        '''
+
+        # check which mode we are drawing in and set drawing variables
+        # normal draw/erase
+        if self.mode.kind is None:
+            if self.erase:
+                brush_val = 0
+                editing_val = self.edit_value
+            else:
+                brush_val = self.edit_value
+                editing_val = 0
+
+        # conversion brush
+        elif self.mode.kind == "DRAW":
+            # erase does not apply in conversion brush mode
+            brush_val = self.conversion_brush_value
+            editing_val = self.conversion_brush_target
+
+        # take current frame and check for presence of brush_val and editing_val
+        # (determines whether to add or del any cell info from dictionaries)
+        annotated = self.annotated[self.current_frame,:,:,self.feature]
+        brush_val_in_original = np.any(np.isin(annotated, brush_val))
+        editing_val_in_original = np.any(np.isin(annotated, editing_val))
+
+        # create image where all editing_val pixels are replaced with brush val
+        annotated_draw = np.where(annotated==editing_val, brush_val, annotated)
+        # only modify 'annotated' within brush_area
+        brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
+        annotated[brush_area] = annotated_draw[brush_area]
+
+        # check to see if any labels have been added or removed from frame
+        # possible to add new label or delete target label
+        brush_val_in_modified = np.any(np.isin(annotated, brush_val))
+        editing_val_in_modified = np.any(np.isin(annotated, editing_val))
+
+        # label deletion
+        if editing_val_in_original and not editing_val_in_modified:
+            self.del_cell_info(feature = self.feature, del_label = editing_val, frame = self.current_frame)
+
+        # label addition
+        if brush_val_in_modified and not brush_val_in_original:
+            self.add_cell_info(feature = self.feature, add_label = brush_val, frame = self.current_frame)
+
+        # annotated still refers to self.annotated[self.current_frame,:,:,self.feature] so we don't need to update that
+
+        # would need to add back if adding a "check if image modified" step like browser caliban has
+
+        # self.annotated[self.current_frame,:,:,self.feature] = annotated
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self.draw_raw:
