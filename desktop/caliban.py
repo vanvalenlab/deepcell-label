@@ -1519,10 +1519,22 @@ class ZStackReview:
             self.helper_update_composite()
 
     def on_draw(self):
+        '''
+        Event handler for pyglet window, redraws all content of screen after
+        window events. Clears window, calculates screen scaling, then redraws
+        the displayed image, lines around that image (to distinguish from black
+        background of the rest of the window), and information text in the sidebar.
+        '''
+        # clear old information
         self.window.clear()
+        # TODO: move self.scale_screen into self.window.on_resize, which is more appropriate
         self.scale_screen()
+        # TODO: use a batch to consolidate all of the "drawing" calls
+        # draw relevant image
         self.draw_current_frame()
+        # draw lines around the image to distinguish it from rest of window
         self.draw_line()
+        # draw information text in sidebar
         self.draw_label()
 
     def scale_screen(self):
