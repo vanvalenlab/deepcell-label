@@ -2089,11 +2089,35 @@ class ZStackReview:
             return self.annotated[self.current_frame]
 
     def draw_line(self):
-        pyglet.graphics.draw(4, pyglet.gl.GL_LINES,
-            ("v2f", (self.sidebar_width, self.window.height,
+        '''
+        Draw thin white lines around the area of the window where the image
+        is being displayed. Distinguishes interactable portion of window from
+        information display more clearly but has no other purpose.
+
+        Uses:
+            self.scale_factor, self.width, self.height to calculate area of
+                window where image is being displayed
+            self.sidebar_width to offset lines appropriately
+        '''
+
+        # either one vertical line to separate left edge of image from sidebar
+        # or box around whole image (but I'm leaning towards box)
+        # TODO: need box to be 1 pixel removed from each edge because drawing it at
+        # these exact height slightly obscures the image itself--less of a problem
+        # at larger scales, more of a problem at scale_factor = 1 or 2
+
+        frame_width = self.scale_factor * self.width
+        frame_height = self.scale_factor * self.height
+
+        pyglet.graphics.draw(8, pyglet.gl.GL_LINES,
+            ("v2f", (self.sidebar_width, frame_height,
                      self.sidebar_width, 0,
                      self.sidebar_width, 0,
-                     self.window.width, 0))
+                     self.sidebar_width + frame_width, 0,
+                     self.sidebar_width + frame_width, 0,
+                     self.sidebar_width + frame_width, frame_height,
+                     self.sidebar_width + frame_width, frame_height,
+                     self.sidebar_width, frame_height))
         )
 
     def draw_label(self):
