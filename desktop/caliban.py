@@ -993,8 +993,7 @@ class ZStackReview:
         self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
         self.composite_view = np.zeros((1,self.height,self.width,3))
         self.show_brush = True
-        self.predict_seed_1 = None
-        self.predict_seed_2 = None
+        self.predict_seed = None
         self.invert = True
         self.sobel_on = False
         self.adapthist_on = False
@@ -1025,7 +1024,7 @@ class ZStackReview:
             self.annotated, self.current_frame, self.y, self.x, self.feature
                 to determine which label was clicked on
             helper functions to handle specific cases
-            self.predict_seed_1 to set corner of thresholding box
+            self.predict_seed to set corner of thresholding box
         '''
 
         if not self.edit_mode:
@@ -1058,7 +1057,7 @@ class ZStackReview:
 
                 # start drawing bounding box for threshold prediction
                 elif self.mode.kind == "PROMPT" and self.mode.action == "DRAW BOX":
-                    self.predict_seed_1 = (self.y, self.x)
+                    self.predict_seed = (self.y, self.x)
 
     def mouse_press_none_helper(self, modifiers, label):
         '''
@@ -1201,90 +1200,153 @@ class ZStackReview:
                 conversion_brush_value = self.conversion_brush_value)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        '''
+        Overwrite default pyglet window on_mouse_drag event.
+        Takes x, y, button, modifiers as params (there are what the
+        window sends to this event when it is triggered by mouse drag),
+        but button and modifiers are not used in this custom event. X and y
+        are used to update self.x and self.y (coordinates of mouse within the
+        image; also updated when mouse moves). Mouse drag behavior changes depending
+        on edit mode, mode.kind, and mode.action. Helper functions are used for the
+        different modes of behavior.
 
+        Uses:
+            self.update_mouse_position_helper to update current self.x and self.y from
+                event x and y
+            self.edit_mode, self.mode.kind, self.mode.action, self.show_brush
+                to determine response to mouse drag
+
+        Note: self.show_brush is not a user-toggled option but is used to display
+            the correct preview (threshold box vs path of brush)
+        '''
+        # always update self.x and self.y when mouse has moved
+        self.update_mouse_position_helper(x, y)
+
+        # mouse drag only has special behavior in pixel-editing mode
+        if self.edit_mode:
+            # drawing with brush (normal or conversion)
+            if self.show_brush:
+                # update brush_view if self.mode.kind is DRAW or None, but not PROMPT
+                brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
+                # conversion brush
+                if self.mode.kind == "DRAW":
+                    self.brush_view[brush_area] = self.conversion_brush_value
+                # normal brush
+                elif self.mode.kind is None:
+                    self.brush_view[brush_area] = self.edit_value
+                # modify annotation
+                self.handle_draw_helper()
+
+            # dragging the bounding box for threshold prediction
+            elif not self.show_brush and self.mode.action == "DRAW BOX":
+                # reset self.brush_view
+                self.brush_view = np.zeros(self.brush_view.shape)
+
+                # use self.brush_view to display a box; need to calculate min/max
+                # or else box will not always display
+                top_edge = min(self.predict_seed[0], self.y)
+                bottom_edge = max(self.predict_seed[0], self.y)
+                left_edge = min(self.predict_seed[1], self.x)
+                right_edge = max(self.predict_seed[1], self.x)
+
+                self.brush_view[top_edge:bottom_edge, left_edge:right_edge] = self.edit_value
+
+    def update_mouse_position_helper(self, x, y):
+        '''
+        Helper function for adjusting self.x and self.y upon mouse movement.
+        Mouse movement and drag are mutually exclusive, so both event handlers
+        (on_mouse_drag and on_mouse_motion) use this helper function. Converts
+        window x and y into image x and y, as we need image x and y (self.x and
+        self.y) to display label info and carry out actions, but we do not need
+        window/event x and y for anything.
+
+        Uses:
+            x and y, values passed in from event handling, location of mouse cursor
+                in the window (relative to corner of window)
+            self.sidebar_width to offset x location
+            self.scale_factor to rescale x and y coordinates down to scale of original
+                image
+            self.width and self.height to check whether mouse cursor is in area of image
+                (self.x and self.y will not update if mouse has moved outside of image)
+        '''
+        # convert event x to image x by accounting for sidebar width, then scale
         x -= self.sidebar_width
-        x //= max(self.scale_factor, 1)
-        y = self.height - y // max(self.scale_factor, 1)
+        x //= self.scale_factor
 
+        # convert event y to image y by rescaling and changing coordinates:
+        # pyglet y has increasing y at the top of the screen, opposite convention of array indices
+        y = self.height - y // self.scale_factor
+
+        # check that mouse cursor is within bounds of image before updating
         if 0 <= x < self.width and 0 <= y < self.height:
             self.x, self.y = x, y
 
-        if self.edit_mode:
-            if self.show_brush and self.mode.kind is None:
-                #show where brush has drawn this time
-                brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
-                self.brush_view[brush_area] = self.edit_value
-
-                self.handle_draw_helper()
-
-            elif self.mode.kind is not None:
-                # conversion brush
-                if self.mode.kind == "DRAW":
-                    # update brush preview to show path brush has taken
-                    brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
-                    self.brush_view[brush_area] = self.conversion_brush_value
-
-                    self.handle_draw_helper()
-
-                #dragging the bounding box for threshold prediction
-                elif not self.show_brush and self.mode.action == "DRAW BOX":
-                    self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
-
-                    bbox_corner_live = (self.y, self.x)
-
-                    # show a box with self.brush_view
-                    top_edge = min(self.predict_seed_1[0], bbox_corner_live[0])
-                    bottom_edge = max(self.predict_seed_1[0], bbox_corner_live[0])
-                    left_edge = min(self.predict_seed_1[1], bbox_corner_live[1])
-                    right_edge = max(self.predict_seed_1[1], bbox_corner_live[1])
-
-                    self.brush_view[top_edge:bottom_edge, left_edge:right_edge] = self.edit_value
-
-
     def on_mouse_release(self, x, y, buttons, modifiers):
+        '''
+        Overwrite pyglet default window on_mouse_release event.
+        Takes x, y, button, modifiers as params (there are what the
+        window sends to this event when it is triggered by mouse press),
+        but x, y, button, and modifiers are not used in this custom event.
+        Mouse release only triggers special behavior while in pixel-editing
+        mode; mode.action and self.show_brush are used to determine which
+        actions to carry out (threholding, updating brush preview appropriately).
+        Helper functions are called for some complex updates.
+
+        Uses:
+            self.edit_mode, self.show_brush, self.mode.action, self.hide_annotations
+                to determine which updates need to be carried out upon mouse release
+                (if any)
+            self.handle_threshold_helper finalizes thresholding bbox, carries out
+                thresholding, and does necessary bookkeeping
+            self.update_brushview_helper to clear brush trace and update with current
+                brush view
+            self.helper_update_composite to update the edit_mode display with whatever
+                changes were applied to the annotation during mouse drag (brush) or as
+                a result of mouse release (thresholding)
+        '''
+        # mouse release only has special behavior in pixel-editing mode; most custom
+        # behavior during a mouse click is handled in the mouse press event
         if self.edit_mode:
+            # releasing the mouse finalizes bounding box for thresholding
+            if not self.show_brush and self.mode.action == "DRAW BOX":
+                self.handle_threshold_helper()
+                # self.show_brush reset to True here, so brush preview will render
+
+            # update brush view (prevents brush flickering)
             if self.show_brush:
-                self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
-                brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
-                if self.mode.kind == "DRAW":
-                    self.brush_view[brush_area] = self.conversion_brush_value
-                else:
-                    self.brush_view[brush_area] = self.edit_value
+                self.update_brushview_helper()
 
-            if self.mode.kind is not None:
-                if not self.show_brush and self.mode.action == "DRAW BOX":
-                    #releasing the mouse is the cue to finalize the bounding box
-                    self.predict_seed_2 = (self.y, self.x)
-                    #send to threshold function
-
-                    top_edge = min(self.predict_seed_1[0], self.y)
-                    bottom_edge = max(self.predict_seed_1[0], self.y)
-                    left_edge = min(self.predict_seed_1[1], self.x)
-                    right_edge = max(self.predict_seed_1[1], self.x)
-
-                    if top_edge != bottom_edge and left_edge != right_edge:
-                        threshold_prediction = self.action_threshold_predict(top_edge, bottom_edge, left_edge, right_edge)
-
-                        #put prediction in without overwriting
-                        predict_area = self.annotated[self.current_frame, top_edge:bottom_edge, left_edge:right_edge, self.feature]
-                        safe_overlay = np.where(predict_area == 0, threshold_prediction, predict_area)
-
-                        self.annotated[self.current_frame,top_edge:bottom_edge,left_edge:right_edge,self.feature] = safe_overlay
-
-                    # TODO: it would be great if a preview of the prediction was displayed
-                    # and then the user confirms that they want to add it to the annotation
-                    # otherwise they can cancel it, or adjust the brightness to change the prediction
-                    # before confirming. Would probably need more mode handling
-
-                    # clear bounding box and Mode
-                    self.show_brush = True
-                    self.mode = Mode.none()
-
-            # moved update_composite here from on_mouse_drag as compromise
-            # will still be able to see brush view if drawing, so you aren't drawing blind
-            # threshold predictions will show up also
+            # annotation has changed (either during mouse drag for brush, or upon release
+            # for threshold), update the image composite with the current annotation
             if not self.hide_annotations:
                 self.helper_update_composite()
+
+    def handle_threshold_helper(self):
+        '''
+        Helper function to do pre- and post-action bookkeeping for thresholding.
+        Figures out indices to send to action_threshold_predict, calls action_threshold_predict,
+        then resets variables to return to regular pixel-editing brush functionality. Used by
+        on_mouse_release.
+
+        Uses:
+            self.predict_seed, self.y, self.x to calculate appropriate edges of bounding box
+            self.action_threshold_predict to carry out thresholding and annotation update
+            self.show_brush and self.mode are reset at end to finish/clear thresholding behavior
+        '''
+        # min/max need to be calculated for correct numpy array slicing
+        top_edge = min(self.predict_seed[0], self.y)
+        bottom_edge = max(self.predict_seed[0], self.y)
+        left_edge = min(self.predict_seed[1], self.x)
+        right_edge = max(self.predict_seed[1], self.x)
+
+        # check to make sure box is actually a box and not a line
+        if top_edge != bottom_edge and left_edge != right_edge:
+            threshold_prediction = self.action_threshold_predict(top_edge,
+                bottom_edge, left_edge, right_edge)
+
+        # clear bounding box and Mode
+        self.show_brush = True
+        self.mode = Mode.none()
 
     def handle_draw_helper(self):
         '''
@@ -1323,6 +1385,11 @@ class ZStackReview:
             brush_val = self.conversion_brush_value
             editing_val = self.conversion_brush_target
 
+        # could be in the middle of setting conversion brush, in which case
+        # shouldn't be attempting to draw
+        else:
+            return
+
         # take current frame and check for presence of brush_val and editing_val
         # (determines whether to add or del any cell info from dictionaries)
         annotated = self.annotated[self.current_frame,:,:,self.feature]
@@ -1354,45 +1421,102 @@ class ZStackReview:
 
         # self.annotated[self.current_frame,:,:,self.feature] = annotated
 
+    def on_mouse_motion(self, x, y, dx, dy):
+        '''
+        Overwrite default pyglet window on_mouse_motion event.
+        Takes x, y, dx, dy as params (these are what the window sends
+        to this event when it is triggered by mouse motion), but dx and dy
+        are not used in this custom event. X and y are used to update self.x
+        and self.y (coordinates of mouse within the image; also updated during
+        mouse drag). Updates brush preview (pixel-editing mode) when appropriate.
+        Uses:
+            self.update_mouse_position_helper to update current self.x and self.y from
+                event x and y
+            self.edit_mode, self.mode.kind, self.show_brush to determine when to display
+                brush preview
+            self.brush_view, self.y, self.x, self.brush_size, self.height, self.width,
+                self.conversion_brush_value, self.edit_value to create brush preview
+
+        Note: self.show_brush is not a user-toggled option but is used to display
+            the correct preview (threshold box vs path of brush)
+        '''
+        # always update self.x and self.y when mouse has moved
+        self.update_mouse_position_helper(x, y)
+
+        # brush_view is only updated when in pixel-editing mode
+        if self.edit_mode:
+            # don't display brush preview if thresholding
+            if self.show_brush:
+                self.update_brushview_helper()
+
+    def update_brushview_helper(self):
+        '''
+        Helper function to redraw brush after brush variables have changed.
+        Brush variables that may change are position, color, and size.
+
+        Uses:
+            self.brush_view to update (clear) whatever preview brush_view had been
+                showing (either thresholding bbox or brush trace)
+            self.y, self.x, self.brush_size, self.height, self.width, self.mode.kind,
+                self.conversion_brush_value, self.edit_value to show appropriate
+                preview of brush
+        '''
+        # clear old brush_view
+        self.brush_view = np.zeros(self.brush_view.shape)
+        brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
+        # color/value of brush view depends on which brush mode we are in
+        if self.mode.kind == "DRAW":
+            self.brush_view[brush_area] = self.conversion_brush_value
+        else:
+            self.brush_view[brush_area] = self.edit_value
+
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
+        '''
+        Overwrite default pyglet window on_mouse_scroll event.
+        Takes x, y, scroll_x, scroll_y as params (these are what the window
+        sends to this event when it is triggered by scrolling), but x, y, and
+        scroll_x are not used in this custom event. Scroll_y is used to change
+        brightness of raw image or the range of label colors used, depending
+        on the context. Note: while in edit_mode (pixel-editing), scrolling *will*
+        cause the composite to adjust multiple times, as there isn't a good way to
+        check for "finished scrolling"; as a result this will cause lag if user
+        scrolls too much in edit_mode.
+
+        Uses:
+            self.draw_raw to determine which image to adjust (and which adjustment to use)
+            self.max_intensity and self.channel to set or change the brightness of raw images
+            self.cell_ids, self.adjustment, self.feature to determine when to stop decreasing
+                self.adjustment (applied to annotations when drawing to determine range of colormap
+                applied to frame)
+            self.edit_mode, self.hide_annotations to check if the composite image should be updated
+        '''
+        # adjust brightness of raw image, if looking at raw image
+        # (also applies to edit mode if self.draw_raw is True)
         if self.draw_raw:
+            # self.max_intensity[self.channel] is initialized as None, set to value
+            # based on maximum brightness of image
             if self.max_intensity[self.channel] is None:
                 self.max_intensity[self.channel] = np.max(self.get_current_frame()[:,:,self.channel])
+            # self.max_intensity[self.channel] has a value so we can adjust it
             else:
+                # check minimum brightness of image as lower bound of brightness adjustment
                 min_intensity = np.min(self.raw[self.current_frame,:,:,self.channel])
+                # adjust max brightness value by a percentage of the current value
                 raw_adjust = max(int(self.max_intensity[self.channel] * 0.02), 1)
+                # set the adjusted max brightness value, but it should never be the same or less than
+                # the minimum brightness in the image
                 self.max_intensity[self.channel] = max(self.max_intensity[self.channel] - raw_adjust * scroll_y,
                                                         min_intensity + 1)
 
+        # adjusting colormap range of annotations
         elif not self.draw_raw:
+            # self.adjustment value for the current feature should never reduce possible colors to 0
             if np.max(self.cell_ids[self.feature]) + (self.adjustment[self.feature] - 1 * scroll_y) > 0:
                 self.adjustment[self.feature] = self.adjustment[self.feature] - 1 * scroll_y
 
+        # color/brightness adjustments will change what the composited image looks like
         if self.edit_mode and not self.hide_annotations:
             self.helper_update_composite()
-
-    def on_mouse_motion(self, x, y, dx, dy):
-        x -= self.sidebar_width
-        x //= max(self.scale_factor, 1)
-        y = self.height - y // max(self.scale_factor,1)
-
-        if 0 <= x < self.width and 0 <= y < self.height:
-            self.x, self.y = x, y
-
-        if self.edit_mode:
-            if self.show_brush:
-                #display brush size
-
-                #which color to display depends on conversion brush or normal brush
-                if self.mode.kind == "DRAW":
-                    brush_val = self.conversion_brush_value
-                else:
-                    brush_val = self.edit_value
-
-                self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
-                brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
-                self.brush_view[brush_area] = brush_val
-
 
     def on_draw(self):
         self.window.clear()
@@ -2002,11 +2126,15 @@ class ZStackReview:
         hyst = filters.apply_hysteresis_threshold(image = predict_area, low = threshold, high = threshold_stringent)
         ann_threshold = np.where(hyst, new_label, 0)
 
+        #put prediction in without overwriting
+        predict_area = self.annotated[self.current_frame, y1:y2, x1:x2, self.feature]
+        safe_overlay = np.where(predict_area == 0, ann_threshold, predict_area)
+
         # don't need to update cell_info unless an annotation has been added
-        if np.any(np.isin(ann_threshold, new_label)):
+        if np.any(np.isin(safe_overlay, new_label)):
             self.add_cell_info(feature=self.feature, add_label=new_label, frame = self.current_frame)
 
-        return ann_threshold
+            self.annotated[self.current_frame,y1:y2,x1:x2,self.feature] = safe_overlay
 
     def action_delete_mask(self):
         '''
