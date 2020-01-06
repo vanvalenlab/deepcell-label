@@ -2121,34 +2121,71 @@ class ZStackReview:
         )
 
     def draw_label(self):
-        # always use segmented output for label, not raw
-        frame = self.annotated[self.current_frame,:,:,self.feature]
-        label = int(frame[self.y, self.x])
+        '''
+        Coordinates information display (text) on left side of screen.
+        '''
+        # TODO: only update labels when the content changes?
+        # TODO: batch graphics?
+        self.render_cell_label_info_helper()
+
+        self.render_edit_mode_info_helper()
+
+        self.render_frame_info_helper()
+
+    def render_cell_label_info_helper(self):
+        '''
+        When cursor is over a label, displays information about that label
+        at the bottom of the information column.
+        '''
+        # value of annotation at current position of mouse
+        label = int(self.annotated[self.current_frame,self.y,self.x,self.feature])
+
         if label != 0:
             cell_info = self.cell_info[self.feature][label].copy()
 
+            # display "frames" info nicely ("1,2,3,5" becomes "1-3,5")
             slices = list(map(list, consecutive(cell_info['frames'])))
             slices = '[' + ', '.join(["{}".format(a[0])
                                 if len(a) == 1 else "{}-{}".format(a[0], a[-1])
                                 for a in slices]) + ']'
 
+            # update slices info
+            # TODO: does this need to be here? seems like slices could be populated upon
+            # initialization, then updated as needed when frames change, instead of every time
+            # an event (incl. mouse motion) fires
             self.cell_info[self.feature][label].update({'slices' : slices})
 
+            # generate text from cell_info and display_info (use slices instead of frames)
             text = '\n'.join("{:10}{}".format(str(k)+':', self.cell_info[self.feature][label][k])
                               for k in self.display_info)
+        # display nothing if not hovering over a label
         else:
             text = ''
 
+        # add info from self.mode (eg, prompts or "selected", etc)
         text += self.mode.render()
 
+        # TODO: render label in a batch
+        # create pyglet label anchored to bottom of left side
         cell_info_label = pyglet.text.Label(text, font_name="monospace",
                                        anchor_x="left", anchor_y="bottom",
                                        width=self.sidebar_width,
                                        multiline=True,
                                        x=5, y=5, color=[255]*4)
 
+        # draw the label
+        cell_info_label.draw()
+
+    def render_edit_mode_info_helper(self):
+        '''
+        Display information about pixel-editing mode (if in that mode).
+        Pixel-editing information such as brush attributes displayed in
+        center of information column.
+        '''
+        # TODO: display info about image settings (eg, which filters are turned on)
+
+        # only display while in pixel-editing mode
         if self.edit_mode:
-            edit_mode = "on"
             brush_size_display = "brush size: {}".format(self.brush_size)
             edit_label_display = "editing label: {}".format(self.edit_value)
             if self.erase:
@@ -2157,6 +2194,8 @@ class ZStackReview:
                 erase_mode = "off"
             draw_or_erase = "eraser mode: {}".format(erase_mode)
 
+            # TODO: render label in a batch
+            # create pyglet label anchored to middle of left side
             edit_label = pyglet.text.Label('{}\n{}\n{}'.format(brush_size_display,
                                                         edit_label_display,
                                                         draw_or_erase),
@@ -2166,25 +2205,44 @@ class ZStackReview:
                                             multiline=True,
                                             x=5, y=self.window.height//2,
                                             color=[255]*4)
+            # draw the label
             edit_label.draw()
 
+    def render_frame_info_helper(self):
+        '''
+        Display information about the frame currently being viewed.
+        Always displays information; highlight info is only info
+        conditionally displayed by this label. This info is displayed
+        at top of info column.
+        '''
+        # TODO: display currently used colormap
 
+        # highlighting doesn't apply in pixel-editing mode (yet)
+        # so highlight info is blank in that context
+        if self.edit_mode:
+            edit_mode = "on"
             highlight_text = ""
 
+        # label-editing mode, where highlighting is an option
         else:
             edit_mode = "off"
+            # if highlight is on, show which labels are highlighted
             if self.highlight:
+                # two labels highlighted
                 if self.highlighted_cell_two != -1:
                     highlight_text = "highlight: on\nhighlighted cell 1: {}\nhighlighted cell 2: {}".format(self.highlighted_cell_one, self.highlighted_cell_two)
+                # one label highlighted
                 elif self.highlighted_cell_one != -1:
                     highlight_text = "highlight: on\nhighlighted cell: {}".format(self.highlighted_cell_one)
+                # no labels highlighted
                 else:
                     highlight_text = "highlight: on"
+            # highlighting turned off
             else:
                 highlight_text = "highlight: off"
 
-
-
+        # TODO: render label in a batch
+        # create pyglet label anchored to top of left side
         frame_label = pyglet.text.Label("frame: {}\n".format(self.current_frame)
                                         + "channel: {}\n".format(self.channel)
                                         + "feature: {}\n".format(self.feature)
@@ -2196,8 +2254,7 @@ class ZStackReview:
                                         multiline=True,
                                         x=5, y=self.window.height - 5,
                                         color=[255]*4)
-
-        cell_info_label.draw()
+        # draw the label
         frame_label.draw()
 
     def draw_current_frame(self):
