@@ -1560,244 +1560,526 @@ class ZStackReview:
         self.scale_factor = max(1, self.scale_factor)
 
     def on_key_press(self, symbol, modifiers):
-        # Set scroll speed (through sequential frames) with offset
-        offset = 5 if modifiers & key.MOD_SHIFT else 1
+        '''
+        Event handler for keypresses in pyglet window. (Mouse does not have
+        to be within window for keypress events to occur, as long as window
+        has focus.) Keypresses are context-dependent and are organized into
+        helper functions grouped by context. Universal keypresses apply in
+        any context, while other keypresses (eg, those that trigger actions)
+        are naturally grouped together. Some keybinds occur in specific contexts
+        and may be grouped into "misc" helper functions.
 
-        # universal keybinds
+        Actions that modify the file are carried out in two steps: a keybind that
+        prompts the action, and a subsequent keybind to confirm the decision (and
+        choose options, where applicable). Any keybind whose effect is to set
+        self.mode to a new Mode object requires a secondary action, often a keybind,
+        to confirm. When actions are carried out, self.mode is reset to Mode.none().
 
-        #cycle through colormaps
-        if modifiers & key.MOD_SHIFT:
-            if symbol == key.UP:
-                if self.current_cmap == len(self.cmap_options) - 1:
-                    self.current_cmap = 0
-                elif self.current_cmap < len(self.cmap_options) -1:
-                    self.current_cmap += 1
-            if symbol == key.DOWN:
-                if self.current_cmap == 0:
-                    self.current_cmap = len(self.cmap_options) - 1
-                elif self.current_cmap > 0:
-                    self.current_cmap -= 1
+        Uses:
+            symbol: integer representation of keypress, compare against pyglet.window.key
+                (modifiers do not affect symbol, so "a" and "A" are both key.A)
+            modifiers: keys like shift, ctrl that are held down at the time of keypress
+            (see pyglet docs for further explanation of these inputs and list of modifiers)
+        '''
+        # TODO: on_key_press for any key registers it as being held down
+        # which is changed back on_key_release
+        # this would allow other types of actions to be modified
+        # eg, hold spacebar while clicking and dragging to pan screen,
+        # or hold shift while scrolling mouse wheel to change minimum brightness
+        # (I think) -- KeyStateHandler might be this
 
+        # always carried out regardless of context
+        self.universal_keypress_helper(symbol, modifiers)
+
+        # context: only while in pixel-editing mode
+        if self.edit_mode:
+            # context: always carried out in pixel-editing mode (eg, image filters)
+            self.edit_mode_universal_keypress_helper(symbol, modifiers)
+            # context: specific cases
+            self.edit_mode_misc_keypress_helper(symbol, modifiers)
+            # context: only when another action is not being performed (eg, thresholding)
+            if self.mode.kind is None:
+                self.edit_mode_none_keypress_helper(symbol, modifiers)
+
+        # context: only while in label-editing mode
+        else:
+            # unusual context for keybinds
+            self.label_mode_misc_keypress_helper(symbol, modifiers)
+            # context: no labels selected
+            if self.mode.kind is None:
+                self.label_mode_none_keypress_helper(symbol, modifiers)
+            # context: one label selected
+            elif self.mode.kind == "SELECTED":
+                self.label_mode_single_keypress_helper(symbol, modifiers)
+            # context: two labels selected
+            elif self.mode.kind == "MULTIPLE":
+                self.label_mode_multiple_keypress_helper(symbol, modifiers)
+            # context: responding to question (eg, confirming an action)
+            elif self.mode.kind == "QUESTION":
+                self.label_mode_question_keypress_helper(symbol, modifiers)
+
+    def universal_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that
+        are handled here apply in every situation (no logic checks
+        within on_key_press before universal_keypress_helper is called!)
+        so *no other commands may share these keybinds.*
+
+        Keybinds:
+            a or left arrow key: view previous frame
+            d or right arrow key: view next frame
+            v: toggle cursor visibility
+            escape: clear selection or cancel action
+        '''
+
+        # CHANGING FRAMES
+        # Move through frames faster (5 at a time) when holding shift
+        num_frames_changed = 5 if modifiers & key.MOD_SHIFT else 1
+        # Go backward through frames (stop at frame 0)
         if symbol in {key.LEFT, key.A}:
-            self.current_frame = max(self.current_frame - offset, 0)
+            self.current_frame = max(self.current_frame - num_frames_changed, 0)
             # if you change frames while you've viewing composite, update composite
             if self.edit_mode and not self.hide_annotations:
                 self.helper_update_composite()
-
+        # Go forward through frames (stop at last frame)
         elif symbol in {key.RIGHT, key.D}:
-            self.current_frame = min(self.current_frame + offset, self.num_frames - 1)
+            self.current_frame = min(self.current_frame + num_frames_changed, self.num_frames - 1)
             # if you change frames while you've viewing composite, update composite
             if self.edit_mode and not self.hide_annotations:
                 self.helper_update_composite()
 
+        # TOGGLE CURSOR VISIBILITY
+        # most useful in edit mode, but inconvenient if can't be turned back on elsewhere
         elif symbol == key.V:
-            #toggle visibility of cursor - mostly to hide from edit mode
-            #but inconvenient if you can only turn it back on in edit mode
             self.mouse_visible = not self.mouse_visible
             self.window.set_mouse_visible(self.mouse_visible)
 
-        elif symbol == key.Z:
-            self.draw_raw = not self.draw_raw
+        # CLEAR/CANCEL ACTION
+        elif symbol == key.ESCAPE:
+            # clear highlighted cells
+            self.highlighted_cell_one = -1
+            self.highlighted_cell_two = -1
+            # clear hole fill seed (used in hole fill, trim pixels, flood contiguous)
+            self.hole_fill_seed = None
+            # reset self.mode (deselects labels, clears actions)
+            self.mode = Mode.none()
+            # reset from thresholding
+            self.show_brush = True
 
-        # regular mode keybinds
-        if not self.edit_mode:
-            if symbol == key.ESCAPE:
-                self.highlighted_cell_one = -1
-                self.highlighted_cell_two = -1
-                self.hole_fill_seed = None
-                self.mode = Mode.none()
+    def edit_mode_universal_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that are
+        handled here always apply to pixel-editing mode, so these keybinds
+        may be reused in label-editing mode, but cannot be used elsewhere
+        in pixel-editing mode.
 
-            elif symbol == key.H:
-                self.highlight = not self.highlight
+        Keybinds:
+            i: invert light/dark in raw image (does not affect color of overlay)
+            k: toggle sobel filter (emphasizes edges) on raw image
+            j: toggle adaptive histogram equalization of raw image
+            h: toggles annotation visibility (can still edit annotations while hidden,
+                but intended to provide clearer look at filtered raw image if needed)
+                (note: h will eventually be bound to highlighting, as it is in browser mode;
+                annotation hiding will be available but under a different keybind)
+        '''
+        # INVERT RAW IMAGE LIGHT/DARK
+        if symbol == key.I:
+            self.invert = not self.invert
+            # if you invert the image while you're viewing composite, update composite
+            if not self.hide_annotations:
+                self.helper_update_composite()
 
-            else:
-                self.mode_handle(symbol)
-        # edit mode keybinds
-        else:
-            if symbol == key.ESCAPE:
-                self.mode = Mode.none()
-                self.show_brush = True
-            if symbol == key.EQUAL:
-                self.edit_value += 1
-            if symbol == key.MINUS:
-                self.edit_value = max(self.edit_value - 1, 1)
-            # set brush to unused label
-            if symbol == key.N:
-                self.edit_value = np.max(self.cell_ids[self.feature]) + 1
-            if symbol == key.X:
-                self.erase = not self.erase
+        # TOGGLE SOBEL FILTER
+        if symbol == key.K:
+            self.sobel_on = not self.sobel_on
+            if not self.hide_annotations:
+                self.helper_update_composite()
+
+        # TOGGLE ADAPTIVE HISTOGRAM EQUALIZATION
+        if symbol == key.J:
+            self.adapthist_on = not self.adapthist_on
+            if not self.hide_annotations:
+                self.helper_update_composite()
+
+        # TOGGLE ANNOTATION VISIBILITY
+        # TODO: will want to change to shift+H in future when adding highlight to edit mode
+        if symbol == key.H:
+            self.hide_annotations = not self.hide_annotations
+            # in case any display changes have been made while hiding annotations
+            if not self.hide_annotations:
+                self.helper_update_composite()
+
+    def edit_mode_none_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that are
+        handled here apply to pixel-editing mode only when another action
+        or prompt is not in use (ie, not in the middle of the color picker
+        prompt, thresholding prompt, or conversion brush mode). These keybinds
+        include leaving edit mode, changing the value of the normal brush, and
+        initiating actions.
+
+        Keybinds:
+            e: leave edit mode
+            =: increase value of normal brush
+            -: decrease value of normal brush
+            n: set normal brush to new value (highest label in file + 1)
+            x: toggle eraser (only applies to normal brush)
+            p: color picker action
+            r: start conversion brush
+            t: prompt thresholding
+        '''
+        # LEAVE EDIT MODE
+        if symbol == key.E:
+            self.edit_mode = False
+
+        # BRUSH VALUE ADJUSTMENT
+        # increase brush value, caps at max value + 1
+        if symbol == key.EQUAL:
+            self.edit_value = min(self.edit_value + 1, np.max(self.cell_ids[self.feature]) + 1)
+            self.update_brushview_helper()
+        # decrease brush value, can't decrease past 1
+        if symbol == key.MINUS:
+            self.edit_value = max(self.edit_value - 1, 1)
+            self.update_brushview_helper()
+        # set brush to unused label
+        if symbol == key.N:
+            self.edit_value = np.max(self.cell_ids[self.feature]) + 1
+            self.update_brushview_helper()
+
+        # TOGGLE ERASER
+        if symbol == key.X:
+            self.erase = not self.erase
+
+        # ACTIONS - COLOR PICKER
+        if symbol == key.P:
+            self.mode = Mode("PROMPT", action = "PICK COLOR", **self.mode.info)
+        # ACTIONS - CONVERSION BRUSH
+        if symbol == key.R:
+            self.mode = Mode("PROMPT", action="CONVERSION BRUSH TARGET", **self.mode.info)
+        # ACTIONS - SAVE FILE
+        if symbol == key.S:
+            self.mode = Mode("QUESTION", action="SAVE", filetype = 'npz')
+        # ACTIONS - THRESHOLD
+        if symbol == key.T:
+            self.mode = Mode("PROMPT", action = "DRAW BOX", **self.mode.info)
+            self.show_brush = False
+            self.brush_view = np.zeros(self.brush_view.shape)
+
+    def edit_mode_misc_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that are
+        handled here apply to pixel-editing mode in specific contexts;
+        unlike other helper functions, which are grouped by context, these
+        keybinds have their conditional logic within the helper function,
+        since they are not easily grouped with anything else.
+
+        Keybinds:
+            down key: decrease size of brush (applies when normal brush or
+                conversion brush is active, but not during thresholding)
+            up key: increase size of brush (applies when normal brush or
+                conversion brush is active, but not during thresholding)
+            n: set conversion brush value to unused (max label + 1) value;
+                analogous to setting normal brush value with this keybind,
+                but specifically when picking a label for the conversion brush
+                value (note that allowing this option for the conversion brush
+                target would be counterproductive)
+        '''
+        # BRUSH MODIFICATION KEYBINDS
+        # (don't want to adjust brush if thresholding; applies to both
+        # normal brush and conversion brushes)
+        if self.show_brush:
+            # BRUSH SIZE ADJUSTMENT
+            # decrease brush size
             if symbol == key.DOWN:
                 self.brush_size = max(self.brush_size -1, 1)
-
+                self.update_brushview_helper()
+            # increase brush size
             if symbol == key.UP:
                 self.brush_size = min(self.brush_size + 1, self.height, self.width)
+                self.update_brushview_helper()
 
-            if symbol == key.I:
-                self.invert = not self.invert
-                # if you invert the image while you're viewing composite, update composite
-                if not self.hide_annotations:
-                    self.helper_update_composite()
+        # SET CONVERSION BRUSH VALUE TO UNUSED LABEL
+        # TODO: update Mode prompt to reflect that you can do this
+        if self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH VALUE":
+            if symbol == key.N:
+                self.conversion_brush_value = np.max(self.cell_ids[self.feature]) + 1
+                self.mode = Mode("DRAW", action = "CONVERSION",
+                        conversion_brush_target = self.conversion_brush_target,
+                        conversion_brush_value = self.conversion_brush_value)
 
-            if symbol == key.K:
-                self.sobel_on = not self.sobel_on
-                if not self.hide_annotations:
-                    self.helper_update_composite()
+    def label_mode_misc_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that are
+        handled here apply to label-editing mode in specific contexts;
+        unlike other helper functions, which are grouped by context, these
+        keybinds have their conditional logic within the helper function,
+        since they are not easily grouped with anything else. Since very
+        few keybinds are universal to label-editing mode (as opposed to the
+        different filter options in pixel-editing mode), "universal" label-mode
+        keybinds are also found here.
 
-            if symbol == key.J:
-                self.adapthist_on = not self.adapthist_on
-                if not self.hide_annotations:
-                    self.helper_update_composite()
+        Keybinds:
+            z: toggle between viewing raw images and annotations ("universal")
+            h: toggle highlight ("universal") (note: will eventually become truly
+                universal when highlighting is added to pixel-editing mode)
+            - and =: highlight cycling, COMING SOON
+            shift + up, shift + down: cycle through colormaps, only applies when
+                viewing the raw image
+        '''
+        # toggle raw/label display, "universal" in label mode
+        if symbol == key.Z:
+            self.draw_raw = not self.draw_raw
 
-            if symbol == key.H:
-                self.hide_annotations = not self.hide_annotations
-                # in case any display changes have been made while hiding annotations
-                if not self.hide_annotations:
-                    self.helper_update_composite()
+        # toggle highlight, "universal" in label mode
+        # TODO: this will eventually become truly universal (as in browser version)
+        if symbol == key.H:
+            self.highlight = not self.highlight
 
-            else:
-                self.mode_handle(symbol)
+        # HIGHLIGHT CYCLING
+        # TODO: add highlight cycling when cell not selected
+        # check that highlighted cell != -1
 
+        # cycle through colormaps, but only while viewing raw
+        if self.draw_raw:
+            if modifiers & key.MOD_SHIFT:
+                if symbol == key.UP:
+                    if self.current_cmap == len(self.cmap_options) - 1:
+                        self.current_cmap = 0
+                    elif self.current_cmap < len(self.cmap_options) -1:
+                        self.current_cmap += 1
+                if symbol == key.DOWN:
+                    if self.current_cmap == 0:
+                        self.current_cmap = len(self.cmap_options) - 1
+                    elif self.current_cmap > 0:
+                        self.current_cmap -= 1
 
-    def mode_handle(self, symbol):
+    def label_mode_none_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that are
+        handled here apply to label-editing mode only if no labels are
+        selected and no actions are awaiting confirmation.
 
+        Keybinds:
+            c: go forward through channels
+            C (shift + c): go backward through channels
+            f: go forward through features
+            F (shift + f): go backward through features
+            e: enter pixel-editing mode
+            s: prompt saving a copy of the file
+            p: predict 3D labels (computer vision, not deep learning)
+            r: relabel annotations (different methods available)
+        '''
+        # CHANGE CHANNELS
         if symbol == key.C:
-            #cycle through channels but only if nothing is selected
-            if self.mode.kind is None and not self.edit_mode:
-                if self.channel + 1== self.channel_max:
+            # hold shift to go backward
+            if modifiers & key.MOD_SHIFT:
+                if self.channel == 0:
+                    self.channel = self.channel_max - 1
+                else:
+                    self.channel -= 1
+            # go forward through channels
+            else:
+                if self.channel + 1 == self.channel_max:
                     self.channel = 0
                 else:
                     self.channel += 1
-            elif self.mode.kind == "SELECTED":
-                self.mode = Mode("QUESTION",
-                                action="CREATE NEW", **self.mode.info)
 
-        if symbol == key.E:
-            #toggle edit mode only if nothing is selected
-            if self.mode.kind is None:
-                self.edit_mode = not self.edit_mode
-                if self.edit_mode and not self.hide_annotations:
-                    self.helper_update_composite()
-
+        # CHANGE FEATURES
         if symbol == key.F:
-            #cycle through features but only if nothing is selected
-            if self.mode.kind is None and not self.edit_mode:
+            # hold shift to go backward
+            if modifiers & key.MOD_SHIFT:
+                if self.feature == 0:
+                    self.feature = self.feature_max - 1
+                else:
+                    self.feature -= 1
+            # go forward through channels
+            else:
                 if self.feature + 1 == self.feature_max:
                     self.feature = 0
                 else:
-                    self.feature +=1
+                    self.feature += 1
 
-            if self.mode.kind == "SELECTED":
-                self.mode = Mode("PROMPT",
-                                action="FILL HOLE", **self.mode.info)
+        # ENTER EDIT MODE
+        if symbol == key.E:
+            self.edit_mode = True
+            # update composite with changes, if needed
+            if not self.hide_annotations:
+                self.helper_update_composite()
 
+        # SAVE
         if symbol == key.S:
-            if self.mode.kind is None and not self.edit_mode:
-                self.mode = Mode("QUESTION",
-                                 action="SAVE", filetype = 'npz')
+            self.mode = Mode("QUESTION", action="SAVE", filetype = 'npz')
 
-            # if answering a question, it's for choosing the single frame
-            # version of an action
-            elif self.mode.kind == "QUESTION":
-                if self.mode.action == "CREATE NEW":
-                    self.action_new_single_cell()
-                    self.mode = Mode.none()
-                elif self.mode.action == "PREDICT":
-                    self.action_predict_single()
-                    self.mode = Mode.none()
-                elif self.mode.action == "SWAP":
-                    self.action_swap_single_frame()
-                    self.mode = Mode.none()
-                elif self.mode.action == "REPLACE":
-                    self.action_replace_single()
-                    self.mode = Mode.none()
-                elif self.mode.action == "RELABEL":
-                    self.action_relabel_frame()
-                    self.mode = Mode.none()
+        # PREDICT
+        if symbol == key.P:
+            self.mode = Mode("QUESTION", action="PREDICT", **self.mode.info)
 
-            elif self.mode.kind == "MULTIPLE":
-                self.mode = Mode("QUESTION",
-                                 action="SWAP", **self.mode.info)
+        # RELABEL
+        if symbol == key.R:
+            self.mode = Mode("QUESTION", action='RELABEL', **self.mode.info)
 
+    def label_mode_single_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that are
+        handled here apply to label-editing mode only if one label is
+        selected and no actions are awaiting confirmation.
 
-        if symbol == key.T:
-            if self.mode.kind == "QUESTION":
-                if self.mode.action == "SAVE":
-                    self.save_as_trk()
-                    self.mode = Mode.none()
-            if self.mode.kind is None and self.edit_mode:
-                self.mode = Mode("PROMPT", action = "DRAW BOX", **self.mode.info)
-                self.show_brush = False
-                self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
+        Keybinds:
+            =: increment currently-highlighted label by 1
+            -: decrement currently-highlighted label by 1
+            c: prompt creation of new label
+            f: prompt hole fill
+            x: prompt deletion of label in frame
+        '''
+        # HIGHLIGHT CYCLING
+        if symbol == key.EQUAL:
+            if self.highlighted_cell_one < self.num_cells[self.feature]:
+                self.highlighted_cell_one += 1
+            elif self.highlighted_cell_one == self.num_cells[self.feature]:
+                self.highlighted_cell_one = 1
+            # TODO: deselect cell when highlight cycling
+        if symbol == key.MINUS:
+            if self.highlighted_cell_one > 1:
+                self.highlighted_cell_one -= 1
+            elif self.highlighted_cell_one == 1:
+                self.highlighted_cell_one = self.num_cells[self.feature]
+            # TODO: deselect cell when highlight cycling
 
-        if symbol == key.U:
-            if self.mode.kind == "QUESTION" and self.mode.action == "RELABEL":
+        # CREATE CELL
+        if symbol == key.C:
+            self.mode = Mode("QUESTION", action="CREATE NEW", **self.mode.info)
+
+        # HOLE FILL
+        if symbol == key.F:
+            self.mode = Mode("PROMPT", action="FILL HOLE", **self.mode.info)
+
+        # DELETE CELL
+        if symbol == key.X:
+            self.mode = Mode("QUESTION", action="DELETE", **self.mode.info)
+
+    def label_mode_multiple_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that are
+        handled here apply to label-editing mode only if two labels are
+        selected and no actions are awaiting confirmation. (Note: the
+        two selected labels must be the same label for watershed to work,
+        and different labels for replace and swap to work.)
+
+        Keybinds:
+            r: prompt replacement of one label with another
+            s: prompt swap between two labels
+            w: prompt watershed action
+        '''
+        # REPLACE
+        if symbol == key.R:
+            self.mode = Mode("QUESTION", action="REPLACE", **self.mode.info)
+
+        # SWAP
+        if symbol == key.S:
+            self.mode = Mode("QUESTION", action="SWAP", **self.mode.info)
+
+        # WATERSHED
+        if symbol == key.W:
+            self.mode = Mode("QUESTION", action="WATERSHED", **self.mode.info)
+
+    def label_mode_question_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that are
+        handled here apply to label-editing mode when actions are awaiting
+        confirmation. Most actions are confirmed with the space key, while
+        others have different options mapped to other keys. Keybinds in this
+        helper function are grouped by the question they are responding to.
+
+        Keybinds:
+            space: carries out action; when action can be applied to single OR
+                multiple frames, space carries out the multiple frame option
+            s: carries out single-frame version of action where applicable
+            t: save npz with empty lineage as trk filetype
+            u: relabel annotations in file with "unique" strategy
+            p: relabel annotations in file with "preserve" strategy
+        '''
+        # RESPOND TO SAVE QUESTION
+        if self.mode.action == "SAVE":
+            if symbol == key.T:
+                self.save_as_trk()
+                self.mode = Mode.none()
+            if symbol == key.SPACE:
+                self.save()
+                self.mode = Mode.none()
+
+        # RESPOND TO RELABEL QUESTION
+        elif self.mode.action == "RELABEL":
+            if symbol == key.U:
                 self.action_relabel_unique()
                 self.mode = Mode.none()
-
-        if symbol == key.P:
-            if self.mode.kind is None and not self.edit_mode:
-                self.mode = Mode("QUESTION",
-                                action="PREDICT", **self.mode.info)
-            elif self.mode.kind == "QUESTION" and self.mode.action == "RELABEL":
+            if symbol == key.P:
                 self.action_relabel_preserve()
                 self.mode = Mode.none()
-            elif self.mode.kind is None and self.edit_mode:
-                self.mode = Mode("PROMPT", action = "PICK COLOR", **self.mode.info)
+            if symbol == key.S:
+                self.action_relabel_frame()
+                self.mode = Mode.none()
+            if symbol == key.SPACE:
+                self.action_relabel_all_frames()
+                self.mode = Mode.none()
 
-        if symbol == key.R:
-            if self.mode.kind is None and not self.edit_mode:
-                self.mode = Mode("QUESTION", action='RELABEL', **self.mode.info)
-            elif self.mode.kind == "MULTIPLE":
-                self.mode = Mode("QUESTION",
-                                 action="REPLACE", **self.mode.info)
-            elif self.mode.kind is None and self.edit_mode:
-                self.mode = Mode("PROMPT", action="CONVERSION BRUSH TARGET", **self.mode.info)
+        # RESPOND TO PREDICT QUESTION
+        elif self.mode.action == "PREDICT":
+            if symbol == key.S:
+                self.action_predict_single()
+                self.mode = Mode.none()
+            if symbol == key.SPACE:
+                self.action_predict_zstack()
+                self.mode = Mode.none()
 
-        if symbol == key.X:
-            if self.mode.kind == "SELECTED":
-                self.mode = Mode("QUESTION",
-                                action="DELETE", **self.mode.info)
+        # RESPOND TO CREATE QUESTION
+        elif self.mode.action == "CREATE NEW":
+            if symbol == key.S:
+                self.action_new_single_cell()
+                self.mode = Mode.none()
+            if symbol == key.SPACE:
+                self.action_new_cell_stack()
+                self.mode = Mode.none()
 
-        if symbol == key.W:
-            if self.mode.kind == "MULTIPLE":
-                self.mode = Mode("QUESTION",
-                                 action="WATERSHED", **self.mode.info)
+        # RESPOND TO REPLACE QUESTION
+        elif self.mode.action == "REPLACE":
+            if symbol == key.S:
+                self.action_replace_single()
+                self.mode = Mode.none()
+            if symbol == key.SPACE:
+                self.action_replace()
+                self.mode = Mode.none()
 
-        if symbol == key.EQUAL:
-            if self.mode.kind == "SELECTED":
-                if self.highlighted_cell_one < self.num_cells[self.feature]:
-                    self.highlighted_cell_one += 1
-                elif self.highlighted_cell_one == self.num_cells[self.feature]:
-                    self.highlighted_cell_one = 1
-        if symbol == key.MINUS:
-            if self.mode.kind == "SELECTED":
-                if self.highlighted_cell_one > 1:
-                    self.highlighted_cell_one -= 1
-                elif self.highlighted_cell_one == 1:
-                    self.highlighted_cell_one = self.num_cells[self.feature]
+        # RESPOND TO SWAP QUESTION
+        elif self.mode.action == "SWAP":
+            if symbol == key.S:
+                self.action_swap_single_frame()
+                self.mode = Mode.none()
+            if symbol == key.SPACE:
+                self.action_swap_all()
+                self.mode = Mode.none()
 
-        if symbol == key.SPACE:
-            if self.mode.kind == "QUESTION":
-                if self.mode.action == "REPLACE":
-                    self.action_replace()
-                elif self.mode.action == "PREDICT":
-                    self.action_predict_zstack()
-                elif self.mode.action == "RELABEL":
-                    self.action_relabel_all_frames()
-                elif self.mode.action == "CREATE NEW":
-                    self.action_new_cell_stack()
-                elif self.mode.action == "FLOOD CELL":
-                    self.action_flood_contiguous()
-                elif self.mode.action == "TRIM PIXELS":
-                    self.action_trim_pixels()
-                elif self.mode.action == "SWAP":
-                    self.action_swap_all()
-                elif self.mode.action == "DELETE":
-                    self.action_delete_mask()
-                elif self.mode.action == "WATERSHED":
-                    self.action_watershed()
-                elif self.mode.action == "SAVE":
-                    self.save()
+        # RESPOND TO DELETE QUESTION
+        elif self.mode.action == "DELETE":
+            if symbol == key.SPACE:
+                self.action_delete_mask()
+                self.mode = Mode.none()
+
+        # RESPOND TO WATERSHED QUESTION
+        elif self.mode.action == "WATERSHED":
+            if symbol == key.SPACE:
+                self.action_watershed()
+                self.mode = Mode.none()
+
+        # RESPOND TO TRIM PIXELS QUESTION
+        elif self.mode.action == "TRIM PIXELS":
+            if symbol == key.SPACE:
+                self.action_trim_pixels()
+                self.mode = Mode.none()
+
+        # RESPOND TO FLOOD CELL QUESTION
+        elif self.mode.action == "FLOOD CELL":
+            if symbol == key.SPACE:
+                self.action_flood_contiguous()
                 self.mode = Mode.none()
 
     def get_current_frame(self):
