@@ -2258,100 +2258,174 @@ class ZStackReview:
         frame_label.draw()
 
     def draw_current_frame(self):
+        '''
+        Draw the current image view. Depending on the viewing mode (pixel-editing
+        or label-editing, raw or annotation view), takes the appropriate input array,
+        and applies adjustments as needed (eg, applying filters to the raw image). A
+        png format image is then created using pyplot and an appropriate colormap, then
+        loaded as a pyglet image, which is then scaled and drawn on the window. Several
+        helper functions are used to abstract steps of the image processing and manipulation.
+        '''
+        if not self.edit_mode:
+            self.draw_current_frame_label_mode_helper()
+
+        elif self.edit_mode:
+            self.draw_current_frame_edit_mode_helper()
+
+    def draw_current_frame_label_mode_helper(self):
+        '''
+        Draws current frame for label-editing mode. If drawing
+        the raw image, applies vmax adjustment and selected colormap.
+        If drawing the annotations, applies vmax adjustment, cubehelix
+        colormap, and highlights selected labels if highlighting is turned on.
+        Image is then scaled by self.scale_factor and drawn in window.
+        '''
         frame = self.get_current_frame()
 
-        if not self.edit_mode:
+        # create pyglet image from raw array info, using brightness and cmap settings
+        if self.draw_raw:
+            image = self.helper_array_to_img(input_array = frame[:,:,self.channel],
+                                                     vmax = self.max_intensity[self.channel],
+                                                     cmap = self.cmap_options[self.current_cmap],
+                                                     output = 'pyglet')
 
+        # create pyglet image from annotation array info,
+        # using highlighting and brightness settings
+        else:
+            # annotations use cubehelix cmap with highlighting in red
             cmap = plt.get_cmap("cubehelix")
             cmap.set_bad('red')
 
+            # if highlighting on, mask highlighted values so they appear red
+            # labels are highlighted if selected or if shift- or ctrl- clicked for actions
             if self.highlight:
-                if self.mode.kind == "SELECTED":
-                    frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
-                elif self.mode.kind == "QUESTION":
-                    if self.mode.action == "FLOOD CELL" or self.mode.action == "TRIM PIXELS":
-                        frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
-                elif self.mode.kind == "MULTIPLE":
-                    frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
-                    frame = np.ma.masked_equal(frame, self.highlighted_cell_two)
+                frame = self.apply_label_highlight_helper(frame)
 
-            if self.draw_raw:
-                image = self.helper_array_to_img(input_array = frame[:,:,self.channel],
-                                                         vmax = self.max_intensity[self.channel],
-                                                         cmap = self.cmap_options[self.current_cmap],
-                                                         output = 'pyglet')
-            else:
-                image = self.helper_array_to_img(input_array = frame[:,:,self.feature],
-                                                        vmax = max(1,np.max(self.cell_ids[self.feature]) + self.adjustment[self.feature]),
-                                                        cmap = cmap,
-                                                        output = 'pyglet')
-
-            sprite = pyglet.sprite.Sprite(image, x=self.sidebar_width, y=0)
-
-            sprite.update(scale_x=self.scale_factor,
-                          scale_y=self.scale_factor)
-
-            gl.glTexParameteri(gl.GL_TEXTURE_2D,
-                               gl.GL_TEXTURE_MAG_FILTER,
-                               gl.GL_NEAREST)
-            sprite.draw()
-
-        elif self.edit_mode:
-
-            # create pyglet image object so we can display brush location
-            brush_img = self.helper_array_to_img(input_array = self.brush_view,
-                                                        vmax = self.num_cells[self.feature] + self.adjustment[self.feature],
-                                                        cmap = 'gist_stern',
-                                                        output = 'pyglet')
-
-            # get raw and annotated data
-            current_raw = self.raw[self.current_frame,:,:,self.channel]
-
-            #try sobel filter here
-            if self.sobel_on:
-                current_raw = filters.sobel(current_raw)
-
-            if self.adapthist_on:
-                current_raw = rescale_intensity(current_raw, in_range = 'image', out_range = 'float')
-                current_raw = equalize_adapthist(current_raw)
-                vmax = 1
-            elif not self.adapthist_on:
-                vmax = self.max_intensity[self.channel]
-
-            if self.invert:
-                current_raw = invert(current_raw)
-
-            if self.hide_annotations:
-                comp_img = self.helper_array_to_img(input_array = current_raw,
-                                                        vmax = vmax,
-                                                        cmap = 'gray',
-                                                        output = 'pyglet')
-
-            # draw the composite if you want to see annotation overlay
-            if not self.hide_annotations:
-                comp_img = self.helper_array_to_img(input_array = self.composite_view,
-                                                    vmax = None,
-                                                    cmap = None,
+            # create pyglet image
+            image = self.helper_array_to_img(input_array = frame[:,:,self.feature],
+                                                    vmax = max(1,np.max(self.cell_ids[self.feature]) + self.adjustment[self.feature]),
+                                                    cmap = cmap,
                                                     output = 'pyglet')
 
-            composite_sprite = pyglet.sprite.Sprite(comp_img, x = self.sidebar_width, y=0)
-            brush_sprite = pyglet.sprite.Sprite(brush_img, x=self.sidebar_width, y=0)
+        # TODO: add sprite to batch?
+        # create pyglet sprite, bottom left corner of image anchored with x offset
+        sprite = pyglet.sprite.Sprite(image, x=self.sidebar_width, y=0)
 
-            brush_sprite.opacity = 128
+        # scale x and y dimensions of sprite
+        sprite.update(scale_x=self.scale_factor,
+                      scale_y=self.scale_factor)
 
-            composite_sprite.update(scale_x=self.scale_factor,
-                                    scale_y=self.scale_factor)
+        # TODO: how often does this actually need to be set?
+        gl.glTexParameteri(gl.GL_TEXTURE_2D,
+                           gl.GL_TEXTURE_MAG_FILTER,
+                           gl.GL_NEAREST)
+        # draw the sprite
+        sprite.draw()
 
-            brush_sprite.update(scale_x=self.scale_factor,
-                                    scale_y=self.scale_factor)
+    def apply_label_highlight_helper(self, frame):
+        '''
+        Masks values in input array (frame) to display highlight.
+        Masked values are then set to a particular color (red) via
+        the colormap used. Frame is returned whether or not it has
+        had a mask applied.
+        '''
+        # one label selected
+        if self.mode.kind == "SELECTED":
+            frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
+        # one label selected for flood cell or trim pixels action
+        elif self.mode.kind == "QUESTION":
+            if self.mode.action == "FLOOD CELL" or self.mode.action == "TRIM PIXELS":
+                frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
+        # two labels selected
+        elif self.mode.kind == "MULTIPLE":
+            frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
+            frame = np.ma.masked_equal(frame, self.highlighted_cell_two)
 
-            composite_sprite.draw()
-            brush_sprite.draw()
+        return frame
 
-            gl.glTexParameteri(gl.GL_TEXTURE_2D,
-                               gl.GL_TEXTURE_MAG_FILTER,
-                               gl.GL_NEAREST)
+    def draw_current_frame_edit_mode_helper(self):
+        '''
+        Draws current frame for pixel-editing mode, along with brush preview
+        (brush preview can display brush or thresholding). If drawing the image
+        with annotations hidden, applies filters/adjustments to raw image and uses
+        that, otherwise uses self.composite_view (generated and updated elsewhere)
+        to show annotations overlaid on the adjusted raw image. Image is then scaled
+        by self.scale_factor and drawn in window.
+        '''
+        # create pyglet image object so we can display brush location
+        brush_img = self.helper_array_to_img(input_array = self.brush_view,
+                                                    vmax = self.num_cells[self.feature] + self.adjustment[self.feature],
+                                                    cmap = 'gist_stern',
+                                                    output = 'pyglet')
 
+        # get raw and annotated data
+        # TODO: np.copy might be appropriate here for clarity
+        # (current_raw is not edited in place but np.copy would help safeguard that)
+        current_raw = self.raw[self.current_frame,:,:,self.channel]
+
+        current_raw, vmax = self.apply_image_adjustments_helper(current_raw)
+
+        # create pyglet image from only the adjusted raw, if hiding annotations
+        if self.hide_annotations:
+            comp_img = self.helper_array_to_img(input_array = current_raw,
+                                                    vmax = vmax,
+                                                    cmap = 'gray',
+                                                    output = 'pyglet')
+
+        # create pyglet image from composite if you want to see annotation overlay
+        # (self.composite view is generated/updated separately)
+        if not self.hide_annotations:
+            comp_img = self.helper_array_to_img(input_array = self.composite_view,
+                                                vmax = None,
+                                                cmap = None,
+                                                output = 'pyglet')
+
+        # create sprites for image and brush view, bottom left corner anchored with x offset
+        # TODO: add sprites to a batch?
+        composite_sprite = pyglet.sprite.Sprite(comp_img, x = self.sidebar_width, y=0)
+        brush_sprite = pyglet.sprite.Sprite(brush_img, x=self.sidebar_width, y=0)
+
+        # make brush view partially transparent
+        brush_sprite.opacity = 128
+
+        # scale x and y dimensions of sprites
+        composite_sprite.update(scale_x=self.scale_factor,
+                                scale_y=self.scale_factor)
+
+        brush_sprite.update(scale_x=self.scale_factor,
+                            scale_y=self.scale_factor)
+
+        # draw the sprites
+        composite_sprite.draw()
+        brush_sprite.draw()
+
+        gl.glTexParameteri(gl.GL_TEXTURE_2D,
+                           gl.GL_TEXTURE_MAG_FILTER,
+                           gl.GL_NEAREST)
+
+    def apply_image_adjustments_helper(self, current_raw):
+        '''
+        Apply filter/adjustment options to raw image for display in
+        pixel-editing mode. Input is unadjusted raw image, with object
+        attributes to determine which filters and adjustments to apply.
+        Returns adjusted image and vmax (appropriate vmax depends on whether
+        or not image histogram has been equalized).
+        '''
+        #try sobel filter here
+        if self.sobel_on:
+            current_raw = filters.sobel(current_raw)
+
+        if self.adapthist_on:
+            current_raw = rescale_intensity(current_raw, in_range = 'image', out_range = 'float')
+            current_raw = equalize_adapthist(current_raw)
+            vmax = 1
+        elif not self.adapthist_on:
+            vmax = self.max_intensity[self.channel]
+
+        if self.invert:
+            current_raw = invert(current_raw)
+
+        return current_raw, vmax
 
     def action_new_single_cell(self):
         """
