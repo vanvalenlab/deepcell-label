@@ -1538,10 +1538,24 @@ class ZStackReview:
         self.draw_label()
 
     def scale_screen(self):
-        #User can resize window and images will expand to fill space if possible
-        #Determine whether to base scale factor on width or height
+        '''
+        Recalculate scaling factor for image display. Calculates largest
+        integer scaling factor that can be applied to both height and width
+        of the image, to best use the available window space. If image size
+        is larger than available window space, scale factor will be set to 1
+        and image/window will extend off-screen: for this reason, it is recommended
+        that large images are reshaped or trimmed before editing in Caliban.
+
+        Uses:
+            self.window.height, self.window.width, and self.sidebar_width to determine
+                free window space
+            self.height and self.width (image dimensions) to calculate scale factor
+            self.scale_factor is updated with the smaller of the two scale factors
+                (or 1, whichever is largest)
+        '''
+        # user can resize window and images will expand to fill space if possible
         y_scale = self.window.height // self.height
-        x_scale = (self.window.width - 300) // self.width
+        x_scale = (self.window.width - self.sidebar_width) // self.width
         self.scale_factor = min(y_scale, x_scale)
         self.scale_factor = max(1, self.scale_factor)
 
