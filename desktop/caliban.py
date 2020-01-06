@@ -2474,7 +2474,6 @@ class ZStackReview:
             self.add_cell_info(feature = self.feature, add_label = label_1, frame = self.current_frame)
             self.del_cell_info(feature = self.feature, del_label = label_2, frame = self.current_frame)
 
-
     def action_replace(self):
         """
         Replacing label_2 with label_1. Overwrites every label_2 in the npz
@@ -2494,7 +2493,6 @@ class ZStackReview:
                     annotated[annotated == label_2] = label_1
                     self.add_cell_info(feature = self.feature, add_label = label_1, frame = frame)
                     self.del_cell_info(feature = self.feature, del_label = label_2, frame = frame)
-
 
     def action_swap_all(self):
         label_1 = self.mode.label_1
@@ -2861,7 +2859,6 @@ class ZStackReview:
             np.savez(save_file, X = self.raw, y = self.annotated)
         self.save_version += 1
 
-
     def add_cell_info(self, feature, add_label, frame):
         '''
         helper function for actions that add a cell to the npz
@@ -2884,7 +2881,6 @@ class ZStackReview:
 
                 self.num_cells[feature] += 1
 
-
     def del_cell_info(self, feature, del_label, frame):
         '''
         helper function for actions that remove a cell from the npz
@@ -2902,7 +2898,6 @@ class ZStackReview:
                 #also remove from list of cell_ids
                 ids = self.cell_ids[feature]
                 self.cell_ids[feature] = np.delete(ids, np.where(ids == np.int64(del_label)))
-
 
     def create_cell_info(self, feature):
         '''
@@ -2934,7 +2929,6 @@ class ZStackReview:
             cell_info["parent"] = None
             cell_info["capped"] = False
             cell_info["frames"] = self.cell_info[self.feature][cell]['frames']
-
 
     def save_as_trk(self):
         '''
