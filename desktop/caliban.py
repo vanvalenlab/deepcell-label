@@ -1076,10 +1076,16 @@ class ZStackReview:
         if label != 0:
             if modifiers & key.MOD_CTRL:
                 self.hole_fill_seed = (self.y, self.x)
-                self.mode = Mode("QUESTION", action = "FLOOD CELL", label = label)
+                self.mode = Mode("QUESTION",
+                                 action = "FLOOD CELL",
+                                 label = label,
+                                 frame = self.current_frame)
             elif modifiers & key.MOD_SHIFT:
                 self.hole_fill_seed = (self.y, self.x)
-                self.mode = Mode("QUESTION", action = "TRIM PIXELS", label = label)
+                self.mode = Mode("QUESTION",
+                                 action = "TRIM PIXELS",
+                                 label = label,
+                                 frame = self.current_frame)
             else:
                 self.mode = Mode("SELECTED",
                                  label=label,
@@ -1134,7 +1140,6 @@ class ZStackReview:
             if label == 0:
                 self.hole_fill_seed = (self.y, self.x)
                 self.action_fill_hole()
-                self.hole_fill_seed = None
                 self.mode = Mode.none()
 
     def handle_color_pick_helper(self):
@@ -2443,7 +2448,19 @@ class ZStackReview:
 
     def action_new_single_cell(self):
         """
-        Create new label in just one frame
+        Create new label in just one frame by replacing selected label with new
+        value everywhere old label value occurs in current frame. Not appropriate
+        for resolving duplicate label issues (see action_flood_contiguous or
+        action_watershed to create a new label in only part of an existing label).
+        Used to correct 3D relationships (eg, daughter cell misidentified as the same
+        label as its parent, obscuring the division).
+
+        Uses:
+            self.mode.label is the selected label to replace with a new (unused) label
+            self.mode.frame and self.feature to get the correct frame of annotations to modify
+            self.cell_ids to pick an unused label
+            self.add_cell_info and self.del_cell_info to update information after change (change
+                is always made, no need to check these first)
         """
         old_label, single_frame = self.mode.label, self.mode.frame
         new_label = np.max(self.cell_ids[self.feature]) + 1
@@ -2458,7 +2475,19 @@ class ZStackReview:
 
     def action_new_cell_stack(self):
         """
-        Creates new cell label and replaces original label with it in all subsequent frames
+        Creates new cell label and replaces original label with it in selected and
+        all subsequent frames. Not appropriate for resolving duplicate label issues, since
+        any pixel with the old label in the modified frames will be replaced with the new label.
+        Used to correct 3D relationships (eg, cell division not detected and daughter cell tracked
+        as parent cell throughout movie, or two cells at same x and y position and different z position
+        misidentified as being same cell).
+
+        Uses:
+            self.mode.label is the selected label to replace with a new (unused) label
+            self.mode.frame and self.feature to get the correct frames of annotations to modify
+            self.cell_ids to pick an unused label
+            self.add_cell_info and self.del_cell_info to update information after change (checked
+                before calling, since old label is only guaranteed to be in the frame it is selected in)
         """
         old_label, start_frame = self.mode.label, self.mode.frame
         new_label = np.max(self.cell_ids[self.feature]) + 1
@@ -2467,6 +2496,7 @@ class ZStackReview:
         for frame in self.annotated[start_frame:,:,:,self.feature]:
             frame[frame == old_label] = new_label
 
+        # update cell info each time a label is actually replaced with new label
         for frame in range(self.annotated.shape[0]):
             if new_label in self.annotated[frame,:,:,self.feature]:
                 self.del_cell_info(feature = self.feature, del_label = old_label, frame = frame)
@@ -2474,24 +2504,58 @@ class ZStackReview:
 
     def action_replace_single(self):
         '''
-        replaces label_2 with label_1, but only in the current frame
-        '''
-        label_1, label_2 = self.mode.label_1, self.mode.label_2
+        Overwrite all pixels of label_2 with label_1 in whichever frame label_2
+        was selected (even if currently viewing a different frame, since label_2
+        may not be present in current frame if user has changed frames since selection).
+        label_1 does not need to be in the same frame as label_2, although it can be.
+        Can be used to correct segmentation in frame (eg, one cell mistakenly segmented
+        with two labels) or to correct 3D relationships (same cell has label_1 in first frame
+        and label_2 in next frame, but should always be label_1).
 
-        #replacing a label with itself crashes Caliban, not good
+        Uses:
+            self.mode.label_1 is first label selected (will be used to overwrite)
+            self.mode.label_2 is second label selected (will be overwritten)
+            self.mode.frame_2 is the frame in which label_2 was selected; this will be
+                the only frame modified in this action
+            self.feature used to get correct annotation frame
+            self.add_cell_info and self.del_cell_info used to update cell info (label_2 will
+                always be completely removed from frame by this action, and will always have
+                label_1 in frame after action)
+        '''
+        # label_1 is first label selected, label_2 is second label selected
+        # order of selection is important here
+        label_1, label_2 = self.mode.label_1, self.mode.label_2
+        frame = self.mode.frame_2
+
+        # replacing a label with itself crashes Caliban, not good
         if label_1 == label_2:
             pass
+        # the labels are different
         else:
-            annotated = self.annotated[self.current_frame,:,:,self.feature]
-
+            # frame to replace label_2 in
+            annotated = self.annotated[frame,:,:,self.feature]
+            # any instance of label_2 in this frame overwritten with label_1
             annotated[annotated == label_2] = label_1
-            self.add_cell_info(feature = self.feature, add_label = label_1, frame = self.current_frame)
-            self.del_cell_info(feature = self.feature, del_label = label_2, frame = self.current_frame)
+            # update cell info
+            self.add_cell_info(feature = self.feature, add_label = label_1, frame = frame)
+            self.del_cell_info(feature = self.feature, del_label = label_2, frame = frame)
 
     def action_replace(self):
         """
-        Replacing label_2 with label_1. Overwrites every label_2 in the npz
-        with label_1 and updates cell_info accordingly.
+        Replaces label_2 with label_1. Overwrites every label_2 in the npz
+        with label_1 and updates cell_info accordingly. After this action, label_2
+        will not exist in any frames in the feature. Use with caution, as this action
+        can cause duplicate label issues. Used to correct 3D relationships in some cases
+        (eg, division falsely detected and 'daughter' cell should actually be parent cell in
+        all frames).
+
+        Uses:
+            self.mode.label_1 is first label selected (will be used to overwrite)
+            self.mode.label_2 is second label selected (will be overwritten)
+            self.feature used to get correct annotation frames
+            self.add_cell_info and self.del_cell_info used to update cell info (label_2 will
+                always be completely removed from feature by this action, label_1 will be
+                added to each frame label_2 was removed from)
         """
         label_1, label_2 = self.mode.label_1, self.mode.label_2
 
@@ -2502,17 +2566,39 @@ class ZStackReview:
             # check each frame
             for frame in range(self.annotated.shape[0]):
                 annotated = self.annotated[frame,:,:,self.feature]
-                # if label being replaced is present, remove it from image and update cell info dict
+                # is label_2 present in that frame:
                 if np.any(np.isin(annotated, label_2)):
+                    # replace all pixels of label_2 with label_1
                     annotated[annotated == label_2] = label_1
+                    # update cell_info for that frame
                     self.add_cell_info(feature = self.feature, add_label = label_1, frame = frame)
                     self.del_cell_info(feature = self.feature, del_label = label_2, frame = frame)
 
     def action_swap_all(self):
+        '''
+        Swap label_1 and label_2 in all frames of file (order of selection
+        does not matter). Modifies cell info by switching the 'frames' info
+        between label_1 and label_2 (but does not need adding/deleting info
+        functions). Affects all frames that contain either label_1 or label_2,
+        eg if a frame has only label_1 before swap, after swap it will contain
+        only label_2. This function does not have a lot of use cases, since it
+        doesn't meaningfully correct mistakes, but could be used to swap labels
+        to make colormap distinctions more clear.
+
+        May remove in subsequent version of Caliban.
+
+        Uses:
+            self.mode.label_1 is first label selected (order not important)
+            self.mode.label_2 is second label selected (order not important)
+            self.feature used to get correct annotation frames
+            self.cell_info used (to swap 'frames' entries between label_1 and label_2)
+        '''
         label_1 = self.mode.label_1
         label_2 = self.mode.label_2
 
+        # for each frame, switch label_1 and label_2
         for frame in range(self.annotated.shape[0]):
+            # get frame
             ann_img = self.annotated[frame,:,:,self.feature]
             ann_img = np.where(ann_img == label_1, -1, ann_img)
             ann_img = np.where(ann_img == label_2, label_1, ann_img)
@@ -2526,19 +2612,59 @@ class ZStackReview:
         self.cell_info[self.feature][label_2].update({'frames': cell_info_1['frames']})
 
     def action_swap_single_frame(self):
-        label_1 = self.mode.label_1
-        label_2 = self.mode.label_2
+        '''
+        Swap label_1 and label_2 in just one frame (order of selection
+        does not matter). Labels must be selected in same frame for single frame
+        swap to work, and will be swapped in the frame where they were selected (not
+        current frame, if frame has changed). Does not modify cell_info, since the
+        frame will contain label_1 and label_2 before and after swap. Used to correct
+        3D relationships when two labels are incorrectly swapped in one or a handful
+        of frames. (Faster and more intuitive than the alternative of multiple create +
+        replace actions.)
 
-        frame = self.current_frame
+        Uses:
+            self.mode.label_1 is first label selected (order not important)
+            self.mode.label_2 is second label selected (order not important)
+            self.feature used to get correct annotation frame
+        '''
+        # frame and label selection info stored in self.mode
+        label_1, frame_1 = self.mode.label_1, self.mode.frame_1
+        label_2, frame_2 = self.mode.label_2, self.mode.frame_2
 
-        ann_img = self.annotated[frame,:,:,self.feature]
-        ann_img = np.where(ann_img == label_1, -1, ann_img)
-        ann_img = np.where(ann_img == label_2, label_1, ann_img)
-        ann_img = np.where(ann_img == -1, label_2, ann_img)
-
-        self.annotated[frame,:,:,self.feature] = ann_img
+        # no use in swapping label with itself, or swapping between different frames
+        if label_1 != label_2 and frame_1 == frame_2:
+            frame = frame_1
+            # get the frame in which labels will be swapped
+            ann_img = self.annotated[frame,:,:,self.feature]
+            # swap
+            ann_img = np.where(ann_img == label_1, -1, ann_img)
+            ann_img = np.where(ann_img == label_2, label_1, ann_img)
+            ann_img = np.where(ann_img == -1, label_2, ann_img)
+            # update self.annotated with swapped frame
+            self.annotated[frame,:,:,self.feature] = ann_img
 
     def action_watershed(self):
+        '''
+        Use watershed transform to split a single label into two labels
+        (original label and new label) based on selected seed points.
+        Watershed transform is based on raw image current frame and channel.
+        The watershed action differs from other multi-click actions in that
+        the labels selected must be the same label and should be selected in
+        same frame (not explicitly required by action, but you may get strange
+        results otherwise). This action will only modify the original label and
+        will not overwrite other labels or delete pixels of the original label.
+        Watershed results depend on both the underlying image and the clicked
+        locations, clean split not guaranteed.
+
+        Uses:
+            self.mode.label_1 is the label to get split by watershed
+            self.cell_ids to create a new valid label
+            self.add_cell_info to add new label to cell_info if it is generated,
+                original label will never be completely removed from frame by this action
+        '''
+        # TODO: add logic checks to make sure label_1 and label_2 are the same,
+        # and seed locations are from same frame
+
         # Pull the label that is being split and find a new valid label
         current_label = self.mode.label_1
         new_label = np.max(self.cell_ids[self.feature]) + 1
@@ -2554,7 +2680,8 @@ class ZStackReview:
         seeds_labeled[self.mode.y1_location, self.mode.x1_location]=current_label
         seeds_labeled[self.mode.y2_location, self.mode.x2_location]=new_label
 
-        # define the bounding box to apply the transform on and select appropriate sections of 3 inputs (raw, seeds, annotation mask)
+        # define the bounding box to apply the transform on
+        # and select appropriate sections of 3 inputs (raw, seeds, annotation mask)
         props = regionprops(np.squeeze(np.int32(img_ann == current_label)))
         minr, minc, maxr, maxc = props[0].bbox
 
@@ -2582,7 +2709,20 @@ class ZStackReview:
 
     def action_threshold_predict(self, y1, y2, x1, x2):
         '''
-        thresholds the raw image for annotation prediction within user-determined bounding box
+        Given user-determined bounding box coordinates, calculates and
+        applies thresholding based on raw image to add new label to annotation.
+        Does not overwrite existing annotations, so new label will not always
+        appear in annotation. If new label is generated via thresholding, the
+        annotation and cell_info will be updated.
+
+        Uses:
+            y1, y2, x1, x2 are bounding box coordinates finalized in
+                on_mouse_release after drawing thresholding box
+            self.raw, self.current_frame, self.channel used with bounding box
+                coordinates to get region of raw image that will be thresholded
+            self.annotated, self.current_frame, self.feature and bounding box
+                coordinates to modify the annotation with thresholding results
+            self.add_cell_info to update cell_info if a label is added
         '''
 
         # pull out the selection portion of the raw frame
@@ -2597,27 +2737,37 @@ class ZStackReview:
         # use a unique label for predction
         new_label = np.max(self.cell_ids[self.feature]) + 1
 
-        # try to keep stray pixels from appearing
-        hyst = filters.apply_hysteresis_threshold(image = predict_area, low = threshold, high = threshold_stringent)
+        # try to keep stray pixels from appearing with hysteresis approach
+        hyst = filters.apply_hysteresis_threshold(image = predict_area,
+            low = threshold, high = threshold_stringent)
+        # apply new_label to areas of threshold that are True (foreground),
+        # 0 for False (background)
         ann_threshold = np.where(hyst, new_label, 0)
 
         #put prediction in without overwriting
         predict_area = self.annotated[self.current_frame, y1:y2, x1:x2, self.feature]
+        # only the background region of original annotation gets updated with ann_threshold
         safe_overlay = np.where(predict_area == 0, ann_threshold, predict_area)
 
         # don't need to update cell_info unless an annotation has been added
         if np.any(np.isin(safe_overlay, new_label)):
             self.add_cell_info(feature=self.feature, add_label=new_label, frame = self.current_frame)
-
+            # update annotation with thresholded region
             self.annotated[self.current_frame,y1:y2,x1:x2,self.feature] = safe_overlay
 
     def action_delete_mask(self):
         '''
-        remove selected annotation from frame, replacing with zeros
+        Delete selected label from the frame it was selected in.
+        Only exists as single-frame action.
+
+        Uses:
+            self.mode.label is selected label (to be deleted)
+            self.mode.frame is the frame in which the label was selected
+            self.del_cell_info to update cell_info appropriately
         '''
 
         label = self.mode.label
-        frame = self.current_frame
+        frame = self.mode.frame
 
         ann_img = self.annotated[frame,:,:,self.feature]
         ann_img = np.where(ann_img == label, 0, ann_img)
@@ -2628,67 +2778,144 @@ class ZStackReview:
 
     def action_fill_hole(self):
         '''
-        fill a "hole" in a cell annotation with the cell label
-        '''
-        img_ann = self.annotated[self.current_frame,:,:,self.feature]
+        Fill a hole (flood connected regions of background) with selected label.
+        Does not affect other labels (self.mouse_press_prompt_helper checks value
+        of annotation at clicked position before carrying out action). Connectivity
+        value of 1 is more restrictive than other flooding actions and prevents hole
+        filling from spilling out beyond enclosed empty space in some cases.
 
+        Uses:
+            self.mode.label is label to flood background with
+            self.hole_fill_seed is determined on click and used to flood area
+            self.annotated, self.current_frame, self.feature to get frame to modify
+            self.add_cell_info to update cell info if needed
+        '''
+        # get frame of annotation to modify
+        img_ann = self.annotated[self.current_frame,:,:,self.feature]
+        # create modified image flooded with value at self.hole_fill_seed
         filled_img_ann = flood_fill(img_ann, self.hole_fill_seed, self.mode.label, connectivity = 1)
+        # update annotation with modified image
         self.annotated[self.current_frame,:,:,self.feature] = filled_img_ann
+
+        # add info in case current_frame didn't already contain that label
+        # (user may change frames between action prompt and click)
+        # will not cause error if the label was already in that frame
+        self.add_cell_info(feature=self.feature, add_label=self.mode.label, frame=self.current_frame)
+
+        # reset hole_fill_seed
+        self.hole_fill_seed = None
 
     def action_flood_contiguous(self):
         '''
-        flood fill a cell with a unique new label; alternative to watershed
-        for fixing duplicate label issue if cells are not touching
+        Flood fill a label (not background) with a unique new label;
+        alternative to watershed for fixing duplicate label issue (if cells
+        are not touching). If there are no other pixels of the old label left
+        after flooding, this action has the same effect as single-frame create.
+        This action never changes pixels to 0. Uses self.mode.frame (the frame that
+        was clicked on) instead of self.current_frame to prevent potential buggy
+        behavior (eg, user changes frames before confirming action, and self.hole_fill_seed
+        in new frame corresponds to a different label from self.mode.label).
+
+        Uses:
+            self.annotated, self.mode.frame, self.feature to get image to modify
+            self.mode.label is the label being flooded with a new value
+            self.hole_fill_seed to get starting point for flooding
+            self.cell_ids to get unused label to flood with
+            self.add_cell_info always needed to add new label to cell_info
+            self.del_cell_info sometimes needed to delete old label from frame
         '''
-        img_ann = self.annotated[self.current_frame,:,:,self.feature]
+        # old label is definitely in original, check later if in modified
         old_label = self.mode.label
+        # label used to flood area
         new_label = np.max(self.cell_ids[self.feature]) + 1
+        # use frame where label was selected, not current frame
+        frame = self.mode.frame
 
-        in_original = np.any(np.isin(img_ann, old_label))
+        # annotation to modify
+        img_ann = self.annotated[frame,:,:,self.feature]
 
+        # flood connected pixels of old_label with new_label, from origin point
+        # of self.hole_fill_seed
         filled_img_ann = flood_fill(img_ann, self.hole_fill_seed, new_label)
-        self.annotated[self.current_frame,:,:,self.feature] = filled_img_ann
+        # update annotation with modified image
+        self.annotated[frame,:,:,self.feature] = filled_img_ann
 
+        # bool, whether any pixels of old_label remain in flooded image
         in_modified = np.any(np.isin(filled_img_ann, old_label))
 
-        # update cell info dicts since labels are changing
-        self.add_cell_info(feature=self.feature, add_label=new_label, frame = self.current_frame)
+        # this action will always add new_label to the annotation in this frame
+        self.add_cell_info(feature=self.feature, add_label=new_label, frame = frame)
 
-        if in_original and not in_modified:
-            self.del_cell_info(feature = self.feature, del_label = old_label, frame = self.current_frame)
+        # check to see if flooding removed old_label from the frame completely
+        if not in_modified:
+            self.del_cell_info(feature = self.feature, del_label = old_label, frame = frame)
 
+        # reset hole_fill_seed
         self.hole_fill_seed = None
 
     def action_trim_pixels(self):
         '''
-        get rid of any stray pixels of selected label; pixels of value label
-        that are not connected to the cell selected will be removed from annotation in that frame
+        Trim away any stray (unconnected) pixels of selected label; pixels in
+        frame with that label that are not connected to self.hole_fill_seed
+        will be set to 0. This action will never completely delete label from frame,
+        since the seed point will always be left unmodified. Used to clean up messy
+        annotations, especially those with only a few pixels elsewhere in the frame,
+        or to quickly clean up thresholding results.
+
+        Uses:
+            self.annotated, self.mode.frame, self.feature to get image to modify
+            self.mode.label is the label being trimmed
+            self.hole_fill_seed is starting point to determine parts of label that
+                will remain unmodified
         '''
-
+        # use frame where label was selected, not current frame
+        frame = self.mode.frame
+        # label to be trimmed
         label = self.mode.label
-        img_ann = self.annotated[self.current_frame,:,:,self.feature]
+        # image to modify
+        img_ann = self.annotated[frame,:,:,self.feature]
 
+        # boolean array of all pixels of label that are connected to self.hole_fill_seed
         contig_cell = flood(image = img_ann, seed_point = self.hole_fill_seed)
 
+        # any pixels in img_ann that have value 'label' and are NOT connected to hole_fill_seed
+        # get changed to 0, all other pixels retain their original value
         img_trimmed = np.where(np.logical_and(np.invert(contig_cell), img_ann == label), 0, img_ann)
 
-        self.annotated[self.current_frame,:,:,self.feature] = img_trimmed
+        # update annotation with trimmed image
+        self.annotated[frame,:,:,self.feature] = img_trimmed
 
+        # reset hole fill seed
         self.hole_fill_seed = None
 
     def action_predict_single(self):
         '''
-        predicts zstack relationship for current frame based on previous frame
-        useful for finetuning corrections one frame at a time
-        '''
+        Uses predict_zstack_cell_ids to predict current frame based on
+        previous frame. Does nothing if called on frame 0. Generates cell_info
+        from scratch after annotations are updated, as the labels present in the
+        modified frame could be drastically different from unmodified frame.
+        Useful for finetuning annotations one frame at a time (eg, in a stack
+        missing annotations, predicting all frames at once would not work particularly
+        well, so adding in labels to a frame, then predicting based on previous frame
+        with this action would be a better workflow).
 
-        annotated = self.annotated[:,:,:,self.feature]
+        Uses:
+            self.annotated, self.feature, self.current_frame to get frame to modify and
+                frame to predict from (if current_frame not 0)
+            self.create_cell_info to generate cell_info from scratch based on updated annotations
+        '''
+        # check if we are on first frame
         current_slice = self.current_frame
+        # if not on the first frame, we can predict from previous frame
         if current_slice > 0:
             prev_slice = current_slice - 1
+            # get image to predict from
             img = self.annotated[prev_slice,:,:,self.feature]
+            # image that will be relabeled based on prev
             next_img = self.annotated[current_slice,:,:,self.feature]
+            # relabel based on prediction
             updated_slice = predict_zstack_cell_ids(img, next_img)
+            # update annotation with relabeled image
             self.annotated[current_slice,:,:,self.feature] = updated_slice
 
         #update cell_info
@@ -2696,17 +2923,30 @@ class ZStackReview:
 
     def action_predict_zstack(self):
         '''
-        use location of cells in image to predict which annotations are
-        different slices of the same cell
+        Uses predict_zstack_cell_ids to iteratively relabel all frames of
+        annotation based on previous frame (predicts which annotations are
+        different slices of the same cell). Works best if relabel_frame is
+        used first on frame 0 so that labels in annotation start from 1.
+        Useful for generating 3D labeled data from stacks of 2D annotations.
+        Note: will not predict divisions in timelapse data, or distinguish
+        between nearby cells in z if they are not separated by at least one slice;
+        human judgments are still required in these cases.
+
+        Uses:
+            self.annotated, self.feature to get stack of annotations to predict
+            self.create_cell_info to generate cell_info from scratch, since
+                labels in most frames have likely changed
         '''
-
-        annotated = self.annotated[:,:,:,self.feature]
-
+        # predict all frames of annotation sequentially
         for zslice in range(self.annotated.shape[0] -1):
+            # image to predict from
             img = self.annotated[zslice,:,:,self.feature]
-
+            # image that will be relabeled based on prev
             next_img = self.annotated[zslice + 1,:,:,self.feature]
+            # relabel based on prediction
             predicted_next = predict_zstack_cell_ids(img, next_img)
+            # update annotation with relabeled image
+            # in next iteration, the relabeled image will be used to predict from
             self.annotated[zslice + 1,:,:,self.feature] = predicted_next
 
         #remake cell_info dict based on new annotations
@@ -2714,42 +2954,75 @@ class ZStackReview:
 
     def action_relabel_frame(self):
         '''
-        relabel cells in the current frame
-        '''
+        Relabel annotations in the current frame starting from 1. Warning:
+        do not use for data that is labeled across frames/slices, as this
+        will render 3D label relationships meaningless. If 3D relabeling is
+        necessary, use action_relabel_preserve.
 
+        Uses:
+            self.annotated, self.current_frame, self.feature to get image to relabel
+            self.create_cell_info to update cell_info
+        '''
+        # frame to relabel
         img = self.annotated[self.current_frame,:,:,self.feature]
+        # relabel frame
         relabeled_img = relabel_frame(img)
+        # update annotation with modified image
         self.annotated[self.current_frame,:,:,self.feature] = relabeled_img
 
+        # remake cell_info dict based on new annotations
         self.create_cell_info(feature=self.feature)
 
     def action_relabel_unique(self):
         '''
-        relabel every cell in every frame with a unique label. Like relabel_all,
-        scrambles 3D relationship info if it exists! Could be useful in cases
-        where a lot of manual assignment is needed/existing prediction not
-        very accurate. Main benefit of this relabeling scheme is to reduce
-        errors from action_replace.
-        '''
+        Relabels all annotations in every frame with a unique label (eg, no
+        label is used in more than one frame). Like relabel_all, scrambles 3D
+        relationship info if it exists! Could be useful in cases where a lot
+        of manual assignment is needed/existing prediction not very accurate.
+        Main benefit of this relabeling strategy is to reduce errors from
+        action_replace. Note: this relabeling strategy will usually produce a huge
+        colormap, causing similar values to be indistinguishable from each other
+        without highlighting. Overall, not recommended for use in most cases.
 
+        Uses:
+            self.annotated, self.feature to get annotation stack to relabel
+            self.create_cell_info to update cell_info
+        '''
+        # unique labels start at 1 (first frame)
         start_val = 1
+        # relabel each frame in stack
         for frame in range(self.annotated.shape[0]):
+            # get annotation to relabel
             img = self.annotated[frame,:,:,self.feature]
+            # relabel image, new labels begin with start_val
             relabeled_img = relabel_frame(img, start_val = start_val)
+            # update start_val so that no previously used labels are repeated
             start_val = np.max(relabeled_img) + 1
+            # update annotation stack with relabeled image
             self.annotated[frame,:,:,self.feature] = relabeled_img
 
+        # remake cell_info dict based on new annotations
         self.create_cell_info(feature = self.feature)
 
     def action_relabel_all_frames(self):
         '''
-        Apply relabel_frame to all frames. Scrambles 3D relationship info
-        if that exists, use relabel_preserve instead in that case!
-        '''
+        Apply relabel_frame to all frames. Warning: do not use for data that
+        is labeled across frames/slices, as this will render 3D label
+        relationships meaningless. If 3D relabeling is necessary, use
+        action_relabel_preserve. Useful if correcting stacks of unrelated 2D
+        annotations.
 
+        Uses:
+            self.annotated, self.feature to get annotation stack to relabel
+            self.create_cell_info to update cell_info
+        '''
+        # relabel all frames in stack
         for frame in range(self.annotated.shape[0]):
+            # get annotation to relabel
             img = self.annotated[frame,:,:,self.feature]
+            # relabel annotation
             relabeled_img = relabel_frame(img)
+            # update annotation with relabeled image
             self.annotated[frame,:,:,self.feature] = relabeled_img
 
         # changes to cell_info not easily changed with helper add/del functions
@@ -2759,13 +3032,22 @@ class ZStackReview:
         '''
         Using relabel_frame on all frames at once (in 3D) preserves
         the 3D relationships between labels. Use this relabeling function
-        if you have tracked or zstack ids to preserve when relabeling.
-        '''
+        if you have tracked or zstack ids to preserve when relabeling. Eg,
+        if label 5 is relabeled to label 1, every instance of label 5 in annotation
+        stack will be relabeled to label 1.
 
+        Uses:
+            self.annotated, self.feature to get annotation stack to relabel
+            self.create_cell_info to update cell_info
+        '''
+        # get annotation stack to relabel
         stack = self.annotated[:,:,:, self.feature]
+        # relabel whole stack at once
         relabeled_stack = relabel_frame(stack)
+        # update annotations with relabeled stack
         self.annotated[:,:,:, self.feature] = relabeled_stack
 
+        # remake cell_info dict based on new annotations
         self.create_cell_info(feature = self.feature)
 
     def helper_array_to_img(self, input_array, vmax, cmap, output):
