@@ -1496,7 +1496,7 @@ class ZStackReview:
             # self.max_intensity[self.channel] is initialized as None, set to value
             # based on maximum brightness of image
             if self.max_intensity[self.channel] is None:
-                self.max_intensity[self.channel] = np.max(self.get_current_frame()[:,:,self.channel])
+                self.max_intensity[self.channel] = np.max(self.get_current_frame())
             # self.max_intensity[self.channel] has a value so we can adjust it
             else:
                 # check minimum brightness of image as lower bound of brightness adjustment
@@ -2083,10 +2083,15 @@ class ZStackReview:
                 self.mode = Mode.none()
 
     def get_current_frame(self):
+        '''
+        Helper function that returns the frame currently being viewed.
+        Used for drawing the image in label-editing mode, and for adjusting
+        the brightness of the raw image with the mouse scroll wheel.
+        '''
         if self.draw_raw:
-            return self.raw[self.current_frame]
+            return self.raw[self.current_frame,:,:,self.channel]
         else:
-            return self.annotated[self.current_frame]
+            return self.annotated[self.current_frame,:,:,self.feature]
 
     def draw_line(self):
         '''
@@ -2284,7 +2289,7 @@ class ZStackReview:
 
         # create pyglet image from raw array info, using brightness and cmap settings
         if self.draw_raw:
-            image = self.helper_array_to_img(input_array = frame[:,:,self.channel],
+            image = self.helper_array_to_img(input_array = frame,
                                                      vmax = self.max_intensity[self.channel],
                                                      cmap = self.cmap_options[self.current_cmap],
                                                      output = 'pyglet')
@@ -2302,7 +2307,7 @@ class ZStackReview:
                 frame = self.apply_label_highlight_helper(frame)
 
             # create pyglet image
-            image = self.helper_array_to_img(input_array = frame[:,:,self.feature],
+            image = self.helper_array_to_img(input_array = frame,
                                                     vmax = max(1,np.max(self.cell_ids[self.feature]) + self.adjustment[self.feature]),
                                                     cmap = cmap,
                                                     output = 'pyglet')
@@ -2826,7 +2831,7 @@ class ZStackReview:
             vmax = 1
         elif not self.adapthist_on:
             if self.draw_raw and self.max_intensity[self.channel] is None:
-                self.max_intensity[self.channel] = np.max(self.get_current_frame()[:,:,self.channel])
+                self.max_intensity[self.channel] = np.max(self.get_current_frame())
             vmax = self.max_intensity[self.channel]
 
         raw_img =  self.helper_array_to_img(input_array = current_raw,
