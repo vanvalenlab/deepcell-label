@@ -1028,7 +1028,7 @@ class ZStackReview:
         '''
 
         if not self.edit_mode:
-            label = int(self.annotated[self.current_frame, self.y, self.x, self.feature])
+            label = self.get_label()
             if self.mode.kind is None:
                 self.mouse_press_none_helper(modifiers, label)
             elif self.mode.kind == "SELECTED":
@@ -1150,7 +1150,7 @@ class ZStackReview:
             self.mode (resets to Mode.none())
         '''
         # which label was clicked on
-        label = int(self.annotated[self.current_frame, self.y, self.x, self.feature])
+        label = self.get_label()
         if label != 0:
             self.edit_value = label
         self.mode = Mode.none()
@@ -1170,7 +1170,7 @@ class ZStackReview:
             self.mode to move to next step of conversion brush setting
         '''
         # which label was clicked on
-        label = int(self.annotated[self.current_frame, self.y, self.x, self.feature])
+        label = self.get_label()
         if label != 0:
             self.conversion_brush_target = label
             # once value is set, move to setting next value
@@ -1191,7 +1191,7 @@ class ZStackReview:
             self.mode to enter use of conversion brush
         '''
         # which label was clicked on
-        label = int(self.annotated[self.current_frame, self.y, self.x, self.feature])
+        label = self.get_label()
         if label != 0:
             self.conversion_brush_value = label
             # once value is set, turn on conversion brush
@@ -2093,6 +2093,15 @@ class ZStackReview:
         else:
             return self.annotated[self.current_frame,:,:,self.feature]
 
+    def get_label(self):
+        '''
+        Helper function that returns the label currently being hovered over.
+        Currently, this helper function just provides a nice little abstraction,
+        but this could also help the existing code stay flexible with additional
+        data formats.
+        '''
+        return int(self.annotated[self.current_frame, self.y, self.x, self.feature])
+
     def draw_line(self):
         '''
         Draw thin white lines around the area of the window where the image
@@ -2143,7 +2152,7 @@ class ZStackReview:
         at the bottom of the information column.
         '''
         # value of annotation at current position of mouse
-        label = int(self.annotated[self.current_frame,self.y,self.x,self.feature])
+        label = self.get_label()
 
         if label != 0:
             cell_info = self.cell_info[self.feature][label].copy()
