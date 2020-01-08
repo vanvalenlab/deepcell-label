@@ -940,7 +940,6 @@ class ZStackReview:
         #create a dictionary that has frame information about each cell
         #analogous to .trk lineage but do not need relationships between cells included
         self.cell_ids = {}
-        self.num_cells = {}
         self.cell_info = {}
 
         for feature in range(self.feature_max):
@@ -1942,16 +1941,16 @@ class ZStackReview:
         '''
         # HIGHLIGHT CYCLING
         if symbol == key.EQUAL:
-            if self.highlighted_cell_one < self.num_cells[self.feature]:
+            if self.highlighted_cell_one < self.get_max_label():
                 self.highlighted_cell_one += 1
-            elif self.highlighted_cell_one == self.num_cells[self.feature]:
+            elif self.highlighted_cell_one == self.get_max_label():
                 self.highlighted_cell_one = 1
             # TODO: deselect cell when highlight cycling
         if symbol == key.MINUS:
             if self.highlighted_cell_one > 1:
                 self.highlighted_cell_one -= 1
             elif self.highlighted_cell_one == 1:
-                self.highlighted_cell_one = self.num_cells[self.feature]
+                self.highlighted_cell_one = self.get_max_label()
             # TODO: deselect cell when highlight cycling
 
         # CREATE CELL
@@ -2111,6 +2110,14 @@ class ZStackReview:
         '''
         return int(self.annotated[self.current_frame, self.y, self.x, self.feature])
 
+    def get_max_label(self):
+        '''
+        Helper function that returns the highest label in use in currently-viewed
+        feature. (Replaces use of self.num_cells to keep track of this info, should
+        also help with code flexibility.)
+        '''
+        return int(np.max(self.cell_ids[self.feature]))
+
     def get_new_label(self):
         '''
         Helper function that returns a new label (doesn't currently exist in
@@ -2125,7 +2132,7 @@ class ZStackReview:
                 when labels are added or removed from features, so this accurately
                 represents which labels are currently in use
         '''
-        return int(np.max(self.cell_ids[self.feature]) + 1)
+        return (self.get_max_label() + 1)
 
     def draw_line(self):
         '''
@@ -2393,7 +2400,7 @@ class ZStackReview:
         '''
         # create pyglet image object so we can display brush location
         brush_img = self.helper_array_to_img(input_array = self.brush_view,
-                                                    vmax = self.num_cells[self.feature] + self.adjustment[self.feature],
+                                                    vmax = self.get_max_label() + self.adjustment[self.feature],
                                                     cmap = 'gist_stern',
                                                     output = 'pyglet')
 
@@ -3156,7 +3163,7 @@ class ZStackReview:
             raw_RGB = invert(raw_RGB)
 
         ann_img = self.helper_array_to_img(input_array = current_ann,
-                                            vmax = self.num_cells[self.feature] + self.adjustment[self.feature],
+                                            vmax = self.get_max_label() + self.adjustment[self.feature],
                                             cmap = 'gist_stern',
                                             output = 'array')
 
@@ -3195,8 +3202,6 @@ class ZStackReview:
 
                 self.cell_ids[feature] = np.append(self.cell_ids[feature], add_label)
 
-                self.num_cells[feature] += 1
-
     def del_cell_info(self, feature, del_label, frame):
         '''
         helper function for actions that remove a cell from the npz
@@ -3222,7 +3227,6 @@ class ZStackReview:
         annotated = self.annotated[:,:,:,feature]
 
         self.cell_ids[feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))]
-        self.num_cells[feature] = max(self.cell_ids[feature])
         self.cell_info[feature] = {}
         for cell in self.cell_ids[feature]:
             self.cell_info[feature][cell] = {}
