@@ -1744,7 +1744,7 @@ class ZStackReview:
         # BRUSH VALUE ADJUSTMENT
         # increase brush value, caps at max value + 1
         if symbol == key.EQUAL:
-            self.edit_value = min(self.edit_value + 1, np.max(self.cell_ids[self.feature]) + 1)
+            self.edit_value = min(self.edit_value + 1, self.get_new_label())
             self.update_brushview_helper()
         # decrease brush value, can't decrease past 1
         if symbol == key.MINUS:
@@ -1752,7 +1752,7 @@ class ZStackReview:
             self.update_brushview_helper()
         # set brush to unused label
         if symbol == key.N:
-            self.edit_value = np.max(self.cell_ids[self.feature]) + 1
+            self.edit_value = self.get_new_label()
             self.update_brushview_helper()
 
         # TOGGLE ERASER
@@ -1811,7 +1811,7 @@ class ZStackReview:
         # TODO: update Mode prompt to reflect that you can do this
         if self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH VALUE":
             if symbol == key.N:
-                self.conversion_brush_value = np.max(self.cell_ids[self.feature]) + 1
+                self.conversion_brush_value = self.get_new_label()
                 self.mode = Mode("DRAW", action = "CONVERSION",
                         conversion_brush_target = self.conversion_brush_target,
                         conversion_brush_value = self.conversion_brush_value)
@@ -2110,6 +2110,22 @@ class ZStackReview:
         data formats.
         '''
         return int(self.annotated[self.current_frame, self.y, self.x, self.feature])
+
+    def get_new_label(self):
+        '''
+        Helper function that returns a new label (doesn't currently exist in
+        annotation feature). The new label is the highest label that currently
+        exists in the feature, plus 1, which will always be unused. Does not
+        ever return labels that have been skipped, although these labels are also
+        technically unused.
+
+        Uses:
+            self.cell_ids, which is a list of the labels present in file (does not
+                contain other information, as cell_info dict does); cell_ids is updated
+                when labels are added or removed from features, so this accurately
+                represents which labels are currently in use
+        '''
+        return int(np.max(self.cell_ids[self.feature]) + 1)
 
     def draw_line(self):
         '''
@@ -2467,7 +2483,7 @@ class ZStackReview:
                 is always made, no need to check these first)
         """
         old_label, single_frame = self.mode.label, self.mode.frame
-        new_label = np.max(self.cell_ids[self.feature]) + 1
+        new_label = self.get_new_label()
 
         # replace frame labels
         frame = self.annotated[single_frame,:,:,self.feature]
@@ -2494,7 +2510,7 @@ class ZStackReview:
                 before calling, since old label is only guaranteed to be in the frame it is selected in)
         """
         old_label, start_frame = self.mode.label, self.mode.frame
-        new_label = np.max(self.cell_ids[self.feature]) + 1
+        new_label = self.get_new_label()
 
         # replace frame labels
         for frame in self.annotated[start_frame:,:,:,self.feature]:
@@ -2671,7 +2687,7 @@ class ZStackReview:
 
         # Pull the label that is being split and find a new valid label
         current_label = self.mode.label_1
-        new_label = np.max(self.cell_ids[self.feature]) + 1
+        new_label = self.get_new_label()
 
         # Locally store the frames to work on
         img_raw = self.raw[self.current_frame,:,:,self.channel]
@@ -2739,7 +2755,7 @@ class ZStackReview:
         threshold_stringent = 1.10 * threshold
 
         # use a unique label for predction
-        new_label = np.max(self.cell_ids[self.feature]) + 1
+        new_label = self.get_new_label()
 
         # try to keep stray pixels from appearing with hysteresis approach
         hyst = filters.apply_hysteresis_threshold(image = predict_area,
@@ -2831,7 +2847,7 @@ class ZStackReview:
         # old label is definitely in original, check later if in modified
         old_label = self.mode.label
         # label used to flood area
-        new_label = np.max(self.cell_ids[self.feature]) + 1
+        new_label = self.get_new_label()
         # use frame where label was selected, not current frame
         frame = self.mode.frame
 
