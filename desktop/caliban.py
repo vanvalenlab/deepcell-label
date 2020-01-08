@@ -961,6 +961,12 @@ class ZStackReview:
         self.window.on_mouse_drag = self.on_mouse_drag
         self.window.on_mouse_release = self.on_mouse_release
 
+        # KeyStateHandler can be queried as dict during other events
+        # to check which keys are being held down
+        # expands potential use of modifiers during different mouse events
+        self.key_states = key.KeyStateHandler()
+        self.window.push_handlers(self.key_states)
+
         self.current_frame = 0
         self.draw_raw = False
         self.max_intensity = {}
@@ -1580,19 +1586,17 @@ class ZStackReview:
         self.mode to a new Mode object requires a secondary action, often a keybind,
         to confirm. When actions are carried out, self.mode is reset to Mode.none().
 
+        Note: this event handler is called when the key is pressed down. Holding down
+        or releasing keys do not affect this event handler. For keys that are being held
+        down at time of other events, query self.key_states[key], which makes use of
+        pyglet's KeyStateHandler class.
+
         Uses:
             symbol: integer representation of keypress, compare against pyglet.window.key
                 (modifiers do not affect symbol, so "a" and "A" are both key.A)
             modifiers: keys like shift, ctrl that are held down at the time of keypress
             (see pyglet docs for further explanation of these inputs and list of modifiers)
         '''
-        # TODO: on_key_press for any key registers it as being held down
-        # which is changed back on_key_release
-        # this would allow other types of actions to be modified
-        # eg, hold spacebar while clicking and dragging to pan screen,
-        # or hold shift while scrolling mouse wheel to change minimum brightness
-        # (I think) -- KeyStateHandler might be this
-
         # always carried out regardless of context
         self.universal_keypress_helper(symbol, modifiers)
 
