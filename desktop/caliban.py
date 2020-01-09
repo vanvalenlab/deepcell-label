@@ -945,10 +945,14 @@ class ZStackReview:
         for feature in range(self.feature_max):
             self.create_cell_info(feature)
 
-        #don't display 'frames' just 'slices' (updated on_draw)
-        first_key = list(self.cell_info[0])[0]
-        display_info_types = self.cell_info[0][first_key]
-        self.display_info = [*sorted(set(display_info_types) - {'frames'})]
+        # don't display 'frames' just 'slices' (updated on_draw)
+        try:
+            first_key = list(self.cell_info[0])[0]
+            display_info_types = self.cell_info[0][first_key]
+            self.display_info = [*sorted(set(display_info_types) - {'frames'})]
+        # if there are no labels in the feature, hardcode the display info
+        except:
+            self.display_info = ['label', 'slices']
 
         self.window = pyglet.window.Window(resizable=True)
         self.window.set_minimum_size(self.width + self.sidebar_width, self.height + 20)
@@ -1521,7 +1525,7 @@ class ZStackReview:
         # adjusting colormap range of annotations
         elif not self.draw_raw:
             # self.adjustment value for the current feature should never reduce possible colors to 0
-            if np.max(self.cell_ids[self.feature]) + (self.adjustment[self.feature] - 1 * scroll_y) > 0:
+            if self.get_max_label() + (self.adjustment[self.feature] - 1 * scroll_y) > 0:
                 self.adjustment[self.feature] = self.adjustment[self.feature] - 1 * scroll_y
 
         # color/brightness adjustments will change what the composited image looks like
@@ -2113,10 +2117,17 @@ class ZStackReview:
     def get_max_label(self):
         '''
         Helper function that returns the highest label in use in currently-viewed
-        feature. (Replaces use of self.num_cells to keep track of this info, should
+        feature. If feature is empty, returns 0 to prevent other functions from crashing.
+        (Replaces use of self.num_cells to keep track of this info, should
         also help with code flexibility.)
         '''
-        return int(np.max(self.cell_ids[self.feature]))
+        # check this first, np.max of empty array will crash
+        if len(self.cell_ids[self.feature]) == 0:
+            max_label = 0
+        # if any labels exist in feature, find the max label
+        else:
+            max_label = int(np.max(self.cell_ids[self.feature]))
+        return max_label
 
     def get_new_label(self):
         '''
@@ -2349,7 +2360,7 @@ class ZStackReview:
 
             # create pyglet image
             image = self.helper_array_to_img(input_array = frame,
-                                                    vmax = max(1,np.max(self.cell_ids[self.feature]) + self.adjustment[self.feature]),
+                                                    vmax = max(1, self.get_max_label() + self.adjustment[self.feature]),
                                                     cmap = cmap,
                                                     output = 'pyglet')
 
