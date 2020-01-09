@@ -922,30 +922,52 @@ class TrackReview:
 
 class ZStackReview:
     def __init__(self, filename, raw, annotated, save_vars_mode):
+        '''
+        Set object attributes to store raw and annotated images (arrays),
+        various settings, bind event handlers to pyglet window, and begin
+        running application. Uses the filename and the output of load_npz(filename)
+        as input.
+
+        Assumes raw array is in format (frames, y, x, channels) and annotated array is
+        in format (frames, y, x, features).
+        '''
+        # store inputs as part of ZStackReview object
+        # filename used to save file later
         self.filename = filename
+        # raw data used to display images and used in some actions (watershed, threshold)
         self.raw = raw
+        # modifying self.annotated with actions is the main purpose of this tool
         self.annotated = annotated
+        # used to determine variable names for npz upon saving file
         self.save_vars_mode = save_vars_mode
 
+        # empty dictionary for lineage, will be populated if file is saved as trk
         self.lineage = {}
 
+        # file opens to the first feature (like channel, but of annotation array)
         self.feature = 0
+        # how many features contained in self.annotated (assumes particular data format)
         self.feature_max = self.annotated.shape[-1]
+        # file opens to the first channel
         self.channel = 0
 
+        # unpack the shape of the raw array
         self.num_frames, self.height, self.width, self.channel_max = raw.shape
 
+        # blank area to the left of displayed image where text info is displayed
         self.sidebar_width = 300
 
-        #create a dictionary that has frame information about each cell
-        #analogous to .trk lineage but do not need relationships between cells included
+        # info dictionaries that will be populated with info about labels for
+        # each feature of annotation array
         self.cell_ids = {}
         self.cell_info = {}
 
+        # populate cell_info and cell_ids with info for each feature in annotation
+        # analogous to .trk lineage but do not need relationships between cells included
         for feature in range(self.feature_max):
             self.create_cell_info(feature)
 
-        # don't display 'frames' just 'slices' (updated on_draw)
+        # don't display 'frames' just 'slices' in sidebar (updated on_draw)
         try:
             first_key = list(self.cell_info[0])[0]
             display_info_types = self.cell_info[0][first_key]
@@ -954,8 +976,12 @@ class ZStackReview:
         except:
             self.display_info = ['label', 'slices']
 
+        # self.window is a resizable pyglet window
         self.window = pyglet.window.Window(resizable=True)
+        # can't resize window to be smaller than the display area when viewed at 1x scale
         self.window.set_minimum_size(self.width + self.sidebar_width, self.height + 20)
+
+        # bind custom event handlers to window
         self.window.on_draw = self.on_draw
         self.window.on_key_press = self.on_key_press
         self.window.on_mouse_motion = self.on_mouse_motion
@@ -970,50 +996,88 @@ class ZStackReview:
         self.key_states = key.KeyStateHandler()
         self.window.push_handlers(self.key_states)
 
+        # open file to first frame of annotation stack
         self.current_frame = 0
+        # start with display showing annotations
         self.draw_raw = False
+        # keeps track of information about brightness of each channel in raw images
         self.max_intensity = {}
         for channel in range(self.channel_max):
             self.max_intensity[channel] = np.max(self.raw[0,:,:,channel])
-        self.x = 0
-        self.y = 0
-        self.mode = Mode.none()
+        # keeps track of information about adjustment of colormap for viewing annotation labels
         self.adjustment = {}
         for feature in range(self.feature_max):
             self.adjustment[feature] = 0
-        self.dtype_raw = raw.dtype
+
+        # mouse position in coordinates of array being viewed as image, (0,0) is placeholder
+        # will be updated on mouse motion
+        self.x = 0
+        self.y = 0
+
+        # self.mode keeps track of selected labels, pending actions, displaying
+        # prompts and confirmation dialogue, using Mode class; start with Mode.none()
+        # (nothing selected, no actions pending)
+        self.mode = Mode.none()
+
+        # how much to scale image by (start with no scaling, but can expand to
+        # fill window when window changes size)
         self.scale_factor = 1
 
+        # start with highlighting option turned off and no labels highlighted
         self.highlight = False
         self.highlighted_cell_one = -1
         self.highlighted_cell_two = -1
 
+        # options for displaying raw image with different cmaps
+        # cubehelix varies smoothly in lightness and hue, gist_yarg and gist_gray are grayscale
+        # and inverted grayscale, magma and nipy_spectral are alternatives to cubehelix, and prism
+        # has effect of showing contours in brightness of image
         self.cmap_options = ['cubehelix', 'gist_yarg', 'gist_gray', 'magma', 'nipy_spectral', 'prism']
+        # start on cubehelix cmap
         self.current_cmap = 0
 
+        # use crosshair cursor instead of usual cursor
         cursor = self.window.get_system_mouse_cursor(self.window.CURSOR_CROSSHAIR)
         self.window.set_mouse_cursor(cursor)
+        # start with cursor visible, but this can be toggled
         self.mouse_visible = True
 
+        # start in label-editing mode
         self.edit_mode = False
+        # set intial pixel-editing mode tool values
         self.edit_value = 1
         self.brush_size = 1
         self.erase = False
+        # brush_view is array used to display a preview of brush tool; same size as other arrays
         self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
+        # composite_view used to store RGB image (composite of raw and annotated) so it can be
+        # accessed and updated as needed
         self.composite_view = np.zeros((1,self.height,self.width,3))
+        # not a user-toggled option; distinguishes between brush and threshold choices
         self.show_brush = True
+        # stores starting point of thresholding bounding box
         self.predict_seed = None
+        # display options for pixel-editing mode
+        # invert grayscale light/dark of raw image
         self.invert = True
+        # apply sobel filter (emphasizes edges) to raw image
         self.sobel_on = False
+        # apply adaptive histogram equalization to raw image
         self.adapthist_on = False
+        # show only raw image instead of composited image
         self.hide_annotations = False
 
+        # values for conversion brush tool
         self.conversion_brush_target = -1
         self.conversion_brush_value = -1
 
+        # stores y, x location of mouse click for actions that use skimage flooding
         self.hole_fill_seed = None
+
+        # how many times the file has been saved since it was opened
         self.save_version = 0
 
+        # start pyglet event loop
         pyglet.app.run()
 
     def on_mouse_press(self, x, y, button, modifiers):
@@ -3090,24 +3154,44 @@ class ZStackReview:
 
     def helper_array_to_img(self, input_array, vmax, cmap, output):
         '''
-        takes input array and does file processing (save with pyplot as temp file)
-        creates and returns a pyglet image with that file loaded
-        '''
+        Helper function to take an input array and output either a pyglet image
+        (to display) or an RGB array (for creating a composite image for
+        pixel-editing mode). Uses pyplot to create png image with vmax and cmap
+        variables, which is saved into a temporary file with BytesIO. The temporary
+        png file is then loaded into the correct output format and closed, and the
+        correctly-formatted image is returned.
 
+        Inputs:
+            input_array: the array to be rendered as an image (either raw or annotated)
+            vmax: vmax for pyplot to use (adjusts range of cmap and may vary)
+            cmap: which matplotlib colormap to use when creating png image
+            output: string specifying desired format ('pyglet' returns pyglet image,
+                'array' returns RGB array representation of image data)
+        '''
+        # temporary file that we can write to
         img_file = BytesIO()
+        # create a png image with pyplot and save it to the temp file
         plt.imsave(img_file, input_array,
                         vmax=vmax,
                         cmap=cmap,
                         format='png')
 
+        # go to start of file so we can read it out correctly
         img_file.seek(0)
+
+        # pyglet image type
         if output == 'pyglet':
+            # create pyglet image loaded from temp file
             pyglet_img = pyglet.image.load('img_file.png', file = img_file)
+            # close file since we are now done with it
             img_file.close()
             return pyglet_img
 
+        # generate an RGB array (what the data 'looks like' but in array format)
         elif output == 'array':
+            # imread will give us an RGB array
             img_array = imread(img_file)
+            # close file since we are now done with it
             img_file.close()
             return img_array
 
@@ -3116,24 +3200,24 @@ class ZStackReview:
 
     def helper_make_composite_img(self, base_array, overlay_array, alpha = 0.6):
         '''
-        takes two arrays and overlays one on top of the other
-        (uses conversion to hsv to make nice gray raw + color annotation
-        overlays). Should work on any two arrays of same size (overlay array
-        should have color in it or there's not really a point) so that it can
-        calculate brush-affected areas quickly. Returns the composite array
-        as rgb array [M,N,3]
+        Helper function to take two arrays and overlay one on top of the other
+        using a conversion to HSV color space. Used to take greyscale RGB array
+        of raw image and overlay colored labels on the image without obscuring
+        image details. Used by helper_update_composite to generate composite image
+        as needed. Returns the composite array as an RGB array (dimensions [M,N,3]).
         '''
 
-        # Convert the input image and color mask to Hue Saturation Value (HSV)
-        # colorspace
+        # Convert the input image and color mask to Hue Saturation Value (HSV) colorspace
         img_hsv = color.rgb2hsv(base_array)
         color_mask_hsv = color.rgb2hsv(overlay_array)
 
         # Replace the hue and saturation of the original image
         # with that of the color mask
         img_hsv[..., 0] = color_mask_hsv[..., 0]
+        # reduce saturation of colors
         img_hsv[..., 1] = color_mask_hsv[..., 1] * alpha
 
+        # convert HSV image back to 8bit RGB
         img_masked = color.hsv2rgb(img_hsv)
         img_masked = rescale_intensity(img_masked, out_range = np.uint8)
         img_masked = img_masked.astype(np.uint8)
@@ -3142,11 +3226,22 @@ class ZStackReview:
 
     def helper_update_composite(self):
         '''
-        actually generate the raw + annotation composite image.
-        moved to helper function because it does not need to be called whenever
-        draw_current_frame is in edit mode
-        '''
+        Helper function that updates self.composite_view from self.raw and
+        self.annotated when needed. self.composite_view is the image drawn
+        in edit mode, but does not need to be recalculated each time the image
+        refreshes (on_draw is triggered after every event, including mouse motion).
+        Takes self.raw and self.annotated, adjusts the images, overlays them,
+        and then stores the generated composite image at self.composite_view.
 
+        Uses:
+            self.raw, self.channel, self.annotated, self.feature, self.current_frame
+                to get arrays to start with
+            self.sobel, self.adapthist_on, self.invert are raw image filtering options
+            self.max_intensity as vmax for raw image (unless histogram equalized)
+            self.helper_array_to_img and self.helper_make_composite_img to abstract
+                away tedious processing steps
+        '''
+        # get images to modify and overlay
         current_raw = self.raw[self.current_frame,:,:,self.channel]
         current_ann = self.annotated[self.current_frame,:,:,self.feature]
 
@@ -3154,58 +3249,113 @@ class ZStackReview:
         if self.sobel_on:
             current_raw = filters.sobel(current_raw)
 
+        # apply adaptive histogram equalization, if option toggled
         if self.adapthist_on:
+            # rescale first (for equalization to work properly, I think)
             current_raw = rescale_intensity(current_raw, in_range = 'image', out_range = 'float')
             current_raw = equalize_adapthist(current_raw)
+            # vmax appropriate for new range of image
             vmax = 1
         elif not self.adapthist_on:
+            # self.max_intensity can be None if brightness hasn't been adjusted
             if self.draw_raw and self.max_intensity[self.channel] is None:
                 self.max_intensity[self.channel] = np.max(self.get_current_frame())
+            # appropriate vmax for image
             vmax = self.max_intensity[self.channel]
 
+        # want image to be in grayscale, but as RGB array, not array of intensities
         raw_img =  self.helper_array_to_img(input_array = current_raw,
                     vmax = vmax,
                     cmap = 'gray',
                     output = 'array')
 
+        # don't need alpha channel
         raw_RGB = raw_img[:,:,0:3]
 
+        # apply dark/light inversion
         if self.invert:
             raw_RGB = invert(raw_RGB)
 
+        # get RGB array of colorful annotation view
         ann_img = self.helper_array_to_img(input_array = current_ann,
                                             vmax = self.get_max_label() + self.adjustment[self.feature],
                                             cmap = 'gist_stern',
                                             output = 'array')
 
+        # don't need alpha channel
         ann_RGB = ann_img[:,:,0:3]
 
+        # create the composite image from the two RGB arrays
         img_masked = self.helper_make_composite_img(base_array = raw_RGB,
                                             overlay_array = ann_RGB)
 
+        # set self.composite view to new composite image
         self.composite_view = img_masked
 
     def save(self):
+        '''
+        Saves the current state of the file in .npz format. Variable names
+        in npz are either raw and annotated (if those were original variable
+        names), or X and y otherwise (these are commonly used in deepcell library).
+        "_save_version_{number}" is part of saved filename to prevent overwriting
+        files, and to track changes over time if needed.
+
+        Uses:
+            self.filename and self.save_version to name file appropriately
+            self.save_vars_mode to choose variable names to save arrays to in npz format
+            self.raw and self.annotated are arrays to save in npz (self.raw should always
+                remain unmodified, but self.annotated may be modified)
+        '''
+        # create filename to save as
         save_file = self.filename + "_save_version_{}.npz".format(self.save_version)
+        # if file was opened with variable names raw and annotated, save them that way
         if self.save_vars_mode == 0:
             np.savez(save_file, raw = self.raw, annotated = self.annotated)
+        # otherwise, save as X and y
         else:
             np.savez(save_file, X = self.raw, y = self.annotated)
+        # keep track of which version of the file this is
         self.save_version += 1
 
     def add_cell_info(self, feature, add_label, frame):
         '''
-        helper function for actions that add a cell to the npz
+        Helper function that updates necessary information (cell_ids and cell_info)
+        when a new label is added to a frame. If the label exists elsewhere in the
+        feature, the new frame is added to the list of frames in the 'frames' entry.
+        Any duplicate frames are removed from the list of frames, so accidentally adding
+        in a label when it already exists in the frame will not cause bugs.
+        If the label does not exist in the feature yet, an entry in cell_info is added
+        for that label, and the label is added to cell_ids. Label 0 (the background) is
+        never added to cell_ids or cell_info.
+
+        Inputs:
+            feature: which feature is being accessed/modified (update appropriate part of
+                cell_ids and cell_info)
+            add_label: the label being updated
+            frame: the frame number that the label is being added to (ie, the frame number
+                being added to the frame information for that label's entry in cell_info)
+
+        Uses:
+            self.cell_info to update a label's entry or add a new label entry
+            self.cell_ids to add a new label to the feature, if needed
         '''
+        # this function should never be called on label 0, but just in case
         if add_label != 0:
-            #if cell already exists elsewhere in npz:
+            # if cell already exists elsewhere in npz:
             try:
+                # get list of frames from cell info
                 old_frames = self.cell_info[feature][add_label]['frames']
+                # add new frame to list
                 updated_frames = np.append(old_frames, frame)
+                # making frames unique prevents weird behavior in case duplicate frame added
+                # convert to list, keeping it as numpy array causes problems
                 updated_frames = np.unique(updated_frames).tolist()
+                # update cell_info with the modified list of frames
                 self.cell_info[feature][add_label].update({'frames': updated_frames})
-            #cell does not exist anywhere in npz:
+
+            # cell does not exist anywhere in npz:
             except KeyError:
+                # create a new entry in cell_info for the new label
                 self.cell_info[feature].update({add_label: {}})
                 self.cell_info[feature][add_label].update({'label': str(add_label)})
                 self.cell_info[feature][add_label].update({'frames': [frame]})
@@ -3215,15 +3365,36 @@ class ZStackReview:
 
     def del_cell_info(self, feature, del_label, frame):
         '''
-        helper function for actions that remove a cell from the npz
+        Helper function that updates necessary information (cell_ids and cell_info)
+        when a label is completely removed from a frame. If the label exists elsewhere in the
+        feature, the the only change in cell_info is the removal of that frame from the label's
+        frame list. If the label does not exist in any other frames of that feature, the label's
+        entry is deleted from cell_info and the label is removed from cell_ids. Other functions
+        should never call del_cell_info on label 0 (the background), but this is checked before
+        modifying cell_info to prevent a possible KeyError, as label 0 never has an entry in
+        cell_info.
+
+        Inputs:
+            feature: which feature is being accessed/modified (update appropriate part of
+                cell_ids and cell_info)
+            del_label: the label being updated
+            frame: the frame number that the label is being deleted from (ie, the frame number
+                being deleted from the frame information for that label's entry in cell_info)
+
+        Uses:
+            self.cell_info to update a label's entry or delete a label entry
+            self.cell_ids to remove a label to the feature, if needed
         '''
+        # prevent KeyError by always checking that label is a real label, not background
         if del_label != 0:
-            #remove cell from frame
+            # get the list of frames for del_label from self.cell_info
             old_frames = self.cell_info[feature][del_label]['frames']
+            # use numpy to remove frame from the list of frames, then convert back to list type
             updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame))).tolist()
+            # update self.cell_info with the modified frames list
             self.cell_info[feature][del_label].update({'frames': updated_frames})
 
-            #if that was the last frame, delete the entry for that cell
+            # if that was the last frame, delete the entry for that cell
             if self.cell_info[feature][del_label]['frames'] == []:
                 del self.cell_info[feature][del_label]
 
@@ -3233,38 +3404,108 @@ class ZStackReview:
 
     def create_cell_info(self, feature):
         '''
-        helper function for actions that make or remake the entire cell info dict
+        Helper function that creates self.cell_ids and self.cell_info from scratch
+        (ie, based on the content of self.annotated), as opposed to updating the
+        info after small changes. self.cell_info and self.cell_ids are used to
+        store information about each label so that it can be displayed when interacting
+        with the file, and to generate appropriate values for variables such as vmax for
+        image display, or the value of a new label when adding to the annotation. Info
+        about labels is also used to create an empty lineage (no division information)
+        when saving into trk format. This helper function is used to generate cell info
+        from annotations upon opening the file, and any actions that can drastically change
+        the labels in the annotation (eg, relabeling frames).
+
+        Inputs:
+            feature: entry of self.cell_ids and self.cell_info to populate with info, based
+                on that feature of the annotation array
+
+        Uses:
+            self.annotated to get values from (each nonzero value in the array is a label)
+            self.cell_ids to update with the unique labels in each feature
+            self.cell_info to update with the labels and label entries (eg, frames) in each feature
         '''
+        # get annotation stack for feature
         annotated = self.annotated[:,:,:,feature]
 
+        # self.cell_ids[feature] is a list of the unique, nonzero values in annotation
         self.cell_ids[feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))]
+
+        # reset self.cell_info value for key feature
         self.cell_info[feature] = {}
+        # each label in the feature needs a key value pair in this dict
         for cell in self.cell_ids[feature]:
+            # key is the label value, value is a dictionary of info about the label
             self.cell_info[feature][cell] = {}
+            # label is one of the info entries for the label (for display reasons)
             self.cell_info[feature][cell]['label'] = str(cell)
+            # frames entry is a list of each frame the label appears in
             self.cell_info[feature][cell]['frames'] = []
 
+            # check each frame of annotation stack for presence of the label
             for frame in range(self.annotated.shape[0]):
+                # TODO: would this be faster with numpy functions?
+                # if np.any(np.isin(annotated[frame], cell)):
                 if cell in annotated[frame,:,:]:
+                    # frame gets added to label entry's list of frames
+                    # this is ordered and unique because of for loop
                     self.cell_info[feature][cell]['frames'].append(frame)
+
+            # label info also needs 'slices' value for display reasons
             self.cell_info[feature][cell]['slices'] = ''
 
     def create_lineage(self):
+        '''
+        Helper function to enable saving npzs in trk format. Trk files
+        require a lineage.json file which contains information about each
+        label in the file (frames present, parent/daughter info, etc).
+        This information is similar to the information in self.cell_info,
+        so this function creates a lineage dictionary from self.cell_info
+        (populating cell division info with blanks) so that users can easily
+        go from npz annotations to trk format to manually add lineage information
+        if needed. Note: running the npz through deepcell tracking should generate
+        a reasonable lineage, so this option is recommended primarily for cases
+        where tracking does particularly poorly, or a manually-assigned ground
+        truth is needed.
+
+        Uses:
+            self.cell_ids and self.feature to get a list of labels to iterate over
+            self.cell_info to get frame information for each label
+            self.lineage to store generated lineage
+        '''
+        # each label needs a lineage entry
         for cell in self.cell_ids[self.feature]:
+            # each label's lineage entry is a dict
             self.lineage[str(cell)] = {}
+            # key of each label's lineage entry is the label as a string
             cell_info = self.lineage[str(cell)]
 
+            # filling out lineage entry for that label:
+            # label is int value of label
             cell_info["label"] = int(cell)
+            # daughters is list of daughters
             cell_info["daughters"] = []
+            # frame_div is None or value of frame where cell divides
             cell_info["frame_div"] = None
+            # parent is None or value of label of parent cell
             cell_info["parent"] = None
+            # capped is bool that corresponds to whether cell track ends within movie
             cell_info["capped"] = False
+            # frames is list of frames that label appears in: get this from cell_info
             cell_info["frames"] = self.cell_info[self.feature][cell]['frames']
 
     def save_as_trk(self):
         '''
-        Take whatever feature and channel are currently selected,
-        create a lineage, and bundle raw, annotated, lineage into trk file
+        Alternative save option intended for timelapse data that needs
+        tracking information added. Saves current channel and feature
+        along with generated lineage file (no division information) into
+        trk format, so that it can subsequently be opened by Caliban's TrackReview
+        class. Adapted from TrackReview save function.
+
+        Uses:
+            self.create_lineage() to generate updated lineage (no division info)
+                from self.cell_info
+            self.annotated, self.raw, self.lineage get saved into trk file
+            self.filename used as basename for saved file
         '''
 
         self.create_lineage()
