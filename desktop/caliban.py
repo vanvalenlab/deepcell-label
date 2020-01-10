@@ -990,6 +990,9 @@ class ZStackReview:
         self.window.on_mouse_drag = self.on_mouse_drag
         self.window.on_mouse_release = self.on_mouse_release
 
+        # add this handler instead of replacing the default on_resize handler
+        self.window.push_handlers(self.on_resize)
+
         # KeyStateHandler can be queried as dict during other events
         # to check which keys are being held down
         # expands potential use of modifiers during different mouse events
@@ -1605,8 +1608,6 @@ class ZStackReview:
         '''
         # clear old information
         self.window.clear()
-        # TODO: move self.scale_screen into self.window.on_resize, which is more appropriate
-        self.scale_screen()
         # TODO: use a batch to consolidate all of the "drawing" calls
         # draw relevant image
         self.draw_current_frame()
@@ -1614,6 +1615,17 @@ class ZStackReview:
         self.draw_line()
         # draw information text in sidebar
         self.draw_label()
+
+    def on_resize(self, width, height):
+        '''
+        Event handler for when pyglet window changes size. Note: this
+        is pushed to the event handler stack instead of overwriting pyglet
+        default event handlers, as on_resize has other default behavior needed
+        to properly display screen. Calls scale_screen when window resized, as
+        this is the only occasion where we may need to update the screen scale
+        factor.
+        '''
+        self.scale_screen()
 
     def scale_screen(self):
         '''
