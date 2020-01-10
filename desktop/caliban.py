@@ -2262,20 +2262,6 @@ class ZStackReview:
         label = self.get_label()
 
         if label != 0:
-            cell_info = self.cell_info[self.feature][label].copy()
-
-            # display "frames" info nicely ("1,2,3,5" becomes "1-3,5")
-            slices = list(map(list, consecutive(cell_info['frames'])))
-            slices = '[' + ', '.join(["{}".format(a[0])
-                                if len(a) == 1 else "{}-{}".format(a[0], a[-1])
-                                for a in slices]) + ']'
-
-            # update slices info
-            # TODO: does this need to be here? seems like slices could be populated upon
-            # initialization, then updated as needed when frames change, instead of every time
-            # an event (incl. mouse motion) fires
-            self.cell_info[self.feature][label].update({'slices' : slices})
-
             # generate text from cell_info and display_info (use slices instead of frames)
             text = '\n'.join("{:10}{}".format(str(k)+':', self.cell_info[self.feature][label][k])
                               for k in self.display_info)
@@ -3338,6 +3324,7 @@ class ZStackReview:
         Uses:
             self.cell_info to update a label's entry or add a new label entry
             self.cell_ids to add a new label to the feature, if needed
+            display_format_frames to create slices entry from frames list
         '''
         # this function should never be called on label 0, but just in case
         if add_label != 0:
@@ -3352,6 +3339,9 @@ class ZStackReview:
                 updated_frames = np.unique(updated_frames).tolist()
                 # update cell_info with the modified list of frames
                 self.cell_info[feature][add_label].update({'frames': updated_frames})
+                # update slices (the frame info that is displayed)
+                updated_slices = display_format_frames(updated_frames)
+                self.cell_info[feature][add_label].update({'slices': updated_slices})
 
             # cell does not exist anywhere in npz:
             except KeyError:
@@ -3359,7 +3349,8 @@ class ZStackReview:
                 self.cell_info[feature].update({add_label: {}})
                 self.cell_info[feature][add_label].update({'label': str(add_label)})
                 self.cell_info[feature][add_label].update({'frames': [frame]})
-                self.cell_info[feature][add_label].update({'slices': ''})
+                new_slice = display_format_frames([frame])
+                self.cell_info[feature][add_label].update({'slices': new_slice})
 
                 self.cell_ids[feature] = np.append(self.cell_ids[feature], add_label)
 
@@ -3384,6 +3375,7 @@ class ZStackReview:
         Uses:
             self.cell_info to update a label's entry or delete a label entry
             self.cell_ids to remove a label to the feature, if needed
+            display_format_frames to create slices entry from frames list
         '''
         # prevent KeyError by always checking that label is a real label, not background
         if del_label != 0:
@@ -3395,12 +3387,17 @@ class ZStackReview:
             self.cell_info[feature][del_label].update({'frames': updated_frames})
 
             # if that was the last frame, delete the entry for that cell
-            if self.cell_info[feature][del_label]['frames'] == []:
+            if updated_frames == []:
                 del self.cell_info[feature][del_label]
 
                 #also remove from list of cell_ids
                 ids = self.cell_ids[feature]
                 self.cell_ids[feature] = np.delete(ids, np.where(ids == np.int64(del_label)))
+
+            # still entries in frames, update slices (the info that is displayed)
+            else:
+                updated_slices = display_format_frames(updated_frames)
+                self.cell_info[feature][del_label]['slices'] = updated_slices
 
     def create_cell_info(self, feature):
         '''
@@ -3423,6 +3420,7 @@ class ZStackReview:
             self.annotated to get values from (each nonzero value in the array is a label)
             self.cell_ids to update with the unique labels in each feature
             self.cell_info to update with the labels and label entries (eg, frames) in each feature
+            display_format_frames to create slices entry from frames list
         '''
         # get annotation stack for feature
         annotated = self.annotated[:,:,:,feature]
@@ -3450,8 +3448,9 @@ class ZStackReview:
                     # this is ordered and unique because of for loop
                     self.cell_info[feature][cell]['frames'].append(frame)
 
-            # label info also needs 'slices' value for display reasons
-            self.cell_info[feature][cell]['slices'] = ''
+            # label info also needs 'slices' string for display reasons
+            frames = self.cell_info[feature][cell]['frames']
+            self.cell_info[feature][cell]['slices'] = display_format_frames(frames)
 
     def create_lineage(self):
         '''
@@ -3538,6 +3537,19 @@ class ZStackReview:
 def consecutive(data, stepsize=1):
     return np.split(data, np.where(np.diff(data) != stepsize)[0]+1)
 
+def display_format_frames(frames):
+    '''
+    Helper function to format list of frames nicely for display in sidebar.
+    Uses consecutive to create string from list of frames. Eg,
+    [1,2,3,5] becomes "[1-3,5]".
+    '''
+    display_frames = list(map(list, consecutive(frames)))
+
+    display_frames = '[' + ', '.join(["{}".format(a[0])
+                        if len(a) == 1 else "{}-{}".format(a[0], a[-1])
+                        for a in display_frames]) + ']'
+
+    return display_frames
 
 def predict_zstack_cell_ids(img, next_img, threshold = 0.1):
     '''
