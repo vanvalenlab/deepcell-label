@@ -1952,6 +1952,8 @@ class ZStackReview:
             C (shift + c): go backward through channels
             f: go forward through features
             F (shift + f): go backward through features
+            =: increment currently-highlighted label by 1
+            -: decrement currently-highlighted label by 1
             e: enter pixel-editing mode
             s: prompt saving a copy of the file
             p: predict 3D labels (computer vision, not deep learning)
@@ -1986,6 +1988,18 @@ class ZStackReview:
                     self.feature = 0
                 else:
                     self.feature += 1
+
+        # HIGHLIGHT CYCLING
+        if symbol == key.EQUAL:
+            if self.highlighted_cell_one < self.get_max_label():
+                self.highlighted_cell_one += 1
+            elif self.highlighted_cell_one == self.get_max_label():
+                self.highlighted_cell_one = 1
+        if symbol == key.MINUS:
+            if self.highlighted_cell_one > 1:
+                self.highlighted_cell_one -= 1
+            elif self.highlighted_cell_one == 1:
+                self.highlighted_cell_one = self.get_max_label()
 
         # ENTER EDIT MODE
         if symbol == key.E:
@@ -2025,13 +2039,15 @@ class ZStackReview:
                 self.highlighted_cell_one += 1
             elif self.highlighted_cell_one == self.get_max_label():
                 self.highlighted_cell_one = 1
-            # TODO: deselect cell when highlight cycling
+            # deselect label, since highlighting is now decoupled from selection
+            self.mode = Mode.none()
         if symbol == key.MINUS:
             if self.highlighted_cell_one > 1:
                 self.highlighted_cell_one -= 1
             elif self.highlighted_cell_one == 1:
                 self.highlighted_cell_one = self.get_max_label()
-            # TODO: deselect cell when highlight cycling
+            # deselect label
+            self.mode = Mode.none()
 
         # CREATE CELL
         if symbol == key.C:
@@ -2416,7 +2432,6 @@ class ZStackReview:
             cmap.set_bad('red')
 
             # if highlighting on, mask highlighted values so they appear red
-            # labels are highlighted if selected or if shift- or ctrl- clicked for actions
             if self.highlight:
                 frame = self.apply_label_highlight_helper(frame)
 
@@ -2445,20 +2460,13 @@ class ZStackReview:
         '''
         Masks values in input array (frame) to display highlight.
         Masked values are then set to a particular color (red) via
-        the colormap used. Frame is returned whether or not it has
-        had a mask applied.
+        the colormap used. If highlighted label are not in frame (eg,
+        if self.highlighted_cell_two = -1), there is no visual effect.
+        Applies highlight regardless of self.kind as long as highlight is on.
         '''
-        # one label selected
-        if self.mode.kind == "SELECTED":
-            frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
-        # one label selected for flood cell or trim pixels action
-        elif self.mode.kind == "QUESTION":
-            if self.mode.action == "FLOOD CELL" or self.mode.action == "TRIM PIXELS":
-                frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
-        # two labels selected
-        elif self.mode.kind == "MULTIPLE":
-            frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
-            frame = np.ma.masked_equal(frame, self.highlighted_cell_two)
+        # image display code will color masked values red
+        frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
+        frame = np.ma.masked_equal(frame, self.highlighted_cell_two)
 
         return frame
 
