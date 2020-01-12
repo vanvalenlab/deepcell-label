@@ -51,8 +51,104 @@ from imageio import imread, imwrite
 
 gl.glEnable(gl.GL_TEXTURE_2D)
 
+class CalibanWindow:
 
-class TrackReview:
+    def __init__(self):
+        # self.window is a resizable pyglet window
+        self.window = pyglet.window.Window(resizable=True)
+        # can't resize window to be smaller than the display area when viewed at 1x scale
+        self.window.set_minimum_size(self.width + self.sidebar_width, self.height + 20)
+
+        # bind custom event handlers to window
+        self.window.on_draw = self.on_draw
+        self.window.on_key_press = self.on_key_press
+        self.window.on_mouse_motion = self.on_mouse_motion
+        self.window.on_mouse_scroll = self.on_mouse_scroll
+        self.window.on_mouse_press = self.on_mouse_press
+        self.window.on_mouse_drag = self.on_mouse_drag
+        self.window.on_mouse_release = self.on_mouse_release
+
+        # add this handler instead of replacing the default on_resize handler
+        self.window.push_handlers(self.on_resize)
+
+        # KeyStateHandler can be queried as dict during other events
+        # to check which keys are being held down
+        # expands potential use of modifiers during different mouse events
+        self.key_states = key.KeyStateHandler()
+        self.window.push_handlers(self.key_states)
+
+        # use crosshair cursor instead of usual cursor
+        cursor = self.window.get_system_mouse_cursor(self.window.CURSOR_CROSSHAIR)
+        self.window.set_mouse_cursor(cursor)
+        # start with cursor visible, but this can be toggled
+        self.mouse_visible = True
+
+    def on_resize(self, width, height):
+        '''
+        Event handler for when pyglet window changes size. Note: this
+        is pushed to the event handler stack instead of overwriting pyglet
+        default event handlers, as on_resize has other default behavior needed
+        to properly display screen. Calls scale_screen when window resized, as
+        this is the only occasion where we may need to update the screen scale
+        factor.
+        '''
+        self.scale_screen()
+
+    def scale_screen(self):
+        '''
+        Recalculate scaling factor for image display. Calculates largest
+        integer scaling factor that can be applied to both height and width
+        of the image, to best use the available window space. If image size
+        is larger than available window space, scale factor will be set to 1
+        and image/window will extend off-screen: for this reason, it is recommended
+        that large images are reshaped or trimmed before editing in Caliban.
+
+        Uses:
+            self.window.height, self.window.width, and self.sidebar_width to determine
+                free window space
+            self.height and self.width (image dimensions) to calculate scale factor
+            self.scale_factor is updated with the smaller of the two scale factors
+                (or 1, whichever is largest)
+        '''
+        # user can resize window and images will expand to fill space if possible
+        y_scale = self.window.height // self.height
+        x_scale = (self.window.width - self.sidebar_width) // self.width
+        self.scale_factor = min(y_scale, x_scale)
+        self.scale_factor = max(1, self.scale_factor)
+
+    def draw_line(self):
+        '''
+        Draw thin white lines around the area of the window where the image
+        is being displayed. Distinguishes interactable portion of window from
+        information display more clearly but has no other purpose.
+
+        Uses:
+            self.scale_factor, self.width, self.height to calculate area of
+                window where image is being displayed
+            self.sidebar_width to offset lines appropriately
+        '''
+
+        # either one vertical line to separate left edge of image from sidebar
+        # or box around whole image (but I'm leaning towards box)
+        # TODO: need box to be 1 pixel removed from each edge because drawing it at
+        # these exact height slightly obscures the image itself--less of a problem
+        # at larger scales, more of a problem at scale_factor = 1 or 2
+
+        frame_width = self.scale_factor * self.width
+        frame_height = self.scale_factor * self.height
+
+        pyglet.graphics.draw(8, pyglet.gl.GL_LINES,
+            ("v2f", (self.sidebar_width, frame_height,
+                     self.sidebar_width, 0,
+                     self.sidebar_width, 0,
+                     self.sidebar_width + frame_width, 0,
+                     self.sidebar_width + frame_width, 0,
+                     self.sidebar_width + frame_width, frame_height,
+                     self.sidebar_width + frame_width, frame_height,
+                     self.sidebar_width, frame_height))
+        )
+
+class TrackReview(CalibanWindow):
     possible_keys = {"label", "daughters", "frames", "parent", "frame_div",
                      "capped"}
     def __init__(self, filename, lineage, raw, tracked):
@@ -920,7 +1016,7 @@ class TrackReview:
                 tracked_file.flush()
                 trks.add(tracked_file.name, "tracked.npy")
 
-class ZStackReview:
+class ZStackReview(CalibanWindow):
     def __init__(self, filename, raw, annotated, save_vars_mode):
         '''
         Set object attributes to store raw and annotated images (arrays),
@@ -975,29 +1071,6 @@ class ZStackReview:
         # if there are no labels in the feature, hardcode the display info
         except:
             self.display_info = ['label', 'slices']
-
-        # self.window is a resizable pyglet window
-        self.window = pyglet.window.Window(resizable=True)
-        # can't resize window to be smaller than the display area when viewed at 1x scale
-        self.window.set_minimum_size(self.width + self.sidebar_width, self.height + 20)
-
-        # bind custom event handlers to window
-        self.window.on_draw = self.on_draw
-        self.window.on_key_press = self.on_key_press
-        self.window.on_mouse_motion = self.on_mouse_motion
-        self.window.on_mouse_scroll = self.on_mouse_scroll
-        self.window.on_mouse_press = self.on_mouse_press
-        self.window.on_mouse_drag = self.on_mouse_drag
-        self.window.on_mouse_release = self.on_mouse_release
-
-        # add this handler instead of replacing the default on_resize handler
-        self.window.push_handlers(self.on_resize)
-
-        # KeyStateHandler can be queried as dict during other events
-        # to check which keys are being held down
-        # expands potential use of modifiers during different mouse events
-        self.key_states = key.KeyStateHandler()
-        self.window.push_handlers(self.key_states)
 
         # open file to first frame of annotation stack
         self.current_frame = 0
@@ -1075,10 +1148,12 @@ class ZStackReview:
         self.conversion_brush_value = -1
 
         # stores y, x location of mouse click for actions that use skimage flooding
-        self.hole_fill_seed = None
+        # self.hole_fill_seed = None
 
         # how many times the file has been saved since it was opened
         self.save_version = 0
+
+        super().__init__()
 
         # start pyglet event loop
         pyglet.app.run()
@@ -1615,39 +1690,6 @@ class ZStackReview:
         self.draw_line()
         # draw information text in sidebar
         self.draw_label()
-
-    def on_resize(self, width, height):
-        '''
-        Event handler for when pyglet window changes size. Note: this
-        is pushed to the event handler stack instead of overwriting pyglet
-        default event handlers, as on_resize has other default behavior needed
-        to properly display screen. Calls scale_screen when window resized, as
-        this is the only occasion where we may need to update the screen scale
-        factor.
-        '''
-        self.scale_screen()
-
-    def scale_screen(self):
-        '''
-        Recalculate scaling factor for image display. Calculates largest
-        integer scaling factor that can be applied to both height and width
-        of the image, to best use the available window space. If image size
-        is larger than available window space, scale factor will be set to 1
-        and image/window will extend off-screen: for this reason, it is recommended
-        that large images are reshaped or trimmed before editing in Caliban.
-
-        Uses:
-            self.window.height, self.window.width, and self.sidebar_width to determine
-                free window space
-            self.height and self.width (image dimensions) to calculate scale factor
-            self.scale_factor is updated with the smaller of the two scale factors
-                (or 1, whichever is largest)
-        '''
-        # user can resize window and images will expand to fill space if possible
-        y_scale = self.window.height // self.height
-        x_scale = (self.window.width - self.sidebar_width) // self.width
-        self.scale_factor = min(y_scale, x_scale)
-        self.scale_factor = max(1, self.scale_factor)
 
     def on_key_press(self, symbol, modifiers):
         '''
