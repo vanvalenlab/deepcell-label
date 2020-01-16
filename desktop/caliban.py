@@ -220,7 +220,7 @@ class TrackReview(CalibanWindow):
                 frame = self.tracked[self.current_frame]
                 label = int(frame[self.y, self.x])
                 if label != 0:
-                    self.mode = Mode("SELECTED",
+                    self.mode.update("SELECTED",
                                      label=label,
                                      frame=self.current_frame,
                                      y_location=self.y, x_location=self.x)
@@ -232,7 +232,7 @@ class TrackReview(CalibanWindow):
                 if label != 0:
                     self.highlighted_cell_one = self.mode.label
                     self.highlighted_cell_two = label
-                    self.mode = Mode("MULTIPLE",
+                    self.mode.update("MULTIPLE",
                                      label_1=self.mode.label,
                                      frame_1=self.mode.frame,
                                      y1_location = self.mode.y_location,
@@ -243,7 +243,7 @@ class TrackReview(CalibanWindow):
                                      x2_location = self.x)
                 #deselect cells if click on background
                 else:
-                    self.mode = Mode.none()
+                    self.mode.clear()
                     self.highlighted_cell_one = -1
                     self.highlighted_cell_two = -1
             #if already have two cells selected, click again to reselect the second cell
@@ -252,7 +252,7 @@ class TrackReview(CalibanWindow):
                 label = int(frame[self.y, self.x])
                 if label != 0:
                     self.highlighted_cell_two = label
-                    self.mode = Mode("MULTIPLE",
+                    self.mode.update("MULTIPLE",
                                      label_1=self.mode.label_1,
                                      frame_1=self.mode.frame_1,
                                      y1_location = self.mode.y1_location,
@@ -263,7 +263,7 @@ class TrackReview(CalibanWindow):
                                      x2_location = self.x)
                 #deselect cells if click on background
                 else:
-                    self.mode = Mode.none()
+                    self.mode.clear()
                     self.highlighted_cell_one = -1
                     self.highlighted_cell_two = -1
             elif self.mode.kind == "PROMPT" and self.mode.action == "FILL HOLE":
@@ -273,7 +273,7 @@ class TrackReview(CalibanWindow):
                         self.hole_fill_seed = (self.y, self.x)
                     if self.hole_fill_seed is not None:
                         self.action_fill_hole()
-                        self.mode = Mode.none()
+                        self.mode.clear()
 
         elif self.edit_mode:
             if self.mode.kind is None:
@@ -307,12 +307,10 @@ class TrackReview(CalibanWindow):
                 frame = self.tracked[self.current_frame]
                 label = int(frame[self.y, self.x, 0])
                 if label == 0:
-                    self.mode = Mode.none()
+                    self.mode.clear()
                 elif label != 0:
                     self.edit_value = label
-                    self.mode = Mode.none()
-
-
+                    self.mode.clear()
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
 
@@ -407,7 +405,7 @@ class TrackReview(CalibanWindow):
         offset = 5 if modifiers & key.MOD_SHIFT else 1
         if not self.edit_mode:
             if symbol == key.ESCAPE:
-                self.mode = Mode.none()
+                self.mode.clear()
                 self.highlighted_cell_one = -1
                 self.highlighted_cell_two = -1
             elif symbol in {key.LEFT, key.A}:
@@ -446,44 +444,44 @@ class TrackReview(CalibanWindow):
                 self.edit_mode = not self.edit_mode
         if symbol == key.C:
             if self.mode.kind == "SELECTED":
-                self.mode = Mode("QUESTION",
+                self.mode.update("QUESTION",
                                  action="NEW TRACK", **self.mode.info)
 
         if symbol == key.F:
             if self.mode.kind == "SELECTED":
-                self.mode = Mode("PROMPT",
+                self.mode.update("PROMPT",
                                 action="FILL HOLE", **self.mode.info)
         if symbol == key.X:
             if self.mode.kind == "SELECTED":
-                self.mode = Mode("QUESTION",
+                self.mode.update("QUESTION",
                                  action="DELETE", **self.mode.info)
         if symbol == key.P:
             if self.mode.kind == "MULTIPLE":
-                self.mode = Mode("QUESTION",
+                self.mode.update("QUESTION",
                                  action="PARENT", **self.mode.info)
             elif self.mode.kind is None and self.edit_mode:
-                self.mode = Mode("PROMPT",
+                self.mode.update("PROMPT",
                                  action = "PICK COLOR", **self.mode.info)
         if symbol == key.R:
             if self.mode.kind == "MULTIPLE":
-                self.mode = Mode("QUESTION",
+                self.mode.update("QUESTION",
                                  action="REPLACE", **self.mode.info)
         if symbol == key.S:
             if self.mode.kind == "MULTIPLE":
-                self.mode = Mode("QUESTION",
+                self.mode.update("QUESTION",
                                  action="SWAP", **self.mode.info)
             elif self.mode.kind == "QUESTION" and self.mode.action == "SWAP":
                 self.action_single_swap()
-                self.mode = Mode.none()
+                self.mode.clear()
             elif self.mode.kind == "QUESTION" and self.mode.action == "NEW TRACK":
                 self.action_new_single_cell()
-                self.mode = Mode.none()
+                self.mode.clear()
             elif self.mode.kind is None and not self.edit_mode:
-                self.mode = Mode("QUESTION",
+                self.mode.update("QUESTION",
                                  action="SAVE")
         if symbol == key.W:
             if self.mode.kind == "MULTIPLE":
-                self.mode = Mode("QUESTION",
+                self.mode.update("QUESTION",
                                  action="WATERSHED", **self.mode.info)
         #cycle through highlighted cells
         if symbol == key.EQUAL:
@@ -515,7 +513,7 @@ class TrackReview(CalibanWindow):
                     self.action_watershed()
                 elif self.mode.action == "DELETE":
                     self.action_delete()
-                self.mode = Mode.none()
+                self.mode.clear()
                 self.highlighted_cell_one = -1
                 self.highlighted_cell_two = -1
 
@@ -1017,6 +1015,12 @@ class TrackReview(CalibanWindow):
                 trks.add(tracked_file.name, "tracked.npy")
 
 class ZStackReview(CalibanWindow):
+
+    save_prompt_text = ("\nSave current file?"
+                        "\nSPACE = SAVE"
+                        "\nT = SAVE AS .TRK FILE"
+                        "\nESC = CANCEL")
+
     def __init__(self, filename, raw, annotated, save_vars_mode):
         '''
         Set object attributes to store raw and annotated images (arrays),
@@ -1094,10 +1098,8 @@ class ZStackReview(CalibanWindow):
         # prompts and confirmation dialogue, using Mode class; start with Mode.none()
         # (nothing selected, no actions pending)
         self.mode = Mode.none()
+        self.mode.update_prompt_additions = self.custom_prompt
 
-        # how much to scale image by (start with no scaling, but can expand to
-        # fill window when window changes size)
-        self.scale_factor = 1
 
         # start with highlighting option turned off and no labels highlighted
         self.highlight = False
@@ -1157,6 +1159,11 @@ class ZStackReview(CalibanWindow):
 
         # start pyglet event loop
         pyglet.app.run()
+
+    def custom_prompt(self):
+        if self.mode.kind == "QUESTION":
+            if self.mode.action == "SAVE":
+                self.mode.text = ZStackReview.save_prompt_text
 
     def on_mouse_press(self, x, y, button, modifiers):
         '''
@@ -1227,18 +1234,18 @@ class ZStackReview(CalibanWindow):
         if label != 0:
             if modifiers & key.MOD_CTRL:
                 self.hole_fill_seed = (self.y, self.x)
-                self.mode = Mode("QUESTION",
+                self.mode.update("QUESTION",
                                  action = "FLOOD CELL",
                                  label = label,
                                  frame = self.current_frame)
             elif modifiers & key.MOD_SHIFT:
                 self.hole_fill_seed = (self.y, self.x)
-                self.mode = Mode("QUESTION",
+                self.mode.update("QUESTION",
                                  action = "TRIM PIXELS",
                                  label = label,
                                  frame = self.current_frame)
             else:
-                self.mode = Mode("SELECTED",
+                self.mode.update("SELECTED",
                                  label=label,
                                  frame=self.current_frame,
                                  y_location=self.y, x_location=self.x)
@@ -1260,7 +1267,7 @@ class ZStackReview(CalibanWindow):
                 whatever label is selected, as in browser caliban)
         '''
         if label != 0:
-            self.mode = Mode("MULTIPLE",
+            self.mode.update("MULTIPLE",
                              label_1=self.mode.label,
                              frame_1=self.mode.frame,
                              y1_location = self.mode.y_location,
@@ -1291,7 +1298,7 @@ class ZStackReview(CalibanWindow):
             if label == 0:
                 self.hole_fill_seed = (self.y, self.x)
                 self.action_fill_hole()
-                self.mode = Mode.none()
+                self.mode.clear()
 
     def handle_color_pick_helper(self):
         '''
@@ -1309,7 +1316,7 @@ class ZStackReview(CalibanWindow):
         label = self.get_label()
         if label != 0:
             self.edit_value = label
-        self.mode = Mode.none()
+        self.mode.clear()
 
     def pick_conversion_target_helper(self):
         '''
@@ -1330,7 +1337,7 @@ class ZStackReview(CalibanWindow):
         if label != 0:
             self.conversion_brush_target = label
             # once value is set, move to setting next value
-            self.mode = Mode("PROMPT", action = "CONVERSION BRUSH VALUE")
+            self.mode.update("PROMPT", action = "CONVERSION BRUSH VALUE")
 
     def pick_conversion_value_helper(self):
         '''
@@ -1351,7 +1358,7 @@ class ZStackReview(CalibanWindow):
         if label != 0:
             self.conversion_brush_value = label
             # once value is set, turn on conversion brush
-            self.mode = Mode("DRAW", action = "CONVERSION",
+            self.mode.update("DRAW", action = "CONVERSION",
                 conversion_brush_target = self.conversion_brush_target,
                 conversion_brush_value = self.conversion_brush_value)
 
@@ -1502,7 +1509,7 @@ class ZStackReview(CalibanWindow):
 
         # clear bounding box and Mode
         self.show_brush = True
-        self.mode = Mode.none()
+        self.mode.clear()
 
     def handle_draw_helper(self):
         '''
@@ -1792,7 +1799,7 @@ class ZStackReview(CalibanWindow):
             # clear hole fill seed (used in hole fill, trim pixels, flood contiguous)
             self.hole_fill_seed = None
             # reset self.mode (deselects labels, clears actions)
-            self.mode = Mode.none()
+            self.mode.clear()
             # reset from thresholding
             self.show_brush = True
 
@@ -1882,16 +1889,16 @@ class ZStackReview(CalibanWindow):
 
         # ACTIONS - COLOR PICKER
         if symbol == key.P:
-            self.mode = Mode("PROMPT", action = "PICK COLOR", **self.mode.info)
+            self.mode.update("PROMPT", action = "PICK COLOR", **self.mode.info)
         # ACTIONS - CONVERSION BRUSH
         if symbol == key.R:
-            self.mode = Mode("PROMPT", action="CONVERSION BRUSH TARGET", **self.mode.info)
+            self.mode.update("PROMPT", action="CONVERSION BRUSH TARGET", **self.mode.info)
         # ACTIONS - SAVE FILE
         if symbol == key.S:
-            self.mode = Mode("QUESTION", action="SAVE", filetype = 'npz')
+            self.mode.update("QUESTION", action="SAVE")
         # ACTIONS - THRESHOLD
         if symbol == key.T:
-            self.mode = Mode("PROMPT", action = "DRAW BOX", **self.mode.info)
+            self.mode.update("PROMPT", action = "DRAW BOX", **self.mode.info)
             self.show_brush = False
             self.brush_view = np.zeros(self.brush_view.shape)
 
@@ -1933,7 +1940,7 @@ class ZStackReview(CalibanWindow):
         if self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH VALUE":
             if symbol == key.N:
                 self.conversion_brush_value = self.get_new_label()
-                self.mode = Mode("DRAW", action = "CONVERSION",
+                self.mode.update("DRAW", action = "CONVERSION",
                         conversion_brush_target = self.conversion_brush_target,
                         conversion_brush_value = self.conversion_brush_value)
 
@@ -2052,15 +2059,15 @@ class ZStackReview(CalibanWindow):
 
         # SAVE
         if symbol == key.S:
-            self.mode = Mode("QUESTION", action="SAVE", filetype = 'npz')
+            self.mode.update("QUESTION", action="SAVE")
 
         # PREDICT
         if symbol == key.P:
-            self.mode = Mode("QUESTION", action="PREDICT", **self.mode.info)
+            self.mode.update("QUESTION", action="PREDICT", **self.mode.info)
 
         # RELABEL
         if symbol == key.R:
-            self.mode = Mode("QUESTION", action='RELABEL', **self.mode.info)
+            self.mode.update("QUESTION", action='RELABEL', **self.mode.info)
 
     def label_mode_single_keypress_helper(self, symbol, modifiers):
         '''
@@ -2082,26 +2089,26 @@ class ZStackReview(CalibanWindow):
             elif self.highlighted_cell_one == self.get_max_label():
                 self.highlighted_cell_one = 1
             # deselect label, since highlighting is now decoupled from selection
-            self.mode = Mode.none()
+            self.mode.clear()
         if symbol == key.MINUS:
             if self.highlighted_cell_one > 1:
                 self.highlighted_cell_one -= 1
             elif self.highlighted_cell_one == 1:
                 self.highlighted_cell_one = self.get_max_label()
             # deselect label
-            self.mode = Mode.none()
+            self.mode.clear()
 
         # CREATE CELL
         if symbol == key.C:
-            self.mode = Mode("QUESTION", action="CREATE NEW", **self.mode.info)
+            self.mode.update("QUESTION", action="CREATE NEW", **self.mode.info)
 
         # HOLE FILL
         if symbol == key.F:
-            self.mode = Mode("PROMPT", action="FILL HOLE", **self.mode.info)
+            self.mode.update("PROMPT", action="FILL HOLE", **self.mode.info)
 
         # DELETE CELL
         if symbol == key.X:
-            self.mode = Mode("QUESTION", action="DELETE", **self.mode.info)
+            self.mode.update("QUESTION", action="DELETE", **self.mode.info)
 
     def label_mode_multiple_keypress_helper(self, symbol, modifiers):
         '''
@@ -2118,15 +2125,15 @@ class ZStackReview(CalibanWindow):
         '''
         # REPLACE
         if symbol == key.R:
-            self.mode = Mode("QUESTION", action="REPLACE", **self.mode.info)
+            self.mode.update("QUESTION", action="REPLACE", **self.mode.info)
 
         # SWAP
         if symbol == key.S:
-            self.mode = Mode("QUESTION", action="SWAP", **self.mode.info)
+            self.mode.update("QUESTION", action="SWAP", **self.mode.info)
 
         # WATERSHED
         if symbol == key.W:
-            self.mode = Mode("QUESTION", action="WATERSHED", **self.mode.info)
+            self.mode.update("QUESTION", action="WATERSHED", **self.mode.info)
 
     def label_mode_question_keypress_helper(self, symbol, modifiers):
         '''
@@ -2148,85 +2155,85 @@ class ZStackReview(CalibanWindow):
         if self.mode.action == "SAVE":
             if symbol == key.T:
                 self.save_as_trk()
-                self.mode = Mode.none()
+                self.mode.clear()
             if symbol == key.SPACE:
                 self.save()
-                self.mode = Mode.none()
+                self.mode.clear()
 
         # RESPOND TO RELABEL QUESTION
         elif self.mode.action == "RELABEL":
             if symbol == key.U:
                 self.action_relabel_unique()
-                self.mode = Mode.none()
+                self.mode.clear()
             if symbol == key.P:
                 self.action_relabel_preserve()
-                self.mode = Mode.none()
+                self.mode.clear()
             if symbol == key.S:
                 self.action_relabel_frame()
-                self.mode = Mode.none()
+                self.mode.clear()
             if symbol == key.SPACE:
                 self.action_relabel_all_frames()
-                self.mode = Mode.none()
+                self.mode.clear()
 
         # RESPOND TO PREDICT QUESTION
         elif self.mode.action == "PREDICT":
             if symbol == key.S:
                 self.action_predict_single()
-                self.mode = Mode.none()
+                self.mode.clear()
             if symbol == key.SPACE:
                 self.action_predict_zstack()
-                self.mode = Mode.none()
+                self.mode.clear()
 
         # RESPOND TO CREATE QUESTION
         elif self.mode.action == "CREATE NEW":
             if symbol == key.S:
                 self.action_new_single_cell()
-                self.mode = Mode.none()
+                self.mode.clear()
             if symbol == key.SPACE:
                 self.action_new_cell_stack()
-                self.mode = Mode.none()
+                self.mode.clear()
 
         # RESPOND TO REPLACE QUESTION
         elif self.mode.action == "REPLACE":
             if symbol == key.S:
                 self.action_replace_single()
-                self.mode = Mode.none()
+                self.mode.clear()
             if symbol == key.SPACE:
                 self.action_replace()
-                self.mode = Mode.none()
+                self.mode.clear()
 
         # RESPOND TO SWAP QUESTION
         elif self.mode.action == "SWAP":
             if symbol == key.S:
                 self.action_swap_single_frame()
-                self.mode = Mode.none()
+                self.mode.clear()
             if symbol == key.SPACE:
                 self.action_swap_all()
-                self.mode = Mode.none()
+                self.mode.clear()
 
         # RESPOND TO DELETE QUESTION
         elif self.mode.action == "DELETE":
             if symbol == key.SPACE:
                 self.action_delete_mask()
-                self.mode = Mode.none()
+                self.mode.clear()
 
         # RESPOND TO WATERSHED QUESTION
         elif self.mode.action == "WATERSHED":
             if symbol == key.SPACE:
                 self.action_watershed()
-                self.mode = Mode.none()
+                self.mode.clear()
 
         # RESPOND TO TRIM PIXELS QUESTION
         elif self.mode.action == "TRIM PIXELS":
             if symbol == key.SPACE:
                 self.action_trim_pixels()
-                self.mode = Mode.none()
+                self.mode.clear()
 
         # RESPOND TO FLOOD CELL QUESTION
         elif self.mode.action == "FLOOD CELL":
             if symbol == key.SPACE:
                 self.action_flood_contiguous()
-                self.mode = Mode.none()
+                self.mode.clear()
 
     def get_current_frame(self):
         '''
