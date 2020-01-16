@@ -550,7 +550,7 @@ class TrackReview(CalibanWindow):
         else:
             text = ''
 
-        text += self.mode.render()
+        text += self.mode.text
 
         info_label = pyglet.text.Label(text, font_name="monospace",
                                        anchor_x="left", anchor_y="bottom",
@@ -2340,7 +2340,7 @@ class ZStackReview(CalibanWindow):
             text = ''
 
         # add info from self.mode (eg, prompts or "selected", etc)
-        text += self.mode.render()
+        text += self.mode.text
 
         # TODO: render label in a batch
         # create pyglet label anchored to bottom of left side

@@ -28,6 +28,8 @@ class Mode:
     def __init__(self, kind, **info):
         self.kind = kind
         self.info = info
+        self.text = ""
+        self.update_prompt()
 
     def __getattr__(self, attrib):
         if attrib in self.info:
@@ -38,7 +40,13 @@ class Mode:
         return ("Mode('{}', ".format(self.kind) +
                 ", ".join("{}={}".format(k, v) for k, v in self.info.items()) + ")")
 
-    def render(self):
+    def update_prompt_additions(self):
+        '''
+        Can be overridden by custom Caliban classes to implement specific prompts.
+        '''
+        pass
+
+    def update_prompt(self):
 
         text = ""
         answer = "SPACE = CONFIRM\nESC = CANCEL"
@@ -150,7 +158,9 @@ class Mode:
                 "\nUse ESC to stop using the conversion brush.").format(self.conversion_brush_target,
                 self.conversion_brush_value)
 
-        return text
+        self.update_prompt_additions()
+
+        self.text = text
 
     @staticmethod
     def none():
