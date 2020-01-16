@@ -52,12 +52,28 @@ from imageio import imread, imwrite
 gl.glEnable(gl.GL_TEXTURE_2D)
 
 class CalibanWindow:
+    # blank area to the left of displayed image where text info is displayed
+    sidebar_width = 300
+
+    # pad image with blank area so we can draw a border around it
+    image_padding = 10
+
+    # window is always a resizable pyglet window
+    window = pyglet.window.Window(resizable=True)
+
+    # use crosshair cursor instead of usual cursor
+    cursor = window.get_system_mouse_cursor(window.CURSOR_CROSSHAIR)
+    window.set_mouse_cursor(cursor)
 
     def __init__(self):
-        # self.window is a resizable pyglet window
-        self.window = pyglet.window.Window(resizable=True)
+
+        # how much to scale image by (start with no scaling, but can expand to
+        # fill window when window changes size)
+        self.scale_factor = 1
+
         # can't resize window to be smaller than the display area when viewed at 1x scale
-        self.window.set_minimum_size(self.width + self.sidebar_width, self.height + 20)
+        self.window.set_minimum_size(width = self.width + self.sidebar_width + 2*self.image_padding,
+                                     height = self.height + 2*self.image_padding)
 
         # bind custom event handlers to window
         self.window.on_draw = self.on_draw
@@ -77,9 +93,6 @@ class CalibanWindow:
         self.key_states = key.KeyStateHandler()
         self.window.push_handlers(self.key_states)
 
-        # use crosshair cursor instead of usual cursor
-        cursor = self.window.get_system_mouse_cursor(self.window.CURSOR_CROSSHAIR)
-        self.window.set_mouse_cursor(cursor)
         # start with cursor visible, but this can be toggled
         self.mouse_visible = True
 
@@ -104,17 +117,36 @@ class CalibanWindow:
         that large images are reshaped or trimmed before editing in Caliban.
 
         Uses:
-            self.window.height, self.window.width, and self.sidebar_width to determine
-                free window space
+            self.window.height, self.window.width, self.image_padding, and
+                self.sidebar_width to determine free window space
             self.height and self.width (image dimensions) to calculate scale factor
             self.scale_factor is updated with the smaller of the two scale factors
                 (or 1, whichever is largest)
         '''
         # user can resize window and images will expand to fill space if possible
-        y_scale = self.window.height // self.height
-        x_scale = (self.window.width - self.sidebar_width) // self.width
+        # padding around image stays constant
+        pad = 2*self.image_padding
+        y_scale = (self.window.height - pad) // self.height
+        x_scale = (self.window.width - (self.sidebar_width + pad)) // self.width
         self.scale_factor = min(y_scale, x_scale)
         self.scale_factor = max(1, self.scale_factor)
+
+    def on_draw(self):
+        '''
+        Event handler for pyglet window, redraws all content of screen after
+        window events. Clears window, calculates screen scaling, then redraws
+        the displayed image, lines around that image (to distinguish from black
+        background of the rest of the window), and information text in the sidebar.
+        '''
+        # clear old information
+        self.window.clear()
+        # TODO: use a batch to consolidate all of the "drawing" calls
+        # draw relevant image
+        self.draw_current_frame()
+        # draw lines around the image to distinguish it from rest of window
+        self.draw_line()
+        # draw information text in sidebar
+        self.draw_label()
 
     def draw_line(self):
         '''
@@ -127,9 +159,6 @@ class CalibanWindow:
                 window where image is being displayed
             self.sidebar_width to offset lines appropriately
         '''
-
-        # either one vertical line to separate left edge of image from sidebar
-        # or box around whole image (but I'm leaning towards box)
         # TODO: need box to be 1 pixel removed from each edge because drawing it at
         # these exact height slightly obscures the image itself--less of a problem
         # at larger scales, more of a problem at scale_factor = 1 or 2
@@ -157,8 +186,6 @@ class TrackReview(CalibanWindow):
         self.raw = raw
         self.tracked = tracked
 
-        self.sidebar_width = 300
-
         # if not all of these keys are present, actions are not supported
         self.incomplete = {*self.tracks[1]} < TrackReview.possible_keys
 
@@ -174,15 +201,7 @@ class TrackReview(CalibanWindow):
         self.num_frames, self.height, self.width, _ = raw.shape
         self.dtype_raw = raw.dtype
 
-        self.window = pyglet.window.Window(resizable=True)
-        self.window.set_minimum_size(self.width + self.sidebar_width, self.height + 20)
-        self.window.on_draw = self.on_draw
-        self.window.on_key_press = self.on_key_press
-        self.window.on_mouse_motion = self.on_mouse_motion
-        self.window.on_mouse_scroll = self.on_mouse_scroll
-        self.window.on_mouse_press = self.on_mouse_press
-        self.window.on_mouse_drag = self.on_mouse_drag
-        self.window.on_mouse_release = self.on_mouse_release
+        super().__init__()
 
         self.current_frame = 0
         self.draw_raw = False
@@ -191,7 +210,6 @@ class TrackReview(CalibanWindow):
         self.y = 0
         self.mode = Mode.none()
         self.adjustment = 0
-        self.scale_factor = 1
         self.highlight = False
         self.highlighted_cell_one = -1
         self.highlighted_cell_two = -1
@@ -385,21 +403,6 @@ class TrackReview(CalibanWindow):
             brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
             self.brush_view[brush_area] = self.edit_value
 
-    def on_draw(self):
-        self.window.clear()
-        self.scale_screen()
-        self.draw_current_frame()
-        self.draw_line()
-        self.draw_label()
-
-    def scale_screen(self):
-        #User can resize window and images will expand to fill space if possible
-        #Determine whether to base scale factor on width or height
-        y_scale = self.window.height // self.height
-        x_scale = (self.window.width - 300) // self.width
-        self.scale_factor = min(y_scale, x_scale)
-        self.scale_factor = max(1, self.scale_factor)
-
     def on_key_press(self, symbol, modifiers):
         # Set scroll speed (through sequential frames) with offset
         offset = 5 if modifiers & key.MOD_SHIFT else 1
@@ -522,14 +525,6 @@ class TrackReview(CalibanWindow):
             return self.raw[self.current_frame]
         else:
             return self.tracked[self.current_frame]
-
-    def draw_line(self):
-        pyglet.graphics.draw(4, pyglet.gl.GL_LINES,
-            ("v2f", (self.sidebar_width, self.window.height,
-                     self.sidebar_width, 0,
-                     self.sidebar_width, 0,
-                     self.window.width, 0))
-        )
 
     def draw_label(self):
         # always use segmented output for label, not raw
@@ -1054,9 +1049,6 @@ class ZStackReview(CalibanWindow):
         # unpack the shape of the raw array
         self.num_frames, self.height, self.width, self.channel_max = raw.shape
 
-        # blank area to the left of displayed image where text info is displayed
-        self.sidebar_width = 300
-
         # info dictionaries that will be populated with info about labels for
         # each feature of annotation array
         self.cell_ids = {}
@@ -1100,7 +1092,6 @@ class ZStackReview(CalibanWindow):
         self.mode = Mode.none()
         self.mode.update_prompt_additions = self.custom_prompt
 
-
         # start with highlighting option turned off and no labels highlighted
         self.highlight = False
         self.highlighted_cell_one = -1
@@ -1113,12 +1104,6 @@ class ZStackReview(CalibanWindow):
         self.cmap_options = ['cubehelix', 'gist_yarg', 'gist_gray', 'magma', 'nipy_spectral', 'prism']
         # start on cubehelix cmap
         self.current_cmap = 0
-
-        # use crosshair cursor instead of usual cursor
-        cursor = self.window.get_system_mouse_cursor(self.window.CURSOR_CROSSHAIR)
-        self.window.set_mouse_cursor(cursor)
-        # start with cursor visible, but this can be toggled
-        self.mouse_visible = True
 
         # start in label-editing mode
         self.edit_mode = False
@@ -1680,23 +1665,6 @@ class ZStackReview(CalibanWindow):
         # color/brightness adjustments will change what the composited image looks like
         if self.edit_mode and not self.hide_annotations:
             self.helper_update_composite()
-
-    def on_draw(self):
-        '''
-        Event handler for pyglet window, redraws all content of screen after
-        window events. Clears window, calculates screen scaling, then redraws
-        the displayed image, lines around that image (to distinguish from black
-        background of the rest of the window), and information text in the sidebar.
-        '''
-        # clear old information
-        self.window.clear()
-        # TODO: use a batch to consolidate all of the "drawing" calls
-        # draw relevant image
-        self.draw_current_frame()
-        # draw lines around the image to distinguish it from rest of window
-        self.draw_line()
-        # draw information text in sidebar
-        self.draw_label()
 
     def on_key_press(self, symbol, modifiers):
         '''
@@ -2285,38 +2253,6 @@ class ZStackReview(CalibanWindow):
                 represents which labels are currently in use
         '''
         return (self.get_max_label() + 1)
-
-    def draw_line(self):
-        '''
-        Draw thin white lines around the area of the window where the image
-        is being displayed. Distinguishes interactable portion of window from
-        information display more clearly but has no other purpose.
-
-        Uses:
-            self.scale_factor, self.width, self.height to calculate area of
-                window where image is being displayed
-            self.sidebar_width to offset lines appropriately
-        '''
-
-        # either one vertical line to separate left edge of image from sidebar
-        # or box around whole image (but I'm leaning towards box)
-        # TODO: need box to be 1 pixel removed from each edge because drawing it at
-        # these exact height slightly obscures the image itself--less of a problem
-        # at larger scales, more of a problem at scale_factor = 1 or 2
-
-        frame_width = self.scale_factor * self.width
-        frame_height = self.scale_factor * self.height
-
-        pyglet.graphics.draw(8, pyglet.gl.GL_LINES,
-            ("v2f", (self.sidebar_width, frame_height,
-                     self.sidebar_width, 0,
-                     self.sidebar_width, 0,
-                     self.sidebar_width + frame_width, 0,
-                     self.sidebar_width + frame_width, 0,
-                     self.sidebar_width + frame_width, frame_height,
-                     self.sidebar_width + frame_width, frame_height,
-                     self.sidebar_width, frame_height))
-        )
 
     def draw_label(self):
         '''
