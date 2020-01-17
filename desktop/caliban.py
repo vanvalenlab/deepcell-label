@@ -131,6 +131,36 @@ class CalibanWindow:
         self.scale_factor = min(y_scale, x_scale)
         self.scale_factor = max(1, self.scale_factor)
 
+    def update_mouse_position(self, x, y):
+        '''
+        Helper function for adjusting self.x and self.y upon mouse movement.
+        Mouse movement and drag are mutually exclusive, so both event handlers
+        (on_mouse_drag and on_mouse_motion) use this helper function. Converts
+        window x and y into image x and y, as we need image x and y (self.x and
+        self.y) to display label info and carry out actions, but we do not need
+        window/event x and y for anything.
+
+        Uses:
+            x and y, values passed in from event handling, location of mouse cursor
+                in the window (relative to corner of window)
+            self.sidebar_width to offset x location
+            self.scale_factor to rescale x and y coordinates down to scale of original
+                image
+            self.width and self.height to check whether mouse cursor is in area of image
+                (self.x and self.y will not update if mouse has moved outside of image)
+        '''
+        # convert event x to image x by accounting for sidebar width, then scale
+        x -= self.sidebar_width
+        x //= self.scale_factor
+
+        # convert event y to image y by rescaling and changing coordinates:
+        # pyglet y has increasing y at the top of the screen, opposite convention of array indices
+        y = self.height - (y // self.scale_factor)
+
+        # check that mouse cursor is within bounds of image before updating
+        if 0 <= x < self.width and 0 <= y < self.height:
+            self.x, self.y = x, y
+
     def on_draw(self):
         '''
         Event handler for pyglet window, redraws all content of screen after
@@ -332,12 +362,7 @@ class TrackReview(CalibanWindow):
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
 
-        x -= self.sidebar_width
-        x //= max(self.scale_factor, 1)
-        y = self.height - y // max(self.scale_factor, 1)
-
-        if 0 <= x < self.width and 0 <= y < self.height:
-            self.x, self.y = x, y
+        self.update_mouse_position(x, y)
 
         if self.edit_mode:
             annotated = self.tracked[self.current_frame,:,:,0]
@@ -390,12 +415,8 @@ class TrackReview(CalibanWindow):
                 self.adjustment = self.adjustment - 1 * scroll_y
 
     def on_mouse_motion(self, x, y, dx, dy):
-        x -= self.sidebar_width
-        x //= self.scale_factor
-        y = self.height - y // self.scale_factor
 
-        if 0 <= x < self.width and 0 <= y < self.height:
-            self.x, self.y = x, y
+        self.update_mouse_position(x, y)
 
         if self.edit_mode:
             #display brush size
@@ -1359,7 +1380,7 @@ class ZStackReview(CalibanWindow):
         different modes of behavior.
 
         Uses:
-            self.update_mouse_position_helper to update current self.x and self.y from
+            self.update_mouse_position to update current self.x and self.y from
                 event x and y
             self.edit_mode, self.mode.kind, self.mode.action, self.show_brush
                 to determine response to mouse drag
@@ -1368,7 +1389,7 @@ class ZStackReview(CalibanWindow):
             the correct preview (threshold box vs path of brush)
         '''
         # always update self.x and self.y when mouse has moved
-        self.update_mouse_position_helper(x, y)
+        self.update_mouse_position(x, y)
 
         # mouse drag only has special behavior in pixel-editing mode
         if self.edit_mode:
@@ -1398,36 +1419,6 @@ class ZStackReview(CalibanWindow):
                 right_edge = max(self.predict_seed[1], self.x)
 
                 self.brush_view[top_edge:bottom_edge, left_edge:right_edge] = self.edit_value
-
-    def update_mouse_position_helper(self, x, y):
-        '''
-        Helper function for adjusting self.x and self.y upon mouse movement.
-        Mouse movement and drag are mutually exclusive, so both event handlers
-        (on_mouse_drag and on_mouse_motion) use this helper function. Converts
-        window x and y into image x and y, as we need image x and y (self.x and
-        self.y) to display label info and carry out actions, but we do not need
-        window/event x and y for anything.
-
-        Uses:
-            x and y, values passed in from event handling, location of mouse cursor
-                in the window (relative to corner of window)
-            self.sidebar_width to offset x location
-            self.scale_factor to rescale x and y coordinates down to scale of original
-                image
-            self.width and self.height to check whether mouse cursor is in area of image
-                (self.x and self.y will not update if mouse has moved outside of image)
-        '''
-        # convert event x to image x by accounting for sidebar width, then scale
-        x -= self.sidebar_width
-        x //= self.scale_factor
-
-        # convert event y to image y by rescaling and changing coordinates:
-        # pyglet y has increasing y at the top of the screen, opposite convention of array indices
-        y = self.height - y // self.scale_factor
-
-        # check that mouse cursor is within bounds of image before updating
-        if 0 <= x < self.width and 0 <= y < self.height:
-            self.x, self.y = x, y
 
     def on_mouse_release(self, x, y, buttons, modifiers):
         '''
@@ -1578,7 +1569,7 @@ class ZStackReview(CalibanWindow):
         and self.y (coordinates of mouse within the image; also updated during
         mouse drag). Updates brush preview (pixel-editing mode) when appropriate.
         Uses:
-            self.update_mouse_position_helper to update current self.x and self.y from
+            self.update_mouse_position to update current self.x and self.y from
                 event x and y
             self.edit_mode, self.mode.kind, self.show_brush to determine when to display
                 brush preview
@@ -1589,7 +1580,7 @@ class ZStackReview(CalibanWindow):
             the correct preview (threshold box vs path of brush)
         '''
         # always update self.x and self.y when mouse has moved
-        self.update_mouse_position_helper(x, y)
+        self.update_mouse_position(x, y)
 
         # brush_view is only updated when in pixel-editing mode
         if self.edit_mode:
