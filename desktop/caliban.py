@@ -150,12 +150,12 @@ class CalibanWindow:
                 (self.x and self.y will not update if mouse has moved outside of image)
         '''
         # convert event x to image x by accounting for sidebar width, then scale
-        x -= self.sidebar_width
+        x -= (self.sidebar_width + self.image_padding)
         x //= self.scale_factor
 
         # convert event y to image y by rescaling and changing coordinates:
         # pyglet y has increasing y at the top of the screen, opposite convention of array indices
-        y = self.height - (y // self.scale_factor)
+        y = self.height - ((y - self.image_padding)// self.scale_factor)
 
         # check that mouse cursor is within bounds of image before updating
         if 0 <= x < self.width and 0 <= y < self.height:
@@ -196,21 +196,31 @@ class CalibanWindow:
         frame_width = self.scale_factor * self.width
         frame_height = self.scale_factor * self.height
 
+        pad = self.image_padding
+
+        top = frame_height + pad
+        bottom = pad
+        left = self.sidebar_width + pad
+        right = self.sidebar_width + frame_width + pad
+
+        # interior part of border
         pyglet.graphics.draw(8, pyglet.gl.GL_LINES,
-            ("v2f", (self.sidebar_width, frame_height,
-                     self.sidebar_width, 0,
-                     self.sidebar_width, 0,
-                     self.sidebar_width + frame_width, 0,
-                     self.sidebar_width + frame_width, 0,
-                     self.sidebar_width + frame_width, frame_height,
-                     self.sidebar_width + frame_width, frame_height,
-                     self.sidebar_width, frame_height))
+            ("v2f", (left, top,
+                     left, bottom-1,
+                     left, bottom-1,
+                     right+1, bottom-1,
+                     right+1, bottom-1,
+                     right+1, top,
+                     right+1, top,
+                     left, top))
         )
 
     def draw_pyglet_image(self, image, opacity = 255):
         # TODO: add sprite to batch?
+        pad = self.image_padding
+
         # create pyglet sprite, bottom left corner of image anchored with some offset
-        sprite = pyglet.sprite.Sprite(image, x=self.sidebar_width, y=0)
+        sprite = pyglet.sprite.Sprite(image, x=self.sidebar_width + pad, y=pad)
 
         # scale x and y dimensions of sprite
         sprite.update(scale_x=self.scale_factor,
