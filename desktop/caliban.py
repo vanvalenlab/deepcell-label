@@ -2495,19 +2495,17 @@ class ZStackReview(CalibanWindow):
                                                     cmap = 'gist_stern',
                                                     output = 'pyglet')
 
-        # get raw and annotated data
-        # TODO: np.copy might be appropriate here for clarity
-        # (current_raw is not edited in place but np.copy would help safeguard that)
-        current_raw = self.get_raw_current_frame()
-
-        current_raw, vmax = self.apply_image_adjustments_helper(current_raw)
-
         # create pyglet image from only the adjusted raw, if hiding annotations
         if self.hide_annotations:
-            comp_img = self.array_to_img(input_array = current_raw,
-                                                    vmax = vmax,
-                                                    cmap = 'gray',
-                                                    output = 'pyglet')
+            # get raw and annotated data
+            # TODO: np.copy might be appropriate here for clarity
+            # (current_raw is not edited in place but np.copy would help safeguard that)
+            current_raw = self.get_raw_current_frame()
+            raw_RGB = self.apply_raw_image_adjustments(current_raw)
+            comp_img = self.array_to_img(input_array = raw_RGB,
+                                        vmax = None,
+                                        cmap = None,
+                                        output = 'pyglet')
 
         # create pyglet image from composite if you want to see annotation overlay
         # (self.composite view is generated/updated separately)
@@ -2524,29 +2522,44 @@ class ZStackReview(CalibanWindow):
         self.draw_pyglet_image(comp_img)
         self.draw_pyglet_image(brush_img, opacity = 128)
 
-    def apply_image_adjustments_helper(self, current_raw):
+    def apply_raw_image_adjustments(self, current_raw, cmap = 'gray'):
         '''
         Apply filter/adjustment options to raw image for display in
         pixel-editing mode. Input is unadjusted raw image, with object
-        attributes to determine which filters and adjustments to apply.
-        Returns adjusted image and vmax (appropriate vmax depends on whether
-        or not image histogram has been equalized).
+        attributes to determine which filters and adjustments to apply. Can
+        accept cmap as input, default value of 'gray' (used for composite images).
+
+        Returns adjusted image as RGB array.
         '''
         #try sobel filter here
         if self.sobel_on:
             current_raw = filters.sobel(current_raw)
 
+        # apply adaptive histogram equalization, if option toggled
         if self.adapthist_on:
+            # rescale first (for equalization to work properly, I think)
             current_raw = rescale_intensity(current_raw, in_range = 'image', out_range = 'float')
             current_raw = equalize_adapthist(current_raw)
+            # vmax appropriate for new range of image
             vmax = 1
         elif not self.adapthist_on:
+            # appropriate vmax for image
             vmax = self.max_intensity
 
-        if self.invert:
-            current_raw = invert(current_raw)
+        # want image to be in grayscale, but as RGB array, not array of intensities
+        raw_img =  self.array_to_img(input_array = current_raw,
+                    vmax = vmax,
+                    cmap = cmap,
+                    output = 'array')
 
-        return current_raw, vmax
+        # don't need alpha channel
+        raw_RGB = raw_img[:,:,0:3]
+
+        # apply dark/light inversion
+        if self.invert:
+            raw_RGB = invert(raw_RGB)
+
+        return raw_RGB
 
     def change_channel(self):
         '''
@@ -3181,33 +3194,7 @@ class ZStackReview(CalibanWindow):
         current_raw = self.get_raw_current_frame()
         current_ann = self.get_ann_current_frame()
 
-        #try sobel filter here
-        if self.sobel_on:
-            current_raw = filters.sobel(current_raw)
-
-        # apply adaptive histogram equalization, if option toggled
-        if self.adapthist_on:
-            # rescale first (for equalization to work properly, I think)
-            current_raw = rescale_intensity(current_raw, in_range = 'image', out_range = 'float')
-            current_raw = equalize_adapthist(current_raw)
-            # vmax appropriate for new range of image
-            vmax = 1
-        elif not self.adapthist_on:
-            # appropriate vmax for image
-            vmax = self.max_intensity
-
-        # want image to be in grayscale, but as RGB array, not array of intensities
-        raw_img =  self.array_to_img(input_array = current_raw,
-                    vmax = vmax,
-                    cmap = 'gray',
-                    output = 'array')
-
-        # don't need alpha channel
-        raw_RGB = raw_img[:,:,0:3]
-
-        # apply dark/light inversion
-        if self.invert:
-            raw_RGB = invert(raw_RGB)
+        raw_RGB = self.apply_raw_image_adjustments(current_raw)
 
         # get RGB array of colorful annotation view
         ann_img = self.array_to_img(input_array = current_ann,
