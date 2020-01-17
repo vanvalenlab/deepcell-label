@@ -299,6 +299,34 @@ class CalibanWindow:
 
         return frame
 
+    def make_composite_img(self, base_array, overlay_array, alpha = 0.6):
+        '''
+        Helper function to take two arrays and overlay one on top of the other
+        using a conversion to HSV color space. Used to take greyscale RGB array
+        of raw image and overlay colored labels on the image without obscuring
+        image details. Used by helper_update_composite to generate composite image
+        as needed. Returns the composite array as an RGB array (dimensions [M,N,3]).
+        '''
+
+        # TODO: investigate using glBlendFunc to do compositing for me?
+
+        # Convert the input image and color mask to Hue Saturation Value (HSV) colorspace
+        img_hsv = color.rgb2hsv(base_array)
+        color_mask_hsv = color.rgb2hsv(overlay_array)
+
+        # Replace the hue and saturation of the original image
+        # with that of the color mask
+        img_hsv[..., 0] = color_mask_hsv[..., 0]
+        # reduce saturation of colors
+        img_hsv[..., 1] = color_mask_hsv[..., 1] * alpha
+
+        # convert HSV image back to 8bit RGB
+        img_masked = color.hsv2rgb(img_hsv)
+        img_masked = rescale_intensity(img_masked, out_range = np.uint8)
+        img_masked = img_masked.astype(np.uint8)
+
+        return img_masked
+
 class TrackReview(CalibanWindow):
     possible_keys = {"label", "daughters", "frames", "parent", "frame_div",
                      "capped"}
@@ -721,80 +749,11 @@ class TrackReview(CalibanWindow):
                 self.draw_ann_frame()
 
         elif self.edit_mode:
+            self.draw_pixel_edit_frame()
 
-            # create pyglet image object so we can display brush location
-            brush_img = self.array_to_img(input_array = self.brush_view,
-                                                        vmax = self.num_tracks + self.adjustment,
-                                                        cmap = 'gist_stern',
-                                                        output = 'pyglet')
-
-            # get raw and annotated data
-            current_raw = self.get_raw_current_frame()
-            current_ann = self.get_ann_current_frame()
-
-            # put raw image data into BytesIO object
-            raw_file = BytesIO()
-
-            plt.imsave(raw_file, current_raw,
-                            vmax=self.max_intensity,
-                            cmap='Greys',
-                            format='png')
-
-            raw_file.seek(0)
-
-            #gives us the 'greyscale' image in array format
-            #(the format is RGB even though it is displayed as grey)
-            raw_img = imread(raw_file)
-
-            #don't need to keep the file open once we have the array
-            raw_file.close()
-            raw_RGB = raw_img[:,:,0:3]
-
-            # put annotated image data into BytesIO object
-            ann_file = BytesIO()
-            plt.imsave(ann_file, current_ann,
-                            vmax=self.num_tracks + self.adjustment,
-                            cmap='gist_stern',
-                            format='png')
-
-            ann_file.seek(0)
-
-            #gives us the color image in array format
-            ann_img = imread(ann_file)
-
-            #don't need to keep the file open once we have the array
-            ann_file.close()
-            ann_RGB = ann_img[:,:,0:3]
-
-            #composite raw image with annotations on top
-            alpha = 0.5
-
-            # Convert the input image and color mask to Hue Saturation Value (HSV)
-            # colorspace
-            img_hsv = color.rgb2hsv(raw_RGB)
-            color_mask_hsv = color.rgb2hsv(ann_RGB)
-
-            # Replace the hue and saturation of the original image
-            # with that of the color mask
-            img_hsv[..., 0] = color_mask_hsv[..., 0]
-            img_hsv[..., 1] = color_mask_hsv[..., 1] * alpha
-
-            img_masked = color.hsv2rgb(img_hsv)
-            img_masked = rescale_intensity(img_masked, out_range = np.uint8)
-            img_masked = img_masked.astype(np.uint8)
-
-            # save img_masked as png so we can load it as a pyglet image
-            file_masked = tempfile.NamedTemporaryFile(suffix = '.png')
-            imwrite(str(file_masked.name), img_masked)
-            comp_img = pyglet.image.load(str(file_masked.name))
-            file_masked.close()
-
-            self.draw_pyglet_image(comp_img)
-            self.draw_pyglet_image(brush_img, opacity = 128)
-
-            gl.glTexParameteri(gl.GL_TEXTURE_2D,
-                               gl.GL_TEXTURE_MAG_FILTER,
-                               gl.GL_NEAREST)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D,
+                           gl.GL_TEXTURE_MAG_FILTER,
+                           gl.GL_NEAREST)
 
     def draw_raw_frame(self):
         raw_array = self.get_raw_current_frame()
@@ -822,6 +781,44 @@ class TrackReview(CalibanWindow):
                                                 cmap = cmap,
                                                 output = 'pyglet')
         self.draw_pyglet_image(image)
+
+    def draw_pixel_edit_frame(self):
+        # create pyglet image object so we can display brush location
+        brush_img = self.array_to_img(input_array = self.brush_view,
+                                                    vmax = self.num_tracks + self.adjustment,
+                                                    cmap = 'gist_stern',
+                                                    output = 'pyglet')
+
+        # get raw and annotated data
+        current_raw = self.get_raw_current_frame()
+        current_ann = self.get_ann_current_frame()
+
+        # want image to be in grayscale, but as RGB array, not array of intensities
+        raw_img =  self.array_to_img(input_array = current_raw,
+                    vmax = self.max_intensity,
+                    cmap = 'Greys', #note: this is inverted grayscale
+                    output = 'array')
+
+        # don't need alpha channel
+        raw_RGB = raw_img[:,:,0:3]
+
+        # get RGB array of colorful annotation view
+        ann_img = self.array_to_img(input_array = current_ann,
+                                            vmax = self.num_tracks + self.adjustment,
+                                            cmap = 'gist_stern',
+                                            output = 'array')
+
+        # don't need alpha channel
+        ann_RGB = ann_img[:,:,0:3]
+
+        comp_array = self.make_composite_img(raw_RGB, ann_RGB)
+        comp_img = self.array_to_img(input_array = comp_array,
+                                    vmax = None,
+                                    cmap = None,
+                                    output = 'pyglet')
+
+        self.draw_pyglet_image(comp_img)
+        self.draw_pyglet_image(brush_img, opacity = 128)
 
     def action_new_track(self):
         """
@@ -3155,32 +3152,6 @@ class ZStackReview(CalibanWindow):
         # remake cell_info dict based on new annotations
         self.create_cell_info(feature = self.feature)
 
-    def helper_make_composite_img(self, base_array, overlay_array, alpha = 0.6):
-        '''
-        Helper function to take two arrays and overlay one on top of the other
-        using a conversion to HSV color space. Used to take greyscale RGB array
-        of raw image and overlay colored labels on the image without obscuring
-        image details. Used by helper_update_composite to generate composite image
-        as needed. Returns the composite array as an RGB array (dimensions [M,N,3]).
-        '''
-
-        # Convert the input image and color mask to Hue Saturation Value (HSV) colorspace
-        img_hsv = color.rgb2hsv(base_array)
-        color_mask_hsv = color.rgb2hsv(overlay_array)
-
-        # Replace the hue and saturation of the original image
-        # with that of the color mask
-        img_hsv[..., 0] = color_mask_hsv[..., 0]
-        # reduce saturation of colors
-        img_hsv[..., 1] = color_mask_hsv[..., 1] * alpha
-
-        # convert HSV image back to 8bit RGB
-        img_masked = color.hsv2rgb(img_hsv)
-        img_masked = rescale_intensity(img_masked, out_range = np.uint8)
-        img_masked = img_masked.astype(np.uint8)
-
-        return img_masked
-
     def helper_update_composite(self):
         '''
         Helper function that updates self.composite_view from self.raw and
@@ -3195,7 +3166,7 @@ class ZStackReview(CalibanWindow):
                 to get arrays to start with
             self.sobel, self.adapthist_on, self.invert are raw image filtering options
             self.max_intensity as vmax for raw image (unless histogram equalized)
-            self.array_to_img and self.helper_make_composite_img to abstract
+            self.array_to_img and self.make_composite_img to abstract
                 away tedious processing steps
         '''
         # get images to modify and overlay
@@ -3243,7 +3214,7 @@ class ZStackReview(CalibanWindow):
         ann_RGB = ann_img[:,:,0:3]
 
         # create the composite image from the two RGB arrays
-        img_masked = self.helper_make_composite_img(base_array = raw_RGB,
+        img_masked = self.make_composite_img(base_array = raw_RGB,
                                             overlay_array = ann_RGB)
 
         # set self.composite view to new composite image
