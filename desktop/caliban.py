@@ -1165,9 +1165,12 @@ class ZStackReview(CalibanWindow):
         # start with display showing annotations
         self.draw_raw = False
         # keeps track of information about brightness of each channel in raw images
-        self.max_intensity = {}
+        self.max_intensity_dict = {}
         for channel in range(self.channel_max):
-            self.max_intensity[channel] = np.max(self.raw[0,:,:,channel])
+            self.max_intensity_dict[channel] = np.max(self.raw[0,:,:,channel])
+        # max_intensity for initial channel
+        self.max_intensity = self.max_intensity_dict[self.channel]
+
         # keeps track of information about adjustment of colormap for viewing annotation labels
         self.adjustment = {}
         for feature in range(self.feature_max):
@@ -1694,7 +1697,7 @@ class ZStackReview(CalibanWindow):
 
         Uses:
             self.draw_raw to determine which image to adjust (and which adjustment to use)
-            self.max_intensity and self.channel to set or change the brightness of raw images
+            self.max_intensity_dict and self.channel to set or change the brightness of raw images
             self.cell_ids, self.adjustment, self.feature to determine when to stop decreasing
                 self.adjustment (applied to annotations when drawing to determine range of colormap
                 applied to frame)
@@ -1703,20 +1706,16 @@ class ZStackReview(CalibanWindow):
         # adjust brightness of raw image, if looking at raw image
         # (also applies to edit mode if self.draw_raw is True)
         if self.draw_raw:
-            # self.max_intensity[self.channel] is initialized as None, set to value
-            # based on maximum brightness of image
-            if self.max_intensity[self.channel] is None:
-                self.max_intensity[self.channel] = np.max(self.get_raw_current_frame())
-            # self.max_intensity[self.channel] has a value so we can adjust it
-            else:
-                # check minimum brightness of image as lower bound of brightness adjustment
-                min_intensity = np.min(self.raw[self.current_frame,:,:,self.channel])
-                # adjust max brightness value by a percentage of the current value
-                raw_adjust = max(int(self.max_intensity[self.channel] * 0.02), 1)
-                # set the adjusted max brightness value, but it should never be the same or less than
-                # the minimum brightness in the image
-                self.max_intensity[self.channel] = max(self.max_intensity[self.channel] - raw_adjust * scroll_y,
-                                                        min_intensity + 1)
+            # self.max_intensity_dict[self.channel] has a value so we can adjust it
+            # check minimum brightness of image as lower bound of brightness adjustment
+            min_intensity = np.min(self.raw[self.current_frame,:,:,self.channel])
+            # adjust max brightness value by a percentage of the current value
+            raw_adjust = max(int(self.max_intensity_dict[self.channel] * 0.02), 1)
+            # set the adjusted max brightness value, but it should never be the same or less than
+            # the minimum brightness in the image
+            self.max_intensity_dict[self.channel] = max(self.max_intensity_dict[self.channel] - raw_adjust * scroll_y,
+                                                    min_intensity + 1)
+            self.max_intensity = self.max_intensity_dict[self.channel]
 
         # adjusting colormap range of annotations
         elif not self.draw_raw:
@@ -2052,6 +2051,7 @@ class ZStackReview(CalibanWindow):
                     self.channel = 0
                 else:
                     self.channel += 1
+            self.change_channel()
 
         # CHANGE FEATURES
         if symbol == key.F:
@@ -2455,7 +2455,7 @@ class ZStackReview(CalibanWindow):
     def draw_raw_frame(self):
         raw_array = self.get_raw_current_frame()
         image = self.array_to_img(input_array = raw_array,
-                                         vmax = self.max_intensity[self.channel],
+                                         vmax = self.max_intensity,
                                          cmap = self.cmap_options[self.current_cmap],
                                          output = 'pyglet')
 
@@ -2541,12 +2541,20 @@ class ZStackReview(CalibanWindow):
             current_raw = equalize_adapthist(current_raw)
             vmax = 1
         elif not self.adapthist_on:
-            vmax = self.max_intensity[self.channel]
+            vmax = self.max_intensity
 
         if self.invert:
             current_raw = invert(current_raw)
 
         return current_raw, vmax
+
+    def change_channel(self):
+        '''
+        Method that updates current attributes as needed based on which
+        channel is being viewed.
+        '''
+        # in this case we only need to update self.max_intensity
+        self.max_intensity = self.max_intensity_dict[self.channel]
 
     def action_new_single_cell(self):
         """
@@ -3185,11 +3193,8 @@ class ZStackReview(CalibanWindow):
             # vmax appropriate for new range of image
             vmax = 1
         elif not self.adapthist_on:
-            # self.max_intensity can be None if brightness hasn't been adjusted
-            if self.draw_raw and self.max_intensity[self.channel] is None:
-                self.max_intensity[self.channel] = np.max(self.get_raw_current_frame())
             # appropriate vmax for image
-            vmax = self.max_intensity[self.channel]
+            vmax = self.max_intensity
 
         # want image to be in grayscale, but as RGB array, not array of intensities
         raw_img =  self.array_to_img(input_array = current_raw,
