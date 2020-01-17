@@ -207,6 +207,88 @@ class CalibanWindow:
                      self.sidebar_width, frame_height))
         )
 
+    def draw_pyglet_image(self, image, opacity = 255):
+        # TODO: add sprite to batch?
+        # create pyglet sprite, bottom left corner of image anchored with some offset
+        sprite = pyglet.sprite.Sprite(image, x=self.sidebar_width, y=0)
+
+        # scale x and y dimensions of sprite
+        sprite.update(scale_x=self.scale_factor,
+                      scale_y=self.scale_factor)
+
+        # set opacity of sprite (255 is default)
+        sprite.opacity = opacity
+
+        # TODO: how often does this actually need to be set?
+        gl.glTexParameteri(gl.GL_TEXTURE_2D,
+                           gl.GL_TEXTURE_MAG_FILTER,
+                           gl.GL_NEAREST)
+        # draw the sprite
+        sprite.draw()
+
+    def array_to_img(self, input_array, vmax, cmap, output):
+        '''
+        Helper function to take an input array and output either a pyglet image
+        (to display) or an RGB array (for creating a composite image for
+        pixel-editing mode). Uses pyplot to create png image with vmax and cmap
+        variables, which is saved into a temporary file with BytesIO. The temporary
+        png file is then loaded into the correct output format and closed, and the
+        correctly-formatted image is returned.
+
+        Inputs:
+            input_array: the array to be rendered as an image (either raw or annotated)
+            vmax: vmax for pyplot to use (adjusts range of cmap and may vary)
+            cmap: which matplotlib colormap to use when creating png image
+            output: string specifying desired format ('pyglet' returns pyglet image,
+                'array' returns RGB array representation of image data)
+        '''
+        # temporary file that we can write to
+        img_file = BytesIO()
+        # create a png image with pyplot and save it to the temp file
+        plt.imsave(img_file, input_array,
+                        vmax=vmax,
+                        cmap=cmap,
+                        format='png')
+
+        # go to start of file so we can read it out correctly
+        img_file.seek(0)
+
+        # pyglet image type
+        if output == 'pyglet':
+            # create pyglet image loaded from temp file
+            pyglet_img = pyglet.image.load('img_file.png', file = img_file)
+            # close file since we are now done with it
+            img_file.close()
+            return pyglet_img
+
+        # generate an RGB array (what the data 'looks like' but in array format)
+        elif output == 'array':
+            # imread will give us an RGB array
+            img_array = imread(img_file)
+            # close file since we are now done with it
+            img_file.close()
+            return img_array
+
+        else:
+            return None
+
+    def apply_label_highlight(self, frame):
+        '''
+        Masks values in input array (frame) to display highlight.
+        Masked values are then set to a particular color (red) via
+        the colormap used. If highlighted label are not in frame (eg,
+        if self.highlighted_cell_two = -1), there is no visual effect.
+        Applies highlight regardless of self.kind as long as highlight is on.
+
+        Currently requires that child class include attributes
+        highlighted_cell_one and highlighted_cell_two.
+        '''
+        # image display code will color masked values red
+        frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
+        frame = np.ma.masked_equal(frame, self.highlighted_cell_two)
+
+        return frame
+
 class TrackReview(CalibanWindow):
     possible_keys = {"label", "daughters", "frames", "parent", "frame_div",
                      "capped"}
@@ -402,11 +484,10 @@ class TrackReview(CalibanWindow):
         if self.edit_mode:
             self.brush_view = np.zeros(self.tracked[self.current_frame,:,:,0].shape)
 
-
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self.draw_raw:
             if self.max_intensity == None:
-                self.max_intensity = np.max(self.get_current_frame())
+                self.max_intensity = np.max(self.get_raw_current_frame())
             else:
                 raw_adjust = max(int(self.max_intensity * 0.02), 1)
                 self.max_intensity = max(self.max_intensity - raw_adjust * scroll_y, 2)
@@ -541,11 +622,11 @@ class TrackReview(CalibanWindow):
                 self.highlighted_cell_one = -1
                 self.highlighted_cell_two = -1
 
-    def get_current_frame(self):
-        if self.draw_raw:
-            return self.raw[self.current_frame]
-        else:
-            return self.tracked[self.current_frame]
+    def get_raw_current_frame(self):
+        return self.raw[self.current_frame,:,:,0]
+
+    def get_ann_current_frame(self):
+        return self.tracked[self.current_frame,:,:,0]
 
     def draw_label(self):
         # always use segmented output for label, not raw
@@ -623,56 +704,23 @@ class TrackReview(CalibanWindow):
         frame_label.draw()
 
     def draw_current_frame(self):
-        frame = self.get_current_frame()
-        cmap = plt.get_cmap("cubehelix")
-        cmap.set_bad('red')
-
         if not self.edit_mode:
-
-            if self.highlight:
-                if self.mode.kind == "SELECTED":
-                    frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
-                elif self.mode.kind == "MULTIPLE":
-                    frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
-                    frame = np.ma.masked_equal(frame, self.highlighted_cell_two)
-
-            with tempfile.TemporaryFile() as file:
-                if self.draw_raw:
-                    plt.imsave(file, frame[:, :, 0],
-                               vmax=self.max_intensity,
-                               cmap="cubehelix",
-                               format="png")
-                else:
-                    plt.imsave(file, frame[:, :, 0],
-                               vmin=0,
-                               vmax=self.num_tracks + self.adjustment,
-                               cmap=cmap,
-                               format="png")
-                image = pyglet.image.load("frame.png", file)
-
-                sprite = pyglet.sprite.Sprite(image, x=self.sidebar_width, y=0)
-                sprite.update(scale_x=self.scale_factor,
-                              scale_y=self.scale_factor)
-
-                gl.glTexParameteri(gl.GL_TEXTURE_2D,
-                                   gl.GL_TEXTURE_MAG_FILTER,
-                                   gl.GL_NEAREST)
-                sprite.draw()
+            if self.draw_raw:
+                self.draw_raw_frame()
+            else:
+                self.draw_ann_frame()
 
         elif self.edit_mode:
 
             # create pyglet image object so we can display brush location
-            # handle with context manager because we don't need to keep brush_file around for long
-            with tempfile.TemporaryFile() as brush_file:
-                plt.imsave(brush_file, self.brush_view,
-                            vmax = self.num_tracks + self.adjustment,
-                            cmap='gist_stern',
-                            format='png')
-                brush_img = pyglet.image.load('brush_file.png', brush_file)
+            brush_img = self.array_to_img(input_array = self.brush_view,
+                                                        vmax = self.num_tracks + self.adjustment,
+                                                        cmap = 'gist_stern',
+                                                        output = 'pyglet')
 
             # get raw and annotated data
-            current_raw = self.raw[self.current_frame,:,:,0]
-            current_ann = self.tracked[self.current_frame,:,:,0]
+            current_raw = self.get_raw_current_frame()
+            current_ann = self.get_ann_current_frame()
 
             # put raw image data into BytesIO object
             raw_file = BytesIO()
@@ -731,23 +779,39 @@ class TrackReview(CalibanWindow):
             comp_img = pyglet.image.load(str(file_masked.name))
             file_masked.close()
 
-            composite_sprite = pyglet.sprite.Sprite(comp_img, x = self.sidebar_width, y=0)
-            brush_sprite = pyglet.sprite.Sprite(brush_img, x=self.sidebar_width, y=0)
-
-            brush_sprite.opacity = 128
-
-            composite_sprite.update(scale_x=self.scale_factor,
-                                    scale_y=self.scale_factor)
-
-            brush_sprite.update(scale_x=self.scale_factor,
-                                    scale_y=self.scale_factor)
-
-            composite_sprite.draw()
-            brush_sprite.draw()
+            self.draw_pyglet_image(comp_img)
+            self.draw_pyglet_image(brush_img, opacity = 128)
 
             gl.glTexParameteri(gl.GL_TEXTURE_2D,
                                gl.GL_TEXTURE_MAG_FILTER,
                                gl.GL_NEAREST)
+
+    def draw_raw_frame(self):
+        raw_array = self.get_raw_current_frame()
+        image = self.array_to_img(input_array = raw_array,
+                                         vmax = self.max_intensity,
+                                         cmap = "cubehelix",
+                                         output = 'pyglet')
+
+        self.draw_pyglet_image(image)
+
+    def draw_ann_frame(self):
+        ann_array = self.get_ann_current_frame()
+
+        # annotations use cubehelix cmap with highlighting in red
+        cmap = plt.get_cmap("cubehelix")
+        cmap.set_bad('red')
+
+        # if highlighting on, mask highlighted values so they appear red
+        if self.highlight:
+            ann_array = self.apply_label_highlight(ann_array)
+
+        # create pyglet image
+        image = self.array_to_img(input_array = ann_array,
+                                                vmax = self.num_tracks + self.adjustment,
+                                                cmap = cmap,
+                                                output = 'pyglet')
+        self.draw_pyglet_image(image)
 
     def action_new_track(self):
         """
@@ -1635,7 +1699,7 @@ class ZStackReview(CalibanWindow):
             # self.max_intensity[self.channel] is initialized as None, set to value
             # based on maximum brightness of image
             if self.max_intensity[self.channel] is None:
-                self.max_intensity[self.channel] = np.max(self.get_current_frame())
+                self.max_intensity[self.channel] = np.max(self.get_raw_current_frame())
             # self.max_intensity[self.channel] has a value so we can adjust it
             else:
                 # check minimum brightness of image as lower bound of brightness adjustment
@@ -2194,16 +2258,11 @@ class ZStackReview(CalibanWindow):
                 self.action_flood_contiguous()
                 self.mode.clear()
 
-    def get_current_frame(self):
-        '''
-        Helper function that returns the frame currently being viewed.
-        Used for drawing the image in label-editing mode, and for adjusting
-        the brightness of the raw image with the mouse scroll wheel.
-        '''
-        if self.draw_raw:
-            return self.raw[self.current_frame,:,:,self.channel]
-        else:
-            return self.annotated[self.current_frame,:,:,self.feature]
+    def get_raw_current_frame(self):
+        return self.raw[self.current_frame,:,:,self.channel]
+
+    def get_ann_current_frame(self):
+        return self.annotated[self.current_frame,:,:,self.feature]
 
     def get_label(self):
         '''
@@ -2378,75 +2437,43 @@ class ZStackReview(CalibanWindow):
         helper functions are used to abstract steps of the image processing and manipulation.
         '''
         if not self.edit_mode:
-            self.draw_current_frame_label_mode_helper()
+            if self.draw_raw:
+                self.draw_raw_frame()
+            else:
+                self.draw_ann_frame()
 
         elif self.edit_mode:
-            self.draw_current_frame_edit_mode_helper()
+            self.draw_edit_mode_frame()
 
-    def draw_current_frame_label_mode_helper(self):
-        '''
-        Draws current frame for label-editing mode. If drawing
-        the raw image, applies vmax adjustment and selected colormap.
-        If drawing the annotations, applies vmax adjustment, cubehelix
-        colormap, and highlights selected labels if highlighting is turned on.
-        Image is then scaled by self.scale_factor and drawn in window.
-        '''
-        frame = self.get_current_frame()
+    def draw_raw_frame(self):
+        raw_array = self.get_raw_current_frame()
+        image = self.array_to_img(input_array = raw_array,
+                                         vmax = self.max_intensity[self.channel],
+                                         cmap = self.cmap_options[self.current_cmap],
+                                         output = 'pyglet')
 
-        # create pyglet image from raw array info, using brightness and cmap settings
-        if self.draw_raw:
-            image = self.helper_array_to_img(input_array = frame,
-                                                     vmax = self.max_intensity[self.channel],
-                                                     cmap = self.cmap_options[self.current_cmap],
-                                                     output = 'pyglet')
+        self.draw_pyglet_image(image)
 
-        # create pyglet image from annotation array info,
-        # using highlighting and brightness settings
-        else:
-            # annotations use cubehelix cmap with highlighting in red
-            cmap = plt.get_cmap("cubehelix")
-            cmap.set_bad('red')
+    def draw_ann_frame(self):
+        ann_array = self.get_ann_current_frame()
 
-            # if highlighting on, mask highlighted values so they appear red
-            if self.highlight:
-                frame = self.apply_label_highlight_helper(frame)
+        # annotations use cubehelix cmap with highlighting in red
+        cmap = plt.get_cmap("cubehelix")
+        cmap.set_bad('red')
 
-            # create pyglet image
-            image = self.helper_array_to_img(input_array = frame,
-                                                    vmax = max(1, self.get_max_label() + self.adjustment[self.feature]),
-                                                    cmap = cmap,
-                                                    output = 'pyglet')
+        # if highlighting on, mask highlighted values so they appear red
+        if self.highlight:
+            ann_array = self.apply_label_highlight(ann_array)
 
-        # TODO: add sprite to batch?
-        # create pyglet sprite, bottom left corner of image anchored with x offset
-        sprite = pyglet.sprite.Sprite(image, x=self.sidebar_width, y=0)
+        # create pyglet image
+        image = self.array_to_img(input_array = ann_array,
+                                                vmax = max(1, self.get_max_label() + self.adjustment[self.feature]),
+                                                cmap = cmap,
+                                                output = 'pyglet')
 
-        # scale x and y dimensions of sprite
-        sprite.update(scale_x=self.scale_factor,
-                      scale_y=self.scale_factor)
+        self.draw_pyglet_image(image)
 
-        # TODO: how often does this actually need to be set?
-        gl.glTexParameteri(gl.GL_TEXTURE_2D,
-                           gl.GL_TEXTURE_MAG_FILTER,
-                           gl.GL_NEAREST)
-        # draw the sprite
-        sprite.draw()
-
-    def apply_label_highlight_helper(self, frame):
-        '''
-        Masks values in input array (frame) to display highlight.
-        Masked values are then set to a particular color (red) via
-        the colormap used. If highlighted label are not in frame (eg,
-        if self.highlighted_cell_two = -1), there is no visual effect.
-        Applies highlight regardless of self.kind as long as highlight is on.
-        '''
-        # image display code will color masked values red
-        frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
-        frame = np.ma.masked_equal(frame, self.highlighted_cell_two)
-
-        return frame
-
-    def draw_current_frame_edit_mode_helper(self):
+    def draw_edit_mode_frame(self):
         '''
         Draws current frame for pixel-editing mode, along with brush preview
         (brush preview can display brush or thresholding). If drawing the image
@@ -2456,7 +2483,7 @@ class ZStackReview(CalibanWindow):
         by self.scale_factor and drawn in window.
         '''
         # create pyglet image object so we can display brush location
-        brush_img = self.helper_array_to_img(input_array = self.brush_view,
+        brush_img = self.array_to_img(input_array = self.brush_view,
                                                     vmax = self.get_max_label() + self.adjustment[self.feature],
                                                     cmap = 'gist_stern',
                                                     output = 'pyglet')
@@ -2464,13 +2491,13 @@ class ZStackReview(CalibanWindow):
         # get raw and annotated data
         # TODO: np.copy might be appropriate here for clarity
         # (current_raw is not edited in place but np.copy would help safeguard that)
-        current_raw = self.raw[self.current_frame,:,:,self.channel]
+        current_raw = self.get_raw_current_frame()
 
         current_raw, vmax = self.apply_image_adjustments_helper(current_raw)
 
         # create pyglet image from only the adjusted raw, if hiding annotations
         if self.hide_annotations:
-            comp_img = self.helper_array_to_img(input_array = current_raw,
+            comp_img = self.array_to_img(input_array = current_raw,
                                                     vmax = vmax,
                                                     cmap = 'gray',
                                                     output = 'pyglet')
@@ -2478,33 +2505,17 @@ class ZStackReview(CalibanWindow):
         # create pyglet image from composite if you want to see annotation overlay
         # (self.composite view is generated/updated separately)
         if not self.hide_annotations:
-            comp_img = self.helper_array_to_img(input_array = self.composite_view,
+            comp_img = self.array_to_img(input_array = self.composite_view,
                                                 vmax = None,
                                                 cmap = None,
                                                 output = 'pyglet')
 
-        # create sprites for image and brush view, bottom left corner anchored with x offset
-        # TODO: add sprites to a batch?
-        composite_sprite = pyglet.sprite.Sprite(comp_img, x = self.sidebar_width, y=0)
-        brush_sprite = pyglet.sprite.Sprite(brush_img, x=self.sidebar_width, y=0)
-
-        # make brush view partially transparent
-        brush_sprite.opacity = 128
-
-        # scale x and y dimensions of sprites
-        composite_sprite.update(scale_x=self.scale_factor,
-                                scale_y=self.scale_factor)
-
-        brush_sprite.update(scale_x=self.scale_factor,
-                            scale_y=self.scale_factor)
-
-        # draw the sprites
-        composite_sprite.draw()
-        brush_sprite.draw()
-
         gl.glTexParameteri(gl.GL_TEXTURE_2D,
                            gl.GL_TEXTURE_MAG_FILTER,
                            gl.GL_NEAREST)
+
+        self.draw_pyglet_image(comp_img)
+        self.draw_pyglet_image(brush_img, opacity = 128)
 
     def apply_image_adjustments_helper(self, current_raw):
         '''
@@ -3134,52 +3145,6 @@ class ZStackReview(CalibanWindow):
         # remake cell_info dict based on new annotations
         self.create_cell_info(feature = self.feature)
 
-    def helper_array_to_img(self, input_array, vmax, cmap, output):
-        '''
-        Helper function to take an input array and output either a pyglet image
-        (to display) or an RGB array (for creating a composite image for
-        pixel-editing mode). Uses pyplot to create png image with vmax and cmap
-        variables, which is saved into a temporary file with BytesIO. The temporary
-        png file is then loaded into the correct output format and closed, and the
-        correctly-formatted image is returned.
-
-        Inputs:
-            input_array: the array to be rendered as an image (either raw or annotated)
-            vmax: vmax for pyplot to use (adjusts range of cmap and may vary)
-            cmap: which matplotlib colormap to use when creating png image
-            output: string specifying desired format ('pyglet' returns pyglet image,
-                'array' returns RGB array representation of image data)
-        '''
-        # temporary file that we can write to
-        img_file = BytesIO()
-        # create a png image with pyplot and save it to the temp file
-        plt.imsave(img_file, input_array,
-                        vmax=vmax,
-                        cmap=cmap,
-                        format='png')
-
-        # go to start of file so we can read it out correctly
-        img_file.seek(0)
-
-        # pyglet image type
-        if output == 'pyglet':
-            # create pyglet image loaded from temp file
-            pyglet_img = pyglet.image.load('img_file.png', file = img_file)
-            # close file since we are now done with it
-            img_file.close()
-            return pyglet_img
-
-        # generate an RGB array (what the data 'looks like' but in array format)
-        elif output == 'array':
-            # imread will give us an RGB array
-            img_array = imread(img_file)
-            # close file since we are now done with it
-            img_file.close()
-            return img_array
-
-        else:
-            return None
-
     def helper_make_composite_img(self, base_array, overlay_array, alpha = 0.6):
         '''
         Helper function to take two arrays and overlay one on top of the other
@@ -3220,12 +3185,12 @@ class ZStackReview(CalibanWindow):
                 to get arrays to start with
             self.sobel, self.adapthist_on, self.invert are raw image filtering options
             self.max_intensity as vmax for raw image (unless histogram equalized)
-            self.helper_array_to_img and self.helper_make_composite_img to abstract
+            self.array_to_img and self.helper_make_composite_img to abstract
                 away tedious processing steps
         '''
         # get images to modify and overlay
-        current_raw = self.raw[self.current_frame,:,:,self.channel]
-        current_ann = self.annotated[self.current_frame,:,:,self.feature]
+        current_raw = self.get_raw_current_frame()
+        current_ann = self.get_ann_current_frame()
 
         #try sobel filter here
         if self.sobel_on:
@@ -3241,12 +3206,12 @@ class ZStackReview(CalibanWindow):
         elif not self.adapthist_on:
             # self.max_intensity can be None if brightness hasn't been adjusted
             if self.draw_raw and self.max_intensity[self.channel] is None:
-                self.max_intensity[self.channel] = np.max(self.get_current_frame())
+                self.max_intensity[self.channel] = np.max(self.get_raw_current_frame())
             # appropriate vmax for image
             vmax = self.max_intensity[self.channel]
 
         # want image to be in grayscale, but as RGB array, not array of intensities
-        raw_img =  self.helper_array_to_img(input_array = current_raw,
+        raw_img =  self.array_to_img(input_array = current_raw,
                     vmax = vmax,
                     cmap = 'gray',
                     output = 'array')
@@ -3259,7 +3224,7 @@ class ZStackReview(CalibanWindow):
             raw_RGB = invert(raw_RGB)
 
         # get RGB array of colorful annotation view
-        ann_img = self.helper_array_to_img(input_array = current_ann,
+        ann_img = self.array_to_img(input_array = current_ann,
                                             vmax = self.get_max_label() + self.adjustment[self.feature],
                                             cmap = 'gist_stern',
                                             output = 'array')
