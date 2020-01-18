@@ -890,7 +890,6 @@ class TrackReview(CalibanWindow):
         self.del_cell_info(del_label = old_label, frame = single_frame)
         self.add_cell_info(add_label = new_label, frame = single_frame)
 
-
     def action_watershed(self):
         # Pull the label that is being split and find a new valid label
         current_label = self.mode.label_1
@@ -931,7 +930,6 @@ class TrackReview(CalibanWindow):
 
         # current label doesn't change, but add the neccesary bookkeeping for the new track
         self.add_cell_info(add_label = new_label, frame = self.current_frame)
-
 
     def action_swap(self):
         def relabel(old_label, new_label):
@@ -983,7 +981,6 @@ class TrackReview(CalibanWindow):
 
         track_2["parent"] = label_1
         track_1["frame_div"] = frame_div
-
 
     def action_replace(self):
         """
@@ -1090,7 +1087,6 @@ class TrackReview(CalibanWindow):
                     pass
                 if track["parent"] == del_label:
                     track["parent"] = None
-
 
     def save(self):
         backup_file = self.filename + "_original.trk"
