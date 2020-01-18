@@ -1191,9 +1191,11 @@ class ZStackReview(CalibanWindow):
         self.max_intensity = self.max_intensity_dict[self.channel]
 
         # keeps track of information about adjustment of colormap for viewing annotation labels
-        self.adjustment = {}
+        self.adjustment_dict = {}
         for feature in range(self.feature_max):
-            self.adjustment[feature] = 0
+            self.adjustment_dict[feature] = 0
+        # adjustment for initial feature
+        self.adjustment = self.adjustment_dict[self.feature]
 
         # mouse position in coordinates of array being viewed as image, (0,0) is placeholder
         # will be updated on mouse motion
@@ -1706,7 +1708,7 @@ class ZStackReview(CalibanWindow):
         Uses:
             self.draw_raw to determine which image to adjust (and which adjustment to use)
             self.max_intensity_dict and self.channel to set or change the brightness of raw images
-            self.cell_ids, self.adjustment, self.feature to determine when to stop decreasing
+            self.cell_ids, self.adjustment_dict, self.feature to determine when to stop decreasing
                 self.adjustment (applied to annotations when drawing to determine range of colormap
                 applied to frame)
             self.edit_mode, self.hide_annotations to check if the composite image should be updated
@@ -1728,8 +1730,9 @@ class ZStackReview(CalibanWindow):
         # adjusting colormap range of annotations
         elif not self.draw_raw:
             # self.adjustment value for the current feature should never reduce possible colors to 0
-            if self.get_max_label() + (self.adjustment[self.feature] - 1 * scroll_y) > 0:
-                self.adjustment[self.feature] = self.adjustment[self.feature] - 1 * scroll_y
+            if self.get_max_label() + (self.adjustment_dict[self.feature] - 1 * scroll_y) > 0:
+                self.adjustment_dict[self.feature] = self.adjustment_dict[self.feature] - 1 * scroll_y
+            self.adjustment = self.adjustment_dict[self.feature]
 
         # color/brightness adjustments will change what the composited image looks like
         if self.edit_mode and not self.hide_annotations:
@@ -2544,7 +2547,7 @@ class ZStackReview(CalibanWindow):
 
         # create pyglet image
         image = self.array_to_img(input_array = ann_array,
-                                                vmax = max(1, self.get_max_label() + self.adjustment[self.feature]),
+                                                vmax = max(1, self.get_max_label() + self.adjustment),
                                                 cmap = cmap,
                                                 output = 'pyglet')
 
@@ -2561,7 +2564,7 @@ class ZStackReview(CalibanWindow):
         '''
         # create pyglet image object so we can display brush location
         brush_img = self.array_to_img(input_array = self.brush_view,
-                                                    vmax = self.get_max_label() + self.adjustment[self.feature],
+                                                    vmax = self.get_max_label() + self.adjustment,
                                                     cmap = 'gist_stern',
                                                     output = 'pyglet')
 
@@ -2638,6 +2641,14 @@ class ZStackReview(CalibanWindow):
         '''
         # in this case we only need to update self.max_intensity
         self.max_intensity = self.max_intensity_dict[self.channel]
+
+    def change_feature(self):
+        '''
+        Method that updates current attributes as needed based on which
+        feature is being viewed.
+        '''
+        # only need to update self.adjustment
+        self.adjustment = self.adjustment_dict[self.feature]
 
     def action_new_single_cell(self):
         """
@@ -3268,7 +3279,7 @@ class ZStackReview(CalibanWindow):
 
         # get RGB array of colorful annotation view
         ann_img = self.array_to_img(input_array = current_ann,
-                                            vmax = self.get_max_label() + self.adjustment[self.feature],
+                                            vmax = self.get_max_label() + self.adjustment,
                                             cmap = 'gist_stern',
                                             output = 'array')
 
