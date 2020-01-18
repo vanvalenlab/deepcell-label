@@ -113,9 +113,20 @@ class CalibanWindow:
         # fill window when window changes size)
         self.scale_factor = 1
 
+        self.zoom = 1
+
+        self.view_start_y = 0
+        self.view_start_x = 0
+
+        self.max_y = USER_SCREEN.height - 2*self.image_padding
+        self.max_x = USER_SCREEN.width - self.sidebar_width - 2*self.image_padding
+
+        self.view_end_y = min(self.max_y, self.height)
+        self.view_end_x = min(self.max_x, self.width)
+
         # can't resize window to be smaller than the display area when viewed at 1x scale
-        self.window.set_minimum_size(width = self.width + self.sidebar_width + 2*self.image_padding,
-                                     height = self.height + 2*self.image_padding)
+        self.window.set_minimum_size(width = self.view_end_x + self.sidebar_width + 2*self.image_padding,
+                                     height = self.view_end_y + 2*self.image_padding)
 
         # bind custom event handlers to window
         self.window.on_draw = self.on_draw
