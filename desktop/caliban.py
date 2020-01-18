@@ -51,6 +51,10 @@ from imageio import imread, imwrite
 
 gl.glEnable(gl.GL_TEXTURE_2D)
 
+platform = pyglet.window.get_platform()
+display = platform.get_default_display()
+USER_SCREEN = display.get_default_screen()
+
 class CalibanWindow:
     # blank area to the left of displayed image where text info is displayed
     sidebar_width = 300
@@ -60,6 +64,9 @@ class CalibanWindow:
 
     # window is always a resizable pyglet window
     window = pyglet.window.Window(resizable=True)
+
+    # set maximum size based on user's screen
+    window.set_maximum_size(width = USER_SCREEN.width - 40, height = USER_SCREEN.height - 40)
 
     # use crosshair cursor instead of usual cursor
     cursor = window.get_system_mouse_cursor(window.CURSOR_CROSSHAIR)
