@@ -103,6 +103,21 @@ class CalibanWindow:
         # start with cursor visible, but this can be toggled
         self.mouse_visible = True
 
+        # start in label-editing mode
+        self.edit_mode = False
+        # start with display showing annotations
+        self.draw_raw = False
+
+        # IMAGE ADJUSTMENT TOGGLES
+        # invert grayscale light/dark of raw image
+        self.invert = True
+        # apply sobel filter (emphasizes edges) to raw image
+        self.sobel_on = False
+        # apply adaptive histogram equalization to raw image
+        self.adapthist_on = False
+        # show only raw image instead of composited image
+        self.hide_annotations = False
+
     def on_resize(self, width, height):
         '''
         Event handler for when pyglet window changes size. Note: this
@@ -361,7 +376,6 @@ class TrackReview(CalibanWindow):
         super().__init__()
 
         self.current_frame = 0
-        self.draw_raw = False
         self.max_intensity = None
         self.x = 0
         self.y = 0
@@ -373,7 +387,6 @@ class TrackReview(CalibanWindow):
 
         self.hole_fill_seed = None
 
-        self.edit_mode = False
         self.edit_value = 1
         self.brush_size = 1
         self.erase = False
@@ -1169,8 +1182,7 @@ class ZStackReview(CalibanWindow):
 
         # open file to first frame of annotation stack
         self.current_frame = 0
-        # start with display showing annotations
-        self.draw_raw = False
+
         # keeps track of information about brightness of each channel in raw images
         self.max_intensity_dict = {}
         for channel in range(self.channel_max):
@@ -1207,8 +1219,6 @@ class ZStackReview(CalibanWindow):
         # start on cubehelix cmap
         self.current_cmap = 0
 
-        # start in label-editing mode
-        self.edit_mode = False
         # set intial pixel-editing mode tool values
         self.edit_value = 1
         self.brush_size = 1
@@ -1222,15 +1232,6 @@ class ZStackReview(CalibanWindow):
         self.show_brush = True
         # stores starting point of thresholding bounding box
         self.predict_seed = None
-        # display options for pixel-editing mode
-        # invert grayscale light/dark of raw image
-        self.invert = True
-        # apply sobel filter (emphasizes edges) to raw image
-        self.sobel_on = False
-        # apply adaptive histogram equalization to raw image
-        self.adapthist_on = False
-        # show only raw image instead of composited image
-        self.hide_annotations = False
 
         # values for conversion brush tool
         self.conversion_brush_target = -1
