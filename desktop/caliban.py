@@ -2385,6 +2385,77 @@ class ZStackReview(CalibanWindow):
             # draw the label
             edit_label.draw()
 
+    def create_disp_image_text(self):
+        '''
+        '''
+        display_text = "Displayed image: "
+
+        if self.edit_mode:
+            if self.hide_annotations:
+                currently_viewing = "Raw"
+            else:
+                currently_viewing = "Overlay"
+        else:
+            if self.draw_raw:
+                currently_viewing = "Raw"
+            else:
+                currently_viewing = "Labels"
+
+        display_text += currently_viewing
+
+        return display_text
+
+    def create_highlight_text(self):
+        '''
+        Generate text describing current highlighting status.
+        Added to info on side of screen.
+        '''
+        if self.edit_mode:
+            highlight_text = "Highlighting: -\nHighlighted cell(s): None\n"
+        else:
+            highlight_text = "Highlighting: {}\n".format(on_or_off(self.highlight))
+            if self.highlight:
+                if self.highlighted_cell_two != -1:
+                    labels = "{}, {}".format(self.highlighted_cell_one, self.highlighted_cell_two)
+                elif self.highlighted_cell_one != -1:
+                    labels = "{}".format(self.highlighted_cell_one)
+                else:
+                    labels = "None"
+            else:
+                labels = "None"
+            highlight_text += "Highlighted cell(s): {}\n".format(labels)
+
+        return highlight_text
+
+    def create_cmap_text(self):
+        '''
+        Generate text describing the current colormap being used.
+        Added to info display on side of screen.
+        '''
+        cmap = ""
+        if self.edit_mode:
+            if self.hide_annotations:
+                # TODO: replace with actual gray cmap name
+                cmap = "Gray"
+            else:
+                cmap = "gist_stern/gray"
+        else:
+            if self.draw_raw:
+                cmap = self.cmap_options[self.current_cmap]
+            else:
+                cmap = "cubehelix"
+
+        return cmap
+
+    def create_filter_text(self):
+        '''
+        '''
+        filter_text = ("\nSobel filter - {}".format(on_or_off(self.sobel_on))
+                    + "\nColor inversion - {}".format(on_or_off(self.invert))
+                    + "\nHistogram equalization - {}".format(on_or_off(self.adapthist_on)))
+
+        return filter_text
+
     def render_frame_info_helper(self):
         '''
         Display information about the frame currently being viewed.
@@ -2392,39 +2463,30 @@ class ZStackReview(CalibanWindow):
         conditionally displayed by this label. This info is displayed
         at top of info column.
         '''
-        # TODO: display currently used colormap
-
-        # highlighting doesn't apply in pixel-editing mode (yet)
-        # so highlight info is blank in that context
         if self.edit_mode:
-            edit_mode = "on"
-            highlight_text = ""
+            edit_mode = "pixels"
+            filter_info = self.create_filter_text()
 
-        # label-editing mode, where highlighting is an option
+        # label-editing mode
         else:
-            edit_mode = "off"
-            # if highlight is on, show which labels are highlighted
-            if self.highlight:
-                # two labels highlighted
-                if self.highlighted_cell_two != -1:
-                    highlight_text = "highlight: on\nhighlighted cell 1: {}\nhighlighted cell 2: {}".format(self.highlighted_cell_one, self.highlighted_cell_two)
-                # one label highlighted
-                elif self.highlighted_cell_one != -1:
-                    highlight_text = "highlight: on\nhighlighted cell: {}".format(self.highlighted_cell_one)
-                # no labels highlighted
-                else:
-                    highlight_text = "highlight: on"
-            # highlighting turned off
-            else:
-                highlight_text = "highlight: off"
+            edit_mode = "labels"
+            # can't currently apply filters to raw image
+            filter_info = "\n\n\n"
+
+        display_filter_info = ("Current display settings:"
+            "\nColormap - {}").format(self.create_cmap_text())
+        display_filter_info += filter_info
 
         # TODO: render label in a batch
         # create pyglet label anchored to top of left side
-        frame_label = pyglet.text.Label("frame: {}\n".format(self.current_frame)
-                                        + "channel: {}\n".format(self.channel)
-                                        + "feature: {}\n".format(self.feature)
-                                        + "edit mode: {}\n".format(edit_mode)
-                                        + "{}".format(highlight_text),
+        frame_label = pyglet.text.Label("Currently viewing:\n"
+                                        + "Frame: {}\n".format(self.current_frame)
+                                        + "Channel: {}\n".format(self.channel)
+                                        + "Feature: {}\n".format(self.feature)
+                                        + "{}\n\n".format(self.create_disp_image_text())
+                                        + "{}\n".format(self.create_highlight_text())
+                                        + "{}\n\n".format(display_filter_info)
+                                        + "Edit mode: {}\n".format(edit_mode),
                                         font_name="monospace",
                                         anchor_x="left", anchor_y="top",
                                         width=self.sidebar_width,
@@ -3467,6 +3529,11 @@ class ZStackReview(CalibanWindow):
                 tracked_file.flush()
                 trks.add(tracked_file.name, "tracked.npy")
 
+def on_or_off(toggle):
+    if toggle:
+        return "on"
+    else:
+        return "off"
 
 def consecutive(data, stepsize=1):
     return np.split(data, np.where(np.diff(data) != stepsize)[0]+1)
