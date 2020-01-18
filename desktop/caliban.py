@@ -367,7 +367,7 @@ class TrackReview(CalibanWindow):
             print("Actions will not be supported")
 
         # `label` should appear first
-        self.track_keys = ["label", *sorted(set(self.tracks[1]) - {"label"})]
+        self.display_info = ["label", *sorted(set(self.tracks[1]) - {"label"})]
         self.num_tracks = max(self.tracks)
 
         self.num_frames, self.height, self.width, _ = raw.shape
@@ -699,7 +699,7 @@ class TrackReview(CalibanWindow):
 
             track["frames"] = frames
             text = '\n'.join("{:10} {}".format(k+':', track[k])
-                             for k in self.track_keys)
+                             for k in self.display_info)
         else:
             text = ''
 
