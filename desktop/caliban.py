@@ -684,18 +684,20 @@ class TrackReview(CalibanWindow):
     def get_label(self):
         return int(self.tracked[self.current_frame, self.y, self.x])
 
+    def get_label_info(self, label):
+        info = self.tracks[label].copy()
+        frames = list(map(list, consecutive(info["frames"])))
+        frames = '[' + ', '.join(["{}".format(a[0])
+                            if len(a) == 1 else "{}-{}".format(a[0], a[-1])
+                            for a in frames]) + ']'
+        info["frames"] = frames
+        return info
+
     def draw_label(self):
         # always use segmented output for label, not raw
         label = self.get_label()
         if label != 0:
-            track = self.tracks[label].copy()
-            frames = list(map(list, consecutive(track["frames"])))
-            frames = '[' + ', '.join(["{}".format(a[0])
-                                if len(a) == 1 else "{}-{}".format(a[0], a[-1])
-                                for a in frames]) + ']'
-
-            track["frames"] = frames
-            text = '\n'.join("{:10} {}".format(k+':', track[k])
+            text = '\n'.join("{:10} {}".format(k+':', self.get_label_info(label)[k])
                              for k in self.display_info)
         else:
             text = ''
@@ -2315,6 +2317,9 @@ class ZStackReview(CalibanWindow):
         '''
         return (self.get_max_label() + 1)
 
+    def get_label_info(self, label):
+        return self.cell_info[self.feature][label]
+
     def draw_label(self):
         '''
         Coordinates information display (text) on left side of screen.
@@ -2337,7 +2342,7 @@ class ZStackReview(CalibanWindow):
 
         if label != 0:
             # generate text from cell_info and display_info (use slices instead of frames)
-            text = '\n'.join("{:10}{}".format(str(k)+':', self.cell_info[self.feature][label][k])
+            text = '\n'.join("{:10}{}".format(str(k)+':', self.get_label_info(label)[k])
                               for k in self.display_info)
         # display nothing if not hovering over a label
         else:
