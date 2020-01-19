@@ -349,6 +349,18 @@ class CalibanWindow:
 
         return img_masked
 
+    def create_label_info_text(self):
+        label = self.get_label()
+        if label != 0:
+            # generate text from cell_info and display_info (use slices instead of frames)
+            text = '\n'.join("{:11}{}".format(str(k)+': ', self.get_label_info(label)[k])
+                              for k in self.display_info)
+        else:
+            # display nothing if not hovering over a label
+            text = ''
+
+        return text
+
 class TrackReview(CalibanWindow):
     possible_keys = {"label", "daughters", "frames", "parent", "frame_div",
                      "capped"}
@@ -694,14 +706,7 @@ class TrackReview(CalibanWindow):
         return info
 
     def draw_label(self):
-        # always use segmented output for label, not raw
-        label = self.get_label()
-        if label != 0:
-            text = '\n'.join("{:10} {}".format(k+':', self.get_label_info(label)[k])
-                             for k in self.display_info)
-        else:
-            text = ''
-
+        text = self.create_label_info_text()
         text += self.mode.text
 
         info_label = pyglet.text.Label(text, font_name="monospace",
@@ -2337,16 +2342,8 @@ class ZStackReview(CalibanWindow):
         When cursor is over a label, displays information about that label
         at the bottom of the information column.
         '''
-        # value of annotation at current position of mouse
-        label = self.get_label()
 
-        if label != 0:
-            # generate text from cell_info and display_info (use slices instead of frames)
-            text = '\n'.join("{:10}{}".format(str(k)+':', self.get_label_info(label)[k])
-                              for k in self.display_info)
-        # display nothing if not hovering over a label
-        else:
-            text = ''
+        text = self.create_label_info_text()
 
         # add info from self.mode (eg, prompts or "selected", etc)
         text += self.mode.text
