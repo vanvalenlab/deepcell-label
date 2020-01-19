@@ -2342,8 +2342,6 @@ class ZStackReview(CalibanWindow):
         # TODO: batch graphics?
         self.render_cell_label_info_helper()
 
-        self.render_edit_mode_info_helper()
-
         self.render_frame_info_helper()
 
     def render_cell_label_info_helper(self):
@@ -2367,28 +2365,6 @@ class ZStackReview(CalibanWindow):
 
         # draw the label
         cell_info_label.draw()
-
-    def render_edit_mode_info_helper(self):
-        '''
-        Display information about pixel-editing mode (if in that mode).
-        Pixel-editing information such as brush attributes displayed in
-        center of information column.
-        '''
-        # TODO: display info about image settings (eg, which filters are turned on)
-
-        # only display while in pixel-editing mode
-        if self.edit_mode:
-            # TODO: render label in a batch
-            # create pyglet label anchored to middle of left side
-            edit_label = pyglet.text.Label(self.create_brush_text(),
-                                            font_name='monospace',
-                                            anchor_x='left', anchor_y='center',
-                                            width=self.sidebar_width,
-                                            multiline=True,
-                                            x=5, y=self.window.height//2,
-                                            color=[255]*4)
-            # draw the label
-            edit_label.draw()
 
     def create_disp_image_text(self):
         '''
@@ -2440,22 +2416,26 @@ class ZStackReview(CalibanWindow):
         return filter_text
 
     def create_brush_text(self):
-        size_text = "Brush size: "
-        if self.show_brush:
-            size_text += str(self.brush_size)
-        else:
-            size_text += "-"
+        if self.edit_mode:
+            size_text = "Brush size: "
+            if self.show_brush:
+                size_text += str(self.brush_size)
+            else:
+                size_text += "-"
 
-        value_text = "Editing label: "
-        erase_text = "Eraser: "
-        if self.mode.kind is None:
-            value_text += str(self.edit_value)
-            erase_text += on_or_off(self.erase)
-        else:
-            value_text += "-"
-            erase_text += "-"
+            value_text = "Editing label: "
+            erase_text = "Eraser: "
+            if self.mode.kind is None:
+                value_text += str(self.edit_value)
+                erase_text += on_or_off(self.erase)
+            else:
+                value_text += "-"
+                erase_text += "-"
 
-        brush_info_text = "{}\n{}\n{}".format(size_text, value_text, erase_text)
+            brush_info_text = "Current brush settings:\n\n{}\n{}\n{}".format(size_text,
+                value_text, erase_text)
+        else:
+            brush_info_text = ""
 
         return brush_info_text
 
@@ -2489,7 +2469,8 @@ class ZStackReview(CalibanWindow):
                                         + "{}\n\n".format(self.create_disp_image_text())
                                         + "{}\n".format(self.create_highlight_text())
                                         + "{}\n\n".format(display_filter_info)
-                                        + "Edit mode: {}\n".format(edit_mode),
+                                        + "Edit mode: {}\n".format(edit_mode)
+                                        + self.create_brush_text(),
                                         font_name="monospace",
                                         anchor_x="left", anchor_y="top",
                                         width=self.sidebar_width,
