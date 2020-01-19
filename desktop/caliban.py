@@ -380,7 +380,6 @@ class TrackReview(CalibanWindow):
 
         # `label` should appear first
         self.display_info = ["label", *sorted(set(self.tracks[1]) - {"label"})]
-        self.num_tracks = max(self.tracks)
 
         self.num_frames, self.height, self.width, _ = raw.shape
         self.dtype_raw = raw.dtype
@@ -557,7 +556,7 @@ class TrackReview(CalibanWindow):
                 raw_adjust = max(int(self.max_intensity * 0.02), 1)
                 self.max_intensity = max(self.max_intensity - raw_adjust * scroll_y, 2)
         else:
-            if self.num_tracks + (self.adjustment - 1 * scroll_y) > 0:
+            if self.get_max_label() + (self.adjustment - 1 * scroll_y) > 0:
                 self.adjustment = self.adjustment - 1 * scroll_y
 
     def on_mouse_motion(self, x, y, dx, dy):
@@ -592,7 +591,7 @@ class TrackReview(CalibanWindow):
 
         else:
             if symbol == key.EQUAL:
-                self.edit_value = min(self.edit_value + 1, self.num_tracks)
+                self.edit_value = min(self.edit_value + 1, self.get_max_label())
             if symbol == key.MINUS:
                 self.edit_value = max(self.edit_value - 1, 1)
             if symbol == key.X:
@@ -656,16 +655,16 @@ class TrackReview(CalibanWindow):
         #cycle through highlighted cells
         if symbol == key.EQUAL:
             if self.mode.kind == "SELECTED":
-                if self.highlighted_cell_one < self.num_tracks:
+                if self.highlighted_cell_one < self.get_max_label():
                     self.highlighted_cell_one += 1
-                elif self.highlighted_cell_one == self.num_tracks:
+                elif self.highlighted_cell_one == self.get_max_label():
                     self.highlighted_cell_one = 1
         if symbol == key.MINUS:
             if self.mode.kind == "SELECTED":
                 if self.highlighted_cell_one > 1:
                     self.highlighted_cell_one -= 1
                 elif self.highlighted_cell_one == 1:
-                    self.highlighted_cell_one = self.num_tracks
+                    self.highlighted_cell_one = self.get_max_label()
 
         if symbol == key.SPACE:
             if self.mode.kind == "QUESTION":
@@ -695,6 +694,9 @@ class TrackReview(CalibanWindow):
 
     def get_label(self):
         return int(self.tracked[self.current_frame, self.y, self.x])
+
+    def get_max_label(self):
+        return max(self.tracks)
 
     def get_label_info(self, label):
         info = self.tracks[label].copy()
@@ -801,7 +803,7 @@ class TrackReview(CalibanWindow):
 
         # create pyglet image
         image = self.array_to_img(input_array = ann_array,
-                                                vmax = self.num_tracks + self.adjustment,
+                                                vmax = self.get_max_label() + self.adjustment,
                                                 cmap = cmap,
                                                 output = 'pyglet')
         self.draw_pyglet_image(image)
@@ -809,7 +811,7 @@ class TrackReview(CalibanWindow):
     def draw_pixel_edit_frame(self):
         # create pyglet image object so we can display brush location
         brush_img = self.array_to_img(input_array = self.brush_view,
-                                                    vmax = self.num_tracks + self.adjustment,
+                                                    vmax = self.get_max_label() + self.adjustment,
                                                     cmap = 'gist_stern',
                                                     output = 'pyglet')
 
@@ -828,7 +830,7 @@ class TrackReview(CalibanWindow):
 
         # get RGB array of colorful annotation view
         ann_img = self.array_to_img(input_array = current_ann,
-                                            vmax = self.num_tracks + self.adjustment,
+                                            vmax = self.get_max_label() + self.adjustment,
                                             cmap = 'gist_stern',
                                             output = 'array')
 
@@ -849,8 +851,7 @@ class TrackReview(CalibanWindow):
         Replacing label
         """
         old_label, start_frame = self.mode.label, self.mode.frame
-        new_label = self.num_tracks + 1
-        self.num_tracks += 1
+        new_label = self.get_max_label() + 1
 
         if start_frame == 0:
             raise ValueError("new_track cannot be called on the first frame")
@@ -884,7 +885,7 @@ class TrackReview(CalibanWindow):
         Create new label in just one frame
         """
         old_label, single_frame = self.mode.label, self.mode.frame
-        new_label = self.num_tracks + 1
+        new_label = self.get_max_label() + 1
 
         # replace frame labels
         frame = self.tracked[single_frame]
@@ -897,7 +898,7 @@ class TrackReview(CalibanWindow):
     def action_watershed(self):
         # Pull the label that is being split and find a new valid label
         current_label = self.mode.label_1
-        new_label = self.num_tracks + 1
+        new_label = self.get_max_label() + 1
 
         # Locally store the frames to work on
         img_raw = self.raw[self.current_frame]
@@ -1067,8 +1068,6 @@ class TrackReview(CalibanWindow):
             self.tracks[add_label].update({'frame_div': None})
             self.tracks[add_label].update({'parent': None})
             self.tracks[add_label].update({'capped': False})
-
-            self.num_tracks += 1
 
     def del_cell_info(self, del_label, frame):
         '''
