@@ -2378,19 +2378,9 @@ class ZStackReview(CalibanWindow):
 
         # only display while in pixel-editing mode
         if self.edit_mode:
-            brush_size_display = "brush size: {}".format(self.brush_size)
-            edit_label_display = "editing label: {}".format(self.edit_value)
-            if self.erase:
-                erase_mode = "on"
-            else:
-                erase_mode = "off"
-            draw_or_erase = "eraser mode: {}".format(erase_mode)
-
             # TODO: render label in a batch
             # create pyglet label anchored to middle of left side
-            edit_label = pyglet.text.Label('{}\n{}\n{}'.format(brush_size_display,
-                                                        edit_label_display,
-                                                        draw_or_erase),
+            edit_label = pyglet.text.Label(self.create_brush_text(),
                                             font_name='monospace',
                                             anchor_x='left', anchor_y='center',
                                             width=self.sidebar_width,
@@ -2448,6 +2438,26 @@ class ZStackReview(CalibanWindow):
                     + "\nHistogram equalization - {}".format(on_or_off(self.adapthist_on)))
 
         return filter_text
+
+    def create_brush_text(self):
+        size_text = "Brush size: "
+        if self.show_brush:
+            size_text += str(self.brush_size)
+        else:
+            size_text += "-"
+
+        value_text = "Editing label: "
+        erase_text = "Eraser: "
+        if self.mode.kind is None:
+            value_text += str(self.edit_value)
+            erase_text += on_or_off(self.erase)
+        else:
+            value_text += "-"
+            erase_text += "-"
+
+        brush_info_text = "{}\n{}\n{}".format(size_text, value_text, erase_text)
+
+        return brush_info_text
 
     def render_frame_info_helper(self):
         '''
