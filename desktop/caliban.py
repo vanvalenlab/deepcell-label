@@ -349,6 +349,28 @@ class CalibanWindow:
 
         return img_masked
 
+    def create_highlight_text(self):
+        '''
+        Generate text describing current highlighting status.
+        Added to info on side of screen.
+        '''
+        if self.edit_mode:
+            highlight_text = "Highlighting: -\nHighlighted cell(s): None\n"
+        else:
+            highlight_text = "Highlighting: {}\n".format(on_or_off(self.highlight))
+            if self.highlight:
+                if self.highlighted_cell_two != -1:
+                    labels = "{}, {}".format(self.highlighted_cell_one, self.highlighted_cell_two)
+                elif self.highlighted_cell_one != -1:
+                    labels = "{}".format(self.highlighted_cell_one)
+                else:
+                    labels = "None"
+            else:
+                labels = "None"
+            highlight_text += "Highlighted cell(s): {}\n".format(labels)
+
+        return highlight_text
+
     def create_label_info_text(self):
         label = self.get_label()
         if label != 0:
@@ -737,22 +759,10 @@ class TrackReview(CalibanWindow):
                                             x=5, y=self.window.height//2,
                                             color=[255]*4)
             edit_label.draw()
-
-
-            highlight_text = ""
-
         else:
             edit_mode = "off"
-            if self.highlight:
-                if self.highlighted_cell_two != -1:
-                    highlight_text = "highlight: on\nhighlighted cell 1: {}\nhighlighted cell 2: {}".format(self.highlighted_cell_one, self.highlighted_cell_two)
-                elif self.highlighted_cell_one != -1:
-                    highlight_text = "highlight: on\nhighlighted cell: {}".format(self.highlighted_cell_one)
-                else:
-                    highlight_text = "highlight: on"
-            else:
-                highlight_text = "highlight: off"
 
+        highlight_text = self.create_highlight_text()
 
         frame_label = pyglet.text.Label("frame: {}".format(self.current_frame)
                                     + "\nedit mode: {}".format(edit_mode)
@@ -2409,28 +2419,6 @@ class ZStackReview(CalibanWindow):
         display_text += currently_viewing
 
         return display_text
-
-    def create_highlight_text(self):
-        '''
-        Generate text describing current highlighting status.
-        Added to info on side of screen.
-        '''
-        if self.edit_mode:
-            highlight_text = "Highlighting: -\nHighlighted cell(s): None\n"
-        else:
-            highlight_text = "Highlighting: {}\n".format(on_or_off(self.highlight))
-            if self.highlight:
-                if self.highlighted_cell_two != -1:
-                    labels = "{}, {}".format(self.highlighted_cell_one, self.highlighted_cell_two)
-                elif self.highlighted_cell_one != -1:
-                    labels = "{}".format(self.highlighted_cell_one)
-                else:
-                    labels = "None"
-            else:
-                labels = "None"
-            highlight_text += "Highlighted cell(s): {}\n".format(labels)
-
-        return highlight_text
 
     def create_cmap_text(self):
         '''
