@@ -405,8 +405,7 @@ class TrackReview(CalibanWindow):
 
         if not self.edit_mode:
             if self.mode.kind is None:
-                frame = self.tracked[self.current_frame]
-                label = int(frame[self.y, self.x])
+                label = self.get_label()
                 if label != 0:
                     self.mode.update("SELECTED",
                                      label=label,
@@ -415,8 +414,7 @@ class TrackReview(CalibanWindow):
                     self.highlighted_cell_one = label
                     self.highlighted_cell_two = -1
             elif self.mode.kind == "SELECTED":
-                frame = self.tracked[self.current_frame]
-                label = int(frame[self.y, self.x])
+                label = self.get_label()
                 if label != 0:
                     self.highlighted_cell_one = self.mode.label
                     self.highlighted_cell_two = label
@@ -436,8 +434,7 @@ class TrackReview(CalibanWindow):
                     self.highlighted_cell_two = -1
             #if already have two cells selected, click again to reselect the second cell
             elif self.mode.kind == "MULTIPLE":
-                frame = self.tracked[self.current_frame]
-                label = int(frame[self.y, self.x])
+                label = self.get_label()
                 if label != 0:
                     self.highlighted_cell_two = label
                     self.mode.update("MULTIPLE",
@@ -455,8 +452,7 @@ class TrackReview(CalibanWindow):
                     self.highlighted_cell_one = -1
                     self.highlighted_cell_two = -1
             elif self.mode.kind == "PROMPT" and self.mode.action == "FILL HOLE":
-                    frame = self.tracked[self.current_frame]
-                    label = int(frame[self.y, self.x])
+                    label = self.get_label()
                     if label == 0:
                         self.hole_fill_seed = (self.y, self.x)
                     if self.hole_fill_seed is not None:
@@ -492,8 +488,7 @@ class TrackReview(CalibanWindow):
                 self.tracked[self.current_frame,:,:,0] = annotated
 
             elif self.mode.kind == "PROMPT" and self.mode.action == "PICK COLOR":
-                frame = self.tracked[self.current_frame]
-                label = int(frame[self.y, self.x, 0])
+                label = self.get_label()
                 if label == 0:
                     self.mode.clear()
                 elif label != 0:
@@ -686,10 +681,12 @@ class TrackReview(CalibanWindow):
     def get_ann_current_frame(self):
         return self.tracked[self.current_frame,:,:,0]
 
+    def get_label(self):
+        return int(self.tracked[self.current_frame, self.y, self.x])
+
     def draw_label(self):
         # always use segmented output for label, not raw
-        frame = self.tracked[self.current_frame]
-        label = int(frame[self.y, self.x])
+        label = self.get_label()
         if label != 0:
             track = self.tracks[label].copy()
             frames = list(map(list, consecutive(track["frames"])))
