@@ -383,6 +383,39 @@ class CalibanWindow:
 
         return text
 
+class CalibanBrush:
+    def __init__(self):
+        self.size = 1
+        self.edit_val = 1
+        self.erase = False
+
+        self.conv_target = -1
+        self.conv_val = -1
+
+    def decrease_size(self):
+        self.size = max(1, self.size -1)
+
+    def increase_size(self, window):
+        self.size = min(self.size + 1, window.height, window.width)
+
+    def decrease_edit_val(self):
+        self.edit_val = max(1, self.edit_val - 1)
+
+    def increase_edit_val(self, window):
+        self.edit_val = min(window.get_new_label(), self.edit_val + 1)
+
+    def toggle_erase(self):
+        self.erase = not self.erase
+
+    def set_edit_val(self, val):
+        self.edit_val = val
+
+    def set_conv_target(self, val):
+        self.conv_target = val
+
+    def set_conv_val(self, val):
+        self.conv_val = val
+
 class TrackReview(CalibanWindow):
     possible_keys = {"label", "daughters", "frames", "parent", "frame_div",
                      "capped"}
@@ -420,10 +453,8 @@ class TrackReview(CalibanWindow):
 
         self.hole_fill_seed = None
 
-        self.edit_value = 1
-        self.brush_size = 1
-        self.erase = False
         self.brush_view = np.zeros(self.tracked[self.current_frame,:,:,0].shape)
+        self.brush = CalibanBrush()
 
         pyglet.app.run()
 
@@ -496,27 +527,27 @@ class TrackReview(CalibanWindow):
             if self.mode.kind is None:
                 annotated = self.tracked[self.current_frame,:,:,0]
 
-                brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
+                brush_area = circle(self.y, self.x, self.brush.size, (self.height,self.width))
 
-                in_original = np.any(np.isin(annotated, self.edit_value))
+                in_original = np.any(np.isin(annotated, self.brush.edit_val))
 
                 #do not overwrite or erase labels other than the one you're editing
-                if not self.erase:
-                    annotated_draw = np.where(annotated==0, self.edit_value, annotated)
+                if not self.brush.erase:
+                    annotated_draw = np.where(annotated==0, self.brush.edit_val, annotated)
                     annotated[brush_area] = annotated_draw[brush_area]
                 else:
-                    annotated_erase = np.where(annotated==self.edit_value, 0, annotated)
+                    annotated_erase = np.where(annotated==self.brush.edit_val, 0, annotated)
                     annotated[brush_area] = annotated_erase[brush_area]
 
-                in_modified = np.any(np.isin(annotated, self.edit_value))
+                in_modified = np.any(np.isin(annotated, self.brush.edit_val))
 
                 #cell deletion
                 if in_original and not in_modified:
-                    self.del_cell_info(del_label = self.edit_value, frame = self.current_frame)
+                    self.del_cell_info(del_label = self.brush.edit_val, frame = self.current_frame)
 
                 #cell addition
                 elif in_modified and not in_original:
-                    self.add_cell_info(add_label = self.edit_value, frame = self.current_frame)
+                    self.add_cell_info(add_label = self.brush.edit_val, frame = self.current_frame)
 
                 self.tracked[self.current_frame,:,:,0] = annotated
 
@@ -525,7 +556,7 @@ class TrackReview(CalibanWindow):
                 if label == 0:
                     self.mode.clear()
                 elif label != 0:
-                    self.edit_value = label
+                    self.brush.set_edit_val(label)
                     self.mode.clear()
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
@@ -539,30 +570,30 @@ class TrackReview(CalibanWindow):
             x_loc = self.x
             y_loc = self.y
 
-            brush_area = circle(y_loc, x_loc, self.brush_size, (self.height,self.width))
+            brush_area = circle(y_loc, x_loc, self.brush.size, (self.height,self.width))
 
             #show where brush has drawn this time
-            self.brush_view[brush_area] = self.edit_value
+            self.brush_view[brush_area] = self.brush.edit_val
 
-            in_original = np.any(np.isin(annotated, self.edit_value))
+            in_original = np.any(np.isin(annotated, self.brush.edit_val))
 
             #do not overwrite or erase labels other than the one you're editing
-            if not self.erase:
-                annotated_draw = np.where(annotated==0, self.edit_value, annotated)
+            if not self.brush.erase:
+                annotated_draw = np.where(annotated==0, self.brush.edit_val, annotated)
                 annotated[brush_area] = annotated_draw[brush_area]
             else:
-                annotated_erase = np.where(annotated==self.edit_value, 0, annotated)
+                annotated_erase = np.where(annotated==self.brush.edit_val, 0, annotated)
                 annotated[brush_area] = annotated_erase[brush_area]
 
-            in_modified = np.any(np.isin(annotated, self.edit_value))
+            in_modified = np.any(np.isin(annotated, self.brush.edit_val))
 
             #cell deletion
             if in_original and not in_modified:
-                self.del_cell_info(del_label = self.edit_value, frame = self.current_frame)
+                self.del_cell_info(del_label = self.brush.edit_val, frame = self.current_frame)
 
             #cell addition
             elif in_modified and not in_original:
-                self.add_cell_info(add_label = self.edit_value, frame = self.current_frame)
+                self.add_cell_info(add_label = self.brush.edit_val, frame = self.current_frame)
 
             self.tracked[self.current_frame,:,:,0] = annotated
 
@@ -588,8 +619,8 @@ class TrackReview(CalibanWindow):
         if self.edit_mode:
             #display brush size
             self.brush_view = np.zeros(self.tracked[self.current_frame,:,:,0].shape)
-            brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
-            self.brush_view[brush_area] = self.edit_value
+            brush_area = circle(self.y, self.x, self.brush.size, (self.height,self.width))
+            self.brush_view[brush_area] = self.brush.edit_val
 
     def on_key_press(self, symbol, modifiers):
         # Set scroll speed (through sequential frames) with offset
@@ -613,15 +644,15 @@ class TrackReview(CalibanWindow):
 
         else:
             if symbol == key.EQUAL:
-                self.edit_value = min(self.edit_value + 1, self.get_max_label())
+                self.brush.increase_edit_val(window = self)
             if symbol == key.MINUS:
-                self.edit_value = max(self.edit_value - 1, 1)
+                self.brush.decrease_edit_val()
             if symbol == key.X:
-                self.erase = not self.erase
+                self.brush.toggle_erase()
             if symbol == key.LEFT:
-                self.brush_size = max(self.brush_size -1, 1)
+                self.brush.decrease_size()
             if symbol == key.RIGHT:
-                self.brush_size = min(self.brush_size + 1, self.height, self.width)
+                self.brush.increase_size(window = self)
             if symbol == key.Z:
                 self.draw_raw = not self.draw_raw
             else:
@@ -744,9 +775,9 @@ class TrackReview(CalibanWindow):
 
         if self.edit_mode:
             edit_mode = "on"
-            brush_size_display = "brush size: {}".format(self.brush_size)
-            edit_label_display = "editing label: {}".format(self.edit_value)
-            if self.erase:
+            brush_size_display = "brush size: {}".format(self.brush.size)
+            edit_label_display = "editing label: {}".format(self.brush.edit_val)
+            if self.brush.erase:
                 erase_mode = "on"
             else:
                 erase_mode = "off"
@@ -1233,23 +1264,17 @@ class ZStackReview(CalibanWindow):
         # start on cubehelix cmap
         self.current_cmap = 0
 
-        # set intial pixel-editing mode tool values
-        self.edit_value = 1
-        self.brush_size = 1
-        self.erase = False
         # brush_view is array used to display a preview of brush tool; same size as other arrays
         self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
         # composite_view used to store RGB image (composite of raw and annotated) so it can be
         # accessed and updated as needed
         self.composite_view = np.zeros((1,self.height,self.width,3))
+        self.brush = CalibanBrush()
+
         # not a user-toggled option; distinguishes between brush and threshold choices
         self.show_brush = True
         # stores starting point of thresholding bounding box
         self.predict_seed = None
-
-        # values for conversion brush tool
-        self.conversion_brush_target = -1
-        self.conversion_brush_value = -1
 
         # stores y, x location of mouse click for actions that use skimage flooding
         # self.hole_fill_seed = None
@@ -1404,20 +1429,20 @@ class ZStackReview(CalibanWindow):
 
     def handle_color_pick_helper(self):
         '''
-        Takes the label clicked on, sets self.edit_value to that label, and then
+        Takes the label clicked on, sets self.brush.edit_val to that label, and then
         exits color-picking mode. Doesn't change anything if click on background
         but still exits color-picking mode.
 
         Uses:
             self.annotated, self.current_frame, self.y, self.x, and self.feature
                 to determine which label was clicked on
-            self.edit_value (modifies stored value)
+            self.brush.edit_val (modifies stored value)
             self.mode (resets to Mode.none())
         '''
         # which label was clicked on
         label = self.get_label()
         if label != 0:
-            self.edit_value = label
+            self.brush.set_edit_val(label)
         self.mode.clear()
 
     def pick_conversion_target_helper(self):
@@ -1431,13 +1456,13 @@ class ZStackReview(CalibanWindow):
         Uses:
             self.annotated, self.current_frame, self.y, self.x, and self.feature
                 to determine which label was clicked on
-            self.conversion_brush_target to store clicked value
+            self.brush.conv_target to store clicked value
             self.mode to move to next step of conversion brush setting
         '''
         # which label was clicked on
         label = self.get_label()
         if label != 0:
-            self.conversion_brush_target = label
+            self.brush.set_conv_target(label)
             # once value is set, move to setting next value
             self.mode.update("PROMPT", action = "CONVERSION BRUSH VALUE")
 
@@ -1452,17 +1477,17 @@ class ZStackReview(CalibanWindow):
         Uses:
             self.annotated, self.current_frame, self.y, self.x, and self.feature
                 to determine which label was clicked on
-            self.conversion_brush_value to store clicked value
+            self.brush.conv_val to store clicked value
             self.mode to enter use of conversion brush
         '''
         # which label was clicked on
         label = self.get_label()
         if label != 0:
-            self.conversion_brush_value = label
+            self.brush.set_conv_val(label)
             # once value is set, turn on conversion brush
             self.mode.update("DRAW", action = "CONVERSION",
-                conversion_brush_target = self.conversion_brush_target,
-                conversion_brush_value = self.conversion_brush_value)
+                conversion_brush_target = self.brush.conv_target,
+                conversion_brush_value = self.brush.conv_val)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         '''
@@ -1492,13 +1517,13 @@ class ZStackReview(CalibanWindow):
             # drawing with brush (normal or conversion)
             if self.show_brush:
                 # update brush_view if self.mode.kind is DRAW or None, but not PROMPT
-                brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
+                brush_area = circle(self.y, self.x, self.brush.size, (self.height,self.width))
                 # conversion brush
                 if self.mode.kind == "DRAW":
-                    self.brush_view[brush_area] = self.conversion_brush_value
+                    self.brush_view[brush_area] = self.brush.conv_val
                 # normal brush
                 elif self.mode.kind is None:
-                    self.brush_view[brush_area] = self.edit_value
+                    self.brush_view[brush_area] = self.brush.edit_val
                 # modify annotation
                 self.handle_draw_helper()
 
@@ -1514,7 +1539,7 @@ class ZStackReview(CalibanWindow):
                 left_edge = min(self.predict_seed[1], self.x)
                 right_edge = max(self.predict_seed[1], self.x)
 
-                self.brush_view[top_edge:bottom_edge, left_edge:right_edge] = self.edit_value
+                self.brush_view[top_edge:bottom_edge, left_edge:right_edge] = self.brush.edit_val
 
     def on_mouse_release(self, x, y, buttons, modifiers):
         '''
@@ -1595,11 +1620,11 @@ class ZStackReview(CalibanWindow):
 
         Uses:
             self.mode.kind to determine if drawing normally or using conversion brush
-            self.edit_value and self.erase if using normal brush
-            self.conversion_brush_target and self.conversion_brush_value if using conversion brush
+            self.brush.edit_val and self.brush.erase if using normal brush
+            self.brush.conv_target and self.brush.conv_val if using conversion brush
             self.annotated, self.current_frame, self.feature to get frame to modify
             self.x and self.y to center brush
-            self.brush_size to create skimage.draw.circle with that radius
+            self.brush.size to create skimage.draw.circle with that radius
             self.height and self.width to limit boundaries of brush (skimage.draw.circle)
 
         '''
@@ -1607,18 +1632,18 @@ class ZStackReview(CalibanWindow):
         # check which mode we are drawing in and set drawing variables
         # normal draw/erase
         if self.mode.kind is None:
-            if self.erase:
+            if self.brush.erase:
                 brush_val = 0
-                editing_val = self.edit_value
+                editing_val = self.brush.edit_val
             else:
-                brush_val = self.edit_value
+                brush_val = self.brush.edit_val
                 editing_val = 0
 
         # conversion brush
         elif self.mode.kind == "DRAW":
             # erase does not apply in conversion brush mode
-            brush_val = self.conversion_brush_value
-            editing_val = self.conversion_brush_target
+            brush_val = self.brush.conv_val
+            editing_val = self.brush.conv_target
 
         # could be in the middle of setting conversion brush, in which case
         # shouldn't be attempting to draw
@@ -1634,7 +1659,7 @@ class ZStackReview(CalibanWindow):
         # create image where all editing_val pixels are replaced with brush val
         annotated_draw = np.where(annotated==editing_val, brush_val, annotated)
         # only modify 'annotated' within brush_area
-        brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
+        brush_area = circle(self.y, self.x, self.brush.size, (self.height,self.width))
         annotated[brush_area] = annotated_draw[brush_area]
 
         # check to see if any labels have been added or removed from frame
@@ -1669,8 +1694,8 @@ class ZStackReview(CalibanWindow):
                 event x and y
             self.edit_mode, self.mode.kind, self.show_brush to determine when to display
                 brush preview
-            self.brush_view, self.y, self.x, self.brush_size, self.height, self.width,
-                self.conversion_brush_value, self.edit_value to create brush preview
+            self.brush_view, self.y, self.x, self.brush.size, self.height, self.width,
+                self.brush.conv_val, self.brush.edit_val to create brush preview
 
         Note: self.show_brush is not a user-toggled option but is used to display
             the correct preview (threshold box vs path of brush)
@@ -1692,18 +1717,18 @@ class ZStackReview(CalibanWindow):
         Uses:
             self.brush_view to update (clear) whatever preview brush_view had been
                 showing (either thresholding bbox or brush trace)
-            self.y, self.x, self.brush_size, self.height, self.width, self.mode.kind,
-                self.conversion_brush_value, self.edit_value to show appropriate
+            self.y, self.x, self.brush.size, self.height, self.width, self.mode.kind,
+                self.brush.conv_val, self.brush.edit_val to show appropriate
                 preview of brush
         '''
         # clear old brush_view
         self.brush_view = np.zeros(self.brush_view.shape)
-        brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
+        brush_area = circle(self.y, self.x, self.brush.size, (self.height,self.width))
         # color/value of brush view depends on which brush mode we are in
         if self.mode.kind == "DRAW":
-            self.brush_view[brush_area] = self.conversion_brush_value
+            self.brush_view[brush_area] = self.brush.conv_val
         else:
-            self.brush_view[brush_area] = self.edit_value
+            self.brush_view[brush_area] = self.brush.edit_val
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         '''
@@ -1924,20 +1949,20 @@ class ZStackReview(CalibanWindow):
         # BRUSH VALUE ADJUSTMENT
         # increase brush value, caps at max value + 1
         if symbol == key.EQUAL:
-            self.edit_value = min(self.edit_value + 1, self.get_new_label())
+            self.brush.increase_edit_val(window = self)
             self.update_brushview_helper()
         # decrease brush value, can't decrease past 1
         if symbol == key.MINUS:
-            self.edit_value = max(self.edit_value - 1, 1)
+            self.brush.decrease_edit_val()
             self.update_brushview_helper()
         # set brush to unused label
         if symbol == key.N:
-            self.edit_value = self.get_new_label()
+            self.brush.set_edit_val(self.get_new_label())
             self.update_brushview_helper()
 
         # TOGGLE ERASER
         if symbol == key.X:
-            self.erase = not self.erase
+            self.brush.toggle_erase()
 
         # ACTIONS - COLOR PICKER
         if symbol == key.P:
@@ -1980,21 +2005,21 @@ class ZStackReview(CalibanWindow):
             # BRUSH SIZE ADJUSTMENT
             # decrease brush size
             if symbol == key.DOWN:
-                self.brush_size = max(self.brush_size -1, 1)
+                self.brush.decrease_size()
                 self.update_brushview_helper()
             # increase brush size
             if symbol == key.UP:
-                self.brush_size = min(self.brush_size + 1, self.height, self.width)
+                self.brush.increase_size(window = self)
                 self.update_brushview_helper()
 
         # SET CONVERSION BRUSH VALUE TO UNUSED LABEL
         # TODO: update Mode prompt to reflect that you can do this
         if self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH VALUE":
             if symbol == key.N:
-                self.conversion_brush_value = self.get_new_label()
+                self.brush.set_conv_val(self.get_new_label())
                 self.mode.update("DRAW", action = "CONVERSION",
-                        conversion_brush_target = self.conversion_brush_target,
-                        conversion_brush_value = self.conversion_brush_value)
+                        conversion_brush_target = self.brush.conv_target,
+                        conversion_brush_value = self.brush.conv_val)
 
     def label_mode_misc_keypress_helper(self, symbol, modifiers):
         '''
@@ -2422,15 +2447,15 @@ class ZStackReview(CalibanWindow):
         if self.edit_mode:
             size_text = "Brush size: "
             if self.show_brush:
-                size_text += str(self.brush_size)
+                size_text += str(self.brush.size)
             else:
                 size_text += "-"
 
             value_text = "Editing label: "
             erase_text = "Eraser: "
             if self.mode.kind is None:
-                value_text += str(self.edit_value)
-                erase_text += on_or_off(self.erase)
+                value_text += str(self.brush.edit_val)
+                erase_text += on_or_off(self.brush.erase)
             else:
                 value_text += "-"
                 erase_text += "-"
