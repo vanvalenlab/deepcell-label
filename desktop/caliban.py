@@ -110,7 +110,7 @@ class CalibanWindow:
 
         # IMAGE ADJUSTMENT TOGGLES
         # invert grayscale light/dark of raw image
-        self.invert = True
+        self.invert = False
         # apply sobel filter (emphasizes edges) to raw image
         self.sobel_on = False
         # apply adaptive histogram equalization to raw image
