@@ -494,6 +494,9 @@ class CalibanBrush:
         # initialize area with center x = y = 0
         self.area = circle(self.y, self.x, self.size, (self.height,self.width))
 
+        # brush_view is array used to display a preview of brush tool; same size as other arrays
+        self.view = np.zeros((self.height, self.width))
+
     def decrease_size(self):
         self.size = max(1, self.size -1)
         self.update_area()
@@ -569,7 +572,6 @@ class TrackReview(CalibanWindow):
 
         self.hole_fill_seed = None
 
-        self.brush_view = np.zeros(self.tracked[self.current_frame,:,:,0].shape)
         self.brush = CalibanBrush(self.height, self.width)
 
         pyglet.app.run()
@@ -685,7 +687,7 @@ class TrackReview(CalibanWindow):
             y_loc = self.y
 
             #show where brush has drawn this time
-            self.brush_view[self.brush.area] = self.brush.edit_val
+            self.brush.view[self.brush.area] = self.brush.edit_val
 
             in_original = np.any(np.isin(annotated, self.brush.edit_val))
 
@@ -711,7 +713,7 @@ class TrackReview(CalibanWindow):
 
     def on_mouse_release(self, x, y, buttons, modifiers):
         if self.edit_mode:
-            self.brush_view = np.zeros(self.tracked[self.current_frame,:,:,0].shape)
+            self.brush.view = np.zeros(self.brush.view.shape)
             self.helper_update_composite()
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
@@ -731,8 +733,8 @@ class TrackReview(CalibanWindow):
 
         if self.edit_mode:
             #display brush size
-            self.brush_view = np.zeros(self.tracked[self.current_frame,:,:,0].shape)
-            self.brush_view[self.brush.area] = self.brush.edit_val
+            self.brush.view = np.zeros(self.brush.view.shape)
+            self.brush.view[self.brush.area] = self.brush.edit_val
 
     def on_key_press(self, symbol, modifiers):
         # Set scroll speed (through sequential frames) with offset
@@ -968,7 +970,7 @@ class TrackReview(CalibanWindow):
 
     def draw_pixel_edit_frame(self):
         # create pyglet image object so we can display brush location
-        brush_img = self.array_to_img(input_array = self.brush_view,
+        brush_img = self.array_to_img(input_array = self.brush.view,
                                                     vmax = self.get_max_label() + self.adjustment,
                                                     cmap = 'gist_stern',
                                                     output = 'pyglet')
@@ -1355,8 +1357,6 @@ class ZStackReview(CalibanWindow):
         # start on cubehelix cmap
         self.current_cmap = 0
 
-        # brush_view is array used to display a preview of brush tool; same size as other arrays
-        self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
         self.brush = CalibanBrush(self.height, self.width)
 
         # not a user-toggled option; distinguishes between brush and threshold choices
@@ -1607,26 +1607,26 @@ class ZStackReview(CalibanWindow):
                 # update brush_view if self.mode.kind is DRAW or None, but not PROMPT
                 # conversion brush
                 if self.mode.kind == "DRAW":
-                    self.brush_view[self.brush.area] = self.brush.conv_val
+                    self.brush.view[self.brush.area] = self.brush.conv_val
                 # normal brush
                 elif self.mode.kind is None:
-                    self.brush_view[self.brush.area] = self.brush.edit_val
+                    self.brush.view[self.brush.area] = self.brush.edit_val
                 # modify annotation
                 self.handle_draw_helper()
 
             # dragging the bounding box for threshold prediction
             elif not self.show_brush and self.mode.action == "DRAW BOX":
-                # reset self.brush_view
-                self.brush_view = np.zeros(self.brush_view.shape)
+                # reset self.brush.view
+                self.brush.view = np.zeros(self.brush.view.shape)
 
-                # use self.brush_view to display a box; need to calculate min/max
+                # use self.brush.view to display a box; need to calculate min/max
                 # or else box will not always display
                 top_edge = min(self.predict_seed[0], self.y)
                 bottom_edge = max(self.predict_seed[0], self.y)
                 left_edge = min(self.predict_seed[1], self.x)
                 right_edge = max(self.predict_seed[1], self.x)
 
-                self.brush_view[top_edge:bottom_edge, left_edge:right_edge] = self.brush.edit_val
+                self.brush.view[top_edge:bottom_edge, left_edge:right_edge] = self.brush.edit_val
 
     def on_mouse_release(self, x, y, buttons, modifiers):
         '''
@@ -1780,7 +1780,7 @@ class ZStackReview(CalibanWindow):
                 event x and y
             self.edit_mode, self.mode.kind, self.show_brush to determine when to display
                 brush preview
-            self.brush_view, self.y, self.x, self.brush.size, self.height, self.width,
+            self.brush.view, self.y, self.x, self.brush.size, self.height, self.width,
                 self.brush.conv_val, self.brush.edit_val to create brush preview
 
         Note: self.show_brush is not a user-toggled option but is used to display
@@ -1801,19 +1801,19 @@ class ZStackReview(CalibanWindow):
         Brush variables that may change are position, color, and size.
 
         Uses:
-            self.brush_view to update (clear) whatever preview brush_view had been
+            self.brush.view to update (clear) whatever preview brush_view had been
                 showing (either thresholding bbox or brush trace)
             self.y, self.x, self.brush.size, self.height, self.width, self.mode.kind,
                 self.brush.conv_val, self.brush.edit_val to show appropriate
                 preview of brush
         '''
         # clear old brush_view
-        self.brush_view = np.zeros(self.brush_view.shape)
+        self.brush.view = np.zeros(self.brush.view.shape)
         # color/value of brush view depends on which brush mode we are in
         if self.mode.kind == "DRAW":
-            self.brush_view[self.brush.area] = self.brush.conv_val
+            self.brush.view[self.brush.area] = self.brush.conv_val
         else:
-            self.brush_view[self.brush.area] = self.brush.edit_val
+            self.brush.view[self.brush.area] = self.brush.edit_val
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         '''
@@ -2064,7 +2064,7 @@ class ZStackReview(CalibanWindow):
         if symbol == key.T:
             self.mode.update("PROMPT", action = "DRAW BOX", **self.mode.info)
             self.show_brush = False
-            self.brush_view = np.zeros(self.brush_view.shape)
+            self.brush.view = np.zeros(self.brush.view.shape)
 
     def edit_mode_misc_keypress_helper(self, symbol, modifiers):
         '''
@@ -2663,7 +2663,7 @@ class ZStackReview(CalibanWindow):
         by self.scale_factor and drawn in window.
         '''
         # create pyglet image object so we can display brush location
-        brush_img = self.array_to_img(input_array = self.brush_view,
+        brush_img = self.array_to_img(input_array = self.brush.view,
                                                     vmax = self.get_max_label() + self.adjustment,
                                                     cmap = 'gist_stern',
                                                     output = 'pyglet')
