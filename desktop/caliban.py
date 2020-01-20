@@ -720,6 +720,9 @@ class TrackReview(CalibanWindow):
     def get_max_label(self):
         return max(self.tracks)
 
+    def get_new_label(self):
+        return (self.get_max_label() + 1)
+
     def get_label_info(self, label):
         info = self.tracks[label].copy()
         frames = list(map(list, consecutive(info["frames"])))
@@ -861,7 +864,7 @@ class TrackReview(CalibanWindow):
         Replacing label
         """
         old_label, start_frame = self.mode.label, self.mode.frame
-        new_label = self.get_max_label() + 1
+        new_label = self.get_new_label()
 
         if start_frame == 0:
             raise ValueError("new_track cannot be called on the first frame")
@@ -895,7 +898,7 @@ class TrackReview(CalibanWindow):
         Create new label in just one frame
         """
         old_label, single_frame = self.mode.label, self.mode.frame
-        new_label = self.get_max_label() + 1
+        new_label = self.get_new_label()
 
         # replace frame labels
         frame = self.tracked[single_frame]
@@ -908,7 +911,7 @@ class TrackReview(CalibanWindow):
     def action_watershed(self):
         # Pull the label that is being split and find a new valid label
         current_label = self.mode.label_1
-        new_label = self.get_max_label() + 1
+        new_label = self.get_new_label()
 
         # Locally store the frames to work on
         img_raw = self.raw[self.current_frame]
