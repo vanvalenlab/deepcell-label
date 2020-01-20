@@ -453,6 +453,15 @@ class CalibanWindow:
 
         return highlight_text
 
+    def create_filter_text(self):
+        '''
+        '''
+        filter_text = ("\nSobel filter - {}".format(on_or_off(self.sobel_on))
+                    + "\nColor inversion - {}".format(on_or_off(self.invert))
+                    + "\nHistogram equalization - {}".format(on_or_off(self.adapthist_on)))
+
+        return filter_text
+
     def create_label_info_text(self):
         label = self.get_label()
         if label != 0:
@@ -2491,15 +2500,6 @@ class ZStackReview(CalibanWindow):
                 cmap = "cubehelix"
 
         return cmap
-
-    def create_filter_text(self):
-        '''
-        '''
-        filter_text = ("\nSobel filter - {}".format(on_or_off(self.sobel_on))
-                    + "\nColor inversion - {}".format(on_or_off(self.invert))
-                    + "\nHistogram equalization - {}".format(on_or_off(self.adapthist_on)))
-
-        return filter_text
 
     def create_brush_text(self):
         if self.edit_mode:
