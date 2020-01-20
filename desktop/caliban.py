@@ -118,6 +118,10 @@ class CalibanWindow:
         # show only raw image instead of composited image
         self.hide_annotations = False
 
+        # composite_view used to store RGB image (composite of raw and annotated) so it can be
+        # accessed and updated as needed
+        self.composite_view = np.zeros((1,self.height,self.width,3))
+
     def on_resize(self, width, height):
         '''
         Event handler for when pyglet window changes size. Note: this
@@ -388,6 +392,45 @@ class CalibanWindow:
 
         return img_masked
 
+    def helper_update_composite(self):
+        '''
+        Helper function that updates self.composite_view from self.raw and
+        self.annotated when needed. self.composite_view is the image drawn
+        in edit mode, but does not need to be recalculated each time the image
+        refreshes (on_draw is triggered after every event, including mouse motion).
+        Takes self.raw and self.annotated, adjusts the images, overlays them,
+        and then stores the generated composite image at self.composite_view.
+
+        Uses:
+            self.raw, self.channel, self.annotated, self.feature, self.current_frame
+                to get arrays to start with
+            self.sobel, self.adapthist_on, self.invert are raw image filtering options
+            self.max_intensity as vmax for raw image (unless histogram equalized)
+            self.array_to_img and self.make_composite_img to abstract
+                away tedious processing steps
+        '''
+        # get images to modify and overlay
+        current_raw = self.get_raw_current_frame()
+        current_ann = self.get_ann_current_frame()
+
+        raw_RGB = self.apply_raw_image_adjustments(current_raw)
+
+        # get RGB array of colorful annotation view
+        ann_img = self.array_to_img(input_array = current_ann,
+                                            vmax = self.get_max_label() + self.adjustment,
+                                            cmap = 'gist_stern',
+                                            output = 'array')
+
+        # don't need alpha channel
+        ann_RGB = ann_img[:,:,0:3]
+
+        # create the composite image from the two RGB arrays
+        img_masked = self.make_composite_img(base_array = raw_RGB,
+                                            overlay_array = ann_RGB)
+
+        # set self.composite view to new composite image
+        self.composite_view = img_masked
+
     def create_highlight_text(self):
         '''
         Generate text describing current highlighting status.
@@ -639,6 +682,7 @@ class TrackReview(CalibanWindow):
     def on_mouse_release(self, x, y, buttons, modifiers):
         if self.edit_mode:
             self.brush_view = np.zeros(self.tracked[self.current_frame,:,:,0].shape)
+            self.helper_update_composite()
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self.draw_raw:
@@ -703,6 +747,7 @@ class TrackReview(CalibanWindow):
             #toggle edit mode only if nothing is selected
             if self.mode.kind is None:
                 self.edit_mode = not self.edit_mode
+                self.helper_update_composite()
         if symbol == key.C:
             if self.mode.kind == "SELECTED":
                 self.mode.update("QUESTION",
@@ -898,30 +943,7 @@ class TrackReview(CalibanWindow):
                                                     cmap = 'gist_stern',
                                                     output = 'pyglet')
 
-        # get raw and annotated data
-        current_raw = self.get_raw_current_frame()
-        current_ann = self.get_ann_current_frame()
-
-        # want image to be in grayscale, but as RGB array, not array of intensities
-        raw_img =  self.array_to_img(input_array = current_raw,
-                    vmax = self.max_intensity,
-                    cmap = 'Greys', #note: this is inverted grayscale
-                    output = 'array')
-
-        # don't need alpha channel
-        raw_RGB = raw_img[:,:,0:3]
-
-        # get RGB array of colorful annotation view
-        ann_img = self.array_to_img(input_array = current_ann,
-                                            vmax = self.get_max_label() + self.adjustment,
-                                            cmap = 'gist_stern',
-                                            output = 'array')
-
-        # don't need alpha channel
-        ann_RGB = ann_img[:,:,0:3]
-
-        comp_array = self.make_composite_img(raw_RGB, ann_RGB)
-        comp_img = self.array_to_img(input_array = comp_array,
+        comp_img = self.array_to_img(input_array = self.composite_view,
                                     vmax = None,
                                     cmap = None,
                                     output = 'pyglet')
@@ -1305,9 +1327,6 @@ class ZStackReview(CalibanWindow):
 
         # brush_view is array used to display a preview of brush tool; same size as other arrays
         self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
-        # composite_view used to store RGB image (composite of raw and annotated) so it can be
-        # accessed and updated as needed
-        self.composite_view = np.zeros((1,self.height,self.width,3))
         self.brush = CalibanBrush()
 
         # not a user-toggled option; distinguishes between brush and threshold choices
@@ -3254,45 +3273,6 @@ class ZStackReview(CalibanWindow):
 
         # remake cell_info dict based on new annotations
         self.create_cell_info(feature = self.feature)
-
-    def helper_update_composite(self):
-        '''
-        Helper function that updates self.composite_view from self.raw and
-        self.annotated when needed. self.composite_view is the image drawn
-        in edit mode, but does not need to be recalculated each time the image
-        refreshes (on_draw is triggered after every event, including mouse motion).
-        Takes self.raw and self.annotated, adjusts the images, overlays them,
-        and then stores the generated composite image at self.composite_view.
-
-        Uses:
-            self.raw, self.channel, self.annotated, self.feature, self.current_frame
-                to get arrays to start with
-            self.sobel, self.adapthist_on, self.invert are raw image filtering options
-            self.max_intensity as vmax for raw image (unless histogram equalized)
-            self.array_to_img and self.make_composite_img to abstract
-                away tedious processing steps
-        '''
-        # get images to modify and overlay
-        current_raw = self.get_raw_current_frame()
-        current_ann = self.get_ann_current_frame()
-
-        raw_RGB = self.apply_raw_image_adjustments(current_raw)
-
-        # get RGB array of colorful annotation view
-        ann_img = self.array_to_img(input_array = current_ann,
-                                            vmax = self.get_max_label() + self.adjustment,
-                                            cmap = 'gist_stern',
-                                            output = 'array')
-
-        # don't need alpha channel
-        ann_RGB = ann_img[:,:,0:3]
-
-        # create the composite image from the two RGB arrays
-        img_masked = self.make_composite_img(base_array = raw_RGB,
-                                            overlay_array = ann_RGB)
-
-        # set self.composite view to new composite image
-        self.composite_view = img_masked
 
     def save(self):
         '''
