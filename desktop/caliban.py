@@ -520,6 +520,10 @@ class CalibanBrush:
     def set_conv_val(self, val):
         self.conv_val = val
 
+    def clear_conv(self):
+        self.conv_target = -1
+        self.conv_val = -1
+
     def update_center(self, y, x):
         self.y = y
         self.x = x
@@ -1958,6 +1962,8 @@ class ZStackReview(CalibanWindow):
             self.hole_fill_seed = None
             # reset self.mode (deselects labels, clears actions)
             self.mode.clear()
+            # reset conversion brush values
+            self.brush.clear_conv()
             # reset from thresholding
             self.show_brush = True
 
