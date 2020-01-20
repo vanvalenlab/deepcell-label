@@ -186,6 +186,7 @@ class CalibanWindow:
         # check that mouse cursor is within bounds of image before updating
         if 0 <= x < self.width and 0 <= y < self.height:
             self.x, self.y = x, y
+            self.brush.update_center(y, x)
 
     def on_draw(self):
         '''
@@ -487,11 +488,19 @@ class CalibanBrush:
         self.height = height
         self.width = width
 
+        self.y = 0
+        self.x = 0
+
+        # initialize area with center x = y = 0
+        self.area = circle(self.y, self.x, self.size, (self.height,self.width))
+
     def decrease_size(self):
         self.size = max(1, self.size -1)
+        self.update_area()
 
     def increase_size(self):
         self.size = min(self.size + 1, self.height, self.width)
+        self.update_area()
 
     def decrease_edit_val(self):
         self.edit_val = max(1, self.edit_val - 1)
@@ -510,6 +519,14 @@ class CalibanBrush:
 
     def set_conv_val(self, val):
         self.conv_val = val
+
+    def update_center(self, y, x):
+        self.y = y
+        self.x = x
+        self.update_area()
+
+    def update_area(self):
+        self.area = circle(self.y, self.x, self.size, (self.height, self.width))
 
 class TrackReview(CalibanWindow):
     possible_keys = {"label", "daughters", "frames", "parent", "frame_div",
@@ -622,17 +639,15 @@ class TrackReview(CalibanWindow):
             if self.mode.kind is None:
                 annotated = self.tracked[self.current_frame,:,:,0]
 
-                brush_area = circle(self.y, self.x, self.brush.size, (self.height,self.width))
-
                 in_original = np.any(np.isin(annotated, self.brush.edit_val))
 
                 #do not overwrite or erase labels other than the one you're editing
                 if not self.brush.erase:
                     annotated_draw = np.where(annotated==0, self.brush.edit_val, annotated)
-                    annotated[brush_area] = annotated_draw[brush_area]
+                    annotated[self.brush.area] = annotated_draw[self.brush.area]
                 else:
                     annotated_erase = np.where(annotated==self.brush.edit_val, 0, annotated)
-                    annotated[brush_area] = annotated_erase[brush_area]
+                    annotated[self.brush.area] = annotated_erase[self.brush.area]
 
                 in_modified = np.any(np.isin(annotated, self.brush.edit_val))
 
@@ -665,20 +680,18 @@ class TrackReview(CalibanWindow):
             x_loc = self.x
             y_loc = self.y
 
-            brush_area = circle(y_loc, x_loc, self.brush.size, (self.height,self.width))
-
             #show where brush has drawn this time
-            self.brush_view[brush_area] = self.brush.edit_val
+            self.brush_view[self.brush.area] = self.brush.edit_val
 
             in_original = np.any(np.isin(annotated, self.brush.edit_val))
 
             #do not overwrite or erase labels other than the one you're editing
             if not self.brush.erase:
                 annotated_draw = np.where(annotated==0, self.brush.edit_val, annotated)
-                annotated[brush_area] = annotated_draw[brush_area]
+                annotated[self.brush.area] = annotated_draw[self.brush.area]
             else:
                 annotated_erase = np.where(annotated==self.brush.edit_val, 0, annotated)
-                annotated[brush_area] = annotated_erase[brush_area]
+                annotated[self.brush.area] = annotated_erase[self.brush.area]
 
             in_modified = np.any(np.isin(annotated, self.brush.edit_val))
 
@@ -715,12 +728,12 @@ class TrackReview(CalibanWindow):
         if self.edit_mode:
             #display brush size
             self.brush_view = np.zeros(self.tracked[self.current_frame,:,:,0].shape)
-            brush_area = circle(self.y, self.x, self.brush.size, (self.height,self.width))
-            self.brush_view[brush_area] = self.brush.edit_val
+            self.brush_view[self.brush.area] = self.brush.edit_val
 
     def on_key_press(self, symbol, modifiers):
         # Set scroll speed (through sequential frames) with offset
         offset = 5 if modifiers & key.MOD_SHIFT else 1
+
         if not self.edit_mode:
             if symbol == key.ESCAPE:
                 self.mode.clear()
@@ -1588,13 +1601,12 @@ class ZStackReview(CalibanWindow):
             # drawing with brush (normal or conversion)
             if self.show_brush:
                 # update brush_view if self.mode.kind is DRAW or None, but not PROMPT
-                brush_area = circle(self.y, self.x, self.brush.size, (self.height,self.width))
                 # conversion brush
                 if self.mode.kind == "DRAW":
-                    self.brush_view[brush_area] = self.brush.conv_val
+                    self.brush_view[self.brush.area] = self.brush.conv_val
                 # normal brush
                 elif self.mode.kind is None:
-                    self.brush_view[brush_area] = self.brush.edit_val
+                    self.brush_view[self.brush.area] = self.brush.edit_val
                 # modify annotation
                 self.handle_draw_helper()
 
@@ -1729,9 +1741,8 @@ class ZStackReview(CalibanWindow):
 
         # create image where all editing_val pixels are replaced with brush val
         annotated_draw = np.where(annotated==editing_val, brush_val, annotated)
-        # only modify 'annotated' within brush_area
-        brush_area = circle(self.y, self.x, self.brush.size, (self.height,self.width))
-        annotated[brush_area] = annotated_draw[brush_area]
+        # only modify 'annotated' within self.brush.area
+        annotated[self.brush.area] = annotated_draw[self.brush.area]
 
         # check to see if any labels have been added or removed from frame
         # possible to add new label or delete target label
@@ -1794,12 +1805,11 @@ class ZStackReview(CalibanWindow):
         '''
         # clear old brush_view
         self.brush_view = np.zeros(self.brush_view.shape)
-        brush_area = circle(self.y, self.x, self.brush.size, (self.height,self.width))
         # color/value of brush view depends on which brush mode we are in
         if self.mode.kind == "DRAW":
-            self.brush_view[brush_area] = self.brush.conv_val
+            self.brush_view[self.brush.area] = self.brush.conv_val
         else:
-            self.brush_view[brush_area] = self.brush.edit_val
+            self.brush_view[self.brush.area] = self.brush.edit_val
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         '''
