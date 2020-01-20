@@ -535,6 +535,9 @@ class CalibanBrush:
     def update_area(self):
         self.area = circle(self.y, self.x, self.size, (self.height, self.width))
 
+    def clear_view(self):
+        self.view = np.zeros((self.height, self.width))
+
 class TrackReview(CalibanWindow):
     possible_keys = {"label", "daughters", "frames", "parent", "frame_div",
                      "capped"}
@@ -713,7 +716,7 @@ class TrackReview(CalibanWindow):
 
     def on_mouse_release(self, x, y, buttons, modifiers):
         if self.edit_mode:
-            self.brush.view = np.zeros(self.brush.view.shape)
+            self.brush.clear_view()
             self.helper_update_composite()
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
@@ -733,7 +736,7 @@ class TrackReview(CalibanWindow):
 
         if self.edit_mode:
             #display brush size
-            self.brush.view = np.zeros(self.brush.view.shape)
+            self.brush.clear_view()
             self.brush.view[self.brush.area] = self.brush.edit_val
 
     def on_key_press(self, symbol, modifiers):
@@ -1617,7 +1620,7 @@ class ZStackReview(CalibanWindow):
             # dragging the bounding box for threshold prediction
             elif not self.show_brush and self.mode.action == "DRAW BOX":
                 # reset self.brush.view
-                self.brush.view = np.zeros(self.brush.view.shape)
+                self.brush.clear_view()
 
                 # use self.brush.view to display a box; need to calculate min/max
                 # or else box will not always display
@@ -1808,7 +1811,7 @@ class ZStackReview(CalibanWindow):
                 preview of brush
         '''
         # clear old brush_view
-        self.brush.view = np.zeros(self.brush.view.shape)
+        self.brush.clear_view()
         # color/value of brush view depends on which brush mode we are in
         if self.mode.kind == "DRAW":
             self.brush.view[self.brush.area] = self.brush.conv_val
@@ -2064,7 +2067,7 @@ class ZStackReview(CalibanWindow):
         if symbol == key.T:
             self.mode.update("PROMPT", action = "DRAW BOX", **self.mode.info)
             self.show_brush = False
-            self.brush.view = np.zeros(self.brush.view.shape)
+            self.brush.clear_view()
 
     def edit_mode_misc_keypress_helper(self, symbol, modifiers):
         '''
