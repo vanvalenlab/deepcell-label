@@ -2122,6 +2122,26 @@ class ZStackReview(CalibanWindow):
 
         # cycle through colormaps, but only while viewing raw
         if self.draw_raw:
+
+            # INVERT RAW IMAGE LIGHT/DARK
+            if symbol == key.I:
+                self.invert = not self.invert
+                # if you invert the image while you're viewing composite, update composite
+                if not self.hide_annotations:
+                    self.helper_update_composite()
+
+            # TOGGLE SOBEL FILTER
+            if symbol == key.K:
+                self.sobel_on = not self.sobel_on
+                if not self.hide_annotations:
+                    self.helper_update_composite()
+
+            # TOGGLE ADAPTIVE HISTOGRAM EQUALIZATION
+            if symbol == key.J:
+                self.adapthist_on = not self.adapthist_on
+                if not self.hide_annotations:
+                    self.helper_update_composite()
+
             if modifiers & key.MOD_SHIFT:
                 if symbol == key.UP:
                     if self.current_cmap == len(self.cmap_options) - 1:
@@ -2534,12 +2554,12 @@ class ZStackReview(CalibanWindow):
         '''
         if self.edit_mode:
             edit_mode = "pixels"
-            filter_info = self.create_filter_text()
-
-        # label-editing mode
         else:
             edit_mode = "labels"
-            # can't currently apply filters to raw image
+
+        if self.edit_mode or self.draw_raw:
+            filter_info = self.create_filter_text()
+        else:
             filter_info = "\n\n\n"
 
         display_filter_info = ("Current display settings:"
@@ -2586,10 +2606,11 @@ class ZStackReview(CalibanWindow):
 
     def draw_raw_frame(self):
         raw_array = self.get_raw_current_frame()
-        image = self.array_to_img(input_array = raw_array,
-                                         vmax = self.max_intensity,
-                                         cmap = self.cmap_options[self.current_cmap],
-                                         output = 'pyglet')
+        adjusted_raw = self.apply_raw_image_adjustments(raw_array, cmap = self.cmap_options[self.current_cmap])
+        image = self.array_to_img(input_array = adjusted_raw,
+            vmax = None,
+            cmap = None,
+            output = 'pyglet')
 
         self.draw_pyglet_image(image)
 
