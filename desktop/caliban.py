@@ -475,7 +475,7 @@ class CalibanWindow:
         return text
 
 class CalibanBrush:
-    def __init__(self):
+    def __init__(self, height, width):
         self.size = 1
         self.edit_val = 1
         self.erase = False
@@ -483,11 +483,15 @@ class CalibanBrush:
         self.conv_target = -1
         self.conv_val = -1
 
+        # used to put bounds on size, area of brush
+        self.height = height
+        self.width = width
+
     def decrease_size(self):
         self.size = max(1, self.size -1)
 
-    def increase_size(self, window):
-        self.size = min(self.size + 1, window.height, window.width)
+    def increase_size(self):
+        self.size = min(self.size + 1, self.height, self.width)
 
     def decrease_edit_val(self):
         self.edit_val = max(1, self.edit_val - 1)
@@ -545,7 +549,7 @@ class TrackReview(CalibanWindow):
         self.hole_fill_seed = None
 
         self.brush_view = np.zeros(self.tracked[self.current_frame,:,:,0].shape)
-        self.brush = CalibanBrush()
+        self.brush = CalibanBrush(self.height, self.width)
 
         pyglet.app.run()
 
@@ -744,7 +748,7 @@ class TrackReview(CalibanWindow):
             if symbol == key.LEFT:
                 self.brush.decrease_size()
             if symbol == key.RIGHT:
-                self.brush.increase_size(window = self)
+                self.brush.increase_size()
             if symbol == key.Z:
                 self.draw_raw = not self.draw_raw
             else:
@@ -1336,7 +1340,7 @@ class ZStackReview(CalibanWindow):
 
         # brush_view is array used to display a preview of brush tool; same size as other arrays
         self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
-        self.brush = CalibanBrush()
+        self.brush = CalibanBrush(self.height, self.width)
 
         # not a user-toggled option; distinguishes between brush and threshold choices
         self.show_brush = True
@@ -2076,7 +2080,7 @@ class ZStackReview(CalibanWindow):
                 self.update_brushview_helper()
             # increase brush size
             if symbol == key.UP:
-                self.brush.increase_size(window = self)
+                self.brush.increase_size()
                 self.update_brushview_helper()
 
         # SET CONVERSION BRUSH VALUE TO UNUSED LABEL
