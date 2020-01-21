@@ -118,6 +118,8 @@ class CalibanWindow:
         # show only raw image instead of composited image
         self.hide_annotations = False
 
+        self.overlay_cmap = 'gist_stern'
+
         # composite_view used to store RGB image (composite of raw and annotated) so it can be
         # accessed and updated as needed
         self.composite_view = np.zeros((1,self.height,self.width,3))
@@ -347,7 +349,7 @@ class CalibanWindow:
         # create pyglet image object so we can display brush location
         brush_img = self.array_to_img(input_array = self.brush.view,
                                                     vmax = self.get_max_label() + self.adjustment,
-                                                    cmap = 'gist_stern',
+                                                    cmap = self.overlay_cmap,
                                                     output = 'pyglet')
 
         # create pyglet image from only the adjusted raw, if hiding annotations
@@ -554,7 +556,7 @@ class CalibanWindow:
         # get RGB array of colorful annotation view
         ann_img = self.array_to_img(input_array = current_ann,
                                             vmax = self.get_max_label() + self.adjustment,
-                                            cmap = 'gist_stern',
+                                            cmap = self.overlay_cmap,
                                             output = 'array')
 
         # don't need alpha channel
@@ -2613,7 +2615,7 @@ class ZStackReview(CalibanWindow):
                 # TODO: replace with actual gray cmap name
                 cmap = "Gray"
             else:
-                cmap = "gist_stern/gray"
+                cmap = "{}/gray".format(self.overlay_cmap)
         else:
             if self.draw_raw:
                 cmap = self.current_cmap
