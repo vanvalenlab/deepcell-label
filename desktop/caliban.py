@@ -632,8 +632,8 @@ class TrackReview(CalibanWindow):
             return
 
         if not self.edit_mode:
+            label = self.get_label()
             if self.mode.kind is None:
-                label = self.get_label()
                 if label != 0:
                     self.mode.update("SELECTED",
                                      label=label,
@@ -642,7 +642,6 @@ class TrackReview(CalibanWindow):
                     self.highlighted_cell_one = label
                     self.highlighted_cell_two = -1
             elif self.mode.kind == "SELECTED":
-                label = self.get_label()
                 if label != 0:
                     self.highlighted_cell_one = self.mode.label
                     self.highlighted_cell_two = label
@@ -662,7 +661,6 @@ class TrackReview(CalibanWindow):
                     self.highlighted_cell_two = -1
             #if already have two cells selected, click again to reselect the second cell
             elif self.mode.kind == "MULTIPLE":
-                label = self.get_label()
                 if label != 0:
                     self.highlighted_cell_two = label
                     self.mode.update("MULTIPLE",
@@ -680,12 +678,11 @@ class TrackReview(CalibanWindow):
                     self.highlighted_cell_one = -1
                     self.highlighted_cell_two = -1
             elif self.mode.kind == "PROMPT" and self.mode.action == "FILL HOLE":
-                    label = self.get_label()
-                    if label == 0:
-                        self.hole_fill_seed = (self.y, self.x)
-                    if self.hole_fill_seed is not None:
-                        self.action_fill_hole()
-                        self.mode.clear()
+                if label == 0:
+                    self.hole_fill_seed = (self.y, self.x)
+                if self.hole_fill_seed is not None:
+                    self.action_fill_hole()
+                    self.mode.clear()
 
         elif self.edit_mode:
             if self.mode.kind is None:
