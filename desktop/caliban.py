@@ -297,6 +297,16 @@ class CalibanWindow:
                      left, top))
         )
 
+    def draw_raw_frame(self):
+        raw_array = self.get_raw_current_frame()
+        adjusted_raw = self.apply_raw_image_adjustments(raw_array, cmap = self.current_cmap)
+        image = self.array_to_img(input_array = adjusted_raw,
+            vmax = None,
+            cmap = None,
+            output = 'pyglet')
+
+        self.draw_pyglet_image(image)
+
     def draw_ann_frame(self):
         ann_array = self.get_ann_current_frame()
 
@@ -669,6 +679,8 @@ class TrackReview(CalibanWindow):
         self.highlighted_cell_one = -1
         self.highlighted_cell_two = -1
 
+        self.current_cmap = 'cubehelix'
+
         self.hole_fill_seed = None
 
         self.brush = CalibanBrush(self.height, self.width)
@@ -1023,15 +1035,6 @@ class TrackReview(CalibanWindow):
         gl.glTexParameteri(gl.GL_TEXTURE_2D,
                            gl.GL_TEXTURE_MAG_FILTER,
                            gl.GL_NEAREST)
-
-    def draw_raw_frame(self):
-        raw_array = self.get_raw_current_frame()
-        image = self.array_to_img(input_array = raw_array,
-                                         vmax = self.max_intensity,
-                                         cmap = "cubehelix",
-                                         output = 'pyglet')
-
-        self.draw_pyglet_image(image)
 
     def draw_pixel_edit_frame(self):
         # create pyglet image object so we can display brush location
@@ -2679,16 +2682,6 @@ class ZStackReview(CalibanWindow):
 
         elif self.edit_mode:
             self.draw_edit_mode_frame()
-
-    def draw_raw_frame(self):
-        raw_array = self.get_raw_current_frame()
-        adjusted_raw = self.apply_raw_image_adjustments(raw_array, cmap = self.current_cmap)
-        image = self.array_to_img(input_array = adjusted_raw,
-            vmax = None,
-            cmap = None,
-            output = 'pyglet')
-
-        self.draw_pyglet_image(image)
 
     def draw_edit_mode_frame(self):
         '''
