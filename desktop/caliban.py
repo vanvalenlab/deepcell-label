@@ -1952,10 +1952,10 @@ class ZStackReview(CalibanWindow):
             self.hole_fill_seed = None
             # reset self.mode (deselects labels, clears actions)
             self.mode.clear()
-            # reset conversion brush values
-            self.brush.clear_conv()
             # reset from thresholding
             self.brush.show = True
+            # reset conversion brush values
+            self.brush.clear_conv()
 
     def edit_mode_universal_keypress_helper(self, symbol, modifiers):
         '''
