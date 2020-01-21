@@ -1503,7 +1503,8 @@ class ZStackReview(CalibanWindow):
         # has effect of showing contours in brightness of image
         self.cmap_options = ['cubehelix', 'gist_yarg', 'gist_gray', 'magma', 'nipy_spectral', 'prism']
         # start on cubehelix cmap
-        self.current_cmap = 0
+        self.current_cmap_idx = 0
+        self.current_cmap = self.cmap_options[self.current_cmap_idx]
 
         self.brush = CalibanBrush(self.height, self.width)
 
@@ -2217,15 +2218,17 @@ class ZStackReview(CalibanWindow):
 
             if modifiers & key.MOD_SHIFT:
                 if symbol == key.UP:
-                    if self.current_cmap == len(self.cmap_options) - 1:
-                        self.current_cmap = 0
-                    elif self.current_cmap < len(self.cmap_options) -1:
-                        self.current_cmap += 1
+                    if self.current_cmap_idx == len(self.cmap_options) - 1:
+                        self.current_cmap_idx = 0
+                    elif self.current_cmap_idx < len(self.cmap_options) - 1:
+                        self.current_cmap_idx += 1
+                    self.current_cmap = self.cmap_options[self.current_cmap_idx]
                 if symbol == key.DOWN:
-                    if self.current_cmap == 0:
-                        self.current_cmap = len(self.cmap_options) - 1
-                    elif self.current_cmap > 0:
-                        self.current_cmap -= 1
+                    if self.current_cmap_idx == 0:
+                        self.current_cmap_idx = len(self.cmap_options) - 1
+                    elif self.current_cmap_idx > 0:
+                        self.current_cmap_idx -= 1
+                    self.current_cmap = self.cmap_options[self.current_cmap_idx]
 
     def label_mode_none_keypress_helper(self, symbol, modifiers):
         '''
@@ -2588,7 +2591,7 @@ class ZStackReview(CalibanWindow):
                 cmap = "gist_stern/gray"
         else:
             if self.draw_raw:
-                cmap = self.cmap_options[self.current_cmap]
+                cmap = self.current_cmap
             else:
                 cmap = "cubehelix"
 
@@ -2679,7 +2682,7 @@ class ZStackReview(CalibanWindow):
 
     def draw_raw_frame(self):
         raw_array = self.get_raw_current_frame()
-        adjusted_raw = self.apply_raw_image_adjustments(raw_array, cmap = self.cmap_options[self.current_cmap])
+        adjusted_raw = self.apply_raw_image_adjustments(raw_array, cmap = self.current_cmap)
         image = self.array_to_img(input_array = adjusted_raw,
             vmax = None,
             cmap = None,
