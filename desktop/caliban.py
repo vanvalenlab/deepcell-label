@@ -497,35 +497,47 @@ class CalibanBrush:
         # brush_view is array used to display a preview of brush tool; same size as other arrays
         self.view = np.zeros((self.height, self.width))
 
+        # toggle that determines whether we're viewing brush or thresholding box
+        self.show = True
+
     def decrease_size(self):
         self.size = max(1, self.size -1)
         self.update_area()
+        if self.show:
+            self.redraw_view()
 
     def increase_size(self):
         self.size = min(self.size + 1, self.height, self.width)
         self.update_area()
+        if self.show:
+            self.redraw_view()
 
     def decrease_edit_val(self):
         self.edit_val = max(1, self.edit_val - 1)
+        self.redraw_view()
 
     def increase_edit_val(self, window):
         self.edit_val = min(window.get_new_label(), self.edit_val + 1)
-
-    def toggle_erase(self):
-        self.erase = not self.erase
+        self.redraw_view()
 
     def set_edit_val(self, val):
         self.edit_val = val
+        self.redraw_view()
+
+    def toggle_erase(self):
+        self.erase = not self.erase
 
     def set_conv_target(self, val):
         self.conv_target = val
 
     def set_conv_val(self, val):
         self.conv_val = val
+        self.redraw_view()
 
     def clear_conv(self):
         self.conv_target = -1
         self.conv_val = -1
+        self.redraw_view()
 
     def update_center(self, y, x):
         self.y = y
@@ -537,6 +549,16 @@ class CalibanBrush:
 
     def clear_view(self):
         self.view = np.zeros((self.height, self.width))
+
+    def add_to_view(self):
+        if self.conv_val != -1:
+            self.view[self.area] = self.conv_val
+        else:
+            self.view[self.area] = self.edit_val
+
+    def redraw_view(self):
+        self.clear_view()
+        self.add_to_view()
 
 class TrackReview(CalibanWindow):
     possible_keys = {"label", "daughters", "frames", "parent", "frame_div",
@@ -685,12 +707,8 @@ class TrackReview(CalibanWindow):
         if self.edit_mode:
             annotated = self.tracked[self.current_frame,:,:,0]
 
-            #self.x and self.y are different from the mouse's x and y
-            x_loc = self.x
-            y_loc = self.y
-
             #show where brush has drawn this time
-            self.brush.view[self.brush.area] = self.brush.edit_val
+            self.brush.add_to_view()
 
             in_original = np.any(np.isin(annotated, self.brush.edit_val))
 
@@ -716,7 +734,8 @@ class TrackReview(CalibanWindow):
 
     def on_mouse_release(self, x, y, buttons, modifiers):
         if self.edit_mode:
-            self.brush.clear_view()
+            if self.brush.show:
+                self.brush.redraw_view()
             self.helper_update_composite()
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
@@ -1362,8 +1381,6 @@ class ZStackReview(CalibanWindow):
 
         self.brush = CalibanBrush(self.height, self.width)
 
-        # not a user-toggled option; distinguishes between brush and threshold choices
-        self.show_brush = True
         # stores starting point of thresholding bounding box
         self.predict_seed = None
 
@@ -1594,10 +1611,10 @@ class ZStackReview(CalibanWindow):
         Uses:
             self.update_mouse_position to update current self.x and self.y from
                 event x and y
-            self.edit_mode, self.mode.kind, self.mode.action, self.show_brush
+            self.edit_mode, self.mode.kind, self.mode.action, self.brush.show
                 to determine response to mouse drag
 
-        Note: self.show_brush is not a user-toggled option but is used to display
+        Note: self.brush.show is not a user-toggled option but is used to display
             the correct preview (threshold box vs path of brush)
         '''
         # always update self.x and self.y when mouse has moved
@@ -1606,19 +1623,14 @@ class ZStackReview(CalibanWindow):
         # mouse drag only has special behavior in pixel-editing mode
         if self.edit_mode:
             # drawing with brush (normal or conversion)
-            if self.show_brush:
-                # update brush_view if self.mode.kind is DRAW or None, but not PROMPT
-                # conversion brush
-                if self.mode.kind == "DRAW":
-                    self.brush.view[self.brush.area] = self.brush.conv_val
-                # normal brush
-                elif self.mode.kind is None:
-                    self.brush.view[self.brush.area] = self.brush.edit_val
+            if self.brush.show:
+                # # update brush_view if self.mode.kind is DRAW or None, but not PROMPT
+                self.brush.add_to_view()
                 # modify annotation
                 self.handle_draw_helper()
 
             # dragging the bounding box for threshold prediction
-            elif not self.show_brush and self.mode.action == "DRAW BOX":
+            elif not self.brush.show and self.mode.action == "DRAW BOX":
                 # reset self.brush.view
                 self.brush.clear_view()
 
@@ -1638,12 +1650,12 @@ class ZStackReview(CalibanWindow):
         window sends to this event when it is triggered by mouse press),
         but x, y, button, and modifiers are not used in this custom event.
         Mouse release only triggers special behavior while in pixel-editing
-        mode; mode.action and self.show_brush are used to determine which
+        mode; mode.action and self.brush.show are used to determine which
         actions to carry out (threholding, updating brush preview appropriately).
         Helper functions are called for some complex updates.
 
         Uses:
-            self.edit_mode, self.show_brush, self.mode.action, self.hide_annotations
+            self.edit_mode, self.brush.show, self.mode.action, self.hide_annotations
                 to determine which updates need to be carried out upon mouse release
                 (if any)
             self.handle_threshold_helper finalizes thresholding bbox, carries out
@@ -1658,14 +1670,13 @@ class ZStackReview(CalibanWindow):
         # behavior during a mouse click is handled in the mouse press event
         if self.edit_mode:
             # releasing the mouse finalizes bounding box for thresholding
-            if not self.show_brush and self.mode.action == "DRAW BOX":
+            if not self.brush.show and self.mode.action == "DRAW BOX":
                 self.handle_threshold_helper()
-                # self.show_brush reset to True here, so brush preview will render
+                # self.brush.show reset to True here, so brush preview will render
 
             # update brush view (prevents brush flickering)
-            if self.show_brush:
-                self.update_brushview_helper()
-
+            if self.brush.show:
+                self.brush.redraw_view()
             # annotation has changed (either during mouse drag for brush, or upon release
             # for threshold), update the image composite with the current annotation
             if not self.hide_annotations:
@@ -1681,7 +1692,7 @@ class ZStackReview(CalibanWindow):
         Uses:
             self.predict_seed, self.y, self.x to calculate appropriate edges of bounding box
             self.action_threshold_predict to carry out thresholding and annotation update
-            self.show_brush and self.mode are reset at end to finish/clear thresholding behavior
+            self.brush.show and self.mode are reset at end to finish/clear thresholding behavior
         '''
         # min/max need to be calculated for correct numpy array slicing
         top_edge = min(self.predict_seed[0], self.y)
@@ -1695,7 +1706,7 @@ class ZStackReview(CalibanWindow):
                 bottom_edge, left_edge, right_edge)
 
         # clear bounding box and Mode
-        self.show_brush = True
+        self.brush.show = True
         self.mode.clear()
 
     def handle_draw_helper(self):
@@ -1781,42 +1792,18 @@ class ZStackReview(CalibanWindow):
         Uses:
             self.update_mouse_position to update current self.x and self.y from
                 event x and y
-            self.edit_mode, self.mode.kind, self.show_brush to determine when to display
+            self.edit_mode, self.mode.kind, self.brush.show to determine when to display
                 brush preview
             self.brush.view, self.y, self.x, self.brush.size, self.height, self.width,
                 self.brush.conv_val, self.brush.edit_val to create brush preview
 
-        Note: self.show_brush is not a user-toggled option but is used to display
+        Note: self.brush.show is not a user-toggled option but is used to display
             the correct preview (threshold box vs path of brush)
         '''
         # always update self.x and self.y when mouse has moved
         self.update_mouse_position(x, y)
-
-        # brush_view is only updated when in pixel-editing mode
-        if self.edit_mode:
-            # don't display brush preview if thresholding
-            if self.show_brush:
-                self.update_brushview_helper()
-
-    def update_brushview_helper(self):
-        '''
-        Helper function to redraw brush after brush variables have changed.
-        Brush variables that may change are position, color, and size.
-
-        Uses:
-            self.brush.view to update (clear) whatever preview brush_view had been
-                showing (either thresholding bbox or brush trace)
-            self.y, self.x, self.brush.size, self.height, self.width, self.mode.kind,
-                self.brush.conv_val, self.brush.edit_val to show appropriate
-                preview of brush
-        '''
-        # clear old brush_view
-        self.brush.clear_view()
-        # color/value of brush view depends on which brush mode we are in
-        if self.mode.kind == "DRAW":
-            self.brush.view[self.brush.area] = self.brush.conv_val
-        else:
-            self.brush.view[self.brush.area] = self.brush.edit_val
+        if self.brush.show:
+            self.brush.redraw_view()
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         '''
@@ -1968,7 +1955,7 @@ class ZStackReview(CalibanWindow):
             # reset conversion brush values
             self.brush.clear_conv()
             # reset from thresholding
-            self.show_brush = True
+            self.brush.show = True
 
     def edit_mode_universal_keypress_helper(self, symbol, modifiers):
         '''
@@ -2040,15 +2027,12 @@ class ZStackReview(CalibanWindow):
         # increase brush value, caps at max value + 1
         if symbol == key.EQUAL:
             self.brush.increase_edit_val(window = self)
-            self.update_brushview_helper()
         # decrease brush value, can't decrease past 1
         if symbol == key.MINUS:
             self.brush.decrease_edit_val()
-            self.update_brushview_helper()
         # set brush to unused label
         if symbol == key.N:
             self.brush.set_edit_val(self.get_new_label())
-            self.update_brushview_helper()
 
         # TOGGLE ERASER
         if symbol == key.X:
@@ -2066,7 +2050,7 @@ class ZStackReview(CalibanWindow):
         # ACTIONS - THRESHOLD
         if symbol == key.T:
             self.mode.update("PROMPT", action = "DRAW BOX", **self.mode.info)
-            self.show_brush = False
+            self.brush.show = False
             self.brush.clear_view()
 
     def edit_mode_misc_keypress_helper(self, symbol, modifiers):
@@ -2091,16 +2075,14 @@ class ZStackReview(CalibanWindow):
         # BRUSH MODIFICATION KEYBINDS
         # (don't want to adjust brush if thresholding; applies to both
         # normal brush and conversion brushes)
-        if self.show_brush:
+        if self.brush.show:
             # BRUSH SIZE ADJUSTMENT
             # decrease brush size
             if symbol == key.DOWN:
                 self.brush.decrease_size()
-                self.update_brushview_helper()
             # increase brush size
             if symbol == key.UP:
                 self.brush.increase_size()
-                self.update_brushview_helper()
 
         # SET CONVERSION BRUSH VALUE TO UNUSED LABEL
         # TODO: update Mode prompt to reflect that you can do this
@@ -2547,7 +2529,7 @@ class ZStackReview(CalibanWindow):
     def create_brush_text(self):
         if self.edit_mode:
             size_text = "Brush size: "
-            if self.show_brush:
+            if self.brush.show:
                 size_text += str(self.brush.size)
             else:
                 size_text += "-"
