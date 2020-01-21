@@ -882,6 +882,10 @@ class TrackReview(CalibanWindow):
                     self.action_watershed()
                 elif self.mode.action == "DELETE":
                     self.action_delete()
+                elif self.mode.action == "FLOOD CELL":
+                    self.action_flood_contiguous()
+                elif self.mode.action == "TRIM PIXELS":
+                    self.action_trim_pixels()
                 self.mode.clear()
                 self.highlighted_cell_one = -1
                 self.highlighted_cell_two = -1
@@ -1216,6 +1220,89 @@ class TrackReview(CalibanWindow):
         self.tracked[current_frame] = ann_img
 
         self.del_cell_info(del_label = selected_label, frame = current_frame)
+
+    def action_flood_contiguous(self):
+        '''
+        Flood fill a label (not background) with a unique new label;
+        alternative to watershed for fixing duplicate label issue (if cells
+        are not touching). If there are no other pixels of the old label left
+        after flooding, this action has the same effect as single-frame create.
+        This action never changes pixels to 0. Uses self.mode.frame (the frame that
+        was clicked on) instead of self.current_frame to prevent potential buggy
+        behavior (eg, user changes frames before confirming action, and self.hole_fill_seed
+        in new frame corresponds to a different label from self.mode.label).
+
+        Uses:
+            self.annotated, self.mode.frame, self.feature to get image to modify
+            self.mode.label is the label being flooded with a new value
+            self.hole_fill_seed to get starting point for flooding
+            self.cell_ids to get unused label to flood with
+            self.add_cell_info always needed to add new label to cell_info
+            self.del_cell_info sometimes needed to delete old label from frame
+        '''
+        # old label is definitely in original, check later if in modified
+        old_label = self.mode.label
+        # label used to flood area
+        new_label = self.get_new_label()
+        # use frame where label was selected, not current frame
+        frame = self.mode.frame
+
+        # annotation to modify
+        img_ann = self.tracked[frame,:,:,0]
+
+        # flood connected pixels of old_label with new_label, from origin point
+        # of self.hole_fill_seed
+        filled_img_ann = flood_fill(img_ann, self.hole_fill_seed, new_label)
+        # update annotation with modified image
+        self.tracked[frame,:,:,0] = filled_img_ann
+
+        # bool, whether any pixels of old_label remain in flooded image
+        in_modified = np.any(np.isin(filled_img_ann, old_label))
+
+        # this action will always add new_label to the annotation in this frame
+        self.add_cell_info(add_label=new_label, frame = frame)
+
+        # check to see if flooding removed old_label from the frame completely
+        if not in_modified:
+            self.del_cell_info(del_label = old_label, frame = frame)
+
+        # reset hole_fill_seed
+        self.hole_fill_seed = None
+
+    def action_trim_pixels(self):
+        '''
+        Trim away any stray (unconnected) pixels of selected label; pixels in
+        frame with that label that are not connected to self.hole_fill_seed
+        will be set to 0. This action will never completely delete label from frame,
+        since the seed point will always be left unmodified. Used to clean up messy
+        annotations, especially those with only a few pixels elsewhere in the frame,
+        or to quickly clean up thresholding results.
+
+        Uses:
+            self.annotated, self.mode.frame, self.feature to get image to modify
+            self.mode.label is the label being trimmed
+            self.hole_fill_seed is starting point to determine parts of label that
+                will remain unmodified
+        '''
+        # use frame where label was selected, not current frame
+        frame = self.mode.frame
+        # label to be trimmed
+        label = self.mode.label
+        # image to modify
+        img_ann = self.tracked[frame,:,:,0]
+
+        # boolean array of all pixels of label that are connected to self.hole_fill_seed
+        contig_cell = flood(image = img_ann, seed_point = self.hole_fill_seed)
+
+        # any pixels in img_ann that have value 'label' and are NOT connected to hole_fill_seed
+        # get changed to 0, all other pixels retain their original value
+        img_trimmed = np.where(np.logical_and(np.invert(contig_cell), img_ann == label), 0, img_ann)
+
+        # update annotation with trimmed image
+        self.tracked[frame,:,:,0] = img_trimmed
+
+        # reset hole fill seed
+        self.hole_fill_seed = None
 
     def add_cell_info(self, add_label, frame):
         '''
