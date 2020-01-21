@@ -297,6 +297,15 @@ class CalibanWindow:
                      left, top))
         )
 
+    def draw_current_frame(self):
+        if self.edit_mode:
+            self.draw_pixel_edit_frame()
+        else:
+            if self.draw_raw:
+                self.draw_raw_frame()
+            else:
+                self.draw_ann_frame()
+
     def draw_raw_frame(self):
         raw_array = self.get_raw_current_frame()
         adjusted_raw = self.apply_raw_image_adjustments(raw_array, cmap = self.current_cmap)
@@ -1063,20 +1072,6 @@ class TrackReview(CalibanWindow):
 
         info_label.draw()
         frame_label.draw()
-
-    def draw_current_frame(self):
-        if not self.edit_mode:
-            if self.draw_raw:
-                self.draw_raw_frame()
-            else:
-                self.draw_ann_frame()
-
-        elif self.edit_mode:
-            self.draw_pixel_edit_frame()
-
-        gl.glTexParameteri(gl.GL_TEXTURE_2D,
-                           gl.GL_TEXTURE_MAG_FILTER,
-                           gl.GL_NEAREST)
 
     def action_new_track(self):
         """
@@ -2691,24 +2686,6 @@ class ZStackReview(CalibanWindow):
                                         color=[255]*4)
         # draw the label
         frame_label.draw()
-
-    def draw_current_frame(self):
-        '''
-        Draw the current image view. Depending on the viewing mode (pixel-editing
-        or label-editing, raw or annotation view), takes the appropriate input array,
-        and applies adjustments as needed (eg, applying filters to the raw image). A
-        png format image is then created using pyplot and an appropriate colormap, then
-        loaded as a pyglet image, which is then scaled and drawn on the window. Several
-        helper functions are used to abstract steps of the image processing and manipulation.
-        '''
-        if not self.edit_mode:
-            if self.draw_raw:
-                self.draw_raw_frame()
-            else:
-                self.draw_ann_frame()
-
-        elif self.edit_mode:
-            self.draw_pixel_edit_frame()
 
     def change_channel(self):
         '''
