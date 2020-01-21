@@ -700,6 +700,11 @@ class CalibanBrush:
 class TrackReview(CalibanWindow):
     possible_keys = {"label", "daughters", "frames", "parent", "frame_div",
                      "capped"}
+
+    replace_prompt = ("\nReplace {} with {}?"
+                     "\nSPACE = REPLACE IN ALL FRAMES"
+                     "\nESC = CANCEL")
+
     def __init__(self, filename, lineage, raw, tracked):
         self.filename = filename
         self.tracks = lineage
@@ -727,6 +732,7 @@ class TrackReview(CalibanWindow):
         self.x = 0
         self.y = 0
         self.mode = Mode.none()
+        self.mode.update_prompt_additions = self.custom_prompt
         self.adjustment = 0
         self.highlight = False
         self.highlighted_cell_one = -1
@@ -1002,6 +1008,12 @@ class TrackReview(CalibanWindow):
                 self.mode.clear()
                 self.highlighted_cell_one = -1
                 self.highlighted_cell_two = -1
+
+    def custom_prompt(self):
+        if self.mode.kind == "QUESTION":
+            if self.mode.action == "REPLACE":
+                self.mode.text = TrackReview.replace_prompt.format(self.mode.label_2,
+                    self.mode.label_1)
 
     def get_raw_current_frame(self):
         return self.raw[self.current_frame,:,:,0]
