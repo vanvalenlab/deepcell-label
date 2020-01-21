@@ -209,6 +209,40 @@ class CalibanWindow:
         if self.brush.show:
             self.brush.redraw_view()
 
+    def mouse_press_none_helper(self, modifiers, label):
+        '''
+        Handles mouse presses when not in edit mode and nothing is selected.
+        With modifiers (keys held down), can trigger ctrl-click to flood label,
+        shift-click to trim pixels, or normal click to select label.
+
+        Uses:
+            modifiers from mouse press event to determine if special click
+            label from click location (determined in on_mouse_press)
+            self.y and self.x to determine self.hole_fill_seed (special click functions)
+                or to add to self.mode.info as y_location and x_location
+            self.mode to prompt special click confirmation or to select label
+            self.highlighted_cell_one to update highlight info with label
+        '''
+        if label != 0:
+            if modifiers & key.MOD_CTRL:
+                self.hole_fill_seed = (self.y, self.x)
+                self.mode.update("QUESTION",
+                                 action = "FLOOD CELL",
+                                 label = label,
+                                 frame = self.current_frame)
+            elif modifiers & key.MOD_SHIFT:
+                self.hole_fill_seed = (self.y, self.x)
+                self.mode.update("QUESTION",
+                                 action = "TRIM PIXELS",
+                                 label = label,
+                                 frame = self.current_frame)
+            else:
+                self.mode.update("SELECTED",
+                                 label=label,
+                                 frame=self.current_frame,
+                                 y_location=self.y, x_location=self.x)
+            self.highlighted_cell_one = label
+
     def on_draw(self):
         '''
         Event handler for pyglet window, redraws all content of screen after
@@ -635,12 +669,7 @@ class TrackReview(CalibanWindow):
             label = self.get_label()
             if self.mode.kind is None:
                 if label != 0:
-                    self.mode.update("SELECTED",
-                                     label=label,
-                                     frame=self.current_frame,
-                                     y_location=self.y, x_location=self.x)
-                    self.highlighted_cell_one = label
-                    self.highlighted_cell_two = -1
+                    self.mouse_press_none_helper(modifiers, label)
             elif self.mode.kind == "SELECTED":
                 if label != 0:
                     self.highlighted_cell_one = self.mode.label
@@ -1547,40 +1576,6 @@ class ZStackReview(CalibanWindow):
                 # start drawing bounding box for threshold prediction
                 elif self.mode.kind == "PROMPT" and self.mode.action == "DRAW BOX":
                     self.predict_seed = (self.y, self.x)
-
-    def mouse_press_none_helper(self, modifiers, label):
-        '''
-        Handles mouse presses when not in edit mode and nothing is selected.
-        With modifiers (keys held down), can trigger ctrl-click to flood label,
-        shift-click to trim pixels, or normal click to select label.
-
-        Uses:
-            modifiers from mouse press event to determine if special click
-            label from click location (determined in on_mouse_press)
-            self.y and self.x to determine self.hole_fill_seed (special click functions)
-                or to add to self.mode.info as y_location and x_location
-            self.mode to prompt special click confirmation or to select label
-            self.highlighted_cell_one to update highlight info with label
-        '''
-        if label != 0:
-            if modifiers & key.MOD_CTRL:
-                self.hole_fill_seed = (self.y, self.x)
-                self.mode.update("QUESTION",
-                                 action = "FLOOD CELL",
-                                 label = label,
-                                 frame = self.current_frame)
-            elif modifiers & key.MOD_SHIFT:
-                self.hole_fill_seed = (self.y, self.x)
-                self.mode.update("QUESTION",
-                                 action = "TRIM PIXELS",
-                                 label = label,
-                                 frame = self.current_frame)
-            else:
-                self.mode.update("SELECTED",
-                                 label=label,
-                                 frame=self.current_frame,
-                                 y_location=self.y, x_location=self.x)
-            self.highlighted_cell_one = label
 
     def mouse_press_selected_helper(self, label):
         '''
