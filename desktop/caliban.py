@@ -326,6 +326,48 @@ class CalibanWindow:
 
         self.draw_pyglet_image(image)
 
+    def draw_pixel_edit_frame(self):
+        '''
+        Draws current frame for pixel-editing mode, along with brush preview
+        (brush preview can display brush or thresholding). If drawing the image
+        with annotations hidden, applies filters/adjustments to raw image and uses
+        that, otherwise uses self.composite_view (generated and updated elsewhere)
+        to show annotations overlaid on the adjusted raw image. Image is then scaled
+        by self.scale_factor and drawn in window.
+        '''
+        # create pyglet image object so we can display brush location
+        brush_img = self.array_to_img(input_array = self.brush.view,
+                                                    vmax = self.get_max_label() + self.adjustment,
+                                                    cmap = 'gist_stern',
+                                                    output = 'pyglet')
+
+        # create pyglet image from only the adjusted raw, if hiding annotations
+        if self.hide_annotations:
+            # get raw and annotated data
+            # TODO: np.copy might be appropriate here for clarity
+            # (current_raw is not edited in place but np.copy would help safeguard that)
+            current_raw = self.get_raw_current_frame()
+            raw_RGB = self.apply_raw_image_adjustments(current_raw)
+            comp_img = self.array_to_img(input_array = raw_RGB,
+                                        vmax = None,
+                                        cmap = None,
+                                        output = 'pyglet')
+
+        # create pyglet image from composite if you want to see annotation overlay
+        # (self.composite view is generated/updated separately)
+        if not self.hide_annotations:
+            comp_img = self.array_to_img(input_array = self.composite_view,
+                                                vmax = None,
+                                                cmap = None,
+                                                output = 'pyglet')
+
+        gl.glTexParameteri(gl.GL_TEXTURE_2D,
+                           gl.GL_TEXTURE_MAG_FILTER,
+                           gl.GL_NEAREST)
+
+        self.draw_pyglet_image(comp_img)
+        self.draw_pyglet_image(brush_img, opacity = 128)
+
     def draw_pyglet_image(self, image, opacity = 255):
         # TODO: add sprite to batch?
         pad = self.image_padding
@@ -1035,21 +1077,6 @@ class TrackReview(CalibanWindow):
         gl.glTexParameteri(gl.GL_TEXTURE_2D,
                            gl.GL_TEXTURE_MAG_FILTER,
                            gl.GL_NEAREST)
-
-    def draw_pixel_edit_frame(self):
-        # create pyglet image object so we can display brush location
-        brush_img = self.array_to_img(input_array = self.brush.view,
-                                                    vmax = self.get_max_label() + self.adjustment,
-                                                    cmap = 'gist_stern',
-                                                    output = 'pyglet')
-
-        comp_img = self.array_to_img(input_array = self.composite_view,
-                                    vmax = None,
-                                    cmap = None,
-                                    output = 'pyglet')
-
-        self.draw_pyglet_image(comp_img)
-        self.draw_pyglet_image(brush_img, opacity = 128)
 
     def action_new_track(self):
         """
@@ -2681,49 +2708,7 @@ class ZStackReview(CalibanWindow):
                 self.draw_ann_frame()
 
         elif self.edit_mode:
-            self.draw_edit_mode_frame()
-
-    def draw_edit_mode_frame(self):
-        '''
-        Draws current frame for pixel-editing mode, along with brush preview
-        (brush preview can display brush or thresholding). If drawing the image
-        with annotations hidden, applies filters/adjustments to raw image and uses
-        that, otherwise uses self.composite_view (generated and updated elsewhere)
-        to show annotations overlaid on the adjusted raw image. Image is then scaled
-        by self.scale_factor and drawn in window.
-        '''
-        # create pyglet image object so we can display brush location
-        brush_img = self.array_to_img(input_array = self.brush.view,
-                                                    vmax = self.get_max_label() + self.adjustment,
-                                                    cmap = 'gist_stern',
-                                                    output = 'pyglet')
-
-        # create pyglet image from only the adjusted raw, if hiding annotations
-        if self.hide_annotations:
-            # get raw and annotated data
-            # TODO: np.copy might be appropriate here for clarity
-            # (current_raw is not edited in place but np.copy would help safeguard that)
-            current_raw = self.get_raw_current_frame()
-            raw_RGB = self.apply_raw_image_adjustments(current_raw)
-            comp_img = self.array_to_img(input_array = raw_RGB,
-                                        vmax = None,
-                                        cmap = None,
-                                        output = 'pyglet')
-
-        # create pyglet image from composite if you want to see annotation overlay
-        # (self.composite view is generated/updated separately)
-        if not self.hide_annotations:
-            comp_img = self.array_to_img(input_array = self.composite_view,
-                                                vmax = None,
-                                                cmap = None,
-                                                output = 'pyglet')
-
-        gl.glTexParameteri(gl.GL_TEXTURE_2D,
-                           gl.GL_TEXTURE_MAG_FILTER,
-                           gl.GL_NEAREST)
-
-        self.draw_pyglet_image(comp_img)
-        self.draw_pyglet_image(brush_img, opacity = 128)
+            self.draw_pixel_edit_frame()
 
     def change_channel(self):
         '''
