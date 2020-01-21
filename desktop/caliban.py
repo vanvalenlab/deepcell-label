@@ -188,6 +188,27 @@ class CalibanWindow:
             self.x, self.y = x, y
             self.brush.update_center(y, x)
 
+    def on_mouse_motion(self, x, y, dx, dy):
+        '''
+        Overwrite default pyglet window on_mouse_motion event.
+        Takes x, y, dx, dy as params (these are what the window sends
+        to this event when it is triggered by mouse motion), but dx and dy
+        are not used in this custom event. X and y are used to update self.x
+        and self.y (coordinates of mouse within the image; also updated during
+        mouse drag). Updates brush preview (pixel-editing mode) when appropriate.
+        Uses:
+            self.update_mouse_position to update current self.x and self.y from
+                event x and y (also updates brush location)
+            self.brush method redraw_view to clear and redraw the brush preview
+
+        Note: self.brush.show is not a user-toggled option but is used to display
+            the correct preview (threshold box vs path of brush)
+        '''
+        # always update self.x and self.y when mouse has moved
+        self.update_mouse_position(x, y)
+        if self.brush.show:
+            self.brush.redraw_view()
+
     def on_draw(self):
         '''
         Event handler for pyglet window, redraws all content of screen after
@@ -748,15 +769,6 @@ class TrackReview(CalibanWindow):
         else:
             if self.get_max_label() + (self.adjustment - 1 * scroll_y) > 0:
                 self.adjustment = self.adjustment - 1 * scroll_y
-
-    def on_mouse_motion(self, x, y, dx, dy):
-
-        self.update_mouse_position(x, y)
-
-        if self.edit_mode:
-            #display brush size
-            self.brush.clear_view()
-            self.brush.view[self.brush.area] = self.brush.edit_val
 
     def on_key_press(self, symbol, modifiers):
         # Set scroll speed (through sequential frames) with offset
@@ -1780,30 +1792,6 @@ class ZStackReview(CalibanWindow):
         # would need to add back if adding a "check if image modified" step like browser caliban has
 
         # self.annotated[self.current_frame,:,:,self.feature] = annotated
-
-    def on_mouse_motion(self, x, y, dx, dy):
-        '''
-        Overwrite default pyglet window on_mouse_motion event.
-        Takes x, y, dx, dy as params (these are what the window sends
-        to this event when it is triggered by mouse motion), but dx and dy
-        are not used in this custom event. X and y are used to update self.x
-        and self.y (coordinates of mouse within the image; also updated during
-        mouse drag). Updates brush preview (pixel-editing mode) when appropriate.
-        Uses:
-            self.update_mouse_position to update current self.x and self.y from
-                event x and y
-            self.edit_mode, self.mode.kind, self.brush.show to determine when to display
-                brush preview
-            self.brush.view, self.y, self.x, self.brush.size, self.height, self.width,
-                self.brush.conv_val, self.brush.edit_val to create brush preview
-
-        Note: self.brush.show is not a user-toggled option but is used to display
-            the correct preview (threshold box vs path of brush)
-        '''
-        # always update self.x and self.y when mouse has moved
-        self.update_mouse_position(x, y)
-        if self.brush.show:
-            self.brush.redraw_view()
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         '''
