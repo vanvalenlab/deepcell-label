@@ -297,6 +297,25 @@ class CalibanWindow:
                      left, top))
         )
 
+    def draw_ann_frame(self):
+        ann_array = self.get_ann_current_frame()
+
+        # annotations use cubehelix cmap with highlighting in red
+        cmap = plt.get_cmap("cubehelix")
+        cmap.set_bad('red')
+
+        # if highlighting on, mask highlighted values so they appear red
+        if self.highlight:
+            ann_array = self.apply_label_highlight(ann_array)
+
+        # create pyglet image
+        image = self.array_to_img(input_array = ann_array,
+                                                vmax = max(1, self.get_max_label() + self.adjustment),
+                                                cmap = cmap,
+                                                output = 'pyglet')
+
+        self.draw_pyglet_image(image)
+
     def draw_pyglet_image(self, image, opacity = 255):
         # TODO: add sprite to batch?
         pad = self.image_padding
@@ -1012,24 +1031,6 @@ class TrackReview(CalibanWindow):
                                          cmap = "cubehelix",
                                          output = 'pyglet')
 
-        self.draw_pyglet_image(image)
-
-    def draw_ann_frame(self):
-        ann_array = self.get_ann_current_frame()
-
-        # annotations use cubehelix cmap with highlighting in red
-        cmap = plt.get_cmap("cubehelix")
-        cmap.set_bad('red')
-
-        # if highlighting on, mask highlighted values so they appear red
-        if self.highlight:
-            ann_array = self.apply_label_highlight(ann_array)
-
-        # create pyglet image
-        image = self.array_to_img(input_array = ann_array,
-                                                vmax = self.get_max_label() + self.adjustment,
-                                                cmap = cmap,
-                                                output = 'pyglet')
         self.draw_pyglet_image(image)
 
     def draw_pixel_edit_frame(self):
@@ -2683,25 +2684,6 @@ class ZStackReview(CalibanWindow):
             vmax = None,
             cmap = None,
             output = 'pyglet')
-
-        self.draw_pyglet_image(image)
-
-    def draw_ann_frame(self):
-        ann_array = self.get_ann_current_frame()
-
-        # annotations use cubehelix cmap with highlighting in red
-        cmap = plt.get_cmap("cubehelix")
-        cmap.set_bad('red')
-
-        # if highlighting on, mask highlighted values so they appear red
-        if self.highlight:
-            ann_array = self.apply_label_highlight(ann_array)
-
-        # create pyglet image
-        image = self.array_to_img(input_array = ann_array,
-                                                vmax = max(1, self.get_max_label() + self.adjustment),
-                                                cmap = cmap,
-                                                output = 'pyglet')
 
         self.draw_pyglet_image(image)
 
