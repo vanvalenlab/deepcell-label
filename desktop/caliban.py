@@ -694,6 +694,26 @@ class CalibanWindow:
 
         return highlight_text
 
+    def create_cmap_text(self):
+        '''
+        Generate text describing the current colormap being used.
+        Added to info display on side of screen.
+        '''
+        cmap = ""
+        if self.edit_mode:
+            if self.hide_annotations:
+                # TODO: replace with actual gray cmap name
+                cmap = "Gray"
+            else:
+                cmap = "{}/gray".format(self.overlay_cmap)
+        else:
+            if self.draw_raw:
+                cmap = self.current_cmap
+            else:
+                cmap = "cubehelix"
+
+        return cmap
+
     def create_filter_text(self):
         '''
         '''
@@ -2625,26 +2645,6 @@ class ZStackReview(CalibanWindow):
         self.draw_cell_info_label()
 
         self.render_frame_info_helper()
-
-    def create_cmap_text(self):
-        '''
-        Generate text describing the current colormap being used.
-        Added to info display on side of screen.
-        '''
-        cmap = ""
-        if self.edit_mode:
-            if self.hide_annotations:
-                # TODO: replace with actual gray cmap name
-                cmap = "Gray"
-            else:
-                cmap = "{}/gray".format(self.overlay_cmap)
-        else:
-            if self.draw_raw:
-                cmap = self.current_cmap
-            else:
-                cmap = "cubehelix"
-
-        return cmap
 
     def render_frame_info_helper(self):
         '''
