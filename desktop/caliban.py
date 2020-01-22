@@ -652,6 +652,26 @@ class CalibanWindow:
         # draw the label
         cell_info_label.draw()
 
+    def create_disp_image_text(self):
+        '''
+        '''
+        display_text = "Displayed image: "
+
+        if self.edit_mode:
+            if self.hide_annotations:
+                currently_viewing = "Raw"
+            else:
+                currently_viewing = "Overlay"
+        else:
+            if self.draw_raw:
+                currently_viewing = "Raw"
+            else:
+                currently_viewing = "Labels"
+
+        display_text += currently_viewing
+
+        return display_text
+
     def create_highlight_text(self):
         '''
         Generate text describing current highlighting status.
@@ -2605,26 +2625,6 @@ class ZStackReview(CalibanWindow):
         self.draw_cell_info_label()
 
         self.render_frame_info_helper()
-
-    def create_disp_image_text(self):
-        '''
-        '''
-        display_text = "Displayed image: "
-
-        if self.edit_mode:
-            if self.hide_annotations:
-                currently_viewing = "Raw"
-            else:
-                currently_viewing = "Overlay"
-        else:
-            if self.draw_raw:
-                currently_viewing = "Raw"
-            else:
-                currently_viewing = "Labels"
-
-        display_text += currently_viewing
-
-        return display_text
 
     def create_cmap_text(self):
         '''
