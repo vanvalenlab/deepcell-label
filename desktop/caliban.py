@@ -631,6 +631,45 @@ class CalibanWindow:
         # set self.composite view to new composite image
         self.composite_view = img_masked
 
+    def draw_persistent_info(self):
+        '''
+        Display information about the frame currently being viewed.
+        Always displays information; highlight info is only info
+        conditionally displayed by this label. This info is displayed
+        at top of info column.
+        '''
+        if self.edit_mode:
+            edit_mode = "pixels"
+        else:
+            edit_mode = "labels"
+
+        if self.edit_mode or self.draw_raw:
+            filter_info = self.create_filter_text()
+        else:
+            filter_info = "\n\n\n"
+
+        display_filter_info = ("Current display settings:"
+            "\nColormap - {}").format(self.create_cmap_text())
+        display_filter_info += filter_info
+
+        # TODO: render label in a batch
+        # create pyglet label anchored to top of left side
+        frame_label = pyglet.text.Label("Currently viewing:\n"
+                                        + "{}".format(self.create_frame_text())
+                                        + "{}\n\n".format(self.create_disp_image_text())
+                                        + "{}\n".format(self.create_highlight_text())
+                                        + "{}\n\n".format(display_filter_info)
+                                        + "Edit mode: {}\n".format(edit_mode)
+                                        + self.create_brush_text(),
+                                        font_name="monospace",
+                                        anchor_x="left", anchor_y="top",
+                                        width=self.sidebar_width,
+                                        multiline=True,
+                                        x=5, y=self.window.height - 5,
+                                        color=[255]*4)
+        # draw the label
+        frame_label.draw()
+
     def draw_cell_info_label(self):
         '''
         When cursor is over a label, displays information about that label
@@ -1181,45 +1220,13 @@ class TrackReview(CalibanWindow):
         info["frames"] = frames
         return info
 
+    def create_frame_text(self):
+        frame_text = "Frame: {}\n".format(self.current_frame)
+        return frame_text
+
     def draw_label(self):
-
-        if self.edit_mode:
-            edit_mode = "on"
-            brush_size_display = "brush size: {}".format(self.brush.size)
-            edit_label_display = "editing label: {}".format(self.brush.edit_val)
-            if self.brush.erase:
-                erase_mode = "on"
-            else:
-                erase_mode = "off"
-            draw_or_erase = "eraser mode: {}".format(erase_mode)
-
-            edit_label = pyglet.text.Label('{}\n{}\n{}'.format(brush_size_display,
-                                                        edit_label_display,
-                                                        draw_or_erase),
-                                            font_name='monospace',
-                                            anchor_x='left', anchor_y='center',
-                                            width=self.sidebar_width,
-                                            multiline=True,
-                                            x=5, y=self.window.height//2,
-                                            color=[255]*4)
-            edit_label.draw()
-        else:
-            edit_mode = "off"
-
-        highlight_text = self.create_highlight_text()
-
-        frame_label = pyglet.text.Label("frame: {}".format(self.current_frame)
-                                    + "\nedit mode: {}".format(edit_mode)
-                                    + "\n{}".format(highlight_text),
-                                        font_name="monospace",
-                                        anchor_x="left", anchor_y="top",
-                                        width=self.sidebar_width,
-                                        multiline=True,
-                                        x=5, y=self.window.height - 5,
-                                        color=[255]*4)
-
+        self.draw_persistent_info()
         self.draw_cell_info_label()
-        frame_label.draw()
 
     def action_new_track(self):
         """
@@ -2636,56 +2643,20 @@ class ZStackReview(CalibanWindow):
     def get_label_info(self, label):
         return self.cell_info[self.feature][label]
 
+    def create_frame_text(self):
+        frame_text = ("Frame: {}\n".format(self.current_frame)
+                    + "Channel: {}\n".format(self.channel)
+                    + "Feature: {}\n".format(self.feature))
+        return frame_text
+
     def draw_label(self):
         '''
         Coordinates information display (text) on left side of screen.
         '''
         # TODO: only update labels when the content changes?
         # TODO: batch graphics?
+        self.draw_persistent_info()
         self.draw_cell_info_label()
-
-        self.render_frame_info_helper()
-
-    def render_frame_info_helper(self):
-        '''
-        Display information about the frame currently being viewed.
-        Always displays information; highlight info is only info
-        conditionally displayed by this label. This info is displayed
-        at top of info column.
-        '''
-        if self.edit_mode:
-            edit_mode = "pixels"
-        else:
-            edit_mode = "labels"
-
-        if self.edit_mode or self.draw_raw:
-            filter_info = self.create_filter_text()
-        else:
-            filter_info = "\n\n\n"
-
-        display_filter_info = ("Current display settings:"
-            "\nColormap - {}").format(self.create_cmap_text())
-        display_filter_info += filter_info
-
-        # TODO: render label in a batch
-        # create pyglet label anchored to top of left side
-        frame_label = pyglet.text.Label("Currently viewing:\n"
-                                        + "Frame: {}\n".format(self.current_frame)
-                                        + "Channel: {}\n".format(self.channel)
-                                        + "Feature: {}\n".format(self.feature)
-                                        + "{}\n\n".format(self.create_disp_image_text())
-                                        + "{}\n".format(self.create_highlight_text())
-                                        + "{}\n\n".format(display_filter_info)
-                                        + "Edit mode: {}\n".format(edit_mode)
-                                        + self.create_brush_text(),
-                                        font_name="monospace",
-                                        anchor_x="left", anchor_y="top",
-                                        width=self.sidebar_width,
-                                        multiline=True,
-                                        x=5, y=self.window.height - 5,
-                                        color=[255]*4)
-        # draw the label
-        frame_label.draw()
 
     def change_channel(self):
         '''
