@@ -683,6 +683,30 @@ class CalibanWindow:
 
         return filter_text
 
+    def create_brush_text(self):
+        if self.edit_mode:
+            size_text = "Brush size: "
+            if self.brush.show:
+                size_text += str(self.brush.size)
+            else:
+                size_text += "-"
+
+            value_text = "Editing label: "
+            erase_text = "Eraser: "
+            if self.mode.kind is None:
+                value_text += str(self.brush.edit_val)
+                erase_text += on_or_off(self.brush.erase)
+            else:
+                value_text += "-"
+                erase_text += "-"
+
+            brush_info_text = "Current brush settings:\n\n{}\n{}\n{}".format(size_text,
+                value_text, erase_text)
+        else:
+            brush_info_text = ""
+
+        return brush_info_text
+
     def create_label_info_text(self):
         label = self.get_label()
         if label != 0:
@@ -2621,30 +2645,6 @@ class ZStackReview(CalibanWindow):
                 cmap = "cubehelix"
 
         return cmap
-
-    def create_brush_text(self):
-        if self.edit_mode:
-            size_text = "Brush size: "
-            if self.brush.show:
-                size_text += str(self.brush.size)
-            else:
-                size_text += "-"
-
-            value_text = "Editing label: "
-            erase_text = "Eraser: "
-            if self.mode.kind is None:
-                value_text += str(self.brush.edit_val)
-                erase_text += on_or_off(self.brush.erase)
-            else:
-                value_text += "-"
-                erase_text += "-"
-
-            brush_info_text = "Current brush settings:\n\n{}\n{}\n{}".format(size_text,
-                value_text, erase_text)
-        else:
-            brush_info_text = ""
-
-        return brush_info_text
 
     def render_frame_info_helper(self):
         '''
