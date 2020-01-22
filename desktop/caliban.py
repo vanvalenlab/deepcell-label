@@ -740,7 +740,7 @@ class CalibanWindow:
                 value_text += "-"
                 erase_text += "-"
 
-            brush_info_text = "Current brush settings:\n\n{}\n{}\n{}".format(size_text,
+            brush_info_text = "\nCurrent brush settings:\n{}\n{}\n{}".format(size_text,
                 value_text, erase_text)
         else:
             brush_info_text = ""
