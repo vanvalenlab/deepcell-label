@@ -245,6 +245,68 @@ class CalibanWindow:
                                  y_location=self.y, x_location=self.x)
             self.highlighted_cell_one = label
 
+    def pick_color(self):
+        '''
+        Takes the label clicked on, sets self.brush.edit_val to that label, and then
+        exits color-picking mode. Doesn't change anything if click on background
+        but still exits color-picking mode.
+
+        Uses:
+            self.annotated, self.current_frame, self.y, self.x, and self.feature
+                to determine which label was clicked on
+            self.brush.edit_val (modifies stored value)
+            self.mode (resets to Mode.none())
+        '''
+        # which label was clicked on
+        label = self.get_label()
+        if label != 0:
+            self.brush.set_edit_val(label)
+        self.mode.clear()
+
+    def pick_conv_target(self):
+        '''
+        Click on a label while setting up conversion brush to choose "target"
+        (label that will be overwritten by the conversion brush). Nothing happens
+        if background is clicked on (remain in conversion brush target-picking mode,
+        as opposed to normal color-picking). When color is picked, move to next
+        step in setting conversion brush.
+
+        Uses:
+            self.annotated, self.current_frame, self.y, self.x, and self.feature
+                to determine which label was clicked on
+            self.brush.conv_target to store clicked value
+            self.mode to move to next step of conversion brush setting
+        '''
+        # which label was clicked on
+        label = self.get_label()
+        if label != 0:
+            self.brush.set_conv_target(label)
+            # once value is set, move to setting next value
+            self.mode.update("PROMPT", action = "CONVERSION BRUSH VALUE")
+
+    def pick_conv_value(self):
+        '''
+        Click on a label while setting up conversion brush to choose "value"
+        (label that will be drawn by the conversion brush). Nothing happens
+        if background is clicked on (remain in conversion brush value-picking mode,
+        as with conversion brush target-picking). After label is picked, conversion
+        brush is set and will be in use.
+
+        Uses:
+            self.annotated, self.current_frame, self.y, self.x, and self.feature
+                to determine which label was clicked on
+            self.brush.conv_val to store clicked value
+            self.mode to enter use of conversion brush
+        '''
+        # which label was clicked on
+        label = self.get_label()
+        if label != 0:
+            self.brush.set_conv_val(label)
+            # once value is set, turn on conversion brush
+            self.mode.update("DRAW", action = "CONVERSION",
+                conversion_brush_target = self.brush.conv_target,
+                conversion_brush_value = self.brush.conv_val)
+
     def on_draw(self):
         '''
         Event handler for pyglet window, redraws all content of screen after
@@ -830,12 +892,7 @@ class TrackReview(CalibanWindow):
                 self.tracked[self.current_frame,:,:,0] = annotated
 
             elif self.mode.kind == "PROMPT" and self.mode.action == "PICK COLOR":
-                label = self.get_label()
-                if label == 0:
-                    self.mode.clear()
-                elif label != 0:
-                    self.brush.set_edit_val(label)
-                    self.mode.clear()
+                self.pick_color()
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
 
@@ -1606,13 +1663,13 @@ class ZStackReview(CalibanWindow):
 
                 # color pick tool
                 elif self.mode.kind == "PROMPT" and self.mode.action == "PICK COLOR":
-                    self.handle_color_pick_helper()
+                    self.pick_color()
 
                 # color picking for conversion brush
                 elif self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH TARGET":
-                    self.pick_conversion_target_helper()
+                    self.pick_conv_target()
                 elif self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH VALUE":
-                    self.pick_conversion_value_helper()
+                    self.pick_conv_value()
 
                 # start drawing bounding box for threshold prediction
                 elif self.mode.kind == "PROMPT" and self.mode.action == "DRAW BOX":
@@ -1666,68 +1723,6 @@ class ZStackReview(CalibanWindow):
                 self.hole_fill_seed = (self.y, self.x)
                 self.action_fill_hole()
                 self.mode.clear()
-
-    def handle_color_pick_helper(self):
-        '''
-        Takes the label clicked on, sets self.brush.edit_val to that label, and then
-        exits color-picking mode. Doesn't change anything if click on background
-        but still exits color-picking mode.
-
-        Uses:
-            self.annotated, self.current_frame, self.y, self.x, and self.feature
-                to determine which label was clicked on
-            self.brush.edit_val (modifies stored value)
-            self.mode (resets to Mode.none())
-        '''
-        # which label was clicked on
-        label = self.get_label()
-        if label != 0:
-            self.brush.set_edit_val(label)
-        self.mode.clear()
-
-    def pick_conversion_target_helper(self):
-        '''
-        Click on a label while setting up conversion brush to choose "target"
-        (label that will be overwritten by the conversion brush). Nothing happens
-        if background is clicked on (remain in conversion brush target-picking mode,
-        as opposed to normal color-picking). When color is picked, move to next
-        step in setting conversion brush.
-
-        Uses:
-            self.annotated, self.current_frame, self.y, self.x, and self.feature
-                to determine which label was clicked on
-            self.brush.conv_target to store clicked value
-            self.mode to move to next step of conversion brush setting
-        '''
-        # which label was clicked on
-        label = self.get_label()
-        if label != 0:
-            self.brush.set_conv_target(label)
-            # once value is set, move to setting next value
-            self.mode.update("PROMPT", action = "CONVERSION BRUSH VALUE")
-
-    def pick_conversion_value_helper(self):
-        '''
-        Click on a label while setting up conversion brush to choose "value"
-        (label that will be drawn by the conversion brush). Nothing happens
-        if background is clicked on (remain in conversion brush value-picking mode,
-        as with conversion brush target-picking). After label is picked, conversion
-        brush is set and will be in use.
-
-        Uses:
-            self.annotated, self.current_frame, self.y, self.x, and self.feature
-                to determine which label was clicked on
-            self.brush.conv_val to store clicked value
-            self.mode to enter use of conversion brush
-        '''
-        # which label was clicked on
-        label = self.get_label()
-        if label != 0:
-            self.brush.set_conv_val(label)
-            # once value is set, turn on conversion brush
-            self.mode.update("DRAW", action = "CONVERSION",
-                conversion_brush_target = self.brush.conv_target,
-                conversion_brush_value = self.brush.conv_val)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         '''
