@@ -631,6 +631,27 @@ class CalibanWindow:
         # set self.composite view to new composite image
         self.composite_view = img_masked
 
+    def draw_cell_info_label(self):
+        '''
+        When cursor is over a label, displays information about that label
+        at the bottom of the information column.
+        '''
+        text = self.create_label_info_text()
+
+        # add info from self.mode (eg, prompts or "selected", etc)
+        text += self.mode.text
+
+        # TODO: render label in a batch
+        # create pyglet label anchored to bottom of left side
+        cell_info_label = pyglet.text.Label(text, font_name="monospace",
+                                       anchor_x="left", anchor_y="bottom",
+                                       width=self.sidebar_width,
+                                       multiline=True,
+                                       x=5, y=5, color=[255]*4)
+
+        # draw the label
+        cell_info_label.draw()
+
     def create_highlight_text(self):
         '''
         Generate text describing current highlighting status.
@@ -1097,14 +1118,6 @@ class TrackReview(CalibanWindow):
         return info
 
     def draw_label(self):
-        text = self.create_label_info_text()
-        text += self.mode.text
-
-        info_label = pyglet.text.Label(text, font_name="monospace",
-                                       anchor_x="left", anchor_y="bottom",
-                                       width=self.sidebar_width,
-                                       multiline=True,
-                                       x=5, y=5, color=[255]*4)
 
         if self.edit_mode:
             edit_mode = "on"
@@ -1141,7 +1154,7 @@ class TrackReview(CalibanWindow):
                                         x=5, y=self.window.height - 5,
                                         color=[255]*4)
 
-        info_label.draw()
+        self.draw_cell_info_label()
         frame_label.draw()
 
     def action_new_track(self):
@@ -2565,31 +2578,9 @@ class ZStackReview(CalibanWindow):
         '''
         # TODO: only update labels when the content changes?
         # TODO: batch graphics?
-        self.render_cell_label_info_helper()
+        self.draw_cell_info_label()
 
         self.render_frame_info_helper()
-
-    def render_cell_label_info_helper(self):
-        '''
-        When cursor is over a label, displays information about that label
-        at the bottom of the information column.
-        '''
-
-        text = self.create_label_info_text()
-
-        # add info from self.mode (eg, prompts or "selected", etc)
-        text += self.mode.text
-
-        # TODO: render label in a batch
-        # create pyglet label anchored to bottom of left side
-        cell_info_label = pyglet.text.Label(text, font_name="monospace",
-                                       anchor_x="left", anchor_y="bottom",
-                                       width=self.sidebar_width,
-                                       multiline=True,
-                                       x=5, y=5, color=[255]*4)
-
-        # draw the label
-        cell_info_label.draw()
 
     def create_disp_image_text(self):
         '''
