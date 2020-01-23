@@ -826,6 +826,9 @@ class CalibanBrush:
         self.y = 0
         self.x = 0
 
+        self.box_x = None
+        self.box_y = None
+
         # initialize area with center x = y = 0
         self.area = circle(self.y, self.x, self.size, (self.height,self.width))
 
@@ -841,6 +844,7 @@ class CalibanBrush:
     def reset(self):
         self.enable_drawing()
         self.show = True
+        self.clear_box()
         self.clear_conv()
 
     def decrease_size(self):
@@ -896,6 +900,22 @@ class CalibanBrush:
         self.redraw_view()
         self.set_draw_vals()
 
+    def set_box_corner(self, y, x):
+        self.box_x = x
+        self.box_y = y
+
+    def get_box_coords(self):
+        y1 = min(self.box_y, self.y)
+        y2 = max(self.box_y, self.y)
+        x1 = min(self.box_x, self.x)
+        x2 = max(self.box_x, self.x)
+
+        return y1, y2, x1, x2
+
+    def clear_box(self):
+        self.box_x = None
+        self.box_y = None
+
     def set_draw_vals(self):
         # pick editing values
         if self.conv_val != -1:
@@ -921,10 +941,16 @@ class CalibanBrush:
         self.view = np.zeros((self.height, self.width))
 
     def add_to_view(self):
-        if self.conv_val != -1:
-            self.view[self.area] = self.conv_val
+        if self.show:
+            if self.conv_val != -1:
+                self.view[self.area] = self.conv_val
+            else:
+                self.view[self.area] = self.edit_val
         else:
-            self.view[self.area] = self.edit_val
+            self.clear_view()
+            if self.box_x is not None:
+                y1, y2, x1, x2 = self.get_box_coords()
+                self.view[y1:y2,x1:x2] = 1
 
     def redraw_view(self):
         self.clear_view()
@@ -1732,9 +1758,6 @@ class ZStackReview(CalibanWindow):
 
         self.brush = CalibanBrush(self.height, self.width)
 
-        # stores starting point of thresholding bounding box
-        self.predict_seed = None
-
         # stores y, x location of mouse click for actions that use skimage flooding
         # self.hole_fill_seed = None
 
@@ -1801,7 +1824,7 @@ class ZStackReview(CalibanWindow):
 
                 # start drawing bounding box for threshold prediction
                 elif self.mode.kind == "PROMPT" and self.mode.action == "DRAW BOX":
-                    self.predict_seed = (self.y, self.x)
+                    self.brush.set_box_corner(self.y, self.x)
 
     def mouse_press_selected_helper(self, label):
         '''
@@ -1878,25 +1901,10 @@ class ZStackReview(CalibanWindow):
         # mouse drag only has special behavior in pixel-editing mode
         if self.edit_mode:
             # drawing with brush (normal or conversion)
+            self.brush.add_to_view()
             if self.brush.show:
-                # # update brush_view if self.mode.kind is DRAW or None, but not PROMPT
-                self.brush.add_to_view()
                 # modify annotation
                 self.handle_draw()
-
-            # dragging the bounding box for threshold prediction
-            elif not self.brush.show and self.mode.action == "DRAW BOX":
-                # reset self.brush.view
-                self.brush.clear_view()
-
-                # use self.brush.view to display a box; need to calculate min/max
-                # or else box will not always display
-                top_edge = min(self.predict_seed[0], self.y)
-                bottom_edge = max(self.predict_seed[0], self.y)
-                left_edge = min(self.predict_seed[1], self.x)
-                right_edge = max(self.predict_seed[1], self.x)
-
-                self.brush.view[top_edge:bottom_edge, left_edge:right_edge] = self.brush.edit_val
 
     def on_mouse_release(self, x, y, buttons, modifiers):
         '''
@@ -1926,18 +1934,17 @@ class ZStackReview(CalibanWindow):
         if self.edit_mode:
             # releasing the mouse finalizes bounding box for thresholding
             if not self.brush.show and self.mode.action == "DRAW BOX":
-                self.handle_threshold_helper()
+                self.handle_threshold()
                 # self.brush.show reset to True here, so brush preview will render
 
             # update brush view (prevents brush flickering)
-            if self.brush.show:
-                self.brush.redraw_view()
+            self.brush.redraw_view()
             # annotation has changed (either during mouse drag for brush, or upon release
             # for threshold), update the image composite with the current annotation
             if not self.hide_annotations:
                 self.helper_update_composite()
 
-    def handle_threshold_helper(self):
+    def handle_threshold(self):
         '''
         Helper function to do pre- and post-action bookkeeping for thresholding.
         Figures out indices to send to action_threshold_predict, calls action_threshold_predict,
@@ -1949,20 +1956,13 @@ class ZStackReview(CalibanWindow):
             self.action_threshold_predict to carry out thresholding and annotation update
             self.brush.show and self.mode are reset at end to finish/clear thresholding behavior
         '''
-        # min/max need to be calculated for correct numpy array slicing
-        top_edge = min(self.predict_seed[0], self.y)
-        bottom_edge = max(self.predict_seed[0], self.y)
-        left_edge = min(self.predict_seed[1], self.x)
-        right_edge = max(self.predict_seed[1], self.x)
-
         # check to make sure box is actually a box and not a line
-        if top_edge != bottom_edge and left_edge != right_edge:
-            threshold_prediction = self.action_threshold_predict(top_edge,
-                bottom_edge, left_edge, right_edge)
+        y1, y2, x1, x2 = self.brush.get_box_coords()
+        if y1 != y2 and x1 != x2:
+            threshold_prediction = self.action_threshold_predict(y1, y2, x1, x2)
 
         # clear bounding box and Mode
-        self.brush.show = True
-        self.brush.enable_drawing()
+        self.brush.reset()
         self.mode.clear()
 
     def handle_draw(self):
