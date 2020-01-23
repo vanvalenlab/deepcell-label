@@ -1783,11 +1783,11 @@ class ZStackReview(CalibanWindow):
         elif self.edit_mode:
             # draw using brush
             if self.mode.kind is None:
-                self.handle_draw_helper()
+                self.handle_draw()
             elif self.mode.kind is not None:
                 # conversion brush
                 if self.mode.kind == "DRAW":
-                    self.handle_draw_helper()
+                    self.handle_draw()
 
                 # color pick tool
                 elif self.mode.kind == "PROMPT" and self.mode.action == "PICK COLOR":
@@ -1882,7 +1882,7 @@ class ZStackReview(CalibanWindow):
                 # # update brush_view if self.mode.kind is DRAW or None, but not PROMPT
                 self.brush.add_to_view()
                 # modify annotation
-                self.handle_draw_helper()
+                self.handle_draw()
 
             # dragging the bounding box for threshold prediction
             elif not self.brush.show and self.mode.action == "DRAW BOX":
@@ -1965,7 +1965,7 @@ class ZStackReview(CalibanWindow):
         self.brush.enable_drawing()
         self.mode.clear()
 
-    def handle_draw_helper(self):
+    def handle_draw(self):
         '''
         Carries out brush drawing on annotation in edit mode. Handles both conversion brush
         and normal drawing or erasing. Does not update the composite image so this can be called
