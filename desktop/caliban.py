@@ -816,6 +816,9 @@ class CalibanBrush:
         self.conv_target = -1
         self.conv_val = -1
 
+        self.background = 0
+        self.draw_value = 1
+
         # used to put bounds on size, area of brush
         self.height = height
         self.width = width
@@ -832,6 +835,14 @@ class CalibanBrush:
         # toggle that determines whether we're viewing brush or thresholding box
         self.show = True
 
+        # use to toggle off draw behavior when we shouldn't be drawing
+        self.drawing = True
+
+    def reset(self):
+        self.enable_drawing()
+        self.show = True
+        self.clear_conv()
+
     def decrease_size(self):
         self.size = max(1, self.size -1)
         self.update_area()
@@ -847,17 +858,28 @@ class CalibanBrush:
     def decrease_edit_val(self):
         self.edit_val = max(1, self.edit_val - 1)
         self.redraw_view()
+        self.set_draw_vals()
 
     def increase_edit_val(self, window):
         self.edit_val = min(window.get_new_label(), self.edit_val + 1)
         self.redraw_view()
+        self.set_draw_vals()
 
     def set_edit_val(self, val):
         self.edit_val = val
         self.redraw_view()
+        self.enable_drawing()
+        self.set_draw_vals()
 
     def toggle_erase(self):
         self.erase = not self.erase
+        self.set_draw_vals()
+
+    def enable_drawing(self):
+        self.drawing = True
+
+    def disable_drawing(self):
+        self.drawing = False
 
     def set_conv_target(self, val):
         self.conv_target = val
@@ -865,11 +887,27 @@ class CalibanBrush:
     def set_conv_val(self, val):
         self.conv_val = val
         self.redraw_view()
+        self.enable_drawing()
+        self.set_draw_vals()
 
     def clear_conv(self):
         self.conv_target = -1
         self.conv_val = -1
         self.redraw_view()
+        self.set_draw_vals()
+
+    def set_draw_vals(self):
+        # pick editing values
+        if self.conv_val != -1:
+            self.background = self.conv_target
+            self.draw_value = self.conv_val
+        else:
+            if self.erase:
+                self.background = self.edit_val
+                self.draw_value = 0
+            else:
+                self.background = 0
+                self.draw_value = self.edit_val
 
     def update_center(self, y, x):
         self.y = y
@@ -891,6 +929,19 @@ class CalibanBrush:
     def redraw_view(self):
         self.clear_view()
         self.add_to_view()
+
+    def draw(self, image):
+        if not self.drawing:
+            return image
+
+        image = np.copy(image)
+
+        # version of image where all background pixels have been changed
+        mod_image = np.where(image == self.background, self.draw_value, image)
+
+        image[self.area] = mod_image[self.area]
+
+        return image
 
 class TrackReview(CalibanWindow):
     possible_keys = {"label", "daughters", "frames", "parent", "frame_div",
@@ -1923,6 +1974,7 @@ class ZStackReview(CalibanWindow):
 
         # clear bounding box and Mode
         self.brush.show = True
+        self.brush.enable_drawing()
         self.mode.clear()
 
     def handle_draw_helper(self):
@@ -1945,57 +1997,26 @@ class ZStackReview(CalibanWindow):
             self.height and self.width to limit boundaries of brush (skimage.draw.circle)
 
         '''
+        annotated = self.get_ann_current_frame()
+        brush_val_in_original = np.any(np.isin(annotated, self.brush.draw_value))
+        editing_val_in_original = np.any(np.isin(annotated, self.brush.background))
 
-        # check which mode we are drawing in and set drawing variables
-        # normal draw/erase
-        if self.mode.kind is None:
-            if self.brush.erase:
-                brush_val = 0
-                editing_val = self.brush.edit_val
-            else:
-                brush_val = self.brush.edit_val
-                editing_val = 0
-
-        # conversion brush
-        elif self.mode.kind == "DRAW":
-            # erase does not apply in conversion brush mode
-            brush_val = self.brush.conv_val
-            editing_val = self.brush.conv_target
-
-        # could be in the middle of setting conversion brush, in which case
-        # shouldn't be attempting to draw
-        else:
-            return
-
-        # take current frame and check for presence of brush_val and editing_val
-        # (determines whether to add or del any cell info from dictionaries)
-        annotated = self.annotated[self.current_frame,:,:,self.feature]
-        brush_val_in_original = np.any(np.isin(annotated, brush_val))
-        editing_val_in_original = np.any(np.isin(annotated, editing_val))
-
-        # create image where all editing_val pixels are replaced with brush val
-        annotated_draw = np.where(annotated==editing_val, brush_val, annotated)
-        # only modify 'annotated' within self.brush.area
-        annotated[self.brush.area] = annotated_draw[self.brush.area]
+        annotated_draw = self.brush.draw(annotated)
 
         # check to see if any labels have been added or removed from frame
         # possible to add new label or delete target label
-        brush_val_in_modified = np.any(np.isin(annotated, brush_val))
-        editing_val_in_modified = np.any(np.isin(annotated, editing_val))
+        brush_val_in_modified = np.any(np.isin(annotated_draw, self.brush.draw_value))
+        editing_val_in_modified = np.any(np.isin(annotated_draw, self.brush.background))
 
         # label deletion
         if editing_val_in_original and not editing_val_in_modified:
-            self.del_cell_info(feature = self.feature, del_label = editing_val, frame = self.current_frame)
+            self.del_cell_info(feature = self.feature, del_label = self.brush.background, frame = self.current_frame)
 
         # label addition
         if brush_val_in_modified and not brush_val_in_original:
-            self.add_cell_info(feature = self.feature, add_label = brush_val, frame = self.current_frame)
+            self.add_cell_info(feature = self.feature, add_label = self.brush.draw_value, frame = self.current_frame)
 
-        # annotated still refers to self.annotated[self.current_frame,:,:,self.feature] so we don't need to update that
-
-        # would need to add back if adding a "check if image modified" step like browser caliban has
-
-        # self.annotated[self.current_frame,:,:,self.feature] = annotated
+        self.annotated[self.current_frame,:,:,self.feature] = annotated_draw
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         '''
@@ -2145,9 +2166,7 @@ class ZStackReview(CalibanWindow):
             # reset self.mode (deselects labels, clears actions)
             self.mode.clear()
             # reset from thresholding
-            self.brush.show = True
-            # reset conversion brush values
-            self.brush.clear_conv()
+            self.brush.reset()
 
     def edit_mode_universal_keypress_helper(self, symbol, modifiers):
         '''
@@ -2233,9 +2252,11 @@ class ZStackReview(CalibanWindow):
         # ACTIONS - COLOR PICKER
         if symbol == key.P:
             self.mode.update("PROMPT", action = "PICK COLOR", **self.mode.info)
+            self.brush.disable_drawing()
         # ACTIONS - CONVERSION BRUSH
         if symbol == key.R:
             self.mode.update("PROMPT", action="CONVERSION BRUSH TARGET", **self.mode.info)
+            self.brush.disable_drawing()
         # ACTIONS - SAVE FILE
         if symbol == key.S:
             self.mode.update("QUESTION", action="SAVE")
@@ -2243,6 +2264,7 @@ class ZStackReview(CalibanWindow):
         if symbol == key.T:
             self.mode.update("PROMPT", action = "DRAW BOX", **self.mode.info)
             self.brush.show = False
+            self.brush.disable_drawing()
             self.brush.clear_view()
 
     def edit_mode_misc_keypress_helper(self, symbol, modifiers):
