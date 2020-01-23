@@ -1051,19 +1051,13 @@ class TrackReview(CalibanWindow):
 
         elif self.edit_mode:
             if self.mode.kind is None:
-                annotated = self.tracked[self.current_frame,:,:,0]
+                annotated = self.get_ann_current_frame()
 
-                in_original = np.any(np.isin(annotated, self.brush.edit_val))
+                in_original = np.any(np.isin(annotated, self.brush.draw_value))
 
-                #do not overwrite or erase labels other than the one you're editing
-                if not self.brush.erase:
-                    annotated_draw = np.where(annotated==0, self.brush.edit_val, annotated)
-                    annotated[self.brush.area] = annotated_draw[self.brush.area]
-                else:
-                    annotated_erase = np.where(annotated==self.brush.edit_val, 0, annotated)
-                    annotated[self.brush.area] = annotated_erase[self.brush.area]
+                annotated = self.brush.draw(annotated)
 
-                in_modified = np.any(np.isin(annotated, self.brush.edit_val))
+                in_modified = np.any(np.isin(annotated, self.brush.draw_value))
 
                 #cell deletion
                 if in_original and not in_modified:
@@ -1083,22 +1077,16 @@ class TrackReview(CalibanWindow):
         self.update_mouse_position(x, y)
 
         if self.edit_mode:
-            annotated = self.tracked[self.current_frame,:,:,0]
-
             #show where brush has drawn this time
             self.brush.add_to_view()
 
-            in_original = np.any(np.isin(annotated, self.brush.edit_val))
+            annotated = self.get_ann_current_frame()
 
-            #do not overwrite or erase labels other than the one you're editing
-            if not self.brush.erase:
-                annotated_draw = np.where(annotated==0, self.brush.edit_val, annotated)
-                annotated[self.brush.area] = annotated_draw[self.brush.area]
-            else:
-                annotated_erase = np.where(annotated==self.brush.edit_val, 0, annotated)
-                annotated[self.brush.area] = annotated_erase[self.brush.area]
+            in_original = np.any(np.isin(annotated, self.brush.draw_value))
 
-            in_modified = np.any(np.isin(annotated, self.brush.edit_val))
+            annotated = self.brush.draw(annotated)
+
+            in_modified = np.any(np.isin(annotated, self.brush.draw_value))
 
             #cell deletion
             if in_original and not in_modified:
