@@ -631,6 +631,15 @@ class CalibanWindow:
         # set self.composite view to new composite image
         self.composite_view = img_masked
 
+    def draw_label(self):
+        '''
+        Coordinates information display (text) on left side of screen.
+        '''
+        # TODO: only update labels when the content changes?
+        # TODO: batch graphics?
+        self.draw_persistent_info()
+        self.draw_cell_info_label()
+
     def draw_persistent_info(self):
         '''
         Display information about the frame currently being viewed.
@@ -1223,10 +1232,6 @@ class TrackReview(CalibanWindow):
     def create_frame_text(self):
         frame_text = "Frame: {}\n".format(self.current_frame)
         return frame_text
-
-    def draw_label(self):
-        self.draw_persistent_info()
-        self.draw_cell_info_label()
 
     def action_new_track(self):
         """
@@ -2648,15 +2653,6 @@ class ZStackReview(CalibanWindow):
                     + "Channel: {}\n".format(self.channel)
                     + "Feature: {}\n".format(self.feature))
         return frame_text
-
-    def draw_label(self):
-        '''
-        Coordinates information display (text) on left side of screen.
-        '''
-        # TODO: only update labels when the content changes?
-        # TODO: batch graphics?
-        self.draw_persistent_info()
-        self.draw_cell_info_label()
 
     def change_channel(self):
         '''
