@@ -1197,23 +1197,7 @@ class TrackReview(CalibanWindow):
 
         elif self.edit_mode:
             if self.mode.kind is None:
-                annotated = self.get_ann_current_frame()
-
-                in_original = np.any(np.isin(annotated, self.brush.draw_value))
-
-                annotated = self.brush.draw(annotated)
-
-                in_modified = np.any(np.isin(annotated, self.brush.draw_value))
-
-                #cell deletion
-                if in_original and not in_modified:
-                    self.del_cell_info(del_label = self.brush.edit_val, frame = self.current_frame)
-
-                #cell addition
-                elif in_modified and not in_original:
-                    self.add_cell_info(add_label = self.brush.edit_val, frame = self.current_frame)
-
-                self.tracked[self.current_frame,:,:,0] = annotated
+                self.handle_draw()
 
             elif self.mode.kind == "PROMPT" and self.mode.action == "PICK COLOR":
                 self.pick_color()
@@ -1225,24 +1209,7 @@ class TrackReview(CalibanWindow):
         if self.edit_mode:
             #show where brush has drawn this time
             self.brush.add_to_view()
-
-            annotated = self.get_ann_current_frame()
-
-            in_original = np.any(np.isin(annotated, self.brush.draw_value))
-
-            annotated = self.brush.draw(annotated)
-
-            in_modified = np.any(np.isin(annotated, self.brush.draw_value))
-
-            #cell deletion
-            if in_original and not in_modified:
-                self.del_cell_info(del_label = self.brush.edit_val, frame = self.current_frame)
-
-            #cell addition
-            elif in_modified and not in_original:
-                self.add_cell_info(add_label = self.brush.edit_val, frame = self.current_frame)
-
-            self.tracked[self.current_frame,:,:,0] = annotated
+            self.handle_draw()
 
     def on_mouse_release(self, x, y, buttons, modifiers):
         if self.edit_mode:
@@ -1260,6 +1227,30 @@ class TrackReview(CalibanWindow):
         else:
             if self.get_max_label() + (self.adjustment - 1 * scroll_y) > 0:
                 self.adjustment = self.adjustment - 1 * scroll_y
+
+    def handle_draw(self):
+        '''
+        '''
+        annotated = self.get_ann_current_frame()
+        brush_val_in_original = np.any(np.isin(annotated, self.brush.draw_value))
+        editing_val_in_original = np.any(np.isin(annotated, self.brush.background))
+
+        annotated_draw = self.brush.draw(annotated)
+
+        # check to see if any labels have been added or removed from frame
+        # possible to add new label or delete target label
+        brush_val_in_modified = np.any(np.isin(annotated_draw, self.brush.draw_value))
+        editing_val_in_modified = np.any(np.isin(annotated_draw, self.brush.background))
+
+        # label deletion
+        if editing_val_in_original and not editing_val_in_modified:
+            self.del_cell_info(del_label = self.brush.background, frame = self.current_frame)
+
+        # label addition
+        if brush_val_in_modified and not brush_val_in_original:
+            self.add_cell_info(add_label = self.brush.draw_value, frame = self.current_frame)
+
+        self.tracked[self.current_frame,:,:,0] = annotated_draw
 
     def on_key_press(self, symbol, modifiers):
         # Set scroll speed (through sequential frames) with offset
