@@ -809,23 +809,30 @@ class CalibanWindow:
 
 class CalibanBrush:
     def __init__(self, height, width):
+        # radius of brush
         self.size = 1
+        # value that brush can affect in default mode
         self.edit_val = 1
+        # erasing behavior
         self.erase = False
 
+        # values of conversion brush (-1 is conversion brush turned off)
         self.conv_target = -1
         self.conv_val = -1
 
+        # values that brush will draw; depends on edit_val, erase, and conv values
         self.background = 0
         self.draw_value = 1
 
-        # used to put bounds on size, area of brush
+        # size of annotation; used to put bounds on size, area of brush
         self.height = height
         self.width = width
 
+        # current location of cursor (center of brush or edge of box)
         self.y = 0
         self.x = 0
 
+        # anchor point for bounding box; None when box is not in use
         self.box_x = None
         self.box_y = None
 
@@ -842,69 +849,139 @@ class CalibanBrush:
         self.drawing = True
 
     def reset(self):
+        '''
+        Clear brush of special behaviors (clear conversion brush values, box
+        values). Doesn't affect brush size, edit_val, or status of eraser.
+        Redraws view to show brush shadow.
+        '''
         self.enable_drawing()
         self.show = True
         self.clear_box()
         self.clear_conv()
 
     def decrease_size(self):
+        '''
+        Decrease size of brush (minimum size of one pixel).
+        Updates area that brush covers and redraws to show new
+        area if brush shadow is currently being displayed.
+        '''
         self.size = max(1, self.size -1)
         self.update_area()
         if self.show:
             self.redraw_view()
 
     def increase_size(self):
+        '''
+        Increase size of brush (does not get larger than height or width
+        of displayed image). Updates area that brush covers and redraws
+        to show new area if brush shadow is currently being displayed.
+        '''
         self.size = min(self.size + 1, self.height, self.width)
         self.update_area()
         if self.show:
             self.redraw_view()
 
     def decrease_edit_val(self):
+        '''
+        Decreases edit_val (minimum value of 1); value that normal brush draws
+        or erases. Redraws brush view to show updated color of brush shadow.
+        Also updates brush's drawing values appropriately.
+        '''
         self.edit_val = max(1, self.edit_val - 1)
         self.redraw_view()
         self.set_draw_vals()
 
     def increase_edit_val(self, window):
+        '''
+        Increases edit_val (does not increase past the window's max label + 1);
+        value that normal brush draws or erases. Redraws brush view to show
+        updated color of brush shadow. Also updates brush's drawing values appropriately.
+        '''
         self.edit_val = min(window.get_new_label(), self.edit_val + 1)
         self.redraw_view()
         self.set_draw_vals()
 
     def set_edit_val(self, val):
+        '''
+        Sets edit_val to given value (used with color picker); value that
+        normal brush draws or erases. Redraws brush view to show updated color
+        of brush shadow. Also updates brush's drawing values appropriately.
+        Re-enables drawing, as drawing is disabled while waiting for color to
+        be picked.
+        '''
         self.edit_val = val
         self.redraw_view()
         self.enable_drawing()
         self.set_draw_vals()
 
     def toggle_erase(self):
+        '''
+        Turns erasing behavior on or off for default brush mode, updates
+        brush's drawing values appropriately. No visual change.
+        '''
         self.erase = not self.erase
         self.set_draw_vals()
 
     def enable_drawing(self):
+        '''
+        Turn drawing on; used to re-enable editing behavior after attribute-modifying
+        actions such as color picking.
+        '''
         self.drawing = True
 
     def disable_drawing(self):
+        '''
+        Turn drawing off; used to disable editing behavior while other brush-related
+        actions are carried out (eg, thresholding, color picking).
+        '''
         self.drawing = False
 
     def set_conv_target(self, val):
+        '''
+        Set the conversion brush target to val; conversion brush target is value
+        that will be overwritten by use of conversion brush. Does not call other
+        methods, since conversion brush is not set until conv_val is picked.
+        '''
         self.conv_target = val
 
     def set_conv_val(self, val):
+        '''
+        Set the conversion brush value to val; conversion brush value is value
+        that will be used to overwrite target. Once this value is set, the
+        conversion brush is ready to use, so the view is redrawn to reflect new
+        value of brush, the brush drawing values are updated, and drawing is
+        enabled (drawing is disabled while brush is being set).
+        '''
         self.conv_val = val
         self.redraw_view()
         self.enable_drawing()
         self.set_draw_vals()
 
     def clear_conv(self):
+        '''
+        Clear the conversion brush by setting target and value to -1.
+        Also update brush drawing values and redraw brush preview to reflect
+        appropriate value (now that brush is back to affecting edit_val in
+        its default drawing mode).
+        '''
         self.conv_target = -1
         self.conv_val = -1
         self.redraw_view()
         self.set_draw_vals()
 
     def set_box_corner(self, y, x):
+        '''
+        Sets the anchored corner of bounding box for thresholding.
+        '''
         self.box_x = x
         self.box_y = y
 
     def get_box_coords(self):
+        '''
+        Return the corners of the current bounding box, based on anchored
+        corner and current mouse position (self.x and y). Corners are
+        sorted so they can be used for array slicing.
+        '''
         y1 = min(self.box_y, self.y)
         y2 = max(self.box_y, self.y)
         x1 = min(self.box_x, self.x)
@@ -913,10 +990,22 @@ class CalibanBrush:
         return y1, y2, x1, x2
 
     def clear_box(self):
+        '''
+        Resets anchored corner of bounding box to None.
+        '''
         self.box_x = None
         self.box_y = None
 
     def set_draw_vals(self):
+        '''
+        Sets drawing values for brush based on current brush status; keeps
+        track of which value the brush is currently using to draw over which
+        background value. For default (no erasing) behavior, 0 is background
+        and edit_val is the drawing value, but this changes depending on settings.
+        Using drawing values separate from other brush settings allows drawing
+        functions to access only those attributes without needing to account for
+        current brush settings.
+        '''
         # pick editing values
         if self.conv_val != -1:
             self.background = self.conv_target
@@ -930,17 +1019,38 @@ class CalibanBrush:
                 self.draw_value = self.edit_val
 
     def update_center(self, y, x):
+        '''
+        Update center of brush area with current mouse location (only called by
+        window if mouse location is within bounds of displayed image). Updates
+        current area of brush when center changes. Updated center of brush is also
+        used for changing free corner of bounding box when box is active.
+        '''
         self.y = y
         self.x = x
         self.update_area()
 
     def update_area(self):
+        '''
+        Updates area of brush based on current center of circle and radius of
+        brush. Height and width values are used to prevent brush area from
+        extending past bounds of view array. Called when either the center
+        or size of brush changes.
+        '''
         self.area = circle(self.y, self.x, self.size, (self.height, self.width))
 
     def clear_view(self):
+        '''
+        Reset brush view by replacing it with array of same size, filled with
+        zeros.
+        '''
         self.view = np.zeros((self.height, self.width))
 
     def add_to_view(self):
+        '''
+        Add values to brush view to be displayed, based on current brush status.
+        If drawing box, clear view first, since we never want to see where boxes
+        have been.
+        '''
         if self.show:
             if self.conv_val != -1:
                 self.view[self.area] = self.conv_val
@@ -953,10 +1063,19 @@ class CalibanBrush:
                 self.view[y1:y2,x1:x2] = 1
 
     def redraw_view(self):
+        '''
+        Clear view before redrawing; used for updating brush view with brush
+        shadow when not using brush to draw.
+        '''
         self.clear_view()
         self.add_to_view()
 
     def draw(self, image):
+        '''
+        Modify input image with brush drawing values in current brush area.
+        If brush does not have drawing enabled, return image before making
+        modifications.
+        '''
         if not self.drawing:
             return image
 
@@ -965,6 +1084,7 @@ class CalibanBrush:
         # version of image where all background pixels have been changed
         mod_image = np.where(image == self.background, self.draw_value, image)
 
+        # only change area part of image
         image[self.area] = mod_image[self.area]
 
         return image
