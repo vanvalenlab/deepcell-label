@@ -211,6 +211,36 @@ class CalibanWindow:
         if self.brush.show:
             self.brush.redraw_view()
 
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        '''
+        Overwrite default pyglet window on_mouse_drag event.
+        Takes x, y, button, modifiers as params (there are what the
+        window sends to this event when it is triggered by mouse drag),
+        but button and modifiers are not used in this custom event. X and y
+        are used to update self.x and self.y (coordinates of mouse within the
+        image; also updated when mouse moves). Mouse drag behavior changes depending
+        on edit mode, mode.kind, and mode.action. Helper functions are used for the
+        different modes of behavior.
+
+        Uses:
+            self.update_mouse_position to update current self.x and self.y from
+                event x and y
+            self.edit_mode, self.mode.kind, self.mode.action, self.brush.show
+                to determine response to mouse drag
+
+        Note: self.brush.show is not a user-toggled option but is used to display
+            the correct preview (threshold box vs path of brush)
+        '''
+        # always update self.x and self.y when mouse has moved
+        self.update_mouse_position(x, y)
+
+        # mouse drag only has special behavior in pixel-editing mode
+        if self.edit_mode:
+            # drawing with brush (normal or conversion)
+            self.brush.add_to_view()
+            # modify annotation
+            self.handle_draw()
+
     def mouse_press_none_helper(self, modifiers, label):
         '''
         Handles mouse presses when not in edit mode and nothing is selected.
@@ -1202,15 +1232,6 @@ class TrackReview(CalibanWindow):
             elif self.mode.kind == "PROMPT" and self.mode.action == "PICK COLOR":
                 self.pick_color()
 
-    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-
-        self.update_mouse_position(x, y)
-
-        if self.edit_mode:
-            #show where brush has drawn this time
-            self.brush.add_to_view()
-            self.handle_draw()
-
     def on_mouse_release(self, x, y, buttons, modifiers):
         if self.edit_mode:
             if self.brush.show:
@@ -1987,37 +2008,6 @@ class ZStackReview(CalibanWindow):
                 self.hole_fill_seed = (self.y, self.x)
                 self.action_fill_hole()
                 self.mode.clear()
-
-    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        '''
-        Overwrite default pyglet window on_mouse_drag event.
-        Takes x, y, button, modifiers as params (there are what the
-        window sends to this event when it is triggered by mouse drag),
-        but button and modifiers are not used in this custom event. X and y
-        are used to update self.x and self.y (coordinates of mouse within the
-        image; also updated when mouse moves). Mouse drag behavior changes depending
-        on edit mode, mode.kind, and mode.action. Helper functions are used for the
-        different modes of behavior.
-
-        Uses:
-            self.update_mouse_position to update current self.x and self.y from
-                event x and y
-            self.edit_mode, self.mode.kind, self.mode.action, self.brush.show
-                to determine response to mouse drag
-
-        Note: self.brush.show is not a user-toggled option but is used to display
-            the correct preview (threshold box vs path of brush)
-        '''
-        # always update self.x and self.y when mouse has moved
-        self.update_mouse_position(x, y)
-
-        # mouse drag only has special behavior in pixel-editing mode
-        if self.edit_mode:
-            # drawing with brush (normal or conversion)
-            self.brush.add_to_view()
-            if self.brush.show:
-                # modify annotation
-                self.handle_draw()
 
     def on_mouse_release(self, x, y, buttons, modifiers):
         '''
