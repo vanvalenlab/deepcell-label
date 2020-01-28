@@ -17,6 +17,7 @@ import tempfile
 import boto3
 import sys
 from werkzeug.utils import secure_filename
+from skimage import filters
 import skimage.morphology
 from skimage.morphology import watershed
 from skimage.morphology import flood_fill, flood
@@ -110,7 +111,7 @@ class ZStackReview:
             frame = np.ma.masked_equal(frame, 0)
             return pngify(imgarr=frame,
                          vmin=0,
-                         vmax=self.num_cells[self.feature],
+                         vmax=np.max(self.cell_ids[self.feature]),
                          cmap=self.color_map)
 
     def get_array(self, frame):
@@ -135,9 +136,11 @@ class ZStackReview:
         elif action_type == "change_feature":
             self.action_change_feature(**info)
 
-        # edit mode action
+        # edit mode actions
         elif action_type == "handle_draw":
             self.action_handle_draw(**info)
+        elif action_type == "threshold":
+            self.action_threshold(**info)
 
         # modified click actions
         elif action_type == "flood_cell":
@@ -184,14 +187,14 @@ class ZStackReview:
         self.feature = feature
         self.frames_changed = True
 
-    def action_handle_draw(self, trace, edit_value, brush_size, erase, frame):
+    def action_handle_draw(self, trace, target_value, brush_value, brush_size, erase, frame):
 
         annotated = np.copy(self.annotated[frame,:,:,self.feature])
 
-        in_original = np.any(np.isin(annotated, edit_value))
+        in_original = np.any(np.isin(annotated, brush_value))
 
-        annotated_draw = np.where(annotated==0, edit_value, annotated)
-        annotated_erase = np.where(annotated==edit_value, 0, annotated)
+        annotated_draw = np.where(annotated==target_value, brush_value, annotated)
+        annotated_erase = np.where(annotated==brush_value, target_value, annotated)
 
         for loc in trace:
             # each element of trace is an array with [y,x] coordinates of array
@@ -206,15 +209,15 @@ class ZStackReview:
             else:
                 annotated[brush_area] = annotated_erase[brush_area]
 
-        in_modified = np.any(np.isin(annotated, edit_value))
+        in_modified = np.any(np.isin(annotated, brush_value))
 
         #cell deletion
         if in_original and not in_modified:
-            self.del_cell_info(feature = self.feature, del_label = edit_value, frame = frame)
+            self.del_cell_info(feature = self.feature, del_label = brush_value, frame = frame)
 
         #cell addition
         elif in_modified and not in_original:
-            self.add_cell_info(feature = self.feature, add_label = edit_value, frame = frame)
+            self.add_cell_info(feature = self.feature, add_label = brush_value, frame = frame)
 
         #check for image change, in case pixels changed but no new or del cell
         comparison = np.where(annotated != self.annotated[frame,:,:,self.feature])
@@ -222,6 +225,38 @@ class ZStackReview:
         #if info changed, self.info_changed set to true with info helper functions
 
         self.annotated[frame,:,:,self.feature] = annotated
+
+    def action_threshold(self, y1, x1, y2, x2, frame, label):
+        '''
+        thresholds the raw image for annotation prediction within user-determined bounding box
+        '''
+        top_edge = min(y1, y2)
+        bottom_edge = max(y1, y2)
+        left_edge = min(x1, x2)
+        right_edge = max(x1, x2)
+
+        # pull out the selection portion of the raw frame
+        predict_area = self.raw[frame, top_edge:bottom_edge, left_edge:right_edge, self.channel]
+
+        # triangle threshold picked after trying a few on one dataset
+        # may not be the best threshold approach for other datasets!
+        # pick two thresholds to use hysteresis thresholding strategy
+        threshold = filters.threshold_triangle(image = predict_area)
+        threshold_stringent = 1.10 * threshold
+
+        # try to keep stray pixels from appearing
+        hyst = filters.apply_hysteresis_threshold(image = predict_area, low = threshold, high = threshold_stringent)
+        ann_threshold = np.where(hyst, label, 0)
+
+        #put prediction in without overwriting
+        predict_area = self.annotated[frame, top_edge:bottom_edge, left_edge:right_edge, self.feature]
+        safe_overlay = np.where(predict_area == 0, ann_threshold, predict_area)
+
+        self.annotated[frame,top_edge:bottom_edge,left_edge:right_edge,self.feature] = safe_overlay
+
+        # don't need to update cell_info unless an annotation has been added
+        if np.any(np.isin(self.annotated[frame,:,:,self.feature], label)):
+            self.add_cell_info(feature=self.feature, add_label=label, frame = frame)
 
     def action_flood_contiguous(self, label, frame, x_location, y_location):
         '''
@@ -1224,10 +1259,14 @@ def load_npz(filename):
     data = BytesIO(filename)
     npz = np.load(data)
 
-    try:
+    if 'y' in npz.files:
+        raw_stack = npz['X']
+        annotation_stack = npz['y']
+
+    elif 'raw' in npz.files:
         raw_stack = npz['raw']
         annotation_stack = npz['annotated']
-    except:
+    else:
         raw_stack = npz[npz.files[0]]
         annotation_stack = npz[npz.files[1]]
 
