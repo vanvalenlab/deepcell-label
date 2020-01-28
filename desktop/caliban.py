@@ -241,6 +241,58 @@ class CalibanWindow:
             # modify annotation
             self.handle_draw()
 
+    def on_mouse_press(self, x, y, button, modifiers):
+        '''
+        Overwrite pyglet default window on_mouse_press event.
+        Takes x, y, button, modifiers as params (there are what the
+        window sends to this event when it is triggered by mouse press),
+        but x, y, and button are not used in this custom event.
+        Mouse press behavior changes depending on edit mode, mode.kind,
+        and mode.action. Helper functions are used for the different modes
+        of behavior. self.x and self.y are used for mouse position and are
+        updated when the mouse moves.
+
+        Uses:
+            self.edit_mode, self.mode.kind, self.mode.action to determine
+                what the response to mouse press should be
+            self.annotated, self.current_frame, self.y, self.x, self.feature
+                to determine which label was clicked on
+            helper functions to handle specific cases
+            self.predict_seed to set corner of thresholding box
+        '''
+
+        if not self.edit_mode:
+            label = self.get_label()
+            if self.mode.kind is None:
+                self.mouse_press_none_helper(modifiers, label)
+            elif self.mode.kind == "SELECTED":
+                self.mouse_press_selected_helper(label)
+            elif self.mode.kind == "PROMPT":
+                self.mouse_press_prompt_helper(label)
+
+        elif self.edit_mode:
+            # draw using brush
+            if self.mode.kind is None:
+                self.handle_draw()
+            elif self.mode.kind is not None:
+                # conversion brush
+                if self.mode.kind == "DRAW":
+                    self.handle_draw()
+
+                # color pick tool
+                elif self.mode.kind == "PROMPT" and self.mode.action == "PICK COLOR":
+                    self.pick_color()
+
+                # color picking for conversion brush
+                elif self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH TARGET":
+                    self.pick_conv_target()
+                elif self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH VALUE":
+                    self.pick_conv_value()
+
+                # start drawing bounding box for threshold prediction
+                elif self.mode.kind == "PROMPT" and self.mode.action == "DRAW BOX":
+                    self.brush.set_box_corner(self.y, self.x)
+
     def on_mouse_release(self, x, y, buttons, modifiers):
         '''
         Overwrite pyglet default window on_mouse_release event.
@@ -1264,60 +1316,8 @@ class TrackReview(CalibanWindow):
             print("Actions will not be supported.")
             return
 
-        if not self.edit_mode:
-            label = self.get_label()
-            if self.mode.kind is None:
-                if label != 0:
-                    self.mouse_press_none_helper(modifiers, label)
-            elif self.mode.kind == "SELECTED":
-                if label != 0:
-                    self.highlighted_cell_one = self.mode.label
-                    self.highlighted_cell_two = label
-                    self.mode.update("MULTIPLE",
-                                     label_1=self.mode.label,
-                                     frame_1=self.mode.frame,
-                                     y1_location = self.mode.y_location,
-                                     x1_location = self.mode.x_location,
-                                     label_2=label,
-                                     frame_2=self.current_frame,
-                                     y2_location = self.y,
-                                     x2_location = self.x)
-                #deselect cells if click on background
-                else:
-                    self.mode.clear()
-                    self.highlighted_cell_one = -1
-                    self.highlighted_cell_two = -1
-            #if already have two cells selected, click again to reselect the second cell
-            elif self.mode.kind == "MULTIPLE":
-                if label != 0:
-                    self.highlighted_cell_two = label
-                    self.mode.update("MULTIPLE",
-                                     label_1=self.mode.label_1,
-                                     frame_1=self.mode.frame_1,
-                                     y1_location = self.mode.y1_location,
-                                     x1_location = self.mode.x1_location,
-                                     label_2=label,
-                                     frame_2=self.current_frame,
-                                     y2_location = self.y,
-                                     x2_location = self.x)
-                #deselect cells if click on background
-                else:
-                    self.mode.clear()
-                    self.highlighted_cell_one = -1
-                    self.highlighted_cell_two = -1
-            elif self.mode.kind == "PROMPT" and self.mode.action == "FILL HOLE":
-                if label == 0:
-                    self.hole_fill_seed = (self.y, self.x)
-                if self.hole_fill_seed is not None:
-                    self.action_fill_hole()
-                    self.mode.clear()
-
-        elif self.edit_mode:
-            if self.mode.kind is None:
-                self.handle_draw()
-
-            elif self.mode.kind == "PROMPT" and self.mode.action == "PICK COLOR":
-                self.pick_color()
+        else:
+            super().on_mouse_press(x, y, button, modifiers)
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self.draw_raw:
@@ -1988,58 +1988,6 @@ class ZStackReview(CalibanWindow):
         if self.mode.kind == "QUESTION":
             if self.mode.action == "SAVE":
                 self.mode.text = ZStackReview.save_prompt_text
-
-    def on_mouse_press(self, x, y, button, modifiers):
-        '''
-        Overwrite pyglet default window on_mouse_press event.
-        Takes x, y, button, modifiers as params (there are what the
-        window sends to this event when it is triggered by mouse press),
-        but x, y, and button are not used in this custom event.
-        Mouse press behavior changes depending on edit mode, mode.kind,
-        and mode.action. Helper functions are used for the different modes
-        of behavior. self.x and self.y are used for mouse position and are
-        updated when the mouse moves.
-
-        Uses:
-            self.edit_mode, self.mode.kind, self.mode.action to determine
-                what the response to mouse press should be
-            self.annotated, self.current_frame, self.y, self.x, self.feature
-                to determine which label was clicked on
-            helper functions to handle specific cases
-            self.predict_seed to set corner of thresholding box
-        '''
-
-        if not self.edit_mode:
-            label = self.get_label()
-            if self.mode.kind is None:
-                self.mouse_press_none_helper(modifiers, label)
-            elif self.mode.kind == "SELECTED":
-                self.mouse_press_selected_helper(label)
-            elif self.mode.kind == "PROMPT":
-                self.mouse_press_prompt_helper(label)
-
-        elif self.edit_mode:
-            # draw using brush
-            if self.mode.kind is None:
-                self.handle_draw()
-            elif self.mode.kind is not None:
-                # conversion brush
-                if self.mode.kind == "DRAW":
-                    self.handle_draw()
-
-                # color pick tool
-                elif self.mode.kind == "PROMPT" and self.mode.action == "PICK COLOR":
-                    self.pick_color()
-
-                # color picking for conversion brush
-                elif self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH TARGET":
-                    self.pick_conv_target()
-                elif self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH VALUE":
-                    self.pick_conv_value()
-
-                # start drawing bounding box for threshold prediction
-                elif self.mode.kind == "PROMPT" and self.mode.action == "DRAW BOX":
-                    self.brush.set_box_corner(self.y, self.x)
 
     def handle_threshold(self):
         '''
