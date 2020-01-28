@@ -241,6 +241,44 @@ class CalibanWindow:
             # modify annotation
             self.handle_draw()
 
+    def on_mouse_release(self, x, y, buttons, modifiers):
+        '''
+        Overwrite pyglet default window on_mouse_release event.
+        Takes x, y, button, modifiers as params (there are what the
+        window sends to this event when it is triggered by mouse press),
+        but x, y, button, and modifiers are not used in this custom event.
+        Mouse release only triggers special behavior while in pixel-editing
+        mode; mode.action and self.brush.show are used to determine which
+        actions to carry out (threholding, updating brush preview appropriately).
+        Helper functions are called for some complex updates.
+
+        Uses:
+            self.edit_mode, self.brush.show, self.mode.action, self.hide_annotations
+                to determine which updates need to be carried out upon mouse release
+                (if any)
+            self.handle_threshold_helper finalizes thresholding bbox, carries out
+                thresholding, and does necessary bookkeeping
+            self.update_brushview_helper to clear brush trace and update with current
+                brush view
+            self.helper_update_composite to update the edit_mode display with whatever
+                changes were applied to the annotation during mouse drag (brush) or as
+                a result of mouse release (thresholding)
+        '''
+        # mouse release only has special behavior in pixel-editing mode; most custom
+        # behavior during a mouse click is handled in the mouse press event
+        if self.edit_mode:
+            # releasing the mouse finalizes bounding box for thresholding
+            if not self.brush.show and self.mode.action == "DRAW BOX":
+                self.handle_threshold()
+                # self.brush.show reset to True here, so brush preview will render
+
+            # update brush view (prevents brush flickering)
+            self.brush.redraw_view()
+            # annotation has changed (either during mouse drag for brush, or upon release
+            # for threshold), update the image composite with the current annotation
+            if not self.hide_annotations:
+                self.helper_update_composite()
+
     def mouse_press_none_helper(self, modifiers, label):
         '''
         Handles mouse presses when not in edit mode and nothing is selected.
@@ -1232,12 +1270,6 @@ class TrackReview(CalibanWindow):
             elif self.mode.kind == "PROMPT" and self.mode.action == "PICK COLOR":
                 self.pick_color()
 
-    def on_mouse_release(self, x, y, buttons, modifiers):
-        if self.edit_mode:
-            if self.brush.show:
-                self.brush.redraw_view()
-            self.helper_update_composite()
-
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self.draw_raw:
             if self.max_intensity == None:
@@ -2008,44 +2040,6 @@ class ZStackReview(CalibanWindow):
                 self.hole_fill_seed = (self.y, self.x)
                 self.action_fill_hole()
                 self.mode.clear()
-
-    def on_mouse_release(self, x, y, buttons, modifiers):
-        '''
-        Overwrite pyglet default window on_mouse_release event.
-        Takes x, y, button, modifiers as params (there are what the
-        window sends to this event when it is triggered by mouse press),
-        but x, y, button, and modifiers are not used in this custom event.
-        Mouse release only triggers special behavior while in pixel-editing
-        mode; mode.action and self.brush.show are used to determine which
-        actions to carry out (threholding, updating brush preview appropriately).
-        Helper functions are called for some complex updates.
-
-        Uses:
-            self.edit_mode, self.brush.show, self.mode.action, self.hide_annotations
-                to determine which updates need to be carried out upon mouse release
-                (if any)
-            self.handle_threshold_helper finalizes thresholding bbox, carries out
-                thresholding, and does necessary bookkeeping
-            self.update_brushview_helper to clear brush trace and update with current
-                brush view
-            self.helper_update_composite to update the edit_mode display with whatever
-                changes were applied to the annotation during mouse drag (brush) or as
-                a result of mouse release (thresholding)
-        '''
-        # mouse release only has special behavior in pixel-editing mode; most custom
-        # behavior during a mouse click is handled in the mouse press event
-        if self.edit_mode:
-            # releasing the mouse finalizes bounding box for thresholding
-            if not self.brush.show and self.mode.action == "DRAW BOX":
-                self.handle_threshold()
-                # self.brush.show reset to True here, so brush preview will render
-
-            # update brush view (prevents brush flickering)
-            self.brush.redraw_view()
-            # annotation has changed (either during mouse drag for brush, or upon release
-            # for threshold), update the image composite with the current annotation
-            if not self.hide_annotations:
-                self.helper_update_composite()
 
     def handle_threshold(self):
         '''
