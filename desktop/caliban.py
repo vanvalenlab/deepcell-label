@@ -313,6 +313,55 @@ class CalibanWindow:
                                  y_location=self.y, x_location=self.x)
             self.highlighted_cell_one = label
 
+    def mouse_press_selected_helper(self, label):
+        '''
+        Handles mouse presses when not in edit mode and when one label has already
+        been selected. Modifies self.mode to include info about both labels that have
+        been selected.
+
+        Uses:
+            label from click location (determined in on_mouse_press)
+            self.mode to store info about both selected labels
+            self.highlighted_cell_one and self.highlighted_cell_two to update
+                highlights appropriately; update cell_one because user could have
+                changed highlight with cycling after selecting first label
+                (note: this should change soon so that cycling the highlight deselects
+                whatever label is selected, as in browser caliban)
+        '''
+        if label != 0:
+            self.mode.update("MULTIPLE",
+                             label_1=self.mode.label,
+                             frame_1=self.mode.frame,
+                             y1_location = self.mode.y_location,
+                             x1_location = self.mode.x_location,
+                             label_2=label,
+                             frame_2=self.current_frame,
+                             y2_location = self.y,
+                             x2_location = self.x)
+            self.highlighted_cell_one = self.mode.label_1
+            self.highlighted_cell_two = label
+
+    def mouse_press_prompt_helper(self, label):
+        '''
+        Handles mouse presses when not in edit mode and in response to a
+        prompt (currently, hole fill is the only action with this pattern).
+        Only fills hole if user has clicked on an empty/background pixel (label is 0).
+        If appropriate pixel is clicked on, action_fill_hole is called before
+        resetting the hole_fill_seed and self.mode.
+
+        Uses:
+            self.mode.action to determine what response to mouse press should be
+            label from click location (determined in on_mouse_press) to check if
+                action should be carried out
+            self.hole_fill_seed to store start point for action_fill_hole
+            self.mode to clear action info once action has finished
+        '''
+        if self.mode.action == "FILL HOLE":
+            if label == 0:
+                self.hole_fill_seed = (self.y, self.x)
+                self.action_fill_hole()
+                self.mode.clear()
+
     def pick_color(self):
         '''
         Takes the label clicked on, sets self.brush.edit_val to that label, and then
@@ -1991,55 +2040,6 @@ class ZStackReview(CalibanWindow):
                 # start drawing bounding box for threshold prediction
                 elif self.mode.kind == "PROMPT" and self.mode.action == "DRAW BOX":
                     self.brush.set_box_corner(self.y, self.x)
-
-    def mouse_press_selected_helper(self, label):
-        '''
-        Handles mouse presses when not in edit mode and when one label has already
-        been selected. Modifies self.mode to include info about both labels that have
-        been selected.
-
-        Uses:
-            label from click location (determined in on_mouse_press)
-            self.mode to store info about both selected labels
-            self.highlighted_cell_one and self.highlighted_cell_two to update
-                highlights appropriately; update cell_one because user could have
-                changed highlight with cycling after selecting first label
-                (note: this should change soon so that cycling the highlight deselects
-                whatever label is selected, as in browser caliban)
-        '''
-        if label != 0:
-            self.mode.update("MULTIPLE",
-                             label_1=self.mode.label,
-                             frame_1=self.mode.frame,
-                             y1_location = self.mode.y_location,
-                             x1_location = self.mode.x_location,
-                             label_2=label,
-                             frame_2=self.current_frame,
-                             y2_location = self.y,
-                             x2_location = self.x)
-            self.highlighted_cell_one = self.mode.label_1
-            self.highlighted_cell_two = label
-
-    def mouse_press_prompt_helper(self, label):
-        '''
-        Handles mouse presses when not in edit mode and in response to a
-        prompt (currently, hole fill is the only action with this pattern).
-        Only fills hole if user has clicked on an empty/background pixel (label is 0).
-        If appropriate pixel is clicked on, action_fill_hole is called before
-        resetting the hole_fill_seed and self.mode.
-
-        Uses:
-            self.mode.action to determine what response to mouse press should be
-            label from click location (determined in on_mouse_press) to check if
-                action should be carried out
-            self.hole_fill_seed to store start point for action_fill_hole
-            self.mode to clear action info once action has finished
-        '''
-        if self.mode.action == "FILL HOLE":
-            if label == 0:
-                self.hole_fill_seed = (self.y, self.x)
-                self.action_fill_hole()
-                self.mode.clear()
 
     def handle_threshold(self):
         '''
