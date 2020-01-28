@@ -56,6 +56,37 @@ display = platform.get_default_display()
 USER_SCREEN = display.get_default_screen()
 
 class CalibanWindow:
+    '''
+    Pyglet window and associated functions for displaying images in the window.
+    For now, also contains some other methods as a first pass at splitting out
+    functionality from its child classes (TrackReview and ZStackReview), namely
+    for label generation and responses to mouse input.
+
+    This parent class does not contain any methods for using keybinds or
+    applying actions to data.
+
+    To work correctly, child classes must provide their own methods for:
+    get_raw_current_frame
+    get_ann_current_frame
+    get_label
+    get_max_label
+    handle_draw
+    handle_threshold
+    create_frame_text
+    get_label_info
+
+    And must contain attributes:
+    brush (CalibanBrush)
+    mode (Mode)
+    highlight (bool)
+    highlighted_cell_one (int)
+    highlighted_cell_two (int)
+    current_frame (int)
+    hole_fill_seed (tuple of ints (y,x))
+    current_cmap (string for valid matplotlib cmap)
+    adjustment (int)
+    max_intensity (float)
+    '''
     # blank area to the left of displayed image where text info is displayed
     sidebar_width = 300
 
@@ -73,7 +104,11 @@ class CalibanWindow:
     window.set_mouse_cursor(cursor)
 
     def __init__(self):
-
+        '''
+        Initialize CalibanWindow by binding events to window and setting display
+        attributes (eg, raw image adjustment toggles, colormap for creating overlaid
+        labels, scale factor, which view to display, and an empty composite_view).
+        '''
         # how much to scale image by (start with no scaling, but can expand to
         # fill window when window changes size)
         self.scale_factor = 1
@@ -176,6 +211,7 @@ class CalibanWindow:
                 image
             self.width and self.height to check whether mouse cursor is in area of image
                 (self.x and self.y will not update if mouse has moved outside of image)
+            self.brush to update where the center of the brush is
         '''
         # convert event x to image x by accounting for sidebar width, then scale
         x -= (self.sidebar_width + self.image_padding)
@@ -225,11 +261,11 @@ class CalibanWindow:
         Uses:
             self.update_mouse_position to update current self.x and self.y from
                 event x and y
-            self.edit_mode, self.mode.kind, self.mode.action, self.brush.show
-                to determine response to mouse drag
-
-        Note: self.brush.show is not a user-toggled option but is used to display
-            the correct preview (threshold box vs path of brush)
+            self.edit_mode to determine response to mouse drag; if in pixel-editing mode,
+                CalibanBrush add_to_view method handles appropriate display updating based
+                on context
+            self.handle_draw (must be defined in child class) to modify labels and update
+                label information as needed
         '''
         # always update self.x and self.y when mouse has moved
         self.update_mouse_position(x, y)
@@ -248,17 +284,22 @@ class CalibanWindow:
         window sends to this event when it is triggered by mouse press),
         but x, y, and button are not used in this custom event.
         Mouse press behavior changes depending on edit mode, mode.kind,
-        and mode.action. Helper functions are used for the different modes
-        of behavior. self.x and self.y are used for mouse position and are
-        updated when the mouse moves.
+        and mode.action. Helper methods are used for different behavior options.
+        self.x and self.y are used for mouse position and are updated when the
+        mouse moves.
 
         Uses:
             self.edit_mode, self.mode.kind, self.mode.action to determine
                 what the response to mouse press should be
-            self.annotated, self.current_frame, self.y, self.x, self.feature
-                to determine which label was clicked on
-            helper functions to handle specific cases
-            self.predict_seed to set corner of thresholding box
+            self.get_label (must be provided by child class) to determine which
+                label was clicked on (or the background)
+            self.mouse_press helper methods (included in this class) for updating mode
+                and/or triggering actions appropriately
+            self.handle_draw (must be provided by child class) to handle pixel-editing
+                changes to labels
+            self.pick_color, self.pick_conv_target, and self.pick_conv_value for
+                appropriately updating brush attributes
+            self.brush.set_box_corner for starting to draw a thresholding box
         '''
 
         if not self.edit_mode:
@@ -296,7 +337,7 @@ class CalibanWindow:
     def on_mouse_release(self, x, y, buttons, modifiers):
         '''
         Overwrite pyglet default window on_mouse_release event.
-        Takes x, y, button, modifiers as params (there are what the
+        Takes x, y, button, modifiers as params (these are what the
         window sends to this event when it is triggered by mouse press),
         but x, y, button, and modifiers are not used in this custom event.
         Mouse release only triggers special behavior while in pixel-editing
@@ -308,9 +349,9 @@ class CalibanWindow:
             self.edit_mode, self.brush.show, self.mode.action, self.hide_annotations
                 to determine which updates need to be carried out upon mouse release
                 (if any)
-            self.handle_threshold_helper finalizes thresholding bbox, carries out
-                thresholding, and does necessary bookkeeping
-            self.update_brushview_helper to clear brush trace and update with current
+            self.handle_threshold (must be provided by child class) finalizes
+                thresholding bbox, carries out thresholding, and does necessary bookkeeping
+            self.brush.redraw_view to clear brush trace or bbox and update with current
                 brush view
             self.helper_update_composite to update the edit_mode display with whatever
                 changes were applied to the annotation during mouse drag (brush) or as
@@ -378,7 +419,8 @@ class CalibanWindow:
                 highlights appropriately; update cell_one because user could have
                 changed highlight with cycling after selecting first label
                 (note: this should change soon so that cycling the highlight deselects
-                whatever label is selected, as in browser caliban)
+                whatever label is selected, as in browser caliban; ZStackReview has
+                deselection upon highlight cycling but TrackReview does not)
         '''
         if label != 0:
             self.mode.update("MULTIPLE",
@@ -421,10 +463,10 @@ class CalibanWindow:
         but still exits color-picking mode.
 
         Uses:
-            self.annotated, self.current_frame, self.y, self.x, and self.feature
-                to determine which label was clicked on
-            self.brush.edit_val (modifies stored value)
-            self.mode (resets to Mode.none())
+            self.get_label (must be provided by child class) to determine which
+                label was clicked on
+            self.brush.set_edit_val (modifies stored value)
+            self.mode.clear to exit color picking
         '''
         # which label was clicked on
         label = self.get_label()
@@ -441,10 +483,10 @@ class CalibanWindow:
         step in setting conversion brush.
 
         Uses:
-            self.annotated, self.current_frame, self.y, self.x, and self.feature
-                to determine which label was clicked on
-            self.brush.conv_target to store clicked value
-            self.mode to move to next step of conversion brush setting
+            self.get_label (must be provided by child class) to determine which
+                label was clicked on
+            self.brush.set_conv_target to store clicked value
+            self.mode.update to move to next step of conversion brush setting
         '''
         # which label was clicked on
         label = self.get_label()
@@ -459,13 +501,15 @@ class CalibanWindow:
         (label that will be drawn by the conversion brush). Nothing happens
         if background is clicked on (remain in conversion brush value-picking mode,
         as with conversion brush target-picking). After label is picked, conversion
-        brush is set and will be in use.
+        brush is set and will be in use. Note: setting conversion brush values in
+        mode.update is not necessary for drawing, but allows those values to be
+        displayed in mode prompt as a reminder to user.
 
         Uses:
-            self.annotated, self.current_frame, self.y, self.x, and self.feature
-                to determine which label was clicked on
-            self.brush.conv_val to store clicked value
-            self.mode to enter use of conversion brush
+            self.get_label (must be provided by child class) to determine which
+                label was clicked on
+            self.brush.set_conv_val to store clicked value
+            self.mode.update to enter use of conversion brush
         '''
         # which label was clicked on
         label = self.get_label()
@@ -502,23 +546,21 @@ class CalibanWindow:
         Uses:
             self.scale_factor, self.width, self.height to calculate area of
                 window where image is being displayed
-            self.sidebar_width to offset lines appropriately
+            self.sidebar_width, self.image_padding to offset lines appropriately
         '''
-        # TODO: need box to be 1 pixel removed from each edge because drawing it at
-        # these exact height slightly obscures the image itself--less of a problem
-        # at larger scales, more of a problem at scale_factor = 1 or 2
-
         frame_width = self.scale_factor * self.width
         frame_height = self.scale_factor * self.height
 
         pad = self.image_padding
 
+        # determine where edges of image are
         top = frame_height + pad
         bottom = pad
         left = self.sidebar_width + pad
         right = self.sidebar_width + frame_width + pad
 
-        # interior part of border
+        # draw lines around image, but space a pixel away in some places
+        # (prevent obscuring actual image)
         pyglet.graphics.draw(8, pyglet.gl.GL_LINES,
             ("v2f", (left, top,
                      left, bottom-1,
@@ -531,6 +573,15 @@ class CalibanWindow:
         )
 
     def draw_current_frame(self):
+        '''
+        Method called during on_draw to coordinate which method should be used
+        to display current image.
+
+        Uses:
+            self.edit_mode, self.draw_raw to determine which view to show
+            self.draw_pixel_edit_frame, self.draw_ann_frame, self.draw_raw_frame
+                to display appropriate data
+        '''
         if self.edit_mode:
             self.draw_pixel_edit_frame()
         else:
@@ -540,6 +591,20 @@ class CalibanWindow:
                 self.draw_ann_frame()
 
     def draw_raw_frame(self):
+        '''
+        Displays raw image with any image adjustments and currently selected
+        colormap.
+
+        Uses:
+            self.get_raw_current_frame (must be provided by child class) to get
+                the appropriate slice of raw array data
+            self.apply_raw_image_adjustments (provided) and self.current_cmap
+                (must be provided by child class) to create an appropriately-adjusted
+                RGB array for displaying the data
+            self.array_to_img to create a pyglet Image object from the RGB array
+            self.draw_pyglet_image to display pyglet Image on screen in correct
+                location with scaling
+        '''
         raw_array = self.get_raw_current_frame()
         adjusted_raw = self.apply_raw_image_adjustments(raw_array, cmap = self.current_cmap)
         image = self.array_to_img(input_array = adjusted_raw,
@@ -550,6 +615,21 @@ class CalibanWindow:
         self.draw_pyglet_image(image)
 
     def draw_ann_frame(self):
+        '''
+        Displays annotations in cubehelix colormap with highlights applied in red.
+
+        Uses:
+            self.get_ann_current_frame (must be provided by child class) to get
+                the appropriate slice of label data
+            self.highlight (must be provided by child class) to determine if array
+                should be masked to show highlighted label(s)
+            self.apply_label_highlight to mask array at highlighted label values
+            self.array_to_img (provided), self.get_max_label and self.adjustment
+                (must be provided by child class) to create a pyglet Image object
+                from the array, with an appropriate range of colors
+            self.draw_pyglet_image to display pyglet Image on screen in correct
+                location with scaling
+        '''
         ann_array = self.get_ann_current_frame()
 
         # annotations use cubehelix cmap with highlighting in red
@@ -574,8 +654,9 @@ class CalibanWindow:
         (brush preview can display brush or thresholding). If drawing the image
         with annotations hidden, applies filters/adjustments to raw image and uses
         that, otherwise uses self.composite_view (generated and updated elsewhere)
-        to show annotations overlaid on the adjusted raw image. Image is then scaled
-        by self.scale_factor and drawn in window.
+        to show annotations overlaid on the adjusted raw image. Requires child
+        class to have methods for get_max_label and get_raw_current_frame, and
+        adjustment attribute.
         '''
         # create pyglet image object so we can display brush location
         brush_img = self.array_to_img(input_array = self.brush.view,
@@ -611,6 +692,17 @@ class CalibanWindow:
         self.draw_pyglet_image(brush_img, opacity = 128)
 
     def draw_pyglet_image(self, image, opacity = 255):
+        '''
+        Takes a pyglet Image object, turns it into a sprite, and draws the sprite.
+        Creating a sprite makes it easy for pyglet to anchor the image in the
+        correct place, apply the scale factor for both x and y, and set the opacity
+        of the drawn image (default is fully opaque).
+
+        Uses:
+            self.image_padding and self.sidebar_width to set correct anchor point
+                for image corner
+            self.scale_factor to scale both x and y for image display
+        '''
         # TODO: add sprite to batch?
         pad = self.image_padding
 
@@ -700,6 +792,7 @@ class CalibanWindow:
         pixel-editing mode. Input is unadjusted raw image, with object
         attributes to determine which filters and adjustments to apply. Can
         accept cmap as input, default value of 'gray' (used for composite images).
+        Requires child class to have max_intensity attribute.
 
         Returns adjusted image as RGB array.
         '''
@@ -767,16 +860,19 @@ class CalibanWindow:
         self.annotated when needed. self.composite_view is the image drawn
         in edit mode, but does not need to be recalculated each time the image
         refreshes (on_draw is triggered after every event, including mouse motion).
-        Takes self.raw and self.annotated, adjusts the images, overlays them,
+        Takes data from self.raw and self.annotated, adjusts the images, overlays them,
         and then stores the generated composite image at self.composite_view.
 
         Uses:
-            self.raw, self.channel, self.annotated, self.feature, self.current_frame
-                to get arrays to start with
-            self.sobel, self.adapthist_on, self.invert are raw image filtering options
-            self.max_intensity as vmax for raw image (unless histogram equalized)
-            self.array_to_img and self.make_composite_img to abstract
-                away tedious processing steps
+            self.get_raw_current_frame and self.get_ann_current_frame (must be
+                provided by child class) to get appropriate slices of arrays
+            self.apply_raw_image_adjustments to apply raw image filtering options
+                (returns an RGB array)
+            self.array_to_img to create RGB array from label image (requires child
+                class to provide get_max_label method and adjustment, overlay_cmap
+                attributes)
+            self.make_composite_img to overlay annotation RGB image on top of
+                adjusted raw image
         '''
         # get images to modify and overlay
         current_raw = self.get_raw_current_frame()
@@ -812,9 +908,9 @@ class CalibanWindow:
     def draw_persistent_info(self):
         '''
         Display information about the frame currently being viewed.
-        Always displays information; highlight info is only info
-        conditionally displayed by this label. This info is displayed
-        at top of info column.
+        Always displays information, although brush settings are displayed
+        only when in pixel-editing mode. This info is displayed at top of info
+        column. Child class must provide create_frame_text method.
         '''
         if self.edit_mode:
             edit_mode = "pixels"
@@ -851,7 +947,8 @@ class CalibanWindow:
     def draw_cell_info_label(self):
         '''
         When cursor is over a label, displays information about that label
-        at the bottom of the information column.
+        at the bottom of the information column. Also displays mode text
+        (selections, prompts).
         '''
         text = self.create_label_info_text()
 
@@ -871,6 +968,8 @@ class CalibanWindow:
 
     def create_disp_image_text(self):
         '''
+        Method to create string to tell viewer which viewing mode is in use.
+        Default options are raw, labels, and overlay. Used in draw_persistent_info.
         '''
         display_text = "Displayed image: "
 
@@ -891,8 +990,9 @@ class CalibanWindow:
 
     def create_highlight_text(self):
         '''
-        Generate text describing current highlighting status.
-        Added to info on side of screen.
+        Generate text describing current highlighting status. Requires child
+        class to have highlighted_cell_one and highlighted_cell_two attributes.
+        Added to info on side of screen (via draw_persistent_info).
         '''
         if self.edit_mode:
             highlight_text = "Highlighting: -\nHighlighted cell(s): None\n"
@@ -913,14 +1013,14 @@ class CalibanWindow:
 
     def create_cmap_text(self):
         '''
-        Generate text describing the current colormap being used.
-        Added to info display on side of screen.
+        Generate text describing the current colormap being used. Added to info
+        display on side of screen (via draw_persistent_info). Requires that child
+        class have attribute current_cmap.
         '''
         cmap = ""
         if self.edit_mode:
             if self.hide_annotations:
-                # TODO: replace with actual gray cmap name
-                cmap = "Gray"
+                cmap = "gray"
             else:
                 cmap = "{}/gray".format(self.overlay_cmap)
         else:
@@ -933,6 +1033,9 @@ class CalibanWindow:
 
     def create_filter_text(self):
         '''
+        Method to create string to tell viewer which image adjustments are
+        currently being applied to the raw image. (Displays in both raw and
+        pixel-editing display modes.) Used in draw_persistent_info.
         '''
         filter_text = ("\nSobel filter - {}".format(on_or_off(self.sobel_on))
                     + "\nColor inversion - {}".format(on_or_off(self.invert))
@@ -941,6 +1044,12 @@ class CalibanWindow:
         return filter_text
 
     def create_brush_text(self):
+        '''
+        Generate string to display relevant information about brush settings.
+        Only appears on screen while in pixel-editing mode. Uses brush attributes
+        as well as mode.kind to determine which attributes should be displayed.
+        Displayed as part of draw_persistent_info.
+        '''
         if self.edit_mode:
             size_text = "Brush size: "
             if self.brush.show:
@@ -965,6 +1074,14 @@ class CalibanWindow:
         return brush_info_text
 
     def create_label_info_text(self):
+        '''
+        Creates label-specific text to display as part of draw_cell_info_label.
+        Depends on current location of cursor (displays info about whichever label
+        is currently under the mouse cursor). Requires child class to have a
+        get_label method. Requires child class to have a get_label_info method
+        that takes in an integer label and returns a dictionary of information
+        to be displayed.
+        '''
         label = self.get_label()
         if label != 0:
             # generate text from cell_info and display_info (use slices instead of frames)
