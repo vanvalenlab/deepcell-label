@@ -39,9 +39,9 @@ class Mode:
                 ", ".join("{}={}".format(k, v) for k, v in self.info.items()) + ")")
 
     def render(self):
-        if self.kind is None:
-            return ''
-        answer = "(SPACE=YES / ESC=NO)"
+
+        text = ""
+        answer = "SPACE = CONFIRM\nESC = CANCEL"
 
         try:
             filetype = self.info['filetype']
@@ -49,65 +49,108 @@ class Mode:
             filetype = ""
 
         if self.kind == "SELECTED":
-            return "\nSELECTED {}".format(self.label)
+            text = "\nSELECTED {}".format(self.label)
+
         elif self.kind == "MULTIPLE":
-            return "\nSELECTED {}, {}".format(self.label_1, self.label_2)
+            text = "\nSELECTED {}, {}".format(self.label_1, self.label_2)
+
         elif self.kind == "QUESTION":
             if self.action == "SAVE":
                 if filetype == "npz":
-                    return ("\nSave current movie?\nSPACE=SAVE\nT=SAVE AS .TRK FILE\nESC=CANCEL")
+                    text = ("\nSave current movie?"
+                        "\nSPACE = SAVE"
+                        "\nT = SAVE AS .TRK FILE"
+                        "\nESC = CANCEL")
                 else:
-                    return ("\nSave current movie?\nSPACE=SAVE\nESC=CANCEL")
+                    text = ("\nSave current movie?"
+                        "\nSPACE = SAVE"
+                        "\nESC = CANCEL")
+
             elif self.action == "REPLACE":
-                return ("\nreplace {} with {}?\n {}".format(self.label_2, self.label_1,
-                 '\nSPACE = REPLACE IN ALL FRAMES\nS = REPLACE IN THIS FRAME ONLY\nESC = CANCEL REPLACE'))
+                text = ("\nReplace {} with {}?"
+                    "\nSPACE = REPLACE IN ALL FRAMES"
+                     "\nS = REPLACE IN FRAME {} ONLY"
+                     "\nESC = CANCEL").format(self.label_2, self.label_1, self.frame_2)
+
             elif self.action == "SWAP":
-                return ("\nswap {} & {}?\n{}".format(self.label_2, self.label_1,
-                '\nSPACE = SWAP IN ALL FRAMES\nS = SWAP IN THIS FRAME ONLY\nESC = CANCEL SWAP'))
+                if self.frame_1 == self.frame_2:
+                    text = ("\nSwap {} & {}?"
+                        "\nSPACE = SWAP IN ALL FRAMES"
+                        "\nS = SWAP IN FRAME {} ONLY"
+                        "\nESC = CANCEL").format(self.label_2, self.label_1, self.frame_2)
+                else:
+                    text = ("\nSwap {} & {}?"
+                        "\nSPACE = SWAP IN ALL FRAMES"
+                        "\nESC = CANCEL").format(self.label_2, self.label_1)
+
             elif self.action == "PARENT":
-                return ("\nmake {} a daughter of {}?\n {}".format(self.label_2, self.label_1, answer))
+                text = "\nMake {} a daughter of {}?\n{}".format(self.label_2, self.label_1, answer)
+
             elif self.action == "NEW TRACK":
-                return ("\ncreate new track from {} on frame {}?".format(self.label, self.frame) +
-                    "\n {}".format("(S=SINGLE FRAME / SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)"))
+                text = ("\nCreate new track from {0} in frame {1}?"
+                    "\nSPACE = CREATE IN FRAME {1} AND ALL SUBSEQUENT FRAMES"
+                    "\nS = CREATE IN FRAME {1} ONLY"
+                    "\nESC = CANCEL").format(self.label, self.frame)
+
             elif self.action == "CREATE NEW":
-                return ("".format(self.label, self.frame)
-                        + "\n {}".format("(S=SINGLE FRAME / SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)"))
+                text = ("\nCreate new label from {0} in frame {1}?"
+                    "\nSPACE = CREATE IN FRAME {1} AND ALL SUBSEQUENT FRAMES"
+                    "\nS = CREATE IN FRAME {1} ONLY"
+                    "\nESC = CANCEL").format(self.label, self.frame)
+
             elif self.action == "FLOOD CELL":
-                return('\nSPACE = FLOOD SELECTED CELL WITH NEW LABEL\nESC = CANCEL')
+                text = ("\nFlood selected region of {} with new label in frame {}?"
+                    "\n{}").format(self.label, self.frame, answer)
+
             elif self.action == "TRIM PIXELS":
-                return('\nSPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL\nESC = CANCEL')
+                text = ("\nTrim unconnected pixels away from selected region of label {} in frame {}?"
+                    "\n{}").format(self.label, self.frame, answer)
+
             elif self.action == "DELETE":
-                return ('\nDelete label {} in frame {}?\n{}'.format(self.label, self.frame,
-                "SPACE = CONFIRM DELETION\nESC = CANCEL DELETION"))
+                text = ("\nDelete label {} in frame {}?"
+                    "\n{}").format(self.label, self.frame, answer)
+
             elif self.action == "WATERSHED":
-                return ("\nperform watershed to split {}?\n{}".format(self.label_1, answer))
+                text = ("\nPerform watershed to split {}?"
+                    "\n{}").format(self.label_1, answer)
+
             elif self.action == "PREDICT":
-                return ("Predict cell ids for zstack?\nS=PREDICT THIS FRAME\nSPACE=PREDICT ALL FRAMES\nESC=CANCEL PREDICTION")
+                text = ("\nPredict 3D relationships between labels?"
+                    "\nS = PREDICT THIS FRAME FROM PREVIOUS FRAME"
+                    "\nSPACE = PREDICT ALL FRAMES"
+                    "\nESC = CANCEL")
+
             elif self.action == "RELABEL":
-                return ("Relabel cells?\nSPACE=RELABEL ALL FRAMES\nP=PRESERVE 3D INFO\nS=RELABEL THIS FRAME ONLY\nU=UNIQUELY RELABEL EACH CELL\nESC=CANCEL")
+                text = ("\nRelabel annotations?"
+                    "\nSPACE = RELABEL IN ALL FRAMES"
+                    "\nP = PRESERVE 3D INFO WHILE RELABELING"
+                    "\nS = RELABEL THIS FRAME ONLY"
+                    "\nU = UNIQUELY RELABEL EACH LABEL"
+                    "\nESC = CANCEL")
+
         elif self.kind == "PROMPT":
             if self.action == "FILL HOLE":
-                return('\nselect hole to fill in cell {}'.format(self.label))
-            elif self.action == "PICK COLOR":
-                return('\nclick on a cell to change the brush value to that value')
-            elif self.action == "DRAW BOX":
-                return('\ndraw a bounding box around the area you want to threshold')
-            elif self.action == "START SNAKE":
-                return('\nclick to select a starting point for contour prediction')
-            elif self.action == "END SNAKE":
-                return('\nclick to select an ending point for contour prediction')
-            elif self.action == "CONVERSION BRUSH TARGET":
-                return('\nclick on the label you want to draw OVER')
-            elif self.action == "CONVERSION BRUSH VALUE":
-                return('\nclick on the label you want to draw WITH')
-        elif self.kind == "DRAW":
-            # return('\nusing conversion brush to replace {} with {}'.format(self.info['conversion_brush_target'],
-            #     self.info['conversion_brush_value']))
-            return('\nusing conversion brush to replace {} with {}\nuse ESC to leave this mode'.format(self.conversion_brush_target,
-                self.conversion_brush_value))
-        else:
-            return ''
+                text = "\nSelect hole to fill in label {}.".format(self.label)
 
+            elif self.action == "PICK COLOR":
+                text = "\nClick on a label to change the brush value to that value."
+
+            elif self.action == "DRAW BOX":
+                text = "\nDraw a bounding box around the area you want to threshold."
+
+            elif self.action == "CONVERSION BRUSH TARGET":
+                text = "\nClick on the label you want to draw OVER."
+
+            elif self.action == "CONVERSION BRUSH VALUE":
+                text = ("\nClick on the label you want to draw WITH,"
+                " or press N to set the brush to an unused label.")
+
+        elif self.kind == "DRAW":
+            text = ("\nUsing conversion brush to replace {} with {}."
+                "\nUse ESC to stop using the conversion brush.").format(self.conversion_brush_target,
+                self.conversion_brush_value)
+
+        return text
 
     @staticmethod
     def none():
