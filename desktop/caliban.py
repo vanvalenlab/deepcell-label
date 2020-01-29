@@ -26,6 +26,7 @@
 """Displaying and Curating annotations tracked over time in multiple frames."""
 from mode import Mode
 
+import argparse
 import json
 import numpy as np
 import matplotlib.pyplot as plt
@@ -3917,7 +3918,7 @@ def load_npz(filename):
     return {"raw": raw_stack, "annotated": annotation_stack, "save_vars_mode": save_vars_mode}
 
 
-def review(filename):
+def review(filename, args):
     filetype = os.path.splitext(filename)[1]
     if filetype == '.trk':
         track_review = TrackReview(str(pathlib.Path(filename).with_suffix('')),
@@ -3929,5 +3930,8 @@ def review(filename):
 
 
 if __name__ == "__main__":
-    review(sys.argv[1])
-
+    parser = argparse.ArgumentParser()
+    parser.add_argument("filepath")
+    parser.add_argument("-rgb", dest = 'rgb', const = True, default = False, nargs = "?")
+    args = parser.parse_args()
+    review(args.filepath, args)
