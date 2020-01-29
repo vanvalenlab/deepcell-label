@@ -3924,10 +3924,12 @@ def review(filename, args):
         track_review = TrackReview(str(pathlib.Path(filename).with_suffix('')),
             **load_trk(filename))
     if filetype == '.npz':
-        zstack_review = ZStackReview(str(pathlib.Path(filename).with_suffix('')),
-            **load_npz(filename))
-
-
+        if args.rgb:
+            rbg_npz = RGBNpz(str(pathlib.Path(filename).with_suffix('')),
+                **load_npz(filename))
+        else:
+            zstack_review = ZStackReview(str(pathlib.Path(filename).with_suffix('')),
+                **load_npz(filename))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
