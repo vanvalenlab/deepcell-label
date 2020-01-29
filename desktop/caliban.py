@@ -3702,6 +3702,1197 @@ class ZStackReview(CalibanWindow):
                 tracked_file.flush()
                 trks.add(tracked_file.name, "tracked.npy")
 
+class RGBNpz(CalibanWindow):
+    def __init__(self, filename, raw, annotated, save_vars_mode):
+        '''
+        Set object attributes to store raw and annotated images (arrays),
+        various settings, bind event handlers to pyglet window, and begin
+        running application. Uses the filename and the output of load_npz(filename)
+        as input.
+
+        Assumes raw array is in format (y, x, 3) and annotated array is
+        in format (y, x, features).
+        '''
+        # store inputs as part of ZStackReview object
+        # filename used to save file later
+        self.filename = filename
+        # raw data used to display images and used in some actions (watershed, threshold)
+        self.raw = raw
+        # modifying self.annotated with actions is the main purpose of this tool
+        self.annotated = annotated
+        # used to determine variable names for npz upon saving file
+        self.save_vars_mode = save_vars_mode
+
+        # file opens to the first feature (like channel, but of annotation array)
+        self.feature = 0
+        # how many features contained in self.annotated (assumes particular data format)
+        self.feature_max = self.annotated.shape[-1]
+        # file opens to the first channel
+        self.channel = 0
+        self.channel_list = ['red', 'green', 'blue']
+
+        # unpack the shape of the raw array
+        self.height, self.width, self.channel_max = raw.shape
+
+        # info dictionaries that will be populated with info about labels for
+        # each feature of annotation array
+        self.cell_ids = {}
+        self.cell_info = {}
+
+        # populate cell_info and cell_ids with info for each feature in annotation
+        # analogous to .trk lineage but do not need relationships between cells included
+        for feature in range(self.feature_max):
+            self.create_cell_info(feature)
+
+        # don't display 'frames' just 'slices' in sidebar (updated on_draw)
+        try:
+            first_key = list(self.cell_info[0])[0]
+            display_info_types = self.cell_info[0][first_key]
+            self.display_info = [*sorted(set(display_info_types) - {'frames'})]
+        # if there are no labels in the feature, hardcode the display info
+        except:
+            self.display_info = ['label', 'slices']
+
+        # open file to first frame of annotation stack
+        self.current_frame = 0
+
+        # keeps track of information about adjustment of colormap for viewing annotation labels
+        self.adjustment_dict = {}
+        for feature in range(self.feature_max):
+            self.adjustment_dict[feature] = 0
+        # adjustment for initial feature
+        self.adjustment = self.adjustment_dict[self.feature]
+
+        self.adjusted_raw = np.zeros(self.raw.shape)
+        self.adjustments = [0,0,0]
+        self.update_adjusted_raw()
+
+        # mouse position in coordinates of array being viewed as image, (0,0) is placeholder
+        # will be updated on mouse motion
+        self.x = 0
+        self.y = 0
+
+        # self.mode keeps track of selected labels, pending actions, displaying
+        # prompts and confirmation dialogue, using Mode class; start with Mode.none()
+        # (nothing selected, no actions pending)
+        self.mode = Mode.none()
+        # self.mode.update_prompt_additions = self.custom_prompt
+
+        # start with highlighting option turned off and no labels highlighted
+        self.highlight = False
+        self.highlighted_cell_one = -1
+        self.highlighted_cell_two = -1
+
+        self.current_cmap = None
+
+        self.brush = CalibanBrush(self.height, self.width)
+
+        # stores y, x location of mouse click for actions that use skimage flooding
+        # self.hole_fill_seed = None
+
+        # how many times the file has been saved since it was opened
+        self.save_version = 0
+
+        super().__init__()
+
+        self.draw_raw = True
+        self.show_adjusted_raw = True
+
+        # start pyglet event loop
+        pyglet.app.run()
+
+    def update_adjusted_raw(self):
+        for c, adjust in enumerate(self.adjustments):
+            img_max = np.max(self.raw[:,:,c])
+
+            # catch unreasonable adjustments
+            if img_max + adjust < 2:
+                self.adjustments[self.channel] = self.adjustments[self.channel] + 1
+
+            # can't dim any lower than original brightness - may change
+            # definitely want to set bound on this though
+            if img_max + adjust > 255:
+                self.adjustments[self.channel] = self.adjustments[self.channel] -1
+
+            self.adjusted_raw[:,:,c] = rescale_intensity(self.raw[:,:,c],
+                in_range =(0, img_max + adjust), out_range = 'dtype')
+
+    def get_raw_current_frame(self):
+        if self.show_adjusted_raw:
+            raw = self.adjusted_raw[:,:,0:3]
+        else:
+            raw = self.raw[:,:,0:3]
+
+        return raw
+
+    def draw_raw_frame(self):
+        '''
+        Displays raw image with any image adjustments and currently selected
+        colormap.
+
+        Uses:
+            self.get_raw_current_frame (must be provided by child class) to get
+                the appropriate slice of raw array data
+            self.apply_raw_image_adjustments (provided) and self.current_cmap
+                (must be provided by child class) to create an appropriately-adjusted
+                RGB array for displaying the data
+            self.array_to_img to create a pyglet Image object from the RGB array
+            self.draw_pyglet_image to display pyglet Image on screen in correct
+                location with scaling
+        '''
+        raw = self.get_raw_current_frame()
+
+        adjusted_raw = rescale_intensity(raw, in_range = 'image', out_range = 'float')
+        image = self.array_to_img(input_array = adjusted_raw,
+            vmax = None,
+            cmap = None,
+            output = 'pyglet')
+
+        self.draw_pyglet_image(image)
+
+    def helper_update_composite(self):
+        '''
+        Helper function that updates self.composite_view from self.raw and
+        self.annotated when needed. self.composite_view is the image drawn
+        in edit mode, but does not need to be recalculated each time the image
+        refreshes (on_draw is triggered after every event, including mouse motion).
+        Takes data from self.raw and self.annotated, adjusts the images, overlays them,
+        and then stores the generated composite image at self.composite_view.
+
+        Uses:
+            self.get_raw_current_frame and self.get_ann_current_frame (must be
+                provided by child class) to get appropriate slices of arrays
+            self.apply_raw_image_adjustments to apply raw image filtering options
+                (returns an RGB array)
+            self.array_to_img to create RGB array from label image (requires child
+                class to provide get_max_label method and adjustment, overlay_cmap
+                attributes)
+            self.make_composite_img to overlay annotation RGB image on top of
+                adjusted raw image
+        '''
+        # get images to modify and overlay
+        raw_RGB = self.get_raw_current_frame()
+        current_ann = self.get_ann_current_frame()
+
+        # get RGB array of colorful annotation view
+        ann_img = self.array_to_img(input_array = current_ann,
+                                            vmax = self.get_max_label() + self.adjustment,
+                                            cmap = self.overlay_cmap,
+                                            output = 'array')
+
+        # don't need alpha channel
+        ann_RGB = ann_img[:,:,0:3]
+
+        # create the composite image from the two RGB arrays
+        img_masked = self.make_composite_img(base_array = raw_RGB,
+                                            overlay_array = ann_RGB)
+
+        # set self.composite view to new composite image
+        self.composite_view = img_masked
+
+    def handle_threshold(self):
+        '''
+        Helper function to do pre- and post-action bookkeeping for thresholding.
+        Figures out indices to send to action_threshold_predict, calls action_threshold_predict,
+        then resets variables to return to regular pixel-editing brush functionality. Used by
+        on_mouse_release.
+
+        Uses:
+            self.predict_seed, self.y, self.x to calculate appropriate edges of bounding box
+            self.action_threshold_predict to carry out thresholding and annotation update
+            self.brush.show and self.mode are reset at end to finish/clear thresholding behavior
+        '''
+        # check to make sure box is actually a box and not a line
+        y1, y2, x1, x2 = self.brush.get_box_coords()
+        if y1 != y2 and x1 != x2:
+            threshold_prediction = self.action_threshold_predict(y1, y2, x1, x2)
+
+        # clear bounding box and Mode
+        self.brush.reset()
+        self.mode.clear()
+
+    def handle_draw(self):
+        '''
+        Carries out brush drawing on annotation in edit mode. Handles both conversion brush
+        and normal drawing or erasing. Does not update the composite image so this can be called
+        either by mouse_press or mouse_drag.
+
+        brush_val is what the brush is drawing *with*, while editing_val is what the brush is
+        drawing *over*. In normal drawing mode, brush_val is whatever the brush is set to, while
+        editing_val is the background (0).
+
+        Uses:
+            self.mode.kind to determine if drawing normally or using conversion brush
+            self.brush.edit_val and self.brush.erase if using normal brush
+            self.brush.conv_target and self.brush.conv_val if using conversion brush
+            self.annotated, self.current_frame, self.feature to get frame to modify
+            self.x and self.y to center brush
+            self.brush.size to create skimage.draw.circle with that radius
+            self.height and self.width to limit boundaries of brush (skimage.draw.circle)
+
+        '''
+        annotated = self.get_ann_current_frame()
+        brush_val_in_original = np.any(np.isin(annotated, self.brush.draw_value))
+        editing_val_in_original = np.any(np.isin(annotated, self.brush.background))
+
+        annotated_draw = self.brush.draw(annotated)
+
+        # check to see if any labels have been added or removed from frame
+        # possible to add new label or delete target label
+        brush_val_in_modified = np.any(np.isin(annotated_draw, self.brush.draw_value))
+        editing_val_in_modified = np.any(np.isin(annotated_draw, self.brush.background))
+
+        # label deletion
+        if editing_val_in_original and not editing_val_in_modified:
+            self.del_cell_info(feature = self.feature, del_label = self.brush.background)
+
+        # label addition
+        if brush_val_in_modified and not brush_val_in_original:
+            self.add_cell_info(feature = self.feature, add_label = self.brush.draw_value)
+
+        self.annotated[:,:,self.feature] = annotated_draw
+
+    def on_key_press(self, symbol, modifiers):
+
+        # always carried out regardless of context
+        self.universal_keypress_helper(symbol, modifiers)
+
+        # context: only while in pixel-editing mode
+        if self.edit_mode:
+            # context: always carried out in pixel-editing mode (eg, image filters)
+            self.edit_mode_universal_keypress_helper(symbol, modifiers)
+            # context: specific cases
+            self.edit_mode_misc_keypress_helper(symbol, modifiers)
+            # context: only when another action is not being performed (eg, thresholding)
+            if self.mode.kind is None:
+                self.edit_mode_none_keypress_helper(symbol, modifiers)
+
+        # context: only while in label-editing mode
+        else:
+            # unusual context for keybinds
+            self.label_mode_misc_keypress_helper(symbol, modifiers)
+            # context: no labels selected
+            if self.mode.kind is None:
+                self.label_mode_none_keypress_helper(symbol, modifiers)
+            # context: one label selected
+            elif self.mode.kind == "SELECTED":
+                self.label_mode_single_keypress_helper(symbol, modifiers)
+            # context: two labels selected
+            elif self.mode.kind == "MULTIPLE":
+                self.label_mode_multiple_keypress_helper(symbol, modifiers)
+            # context: responding to question (eg, confirming an action)
+            elif self.mode.kind == "QUESTION":
+                self.label_mode_question_keypress_helper(symbol, modifiers)
+
+    def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
+        if self.draw_raw:
+            current_adjustment = self.adjustments[self.channel]
+            # need to put bounds on this
+            current_adjustment += scroll_y
+            self.adjustments[self.channel] = current_adjustment
+            self.update_adjusted_raw()
+
+    def universal_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that
+        are handled here apply in every situation (no logic checks
+        within on_key_press before universal_keypress_helper is called!)
+        so *no other commands may share these keybinds.*
+
+        Keybinds:
+            a or left arrow key: view previous frame
+            d or right arrow key: view next frame
+            v: toggle cursor visibility
+            escape: clear selection or cancel action
+        '''
+        # TOGGLE CURSOR VISIBILITY
+        # most useful in edit mode, but inconvenient if can't be turned back on elsewhere
+        if symbol == key.V:
+            self.mouse_visible = not self.mouse_visible
+            self.window.set_mouse_visible(self.mouse_visible)
+
+        # CLEAR/CANCEL ACTION
+        elif symbol == key.ESCAPE:
+            # clear highlighted cells
+            self.highlighted_cell_one = -1
+            self.highlighted_cell_two = -1
+            # clear hole fill seed (used in hole fill, trim pixels, flood contiguous)
+            self.hole_fill_seed = None
+            # reset self.mode (deselects labels, clears actions)
+            self.mode.clear()
+            # reset from thresholding
+            self.brush.reset()
+
+    def edit_mode_universal_keypress_helper(self, symbol, modifiers):
+        # TOGGLE ANNOTATION VISIBILITY
+        # TODO: will want to change to shift+H in future when adding highlight to edit mode
+        if symbol == key.H:
+            self.hide_annotations = not self.hide_annotations
+            # in case any display changes have been made while hiding annotations
+            if not self.hide_annotations:
+                self.helper_update_composite()
+
+    def edit_mode_none_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that are
+        handled here apply to pixel-editing mode only when another action
+        or prompt is not in use (ie, not in the middle of the color picker
+        prompt, thresholding prompt, or conversion brush mode). These keybinds
+        include leaving edit mode, changing the value of the normal brush, and
+        initiating actions.
+
+        Keybinds:
+            e: leave edit mode
+            =: increase value of normal brush
+            -: decrease value of normal brush
+            n: set normal brush to new value (highest label in file + 1)
+            x: toggle eraser (only applies to normal brush)
+            p: color picker action
+            r: start conversion brush
+            t: prompt thresholding
+        '''
+        # LEAVE EDIT MODE
+        if symbol == key.E:
+            self.edit_mode = False
+
+        # BRUSH VALUE ADJUSTMENT
+        # increase brush value, caps at max value + 1
+        if symbol == key.EQUAL:
+            self.brush.increase_edit_val(window = self)
+        # decrease brush value, can't decrease past 1
+        if symbol == key.MINUS:
+            self.brush.decrease_edit_val()
+        # set brush to unused label
+        if symbol == key.N:
+            self.brush.set_edit_val(self.get_new_label())
+
+        # TOGGLE ERASER
+        if symbol == key.X:
+            self.brush.toggle_erase()
+
+        # ACTIONS - COLOR PICKER
+        if symbol == key.P:
+            self.mode.update("PROMPT", action = "PICK COLOR", **self.mode.info)
+            self.brush.disable_drawing()
+        # ACTIONS - CONVERSION BRUSH
+        if symbol == key.R:
+            self.mode.update("PROMPT", action="CONVERSION BRUSH TARGET", **self.mode.info)
+            self.brush.disable_drawing()
+        # ACTIONS - SAVE FILE
+        if symbol == key.S:
+            self.mode.update("QUESTION", action="SAVE")
+        # ACTIONS - THRESHOLD
+        if symbol == key.T:
+            self.mode.update("PROMPT", action = "DRAW BOX", **self.mode.info)
+            self.brush.show = False
+            self.brush.disable_drawing()
+            self.brush.clear_view()
+
+    def edit_mode_misc_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that are
+        handled here apply to pixel-editing mode in specific contexts;
+        unlike other helper functions, which are grouped by context, these
+        keybinds have their conditional logic within the helper function,
+        since they are not easily grouped with anything else.
+
+        Keybinds:
+            down key: decrease size of brush (applies when normal brush or
+                conversion brush is active, but not during thresholding)
+            up key: increase size of brush (applies when normal brush or
+                conversion brush is active, but not during thresholding)
+            n: set conversion brush value to unused (max label + 1) value;
+                analogous to setting normal brush value with this keybind,
+                but specifically when picking a label for the conversion brush
+                value (note that allowing this option for the conversion brush
+                target would be counterproductive)
+        '''
+        # BRUSH MODIFICATION KEYBINDS
+        # (don't want to adjust brush if thresholding; applies to both
+        # normal brush and conversion brushes)
+        if self.brush.show:
+            # BRUSH SIZE ADJUSTMENT
+            # decrease brush size
+            if symbol == key.DOWN:
+                self.brush.decrease_size()
+            # increase brush size
+            if symbol == key.UP:
+                self.brush.increase_size()
+
+        # SET CONVERSION BRUSH VALUE TO UNUSED LABEL
+        # TODO: update Mode prompt to reflect that you can do this
+        if self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH VALUE":
+            if symbol == key.N:
+                self.brush.set_conv_val(self.get_new_label())
+                self.mode.update("DRAW", action = "CONVERSION",
+                        conversion_brush_target = self.brush.conv_target,
+                        conversion_brush_value = self.brush.conv_val)
+
+    def label_mode_misc_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that are
+        handled here apply to label-editing mode in specific contexts;
+        unlike other helper functions, which are grouped by context, these
+        keybinds have their conditional logic within the helper function,
+        since they are not easily grouped with anything else. Since very
+        few keybinds are universal to label-editing mode (as opposed to the
+        different filter options in pixel-editing mode), "universal" label-mode
+        keybinds are also found here.
+
+        Keybinds:
+            z: toggle between viewing raw images and annotations ("universal")
+            h: toggle highlight ("universal") (note: will eventually become truly
+                universal when highlighting is added to pixel-editing mode)
+            - and =: highlight cycling, COMING SOON
+            shift + up, shift + down: cycle through colormaps, only applies when
+                viewing the raw image
+        '''
+        # toggle raw/label display, "universal" in label mode
+        if symbol == key.Z:
+            self.draw_raw = not self.draw_raw
+
+        # toggle highlight, "universal" in label mode
+        # TODO: this will eventually become truly universal (as in browser version)
+        if symbol == key.H:
+            self.highlight = not self.highlight
+
+        if self.draw_raw:
+            if symbol == key.M:
+                self.show_adjusted_raw = not self.show_adjusted_raw
+            if self.show_adjusted_raw:
+                # reset adjustments
+                if symbol == key._0:
+                    self.adjustments = [0,0,0]
+                    self.update_adjusted_raw()
+
+    def label_mode_none_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that are
+        handled here apply to label-editing mode only if no labels are
+        selected and no actions are awaiting confirmation.
+
+        Keybinds:
+            c: go forward through channels
+            C (shift + c): go backward through channels
+            f: go forward through features
+            F (shift + f): go backward through features
+            =: increment currently-highlighted label by 1
+            -: decrement currently-highlighted label by 1
+            e: enter pixel-editing mode
+            s: prompt saving a copy of the file
+            p: predict 3D labels (computer vision, not deep learning)
+            r: relabel annotations (different methods available)
+        '''
+        # CHANGE CHANNELS
+        if symbol == key.C:
+            # hold shift to go backward
+            if modifiers & key.MOD_SHIFT:
+                if self.channel == 0:
+                    self.channel = self.channel_max - 1
+                else:
+                    self.channel -= 1
+            # go forward through channels
+            else:
+                if self.channel + 1 == self.channel_max:
+                    self.channel = 0
+                else:
+                    self.channel += 1
+
+        # CHANGE FEATURES
+        if symbol == key.F:
+            # hold shift to go backward
+            if modifiers & key.MOD_SHIFT:
+                if self.feature == 0:
+                    self.feature = self.feature_max - 1
+                else:
+                    self.feature -= 1
+            # go forward through channels
+            else:
+                if self.feature + 1 == self.feature_max:
+                    self.feature = 0
+                else:
+                    self.feature += 1
+
+        # HIGHLIGHT CYCLING
+        if symbol == key.EQUAL:
+            if self.highlighted_cell_one < self.get_max_label():
+                self.highlighted_cell_one += 1
+            elif self.highlighted_cell_one == self.get_max_label():
+                self.highlighted_cell_one = 1
+        if symbol == key.MINUS:
+            if self.highlighted_cell_one > 1:
+                self.highlighted_cell_one -= 1
+            elif self.highlighted_cell_one == 1:
+                self.highlighted_cell_one = self.get_max_label()
+
+        # ENTER EDIT MODE
+        if symbol == key.E:
+            self.edit_mode = True
+            # update composite with changes, if needed
+            if not self.hide_annotations:
+                self.helper_update_composite()
+
+        # SAVE
+        if symbol == key.S:
+            self.mode.update("QUESTION", action="SAVE")
+
+        # RELABEL
+        if symbol == key.R:
+            self.mode.update("QUESTION", action='RELABEL', **self.mode.info)
+
+    def label_mode_single_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that are
+        handled here apply to label-editing mode only if one label is
+        selected and no actions are awaiting confirmation.
+
+        Keybinds:
+            =: increment currently-highlighted label by 1
+            -: decrement currently-highlighted label by 1
+            c: prompt creation of new label
+            f: prompt hole fill
+            x: prompt deletion of label in frame
+        '''
+        # HIGHLIGHT CYCLING
+        if symbol == key.EQUAL:
+            if self.highlighted_cell_one < self.get_max_label():
+                self.highlighted_cell_one += 1
+            elif self.highlighted_cell_one == self.get_max_label():
+                self.highlighted_cell_one = 1
+            # deselect label, since highlighting is now decoupled from selection
+            self.mode.clear()
+        if symbol == key.MINUS:
+            if self.highlighted_cell_one > 1:
+                self.highlighted_cell_one -= 1
+            elif self.highlighted_cell_one == 1:
+                self.highlighted_cell_one = self.get_max_label()
+            # deselect label
+            self.mode.clear()
+
+        # HOLE FILL
+        if symbol == key.F:
+            self.mode.update("PROMPT", action="FILL HOLE", **self.mode.info)
+
+        # DELETE CELL
+        if symbol == key.X:
+            self.mode.update("QUESTION", action="DELETE", **self.mode.info)
+
+    def label_mode_multiple_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that are
+        handled here apply to label-editing mode only if two labels are
+        selected and no actions are awaiting confirmation. (Note: the
+        two selected labels must be the same label for watershed to work,
+        and different labels for replace and swap to work.)
+
+        Keybinds:
+            r: prompt replacement of one label with another
+            s: prompt swap between two labels
+            w: prompt watershed action
+        '''
+        # REPLACE
+        if symbol == key.R:
+            self.mode.update("QUESTION", action="REPLACE", **self.mode.info)
+
+        # SWAP
+        if symbol == key.S:
+            self.mode.update("QUESTION", action="SWAP", **self.mode.info)
+
+        # WATERSHED
+        if symbol == key.W:
+            self.mode.update("QUESTION", action="WATERSHED", **self.mode.info)
+
+    def label_mode_question_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that are
+        handled here apply to label-editing mode when actions are awaiting
+        confirmation. Most actions are confirmed with the space key, while
+        others have different options mapped to other keys. Keybinds in this
+        helper function are grouped by the question they are responding to.
+
+        Keybinds:
+            space: carries out action; when action can be applied to single OR
+                multiple frames, space carries out the multiple frame option
+            s: carries out single-frame version of action where applicable
+            t: save npz with empty lineage as trk filetype
+            u: relabel annotations in file with "unique" strategy
+            p: relabel annotations in file with "preserve" strategy
+        '''
+        # RESPOND TO SAVE QUESTION
+        if self.mode.action == "SAVE":
+            if symbol == key.SPACE:
+                self.save()
+                self.mode.clear()
+
+        # RESPOND TO RELABEL QUESTION
+        elif self.mode.action == "RELABEL":
+            if symbol == key.SPACE:
+                self.action_relabel_frame()
+                self.mode.clear()
+
+        # RESPOND TO REPLACE QUESTION
+        elif self.mode.action == "REPLACE":
+            if symbol == key.SPACE:
+                self.action_replace_single()
+                self.mode.clear()
+
+        # RESPOND TO SWAP QUESTION
+        elif self.mode.action == "SWAP":
+            if symbol == key.SPACE:
+                self.action_swap_single_frame()
+                self.mode.clear()
+
+        # RESPOND TO DELETE QUESTION
+        elif self.mode.action == "DELETE":
+            if symbol == key.SPACE:
+                self.action_delete_mask()
+                self.mode.clear()
+
+        # RESPOND TO WATERSHED QUESTION
+        elif self.mode.action == "WATERSHED":
+            if symbol == key.SPACE:
+                self.action_watershed()
+                self.mode.clear()
+
+        # RESPOND TO TRIM PIXELS QUESTION
+        elif self.mode.action == "TRIM PIXELS":
+            if symbol == key.SPACE:
+                self.action_trim_pixels()
+                self.mode.clear()
+
+        # RESPOND TO FLOOD CELL QUESTION
+        elif self.mode.action == "FLOOD CELL":
+            if symbol == key.SPACE:
+                self.action_flood_contiguous()
+                self.mode.clear()
+
+    def get_ann_current_frame(self):
+        return self.annotated[:,:,self.feature]
+
+    def get_label(self):
+        '''
+        Helper function that returns the label currently being hovered over.
+        Currently, this helper function just provides a nice little abstraction,
+        but this could also help the existing code stay flexible with additional
+        data formats.
+        '''
+        return int(self.annotated[self.y, self.x, self.feature])
+
+    def get_max_label(self):
+        '''
+        Helper function that returns the highest label in use in currently-viewed
+        feature. If feature is empty, returns 0 to prevent other functions from crashing.
+        (Replaces use of self.num_cells to keep track of this info, should
+        also help with code flexibility.)
+        '''
+        # check this first, np.max of empty array will crash
+        if len(self.cell_ids[self.feature]) == 0:
+            max_label = 0
+        # if any labels exist in feature, find the max label
+        else:
+            max_label = int(np.max(self.cell_ids[self.feature]))
+        return max_label
+
+    def get_new_label(self):
+        '''
+        Helper function that returns a new label (doesn't currently exist in
+        annotation feature). The new label is the highest label that currently
+        exists in the feature, plus 1, which will always be unused. Does not
+        ever return labels that have been skipped, although these labels are also
+        technically unused.
+
+        Uses:
+            self.cell_ids, which is a list of the labels present in file (does not
+                contain other information, as cell_info dict does); cell_ids is updated
+                when labels are added or removed from features, so this accurately
+                represents which labels are currently in use
+        '''
+        return (self.get_max_label() + 1)
+
+    def create_frame_text(self):
+        if self.feature_max > 1:
+            frame_text = "Feature: {}\n".format(self.feature)
+        else:
+            frame_text = ""
+
+        return frame_text
+
+    def create_filter_text(self):
+        '''
+        Method to create string to tell viewer which image adjustments are
+        currently being applied to the raw image. (Displays in both raw and
+        pixel-editing display modes.) Used in draw_persistent_info.
+        '''
+        if self.show_adjusted_raw:
+            adjustment_text = "Adjusting: {}\n".format(self.channel_list[self.channel])
+            adjustment_text += "Current adjustments:\n{}".format(self.adjustments)
+        else:
+            adjustment_text = "\n\n"
+
+        filter_text = ("\nShowing adjusted raw - {}".format(on_or_off(self.show_adjusted_raw))
+                    + "\n{}".format(adjustment_text))
+
+        return filter_text
+
+    def get_label_info(self, label):
+        return self.cell_info[self.feature][label]
+
+    def action_replace_single(self):
+        '''
+        Overwrite all pixels of label_2 with label_1 in whichever frame label_2
+        was selected (even if currently viewing a different frame, since label_2
+        may not be present in current frame if user has changed frames since selection).
+        label_1 does not need to be in the same frame as label_2, although it can be.
+        Can be used to correct segmentation in frame (eg, one cell mistakenly segmented
+        with two labels) or to correct 3D relationships (same cell has label_1 in first frame
+        and label_2 in next frame, but should always be label_1).
+
+        Uses:
+            self.mode.label_1 is first label selected (will be used to overwrite)
+            self.mode.label_2 is second label selected (will be overwritten)
+            self.mode.frame_2 is the frame in which label_2 was selected; this will be
+                the only frame modified in this action
+            self.feature used to get correct annotation frame
+            self.add_cell_info and self.del_cell_info used to update cell info (label_2 will
+                always be completely removed from frame by this action, and will always have
+                label_1 in frame after action)
+        '''
+        # label_1 is first label selected, label_2 is second label selected
+        # order of selection is important here
+        label_1, label_2 = self.mode.label_1, self.mode.label_2
+
+        # replacing a label with itself crashes Caliban, not good
+        if label_1 == label_2:
+            pass
+        # the labels are different
+        else:
+            # frame to replace label_2 in
+            annotated = self.annotated[:,:,self.feature]
+            # any instance of label_2 in this frame overwritten with label_1
+            annotated[annotated == label_2] = label_1
+            # update cell info
+            self.add_cell_info(feature = self.feature, add_label = label_1)
+            self.del_cell_info(feature = self.feature, del_label = label_2)
+
+    def action_swap_single_frame(self):
+        '''
+        Swap label_1 and label_2 in just one frame (order of selection
+        does not matter). Labels must be selected in same frame for single frame
+        swap to work, and will be swapped in the frame where they were selected (not
+        current frame, if frame has changed). Does not modify cell_info, since the
+        frame will contain label_1 and label_2 before and after swap. Used to correct
+        3D relationships when two labels are incorrectly swapped in one or a handful
+        of frames. (Faster and more intuitive than the alternative of multiple create +
+        replace actions.)
+
+        Uses:
+            self.mode.label_1 is first label selected (order not important)
+            self.mode.label_2 is second label selected (order not important)
+            self.feature used to get correct annotation frame
+        '''
+        # frame and label selection info stored in self.mode
+        label_1 = self.mode.label_1
+        label_2 = self.mode.label_2
+
+        # no use in swapping label with itself, or swapping between different frames
+        if label_1 != label_2:
+            # get the frame in which labels will be swapped
+            ann_img = self.annotated[:,:,self.feature]
+            # swap
+            ann_img = np.where(ann_img == label_1, -1, ann_img)
+            ann_img = np.where(ann_img == label_2, label_1, ann_img)
+            ann_img = np.where(ann_img == -1, label_2, ann_img)
+            # update self.annotated with swapped frame
+            self.annotated[:,:,self.feature] = ann_img
+
+    def action_watershed(self):
+        '''
+        Use watershed transform to split a single label into two labels
+        (original label and new label) based on selected seed points.
+        Watershed transform is based on raw image current frame and channel.
+        The watershed action differs from other multi-click actions in that
+        the labels selected must be the same label and should be selected in
+        same frame (not explicitly required by action, but you may get strange
+        results otherwise). This action will only modify the original label and
+        will not overwrite other labels or delete pixels of the original label.
+        Watershed results depend on both the underlying image and the clicked
+        locations, clean split not guaranteed.
+
+        Uses:
+            self.mode.label_1 is the label to get split by watershed
+            self.cell_ids to create a new valid label
+            self.add_cell_info to add new label to cell_info if it is generated,
+                original label will never be completely removed from frame by this action
+        '''
+        # TODO: add logic checks to make sure label_1 and label_2 are the same,
+        # and seed locations are from same frame
+
+        # Pull the label that is being split and find a new valid label
+        current_label = self.mode.label_1
+        new_label = self.get_new_label()
+
+        # Locally store the frames to work on
+        img_raw = self.raw[:,:,self.channel]
+        img_ann = self.annotated[:,:,self.feature]
+
+        # Pull the 2 seed locations and store locally
+        # define a new seeds labeled img that is the same size as raw/annotation imgs
+        seeds_labeled = np.zeros(img_ann.shape)
+        # create two seed locations
+        seeds_labeled[self.mode.y1_location, self.mode.x1_location]=current_label
+        seeds_labeled[self.mode.y2_location, self.mode.x2_location]=new_label
+
+        # define the bounding box to apply the transform on
+        # and select appropriate sections of 3 inputs (raw, seeds, annotation mask)
+        props = regionprops(np.squeeze(np.int32(img_ann == current_label)))
+        minr, minc, maxr, maxc = props[0].bbox
+
+        # store these subsections to run the watershed on
+        img_sub_raw = np.copy(img_raw[minr:maxr, minc:maxc])
+        img_sub_ann = np.copy(img_ann[minr:maxr, minc:maxc])
+        img_sub_seeds = np.copy(seeds_labeled[minr:maxr, minc:maxc])
+
+        # contrast adjust the raw image to assist the transform
+        img_sub_raw_scaled = rescale_intensity(img_sub_raw)
+
+        # apply watershed transform to the subsections
+        ws = watershed(-img_sub_raw_scaled, img_sub_seeds, mask=img_sub_ann.astype(bool))
+
+        # only update img_sub_ann where ws has changed label from current_label to new_label
+        img_sub_ann = np.where(np.logical_and(ws == new_label,img_sub_ann == current_label), ws, img_sub_ann)
+
+        # reintegrate subsection into original mask
+        img_ann[minr:maxr, minc:maxc] = img_sub_ann
+        self.annotated[:,:,self.feature] = img_ann
+
+        #update cell_info dict only if new label was created with ws
+        if np.any(np.isin(self.annotated[:,:,self.feature], new_label)):
+            self.add_cell_info(feature=self.feature, add_label=new_label)
+
+    def action_threshold_predict(self, y1, y2, x1, x2):
+        '''
+        Given user-determined bounding box coordinates, calculates and
+        applies thresholding based on raw image to add new label to annotation.
+        Does not overwrite existing annotations, so new label will not always
+        appear in annotation. If new label is generated via thresholding, the
+        annotation and cell_info will be updated.
+
+        Uses:
+            y1, y2, x1, x2 are bounding box coordinates finalized in
+                on_mouse_release after drawing thresholding box
+            self.raw, self.current_frame, self.channel used with bounding box
+                coordinates to get region of raw image that will be thresholded
+            self.annotated, self.current_frame, self.feature and bounding box
+                coordinates to modify the annotation with thresholding results
+            self.add_cell_info to update cell_info if a label is added
+        '''
+
+        # pull out the selection portion of the raw frame
+        predict_area = self.raw[y1:y2, x1:x2, self.channel]
+
+        # triangle threshold picked after trying a few on one dataset
+        # may not be the best threshold approach for other datasets!
+        # pick two thresholds to use hysteresis thresholding strategy
+        try:
+            threshold = filters.threshold_triangle(image = predict_area)
+        except:
+            return
+        threshold_stringent = 1.10 * threshold
+
+        # use a unique label for predction
+        new_label = self.get_new_label()
+
+        # try to keep stray pixels from appearing with hysteresis approach
+        hyst = filters.apply_hysteresis_threshold(image = predict_area,
+            low = threshold, high = threshold_stringent)
+        # apply new_label to areas of threshold that are True (foreground),
+        # 0 for False (background)
+        ann_threshold = np.where(hyst, new_label, 0)
+
+        #put prediction in without overwriting
+        predict_area = self.annotated[y1:y2, x1:x2, self.feature]
+        # only the background region of original annotation gets updated with ann_threshold
+        safe_overlay = np.where(predict_area == 0, ann_threshold, predict_area)
+
+        # don't need to update cell_info unless an annotation has been added
+        if np.any(np.isin(safe_overlay, new_label)):
+            self.add_cell_info(feature=self.feature, add_label=new_label)
+            # update annotation with thresholded region
+            self.annotated[y1:y2,x1:x2,self.feature] = safe_overlay
+
+    def action_delete_mask(self):
+        '''
+        Delete selected label from the frame it was selected in.
+        Only exists as single-frame action.
+
+        Uses:
+            self.mode.label is selected label (to be deleted)
+            self.mode.frame is the frame in which the label was selected
+            self.del_cell_info to update cell_info appropriately
+        '''
+
+        label = self.mode.label
+
+        ann_img = self.annotated[:,:,self.feature]
+        ann_img = np.where(ann_img == label, 0, ann_img)
+
+        self.annotated[:,:,self.feature] = ann_img
+
+        self.del_cell_info(feature = self.feature, del_label = label)
+
+    def action_fill_hole(self):
+        '''
+        Fill a hole (flood connected regions of background) with selected label.
+        Does not affect other labels (self.mouse_press_prompt_helper checks value
+        of annotation at clicked position before carrying out action). Connectivity
+        value of 1 is more restrictive than other flooding actions and prevents hole
+        filling from spilling out beyond enclosed empty space in some cases.
+
+        Uses:
+            self.mode.label is label to flood background with
+            self.hole_fill_seed is determined on click and used to flood area
+            self.annotated, self.current_frame, self.feature to get frame to modify
+            self.add_cell_info to update cell info if needed
+        '''
+        # get frame of annotation to modify
+        img_ann = self.annotated[:,:,self.feature]
+        # create modified image flooded with value at self.hole_fill_seed
+        filled_img_ann = flood_fill(img_ann, self.hole_fill_seed, self.mode.label, connectivity = 1)
+        # update annotation with modified image
+        self.annotated[:,:,self.feature] = filled_img_ann
+
+        # add info in case current_frame didn't already contain that label
+        # (user may change frames between action prompt and click)
+        # will not cause error if the label was already in that frame
+        self.add_cell_info(feature=self.feature, add_label=self.mode.label)
+
+        # reset hole_fill_seed
+        self.hole_fill_seed = None
+
+    def action_flood_contiguous(self):
+        '''
+        Flood fill a label (not background) with a unique new label;
+        alternative to watershed for fixing duplicate label issue (if cells
+        are not touching). If there are no other pixels of the old label left
+        after flooding, this action has the same effect as single-frame create.
+        This action never changes pixels to 0. Uses self.mode.frame (the frame that
+        was clicked on) instead of self.current_frame to prevent potential buggy
+        behavior (eg, user changes frames before confirming action, and self.hole_fill_seed
+        in new frame corresponds to a different label from self.mode.label).
+
+        Uses:
+            self.annotated, self.mode.frame, self.feature to get image to modify
+            self.mode.label is the label being flooded with a new value
+            self.hole_fill_seed to get starting point for flooding
+            self.cell_ids to get unused label to flood with
+            self.add_cell_info always needed to add new label to cell_info
+            self.del_cell_info sometimes needed to delete old label from frame
+        '''
+        # old label is definitely in original, check later if in modified
+        old_label = self.mode.label
+        # label used to flood area
+        new_label = self.get_new_label()
+
+        # annotation to modify
+        img_ann = self.annotated[:,:,self.feature]
+
+        # flood connected pixels of old_label with new_label, from origin point
+        # of self.hole_fill_seed
+        filled_img_ann = flood_fill(img_ann, self.hole_fill_seed, new_label)
+        # update annotation with modified image
+        self.annotated[:,:,self.feature] = filled_img_ann
+
+        # bool, whether any pixels of old_label remain in flooded image
+        in_modified = np.any(np.isin(filled_img_ann, old_label))
+
+        # this action will always add new_label to the annotation in this frame
+        self.add_cell_info(feature=self.feature, add_label=new_label)
+
+        # check to see if flooding removed old_label from the frame completely
+        if not in_modified:
+            self.del_cell_info(feature = self.feature, del_label = old_label)
+
+        # reset hole_fill_seed
+        self.hole_fill_seed = None
+
+    def action_trim_pixels(self):
+        '''
+        Trim away any stray (unconnected) pixels of selected label; pixels in
+        frame with that label that are not connected to self.hole_fill_seed
+        will be set to 0. This action will never completely delete label from frame,
+        since the seed point will always be left unmodified. Used to clean up messy
+        annotations, especially those with only a few pixels elsewhere in the frame,
+        or to quickly clean up thresholding results.
+
+        Uses:
+            self.annotated, self.mode.frame, self.feature to get image to modify
+            self.mode.label is the label being trimmed
+            self.hole_fill_seed is starting point to determine parts of label that
+                will remain unmodified
+        '''
+        # label to be trimmed
+        label = self.mode.label
+        # image to modify
+        img_ann = self.annotated[:,:,self.feature]
+
+        # boolean array of all pixels of label that are connected to self.hole_fill_seed
+        contig_cell = flood(image = img_ann, seed_point = self.hole_fill_seed)
+
+        # any pixels in img_ann that have value 'label' and are NOT connected to hole_fill_seed
+        # get changed to 0, all other pixels retain their original value
+        img_trimmed = np.where(np.logical_and(np.invert(contig_cell), img_ann == label), 0, img_ann)
+
+        # update annotation with trimmed image
+        self.annotated[:,:,self.feature] = img_trimmed
+
+        # reset hole fill seed
+        self.hole_fill_seed = None
+
+    def action_relabel_frame(self):
+        '''
+        Relabel annotations in the current frame starting from 1. Warning:
+        do not use for data that is labeled across frames/slices, as this
+        will render 3D label relationships meaningless. If 3D relabeling is
+        necessary, use action_relabel_preserve.
+
+        Uses:
+            self.annotated, self.current_frame, self.feature to get image to relabel
+            self.create_cell_info to update cell_info
+        '''
+        # frame to relabel
+        img = self.annotated[:,:,self.feature]
+        # relabel frame
+        relabeled_img = relabel_frame(img)
+        # update annotation with modified image
+        self.annotated[:,:,self.feature] = relabeled_img
+
+        # remake cell_info dict based on new annotations
+        self.create_cell_info(feature=self.feature)
+
+    def add_cell_info(self, feature, add_label):
+        '''
+        Helper function that updates necessary information (cell_ids and cell_info)
+        when a new label is added to a frame. If the label exists elsewhere in the
+        feature, the new frame is added to the list of frames in the 'frames' entry.
+        Any duplicate frames are removed from the list of frames, so accidentally adding
+        in a label when it already exists in the frame will not cause bugs.
+        If the label does not exist in the feature yet, an entry in cell_info is added
+        for that label, and the label is added to cell_ids. Label 0 (the background) is
+        never added to cell_ids or cell_info.
+
+        Inputs:
+            feature: which feature is being accessed/modified (update appropriate part of
+                cell_ids and cell_info)
+            add_label: the label being updated
+            frame: the frame number that the label is being added to (ie, the frame number
+                being added to the frame information for that label's entry in cell_info)
+
+        Uses:
+            self.cell_info to update a label's entry or add a new label entry
+            self.cell_ids to add a new label to the feature, if needed
+            display_format_frames to create slices entry from frames list
+        '''
+        # this function should never be called on label 0, but just in case
+        if add_label != 0:
+            # key is the label value, value is a dictionary of info about the label
+            self.cell_info[feature][add_label] = {}
+            # label is one of the info entries for the label (for display reasons)
+            self.cell_info[feature][add_label]['label'] = str(int(add_label))
+            self.cell_ids[feature] = np.unique(np.append(self.cell_ids[feature], add_label))
+
+    def del_cell_info(self, feature, del_label):
+        '''
+        Helper function that updates necessary information (cell_ids and cell_info)
+        when a label is completely removed from a frame. If the label exists elsewhere in the
+        feature, the the only change in cell_info is the removal of that frame from the label's
+        frame list. If the label does not exist in any other frames of that feature, the label's
+        entry is deleted from cell_info and the label is removed from cell_ids. Other functions
+        should never call del_cell_info on label 0 (the background), but this is checked before
+        modifying cell_info to prevent a possible KeyError, as label 0 never has an entry in
+        cell_info.
+
+        Inputs:
+            feature: which feature is being accessed/modified (update appropriate part of
+                cell_ids and cell_info)
+            del_label: the label being updated
+            frame: the frame number that the label is being deleted from (ie, the frame number
+                being deleted from the frame information for that label's entry in cell_info)
+
+        Uses:
+            self.cell_info to update a label's entry or delete a label entry
+            self.cell_ids to remove a label to the feature, if needed
+            display_format_frames to create slices entry from frames list
+        '''
+        if del_label != 0:
+            try:
+                del self.cell_info[feature][del_label]
+                self.cell_ids[feature] = np.delete(ids, np.where(ids == np.int64(del_label)))
+            except:
+                pass
+
+    def create_cell_info(self, feature):
+        '''
+        Helper function that creates self.cell_ids and self.cell_info from scratch
+        (ie, based on the content of self.annotated), as opposed to updating the
+        info after small changes. self.cell_info and self.cell_ids are used to
+        store information about each label so that it can be displayed when interacting
+        with the file, and to generate appropriate values for variables such as vmax for
+        image display, or the value of a new label when adding to the annotation. Info
+        about labels is also used to create an empty lineage (no division information)
+        when saving into trk format. This helper function is used to generate cell info
+        from annotations upon opening the file, and any actions that can drastically change
+        the labels in the annotation (eg, relabeling frames).
+
+        Inputs:
+            feature: entry of self.cell_ids and self.cell_info to populate with info, based
+                on that feature of the annotation array
+
+        Uses:
+            self.annotated to get values from (each nonzero value in the array is a label)
+            self.cell_ids to update with the unique labels in each feature
+            self.cell_info to update with the labels and label entries (eg, frames) in each feature
+            display_format_frames to create slices entry from frames list
+        '''
+        # get annotation stack for feature
+        annotated = self.annotated[:,:,feature]
+
+        # self.cell_ids[feature] is a list of the unique, nonzero values in annotation
+        self.cell_ids[feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))].astype(int)
+
+        # reset self.cell_info value for key feature
+        self.cell_info[feature] = {}
+        # each label in the feature needs a key value pair in this dict
+        for cell in self.cell_ids[feature]:
+            # key is the label value, value is a dictionary of info about the label
+            self.cell_info[feature][cell] = {}
+            # label is one of the info entries for the label (for display reasons)
+            self.cell_info[feature][cell]['label'] = str(int(cell))
+
+    def save(self):
+        '''
+        Saves the current state of the file in .npz format. Variable names
+        in npz are either raw and annotated (if those were original variable
+        names), or X and y otherwise (these are commonly used in deepcell library).
+        "_save_version_{number}" is part of saved filename to prevent overwriting
+        files, and to track changes over time if needed.
+
+        Uses:
+            self.filename and self.save_version to name file appropriately
+            self.save_vars_mode to choose variable names to save arrays to in npz format
+            self.raw and self.annotated are arrays to save in npz (self.raw should always
+                remain unmodified, but self.annotated may be modified)
+        '''
+        # create filename to save as
+        save_file = self.filename + "_save_version_{}.npz".format(self.save_version)
+        # if file was opened with variable names raw and annotated, save them that way
+        if self.save_vars_mode == 0:
+            np.savez(save_file, raw = self.raw, annotated = self.annotated)
+        # otherwise, save as X and y
+        else:
+            np.savez(save_file, X = self.raw, y = self.annotated)
+        # keep track of which version of the file this is
+        self.save_version += 1
+
 def on_or_off(toggle):
     if toggle:
         return "on"
