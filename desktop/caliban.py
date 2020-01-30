@@ -3704,6 +3704,8 @@ class ZStackReview(CalibanWindow):
 
 class RGBNpz(CalibanWindow):
     channel_list = ['red', 'green', 'blue', 'cyan', 'magenta', 'yellow']
+    channel_names = []
+
     def __init__(self, filename, raw, annotated, save_vars_mode):
         '''
         Set object attributes to store raw and annotated images (arrays),
@@ -3736,6 +3738,8 @@ class RGBNpz(CalibanWindow):
 
         if self.channel_max > 6:
             print("Warning! You will not be able to display channels beyond the first 6.")
+        for c in range(self.channel_max):
+            self.channel_names.append("channel {}".format(c))
 
         # info dictionaries that will be populated with info about labels for
         # each feature of annotation array
@@ -4430,10 +4434,12 @@ class RGBNpz(CalibanWindow):
         return (self.get_max_label() + 1)
 
     def create_frame_text(self):
+        frame_text = "Channel: {}\n".format(self.channel_names[self.channel])
+
         if self.feature_max > 1:
-            frame_text = "Feature: {}\n".format(self.feature)
+            frame_text += "Feature: {}\n".format(self.feature)
         else:
-            frame_text = ""
+            frame_text += ""
 
         return frame_text
 
@@ -4444,7 +4450,7 @@ class RGBNpz(CalibanWindow):
         pixel-editing display modes.) Used in draw_persistent_info.
         '''
         if self.show_adjusted_raw:
-            adjustment_text = "Adjusting: {}\n".format(self.channel_list[self.channel])
+            adjustment_text = "Current color: {}\n".format(self.channel_list[self.channel])
             adjustment_text += "Current adjustments:\n{}".format(self.adjustments)
         else:
             adjustment_text = "\n\n"
