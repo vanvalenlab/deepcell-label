@@ -47,6 +47,7 @@ from skimage.measure import regionprops
 from skimage.exposure import rescale_intensity, equalize_adapthist
 from skimage import color, img_as_float, filters
 from skimage.util import invert
+from skimage.segmentation import find_boundaries
 
 from imageio import imread, imwrite
 
@@ -3866,53 +3867,53 @@ class RGBNpz(CalibanWindow):
         '''
         raw = self.get_raw_current_frame()
 
-        adjusted_raw = rescale_intensity(raw, in_range = 'image', out_range = 'float')
-        image = self.array_to_img(input_array = adjusted_raw,
+        adjusted_raw = rescale_intensity(raw, in_range = 'image', out_range = 'uint8')
+        image = self.array_to_img(input_array = adjusted_raw.astype(np.uint8),
             vmax = None,
             cmap = None,
             output = 'pyglet')
 
         self.draw_pyglet_image(image)
 
-    def helper_update_composite(self):
+    def generate_ann_boundaries(self, img):
+        boundary_mask = find_boundaries(img)
+        white_mask = np.where(boundary_mask==1, 255, 0)
+
+        white_rgb = np.zeros((self.height, self.width, 3))
+        for c in range(3):
+            white_rgb[:,:,c] = white_mask
+
+        return white_rgb.astype(np.uint8)
+
+    def overlay_white(self, base_RGB, overlay_RGB):
+        return np.where(overlay_RGB == [255, 255, 255], [255, 255, 255], base_RGB)
+
+    def draw_pixel_edit_frame(self):
         '''
-        Helper function that updates self.composite_view from self.raw and
-        self.annotated when needed. self.composite_view is the image drawn
-        in edit mode, but does not need to be recalculated each time the image
-        refreshes (on_draw is triggered after every event, including mouse motion).
-        Takes data from self.raw and self.annotated, adjusts the images, overlays them,
-        and then stores the generated composite image at self.composite_view.
-
-        Uses:
-            self.get_raw_current_frame and self.get_ann_current_frame (must be
-                provided by child class) to get appropriate slices of arrays
-            self.apply_raw_image_adjustments to apply raw image filtering options
-                (returns an RGB array)
-            self.array_to_img to create RGB array from label image (requires child
-                class to provide get_max_label method and adjustment, overlay_cmap
-                attributes)
-            self.make_composite_img to overlay annotation RGB image on top of
-                adjusted raw image
+        Draws current frame for pixel-editing mode, along with brush preview
+        (brush preview can display brush or thresholding). If drawing the image
+        with annotations hidden, applies filters/adjustments to raw image and uses
+        that, otherwise uses self.composite_view (generated and updated elsewhere)
+        to show annotations overlaid on the adjusted raw image. Requires child
+        class to have methods for get_max_label and get_raw_current_frame, and
+        adjustment attribute.
         '''
-        # get images to modify and overlay
-        raw_RGB = self.get_raw_current_frame()
-        current_ann = self.get_ann_current_frame()
 
-        # get RGB array of colorful annotation view
-        ann_img = self.array_to_img(input_array = current_ann,
-                                            vmax = self.get_max_label() + self.adjustment,
-                                            cmap = self.overlay_cmap,
-                                            output = 'array')
+        raw = self.get_raw_current_frame()
+        adjusted_raw = rescale_intensity(raw, in_range = 'image', out_range = 'uint8')
+        ann = self.generate_ann_boundaries(self.get_ann_current_frame())
+        lazy_comp = self.overlay_white(adjusted_raw, self.generate_ann_boundaries(self.brush.view))
+        if not self.hide_annotations:
+            lazy_comp = self.overlay_white(lazy_comp, ann)
 
-        # don't need alpha channel
-        ann_RGB = ann_img[:,:,0:3]
+        gl.glTexParameteri(gl.GL_TEXTURE_2D,
+                           gl.GL_TEXTURE_MAG_FILTER,
+                           gl.GL_NEAREST)
 
-        # create the composite image from the two RGB arrays
-        img_masked = self.make_composite_img(base_array = raw_RGB,
-                                            overlay_array = ann_RGB)
+        comp_img = self.array_to_img(input_array = lazy_comp.astype(np.uint8),
+                                    vmax = None, cmap = None, output = 'pyglet')
 
-        # set self.composite view to new composite image
-        self.composite_view = img_masked
+        self.draw_pyglet_image(comp_img)
 
     def handle_threshold(self):
         '''
@@ -4052,9 +4053,6 @@ class RGBNpz(CalibanWindow):
         # TODO: will want to change to shift+H in future when adding highlight to edit mode
         if symbol == key.H:
             self.hide_annotations = not self.hide_annotations
-            # in case any display changes have been made while hiding annotations
-            if not self.hide_annotations:
-                self.helper_update_composite()
 
     def edit_mode_none_keypress_helper(self, symbol, modifiers):
         '''
@@ -4252,9 +4250,6 @@ class RGBNpz(CalibanWindow):
         # ENTER EDIT MODE
         if symbol == key.E:
             self.edit_mode = True
-            # update composite with changes, if needed
-            if not self.hide_annotations:
-                self.helper_update_composite()
 
         # SAVE
         if symbol == key.S:
