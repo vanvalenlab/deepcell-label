@@ -3977,6 +3977,10 @@ class RGBNpz(CalibanWindow):
 
         self.annotated[:,:,self.feature] = annotated_draw
 
+    def jump_to_channel(self, c):
+        if c < self.channel_max:
+            self.channel = c
+
     def on_key_press(self, symbol, modifiers):
 
         # always carried out regardless of context
@@ -4047,6 +4051,24 @@ class RGBNpz(CalibanWindow):
             self.mode.clear()
             # reset from thresholding
             self.brush.reset()
+
+        elif symbol == key._1:
+            self.jump_to_channel(0)
+
+        elif symbol == key._2:
+            self.jump_to_channel(1)
+
+        elif symbol == key._3:
+            self.jump_to_channel(2)
+
+        elif symbol == key._4:
+            self.jump_to_channel(3)
+
+        elif symbol == key._5:
+            self.jump_to_channel(4)
+
+        elif symbol == key._6:
+            self.jump_to_channel(5)
 
     def edit_mode_universal_keypress_helper(self, symbol, modifiers):
         # TOGGLE ANNOTATION VISIBILITY
