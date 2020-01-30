@@ -3705,6 +3705,7 @@ class ZStackReview(CalibanWindow):
 
 class RGBNpz(CalibanWindow):
     channel_list = ['red', 'green', 'blue', 'cyan', 'magenta', 'yellow']
+    channel_on = [True, True, True, True, True, True]
     channel_names = []
 
     def __init__(self, filename, raw, annotated, save_vars_mode):
@@ -3823,24 +3824,30 @@ class RGBNpz(CalibanWindow):
                 self.adjustments[self.channel] = self.adjustments[self.channel] -1
 
             if c < 3:
-                self.adjusted_raw[:,:,c] = rescale_intensity(self.raw[:,:,c],
-                    in_range =(0, img_max + adjust), out_range = 'dtype')
+                if self.channel_on[c]:
+                    self.adjusted_raw[:,:,c] = rescale_intensity(self.raw[:,:,c],
+                        in_range =(0, img_max + adjust), out_range = 'dtype')
+                else:
+                    self.adjusted_raw[:,:,c] = 0
             # cyan
             elif c == 3:
-                cyan = rescale_intensity(self.raw[:,:,c], in_range = (0, img_max + adjust), out_range = 'dtype')
-                self.adjusted_raw[:,:,1] = self.adjusted_raw[:,:,1] + cyan
-                self.adjusted_raw[:,:,2] = self.adjusted_raw[:,:,2] + cyan
+                if self.channel_on[c]:
+                    cyan = rescale_intensity(self.raw[:,:,c], in_range = (0, img_max + adjust), out_range = 'dtype')
+                    self.adjusted_raw[:,:,1] = self.adjusted_raw[:,:,1] + cyan
+                    self.adjusted_raw[:,:,2] = self.adjusted_raw[:,:,2] + cyan
             # magenta
             elif c == 4:
-                magenta = rescale_intensity(self.raw[:,:,c], in_range = (0, img_max + adjust), out_range = 'dtype')
-                self.adjusted_raw[:,:,0] = self.adjusted_raw[:,:,0] + magenta
-                self.adjusted_raw[:,:,2] = self.adjusted_raw[:,:,2] + magenta
+                if self.channel_on[c]:
+                    magenta = rescale_intensity(self.raw[:,:,c], in_range = (0, img_max + adjust), out_range = 'dtype')
+                    self.adjusted_raw[:,:,0] = self.adjusted_raw[:,:,0] + magenta
+                    self.adjusted_raw[:,:,2] = self.adjusted_raw[:,:,2] + magenta
 
             # yellow
             elif c == 5:
-                yellow = rescale_intensity(self.raw[:,:,c], in_range = (0, img_max + adjust), out_range = 'dtype')
-                self.adjusted_raw[:,:,0] = self.adjusted_raw[:,:,0] + yellow
-                self.adjusted_raw[:,:,2] = self.adjusted_raw[:,:,1] + yellow
+                if self.channel_on[c]:
+                    yellow = rescale_intensity(self.raw[:,:,c], in_range = (0, img_max + adjust), out_range = 'dtype')
+                    self.adjusted_raw[:,:,0] = self.adjusted_raw[:,:,0] + yellow
+                    self.adjusted_raw[:,:,2] = self.adjusted_raw[:,:,1] + yellow
 
     def get_raw_current_frame(self):
         if self.show_adjusted_raw:
@@ -3981,6 +3988,13 @@ class RGBNpz(CalibanWindow):
         if c < self.channel_max:
             self.channel = c
 
+    def toggle_channel_display(self):
+        try:
+            self.channel_on[self.channel] = not self.channel_on[self.channel]
+            self.update_adjusted_raw()
+        except:
+            pass
+
     def on_key_press(self, symbol, modifiers):
 
         # always carried out regardless of context
@@ -4039,6 +4053,13 @@ class RGBNpz(CalibanWindow):
         if symbol == key.V:
             self.mouse_visible = not self.mouse_visible
             self.window.set_mouse_visible(self.mouse_visible)
+
+        elif symbol == key.I:
+            self.channel_on = [not c for c in self.channel_on]
+            self.update_adjusted_raw()
+
+        elif symbol == key.O:
+            self.toggle_channel_display()
 
         # CLEAR/CANCEL ACTION
         elif symbol == key.ESCAPE:
