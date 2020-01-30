@@ -3703,6 +3703,7 @@ class ZStackReview(CalibanWindow):
                 trks.add(tracked_file.name, "tracked.npy")
 
 class RGBNpz(CalibanWindow):
+    channel_list = ['red', 'green', 'blue', 'cyan', 'magenta', 'yellow']
     def __init__(self, filename, raw, annotated, save_vars_mode):
         '''
         Set object attributes to store raw and annotated images (arrays),
@@ -3729,10 +3730,12 @@ class RGBNpz(CalibanWindow):
         self.feature_max = self.annotated.shape[-1]
         # file opens to the first channel
         self.channel = 0
-        self.channel_list = ['red', 'green', 'blue']
 
         # unpack the shape of the raw array
         self.height, self.width, self.channel_max = raw.shape
+
+        if self.channel_max > 6:
+            print("Warning! You will not be able to display channels beyond the first 6.")
 
         # info dictionaries that will be populated with info about labels for
         # each feature of annotation array
@@ -3764,7 +3767,7 @@ class RGBNpz(CalibanWindow):
         self.adjustment = self.adjustment_dict[self.feature]
 
         self.adjusted_raw = np.zeros(self.raw.shape)
-        self.adjustments = [0,0,0]
+        self.adjustments = np.zeros(min(self.channel_max, 6))
         self.update_adjusted_raw()
 
         # mouse position in coordinates of array being viewed as image, (0,0) is placeholder
@@ -3814,8 +3817,25 @@ class RGBNpz(CalibanWindow):
             if img_max + adjust > 255:
                 self.adjustments[self.channel] = self.adjustments[self.channel] -1
 
-            self.adjusted_raw[:,:,c] = rescale_intensity(self.raw[:,:,c],
-                in_range =(0, img_max + adjust), out_range = 'dtype')
+            if c < 3:
+                self.adjusted_raw[:,:,c] = rescale_intensity(self.raw[:,:,c],
+                    in_range =(0, img_max + adjust), out_range = 'dtype')
+            # cyan
+            elif c == 3:
+                cyan = rescale_intensity(self.raw[:,:,c], in_range = (0, img_max + adjust), out_range = 'dtype')
+                self.adjusted_raw[:,:,1] = self.adjusted_raw[:,:,1] + cyan
+                self.adjusted_raw[:,:,2] = self.adjusted_raw[:,:,2] + cyan
+            # magenta
+            elif c == 4:
+                magenta = rescale_intensity(self.raw[:,:,c], in_range = (0, img_max + adjust), out_range = 'dtype')
+                self.adjusted_raw[:,:,0] = self.adjusted_raw[:,:,0] + magenta
+                self.adjusted_raw[:,:,2] = self.adjusted_raw[:,:,2] + magenta
+
+            # yellow
+            elif c == 5:
+                yellow = rescale_intensity(self.raw[:,:,c], in_range = (0, img_max + adjust), out_range = 'dtype')
+                self.adjusted_raw[:,:,0] = self.adjusted_raw[:,:,0] + yellow
+                self.adjusted_raw[:,:,2] = self.adjusted_raw[:,:,1] + yellow
 
     def get_raw_current_frame(self):
         if self.show_adjusted_raw:
