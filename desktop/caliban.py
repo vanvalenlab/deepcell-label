@@ -3810,6 +3810,9 @@ class RGBNpz(CalibanWindow):
         # start pyglet event loop
         pyglet.app.run()
 
+    def helper_update_composite(self):
+        pass
+
     def update_adjusted_raw(self):
         for c, adjust in enumerate(self.adjustments):
             img_max = np.max(self.raw[:,:,c])
