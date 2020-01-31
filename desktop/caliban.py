@@ -4911,11 +4911,9 @@ class RGBNpz(CalibanWindow):
             display_format_frames to create slices entry from frames list
         '''
         if del_label != 0:
-            try:
-                del self.cell_info[feature][del_label]
-                self.cell_ids[feature] = np.delete(ids, np.where(ids == np.int64(del_label)))
-            except:
-                pass
+            del self.cell_info[feature][del_label]
+            ids = self.cell_ids[feature]
+            self.cell_ids[feature] = np.delete(ids, np.where(ids == np.int64(del_label)))
 
     def create_cell_info(self, feature):
         '''
