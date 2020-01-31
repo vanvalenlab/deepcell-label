@@ -3900,8 +3900,14 @@ class RGBNpz(CalibanWindow):
 
         return white_rgb.astype(np.uint8)
 
-    def overlay_white(self, base_RGB, overlay_RGB):
-        return np.where(overlay_RGB == [255, 255, 255], [255, 255, 255], base_RGB)
+    def overlay_RGB(self, base_RGB, overlay_RGB):
+        '''
+        Totally replaces pixels in base_RGB with pixels from overlay_RGB.
+        As such, does not create composite of two images (overlay_RGB completely
+        obscures pixels from base_RGB). Used to draw outlines in overlay_RGB over
+        base_RGB.
+        '''
+        return np.where(overlay_RGB != [0, 0, 0], overlay_RGB, base_RGB)
 
     def draw_pixel_edit_frame(self):
         '''
@@ -3917,9 +3923,9 @@ class RGBNpz(CalibanWindow):
         raw = self.get_raw_current_frame()
         adjusted_raw = rescale_intensity(raw, in_range = 'image', out_range = 'uint8')
         ann = self.generate_ann_boundaries(self.get_ann_current_frame())
-        lazy_comp = self.overlay_white(adjusted_raw, self.generate_ann_boundaries(self.brush.view))
+        lazy_comp = self.overlay_RGB(adjusted_raw, self.generate_ann_boundaries(self.brush.view))
         if not self.hide_annotations:
-            lazy_comp = self.overlay_white(lazy_comp, ann)
+            lazy_comp = self.overlay_RGB(lazy_comp, ann)
 
         gl.glTexParameteri(gl.GL_TEXTURE_2D,
                            gl.GL_TEXTURE_MAG_FILTER,
