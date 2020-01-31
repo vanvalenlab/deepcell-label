@@ -4031,7 +4031,7 @@ class RGBNpz(CalibanWindow):
                 self.label_mode_question_keypress_helper(symbol, modifiers)
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
-        if self.draw_raw:
+        if self.draw_raw or self.edit_mode:
             current_adjustment = self.adjustments[self.channel]
             # need to put bounds on this
             current_adjustment += scroll_y
