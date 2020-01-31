@@ -169,7 +169,8 @@ class CalibanWindow:
         # show only raw image instead of composited image
         self.hide_annotations = False
 
-        self.overlay_cmap = 'gist_stern'
+        self.labels_cmap = plt.get_cmap("viridis")
+        self.labels_cmap.set_bad('black')
 
         # composite_view used to store RGB image (composite of raw and annotated) so it can be
         # accessed and updated as needed
@@ -769,14 +770,12 @@ class CalibanWindow:
         ann_array = self.get_ann_current_frame()[y1:y2,x1:x2]
 
         # annotations use cubehelix cmap with highlighting in red
-        cmap = plt.get_cmap("viridis")
-        cmap.set_bad('black')
         ann_array = np.ma.masked_equal(ann_array, 0)
 
         # create pyglet image
         image = self.array_to_img(input_array = ann_array,
                                                 vmax = max(1, self.get_max_label() + self.adjustment),
-                                                cmap = cmap,
+                                                cmap = self.labels_cmap,
                                                 output = 'array')
 
         # if highlighting on, mask highlighted values so they appear red
@@ -801,10 +800,14 @@ class CalibanWindow:
         y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
         x1 = max(int(self.view_start_x), 0)
         x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
+
         # create pyglet image object so we can display brush location
-        brush_img = self.array_to_img(input_array = self.brush.view[y1:y2, x1:x2],
+        brush_arr = self.brush.view[y1:y2, x1:x2]
+        brush_arr = np.ma.masked_equal(brush_arr, 0)
+
+        brush_img = self.array_to_img(input_array = brush_arr,
                                                     vmax = self.get_max_label() + self.adjustment,
-                                                    cmap = self.overlay_cmap,
+                                                    cmap = self.labels_cmap,
                                                     output = 'pyglet')
 
         # create pyglet image from only the adjusted raw, if hiding annotations
@@ -1021,13 +1024,14 @@ class CalibanWindow:
         # get images to modify and overlay
         current_raw = self.get_raw_current_frame()
         current_ann = self.get_ann_current_frame()
+        current_ann = np.ma.masked_equal(current_ann, 0)
 
         raw_RGB = self.apply_raw_image_adjustments(current_raw)
 
         # get RGB array of colorful annotation view
         ann_img = self.array_to_img(input_array = current_ann,
                                             vmax = self.get_max_label() + self.adjustment,
-                                            cmap = self.overlay_cmap,
+                                            cmap = self.labels_cmap,
                                             output = 'array')
 
         # don't need alpha channel
@@ -1166,12 +1170,12 @@ class CalibanWindow:
             if self.hide_annotations:
                 cmap = "gray"
             else:
-                cmap = "{}/gray".format(self.overlay_cmap)
+                cmap = "viridis/gray"
         else:
             if self.draw_raw:
                 cmap = self.current_cmap
             else:
-                cmap = "cubehelix"
+                cmap = "viridis"
 
         return cmap
 
