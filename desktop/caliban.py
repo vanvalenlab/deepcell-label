@@ -4250,7 +4250,7 @@ class RGBNpz(CalibanWindow):
             if self.show_adjusted_raw:
                 # reset adjustments
                 if symbol == key._0:
-                    self.adjustments = [0,0,0]
+                    self.adjustments = np.zeros(self.adjustments.shape)
                     self.update_adjusted_raw()
 
     def label_mode_none_keypress_helper(self, symbol, modifiers):
