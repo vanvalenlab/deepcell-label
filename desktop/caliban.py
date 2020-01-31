@@ -3715,18 +3715,26 @@ class RGBNpz(CalibanWindow):
         running application. Uses the filename and the output of load_npz(filename)
         as input.
 
-        Assumes raw array is in format (y, x, 3) and annotated array is
-        in format (y, x, features).
+        Assumes raw array is in format (y, x, c) (c <= 6) and annotated array is
+        in format (y, x, f). Arrays can also be in shape (1, y, x, c or f).
         '''
         # store inputs as part of ZStackReview object
         # filename used to save file later
         self.filename = filename
-        # raw data used to display images and used in some actions (watershed, threshold)
-        self.raw = raw
-        # modifying self.annotated with actions is the main purpose of this tool
-        self.annotated = annotated
+
         # used to determine variable names for npz upon saving file
         self.save_vars_mode = save_vars_mode
+
+        # unpack the shape of the raw array
+        self.dims = len(raw.shape)
+        if self.dims == 3:
+            self.raw = raw
+            self.annotated = annotated
+        elif self.dims == 4:
+            self.raw = np.squeeze(raw, axis = 0)
+            self.annotated = np.squeeze(annotated, axis = 0)
+
+        self.height, self.width, self.channel_max = self.raw.shape
 
         # file opens to the first feature (like channel, but of annotation array)
         self.feature = 0
@@ -3734,9 +3742,6 @@ class RGBNpz(CalibanWindow):
         self.feature_max = self.annotated.shape[-1]
         # file opens to the first channel
         self.channel = 0
-
-        # unpack the shape of the raw array
-        self.height, self.width, self.channel_max = raw.shape
 
         if self.channel_max > 6:
             print("Warning! You will not be able to display channels beyond the first 6.")
@@ -4966,12 +4971,20 @@ class RGBNpz(CalibanWindow):
         '''
         # create filename to save as
         save_file = self.filename + "_save_version_{}.npz".format(self.save_version)
+
+        if self.dims == 3:
+            raw = self.raw
+            ann = self.annotated
+        elif self.dims == 4:
+            raw = np.expand_dims(self.raw, axis = 0)
+            ann = np.expand_dims(self.annotated, axis = 0)
+
         # if file was opened with variable names raw and annotated, save them that way
         if self.save_vars_mode == 0:
-            np.savez(save_file, raw = self.raw, annotated = self.annotated)
+            np.savez(save_file, raw = raw, annotated = ann)
         # otherwise, save as X and y
         else:
-            np.savez(save_file, X = self.raw, y = self.annotated)
+            np.savez(save_file, X = raw, y = ann)
         # keep track of which version of the file this is
         self.save_version += 1
 
