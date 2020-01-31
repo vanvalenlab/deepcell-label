@@ -4097,6 +4097,10 @@ class RGBNpz(CalibanWindow):
             self.mouse_visible = not self.mouse_visible
             self.window.set_mouse_visible(self.mouse_visible)
 
+        # TOGGLE HIGHLIGHT
+        if symbol == key.H:
+            self.highlight = not self.highlight
+
         elif symbol == key.I:
             self.channel_on = [not c for c in self.channel_on]
             self.update_adjusted_raw()
@@ -4273,11 +4277,6 @@ class RGBNpz(CalibanWindow):
         # toggle raw/label display, "universal" in label mode
         if symbol == key.Z:
             self.draw_raw = not self.draw_raw
-
-        # toggle highlight, "universal" in label mode
-        # TODO: this will eventually become truly universal (as in browser version)
-        if symbol == key.H:
-            self.highlight = not self.highlight
 
         if self.draw_raw:
             if symbol == key.M:
