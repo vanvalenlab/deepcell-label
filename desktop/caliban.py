@@ -4504,6 +4504,13 @@ class RGBNpz(CalibanWindow):
 
         return frame_text
 
+    def get_colors_in_use(self):
+        colors = []
+        for c in range(min(self.channel_max, 6)):
+            if self.channel_on[c]:
+                colors.append(self.channel_list[c])
+        return ", ".join(colors)
+
     def create_filter_text(self):
         '''
         Method to create string to tell viewer which image adjustments are
@@ -4512,6 +4519,7 @@ class RGBNpz(CalibanWindow):
         '''
         if self.show_adjusted_raw:
             adjustment_text = "Current color: {}\n".format(self.channel_list[self.channel])
+            adjustment_text += "Colors in use: {}\n".format(self.get_colors_in_use())
             adjustment_text += "Current adjustments:\n{}".format(self.adjustments)
         else:
             adjustment_text = "\n\n"
