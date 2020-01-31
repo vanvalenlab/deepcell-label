@@ -4097,7 +4097,7 @@ class RGBNpz(CalibanWindow):
     def edit_mode_universal_keypress_helper(self, symbol, modifiers):
         # TOGGLE ANNOTATION VISIBILITY
         # TODO: will want to change to shift+H in future when adding highlight to edit mode
-        if symbol == key.H:
+        if symbol == key.L:
             self.hide_annotations = not self.hide_annotations
 
         # CHANGE CHANNELS
