@@ -4100,6 +4100,21 @@ class RGBNpz(CalibanWindow):
         if symbol == key.H:
             self.hide_annotations = not self.hide_annotations
 
+        # CHANGE CHANNELS
+        elif symbol == key.C:
+            # hold shift to go backward
+            if modifiers & key.MOD_SHIFT:
+                if self.channel == 0:
+                    self.channel = self.channel_max - 1
+                else:
+                    self.channel -= 1
+            # go forward through channels
+            else:
+                if self.channel + 1 == self.channel_max:
+                    self.channel = 0
+                else:
+                    self.channel += 1
+
     def edit_mode_none_keypress_helper(self, symbol, modifiers):
         '''
         Helper function for keypress handling. The keybinds that are
