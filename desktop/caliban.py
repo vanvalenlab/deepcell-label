@@ -3894,15 +3894,15 @@ class RGBNpz(CalibanWindow):
 
         self.draw_pyglet_image(image)
 
-    def generate_ann_boundaries(self, img):
+    def generate_ann_boundaries(self, img, color = 'white'):
         boundary_mask = find_boundaries(img)
-        white_mask = np.where(boundary_mask==1, 255, 0)
+        boundary_mask = np.expand_dims(boundary_mask, axis = 2)
+        if color == 'white':
+            rgb_mask = np.where(boundary_mask ==1, [255, 255, 255], [0,0,0])
+        elif color == 'red':
+            rgb_mask = np.where(boundary_mask ==1, [255, 0, 0], [0,0,0])
 
-        white_rgb = np.zeros((self.height, self.width, 3))
-        for c in range(3):
-            white_rgb[:,:,c] = white_mask
-
-        return white_rgb.astype(np.uint8)
+        return rgb_mask
 
     def overlay_RGB(self, base_RGB, overlay_RGB):
         '''
@@ -3911,7 +3911,16 @@ class RGBNpz(CalibanWindow):
         obscures pixels from base_RGB). Used to draw outlines in overlay_RGB over
         base_RGB.
         '''
-        return np.where(overlay_RGB != [0, 0, 0], overlay_RGB, base_RGB)
+        # mask of which pixels in overlay_RGB are black
+        overlay_mask = np.all(overlay_RGB == (0, 0, 0), axis=-1, keepdims = True)
+        # where overlay_RGB is black, use the underlying image
+        return np.where(overlay_mask, base_RGB, overlay_RGB)
+
+    def apply_transparent_highlight(self, base_RGB, mask):
+        mask = np.expand_dims(mask, axis = 2)
+        base_RGB = np.where(mask != 0, base_RGB + 40, base_RGB)
+        base_RGB = np.clip(base_RGB, a_min = 0, a_max = 255)
+        return base_RGB
 
     def draw_pixel_edit_frame(self):
         '''
@@ -3927,15 +3936,31 @@ class RGBNpz(CalibanWindow):
         raw = self.get_raw_current_frame()
         adjusted_raw = rescale_intensity(raw, in_range = 'image', out_range = 'uint8')
         ann = self.generate_ann_boundaries(self.get_ann_current_frame())
-        lazy_comp = self.overlay_RGB(adjusted_raw, self.generate_ann_boundaries(self.brush.view))
+
+        display = adjusted_raw
         if not self.hide_annotations:
-            lazy_comp = self.overlay_RGB(lazy_comp, ann)
+            display = self.overlay_RGB(display, ann)
+            if self.highlight:
+                if self.brush.conv_val != -1:
+                    highlight_val = self.brush.conv_val
+                else:
+                    highlight_val = self.brush.edit_val
+                highlight_mask = np.where(self.get_ann_current_frame() == highlight_val, 1, 0)
+                display = self.apply_transparent_highlight(display, highlight_mask)
+
+        display = self.apply_transparent_highlight(display, self.brush.view)
+
+        if self.brush.erase:
+            brush_outline = self.generate_ann_boundaries(self.brush.view, color ='red')
+        else:
+            brush_outline = self.generate_ann_boundaries(self.brush.view)
+        display = self.overlay_RGB(display, brush_outline)
 
         gl.glTexParameteri(gl.GL_TEXTURE_2D,
                            gl.GL_TEXTURE_MAG_FILTER,
                            gl.GL_NEAREST)
 
-        comp_img = self.array_to_img(input_array = lazy_comp.astype(np.uint8),
+        comp_img = self.array_to_img(input_array = display.astype(np.uint8),
                                     vmax = None, cmap = None, output = 'pyglet')
 
         self.draw_pyglet_image(comp_img)
