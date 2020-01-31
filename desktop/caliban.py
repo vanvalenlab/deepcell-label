@@ -635,18 +635,21 @@ class CalibanWindow:
         ann_array = self.get_ann_current_frame()
 
         # annotations use cubehelix cmap with highlighting in red
-        cmap = plt.get_cmap("cubehelix")
-        cmap.set_bad('red')
-
-        # if highlighting on, mask highlighted values so they appear red
-        if self.highlight:
-            ann_array = self.apply_label_highlight(ann_array)
+        cmap = plt.get_cmap("viridis")
+        cmap.set_bad('black')
+        ann_array = np.ma.masked_equal(ann_array, 0)
 
         # create pyglet image
         image = self.array_to_img(input_array = ann_array,
                                                 vmax = max(1, self.get_max_label() + self.adjustment),
                                                 cmap = cmap,
-                                                output = 'pyglet')
+                                                output = 'array')
+
+        # if highlighting on, mask highlighted values so they appear red
+        if self.highlight:
+            image = self.apply_label_highlight(ann_array, image)
+
+        image = self.array_to_img(input_array = image, vmax = None, cmap = None, output = 'pyglet')
 
         self.draw_pyglet_image(image)
 
@@ -771,22 +774,23 @@ class CalibanWindow:
         else:
             return None
 
-    def apply_label_highlight(self, frame):
+    def apply_label_highlight(self, frame, RGB_frame):
         '''
-        Masks values in input array (frame) to display highlight.
-        Masked values are then set to a particular color (red) via
-        the colormap used. If highlighted label are not in frame (eg,
-        if self.highlighted_cell_two = -1), there is no visual effect.
-        Applies highlight regardless of self.kind as long as highlight is on.
+        Masks pixels in input RGB array (RGB_frame) based on values in input
+        array (frame). Masked pixels are displayed as red. If highlighted
+        labels are not in frame (eg, if self.highlighted_cell_two = -1), there
+        is no visual effect. Applies highlight regardless of self.kind as long
+        as highlight is on.
 
         Currently requires that child class include attributes
         highlighted_cell_one and highlighted_cell_two.
         '''
-        # image display code will color masked values red
-        frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
-        frame = np.ma.masked_equal(frame, self.highlighted_cell_two)
+        mask = np.logical_or(frame == self.highlighted_cell_one, frame == self.highlighted_cell_two)
+        mask = np.expand_dims(mask, axis = 2)
+        RGB_frame = RGB_frame[:,:,0:3]
+        RGB_frame = np.where(mask, [255, 0,0], RGB_frame)
 
-        return frame
+        return RGB_frame.astype(np.uint8)
 
     def apply_raw_image_adjustments(self, current_raw, cmap = 'gray'):
         '''
