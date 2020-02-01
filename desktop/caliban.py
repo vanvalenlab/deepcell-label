@@ -4570,6 +4570,9 @@ class RGBNpz(CalibanWindow):
                 colors.append(self.channel_list[c])
         return ", ".join(colors)
 
+    def create_cmap_text(self):
+        return ""
+
     def create_filter_text(self):
         '''
         Method to create string to tell viewer which image adjustments are
