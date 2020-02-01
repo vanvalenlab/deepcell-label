@@ -3815,6 +3815,7 @@ class RGBNpz(CalibanWindow):
 
         self.draw_raw = True
         self.show_adjusted_raw = True
+        self.show_label_outlines = False
 
         # start pyglet event loop
         pyglet.app.run()
@@ -3893,6 +3894,27 @@ class RGBNpz(CalibanWindow):
             output = 'pyglet')
 
         self.draw_pyglet_image(image)
+
+    def draw_ann_frame(self):
+        if not self.show_label_outlines:
+            super().draw_ann_frame()
+        else:
+            ann = self.get_ann_current_frame()
+            raw = self.get_raw_current_frame()
+            adjusted_raw = rescale_intensity(raw, in_range = 'image', out_range = 'uint8')
+            ann_boundaries = self.generate_ann_boundaries(ann)
+
+            display = adjusted_raw
+            display = self.overlay_RGB(display, ann_boundaries)
+
+            if self.highlight:
+                highlight_mask = np.where(np.logical_or(ann == self.highlighted_cell_one,
+                    ann == self.highlighted_cell_two), 1, 0)
+                display = self.apply_transparent_highlight(display, highlight_mask)
+            ann_img = self.array_to_img(input_array = display.astype(np.uint8),
+                                    vmax = None, cmap = None, output = 'pyglet')
+
+            self.draw_pyglet_image(ann_img)
 
     def generate_ann_boundaries(self, img, color = 'white'):
         boundary_mask = find_boundaries(img)
@@ -4286,6 +4308,9 @@ class RGBNpz(CalibanWindow):
                 if symbol == key._0:
                     self.adjustments = np.zeros(self.adjustments.shape)
                     self.update_adjusted_raw()
+        else:
+            if symbol == key.L:
+                self.show_label_outlines = not self.show_label_outlines
 
     def label_mode_none_keypress_helper(self, symbol, modifiers):
         '''
