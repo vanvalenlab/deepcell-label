@@ -4093,7 +4093,7 @@ class RGBNpz(CalibanWindow):
                 self.label_mode_question_keypress_helper(symbol, modifiers)
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
-        if self.draw_raw or self.edit_mode:
+        if self.draw_raw or self.edit_mode or self.show_label_outlines:
             current_adjustment = self.adjustments[self.channel]
             # need to put bounds on this
             current_adjustment += scroll_y
@@ -4300,7 +4300,7 @@ class RGBNpz(CalibanWindow):
         if symbol == key.Z:
             self.draw_raw = not self.draw_raw
 
-        if self.draw_raw:
+        if self.draw_raw or self.show_label_outlines:
             if symbol == key.M:
                 self.show_adjusted_raw = not self.show_adjusted_raw
             if self.show_adjusted_raw:
@@ -4308,7 +4308,8 @@ class RGBNpz(CalibanWindow):
                 if symbol == key._0:
                     self.adjustments = np.zeros(self.adjustments.shape)
                     self.update_adjusted_raw()
-        else:
+
+        if not self.draw_raw:
             if symbol == key.L:
                 self.show_label_outlines = not self.show_label_outlines
 
@@ -4573,6 +4574,31 @@ class RGBNpz(CalibanWindow):
     def create_cmap_text(self):
         return ""
 
+    def create_disp_image_text(self):
+        '''
+        Method to create string to tell viewer which viewing mode is in use.
+        Default options are raw, labels, and overlay. Used in draw_persistent_info.
+        '''
+        display_text = "Displayed image: "
+
+        if self.edit_mode:
+            if self.hide_annotations:
+                currently_viewing = "Raw"
+            else:
+                currently_viewing = "Overlay"
+        else:
+            if self.draw_raw:
+                currently_viewing = "Raw"
+            else:
+                if self.show_label_outlines:
+                    currently_viewing = "Overlay"
+                else:
+                    currently_viewing = "Labels"
+
+        display_text += currently_viewing
+
+        return display_text
+
     def create_filter_text(self):
         '''
         Method to create string to tell viewer which image adjustments are
@@ -4593,6 +4619,72 @@ class RGBNpz(CalibanWindow):
 
     def get_label_info(self, label):
         return self.cell_info[self.feature][label]
+
+    def create_highlight_text(self):
+        '''
+        Generate text describing current highlighting status. Requires child
+        class to have highlighted_cell_one and highlighted_cell_two attributes.
+        Added to info on side of screen (via draw_persistent_info).
+        '''
+        if (not self.highlight) or (self.edit_mode and self.hide_annotations):
+            highlight_text = "Highlighting: -\nHighlighted cell(s): None\n"
+        else:
+            highlight_text = "Highlighting: {}\n".format(on_or_off(self.highlight))
+            if not self.edit_mode:
+                if self.highlighted_cell_two != -1:
+                    labels = "{}, {}".format(self.highlighted_cell_one, self.highlighted_cell_two)
+                elif self.highlighted_cell_one != -1:
+                    labels = "{}".format(self.highlighted_cell_one)
+                else:
+                    labels = "None"
+            else:
+                if self.brush.conv_val != -1:
+                    labels = "{}".format(self.brush.conv_val)
+                else:
+                    labels = "{}".format(self.brush.edit_val)
+
+            highlight_text += "Highlighted cell(s): {}\n".format(labels)
+
+        return highlight_text
+
+    def draw_persistent_info(self):
+        '''
+        Display information about the frame currently being viewed.
+        Always displays information, although brush settings are displayed
+        only when in pixel-editing mode. This info is displayed at top of info
+        column. Child class must provide create_frame_text method.
+        '''
+        if self.edit_mode:
+            edit_mode = "pixels"
+        else:
+            edit_mode = "labels"
+
+        if self.edit_mode or self.draw_raw or self.show_label_outlines:
+            filter_info = self.create_filter_text()
+        else:
+            filter_info = "\n\n\n"
+
+        display_filter_info = "Current display settings:"
+        display_filter_info += self.create_cmap_text()
+        display_filter_info += filter_info
+
+        # TODO: render label in a batch
+        # create pyglet label anchored to top of left side
+        frame_label = pyglet.text.Label("Currently viewing:\n"
+                                        + "{}".format(self.create_frame_text())
+                                        + "{}\n\n".format(self.create_disp_image_text())
+                                        + "{}\n".format(self.create_highlight_text())
+                                        + "{}\n\n".format(display_filter_info)
+                                        + "Edit mode: {}\n".format(edit_mode)
+                                        + self.create_brush_text(),
+                                        font_name="monospace",
+                                        anchor_x="left", anchor_y="top",
+                                        width=self.sidebar_width,
+                                        multiline=True,
+                                        x=5, y=self.window.height - 5,
+                                        color=[255]*4)
+        # draw the label
+        frame_label.draw()
 
     def action_replace_single(self):
         '''
