@@ -4160,26 +4160,26 @@ class RGBNpz(CalibanWindow):
         elif symbol == key._6:
             self.jump_to_channel(5)
 
-    def edit_mode_universal_keypress_helper(self, symbol, modifiers):
-        # TOGGLE ANNOTATION VISIBILITY
-        # TODO: will want to change to shift+H in future when adding highlight to edit mode
-        if symbol == key.L:
-            self.hide_annotations = not self.hide_annotations
-
         # CHANGE CHANNELS
         elif symbol == key.C:
             # hold shift to go backward
             if modifiers & key.MOD_SHIFT:
                 if self.channel == 0:
-                    self.channel = self.channel_max - 1
+                    self.channel = min(self.channel_max - 1, 5)
                 else:
                     self.channel -= 1
             # go forward through channels
             else:
-                if self.channel + 1 == self.channel_max:
+                if self.channel + 1 == min(self.channel_max, 6):
                     self.channel = 0
                 else:
                     self.channel += 1
+
+    def edit_mode_universal_keypress_helper(self, symbol, modifiers):
+        # TOGGLE ANNOTATION VISIBILITY
+        # TODO: will want to change to shift+H in future when adding highlight to edit mode
+        if symbol == key.L:
+            self.hide_annotations = not self.hide_annotations
 
     def edit_mode_none_keypress_helper(self, symbol, modifiers):
         '''
@@ -4331,21 +4331,6 @@ class RGBNpz(CalibanWindow):
             p: predict 3D labels (computer vision, not deep learning)
             r: relabel annotations (different methods available)
         '''
-        # CHANGE CHANNELS
-        if symbol == key.C:
-            # hold shift to go backward
-            if modifiers & key.MOD_SHIFT:
-                if self.channel == 0:
-                    self.channel = self.channel_max - 1
-                else:
-                    self.channel -= 1
-            # go forward through channels
-            else:
-                if self.channel + 1 == self.channel_max:
-                    self.channel = 0
-                else:
-                    self.channel += 1
-
         # CHANGE FEATURES
         if symbol == key.F:
             # hold shift to go backward
