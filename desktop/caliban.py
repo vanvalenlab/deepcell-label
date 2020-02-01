@@ -3972,7 +3972,7 @@ class RGBNpz(CalibanWindow):
 
         display = self.apply_transparent_highlight(display, self.brush.view)
 
-        if self.brush.erase:
+        if self.brush.erase and self.brush.conv_val == -1:
             brush_outline = self.generate_ann_boundaries(self.brush.view, color ='red')
         else:
             brush_outline = self.generate_ann_boundaries(self.brush.view)
