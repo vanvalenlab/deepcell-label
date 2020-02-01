@@ -928,8 +928,8 @@ class CalibanWindow:
         else:
             filter_info = "\n\n\n"
 
-        display_filter_info = ("Current display settings:"
-            "\nColormap - {}").format(self.create_cmap_text())
+        display_filter_info = "Current display settings:"
+        display_filter_info += self.create_cmap_text()
         display_filter_info += filter_info
 
         # TODO: render label in a batch
@@ -1035,7 +1035,7 @@ class CalibanWindow:
             else:
                 cmap = "viridis"
 
-        return cmap
+        return "\nColormap - " + str(cmap)
 
     def create_filter_text(self):
         '''
