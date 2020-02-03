@@ -27,6 +27,7 @@
 from mode import Mode
 
 import json
+import math
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -87,6 +88,9 @@ class CalibanWindow:
     adjustment (int)
     max_intensity (float)
     '''
+    white = (255, 255, 255)
+    red = (255, 0, 0)
+
     # blank area to the left of displayed image where text info is displayed
     sidebar_width = 300
 
@@ -582,8 +586,11 @@ class CalibanWindow:
                 window where image is being displayed
             self.sidebar_width, self.image_padding to offset lines appropriately
         '''
-        frame_width = self.scale_factor * self.width
-        frame_height = self.scale_factor * self.height
+        h1, h2 = self.highlighted_cell_one, self.highlighted_cell_two
+        y1, y2 = int(self.view_start_y), int(self.view_end_y)
+        x1, x2 = int(self.view_start_x), int(self.view_end_x)
+        frame_width = (x2 - x1) * self.zoom * self.scale_factor
+        frame_height = (y2 - y1) * self.zoom * self.scale_factor
 
         pad = self.image_padding
 
@@ -593,18 +600,70 @@ class CalibanWindow:
         left = self.sidebar_width + pad
         right = self.sidebar_width + frame_width + pad
 
-        # draw lines around image, but space a pixel away in some places
-        # (prevent obscuring actual image)
-        pyglet.graphics.draw(8, pyglet.gl.GL_LINES,
-            ("v2f", (left, top,
-                     left, bottom-1,
-                     left, bottom-1,
-                     right+1, bottom-1,
-                     right+1, bottom-1,
-                     right+1, top,
-                     right+1, top,
+        # bottom line
+        if math.ceil(self.view_end_y) == self.height:
+            pyglet.graphics.draw(2, pyglet.gl.GL_LINES,
+                ("v2f", (left, bottom -1,
+                     right+1, bottom-1))
+            )
+        else:
+            bottom_piece = self.get_ann_current_frame()[y2:self.height]
+            if np.any(np.where(np.logical_or(bottom_piece == h1, bottom_piece == h2))):
+                r, g, b = self.red
+                pyglet.graphics.draw(2, pyglet.gl.GL_LINES,
+                    ("v2f", (left, bottom-1,
+                         right+1, bottom-1)),
+                    ("c3B", (r, g, b, r, g, b))
+                )
+
+        # left line
+        if x1 == 0:
+            pyglet.graphics.draw(2, pyglet.gl.GL_LINES,
+                ("v2f", (left, bottom -1,
                      left, top))
-        )
+            )
+        else:
+            left_piece = self.get_ann_current_frame()[:,0:x1]
+            if np.any(np.where(np.logical_or(left_piece == h1, left_piece == h2))):
+                r, g, b = self.red
+                pyglet.graphics.draw(2, pyglet.gl.GL_LINES,
+                    ("v2f", (left, bottom -1,
+                         left, top)),
+                    ("c3B", (r, g, b, r, g, b))
+                )
+
+        # right line
+        if math.ceil(self.view_end_x) == self.width:
+            pyglet.graphics.draw(2, pyglet.gl.GL_LINES,
+                ("v2f", (right+1, bottom -1,
+                     right+1, top))
+            )
+        else:
+            right_piece = self.get_ann_current_frame()[:,x2:self.width]
+            if np.any(np.where(np.logical_or(right_piece == h1, right_piece == h2))):
+                r, g, b = self.red
+                pyglet.graphics.draw(2, pyglet.gl.GL_LINES,
+                    ("v2f", (right+1, bottom-1,
+                         right+1, top)),
+                    ("c3B", (r, g, b, r, g, b))
+                )
+
+        # top line
+        if y1 == 0:
+            pyglet.graphics.draw(2, pyglet.gl.GL_LINES,
+                ("v2f", (left, top,
+                     right+1, top))
+            )
+        # check to see if values are outside this range
+        else:
+            top_piece = self.get_ann_current_frame()[0:y1]
+            if np.any(np.where(np.logical_or(top_piece == h1, top_piece == h2))):
+                r, g, b = self.red
+                pyglet.graphics.draw(2, pyglet.gl.GL_LINES,
+                    ("v2f", (left, top,
+                         right+1, top)),
+                    ("c3B", (r, g, b, r, g, b))
+                )
 
     def draw_current_frame(self):
         '''
