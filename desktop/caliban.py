@@ -224,13 +224,18 @@ class CalibanWindow:
                 (self.x and self.y will not update if mouse has moved outside of image)
             self.brush to update where the center of the brush is
         '''
-        # convert event x to image x by accounting for sidebar width, then scale
+        # convert event x to viewing pane x by accounting for sidebar width, then scale
         x -= (self.sidebar_width + self.image_padding)
         x //= self.scale_factor
+        # convert viewing pane x to image x by accounting for offset and zoom
+        x //= self.zoom
+        x += int(self.view_start_x)
 
         # convert event y to image y by rescaling and changing coordinates:
         # pyglet y has increasing y at the top of the screen, opposite convention of array indices
         y = self.height - ((y - self.image_padding)// self.scale_factor)
+        y //= self.zoom
+        y += int(self.view_start_y)
 
         # check that mouse cursor is within bounds of image before updating
         if 0 <= x < self.width and 0 <= y < self.height:
@@ -281,12 +286,30 @@ class CalibanWindow:
         # always update self.x and self.y when mouse has moved
         self.update_mouse_position(x, y)
 
-        # mouse drag only has special behavior in pixel-editing mode
-        if self.edit_mode:
-            # drawing with brush (normal or conversion)
-            self.brush.add_to_view()
-            # modify annotation
-            self.handle_draw()
+        if self.key_states[key.SPACE]:
+            self.pan(dx, dy)
+        else:
+            # mouse drag only has special behavior in pixel-editing mode
+            if self.edit_mode:
+                # drawing with brush (normal or conversion)
+                self.brush.add_to_view()
+                # modify annotation
+                self.handle_draw()
+
+    def pan(self, dx, dy):
+        # y coords are inverted
+        new_y_start = self.view_start_y + dy/(self.zoom*self.scale_factor)
+        new_y_end = self.view_end_y + dy/(self.zoom*self.scale_factor)
+        if new_y_start >= 0 and new_y_end <= self.height:
+            self.view_start_y = max(0, new_y_start)
+            self.view_end_y = min(self.height, new_y_end)
+
+        # y coords
+        new_x_start = self.view_start_x - dx/(self.zoom*self.scale_factor)
+        new_x_end = self.view_end_x - dx/(self.zoom*self.scale_factor)
+        if new_x_start >= 0 and new_x_end <= self.width:
+            self.view_start_x = max(0, new_x_start)
+            self.view_end_x = min(self.width, new_x_end)
 
     def on_mouse_press(self, x, y, button, modifiers):
         '''
@@ -312,38 +335,38 @@ class CalibanWindow:
                 appropriately updating brush attributes
             self.brush.set_box_corner for starting to draw a thresholding box
         '''
+        if not self.key_states[key.SPACE]:
+            if not self.edit_mode:
+                label = self.get_label()
+                if self.mode.kind is None:
+                    self.mouse_press_none_helper(modifiers, label)
+                elif self.mode.kind == "SELECTED":
+                    self.mouse_press_selected_helper(label)
+                elif self.mode.kind == "PROMPT":
+                    self.mouse_press_prompt_helper(label)
 
-        if not self.edit_mode:
-            label = self.get_label()
-            if self.mode.kind is None:
-                self.mouse_press_none_helper(modifiers, label)
-            elif self.mode.kind == "SELECTED":
-                self.mouse_press_selected_helper(label)
-            elif self.mode.kind == "PROMPT":
-                self.mouse_press_prompt_helper(label)
-
-        elif self.edit_mode:
-            # draw using brush
-            if self.mode.kind is None:
-                self.handle_draw()
-            elif self.mode.kind is not None:
-                # conversion brush
-                if self.mode.kind == "DRAW":
+            elif self.edit_mode:
+                # draw using brush
+                if self.mode.kind is None:
                     self.handle_draw()
+                elif self.mode.kind is not None:
+                    # conversion brush
+                    if self.mode.kind == "DRAW":
+                        self.handle_draw()
 
-                # color pick tool
-                elif self.mode.kind == "PROMPT" and self.mode.action == "PICK COLOR":
-                    self.pick_color()
+                    # color pick tool
+                    elif self.mode.kind == "PROMPT" and self.mode.action == "PICK COLOR":
+                        self.pick_color()
 
-                # color picking for conversion brush
-                elif self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH TARGET":
-                    self.pick_conv_target()
-                elif self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH VALUE":
-                    self.pick_conv_value()
+                    # color picking for conversion brush
+                    elif self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH TARGET":
+                        self.pick_conv_target()
+                    elif self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH VALUE":
+                        self.pick_conv_value()
 
-                # start drawing bounding box for threshold prediction
-                elif self.mode.kind == "PROMPT" and self.mode.action == "DRAW BOX":
-                    self.brush.set_box_corner(self.y, self.x)
+                    # start drawing bounding box for threshold prediction
+                    elif self.mode.kind == "PROMPT" and self.mode.action == "DRAW BOX":
+                        self.brush.set_box_corner(self.y, self.x)
 
     def on_mouse_release(self, x, y, buttons, modifiers):
         '''
@@ -616,7 +639,9 @@ class CalibanWindow:
             self.draw_pyglet_image to display pyglet Image on screen in correct
                 location with scaling
         '''
-        raw_array = self.get_raw_current_frame()
+        y1, y2 = int(self.view_start_y), int(self.view_end_y)
+        x1, x2 = int(self.view_start_x), int(self.view_end_x)
+        raw_array = self.get_raw_current_frame()[y1:y2, x1:x2]
         adjusted_raw = self.apply_raw_image_adjustments(raw_array, cmap = self.current_cmap)
         image = self.array_to_img(input_array = adjusted_raw,
             vmax = None,
@@ -641,7 +666,9 @@ class CalibanWindow:
             self.draw_pyglet_image to display pyglet Image on screen in correct
                 location with scaling
         '''
-        ann_array = self.get_ann_current_frame()
+        y1, y2 = int(self.view_start_y), int(self.view_end_y)
+        x1, x2 = int(self.view_start_x), int(self.view_end_x)
+        ann_array = self.get_ann_current_frame()[y1:y2,x1:x2]
 
         # annotations use cubehelix cmap with highlighting in red
         cmap = plt.get_cmap("cubehelix")
@@ -669,8 +696,10 @@ class CalibanWindow:
         class to have methods for get_max_label and get_raw_current_frame, and
         adjustment attribute.
         '''
+        y1, y2 = int(self.view_start_y), int(self.view_end_y)
+        x1, x2 = int(self.view_start_x), int(self.view_end_x)
         # create pyglet image object so we can display brush location
-        brush_img = self.array_to_img(input_array = self.brush.view,
+        brush_img = self.array_to_img(input_array = self.brush.view[y1:y2, x1:x2],
                                                     vmax = self.get_max_label() + self.adjustment,
                                                     cmap = self.overlay_cmap,
                                                     output = 'pyglet')
@@ -680,7 +709,7 @@ class CalibanWindow:
             # get raw and annotated data
             # TODO: np.copy might be appropriate here for clarity
             # (current_raw is not edited in place but np.copy would help safeguard that)
-            current_raw = self.get_raw_current_frame()
+            current_raw = self.get_raw_current_frame()[y1:y2, x1:x2]
             raw_RGB = self.apply_raw_image_adjustments(current_raw)
             comp_img = self.array_to_img(input_array = raw_RGB,
                                         vmax = None,
@@ -690,7 +719,7 @@ class CalibanWindow:
         # create pyglet image from composite if you want to see annotation overlay
         # (self.composite view is generated/updated separately)
         if not self.hide_annotations:
-            comp_img = self.array_to_img(input_array = self.composite_view,
+            comp_img = self.array_to_img(input_array = self.composite_view[y1:y2, x1:x2],
                                                 vmax = None,
                                                 cmap = None,
                                                 output = 'pyglet')
@@ -721,8 +750,8 @@ class CalibanWindow:
         sprite = pyglet.sprite.Sprite(image, x=self.sidebar_width + pad, y=pad)
 
         # scale x and y dimensions of sprite
-        sprite.update(scale_x=self.scale_factor,
-                      scale_y=self.scale_factor)
+        sprite.update(scale_x=self.scale_factor*self.zoom,
+                      scale_y=self.scale_factor*self.zoom)
 
         # set opacity of sprite (255 is default)
         sprite.opacity = opacity
