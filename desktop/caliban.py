@@ -125,12 +125,13 @@ class CalibanWindow:
         self.max_y = int(USER_SCREEN.height * 0.8) - 2*self.image_padding
         self.max_x = int(USER_SCREEN.width *0.8) - self.sidebar_width - 2*self.image_padding
 
-        self.view_end_y = min(self.max_y, self.height)
-        self.view_end_x = min(self.max_x, self.width)
+        self.visible_y_pix = min(self.max_y, self.height)
+        self.visible_x_pix = min(self.max_x, self.width)
 
         # can't resize window to be smaller than the display area when viewed at 1x scale
-        self.window.set_minimum_size(width = self.view_end_x + self.sidebar_width + 2*self.image_padding,
-                                     height = self.view_end_y + 2*self.image_padding)
+        if not (self.height > self.max_y or self.width > self.max_x):
+            self.window.set_minimum_size(width = self.visible_x_pix + self.sidebar_width + 2*self.image_padding,
+                                     height = self.visible_y_pix + 2*self.image_padding)
 
         # bind custom event handlers to window
         self.window.on_draw = self.on_draw
@@ -233,13 +234,13 @@ class CalibanWindow:
         x //= self.scale_factor
         # convert viewing pane x to image x by accounting for offset and zoom
         x //= self.zoom
-        x += int(self.view_start_x)
+        x = int(self.view_start_x + x)
 
         # convert event y to image y by rescaling and changing coordinates:
         # pyglet y has increasing y at the top of the screen, opposite convention of array indices
-        y = self.height - ((y - self.image_padding)// self.scale_factor)
+        y = self.visible_y_pix - ((y - self.image_padding)// self.scale_factor)
         y //= self.zoom
-        y += int(self.view_start_y)
+        y = int(self.view_start_y + y)
 
         # check that mouse cursor is within bounds of image before updating
         if 0 <= x < self.width and 0 <= y < self.height:
@@ -303,17 +304,15 @@ class CalibanWindow:
     def pan(self, dx, dy):
         # y coords are inverted
         new_y_start = self.view_start_y + dy/(self.zoom*self.scale_factor)
-        new_y_end = self.view_end_y + dy/(self.zoom*self.scale_factor)
-        if new_y_start >= 0 and new_y_end <= self.height:
-            self.view_start_y = max(0, new_y_start)
-            self.view_end_y = min(self.height, new_y_end)
+        if new_y_start >= 0:
+            new_y_start = max(0, new_y_start)
+            self.view_start_y = min(new_y_start, self.height - int(self.visible_y_pix/self.zoom))
 
-        # y coords
+        # x coords
         new_x_start = self.view_start_x - dx/(self.zoom*self.scale_factor)
-        new_x_end = self.view_end_x - dx/(self.zoom*self.scale_factor)
-        if new_x_start >= 0 and new_x_end <= self.width:
-            self.view_start_x = max(0, new_x_start)
-            self.view_end_x = min(self.width, new_x_end)
+        if new_x_start >= 0:
+            new_x_start = max(0, new_x_start)
+            self.view_start_x = min(new_x_start, self.width - int(self.visible_x_pix/self.zoom))
 
     def on_mouse_press(self, x, y, button, modifiers):
         '''
@@ -587,8 +586,10 @@ class CalibanWindow:
             self.sidebar_width, self.image_padding to offset lines appropriately
         '''
         h1, h2 = self.highlighted_cell_one, self.highlighted_cell_two
-        y1, y2 = int(self.view_start_y), int(self.view_end_y)
-        x1, x2 = int(self.view_start_x), int(self.view_end_x)
+        y1 = max(int(self.view_start_y), 0)
+        y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
+        x1 = max(int(self.view_start_x), 0)
+        x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
         frame_width = (x2 - x1) * self.zoom * self.scale_factor
         frame_height = (y2 - y1) * self.zoom * self.scale_factor
 
@@ -601,7 +602,7 @@ class CalibanWindow:
         right = self.sidebar_width + frame_width + pad
 
         # bottom line
-        if math.ceil(self.view_end_y) == self.height:
+        if y2 == self.height:
             pyglet.graphics.draw(2, pyglet.gl.GL_LINES,
                 ("v2f", (left, bottom -1,
                      right+1, bottom-1))
@@ -633,7 +634,7 @@ class CalibanWindow:
                 )
 
         # right line
-        if math.ceil(self.view_end_x) == self.width:
+        if x2 == self.width:
             pyglet.graphics.draw(2, pyglet.gl.GL_LINES,
                 ("v2f", (right+1, bottom -1,
                      right+1, top))
@@ -698,8 +699,11 @@ class CalibanWindow:
             self.draw_pyglet_image to display pyglet Image on screen in correct
                 location with scaling
         '''
-        y1, y2 = int(self.view_start_y), int(self.view_end_y)
-        x1, x2 = int(self.view_start_x), int(self.view_end_x)
+        y1 = max(int(self.view_start_y), 0)
+        y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
+        x1 = max(int(self.view_start_x), 0)
+        x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
+
         raw_array = self.get_raw_current_frame()[y1:y2, x1:x2]
         adjusted_raw = self.apply_raw_image_adjustments(raw_array, cmap = self.current_cmap)
         image = self.array_to_img(input_array = adjusted_raw,
@@ -725,8 +729,10 @@ class CalibanWindow:
             self.draw_pyglet_image to display pyglet Image on screen in correct
                 location with scaling
         '''
-        y1, y2 = int(self.view_start_y), int(self.view_end_y)
-        x1, x2 = int(self.view_start_x), int(self.view_end_x)
+        y1 = max(int(self.view_start_y), 0)
+        y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
+        x1 = max(int(self.view_start_x), 0)
+        x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
         ann_array = self.get_ann_current_frame()[y1:y2,x1:x2]
 
         # annotations use cubehelix cmap with highlighting in red
@@ -755,8 +761,10 @@ class CalibanWindow:
         class to have methods for get_max_label and get_raw_current_frame, and
         adjustment attribute.
         '''
-        y1, y2 = int(self.view_start_y), int(self.view_end_y)
-        x1, x2 = int(self.view_start_x), int(self.view_end_x)
+        y1 = max(int(self.view_start_y), 0)
+        y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
+        x1 = max(int(self.view_start_x), 0)
+        x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
         # create pyglet image object so we can display brush location
         brush_img = self.array_to_img(input_array = self.brush.view[y1:y2, x1:x2],
                                                     vmax = self.get_max_label() + self.adjustment,
