@@ -187,6 +187,22 @@ class CalibanWindow:
         '''
         self.scale_screen()
 
+        if self.window.fullscreen:
+            self.max_y = USER_SCREEN.height - 2*self.image_padding
+            self.max_x = USER_SCREEN.width - self.sidebar_width - 2*self.image_padding
+
+            self.visible_y_pix = min(self.max_y, self.height)
+            self.visible_x_pix = min(self.max_x, self.width)
+
+        else:
+            self.max_y = int(USER_SCREEN.height * 0.8) - 2*self.image_padding
+            self.max_x = int(USER_SCREEN.width *0.8) - self.sidebar_width - 2*self.image_padding
+
+            self.visible_y_pix = min(self.max_y, self.height)
+            self.visible_x_pix = min(self.max_x, self.width)
+
+            self.window.set_maximum_size(width = int(USER_SCREEN.width *0.8), height = int(USER_SCREEN.height * 0.8))
+
     def scale_screen(self):
         '''
         Recalculate scaling factor for image display. Calculates largest
@@ -2482,6 +2498,9 @@ class ZStackReview(CalibanWindow):
             self.mode.clear()
             # reset from thresholding
             self.brush.reset()
+
+        elif symbol == key.F11:
+            self.window.set_fullscreen(fullscreen = not self.window.fullscreen)
 
     def edit_mode_universal_keypress_helper(self, symbol, modifiers):
         '''
