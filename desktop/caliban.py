@@ -101,7 +101,7 @@ class CalibanWindow:
     window = pyglet.window.Window(resizable=True)
 
     # set maximum size based on user's screen
-    window.set_maximum_size(width = USER_SCREEN.width - 40, height = USER_SCREEN.height - 40)
+    window.set_maximum_size(width = int(USER_SCREEN.width *0.8), height = int(USER_SCREEN.height * 0.8))
 
     # use crosshair cursor instead of usual cursor
     cursor = window.get_system_mouse_cursor(window.CURSOR_CROSSHAIR)
@@ -122,8 +122,8 @@ class CalibanWindow:
         self.view_start_y = 0
         self.view_start_x = 0
 
-        self.max_y = USER_SCREEN.height - 2*self.image_padding
-        self.max_x = USER_SCREEN.width - self.sidebar_width - 2*self.image_padding
+        self.max_y = int(USER_SCREEN.height * 0.8) - 2*self.image_padding
+        self.max_x = int(USER_SCREEN.width *0.8) - self.sidebar_width - 2*self.image_padding
 
         self.view_end_y = min(self.max_y, self.height)
         self.view_end_x = min(self.max_x, self.width)
