@@ -2328,30 +2328,34 @@ class ZStackReview(CalibanWindow):
                 applied to frame)
             self.edit_mode, self.hide_annotations to check if the composite image should be updated
         '''
-        # adjust brightness of raw image, if looking at raw image
-        # (also applies to edit mode if self.draw_raw is True)
-        if self.draw_raw:
-            # self.max_intensity_dict[self.channel] has a value so we can adjust it
-            # check minimum brightness of image as lower bound of brightness adjustment
-            min_intensity = np.min(self.raw[self.current_frame,:,:,self.channel])
-            # adjust max brightness value by a percentage of the current value
-            raw_adjust = max(int(self.max_intensity_dict[self.channel] * 0.02), 1)
-            # set the adjusted max brightness value, but it should never be the same or less than
-            # the minimum brightness in the image
-            self.max_intensity_dict[self.channel] = max(self.max_intensity_dict[self.channel] - raw_adjust * scroll_y,
-                                                    min_intensity + 1)
-            self.max_intensity = self.max_intensity_dict[self.channel]
+        if self.key_states[key.LCTRL] or self.key_states[key.RCTRL]:
+            self.adjust_zoom(scroll_y)
 
-        # adjusting colormap range of annotations
-        elif not self.draw_raw:
-            # self.adjustment value for the current feature should never reduce possible colors to 0
-            if self.get_max_label() + (self.adjustment_dict[self.feature] - 1 * scroll_y) > 0:
-                self.adjustment_dict[self.feature] = self.adjustment_dict[self.feature] - 1 * scroll_y
-            self.adjustment = self.adjustment_dict[self.feature]
+        else:
+            # adjust brightness of raw image, if looking at raw image
+            # (also applies to edit mode if self.draw_raw is True)
+            if self.draw_raw:
+                # self.max_intensity_dict[self.channel] has a value so we can adjust it
+                # check minimum brightness of image as lower bound of brightness adjustment
+                min_intensity = np.min(self.raw[self.current_frame,:,:,self.channel])
+                # adjust max brightness value by a percentage of the current value
+                raw_adjust = max(int(self.max_intensity_dict[self.channel] * 0.02), 1)
+                # set the adjusted max brightness value, but it should never be the same or less than
+                # the minimum brightness in the image
+                self.max_intensity_dict[self.channel] = max(self.max_intensity_dict[self.channel] - raw_adjust * scroll_y,
+                                                        min_intensity + 1)
+                self.max_intensity = self.max_intensity_dict[self.channel]
 
-        # color/brightness adjustments will change what the composited image looks like
-        if self.edit_mode and not self.hide_annotations:
-            self.helper_update_composite()
+            # adjusting colormap range of annotations
+            elif not self.draw_raw:
+                # self.adjustment value for the current feature should never reduce possible colors to 0
+                if self.get_max_label() + (self.adjustment_dict[self.feature] - 1 * scroll_y) > 0:
+                    self.adjustment_dict[self.feature] = self.adjustment_dict[self.feature] - 1 * scroll_y
+                self.adjustment = self.adjustment_dict[self.feature]
+
+            # color/brightness adjustments will change what the composited image looks like
+            if self.edit_mode and not self.hide_annotations:
+                self.helper_update_composite()
 
     def on_key_press(self, symbol, modifiers):
         '''
