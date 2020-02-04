@@ -314,6 +314,39 @@ class CalibanWindow:
             new_x_start = max(0, new_x_start)
             self.view_start_x = min(new_x_start, self.width - int(self.visible_x_pix/self.zoom))
 
+    def adjust_zoom(self, scroll_y):
+
+        pixel_w = int(self.visible_x_pix/self.zoom)
+        pixel_h = int(self.visible_y_pix/self.zoom)
+
+        if self.zoom == 1 and scroll_y < 0:
+            new_zoom = max(self.zoom + 0.1 * scroll_y, 0.1)
+        elif self.zoom < 1:
+            new_zoom = max(self.zoom + 0.1 * scroll_y, 0.1)
+        else:
+            new_zoom = min(self.zoom + 0.5 * scroll_y, 10)
+
+        # adjust start and end indices
+        prop_y = (self.y - self.view_start_y)*self.zoom/(self.visible_y_pix)
+        prop_x = (self.x - self.view_start_x)*self.zoom/(self.visible_x_pix)
+
+        # don't zoom unnecessarily far out
+        if (self.zoom < 1 and new_zoom < self.zoom and
+            self.visible_x_pix/self.zoom > self.width and
+            self.visible_y_pix/self.zoom > self.height):
+            return
+
+        else:
+            y_diff =  pixel_h - int(self.visible_y_pix/new_zoom)
+            new_y_start = max(0, self.view_start_y + prop_y*y_diff)
+            self.view_start_y = min(self.height - int(self.visible_y_pix/new_zoom), new_y_start)
+
+            x_diff = pixel_w - int(self.visible_x_pix/new_zoom)
+            new_x_start = max(0, self.view_start_x + prop_x*x_diff)
+            self.view_start_x = min(self.width - int(self.visible_x_pix/new_zoom), new_x_start)
+
+            self.zoom = new_zoom
+
     def on_mouse_press(self, x, y, button, modifiers):
         '''
         Overwrite pyglet default window on_mouse_press event.
