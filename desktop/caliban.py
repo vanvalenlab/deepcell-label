@@ -1077,7 +1077,8 @@ class CalibanWindow:
         # TODO: render label in a batch
         # create pyglet label anchored to top of left side
         frame_label = pyglet.text.Label("Currently viewing:\n"
-                                        + "{}".format(self.create_frame_text())
+                                        + "{}\n".format(self.create_frame_text())
+                                        + "{}\n".format(self.create_zoom_text())
                                         + "{}\n\n".format(self.create_disp_image_text())
                                         + "{}\n".format(self.create_highlight_text())
                                         + "{}\n\n".format(display_filter_info)
@@ -1113,6 +1114,18 @@ class CalibanWindow:
 
         # draw the label
         cell_info_label.draw()
+
+    def create_zoom_text(self):
+        y1 = max(int(self.view_start_y), 0)
+        y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
+        x1 = max(int(self.view_start_x), 0)
+        x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
+
+        zoom_text = "Zoom: {:1.1f}".format(self.zoom)
+        zoom_text += "\nWindow (y): {}-{}".format(y1, y2)
+        zoom_text += "\nWindow (x): {}-{}".format(x1, x2)
+
+        return zoom_text
 
     def create_disp_image_text(self):
         '''
