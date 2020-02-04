@@ -47,6 +47,7 @@ from skimage.measure import regionprops
 from skimage.exposure import rescale_intensity, equalize_adapthist
 from skimage import color, img_as_float, filters
 from skimage.util import invert
+from skimage.segmentation import find_boundaries
 
 from imageio import imread, imwrite
 
@@ -819,12 +820,13 @@ class CalibanWindow:
 
         # create pyglet image object so we can display brush location
         brush_arr = self.brush.view[y1:y2, x1:x2]
-        brush_arr = np.ma.masked_equal(brush_arr, 0)
+        # brush_arr = np.ma.masked_equal(brush_arr, 0)
 
-        brush_img = self.array_to_img(input_array = brush_arr,
-                                                    vmax = self.get_max_label() + self.adjustment,
-                                                    cmap = self.labels_cmap,
-                                                    output = 'pyglet')
+        # brush_img = self.array_to_img(input_array = brush_arr,
+        #                                             vmax = self.get_max_label() + self.adjustment,
+        #                                             cmap = self.labels_cmap,
+        #                                             output = 'pyglet')
+
 
         # create pyglet image from only the adjusted raw, if hiding annotations
         if self.hide_annotations:
@@ -832,26 +834,38 @@ class CalibanWindow:
             # TODO: np.copy might be appropriate here for clarity
             # (current_raw is not edited in place but np.copy would help safeguard that)
             current_raw = self.get_raw_current_frame()[y1:y2, x1:x2]
-            raw_RGB = self.apply_raw_image_adjustments(current_raw)
-            comp_img = self.array_to_img(input_array = raw_RGB,
-                                        vmax = None,
-                                        cmap = None,
-                                        output = 'pyglet')
+            display = self.apply_raw_image_adjustments(current_raw)
+            # comp_img = self.array_to_img(input_array = raw_RGB,
+            #                             vmax = None,
+            #                             cmap = None,
+            #                             output = 'pyglet')
 
         # create pyglet image from composite if you want to see annotation overlay
         # (self.composite view is generated/updated separately)
         if not self.hide_annotations:
-            comp_img = self.array_to_img(input_array = self.composite_view[y1:y2, x1:x2],
-                                                vmax = None,
-                                                cmap = None,
-                                                output = 'pyglet')
+            # comp_img = self.array_to_img(input_array = self.composite_view[y1:y2, x1:x2],
+            #                                     vmax = None,
+            #                                     cmap = None,
+            #                                     output = 'pyglet')
+            display = self.composite_view[y1:y2, x1:x2]
+
+        display = self.apply_transparent_highlight(display, brush_arr)
+
+        if self.brush.erase and self.brush.conv_val == -1:
+            brush_outline = self.generate_ann_boundaries(brush_arr, color ='red')
+        else:
+            brush_outline = self.generate_ann_boundaries(brush_arr)
+        display = self.overlay_RGB(display, brush_outline)
+
+        comp_img = self.array_to_img(input_array = display.astype(np.uint8),
+                                    vmax = None, cmap = None, output = 'pyglet')
 
         gl.glTexParameteri(gl.GL_TEXTURE_2D,
                            gl.GL_TEXTURE_MAG_FILTER,
                            gl.GL_NEAREST)
 
         self.draw_pyglet_image(comp_img)
-        self.draw_pyglet_image(brush_img, opacity = 128)
+        # self.draw_pyglet_image(brush_img, opacity = 128)
 
     def draw_pyglet_image(self, image, opacity = 255):
         '''
@@ -930,6 +944,38 @@ class CalibanWindow:
 
         else:
             return None
+
+    def generate_ann_boundaries(self, img, color = 'white'):
+        boundary_mask = find_boundaries(img)
+        boundary_mask = np.expand_dims(boundary_mask, axis = 2)
+        if color == 'white':
+            rgb_mask = np.where(boundary_mask ==1, [255, 255, 255], [0,0,0])
+        elif color == 'red':
+            rgb_mask = np.where(boundary_mask ==1, [255, 0, 0], [0,0,0])
+
+        return rgb_mask
+
+    def overlay_RGB(self, base_RGB, overlay_RGB):
+        '''
+        Totally replaces pixels in base_RGB with pixels from overlay_RGB.
+        As such, does not create composite of two images (overlay_RGB completely
+        obscures pixels from base_RGB). Used to draw outlines in overlay_RGB over
+        base_RGB.
+        '''
+        # mask of which pixels in overlay_RGB are black
+        overlay_mask = np.all(overlay_RGB == (0, 0, 0), axis=-1, keepdims = True)
+        # where overlay_RGB is black, use the underlying image
+        return np.where(overlay_mask, base_RGB, overlay_RGB)
+
+    def apply_transparent_highlight(self, base_RGB, mask):
+        mask = np.expand_dims(mask, axis = 2)
+        if self.invert:
+            adjustment = -40
+        else:
+            adjustment = 40
+        base_RGB = np.where(mask != 0, base_RGB + adjustment, base_RGB)
+        base_RGB = np.clip(base_RGB, a_min = 0, a_max = 255)
+        return base_RGB
 
     def apply_label_highlight(self, frame, RGB_frame):
         '''
