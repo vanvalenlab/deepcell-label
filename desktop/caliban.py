@@ -1229,20 +1229,29 @@ class CalibanWindow:
         class to have highlighted_cell_one and highlighted_cell_two attributes.
         Added to info on side of screen (via draw_persistent_info).
         '''
+        highlight_text = "Highlighting: {}\n".format(on_or_off(self.highlight))
+
         if self.edit_mode:
-            highlight_text = "Highlighting: -\nHighlighted cell(s): None\n"
+            h1, h2 = self.brush.h1, self.brush.h2
         else:
-            highlight_text = "Highlighting: {}\n".format(on_or_off(self.highlight))
-            if self.highlight:
-                if self.highlighted_cell_two != -1:
-                    labels = "{}, {}".format(self.highlighted_cell_one, self.highlighted_cell_two)
-                elif self.highlighted_cell_one != -1:
-                    labels = "{}".format(self.highlighted_cell_one)
-                else:
-                    labels = "None"
+            h1, h2 = self.highlighted_cell_one, self.highlighted_cell_two
+
+        if self.highlight:
+            # two labels highlighted
+            if h2 != -1:
+                labels = "{}, {}".format(h1, h2)
+            # only one label highlighted
+            elif h1 != -1:
+                labels = "{}".format(h1)
+            # nothing highlighted
             else:
                 labels = "None"
-            highlight_text += "Highlighted cell(s): {}\n".format(labels)
+
+        # nothing highlighted because highlighting is off
+        else:
+            labels = "None"
+
+        highlight_text += "Highlighted cell(s): {}\n".format(labels)
 
         return highlight_text
 
