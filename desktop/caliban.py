@@ -3868,7 +3868,13 @@ class RGBNpz(CalibanWindow):
         else:
             raw = self.raw[:,:,0:3]
 
-        return raw
+        if self.channel_max < 3:
+            padded_raw = np.zeros((self.height, self.width, 3))
+            padded_raw[:,:,0:self.channel_max] = raw
+            return padded_raw
+
+        else:
+            return raw
 
     def draw_raw_frame(self):
         '''
