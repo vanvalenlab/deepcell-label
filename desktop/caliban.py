@@ -322,15 +322,13 @@ class CalibanWindow:
     def pan(self, dx, dy):
         # y coords are inverted
         new_y_start = self.view_start_y + dy/(self.zoom*self.scale_factor)
-        if new_y_start >= 0:
-            new_y_start = max(0, new_y_start)
-            self.view_start_y = min(new_y_start, self.height - int(self.visible_y_pix/self.zoom))
+        new_y_start = max(0, new_y_start)
+        self.view_start_y = min(new_y_start, self.height - int(self.visible_y_pix/self.zoom))
 
         # x coords
         new_x_start = self.view_start_x - dx/(self.zoom*self.scale_factor)
-        if new_x_start >= 0:
-            new_x_start = max(0, new_x_start)
-            self.view_start_x = min(new_x_start, self.width - int(self.visible_x_pix/self.zoom))
+        new_x_start = max(0, new_x_start)
+        self.view_start_x = min(new_x_start, self.width - int(self.visible_x_pix/self.zoom))
 
     def adjust_zoom(self, scroll_y):
 
