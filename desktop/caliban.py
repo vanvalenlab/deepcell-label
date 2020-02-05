@@ -1334,6 +1334,10 @@ class CalibanBrush:
         self.background = 0
         self.draw_value = 1
 
+        # value(s) of label to highlight when window highlighting is turned on
+        self.h1 = 1
+        self.h2 = -1
+
         # size of annotation; used to put bounds on size, area of brush
         self.height = height
         self.width = width
@@ -1527,6 +1531,16 @@ class CalibanBrush:
             else:
                 self.background = 0
                 self.draw_value = self.edit_val
+
+        self.set_highlight()
+
+    def set_highlight(self):
+        if self.conv_val != -1:
+            self.h1 = self.conv_val
+            self.h2 = self.conv_target
+        else:
+            self.h1 = self.edit_val
+            self.h2 = -1
 
     def update_center(self, y, x):
         '''
