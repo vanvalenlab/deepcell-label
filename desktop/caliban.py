@@ -445,20 +445,21 @@ class CalibanWindow:
                 changes were applied to the annotation during mouse drag (brush) or as
                 a result of mouse release (thresholding)
         '''
-        # mouse release only has special behavior in pixel-editing mode; most custom
-        # behavior during a mouse click is handled in the mouse press event
-        if self.edit_mode:
-            # releasing the mouse finalizes bounding box for thresholding
-            if not self.brush.show and self.mode.action == "DRAW BOX":
-                self.handle_threshold()
-                # self.brush.show reset to True here, so brush preview will render
+        if not self.key_states[key.SPACE]:
+            # mouse release only has special behavior in pixel-editing mode; most custom
+            # behavior during a mouse click is handled in the mouse press event
+            if self.edit_mode:
+                # releasing the mouse finalizes bounding box for thresholding
+                if not self.brush.show and self.mode.action == "DRAW BOX":
+                    self.handle_threshold()
+                    # self.brush.show reset to True here, so brush preview will render
 
-            # update brush view (prevents brush flickering)
-            self.brush.redraw_view()
-            # annotation has changed (either during mouse drag for brush, or upon release
-            # for threshold), update the image composite with the current annotation
-            if not self.hide_annotations:
-                self.helper_update_composite()
+                # update brush view (prevents brush flickering)
+                self.brush.redraw_view()
+                # annotation has changed (either during mouse drag for brush, or upon release
+                # for threshold), update the image composite with the current annotation
+                if not self.hide_annotations:
+                    self.helper_update_composite()
 
     def mouse_press_none_helper(self, modifiers, label):
         '''
