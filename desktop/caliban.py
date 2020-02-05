@@ -2556,6 +2556,11 @@ class ZStackReview(CalibanWindow):
             self.mouse_visible = not self.mouse_visible
             self.window.set_mouse_visible(self.mouse_visible)
 
+        # TOGGLE HIGHLIGHT
+        # note: shift+H is conditional keybind elsewhere
+        elif symbol == key.H:
+            self.highlight = not self.highlight
+
         # CLEAR/CANCEL ACTION
         elif symbol == key.ESCAPE:
             # clear highlighted cells
@@ -2607,12 +2612,12 @@ class ZStackReview(CalibanWindow):
                 self.helper_update_composite()
 
         # TOGGLE ANNOTATION VISIBILITY
-        # TODO: will want to change to shift+H in future when adding highlight to edit mode
         if symbol == key.H:
-            self.hide_annotations = not self.hide_annotations
-            # in case any display changes have been made while hiding annotations
-            if not self.hide_annotations:
-                self.helper_update_composite()
+            if modifiers & key.MOD_SHIFT:
+                self.hide_annotations = not self.hide_annotations
+                # in case any display changes have been made while hiding annotations
+                if not self.hide_annotations:
+                    self.helper_update_composite()
 
     def edit_mode_none_keypress_helper(self, symbol, modifiers):
         '''
@@ -2732,11 +2737,6 @@ class ZStackReview(CalibanWindow):
         # toggle raw/label display, "universal" in label mode
         if symbol == key.Z:
             self.draw_raw = not self.draw_raw
-
-        # toggle highlight, "universal" in label mode
-        # TODO: this will eventually become truly universal (as in browser version)
-        if symbol == key.H:
-            self.highlight = not self.highlight
 
         # HIGHLIGHT CYCLING
         # TODO: add highlight cycling when cell not selected
