@@ -637,7 +637,10 @@ class CalibanWindow:
                 window where image is being displayed
             self.sidebar_width, self.image_padding to offset lines appropriately
         '''
-        h1, h2 = self.highlighted_cell_one, self.highlighted_cell_two
+        if self.edit_mode:
+            h1, h2 = self.brush.h1, self.brush.h2
+        else:
+            h1, h2 = self.highlighted_cell_one, self.highlighted_cell_two
         y1 = max(int(self.view_start_y), 0)
         y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
         x1 = max(int(self.view_start_x), 0)
