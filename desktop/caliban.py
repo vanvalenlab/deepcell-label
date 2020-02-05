@@ -2583,6 +2583,16 @@ class ZStackReview(CalibanWindow):
             # reset from thresholding
             self.brush.reset()
 
+        # QUICK PANNING
+        elif symbol == key.PAGEUP:
+            self.pan(dx = 0, dy = -self.visible_y_pix)
+        elif symbol == key.PAGEDOWN:
+            self.pan(dx = 0, dy = self.visible_y_pix)
+        elif symbol == key.HOME:
+            self.pan(dx = self.visible_x_pix, dy = 0)
+        elif symbol == key.END:
+            self.pan(dx = - self.visible_x_pix, dy = 0)
+
         elif symbol == key.F11:
             self.window.set_fullscreen(fullscreen = not self.window.fullscreen)
 
