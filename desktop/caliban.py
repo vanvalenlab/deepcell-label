@@ -3824,8 +3824,12 @@ class RGBNpz(CalibanWindow):
         pass
 
     def update_adjusted_raw(self):
+        # self.raw may not be in 8 bit (0, 255) format; rescale without modifying original
+        rescaled_raw = rescale_intensity(self.raw[:,:,0:6], in_range = 'image', out_range = 'uint8')
+        rescaled_raw = rescaled_raw.astype('uint8')
+
         for c, adjust in enumerate(self.adjustments):
-            img_max = np.max(self.raw[:,:,c])
+            img_max = np.max(rescaled_raw[:,:,c])
 
             # catch unreasonable adjustments
             if img_max + adjust < 2:
@@ -3838,27 +3842,27 @@ class RGBNpz(CalibanWindow):
 
             if c < 3:
                 if self.channel_on[c]:
-                    self.adjusted_raw[:,:,c] = rescale_intensity(self.raw[:,:,c],
+                    self.adjusted_raw[:,:,c] = rescale_intensity(rescaled_raw[:,:,c],
                         in_range =(0, img_max + adjust), out_range = 'dtype')
                 else:
                     self.adjusted_raw[:,:,c] = 0
             # cyan
             elif c == 3:
                 if self.channel_on[c]:
-                    cyan = rescale_intensity(self.raw[:,:,c], in_range = (0, img_max + adjust), out_range = 'dtype')
+                    cyan = rescale_intensity(rescaled_raw[:,:,c], in_range = (0, img_max + adjust), out_range = 'dtype')
                     self.adjusted_raw[:,:,1] = self.adjusted_raw[:,:,1] + cyan
                     self.adjusted_raw[:,:,2] = self.adjusted_raw[:,:,2] + cyan
             # magenta
             elif c == 4:
                 if self.channel_on[c]:
-                    magenta = rescale_intensity(self.raw[:,:,c], in_range = (0, img_max + adjust), out_range = 'dtype')
+                    magenta = rescale_intensity(rescaled_raw[:,:,c], in_range = (0, img_max + adjust), out_range = 'dtype')
                     self.adjusted_raw[:,:,0] = self.adjusted_raw[:,:,0] + magenta
                     self.adjusted_raw[:,:,2] = self.adjusted_raw[:,:,2] + magenta
 
             # yellow
             elif c == 5:
                 if self.channel_on[c]:
-                    yellow = rescale_intensity(self.raw[:,:,c], in_range = (0, img_max + adjust), out_range = 'dtype')
+                    yellow = rescale_intensity(rescaled_raw[:,:,c], in_range = (0, img_max + adjust), out_range = 'dtype')
                     self.adjusted_raw[:,:,0] = self.adjusted_raw[:,:,0] + yellow
                     self.adjusted_raw[:,:,2] = self.adjusted_raw[:,:,1] + yellow
 
