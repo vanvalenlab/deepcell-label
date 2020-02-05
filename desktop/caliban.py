@@ -858,6 +858,14 @@ class CalibanWindow:
             brush_outline = self.generate_ann_boundaries(brush_arr)
         display = self.overlay_RGB(display, brush_outline)
 
+        if self.highlight:
+            white_mask = np.where(self.get_ann_current_frame()[y1:y2,x1:x2] == self.brush.h1, 1, 0)
+            white_mask = self.generate_ann_boundaries(white_mask)
+            display = self.overlay_RGB(display, white_mask)
+            red_mask = np.where(self.get_ann_current_frame()[y1:y2,x1:x2] == self.brush.h2, 1, 0)
+            red_mask = self.generate_ann_boundaries(red_mask, color = 'red')
+            display = self.overlay_RGB(display, red_mask)
+
         comp_img = self.array_to_img(input_array = display.astype(np.uint8),
                                     vmax = None, cmap = None, output = 'pyglet')
 
