@@ -3859,7 +3859,7 @@ class RGBNpz(CalibanWindow):
                 if self.channel_on[c]:
                     yellow = rescale_intensity(rescaled_raw[:,:,c], in_range = (0, range_max), out_range = 'dtype')
                     self.adjusted_raw[:,:,0] = self.adjusted_raw[:,:,0] + yellow
-                    self.adjusted_raw[:,:,2] = self.adjusted_raw[:,:,1] + yellow
+                    self.adjusted_raw[:,:,1] = self.adjusted_raw[:,:,1] + yellow
 
     def get_raw_current_frame(self):
         if self.show_adjusted_raw:
