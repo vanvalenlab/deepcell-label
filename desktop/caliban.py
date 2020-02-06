@@ -979,12 +979,12 @@ class CalibanWindow:
 
     def apply_transparent_highlight(self, base_RGB, mask):
         mask = np.expand_dims(mask, axis = 2)
-        if self.invert:
-            adjustment = -40
-        else:
-            adjustment = 40
+        adjustment = 40
+
+        base_RGB = base_RGB.astype('uint16')
         base_RGB = np.where(mask != 0, base_RGB + adjustment, base_RGB)
-        base_RGB = np.clip(base_RGB, a_min = 0, a_max = 255)
+        base_RGB = np.clip(base_RGB, a_min = 0, a_max = 255).astype('uint8')
+
         return base_RGB
 
     def apply_label_highlight(self, frame, RGB_frame):
