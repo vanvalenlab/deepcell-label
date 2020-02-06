@@ -3832,37 +3832,32 @@ class RGBNpz(CalibanWindow):
             img_max = np.max(rescaled_raw[:,:,c])
 
             # catch unreasonable adjustments
-            if img_max + adjust < 2:
-                self.adjustments[self.channel] = self.adjustments[self.channel] + 1
-
-            # can't dim any lower than original brightness - may change
-            # definitely want to set bound on this though
-            if img_max + adjust > 255:
-                self.adjustments[self.channel] = self.adjustments[self.channel] -1
+            range_max = min(img_max + adjust, 255)
+            range_max = max(range_max, 1)
 
             if c < 3:
                 if self.channel_on[c]:
                     self.adjusted_raw[:,:,c] = rescale_intensity(rescaled_raw[:,:,c],
-                        in_range =(0, img_max + adjust), out_range = 'dtype')
+                        in_range =(0, range_max), out_range = 'dtype')
                 else:
                     self.adjusted_raw[:,:,c] = 0
             # cyan
             elif c == 3:
                 if self.channel_on[c]:
-                    cyan = rescale_intensity(rescaled_raw[:,:,c], in_range = (0, img_max + adjust), out_range = 'dtype')
+                    cyan = rescale_intensity(rescaled_raw[:,:,c], in_range = (0, range_max), out_range = 'dtype')
                     self.adjusted_raw[:,:,1] = self.adjusted_raw[:,:,1] + cyan
                     self.adjusted_raw[:,:,2] = self.adjusted_raw[:,:,2] + cyan
             # magenta
             elif c == 4:
                 if self.channel_on[c]:
-                    magenta = rescale_intensity(rescaled_raw[:,:,c], in_range = (0, img_max + adjust), out_range = 'dtype')
+                    magenta = rescale_intensity(rescaled_raw[:,:,c], in_range = (0, range_max), out_range = 'dtype')
                     self.adjusted_raw[:,:,0] = self.adjusted_raw[:,:,0] + magenta
                     self.adjusted_raw[:,:,2] = self.adjusted_raw[:,:,2] + magenta
 
             # yellow
             elif c == 5:
                 if self.channel_on[c]:
-                    yellow = rescale_intensity(rescaled_raw[:,:,c], in_range = (0, img_max + adjust), out_range = 'dtype')
+                    yellow = rescale_intensity(rescaled_raw[:,:,c], in_range = (0, range_max), out_range = 'dtype')
                     self.adjusted_raw[:,:,0] = self.adjusted_raw[:,:,0] + yellow
                     self.adjusted_raw[:,:,2] = self.adjusted_raw[:,:,1] + yellow
 
@@ -4105,8 +4100,12 @@ class RGBNpz(CalibanWindow):
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self.draw_raw or self.edit_mode or self.show_label_outlines:
             current_adjustment = self.adjustments[self.channel]
-            # need to put bounds on this
             current_adjustment += scroll_y
+
+            # these are somewhat arbitrary bounds on the value
+            current_adjustment = min(255, current_adjustment)
+            current_adjustment = max(-255, current_adjustment)
+
             self.adjustments[self.channel] = current_adjustment
             self.update_adjusted_raw()
 
