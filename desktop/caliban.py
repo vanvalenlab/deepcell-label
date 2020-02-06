@@ -3865,7 +3865,19 @@ class RGBNpz(CalibanWindow):
         if self.show_adjusted_raw:
             raw = self.adjusted_raw[:,:,0:3]
         else:
-            raw = self.raw[:,:,0:3]
+            # raw = self.raw[:,:,0:3]
+            rescaled_raw = rescale_intensity(self.raw[:,:,0:6], in_range = 'image', out_range = 'uint8')
+            raw = rescaled_raw[:,:,0:3]
+            # add cyan
+            if self.channel_max > 3:
+                raw[:,:,1] = raw[:,:,1] + rescaled_raw[:,:,3]
+                raw[:,:,2] = raw[:,:,2] + rescaled_raw[:,:,3]
+            if self.channel_max > 4:
+                raw[:,:,0] = raw[:,:,0] + rescaled_raw[:,:,4]
+                raw[:,:,2] = raw[:,:,2] + rescaled_raw[:,:,4]
+            if self.channel_max > 5:
+                raw[:,:,0] = raw[:,:,0] + rescaled_raw[:,:,5]
+                raw[:,:,1] = raw[:,:,1] + rescaled_raw[:,:,5]
 
         if self.channel_max < 3:
             padded_raw = np.zeros((self.height, self.width, 3))
