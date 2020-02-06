@@ -2585,13 +2585,33 @@ class ZStackReview(CalibanWindow):
 
         # QUICK PANNING
         elif symbol == key.PAGEUP:
-            self.pan(dx = 0, dy = -self.visible_y_pix)
+            if modifiers & key.MOD_SHIFT:
+                self.pan(dx = 0, dy = -self.visible_y_pix//2)
+            elif modifiers & key.MOD_CTRL:
+                self.pan(dx = 0, dy = -self.height*self.zoom*self.scale_factor)
+            else:
+                self.pan(dx = 0, dy = -self.visible_y_pix)
         elif symbol == key.PAGEDOWN:
-            self.pan(dx = 0, dy = self.visible_y_pix)
+            if modifiers & key.MOD_SHIFT:
+                self.pan(dx = 0, dy = self.visible_y_pix//2)
+            elif modifiers & key.MOD_CTRL:
+                self.pan(dx = 0, dy = self.height*self.zoom*self.scale_factor)
+            else:
+                self.pan(dx = 0, dy = self.visible_y_pix)
         elif symbol == key.HOME:
-            self.pan(dx = self.visible_x_pix, dy = 0)
+            if modifiers & key.MOD_SHIFT:
+                self.pan(dx = self.visible_x_pix//2, dy = 0)
+            elif modifiers & key.MOD_CTRL:
+                self.pan(dx = self.width*self.zoom*self.scale_factor, dy = 0)
+            else:
+                self.pan(dx = self.visible_x_pix, dy = 0)
         elif symbol == key.END:
-            self.pan(dx = - self.visible_x_pix, dy = 0)
+            if modifiers & key.MOD_SHIFT:
+                self.pan(dx = -self.visible_x_pix//2, dy = 0)
+            elif modifiers & key.MOD_CTRL:
+                self.pan(dx = -self.width*self.zoom*self.scale_factor, dy = 0)
+            else:
+                self.pan(dx = - self.visible_x_pix, dy = 0)
 
         elif symbol == key.F11:
             self.window.set_fullscreen(fullscreen = not self.window.fullscreen)
