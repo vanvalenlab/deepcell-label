@@ -2868,12 +2868,12 @@ class ZStackReview(CalibanWindow):
                     self.feature += 1
 
         # HIGHLIGHT CYCLING
-        if symbol == key.EQUAL:
+        if symbol == key.BRACKETRIGHT:
             if self.highlighted_cell_one < self.get_max_label():
                 self.highlighted_cell_one += 1
             elif self.highlighted_cell_one == self.get_max_label():
                 self.highlighted_cell_one = 1
-        if symbol == key.MINUS:
+        if symbol == key.BRACKETLEFT:
             if self.highlighted_cell_one > 1:
                 self.highlighted_cell_one -= 1
             elif self.highlighted_cell_one == 1:
@@ -2912,14 +2912,14 @@ class ZStackReview(CalibanWindow):
             x: prompt deletion of label in frame
         '''
         # HIGHLIGHT CYCLING
-        if symbol == key.EQUAL:
+        if symbol == key.BRACKETRIGHT:
             if self.highlighted_cell_one < self.get_max_label():
                 self.highlighted_cell_one += 1
             elif self.highlighted_cell_one == self.get_max_label():
                 self.highlighted_cell_one = 1
             # deselect label, since highlighting is now decoupled from selection
             self.mode.clear()
-        if symbol == key.MINUS:
+        if symbol == key.BRACKETLEFT:
             if self.highlighted_cell_one > 1:
                 self.highlighted_cell_one -= 1
             elif self.highlighted_cell_one == 1:
