@@ -4303,6 +4303,13 @@ class RGBNpz(CalibanWindow):
                         conversion_brush_target = self.brush.conv_target,
                         conversion_brush_value = self.brush.conv_val)
 
+        # RESPOND TO SAVE QUESTION
+        if self.mode.kind is not None:
+            if self.mode.action == "SAVE":
+                if symbol == key.SPACE:
+                    self.save()
+                    self.mode.clear()
+
     def label_mode_misc_keypress_helper(self, symbol, modifiers):
         '''
         Helper function for keypress handling. The keybinds that are
