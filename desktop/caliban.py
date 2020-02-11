@@ -254,11 +254,14 @@ class CalibanWindow:
         x //= self.zoom
         x = int(self.view_start_x + x)
 
-        # convert event y to image y by rescaling and changing coordinates:
-        # pyglet y has increasing y at the top of the screen, opposite convention of array indices
-        y = self.visible_y_pix - ((y - self.image_padding)// self.scale_factor)
-        y //= self.zoom
-        y = int(self.view_start_y + y)
+        # these are the start and end indices of what is being displayed for y
+        y1 = max(int(self.view_start_y), 0)
+        y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
+
+        # convert pyglet y coordinate to relative position from bottom of image
+        y = int((y - self.image_padding)//(self.zoom*self.scale_factor))
+        # current position = index at bottom of displayed image - position relative to the bottom
+        y = y2 - y
 
         # check that mouse cursor is within bounds of image before updating
         if 0 <= x < self.width and 0 <= y < self.height:
@@ -322,13 +325,13 @@ class CalibanWindow:
     def pan(self, dx, dy):
         # y coords are inverted
         new_y_start = self.view_start_y + dy/(self.zoom*self.scale_factor)
-        new_y_start = max(0, new_y_start)
-        self.view_start_y = min(new_y_start, self.height - int(self.visible_y_pix/self.zoom))
+        new_y_start = min(new_y_start, self.height - int(self.visible_y_pix/self.zoom))
+        self.view_start_y = max(0, new_y_start)
 
         # x coords
         new_x_start = self.view_start_x - dx/(self.zoom*self.scale_factor)
-        new_x_start = max(0, new_x_start)
-        self.view_start_x = min(new_x_start, self.width - int(self.visible_x_pix/self.zoom))
+        new_x_start = min(new_x_start, self.width - int(self.visible_x_pix/self.zoom))
+        self.view_start_x = max(0, new_x_start)
 
     def adjust_zoom(self, scroll_y):
 
@@ -354,12 +357,14 @@ class CalibanWindow:
 
         else:
             y_diff =  pixel_h - int(self.visible_y_pix/new_zoom)
-            new_y_start = max(0, self.view_start_y + prop_y*y_diff)
-            self.view_start_y = min(self.height - int(self.visible_y_pix/new_zoom), new_y_start)
+            new_y_start = self.view_start_y + prop_y*y_diff
+            new_y_start = min(self.height - int(self.visible_y_pix/new_zoom), new_y_start)
+            self.view_start_y = max(0, new_y_start)
 
             x_diff = pixel_w - int(self.visible_x_pix/new_zoom)
-            new_x_start = max(0, self.view_start_x + prop_x*x_diff)
-            self.view_start_x = min(self.width - int(self.visible_x_pix/new_zoom), new_x_start)
+            new_x_start = self.view_start_x + prop_x*x_diff
+            new_x_start = min(self.width - int(self.visible_x_pix/new_zoom), new_x_start)
+            self.view_start_x = max(0, new_x_start)
 
             self.zoom = new_zoom
 
