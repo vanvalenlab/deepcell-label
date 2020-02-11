@@ -91,6 +91,7 @@ class CalibanWindow:
     '''
     white = (255, 255, 255)
     red = (255, 0, 0)
+    black = (0, 0, 0)
 
     # blank area to the left of displayed image where text info is displayed
     sidebar_width = 300
@@ -621,13 +622,18 @@ class CalibanWindow:
         '''
         # clear old information
         self.window.clear()
-        # TODO: use a batch to consolidate all of the "drawing" calls
-        # draw relevant image
+
+        self.batch = pyglet.graphics.Batch()
+
+        # add relevant image to batch
         self.draw_current_frame()
-        # draw lines around the image to distinguish it from rest of window
+        # add lines around the image to distinguish it from rest of window
         self.draw_line()
-        # draw information text in sidebar
+        # add information text in sidebar to batch
         self.draw_label()
+
+        # draw everything
+        self.batch.draw()
 
     def draw_line(self):
         '''
@@ -661,68 +667,68 @@ class CalibanWindow:
 
         # bottom line
         if y2 == self.height:
-            pyglet.graphics.draw(2, pyglet.gl.GL_LINES,
-                ("v2f", (left, bottom -1,
-                     right+1, bottom-1))
-            )
+            r, g, b = self.white
         else:
             bottom_piece = self.get_ann_current_frame()[y2:self.height]
             if np.any(np.where(np.logical_or(bottom_piece == h1, bottom_piece == h2))):
                 r, g, b = self.red
-                pyglet.graphics.draw(2, pyglet.gl.GL_LINES,
-                    ("v2f", (left, bottom-1,
-                         right+1, bottom-1)),
-                    ("c3B", (r, g, b, r, g, b))
-                )
+            else:
+                r, g, b = self.black
+
+        self.bottom_vlist = self.batch.add(2, pyglet.gl.GL_LINES, None,
+            ("v2f", (left, bottom-1,
+                 right+1, bottom-1)),
+            ("c3B", (r, g, b, r, g, b))
+        )
 
         # left line
         if x1 == 0:
-            pyglet.graphics.draw(2, pyglet.gl.GL_LINES,
-                ("v2f", (left, bottom -1,
-                     left, top))
-            )
+            r, g, b = self.white
         else:
             left_piece = self.get_ann_current_frame()[:,0:x1]
             if np.any(np.where(np.logical_or(left_piece == h1, left_piece == h2))):
                 r, g, b = self.red
-                pyglet.graphics.draw(2, pyglet.gl.GL_LINES,
-                    ("v2f", (left, bottom -1,
-                         left, top)),
-                    ("c3B", (r, g, b, r, g, b))
-                )
+            else:
+                r, g, b = self.black
+
+        self.left_vlist = self.batch.add(2, pyglet.gl.GL_LINES, None,
+            ("v2f", (left, bottom -1,
+                 left, top)),
+            ("c3B", (r, g, b, r, g, b))
+        )
 
         # right line
         if x2 == self.width:
-            pyglet.graphics.draw(2, pyglet.gl.GL_LINES,
-                ("v2f", (right+1, bottom -1,
-                     right+1, top))
-            )
+            r, g, b = self.white
         else:
             right_piece = self.get_ann_current_frame()[:,x2:self.width]
             if np.any(np.where(np.logical_or(right_piece == h1, right_piece == h2))):
                 r, g, b = self.red
-                pyglet.graphics.draw(2, pyglet.gl.GL_LINES,
-                    ("v2f", (right+1, bottom-1,
-                         right+1, top)),
-                    ("c3B", (r, g, b, r, g, b))
-                )
+            else:
+                r, g, b = self.black
+
+        self.right_vlist = self.batch.add(2, pyglet.gl.GL_LINES, None,
+            ("v2f", (right+1, bottom-1,
+                 right+1, top)),
+            ("c3B", (r, g, b, r, g, b))
+        )
 
         # top line
         if y1 == 0:
-            pyglet.graphics.draw(2, pyglet.gl.GL_LINES,
-                ("v2f", (left, top,
-                     right+1, top))
-            )
+            r, g, b = self.white
         # check to see if values are outside this range
         else:
             top_piece = self.get_ann_current_frame()[0:y1]
             if np.any(np.where(np.logical_or(top_piece == h1, top_piece == h2))):
                 r, g, b = self.red
-                pyglet.graphics.draw(2, pyglet.gl.GL_LINES,
-                    ("v2f", (left, top,
-                         right+1, top)),
-                    ("c3B", (r, g, b, r, g, b))
-                )
+            else:
+                r, g, b = self.black
+
+        self.top_vlist = self.batch.add(2, pyglet.gl.GL_LINES, None,
+            ("v2f", (left, top,
+                 right+1, top)),
+            ("c3B", (r, g, b, r, g, b))
+        )
 
     def draw_current_frame(self):
         '''
@@ -898,21 +904,19 @@ class CalibanWindow:
         pad = self.image_padding
 
         # create pyglet sprite, bottom left corner of image anchored with some offset
-        sprite = pyglet.sprite.Sprite(image, x=self.sidebar_width + pad, y=pad)
+        self.sprite = pyglet.sprite.Sprite(image, x=self.sidebar_width + pad, y=pad, batch = self.batch)
 
         # scale x and y dimensions of sprite
-        sprite.update(scale_x=self.scale_factor*self.zoom,
+        self.sprite.update(scale_x=self.scale_factor*self.zoom,
                       scale_y=self.scale_factor*self.zoom)
 
         # set opacity of sprite (255 is default)
-        sprite.opacity = opacity
+        self.sprite.opacity = opacity
 
         # TODO: how often does this actually need to be set?
         gl.glTexParameteri(gl.GL_TEXTURE_2D,
                            gl.GL_TEXTURE_MAG_FILTER,
                            gl.GL_NEAREST)
-        # draw the sprite
-        sprite.draw()
 
     def array_to_img(self, input_array, vmax, cmap, output):
         '''
@@ -1166,9 +1170,8 @@ class CalibanWindow:
                                         width=self.sidebar_width,
                                         multiline=True,
                                         x=5, y=self.window.height - 5,
-                                        color=[255]*4)
-        # draw the label
-        frame_label.draw()
+                                        color=[255]*4,
+                                        batch = self.batch)
 
     def draw_cell_info_label(self):
         '''
@@ -1187,10 +1190,8 @@ class CalibanWindow:
                                        anchor_x="left", anchor_y="bottom",
                                        width=self.sidebar_width,
                                        multiline=True,
-                                       x=5, y=5, color=[255]*4)
-
-        # draw the label
-        cell_info_label.draw()
+                                       x=5, y=5, color=[255]*4,
+                                       batch = self.batch)
 
     def create_zoom_text(self):
         y1 = max(int(self.view_start_y), 0)
