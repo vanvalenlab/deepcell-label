@@ -2583,6 +2583,11 @@ class ZStackReview(CalibanWindow):
             # reset from thresholding
             self.brush.reset()
 
+        elif symbol == key.MINUS:
+            self.adjust_zoom(-1)
+        elif symbol == key.EQUAL:
+            self.adjust_zoom(1)
+
         # QUICK PANNING
         elif symbol == key.PAGEUP:
             if modifiers & key.MOD_SHIFT:
