@@ -2684,10 +2684,10 @@ class ZStackReview(CalibanWindow):
 
         # BRUSH VALUE ADJUSTMENT
         # increase brush value, caps at max value + 1
-        if symbol == key.EQUAL:
+        if symbol == key.BRACKETRIGHT:
             self.brush.increase_edit_val(window = self)
         # decrease brush value, can't decrease past 1
-        if symbol == key.MINUS:
+        if symbol == key.BRACKETLEFT:
             self.brush.decrease_edit_val()
         # set brush to unused label
         if symbol == key.N:
