@@ -3977,7 +3977,7 @@ class RGBNpz(CalibanWindow):
         ann = self.generate_ann_boundaries(self.get_ann_current_frame())
 
         display = adjusted_raw
-        if not self.hide_annotations:
+        if not self.draw_raw:
             display = self.overlay_RGB(display, ann)
             if self.highlight:
                 if self.brush.conv_val != -1:
@@ -4134,6 +4134,10 @@ class RGBNpz(CalibanWindow):
             v: toggle cursor visibility
             escape: clear selection or cancel action
         '''
+        # toggle raw/label display
+        if symbol == key.Z:
+            self.draw_raw = not self.draw_raw
+
         # TOGGLE CURSOR VISIBILITY
         # most useful in edit mode, but inconvenient if can't be turned back on elsewhere
         if symbol == key.V:
@@ -4199,8 +4203,9 @@ class RGBNpz(CalibanWindow):
     def edit_mode_universal_keypress_helper(self, symbol, modifiers):
         # TOGGLE ANNOTATION VISIBILITY
         # TODO: will want to change to shift+H in future when adding highlight to edit mode
-        if symbol == key.L:
-            self.hide_annotations = not self.hide_annotations
+        # if symbol == key.L:
+        #     self.hide_annotations = not self.hide_annotations
+        pass
 
     def edit_mode_none_keypress_helper(self, symbol, modifiers):
         '''
@@ -4317,10 +4322,6 @@ class RGBNpz(CalibanWindow):
             shift + up, shift + down: cycle through colormaps, only applies when
                 viewing the raw image
         '''
-        # toggle raw/label display, "universal" in label mode
-        if symbol == key.Z:
-            self.draw_raw = not self.draw_raw
-
         if self.draw_raw or self.show_label_outlines:
             if symbol == key.M:
                 self.show_adjusted_raw = not self.show_adjusted_raw
