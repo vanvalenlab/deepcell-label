@@ -178,6 +178,8 @@ class CalibanWindow:
         # accessed and updated as needed
         self.composite_view = np.zeros((1,self.height,self.width,3))
 
+        self.update_image = True
+
     def on_resize(self, width, height):
         '''
         Event handler for when pyglet window changes size. Note: this
@@ -268,6 +270,8 @@ class CalibanWindow:
         if 0 <= x < self.width and 0 <= y < self.height:
             self.x, self.y = x, y
             self.brush.update_center(y, x)
+            if self.edit_mode and self.brush.show:
+                self.update_image = True
 
     def on_mouse_motion(self, x, y, dx, dy):
         '''
@@ -325,14 +329,19 @@ class CalibanWindow:
 
     def pan(self, dx, dy):
         # y coords are inverted
+        old_y_start = self.view_start_y
         new_y_start = self.view_start_y + dy/(self.zoom*self.scale_factor)
         new_y_start = min(new_y_start, self.height - int(self.visible_y_pix/self.zoom))
         self.view_start_y = max(0, new_y_start)
 
         # x coords
+        old_x_start = self.view_start_x
         new_x_start = self.view_start_x - dx/(self.zoom*self.scale_factor)
         new_x_start = min(new_x_start, self.width - int(self.visible_x_pix/self.zoom))
         self.view_start_x = max(0, new_x_start)
+
+        if old_y_start != self.view_start_y or old_x_start != self.view_start_x:
+            self.update_image = True
 
     def adjust_zoom(self, scroll_y):
 
@@ -368,6 +377,7 @@ class CalibanWindow:
             self.view_start_x = max(0, new_x_start)
 
             self.zoom = new_zoom
+            self.update_image = True
 
     def on_mouse_press(self, x, y, button, modifiers):
         '''
@@ -763,19 +773,22 @@ class CalibanWindow:
             self.draw_pyglet_image to display pyglet Image on screen in correct
                 location with scaling
         '''
-        y1 = max(int(self.view_start_y), 0)
-        y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
-        x1 = max(int(self.view_start_x), 0)
-        x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
+        if self.update_image:
+            y1 = max(int(self.view_start_y), 0)
+            y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
+            x1 = max(int(self.view_start_x), 0)
+            x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
 
-        raw_array = self.get_raw_current_frame()[y1:y2, x1:x2]
-        adjusted_raw = self.apply_raw_image_adjustments(raw_array, cmap = self.current_cmap)
-        image = self.array_to_img(input_array = adjusted_raw,
-            vmax = None,
-            cmap = None,
-            output = 'pyglet')
+            raw_array = self.get_raw_current_frame()[y1:y2, x1:x2]
+            adjusted_raw = self.apply_raw_image_adjustments(raw_array, cmap = self.current_cmap)
+            self.image = self.array_to_img(input_array = adjusted_raw,
+                vmax = None,
+                cmap = None,
+                output = 'pyglet')
 
-        self.draw_pyglet_image(image)
+            self.update_image = False
+
+        self.draw_pyglet_image(self.image)
 
     def draw_ann_frame(self):
         '''
@@ -793,28 +806,31 @@ class CalibanWindow:
             self.draw_pyglet_image to display pyglet Image on screen in correct
                 location with scaling
         '''
-        y1 = max(int(self.view_start_y), 0)
-        y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
-        x1 = max(int(self.view_start_x), 0)
-        x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
-        ann_array = self.get_ann_current_frame()[y1:y2,x1:x2]
+        if self.update_image:
+            y1 = max(int(self.view_start_y), 0)
+            y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
+            x1 = max(int(self.view_start_x), 0)
+            x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
+            ann_array = self.get_ann_current_frame()[y1:y2,x1:x2]
 
-        # annotations use cubehelix cmap with highlighting in red
-        ann_array = np.ma.masked_equal(ann_array, 0)
+            # annotations use cubehelix cmap with highlighting in red
+            ann_array = np.ma.masked_equal(ann_array, 0)
 
-        # create pyglet image
-        image = self.array_to_img(input_array = ann_array,
-                                                vmax = max(1, self.get_max_label() + self.adjustment),
-                                                cmap = self.labels_cmap,
-                                                output = 'array')
+            # create pyglet image
+            image = self.array_to_img(input_array = ann_array,
+                                                    vmax = max(1, self.get_max_label() + self.adjustment),
+                                                    cmap = self.labels_cmap,
+                                                    output = 'array')
 
-        # if highlighting on, mask highlighted values so they appear red
-        if self.highlight:
-            image = self.apply_label_highlight(ann_array, image)
+            # if highlighting on, mask highlighted values so they appear red
+            if self.highlight:
+                image = self.apply_label_highlight(ann_array, image)
 
-        image = self.array_to_img(input_array = image, vmax = None, cmap = None, output = 'pyglet')
+            self.image = self.array_to_img(input_array = image, vmax = None, cmap = None, output = 'pyglet')
 
-        self.draw_pyglet_image(image)
+            self.update_image = False
+
+        self.draw_pyglet_image(self.image)
 
     def draw_pixel_edit_frame(self):
         '''
@@ -826,67 +842,55 @@ class CalibanWindow:
         class to have methods for get_max_label and get_raw_current_frame, and
         adjustment attribute.
         '''
-        y1 = max(int(self.view_start_y), 0)
-        y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
-        x1 = max(int(self.view_start_x), 0)
-        x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
+        if self.update_image:
 
-        # create pyglet image object so we can display brush location
-        brush_arr = self.brush.view[y1:y2, x1:x2]
-        # brush_arr = np.ma.masked_equal(brush_arr, 0)
+            y1 = max(int(self.view_start_y), 0)
+            y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
+            x1 = max(int(self.view_start_x), 0)
+            x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
 
-        # brush_img = self.array_to_img(input_array = brush_arr,
-        #                                             vmax = self.get_max_label() + self.adjustment,
-        #                                             cmap = self.labels_cmap,
-        #                                             output = 'pyglet')
+            # create pyglet image object so we can display brush location
+            brush_arr = self.brush.view[y1:y2, x1:x2]
 
+            # create pyglet image from only the adjusted raw, if hiding annotations
+            if self.hide_annotations:
+                # get raw and annotated data
+                # TODO: np.copy might be appropriate here for clarity
+                # (current_raw is not edited in place but np.copy would help safeguard that)
+                current_raw = self.get_raw_current_frame()[y1:y2, x1:x2]
+                display = self.apply_raw_image_adjustments(current_raw)
 
-        # create pyglet image from only the adjusted raw, if hiding annotations
-        if self.hide_annotations:
-            # get raw and annotated data
-            # TODO: np.copy might be appropriate here for clarity
-            # (current_raw is not edited in place but np.copy would help safeguard that)
-            current_raw = self.get_raw_current_frame()[y1:y2, x1:x2]
-            display = self.apply_raw_image_adjustments(current_raw)
-            # comp_img = self.array_to_img(input_array = raw_RGB,
-            #                             vmax = None,
-            #                             cmap = None,
-            #                             output = 'pyglet')
+            # create pyglet image from composite if you want to see annotation overlay
+            # (self.composite view is generated/updated separately)
+            if not self.hide_annotations:
+                display = self.composite_view[y1:y2, x1:x2]
 
-        # create pyglet image from composite if you want to see annotation overlay
-        # (self.composite view is generated/updated separately)
-        if not self.hide_annotations:
-            # comp_img = self.array_to_img(input_array = self.composite_view[y1:y2, x1:x2],
-            #                                     vmax = None,
-            #                                     cmap = None,
-            #                                     output = 'pyglet')
-            display = self.composite_view[y1:y2, x1:x2]
+            display = self.apply_transparent_highlight(display, brush_arr)
 
-        display = self.apply_transparent_highlight(display, brush_arr)
+            if self.highlight:
+                white_mask = np.where(self.get_ann_current_frame()[y1:y2,x1:x2] == self.brush.h1, 1, 0)
+                white_mask = self.generate_ann_boundaries(white_mask)
+                display = self.overlay_RGB(display, white_mask)
+                red_mask = np.where(self.get_ann_current_frame()[y1:y2,x1:x2] == self.brush.h2, 1, 0)
+                red_mask = self.generate_ann_boundaries(red_mask, color = 'red')
+                display = self.overlay_RGB(display, red_mask)
 
-        if self.highlight:
-            white_mask = np.where(self.get_ann_current_frame()[y1:y2,x1:x2] == self.brush.h1, 1, 0)
-            white_mask = self.generate_ann_boundaries(white_mask)
-            display = self.overlay_RGB(display, white_mask)
-            red_mask = np.where(self.get_ann_current_frame()[y1:y2,x1:x2] == self.brush.h2, 1, 0)
-            red_mask = self.generate_ann_boundaries(red_mask, color = 'red')
-            display = self.overlay_RGB(display, red_mask)
+            if self.brush.erase and self.brush.conv_val == -1:
+                brush_outline = self.generate_ann_boundaries(brush_arr, color ='red')
+            else:
+                brush_outline = self.generate_ann_boundaries(brush_arr)
+            display = self.overlay_RGB(display, brush_outline)
 
-        if self.brush.erase and self.brush.conv_val == -1:
-            brush_outline = self.generate_ann_boundaries(brush_arr, color ='red')
-        else:
-            brush_outline = self.generate_ann_boundaries(brush_arr)
-        display = self.overlay_RGB(display, brush_outline)
+            self.image = self.array_to_img(input_array = display.astype(np.uint8),
+                                        vmax = None, cmap = None, output = 'pyglet')
 
-        comp_img = self.array_to_img(input_array = display.astype(np.uint8),
-                                    vmax = None, cmap = None, output = 'pyglet')
+            gl.glTexParameteri(gl.GL_TEXTURE_2D,
+                               gl.GL_TEXTURE_MAG_FILTER,
+                               gl.GL_NEAREST)
 
-        gl.glTexParameteri(gl.GL_TEXTURE_2D,
-                           gl.GL_TEXTURE_MAG_FILTER,
-                           gl.GL_NEAREST)
+            self.update_image = False
 
-        self.draw_pyglet_image(comp_img)
-        # self.draw_pyglet_image(brush_img, opacity = 128)
+        self.draw_pyglet_image(self.image)
 
     def draw_pyglet_image(self, image, opacity = 255):
         '''
@@ -2429,6 +2433,7 @@ class ZStackReview(CalibanWindow):
             self.add_cell_info(feature = self.feature, add_label = self.brush.draw_value, frame = self.current_frame)
 
         self.annotated[self.current_frame,:,:,self.feature] = annotated_draw
+        self.update_image = True
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         '''
@@ -2478,6 +2483,8 @@ class ZStackReview(CalibanWindow):
             # color/brightness adjustments will change what the composited image looks like
             if self.edit_mode and not self.hide_annotations:
                 self.helper_update_composite()
+
+            self.update_image = True
 
     def on_key_press(self, symbol, modifiers):
         '''
@@ -2555,16 +2562,22 @@ class ZStackReview(CalibanWindow):
         num_frames_changed = 5 if modifiers & key.MOD_SHIFT else 1
         # Go backward through frames (stop at frame 0)
         if symbol in {key.LEFT, key.A}:
+            old_frame = self.current_frame
             self.current_frame = max(self.current_frame - num_frames_changed, 0)
-            # if you change frames while you've viewing composite, update composite
-            if self.edit_mode and not self.hide_annotations:
-                self.helper_update_composite()
+            if old_frame != self.current_frame:
+                # if you change frames while you've viewing composite, update composite
+                if self.edit_mode and not self.hide_annotations:
+                    self.helper_update_composite()
+                self.update_image = True
         # Go forward through frames (stop at last frame)
         elif symbol in {key.RIGHT, key.D}:
+            old_frame = self.current_frame
             self.current_frame = min(self.current_frame + num_frames_changed, self.num_frames - 1)
-            # if you change frames while you've viewing composite, update composite
-            if self.edit_mode and not self.hide_annotations:
-                self.helper_update_composite()
+            if old_frame != self.current_frame:
+                # if you change frames while you've viewing composite, update composite
+                if self.edit_mode and not self.hide_annotations:
+                    self.helper_update_composite()
+                self.update_image = True
 
         # TOGGLE CURSOR VISIBILITY
         # most useful in edit mode, but inconvenient if can't be turned back on elsewhere
@@ -2576,6 +2589,7 @@ class ZStackReview(CalibanWindow):
         # note: shift+H is conditional keybind elsewhere
         elif symbol == key.H:
             self.highlight = not self.highlight
+            self.update_image = True
 
         # CLEAR/CANCEL ACTION
         elif symbol == key.ESCAPE:
@@ -2588,6 +2602,7 @@ class ZStackReview(CalibanWindow):
             self.mode.clear()
             # reset from thresholding
             self.brush.reset()
+            self.update_image = True
 
         elif symbol == key.MINUS:
             self.adjust_zoom(-1)
@@ -2626,6 +2641,7 @@ class ZStackReview(CalibanWindow):
 
         elif symbol == key.F11:
             self.window.set_fullscreen(fullscreen = not self.window.fullscreen)
+            self.update_image = True
 
     def edit_mode_universal_keypress_helper(self, symbol, modifiers):
         '''
@@ -2649,18 +2665,21 @@ class ZStackReview(CalibanWindow):
             # if you invert the image while you're viewing composite, update composite
             if not self.hide_annotations:
                 self.helper_update_composite()
+            self.update_image = True
 
         # TOGGLE SOBEL FILTER
         if symbol == key.K:
             self.sobel_on = not self.sobel_on
             if not self.hide_annotations:
                 self.helper_update_composite()
+            self.update_image = True
 
         # TOGGLE ADAPTIVE HISTOGRAM EQUALIZATION
         if symbol == key.J:
             self.adapthist_on = not self.adapthist_on
             if not self.hide_annotations:
                 self.helper_update_composite()
+            self.update_image = True
 
         # TOGGLE ANNOTATION VISIBILITY
         if symbol == key.H:
@@ -2669,6 +2688,7 @@ class ZStackReview(CalibanWindow):
                 # in case any display changes have been made while hiding annotations
                 if not self.hide_annotations:
                     self.helper_update_composite()
+                self.update_image = True
 
     def edit_mode_none_keypress_helper(self, symbol, modifiers):
         '''
@@ -2692,21 +2712,26 @@ class ZStackReview(CalibanWindow):
         # LEAVE EDIT MODE
         if symbol == key.E:
             self.edit_mode = False
+            self.update_image = True
 
         # BRUSH VALUE ADJUSTMENT
         # increase brush value, caps at max value + 1
         if symbol == key.BRACKETRIGHT:
             self.brush.increase_edit_val(window = self)
+            self.update_image = True
         # decrease brush value, can't decrease past 1
         if symbol == key.BRACKETLEFT:
             self.brush.decrease_edit_val()
+            self.update_image = True
         # set brush to unused label
         if symbol == key.N:
             self.brush.set_edit_val(self.get_new_label())
+            self.update_image = True
 
         # TOGGLE ERASER
         if symbol == key.X:
             self.brush.toggle_erase()
+            self.update_image = True
 
         # ACTIONS - COLOR PICKER
         if symbol == key.P:
@@ -2725,6 +2750,7 @@ class ZStackReview(CalibanWindow):
             self.brush.show = False
             self.brush.disable_drawing()
             self.brush.clear_view()
+            self.update_image = True
 
     def edit_mode_misc_keypress_helper(self, symbol, modifiers):
         '''
@@ -2753,9 +2779,11 @@ class ZStackReview(CalibanWindow):
             # decrease brush size
             if symbol == key.DOWN:
                 self.brush.decrease_size()
+                self.update_image = True
             # increase brush size
             if symbol == key.UP:
                 self.brush.increase_size()
+                self.update_image = True
 
         # SET CONVERSION BRUSH VALUE TO UNUSED LABEL
         # TODO: update Mode prompt to reflect that you can do this
@@ -2765,6 +2793,7 @@ class ZStackReview(CalibanWindow):
                 self.mode.update("DRAW", action = "CONVERSION",
                         conversion_brush_target = self.brush.conv_target,
                         conversion_brush_value = self.brush.conv_val)
+                self.update_image = True
 
     def label_mode_misc_keypress_helper(self, symbol, modifiers):
         '''
@@ -2788,6 +2817,7 @@ class ZStackReview(CalibanWindow):
         # toggle raw/label display, "universal" in label mode
         if symbol == key.Z:
             self.draw_raw = not self.draw_raw
+            self.update_image = True
 
         # HIGHLIGHT CYCLING
         # TODO: add highlight cycling when cell not selected
@@ -2802,18 +2832,21 @@ class ZStackReview(CalibanWindow):
                 # if you invert the image while you're viewing composite, update composite
                 if not self.hide_annotations:
                     self.helper_update_composite()
+                self.update_image = True
 
             # TOGGLE SOBEL FILTER
             if symbol == key.K:
                 self.sobel_on = not self.sobel_on
                 if not self.hide_annotations:
                     self.helper_update_composite()
+                self.update_image = True
 
             # TOGGLE ADAPTIVE HISTOGRAM EQUALIZATION
             if symbol == key.J:
                 self.adapthist_on = not self.adapthist_on
                 if not self.hide_annotations:
                     self.helper_update_composite()
+                self.update_image = True
 
             if modifiers & key.MOD_SHIFT:
                 if symbol == key.UP:
@@ -2822,12 +2855,15 @@ class ZStackReview(CalibanWindow):
                     elif self.current_cmap_idx < len(self.cmap_options) - 1:
                         self.current_cmap_idx += 1
                     self.current_cmap = self.cmap_options[self.current_cmap_idx]
+                    self.update_image = True
+
                 if symbol == key.DOWN:
                     if self.current_cmap_idx == 0:
                         self.current_cmap_idx = len(self.cmap_options) - 1
                     elif self.current_cmap_idx > 0:
                         self.current_cmap_idx -= 1
                     self.current_cmap = self.cmap_options[self.current_cmap_idx]
+                    self.update_image = True
 
     def label_mode_none_keypress_helper(self, symbol, modifiers):
         '''
@@ -2865,18 +2901,19 @@ class ZStackReview(CalibanWindow):
 
         # CHANGE FEATURES
         if symbol == key.F:
-            # hold shift to go backward
-            if modifiers & key.MOD_SHIFT:
-                if self.feature == 0:
-                    self.feature = self.feature_max - 1
+            if self.feature_max > 1:
+                # hold shift to go backward
+                if modifiers & key.MOD_SHIFT:
+                    if self.feature == 0:
+                        self.feature = self.feature_max - 1
+                    else:
+                        self.feature -= 1
+                # go forward through channels
                 else:
-                    self.feature -= 1
-            # go forward through channels
-            else:
-                if self.feature + 1 == self.feature_max:
-                    self.feature = 0
-                else:
-                    self.feature += 1
+                    if self.feature + 1 == self.feature_max:
+                        self.feature = 0
+                    else:
+                        self.feature += 1
 
         # HIGHLIGHT CYCLING
         if symbol == key.BRACKETRIGHT:
@@ -2884,11 +2921,16 @@ class ZStackReview(CalibanWindow):
                 self.highlighted_cell_one += 1
             elif self.highlighted_cell_one == self.get_max_label():
                 self.highlighted_cell_one = 1
+            if self.highlight:
+                self.update_image = True
+
         if symbol == key.BRACKETLEFT:
             if self.highlighted_cell_one > 1:
                 self.highlighted_cell_one -= 1
             elif self.highlighted_cell_one == 1:
                 self.highlighted_cell_one = self.get_max_label()
+            if self.highlight:
+                self.update_image = True
 
         # ENTER EDIT MODE
         if symbol == key.E:
@@ -2896,6 +2938,7 @@ class ZStackReview(CalibanWindow):
             # update composite with changes, if needed
             if not self.hide_annotations:
                 self.helper_update_composite()
+            self.update_image = True
 
         # SAVE
         if symbol == key.S:
@@ -2930,6 +2973,9 @@ class ZStackReview(CalibanWindow):
                 self.highlighted_cell_one = 1
             # deselect label, since highlighting is now decoupled from selection
             self.mode.clear()
+            if self.highlight:
+                self.update_image = True
+
         if symbol == key.BRACKETLEFT:
             if self.highlighted_cell_one > 1:
                 self.highlighted_cell_one -= 1
@@ -2937,6 +2983,8 @@ class ZStackReview(CalibanWindow):
                 self.highlighted_cell_one = self.get_max_label()
             # deselect label
             self.mode.clear()
+            if self.highlight:
+                self.update_image = True
 
         # CREATE CELL
         if symbol == key.C:
@@ -3137,6 +3185,8 @@ class ZStackReview(CalibanWindow):
         '''
         # in this case we only need to update self.max_intensity
         self.max_intensity = self.max_intensity_dict[self.channel]
+        if self.draw_raw:
+            self.update_image = True
 
     def change_feature(self):
         '''
@@ -3172,6 +3222,7 @@ class ZStackReview(CalibanWindow):
         # replace fields
         self.del_cell_info(feature = self.feature, del_label = old_label, frame = single_frame)
         self.add_cell_info(feature = self.feature, add_label = new_label, frame = single_frame)
+        self.update_image = True
 
     def action_new_cell_stack(self):
         """
@@ -3201,6 +3252,7 @@ class ZStackReview(CalibanWindow):
             if new_label in self.annotated[frame,:,:,self.feature]:
                 self.del_cell_info(feature = self.feature, del_label = old_label, frame = frame)
                 self.add_cell_info(feature = self.feature, add_label = new_label, frame = frame)
+        self.update_image = True
 
     def action_replace_single(self):
         '''
@@ -3239,6 +3291,7 @@ class ZStackReview(CalibanWindow):
             # update cell info
             self.add_cell_info(feature = self.feature, add_label = label_1, frame = frame)
             self.del_cell_info(feature = self.feature, del_label = label_2, frame = frame)
+            self.update_image = True
 
     def action_replace(self):
         """
@@ -3273,6 +3326,7 @@ class ZStackReview(CalibanWindow):
                     # update cell_info for that frame
                     self.add_cell_info(feature = self.feature, add_label = label_1, frame = frame)
                     self.del_cell_info(feature = self.feature, del_label = label_2, frame = frame)
+            self.update_image = True
 
     def action_swap_all(self):
         '''
@@ -3310,6 +3364,7 @@ class ZStackReview(CalibanWindow):
         cell_info_2 = self.cell_info[self.feature][label_2].copy()
         self.cell_info[self.feature][label_1].update({'frames': cell_info_2['frames']})
         self.cell_info[self.feature][label_2].update({'frames': cell_info_1['frames']})
+        self.update_image = True
 
     def action_swap_single_frame(self):
         '''
@@ -3342,6 +3397,7 @@ class ZStackReview(CalibanWindow):
             ann_img = np.where(ann_img == -1, label_2, ann_img)
             # update self.annotated with swapped frame
             self.annotated[frame,:,:,self.feature] = ann_img
+            self.update_image = True
 
     def action_watershed(self):
         '''
@@ -3406,6 +3462,7 @@ class ZStackReview(CalibanWindow):
         #update cell_info dict only if new label was created with ws
         if np.any(np.isin(self.annotated[self.current_frame,:,:,self.feature], new_label)):
             self.add_cell_info(feature=self.feature, add_label=new_label, frame = self.current_frame)
+            self.update_image = True
 
     def action_threshold_predict(self, y1, y2, x1, x2):
         '''
@@ -3454,6 +3511,7 @@ class ZStackReview(CalibanWindow):
             self.add_cell_info(feature=self.feature, add_label=new_label, frame = self.current_frame)
             # update annotation with thresholded region
             self.annotated[self.current_frame,y1:y2,x1:x2,self.feature] = safe_overlay
+            self.update_image = True
 
     def action_delete_mask(self):
         '''
@@ -3475,6 +3533,7 @@ class ZStackReview(CalibanWindow):
         self.annotated[frame,:,:,self.feature] = ann_img
 
         self.del_cell_info(feature = self.feature, del_label = label, frame = frame)
+        self.update_image = True
 
     def action_fill_hole(self):
         '''
@@ -3504,6 +3563,7 @@ class ZStackReview(CalibanWindow):
 
         # reset hole_fill_seed
         self.hole_fill_seed = None
+        self.update_image = True
 
     def action_flood_contiguous(self):
         '''
@@ -3552,6 +3612,7 @@ class ZStackReview(CalibanWindow):
 
         # reset hole_fill_seed
         self.hole_fill_seed = None
+        self.update_image = True
 
     def action_trim_pixels(self):
         '''
@@ -3587,6 +3648,7 @@ class ZStackReview(CalibanWindow):
 
         # reset hole fill seed
         self.hole_fill_seed = None
+        self.update_image = True
 
     def action_predict_single(self):
         '''
@@ -3620,6 +3682,7 @@ class ZStackReview(CalibanWindow):
 
         #update cell_info
         self.create_cell_info(feature = self.feature)
+        self.update_image = True
 
     def action_predict_zstack(self):
         '''
@@ -3651,6 +3714,7 @@ class ZStackReview(CalibanWindow):
 
         #remake cell_info dict based on new annotations
         self.create_cell_info(feature = self.feature)
+        self.update_image = True
 
     def action_relabel_frame(self):
         '''
@@ -3672,6 +3736,7 @@ class ZStackReview(CalibanWindow):
 
         # remake cell_info dict based on new annotations
         self.create_cell_info(feature=self.feature)
+        self.update_image = True
 
     def action_relabel_unique(self):
         '''
@@ -3703,6 +3768,7 @@ class ZStackReview(CalibanWindow):
 
         # remake cell_info dict based on new annotations
         self.create_cell_info(feature = self.feature)
+        self.update_image = True
 
     def action_relabel_all_frames(self):
         '''
@@ -3727,6 +3793,7 @@ class ZStackReview(CalibanWindow):
 
         # changes to cell_info not easily changed with helper add/del functions
         self.create_cell_info(feature=self.feature)
+        self.update_image = True
 
     def action_relabel_preserve(self):
         '''
@@ -3749,6 +3816,7 @@ class ZStackReview(CalibanWindow):
 
         # remake cell_info dict based on new annotations
         self.create_cell_info(feature = self.feature)
+        self.update_image = True
 
     def save(self):
         '''
