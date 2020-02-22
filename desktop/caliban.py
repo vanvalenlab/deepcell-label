@@ -508,6 +508,8 @@ class CalibanWindow:
                                  frame=self.current_frame,
                                  y_location=self.y, x_location=self.x)
             self.highlighted_cell_one = label
+            if self.highlight:
+                self.update_image = True
 
     def mouse_press_selected_helper(self, label):
         '''
@@ -537,6 +539,8 @@ class CalibanWindow:
                              x2_location = self.x)
             self.highlighted_cell_one = self.mode.label_1
             self.highlighted_cell_two = label
+            if self.highlight:
+                self.update_image = True
 
     def mouse_press_prompt_helper(self, label):
         '''
@@ -2917,7 +2921,8 @@ class ZStackReview(CalibanWindow):
 
         # HIGHLIGHT CYCLING
         if symbol == key.BRACKETRIGHT:
-            if self.highlighted_cell_one < self.get_max_label():
+            if (self.highlighted_cell_one < self.get_max_label() and
+                self.highlighted_cell_one > -1):
                 self.highlighted_cell_one += 1
             elif self.highlighted_cell_one == self.get_max_label():
                 self.highlighted_cell_one = 1
@@ -2967,7 +2972,8 @@ class ZStackReview(CalibanWindow):
         '''
         # HIGHLIGHT CYCLING
         if symbol == key.BRACKETRIGHT:
-            if self.highlighted_cell_one < self.get_max_label():
+            if (self.highlighted_cell_one < self.get_max_label() and
+                self.highlighted_cell_one > -1):
                 self.highlighted_cell_one += 1
             elif self.highlighted_cell_one == self.get_max_label():
                 self.highlighted_cell_one = 1
