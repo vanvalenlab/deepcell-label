@@ -1397,11 +1397,24 @@ class CalibanBrush:
         # brush_view is array used to display a preview of brush tool; same size as other arrays
         self.view = np.zeros((self.height, self.width))
 
+        # dirty rectangle = area that has been changed
+        # keep track of this for faster image modification
+        self.dirty_y1, self.dirty_y2 = None, None
+        self.dirty_x1, self.dirty_x2 = None, None
+
         # toggle that determines whether we're viewing brush or thresholding box
         self.show = True
 
         # use to toggle off draw behavior when we shouldn't be drawing
         self.drawing = True
+
+    @property
+    def dirty_bbox(self):
+        '''
+        Shortcut for getting the edges of the "dirty" box, which includes
+        the part of the brush view that has been affected by the brush.
+        '''
+        return(self.dirty_y1, self.dirty_y2, self.dirty_x1, self.dirty_x2)
 
     def reset(self):
         '''
@@ -1609,6 +1622,8 @@ class CalibanBrush:
         zeros.
         '''
         self.view = np.zeros((self.height, self.width))
+        self.dirty_y1, self.dirty_y2 = None, None
+        self.dirty_x1, self.dirty_x2 = None, None
 
     def add_to_view(self):
         '''
@@ -1621,11 +1636,26 @@ class CalibanBrush:
                 self.view[self.area] = self.conv_val
             else:
                 self.view[self.area] = self.edit_val
+            y1, y2 = np.min(self.area[0]) - 1, np.max(self.area[0]) + 2
+            x1, x2 = np.min(self.area[1]) - 1, np.max(self.area[1]) + 2
+            if None in (self.dirty_y1, self.dirty_y2, self.dirty_x1, self.dirty_x2):
+                self.dirty_y1 = max(0, y1)
+                self.dirty_y2 = min(self.height, y2)
+                self.dirty_x1 = max(0, x1)
+                self.dirty_x2 = min(self.width, x2)
+            else:
+                self.dirty_y1 = max(0, min(self.dirty_y1, y1))
+                self.dirty_y2 = min(self.height, max(self.dirty_y2, y2))
+                self.dirty_x1 = max(0, min(self.dirty_x1, x1))
+                self.dirty_x2 = min(self.width, max(self.dirty_x2, x2))
+
         else:
             self.clear_view()
             if self.box_x is not None:
                 y1, y2, x1, x2 = self.get_box_coords()
                 self.view[y1:y2,x1:x2] = 1
+                self.dirty_y1, self.dirty_y2 = max(0, y1 - 1), min(self.height, y2 + 2)
+                self.dirty_x1, self.dirty_x2 = max(0, x1 - 1), max(self.width, x2 + 2)
 
     def redraw_view(self):
         '''
@@ -4110,6 +4140,18 @@ def display_format_frames(frames):
                         for a in display_frames]) + ']'
 
     return display_frames
+
+def get_dirty_rectangle(input_array):
+    nonzero = input_array.nonzero()
+    if len(nonzero[0]) > 0 and len(nonzero[1]) > 0:
+        dy1 = max(0, np.min(nonzero[0]) - 1)
+        dy2 = min(input_array.shape[0], np.max(nonzero[0]) + 2)
+        dx1 = max(0, np.min(nonzero[1] - 1))
+        dx2 = min(input_array.shape[1], np.max(nonzero[1]) + 2)
+    else:
+        dy1 = dy2 = dx1 = dx2 = None
+
+    return dy1, dy2, dx1, dx2
 
 def predict_zstack_cell_ids(img, next_img, threshold = 0.1):
     '''
