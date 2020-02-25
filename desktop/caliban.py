@@ -115,6 +115,9 @@ class CalibanWindow:
         attributes (eg, raw image adjustment toggles, colormap for creating overlaid
         labels, scale factor, which view to display, and an empty composite_view).
         '''
+        self._mouse_x = 0
+        self._mouse_y = 0
+
         # how much to scale image by (start with no scaling, but can expand to
         # fill window when window changes size)
         self.scale_factor = 1
@@ -250,6 +253,9 @@ class CalibanWindow:
                 (self.x and self.y will not update if mouse has moved outside of image)
             self.brush to update where the center of the brush is
         '''
+        self._mouse_x = x
+        self._mouse_y = y
+
         # convert event x to viewing pane x by accounting for sidebar width, then scale
         x -= (self.sidebar_width + self.image_padding)
         x //= self.scale_factor
@@ -377,6 +383,9 @@ class CalibanWindow:
             self.view_start_x = max(0, new_x_start)
 
             self.zoom = new_zoom
+            self.update_mouse_position(x = self._mouse_x, y = self._mouse_y)
+            self.brush.redraw_view()
+
             self.update_image = True
 
     def on_mouse_press(self, x, y, button, modifiers):
