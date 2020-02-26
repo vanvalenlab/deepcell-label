@@ -997,6 +997,7 @@ class CalibanWindow:
     def add_brush_preview(self):
         '''
         '''
+        # edges of what is currently being displayed
         y1 = max(int(self.view_start_y), 0)
         y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
         x1 = max(int(self.view_start_x), 0)
@@ -1005,13 +1006,23 @@ class CalibanWindow:
         dy1, dy2 = self.brush.dirty_y1, self.brush.dirty_y2
         dx1, dx2 = self.brush.dirty_x1, self.brush.dirty_x2
 
-        # create pyglet image object so we can display brush location
+        # if no dirty rectangle, don't need to update any more
         if None in (dy1, dy2, dx1, dx2):
-            dy1, dy2, dx1, dx2 = y1, y2, x1, x2
+            self.array_to_img(input_array = self.display.astype(np.uint8),
+                                        vmax = None, cmap = None, output = 'pyglet')
+            return
+
+        # don't update outside of viewing window
         dy1 = max(dy1, y1)
         dy2 = min(dy2, y2)
         dx1 = max(dx1, x1)
         dx2 = min(dx2, x2)
+
+        # brush has moved offscreen (can happen during click & drag panning)
+        if dx2 <= dx1 or dy2 <= dy1:
+            self.array_to_img(input_array = self.display.astype(np.uint8),
+                                        vmax = None, cmap = None, output = 'pyglet')
+            return
 
         brush_arr = self.brush.view[dy1:dy2, dx1:dx2]
 
