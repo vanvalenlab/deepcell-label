@@ -280,8 +280,11 @@ class CalibanWindow:
         # current position = index at bottom of displayed image - position relative to the bottom
         y = y2 - y
 
+        x1 = max(int(self.view_start_x), 0)
+        x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
+
         # check that mouse cursor is within bounds of image before updating
-        if 0 <= x < self.width and 0 <= y < self.height:
+        if y1 <= y < y2 and x1 <= x < x2:
             self.x, self.y = x, y
             self.brush.update_center(y, x)
             if self.edit_mode and None not in self.brush.dirty_bbox:
