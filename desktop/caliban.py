@@ -48,6 +48,10 @@ from skimage.exposure import rescale_intensity, equalize_adapthist
 from skimage import color, img_as_float, filters
 from skimage.util import invert
 from skimage.segmentation import find_boundaries
+from skimage.transform import rescale
+
+import matplotlib.cm as cmaps
+from matplotlib.colors import Normalize
 
 from imageio import imread, imwrite
 
@@ -179,9 +183,13 @@ class CalibanWindow:
 
         # composite_view used to store RGB image (composite of raw and annotated) so it can be
         # accessed and updated as needed
-        self.composite_view = np.zeros((1,self.height,self.width,3))
+        self.composite_view = np.zeros((self.height,self.width,3))
+
+        self.comp_dy1, self.comp_dy2 = None, None
+        self.comp_dx1, self.comp_dx2 = None, None
 
         self.update_image = True
+        self.update_brush_image = True
 
     def on_resize(self, width, height):
         '''
@@ -276,8 +284,8 @@ class CalibanWindow:
         if 0 <= x < self.width and 0 <= y < self.height:
             self.x, self.y = x, y
             self.brush.update_center(y, x)
-            if self.edit_mode and self.brush.show:
-                self.update_image = True
+            if self.edit_mode and None not in self.brush.dirty_bbox:
+                self.update_brush_image = True
 
     def on_mouse_motion(self, x, y, dx, dy):
         '''
@@ -472,6 +480,8 @@ class CalibanWindow:
             # mouse release only has special behavior in pixel-editing mode; most custom
             # behavior during a mouse click is handled in the mouse press event
             if self.edit_mode:
+                self.comp_dy1, self.comp_dy2 = self.brush.dirty_y1, self.brush.dirty_y2
+                self.comp_dx1, self.comp_dx2 = self.brush.dirty_x1, self.brush.dirty_x2
                 # releasing the mouse finalizes bounding box for thresholding
                 if not self.brush.show and self.mode.action == "DRAW BOX":
                     self.handle_threshold()
@@ -483,6 +493,7 @@ class CalibanWindow:
                 # for threshold), update the image composite with the current annotation
                 if not self.hide_annotations:
                     self.helper_update_composite()
+                    self.update_image = True
 
     def mouse_press_none_helper(self, modifiers, label):
         '''
@@ -763,13 +774,19 @@ class CalibanWindow:
             self.draw_pixel_edit_frame, self.draw_ann_frame, self.draw_raw_frame
                 to display appropriate data
         '''
-        if self.edit_mode:
-            self.draw_pixel_edit_frame()
-        else:
-            if self.draw_raw:
-                self.draw_raw_frame()
+        if self.update_image:
+            if self.edit_mode:
+                self.draw_pixel_edit_frame()
             else:
-                self.draw_ann_frame()
+                if self.draw_raw:
+                    self.draw_raw_frame()
+                else:
+                    self.draw_ann_frame()
+
+        elif self.update_brush_image and self.edit_mode:
+            self.add_brush_preview()
+
+        self.draw_pyglet_image()
 
     def draw_raw_frame(self):
         '''
@@ -786,22 +803,19 @@ class CalibanWindow:
             self.draw_pyglet_image to display pyglet Image on screen in correct
                 location with scaling
         '''
-        if self.update_image:
-            y1 = max(int(self.view_start_y), 0)
-            y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
-            x1 = max(int(self.view_start_x), 0)
-            x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
+        y1 = max(int(self.view_start_y), 0)
+        y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
+        x1 = max(int(self.view_start_x), 0)
+        x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
 
-            raw_array = self.get_raw_current_frame()[y1:y2, x1:x2]
-            adjusted_raw = self.apply_raw_image_adjustments(raw_array, cmap = self.current_cmap)
-            self.image = self.array_to_img(input_array = adjusted_raw,
-                vmax = None,
-                cmap = None,
-                output = 'pyglet')
+        raw_array = self.get_raw_current_frame()[y1:y2, x1:x2]
+        adjusted_raw = self.apply_raw_image_adjustments(raw_array, cmap = self.current_cmap)
+        self.array_to_img(input_array = adjusted_raw,
+            vmax = None,
+            cmap = None,
+            output = 'pyglet')
 
-            self.update_image = False
-
-        self.draw_pyglet_image(self.image)
+        self.update_image = False
 
     def draw_ann_frame(self):
         '''
@@ -819,31 +833,28 @@ class CalibanWindow:
             self.draw_pyglet_image to display pyglet Image on screen in correct
                 location with scaling
         '''
-        if self.update_image:
-            y1 = max(int(self.view_start_y), 0)
-            y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
-            x1 = max(int(self.view_start_x), 0)
-            x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
-            ann_array = self.get_ann_current_frame()[y1:y2,x1:x2]
+        y1 = max(int(self.view_start_y), 0)
+        y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
+        x1 = max(int(self.view_start_x), 0)
+        x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
+        ann_array = self.get_ann_current_frame()[y1:y2,x1:x2]
 
-            # annotations use cubehelix cmap with highlighting in red
-            ann_array = np.ma.masked_equal(ann_array, 0)
+        # annotations use cubehelix cmap with highlighting in red
+        ann_array = np.ma.masked_equal(ann_array, 0)
 
-            # create pyglet image
-            image = self.array_to_img(input_array = ann_array,
-                                                    vmax = max(1, self.get_max_label() + self.adjustment),
-                                                    cmap = self.labels_cmap,
-                                                    output = 'array')
+        # create pyglet image
+        image = self.array_to_img(input_array = ann_array,
+                                                vmax = max(1, self.get_max_label() + self.adjustment),
+                                                cmap = self.labels_cmap,
+                                                output = 'array')
 
-            # if highlighting on, mask highlighted values so they appear red
-            if self.highlight:
-                image = self.apply_label_highlight(ann_array, image)
+        # if highlighting on, mask highlighted values so they appear red
+        if self.highlight:
+            image = self.apply_label_highlight(ann_array, image)
 
-            self.image = self.array_to_img(input_array = image, vmax = None, cmap = None, output = 'pyglet')
+        self.array_to_img(input_array = image, vmax = None, cmap = None, output = 'pyglet')
 
-            self.update_image = False
-
-        self.draw_pyglet_image(self.image)
+        self.update_image = False
 
     def draw_pixel_edit_frame(self):
         '''
@@ -855,57 +866,47 @@ class CalibanWindow:
         class to have methods for get_max_label and get_raw_current_frame, and
         adjustment attribute.
         '''
-        if self.update_image:
+        y1 = max(int(self.view_start_y), 0)
+        y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
+        x1 = max(int(self.view_start_x), 0)
+        x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
 
-            y1 = max(int(self.view_start_y), 0)
-            y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
-            x1 = max(int(self.view_start_x), 0)
-            x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
+        # create pyglet image from only the adjusted raw, if hiding annotations
+        if self.hide_annotations:
+            # get raw and annotated data
+            current_raw = self.get_raw_current_frame()[y1:y2, x1:x2]
+            display = self.apply_raw_image_adjustments(np.copy(current_raw))
 
-            # create pyglet image object so we can display brush location
-            brush_arr = self.brush.view[y1:y2, x1:x2]
+        # create pyglet image from composite if you want to see annotation overlay
+        # (self.composite view is generated/updated separately)
+        if not self.hide_annotations:
+            display = np.copy(self.composite_view[y1:y2, x1:x2])
 
-            # create pyglet image from only the adjusted raw, if hiding annotations
-            if self.hide_annotations:
-                # get raw and annotated data
-                # TODO: np.copy might be appropriate here for clarity
-                # (current_raw is not edited in place but np.copy would help safeguard that)
-                current_raw = self.get_raw_current_frame()[y1:y2, x1:x2]
-                display = self.apply_raw_image_adjustments(current_raw)
+        if self.highlight:
+            white_mask = np.where(self.get_ann_current_frame()[y1:y2,x1:x2] == self.brush.h1, 1, 0)
+            dy1, dy2, dx1, dx2 = get_dirty_rectangle(white_mask)
+            if not None in (dy1, dy2, dx1, dx2):
+                white_mask = self.generate_ann_boundaries(white_mask[dy1:dy2, dx1:dx2])
+                display[dy1:dy2, dx1:dx2] = self.overlay_RGB(display[dy1:dy2, dx1:dx2], white_mask)
 
-            # create pyglet image from composite if you want to see annotation overlay
-            # (self.composite view is generated/updated separately)
-            if not self.hide_annotations:
-                display = self.composite_view[y1:y2, x1:x2]
-
-            display = self.apply_transparent_highlight(display, brush_arr)
-
-            if self.highlight:
-                white_mask = np.where(self.get_ann_current_frame()[y1:y2,x1:x2] == self.brush.h1, 1, 0)
-                white_mask = self.generate_ann_boundaries(white_mask)
-                display = self.overlay_RGB(display, white_mask)
+            if self.brush.h2 != -1:
                 red_mask = np.where(self.get_ann_current_frame()[y1:y2,x1:x2] == self.brush.h2, 1, 0)
-                red_mask = self.generate_ann_boundaries(red_mask, color = 'red')
-                display = self.overlay_RGB(display, red_mask)
+                dy1, dy2, dx1, dx2 = get_dirty_rectangle(red_mask)
+                if not None in (dy1, dy2, dx1, dx2):
+                    red_mask = self.generate_ann_boundaries(red_mask[dy1:dy2, dx1:dx2], color = 'red')
+                    display[dy1:dy2, dx1:dx2] = self.overlay_RGB(display[dy1:dy2, dx1:dx2], red_mask)
 
-            if self.brush.erase and self.brush.conv_val == -1:
-                brush_outline = self.generate_ann_boundaries(brush_arr, color ='red')
-            else:
-                brush_outline = self.generate_ann_boundaries(brush_arr)
-            display = self.overlay_RGB(display, brush_outline)
+        self.display = display
 
-            self.image = self.array_to_img(input_array = display.astype(np.uint8),
-                                        vmax = None, cmap = None, output = 'pyglet')
+        self.add_brush_preview()
 
-            gl.glTexParameteri(gl.GL_TEXTURE_2D,
-                               gl.GL_TEXTURE_MAG_FILTER,
-                               gl.GL_NEAREST)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D,
+                           gl.GL_TEXTURE_MAG_FILTER,
+                           gl.GL_NEAREST)
 
-            self.update_image = False
+        self.update_image = False
 
-        self.draw_pyglet_image(self.image)
-
-    def draw_pyglet_image(self, image, opacity = 255):
+    def draw_pyglet_image(self):
         '''
         Takes a pyglet Image object, turns it into a sprite, and draws the sprite.
         Creating a sprite makes it easy for pyglet to anchor the image in the
@@ -917,25 +918,27 @@ class CalibanWindow:
                 for image corner
             self.scale_factor to scale both x and y for image display
         '''
-        # TODO: add sprite to batch?
+        format_size = self.input_array.shape[-1]
+        bytes_per_channel = 1
+        pitch = self.input_array.shape[1] * format_size * bytes_per_channel
+        if format_size == 4:
+            format_str = "RGBA"
+        else:
+            format_str = "RGB"
+
+        image_data = pyglet.image.ImageData(self.input_array.shape[1], self.input_array.shape[0],
+            format_str, self.array_data, pitch = -pitch)
+
         pad = self.image_padding
 
-        # create pyglet sprite, bottom left corner of image anchored with some offset
-        self.sprite = pyglet.sprite.Sprite(image, x=self.sidebar_width + pad, y=pad, batch = self.batch)
-
-        # scale x and y dimensions of sprite
-        self.sprite.update(scale_x=self.scale_factor*self.zoom,
-                      scale_y=self.scale_factor*self.zoom)
-
-        # set opacity of sprite (255 is default)
-        self.sprite.opacity = opacity
+        image_data.blit(x = self.sidebar_width + pad, y = pad)
 
         # TODO: how often does this actually need to be set?
         gl.glTexParameteri(gl.GL_TEXTURE_2D,
                            gl.GL_TEXTURE_MAG_FILTER,
                            gl.GL_NEAREST)
 
-    def array_to_img(self, input_array, vmax, cmap, output):
+    def array_to_img(self, input_array, vmax, cmap, output, vmin = None):
         '''
         Helper function to take an input array and output either a pyglet image
         (to display) or an RGB array (for creating a composite image for
@@ -951,35 +954,74 @@ class CalibanWindow:
             output: string specifying desired format ('pyglet' returns pyglet image,
                 'array' returns RGB array representation of image data)
         '''
-        # temporary file that we can write to
-        img_file = BytesIO()
-        # create a png image with pyplot and save it to the temp file
-        plt.imsave(img_file, input_array,
-                        vmax=vmax,
-                        cmap=cmap,
-                        format='png')
-
-        # go to start of file so we can read it out correctly
-        img_file.seek(0)
 
         # pyglet image type
         if output == 'pyglet':
-            # create pyglet image loaded from temp file
-            pyglet_img = pyglet.image.load('img_file.png', file = img_file)
-            # close file since we are now done with it
-            img_file.close()
-            return pyglet_img
+
+            if cmap is not None:
+                input_array = self.array_to_img(input_array, vmax, cmap, output = 'array')
+
+            # rescale (if needed)
+            scale = self.scale_factor * self.zoom
+            if scale != 1:
+                input_array = rescale(input_array, scale = scale, preserve_range = True,
+                    multichannel = True, anti_aliasing = False)
+
+            input_array = input_array.astype(np.uint8)
+
+            self.input_array = input_array
+
+            self.array_data = (gl.GLubyte * self.input_array.size).from_buffer(self.input_array)
 
         # generate an RGB array (what the data 'looks like' but in array format)
         elif output == 'array':
-            # imread will give us an RGB array
-            img_array = imread(img_file)
-            # close file since we are now done with it
-            img_file.close()
-            return img_array
+            if type(cmap) is str:
+                cmap = plt.get_cmap(cmap)
+            input_array = Normalize(vmin = vmin, vmax = vmax)(input_array)
+            RGB_array = cmap(input_array, bytes = True)
+
+            return RGB_array
 
         else:
             return None
+
+    def add_brush_preview(self):
+        '''
+        '''
+        y1 = max(int(self.view_start_y), 0)
+        y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
+        x1 = max(int(self.view_start_x), 0)
+        x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
+
+        dy1, dy2 = self.brush.dirty_y1, self.brush.dirty_y2
+        dx1, dx2 = self.brush.dirty_x1, self.brush.dirty_x2
+
+        # create pyglet image object so we can display brush location
+        if None in (dy1, dy2, dx1, dx2):
+            dy1, dy2, dx1, dx2 = y1, y2, x1, x2
+        dy1 = max(dy1, y1)
+        dy2 = min(dy2, y2)
+        dx1 = max(dx1, x1)
+        dx2 = min(dx2, x2)
+
+        brush_arr = self.brush.view[dy1:dy2, dx1:dx2]
+
+        self.brush_display = np.copy(self.display)
+        temp_display = self.brush_display[dy1-y1:dy2-y1, dx1-x1:dx2-x1]
+
+        self.brush_display[dy1-y1:dy2-y1, dx1-x1:dx2-x1] = self.apply_transparent_highlight(temp_display, brush_arr)
+
+        if self.brush.erase and self.brush.conv_val == -1:
+            brush_outline = self.generate_ann_boundaries(brush_arr, color ='red')
+        else:
+            brush_outline = self.generate_ann_boundaries(brush_arr)
+
+        self.brush_display[dy1-y1:dy2-y1, dx1-x1:dx2-x1] = self.overlay_RGB(self.brush_display[dy1-y1:dy2-y1, dx1-x1:dx2-x1], brush_outline)
+
+        self.array_to_img(input_array = self.brush_display.astype(np.uint8),
+                                    vmax = None, cmap = None, output = 'pyglet')
+
+        self.update_brush_image = False
 
     def generate_ann_boundaries(self, img, color = 'white'):
         boundary_mask = find_boundaries(img, mode = 'inner')
@@ -1071,7 +1113,7 @@ class CalibanWindow:
 
         return raw_RGB
 
-    def make_composite_img(self, base_array, overlay_array, alpha = 0.6):
+    def make_composite_img(self, base_array, overlay_array, alpha = 0.6, partial = False):
         '''
         Helper function to take two arrays and overlay one on top of the other
         using a conversion to HSV color space. Used to take greyscale RGB array
@@ -1094,7 +1136,10 @@ class CalibanWindow:
 
         # convert HSV image back to 8bit RGB
         img_masked = color.hsv2rgb(img_hsv)
-        img_masked = rescale_intensity(img_masked, out_range = np.uint8)
+        if partial:
+            img_masked = rescale_intensity(img_masked, in_range = (0,1), out_range = np.uint8)
+        else:
+            img_masked = rescale_intensity(img_masked, out_range = np.uint8)
         img_masked = img_masked.astype(np.uint8)
 
         return img_masked
@@ -1119,28 +1164,40 @@ class CalibanWindow:
             self.make_composite_img to overlay annotation RGB image on top of
                 adjusted raw image
         '''
+        # if only part of the composite needs to be redrawn:
+        dy1, dy2, dx1, dx2 = self.comp_dy1, self.comp_dy2, self.comp_dx1, self.comp_dx2
+
         # get images to modify and overlay
         current_raw = self.get_raw_current_frame()
-        current_ann = self.get_ann_current_frame()
+        current_ann = self.get_ann_current_frame()[dy1:dy2, dx1:dx2]
         current_ann = np.ma.masked_equal(current_ann, 0)
 
-        raw_RGB = self.apply_raw_image_adjustments(current_raw)
+        raw_RGB = self.apply_raw_image_adjustments(current_raw)[dy1:dy2, dx1:dx2]
 
         # get RGB array of colorful annotation view
         ann_img = self.array_to_img(input_array = current_ann,
                                             vmax = self.get_max_label() + self.adjustment,
                                             cmap = self.labels_cmap,
-                                            output = 'array')
+                                            output = 'array',
+                                            vmin = 0)
 
         # don't need alpha channel
-        ann_RGB = ann_img[:,:,0:3]
+        ann_RGB = ann_img[...,0:3]
+
+        if None not in (dy1, dy2, dx1, dx2):
+            partial = True
+        else:
+            partial = False
 
         # create the composite image from the two RGB arrays
         img_masked = self.make_composite_img(base_array = raw_RGB,
-                                            overlay_array = ann_RGB)
+                                            overlay_array = ann_RGB,
+                                            partial = partial)
 
         # set self.composite view to new composite image
-        self.composite_view = img_masked
+        self.composite_view[dy1:dy2, dx1:dx2] = img_masked
+
+        self.comp_dy1, self.comp_dy2, self.comp_dx1, self.comp_dx2 = None, None, None, None
 
     def draw_label(self):
         '''
@@ -2476,7 +2533,6 @@ class ZStackReview(CalibanWindow):
             self.add_cell_info(feature = self.feature, add_label = self.brush.draw_value, frame = self.current_frame)
 
         self.annotated[self.current_frame,:,:,self.feature] = annotated_draw
-        self.update_image = True
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         '''
@@ -2774,7 +2830,7 @@ class ZStackReview(CalibanWindow):
         # TOGGLE ERASER
         if symbol == key.X:
             self.brush.toggle_erase()
-            self.update_image = True
+            self.update_brush_image = True
 
         # ACTIONS - COLOR PICKER
         if symbol == key.P:
@@ -2822,11 +2878,11 @@ class ZStackReview(CalibanWindow):
             # decrease brush size
             if symbol == key.DOWN:
                 self.brush.decrease_size()
-                self.update_image = True
+                self.update_brush_image = True
             # increase brush size
             if symbol == key.UP:
                 self.brush.increase_size()
-                self.update_image = True
+                self.update_brush_image = True
 
         # SET CONVERSION BRUSH VALUE TO UNUSED LABEL
         # TODO: update Mode prompt to reflect that you can do this
