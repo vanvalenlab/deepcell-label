@@ -239,8 +239,11 @@ class CalibanWindow:
         pad = 2*self.image_padding
         y_scale = (self.window.height - pad) // self.height
         x_scale = (self.window.width - (self.sidebar_width + pad)) // self.width
-        self.scale_factor = min(y_scale, x_scale)
-        self.scale_factor = max(1, self.scale_factor)
+        new_scale_factor = min(y_scale, x_scale)
+        new_scale_factor = max(1, new_scale_factor)
+        if new_scale_factor != self.scale_factor:
+            self.scale_factor = new_scale_factor
+            self.update_image = True
 
     def update_mouse_position(self, x, y):
         '''
