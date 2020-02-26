@@ -355,10 +355,14 @@ class CalibanWindow:
         self.view_start_x = max(0, new_x_start)
 
         if old_y_start != self.view_start_y or old_x_start != self.view_start_x:
+            # important to update mouse position if a pan button has been used
+            self.update_mouse_position(x = self._mouse_x, y = self._mouse_y)
+            # refresh the brush area
+            if self.brush.show:
+                self.brush.redraw_view()
             self.update_image = True
 
     def adjust_zoom(self, scroll_y):
-
         pixel_w = int(self.visible_x_pix/self.zoom)
         pixel_h = int(self.visible_y_pix/self.zoom)
 
