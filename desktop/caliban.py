@@ -880,9 +880,10 @@ class CalibanWindow:
 
         # create pyglet image from only the adjusted raw, if hiding annotations
         if self.hide_annotations:
-            # get raw and annotated data
-            current_raw = self.get_raw_current_frame()[y1:y2, x1:x2]
-            display = self.apply_raw_image_adjustments(np.copy(current_raw))
+            # get whole raw image so that adjustments will be the same as they are in composite
+            current_raw = self.get_raw_current_frame()
+            # get the current view from adjusted image
+            display = self.apply_raw_image_adjustments(np.copy(current_raw))[y1:y2, x1:x2]
 
         # create pyglet image from composite if you want to see annotation overlay
         # (self.composite view is generated/updated separately)
