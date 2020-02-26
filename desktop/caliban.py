@@ -2709,7 +2709,7 @@ class ZStackReview(CalibanWindow):
 
         # TOGGLE HIGHLIGHT
         # note: shift+H is conditional keybind elsewhere
-        elif symbol == key.H:
+        elif symbol == key.H and not (modifiers & key.MOD_SHIFT):
             self.highlight = not self.highlight
             self.update_image = True
 
