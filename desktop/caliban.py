@@ -267,6 +267,8 @@ class CalibanWindow:
         self._mouse_x = x
         self._mouse_y = y
 
+        old_y, old_x = self.y, self.x
+
         # convert event x to viewing pane x by accounting for sidebar width, then scale
         x -= (self.sidebar_width + self.image_padding)
         x //= self.scale_factor
@@ -288,10 +290,12 @@ class CalibanWindow:
 
         # check that mouse cursor is within bounds of image before updating
         if y1 <= y < y2 and x1 <= x < x2:
-            self.x, self.y = x, y
-            self.brush.update_center(y, x)
-            if self.edit_mode and None not in self.brush.dirty_bbox:
-                self.update_brush_image = True
+            # mouse is now over a different displayed pixel of image
+            if (old_y != y or old_x != x):
+                self.x, self.y = x, y
+                self.brush.update_center(y, x)
+                if self.edit_mode and None not in self.brush.dirty_bbox:
+                    self.update_brush_image = True
 
     def on_mouse_motion(self, x, y, dx, dy):
         '''
@@ -309,9 +313,10 @@ class CalibanWindow:
         Note: self.brush.show is not a user-toggled option but is used to display
             the correct preview (threshold box vs path of brush)
         '''
+        old_y, old_x = self.y, self.x
         # always update self.x and self.y when mouse has moved
         self.update_mouse_position(x, y)
-        if self.brush.show:
+        if self.brush.show and (old_y != self.y or old_x != self.x):
             self.brush.redraw_view()
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
@@ -335,13 +340,14 @@ class CalibanWindow:
                 label information as needed
         '''
         # always update self.x and self.y when mouse has moved
+        old_y, old_x = self.y, self.x
         self.update_mouse_position(x, y)
 
         if self.key_states[key.SPACE]:
             self.pan(dx, dy)
         else:
             # mouse drag only has special behavior in pixel-editing mode
-            if self.edit_mode:
+            if self.edit_mode and (old_y != self.y or old_x != self.x):
                 # drawing with brush (normal or conversion)
                 self.brush.add_to_view()
                 # modify annotation
