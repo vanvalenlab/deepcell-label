@@ -1760,13 +1760,19 @@ class CalibanBrush:
         if not self.drawing:
             return image
 
+        dy1, dy2, dx1, dx2 = self.dirty_bbox
+
         image = np.copy(image)
 
+        # use only dirty rectangle of image for faster processing
+        img_piece = image[dy1:dy2, dx1:dx2]
+
         # version of image where all background pixels have been changed
-        mod_image = np.where(image == self.background, self.draw_value, image)
+        mod_image = np.where(img_piece == self.background, self.draw_value, img_piece)
 
         # only change area part of image
-        image[self.area] = mod_image[self.area]
+        area = (self.area[0]-dy1, self.area[1]-dx1)
+        image[self.area] = mod_image[area]
 
         return image
 
