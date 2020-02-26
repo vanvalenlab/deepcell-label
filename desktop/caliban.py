@@ -26,6 +26,7 @@
 """Displaying and Curating annotations tracked over time in multiple frames."""
 from mode import Mode
 
+import cv2
 import json
 import math
 import numpy as np
@@ -48,7 +49,6 @@ from skimage.exposure import rescale_intensity, equalize_adapthist
 from skimage import color, img_as_float, filters
 from skimage.util import invert
 from skimage.segmentation import find_boundaries
-from skimage.transform import rescale
 
 import matplotlib.cm as cmaps
 from matplotlib.colors import Normalize
@@ -967,9 +967,10 @@ class CalibanWindow:
 
             # rescale (if needed)
             scale = self.scale_factor * self.zoom
-            if scale != 1:
-                input_array = rescale(input_array, scale = scale, preserve_range = True,
-                    multichannel = True, anti_aliasing = False)
+            if scale > 1:
+                input_array = cv2.resize(input_array, None, fy = scale, fx = scale, interpolation = cv2.INTER_AREA)
+            elif scale < 1:
+                input_array = cv2.resize(input_array, None, fy = scale, fx = scale, interpolation = cv2.INTER_LINEAR)
 
             input_array = input_array.astype(np.uint8)
 
