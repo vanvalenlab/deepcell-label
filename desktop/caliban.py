@@ -3934,7 +3934,7 @@ class RGBNpz(CalibanWindow):
             self.draw_pyglet_image(ann_img)
 
     def generate_ann_boundaries(self, img, color = 'white'):
-        boundary_mask = find_boundaries(img)
+        boundary_mask = find_boundaries(img, mode = 'inner')
         boundary_mask = np.expand_dims(boundary_mask, axis = 2)
         if color == 'white':
             rgb_mask = np.where(boundary_mask ==1, [255, 255, 255], [0,0,0])
