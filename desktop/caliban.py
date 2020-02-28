@@ -185,6 +185,8 @@ class CalibanWindow:
         # accessed and updated as needed
         self.composite_view = np.zeros((self.height,self.width,3))
 
+        self.vmin = 0
+
         self.comp_dy1, self.comp_dy2 = None, None
         self.comp_dx1, self.comp_dx2 = None, None
 
@@ -1122,16 +1124,19 @@ class CalibanWindow:
             current_raw = rescale_intensity(current_raw, in_range = 'image', out_range = 'float')
             current_raw = equalize_adapthist(current_raw)
             # vmax appropriate for new range of image
+            vmin = 0
             vmax = 1
         elif not self.adapthist_on:
             # appropriate vmax for image
+            vmin = self.vmin
             vmax = self.max_intensity
 
         # want image to be in grayscale, but as RGB array, not array of intensities
         raw_img =  self.array_to_img(input_array = current_raw,
                     vmax = vmax,
                     cmap = cmap,
-                    output = 'array')
+                    output = 'array',
+                    vmin = vmin)
 
         # don't need alpha channel
         raw_RGB = raw_img[:,:,0:3]
@@ -2457,6 +2462,11 @@ class ZStackReview(CalibanWindow):
         # max_intensity for initial channel
         self.max_intensity = self.max_intensity_dict[self.channel]
 
+        self.min_intensity_dict = {}
+        for channel in range(self.channel_max):
+            self.min_intensity_dict[channel] = 0
+        self.vmin = self.min_intensity_dict[self.channel]
+
         # keeps track of information about adjustment of colormap for viewing annotation labels
         self.adjustment_dict = {}
         for feature in range(self.feature_max):
@@ -2596,16 +2606,24 @@ class ZStackReview(CalibanWindow):
             # adjust brightness of raw image, if looking at raw image
             # (also applies to edit mode if self.draw_raw is True)
             if self.draw_raw:
-                # self.max_intensity_dict[self.channel] has a value so we can adjust it
-                # check minimum brightness of image as lower bound of brightness adjustment
-                min_intensity = np.min(self.raw[self.current_frame,:,:,self.channel])
-                # adjust max brightness value by a percentage of the current value
-                raw_adjust = max(int(self.max_intensity_dict[self.channel] * 0.02), 1)
-                # set the adjusted max brightness value, but it should never be the same or less than
-                # the minimum brightness in the image
-                self.max_intensity_dict[self.channel] = max(self.max_intensity_dict[self.channel] - raw_adjust * scroll_y,
-                                                        min_intensity + 1)
-                self.max_intensity = self.max_intensity_dict[self.channel]
+                if not self.key_states[key.LSHIFT] or self.key_states[key.RSHIFT]:
+                    # self.max_intensity_dict[self.channel] has a value so we can adjust it
+                    # check minimum brightness of image as lower bound of brightness adjustment
+                    min_intensity = np.min(self.raw[self.current_frame,:,:,self.channel])
+                    # adjust max brightness value by a percentage of the current value
+                    raw_adjust = max(int(self.max_intensity_dict[self.channel] * 0.02), 1)
+                    # set the adjusted max brightness value, but it should never be the same or less than
+                    # the minimum brightness in the image
+                    self.max_intensity_dict[self.channel] = max(self.max_intensity_dict[self.channel] - raw_adjust * scroll_y,
+                                                            min_intensity + 1)
+                    self.max_intensity = self.max_intensity_dict[self.channel]
+                else:
+                    min_intensity = np.min(self.raw[self.current_frame,:,:,self.channel])
+                    new_vmin = self.vmin + max(int(min_intensity*0.02), 1) * scroll_y
+                    new_vmin = min(new_vmin, min_intensity)
+                    new_vmin = max(new_vmin, 0)
+                    self.min_intensity_dict[self.channel] = new_vmin
+                    self.vmin = new_vmin
 
             # adjusting colormap range of annotations
             elif not self.draw_raw:
@@ -3321,6 +3339,7 @@ class ZStackReview(CalibanWindow):
         '''
         # in this case we only need to update self.max_intensity
         self.max_intensity = self.max_intensity_dict[self.channel]
+        self.vmin = self.min_intensity_dict[self.channel]
         if self.draw_raw:
             self.update_image = True
 
