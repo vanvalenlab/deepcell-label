@@ -2036,6 +2036,49 @@ class TrackReview(CalibanWindow):
                     self.helper_update_composite()
                 self.update_image = True
 
+    def edit_mode_misc_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that are
+        handled here apply to pixel-editing mode in specific contexts;
+        unlike other helper functions, which are grouped by context, these
+        keybinds have their conditional logic within the helper function,
+        since they are not easily grouped with anything else.
+
+        Keybinds:
+            down key: decrease size of brush (applies when normal brush or
+                conversion brush is active, but not during thresholding)
+            up key: increase size of brush (applies when normal brush or
+                conversion brush is active, but not during thresholding)
+            n: set conversion brush value to unused (max label + 1) value;
+                analogous to setting normal brush value with this keybind,
+                but specifically when picking a label for the conversion brush
+                value (note that allowing this option for the conversion brush
+                target would be counterproductive)
+        '''
+        # BRUSH MODIFICATION KEYBINDS
+        # (don't want to adjust brush if thresholding; applies to both
+        # normal brush and conversion brushes)
+        if self.brush.show:
+            # BRUSH SIZE ADJUSTMENT
+            # decrease brush size
+            if symbol == key.DOWN:
+                self.brush.decrease_size()
+                self.update_brush_image = True
+            # increase brush size
+            if symbol == key.UP:
+                self.brush.increase_size()
+                self.update_brush_image = True
+
+        # SET CONVERSION BRUSH VALUE TO UNUSED LABEL
+        # TODO: update Mode prompt to reflect that you can do this
+        if self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH VALUE":
+            if symbol == key.N:
+                self.brush.set_conv_val(self.get_new_label())
+                self.mode.update("DRAW", action = "CONVERSION",
+                        conversion_brush_target = self.brush.conv_target,
+                        conversion_brush_value = self.brush.conv_val)
+                self.update_image = True
+
     def on_key_press(self, symbol, modifiers):
 
         self.universal_keypress_helper(symbol, modifiers)
@@ -2043,16 +2086,14 @@ class TrackReview(CalibanWindow):
         if self.edit_mode:
             self.edit_mode_universal_keypress_helper(symbol, modifiers)
 
+            self.edit_mode_misc_keypress_helper(symbol, modifiers)
+
             if symbol == key.EQUAL:
                 self.brush.increase_edit_val(window = self)
             if symbol == key.MINUS:
                 self.brush.decrease_edit_val()
             if symbol == key.X:
                 self.brush.toggle_erase()
-            if symbol == key.LEFT:
-                self.brush.decrease_size()
-            if symbol == key.RIGHT:
-                self.brush.increase_size()
             if symbol == key.Z:
                 self.draw_raw = not self.draw_raw
             else:
