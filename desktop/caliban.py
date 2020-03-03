@@ -2256,6 +2256,53 @@ class TrackReview(CalibanWindow):
         if symbol == key.S:
             self.mode.update("QUESTION", action="SAVE")
 
+    def label_mode_single_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that are
+        handled here apply to label-editing mode only if one label is
+        selected and no actions are awaiting confirmation.
+
+        Keybinds:
+            ] (right bracket): increment currently-highlighted label by 1
+            [ (left bracket): decrement currently-highlighted label by 1
+            c: prompt creation of new label
+            f: prompt hole fill
+            x: prompt deletion of label in frame
+        '''
+        # HIGHLIGHT CYCLING
+        if symbol == key.BRACKETRIGHT:
+            if (self.highlighted_cell_one < self.get_max_label() and
+                self.highlighted_cell_one > -1):
+                self.highlighted_cell_one += 1
+            elif self.highlighted_cell_one == self.get_max_label():
+                self.highlighted_cell_one = 1
+            # deselect label, since highlighting is now decoupled from selection
+            self.mode.clear()
+            if self.highlight:
+                self.update_image = True
+
+        if symbol == key.BRACKETLEFT:
+            if self.highlighted_cell_one > 1:
+                self.highlighted_cell_one -= 1
+            elif self.highlighted_cell_one == 1:
+                self.highlighted_cell_one = self.get_max_label()
+            # deselect label
+            self.mode.clear()
+            if self.highlight:
+                self.update_image = True
+
+        # CREATE CELL
+        if symbol == key.C:
+            self.mode.update("QUESTION", action="NEW TRACK", **self.mode.info)
+
+        # HOLE FILL
+        if symbol == key.F:
+            self.mode.update("PROMPT", action="FILL HOLE", **self.mode.info)
+
+        # DELETE CELL
+        if symbol == key.X:
+            self.mode.update("QUESTION", action="DELETE", **self.mode.info)
+
     def on_key_press(self, symbol, modifiers):
 
         self.universal_keypress_helper(symbol, modifiers)
@@ -2273,25 +2320,14 @@ class TrackReview(CalibanWindow):
 
             if self.mode.kind is None:
                 self.label_mode_none_keypress_helper(symbol, modifiers)
+            elif self.mode.kind == "SELECTED":
+                self.label_mode_single_keypress_helper(symbol, modifiers)
 
             else:
                 self.mode_handle(symbol)
 
     def mode_handle(self, symbol):
 
-        if symbol == key.C:
-            if self.mode.kind == "SELECTED":
-                self.mode.update("QUESTION",
-                                 action="NEW TRACK", **self.mode.info)
-
-        if symbol == key.F:
-            if self.mode.kind == "SELECTED":
-                self.mode.update("PROMPT",
-                                action="FILL HOLE", **self.mode.info)
-        if symbol == key.X:
-            if self.mode.kind == "SELECTED":
-                self.mode.update("QUESTION",
-                                 action="DELETE", **self.mode.info)
         if symbol == key.P:
             if self.mode.kind == "MULTIPLE":
                 self.mode.update("QUESTION",
@@ -2314,19 +2350,6 @@ class TrackReview(CalibanWindow):
             if self.mode.kind == "MULTIPLE":
                 self.mode.update("QUESTION",
                                  action="WATERSHED", **self.mode.info)
-        #cycle through highlighted cells
-        if symbol == key.EQUAL:
-            if self.mode.kind == "SELECTED":
-                if self.highlighted_cell_one < self.get_max_label():
-                    self.highlighted_cell_one += 1
-                elif self.highlighted_cell_one == self.get_max_label():
-                    self.highlighted_cell_one = 1
-        if symbol == key.MINUS:
-            if self.mode.kind == "SELECTED":
-                if self.highlighted_cell_one > 1:
-                    self.highlighted_cell_one -= 1
-                elif self.highlighted_cell_one == 1:
-                    self.highlighted_cell_one = self.get_max_label()
 
         if symbol == key.SPACE:
             if self.mode.kind == "QUESTION":
