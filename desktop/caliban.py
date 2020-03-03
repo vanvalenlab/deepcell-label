@@ -1924,16 +1924,25 @@ class TrackReview(CalibanWindow):
             self.highlight = not self.highlight
             self.update_image = True
 
+        # CLEAR/CANCEL ACTION
+        elif symbol == key.ESCAPE:
+            # clear highlighted cells
+            self.highlighted_cell_one = -1
+            self.highlighted_cell_two = -1
+            # clear hole fill seed (used in hole fill, trim pixels, flood contiguous)
+            self.hole_fill_seed = None
+            # reset self.mode (deselects labels, clears actions)
+            self.mode.clear()
+            # reset from thresholding
+            self.brush.reset()
+            self.update_image = True
+
     def on_key_press(self, symbol, modifiers):
 
         self.universal_keypress_helper(symbol, modifiers)
 
         if not self.edit_mode:
-            if symbol == key.ESCAPE:
-                self.mode.clear()
-                self.highlighted_cell_one = -1
-                self.highlighted_cell_two = -1
-            elif symbol == key.Z:
+            if symbol == key.Z:
                 self.draw_raw = not self.draw_raw
 
             else:
