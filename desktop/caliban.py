@@ -1934,6 +1934,7 @@ class TrackReview(CalibanWindow):
             self.window.set_mouse_visible(self.mouse_visible)
 
         # TOGGLE HIGHLIGHT
+        # note: shift+H is conditional keybind elsewhere
         elif symbol == key.H and not (modifiers & key.MOD_SHIFT):
             self.highlight = not self.highlight
             self.update_image = True
@@ -1990,11 +1991,58 @@ class TrackReview(CalibanWindow):
             self.window.set_fullscreen(fullscreen = not self.window.fullscreen)
             self.update_image = True
 
+    def edit_mode_universal_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that are
+        handled here always apply to pixel-editing mode, so these keybinds
+        may be reused in label-editing mode, but cannot be used elsewhere
+        in pixel-editing mode.
+
+        Keybinds:
+            i: invert light/dark in raw image (does not affect color of overlay)
+            k: toggle sobel filter (emphasizes edges) on raw image
+            j: toggle adaptive histogram equalization of raw image
+            shift + h: toggles annotation visibility (can still edit annotations while hidden,
+                but intended to provide clearer look at filtered raw image if needed)
+        '''
+        # INVERT RAW IMAGE LIGHT/DARK
+        if symbol == key.I:
+            self.invert = not self.invert
+            # if you invert the image while you're viewing composite, update composite
+            if not self.hide_annotations:
+                self.helper_update_composite()
+            self.update_image = True
+
+        # TOGGLE SOBEL FILTER
+        if symbol == key.K:
+            self.sobel_on = not self.sobel_on
+            if not self.hide_annotations:
+                self.helper_update_composite()
+            self.update_image = True
+
+        # TOGGLE ADAPTIVE HISTOGRAM EQUALIZATION
+        if symbol == key.J:
+            self.adapthist_on = not self.adapthist_on
+            if not self.hide_annotations:
+                self.helper_update_composite()
+            self.update_image = True
+
+        # TOGGLE ANNOTATION VISIBILITY
+        if symbol == key.H:
+            if modifiers & key.MOD_SHIFT:
+                self.hide_annotations = not self.hide_annotations
+                # in case any display changes have been made while hiding annotations
+                if not self.hide_annotations:
+                    self.helper_update_composite()
+                self.update_image = True
+
     def on_key_press(self, symbol, modifiers):
 
         self.universal_keypress_helper(symbol, modifiers)
 
         if self.edit_mode:
+            self.edit_mode_universal_keypress_helper(symbol, modifiers)
+
             if symbol == key.EQUAL:
                 self.brush.increase_edit_val(window = self)
             if symbol == key.MINUS:
