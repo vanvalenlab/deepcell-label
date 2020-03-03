@@ -1894,7 +1894,15 @@ class TrackReview(CalibanWindow):
         Keybinds:
             a or left arrow key: view previous frame
             d or right arrow key: view next frame
+            v: toggle cursor visibility
             h: toggle highlighting
+            escape: clear selection
+            minus: zoom out
+            equal: zoom in
+            pg up: pan up across image (+ctrl to go to top, +shift to move halfway across current screen)
+            pg dn: pan down across image (+ctrl to go to top, +shift to move halfway across current screen)
+            home: pan left across image (+ctrl to go to top, +shift to move halfway across current screen)
+            end: pan right across image (+ctrl to go to top, +shift to move halfway across current screen)
         '''
 
         # CHANGING FRAMES
