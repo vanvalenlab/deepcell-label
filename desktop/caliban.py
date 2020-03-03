@@ -1894,6 +1894,7 @@ class TrackReview(CalibanWindow):
         Keybinds:
             a or left arrow key: view previous frame
             d or right arrow key: view next frame
+            h: toggle highlighting
         '''
 
         # CHANGING FRAMES
@@ -1918,6 +1919,11 @@ class TrackReview(CalibanWindow):
                     self.helper_update_composite()
                 self.update_image = True
 
+        # TOGGLE HIGHLIGHT
+        elif symbol == key.H and not (modifiers & key.MOD_SHIFT):
+            self.highlight = not self.highlight
+            self.update_image = True
+
     def on_key_press(self, symbol, modifiers):
         if not self.edit_mode:
             if symbol == key.ESCAPE:
@@ -1926,8 +1932,6 @@ class TrackReview(CalibanWindow):
                 self.highlighted_cell_two = -1
             elif symbol == key.Z:
                 self.draw_raw = not self.draw_raw
-            elif symbol == key.H:
-                self.highlight = not self.highlight
 
             else:
                 self.mode_handle(symbol)
