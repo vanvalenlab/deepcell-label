@@ -2148,6 +2148,72 @@ class TrackReview(CalibanWindow):
         #     self.brush.clear_view()
         #     self.update_image = True
 
+    def label_mode_misc_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that are
+        handled here apply to label-editing mode in specific contexts;
+        unlike other helper functions, which are grouped by context, these
+        keybinds have their conditional logic within the helper function,
+        since they are not easily grouped with anything else. Since very
+        few keybinds are universal to label-editing mode (as opposed to the
+        different filter options in pixel-editing mode), "universal" label-mode
+        keybinds are also found here.
+
+        Keybinds:
+            z: toggle between viewing raw images and annotations ("universal")
+            i: invert dark/light of image when viewing raw
+            k: toggle sobel filter when viewing raw
+            j: toggle adaptive histogram equalization when viewing raw
+            shift + up, shift + down: cycle through colormaps, only applies when
+                viewing the raw image
+        '''
+        # toggle raw/label display, "universal" in label mode
+        if symbol == key.Z:
+            self.draw_raw = not self.draw_raw
+            self.update_image = True
+
+        # cycle through colormaps, but only while viewing raw
+        if self.draw_raw:
+
+            # INVERT RAW IMAGE LIGHT/DARK
+            if symbol == key.I:
+                self.invert = not self.invert
+                # if you invert the image while you're viewing composite, update composite
+                if not self.hide_annotations:
+                    self.helper_update_composite()
+                self.update_image = True
+
+            # TOGGLE SOBEL FILTER
+            if symbol == key.K:
+                self.sobel_on = not self.sobel_on
+                if not self.hide_annotations:
+                    self.helper_update_composite()
+                self.update_image = True
+
+            # TOGGLE ADAPTIVE HISTOGRAM EQUALIZATION
+            if symbol == key.J:
+                self.adapthist_on = not self.adapthist_on
+                if not self.hide_annotations:
+                    self.helper_update_composite()
+                self.update_image = True
+
+            if modifiers & key.MOD_SHIFT:
+                if symbol == key.UP:
+                    if self.current_cmap_idx == len(self.cmap_options) - 1:
+                        self.current_cmap_idx = 0
+                    elif self.current_cmap_idx < len(self.cmap_options) - 1:
+                        self.current_cmap_idx += 1
+                    self.current_cmap = self.cmap_options[self.current_cmap_idx]
+                    self.update_image = True
+
+                if symbol == key.DOWN:
+                    if self.current_cmap_idx == 0:
+                        self.current_cmap_idx = len(self.cmap_options) - 1
+                    elif self.current_cmap_idx > 0:
+                        self.current_cmap_idx -= 1
+                    self.current_cmap = self.cmap_options[self.current_cmap_idx]
+                    self.update_image = True
+
     def on_key_press(self, symbol, modifiers):
 
         self.universal_keypress_helper(symbol, modifiers)
@@ -2161,8 +2227,7 @@ class TrackReview(CalibanWindow):
                 self.edit_mode_none_keypress_helper(symbol, modifiers)
 
         else:
-            if symbol == key.Z:
-                self.draw_raw = not self.draw_raw
+            self.label_mode_misc_keypress_helper(symbol, modifiers)
 
             else:
                 self.mode_handle(symbol)
