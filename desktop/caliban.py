@@ -1925,6 +1925,9 @@ class TrackReview(CalibanWindow):
             self.update_image = True
 
     def on_key_press(self, symbol, modifiers):
+
+        self.universal_keypress_helper(symbol, modifiers)
+
         if not self.edit_mode:
             if symbol == key.ESCAPE:
                 self.mode.clear()
