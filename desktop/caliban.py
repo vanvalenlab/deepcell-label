@@ -1919,6 +1919,12 @@ class TrackReview(CalibanWindow):
                     self.helper_update_composite()
                 self.update_image = True
 
+        # TOGGLE CURSOR VISIBILITY
+        # most useful in edit mode, but inconvenient if can't be turned back on elsewhere
+        elif symbol == key.V:
+            self.mouse_visible = not self.mouse_visible
+            self.window.set_mouse_visible(self.mouse_visible)
+
         # TOGGLE HIGHLIGHT
         elif symbol == key.H and not (modifiers & key.MOD_SHIFT):
             self.highlight = not self.highlight
