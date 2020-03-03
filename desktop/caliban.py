@@ -2214,6 +2214,48 @@ class TrackReview(CalibanWindow):
                     self.current_cmap = self.cmap_options[self.current_cmap_idx]
                     self.update_image = True
 
+    def label_mode_none_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that are
+        handled here apply to label-editing mode only if no labels are
+        selected and no actions are awaiting confirmation.
+
+        Keybinds:
+            ] (right bracket): increment currently-highlighted label by 1
+            [ (left bracket): decrement currently-highlighted label by 1
+            e: enter pixel-editing mode
+            s: prompt saving a copy of the file
+        '''
+        # HIGHLIGHT CYCLING
+        if symbol == key.BRACKETRIGHT:
+            if (self.highlighted_cell_one < self.get_max_label() and
+                self.highlighted_cell_one > -1):
+                self.highlighted_cell_one += 1
+            elif self.highlighted_cell_one == self.get_max_label():
+                self.highlighted_cell_one = 1
+            if self.highlight:
+                self.update_image = True
+
+        if symbol == key.BRACKETLEFT:
+            if self.highlighted_cell_one > 1:
+                self.highlighted_cell_one -= 1
+            elif self.highlighted_cell_one == 1:
+                self.highlighted_cell_one = self.get_max_label()
+            if self.highlight:
+                self.update_image = True
+
+        # ENTER EDIT MODE
+        if symbol == key.E:
+            self.edit_mode = True
+            # update composite with changes, if needed
+            if not self.hide_annotations:
+                self.helper_update_composite()
+            self.update_image = True
+
+        # SAVE
+        if symbol == key.S:
+            self.mode.update("QUESTION", action="SAVE")
+
     def on_key_press(self, symbol, modifiers):
 
         self.universal_keypress_helper(symbol, modifiers)
@@ -2229,16 +2271,14 @@ class TrackReview(CalibanWindow):
         else:
             self.label_mode_misc_keypress_helper(symbol, modifiers)
 
+            if self.mode.kind is None:
+                self.label_mode_none_keypress_helper(symbol, modifiers)
+
             else:
                 self.mode_handle(symbol)
 
     def mode_handle(self, symbol):
 
-        if symbol == key.E:
-            #toggle edit mode only if nothing is selected
-            if self.mode.kind is None:
-                self.edit_mode = not self.edit_mode
-                self.helper_update_composite()
         if symbol == key.C:
             if self.mode.kind == "SELECTED":
                 self.mode.update("QUESTION",
@@ -2270,9 +2310,6 @@ class TrackReview(CalibanWindow):
             elif self.mode.kind == "QUESTION" and self.mode.action == "NEW TRACK":
                 self.action_new_single_cell()
                 self.mode.clear()
-            elif self.mode.kind is None and not self.edit_mode:
-                self.mode.update("QUESTION",
-                                 action="SAVE")
         if symbol == key.W:
             if self.mode.kind == "MULTIPLE":
                 self.mode.update("QUESTION",
