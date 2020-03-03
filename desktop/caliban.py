@@ -2079,6 +2079,12 @@ class TrackReview(CalibanWindow):
                         conversion_brush_value = self.brush.conv_val)
                 self.update_image = True
 
+        # RESPOND TO SAVE QUESTION
+        if self.mode.kind == "QUESTION" and self.mode.action == "SAVE":
+            if symbol == key.SPACE:
+                self.save()
+                self.mode.clear()
+
     def edit_mode_none_keypress_helper(self, symbol, modifiers):
         '''
         Helper function for keypress handling. The keybinds that are
