@@ -2079,6 +2079,69 @@ class TrackReview(CalibanWindow):
                         conversion_brush_value = self.brush.conv_val)
                 self.update_image = True
 
+    def edit_mode_none_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that are
+        handled here apply to pixel-editing mode only when another action
+        or prompt is not in use (ie, not in the middle of the color picker
+        prompt, thresholding prompt, or conversion brush mode). These keybinds
+        include leaving edit mode, changing the value of the normal brush, and
+        initiating actions.
+
+        Keybinds:
+            e: leave edit mode
+            ] (right bracket): increase value of normal brush
+            [ (left bracket): decrease value of normal brush
+            n: set normal brush to new value (highest label in file + 1)
+            x: toggle eraser (only applies to normal brush)
+            p: color picker action
+            r: start conversion brush
+            t: prompt thresholding - currently disabled
+        '''
+        # LEAVE EDIT MODE
+        if symbol == key.E:
+            self.edit_mode = False
+            self.update_image = True
+
+        # BRUSH VALUE ADJUSTMENT
+        # increase brush value, caps at max value + 1
+        if symbol == key.BRACKETRIGHT:
+            self.brush.increase_edit_val(window = self)
+            self.update_image = True
+        # decrease brush value, can't decrease past 1
+        if symbol == key.BRACKETLEFT:
+            self.brush.decrease_edit_val()
+            self.update_image = True
+        # set brush to unused label
+        if symbol == key.N:
+            self.brush.set_edit_val(self.get_new_label())
+            self.update_image = True
+
+        # TOGGLE ERASER
+        if symbol == key.X:
+            self.brush.toggle_erase()
+            self.update_brush_image = True
+
+        # ACTIONS - COLOR PICKER
+        if symbol == key.P:
+            self.mode.update("PROMPT", action = "PICK COLOR", **self.mode.info)
+            self.brush.disable_drawing()
+        # ACTIONS - CONVERSION BRUSH
+        if symbol == key.R:
+            self.mode.update("PROMPT", action="CONVERSION BRUSH TARGET", **self.mode.info)
+            self.brush.disable_drawing()
+        # ACTIONS - SAVE FILE
+        if symbol == key.S:
+            self.mode.update("QUESTION", action="SAVE")
+
+        # # ACTIONS - THRESHOLD
+        # if symbol == key.T:
+        #     self.mode.update("PROMPT", action = "DRAW BOX", **self.mode.info)
+        #     self.brush.show = False
+        #     self.brush.disable_drawing()
+        #     self.brush.clear_view()
+        #     self.update_image = True
+
     def on_key_press(self, symbol, modifiers):
 
         self.universal_keypress_helper(symbol, modifiers)
@@ -2088,16 +2151,8 @@ class TrackReview(CalibanWindow):
 
             self.edit_mode_misc_keypress_helper(symbol, modifiers)
 
-            if symbol == key.EQUAL:
-                self.brush.increase_edit_val(window = self)
-            if symbol == key.MINUS:
-                self.brush.decrease_edit_val()
-            if symbol == key.X:
-                self.brush.toggle_erase()
-            if symbol == key.Z:
-                self.draw_raw = not self.draw_raw
-            else:
-                self.mode_handle(symbol)
+            if self.mode.kind is None:
+                self.edit_mode_none_keypress_helper(symbol, modifiers)
 
         else:
             if symbol == key.Z:
@@ -2130,9 +2185,6 @@ class TrackReview(CalibanWindow):
             if self.mode.kind == "MULTIPLE":
                 self.mode.update("QUESTION",
                                  action="PARENT", **self.mode.info)
-            elif self.mode.kind is None and self.edit_mode:
-                self.mode.update("PROMPT",
-                                 action = "PICK COLOR", **self.mode.info)
         if symbol == key.R:
             if self.mode.kind == "MULTIPLE":
                 self.mode.update("QUESTION",
