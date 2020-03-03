@@ -1994,14 +1994,7 @@ class TrackReview(CalibanWindow):
 
         self.universal_keypress_helper(symbol, modifiers)
 
-        if not self.edit_mode:
-            if symbol == key.Z:
-                self.draw_raw = not self.draw_raw
-
-            else:
-                self.mode_handle(symbol)
-
-        else:
+        if self.edit_mode:
             if symbol == key.EQUAL:
                 self.brush.increase_edit_val(window = self)
             if symbol == key.MINUS:
@@ -2014,6 +2007,13 @@ class TrackReview(CalibanWindow):
                 self.brush.increase_size()
             if symbol == key.Z:
                 self.draw_raw = not self.draw_raw
+            else:
+                self.mode_handle(symbol)
+
+        else:
+            if symbol == key.Z:
+                self.draw_raw = not self.draw_raw
+
             else:
                 self.mode_handle(symbol)
 
