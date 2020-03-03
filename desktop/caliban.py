@@ -1884,19 +1884,46 @@ class TrackReview(CalibanWindow):
 
         self.tracked[self.current_frame,:,:,0] = annotated_draw
 
-    def on_key_press(self, symbol, modifiers):
-        # Set scroll speed (through sequential frames) with offset
-        offset = 5 if modifiers & key.MOD_SHIFT else 1
+    def universal_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that
+        are handled here apply in every situation (no logic checks
+        within on_key_press before universal_keypress_helper is called!)
+        so *no other commands may share these keybinds.*
 
+        Keybinds:
+            a or left arrow key: view previous frame
+            d or right arrow key: view next frame
+        '''
+
+        # CHANGING FRAMES
+        # Move through frames faster (5 at a time) when holding shift
+        num_frames_changed = 5 if modifiers & key.MOD_SHIFT else 1
+        # Go backward through frames (stop at frame 0)
+        if symbol in {key.LEFT, key.A}:
+            old_frame = self.current_frame
+            self.current_frame = max(self.current_frame - num_frames_changed, 0)
+            if old_frame != self.current_frame:
+                # if you change frames while you've viewing composite, update composite
+                if self.edit_mode and not self.hide_annotations:
+                    self.helper_update_composite()
+                self.update_image = True
+        # Go forward through frames (stop at last frame)
+        elif symbol in {key.RIGHT, key.D}:
+            old_frame = self.current_frame
+            self.current_frame = min(self.current_frame + num_frames_changed, self.num_frames - 1)
+            if old_frame != self.current_frame:
+                # if you change frames while you've viewing composite, update composite
+                if self.edit_mode and not self.hide_annotations:
+                    self.helper_update_composite()
+                self.update_image = True
+
+    def on_key_press(self, symbol, modifiers):
         if not self.edit_mode:
             if symbol == key.ESCAPE:
                 self.mode.clear()
                 self.highlighted_cell_one = -1
                 self.highlighted_cell_two = -1
-            elif symbol in {key.LEFT, key.A}:
-                self.current_frame = max(self.current_frame - offset, 0)
-            elif symbol in {key.RIGHT, key.D}:
-                self.current_frame = min(self.current_frame + offset, self.num_frames - 1)
             elif symbol == key.Z:
                 self.draw_raw = not self.draw_raw
             elif symbol == key.H:
