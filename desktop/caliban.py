@@ -1943,6 +1943,45 @@ class TrackReview(CalibanWindow):
             self.brush.reset()
             self.update_image = True
 
+        elif symbol == key.MINUS:
+            self.adjust_zoom(-1)
+        elif symbol == key.EQUAL:
+            self.adjust_zoom(1)
+
+        # QUICK PANNING
+        elif symbol == key.PAGEUP:
+            if modifiers & key.MOD_SHIFT:
+                self.pan(dx = 0, dy = -(self.visible_y_pix*self.scale_factor)//2)
+            elif modifiers & key.MOD_CTRL:
+                self.pan(dx = 0, dy = -self.height*self.zoom*self.scale_factor)
+            else:
+                self.pan(dx = 0, dy = -self.visible_y_pix*self.scale_factor)
+        elif symbol == key.PAGEDOWN:
+            if modifiers & key.MOD_SHIFT:
+                self.pan(dx = 0, dy = (self.visible_y_pix*self.scale_factor)//2)
+            elif modifiers & key.MOD_CTRL:
+                self.pan(dx = 0, dy = self.height*self.zoom*self.scale_factor)
+            else:
+                self.pan(dx = 0, dy = self.visible_y_pix*self.scale_factor)
+        elif symbol == key.HOME:
+            if modifiers & key.MOD_SHIFT:
+                self.pan(dx = (self.visible_x_pix*self.scale_factor)//2, dy = 0)
+            elif modifiers & key.MOD_CTRL:
+                self.pan(dx = self.width*self.zoom*self.scale_factor, dy = 0)
+            else:
+                self.pan(dx = self.visible_x_pix*self.scale_factor, dy = 0)
+        elif symbol == key.END:
+            if modifiers & key.MOD_SHIFT:
+                self.pan(dx = -(self.visible_x_pix*self.scale_factor)//2, dy = 0)
+            elif modifiers & key.MOD_CTRL:
+                self.pan(dx = -self.width*self.zoom*self.scale_factor, dy = 0)
+            else:
+                self.pan(dx = - self.visible_x_pix*self.scale_factor, dy = 0)
+
+        elif symbol == key.F11:
+            self.window.set_fullscreen(fullscreen = not self.window.fullscreen)
+            self.update_image = True
+
     def on_key_press(self, symbol, modifiers):
 
         self.universal_keypress_helper(symbol, modifiers)
