@@ -1854,11 +1854,19 @@ class TrackReview(CalibanWindow):
             self.adjust_zoom(scroll_y)
         else:
             if self.draw_raw:
-                if self.max_intensity == None:
-                    self.max_intensity = np.max(self.get_raw_current_frame())
+                if not self.key_states[key.LSHIFT] or self.key_states[key.RSHIFT]:
+                    if self.max_intensity == None:
+                        self.max_intensity = np.max(self.get_raw_current_frame())
+                    else:
+                        raw_adjust = max(int(self.max_intensity * 0.02), 1)
+                        self.max_intensity = max(self.max_intensity - raw_adjust * scroll_y, self.vmin + 2)
                 else:
-                    raw_adjust = max(int(self.max_intensity * 0.02), 1)
-                    self.max_intensity = max(self.max_intensity - raw_adjust * scroll_y, 2)
+                    min_intensity = np.min(self.get_raw_current_frame())
+                    new_vmin = self.vmin + max(int(min_intensity*0.02), 1) * scroll_y
+                    new_vmin = min(new_vmin, min_intensity)
+                    new_vmin = max(new_vmin, 0)
+                    self.vmin = new_vmin
+
             else:
                 if self.get_max_label() + (self.adjustment - 1 * scroll_y) > 0:
                     self.adjustment = self.adjustment - 1 * scroll_y
