@@ -3813,9 +3813,9 @@ class RGBNpz(CalibanWindow):
 
         super().__init__()
 
-        self.draw_raw = True
+        self.draw_raw = False
         self.show_adjusted_raw = True
-        self.show_label_outlines = False
+        self.show_label_outlines = True
 
         # start pyglet event loop
         pyglet.app.run()
