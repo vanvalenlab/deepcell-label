@@ -2535,6 +2535,8 @@ class TrackReview(CalibanWindow):
         track_old["frame_div"] = None
         track_old["capped"] = True
 
+        self.update_image = True
+
     def action_new_single_cell(self):
         """
         Create new label in just one frame
@@ -2549,6 +2551,8 @@ class TrackReview(CalibanWindow):
         # replace fields
         self.del_cell_info(del_label = old_label, frame = single_frame)
         self.add_cell_info(add_label = new_label, frame = single_frame)
+
+        self.update_image = True
 
     def action_watershed(self):
         # Pull the label that is being split and find a new valid label
@@ -2590,6 +2594,7 @@ class TrackReview(CalibanWindow):
 
         # current label doesn't change, but add the neccesary bookkeeping for the new track
         self.add_cell_info(add_label = new_label, frame = self.current_frame)
+        self.update_image = True
 
     def action_swap(self):
         def relabel(old_label, new_label):
@@ -2608,6 +2613,8 @@ class TrackReview(CalibanWindow):
         relabel(self.mode.label_2, self.mode.label_1)
         relabel(-1, self.mode.label_2)
 
+        self.update_image = True
+
     def action_single_swap(self):
         '''
         swap annotation labels in one frame but do not change lineage info
@@ -2623,6 +2630,7 @@ class TrackReview(CalibanWindow):
         ann_img = np.where(ann_img == -1, label_2, ann_img)
 
         self.tracked[frame] = ann_img
+        self.update_image = True
 
     def action_parent(self):
         """
@@ -2682,6 +2690,8 @@ class TrackReview(CalibanWindow):
             except ValueError:
                 pass
 
+            self.update_image = True
+
     def action_fill_hole(self):
         '''
         fill a "hole" in a cell annotation with the cell label
@@ -2690,6 +2700,8 @@ class TrackReview(CalibanWindow):
 
         filled_img_ann = flood_fill(img_ann, self.hole_fill_seed, self.mode.label, connectivity = 1)
         self.tracked[self.current_frame,:,:,0] = filled_img_ann
+
+        self.update_image = True
 
     def action_delete(self):
         """
@@ -2703,6 +2715,7 @@ class TrackReview(CalibanWindow):
         self.tracked[current_frame] = ann_img
 
         self.del_cell_info(del_label = selected_label, frame = current_frame)
+        self.update_image = True
 
     def action_flood_contiguous(self):
         '''
@@ -2752,6 +2765,8 @@ class TrackReview(CalibanWindow):
         # reset hole_fill_seed
         self.hole_fill_seed = None
 
+        self.update_image = True
+
     def action_trim_pixels(self):
         '''
         Trim away any stray (unconnected) pixels of selected label; pixels in
@@ -2786,6 +2801,8 @@ class TrackReview(CalibanWindow):
 
         # reset hole fill seed
         self.hole_fill_seed = None
+
+        self.update_image = True
 
     def add_cell_info(self, add_label, frame):
         '''
