@@ -1884,6 +1884,63 @@ class TrackReview(CalibanWindow):
 
         self.tracked[self.current_frame,:,:,0] = annotated_draw
 
+    def on_key_press(self, symbol, modifiers):
+        '''
+        Event handler for keypresses in pyglet window. (Mouse does not have
+        to be within window for keypress events to occur, as long as window
+        has focus.) Keypresses are context-dependent and are organized into
+        helper functions grouped by context. Universal keypresses apply in
+        any context, while other keypresses (eg, those that trigger actions)
+        are naturally grouped together. Some keybinds occur in specific contexts
+        and may be grouped into "misc" helper functions.
+
+        Actions that modify the file are carried out in two steps: a keybind that
+        prompts the action, and a subsequent keybind to confirm the decision (and
+        choose options, where applicable). Any keybind whose effect is to set
+        self.mode to a new Mode object requires a secondary action, often a keybind,
+        to confirm. When actions are carried out, self.mode is reset to Mode.none().
+
+        Note: this event handler is called when the key is pressed down. Holding down
+        or releasing keys do not affect this event handler. For keys that are being held
+        down at time of other events, query self.key_states[key], which makes use of
+        pyglet's KeyStateHandler class.
+
+        Uses:
+            symbol: integer representation of keypress, compare against pyglet.window.key
+                (modifiers do not affect symbol, so "a" and "A" are both key.A)
+            modifiers: keys like shift, ctrl that are held down at the time of keypress
+            (see pyglet docs for further explanation of these inputs and list of modifiers)
+        '''
+        # always carried out regardless of context
+        self.universal_keypress_helper(symbol, modifiers)
+
+        # context: only while in pixel-editing mode
+        if self.edit_mode:
+            # context: always carried out in pixel-editing mode (eg, image filters)
+            self.edit_mode_universal_keypress_helper(symbol, modifiers)
+            # context: specific cases
+            self.edit_mode_misc_keypress_helper(symbol, modifiers)
+            # context: only when another action is not being performed (eg, thresholding)
+            if self.mode.kind is None:
+                self.edit_mode_none_keypress_helper(symbol, modifiers)
+
+        # context: only while in label-editing mode
+        else:
+            # unusual context for keybinds
+            self.label_mode_misc_keypress_helper(symbol, modifiers)
+            # context: no labels selected
+            if self.mode.kind is None:
+                self.label_mode_none_keypress_helper(symbol, modifiers)
+            # context: one label selected
+            elif self.mode.kind == "SELECTED":
+                self.label_mode_single_keypress_helper(symbol, modifiers)
+            # context: two labels selected
+            elif self.mode.kind == "MULTIPLE":
+                self.label_mode_multiple_keypress_helper(symbol, modifiers)
+            # context: responding to question (eg, confirming an action)
+            elif self.mode.kind == "QUESTION":
+                self.label_mode_question_keypress_helper(symbol, modifiers)
+
     def universal_keypress_helper(self, symbol, modifiers):
         '''
         Helper function for keypress handling. The keybinds that
@@ -2404,30 +2461,6 @@ class TrackReview(CalibanWindow):
             if symbol == key.SPACE:
                 self.action_parent()
                 self.mode.clear()
-
-    def on_key_press(self, symbol, modifiers):
-
-        self.universal_keypress_helper(symbol, modifiers)
-
-        if self.edit_mode:
-            self.edit_mode_universal_keypress_helper(symbol, modifiers)
-
-            self.edit_mode_misc_keypress_helper(symbol, modifiers)
-
-            if self.mode.kind is None:
-                self.edit_mode_none_keypress_helper(symbol, modifiers)
-
-        else:
-            self.label_mode_misc_keypress_helper(symbol, modifiers)
-
-            if self.mode.kind is None:
-                self.label_mode_none_keypress_helper(symbol, modifiers)
-            elif self.mode.kind == "SELECTED":
-                self.label_mode_single_keypress_helper(symbol, modifiers)
-            elif self.mode.kind == "MULTIPLE":
-                self.label_mode_multiple_keypress_helper(symbol, modifiers)
-            elif self.mode.kind == "QUESTION":
-                self.label_mode_question_keypress_helper(symbol, modifiers)
 
     def custom_prompt(self):
         if self.mode.kind == "QUESTION":
