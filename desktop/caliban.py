@@ -1102,7 +1102,7 @@ class CalibanWindow:
 class CalibanBrush:
     def __init__(self, height, width):
         # radius of brush
-        self.size = 1
+        self.size = 5
         # value that brush can affect in default mode
         self.edit_val = 1
         # erasing behavior
