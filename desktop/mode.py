@@ -28,6 +28,8 @@ class Mode:
     def __init__(self, kind, **info):
         self.kind = kind
         self.info = info
+        self.text = ""
+        self.update_prompt()
 
     def __getattr__(self, attrib):
         if attrib in self.info:
@@ -38,15 +40,25 @@ class Mode:
         return ("Mode('{}', ".format(self.kind) +
                 ", ".join("{}={}".format(k, v) for k, v in self.info.items()) + ")")
 
-    def render(self):
+    def clear(self):
+        self.kind = None
+        self.info = {}
+        self.update_prompt()
 
+    def update(self, kind, **info):
+        self.kind = kind
+        self.info = info
+        self.update_prompt()
+
+    def update_prompt_additions(self):
+        '''
+        Can be overridden by custom Caliban classes to implement specific prompts.
+        '''
+        pass
+
+    def update_prompt(self):
         text = ""
         answer = "SPACE = CONFIRM\nESC = CANCEL"
-
-        try:
-            filetype = self.info['filetype']
-        except KeyError:
-            filetype = ""
 
         if self.kind == "SELECTED":
             text = "\nSELECTED {}".format(self.label)
@@ -56,15 +68,9 @@ class Mode:
 
         elif self.kind == "QUESTION":
             if self.action == "SAVE":
-                if filetype == "npz":
-                    text = ("\nSave current movie?"
-                        "\nSPACE = SAVE"
-                        "\nT = SAVE AS .TRK FILE"
-                        "\nESC = CANCEL")
-                else:
-                    text = ("\nSave current movie?"
-                        "\nSPACE = SAVE"
-                        "\nESC = CANCEL")
+                text = ("\nSave current file?"
+                    "\nSPACE = SAVE"
+                    "\nESC = CANCEL")
 
             elif self.action == "REPLACE":
                 text = ("\nReplace {} with {}?"
@@ -150,7 +156,8 @@ class Mode:
                 "\nUse ESC to stop using the conversion brush.").format(self.conversion_brush_target,
                 self.conversion_brush_value)
 
-        return text
+        self.text = text
+        self.update_prompt_additions()
 
     @staticmethod
     def none():

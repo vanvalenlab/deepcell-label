@@ -51,17 +51,1343 @@ from imageio import imread, imwrite
 
 gl.glEnable(gl.GL_TEXTURE_2D)
 
+platform = pyglet.window.get_platform()
+display = platform.get_default_display()
+USER_SCREEN = display.get_default_screen()
 
-class TrackReview:
+class CalibanWindow:
+    '''
+    Pyglet window and associated functions for displaying images in the window.
+    For now, also contains some other methods as a first pass at splitting out
+    functionality from its child classes (TrackReview and ZStackReview), namely
+    for label generation and responses to mouse input.
+
+    This parent class does not contain any methods for using keybinds or
+    applying actions to data.
+
+    To work correctly, child classes must provide their own methods for:
+    get_raw_current_frame
+    get_ann_current_frame
+    get_label
+    get_max_label
+    handle_draw
+    handle_threshold
+    create_frame_text
+    get_label_info
+
+    And must contain attributes:
+    brush (CalibanBrush)
+    mode (Mode)
+    highlight (bool)
+    highlighted_cell_one (int)
+    highlighted_cell_two (int)
+    current_frame (int)
+    hole_fill_seed (tuple of ints (y,x))
+    current_cmap (string for valid matplotlib cmap)
+    adjustment (int)
+    max_intensity (float)
+    '''
+    # blank area to the left of displayed image where text info is displayed
+    sidebar_width = 300
+
+    # pad image with blank area so we can draw a border around it
+    image_padding = 10
+
+    # window is always a resizable pyglet window
+    window = pyglet.window.Window(resizable=True)
+
+    # set maximum size based on user's screen
+    window.set_maximum_size(width = USER_SCREEN.width - 40, height = USER_SCREEN.height - 40)
+
+    # use crosshair cursor instead of usual cursor
+    cursor = window.get_system_mouse_cursor(window.CURSOR_CROSSHAIR)
+    window.set_mouse_cursor(cursor)
+
+    def __init__(self):
+        '''
+        Initialize CalibanWindow by binding events to window and setting display
+        attributes (eg, raw image adjustment toggles, colormap for creating overlaid
+        labels, scale factor, which view to display, and an empty composite_view).
+        '''
+        # how much to scale image by (start with no scaling, but can expand to
+        # fill window when window changes size)
+        self.scale_factor = 1
+
+        # can't resize window to be smaller than the display area when viewed at 1x scale
+        self.window.set_minimum_size(width = self.width + self.sidebar_width + 2*self.image_padding,
+                                     height = self.height + 2*self.image_padding)
+
+        # bind custom event handlers to window
+        self.window.on_draw = self.on_draw
+        self.window.on_key_press = self.on_key_press
+        self.window.on_mouse_motion = self.on_mouse_motion
+        self.window.on_mouse_scroll = self.on_mouse_scroll
+        self.window.on_mouse_press = self.on_mouse_press
+        self.window.on_mouse_drag = self.on_mouse_drag
+        self.window.on_mouse_release = self.on_mouse_release
+
+        # add this handler instead of replacing the default on_resize handler
+        self.window.push_handlers(self.on_resize)
+
+        # KeyStateHandler can be queried as dict during other events
+        # to check which keys are being held down
+        # expands potential use of modifiers during different mouse events
+        self.key_states = key.KeyStateHandler()
+        self.window.push_handlers(self.key_states)
+
+        # start with cursor visible, but this can be toggled
+        self.mouse_visible = True
+
+        # start in label-editing mode
+        self.edit_mode = False
+        # start with display showing annotations
+        self.draw_raw = False
+
+        # IMAGE ADJUSTMENT TOGGLES
+        # invert grayscale light/dark of raw image
+        self.invert = False
+        # apply sobel filter (emphasizes edges) to raw image
+        self.sobel_on = False
+        # apply adaptive histogram equalization to raw image
+        self.adapthist_on = False
+        # show only raw image instead of composited image
+        self.hide_annotations = False
+
+        self.overlay_cmap = 'gist_stern'
+
+        # composite_view used to store RGB image (composite of raw and annotated) so it can be
+        # accessed and updated as needed
+        self.composite_view = np.zeros((1,self.height,self.width,3))
+
+    def on_resize(self, width, height):
+        '''
+        Event handler for when pyglet window changes size. Note: this
+        is pushed to the event handler stack instead of overwriting pyglet
+        default event handlers, as on_resize has other default behavior needed
+        to properly display screen. Calls scale_screen when window resized, as
+        this is the only occasion where we may need to update the screen scale
+        factor.
+        '''
+        self.scale_screen()
+
+    def scale_screen(self):
+        '''
+        Recalculate scaling factor for image display. Calculates largest
+        integer scaling factor that can be applied to both height and width
+        of the image, to best use the available window space. If image size
+        is larger than available window space, scale factor will be set to 1
+        and image/window will extend off-screen: for this reason, it is recommended
+        that large images are reshaped or trimmed before editing in Caliban.
+
+        Uses:
+            self.window.height, self.window.width, self.image_padding, and
+                self.sidebar_width to determine free window space
+            self.height and self.width (image dimensions) to calculate scale factor
+            self.scale_factor is updated with the smaller of the two scale factors
+                (or 1, whichever is largest)
+        '''
+        # user can resize window and images will expand to fill space if possible
+        # padding around image stays constant
+        pad = 2*self.image_padding
+        y_scale = (self.window.height - pad) // self.height
+        x_scale = (self.window.width - (self.sidebar_width + pad)) // self.width
+        self.scale_factor = min(y_scale, x_scale)
+        self.scale_factor = max(1, self.scale_factor)
+
+    def update_mouse_position(self, x, y):
+        '''
+        Helper function for adjusting self.x and self.y upon mouse movement.
+        Mouse movement and drag are mutually exclusive, so both event handlers
+        (on_mouse_drag and on_mouse_motion) use this helper function. Converts
+        window x and y into image x and y, as we need image x and y (self.x and
+        self.y) to display label info and carry out actions, but we do not need
+        window/event x and y for anything.
+
+        Uses:
+            x and y, values passed in from event handling, location of mouse cursor
+                in the window (relative to corner of window)
+            self.sidebar_width to offset x location
+            self.scale_factor to rescale x and y coordinates down to scale of original
+                image
+            self.width and self.height to check whether mouse cursor is in area of image
+                (self.x and self.y will not update if mouse has moved outside of image)
+            self.brush to update where the center of the brush is
+        '''
+        # convert event x to image x by accounting for sidebar width, then scale
+        x -= (self.sidebar_width + self.image_padding)
+        x //= self.scale_factor
+
+        # convert event y to image y by rescaling and changing coordinates:
+        # pyglet y has increasing y at the top of the screen, opposite convention of array indices
+        y = self.height - ((y - self.image_padding)// self.scale_factor)
+
+        # check that mouse cursor is within bounds of image before updating
+        if 0 <= x < self.width and 0 <= y < self.height:
+            self.x, self.y = x, y
+            self.brush.update_center(y, x)
+
+    def on_mouse_motion(self, x, y, dx, dy):
+        '''
+        Overwrite default pyglet window on_mouse_motion event.
+        Takes x, y, dx, dy as params (these are what the window sends
+        to this event when it is triggered by mouse motion), but dx and dy
+        are not used in this custom event. X and y are used to update self.x
+        and self.y (coordinates of mouse within the image; also updated during
+        mouse drag). Updates brush preview (pixel-editing mode) when appropriate.
+        Uses:
+            self.update_mouse_position to update current self.x and self.y from
+                event x and y (also updates brush location)
+            self.brush method redraw_view to clear and redraw the brush preview
+
+        Note: self.brush.show is not a user-toggled option but is used to display
+            the correct preview (threshold box vs path of brush)
+        '''
+        # always update self.x and self.y when mouse has moved
+        self.update_mouse_position(x, y)
+        if self.brush.show:
+            self.brush.redraw_view()
+
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        '''
+        Overwrite default pyglet window on_mouse_drag event.
+        Takes x, y, button, modifiers as params (there are what the
+        window sends to this event when it is triggered by mouse drag),
+        but button and modifiers are not used in this custom event. X and y
+        are used to update self.x and self.y (coordinates of mouse within the
+        image; also updated when mouse moves). Mouse drag behavior changes depending
+        on edit mode, mode.kind, and mode.action. Helper functions are used for the
+        different modes of behavior.
+
+        Uses:
+            self.update_mouse_position to update current self.x and self.y from
+                event x and y
+            self.edit_mode to determine response to mouse drag; if in pixel-editing mode,
+                CalibanBrush add_to_view method handles appropriate display updating based
+                on context
+            self.handle_draw (must be defined in child class) to modify labels and update
+                label information as needed
+        '''
+        # always update self.x and self.y when mouse has moved
+        self.update_mouse_position(x, y)
+
+        # mouse drag only has special behavior in pixel-editing mode
+        if self.edit_mode:
+            # drawing with brush (normal or conversion)
+            self.brush.add_to_view()
+            # modify annotation
+            self.handle_draw()
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        '''
+        Overwrite pyglet default window on_mouse_press event.
+        Takes x, y, button, modifiers as params (there are what the
+        window sends to this event when it is triggered by mouse press),
+        but x, y, and button are not used in this custom event.
+        Mouse press behavior changes depending on edit mode, mode.kind,
+        and mode.action. Helper methods are used for different behavior options.
+        self.x and self.y are used for mouse position and are updated when the
+        mouse moves.
+
+        Uses:
+            self.edit_mode, self.mode.kind, self.mode.action to determine
+                what the response to mouse press should be
+            self.get_label (must be provided by child class) to determine which
+                label was clicked on (or the background)
+            self.mouse_press helper methods (included in this class) for updating mode
+                and/or triggering actions appropriately
+            self.handle_draw (must be provided by child class) to handle pixel-editing
+                changes to labels
+            self.pick_color, self.pick_conv_target, and self.pick_conv_value for
+                appropriately updating brush attributes
+            self.brush.set_box_corner for starting to draw a thresholding box
+        '''
+
+        if not self.edit_mode:
+            label = self.get_label()
+            if self.mode.kind is None:
+                self.mouse_press_none_helper(modifiers, label)
+            elif self.mode.kind == "SELECTED":
+                self.mouse_press_selected_helper(label)
+            elif self.mode.kind == "PROMPT":
+                self.mouse_press_prompt_helper(label)
+
+        elif self.edit_mode:
+            # draw using brush
+            if self.mode.kind is None:
+                self.handle_draw()
+            elif self.mode.kind is not None:
+                # conversion brush
+                if self.mode.kind == "DRAW":
+                    self.handle_draw()
+
+                # color pick tool
+                elif self.mode.kind == "PROMPT" and self.mode.action == "PICK COLOR":
+                    self.pick_color()
+
+                # color picking for conversion brush
+                elif self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH TARGET":
+                    self.pick_conv_target()
+                elif self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH VALUE":
+                    self.pick_conv_value()
+
+                # start drawing bounding box for threshold prediction
+                elif self.mode.kind == "PROMPT" and self.mode.action == "DRAW BOX":
+                    self.brush.set_box_corner(self.y, self.x)
+
+    def on_mouse_release(self, x, y, buttons, modifiers):
+        '''
+        Overwrite pyglet default window on_mouse_release event.
+        Takes x, y, button, modifiers as params (these are what the
+        window sends to this event when it is triggered by mouse press),
+        but x, y, button, and modifiers are not used in this custom event.
+        Mouse release only triggers special behavior while in pixel-editing
+        mode; mode.action and self.brush.show are used to determine which
+        actions to carry out (threholding, updating brush preview appropriately).
+        Helper functions are called for some complex updates.
+
+        Uses:
+            self.edit_mode, self.brush.show, self.mode.action, self.hide_annotations
+                to determine which updates need to be carried out upon mouse release
+                (if any)
+            self.handle_threshold (must be provided by child class) finalizes
+                thresholding bbox, carries out thresholding, and does necessary bookkeeping
+            self.brush.redraw_view to clear brush trace or bbox and update with current
+                brush view
+            self.helper_update_composite to update the edit_mode display with whatever
+                changes were applied to the annotation during mouse drag (brush) or as
+                a result of mouse release (thresholding)
+        '''
+        # mouse release only has special behavior in pixel-editing mode; most custom
+        # behavior during a mouse click is handled in the mouse press event
+        if self.edit_mode:
+            # releasing the mouse finalizes bounding box for thresholding
+            if not self.brush.show and self.mode.action == "DRAW BOX":
+                self.handle_threshold()
+                # self.brush.show reset to True here, so brush preview will render
+
+            # update brush view (prevents brush flickering)
+            self.brush.redraw_view()
+            # annotation has changed (either during mouse drag for brush, or upon release
+            # for threshold), update the image composite with the current annotation
+            if not self.hide_annotations:
+                self.helper_update_composite()
+
+    def mouse_press_none_helper(self, modifiers, label):
+        '''
+        Handles mouse presses when not in edit mode and nothing is selected.
+        With modifiers (keys held down), can trigger ctrl-click to flood label,
+        shift-click to trim pixels, or normal click to select label.
+
+        Uses:
+            modifiers from mouse press event to determine if special click
+            label from click location (determined in on_mouse_press)
+            self.y and self.x to determine self.hole_fill_seed (special click functions)
+                or to add to self.mode.info as y_location and x_location
+            self.mode to prompt special click confirmation or to select label
+            self.highlighted_cell_one to update highlight info with label
+        '''
+        if label != 0:
+            if modifiers & key.MOD_CTRL:
+                self.hole_fill_seed = (self.y, self.x)
+                self.mode.update("QUESTION",
+                                 action = "FLOOD CELL",
+                                 label = label,
+                                 frame = self.current_frame)
+            elif modifiers & key.MOD_SHIFT:
+                self.hole_fill_seed = (self.y, self.x)
+                self.mode.update("QUESTION",
+                                 action = "TRIM PIXELS",
+                                 label = label,
+                                 frame = self.current_frame)
+            else:
+                self.mode.update("SELECTED",
+                                 label=label,
+                                 frame=self.current_frame,
+                                 y_location=self.y, x_location=self.x)
+            self.highlighted_cell_one = label
+
+    def mouse_press_selected_helper(self, label):
+        '''
+        Handles mouse presses when not in edit mode and when one label has already
+        been selected. Modifies self.mode to include info about both labels that have
+        been selected.
+
+        Uses:
+            label from click location (determined in on_mouse_press)
+            self.mode to store info about both selected labels
+            self.highlighted_cell_one and self.highlighted_cell_two to update
+                highlights appropriately; update cell_one because user could have
+                changed highlight with cycling after selecting first label
+                (note: this should change soon so that cycling the highlight deselects
+                whatever label is selected, as in browser caliban; ZStackReview has
+                deselection upon highlight cycling but TrackReview does not)
+        '''
+        if label != 0:
+            self.mode.update("MULTIPLE",
+                             label_1=self.mode.label,
+                             frame_1=self.mode.frame,
+                             y1_location = self.mode.y_location,
+                             x1_location = self.mode.x_location,
+                             label_2=label,
+                             frame_2=self.current_frame,
+                             y2_location = self.y,
+                             x2_location = self.x)
+            self.highlighted_cell_one = self.mode.label_1
+            self.highlighted_cell_two = label
+
+    def mouse_press_prompt_helper(self, label):
+        '''
+        Handles mouse presses when not in edit mode and in response to a
+        prompt (currently, hole fill is the only action with this pattern).
+        Only fills hole if user has clicked on an empty/background pixel (label is 0).
+        If appropriate pixel is clicked on, action_fill_hole is called before
+        resetting the hole_fill_seed and self.mode.
+
+        Uses:
+            self.mode.action to determine what response to mouse press should be
+            label from click location (determined in on_mouse_press) to check if
+                action should be carried out
+            self.hole_fill_seed to store start point for action_fill_hole
+            self.mode to clear action info once action has finished
+        '''
+        if self.mode.action == "FILL HOLE":
+            if label == 0:
+                self.hole_fill_seed = (self.y, self.x)
+                self.action_fill_hole()
+                self.mode.clear()
+
+    def pick_color(self):
+        '''
+        Takes the label clicked on, sets self.brush.edit_val to that label, and then
+        exits color-picking mode. Doesn't change anything if click on background
+        but still exits color-picking mode.
+
+        Uses:
+            self.get_label (must be provided by child class) to determine which
+                label was clicked on
+            self.brush.set_edit_val (modifies stored value)
+            self.mode.clear to exit color picking
+        '''
+        # which label was clicked on
+        label = self.get_label()
+        if label != 0:
+            self.brush.set_edit_val(label)
+        self.mode.clear()
+
+    def pick_conv_target(self):
+        '''
+        Click on a label while setting up conversion brush to choose "target"
+        (label that will be overwritten by the conversion brush). Nothing happens
+        if background is clicked on (remain in conversion brush target-picking mode,
+        as opposed to normal color-picking). When color is picked, move to next
+        step in setting conversion brush.
+
+        Uses:
+            self.get_label (must be provided by child class) to determine which
+                label was clicked on
+            self.brush.set_conv_target to store clicked value
+            self.mode.update to move to next step of conversion brush setting
+        '''
+        # which label was clicked on
+        label = self.get_label()
+        if label != 0:
+            self.brush.set_conv_target(label)
+            # once value is set, move to setting next value
+            self.mode.update("PROMPT", action = "CONVERSION BRUSH VALUE")
+
+    def pick_conv_value(self):
+        '''
+        Click on a label while setting up conversion brush to choose "value"
+        (label that will be drawn by the conversion brush). Nothing happens
+        if background is clicked on (remain in conversion brush value-picking mode,
+        as with conversion brush target-picking). After label is picked, conversion
+        brush is set and will be in use. Note: setting conversion brush values in
+        mode.update is not necessary for drawing, but allows those values to be
+        displayed in mode prompt as a reminder to user.
+
+        Uses:
+            self.get_label (must be provided by child class) to determine which
+                label was clicked on
+            self.brush.set_conv_val to store clicked value
+            self.mode.update to enter use of conversion brush
+        '''
+        # which label was clicked on
+        label = self.get_label()
+        if label != 0:
+            self.brush.set_conv_val(label)
+            # once value is set, turn on conversion brush
+            self.mode.update("DRAW", action = "CONVERSION",
+                conversion_brush_target = self.brush.conv_target,
+                conversion_brush_value = self.brush.conv_val)
+
+    def on_draw(self):
+        '''
+        Event handler for pyglet window, redraws all content of screen after
+        window events. Clears window, calculates screen scaling, then redraws
+        the displayed image, lines around that image (to distinguish from black
+        background of the rest of the window), and information text in the sidebar.
+        '''
+        # clear old information
+        self.window.clear()
+        # TODO: use a batch to consolidate all of the "drawing" calls
+        # draw relevant image
+        self.draw_current_frame()
+        # draw lines around the image to distinguish it from rest of window
+        self.draw_line()
+        # draw information text in sidebar
+        self.draw_label()
+
+    def draw_line(self):
+        '''
+        Draw thin white lines around the area of the window where the image
+        is being displayed. Distinguishes interactable portion of window from
+        information display more clearly but has no other purpose.
+
+        Uses:
+            self.scale_factor, self.width, self.height to calculate area of
+                window where image is being displayed
+            self.sidebar_width, self.image_padding to offset lines appropriately
+        '''
+        frame_width = self.scale_factor * self.width
+        frame_height = self.scale_factor * self.height
+
+        pad = self.image_padding
+
+        # determine where edges of image are
+        top = frame_height + pad
+        bottom = pad
+        left = self.sidebar_width + pad
+        right = self.sidebar_width + frame_width + pad
+
+        # draw lines around image, but space a pixel away in some places
+        # (prevent obscuring actual image)
+        pyglet.graphics.draw(8, pyglet.gl.GL_LINES,
+            ("v2f", (left, top,
+                     left, bottom-1,
+                     left, bottom-1,
+                     right+1, bottom-1,
+                     right+1, bottom-1,
+                     right+1, top,
+                     right+1, top,
+                     left, top))
+        )
+
+    def draw_current_frame(self):
+        '''
+        Method called during on_draw to coordinate which method should be used
+        to display current image.
+
+        Uses:
+            self.edit_mode, self.draw_raw to determine which view to show
+            self.draw_pixel_edit_frame, self.draw_ann_frame, self.draw_raw_frame
+                to display appropriate data
+        '''
+        if self.edit_mode:
+            self.draw_pixel_edit_frame()
+        else:
+            if self.draw_raw:
+                self.draw_raw_frame()
+            else:
+                self.draw_ann_frame()
+
+    def draw_raw_frame(self):
+        '''
+        Displays raw image with any image adjustments and currently selected
+        colormap.
+
+        Uses:
+            self.get_raw_current_frame (must be provided by child class) to get
+                the appropriate slice of raw array data
+            self.apply_raw_image_adjustments (provided) and self.current_cmap
+                (must be provided by child class) to create an appropriately-adjusted
+                RGB array for displaying the data
+            self.array_to_img to create a pyglet Image object from the RGB array
+            self.draw_pyglet_image to display pyglet Image on screen in correct
+                location with scaling
+        '''
+        raw_array = self.get_raw_current_frame()
+        adjusted_raw = self.apply_raw_image_adjustments(raw_array, cmap = self.current_cmap)
+        image = self.array_to_img(input_array = adjusted_raw,
+            vmax = None,
+            cmap = None,
+            output = 'pyglet')
+
+        self.draw_pyglet_image(image)
+
+    def draw_ann_frame(self):
+        '''
+        Displays annotations in cubehelix colormap with highlights applied in red.
+
+        Uses:
+            self.get_ann_current_frame (must be provided by child class) to get
+                the appropriate slice of label data
+            self.highlight (must be provided by child class) to determine if array
+                should be masked to show highlighted label(s)
+            self.apply_label_highlight to mask array at highlighted label values
+            self.array_to_img (provided), self.get_max_label and self.adjustment
+                (must be provided by child class) to create a pyglet Image object
+                from the array, with an appropriate range of colors
+            self.draw_pyglet_image to display pyglet Image on screen in correct
+                location with scaling
+        '''
+        ann_array = self.get_ann_current_frame()
+
+        # annotations use cubehelix cmap with highlighting in red
+        cmap = plt.get_cmap("cubehelix")
+        cmap.set_bad('red')
+
+        # if highlighting on, mask highlighted values so they appear red
+        if self.highlight:
+            ann_array = self.apply_label_highlight(ann_array)
+
+        # create pyglet image
+        image = self.array_to_img(input_array = ann_array,
+                                                vmax = max(1, self.get_max_label() + self.adjustment),
+                                                cmap = cmap,
+                                                output = 'pyglet')
+
+        self.draw_pyglet_image(image)
+
+    def draw_pixel_edit_frame(self):
+        '''
+        Draws current frame for pixel-editing mode, along with brush preview
+        (brush preview can display brush or thresholding). If drawing the image
+        with annotations hidden, applies filters/adjustments to raw image and uses
+        that, otherwise uses self.composite_view (generated and updated elsewhere)
+        to show annotations overlaid on the adjusted raw image. Requires child
+        class to have methods for get_max_label and get_raw_current_frame, and
+        adjustment attribute.
+        '''
+        # create pyglet image object so we can display brush location
+        brush_img = self.array_to_img(input_array = self.brush.view,
+                                                    vmax = self.get_max_label() + self.adjustment,
+                                                    cmap = self.overlay_cmap,
+                                                    output = 'pyglet')
+
+        # create pyglet image from only the adjusted raw, if hiding annotations
+        if self.hide_annotations:
+            # get raw and annotated data
+            # TODO: np.copy might be appropriate here for clarity
+            # (current_raw is not edited in place but np.copy would help safeguard that)
+            current_raw = self.get_raw_current_frame()
+            raw_RGB = self.apply_raw_image_adjustments(current_raw)
+            comp_img = self.array_to_img(input_array = raw_RGB,
+                                        vmax = None,
+                                        cmap = None,
+                                        output = 'pyglet')
+
+        # create pyglet image from composite if you want to see annotation overlay
+        # (self.composite view is generated/updated separately)
+        if not self.hide_annotations:
+            comp_img = self.array_to_img(input_array = self.composite_view,
+                                                vmax = None,
+                                                cmap = None,
+                                                output = 'pyglet')
+
+        gl.glTexParameteri(gl.GL_TEXTURE_2D,
+                           gl.GL_TEXTURE_MAG_FILTER,
+                           gl.GL_NEAREST)
+
+        self.draw_pyglet_image(comp_img)
+        self.draw_pyglet_image(brush_img, opacity = 128)
+
+    def draw_pyglet_image(self, image, opacity = 255):
+        '''
+        Takes a pyglet Image object, turns it into a sprite, and draws the sprite.
+        Creating a sprite makes it easy for pyglet to anchor the image in the
+        correct place, apply the scale factor for both x and y, and set the opacity
+        of the drawn image (default is fully opaque).
+
+        Uses:
+            self.image_padding and self.sidebar_width to set correct anchor point
+                for image corner
+            self.scale_factor to scale both x and y for image display
+        '''
+        # TODO: add sprite to batch?
+        pad = self.image_padding
+
+        # create pyglet sprite, bottom left corner of image anchored with some offset
+        sprite = pyglet.sprite.Sprite(image, x=self.sidebar_width + pad, y=pad)
+
+        # scale x and y dimensions of sprite
+        sprite.update(scale_x=self.scale_factor,
+                      scale_y=self.scale_factor)
+
+        # set opacity of sprite (255 is default)
+        sprite.opacity = opacity
+
+        # TODO: how often does this actually need to be set?
+        gl.glTexParameteri(gl.GL_TEXTURE_2D,
+                           gl.GL_TEXTURE_MAG_FILTER,
+                           gl.GL_NEAREST)
+        # draw the sprite
+        sprite.draw()
+
+    def array_to_img(self, input_array, vmax, cmap, output):
+        '''
+        Helper function to take an input array and output either a pyglet image
+        (to display) or an RGB array (for creating a composite image for
+        pixel-editing mode). Uses pyplot to create png image with vmax and cmap
+        variables, which is saved into a temporary file with BytesIO. The temporary
+        png file is then loaded into the correct output format and closed, and the
+        correctly-formatted image is returned.
+
+        Inputs:
+            input_array: the array to be rendered as an image (either raw or annotated)
+            vmax: vmax for pyplot to use (adjusts range of cmap and may vary)
+            cmap: which matplotlib colormap to use when creating png image
+            output: string specifying desired format ('pyglet' returns pyglet image,
+                'array' returns RGB array representation of image data)
+        '''
+        # temporary file that we can write to
+        img_file = BytesIO()
+        # create a png image with pyplot and save it to the temp file
+        plt.imsave(img_file, input_array,
+                        vmax=vmax,
+                        cmap=cmap,
+                        format='png')
+
+        # go to start of file so we can read it out correctly
+        img_file.seek(0)
+
+        # pyglet image type
+        if output == 'pyglet':
+            # create pyglet image loaded from temp file
+            pyglet_img = pyglet.image.load('img_file.png', file = img_file)
+            # close file since we are now done with it
+            img_file.close()
+            return pyglet_img
+
+        # generate an RGB array (what the data 'looks like' but in array format)
+        elif output == 'array':
+            # imread will give us an RGB array
+            img_array = imread(img_file)
+            # close file since we are now done with it
+            img_file.close()
+            return img_array
+
+        else:
+            return None
+
+    def apply_label_highlight(self, frame):
+        '''
+        Masks values in input array (frame) to display highlight.
+        Masked values are then set to a particular color (red) via
+        the colormap used. If highlighted label are not in frame (eg,
+        if self.highlighted_cell_two = -1), there is no visual effect.
+        Applies highlight regardless of self.kind as long as highlight is on.
+
+        Currently requires that child class include attributes
+        highlighted_cell_one and highlighted_cell_two.
+        '''
+        # image display code will color masked values red
+        frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
+        frame = np.ma.masked_equal(frame, self.highlighted_cell_two)
+
+        return frame
+
+    def apply_raw_image_adjustments(self, current_raw, cmap = 'gray'):
+        '''
+        Apply filter/adjustment options to raw image for display in
+        pixel-editing mode. Input is unadjusted raw image, with object
+        attributes to determine which filters and adjustments to apply. Can
+        accept cmap as input, default value of 'gray' (used for composite images).
+        Requires child class to have max_intensity attribute.
+
+        Returns adjusted image as RGB array.
+        '''
+        #try sobel filter here
+        if self.sobel_on:
+            current_raw = filters.sobel(current_raw)
+
+        # apply adaptive histogram equalization, if option toggled
+        if self.adapthist_on:
+            # rescale first (for equalization to work properly, I think)
+            current_raw = rescale_intensity(current_raw, in_range = 'image', out_range = 'float')
+            current_raw = equalize_adapthist(current_raw)
+            # vmax appropriate for new range of image
+            vmax = 1
+        elif not self.adapthist_on:
+            # appropriate vmax for image
+            vmax = self.max_intensity
+
+        # want image to be in grayscale, but as RGB array, not array of intensities
+        raw_img =  self.array_to_img(input_array = current_raw,
+                    vmax = vmax,
+                    cmap = cmap,
+                    output = 'array')
+
+        # don't need alpha channel
+        raw_RGB = raw_img[:,:,0:3]
+
+        # apply dark/light inversion
+        if self.invert:
+            raw_RGB = invert(raw_RGB)
+
+        return raw_RGB
+
+    def make_composite_img(self, base_array, overlay_array, alpha = 0.6):
+        '''
+        Helper function to take two arrays and overlay one on top of the other
+        using a conversion to HSV color space. Used to take greyscale RGB array
+        of raw image and overlay colored labels on the image without obscuring
+        image details. Used by helper_update_composite to generate composite image
+        as needed. Returns the composite array as an RGB array (dimensions [M,N,3]).
+        '''
+
+        # TODO: investigate using glBlendFunc to do compositing for me?
+
+        # Convert the input image and color mask to Hue Saturation Value (HSV) colorspace
+        img_hsv = color.rgb2hsv(base_array)
+        color_mask_hsv = color.rgb2hsv(overlay_array)
+
+        # Replace the hue and saturation of the original image
+        # with that of the color mask
+        img_hsv[..., 0] = color_mask_hsv[..., 0]
+        # reduce saturation of colors
+        img_hsv[..., 1] = color_mask_hsv[..., 1] * alpha
+
+        # convert HSV image back to 8bit RGB
+        img_masked = color.hsv2rgb(img_hsv)
+        img_masked = rescale_intensity(img_masked, out_range = np.uint8)
+        img_masked = img_masked.astype(np.uint8)
+
+        return img_masked
+
+    def helper_update_composite(self):
+        '''
+        Helper function that updates self.composite_view from self.raw and
+        self.annotated when needed. self.composite_view is the image drawn
+        in edit mode, but does not need to be recalculated each time the image
+        refreshes (on_draw is triggered after every event, including mouse motion).
+        Takes data from self.raw and self.annotated, adjusts the images, overlays them,
+        and then stores the generated composite image at self.composite_view.
+
+        Uses:
+            self.get_raw_current_frame and self.get_ann_current_frame (must be
+                provided by child class) to get appropriate slices of arrays
+            self.apply_raw_image_adjustments to apply raw image filtering options
+                (returns an RGB array)
+            self.array_to_img to create RGB array from label image (requires child
+                class to provide get_max_label method and adjustment, overlay_cmap
+                attributes)
+            self.make_composite_img to overlay annotation RGB image on top of
+                adjusted raw image
+        '''
+        # get images to modify and overlay
+        current_raw = self.get_raw_current_frame()
+        current_ann = self.get_ann_current_frame()
+
+        raw_RGB = self.apply_raw_image_adjustments(current_raw)
+
+        # get RGB array of colorful annotation view
+        ann_img = self.array_to_img(input_array = current_ann,
+                                            vmax = self.get_max_label() + self.adjustment,
+                                            cmap = self.overlay_cmap,
+                                            output = 'array')
+
+        # don't need alpha channel
+        ann_RGB = ann_img[:,:,0:3]
+
+        # create the composite image from the two RGB arrays
+        img_masked = self.make_composite_img(base_array = raw_RGB,
+                                            overlay_array = ann_RGB)
+
+        # set self.composite view to new composite image
+        self.composite_view = img_masked
+
+    def draw_label(self):
+        '''
+        Coordinates information display (text) on left side of screen.
+        '''
+        # TODO: only update labels when the content changes?
+        # TODO: batch graphics?
+        self.draw_persistent_info()
+        self.draw_cell_info_label()
+
+    def draw_persistent_info(self):
+        '''
+        Display information about the frame currently being viewed.
+        Always displays information, although brush settings are displayed
+        only when in pixel-editing mode. This info is displayed at top of info
+        column. Child class must provide create_frame_text method.
+        '''
+        if self.edit_mode:
+            edit_mode = "pixels"
+        else:
+            edit_mode = "labels"
+
+        if self.edit_mode or self.draw_raw:
+            filter_info = self.create_filter_text()
+        else:
+            filter_info = "\n\n\n"
+
+        display_filter_info = ("Current display settings:"
+            "\nColormap - {}").format(self.create_cmap_text())
+        display_filter_info += filter_info
+
+        # TODO: render label in a batch
+        # create pyglet label anchored to top of left side
+        frame_label = pyglet.text.Label("Currently viewing:\n"
+                                        + "{}".format(self.create_frame_text())
+                                        + "{}\n\n".format(self.create_disp_image_text())
+                                        + "{}\n".format(self.create_highlight_text())
+                                        + "{}\n\n".format(display_filter_info)
+                                        + "Edit mode: {}\n".format(edit_mode)
+                                        + self.create_brush_text(),
+                                        font_name="monospace",
+                                        anchor_x="left", anchor_y="top",
+                                        width=self.sidebar_width,
+                                        multiline=True,
+                                        x=5, y=self.window.height - 5,
+                                        color=[255]*4)
+        # draw the label
+        frame_label.draw()
+
+    def draw_cell_info_label(self):
+        '''
+        When cursor is over a label, displays information about that label
+        at the bottom of the information column. Also displays mode text
+        (selections, prompts).
+        '''
+        text = self.create_label_info_text()
+
+        # add info from self.mode (eg, prompts or "selected", etc)
+        text += self.mode.text
+
+        # TODO: render label in a batch
+        # create pyglet label anchored to bottom of left side
+        cell_info_label = pyglet.text.Label(text, font_name="monospace",
+                                       anchor_x="left", anchor_y="bottom",
+                                       width=self.sidebar_width,
+                                       multiline=True,
+                                       x=5, y=5, color=[255]*4)
+
+        # draw the label
+        cell_info_label.draw()
+
+    def create_disp_image_text(self):
+        '''
+        Method to create string to tell viewer which viewing mode is in use.
+        Default options are raw, labels, and overlay. Used in draw_persistent_info.
+        '''
+        display_text = "Displayed image: "
+
+        if self.edit_mode:
+            if self.hide_annotations:
+                currently_viewing = "Raw"
+            else:
+                currently_viewing = "Overlay"
+        else:
+            if self.draw_raw:
+                currently_viewing = "Raw"
+            else:
+                currently_viewing = "Labels"
+
+        display_text += currently_viewing
+
+        return display_text
+
+    def create_highlight_text(self):
+        '''
+        Generate text describing current highlighting status. Requires child
+        class to have highlighted_cell_one and highlighted_cell_two attributes.
+        Added to info on side of screen (via draw_persistent_info).
+        '''
+        if self.edit_mode:
+            highlight_text = "Highlighting: -\nHighlighted cell(s): None\n"
+        else:
+            highlight_text = "Highlighting: {}\n".format(on_or_off(self.highlight))
+            if self.highlight:
+                if self.highlighted_cell_two != -1:
+                    labels = "{}, {}".format(self.highlighted_cell_one, self.highlighted_cell_two)
+                elif self.highlighted_cell_one != -1:
+                    labels = "{}".format(self.highlighted_cell_one)
+                else:
+                    labels = "None"
+            else:
+                labels = "None"
+            highlight_text += "Highlighted cell(s): {}\n".format(labels)
+
+        return highlight_text
+
+    def create_cmap_text(self):
+        '''
+        Generate text describing the current colormap being used. Added to info
+        display on side of screen (via draw_persistent_info). Requires that child
+        class have attribute current_cmap.
+        '''
+        cmap = ""
+        if self.edit_mode:
+            if self.hide_annotations:
+                cmap = "gray"
+            else:
+                cmap = "{}/gray".format(self.overlay_cmap)
+        else:
+            if self.draw_raw:
+                cmap = self.current_cmap
+            else:
+                cmap = "cubehelix"
+
+        return cmap
+
+    def create_filter_text(self):
+        '''
+        Method to create string to tell viewer which image adjustments are
+        currently being applied to the raw image. (Displays in both raw and
+        pixel-editing display modes.) Used in draw_persistent_info.
+        '''
+        filter_text = ("\nSobel filter - {}".format(on_or_off(self.sobel_on))
+                    + "\nColor inversion - {}".format(on_or_off(self.invert))
+                    + "\nHistogram equalization - {}".format(on_or_off(self.adapthist_on)))
+
+        return filter_text
+
+    def create_brush_text(self):
+        '''
+        Generate string to display relevant information about brush settings.
+        Only appears on screen while in pixel-editing mode. Uses brush attributes
+        as well as mode.kind to determine which attributes should be displayed.
+        Displayed as part of draw_persistent_info.
+        '''
+        if self.edit_mode:
+            size_text = "Brush size: "
+            if self.brush.show:
+                size_text += str(self.brush.size)
+            else:
+                size_text += "-"
+
+            value_text = "Editing label: "
+            erase_text = "Eraser: "
+            if self.mode.kind is None:
+                value_text += str(self.brush.edit_val)
+                erase_text += on_or_off(self.brush.erase)
+            else:
+                value_text += "-"
+                erase_text += "-"
+
+            brush_info_text = "\nCurrent brush settings:\n{}\n{}\n{}".format(size_text,
+                value_text, erase_text)
+        else:
+            brush_info_text = ""
+
+        return brush_info_text
+
+    def create_label_info_text(self):
+        '''
+        Creates label-specific text to display as part of draw_cell_info_label.
+        Depends on current location of cursor (displays info about whichever label
+        is currently under the mouse cursor). Requires child class to have a
+        get_label method. Requires child class to have a get_label_info method
+        that takes in an integer label and returns a dictionary of information
+        to be displayed.
+        '''
+        label = self.get_label()
+        if label != 0:
+            # generate text from cell_info and display_info (use slices instead of frames)
+            text = '\n'.join("{:11}{}".format(str(k)+': ', self.get_label_info(label)[k])
+                              for k in self.display_info)
+        else:
+            # display nothing if not hovering over a label
+            text = ''
+
+        return text
+
+class CalibanBrush:
+    def __init__(self, height, width):
+        # radius of brush
+        self.size = 1
+        # value that brush can affect in default mode
+        self.edit_val = 1
+        # erasing behavior
+        self.erase = False
+
+        # values of conversion brush (-1 is conversion brush turned off)
+        self.conv_target = -1
+        self.conv_val = -1
+
+        # values that brush will draw; depends on edit_val, erase, and conv values
+        self.background = 0
+        self.draw_value = 1
+
+        # size of annotation; used to put bounds on size, area of brush
+        self.height = height
+        self.width = width
+
+        # current location of cursor (center of brush or edge of box)
+        self.y = 0
+        self.x = 0
+
+        # anchor point for bounding box; None when box is not in use
+        self.box_x = None
+        self.box_y = None
+
+        # initialize area with center x = y = 0
+        self.area = circle(self.y, self.x, self.size, (self.height,self.width))
+
+        # brush_view is array used to display a preview of brush tool; same size as other arrays
+        self.view = np.zeros((self.height, self.width))
+
+        # toggle that determines whether we're viewing brush or thresholding box
+        self.show = True
+
+        # use to toggle off draw behavior when we shouldn't be drawing
+        self.drawing = True
+
+    def reset(self):
+        '''
+        Clear brush of special behaviors (clear conversion brush values, box
+        values). Doesn't affect brush size, edit_val, or status of eraser.
+        Redraws view to show brush shadow.
+        '''
+        self.enable_drawing()
+        self.show = True
+        self.clear_box()
+        self.clear_conv()
+
+    def decrease_size(self):
+        '''
+        Decrease size of brush (minimum size of one pixel).
+        Updates area that brush covers and redraws to show new
+        area if brush shadow is currently being displayed.
+        '''
+        self.size = max(1, self.size -1)
+        self.update_area()
+        if self.show:
+            self.redraw_view()
+
+    def increase_size(self):
+        '''
+        Increase size of brush (does not get larger than height or width
+        of displayed image). Updates area that brush covers and redraws
+        to show new area if brush shadow is currently being displayed.
+        '''
+        self.size = min(self.size + 1, self.height, self.width)
+        self.update_area()
+        if self.show:
+            self.redraw_view()
+
+    def decrease_edit_val(self):
+        '''
+        Decreases edit_val (minimum value of 1); value that normal brush draws
+        or erases. Redraws brush view to show updated color of brush shadow.
+        Also updates brush's drawing values appropriately.
+        '''
+        self.edit_val = max(1, self.edit_val - 1)
+        self.redraw_view()
+        self.set_draw_vals()
+
+    def increase_edit_val(self, window):
+        '''
+        Increases edit_val (does not increase past the window's max label + 1);
+        value that normal brush draws or erases. Redraws brush view to show
+        updated color of brush shadow. Also updates brush's drawing values appropriately.
+        '''
+        self.edit_val = min(window.get_new_label(), self.edit_val + 1)
+        self.redraw_view()
+        self.set_draw_vals()
+
+    def set_edit_val(self, val):
+        '''
+        Sets edit_val to given value (used with color picker); value that
+        normal brush draws or erases. Redraws brush view to show updated color
+        of brush shadow. Also updates brush's drawing values appropriately.
+        Re-enables drawing, as drawing is disabled while waiting for color to
+        be picked.
+        '''
+        self.edit_val = val
+        self.redraw_view()
+        self.enable_drawing()
+        self.set_draw_vals()
+
+    def toggle_erase(self):
+        '''
+        Turns erasing behavior on or off for default brush mode, updates
+        brush's drawing values appropriately. No visual change.
+        '''
+        self.erase = not self.erase
+        self.set_draw_vals()
+
+    def enable_drawing(self):
+        '''
+        Turn drawing on; used to re-enable editing behavior after attribute-modifying
+        actions such as color picking.
+        '''
+        self.drawing = True
+
+    def disable_drawing(self):
+        '''
+        Turn drawing off; used to disable editing behavior while other brush-related
+        actions are carried out (eg, thresholding, color picking).
+        '''
+        self.drawing = False
+
+    def set_conv_target(self, val):
+        '''
+        Set the conversion brush target to val; conversion brush target is value
+        that will be overwritten by use of conversion brush. Does not call other
+        methods, since conversion brush is not set until conv_val is picked.
+        '''
+        self.conv_target = val
+
+    def set_conv_val(self, val):
+        '''
+        Set the conversion brush value to val; conversion brush value is value
+        that will be used to overwrite target. Once this value is set, the
+        conversion brush is ready to use, so the view is redrawn to reflect new
+        value of brush, the brush drawing values are updated, and drawing is
+        enabled (drawing is disabled while brush is being set).
+        '''
+        self.conv_val = val
+        self.redraw_view()
+        self.enable_drawing()
+        self.set_draw_vals()
+
+    def clear_conv(self):
+        '''
+        Clear the conversion brush by setting target and value to -1.
+        Also update brush drawing values and redraw brush preview to reflect
+        appropriate value (now that brush is back to affecting edit_val in
+        its default drawing mode).
+        '''
+        self.conv_target = -1
+        self.conv_val = -1
+        self.redraw_view()
+        self.set_draw_vals()
+
+    def set_box_corner(self, y, x):
+        '''
+        Sets the anchored corner of bounding box for thresholding.
+        '''
+        self.box_x = x
+        self.box_y = y
+
+    def get_box_coords(self):
+        '''
+        Return the corners of the current bounding box, based on anchored
+        corner and current mouse position (self.x and y). Corners are
+        sorted so they can be used for array slicing.
+        '''
+        y1 = min(self.box_y, self.y)
+        y2 = max(self.box_y, self.y)
+        x1 = min(self.box_x, self.x)
+        x2 = max(self.box_x, self.x)
+
+        return y1, y2, x1, x2
+
+    def clear_box(self):
+        '''
+        Resets anchored corner of bounding box to None.
+        '''
+        self.box_x = None
+        self.box_y = None
+
+    def set_draw_vals(self):
+        '''
+        Sets drawing values for brush based on current brush status; keeps
+        track of which value the brush is currently using to draw over which
+        background value. For default (no erasing) behavior, 0 is background
+        and edit_val is the drawing value, but this changes depending on settings.
+        Using drawing values separate from other brush settings allows drawing
+        functions to access only those attributes without needing to account for
+        current brush settings.
+        '''
+        # pick editing values
+        if self.conv_val != -1:
+            self.background = self.conv_target
+            self.draw_value = self.conv_val
+        else:
+            if self.erase:
+                self.background = self.edit_val
+                self.draw_value = 0
+            else:
+                self.background = 0
+                self.draw_value = self.edit_val
+
+    def update_center(self, y, x):
+        '''
+        Update center of brush area with current mouse location (only called by
+        window if mouse location is within bounds of displayed image). Updates
+        current area of brush when center changes. Updated center of brush is also
+        used for changing free corner of bounding box when box is active.
+        '''
+        self.y = y
+        self.x = x
+        self.update_area()
+
+    def update_area(self):
+        '''
+        Updates area of brush based on current center of circle and radius of
+        brush. Height and width values are used to prevent brush area from
+        extending past bounds of view array. Called when either the center
+        or size of brush changes.
+        '''
+        self.area = circle(self.y, self.x, self.size, (self.height, self.width))
+
+    def clear_view(self):
+        '''
+        Reset brush view by replacing it with array of same size, filled with
+        zeros.
+        '''
+        self.view = np.zeros((self.height, self.width))
+
+    def add_to_view(self):
+        '''
+        Add values to brush view to be displayed, based on current brush status.
+        If drawing box, clear view first, since we never want to see where boxes
+        have been.
+        '''
+        if self.show:
+            if self.conv_val != -1:
+                self.view[self.area] = self.conv_val
+            else:
+                self.view[self.area] = self.edit_val
+        else:
+            self.clear_view()
+            if self.box_x is not None:
+                y1, y2, x1, x2 = self.get_box_coords()
+                self.view[y1:y2,x1:x2] = 1
+
+    def redraw_view(self):
+        '''
+        Clear view before redrawing; used for updating brush view with brush
+        shadow when not using brush to draw.
+        '''
+        self.clear_view()
+        self.add_to_view()
+
+    def draw(self, image):
+        '''
+        Modify input image with brush drawing values in current brush area.
+        If brush does not have drawing enabled, return image before making
+        modifications.
+        '''
+        if not self.drawing:
+            return image
+
+        image = np.copy(image)
+
+        # version of image where all background pixels have been changed
+        mod_image = np.where(image == self.background, self.draw_value, image)
+
+        # only change area part of image
+        image[self.area] = mod_image[self.area]
+
+        return image
+
+class TrackReview(CalibanWindow):
     possible_keys = {"label", "daughters", "frames", "parent", "frame_div",
                      "capped"}
+
+    replace_prompt = ("\nReplace {} with {}?"
+                     "\nSPACE = REPLACE IN ALL FRAMES"
+                     "\nESC = CANCEL")
+
     def __init__(self, filename, lineage, raw, tracked):
         self.filename = filename
         self.tracks = lineage
         self.raw = raw
         self.tracked = tracked
-
-        self.sidebar_width = 300
 
         # if not all of these keys are present, actions are not supported
         self.incomplete = {*self.tracks[1]} < TrackReview.possible_keys
@@ -72,41 +1398,29 @@ class TrackReview:
             print("Actions will not be supported")
 
         # `label` should appear first
-        self.track_keys = ["label", *sorted(set(self.tracks[1]) - {"label"})]
-        self.num_tracks = max(self.tracks)
+        self.display_info = ["label", *sorted(set(self.tracks[1]) - {"label"})]
 
         self.num_frames, self.height, self.width, _ = raw.shape
         self.dtype_raw = raw.dtype
 
-        self.window = pyglet.window.Window(resizable=True)
-        self.window.set_minimum_size(self.width + self.sidebar_width, self.height + 20)
-        self.window.on_draw = self.on_draw
-        self.window.on_key_press = self.on_key_press
-        self.window.on_mouse_motion = self.on_mouse_motion
-        self.window.on_mouse_scroll = self.on_mouse_scroll
-        self.window.on_mouse_press = self.on_mouse_press
-        self.window.on_mouse_drag = self.on_mouse_drag
-        self.window.on_mouse_release = self.on_mouse_release
+        super().__init__()
 
         self.current_frame = 0
-        self.draw_raw = False
         self.max_intensity = None
         self.x = 0
         self.y = 0
         self.mode = Mode.none()
+        self.mode.update_prompt_additions = self.custom_prompt
         self.adjustment = 0
-        self.scale_factor = 1
         self.highlight = False
         self.highlighted_cell_one = -1
         self.highlighted_cell_two = -1
 
+        self.current_cmap = 'cubehelix'
+
         self.hole_fill_seed = None
 
-        self.edit_mode = False
-        self.edit_value = 1
-        self.brush_size = 1
-        self.erase = False
-        self.brush_view = np.zeros(self.tracked[self.current_frame,:,:,0].shape)
+        self.brush = CalibanBrush(self.height, self.width)
 
         pyglet.app.run()
 
@@ -119,199 +1433,51 @@ class TrackReview:
             print("Actions will not be supported.")
             return
 
-        if not self.edit_mode:
-            if self.mode.kind is None:
-                frame = self.tracked[self.current_frame]
-                label = int(frame[self.y, self.x])
-                if label != 0:
-                    self.mode = Mode("SELECTED",
-                                     label=label,
-                                     frame=self.current_frame,
-                                     y_location=self.y, x_location=self.x)
-                    self.highlighted_cell_one = label
-                    self.highlighted_cell_two = -1
-            elif self.mode.kind == "SELECTED":
-                frame = self.tracked[self.current_frame]
-                label = int(frame[self.y, self.x])
-                if label != 0:
-                    self.highlighted_cell_one = self.mode.label
-                    self.highlighted_cell_two = label
-                    self.mode = Mode("MULTIPLE",
-                                     label_1=self.mode.label,
-                                     frame_1=self.mode.frame,
-                                     y1_location = self.mode.y_location,
-                                     x1_location = self.mode.x_location,
-                                     label_2=label,
-                                     frame_2=self.current_frame,
-                                     y2_location = self.y,
-                                     x2_location = self.x)
-                #deselect cells if click on background
-                else:
-                    self.mode = Mode.none()
-                    self.highlighted_cell_one = -1
-                    self.highlighted_cell_two = -1
-            #if already have two cells selected, click again to reselect the second cell
-            elif self.mode.kind == "MULTIPLE":
-                frame = self.tracked[self.current_frame]
-                label = int(frame[self.y, self.x])
-                if label != 0:
-                    self.highlighted_cell_two = label
-                    self.mode = Mode("MULTIPLE",
-                                     label_1=self.mode.label_1,
-                                     frame_1=self.mode.frame_1,
-                                     y1_location = self.mode.y1_location,
-                                     x1_location = self.mode.x1_location,
-                                     label_2=label,
-                                     frame_2=self.current_frame,
-                                     y2_location = self.y,
-                                     x2_location = self.x)
-                #deselect cells if click on background
-                else:
-                    self.mode = Mode.none()
-                    self.highlighted_cell_one = -1
-                    self.highlighted_cell_two = -1
-            elif self.mode.kind == "PROMPT" and self.mode.action == "FILL HOLE":
-                    frame = self.tracked[self.current_frame]
-                    label = int(frame[self.y, self.x])
-                    if label == 0:
-                        self.hole_fill_seed = (self.y, self.x)
-                    if self.hole_fill_seed is not None:
-                        self.action_fill_hole()
-                        self.mode = Mode.none()
-
-        elif self.edit_mode:
-            if self.mode.kind is None:
-                annotated = self.tracked[self.current_frame,:,:,0]
-
-                brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
-
-                in_original = np.any(np.isin(annotated, self.edit_value))
-
-                #do not overwrite or erase labels other than the one you're editing
-                if not self.erase:
-                    annotated_draw = np.where(annotated==0, self.edit_value, annotated)
-                    annotated[brush_area] = annotated_draw[brush_area]
-                else:
-                    annotated_erase = np.where(annotated==self.edit_value, 0, annotated)
-                    annotated[brush_area] = annotated_erase[brush_area]
-
-                in_modified = np.any(np.isin(annotated, self.edit_value))
-
-                #cell deletion
-                if in_original and not in_modified:
-                    self.del_cell_info(del_label = self.edit_value, frame = self.current_frame)
-
-                #cell addition
-                elif in_modified and not in_original:
-                    self.add_cell_info(add_label = self.edit_value, frame = self.current_frame)
-
-                self.tracked[self.current_frame,:,:,0] = annotated
-
-            elif self.mode.kind == "PROMPT" and self.mode.action == "PICK COLOR":
-                frame = self.tracked[self.current_frame]
-                label = int(frame[self.y, self.x, 0])
-                if label == 0:
-                    self.mode = Mode.none()
-                elif label != 0:
-                    self.edit_value = label
-                    self.mode = Mode.none()
-
-
-
-    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-
-        x -= self.sidebar_width
-        x //= max(self.scale_factor, 1)
-        y = self.height - y // max(self.scale_factor, 1)
-
-        if 0 <= x < self.width and 0 <= y < self.height:
-            self.x, self.y = x, y
-
-        if self.edit_mode:
-            annotated = self.tracked[self.current_frame,:,:,0]
-
-            #self.x and self.y are different from the mouse's x and y
-            x_loc = self.x
-            y_loc = self.y
-
-            brush_area = circle(y_loc, x_loc, self.brush_size, (self.height,self.width))
-
-            #show where brush has drawn this time
-            self.brush_view[brush_area] = self.edit_value
-
-            in_original = np.any(np.isin(annotated, self.edit_value))
-
-            #do not overwrite or erase labels other than the one you're editing
-            if not self.erase:
-                annotated_draw = np.where(annotated==0, self.edit_value, annotated)
-                annotated[brush_area] = annotated_draw[brush_area]
-            else:
-                annotated_erase = np.where(annotated==self.edit_value, 0, annotated)
-                annotated[brush_area] = annotated_erase[brush_area]
-
-            in_modified = np.any(np.isin(annotated, self.edit_value))
-
-            #cell deletion
-            if in_original and not in_modified:
-                self.del_cell_info(del_label = self.edit_value, frame = self.current_frame)
-
-            #cell addition
-            elif in_modified and not in_original:
-                self.add_cell_info(add_label = self.edit_value, frame = self.current_frame)
-
-            self.tracked[self.current_frame,:,:,0] = annotated
-
-    def on_mouse_release(self, x, y, buttons, modifiers):
-        if self.edit_mode:
-            self.brush_view = np.zeros(self.tracked[self.current_frame,:,:,0].shape)
-
+        else:
+            super().on_mouse_press(x, y, button, modifiers)
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self.draw_raw:
             if self.max_intensity == None:
-                self.max_intensity = np.max(self.get_current_frame())
+                self.max_intensity = np.max(self.get_raw_current_frame())
             else:
                 raw_adjust = max(int(self.max_intensity * 0.02), 1)
                 self.max_intensity = max(self.max_intensity - raw_adjust * scroll_y, 2)
         else:
-            if self.num_tracks + (self.adjustment - 1 * scroll_y) > 0:
+            if self.get_max_label() + (self.adjustment - 1 * scroll_y) > 0:
                 self.adjustment = self.adjustment - 1 * scroll_y
 
-    def on_mouse_motion(self, x, y, dx, dy):
-        x -= self.sidebar_width
-        x //= self.scale_factor
-        y = self.height - y // self.scale_factor
+    def handle_draw(self):
+        '''
+        '''
+        annotated = self.get_ann_current_frame()
+        brush_val_in_original = np.any(np.isin(annotated, self.brush.draw_value))
+        editing_val_in_original = np.any(np.isin(annotated, self.brush.background))
 
-        if 0 <= x < self.width and 0 <= y < self.height:
-            self.x, self.y = x, y
+        annotated_draw = self.brush.draw(annotated)
 
-        if self.edit_mode:
-            #display brush size
-            self.brush_view = np.zeros(self.tracked[self.current_frame,:,:,0].shape)
-            brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
-            self.brush_view[brush_area] = self.edit_value
+        # check to see if any labels have been added or removed from frame
+        # possible to add new label or delete target label
+        brush_val_in_modified = np.any(np.isin(annotated_draw, self.brush.draw_value))
+        editing_val_in_modified = np.any(np.isin(annotated_draw, self.brush.background))
 
-    def on_draw(self):
-        self.window.clear()
-        self.scale_screen()
-        self.draw_current_frame()
-        self.draw_line()
-        self.draw_label()
+        # label deletion
+        if editing_val_in_original and not editing_val_in_modified:
+            self.del_cell_info(del_label = self.brush.background, frame = self.current_frame)
 
-    def scale_screen(self):
-        #User can resize window and images will expand to fill space if possible
-        #Determine whether to base scale factor on width or height
-        y_scale = self.window.height // self.height
-        x_scale = (self.window.width - 300) // self.width
-        self.scale_factor = min(y_scale, x_scale)
-        self.scale_factor = max(1, self.scale_factor)
+        # label addition
+        if brush_val_in_modified and not brush_val_in_original:
+            self.add_cell_info(add_label = self.brush.draw_value, frame = self.current_frame)
+
+        self.tracked[self.current_frame,:,:,0] = annotated_draw
 
     def on_key_press(self, symbol, modifiers):
         # Set scroll speed (through sequential frames) with offset
         offset = 5 if modifiers & key.MOD_SHIFT else 1
+
         if not self.edit_mode:
             if symbol == key.ESCAPE:
-                self.mode = Mode.none()
+                self.mode.clear()
                 self.highlighted_cell_one = -1
                 self.highlighted_cell_two = -1
             elif symbol in {key.LEFT, key.A}:
@@ -328,15 +1494,15 @@ class TrackReview:
 
         else:
             if symbol == key.EQUAL:
-                self.edit_value = min(self.edit_value + 1, self.num_tracks)
+                self.brush.increase_edit_val(window = self)
             if symbol == key.MINUS:
-                self.edit_value = max(self.edit_value - 1, 1)
+                self.brush.decrease_edit_val()
             if symbol == key.X:
-                self.erase = not self.erase
+                self.brush.toggle_erase()
             if symbol == key.LEFT:
-                self.brush_size = max(self.brush_size -1, 1)
+                self.brush.decrease_size()
             if symbol == key.RIGHT:
-                self.brush_size = min(self.brush_size + 1, self.height, self.width)
+                self.brush.increase_size()
             if symbol == key.Z:
                 self.draw_raw = not self.draw_raw
             else:
@@ -348,60 +1514,61 @@ class TrackReview:
             #toggle edit mode only if nothing is selected
             if self.mode.kind is None:
                 self.edit_mode = not self.edit_mode
+                self.helper_update_composite()
         if symbol == key.C:
             if self.mode.kind == "SELECTED":
-                self.mode = Mode("QUESTION",
+                self.mode.update("QUESTION",
                                  action="NEW TRACK", **self.mode.info)
 
         if symbol == key.F:
             if self.mode.kind == "SELECTED":
-                self.mode = Mode("PROMPT",
+                self.mode.update("PROMPT",
                                 action="FILL HOLE", **self.mode.info)
         if symbol == key.X:
             if self.mode.kind == "SELECTED":
-                self.mode = Mode("QUESTION",
+                self.mode.update("QUESTION",
                                  action="DELETE", **self.mode.info)
         if symbol == key.P:
             if self.mode.kind == "MULTIPLE":
-                self.mode = Mode("QUESTION",
+                self.mode.update("QUESTION",
                                  action="PARENT", **self.mode.info)
             elif self.mode.kind is None and self.edit_mode:
-                self.mode = Mode("PROMPT",
+                self.mode.update("PROMPT",
                                  action = "PICK COLOR", **self.mode.info)
         if symbol == key.R:
             if self.mode.kind == "MULTIPLE":
-                self.mode = Mode("QUESTION",
+                self.mode.update("QUESTION",
                                  action="REPLACE", **self.mode.info)
         if symbol == key.S:
             if self.mode.kind == "MULTIPLE":
-                self.mode = Mode("QUESTION",
+                self.mode.update("QUESTION",
                                  action="SWAP", **self.mode.info)
             elif self.mode.kind == "QUESTION" and self.mode.action == "SWAP":
                 self.action_single_swap()
-                self.mode = Mode.none()
+                self.mode.clear()
             elif self.mode.kind == "QUESTION" and self.mode.action == "NEW TRACK":
                 self.action_new_single_cell()
-                self.mode = Mode.none()
+                self.mode.clear()
             elif self.mode.kind is None and not self.edit_mode:
-                self.mode = Mode("QUESTION",
+                self.mode.update("QUESTION",
                                  action="SAVE")
         if symbol == key.W:
             if self.mode.kind == "MULTIPLE":
-                self.mode = Mode("QUESTION",
+                self.mode.update("QUESTION",
                                  action="WATERSHED", **self.mode.info)
         #cycle through highlighted cells
         if symbol == key.EQUAL:
             if self.mode.kind == "SELECTED":
-                if self.highlighted_cell_one < self.num_tracks:
+                if self.highlighted_cell_one < self.get_max_label():
                     self.highlighted_cell_one += 1
-                elif self.highlighted_cell_one == self.num_tracks:
+                elif self.highlighted_cell_one == self.get_max_label():
                     self.highlighted_cell_one = 1
         if symbol == key.MINUS:
             if self.mode.kind == "SELECTED":
                 if self.highlighted_cell_one > 1:
                     self.highlighted_cell_one -= 1
                 elif self.highlighted_cell_one == 1:
-                    self.highlighted_cell_one = self.num_tracks
+                    self.highlighted_cell_one = self.get_max_label()
 
         if symbol == key.SPACE:
             if self.mode.kind == "QUESTION":
@@ -419,233 +1586,54 @@ class TrackReview:
                     self.action_watershed()
                 elif self.mode.action == "DELETE":
                     self.action_delete()
-                self.mode = Mode.none()
+                elif self.mode.action == "FLOOD CELL":
+                    self.action_flood_contiguous()
+                elif self.mode.action == "TRIM PIXELS":
+                    self.action_trim_pixels()
+                self.mode.clear()
                 self.highlighted_cell_one = -1
                 self.highlighted_cell_two = -1
 
-    def get_current_frame(self):
-        if self.draw_raw:
-            return self.raw[self.current_frame]
-        else:
-            return self.tracked[self.current_frame]
+    def custom_prompt(self):
+        if self.mode.kind == "QUESTION":
+            if self.mode.action == "REPLACE":
+                self.mode.text = TrackReview.replace_prompt.format(self.mode.label_2,
+                    self.mode.label_1)
 
-    def draw_line(self):
-        pyglet.graphics.draw(4, pyglet.gl.GL_LINES,
-            ("v2f", (self.sidebar_width, self.window.height,
-                     self.sidebar_width, 0,
-                     self.sidebar_width, 0,
-                     self.window.width, 0))
-        )
+    def get_raw_current_frame(self):
+        return self.raw[self.current_frame,:,:,0]
 
-    def draw_label(self):
-        # always use segmented output for label, not raw
-        frame = self.tracked[self.current_frame]
-        label = int(frame[self.y, self.x])
-        if label != 0:
-            track = self.tracks[label].copy()
-            frames = list(map(list, consecutive(track["frames"])))
-            frames = '[' + ', '.join(["{}".format(a[0])
-                                if len(a) == 1 else "{}-{}".format(a[0], a[-1])
-                                for a in frames]) + ']'
+    def get_ann_current_frame(self):
+        return self.tracked[self.current_frame,:,:,0]
 
-            track["frames"] = frames
-            text = '\n'.join("{:10} {}".format(k+':', track[k])
-                             for k in self.track_keys)
-        else:
-            text = ''
+    def get_label(self):
+        return int(self.tracked[self.current_frame, self.y, self.x])
 
-        text += self.mode.render()
+    def get_max_label(self):
+        return max(self.tracks)
 
-        info_label = pyglet.text.Label(text, font_name="monospace",
-                                       anchor_x="left", anchor_y="bottom",
-                                       width=self.sidebar_width,
-                                       multiline=True,
-                                       x=5, y=5, color=[255]*4)
+    def get_new_label(self):
+        return (self.get_max_label() + 1)
 
-        if self.edit_mode:
-            edit_mode = "on"
-            brush_size_display = "brush size: {}".format(self.brush_size)
-            edit_label_display = "editing label: {}".format(self.edit_value)
-            if self.erase:
-                erase_mode = "on"
-            else:
-                erase_mode = "off"
-            draw_or_erase = "eraser mode: {}".format(erase_mode)
+    def get_label_info(self, label):
+        info = self.tracks[label].copy()
+        frames = list(map(list, consecutive(info["frames"])))
+        frames = '[' + ', '.join(["{}".format(a[0])
+                            if len(a) == 1 else "{}-{}".format(a[0], a[-1])
+                            for a in frames]) + ']'
+        info["frames"] = frames
+        return info
 
-            edit_label = pyglet.text.Label('{}\n{}\n{}'.format(brush_size_display,
-                                                        edit_label_display,
-                                                        draw_or_erase),
-                                            font_name='monospace',
-                                            anchor_x='left', anchor_y='center',
-                                            width=self.sidebar_width,
-                                            multiline=True,
-                                            x=5, y=self.window.height//2,
-                                            color=[255]*4)
-            edit_label.draw()
-
-
-            highlight_text = ""
-
-        else:
-            edit_mode = "off"
-            if self.highlight:
-                if self.highlighted_cell_two != -1:
-                    highlight_text = "highlight: on\nhighlighted cell 1: {}\nhighlighted cell 2: {}".format(self.highlighted_cell_one, self.highlighted_cell_two)
-                elif self.highlighted_cell_one != -1:
-                    highlight_text = "highlight: on\nhighlighted cell: {}".format(self.highlighted_cell_one)
-                else:
-                    highlight_text = "highlight: on"
-            else:
-                highlight_text = "highlight: off"
-
-
-        frame_label = pyglet.text.Label("frame: {}".format(self.current_frame)
-                                    + "\nedit mode: {}".format(edit_mode)
-                                    + "\n{}".format(highlight_text),
-                                        font_name="monospace",
-                                        anchor_x="left", anchor_y="top",
-                                        width=self.sidebar_width,
-                                        multiline=True,
-                                        x=5, y=self.window.height - 5,
-                                        color=[255]*4)
-
-        info_label.draw()
-        frame_label.draw()
-
-    def draw_current_frame(self):
-        frame = self.get_current_frame()
-        cmap = plt.get_cmap("cubehelix")
-        cmap.set_bad('red')
-
-        if not self.edit_mode:
-
-            if self.highlight:
-                if self.mode.kind == "SELECTED":
-                    frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
-                elif self.mode.kind == "MULTIPLE":
-                    frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
-                    frame = np.ma.masked_equal(frame, self.highlighted_cell_two)
-
-            with tempfile.TemporaryFile() as file:
-                if self.draw_raw:
-                    plt.imsave(file, frame[:, :, 0],
-                               vmax=self.max_intensity,
-                               cmap="cubehelix",
-                               format="png")
-                else:
-                    plt.imsave(file, frame[:, :, 0],
-                               vmin=0,
-                               vmax=self.num_tracks + self.adjustment,
-                               cmap=cmap,
-                               format="png")
-                image = pyglet.image.load("frame.png", file)
-
-                sprite = pyglet.sprite.Sprite(image, x=self.sidebar_width, y=0)
-                sprite.update(scale_x=self.scale_factor,
-                              scale_y=self.scale_factor)
-
-                gl.glTexParameteri(gl.GL_TEXTURE_2D,
-                                   gl.GL_TEXTURE_MAG_FILTER,
-                                   gl.GL_NEAREST)
-                sprite.draw()
-
-        elif self.edit_mode:
-
-            # create pyglet image object so we can display brush location
-            # handle with context manager because we don't need to keep brush_file around for long
-            with tempfile.TemporaryFile() as brush_file:
-                plt.imsave(brush_file, self.brush_view,
-                            vmax = self.num_tracks + self.adjustment,
-                            cmap='gist_stern',
-                            format='png')
-                brush_img = pyglet.image.load('brush_file.png', brush_file)
-
-            # get raw and annotated data
-            current_raw = self.raw[self.current_frame,:,:,0]
-            current_ann = self.tracked[self.current_frame,:,:,0]
-
-            # put raw image data into BytesIO object
-            raw_file = BytesIO()
-
-            plt.imsave(raw_file, current_raw,
-                            vmax=self.max_intensity,
-                            cmap='Greys',
-                            format='png')
-
-            raw_file.seek(0)
-
-            #gives us the 'greyscale' image in array format
-            #(the format is RGB even though it is displayed as grey)
-            raw_img = imread(raw_file)
-
-            #don't need to keep the file open once we have the array
-            raw_file.close()
-            raw_RGB = raw_img[:,:,0:3]
-
-            # put annotated image data into BytesIO object
-            ann_file = BytesIO()
-            plt.imsave(ann_file, current_ann,
-                            vmax=self.num_tracks + self.adjustment,
-                            cmap='gist_stern',
-                            format='png')
-
-            ann_file.seek(0)
-
-            #gives us the color image in array format
-            ann_img = imread(ann_file)
-
-            #don't need to keep the file open once we have the array
-            ann_file.close()
-            ann_RGB = ann_img[:,:,0:3]
-
-            #composite raw image with annotations on top
-            alpha = 0.5
-
-            # Convert the input image and color mask to Hue Saturation Value (HSV)
-            # colorspace
-            img_hsv = color.rgb2hsv(raw_RGB)
-            color_mask_hsv = color.rgb2hsv(ann_RGB)
-
-            # Replace the hue and saturation of the original image
-            # with that of the color mask
-            img_hsv[..., 0] = color_mask_hsv[..., 0]
-            img_hsv[..., 1] = color_mask_hsv[..., 1] * alpha
-
-            img_masked = color.hsv2rgb(img_hsv)
-            img_masked = rescale_intensity(img_masked, out_range = np.uint8)
-            img_masked = img_masked.astype(np.uint8)
-
-            # save img_masked as png so we can load it as a pyglet image
-            file_masked = tempfile.NamedTemporaryFile(suffix = '.png')
-            imwrite(str(file_masked.name), img_masked)
-            comp_img = pyglet.image.load(str(file_masked.name))
-            file_masked.close()
-
-            composite_sprite = pyglet.sprite.Sprite(comp_img, x = self.sidebar_width, y=0)
-            brush_sprite = pyglet.sprite.Sprite(brush_img, x=self.sidebar_width, y=0)
-
-            brush_sprite.opacity = 128
-
-            composite_sprite.update(scale_x=self.scale_factor,
-                                    scale_y=self.scale_factor)
-
-            brush_sprite.update(scale_x=self.scale_factor,
-                                    scale_y=self.scale_factor)
-
-            composite_sprite.draw()
-            brush_sprite.draw()
-
-            gl.glTexParameteri(gl.GL_TEXTURE_2D,
-                               gl.GL_TEXTURE_MAG_FILTER,
-                               gl.GL_NEAREST)
+    def create_frame_text(self):
+        frame_text = "Frame: {}\n".format(self.current_frame)
+        return frame_text
 
     def action_new_track(self):
         """
         Replacing label
         """
         old_label, start_frame = self.mode.label, self.mode.frame
-        new_label = self.num_tracks + 1
-        self.num_tracks += 1
+        new_label = self.get_new_label()
 
         if start_frame == 0:
             raise ValueError("new_track cannot be called on the first frame")
@@ -679,7 +1667,7 @@ class TrackReview:
         Create new label in just one frame
         """
         old_label, single_frame = self.mode.label, self.mode.frame
-        new_label = self.num_tracks + 1
+        new_label = self.get_new_label()
 
         # replace frame labels
         frame = self.tracked[single_frame]
@@ -689,11 +1677,10 @@ class TrackReview:
         self.del_cell_info(del_label = old_label, frame = single_frame)
         self.add_cell_info(add_label = new_label, frame = single_frame)
 
-
     def action_watershed(self):
         # Pull the label that is being split and find a new valid label
         current_label = self.mode.label_1
-        new_label = self.num_tracks + 1
+        new_label = self.get_new_label()
 
         # Locally store the frames to work on
         img_raw = self.raw[self.current_frame]
@@ -730,7 +1717,6 @@ class TrackReview:
 
         # current label doesn't change, but add the neccesary bookkeeping for the new track
         self.add_cell_info(add_label = new_label, frame = self.current_frame)
-
 
     def action_swap(self):
         def relabel(old_label, new_label):
@@ -782,7 +1768,6 @@ class TrackReview:
 
         track_2["parent"] = label_1
         track_1["frame_div"] = frame_div
-
 
     def action_replace(self):
         """
@@ -846,50 +1831,132 @@ class TrackReview:
 
         self.del_cell_info(del_label = selected_label, frame = current_frame)
 
+    def action_flood_contiguous(self):
+        '''
+        Flood fill a label (not background) with a unique new label;
+        alternative to watershed for fixing duplicate label issue (if cells
+        are not touching). If there are no other pixels of the old label left
+        after flooding, this action has the same effect as single-frame create.
+        This action never changes pixels to 0. Uses self.mode.frame (the frame that
+        was clicked on) instead of self.current_frame to prevent potential buggy
+        behavior (eg, user changes frames before confirming action, and self.hole_fill_seed
+        in new frame corresponds to a different label from self.mode.label).
+
+        Uses:
+            self.annotated, self.mode.frame, self.feature to get image to modify
+            self.mode.label is the label being flooded with a new value
+            self.hole_fill_seed to get starting point for flooding
+            self.cell_ids to get unused label to flood with
+            self.add_cell_info always needed to add new label to cell_info
+            self.del_cell_info sometimes needed to delete old label from frame
+        '''
+        # old label is definitely in original, check later if in modified
+        old_label = self.mode.label
+        # label used to flood area
+        new_label = self.get_new_label()
+        # use frame where label was selected, not current frame
+        frame = self.mode.frame
+
+        # annotation to modify
+        img_ann = self.tracked[frame,:,:,0]
+
+        # flood connected pixels of old_label with new_label, from origin point
+        # of self.hole_fill_seed
+        filled_img_ann = flood_fill(img_ann, self.hole_fill_seed, new_label)
+        # update annotation with modified image
+        self.tracked[frame,:,:,0] = filled_img_ann
+
+        # bool, whether any pixels of old_label remain in flooded image
+        in_modified = np.any(np.isin(filled_img_ann, old_label))
+
+        # this action will always add new_label to the annotation in this frame
+        self.add_cell_info(add_label=new_label, frame = frame)
+
+        # check to see if flooding removed old_label from the frame completely
+        if not in_modified:
+            self.del_cell_info(del_label = old_label, frame = frame)
+
+        # reset hole_fill_seed
+        self.hole_fill_seed = None
+
+    def action_trim_pixels(self):
+        '''
+        Trim away any stray (unconnected) pixels of selected label; pixels in
+        frame with that label that are not connected to self.hole_fill_seed
+        will be set to 0. This action will never completely delete label from frame,
+        since the seed point will always be left unmodified. Used to clean up messy
+        annotations, especially those with only a few pixels elsewhere in the frame,
+        or to quickly clean up thresholding results.
+
+        Uses:
+            self.annotated, self.mode.frame, self.feature to get image to modify
+            self.mode.label is the label being trimmed
+            self.hole_fill_seed is starting point to determine parts of label that
+                will remain unmodified
+        '''
+        # use frame where label was selected, not current frame
+        frame = self.mode.frame
+        # label to be trimmed
+        label = self.mode.label
+        # image to modify
+        img_ann = self.tracked[frame,:,:,0]
+
+        # boolean array of all pixels of label that are connected to self.hole_fill_seed
+        contig_cell = flood(image = img_ann, seed_point = self.hole_fill_seed)
+
+        # any pixels in img_ann that have value 'label' and are NOT connected to hole_fill_seed
+        # get changed to 0, all other pixels retain their original value
+        img_trimmed = np.where(np.logical_and(np.invert(contig_cell), img_ann == label), 0, img_ann)
+
+        # update annotation with trimmed image
+        self.tracked[frame,:,:,0] = img_trimmed
+
+        # reset hole fill seed
+        self.hole_fill_seed = None
+
     def add_cell_info(self, add_label, frame):
         '''
         helper function for actions that add a cell to the trk
         '''
-        #if cell already exists elsewhere in trk:
-        try:
-            old_frames = self.tracks[add_label]['frames']
-            updated_frames = np.append(old_frames, frame)
-            updated_frames = np.unique(updated_frames).tolist()
-            self.tracks[add_label].update({'frames': updated_frames})
-        #cell does not exist anywhere in trk:
-        except KeyError:
-            self.tracks.update({add_label: {}})
-            self.tracks[add_label].update({'label': int(add_label)})
-            self.tracks[add_label].update({'frames': [frame]})
-            self.tracks[add_label].update({'daughters': []})
-            self.tracks[add_label].update({'frame_div': None})
-            self.tracks[add_label].update({'parent': None})
-            self.tracks[add_label].update({'capped': False})
-
-            self.num_tracks += 1
+        if add_label != 0:
+            #if cell already exists elsewhere in trk:
+            try:
+                old_frames = self.tracks[add_label]['frames']
+                updated_frames = np.append(old_frames, frame)
+                updated_frames = np.unique(updated_frames).tolist()
+                self.tracks[add_label].update({'frames': updated_frames})
+            #cell does not exist anywhere in trk:
+            except KeyError:
+                self.tracks.update({add_label: {}})
+                self.tracks[add_label].update({'label': int(add_label)})
+                self.tracks[add_label].update({'frames': [frame]})
+                self.tracks[add_label].update({'daughters': []})
+                self.tracks[add_label].update({'frame_div': None})
+                self.tracks[add_label].update({'parent': None})
+                self.tracks[add_label].update({'capped': False})
 
     def del_cell_info(self, del_label, frame):
         '''
         helper function for actions that remove a cell from the trk
         '''
-        #remove cell from frame
-        old_frames = self.tracks[del_label]['frames']
-        updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame))).tolist()
-        self.tracks[del_label].update({'frames': updated_frames})
+        if del_label != 0:
+            #remove cell from frame
+            old_frames = self.tracks[del_label]['frames']
+            updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame))).tolist()
+            self.tracks[del_label].update({'frames': updated_frames})
 
-        #if that was the last frame, delete the entry for that cell
-        if self.tracks[del_label]['frames'] == []:
-            del self.tracks[del_label]
+            #if that was the last frame, delete the entry for that cell
+            if self.tracks[del_label]['frames'] == []:
+                del self.tracks[del_label]
 
-            # If deleting lineage data, remove parent/daughter entries
-            for _, track in self.tracks.items():
-                try:
-                    track["daughters"].remove(del_label)
-                except ValueError:
-                    pass
-                if track["parent"] == del_label:
-                    track["parent"] = None
-
+                # If deleting lineage data, remove parent/daughter entries
+                for _, track in self.tracks.items():
+                    try:
+                        track["daughters"].remove(del_label)
+                    except ValueError:
+                        pass
+                    if track["parent"] == del_label:
+                        track["parent"] = None
 
     def save(self):
         backup_file = self.filename + "_original.trk"
@@ -920,7 +1987,13 @@ class TrackReview:
                 tracked_file.flush()
                 trks.add(tracked_file.name, "tracked.npy")
 
-class ZStackReview:
+class ZStackReview(CalibanWindow):
+
+    save_prompt_text = ("\nSave current file?"
+                        "\nSPACE = SAVE"
+                        "\nT = SAVE AS .TRK FILE"
+                        "\nESC = CANCEL")
+
     def __init__(self, filename, raw, annotated, save_vars_mode):
         '''
         Set object attributes to store raw and annotated images (arrays),
@@ -954,9 +2027,6 @@ class ZStackReview:
         # unpack the shape of the raw array
         self.num_frames, self.height, self.width, self.channel_max = raw.shape
 
-        # blank area to the left of displayed image where text info is displayed
-        self.sidebar_width = 300
-
         # info dictionaries that will be populated with info about labels for
         # each feature of annotation array
         self.cell_ids = {}
@@ -976,41 +2046,22 @@ class ZStackReview:
         except:
             self.display_info = ['label', 'slices']
 
-        # self.window is a resizable pyglet window
-        self.window = pyglet.window.Window(resizable=True)
-        # can't resize window to be smaller than the display area when viewed at 1x scale
-        self.window.set_minimum_size(self.width + self.sidebar_width, self.height + 20)
-
-        # bind custom event handlers to window
-        self.window.on_draw = self.on_draw
-        self.window.on_key_press = self.on_key_press
-        self.window.on_mouse_motion = self.on_mouse_motion
-        self.window.on_mouse_scroll = self.on_mouse_scroll
-        self.window.on_mouse_press = self.on_mouse_press
-        self.window.on_mouse_drag = self.on_mouse_drag
-        self.window.on_mouse_release = self.on_mouse_release
-
-        # add this handler instead of replacing the default on_resize handler
-        self.window.push_handlers(self.on_resize)
-
-        # KeyStateHandler can be queried as dict during other events
-        # to check which keys are being held down
-        # expands potential use of modifiers during different mouse events
-        self.key_states = key.KeyStateHandler()
-        self.window.push_handlers(self.key_states)
-
         # open file to first frame of annotation stack
         self.current_frame = 0
-        # start with display showing annotations
-        self.draw_raw = False
+
         # keeps track of information about brightness of each channel in raw images
-        self.max_intensity = {}
+        self.max_intensity_dict = {}
         for channel in range(self.channel_max):
-            self.max_intensity[channel] = np.max(self.raw[0,:,:,channel])
+            self.max_intensity_dict[channel] = np.max(self.raw[0,:,:,channel])
+        # max_intensity for initial channel
+        self.max_intensity = self.max_intensity_dict[self.channel]
+
         # keeps track of information about adjustment of colormap for viewing annotation labels
-        self.adjustment = {}
+        self.adjustment_dict = {}
         for feature in range(self.feature_max):
-            self.adjustment[feature] = 0
+            self.adjustment_dict[feature] = 0
+        # adjustment for initial feature
+        self.adjustment = self.adjustment_dict[self.feature]
 
         # mouse position in coordinates of array being viewed as image, (0,0) is placeholder
         # will be updated on mouse motion
@@ -1021,10 +2072,7 @@ class ZStackReview:
         # prompts and confirmation dialogue, using Mode class; start with Mode.none()
         # (nothing selected, no actions pending)
         self.mode = Mode.none()
-
-        # how much to scale image by (start with no scaling, but can expand to
-        # fill window when window changes size)
-        self.scale_factor = 1
+        self.mode.update_prompt_additions = self.custom_prompt
 
         # start with highlighting option turned off and no labels highlighted
         self.highlight = False
@@ -1037,372 +2085,28 @@ class ZStackReview:
         # has effect of showing contours in brightness of image
         self.cmap_options = ['cubehelix', 'gist_yarg', 'gist_gray', 'magma', 'nipy_spectral', 'prism']
         # start on cubehelix cmap
-        self.current_cmap = 0
+        self.current_cmap_idx = 0
+        self.current_cmap = self.cmap_options[self.current_cmap_idx]
 
-        # use crosshair cursor instead of usual cursor
-        cursor = self.window.get_system_mouse_cursor(self.window.CURSOR_CROSSHAIR)
-        self.window.set_mouse_cursor(cursor)
-        # start with cursor visible, but this can be toggled
-        self.mouse_visible = True
-
-        # start in label-editing mode
-        self.edit_mode = False
-        # set intial pixel-editing mode tool values
-        self.edit_value = 1
-        self.brush_size = 1
-        self.erase = False
-        # brush_view is array used to display a preview of brush tool; same size as other arrays
-        self.brush_view = np.zeros(self.annotated[self.current_frame,:,:,self.feature].shape)
-        # composite_view used to store RGB image (composite of raw and annotated) so it can be
-        # accessed and updated as needed
-        self.composite_view = np.zeros((1,self.height,self.width,3))
-        # not a user-toggled option; distinguishes between brush and threshold choices
-        self.show_brush = True
-        # stores starting point of thresholding bounding box
-        self.predict_seed = None
-        # display options for pixel-editing mode
-        # invert grayscale light/dark of raw image
-        self.invert = True
-        # apply sobel filter (emphasizes edges) to raw image
-        self.sobel_on = False
-        # apply adaptive histogram equalization to raw image
-        self.adapthist_on = False
-        # show only raw image instead of composited image
-        self.hide_annotations = False
-
-        # values for conversion brush tool
-        self.conversion_brush_target = -1
-        self.conversion_brush_value = -1
+        self.brush = CalibanBrush(self.height, self.width)
 
         # stores y, x location of mouse click for actions that use skimage flooding
-        self.hole_fill_seed = None
+        # self.hole_fill_seed = None
 
         # how many times the file has been saved since it was opened
         self.save_version = 0
 
+        super().__init__()
+
         # start pyglet event loop
         pyglet.app.run()
 
-    def on_mouse_press(self, x, y, button, modifiers):
-        '''
-        Overwrite pyglet default window on_mouse_press event.
-        Takes x, y, button, modifiers as params (there are what the
-        window sends to this event when it is triggered by mouse press),
-        but x, y, and button are not used in this custom event.
-        Mouse press behavior changes depending on edit mode, mode.kind,
-        and mode.action. Helper functions are used for the different modes
-        of behavior. self.x and self.y are used for mouse position and are
-        updated when the mouse moves.
+    def custom_prompt(self):
+        if self.mode.kind == "QUESTION":
+            if self.mode.action == "SAVE":
+                self.mode.text = ZStackReview.save_prompt_text
 
-        Uses:
-            self.edit_mode, self.mode.kind, self.mode.action to determine
-                what the response to mouse press should be
-            self.annotated, self.current_frame, self.y, self.x, self.feature
-                to determine which label was clicked on
-            helper functions to handle specific cases
-            self.predict_seed to set corner of thresholding box
-        '''
-
-        if not self.edit_mode:
-            label = self.get_label()
-            if self.mode.kind is None:
-                self.mouse_press_none_helper(modifiers, label)
-            elif self.mode.kind == "SELECTED":
-                self.mouse_press_selected_helper(label)
-            elif self.mode.kind == "PROMPT":
-                self.mouse_press_prompt_helper(label)
-
-        elif self.edit_mode:
-            # draw using brush
-            if self.mode.kind is None:
-                self.handle_draw_helper()
-            elif self.mode.kind is not None:
-                # conversion brush
-                if self.mode.kind == "DRAW":
-                    self.handle_draw_helper()
-
-                # color pick tool
-                elif self.mode.kind == "PROMPT" and self.mode.action == "PICK COLOR":
-                    self.handle_color_pick_helper()
-
-                # color picking for conversion brush
-                elif self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH TARGET":
-                    self.pick_conversion_target_helper()
-                elif self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH VALUE":
-                    self.pick_conversion_value_helper()
-
-                # start drawing bounding box for threshold prediction
-                elif self.mode.kind == "PROMPT" and self.mode.action == "DRAW BOX":
-                    self.predict_seed = (self.y, self.x)
-
-    def mouse_press_none_helper(self, modifiers, label):
-        '''
-        Handles mouse presses when not in edit mode and nothing is selected.
-        With modifiers (keys held down), can trigger ctrl-click to flood label,
-        shift-click to trim pixels, or normal click to select label.
-
-        Uses:
-            modifiers from mouse press event to determine if special click
-            label from click location (determined in on_mouse_press)
-            self.y and self.x to determine self.hole_fill_seed (special click functions)
-                or to add to self.mode.info as y_location and x_location
-            self.mode to prompt special click confirmation or to select label
-            self.highlighted_cell_one to update highlight info with label
-        '''
-        if label != 0:
-            if modifiers & key.MOD_CTRL:
-                self.hole_fill_seed = (self.y, self.x)
-                self.mode = Mode("QUESTION",
-                                 action = "FLOOD CELL",
-                                 label = label,
-                                 frame = self.current_frame)
-            elif modifiers & key.MOD_SHIFT:
-                self.hole_fill_seed = (self.y, self.x)
-                self.mode = Mode("QUESTION",
-                                 action = "TRIM PIXELS",
-                                 label = label,
-                                 frame = self.current_frame)
-            else:
-                self.mode = Mode("SELECTED",
-                                 label=label,
-                                 frame=self.current_frame,
-                                 y_location=self.y, x_location=self.x)
-            self.highlighted_cell_one = label
-
-    def mouse_press_selected_helper(self, label):
-        '''
-        Handles mouse presses when not in edit mode and when one label has already
-        been selected. Modifies self.mode to include info about both labels that have
-        been selected.
-
-        Uses:
-            label from click location (determined in on_mouse_press)
-            self.mode to store info about both selected labels
-            self.highlighted_cell_one and self.highlighted_cell_two to update
-                highlights appropriately; update cell_one because user could have
-                changed highlight with cycling after selecting first label
-                (note: this should change soon so that cycling the highlight deselects
-                whatever label is selected, as in browser caliban)
-        '''
-        if label != 0:
-            self.mode = Mode("MULTIPLE",
-                             label_1=self.mode.label,
-                             frame_1=self.mode.frame,
-                             y1_location = self.mode.y_location,
-                             x1_location = self.mode.x_location,
-                             label_2=label,
-                             frame_2=self.current_frame,
-                             y2_location = self.y,
-                             x2_location = self.x)
-            self.highlighted_cell_one = self.mode.label_1
-            self.highlighted_cell_two = label
-
-    def mouse_press_prompt_helper(self, label):
-        '''
-        Handles mouse presses when not in edit mode and in response to a
-        prompt (currently, hole fill is the only action with this pattern).
-        Only fills hole if user has clicked on an empty/background pixel (label is 0).
-        If appropriate pixel is clicked on, action_fill_hole is called before
-        resetting the hole_fill_seed and self.mode.
-
-        Uses:
-            self.mode.action to determine what response to mouse press should be
-            label from click location (determined in on_mouse_press) to check if
-                action should be carried out
-            self.hole_fill_seed to store start point for action_fill_hole
-            self.mode to clear action info once action has finished
-        '''
-        if self.mode.action == "FILL HOLE":
-            if label == 0:
-                self.hole_fill_seed = (self.y, self.x)
-                self.action_fill_hole()
-                self.mode = Mode.none()
-
-    def handle_color_pick_helper(self):
-        '''
-        Takes the label clicked on, sets self.edit_value to that label, and then
-        exits color-picking mode. Doesn't change anything if click on background
-        but still exits color-picking mode.
-
-        Uses:
-            self.annotated, self.current_frame, self.y, self.x, and self.feature
-                to determine which label was clicked on
-            self.edit_value (modifies stored value)
-            self.mode (resets to Mode.none())
-        '''
-        # which label was clicked on
-        label = self.get_label()
-        if label != 0:
-            self.edit_value = label
-        self.mode = Mode.none()
-
-    def pick_conversion_target_helper(self):
-        '''
-        Click on a label while setting up conversion brush to choose "target"
-        (label that will be overwritten by the conversion brush). Nothing happens
-        if background is clicked on (remain in conversion brush target-picking mode,
-        as opposed to normal color-picking). When color is picked, move to next
-        step in setting conversion brush.
-
-        Uses:
-            self.annotated, self.current_frame, self.y, self.x, and self.feature
-                to determine which label was clicked on
-            self.conversion_brush_target to store clicked value
-            self.mode to move to next step of conversion brush setting
-        '''
-        # which label was clicked on
-        label = self.get_label()
-        if label != 0:
-            self.conversion_brush_target = label
-            # once value is set, move to setting next value
-            self.mode = Mode("PROMPT", action = "CONVERSION BRUSH VALUE")
-
-    def pick_conversion_value_helper(self):
-        '''
-        Click on a label while setting up conversion brush to choose "value"
-        (label that will be drawn by the conversion brush). Nothing happens
-        if background is clicked on (remain in conversion brush value-picking mode,
-        as with conversion brush target-picking). After label is picked, conversion
-        brush is set and will be in use.
-
-        Uses:
-            self.annotated, self.current_frame, self.y, self.x, and self.feature
-                to determine which label was clicked on
-            self.conversion_brush_value to store clicked value
-            self.mode to enter use of conversion brush
-        '''
-        # which label was clicked on
-        label = self.get_label()
-        if label != 0:
-            self.conversion_brush_value = label
-            # once value is set, turn on conversion brush
-            self.mode = Mode("DRAW", action = "CONVERSION",
-                conversion_brush_target = self.conversion_brush_target,
-                conversion_brush_value = self.conversion_brush_value)
-
-    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        '''
-        Overwrite default pyglet window on_mouse_drag event.
-        Takes x, y, button, modifiers as params (there are what the
-        window sends to this event when it is triggered by mouse drag),
-        but button and modifiers are not used in this custom event. X and y
-        are used to update self.x and self.y (coordinates of mouse within the
-        image; also updated when mouse moves). Mouse drag behavior changes depending
-        on edit mode, mode.kind, and mode.action. Helper functions are used for the
-        different modes of behavior.
-
-        Uses:
-            self.update_mouse_position_helper to update current self.x and self.y from
-                event x and y
-            self.edit_mode, self.mode.kind, self.mode.action, self.show_brush
-                to determine response to mouse drag
-
-        Note: self.show_brush is not a user-toggled option but is used to display
-            the correct preview (threshold box vs path of brush)
-        '''
-        # always update self.x and self.y when mouse has moved
-        self.update_mouse_position_helper(x, y)
-
-        # mouse drag only has special behavior in pixel-editing mode
-        if self.edit_mode:
-            # drawing with brush (normal or conversion)
-            if self.show_brush:
-                # update brush_view if self.mode.kind is DRAW or None, but not PROMPT
-                brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
-                # conversion brush
-                if self.mode.kind == "DRAW":
-                    self.brush_view[brush_area] = self.conversion_brush_value
-                # normal brush
-                elif self.mode.kind is None:
-                    self.brush_view[brush_area] = self.edit_value
-                # modify annotation
-                self.handle_draw_helper()
-
-            # dragging the bounding box for threshold prediction
-            elif not self.show_brush and self.mode.action == "DRAW BOX":
-                # reset self.brush_view
-                self.brush_view = np.zeros(self.brush_view.shape)
-
-                # use self.brush_view to display a box; need to calculate min/max
-                # or else box will not always display
-                top_edge = min(self.predict_seed[0], self.y)
-                bottom_edge = max(self.predict_seed[0], self.y)
-                left_edge = min(self.predict_seed[1], self.x)
-                right_edge = max(self.predict_seed[1], self.x)
-
-                self.brush_view[top_edge:bottom_edge, left_edge:right_edge] = self.edit_value
-
-    def update_mouse_position_helper(self, x, y):
-        '''
-        Helper function for adjusting self.x and self.y upon mouse movement.
-        Mouse movement and drag are mutually exclusive, so both event handlers
-        (on_mouse_drag and on_mouse_motion) use this helper function. Converts
-        window x and y into image x and y, as we need image x and y (self.x and
-        self.y) to display label info and carry out actions, but we do not need
-        window/event x and y for anything.
-
-        Uses:
-            x and y, values passed in from event handling, location of mouse cursor
-                in the window (relative to corner of window)
-            self.sidebar_width to offset x location
-            self.scale_factor to rescale x and y coordinates down to scale of original
-                image
-            self.width and self.height to check whether mouse cursor is in area of image
-                (self.x and self.y will not update if mouse has moved outside of image)
-        '''
-        # convert event x to image x by accounting for sidebar width, then scale
-        x -= self.sidebar_width
-        x //= self.scale_factor
-
-        # convert event y to image y by rescaling and changing coordinates:
-        # pyglet y has increasing y at the top of the screen, opposite convention of array indices
-        y = self.height - y // self.scale_factor
-
-        # check that mouse cursor is within bounds of image before updating
-        if 0 <= x < self.width and 0 <= y < self.height:
-            self.x, self.y = x, y
-
-    def on_mouse_release(self, x, y, buttons, modifiers):
-        '''
-        Overwrite pyglet default window on_mouse_release event.
-        Takes x, y, button, modifiers as params (there are what the
-        window sends to this event when it is triggered by mouse press),
-        but x, y, button, and modifiers are not used in this custom event.
-        Mouse release only triggers special behavior while in pixel-editing
-        mode; mode.action and self.show_brush are used to determine which
-        actions to carry out (threholding, updating brush preview appropriately).
-        Helper functions are called for some complex updates.
-
-        Uses:
-            self.edit_mode, self.show_brush, self.mode.action, self.hide_annotations
-                to determine which updates need to be carried out upon mouse release
-                (if any)
-            self.handle_threshold_helper finalizes thresholding bbox, carries out
-                thresholding, and does necessary bookkeeping
-            self.update_brushview_helper to clear brush trace and update with current
-                brush view
-            self.helper_update_composite to update the edit_mode display with whatever
-                changes were applied to the annotation during mouse drag (brush) or as
-                a result of mouse release (thresholding)
-        '''
-        # mouse release only has special behavior in pixel-editing mode; most custom
-        # behavior during a mouse click is handled in the mouse press event
-        if self.edit_mode:
-            # releasing the mouse finalizes bounding box for thresholding
-            if not self.show_brush and self.mode.action == "DRAW BOX":
-                self.handle_threshold_helper()
-                # self.show_brush reset to True here, so brush preview will render
-
-            # update brush view (prevents brush flickering)
-            if self.show_brush:
-                self.update_brushview_helper()
-
-            # annotation has changed (either during mouse drag for brush, or upon release
-            # for threshold), update the image composite with the current annotation
-            if not self.hide_annotations:
-                self.helper_update_composite()
-
-    def handle_threshold_helper(self):
+    def handle_threshold(self):
         '''
         Helper function to do pre- and post-action bookkeeping for thresholding.
         Figures out indices to send to action_threshold_predict, calls action_threshold_predict,
@@ -1412,24 +2116,18 @@ class ZStackReview:
         Uses:
             self.predict_seed, self.y, self.x to calculate appropriate edges of bounding box
             self.action_threshold_predict to carry out thresholding and annotation update
-            self.show_brush and self.mode are reset at end to finish/clear thresholding behavior
+            self.brush.show and self.mode are reset at end to finish/clear thresholding behavior
         '''
-        # min/max need to be calculated for correct numpy array slicing
-        top_edge = min(self.predict_seed[0], self.y)
-        bottom_edge = max(self.predict_seed[0], self.y)
-        left_edge = min(self.predict_seed[1], self.x)
-        right_edge = max(self.predict_seed[1], self.x)
-
         # check to make sure box is actually a box and not a line
-        if top_edge != bottom_edge and left_edge != right_edge:
-            threshold_prediction = self.action_threshold_predict(top_edge,
-                bottom_edge, left_edge, right_edge)
+        y1, y2, x1, x2 = self.brush.get_box_coords()
+        if y1 != y2 and x1 != x2:
+            threshold_prediction = self.action_threshold_predict(y1, y2, x1, x2)
 
         # clear bounding box and Mode
-        self.show_brush = True
-        self.mode = Mode.none()
+        self.brush.reset()
+        self.mode.clear()
 
-    def handle_draw_helper(self):
+    def handle_draw(self):
         '''
         Carries out brush drawing on annotation in edit mode. Handles both conversion brush
         and normal drawing or erasing. Does not update the composite image so this can be called
@@ -1441,115 +2139,34 @@ class ZStackReview:
 
         Uses:
             self.mode.kind to determine if drawing normally or using conversion brush
-            self.edit_value and self.erase if using normal brush
-            self.conversion_brush_target and self.conversion_brush_value if using conversion brush
+            self.brush.edit_val and self.brush.erase if using normal brush
+            self.brush.conv_target and self.brush.conv_val if using conversion brush
             self.annotated, self.current_frame, self.feature to get frame to modify
             self.x and self.y to center brush
-            self.brush_size to create skimage.draw.circle with that radius
+            self.brush.size to create skimage.draw.circle with that radius
             self.height and self.width to limit boundaries of brush (skimage.draw.circle)
 
         '''
+        annotated = self.get_ann_current_frame()
+        brush_val_in_original = np.any(np.isin(annotated, self.brush.draw_value))
+        editing_val_in_original = np.any(np.isin(annotated, self.brush.background))
 
-        # check which mode we are drawing in and set drawing variables
-        # normal draw/erase
-        if self.mode.kind is None:
-            if self.erase:
-                brush_val = 0
-                editing_val = self.edit_value
-            else:
-                brush_val = self.edit_value
-                editing_val = 0
-
-        # conversion brush
-        elif self.mode.kind == "DRAW":
-            # erase does not apply in conversion brush mode
-            brush_val = self.conversion_brush_value
-            editing_val = self.conversion_brush_target
-
-        # could be in the middle of setting conversion brush, in which case
-        # shouldn't be attempting to draw
-        else:
-            return
-
-        # take current frame and check for presence of brush_val and editing_val
-        # (determines whether to add or del any cell info from dictionaries)
-        annotated = self.annotated[self.current_frame,:,:,self.feature]
-        brush_val_in_original = np.any(np.isin(annotated, brush_val))
-        editing_val_in_original = np.any(np.isin(annotated, editing_val))
-
-        # create image where all editing_val pixels are replaced with brush val
-        annotated_draw = np.where(annotated==editing_val, brush_val, annotated)
-        # only modify 'annotated' within brush_area
-        brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
-        annotated[brush_area] = annotated_draw[brush_area]
+        annotated_draw = self.brush.draw(annotated)
 
         # check to see if any labels have been added or removed from frame
         # possible to add new label or delete target label
-        brush_val_in_modified = np.any(np.isin(annotated, brush_val))
-        editing_val_in_modified = np.any(np.isin(annotated, editing_val))
+        brush_val_in_modified = np.any(np.isin(annotated_draw, self.brush.draw_value))
+        editing_val_in_modified = np.any(np.isin(annotated_draw, self.brush.background))
 
         # label deletion
         if editing_val_in_original and not editing_val_in_modified:
-            self.del_cell_info(feature = self.feature, del_label = editing_val, frame = self.current_frame)
+            self.del_cell_info(feature = self.feature, del_label = self.brush.background, frame = self.current_frame)
 
         # label addition
         if brush_val_in_modified and not brush_val_in_original:
-            self.add_cell_info(feature = self.feature, add_label = brush_val, frame = self.current_frame)
+            self.add_cell_info(feature = self.feature, add_label = self.brush.draw_value, frame = self.current_frame)
 
-        # annotated still refers to self.annotated[self.current_frame,:,:,self.feature] so we don't need to update that
-
-        # would need to add back if adding a "check if image modified" step like browser caliban has
-
-        # self.annotated[self.current_frame,:,:,self.feature] = annotated
-
-    def on_mouse_motion(self, x, y, dx, dy):
-        '''
-        Overwrite default pyglet window on_mouse_motion event.
-        Takes x, y, dx, dy as params (these are what the window sends
-        to this event when it is triggered by mouse motion), but dx and dy
-        are not used in this custom event. X and y are used to update self.x
-        and self.y (coordinates of mouse within the image; also updated during
-        mouse drag). Updates brush preview (pixel-editing mode) when appropriate.
-        Uses:
-            self.update_mouse_position_helper to update current self.x and self.y from
-                event x and y
-            self.edit_mode, self.mode.kind, self.show_brush to determine when to display
-                brush preview
-            self.brush_view, self.y, self.x, self.brush_size, self.height, self.width,
-                self.conversion_brush_value, self.edit_value to create brush preview
-
-        Note: self.show_brush is not a user-toggled option but is used to display
-            the correct preview (threshold box vs path of brush)
-        '''
-        # always update self.x and self.y when mouse has moved
-        self.update_mouse_position_helper(x, y)
-
-        # brush_view is only updated when in pixel-editing mode
-        if self.edit_mode:
-            # don't display brush preview if thresholding
-            if self.show_brush:
-                self.update_brushview_helper()
-
-    def update_brushview_helper(self):
-        '''
-        Helper function to redraw brush after brush variables have changed.
-        Brush variables that may change are position, color, and size.
-
-        Uses:
-            self.brush_view to update (clear) whatever preview brush_view had been
-                showing (either thresholding bbox or brush trace)
-            self.y, self.x, self.brush_size, self.height, self.width, self.mode.kind,
-                self.conversion_brush_value, self.edit_value to show appropriate
-                preview of brush
-        '''
-        # clear old brush_view
-        self.brush_view = np.zeros(self.brush_view.shape)
-        brush_area = circle(self.y, self.x, self.brush_size, (self.height,self.width))
-        # color/value of brush view depends on which brush mode we are in
-        if self.mode.kind == "DRAW":
-            self.brush_view[brush_area] = self.conversion_brush_value
-        else:
-            self.brush_view[brush_area] = self.edit_value
+        self.annotated[self.current_frame,:,:,self.feature] = annotated_draw
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         '''
@@ -1565,8 +2182,8 @@ class ZStackReview:
 
         Uses:
             self.draw_raw to determine which image to adjust (and which adjustment to use)
-            self.max_intensity and self.channel to set or change the brightness of raw images
-            self.cell_ids, self.adjustment, self.feature to determine when to stop decreasing
+            self.max_intensity_dict and self.channel to set or change the brightness of raw images
+            self.cell_ids, self.adjustment_dict, self.feature to determine when to stop decreasing
                 self.adjustment (applied to annotations when drawing to determine range of colormap
                 applied to frame)
             self.edit_mode, self.hide_annotations to check if the composite image should be updated
@@ -1574,80 +2191,27 @@ class ZStackReview:
         # adjust brightness of raw image, if looking at raw image
         # (also applies to edit mode if self.draw_raw is True)
         if self.draw_raw:
-            # self.max_intensity[self.channel] is initialized as None, set to value
-            # based on maximum brightness of image
-            if self.max_intensity[self.channel] is None:
-                self.max_intensity[self.channel] = np.max(self.get_current_frame())
-            # self.max_intensity[self.channel] has a value so we can adjust it
-            else:
-                # check minimum brightness of image as lower bound of brightness adjustment
-                min_intensity = np.min(self.raw[self.current_frame,:,:,self.channel])
-                # adjust max brightness value by a percentage of the current value
-                raw_adjust = max(int(self.max_intensity[self.channel] * 0.02), 1)
-                # set the adjusted max brightness value, but it should never be the same or less than
-                # the minimum brightness in the image
-                self.max_intensity[self.channel] = max(self.max_intensity[self.channel] - raw_adjust * scroll_y,
-                                                        min_intensity + 1)
+            # self.max_intensity_dict[self.channel] has a value so we can adjust it
+            # check minimum brightness of image as lower bound of brightness adjustment
+            min_intensity = np.min(self.raw[self.current_frame,:,:,self.channel])
+            # adjust max brightness value by a percentage of the current value
+            raw_adjust = max(int(self.max_intensity_dict[self.channel] * 0.02), 1)
+            # set the adjusted max brightness value, but it should never be the same or less than
+            # the minimum brightness in the image
+            self.max_intensity_dict[self.channel] = max(self.max_intensity_dict[self.channel] - raw_adjust * scroll_y,
+                                                    min_intensity + 1)
+            self.max_intensity = self.max_intensity_dict[self.channel]
 
         # adjusting colormap range of annotations
         elif not self.draw_raw:
             # self.adjustment value for the current feature should never reduce possible colors to 0
-            if self.get_max_label() + (self.adjustment[self.feature] - 1 * scroll_y) > 0:
-                self.adjustment[self.feature] = self.adjustment[self.feature] - 1 * scroll_y
+            if self.get_max_label() + (self.adjustment_dict[self.feature] - 1 * scroll_y) > 0:
+                self.adjustment_dict[self.feature] = self.adjustment_dict[self.feature] - 1 * scroll_y
+            self.adjustment = self.adjustment_dict[self.feature]
 
         # color/brightness adjustments will change what the composited image looks like
         if self.edit_mode and not self.hide_annotations:
             self.helper_update_composite()
-
-    def on_draw(self):
-        '''
-        Event handler for pyglet window, redraws all content of screen after
-        window events. Clears window, calculates screen scaling, then redraws
-        the displayed image, lines around that image (to distinguish from black
-        background of the rest of the window), and information text in the sidebar.
-        '''
-        # clear old information
-        self.window.clear()
-        # TODO: use a batch to consolidate all of the "drawing" calls
-        # draw relevant image
-        self.draw_current_frame()
-        # draw lines around the image to distinguish it from rest of window
-        self.draw_line()
-        # draw information text in sidebar
-        self.draw_label()
-
-    def on_resize(self, width, height):
-        '''
-        Event handler for when pyglet window changes size. Note: this
-        is pushed to the event handler stack instead of overwriting pyglet
-        default event handlers, as on_resize has other default behavior needed
-        to properly display screen. Calls scale_screen when window resized, as
-        this is the only occasion where we may need to update the screen scale
-        factor.
-        '''
-        self.scale_screen()
-
-    def scale_screen(self):
-        '''
-        Recalculate scaling factor for image display. Calculates largest
-        integer scaling factor that can be applied to both height and width
-        of the image, to best use the available window space. If image size
-        is larger than available window space, scale factor will be set to 1
-        and image/window will extend off-screen: for this reason, it is recommended
-        that large images are reshaped or trimmed before editing in Caliban.
-
-        Uses:
-            self.window.height, self.window.width, and self.sidebar_width to determine
-                free window space
-            self.height and self.width (image dimensions) to calculate scale factor
-            self.scale_factor is updated with the smaller of the two scale factors
-                (or 1, whichever is largest)
-        '''
-        # user can resize window and images will expand to fill space if possible
-        y_scale = self.window.height // self.height
-        x_scale = (self.window.width - self.sidebar_width) // self.width
-        self.scale_factor = min(y_scale, x_scale)
-        self.scale_factor = max(1, self.scale_factor)
 
     def on_key_press(self, symbol, modifiers):
         '''
@@ -1750,9 +2314,9 @@ class ZStackReview:
             # clear hole fill seed (used in hole fill, trim pixels, flood contiguous)
             self.hole_fill_seed = None
             # reset self.mode (deselects labels, clears actions)
-            self.mode = Mode.none()
+            self.mode.clear()
             # reset from thresholding
-            self.show_brush = True
+            self.brush.reset()
 
     def edit_mode_universal_keypress_helper(self, symbol, modifiers):
         '''
@@ -1823,35 +2387,35 @@ class ZStackReview:
         # BRUSH VALUE ADJUSTMENT
         # increase brush value, caps at max value + 1
         if symbol == key.EQUAL:
-            self.edit_value = min(self.edit_value + 1, self.get_new_label())
-            self.update_brushview_helper()
+            self.brush.increase_edit_val(window = self)
         # decrease brush value, can't decrease past 1
         if symbol == key.MINUS:
-            self.edit_value = max(self.edit_value - 1, 1)
-            self.update_brushview_helper()
+            self.brush.decrease_edit_val()
         # set brush to unused label
         if symbol == key.N:
-            self.edit_value = self.get_new_label()
-            self.update_brushview_helper()
+            self.brush.set_edit_val(self.get_new_label())
 
         # TOGGLE ERASER
         if symbol == key.X:
-            self.erase = not self.erase
+            self.brush.toggle_erase()
 
         # ACTIONS - COLOR PICKER
         if symbol == key.P:
-            self.mode = Mode("PROMPT", action = "PICK COLOR", **self.mode.info)
+            self.mode.update("PROMPT", action = "PICK COLOR", **self.mode.info)
+            self.brush.disable_drawing()
         # ACTIONS - CONVERSION BRUSH
         if symbol == key.R:
-            self.mode = Mode("PROMPT", action="CONVERSION BRUSH TARGET", **self.mode.info)
+            self.mode.update("PROMPT", action="CONVERSION BRUSH TARGET", **self.mode.info)
+            self.brush.disable_drawing()
         # ACTIONS - SAVE FILE
         if symbol == key.S:
-            self.mode = Mode("QUESTION", action="SAVE", filetype = 'npz')
+            self.mode.update("QUESTION", action="SAVE")
         # ACTIONS - THRESHOLD
         if symbol == key.T:
-            self.mode = Mode("PROMPT", action = "DRAW BOX", **self.mode.info)
-            self.show_brush = False
-            self.brush_view = np.zeros(self.brush_view.shape)
+            self.mode.update("PROMPT", action = "DRAW BOX", **self.mode.info)
+            self.brush.show = False
+            self.brush.disable_drawing()
+            self.brush.clear_view()
 
     def edit_mode_misc_keypress_helper(self, symbol, modifiers):
         '''
@@ -1875,25 +2439,23 @@ class ZStackReview:
         # BRUSH MODIFICATION KEYBINDS
         # (don't want to adjust brush if thresholding; applies to both
         # normal brush and conversion brushes)
-        if self.show_brush:
+        if self.brush.show:
             # BRUSH SIZE ADJUSTMENT
             # decrease brush size
             if symbol == key.DOWN:
-                self.brush_size = max(self.brush_size -1, 1)
-                self.update_brushview_helper()
+                self.brush.decrease_size()
             # increase brush size
             if symbol == key.UP:
-                self.brush_size = min(self.brush_size + 1, self.height, self.width)
-                self.update_brushview_helper()
+                self.brush.increase_size()
 
         # SET CONVERSION BRUSH VALUE TO UNUSED LABEL
         # TODO: update Mode prompt to reflect that you can do this
         if self.mode.kind == "PROMPT" and self.mode.action == "CONVERSION BRUSH VALUE":
             if symbol == key.N:
-                self.conversion_brush_value = self.get_new_label()
-                self.mode = Mode("DRAW", action = "CONVERSION",
-                        conversion_brush_target = self.conversion_brush_target,
-                        conversion_brush_value = self.conversion_brush_value)
+                self.brush.set_conv_val(self.get_new_label())
+                self.mode.update("DRAW", action = "CONVERSION",
+                        conversion_brush_target = self.brush.conv_target,
+                        conversion_brush_value = self.brush.conv_val)
 
     def label_mode_misc_keypress_helper(self, symbol, modifiers):
         '''
@@ -1929,17 +2491,39 @@ class ZStackReview:
 
         # cycle through colormaps, but only while viewing raw
         if self.draw_raw:
+
+            # INVERT RAW IMAGE LIGHT/DARK
+            if symbol == key.I:
+                self.invert = not self.invert
+                # if you invert the image while you're viewing composite, update composite
+                if not self.hide_annotations:
+                    self.helper_update_composite()
+
+            # TOGGLE SOBEL FILTER
+            if symbol == key.K:
+                self.sobel_on = not self.sobel_on
+                if not self.hide_annotations:
+                    self.helper_update_composite()
+
+            # TOGGLE ADAPTIVE HISTOGRAM EQUALIZATION
+            if symbol == key.J:
+                self.adapthist_on = not self.adapthist_on
+                if not self.hide_annotations:
+                    self.helper_update_composite()
+
             if modifiers & key.MOD_SHIFT:
                 if symbol == key.UP:
-                    if self.current_cmap == len(self.cmap_options) - 1:
-                        self.current_cmap = 0
-                    elif self.current_cmap < len(self.cmap_options) -1:
-                        self.current_cmap += 1
+                    if self.current_cmap_idx == len(self.cmap_options) - 1:
+                        self.current_cmap_idx = 0
+                    elif self.current_cmap_idx < len(self.cmap_options) - 1:
+                        self.current_cmap_idx += 1
+                    self.current_cmap = self.cmap_options[self.current_cmap_idx]
                 if symbol == key.DOWN:
-                    if self.current_cmap == 0:
-                        self.current_cmap = len(self.cmap_options) - 1
-                    elif self.current_cmap > 0:
-                        self.current_cmap -= 1
+                    if self.current_cmap_idx == 0:
+                        self.current_cmap_idx = len(self.cmap_options) - 1
+                    elif self.current_cmap_idx > 0:
+                        self.current_cmap_idx -= 1
+                    self.current_cmap = self.cmap_options[self.current_cmap_idx]
 
     def label_mode_none_keypress_helper(self, symbol, modifiers):
         '''
@@ -1973,6 +2557,7 @@ class ZStackReview:
                     self.channel = 0
                 else:
                     self.channel += 1
+            self.change_channel()
 
         # CHANGE FEATURES
         if symbol == key.F:
@@ -2010,15 +2595,15 @@ class ZStackReview:
 
         # SAVE
         if symbol == key.S:
-            self.mode = Mode("QUESTION", action="SAVE", filetype = 'npz')
+            self.mode.update("QUESTION", action="SAVE")
 
         # PREDICT
         if symbol == key.P:
-            self.mode = Mode("QUESTION", action="PREDICT", **self.mode.info)
+            self.mode.update("QUESTION", action="PREDICT", **self.mode.info)
 
         # RELABEL
         if symbol == key.R:
-            self.mode = Mode("QUESTION", action='RELABEL', **self.mode.info)
+            self.mode.update("QUESTION", action='RELABEL', **self.mode.info)
 
     def label_mode_single_keypress_helper(self, symbol, modifiers):
         '''
@@ -2040,26 +2625,26 @@ class ZStackReview:
             elif self.highlighted_cell_one == self.get_max_label():
                 self.highlighted_cell_one = 1
             # deselect label, since highlighting is now decoupled from selection
-            self.mode = Mode.none()
+            self.mode.clear()
         if symbol == key.MINUS:
             if self.highlighted_cell_one > 1:
                 self.highlighted_cell_one -= 1
             elif self.highlighted_cell_one == 1:
                 self.highlighted_cell_one = self.get_max_label()
             # deselect label
-            self.mode = Mode.none()
+            self.mode.clear()
 
         # CREATE CELL
         if symbol == key.C:
-            self.mode = Mode("QUESTION", action="CREATE NEW", **self.mode.info)
+            self.mode.update("QUESTION", action="CREATE NEW", **self.mode.info)
 
         # HOLE FILL
         if symbol == key.F:
-            self.mode = Mode("PROMPT", action="FILL HOLE", **self.mode.info)
+            self.mode.update("PROMPT", action="FILL HOLE", **self.mode.info)
 
         # DELETE CELL
         if symbol == key.X:
-            self.mode = Mode("QUESTION", action="DELETE", **self.mode.info)
+            self.mode.update("QUESTION", action="DELETE", **self.mode.info)
 
     def label_mode_multiple_keypress_helper(self, symbol, modifiers):
         '''
@@ -2076,15 +2661,15 @@ class ZStackReview:
         '''
         # REPLACE
         if symbol == key.R:
-            self.mode = Mode("QUESTION", action="REPLACE", **self.mode.info)
+            self.mode.update("QUESTION", action="REPLACE", **self.mode.info)
 
         # SWAP
         if symbol == key.S:
-            self.mode = Mode("QUESTION", action="SWAP", **self.mode.info)
+            self.mode.update("QUESTION", action="SWAP", **self.mode.info)
 
         # WATERSHED
         if symbol == key.W:
-            self.mode = Mode("QUESTION", action="WATERSHED", **self.mode.info)
+            self.mode.update("QUESTION", action="WATERSHED", **self.mode.info)
 
     def label_mode_question_keypress_helper(self, symbol, modifiers):
         '''
@@ -2106,96 +2691,91 @@ class ZStackReview:
         if self.mode.action == "SAVE":
             if symbol == key.T:
                 self.save_as_trk()
-                self.mode = Mode.none()
+                self.mode.clear()
             if symbol == key.SPACE:
                 self.save()
-                self.mode = Mode.none()
+                self.mode.clear()
 
         # RESPOND TO RELABEL QUESTION
         elif self.mode.action == "RELABEL":
             if symbol == key.U:
                 self.action_relabel_unique()
-                self.mode = Mode.none()
+                self.mode.clear()
             if symbol == key.P:
                 self.action_relabel_preserve()
-                self.mode = Mode.none()
+                self.mode.clear()
             if symbol == key.S:
                 self.action_relabel_frame()
-                self.mode = Mode.none()
+                self.mode.clear()
             if symbol == key.SPACE:
                 self.action_relabel_all_frames()
-                self.mode = Mode.none()
+                self.mode.clear()
 
         # RESPOND TO PREDICT QUESTION
         elif self.mode.action == "PREDICT":
             if symbol == key.S:
                 self.action_predict_single()
-                self.mode = Mode.none()
+                self.mode.clear()
             if symbol == key.SPACE:
                 self.action_predict_zstack()
-                self.mode = Mode.none()
+                self.mode.clear()
 
         # RESPOND TO CREATE QUESTION
         elif self.mode.action == "CREATE NEW":
             if symbol == key.S:
                 self.action_new_single_cell()
-                self.mode = Mode.none()
+                self.mode.clear()
             if symbol == key.SPACE:
                 self.action_new_cell_stack()
-                self.mode = Mode.none()
+                self.mode.clear()
 
         # RESPOND TO REPLACE QUESTION
         elif self.mode.action == "REPLACE":
             if symbol == key.S:
                 self.action_replace_single()
-                self.mode = Mode.none()
+                self.mode.clear()
             if symbol == key.SPACE:
                 self.action_replace()
-                self.mode = Mode.none()
+                self.mode.clear()
 
         # RESPOND TO SWAP QUESTION
         elif self.mode.action == "SWAP":
             if symbol == key.S:
                 self.action_swap_single_frame()
-                self.mode = Mode.none()
+                self.mode.clear()
             if symbol == key.SPACE:
                 self.action_swap_all()
-                self.mode = Mode.none()
+                self.mode.clear()
 
         # RESPOND TO DELETE QUESTION
         elif self.mode.action == "DELETE":
             if symbol == key.SPACE:
                 self.action_delete_mask()
-                self.mode = Mode.none()
+                self.mode.clear()
 
         # RESPOND TO WATERSHED QUESTION
         elif self.mode.action == "WATERSHED":
             if symbol == key.SPACE:
                 self.action_watershed()
-                self.mode = Mode.none()
+                self.mode.clear()
 
         # RESPOND TO TRIM PIXELS QUESTION
         elif self.mode.action == "TRIM PIXELS":
             if symbol == key.SPACE:
                 self.action_trim_pixels()
-                self.mode = Mode.none()
+                self.mode.clear()
 
         # RESPOND TO FLOOD CELL QUESTION
         elif self.mode.action == "FLOOD CELL":
             if symbol == key.SPACE:
                 self.action_flood_contiguous()
-                self.mode = Mode.none()
+                self.mode.clear()
 
-    def get_current_frame(self):
-        '''
-        Helper function that returns the frame currently being viewed.
-        Used for drawing the image in label-editing mode, and for adjusting
-        the brightness of the raw image with the mouse scroll wheel.
-        '''
-        if self.draw_raw:
-            return self.raw[self.current_frame,:,:,self.channel]
-        else:
-            return self.annotated[self.current_frame,:,:,self.feature]
+    def get_raw_current_frame(self):
+        return self.raw[self.current_frame,:,:,self.channel]
+
+    def get_ann_current_frame(self):
+        return self.annotated[self.current_frame,:,:,self.feature]
 
     def get_label(self):
         '''
@@ -2237,322 +2817,30 @@ class ZStackReview:
         '''
         return (self.get_max_label() + 1)
 
-    def draw_line(self):
+    def get_label_info(self, label):
+        return self.cell_info[self.feature][label]
+
+    def create_frame_text(self):
+        frame_text = ("Frame: {}\n".format(self.current_frame)
+                    + "Channel: {}\n".format(self.channel)
+                    + "Feature: {}\n".format(self.feature))
+        return frame_text
+
+    def change_channel(self):
         '''
-        Draw thin white lines around the area of the window where the image
-        is being displayed. Distinguishes interactable portion of window from
-        information display more clearly but has no other purpose.
-
-        Uses:
-            self.scale_factor, self.width, self.height to calculate area of
-                window where image is being displayed
-            self.sidebar_width to offset lines appropriately
+        Method that updates current attributes as needed based on which
+        channel is being viewed.
         '''
+        # in this case we only need to update self.max_intensity
+        self.max_intensity = self.max_intensity_dict[self.channel]
 
-        # either one vertical line to separate left edge of image from sidebar
-        # or box around whole image (but I'm leaning towards box)
-        # TODO: need box to be 1 pixel removed from each edge because drawing it at
-        # these exact height slightly obscures the image itself--less of a problem
-        # at larger scales, more of a problem at scale_factor = 1 or 2
-
-        frame_width = self.scale_factor * self.width
-        frame_height = self.scale_factor * self.height
-
-        pyglet.graphics.draw(8, pyglet.gl.GL_LINES,
-            ("v2f", (self.sidebar_width, frame_height,
-                     self.sidebar_width, 0,
-                     self.sidebar_width, 0,
-                     self.sidebar_width + frame_width, 0,
-                     self.sidebar_width + frame_width, 0,
-                     self.sidebar_width + frame_width, frame_height,
-                     self.sidebar_width + frame_width, frame_height,
-                     self.sidebar_width, frame_height))
-        )
-
-    def draw_label(self):
+    def change_feature(self):
         '''
-        Coordinates information display (text) on left side of screen.
+        Method that updates current attributes as needed based on which
+        feature is being viewed.
         '''
-        # TODO: only update labels when the content changes?
-        # TODO: batch graphics?
-        self.render_cell_label_info_helper()
-
-        self.render_edit_mode_info_helper()
-
-        self.render_frame_info_helper()
-
-    def render_cell_label_info_helper(self):
-        '''
-        When cursor is over a label, displays information about that label
-        at the bottom of the information column.
-        '''
-        # value of annotation at current position of mouse
-        label = self.get_label()
-
-        if label != 0:
-            # generate text from cell_info and display_info (use slices instead of frames)
-            text = '\n'.join("{:10}{}".format(str(k)+':', self.cell_info[self.feature][label][k])
-                              for k in self.display_info)
-        # display nothing if not hovering over a label
-        else:
-            text = ''
-
-        # add info from self.mode (eg, prompts or "selected", etc)
-        text += self.mode.render()
-
-        # TODO: render label in a batch
-        # create pyglet label anchored to bottom of left side
-        cell_info_label = pyglet.text.Label(text, font_name="monospace",
-                                       anchor_x="left", anchor_y="bottom",
-                                       width=self.sidebar_width,
-                                       multiline=True,
-                                       x=5, y=5, color=[255]*4)
-
-        # draw the label
-        cell_info_label.draw()
-
-    def render_edit_mode_info_helper(self):
-        '''
-        Display information about pixel-editing mode (if in that mode).
-        Pixel-editing information such as brush attributes displayed in
-        center of information column.
-        '''
-        # TODO: display info about image settings (eg, which filters are turned on)
-
-        # only display while in pixel-editing mode
-        if self.edit_mode:
-            brush_size_display = "brush size: {}".format(self.brush_size)
-            edit_label_display = "editing label: {}".format(self.edit_value)
-            if self.erase:
-                erase_mode = "on"
-            else:
-                erase_mode = "off"
-            draw_or_erase = "eraser mode: {}".format(erase_mode)
-
-            # TODO: render label in a batch
-            # create pyglet label anchored to middle of left side
-            edit_label = pyglet.text.Label('{}\n{}\n{}'.format(brush_size_display,
-                                                        edit_label_display,
-                                                        draw_or_erase),
-                                            font_name='monospace',
-                                            anchor_x='left', anchor_y='center',
-                                            width=self.sidebar_width,
-                                            multiline=True,
-                                            x=5, y=self.window.height//2,
-                                            color=[255]*4)
-            # draw the label
-            edit_label.draw()
-
-    def render_frame_info_helper(self):
-        '''
-        Display information about the frame currently being viewed.
-        Always displays information; highlight info is only info
-        conditionally displayed by this label. This info is displayed
-        at top of info column.
-        '''
-        # TODO: display currently used colormap
-
-        # highlighting doesn't apply in pixel-editing mode (yet)
-        # so highlight info is blank in that context
-        if self.edit_mode:
-            edit_mode = "on"
-            highlight_text = ""
-
-        # label-editing mode, where highlighting is an option
-        else:
-            edit_mode = "off"
-            # if highlight is on, show which labels are highlighted
-            if self.highlight:
-                # two labels highlighted
-                if self.highlighted_cell_two != -1:
-                    highlight_text = "highlight: on\nhighlighted cell 1: {}\nhighlighted cell 2: {}".format(self.highlighted_cell_one, self.highlighted_cell_two)
-                # one label highlighted
-                elif self.highlighted_cell_one != -1:
-                    highlight_text = "highlight: on\nhighlighted cell: {}".format(self.highlighted_cell_one)
-                # no labels highlighted
-                else:
-                    highlight_text = "highlight: on"
-            # highlighting turned off
-            else:
-                highlight_text = "highlight: off"
-
-        # TODO: render label in a batch
-        # create pyglet label anchored to top of left side
-        frame_label = pyglet.text.Label("frame: {}\n".format(self.current_frame)
-                                        + "channel: {}\n".format(self.channel)
-                                        + "feature: {}\n".format(self.feature)
-                                        + "edit mode: {}\n".format(edit_mode)
-                                        + "{}".format(highlight_text),
-                                        font_name="monospace",
-                                        anchor_x="left", anchor_y="top",
-                                        width=self.sidebar_width,
-                                        multiline=True,
-                                        x=5, y=self.window.height - 5,
-                                        color=[255]*4)
-        # draw the label
-        frame_label.draw()
-
-    def draw_current_frame(self):
-        '''
-        Draw the current image view. Depending on the viewing mode (pixel-editing
-        or label-editing, raw or annotation view), takes the appropriate input array,
-        and applies adjustments as needed (eg, applying filters to the raw image). A
-        png format image is then created using pyplot and an appropriate colormap, then
-        loaded as a pyglet image, which is then scaled and drawn on the window. Several
-        helper functions are used to abstract steps of the image processing and manipulation.
-        '''
-        if not self.edit_mode:
-            self.draw_current_frame_label_mode_helper()
-
-        elif self.edit_mode:
-            self.draw_current_frame_edit_mode_helper()
-
-    def draw_current_frame_label_mode_helper(self):
-        '''
-        Draws current frame for label-editing mode. If drawing
-        the raw image, applies vmax adjustment and selected colormap.
-        If drawing the annotations, applies vmax adjustment, cubehelix
-        colormap, and highlights selected labels if highlighting is turned on.
-        Image is then scaled by self.scale_factor and drawn in window.
-        '''
-        frame = self.get_current_frame()
-
-        # create pyglet image from raw array info, using brightness and cmap settings
-        if self.draw_raw:
-            image = self.helper_array_to_img(input_array = frame,
-                                                     vmax = self.max_intensity[self.channel],
-                                                     cmap = self.cmap_options[self.current_cmap],
-                                                     output = 'pyglet')
-
-        # create pyglet image from annotation array info,
-        # using highlighting and brightness settings
-        else:
-            # annotations use cubehelix cmap with highlighting in red
-            cmap = plt.get_cmap("cubehelix")
-            cmap.set_bad('red')
-
-            # if highlighting on, mask highlighted values so they appear red
-            if self.highlight:
-                frame = self.apply_label_highlight_helper(frame)
-
-            # create pyglet image
-            image = self.helper_array_to_img(input_array = frame,
-                                                    vmax = max(1, self.get_max_label() + self.adjustment[self.feature]),
-                                                    cmap = cmap,
-                                                    output = 'pyglet')
-
-        # TODO: add sprite to batch?
-        # create pyglet sprite, bottom left corner of image anchored with x offset
-        sprite = pyglet.sprite.Sprite(image, x=self.sidebar_width, y=0)
-
-        # scale x and y dimensions of sprite
-        sprite.update(scale_x=self.scale_factor,
-                      scale_y=self.scale_factor)
-
-        # TODO: how often does this actually need to be set?
-        gl.glTexParameteri(gl.GL_TEXTURE_2D,
-                           gl.GL_TEXTURE_MAG_FILTER,
-                           gl.GL_NEAREST)
-        # draw the sprite
-        sprite.draw()
-
-    def apply_label_highlight_helper(self, frame):
-        '''
-        Masks values in input array (frame) to display highlight.
-        Masked values are then set to a particular color (red) via
-        the colormap used. If highlighted label are not in frame (eg,
-        if self.highlighted_cell_two = -1), there is no visual effect.
-        Applies highlight regardless of self.kind as long as highlight is on.
-        '''
-        # image display code will color masked values red
-        frame = np.ma.masked_equal(frame, self.highlighted_cell_one)
-        frame = np.ma.masked_equal(frame, self.highlighted_cell_two)
-
-        return frame
-
-    def draw_current_frame_edit_mode_helper(self):
-        '''
-        Draws current frame for pixel-editing mode, along with brush preview
-        (brush preview can display brush or thresholding). If drawing the image
-        with annotations hidden, applies filters/adjustments to raw image and uses
-        that, otherwise uses self.composite_view (generated and updated elsewhere)
-        to show annotations overlaid on the adjusted raw image. Image is then scaled
-        by self.scale_factor and drawn in window.
-        '''
-        # create pyglet image object so we can display brush location
-        brush_img = self.helper_array_to_img(input_array = self.brush_view,
-                                                    vmax = self.get_max_label() + self.adjustment[self.feature],
-                                                    cmap = 'gist_stern',
-                                                    output = 'pyglet')
-
-        # get raw and annotated data
-        # TODO: np.copy might be appropriate here for clarity
-        # (current_raw is not edited in place but np.copy would help safeguard that)
-        current_raw = self.raw[self.current_frame,:,:,self.channel]
-
-        current_raw, vmax = self.apply_image_adjustments_helper(current_raw)
-
-        # create pyglet image from only the adjusted raw, if hiding annotations
-        if self.hide_annotations:
-            comp_img = self.helper_array_to_img(input_array = current_raw,
-                                                    vmax = vmax,
-                                                    cmap = 'gray',
-                                                    output = 'pyglet')
-
-        # create pyglet image from composite if you want to see annotation overlay
-        # (self.composite view is generated/updated separately)
-        if not self.hide_annotations:
-            comp_img = self.helper_array_to_img(input_array = self.composite_view,
-                                                vmax = None,
-                                                cmap = None,
-                                                output = 'pyglet')
-
-        # create sprites for image and brush view, bottom left corner anchored with x offset
-        # TODO: add sprites to a batch?
-        composite_sprite = pyglet.sprite.Sprite(comp_img, x = self.sidebar_width, y=0)
-        brush_sprite = pyglet.sprite.Sprite(brush_img, x=self.sidebar_width, y=0)
-
-        # make brush view partially transparent
-        brush_sprite.opacity = 128
-
-        # scale x and y dimensions of sprites
-        composite_sprite.update(scale_x=self.scale_factor,
-                                scale_y=self.scale_factor)
-
-        brush_sprite.update(scale_x=self.scale_factor,
-                            scale_y=self.scale_factor)
-
-        # draw the sprites
-        composite_sprite.draw()
-        brush_sprite.draw()
-
-        gl.glTexParameteri(gl.GL_TEXTURE_2D,
-                           gl.GL_TEXTURE_MAG_FILTER,
-                           gl.GL_NEAREST)
-
-    def apply_image_adjustments_helper(self, current_raw):
-        '''
-        Apply filter/adjustment options to raw image for display in
-        pixel-editing mode. Input is unadjusted raw image, with object
-        attributes to determine which filters and adjustments to apply.
-        Returns adjusted image and vmax (appropriate vmax depends on whether
-        or not image histogram has been equalized).
-        '''
-        #try sobel filter here
-        if self.sobel_on:
-            current_raw = filters.sobel(current_raw)
-
-        if self.adapthist_on:
-            current_raw = rescale_intensity(current_raw, in_range = 'image', out_range = 'float')
-            current_raw = equalize_adapthist(current_raw)
-            vmax = 1
-        elif not self.adapthist_on:
-            vmax = self.max_intensity[self.channel]
-
-        if self.invert:
-            current_raw = invert(current_raw)
-
-        return current_raw, vmax
+        # only need to update self.adjustment
+        self.adjustment = self.adjustment_dict[self.feature]
 
     def action_new_single_cell(self):
         """
@@ -3158,146 +3446,6 @@ class ZStackReview:
         # remake cell_info dict based on new annotations
         self.create_cell_info(feature = self.feature)
 
-    def helper_array_to_img(self, input_array, vmax, cmap, output):
-        '''
-        Helper function to take an input array and output either a pyglet image
-        (to display) or an RGB array (for creating a composite image for
-        pixel-editing mode). Uses pyplot to create png image with vmax and cmap
-        variables, which is saved into a temporary file with BytesIO. The temporary
-        png file is then loaded into the correct output format and closed, and the
-        correctly-formatted image is returned.
-
-        Inputs:
-            input_array: the array to be rendered as an image (either raw or annotated)
-            vmax: vmax for pyplot to use (adjusts range of cmap and may vary)
-            cmap: which matplotlib colormap to use when creating png image
-            output: string specifying desired format ('pyglet' returns pyglet image,
-                'array' returns RGB array representation of image data)
-        '''
-        # temporary file that we can write to
-        img_file = BytesIO()
-        # create a png image with pyplot and save it to the temp file
-        plt.imsave(img_file, input_array,
-                        vmax=vmax,
-                        cmap=cmap,
-                        format='png')
-
-        # go to start of file so we can read it out correctly
-        img_file.seek(0)
-
-        # pyglet image type
-        if output == 'pyglet':
-            # create pyglet image loaded from temp file
-            pyglet_img = pyglet.image.load('img_file.png', file = img_file)
-            # close file since we are now done with it
-            img_file.close()
-            return pyglet_img
-
-        # generate an RGB array (what the data 'looks like' but in array format)
-        elif output == 'array':
-            # imread will give us an RGB array
-            img_array = imread(img_file)
-            # close file since we are now done with it
-            img_file.close()
-            return img_array
-
-        else:
-            return None
-
-    def helper_make_composite_img(self, base_array, overlay_array, alpha = 0.6):
-        '''
-        Helper function to take two arrays and overlay one on top of the other
-        using a conversion to HSV color space. Used to take greyscale RGB array
-        of raw image and overlay colored labels on the image without obscuring
-        image details. Used by helper_update_composite to generate composite image
-        as needed. Returns the composite array as an RGB array (dimensions [M,N,3]).
-        '''
-
-        # Convert the input image and color mask to Hue Saturation Value (HSV) colorspace
-        img_hsv = color.rgb2hsv(base_array)
-        color_mask_hsv = color.rgb2hsv(overlay_array)
-
-        # Replace the hue and saturation of the original image
-        # with that of the color mask
-        img_hsv[..., 0] = color_mask_hsv[..., 0]
-        # reduce saturation of colors
-        img_hsv[..., 1] = color_mask_hsv[..., 1] * alpha
-
-        # convert HSV image back to 8bit RGB
-        img_masked = color.hsv2rgb(img_hsv)
-        img_masked = rescale_intensity(img_masked, out_range = np.uint8)
-        img_masked = img_masked.astype(np.uint8)
-
-        return img_masked
-
-    def helper_update_composite(self):
-        '''
-        Helper function that updates self.composite_view from self.raw and
-        self.annotated when needed. self.composite_view is the image drawn
-        in edit mode, but does not need to be recalculated each time the image
-        refreshes (on_draw is triggered after every event, including mouse motion).
-        Takes self.raw and self.annotated, adjusts the images, overlays them,
-        and then stores the generated composite image at self.composite_view.
-
-        Uses:
-            self.raw, self.channel, self.annotated, self.feature, self.current_frame
-                to get arrays to start with
-            self.sobel, self.adapthist_on, self.invert are raw image filtering options
-            self.max_intensity as vmax for raw image (unless histogram equalized)
-            self.helper_array_to_img and self.helper_make_composite_img to abstract
-                away tedious processing steps
-        '''
-        # get images to modify and overlay
-        current_raw = self.raw[self.current_frame,:,:,self.channel]
-        current_ann = self.annotated[self.current_frame,:,:,self.feature]
-
-        #try sobel filter here
-        if self.sobel_on:
-            current_raw = filters.sobel(current_raw)
-
-        # apply adaptive histogram equalization, if option toggled
-        if self.adapthist_on:
-            # rescale first (for equalization to work properly, I think)
-            current_raw = rescale_intensity(current_raw, in_range = 'image', out_range = 'float')
-            current_raw = equalize_adapthist(current_raw)
-            # vmax appropriate for new range of image
-            vmax = 1
-        elif not self.adapthist_on:
-            # self.max_intensity can be None if brightness hasn't been adjusted
-            if self.draw_raw and self.max_intensity[self.channel] is None:
-                self.max_intensity[self.channel] = np.max(self.get_current_frame())
-            # appropriate vmax for image
-            vmax = self.max_intensity[self.channel]
-
-        # want image to be in grayscale, but as RGB array, not array of intensities
-        raw_img =  self.helper_array_to_img(input_array = current_raw,
-                    vmax = vmax,
-                    cmap = 'gray',
-                    output = 'array')
-
-        # don't need alpha channel
-        raw_RGB = raw_img[:,:,0:3]
-
-        # apply dark/light inversion
-        if self.invert:
-            raw_RGB = invert(raw_RGB)
-
-        # get RGB array of colorful annotation view
-        ann_img = self.helper_array_to_img(input_array = current_ann,
-                                            vmax = self.get_max_label() + self.adjustment[self.feature],
-                                            cmap = 'gist_stern',
-                                            output = 'array')
-
-        # don't need alpha channel
-        ann_RGB = ann_img[:,:,0:3]
-
-        # create the composite image from the two RGB arrays
-        img_masked = self.helper_make_composite_img(base_array = raw_RGB,
-                                            overlay_array = ann_RGB)
-
-        # set self.composite view to new composite image
-        self.composite_view = img_masked
-
     def save(self):
         '''
         Saves the current state of the file in .npz format. Variable names
@@ -3553,6 +3701,11 @@ class ZStackReview:
                 tracked_file.flush()
                 trks.add(tracked_file.name, "tracked.npy")
 
+def on_or_off(toggle):
+    if toggle:
+        return "on"
+    else:
+        return "off"
 
 def consecutive(data, stepsize=1):
     return np.split(data, np.where(np.diff(data) != stepsize)[0]+1)
