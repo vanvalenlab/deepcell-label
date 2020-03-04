@@ -2303,6 +2303,36 @@ class TrackReview(CalibanWindow):
         if symbol == key.X:
             self.mode.update("QUESTION", action="DELETE", **self.mode.info)
 
+    def label_mode_multiple_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that are
+        handled here apply to label-editing mode only if two labels are
+        selected and no actions are awaiting confirmation. (Note: the
+        two selected labels must be the same label for watershed to work,
+        and different labels for replace and swap to work.)
+
+        Keybinds:
+            p: prompt assignment of parent/daughter pair
+            r: prompt replacement of one label with another
+            s: prompt swap between two labels
+            w: prompt watershed action
+        '''
+        # PARENT
+        if symbol == key.P:
+            self.mode.update("QUESTION", action="PARENT", **self.mode.info)
+
+        # REPLACE
+        if symbol == key.R:
+            self.mode.update("QUESTION", action="REPLACE", **self.mode.info)
+
+        # SWAP
+        if symbol == key.S:
+            self.mode.update("QUESTION", action="SWAP", **self.mode.info)
+
+        # WATERSHED
+        if symbol == key.W:
+            self.mode.update("QUESTION", action="WATERSHED", **self.mode.info)
+
     def on_key_press(self, symbol, modifiers):
 
         self.universal_keypress_helper(symbol, modifiers)
@@ -2322,34 +2352,21 @@ class TrackReview(CalibanWindow):
                 self.label_mode_none_keypress_helper(symbol, modifiers)
             elif self.mode.kind == "SELECTED":
                 self.label_mode_single_keypress_helper(symbol, modifiers)
+            elif self.mode.kind == "MULTIPLE":
+                self.label_mode_multiple_keypress_helper(symbol, modifiers)
 
             else:
                 self.mode_handle(symbol)
 
     def mode_handle(self, symbol):
 
-        if symbol == key.P:
-            if self.mode.kind == "MULTIPLE":
-                self.mode.update("QUESTION",
-                                 action="PARENT", **self.mode.info)
-        if symbol == key.R:
-            if self.mode.kind == "MULTIPLE":
-                self.mode.update("QUESTION",
-                                 action="REPLACE", **self.mode.info)
         if symbol == key.S:
-            if self.mode.kind == "MULTIPLE":
-                self.mode.update("QUESTION",
-                                 action="SWAP", **self.mode.info)
-            elif self.mode.kind == "QUESTION" and self.mode.action == "SWAP":
+            if self.mode.kind == "QUESTION" and self.mode.action == "SWAP":
                 self.action_single_swap()
                 self.mode.clear()
             elif self.mode.kind == "QUESTION" and self.mode.action == "NEW TRACK":
                 self.action_new_single_cell()
                 self.mode.clear()
-        if symbol == key.W:
-            if self.mode.kind == "MULTIPLE":
-                self.mode.update("QUESTION",
-                                 action="WATERSHED", **self.mode.info)
 
         if symbol == key.SPACE:
             if self.mode.kind == "QUESTION":
