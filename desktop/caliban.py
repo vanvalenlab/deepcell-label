@@ -1850,15 +1850,20 @@ class TrackReview(CalibanWindow):
             super().on_mouse_press(x, y, button, modifiers)
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
-        if self.draw_raw:
-            if self.max_intensity == None:
-                self.max_intensity = np.max(self.get_raw_current_frame())
-            else:
-                raw_adjust = max(int(self.max_intensity * 0.02), 1)
-                self.max_intensity = max(self.max_intensity - raw_adjust * scroll_y, 2)
+        if self.key_states[key.LCTRL] or self.key_states[key.RCTRL]:
+            self.adjust_zoom(scroll_y)
         else:
-            if self.get_max_label() + (self.adjustment - 1 * scroll_y) > 0:
-                self.adjustment = self.adjustment - 1 * scroll_y
+            if self.draw_raw:
+                if self.max_intensity == None:
+                    self.max_intensity = np.max(self.get_raw_current_frame())
+                else:
+                    raw_adjust = max(int(self.max_intensity * 0.02), 1)
+                    self.max_intensity = max(self.max_intensity - raw_adjust * scroll_y, 2)
+            else:
+                if self.get_max_label() + (self.adjustment - 1 * scroll_y) > 0:
+                    self.adjustment = self.adjustment - 1 * scroll_y
+
+            self.update_image = True
 
     def handle_draw(self):
         '''
