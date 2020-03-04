@@ -2333,6 +2333,78 @@ class TrackReview(CalibanWindow):
         if symbol == key.W:
             self.mode.update("QUESTION", action="WATERSHED", **self.mode.info)
 
+    def label_mode_question_keypress_helper(self, symbol, modifiers):
+        '''
+        Helper function for keypress handling. The keybinds that are
+        handled here apply to label-editing mode when actions are awaiting
+        confirmation. Most actions are confirmed with the space key, while
+        others have different options mapped to other keys. Keybinds in this
+        helper function are grouped by the question they are responding to.
+
+        Keybinds:
+            space: carries out action; when action can be applied to single OR
+                multiple frames, space carries out the multiple frame option
+            s: carries out single-frame version of action where applicable
+        '''
+        # RESPOND TO SAVE QUESTION
+        if self.mode.action == "SAVE":
+            if symbol == key.SPACE:
+                self.save()
+                self.mode.clear()
+
+        # RESPOND TO CREATE QUESTION
+        elif self.mode.action == "NEW TRACK":
+            if symbol == key.S:
+                self.action_new_single_cell()
+                self.mode.clear()
+            if symbol == key.SPACE:
+                self.action_new_track()
+                self.mode.clear()
+
+        # RESPOND TO REPLACE QUESTION
+        elif self.mode.action == "REPLACE":
+            if symbol == key.SPACE:
+                self.action_replace()
+                self.mode.clear()
+
+        # RESPOND TO SWAP QUESTION
+        elif self.mode.action == "SWAP":
+            if symbol == key.S:
+                self.action_single_swap()
+                self.mode.clear()
+            if symbol == key.SPACE:
+                self.action_swap()
+                self.mode.clear()
+
+        # RESPOND TO DELETE QUESTION
+        elif self.mode.action == "DELETE":
+            if symbol == key.SPACE:
+                self.action_delete()
+                self.mode.clear()
+
+        # RESPOND TO WATERSHED QUESTION
+        elif self.mode.action == "WATERSHED":
+            if symbol == key.SPACE:
+                self.action_watershed()
+                self.mode.clear()
+
+        # RESPOND TO TRIM PIXELS QUESTION
+        elif self.mode.action == "TRIM PIXELS":
+            if symbol == key.SPACE:
+                self.action_trim_pixels()
+                self.mode.clear()
+
+        # RESPOND TO FLOOD CELL QUESTION
+        elif self.mode.action == "FLOOD CELL":
+            if symbol == key.SPACE:
+                self.action_flood_contiguous()
+                self.mode.clear()
+
+        elif self.mode.action == "PARENT":
+            if symbol == key.SPACE:
+                self.action_parent()
+                self.mode.clear()
+
     def on_key_press(self, symbol, modifiers):
 
         self.universal_keypress_helper(symbol, modifiers)
@@ -2354,43 +2426,8 @@ class TrackReview(CalibanWindow):
                 self.label_mode_single_keypress_helper(symbol, modifiers)
             elif self.mode.kind == "MULTIPLE":
                 self.label_mode_multiple_keypress_helper(symbol, modifiers)
-
-            else:
-                self.mode_handle(symbol)
-
-    def mode_handle(self, symbol):
-
-        if symbol == key.S:
-            if self.mode.kind == "QUESTION" and self.mode.action == "SWAP":
-                self.action_single_swap()
-                self.mode.clear()
-            elif self.mode.kind == "QUESTION" and self.mode.action == "NEW TRACK":
-                self.action_new_single_cell()
-                self.mode.clear()
-
-        if symbol == key.SPACE:
-            if self.mode.kind == "QUESTION":
-                if self.mode.action == "SAVE":
-                    self.save()
-                elif self.mode.action == "NEW TRACK":
-                    self.action_new_track()
-                elif self.mode.action == "PARENT":
-                    self.action_parent()
-                elif self.mode.action == "REPLACE":
-                    self.action_replace()
-                elif self.mode.action == "SWAP":
-                    self.action_swap()
-                elif self.mode.action == "WATERSHED":
-                    self.action_watershed()
-                elif self.mode.action == "DELETE":
-                    self.action_delete()
-                elif self.mode.action == "FLOOD CELL":
-                    self.action_flood_contiguous()
-                elif self.mode.action == "TRIM PIXELS":
-                    self.action_trim_pixels()
-                self.mode.clear()
-                self.highlighted_cell_one = -1
-                self.highlighted_cell_two = -1
+            elif self.mode.kind == "QUESTION":
+                self.label_mode_question_keypress_helper(symbol, modifiers)
 
     def custom_prompt(self):
         if self.mode.kind == "QUESTION":
