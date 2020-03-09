@@ -443,9 +443,9 @@ class CalibanWindow:
         else:
             new_zoom = min(self.zoom + 0.5 * scroll_y, 10)
 
-        # adjust start and end indices
-        prop_y = (self.y - self.view_start_y)*self.zoom/(self.visible_y_pix)
-        prop_x = (self.x - self.view_start_x)*self.zoom/(self.visible_x_pix)
+        # adjust start and end indices to center zoom on mouse position
+        prop_y = (self.y - self.view_start_y)/pixel_h
+        prop_x = (self.x - self.view_start_x)/pixel_w
 
         # don't zoom unnecessarily far out
         if (self.zoom < 1 and new_zoom < self.zoom and
