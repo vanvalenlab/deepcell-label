@@ -308,17 +308,13 @@ class CalibanWindow:
         x //= self.zoom
         x = int(self.view_start_x + x)
 
-        # these are the start and end indices of what is being displayed for y
-        y1 = max(int(self.view_start_y), 0)
-        y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
+        # indices of what is currently displayed on screen
+        y1, y2, x1, x2 = self.visible_region
 
         # convert pyglet y coordinate to relative position from bottom of image
         y = int((y - self.image_padding)//(self.zoom*self.scale_factor))
         # current position = index at bottom of displayed image - position relative to the bottom
         y = y2 - y
-
-        x1 = max(int(self.view_start_x), 0)
-        x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
 
         # check that mouse cursor is within bounds of image before updating
         if y1 <= y < y2 and x1 <= x < x2:
@@ -781,10 +777,8 @@ class CalibanWindow:
             h1, h2 = self.brush.h1, self.brush.h2
         else:
             h1, h2 = self.highlighted_cell_one, self.highlighted_cell_two
-        y1 = max(int(self.view_start_y), 0)
-        y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
-        x1 = max(int(self.view_start_x), 0)
-        x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
+
+        y1, y2, x1, x2 = self.visible_region
         frame_width = (x2 - x1) * self.zoom * self.scale_factor
         frame_height = (y2 - y1) * self.zoom * self.scale_factor
 
@@ -885,12 +879,24 @@ class CalibanWindow:
 
         self.draw_pyglet_image()
 
+    @property
+    def visible_region(self):
+        '''
+        Shortcut for getting the start and end indices for image to be displayed.
+        '''
+        y1 = max(int(self.view_start_y), 0)
+        y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
+        x1 = max(int(self.view_start_x), 0)
+        x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
+        return y1, y2, x1, x2
+
     def draw_raw_frame(self):
         '''
         Displays raw image with any image adjustments and currently selected
         colormap.
 
         Uses:
+            self.visible_region to get part of image to display
             self.get_raw_current_frame (must be provided by child class) to get
                 the appropriate slice of raw array data
             self.apply_raw_image_adjustments (provided) and self.current_cmap
@@ -900,10 +906,7 @@ class CalibanWindow:
             self.draw_pyglet_image to display pyglet Image on screen in correct
                 location with scaling
         '''
-        y1 = max(int(self.view_start_y), 0)
-        y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
-        x1 = max(int(self.view_start_x), 0)
-        x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
+        y1, y2, x1, x2 = self.visible_region
 
         raw_array = self.get_raw_current_frame()[y1:y2, x1:x2]
         adjusted_raw = self.apply_raw_image_adjustments(raw_array, cmap = self.current_cmap)
@@ -919,6 +922,7 @@ class CalibanWindow:
         Displays annotations in modified viridis colormap with highlights applied in red.
 
         Uses:
+            self.visible_region to get part of image to display
             self.get_ann_current_frame (must be provided by child class) to get
                 the appropriate slice of label data
             self.highlight (must be provided by child class) to determine if array
@@ -930,10 +934,7 @@ class CalibanWindow:
             self.draw_pyglet_image to display pyglet Image on screen in correct
                 location with scaling
         '''
-        y1 = max(int(self.view_start_y), 0)
-        y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
-        x1 = max(int(self.view_start_x), 0)
-        x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
+        y1, y2, x1, x2 = self.visible_region
         ann_array = self.get_ann_current_frame()[y1:y2,x1:x2]
 
         # annotations use cubehelix cmap with highlighting in red
@@ -963,10 +964,7 @@ class CalibanWindow:
         class to have methods for get_max_label and get_raw_current_frame, and
         adjustment attribute.
         '''
-        y1 = max(int(self.view_start_y), 0)
-        y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
-        x1 = max(int(self.view_start_x), 0)
-        x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
+        y1, y2, x1, x2 = self.visible_region
 
         # create pyglet image from only the adjusted raw, if hiding annotations
         if self.hide_annotations:
@@ -1125,10 +1123,7 @@ class CalibanWindow:
                 something about brush changes
         '''
         # edges of what is currently being displayed
-        y1 = max(int(self.view_start_y), 0)
-        y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
-        x1 = max(int(self.view_start_x), 0)
-        x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
+        y1, y2, x1, x2 = self.visible_region
 
         # region of full array affected by brush
         dy1, dy2 = self.brush.dirty_y1, self.brush.dirty_y2
@@ -1459,10 +1454,11 @@ class CalibanWindow:
                                        batch = self.batch)
 
     def create_zoom_text(self):
-        y1 = max(int(self.view_start_y), 0)
-        y2 = min(int(y1 + self.visible_y_pix/self.zoom), self.height)
-        x1 = max(int(self.view_start_x), 0)
-        x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
+        '''
+        Create string to tell viewer what level of zoom they are at. Also
+        displays which indices of array are being shown.
+        '''
+        y1, y2, x1, x2 = self.visible_region
 
         # format to truncate decimal places of <1 zoom
         zoom_text = "Zoom: {:1.1f}".format(self.zoom)
