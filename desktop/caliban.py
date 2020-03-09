@@ -908,8 +908,8 @@ class CalibanWindow:
         '''
         y1, y2, x1, x2 = self.visible_region
 
-        raw_array = self.get_raw_current_frame()[y1:y2, x1:x2]
-        adjusted_raw = self.apply_raw_image_adjustments(raw_array, cmap = self.current_cmap)
+        raw_array = self.get_raw_current_frame()
+        adjusted_raw = self.apply_raw_image_adjustments(raw_array, cmap = self.current_cmap)[y1:y2, x1:x2]
         self.array_to_img(input_array = adjusted_raw,
             vmax = None,
             cmap = None,
