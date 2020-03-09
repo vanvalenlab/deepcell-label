@@ -1293,7 +1293,7 @@ class CalibanWindow:
 
         return raw_RGB
 
-    def make_composite_img(self, base_array, overlay_array, alpha = 0.6, partial = False):
+    def make_composite_img(self, base_array, overlay_array, alpha = 0.6):
         '''
         Helper function to take two arrays and overlay one on top of the other
         using a conversion to HSV color space. Used to take greyscale RGB array
@@ -1316,10 +1316,9 @@ class CalibanWindow:
 
         # convert HSV image back to 8bit RGB
         img_masked = color.hsv2rgb(img_hsv)
-        if partial:
-            img_masked = rescale_intensity(img_masked, in_range = (0,1), out_range = np.uint8)
-        else:
-            img_masked = rescale_intensity(img_masked, out_range = np.uint8)
+
+        # rescale values from float (0 to 1) to uint8 (0 to 255)
+        img_masked = rescale_intensity(img_masked, in_range = (0,1), out_range = np.uint8)
         img_masked = img_masked.astype(np.uint8)
 
         return img_masked
@@ -1370,15 +1369,9 @@ class CalibanWindow:
         # don't need alpha channel for compositing step
         ann_RGB = ann_img[...,0:3]
 
-        if None not in (dy1, dy2, dx1, dx2):
-            partial = True
-        else:
-            partial = False
-
         # create the composite image from the two RGB arrays
         img_masked = self.make_composite_img(base_array = raw_RGB,
-                                            overlay_array = ann_RGB,
-                                            partial = partial)
+                                            overlay_array = ann_RGB)
 
         # set self.composite view to new composite image
         self.composite_view[dy1:dy2, dx1:dx2] = img_masked
