@@ -137,6 +137,11 @@ class CalibanWindow:
         if not (self.height > self.max_y or self.width > self.max_x):
             self.window.set_minimum_size(width = self.visible_x_pix + self.sidebar_width + 2*self.image_padding,
                                      height = self.visible_y_pix + 2*self.image_padding)
+        # can't resize window to be smaller than sidebar and image padding
+        else:
+            # +1 prevents exception raised when trying to blit image
+            self.window.set_minimum_size(width = self.sidebar_width + 2*self.image_padding + 1,
+                                     height = 2 * self.image_padding + 1)
 
         # bind custom event handlers to window
         self.window.on_draw = self.on_draw
