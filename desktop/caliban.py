@@ -53,8 +53,6 @@ from skimage.segmentation import find_boundaries
 import matplotlib.cm as cmaps
 from matplotlib.colors import Normalize
 
-from imageio import imread, imwrite
-
 gl.glEnable(gl.GL_TEXTURE_2D)
 
 platform = pyglet.window.get_platform()
