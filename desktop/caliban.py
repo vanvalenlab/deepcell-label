@@ -91,6 +91,7 @@ class CalibanWindow:
     adjustment (int)
     max_intensity (float)
     '''
+    # 8bit RGB color values for misc display methods
     white = (255, 255, 255)
     red = (255, 0, 0)
     black = (0, 0, 0)
@@ -112,8 +113,11 @@ class CalibanWindow:
         '''
         Initialize CalibanWindow by binding events to window and setting display
         attributes (eg, raw image adjustment toggles, colormap for creating overlaid
-        labels, scale factor, which view to display, and an empty composite_view).
+        labels, scale factor, zoom bookkeeping, which view to display, and an empty
+        composite_view).
         '''
+        # stores the location of mouse on screen (used to update mouse pos in image
+        # if image changes without cursor changing location)
         self._mouse_x = 0
         self._mouse_y = 0
 
@@ -121,8 +125,10 @@ class CalibanWindow:
         # fill window when window changes size)
         self.scale_factor = 1
 
+        # start at 1x zoom
         self.zoom = 1
 
+        # starting point for currently visible x and y portions of displayed array
         self.view_start_y = 0
         self.view_start_x = 0
 
@@ -130,6 +136,7 @@ class CalibanWindow:
         self.max_y = int(self.window.height) - 2*self.image_padding
         self.max_x = int(self.window.width) - self.sidebar_width - 2*self.image_padding
 
+        # update number of pixels of image we can display in viewing pane
         self.visible_y_pix = min(self.max_y, self.height)
         self.visible_x_pix = min(self.max_x, self.width)
 
@@ -179,6 +186,7 @@ class CalibanWindow:
         # show only raw image instead of composited image
         self.hide_annotations = False
 
+        # set cmap for labels here (easier to set_bad just once)
         self.labels_cmap = plt.get_cmap("viridis")
         self.labels_cmap.set_bad('black')
 
@@ -186,11 +194,14 @@ class CalibanWindow:
         # accessed and updated as needed
         self.composite_view = np.zeros((self.height,self.width,3))
 
+        # default vmin for brightness adjustments (when viewing raw image)
         self.vmin = 0
 
+        # "dirty rectangle" for raw + label compositing
         self.comp_dy1, self.comp_dy2 = None, None
         self.comp_dx1, self.comp_dx2 = None, None
 
+        # trigger drawing of images upon first call to on_draw
         self.update_image = True
         self.update_brush_image = True
 
@@ -203,12 +214,16 @@ class CalibanWindow:
         this is the only occasion where we may need to update the screen scale
         factor.
         '''
+        # calculate how much image can be resized without zooming
         self.scale_screen()
 
+        # can use the full screen height and width to display Caliban while fullscreened
         if self.window.fullscreen:
+            # number of pixels of space available in viewing pane
             self.max_y = USER_SCREEN.height - 2*self.image_padding
             self.max_x = USER_SCREEN.width - self.sidebar_width - 2*self.image_padding
 
+            # update number of pixels of image we can display in viewing pane
             self.visible_y_pix = min(self.max_y, self.height)
             self.visible_x_pix = min(self.max_x, self.width)
 
@@ -227,7 +242,8 @@ class CalibanWindow:
         of the image, to best use the available window space. If image size
         is larger than available window space, scale factor will be set to 1
         and image/window will extend off-screen: for this reason, it is recommended
-        that large images are reshaped or trimmed before editing in Caliban.
+        that large images are reshaped or trimmed before editing in Caliban. Scale
+        factor is calculated independent of current zoom level.
 
         Uses:
             self.window.height, self.window.width, self.image_padding, and
@@ -241,8 +257,12 @@ class CalibanWindow:
         pad = 2*self.image_padding
         y_scale = (self.window.height - pad) // self.height
         x_scale = (self.window.width - (self.sidebar_width + pad)) // self.width
+
+        # scale factor should always be at least 1, and accommodate both x and y dims
         new_scale_factor = min(y_scale, x_scale)
         new_scale_factor = max(1, new_scale_factor)
+
+        # only update and redraw if scaling has changed
         if new_scale_factor != self.scale_factor:
             self.scale_factor = new_scale_factor
             self.update_image = True
@@ -259,16 +279,21 @@ class CalibanWindow:
         Uses:
             x and y, values passed in from event handling, location of mouse cursor
                 in the window (relative to corner of window)
-            self.sidebar_width to offset x location
-            self.scale_factor to rescale x and y coordinates down to scale of original
-                image
-            self.width and self.height to check whether mouse cursor is in area of image
+            self._mouse_x and self._mouse_y to store cursor location independent of
+                image coordinates
+            self.sidebar_width and self.image_padding as offsets to cursor location
+            self.scale_factor and self.zoom to rescale x and y coordinates down to
+                scale of original image
+            self.visible_region to check whether mouse cursor is in area of image
                 (self.x and self.y will not update if mouse has moved outside of image)
             self.brush to update where the center of the brush is
         '''
+        # store latest cursor location
         self._mouse_x = x
         self._mouse_y = y
 
+        # cursor may change location without changing image coordinates, so
+        # temporarily store old image coordinates to check this later
         old_y, old_x = self.y, self.x
 
         # convert event x to viewing pane x by accounting for sidebar width, then scale
@@ -294,7 +319,9 @@ class CalibanWindow:
         if y1 <= y < y2 and x1 <= x < x2:
             # mouse is now over a different displayed pixel of image
             if (old_y != y or old_x != x):
+                # update to new image coordinate
                 self.x, self.y = x, y
+                # update brush attributes
                 self.brush.update_center(y, x)
                 if self.edit_mode and None not in self.brush.dirty_bbox:
                     self.update_brush_image = True
@@ -315,9 +342,14 @@ class CalibanWindow:
         Note: self.brush.show is not a user-toggled option but is used to display
             the correct preview (threshold box vs path of brush)
         '''
+        # cursor may change location without changing image coordinates, so
+        # temporarily store old image coordinates to check this later
         old_y, old_x = self.y, self.x
+
         # always update self.x and self.y when mouse has moved
         self.update_mouse_position(x, y)
+
+        # if image coordinate where cursor is has changed, update the brush view
         if self.brush.show and (old_y != self.y or old_x != self.x):
             self.brush.redraw_view()
 
@@ -341,14 +373,19 @@ class CalibanWindow:
             self.handle_draw (must be defined in child class) to modify labels and update
                 label information as needed
         '''
-        # always update self.x and self.y when mouse has moved
+        # cursor may change location without changing image coordinates, so
+        # temporarily store old image coordinates to check this later
         old_y, old_x = self.y, self.x
+
+        # always update self.x and self.y when mouse has moved
         self.update_mouse_position(x, y)
 
+        # holding down space = panning
         if self.key_states[key.SPACE]:
             self.pan(dx, dy)
         else:
             # mouse drag only has special behavior in pixel-editing mode
+            # only update brush view if image coordinate has changed due to mouse movement
             if self.edit_mode and (old_y != self.y or old_x != self.x):
                 # drawing with brush (normal or conversion)
                 self.brush.add_to_view()
@@ -356,18 +393,29 @@ class CalibanWindow:
                 self.handle_draw()
 
     def pan(self, dx, dy):
+        '''
+        Moves the viewed portion of the image by dx and dy. Can be triggered
+        by spacebar+click and drag, or by jumping to portion of image with pg up/dn,
+        home/end. Recalculates self.view_start_x and self.view_start_y; if they have
+        changed, the image is updated appropriately.
+        '''
         # y coords are inverted
         old_y_start = self.view_start_y
         new_y_start = self.view_start_y + dy/(self.zoom*self.scale_factor)
+        # don't move this view start index out of appropriate bounds
+        # (eg, stop panning if you are at top or bottom of image)
         new_y_start = min(new_y_start, self.height - int(self.visible_y_pix/self.zoom))
         self.view_start_y = max(0, new_y_start)
 
         # x coords
         old_x_start = self.view_start_x
         new_x_start = self.view_start_x - dx/(self.zoom*self.scale_factor)
+        # don't move this view start index out of appropriate bounds
+        # (eg, stop panning if you are at left or right edge of image)
         new_x_start = min(new_x_start, self.width - int(self.visible_x_pix/self.zoom))
         self.view_start_x = max(0, new_x_start)
 
+        # don't trigger further updates unless the view has moved
         if old_y_start != self.view_start_y or old_x_start != self.view_start_x:
             # important to update mouse position if a pan button has been used
             self.update_mouse_position(x = self._mouse_x, y = self._mouse_y)
@@ -377,9 +425,16 @@ class CalibanWindow:
             self.update_image = True
 
     def adjust_zoom(self, scroll_y):
+        '''
+        Change the level of zoom based on an input (-1 or 1, zoom out or zoom in).
+        Updates visible portion of screen if zoom level changes. Restricts zoom
+        levels to be in the range 0.1 to 10.
+        '''
+        # number of pixels of image actually on screen
         pixel_w = int(self.visible_x_pix/self.zoom)
         pixel_h = int(self.visible_y_pix/self.zoom)
 
+        # how much to adjust zoom based on scroll
         if self.zoom == 1 and scroll_y < 0:
             new_zoom = max(self.zoom + 0.1 * scroll_y, 0.1)
         elif self.zoom < 1:
@@ -397,21 +452,27 @@ class CalibanWindow:
             self.visible_y_pix/self.zoom > self.height):
             return
 
+        # adjusting visible portion of screen
         else:
+            # update visible y
             y_diff =  pixel_h - int(self.visible_y_pix/new_zoom)
             new_y_start = self.view_start_y + prop_y*y_diff
             new_y_start = min(self.height - int(self.visible_y_pix/new_zoom), new_y_start)
             self.view_start_y = max(0, new_y_start)
 
+            # update visible x
             x_diff = pixel_w - int(self.visible_x_pix/new_zoom)
             new_x_start = self.view_start_x + prop_x*x_diff
             new_x_start = min(self.width - int(self.visible_x_pix/new_zoom), new_x_start)
             self.view_start_x = max(0, new_x_start)
 
+            # store new zoom value
             self.zoom = new_zoom
+            # which pixel of the image the mouse is over has changed
             self.update_mouse_position(x = self._mouse_x, y = self._mouse_y)
             self.brush.redraw_view()
 
+            # full image should be redrawn
             self.update_image = True
 
     def on_mouse_press(self, x, y, button, modifiers):
@@ -424,6 +485,9 @@ class CalibanWindow:
         and mode.action. Helper methods are used for different behavior options.
         self.x and self.y are used for mouse position and are updated when the
         mouse moves.
+
+        If space bar is being held down (stored in self.key_states), disable default
+        behavior so panning can be used.
 
         Uses:
             self.edit_mode, self.mode.kind, self.mode.action to determine
@@ -481,6 +545,9 @@ class CalibanWindow:
         mode; mode.action and self.brush.show are used to determine which
         actions to carry out (threholding, updating brush preview appropriately).
         Helper functions are called for some complex updates.
+
+        If space bar is being held down (stored in self.key_states), disable default
+        behavior, as panning behavior has been used instead.
 
         Uses:
             self.edit_mode, self.brush.show, self.mode.action, self.hide_annotations
@@ -691,11 +758,18 @@ class CalibanWindow:
         '''
         Draw thin white lines around the area of the window where the image
         is being displayed. Distinguishes interactable portion of window from
-        information display more clearly but has no other purpose.
+        information display more clearly. Indicates if highlighted/selected labels
+        are present off-screen by drawing red lines instead of white on relevant
+        edges. No line displayed on edge (black line) if image extends further in
+        that direction.
 
         Uses:
-            self.scale_factor, self.width, self.height to calculate area of
-                window where image is being displayed
+            self.brush.h1, self.brush.h2, self.highlighted_cell_one,
+                self.highlighted_cell_two are values to check off-screen for
+            self.visible_region to determine which parts of image are off-screen
+            self.scale_factor, self.zoom to calculate area of window where image
+                is being displayed
+            self.width, self.height to check if edges of image are being displayed
             self.sidebar_width, self.image_padding to offset lines appropriately
         '''
         if self.edit_mode:
@@ -837,7 +911,7 @@ class CalibanWindow:
 
     def draw_ann_frame(self):
         '''
-        Displays annotations in cubehelix colormap with highlights applied in red.
+        Displays annotations in modified viridis colormap with highlights applied in red.
 
         Uses:
             self.get_ann_current_frame (must be provided by child class) to get
@@ -901,13 +975,18 @@ class CalibanWindow:
         if not self.hide_annotations:
             display = np.copy(self.composite_view[y1:y2, x1:x2])
 
+        # highlighting in edit-mode is outline in white around label, sometimes also outline in red
         if self.highlight:
+            # get region to highlight (where label is equal to brush value)
             white_mask = np.where(self.get_ann_current_frame()[y1:y2,x1:x2] == self.brush.h1, 1, 0)
+            # only work on part of image that is affected, speeds up array operations
             dy1, dy2, dx1, dx2 = get_dirty_rectangle(white_mask)
+            # within that region, create an outline mask and overlay it onto the display
             if not None in (dy1, dy2, dx1, dx2):
                 white_mask = self.generate_ann_boundaries(white_mask[dy1:dy2, dx1:dx2])
                 display[dy1:dy2, dx1:dx2] = self.overlay_RGB(display[dy1:dy2, dx1:dx2], white_mask)
 
+            # add in red outline if currently using conversion brush
             if self.brush.h2 != -1:
                 red_mask = np.where(self.get_ann_current_frame()[y1:y2,x1:x2] == self.brush.h2, 1, 0)
                 dy1, dy2, dx1, dx2 = get_dirty_rectangle(red_mask)
@@ -915,8 +994,10 @@ class CalibanWindow:
                     red_mask = self.generate_ann_boundaries(red_mask[dy1:dy2, dx1:dx2], color = 'red')
                     display[dy1:dy2, dx1:dx2] = self.overlay_RGB(display[dy1:dy2, dx1:dx2], red_mask)
 
+        # update the display with appropriate RGB image based on steps above
         self.display = display
 
+        # draw the brush over the display
         self.add_brush_preview()
 
         gl.glTexParameteri(gl.GL_TEXTURE_2D,
@@ -927,17 +1008,19 @@ class CalibanWindow:
 
     def draw_pyglet_image(self):
         '''
-        Takes a pyglet Image object, turns it into a sprite, and draws the sprite.
-        Creating a sprite makes it easy for pyglet to anchor the image in the
-        correct place, apply the scale factor for both x and y, and set the opacity
-        of the drawn image (default is fully opaque).
+        Creates a pyglet ImageData object from self.array_data that is blitted
+        to screen with an offset for padding around image. Array data must already
+        be rescaled and adjusted for opacity/other image modifications.
 
         Uses:
+            self.input_array to get appropriate sizes for ImageData object
+            self.array_data, the actual data for creating the ImageData object
             self.image_padding and self.sidebar_width to set correct anchor point
                 for image corner
-            self.scale_factor to scale both x and y for image display
         '''
+        # converting RGB(A) array into image data without i/o step
         format_size = self.input_array.shape[-1]
+        # 8 bit RGB(A) array -> 1 byte for each channel
         bytes_per_channel = 1
         pitch = self.input_array.shape[1] * format_size * bytes_per_channel
         if format_size == 4:
@@ -945,11 +1028,14 @@ class CalibanWindow:
         else:
             format_str = "RGB"
 
+        # create ImageData that pyglet can use
+        # NOTE: the data it is using comes from self.array_data, which is assigned
+        # in array_to_img(output = 'pyglet'), NOT self.input_array
         image_data = pyglet.image.ImageData(self.input_array.shape[1], self.input_array.shape[0],
             format_str, self.array_data, pitch = -pitch)
 
+        # blit the ImageData onto the correct (offset) part of window
         pad = self.image_padding
-
         image_data.blit(x = self.sidebar_width + pad, y = pad)
 
         # TODO: how often does this actually need to be set?
@@ -959,45 +1045,51 @@ class CalibanWindow:
 
     def array_to_img(self, input_array, vmax, cmap, output, vmin = None):
         '''
-        Helper function to take an input array and output either a pyglet image
-        (to display) or an RGB array (for creating a composite image for
-        pixel-editing mode). Uses pyplot to create png image with vmax and cmap
-        variables, which is saved into a temporary file with BytesIO. The temporary
-        png file is then loaded into the correct output format and closed, and the
-        correctly-formatted image is returned.
+        Helper function to take an input array and process it to be displayed.
+        Can process grayscale images into RGB images based on colormap, or can process
+        RGB images into pyglet-friendly format.
 
         Inputs:
-            input_array: the array to be rendered as an image (either raw or annotated)
-            vmax: vmax for pyplot to use (adjusts range of cmap and may vary)
-            cmap: which matplotlib colormap to use when creating png image
-            output: string specifying desired format ('pyglet' returns pyglet image,
-                'array' returns RGB array representation of image data)
+            input_array: the array to be rendered as an image (either grayscale or RGB)
+            vmax: vmax in pre-cmap normalization step (adjusts range of cmap and may vary)
+            cmap: which matplotlib colormap to use when creating png image (can either be
+                a colormap object or a string specifying the cmap)
+            output: string specifying desired format ('pyglet' sets self.array_data based
+                on input_array, 'array' returns RGB array representation of image data)
+            vmin: optional argument to specify vmin, default None (used in
+                normalization step before applying cmap to grayscale array)
         '''
-
         # pyglet image type
         if output == 'pyglet':
 
+            # apply cmap to grayscale image first, if needed
             if cmap is not None:
                 input_array = self.array_to_img(input_array, vmax, cmap, output = 'array')
 
             # rescale (if needed)
             scale = self.scale_factor * self.zoom
+            # different interpolation depending on upsampling or downsampling
             if scale > 1:
                 input_array = cv2.resize(input_array, None, fy = scale, fx = scale, interpolation = cv2.INTER_AREA)
             elif scale < 1:
                 input_array = cv2.resize(input_array, None, fy = scale, fx = scale, interpolation = cv2.INTER_LINEAR)
 
+            # make sure array is appropriate dtype
             input_array = input_array.astype(np.uint8)
 
             self.input_array = input_array
 
+            # data format that pyglet can use for ImageData, adapted from stackoverflow
             self.array_data = (gl.GLubyte * self.input_array.size).from_buffer(self.input_array)
 
         # generate an RGB array (what the data 'looks like' but in array format)
         elif output == 'array':
+            # can use a colormap object or fetch one based on the cmap string
             if type(cmap) is str:
                 cmap = plt.get_cmap(cmap)
+            # normalize the input array so we can apply the cmap
             input_array = Normalize(vmin = vmin, vmax = vmax)(input_array)
+            # apply the colormap
             RGB_array = cmap(input_array, bytes = True)
 
             return RGB_array
@@ -1007,6 +1099,25 @@ class CalibanWindow:
 
     def add_brush_preview(self):
         '''
+        Add a preview of the pixel-editing brush to the current display.
+        Images are processed only within the brush's "dirty rectangle", the
+        indices where changes need to be made. The interior of the brush is
+        then given translucency and outlined with either red or white, depending
+        on brush state. The image is then displayed.
+
+        Uses:
+            self.visible_region and self.brush.dirty_y1, y2, x1, x2 to restrict
+                image processing to the areas that actually need it (speeds up
+                process)
+            self.display (composite image with any label highlighting applied)
+                to copy for editing (adding brush image on top)
+            self.brush.view as mask for modifying copy of display
+            self.apply_transparent_highlight, self.generate_ann_boundaries, and
+                self.overlay_RGB to add brush preview to image
+            self.array_to_img for setting current image display data to updated
+                display
+            self.update_brush_image to prevent further image processing until
+                something about brush changes
         '''
         # edges of what is currently being displayed
         y1 = max(int(self.view_start_y), 0)
@@ -1014,6 +1125,7 @@ class CalibanWindow:
         x1 = max(int(self.view_start_x), 0)
         x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
 
+        # region of full array affected by brush
         dy1, dy2 = self.brush.dirty_y1, self.brush.dirty_y2
         dx1, dx2 = self.brush.dirty_x1, self.brush.dirty_x2
 
@@ -1035,28 +1147,46 @@ class CalibanWindow:
                                         vmax = None, cmap = None, output = 'pyglet')
             return
 
+        # affected piece of brush.view that gets applied to display
         brush_arr = self.brush.view[dy1:dy2, dx1:dx2]
 
+        # make copy of current display (self.display should remain unchanged by brush)
         self.brush_display = np.copy(self.display)
+
+        # part of display affected by brush
         temp_display = self.brush_display[dy1-y1:dy2-y1, dx1-x1:dx2-x1]
 
+        # apply transparent highlight to brush in this affected region
         self.brush_display[dy1-y1:dy2-y1, dx1-x1:dx2-x1] = self.apply_transparent_highlight(temp_display, brush_arr)
 
+        # create solid outline of brush (red for normal erasing, white otherwise)
         if self.brush.erase and self.brush.conv_val == -1:
             brush_outline = self.generate_ann_boundaries(brush_arr, color ='red')
         else:
             brush_outline = self.generate_ann_boundaries(brush_arr)
 
+        # add solid outline of brush to the affected part of image that will be displayed
         self.brush_display[dy1-y1:dy2-y1, dx1-x1:dx2-x1] = self.overlay_RGB(self.brush_display[dy1-y1:dy2-y1, dx1-x1:dx2-x1], brush_outline)
 
+        # update state so this image is shown
         self.array_to_img(input_array = self.brush_display.astype(np.uint8),
                                     vmax = None, cmap = None, output = 'pyglet')
 
+        # location of brush does not need to be updated unless brush moves
         self.update_brush_image = False
 
     def generate_ann_boundaries(self, img, color = 'white'):
+        '''
+        Generates an RGB image of an outline corresponding to an input mask.
+        The input mask should only have one non-zero label and a background of 0.
+        The returned RGB image can be overlaid on a different RGB image to visually
+        highlight the edges of a label.
+        '''
+        # create mask of where edges are (0s and 1s)
         boundary_mask = find_boundaries(img, mode = 'inner')
+        # add channels dimension back in to image
         boundary_mask = np.expand_dims(boundary_mask, axis = 2)
+        # create RGB image where boundaries have a particular color
         if color == 'white':
             rgb_mask = np.where(boundary_mask ==1, [255, 255, 255], [0,0,0])
         elif color == 'red':
@@ -1077,11 +1207,22 @@ class CalibanWindow:
         return np.where(overlay_mask, base_RGB, overlay_RGB)
 
     def apply_transparent_highlight(self, base_RGB, mask):
+        '''
+        Adds a fixed value to each channel of an RGB image based on mask.
+        Has effect of lightening/making masked regions appear translucent.
+        Used to display brush in pixel-editing mode.
+        '''
+        # create channels dimension in mask image
         mask = np.expand_dims(mask, axis = 2)
+
+        # amount of translucency (higher value = more opaque)
         adjustment = 40
 
+        # cast to uint16 so values don't overflow
         base_RGB = base_RGB.astype('uint16')
+        # apply translucency based on mask
         base_RGB = np.where(mask != 0, base_RGB + adjustment, base_RGB)
+        # clip values back down to between 0-255 to prevent overflow
         base_RGB = np.clip(base_RGB, a_min = 0, a_max = 255).astype('uint8')
 
         return base_RGB
@@ -1097,9 +1238,13 @@ class CalibanWindow:
         Currently requires that child class include attributes
         highlighted_cell_one and highlighted_cell_two.
         '''
+        # same highlight gets applied to up to two labels
         mask = np.logical_or(frame == self.highlighted_cell_one, frame == self.highlighted_cell_two)
+        # add channels dimension into mask
         mask = np.expand_dims(mask, axis = 2)
+        # only work with RGB, not potential alpha channel
         RGB_frame = RGB_frame[:,:,0:3]
+        # change RGB values to red wherever mask applies, leave untouched otherwise
         RGB_frame = np.where(mask, [255, 0,0], RGB_frame)
 
         return RGB_frame.astype(np.uint8)
@@ -1154,8 +1299,8 @@ class CalibanWindow:
         of raw image and overlay colored labels on the image without obscuring
         image details. Used by helper_update_composite to generate composite image
         as needed. Returns the composite array as an RGB array (dimensions [M,N,3]).
+        Can be used to composite all or part of an image.
         '''
-
         # TODO: investigate using glBlendFunc to do compositing for me?
 
         # Convert the input image and color mask to Hue Saturation Value (HSV) colorspace
@@ -1186,8 +1331,12 @@ class CalibanWindow:
         refreshes (on_draw is triggered after every event, including mouse motion).
         Takes data from self.raw and self.annotated, adjusts the images, overlays them,
         and then stores the generated composite image at self.composite_view.
+        Updates only part of the composite image for faster runtime if attributes have
+        been set via drawing actions.
 
         Uses:
+            self.comp_dy1, dy2, dx1, dx2 to determine how much of image needs to
+                be updated
             self.get_raw_current_frame and self.get_ann_current_frame (must be
                 provided by child class) to get appropriate slices of arrays
             self.apply_raw_image_adjustments to apply raw image filtering options
@@ -1206,6 +1355,8 @@ class CalibanWindow:
         current_ann = self.get_ann_current_frame()[dy1:dy2, dx1:dx2]
         current_ann = np.ma.masked_equal(current_ann, 0)
 
+        # apply adjustments to whole raw image, then index into it
+        # (keeps image adjustments consistent even when updating small piece of image)
         raw_RGB = self.apply_raw_image_adjustments(current_raw)[dy1:dy2, dx1:dx2]
 
         # get RGB array of colorful annotation view
@@ -1215,7 +1366,7 @@ class CalibanWindow:
                                             output = 'array',
                                             vmin = 0)
 
-        # don't need alpha channel
+        # don't need alpha channel for compositing step
         ann_RGB = ann_img[...,0:3]
 
         if None not in (dy1, dy2, dx1, dx2):
@@ -1231,6 +1382,7 @@ class CalibanWindow:
         # set self.composite view to new composite image
         self.composite_view[dy1:dy2, dx1:dx2] = img_masked
 
+        # reset composite dirty rectangle
         self.comp_dy1, self.comp_dy2, self.comp_dx1, self.comp_dx2 = None, None, None, None
 
     def draw_label(self):
@@ -1307,7 +1459,9 @@ class CalibanWindow:
         x1 = max(int(self.view_start_x), 0)
         x2 = min(int(x1 + self.visible_x_pix/self.zoom), self.width)
 
+        # format to truncate decimal places of <1 zoom
         zoom_text = "Zoom: {:1.1f}".format(self.zoom)
+        # display which indices of image you are viewing
         zoom_text += "\nWindow (y): {}-{}".format(y1, y2)
         zoom_text += "\nWindow (x): {}-{}".format(x1, x2)
 
@@ -1727,13 +1881,17 @@ class CalibanBrush:
                 self.view[self.area] = self.conv_val
             else:
                 self.view[self.area] = self.edit_val
+
+            # set "dirty rectangle" where brush affects image
             y1, y2 = np.min(self.area[0]) - 1, np.max(self.area[0]) + 2
             x1, x2 = np.min(self.area[1]) - 1, np.max(self.area[1]) + 2
+            # set values for new dirty rectangle
             if None in (self.dirty_y1, self.dirty_y2, self.dirty_x1, self.dirty_x2):
                 self.dirty_y1 = max(0, y1)
                 self.dirty_y2 = min(self.height, y2)
                 self.dirty_x1 = max(0, x1)
                 self.dirty_x2 = min(self.width, x2)
+            # update existing dirty rectangle
             else:
                 self.dirty_y1 = max(0, min(self.dirty_y1, y1))
                 self.dirty_y2 = min(self.height, max(self.dirty_y2, y2))
