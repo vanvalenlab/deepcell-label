@@ -232,6 +232,11 @@ class CalibanWindow:
             self.max_y = int(self.window.height) - 2*self.image_padding
             self.max_x = int(self.window.width) - self.sidebar_width - 2*self.image_padding
 
+            # smoother visual behavior if image is too large to be completely displayed
+            if (self.height > self.max_y or self.width > self.max_x):
+                self.update_image = True
+
+            # update number of pixels of image we can display in viewing pane
             self.visible_y_pix = min(self.max_y, self.height)
             self.visible_x_pix = min(self.max_x, self.width)
 
