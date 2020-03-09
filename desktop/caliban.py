@@ -3567,6 +3567,8 @@ class ZStackReview(CalibanWindow):
                 but specifically when picking a label for the conversion brush
                 value (note that allowing this option for the conversion brush
                 target would be counterproductive)
+            space: confirm saving file
+            t: confirm saving file in trk format
         '''
         # BRUSH MODIFICATION KEYBINDS
         # (don't want to adjust brush if thresholding; applies to both
@@ -3591,6 +3593,15 @@ class ZStackReview(CalibanWindow):
                         conversion_brush_target = self.brush.conv_target,
                         conversion_brush_value = self.brush.conv_val)
                 self.update_image = True
+
+        # RESPOND TO SAVE QUESTION
+        if self.mode.kind == "QUESTION" and self.mode.action == "SAVE":
+            if symbol == key.SPACE:
+                self.save()
+                self.mode.clear()
+            if symbol == key.T:
+                self.save_as_trk()
+                self.mode.clear()
 
     def label_mode_misc_keypress_helper(self, symbol, modifiers):
         '''
