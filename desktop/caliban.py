@@ -2126,6 +2126,7 @@ class TrackReview(CalibanWindow):
             pg dn: pan down across image (+ctrl to go to top, +shift to move halfway across current screen)
             home: pan left across image (+ctrl to go to top, +shift to move halfway across current screen)
             end: pan right across image (+ctrl to go to top, +shift to move halfway across current screen)
+            F11: toggle fullscreen
         '''
 
         # CHANGING FRAMES
@@ -2277,6 +2278,7 @@ class TrackReview(CalibanWindow):
                 but specifically when picking a label for the conversion brush
                 value (note that allowing this option for the conversion brush
                 target would be counterproductive)
+            space: confirm saving file
         '''
         # BRUSH MODIFICATION KEYBINDS
         # (don't want to adjust brush if thresholding; applies to both
@@ -2325,6 +2327,7 @@ class TrackReview(CalibanWindow):
             x: toggle eraser (only applies to normal brush)
             p: color picker action
             r: start conversion brush
+            s: prompt saving file
             t: prompt thresholding - currently disabled
         '''
         # LEAVE EDIT MODE
@@ -3251,6 +3254,7 @@ class ZStackReview(CalibanWindow):
             # adjust brightness of raw image, if looking at raw image
             # (also applies to edit mode if self.draw_raw is True)
             if self.draw_raw:
+                # regular scrolling changes maximum brightness of image
                 if not self.key_states[key.LSHIFT] or self.key_states[key.RSHIFT]:
                     # self.max_intensity_dict[self.channel] has a value so we can adjust it
                     # check minimum brightness of image as lower bound of brightness adjustment
@@ -3262,6 +3266,8 @@ class ZStackReview(CalibanWindow):
                     self.max_intensity_dict[self.channel] = max(self.max_intensity_dict[self.channel] - raw_adjust * scroll_y,
                                                             min_intensity + 1)
                     self.max_intensity = self.max_intensity_dict[self.channel]
+
+                # change vmin cutoff (low values appear darker when vmin increased)
                 else:
                     min_intensity = np.min(self.raw[self.current_frame,:,:,self.channel])
                     new_vmin = self.vmin + max(int(min_intensity*0.02), 1) * scroll_y
@@ -3351,7 +3357,15 @@ class ZStackReview(CalibanWindow):
             a or left arrow key: view previous frame
             d or right arrow key: view next frame
             v: toggle cursor visibility
+            h: toggle highlighting
             escape: clear selection or cancel action
+            minus: zoom out
+            equal: zoom in
+            pg up: pan up across image (+ctrl to go to top, +shift to move halfway across current screen)
+            pg dn: pan down across image (+ctrl to go to top, +shift to move halfway across current screen)
+            home: pan left across image (+ctrl to go to top, +shift to move halfway across current screen)
+            end: pan right across image (+ctrl to go to top, +shift to move halfway across current screen)
+            F11: toggle fullscreen
         '''
 
         # CHANGING FRAMES
@@ -3451,10 +3465,8 @@ class ZStackReview(CalibanWindow):
             i: invert light/dark in raw image (does not affect color of overlay)
             k: toggle sobel filter (emphasizes edges) on raw image
             j: toggle adaptive histogram equalization of raw image
-            h: toggles annotation visibility (can still edit annotations while hidden,
+            shift + h: toggles annotation visibility (can still edit annotations while hidden,
                 but intended to provide clearer look at filtered raw image if needed)
-                (note: h will eventually be bound to highlighting, as it is in browser mode;
-                annotation hiding will be available but under a different keybind)
         '''
         # INVERT RAW IMAGE LIGHT/DARK
         if symbol == key.I:
@@ -3498,12 +3510,13 @@ class ZStackReview(CalibanWindow):
 
         Keybinds:
             e: leave edit mode
-            =: increase value of normal brush
-            -: decrease value of normal brush
+            ] (right bracket): increase value of normal brush
+            [ (left bracket): decrease value of normal brush
             n: set normal brush to new value (highest label in file + 1)
             x: toggle eraser (only applies to normal brush)
             p: color picker action
             r: start conversion brush
+            s: prompt saving file
             t: prompt thresholding
         '''
         # LEAVE EDIT MODE
@@ -3616,9 +3629,9 @@ class ZStackReview(CalibanWindow):
 
         Keybinds:
             z: toggle between viewing raw images and annotations ("universal")
-            h: toggle highlight ("universal") (note: will eventually become truly
-                universal when highlighting is added to pixel-editing mode)
-            - and =: highlight cycling, COMING SOON
+            i: invert dark/light of image when viewing raw
+            k: toggle sobel filter when viewing raw
+            j: toggle adaptive histogram equalization when viewing raw
             shift + up, shift + down: cycle through colormaps, only applies when
                 viewing the raw image
         '''
@@ -3684,8 +3697,8 @@ class ZStackReview(CalibanWindow):
             C (shift + c): go backward through channels
             f: go forward through features
             F (shift + f): go backward through features
-            =: increment currently-highlighted label by 1
-            -: decrement currently-highlighted label by 1
+            ] (right bracket): increment currently-highlighted label by 1
+            [ (left bracket): decrement currently-highlighted label by 1
             e: enter pixel-editing mode
             s: prompt saving a copy of the file
             p: predict 3D labels (computer vision, not deep learning)
@@ -3768,8 +3781,8 @@ class ZStackReview(CalibanWindow):
         selected and no actions are awaiting confirmation.
 
         Keybinds:
-            =: increment currently-highlighted label by 1
-            -: decrement currently-highlighted label by 1
+            ] (right bracket): increment currently-highlighted label by 1
+            [ (left bracket): decrement currently-highlighted label by 1
             c: prompt creation of new label
             f: prompt hole fill
             x: prompt deletion of label in frame
