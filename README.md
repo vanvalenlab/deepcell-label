@@ -27,19 +27,25 @@ Files can be edited using keyboard operations.
 
 Caliban's default setting allows operations to be carried out quickly and easily on existing segmentations. The actions that can modify cell labels and/or lineage information are:
 
-*click* - click on a cell label to select it. Up to two cells can be selected at one time.
+*click* - click on a cell label to select it. Up to two labels can be selected at one time.
+
+*shift + click* - trim stray pixels away from selected part of label
+
+*ctrl + click* - flood selected part of label with a new, unused label
+
+*c* - create: relabel selected label with a new, unused label
+
+*f* - fill: select label, press "f", then follow prompt to fill a hole in the selected label
 
 *r* - replace: relabel all instances of a selected cell label with a second selected cell label; replaces lineage data in a trk file
 
-*r* - relabel: sequentially relabel all cells in frame, starting from 1, when no cells are selected (npz only)
+*r* - relabel: sequentially relabel all labels in frame, starting from 1, when no labels are selected (npz only)
 
-*c* - create: relabel selected cell with an unused label
+*p* - parent: assign parent/daughter relationship to pair of selected labels in trk file
 
-*p* - parent: assign parent/daughter relationship to pair of selected cells in trk file
+*p* - predict: predict zstack relationships in npz when no labels are selected
 
-*p* - predict: predict zstack relationships in npz when no cells are selected
-
-*s* - swap: swap labels and lineage information between two selected cells  
+*s* - swap: swap labels and lineage information between two selected labels  
 
 *x* - delete: remove selected cell mask in frame
 
@@ -50,57 +56,62 @@ Caliban's default setting allows operations to be carried out quickly and easily
 *space bar* - confirm operation  
 *s* - confirm operation in a single frame, when applicable
 
-You can also use *esc* or click on the black background to return back to a state where no cells are selected.
+You can use *esc* to return back to a state where no labels are selected.
 
 **In annotation (pixel editing) mode:**
 
 Keybinds in pixel editing mode are different from those in the label-editing mode.
 
-Annotation mode focuses on using an adjustable brush to modify annotations on a pixel level, rather than using operations that apply to every instance of a label within a frame or set of frames. The brush tool will only make changes to the currently selected value. Ie, a brush set to edit cell 5 will only add or erase "5" to the annotated image. 
+Annotation mode focuses on using an adjustable brush to modify annotations on a pixel level, rather than using operations that apply to every instance of a label within a frame or set of frames. The brush tool will only make changes to the currently selected value. Ie, a brush set to edit label 5 will only add or erase "5" to the annotated image. 
 
-*i* - invert greyscale raw image
-
-*k* - apply sobel filter to raw image
-
-*j* - apply adaptive histogram equalization to raw image
-
-*-/=* - increment value that brush is applying
+*[ (left bracket) / ] (right bracket)* - decrement/increment value that brush is applying
 
 *&darr; &uarr;* - change size of brush tool
 
 *x* - toggle eraser mode
 
-*n* - change brush label to an unusued label, so that a new cell can be created with a unique id
+*n* - change brush label to an unusued label, so that a new label can be created with a unique id. Can be used with conversion brush to overwrite existing label with unused label (follow conversion brush prompt).
 
 *p* - color picker (click on a label to change the brush value to it)
 
 *r* - turn on "conversion brush" setting, which changes brush behavior so that one label value is overwritten with another label value. No other labels are affected, and conversion brush will not draw on background. After turning on conversion brush, click on cell labels as prompted to set brush values.
-
-*l* - contour prediction for determining inter-cell edges. After turning this on, use two clicks to draw a line that is a guess at where the border between two cells is. Predicted contour points (based on the darkness of the raw image) will be displayed on screen until "c" is selected or the frame is changed. Contour points will not affect the annotation file and are only displayed as a guide to the user.
 
 *t* - threshold to predict annotations based on brightness. After turning this on, click and drag to draw a bounding box around the cell you wish to threshold. Make sure to include some background in the bounding box for accurate threshold predictions. Whatever was thresholded as foreground within the bounding box will be added to the annotation as a new cell with unique label. 
 
 
 ### Viewing Options:
 
-*h* - switch between highlighted mode and non-highlighted mode (outside of the pixel editor)
-          (once highlight mode is on, use *-/=* to decrement/increment selected cell label number)
+*F11* - toggle fullscreen
 
-*h* - switch between showing and hiding annotation masks in the pixel editor
+*-/= or ctrl + scroll wheel* - change level of zoom
+
+**To pan in image:** Hold down the spacebar while clicking and dragging image to pan. Alternatively, the keys *home, page up, page down, and end* can be used to jump across the screen. Holding the shift key while using these pan buttons will result in a smaller jump; holding the control key will snap to the edge of the image.
+
+*h* - switch between highlighted mode and non-highlighted mode (highlight exists in label- and pixel-editing modes but is displayed differently; label-editing highlighting recolors solid label with red, pixel-editing highlighting adds white or red outline around label in image). Once highlight mode is on, use *[ (left bracket) / ] (right bracket)* to decrement/increment selected cell label number.
+
+*shift+h* - switch between showing and hiding annotation masks in the pixel editor
     
-*z* - switch between annotations and raw images
+*z* - switch between annotations and raw images (outside of pixel editor)
+
+*i* - invert greyscale raw image (viewing raw image or in pixel editor)
+
+*k* - apply sobel filter to raw image (viewing raw image or in pixel editor)
+
+*j* - apply adaptive histogram equalization to raw image (viewing raw image or in pixel editor)
 
 *v* - switch between showing and hiding cursor
 
-*f* - cycle between different annotations when no cells are selected
+*f* - cycle between different annotations when no labels are selected (label-editing mode)
 
-*c* - cycle between different channels when no cells are selected
+*c* - cycle between different channels when no labels are selected (label-editing mode)
 
-*shift + up/down* - cycle between colormaps for viewing raw images (does not apply to pixel editor)
+*shift + &darr; / &uarr;* - cycle between colormaps for viewing raw images (does not apply to pixel editor)
 
-*e* - toggle annotation mode (when nothing else selected)
+*e* - toggle annotation mode between pixel-editing and whole-label-editing (when nothing else selected)
 
-*scroll wheel* - change image or annotation contrast
+*scroll wheel* - change image or annotation maximum brightness
+
+*shift + scroll wheel* - change image minimum brightness
 
 
 ### To Save:
