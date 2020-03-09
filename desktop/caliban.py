@@ -944,7 +944,8 @@ class CalibanWindow:
         image = self.array_to_img(input_array = ann_array,
                                                 vmax = max(1, self.get_max_label() + self.adjustment),
                                                 cmap = self.labels_cmap,
-                                                output = 'array')
+                                                output = 'array',
+                                                vmin = 0)
 
         # if highlighting on, mask highlighted values so they appear red
         if self.highlight:
