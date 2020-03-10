@@ -1,10 +1,43 @@
-import boto3, botocore
-from config import S3_KEY, S3_SECRET, S3_BUCKET
+import os
 
-ALLOWED_EXTENSIONS = set(['txt', 'md', 'markdown', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
+import boto3
+
+from config import S3_KEY, S3_SECRET
+
+
+ALLOWED_EXTENSIONS = set([
+    '.txt', '.md', '.markdown', '.pdf',
+    '.png', '.jpg', '.jpeg', '.gif',
+])
+
 
 def allowed_file(name):
-    return "." in name and name.split(".")[1].lower() in ALLOWED_EXTENSIONS
+    return os.path.splitext(str(name).lower())[-1] in ALLOWED_EXTENSIONS
+
+
+def is_trk_file(name):
+    '''Determines if a given file is a trk or trks file.
+
+    Args:
+        name (str): potential trk or trks filename.
+
+    Returns:
+        bool: True if the file is trk or trks, otherwise False.
+    '''
+    return os.path.splitext(str(name).lower())[-1] in {'.trk', '.trks'}
+
+
+def is_npz_file(name):
+    '''Determines if a given file is a npz file.
+
+    Args:
+        name (str): potential npz filename.
+
+    Returns:
+        bool: True if the file is npz, otherwise False.
+    '''
+    return os.path.splitext(str(name).lower())[-1] in {'.npz'}
+
 
 # Connect to the s3 service
 s3 = boto3.client(
@@ -35,4 +68,4 @@ def upload_file_to_s3(file, bucket_name, acl="public-read"):
         print("Something Happened: ", e)
         return e
 
-    return "{}{}".format(S3_BUCKET, file.filename)
+    return "{}{}".format(bucket_name, filename.filename)
