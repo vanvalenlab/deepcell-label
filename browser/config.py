@@ -3,8 +3,6 @@ import sys
 
 from decouple import config
 
-# UPLOAD_FOLDER           =  os.path.join(os.getcwd(), "uploads")
-
 DEBUG 					= True
 PORT 					= 5000
 
