@@ -76,6 +76,21 @@ class ZStackReview:
         self.frames_changed = False
         self.info_changed = False
 
+    def get_max_label(self):
+        '''
+        Helper function that returns the highest label in use in currently-viewed
+        feature. If feature is empty, returns 0 to prevent other functions from crashing.
+        (Replaces use of self.num_cells to keep track of this info, should
+        also help with code flexibility.)
+        '''
+        # check this first, np.max of empty array will crash
+        if len(self.cell_ids[self.feature]) == 0:
+            max_label = 0
+        # if any labels exist in feature, find the max label
+        else:
+            max_label = int(np.max(self.cell_ids[self.feature]))
+        return max_label
+
     @property
     def readable_tracks(self):
         """
@@ -106,7 +121,7 @@ class ZStackReview:
             frame = np.ma.masked_equal(frame, 0)
             return pngify(imgarr=frame,
                          vmin=0,
-                         vmax=np.max(self.cell_ids[self.feature]),
+                         vmax=self.get_max_label(),
                          cmap=self.color_map)
 
     def get_array(self, frame):
