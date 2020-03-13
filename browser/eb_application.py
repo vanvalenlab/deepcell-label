@@ -5,17 +5,20 @@ import json
 import os
 import pickle
 import re
-import sqlite3
 import sys
 import traceback
+
+import MySQLdb
 
 from flask import Flask, jsonify, render_template, request, redirect
 
 from helpers import is_trk_file, is_npz_file
 from caliban import TrackReview, ZStackReview
+import config
 
 # Create and configure the app
-app = Flask(__name__)  # pylint: disable=C0103
+application = Flask(__name__)  # pylint: disable=C0103
+app = application
 app.config.from_object("config")
 
 
@@ -51,6 +54,7 @@ def action(project_id, action_type, frame):
     ''' Make an edit operation to the data file and update the object
         in the database.
     '''
+
     # obtain 'info' parameter data sent by .js script
     info = {k: json.loads(v) for k, v in request.values.to_dict().items()}
     frame = int(frame)
@@ -131,10 +135,9 @@ def get_frame(frame, project_id):
         'raw': f'data:image/png;base64,{encode(raw)}',
         'segmented': f'data:image/png;base64,{encode(img)}',
         'seg_arr': edit_arr.tolist()
-    }
+        }
 
     return jsonify(payload)
-
 
 @app.route("/load/<filename>", methods=["POST"])
 def load(filename):
@@ -245,14 +248,20 @@ def shortcut(filename):
     }
     return jsonify(error), 400
 
-
-def create_connection(db_file):
+def create_connection(_):
     ''' Create a database connection to a SQLite database.
     '''
     conn = None
     try:
-        conn = sqlite3.connect(db_file)
-    except sqlite3.Error as err:
+        conn = MySQLdb.connect(
+            user=config.MYSQL_USERNAME,
+            host=config.MYSQL_HOSTNAME,
+            port=config.MYSQL_PORT,
+            passwd=config.MYSQL_PASSWORD,
+            db=config.MYSQL_DATABASE,
+            charset='utf8',
+            use_unicode=True)
+    except MySQLdb._exceptions.MySQLError as err:
         print(err)
     return conn
 
@@ -263,7 +272,7 @@ def create_table(conn, create_table_sql):
     try:
         cursor = conn.cursor()
         cursor.execute(create_table_sql)
-    except sqlite3.Error as err:
+    except MySQLdb._exceptions.MySQLError as err:
         print(err)
 
 
@@ -271,13 +280,13 @@ def create_project(conn, filename, data):
     ''' Create a new project in the database table.
     '''
     sql = ''' INSERT INTO projects(filename, state)
-              VALUES(?, ?) '''
+              VALUES(%s, %s) '''
     cursor = conn.cursor()
 
     # convert object to binary data to be stored as data type BLOB
     state_data = pickle.dumps(data, pickle.HIGHEST_PROTOCOL)
 
-    cursor.execute(sql, (filename, sqlite3.Binary(state_data)))
+    cursor.execute(sql, (filename, state_data))
     return cursor.lastrowid
 
 
@@ -285,15 +294,15 @@ def update_object(conn, project):
     ''' Update filename, state of a project.
     '''
     sql = ''' UPDATE projects
-              SET filename = ? ,
-                  state = ?
-              WHERE id = ?'''
+              SET filename = %s ,
+                  state = %s
+              WHERE id = %s'''
 
     # convert object to binary data to be stored as data type BLOB
     state_data = pickle.dumps(project[1], pickle.HIGHEST_PROTOCOL)
 
     cur = conn.cursor()
-    cur.execute(sql, (project[0], sqlite3.Binary(state_data), project[2]))
+    cur.execute(sql, (project[0], state_data, project[2]))
     conn.commit()
 
 
@@ -319,7 +328,7 @@ def get_project(conn, project_id):
 def delete_project(conn, project_id):
     ''' Delete data object (TrackReview/ZStackReview) by id.
     '''
-    sql = 'DELETE FROM projects WHERE id=?'
+    sql = 'DELETE FROM projects WHERE id=%s'
     cur = conn.cursor()
     cur.execute(sql, (project_id,))
     conn.commit()
@@ -331,9 +340,9 @@ def main():
     conn = create_connection("caliban.db")
     sql_create_projects_table = """
         CREATE TABLE IF NOT EXISTS projects (
-            id integer PRIMARY KEY,
+            id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
             filename text NOT NULL,
-            state blob NOT NULL
+            state longblob NOT NULL
         );
     """
     create_table(conn, sql_create_projects_table)
