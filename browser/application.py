@@ -213,7 +213,7 @@ def tool():
     print(f"{filename} is filename", file=sys.stderr)
 
     new_filename = 'caliban-input__caliban-output__test__{}'.format(
-        str(filename).lower())
+        str(filename))
 
     if is_trk_file(new_filename):
         return render_template('index_track.html', filename=new_filename)
