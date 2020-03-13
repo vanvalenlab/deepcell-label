@@ -53,7 +53,6 @@ class ZStackReview:
         #create a dictionary that has frame information about each cell
         #analogous to .trk lineage but do not need relationships between cells included
         self.cell_ids = {}
-        self.num_cells = {}
         self.cell_info = {}
 
         self.current_frame = 0
@@ -529,8 +528,6 @@ class ZStackReview:
 
             self.cell_ids[feature] = np.append(self.cell_ids[feature], add_label)
 
-            self.num_cells[feature] += 1
-
         #if adding cell, frames and info have necessarily changed
         self.frames_changed = self.info_changed = True
 
@@ -562,8 +559,6 @@ class ZStackReview:
         annotated = self.annotated[:,:,:,feature]
 
         self.cell_ids[feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))]
-
-        self.num_cells[feature] = int(max(self.cell_ids[feature]))
 
         self.cell_info[feature] = {}
 
