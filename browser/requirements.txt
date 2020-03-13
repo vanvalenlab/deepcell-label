@@ -14,12 +14,14 @@ jsonify==0.5
 kiwisolver==1.1.0
 MarkupSafe==1.1.1
 matplotlib==3.1.0
+mysqlclient==1.4.5
 numpy==1.16.4
 pillow>=6.2.0
 post==2019.4.13
 public==2019.4.13
 pyparsing==2.4.0
 python-dateutil==2.8.0
+python-decouple==3.1
 query-string==2019.4.13
 request==2019.4.13
 s3transfer==0.2.1
