@@ -19,7 +19,7 @@ import config
 # Create and configure the app
 application = Flask(__name__)  # pylint: disable=C0103
 app = application
-app.config.from_object("config")  # TODO: did this break by adding new env vars?
+app.config.from_object("config")
 
 
 @app.route("/upload_file/<project_id>", methods=["GET", "POST"])
