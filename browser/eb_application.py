@@ -361,16 +361,6 @@ def main():
     """
     create_table(conn, sql_create_projects_table)
 
-    sql_create_timestamps_table = """
-        CREATE TABLE IF NOT EXISTS timestamps (
-            id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
-            filename text NOT NULL,
-            started TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            finished TIMESTAMP DEFAULT '0000-00-00 00:00:00'
-        );
-    """
-    create_table(conn, sql_create_timestamps_table)
     conn.commit()
     conn.close()
 
