@@ -43,6 +43,9 @@ def upload_file(project_id):
         state.action_save_zstack()
 
     # Delete id and object from database
+    # TODO: instead of deleting the project,
+    # maybe we can just null out the longblob
+    # we can keep the IDs for later?
     delete_project(conn, project_id)
     conn.close()
 
@@ -162,8 +165,6 @@ def load(filename):
         track_review = TrackReview(filename, input_bucket, output_bucket, subfolders)
         project_id = create_project(conn, filename, track_review)
 
-        create_timestamp(conn, project_id, filename)
-
         conn.commit()
         conn.close()
 
@@ -180,8 +181,6 @@ def load(filename):
         # Initate ZStackReview object and entry in database
         zstack_review = ZStackReview(filename, input_bucket, output_bucket, subfolders)
         project_id = create_project(conn, filename, zstack_review)
-
-        create_timestamp(conn, project_id, filename)
 
         conn.commit()
         conn.close()
@@ -296,21 +295,6 @@ def create_project(conn, filename, data):
     return cursor.lastrowid
 
 
-def create_timestamp(conn, project_id, filename):
-    '''
-    Create a new entry in the timestamps table. Corresponds
-    to the same project id in projects table that it is
-    tracking.
-    '''
-    sql = ''' INSERT INTO timestamps(id, filename)
-              VALUES(%s, %s) '''
-    cursor = conn.cursor()
-    # create entry in timestamps with id = project_id
-    # TODO: setting the id like this should not produce duplicate entries since
-    # we are using an innodb engine, but this should be made more robust
-    cursor.execute(sql, (project_id, filename))
-
-
 # TODO: I don't think we actually need to update the filename of anything, just the state
 def update_object(conn, project):
     ''' Update filename, state of a project.
@@ -370,7 +354,9 @@ def main():
         CREATE TABLE IF NOT EXISTS projects (
             id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
             filename text NOT NULL,
-            state longblob NOT NULL
+            state longblob NOT NULL,
+            createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         );
     """
     create_table(conn, sql_create_projects_table)
