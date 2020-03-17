@@ -161,6 +161,9 @@ def load(filename):
         # Initate TrackReview object and entry in database
         track_review = TrackReview(filename, input_bucket, output_bucket, subfolders)
         project_id = create_project(conn, filename, track_review)
+
+        create_timestamp(conn, project_id, filename)
+
         conn.commit()
         conn.close()
 
@@ -177,6 +180,9 @@ def load(filename):
         # Initate ZStackReview object and entry in database
         zstack_review = ZStackReview(filename, input_bucket, output_bucket, subfolders)
         project_id = create_project(conn, filename, zstack_review)
+
+        create_timestamp(conn, project_id, filename)
+
         conn.commit()
         conn.close()
 
@@ -290,6 +296,22 @@ def create_project(conn, filename, data):
     return cursor.lastrowid
 
 
+def create_timestamp(conn, project_id, filename):
+    '''
+    Create a new entry in the timestamps table. Corresponds
+    to the same project id in projects table that it is
+    tracking.
+    '''
+    sql = ''' INSERT INTO timestamps(id, filename)
+              VALUES(%s, %s) '''
+    cursor = conn.cursor()
+    # create entry in timestamps with id = project_id
+    # TODO: setting the id like this should not produce duplicate entries since
+    # we are using an innodb engine, but this should be made more robust
+    cursor.execute(sql, (project_id, filename))
+
+
+# TODO: I don't think we actually need to update the filename of anything, just the state
 def update_object(conn, project):
     ''' Update filename, state of a project.
     '''
@@ -331,6 +353,12 @@ def delete_project(conn, project_id):
     sql = 'DELETE FROM projects WHERE id=%s'
     cur = conn.cursor()
     cur.execute(sql, (project_id,))
+
+    timesql = ''' UPDATE timestamp
+                  SET finished = CURRENT_TIMESTAMP
+                  WHERE id = %s'''
+    cur.execute(timesql, (project_id,))
+
     conn.commit()
 
 
@@ -346,6 +374,17 @@ def main():
         );
     """
     create_table(conn, sql_create_projects_table)
+
+    sql_create_timestamps_table = """
+        CREATE TABLE IF NOT EXISTS timestamps (
+            id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            filename text NOT NULL,
+            started TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            finished TIMESTAMP DEFAULT '0000-00-00 00:00:00'
+        );
+    """
+    create_table(conn, sql_create_timestamps_table)
     conn.commit()
     conn.close()
 
