@@ -1,0 +1,23 @@
+version: "2"
+services:
+  app:
+    build: .
+    links:
+      - db
+    ports:
+      - 5000:5000
+    environment:
+      MYSQL_PASSWORD: root
+      MYSQL_USERNAME: root
+      MYSQL_HOSTNAME: db
+      MYSQL_PORT: 3306
+      S3_KEY: ""
+      S3_SECRET: ""
+  db:
+    image: mysql:8.0
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d/:ro
