@@ -53,7 +53,6 @@ class ZStackReview:
         #create a dictionary that has frame information about each cell
         #analogous to .trk lineage but do not need relationships between cells included
         self.cell_ids = {}
-        self.num_cells = {}
         self.cell_info = {}
 
         self.current_frame = 0
@@ -76,6 +75,19 @@ class ZStackReview:
 
         self.frames_changed = False
         self.info_changed = False
+
+    def get_max_label(self):
+        '''
+        Helper function that returns the highest label in use in currently-viewed
+        feature. If feature is empty, returns 0 to prevent other functions from crashing.
+        '''
+        # check this first, np.max of empty array will crash
+        if len(self.cell_ids[self.feature]) == 0:
+            max_label = 0
+        # if any labels exist in feature, find the max label
+        else:
+            max_label = int(np.max(self.cell_ids[self.feature]))
+        return max_label
 
     @property
     def readable_tracks(self):
@@ -107,7 +119,7 @@ class ZStackReview:
             frame = np.ma.masked_equal(frame, 0)
             return pngify(imgarr=frame,
                          vmin=0,
-                         vmax=np.max(self.cell_ids[self.feature]),
+                         vmax=self.get_max_label(),
                          cmap=self.color_map)
 
     def get_array(self, frame):
@@ -529,8 +541,6 @@ class ZStackReview:
 
             self.cell_ids[feature] = np.append(self.cell_ids[feature], add_label)
 
-            self.num_cells[feature] += 1
-
         #if adding cell, frames and info have necessarily changed
         self.frames_changed = self.info_changed = True
 
@@ -562,8 +572,6 @@ class ZStackReview:
         annotated = self.annotated[:,:,:,feature]
 
         self.cell_ids[feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))]
-
-        self.num_cells[feature] = int(max(self.cell_ids[feature]))
 
         self.cell_info[feature] = {}
 
