@@ -436,6 +436,7 @@ var seg_array;
 var scale;
 var mouse_x = 0;
 var mouse_y = 0;
+const padding = 5;
 var edit_mode = false;
 var edit_value = 1;
 var brush_size = 1;
@@ -612,9 +613,9 @@ function render_info_display() {
 function render_edit_image(ctx) {
   let hidden_canvas = document.getElementById('hidden_canvas');
 
-  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-  ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
-  let image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+  ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
+  ctx.drawImage(raw_image, padding, padding, dimensions[0], dimensions[1]);
+  let image_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
 
   // adjust underlying raw image
   contrast_image(image_data, current_contrast);
@@ -622,39 +623,39 @@ function render_edit_image(ctx) {
   if (display_invert) {
     invert(image_data);
   }
-  ctx.putImageData(image_data, 0, 0);
+  ctx.putImageData(image_data, padding, padding);
   ctx.save();
   ctx.globalCompositeOperation = 'color';
-  ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
+  ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
   ctx.restore();
 
   // draw brushview on top of cells/annotations
   ctx.save();
   ctx.globalAlpha = 0.7;
   ctx.globalCompositeOperation = 'source-over';
-  ctx.drawImage(hidden_canvas, 0, 0, dimensions[0], dimensions[1]);
+  ctx.drawImage(hidden_canvas, padding, padding, dimensions[0], dimensions[1]);
   ctx.restore();
 }
 
 function render_raw_image(ctx) {
-  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-  ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
+  ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
+  ctx.drawImage(raw_image, padding, padding, dimensions[0], dimensions[1]);
 
   // contrast image
-  image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+  image_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
   contrast_image(image_data, current_contrast);
   // draw contrasted image over the original
-  ctx.putImageData(image_data, 0, 0);
+  ctx.putImageData(image_data, padding, padding);
 }
 
 function render_annotation_image(ctx) {
-  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-  ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
+  ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
+  ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
   if (current_highlight) {
-    let img_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+    let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
     highlight(img_data, mode.highlighted_cell_one);
     highlight(img_data, mode.highlighted_cell_two);
-    ctx.putImageData(img_data, 0, 0);
+    ctx.putImageData(img_data, padding, padding);
   }
 }
 
@@ -705,8 +706,8 @@ function load_file(file) {
       maxTrack = Math.max(... Object.keys(tracks).map(Number));
 
       project_id = payload.project_id;
-      $('#canvas').get(0).width = dimensions[0];
-      $('#canvas').get(0).height = dimensions[1];
+      $('#canvas').get(0).width = dimensions[0] + 2*padding;
+      $('#canvas').get(0).height = dimensions[1] + 2*padding;
 
       $('#hidden_canvas').get(0).width = dimensions[0];
       $('#hidden_canvas').get(0).height = dimensions[1];
@@ -729,8 +730,8 @@ function handle_scroll(evt) {
 // of click&drag, since clicks are handled by Mode.click)
 function handle_mousedown(evt) {
   mousedown = true;
-  mouse_x = evt.offsetX;
-  mouse_y = evt.offsetY;
+  mouse_x = evt.offsetX - padding;
+  mouse_y = evt.offsetY - padding;
   // begin drawing
   if (edit_mode) {
     let img_y = Math.floor(mouse_y/scale);
@@ -742,8 +743,8 @@ function handle_mousedown(evt) {
 // handles mouse movement, whether or not mouse button is held down
 function handle_mousemove(evt) {
   // update displayed info depending on where mouse is
-  mouse_x = evt.offsetX;
-  mouse_y = evt.offsetY;
+  mouse_x = evt.offsetX - padding;
+  mouse_y = evt.offsetY - padding;
   render_info_display();
 
   // update brush preview

@@ -402,8 +402,8 @@ class Mode {
 
   handle_threshold(evt) {
     thresholding = false;
-    let end_y = evt.offsetY;
-    let end_x = evt.offsetX;
+    let end_y = evt.offsetY - padding;
+    let end_x = evt.offsetX - padding;
 
     let threshold_start_y = Math.floor(box_start_y / scale);
     let threshold_start_x = Math.floor(box_start_x / scale);
@@ -614,6 +614,7 @@ var seg_array; // declare here so it is global var
 var scale;
 var mouse_x = 0;
 var mouse_y = 0;
+const padding = 5;
 var edit_mode = false;
 let edit_value = 1;
 let target_value = 0;
@@ -815,9 +816,9 @@ function update_seg_highlight() {
 }
 
 function render_edit_image(ctx) {
-  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-  ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
-  let raw_image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+  ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
+  ctx.drawImage(raw_image, padding, padding, dimensions[0], dimensions[1]);
+  let raw_image_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
 
   // adjust underlying raw image
   contrast_image(raw_image_data, current_contrast);
@@ -825,16 +826,16 @@ function render_edit_image(ctx) {
   if (display_invert) {
     invert(raw_image_data);
   }
-  ctx.putImageData(raw_image_data, 0, 0);
+  ctx.putImageData(raw_image_data, padding, padding);
 
   // draw segmentations, highlighted version if highlight is on
   ctx.save();
   // ctx.globalCompositeOperation = 'color';
   ctx.globalAlpha = 0.3;
   if (current_highlight) {
-    ctx.drawImage(adjusted_seg, 0, 0, dimensions[0], dimensions[1]);
+    ctx.drawImage(adjusted_seg, padding, padding, dimensions[0], dimensions[1]);
   } else {
-    ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
+    ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
   }
   ctx.restore();
 
@@ -843,29 +844,29 @@ function render_edit_image(ctx) {
   ctx.globalAlpha = 0.2;
   ctx.globalCompositeOperation = 'source-over';
   let hidden_canvas = document.getElementById('hidden_canvas');
-  ctx.drawImage(hidden_canvas, 0,0,dimensions[0],dimensions[1]);
+  ctx.drawImage(hidden_canvas, padding,padding,dimensions[0],dimensions[1]);
   ctx.restore();
 }
 
 function render_raw_image(ctx) {
-  ctx.clearRect(0, 0, dimensions, dimensions[1]);
-  ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
+  ctx.clearRect(padding, padding, dimensions, dimensions[1]);
+  ctx.drawImage(raw_image, padding, padding, dimensions[0], dimensions[1]);
 
   // contrast image
-  image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+  image_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
   contrast_image(image_data, current_contrast);
   // draw contrasted image over the original
-  ctx.putImageData(image_data, 0, 0);
+  ctx.putImageData(image_data, padding, padding);
 }
 
 function render_annotation_image(ctx) {
-  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-  ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
+  ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
+  ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
   if (current_highlight) {
-    let img_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+    let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
     highlight(img_data, mode.highlighted_cell_one);
     highlight(img_data, mode.highlighted_cell_two);
-    ctx.putImageData(img_data, 0, 0);
+    ctx.putImageData(img_data, padding, padding);
   }
 }
 
@@ -924,8 +925,8 @@ function load_file(file) {
       }
 
       project_id = payload.project_id;
-      $('#canvas').get(0).width = dimensions[0];
-      $('#canvas').get(0).height = dimensions[1];
+      $('#canvas').get(0).width = dimensions[0] + 2*padding;
+      $('#canvas').get(0).height = dimensions[1] + 2*padding;
       $('#hidden_canvas').get(0).width = dimensions[0];
       $('#hidden_canvas').get(0).height = dimensions[1];
       $('#hidden_seg_canvas').get(0).width = dimensions[0];
@@ -950,8 +951,8 @@ function handle_scroll(evt) {
 function handle_mousedown(evt) {
   if (mode.kind !== Modes.prompt) {
     mousedown = true;
-    mouse_x = evt.offsetX;
-    mouse_y = evt.offsetY;
+    mouse_x = evt.offsetX - padding;
+    mouse_y = evt.offsetY - padding;
     // begin drawing
     if (edit_mode) {
       let img_y = Math.floor(mouse_y/scale);
@@ -990,8 +991,8 @@ function helper_box_draw(start_y, start_x, end_y, end_x) {
 // handles mouse movement, whether or not mouse button is held down
 function handle_mousemove(evt) {
   // update displayed info depending on where mouse is
-  mouse_x = evt.offsetX;
-  mouse_y = evt.offsetY;
+  mouse_x = evt.offsetX - padding;
+  mouse_y = evt.offsetY - padding;
   render_info_display();
 
   // update brush preview
@@ -1021,8 +1022,8 @@ function handle_mouseup(evt) {
       }
       // reset brush preview
       clear_hidden_ctx();
-      brush.x = evt.offsetX;
-      brush.y = evt.offsetY;
+      brush.x = evt.offsetX - padding;
+      brush.y = evt.offsetY - padding;
       brush.draw(hidden_ctx);
     }
   }
