@@ -840,6 +840,21 @@ function action(action, info, frame = current_frame) {
 }
 
 function start_caliban(filename) {
+  // disable scrolling from scrolling around on page (it should just control brightness)
+  document.addEventListener('wheel', function(event) {
+    event.preventDefault();
+  }, {passive: false});
+  // disable space and up/down keys from moving around on page
+  $(document).on('keydown', function(event) {
+    if (event.key === " ") {
+      event.preventDefault();
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+    } else if (event.key === "ArrowDown") {
+      event.preventDefault();
+    }
+  });
+
   load_file(filename);
   prepare_canvas();
   fetch_and_render_frame();
