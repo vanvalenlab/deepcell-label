@@ -80,8 +80,6 @@ class ZStackReview:
         '''
         Helper function that returns the highest label in use in currently-viewed
         feature. If feature is empty, returns 0 to prevent other functions from crashing.
-        (Replaces use of self.num_cells to keep track of this info, should
-        also help with code flexibility.)
         '''
         # check this first, np.max of empty array will crash
         if len(self.cell_ids[self.feature]) == 0:
