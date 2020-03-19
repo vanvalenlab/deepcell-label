@@ -13,8 +13,6 @@ services:
       MYSQL_USERNAME: root
       MYSQL_HOSTNAME: db
       MYSQL_PORT: 3306
-      S3_KEY: ""
-      S3_SECRET: ""
   db:
     image: mysql:8.0
     ports:
