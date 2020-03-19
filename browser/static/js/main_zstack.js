@@ -577,7 +577,22 @@ class Mode {
   }
 }
 
+class Brush {
+  constructor() {
+    this.x = 0;
+    this.y = 0;
+    this.radius = 1;
+    this.color ='red';
+  }
 
+  draw(ctx) {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
+    ctx.closePath();
+    ctx.fillStyle = this.color;
+    ctx.fill();
+    }
+  }
 
 
 
@@ -1113,18 +1128,6 @@ function start_caliban(filename) {
   fetch_and_render_frame();
   update_seg_highlight();
 
-  brush = {
-  x: 0,
-  y: 0,
-  radius: 1,
-  color: 'red',
-  draw: function(ctx) {
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
-    ctx.closePath();
-    ctx.fillStyle = this.color;
-    ctx.fill();
-    }
-  }
+  brush = new Brush();
   hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
 }
