@@ -66,7 +66,7 @@ class Mode {
       // update the brush with its new size
       clear_hidden_ctx();
       brush.radius = brush_size * scale;
-      brush.draw(hidden_ctx);
+      brush.draw(brush.ctx);
 
       // redraw the frame with the updated brush preview
       render_image_display();
@@ -78,7 +78,7 @@ class Mode {
       // update the brush with its new size
       clear_hidden_ctx();
       brush.radius = brush_size * scale;
-      brush.draw(hidden_ctx);
+      brush.draw(brush.ctx);
 
       // redraw the frame with the updated brush preview
       render_image_display();
@@ -578,11 +578,20 @@ class Mode {
 }
 
 class Brush {
-  constructor() {
+  constructor(height, width) {
     this.x = 0;
     this.y = 0;
     this.radius = 1;
     this.color ='red';
+
+    // create hidden canvas to store brush preview
+    this.canvas = document.createElement('canvas');
+    this.canvas.id = 'brushCanvas';
+    this.canvas.style.display = 'none';
+    this.canvas.height = height;
+    this.canvas.width = width;
+    document.body.appendChild(this.canvas);
+    this.ctx = $('#brushCanvas').get(0).getContext("2d");
   }
 
   draw(ctx) {
@@ -644,7 +653,6 @@ let mouse_trace = [];
 let thresholding = false;
 let box_start_x;
 let box_start_y;
-let hidden_ctx;
 const adjusted_seg = new Image();
 adjusted_seg.onload = render_image_display;
 
@@ -809,7 +817,7 @@ function render_info_display() {
 }
 
 function clear_hidden_ctx() {
-  hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1]);
+  brush.ctx.clearRect(0,0,dimensions[0],dimensions[1]);
 }
 
 // apply highlight to edit_value in seg_image, save resulting
@@ -858,8 +866,7 @@ function render_edit_image(ctx) {
   ctx.save();
   ctx.globalAlpha = 0.2;
   ctx.globalCompositeOperation = 'source-over';
-  let hidden_canvas = document.getElementById('hidden_canvas');
-  ctx.drawImage(hidden_canvas, padding,padding,dimensions[0],dimensions[1]);
+  ctx.drawImage(brush.canvas, padding,padding,dimensions[0],dimensions[1]);
   ctx.restore();
 }
 
@@ -942,8 +949,6 @@ function load_file(file) {
       project_id = payload.project_id;
       $('#canvas').get(0).width = dimensions[0] + 2*padding;
       $('#canvas').get(0).height = dimensions[1] + 2*padding;
-      $('#hidden_canvas').get(0).width = dimensions[0];
-      $('#hidden_canvas').get(0).height = dimensions[1];
       $('#hidden_seg_canvas').get(0).width = dimensions[0];
       $('#hidden_seg_canvas').get(0).height = dimensions[1];
     },
@@ -994,13 +999,13 @@ function helper_brush_draw() {
   }
   brush.x = mouse_x;
   brush.y = mouse_y;
-  brush.draw(hidden_ctx);
+  brush.draw(brush.ctx);
 }
 
 function helper_box_draw(start_y, start_x, end_y, end_x) {
   clear_hidden_ctx();
-  hidden_ctx.fillStyle = 'red';
-  hidden_ctx.fillRect(start_x, start_y, (end_x - start_x), (end_y - start_y));
+  brush.ctx.fillStyle = 'red';
+  brush.ctx.fillRect(start_x, start_y, (end_x - start_x), (end_y - start_y));
 }
 
 // handles mouse movement, whether or not mouse button is held down
@@ -1039,7 +1044,7 @@ function handle_mouseup(evt) {
       clear_hidden_ctx();
       brush.x = evt.offsetX - padding;
       brush.y = evt.offsetY - padding;
-      brush.draw(hidden_ctx);
+      brush.draw(brush.ctx);
     }
   }
 }
@@ -1128,6 +1133,5 @@ function start_caliban(filename) {
   fetch_and_render_frame();
   update_seg_highlight();
 
-  brush = new Brush();
-  hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
+  brush = new Brush(height=dimensions[1], width=dimensions[0]);
 }
