@@ -265,6 +265,35 @@ def create_connection(_):
         print(err)
     return conn
 
+def initial_connection(_):
+    ''' Create a connection to a MySQL server. Creates database if
+    it doesn't exist yet. Only called when starting app.
+    '''
+    try:
+        # connect but don't specify database: it might not exist
+        conn = MySQLdb.connect(
+            user=config.MYSQL_USERNAME,
+            host=config.MYSQL_HOSTNAME,
+            port=config.MYSQL_PORT,
+            passwd=config.MYSQL_PASSWORD,
+            charset='utf8',
+            use_unicode=True)
+
+        # on new server, caliban database won't exist yet
+        try:
+            query = '''CREATE DATABASE {}'''.format(config.MYSQL_DATABASE)
+            conn.cursor().execute(query)
+            conn.commit()
+
+        # it already exists
+        except:
+            pass
+
+        conn.close()
+
+    except MySQLdb._exceptions.MySQLError as err:
+        print('error', err)
+
 
 def create_table(conn, create_table_sql):
     ''' Create a table from the create_table_sql statement.
@@ -337,7 +366,8 @@ def delete_project(conn, project_id):
 def main():
     ''' Runs app and initiates database file if it doesn't exist.
     '''
-    conn = create_connection("caliban.db")
+    initial_connection("caliban.db")
+    conn = create_connection("")
     sql_create_projects_table = """
         CREATE TABLE IF NOT EXISTS projects (
             id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
