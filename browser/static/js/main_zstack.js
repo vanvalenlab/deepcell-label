@@ -581,6 +581,7 @@ class Brush {
     this.y = 0;
     this.radius = 1;
     this.color ='red';
+    this._opacity = 0.2;
 
     this._height = height;
     this._width = width;
@@ -613,6 +614,15 @@ class Brush {
   refreshView() {
     this.clearView();
     this.addToView();
+  }
+
+  // draw brush preview onto destination ctx
+  draw(ctxDst, padding) {
+    ctxDst.save();
+    ctxDst.globalAlpha = this._opacity;
+    ctxDst.globalCompositeOperation = 'source-over';
+    ctxDst.drawImage(this.canvas, padding,padding,this._width, this._height);
+    ctxDst.restore();
   }
 
 }
@@ -873,11 +883,7 @@ function render_edit_image(ctx) {
   ctx.restore();
 
   // draw brushview on top of cells/annotations
-  ctx.save();
-  ctx.globalAlpha = 0.2;
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.drawImage(brush.canvas, padding,padding,dimensions[0],dimensions[1]);
-  ctx.restore();
+  brush.draw(ctx, padding);
 }
 
 function render_raw_image(ctx) {
