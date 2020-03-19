@@ -64,9 +64,8 @@ class Mode {
       brush_size = Math.max(brush_size - 1, 1);
 
       // update the brush with its new size
-      clear_hidden_ctx();
       brush.radius = brush_size * scale;
-      brush.draw();
+      brush.refreshView();
 
       // redraw the frame with the updated brush preview
       render_image_display();
@@ -76,9 +75,8 @@ class Mode {
           dimensions[0]/scale, dimensions[1]/scale);
 
       // update the brush with its new size
-      clear_hidden_ctx();
       brush.radius = brush_size * scale;
-      brush.draw();
+      brush.refreshView();
 
       // redraw the frame with the updated brush preview
       render_image_display();
@@ -171,7 +169,7 @@ class Mode {
       this.action = "start_threshold";
       this.prompt = "Click and drag to create a bounding box around the area you want to threshold";
       thresholding = true;
-      clear_hidden_ctx();
+      brush.clearView();
       render_image_display();
     }
   }
@@ -584,6 +582,9 @@ class Brush {
     this.radius = 1;
     this.color ='red';
 
+    this._height = height;
+    this._width = width;
+
     // create hidden canvas to store brush preview
     this.canvas = document.createElement('canvas');
     this.canvas.id = 'brushCanvas';
@@ -594,14 +595,27 @@ class Brush {
     this.ctx = $('#brushCanvas').get(0).getContext("2d");
   }
 
-  draw() {
+  // clear ctx
+  clearView() {
+    this.ctx.clearRect(0,0,this._width,this._height);
+  }
+
+  // adds brush shadow to ctx
+  addToView() {
     this.ctx.beginPath();
     this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
     this.ctx.closePath();
     this.ctx.fillStyle = this.color;
     this.ctx.fill();
-    }
   }
+
+  // clear previous view and update with current view
+  refreshView() {
+    this.clearView();
+    this.addToView();
+  }
+
+}
 
 
 
@@ -816,10 +830,6 @@ function render_info_display() {
   $('#mode').html(mode.render());
 }
 
-function clear_hidden_ctx() {
-  brush.ctx.clearRect(0,0,dimensions[0],dimensions[1]);
-}
-
 // apply highlight to edit_value in seg_image, save resulting
 // image as src of adjusted_seg to use to render edit (if needed)
 // additional hidden canvas is used to prevent image flickering
@@ -995,15 +1005,15 @@ function helper_brush_draw() {
     let img_x = Math.floor(mouse_x/scale);
     mouse_trace.push([img_y, img_x]);
   } else {
-    clear_hidden_ctx();
+    brush.clearView();
   }
   brush.x = mouse_x;
   brush.y = mouse_y;
-  brush.draw();
+  brush.addToView();
 }
 
 function helper_box_draw(start_y, start_x, end_y, end_x) {
-  clear_hidden_ctx();
+  brush.clearView();
   brush.ctx.fillStyle = 'red';
   brush.ctx.fillRect(start_x, start_y, (end_x - start_x), (end_y - start_y));
 }
@@ -1021,7 +1031,7 @@ function handle_mousemove(evt) {
     if (!thresholding) {
       helper_brush_draw();
     } else if (thresholding && mode.action === "start_threshold") {
-      clear_hidden_ctx();
+      brush.clearView();
     } else if (thresholding && mode.action === "draw_threshold_box") {
       helper_box_draw(box_start_y, box_start_x, mouse_y, mouse_x);
     }
@@ -1041,10 +1051,9 @@ function handle_mouseup(evt) {
         mode.handle_draw();
       }
       // reset brush preview
-      clear_hidden_ctx();
       brush.x = evt.offsetX - padding;
       brush.y = evt.offsetY - padding;
-      brush.draw();
+      brush.refreshView();
     }
   }
 }
