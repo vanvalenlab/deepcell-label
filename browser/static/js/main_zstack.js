@@ -66,7 +66,7 @@ class Mode {
       // update the brush with its new size
       clear_hidden_ctx();
       brush.radius = brush_size * scale;
-      brush.draw(brush.ctx);
+      brush.draw();
 
       // redraw the frame with the updated brush preview
       render_image_display();
@@ -78,7 +78,7 @@ class Mode {
       // update the brush with its new size
       clear_hidden_ctx();
       brush.radius = brush_size * scale;
-      brush.draw(brush.ctx);
+      brush.draw();
 
       // redraw the frame with the updated brush preview
       render_image_display();
@@ -594,12 +594,12 @@ class Brush {
     this.ctx = $('#brushCanvas').get(0).getContext("2d");
   }
 
-  draw(ctx) {
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
-    ctx.closePath();
-    ctx.fillStyle = this.color;
-    ctx.fill();
+  draw() {
+    this.ctx.beginPath();
+    this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
+    this.ctx.closePath();
+    this.ctx.fillStyle = this.color;
+    this.ctx.fill();
     }
   }
 
@@ -999,7 +999,7 @@ function helper_brush_draw() {
   }
   brush.x = mouse_x;
   brush.y = mouse_y;
-  brush.draw(brush.ctx);
+  brush.draw();
 }
 
 function helper_box_draw(start_y, start_x, end_y, end_x) {
@@ -1044,7 +1044,7 @@ function handle_mouseup(evt) {
       clear_hidden_ctx();
       brush.x = evt.offsetX - padding;
       brush.y = evt.offsetY - padding;
-      brush.draw(brush.ctx);
+      brush.draw();
     }
   }
 }
