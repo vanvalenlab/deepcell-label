@@ -566,8 +566,8 @@ class Mode {
 }
 
 class Brush {
-  constructor(scale, height, width) {
-    // center of brush
+  constructor(scale, height, width, pad) {
+    // center of brush (scaled)
     this.x = 0;
     this.y = 0;
     // size of brush in pixels
@@ -588,6 +588,7 @@ class Brush {
 
     this._height = height;
     this._width = width;
+    this._padding = pad;
 
     // create hidden canvas to store brush preview
     this.canvas = document.createElement('canvas');
@@ -652,27 +653,27 @@ class Brush {
   }
 
   // draw brush preview onto destination ctx
-  draw(ctxDst, padding) {
+  draw(ctxDst) {
     // save here so we can revert clipped region after drawing
     ctxDst.save();
 
     // clip region to displayed image to prevent drawing brush onto
     // empty canvas padding region
     let region = new Path2D();
-    region.rect(padding, padding, this._width, this._height);
+    region.rect(this._padding, this._padding, this._width, this._height);
     ctxDst.clip(region);
 
     // draw translucent brush trace
     ctxDst.save();
     ctxDst.globalAlpha = this._opacity;
     ctxDst.globalCompositeOperation = 'source-over';
-    ctxDst.drawImage(this.canvas, padding, padding, this._width, this._height);
+    ctxDst.drawImage(this.canvas, this._padding, this._padding, this._width, this._height);
     ctxDst.restore();
 
     // add solid outline around current brush location
     ctxDst.beginPath();
     if (this.show) {
-      ctxDst.arc(this.x + padding, this.y + padding, this.radius, 0, Math.PI * 2, true);
+      ctxDst.arc(this.x + this._padding, this.y + this._padding, this.radius, 0, Math.PI * 2, true);
       ctxDst.strokeStyle = this._outlineColor;
     }
     ctxDst.closePath();
@@ -937,7 +938,7 @@ function render_edit_image(ctx) {
   ctx.restore();
 
   // draw brushview on top of cells/annotations
-  brush.draw(ctx, padding);
+  brush.draw(ctx);
 }
 
 function render_raw_image(ctx) {
@@ -1202,5 +1203,5 @@ function start_caliban(filename) {
   fetch_and_render_frame();
   update_seg_highlight();
 
-  brush = new Brush(scale=scale, height=dimensions[1], width=dimensions[0]);
+  brush = new Brush(scale=scale, height=dimensions[1], width=dimensions[0], pad = padding);
 }
