@@ -61,23 +61,12 @@ class Mode {
   handle_universal_edit_keybind(key) {
     if (key === "ArrowDown") {
       // decrease brush size, minimum size 1
-      brush_size = Math.max(brush_size - 1, 1);
-
-      // update the brush with its new size
-      brush.radius = brush_size * scale;
-      brush.refreshView();
-
+      brush.size -= 1;
       // redraw the frame with the updated brush preview
       render_image_display();
     } else if (key === "ArrowUp") {
-      //increase brush size, shouldn't be larger than the image
-      brush_size = Math.min(self.brush_size + 1,
-          dimensions[0]/scale, dimensions[1]/scale);
-
-      // update the brush with its new size
-      brush.radius = brush_size * scale;
-      brush.refreshView();
-
+      // increase brush size, diameter shouldn't be larger than the image
+      brush.size += 1;
       // redraw the frame with the updated brush preview
       render_image_display();
     } else if (key === 'i') {
@@ -390,7 +379,7 @@ class Mode {
     action("handle_draw", { "trace": JSON.stringify(mouse_trace), //stringify array so it doesn't get messed up
                   "target_value": target_value, //value that we're overwriting
                   "brush_value": edit_value, //we don't update caliban with edit_value, etc each time they change
-                  "brush_size": brush_size, //so we need to pass them in as args
+                  "brush_size": brush.size, //so we need to pass them in as args
                   "erase": brush.erase,
                   "frame": current_frame});
     mouse_trace = [];
@@ -577,10 +566,17 @@ class Mode {
 }
 
 class Brush {
-  constructor(height, width) {
+  constructor(scale, height, width) {
+    // center of brush
     this.x = 0;
     this.y = 0;
-    this.radius = 1;
+    // size of brush in pixels
+    this._size = 1;
+    // scale of image (and therefore brush preview)
+    this.scale = scale;
+    // displayed size of brush
+    this.radius = this._size * this.scale;
+    // status of eraser
     this._erase = false;
 
     this._fillColor = 'white';
@@ -598,6 +594,20 @@ class Brush {
     this.canvas.width = width;
     document.body.appendChild(this.canvas);
     this.ctx = $('#brushCanvas').get(0).getContext("2d");
+  }
+
+  get size() {
+    return this._size;
+  }
+
+  // set bounds on size of brush, update radius and brushview appropriately
+  set size(newSize) {
+    if (newSize > 0 && newSize < this._height/(2*this.scale)
+        && newSize < this._width/(2*this.scale) && newSize !== this._size) {
+      this._size = newSize;
+      this.radius = this._size * this.scale;
+      this.refreshView();
+    }
   }
 
   get erase() {
@@ -696,7 +706,6 @@ const padding = 5;
 var edit_mode = false;
 let edit_value = 1;
 let target_value = 0;
-var brush_size = 1;
 var answer = "(SPACE=YES / ESC=NO)";
 let mousedown = false;
 var tooltype = 'draw';
@@ -823,7 +832,7 @@ function render_edit_info() {
     $('#edit_label_row').css('visibility', 'visible');
     $('#edit_erase_row').css('visibility', 'visible');
 
-    $('#edit_brush').html(brush_size);
+    $('#edit_brush').html(brush.size);
     $('#edit_label').html(edit_value);
 
     if (brush.erase) {
@@ -1177,5 +1186,5 @@ function start_caliban(filename) {
   fetch_and_render_frame();
   update_seg_highlight();
 
-  brush = new Brush(height=dimensions[1], width=dimensions[0]);
+  brush = new Brush(scale=scale, height=dimensions[1], width=dimensions[0]);
 }
