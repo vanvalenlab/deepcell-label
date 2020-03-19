@@ -89,10 +89,11 @@ class Mode {
       edit_value = maxLabelsMap.get(this.feature) + 1;
       update_seg_highlight();
       if (this.kind === Modes.prompt) {
-        erase = false;
+        brush.erase = false;
         this.prompt = "Now drawing over label " + target_value + " with label " + edit_value
             + ". Use ESC to leave this mode.";
         this.kind = Modes.drawing;
+        render_image_display();
       }
       render_info_display();
     }
@@ -149,8 +150,8 @@ class Mode {
       render_info_display();
     } else if (key === "x") {
       // turn eraser on and off
-      erase = !erase;
-      render_info_display();
+      brush.erase = !brush.erase;
+      render_image_display();
     } else if (key === 'p') {
       // color picker
       this.kind = Modes.prompt;
@@ -390,7 +391,7 @@ class Mode {
                   "target_value": target_value, //value that we're overwriting
                   "brush_value": edit_value, //we don't update caliban with edit_value, etc each time they change
                   "brush_size": brush_size, //so we need to pass them in as args
-                  "erase": erase,
+                  "erase": brush.erase,
                   "frame": current_frame});
     mouse_trace = [];
     if (this.kind !== Modes.drawing) {
@@ -489,11 +490,11 @@ class Mode {
       edit_value = current_label;
       update_seg_highlight();
       if (target_value !== 0) {
-        erase = false;
+        brush.erase = false;
         this.prompt = "Now drawing over label " + target_value + " with label " + edit_value
             + ". Use ESC to leave this mode.";
         this.kind = Modes.drawing;
-        render_info_display();
+        render_image_display();
       } else {
         this.clear();
       }
@@ -580,6 +581,8 @@ class Brush {
     this.x = 0;
     this.y = 0;
     this.radius = 1;
+    this._erase = false;
+
     this._fillColor = 'white';
     this._outlineColor = 'white';
     this._opacity = 0.2;
@@ -595,6 +598,24 @@ class Brush {
     this.canvas.width = width;
     document.body.appendChild(this.canvas);
     this.ctx = $('#brushCanvas').get(0).getContext("2d");
+  }
+
+  get erase() {
+    return this._erase;
+  }
+
+  set erase(bool) {
+    // eraser is either true or false
+    if (typeof bool === 'boolean') {
+      this._erase = bool;
+      // red outline is visual indicator for eraser being on
+      if (this._erase) {
+        this._outlineColor = 'red';
+      // white outline if eraser is off (drawing normally)
+      } else {
+        this._outlineColor = 'white';
+      }
+    }
   }
 
   // clear ctx
@@ -676,7 +697,6 @@ var edit_mode = false;
 let edit_value = 1;
 let target_value = 0;
 var brush_size = 1;
-var erase = false;
 var answer = "(SPACE=YES / ESC=NO)";
 let mousedown = false;
 var tooltype = 'draw';
@@ -806,7 +826,7 @@ function render_edit_info() {
     $('#edit_brush').html(brush_size);
     $('#edit_label').html(edit_value);
 
-    if (erase) {
+    if (brush.erase) {
       $('#edit_erase').html("ON");
     } else {
       $('#edit_erase').html("OFF");
