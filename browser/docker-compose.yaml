@@ -6,6 +6,8 @@ services:
       - db
     ports:
       - 5000:5000
+    depends_on:
+      - db
     environment:
       MYSQL_PASSWORD: root
       MYSQL_USERNAME: root
