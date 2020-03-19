@@ -650,6 +650,15 @@ class Brush {
 
   // draw brush preview onto destination ctx
   draw(ctxDst, padding) {
+    // save here so we can revert clipped region after drawing
+    ctxDst.save();
+
+    // clip region to displayed image to prevent drawing brush onto
+    // empty canvas padding region
+    let region = new Path2D();
+    region.rect(padding, padding, this._width, this._height);
+    ctxDst.clip(region);
+
     // draw translucent brush trace
     ctxDst.save();
     ctxDst.globalAlpha = this._opacity;
@@ -663,6 +672,9 @@ class Brush {
     ctxDst.closePath();
     ctxDst.strokeStyle = this._outlineColor;
     ctxDst.stroke();
+
+    // restore unclipped canvas context
+    ctxDst.restore();
   }
 
 }
