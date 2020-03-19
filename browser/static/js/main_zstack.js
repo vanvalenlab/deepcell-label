@@ -580,7 +580,8 @@ class Brush {
     this.x = 0;
     this.y = 0;
     this.radius = 1;
-    this.color ='red';
+    this._fillColor = 'white';
+    this._outlineColor = 'white';
     this._opacity = 0.2;
 
     this._height = height;
@@ -606,7 +607,7 @@ class Brush {
     this.ctx.beginPath();
     this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
     this.ctx.closePath();
-    this.ctx.fillStyle = this.color;
+    this.ctx.fillStyle = this._fillColor;
     this.ctx.fill();
   }
 
@@ -618,11 +619,19 @@ class Brush {
 
   // draw brush preview onto destination ctx
   draw(ctxDst, padding) {
+    // draw translucent brush trace
     ctxDst.save();
     ctxDst.globalAlpha = this._opacity;
     ctxDst.globalCompositeOperation = 'source-over';
     ctxDst.drawImage(this.canvas, padding,padding,this._width, this._height);
     ctxDst.restore();
+
+    // add solid outline around current brush location
+    ctxDst.beginPath();
+    ctxDst.arc(this.x + padding, this.y + padding, this.radius, 0, Math.PI * 2, true);
+    ctxDst.closePath();
+    ctxDst.strokeStyle = this._outlineColor;
+    ctxDst.stroke();
   }
 
 }
