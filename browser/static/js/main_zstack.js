@@ -17,7 +17,7 @@ class Mode {
     this.highlighted_cell_one = -1;
     this.highlighted_cell_two = -1;
 
-    thresholding = false;
+    brush.show = true;
     target_value = 0;
 
     this.action = "";
@@ -158,7 +158,7 @@ class Mode {
       this.kind = Modes.question;
       this.action = "start_threshold";
       this.prompt = "Click and drag to create a bounding box around the area you want to threshold";
-      thresholding = true;
+      brush.show = false;
       brush.clearView();
       render_image_display();
     }
@@ -389,7 +389,7 @@ class Mode {
   }
 
   handle_threshold(evt) {
-    thresholding = false;
+    brush.show = true;
     let end_y = evt.offsetY - padding;
     let end_x = evt.offsetX - padding;
 
@@ -579,6 +579,9 @@ class Brush {
     // status of eraser
     this._erase = false;
 
+    // threshold/box attributes
+    this.show = true;
+
     this._fillColor = 'white';
     this._outlineColor = 'white';
     this._opacity = 0.2;
@@ -663,14 +666,16 @@ class Brush {
     ctxDst.save();
     ctxDst.globalAlpha = this._opacity;
     ctxDst.globalCompositeOperation = 'source-over';
-    ctxDst.drawImage(this.canvas, padding,padding,this._width, this._height);
+    ctxDst.drawImage(this.canvas, padding, padding, this._width, this._height);
     ctxDst.restore();
 
     // add solid outline around current brush location
     ctxDst.beginPath();
-    ctxDst.arc(this.x + padding, this.y + padding, this.radius, 0, Math.PI * 2, true);
+    if (this.show) {
+      ctxDst.arc(this.x + padding, this.y + padding, this.radius, 0, Math.PI * 2, true);
+      ctxDst.strokeStyle = this._outlineColor;
+    }
     ctxDst.closePath();
-    ctxDst.strokeStyle = this._outlineColor;
     ctxDst.stroke();
 
     // restore unclipped canvas context
@@ -724,7 +729,6 @@ var tooltype = 'draw';
 var project_id;
 var brush;
 let mouse_trace = [];
-let thresholding = false;
 let box_start_x;
 let box_start_y;
 const adjusted_seg = new Image();
@@ -1043,7 +1047,7 @@ function handle_mousedown(evt) {
     if (edit_mode) {
       let img_y = Math.floor(mouse_y/scale);
       let img_x = Math.floor(mouse_x/scale);
-      if (thresholding) {
+      if (!brush.show) {
         box_start_x = mouse_x;
         box_start_y = mouse_y;
         mode.action = "draw_threshold_box";
@@ -1084,11 +1088,11 @@ function handle_mousemove(evt) {
   // update brush preview
   if (edit_mode) {
     // hidden canvas is keeping track of the brush
-    if (!thresholding) {
+    if (brush.show) {
       helper_brush_draw();
-    } else if (thresholding && mode.action === "start_threshold") {
+    } else if (!brush.show && mode.action === "start_threshold") {
       brush.clearView();
-    } else if (thresholding && mode.action === "draw_threshold_box") {
+    } else if (!brush.show && mode.action === "draw_threshold_box") {
       helper_box_draw(box_start_y, box_start_x, mouse_y, mouse_x);
     }
     render_image_display();
@@ -1100,7 +1104,7 @@ function handle_mouseup(evt) {
   if (mode.kind !== Modes.prompt) {
     mousedown = false;
     if (edit_mode) {
-      if (thresholding) {
+      if (!brush.show) {
         mode.handle_threshold(evt);
       } else {
         //send click&drag coordinates to caliban.py to update annotations
