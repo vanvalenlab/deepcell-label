@@ -17,7 +17,8 @@ class Mode {
     this.highlighted_cell_one = -1;
     this.highlighted_cell_two = -1;
 
-    brush.show = true;
+    brush.clearThresh();
+
     target_value = 0;
 
     this.action = "";
@@ -389,12 +390,11 @@ class Mode {
   }
 
   handle_threshold(evt) {
-    brush.show = true;
     let end_y = evt.offsetY - padding;
     let end_x = evt.offsetX - padding;
 
-    let threshold_start_y = Math.floor(box_start_y / scale);
-    let threshold_start_x = Math.floor(box_start_x / scale);
+    let threshold_start_y = Math.floor(brush.threshY / scale);
+    let threshold_start_x = Math.floor(brush.threshX / scale);
     let threshold_end_y = Math.floor(end_y / scale);
     let threshold_end_x = Math.floor(end_x / scale);
 
@@ -581,6 +581,9 @@ class Brush {
 
     // threshold/box attributes
     this.show = true;
+    this._threshX = -2*pad;
+    this._threshY = -2*pad;
+    this._showBox = false;
 
     this._fillColor = 'white';
     this._outlineColor = 'white';
@@ -598,6 +601,7 @@ class Brush {
     this.canvas.width = width;
     document.body.appendChild(this.canvas);
     this.ctx = $('#brushCanvas').get(0).getContext("2d");
+    this.ctx.fillStyle = this._fillColor;
   }
 
   get size() {
@@ -632,6 +636,45 @@ class Brush {
     }
   }
 
+  get threshX() {
+    return this._threshX;
+  }
+
+  set threshX(x) {
+    if (x === -2*this._padding) {
+      this._threshX = x;
+      this._showBox = false;
+      this.clearView();
+    } else {
+      this._threshX = x;
+      this._showBox = true;
+      this.boxView();
+    }
+  }
+
+  get threshY() {
+    return this._threshY;
+  }
+
+  set threshY(y) {
+    if (y === -2*this._padding) {
+      this._threshY = y;
+      this._showBox = false;
+      this.clearView();
+    } else {
+      this._threshY = y;
+      this._showBox = true;
+      this.boxView();
+    }
+  }
+
+  clearThresh() {
+    this.threshX = -2*this._padding;
+    this.threshY = -2*this._padding;
+    this.show = true;
+    this.addToView();
+  }
+
   // clear ctx
   clearView() {
     this.ctx.clearRect(0,0,this._width,this._height);
@@ -642,7 +685,6 @@ class Brush {
     this.ctx.beginPath();
     this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
     this.ctx.closePath();
-    this.ctx.fillStyle = this._fillColor;
     this.ctx.fill();
   }
 
@@ -650,6 +692,14 @@ class Brush {
   refreshView() {
     this.clearView();
     this.addToView();
+  }
+
+  boxView() {
+    this.clearView();
+    if (this._showBox) {
+      this.ctx.fillRect(this.threshX, this.threshY,
+        this.x-this.threshX, this.y-this.threshY);
+    }
   }
 
   // draw brush preview onto destination ctx
@@ -671,13 +721,18 @@ class Brush {
     ctxDst.restore();
 
     // add solid outline around current brush location
-    ctxDst.beginPath();
     if (this.show) {
+      ctxDst.beginPath();
       ctxDst.arc(this.x + this._padding, this.y + this._padding, this.radius, 0, Math.PI * 2, true);
       ctxDst.strokeStyle = this._outlineColor;
+      ctxDst.closePath();
+      ctxDst.stroke();
+    }  else if (this._showBox) {
+      // draw box around threshold area
+      ctxDst.strokeStyle = 'white';
+      ctxDst.strokeRect(this.threshX + this._padding, this.threshY + this._padding,
+        this.x-this.threshX, this.y-this.threshY);
     }
-    ctxDst.closePath();
-    ctxDst.stroke();
 
     // restore unclipped canvas context
     ctxDst.restore();
@@ -730,8 +785,6 @@ var tooltype = 'draw';
 var project_id;
 var brush;
 let mouse_trace = [];
-let box_start_x;
-let box_start_y;
 const adjusted_seg = new Image();
 adjusted_seg.onload = render_image_display;
 
@@ -1049,9 +1102,8 @@ function handle_mousedown(evt) {
       let img_y = Math.floor(mouse_y/scale);
       let img_x = Math.floor(mouse_x/scale);
       if (!brush.show) {
-        box_start_x = mouse_x;
-        box_start_y = mouse_y;
-        mode.action = "draw_threshold_box";
+        brush.threshX = mouse_x;
+        brush.threshY = mouse_y;
       } else {
         mouse_trace.push([img_y, img_x]);
       }
@@ -1068,15 +1120,7 @@ function helper_brush_draw() {
   } else {
     brush.clearView();
   }
-  brush.x = mouse_x;
-  brush.y = mouse_y;
   brush.addToView();
-}
-
-function helper_box_draw(start_y, start_x, end_y, end_x) {
-  brush.clearView();
-  brush.ctx.fillStyle = 'red';
-  brush.ctx.fillRect(start_x, start_y, (end_x - start_x), (end_y - start_y));
 }
 
 // handles mouse movement, whether or not mouse button is held down
@@ -1088,13 +1132,13 @@ function handle_mousemove(evt) {
 
   // update brush preview
   if (edit_mode) {
-    // hidden canvas is keeping track of the brush
+    brush.x = mouse_x;
+    brush.y = mouse_y;
+    // brush's canvas is keeping track of the brush
     if (brush.show) {
       helper_brush_draw();
-    } else if (!brush.show && mode.action === "start_threshold") {
-      brush.clearView();
-    } else if (!brush.show && mode.action === "draw_threshold_box") {
-      helper_box_draw(box_start_y, box_start_x, mouse_y, mouse_x);
+    } else {
+      brush.boxView();
     }
     render_image_display();
   }
