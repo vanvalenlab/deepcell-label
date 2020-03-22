@@ -42,10 +42,7 @@ def upload_file(project_id):
     elif is_npz_file(id_exists[1]):
         state.action_save_zstack()
 
-    # Delete id and object from database
-    # TODO: instead of deleting the project,
-    # maybe we can just null out the longblob
-    # we can keep the IDs for later?
+    # add "finished" timestamp and null out state longblob
     delete_project(conn, project_id)
     conn.close()
 
@@ -363,30 +360,41 @@ def get_project(conn, project_id):
 def delete_project(conn, project_id):
     ''' Delete data object (TrackReview/ZStackReview) by id.
     '''
-    sql = 'DELETE FROM projects WHERE id=%s'
     cur = conn.cursor()
-    cur.execute(sql, (project_id,))
 
-    timesql = ''' UPDATE timestamp
-                  SET finished = CURRENT_TIMESTAMP
-                  WHERE id = %s'''
-    cur.execute(timesql, (project_id,))
+    timesql = ''' UPDATE {tn}
+                  SET finished = CURRENT_TIMESTAMP,
+                      state = NULL
+                  WHERE id = {my_id}'''.format(
+                    tn = "projects",
+                    my_id = project_id)
+    cur.execute(timesql)
 
     conn.commit()
 
 
 def main():
     ''' Runs app and initiates database file if it doesn't exist.
+    Columns in table:
+    id: always has a value, used to match actions to the correct file
+    filename: always has a value, does not contain subfolders in filename
+    state: stores python object as longblob while file is open, nulls out
+        when file is uploaded
+    createdAt: timestamp of when the file was opened; should always have a value
+    updatedAt: timestamp of lastest time the file was changed, including upload
+    finished: null value until file is uploaded and it gets a timestamp
     '''
     initial_connection("caliban.db")
     conn = create_connection("")
+
     sql_create_projects_table = """
         CREATE TABLE IF NOT EXISTS projects (
             id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
             filename text NOT NULL,
-            state longblob NOT NULL,
-            createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            state longblob,
+            createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+            updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+            finished TIMESTAMP
         );
     """
     create_table(conn, sql_create_projects_table)
