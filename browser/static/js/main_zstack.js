@@ -959,10 +959,12 @@ function handle_mousemove(evt) {
   mouse_y = evt.offsetY - padding;
   render_info_display();
 
+  // keeps brush location updated correctly when mouse moves outside edit mode
+  brush.x = mouse_x;
+  brush.y = mouse_y;
+
   // update brush preview
   if (edit_mode) {
-    brush.x = mouse_x;
-    brush.y = mouse_y;
     // brush's canvas is keeping track of the brush
     if (brush.show) {
       helper_brush_draw();
