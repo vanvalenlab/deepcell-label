@@ -70,7 +70,7 @@ class Mode {
     } else if (key === "x") {
       // turn eraser on and off
       brush.erase = !brush.erase;
-      render_info_display();
+      render_image_display();
     } else if (key === "ArrowDown") {
       // decrease brush size, minimum size 1
       brush.size -= 1;
@@ -720,6 +720,8 @@ function handle_mousemove(evt) {
   // update displayed info depending on where mouse is
   mouse_x = evt.offsetX - padding;
   mouse_y = evt.offsetY - padding;
+  brush.x = mouse_x;
+  brush.y = mouse_y;
   render_info_display();
 
   // update brush preview
@@ -733,8 +735,6 @@ function handle_mousemove(evt) {
     } else {
       brush.clearView();
     }
-    brush.x = mouse_x;
-    brush.y = mouse_y;
     brush.addToView();
     render_image_display();
   }
