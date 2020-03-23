@@ -9,8 +9,18 @@ class Brush {
     this.scale = scale;
     // displayed size of brush
     this.radius = this._size * this.scale;
+
     // status of eraser
     this._erase = false;
+
+    // normal brush attributes
+    this._regTarget = 0;
+    this._regValue = 1;
+
+    // conversion brush attributes
+    this._convTarget = -1;
+    this._convValue = -1;
+    this._conv = false;
 
     // threshold/box attributes
     this.show = true;
@@ -18,6 +28,7 @@ class Brush {
     this._threshY = -2*pad;
     this._showBox = false;
 
+    // how to draw brush/box shadow
     this._fillColor = 'white';
     this._outlineColor = 'white';
     this._opacity = 0.2;
@@ -66,6 +77,54 @@ class Brush {
       } else {
         this._outlineColor = 'white';
       }
+    }
+  }
+
+  get target() {
+    if (this._conv) {
+      return this._convTarget;
+    } else {
+      return this._regTarget;
+    }
+  }
+
+  set target(val) {
+    if (this._conv && val !== 0) {
+      this._convTarget = val;
+    }
+  }
+
+  get value() {
+    if (this._conv) {
+      return this._convValue;
+    } else {
+      return this._regValue;
+    }
+  }
+
+  set value(val) {
+    if (this._conv && val !== 0) {
+      this._convValue = val;
+    } else if (!this._conv) {
+      this._regValue = Math.max(val, 1);
+    }
+  }
+
+  get conv() {
+    return this._conv;
+  }
+
+  set conv(bool) {
+    this._conv = bool;
+    if (!bool) {
+      this._convValue = -1;
+      this._convTarget = -1;
+    }
+    if (this._erase && !this._conv) {
+      this._outlineColor = 'red';
+      // white outline if eraser is off (drawing normally)
+    } else {
+      this._outlineColor = 'white';
     }
   }
 

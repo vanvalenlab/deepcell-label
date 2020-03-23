@@ -61,11 +61,11 @@ class Mode {
       render_image_display();
     } else if (key === "=") {
       // increase edit_value up to max label + 1 (guaranteed unused)
-      edit_value = Math.min(edit_value + 1, maxTrack + 1);
+      brush.value = Math.min(brush.value + 1, maxTrack + 1);
       render_info_display();
     } else if (key === "-") {
       // decrease edit_value, minimum 1
-      edit_value = Math.max(edit_value - 1, 1);
+      brush.value -= 1;
       render_info_display();
     } else if (key === "x") {
       // turn eraser on and off
@@ -83,7 +83,7 @@ class Mode {
       render_image_display();
     } else if (key === 'n') {
       // set edit value to something unused
-      edit_value = maxTrack + 1;
+      brush.value = maxTrack + 1;
       render_info_display();
       // when value of brush determines color of brush, render_image instead
     } else if (key === 'i') {
@@ -276,7 +276,7 @@ class Mode {
 
   handle_draw() {
     action("handle_draw", { "trace": JSON.stringify(mouse_trace),
-                  "edit_value": edit_value,
+                  "edit_value": brush.value,
                   "brush_size": brush.size,
                   "erase": brush.erase,
                   "frame": current_frame});
@@ -423,7 +423,6 @@ var mouse_x = 0;
 var mouse_y = 0;
 const padding = 5;
 var edit_mode = false;
-var edit_value = 1;
 let mousedown = false;
 var answer = "(SPACE=YES / ESC=NO)";
 var project_id = undefined;
@@ -541,7 +540,7 @@ function render_edit_info() {
     $('#edit_erase_row').css('visibility', 'visible');
 
     $('#edit_brush').html(brush.size);
-    $('#edit_label').html(edit_value);
+    $('#edit_label').html(brush.value);
 
     if (brush.erase) {
       $('#edit_erase').html("ON");

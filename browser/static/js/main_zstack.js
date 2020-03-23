@@ -17,9 +17,9 @@ class Mode {
     this.highlighted_cell_one = -1;
     this.highlighted_cell_two = -1;
 
+    brush.conv = false;
     brush.clearThresh();
-
-    target_value = 0;
+    update_seg_highlight();
 
     this.action = "";
     this.prompt = "";
@@ -46,6 +46,7 @@ class Mode {
     } else if (key === "Escape") {
       // deselect/cancel action/reset highlight
       mode.clear();
+      // may want some things here that trigger on ESC but not clear()
     } else if (key === 'h') {
       // toggle highlight
       current_highlight = !current_highlight;
@@ -76,11 +77,10 @@ class Mode {
       render_image_display();
     } else if (key === 'n') {
       // set edit value to something unused
-      edit_value = maxLabelsMap.get(this.feature) + 1;
+      brush.value = maxLabelsMap.get(this.feature) + 1;
       update_seg_highlight();
-      if (this.kind === Modes.prompt) {
-        brush.erase = false;
-        this.prompt = "Now drawing over label " + target_value + " with label " + edit_value
+      if (this.kind === Modes.prompt && brush.conv) {
+        this.prompt = "Now drawing over label " + brush.target + " with label " + brush.value
             + ". Use ESC to leave this mode.";
         this.kind = Modes.drawing;
         render_image_display();
@@ -129,13 +129,13 @@ class Mode {
       }
     } else if (key === "=") {
       // increase edit_value up to max label + 1 (guaranteed unused)
-      edit_value = Math.min(edit_value + 1,
+      brush.value = Math.min(brush.value + 1,
           maxLabelsMap.get(this.feature) + 1);
       update_seg_highlight();
       render_info_display();
     } else if (key === "-") {
       // decrease edit_value, minimum 1
-      edit_value = Math.max(edit_value - 1, 1);
+      brush.value -= 1;
       update_seg_highlight();
       render_info_display();
     } else if (key === "x") {
@@ -153,7 +153,8 @@ class Mode {
       this.kind = Modes.prompt;
       this.action = "pick_target";
       this.prompt = "First, click on the label you want to overwrite.";
-      render_info_display();
+      brush.conv = true;
+      render_image_display();
     } else if (key === 't') {
       // prompt thresholding with bounding box
       this.kind = Modes.question;
@@ -378,10 +379,10 @@ class Mode {
 
   handle_draw() {
     action("handle_draw", { "trace": JSON.stringify(mouse_trace), //stringify array so it doesn't get messed up
-                  "target_value": target_value, //value that we're overwriting
-                  "brush_value": edit_value, //we don't update caliban with edit_value, etc each time they change
+                  "target_value": brush.target, //value that we're overwriting
+                  "brush_value": brush.value, //we don't update caliban with edit_value, etc each time they change
                   "brush_size": brush.size, //so we need to pass them in as args
-                  "erase": brush.erase,
+                  "erase": (brush.erase && !brush.conv),
                   "frame": current_frame});
     mouse_trace = [];
     if (this.kind !== Modes.drawing) {
@@ -475,12 +476,11 @@ class Mode {
       this.clear();
     } else if (this.action === "pick_color"
           && current_label !== 0
-          && current_label !== target_value) {
-      edit_value = current_label;
+          && current_label !== brush.target) {
+      brush.value = current_label;
       update_seg_highlight();
-      if (target_value !== 0) {
-        brush.erase = false;
-        this.prompt = "Now drawing over label " + target_value + " with label " + edit_value
+      if (brush.target !== 0) {
+        this.prompt = "Now drawing over label " + brush.target + " with label " + brush.value
             + ". Use ESC to leave this mode.";
         this.kind = Modes.drawing;
         render_image_display();
@@ -488,7 +488,7 @@ class Mode {
         this.clear();
       }
     } else if (this.action === "pick_target" && current_label !== 0) {
-      target_value = current_label;
+      brush.target = current_label;
       this.action = "pick_color";
       this.prompt = "Click on the label you want to draw with, or press 'n' to draw with an unused label.";
       render_info_display();
@@ -600,8 +600,6 @@ var mouse_x = 0;
 var mouse_y = 0;
 const padding = 5;
 var edit_mode = false;
-let edit_value = 1;
-let target_value = 0;
 var answer = "(SPACE=YES / ESC=NO)";
 let mousedown = false;
 var tooltype = 'draw';
@@ -700,7 +698,11 @@ function render_highlight_info() {
   if (current_highlight) {
     $('#highlight').html("ON");
     if (edit_mode) {
-      $('#currently_highlighted').html(edit_value)
+      if (brush.value > 0) {
+        $('#currently_highlighted').html(brush.value)
+      } else {
+        $('#currently_highlighted').html('-')
+      }
     } else {
       if (mode.highlighted_cell_one !== -1) {
         if (mode.highlighted_cell_two !== -1) {
@@ -726,9 +728,13 @@ function render_edit_info() {
     $('#edit_erase_row').css('visibility', 'visible');
 
     $('#edit_brush').html(brush.size);
-    $('#edit_label').html(edit_value);
+    if (brush.value > 0) {
+      $('#edit_label').html(brush.value);
+    } else {
+      $('#edit_label').html('-');
+    }
 
-    if (brush.erase) {
+    if (brush.erase && !brush.conv) {
       $('#edit_erase').html("ON");
     } else {
       $('#edit_erase').html("OFF");
@@ -783,7 +789,7 @@ function update_seg_highlight() {
   ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
   ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
   let seg_img_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
-  highlight(seg_img_data, edit_value);
+  highlight(seg_img_data, brush.value);
   ctx.putImageData(seg_img_data, 0, 0);
   // once this new src is loaded, displayed image will be rerendered
   adjusted_seg.src = canvas.toDataURL();
@@ -1068,7 +1074,7 @@ function start_caliban(filename) {
   load_file(filename);
   prepare_canvas();
   fetch_and_render_frame();
-  update_seg_highlight();
 
   brush = new Brush(scale=scale, height=dimensions[1], width=dimensions[0], pad = padding);
+  update_seg_highlight();
 }
