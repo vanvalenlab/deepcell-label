@@ -5,10 +5,38 @@ class Mode {
     this.highlighted_cell_one = -1;
     this.highlighted_cell_two = -1;
     this.feature = 0;
-    this.channel = 0;
+    this._channel = 0;
     this.action = "";
     this.prompt = "";
 
+  }
+
+  get channel() {
+    return this._channel;
+  }
+
+  set channel(num) {
+    // don't try and change channel if no other channels exist
+    if (channel_max > 1) {
+      // save current display settings before changing
+      brightnessMap.set(this._channel, brightness);
+      contrastMap.set(this._channel, current_contrast);
+      // change channel, wrap around if needed
+      if (num === channel_max) {
+        this._channel = 0;
+      } else if (num < 0) {
+        this._channel = channel_max - 1;
+      } else {
+        this._channel = num;
+      }
+      // get new channel image from server
+      this.info = {"channel": this._channel};
+      action("change_channel", this.info);
+      this.clear();
+      // get brightness/contrast vals for new channel
+      brightness = brightnessMap.get(this._channel);
+      current_contrast = contrastMap.get(this._channel);
+    }
   }
 
   clear() {
@@ -108,20 +136,10 @@ class Mode {
       render_image_display();
     } else if (key === "c") {
       // cycle forward one channel, if applicable
-      if (channel_max > 1) {
-        this.channel = this.increment_value(this.channel, 0, channel_max -1);
-        this.info = {"channel": this.channel};
-        action("change_channel", this.info);
-        this.clear();
-      }
+      this.channel += 1;
     } else if (key === "C") {
       // cycle backward one channel, if applicable
-      if (channel_max > 1) {
-        this.channel = this.decrement_value(this.channel, 0, channel_max -1);
-        this.info = {"channel": this.channel};
-        action("change_channel", this.info);
-        this.clear();
-      }
+      this.channel -= 1;
     } else if (key === "f") {
       // cycle forward one feature, if applicable
       if (feature_max > 1) {
@@ -185,20 +203,10 @@ class Mode {
       render_image_display();
     } else if (key === "c") {
       // cycle forward one channel, if applicable
-      if (channel_max > 1) {
-        this.channel = this.increment_value(this.channel, 0, channel_max -1);
-        this.info = {"channel": this.channel};
-        action("change_channel", this.info);
-        this.clear();
-      }
+      this.channel += 1;
     } else if (key === "C") {
       // cycle backward one channel, if applicable
-      if (channel_max > 1) {
-        this.channel = this.decrement_value(this.channel, 0, channel_max -1);
-        this.info = {"channel": this.channel};
-        action("change_channel", this.info);
-        this.clear();
-      }
+      this.channel -= 1;
     } else if (key === "f") {
       // cycle forward one feature, if applicable
       if (feature_max > 1) {
@@ -595,8 +603,10 @@ var temp_x = 0;
 var temp_y = 0;
 var rendering_raw = false;
 let display_invert = true;
-var current_contrast = 0;
-let brightness = 0;
+var current_contrast;
+let contrastMap = new Map();
+let brightness;
+let brightnessMap = new Map();
 var current_frame = 0;
 var current_label = 0;
 var current_highlight = false;
@@ -923,6 +933,13 @@ function load_file(file) {
         //use i as key in this map because it is an int, mode.feature is also int
         maxLabelsMap.set(i, Math.max(... Object.keys(tracks[key]).map(Number)));
       }
+
+      for (let i = 0; i < channel_max; i++) {
+        brightnessMap.set(i, 0);
+        contrastMap.set(i, 0);
+      }
+      brightness = brightnessMap.get(0);
+      current_contrast = contrastMap.get(0);
 
       project_id = payload.project_id;
       $('#canvas').get(0).width = dimensions[0] + 2*padding;
