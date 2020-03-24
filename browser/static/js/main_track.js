@@ -422,6 +422,7 @@ var temp_y = 0;
 var rendering_raw = false;
 let display_invert = true;
 var current_contrast = 0;
+let brightness = 0;
 var current_frame = 0;
 var current_label = 0;
 var current_highlight = false;
@@ -462,11 +463,10 @@ function upload_file() {
 function contrast_image(img, contrast) {
   let d = img.data;
   contrast = (contrast / 100) + 1;
-  /* let intercept = 128 * (1 - contrast); */
   for (let i = 0; i < d.length; i += 4) {
-      d[i] *= contrast;
-      d[i + 1] *= contrast;
-      d[i + 2] *= contrast;
+      d[i] = d[i]*contrast + brightness;
+      d[i + 1] = d[i+1]*contrast + brightness;
+      d[i + 2] = d[i+2]*contrast + brightness;
   }
   return img;
 }
@@ -719,9 +719,18 @@ function load_file(file) {
 // adjust current_contrast upon mouse scroll
 function handle_scroll(evt) {
   // adjust contrast whenever we can see raw
-  if (rendering_raw || edit_mode) {
-    let delta = - evt.originalEvent.deltaY / 2;
-    current_contrast = Math.max(current_contrast + delta, -100);
+  if ((rendering_raw || edit_mode) && !evt.originalEvent.shiftKey) {
+    // don't use magnitude of scroll
+    let mod_contrast = -Math.sign(evt.originalEvent.deltaY) * 4;
+    // stop if fully desaturated
+    current_contrast = Math.max(current_contrast + mod_contrast, -100);
+    // stop at 5x contrast
+    current_contrast = Math.min(current_contrast + mod_contrast, 400);
+    render_image_display();
+  } else if ((rendering_raw || edit_mode) && evt.originalEvent.shiftKey) {
+    let mod = -Math.sign(evt.originalEvent.deltaY);
+    brightness = Math.min(brightness + mod, 255);
+    brightness = Math.max(brightness + mod, -512);
     render_image_display();
   }
 }
