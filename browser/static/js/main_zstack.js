@@ -940,8 +940,12 @@ function load_file(file) {
 function handle_scroll(evt) {
   // adjust contrast whenever we can see raw
   if (rendering_raw || edit_mode) {
-    let delta = - evt.originalEvent.deltaY / 2;
-    current_contrast = Math.max(current_contrast + delta, -100);
+    // don't use magnitude of scroll
+    let mod_contrast = -Math.sign(evt.originalEvent.deltaY) * 4;
+    // stop if fully desaturated
+    current_contrast = Math.max(current_contrast + mod_contrast, -100);
+    // stop at 5x contrast
+    current_contrast = Math.min(current_contrast + mod_contrast, 400);
     render_image_display();
   }
 }
