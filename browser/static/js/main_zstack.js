@@ -81,6 +81,11 @@ class Mode {
       // toggle rendering_raw
       rendering_raw = !rendering_raw;
       render_image_display();
+    } else if (key === '0') {
+      // reset brightness adjustments
+      brightness = 0;
+      current_contrast = 0;
+      render_image_display();
     }
   }
 
