@@ -684,6 +684,33 @@ function highlight(img, label) {
   }
 }
 
+function outline(img) {
+  let ann = img.data;
+  // use label array to figure out which pixels to recolor
+  for (var j = 0; j < seg_array.length; j += 1){ //y
+    for (var i = 0; i < seg_array[j].length; i += 1){ //x
+      let jlen = seg_array[j].length;
+
+      // label boundaries have negative values
+      if (seg_array[j][i] < 0) {
+        // fill in all pixels affected by scale
+        // k and l get the pixels that are part of the original pixel that has been scaled up
+        for (var k = 0; k < scale; k +=1) {
+          for (var l = 0; l < scale; l +=1) {
+            // location in 1D array based on i,j, and scale
+            pixel_num = (scale*(jlen*(scale*j + l) + i)) + k;
+
+            // set to red by changing RGB values
+            ann[(pixel_num*4)] = 255;
+            ann[(pixel_num*4) + 1] = 255;
+            ann[(pixel_num*4) + 2] = 255;
+          }
+        }
+      }
+    }
+  }
+}
+
 function grayscale(img) {
   let data = img.data;
   for (var i = 0; i < data.length; i += 4) {
@@ -838,6 +865,11 @@ function render_edit_image(ctx) {
     ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
   }
   ctx.restore();
+
+  // to outline all edges:
+  // let composite = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
+  // outline(composite);
+  // ctx.putImageData(composite, padding, padding);
 
   // draw brushview on top of cells/annotations
   ctx.save();
