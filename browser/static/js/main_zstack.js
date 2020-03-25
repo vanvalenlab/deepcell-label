@@ -17,8 +17,9 @@ class Mode {
     this.highlighted_cell_one = -1;
     this.highlighted_cell_two = -1;
 
-    thresholding = false;
-    target_value = 0;
+    brush.conv = false;
+    brush.clearThresh();
+    update_seg_highlight();
 
     this.action = "";
     this.prompt = "";
@@ -45,6 +46,7 @@ class Mode {
     } else if (key === "Escape") {
       // deselect/cancel action/reset highlight
       mode.clear();
+      // may want some things here that trigger on ESC but not clear()
     } else if (key === 'h') {
       // toggle highlight
       current_highlight = !current_highlight;
@@ -61,25 +63,12 @@ class Mode {
   handle_universal_edit_keybind(key) {
     if (key === "ArrowDown") {
       // decrease brush size, minimum size 1
-      brush_size = Math.max(brush_size - 1, 1);
-
-      // update the brush with its new size
-      clear_hidden_ctx();
-      brush.radius = brush_size * scale;
-      brush.draw(hidden_ctx);
-
+      brush.size -= 1;
       // redraw the frame with the updated brush preview
       render_image_display();
     } else if (key === "ArrowUp") {
-      //increase brush size, shouldn't be larger than the image
-      brush_size = Math.min(self.brush_size + 1,
-          dimensions[0]/scale, dimensions[1]/scale);
-
-      // update the brush with its new size
-      clear_hidden_ctx();
-      brush.radius = brush_size * scale;
-      brush.draw(hidden_ctx);
-
+      // increase brush size, diameter shouldn't be larger than the image
+      brush.size += 1;
       // redraw the frame with the updated brush preview
       render_image_display();
     } else if (key === 'i') {
@@ -88,13 +77,13 @@ class Mode {
       render_image_display();
     } else if (key === 'n') {
       // set edit value to something unused
-      edit_value = maxLabelsMap.get(this.feature) + 1;
+      brush.value = maxLabelsMap.get(this.feature) + 1;
       update_seg_highlight();
-      if (this.kind === Modes.prompt) {
-        erase = false;
-        this.prompt = "Now drawing over label " + target_value + " with label " + edit_value
+      if (this.kind === Modes.prompt && brush.conv) {
+        this.prompt = "Now drawing over label " + brush.target + " with label " + brush.value
             + ". Use ESC to leave this mode.";
         this.kind = Modes.drawing;
+        render_image_display();
       }
       render_info_display();
     }
@@ -140,19 +129,19 @@ class Mode {
       }
     } else if (key === "=") {
       // increase edit_value up to max label + 1 (guaranteed unused)
-      edit_value = Math.min(edit_value + 1,
+      brush.value = Math.min(brush.value + 1,
           maxLabelsMap.get(this.feature) + 1);
       update_seg_highlight();
       render_info_display();
     } else if (key === "-") {
       // decrease edit_value, minimum 1
-      edit_value = Math.max(edit_value - 1, 1);
+      brush.value -= 1;
       update_seg_highlight();
       render_info_display();
     } else if (key === "x") {
       // turn eraser on and off
-      erase = !erase;
-      render_info_display();
+      brush.erase = !brush.erase;
+      render_image_display();
     } else if (key === 'p') {
       // color picker
       this.kind = Modes.prompt;
@@ -164,14 +153,15 @@ class Mode {
       this.kind = Modes.prompt;
       this.action = "pick_target";
       this.prompt = "First, click on the label you want to overwrite.";
-      render_info_display();
+      brush.conv = true;
+      render_image_display();
     } else if (key === 't') {
       // prompt thresholding with bounding box
       this.kind = Modes.question;
       this.action = "start_threshold";
       this.prompt = "Click and drag to create a bounding box around the area you want to threshold";
-      thresholding = true;
-      clear_hidden_ctx();
+      brush.show = false;
+      brush.clearView();
       render_image_display();
     }
   }
@@ -389,10 +379,10 @@ class Mode {
 
   handle_draw() {
     action("handle_draw", { "trace": JSON.stringify(mouse_trace), //stringify array so it doesn't get messed up
-                  "target_value": target_value, //value that we're overwriting
-                  "brush_value": edit_value, //we don't update caliban with edit_value, etc each time they change
-                  "brush_size": brush_size, //so we need to pass them in as args
-                  "erase": erase,
+                  "target_value": brush.target, //value that we're overwriting
+                  "brush_value": brush.value, //we don't update caliban with edit_value, etc each time they change
+                  "brush_size": brush.size, //so we need to pass them in as args
+                  "erase": (brush.erase && !brush.conv),
                   "frame": current_frame});
     mouse_trace = [];
     if (this.kind !== Modes.drawing) {
@@ -401,12 +391,11 @@ class Mode {
   }
 
   handle_threshold(evt) {
-    thresholding = false;
     let end_y = evt.offsetY - padding;
     let end_x = evt.offsetX - padding;
 
-    let threshold_start_y = Math.floor(box_start_y / scale);
-    let threshold_start_x = Math.floor(box_start_x / scale);
+    let threshold_start_y = Math.floor(brush.threshY / scale);
+    let threshold_start_x = Math.floor(brush.threshX / scale);
     let threshold_end_y = Math.floor(end_y / scale);
     let threshold_end_x = Math.floor(end_x / scale);
 
@@ -487,20 +476,19 @@ class Mode {
       this.clear();
     } else if (this.action === "pick_color"
           && current_label !== 0
-          && current_label !== target_value) {
-      edit_value = current_label;
+          && current_label !== brush.target) {
+      brush.value = current_label;
       update_seg_highlight();
-      if (target_value !== 0) {
-        erase = false;
-        this.prompt = "Now drawing over label " + target_value + " with label " + edit_value
+      if (brush.target !== 0) {
+        this.prompt = "Now drawing over label " + brush.target + " with label " + brush.value
             + ". Use ESC to leave this mode.";
         this.kind = Modes.drawing;
-        render_info_display();
+        render_image_display();
       } else {
         this.clear();
       }
     } else if (this.action === "pick_target" && current_label !== 0) {
-      target_value = current_label;
+      brush.target = current_label;
       this.action = "pick_color";
       this.prompt = "Click on the label you want to draw with, or press 'n' to draw with an unused label.";
       render_info_display();
@@ -577,10 +565,6 @@ class Mode {
   }
 }
 
-
-
-
-
 var Modes = Object.freeze({
   "none": 1,
   "single": 2,
@@ -616,20 +600,12 @@ var mouse_x = 0;
 var mouse_y = 0;
 const padding = 5;
 var edit_mode = false;
-let edit_value = 1;
-let target_value = 0;
-var brush_size = 1;
-var erase = false;
 var answer = "(SPACE=YES / ESC=NO)";
 let mousedown = false;
 var tooltype = 'draw';
 var project_id;
 var brush;
 let mouse_trace = [];
-let thresholding = false;
-let box_start_x;
-let box_start_y;
-let hidden_ctx;
 const adjusted_seg = new Image();
 adjusted_seg.onload = render_image_display;
 
@@ -722,7 +698,11 @@ function render_highlight_info() {
   if (current_highlight) {
     $('#highlight').html("ON");
     if (edit_mode) {
-      $('#currently_highlighted').html(edit_value)
+      if (brush.value > 0) {
+        $('#currently_highlighted').html(brush.value)
+      } else {
+        $('#currently_highlighted').html('-')
+      }
     } else {
       if (mode.highlighted_cell_one !== -1) {
         if (mode.highlighted_cell_two !== -1) {
@@ -747,10 +727,14 @@ function render_edit_info() {
     $('#edit_label_row').css('visibility', 'visible');
     $('#edit_erase_row').css('visibility', 'visible');
 
-    $('#edit_brush').html(brush_size);
-    $('#edit_label').html(edit_value);
+    $('#edit_brush').html(brush.size);
+    if (brush.value > 0) {
+      $('#edit_label').html(brush.value);
+    } else {
+      $('#edit_label').html('-');
+    }
 
-    if (erase) {
+    if (brush.erase && !brush.conv) {
       $('#edit_erase').html("ON");
     } else {
       $('#edit_erase').html("OFF");
@@ -793,10 +777,6 @@ function render_info_display() {
   $('#mode').html(mode.render());
 }
 
-function clear_hidden_ctx() {
-  hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1]);
-}
-
 // apply highlight to edit_value in seg_image, save resulting
 // image as src of adjusted_seg to use to render edit (if needed)
 // additional hidden canvas is used to prevent image flickering
@@ -809,7 +789,7 @@ function update_seg_highlight() {
   ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
   ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
   let seg_img_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
-  highlight(seg_img_data, edit_value);
+  highlight(seg_img_data, brush.value);
   ctx.putImageData(seg_img_data, 0, 0);
   // once this new src is loaded, displayed image will be rerendered
   adjusted_seg.src = canvas.toDataURL();
@@ -840,12 +820,7 @@ function render_edit_image(ctx) {
   ctx.restore();
 
   // draw brushview on top of cells/annotations
-  ctx.save();
-  ctx.globalAlpha = 0.2;
-  ctx.globalCompositeOperation = 'source-over';
-  let hidden_canvas = document.getElementById('hidden_canvas');
-  ctx.drawImage(hidden_canvas, padding,padding,dimensions[0],dimensions[1]);
-  ctx.restore();
+  brush.draw(ctx);
 }
 
 function render_raw_image(ctx) {
@@ -927,8 +902,6 @@ function load_file(file) {
       project_id = payload.project_id;
       $('#canvas').get(0).width = dimensions[0] + 2*padding;
       $('#canvas').get(0).height = dimensions[1] + 2*padding;
-      $('#hidden_canvas').get(0).width = dimensions[0];
-      $('#hidden_canvas').get(0).height = dimensions[1];
       $('#hidden_seg_canvas').get(0).width = dimensions[0];
       $('#hidden_seg_canvas').get(0).height = dimensions[1];
     },
@@ -957,10 +930,9 @@ function handle_mousedown(evt) {
     if (edit_mode) {
       let img_y = Math.floor(mouse_y/scale);
       let img_x = Math.floor(mouse_x/scale);
-      if (thresholding) {
-        box_start_x = mouse_x;
-        box_start_y = mouse_y;
-        mode.action = "draw_threshold_box";
+      if (!brush.show) {
+        brush.threshX = mouse_x;
+        brush.threshY = mouse_y;
       } else {
         mouse_trace.push([img_y, img_x]);
       }
@@ -975,17 +947,9 @@ function helper_brush_draw() {
     let img_x = Math.floor(mouse_x/scale);
     mouse_trace.push([img_y, img_x]);
   } else {
-    clear_hidden_ctx();
+    brush.clearView();
   }
-  brush.x = mouse_x;
-  brush.y = mouse_y;
-  brush.draw(hidden_ctx);
-}
-
-function helper_box_draw(start_y, start_x, end_y, end_x) {
-  clear_hidden_ctx();
-  hidden_ctx.fillStyle = 'red';
-  hidden_ctx.fillRect(start_x, start_y, (end_x - start_x), (end_y - start_y));
+  brush.addToView();
 }
 
 // handles mouse movement, whether or not mouse button is held down
@@ -995,15 +959,17 @@ function handle_mousemove(evt) {
   mouse_y = evt.offsetY - padding;
   render_info_display();
 
+  // keeps brush location updated correctly when mouse moves outside edit mode
+  brush.x = mouse_x;
+  brush.y = mouse_y;
+
   // update brush preview
   if (edit_mode) {
-    // hidden canvas is keeping track of the brush
-    if (!thresholding) {
+    // brush's canvas is keeping track of the brush
+    if (brush.show) {
       helper_brush_draw();
-    } else if (thresholding && mode.action === "start_threshold") {
-      clear_hidden_ctx();
-    } else if (thresholding && mode.action === "draw_threshold_box") {
-      helper_box_draw(box_start_y, box_start_x, mouse_y, mouse_x);
+    } else {
+      brush.boxView();
     }
     render_image_display();
   }
@@ -1014,17 +980,16 @@ function handle_mouseup(evt) {
   if (mode.kind !== Modes.prompt) {
     mousedown = false;
     if (edit_mode) {
-      if (thresholding) {
+      if (!brush.show) {
         mode.handle_threshold(evt);
       } else {
         //send click&drag coordinates to caliban.py to update annotations
         mode.handle_draw();
       }
       // reset brush preview
-      clear_hidden_ctx();
       brush.x = evt.offsetX - padding;
       brush.y = evt.offsetY - padding;
-      brush.draw(hidden_ctx);
+      brush.refreshView();
     }
   }
 }
@@ -1111,20 +1076,7 @@ function start_caliban(filename) {
   load_file(filename);
   prepare_canvas();
   fetch_and_render_frame();
-  update_seg_highlight();
 
-  brush = {
-  x: 0,
-  y: 0,
-  radius: 1,
-  color: 'red',
-  draw: function(ctx) {
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
-    ctx.closePath();
-    ctx.fillStyle = this.color;
-    ctx.fill();
-    }
-  }
-  hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
+  brush = new Brush(scale=scale, height=dimensions[1], width=dimensions[0], pad = padding);
+  update_seg_highlight();
 }
