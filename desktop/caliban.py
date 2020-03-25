@@ -3769,7 +3769,7 @@ class RGBNpz(CalibanWindow):
             self.display_info = [*sorted(set(display_info_types) - {'frames'})]
         # if there are no labels in the feature, hardcode the display info
         except:
-            self.display_info = ['label', 'slices']
+            self.display_info = ['label']
 
         # open file to first frame of annotation stack
         self.current_frame = 0
