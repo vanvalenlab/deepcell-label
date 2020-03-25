@@ -327,7 +327,8 @@ def update_object(conn, project):
     '''
     sql = ''' UPDATE projects
               SET filename = %s ,
-                  state = %s
+                  state = %s,
+                  numUpdates = numUpdates + 1
               WHERE id = %s'''
 
     # convert object to binary data to be stored as data type BLOB
@@ -394,7 +395,8 @@ def main():
             state longblob,
             createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
             updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
-            finished TIMESTAMP
+            finished TIMESTAMP,
+            numUpdates integer NOT NULL DEFAULT 0
         );
     """
     create_table(conn, sql_create_projects_table)
