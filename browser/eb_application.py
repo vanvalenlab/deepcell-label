@@ -77,7 +77,7 @@ def action(project_id, action_type, frame):
         state.frames_changed = state.info_changed = False
 
         # Update object in local database
-        update_object(conn, (id_exists[1], state, project_id))
+        update_object(conn, state, project_id)
         conn.close()
 
     except Exception as e:
@@ -252,7 +252,7 @@ def shortcut(filename):
     return jsonify(error), 400
 
 def create_connection(_):
-    ''' Create a database connection to a SQLite database.
+    ''' Create a database connection to a MySQL database.
     '''
     conn = None
     try:
@@ -309,7 +309,10 @@ def create_table(conn, create_table_sql):
 
 
 def create_project(conn, filename, data, subfolders):
-    ''' Create a new project in the database table.
+    ''' Create a new project in the database table. Creates a
+    new row (id autoincrements from whatever id came before it).
+    Populates row with file info (name, subfolders, and the file
+    contents, as a pickled python object).
     '''
     sql = ''' INSERT INTO projects(filename, state, subfolders)
               VALUES(%s, %s, %s) '''
@@ -322,22 +325,22 @@ def create_project(conn, filename, data, subfolders):
     return cursor.lastrowid
 
 
-# TODO: I don't think we actually need to update the filename of anything, just the state
-def update_object(conn, project):
-    ''' Update filename, state of a project.
+def update_object(conn, state, project_id):
+    ''' Update state of a project. Creates pickle dump of object state
+    and stores it in db in appropriate project row. Also increments numUpdates,
+    and creates timestamp for firstUpdate if appropriate.
     '''
     sql = ''' UPDATE projects
-              SET filename = %s ,
-                  state = %s,
+              SET state = %s,
                   firstUpdate = IF(numUpdates = 0, CURRENT_TIMESTAMP, firstUpdate),
                   numUpdates = numUpdates + 1
               WHERE id = %s'''
 
     # convert object to binary data to be stored as data type BLOB
-    state_data = pickle.dumps(project[1], pickle.HIGHEST_PROTOCOL)
+    state_data = pickle.dumps(state, pickle.HIGHEST_PROTOCOL)
 
     cur = conn.cursor()
-    cur.execute(sql, (project[0], state_data, project[2]))
+    cur.execute(sql, (state_data, project_id)
     conn.commit()
 
 
@@ -361,7 +364,10 @@ def get_project(conn, project_id):
 
 
 def delete_project(conn, project_id):
-    ''' Delete data object (TrackReview/ZStackReview) by id.
+    ''' Delete data object (TrackReview/ZStackReview) by id. Ie, state data
+    gets overwritten with NULL value in database (it should have been uploaded
+    to AWS as part of upload action) to save space in db. Timestamp metrics
+    are updated appropriately.
     '''
     cur = conn.cursor()
 
@@ -389,9 +395,16 @@ def main():
     filename: always has a value, does not contain subfolders in filename
     state: stores python object as longblob while file is open, nulls out
         when file is uploaded
+    subfolders: directory structure of s3 bucket where file was stored
     createdAt: timestamp of when the file was opened; should always have a value
     updatedAt: timestamp of lastest time the file was changed, including upload
     finished: null value until file is uploaded and it gets a timestamp
+    numUpdates: integer that increments each time the file is updated (note:
+        changing channels counts as an update, changing frames does not)
+    firstUpdate: timestamp that is null by default until an update is made. Is not
+        subsequently changed
+    lastUpdate: timestamp that is null by default until file is uploaded, to
+        accurately track the last change made to file before upload
     '''
     initial_connection("caliban.db")
     conn = create_connection("")
