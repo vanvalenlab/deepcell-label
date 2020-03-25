@@ -3825,7 +3825,11 @@ class RGBNpz(CalibanWindow):
 
     def update_adjusted_raw(self):
         # self.raw may not be in 8 bit (0, 255) format; rescale without modifying original
-        rescaled_raw = rescale_intensity(self.raw[:,:,0:6], in_range = 'image', out_range = 'uint8')
+
+        # get value at 5th and 95th percentile for min and max rescaling, respectively
+        percentiles = np.percentile(self.raw[self.raw > 0], [5, 95])
+        rescaled_raw = rescale_intensity(self.raw[:,:,0:6], in_range=(percentiles[0], percentiles[1]),
+                                         out_range='uint8')
         rescaled_raw = rescaled_raw.astype('uint8')
 
         for c, adjust in enumerate(self.adjustments):
@@ -3866,7 +3870,11 @@ class RGBNpz(CalibanWindow):
             raw = self.adjusted_raw[:,:,0:3]
         else:
             # raw = self.raw[:,:,0:3]
-            rescaled_raw = rescale_intensity(self.raw[:,:,0:6], in_range = 'image', out_range = 'uint8')
+
+            # get value at 5th and 95th percentile for min and max rescaling, respectively
+            percentiles = np.percentile(self.raw[self.raw > 0], [5, 95])
+            rescaled_raw = rescale_intensity(self.raw[:, :, 0:6], in_range=(percentiles[0], percentiles[1]),
+                                             out_range='uint8')
             raw = rescaled_raw[:,:,0:3]
             # add cyan
             if self.channel_max > 3:
@@ -3904,7 +3912,10 @@ class RGBNpz(CalibanWindow):
         '''
         raw = self.get_raw_current_frame()
 
-        adjusted_raw = rescale_intensity(raw, in_range = 'image', out_range = 'uint8')
+        # get value at 5th and 95th percentile for min and max rescaling, respectively
+        percentiles = np.percentile(raw[raw > 0], [5, 95])
+        adjusted_raw = rescale_intensity(raw, in_range=(percentiles[0], percentiles[1]),
+                                         out_range='uint8')
         image = self.array_to_img(input_array = adjusted_raw.astype(np.uint8),
             vmax = None,
             cmap = None,
