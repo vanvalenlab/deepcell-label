@@ -24,6 +24,7 @@ from skimage.morphology import flood_fill, flood
 from skimage.draw import circle
 from skimage.measure import regionprops
 from skimage.exposure import rescale_intensity
+from skimage.segmentation import find_boundaries
 
 from config import S3_KEY, S3_SECRET
 
@@ -124,7 +125,20 @@ class ZStackReview:
 
     def get_array(self, frame):
         frame = self.annotated[frame][:,:,self.feature]
+        frame = self.add_outlines(frame)
         return frame
+
+    def add_outlines(self, frame):
+        '''
+        Helper function that indicates label outlines in array with
+        negative values of that label.
+        '''
+        # this is sometimes int 32 but may be uint, convert to
+        # int16 to ensure negative numbers and smaller payload than int32
+        frame = frame.astype(np.int16)
+        boundary_mask = find_boundaries(frame, mode = 'inner')
+        outlined_frame = np.where(boundary_mask == 1, -frame, frame)
+        return outlined_frame
 
     def load(self, filename):
 

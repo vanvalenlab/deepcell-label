@@ -466,7 +466,7 @@ function highlight(img, label) {
     for (var i = 0; i < seg_array[j].length; i += 1){ //x
       let jlen = seg_array[j].length;
 
-      if (seg_array[j][i] === label){
+      if (Math.abs(seg_array[j][i]) === label){
         // fill in all pixels affected by scale
         // k and l get the pixels that are part of the original pixel that has been scaled up
         for (var k = 0; k < scale; k +=1) {
@@ -512,7 +512,7 @@ function label_under_mouse() {
   let new_label;
   if (img_y >= 0 && img_y < seg_array.length &&
       img_x >= 0 && img_x < seg_array[0].length) {
-    new_label = seg_array[img_y][img_x]; //check array value at mouse location
+    new_label = Math.abs(seg_array[img_y][img_x]); //check array value at mouse location
   } else {
     new_label = 0;
   }
