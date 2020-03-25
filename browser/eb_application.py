@@ -328,6 +328,7 @@ def update_object(conn, project):
     sql = ''' UPDATE projects
               SET filename = %s ,
                   state = %s,
+                  firstUpdate = IF(numUpdates = 0, CURRENT_TIMESTAMP, firstUpdate),
                   numUpdates = numUpdates + 1
               WHERE id = %s'''
 
@@ -396,7 +397,8 @@ def main():
             createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
             updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
             finished TIMESTAMP,
-            numUpdates integer NOT NULL DEFAULT 0
+            numUpdates integer NOT NULL DEFAULT 0,
+            firstUpdate TIMESTAMP
         );
     """
     create_table(conn, sql_create_projects_table)
