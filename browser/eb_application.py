@@ -364,6 +364,12 @@ def delete_project(conn, project_id):
     '''
     cur = conn.cursor()
 
+    sql = ''' UPDATE {tn}
+              SET lastUpdate = updatedAt
+              WHERE id = {my_id}
+          '''.format(tn = 'projects', my_id = project_id)
+    cur.execute(sql)
+
     timesql = ''' UPDATE {tn}
                   SET finished = CURRENT_TIMESTAMP,
                       state = NULL
@@ -398,7 +404,8 @@ def main():
             updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
             finished TIMESTAMP,
             numUpdates integer NOT NULL DEFAULT 0,
-            firstUpdate TIMESTAMP
+            firstUpdate TIMESTAMP,
+            lastUpdate TIMESTAMP
         );
     """
     create_table(conn, sql_create_projects_table)
