@@ -150,17 +150,18 @@ def load(filename):
 
     folders = re.split('__', filename)
     filename = folders[len(folders) - 1]
-    subfolders = folders[2:len(folders)]
+    subfolders = folders[2:len(folders)-1]
 
     subfolders = '/'.join(subfolders)
+    full_path = os.path.join(subfolders, filename)
 
     input_bucket = folders[0]
     output_bucket = folders[1]
 
     if is_trk_file(filename):
         # Initate TrackReview object and entry in database
-        track_review = TrackReview(filename, input_bucket, output_bucket, subfolders)
-        project_id = create_project(conn, filename, track_review)
+        track_review = TrackReview(filename, input_bucket, output_bucket, full_path)
+        project_id = create_project(conn, filename, track_review, subfolders)
 
         conn.commit()
         conn.close()
@@ -176,8 +177,8 @@ def load(filename):
 
     if is_npz_file(filename):
         # Initate ZStackReview object and entry in database
-        zstack_review = ZStackReview(filename, input_bucket, output_bucket, subfolders)
-        project_id = create_project(conn, filename, zstack_review)
+        zstack_review = ZStackReview(filename, input_bucket, output_bucket, full_path)
+        project_id = create_project(conn, filename, zstack_review, subfolders)
 
         conn.commit()
         conn.close()
@@ -307,17 +308,17 @@ def create_table(conn, create_table_sql):
         print(err)
 
 
-def create_project(conn, filename, data):
+def create_project(conn, filename, data, subfolders):
     ''' Create a new project in the database table.
     '''
-    sql = ''' INSERT INTO projects(filename, state)
-              VALUES(%s, %s) '''
+    sql = ''' INSERT INTO projects(filename, state, subfolders)
+              VALUES(%s, %s, %s) '''
     cursor = conn.cursor()
 
     # convert object to binary data to be stored as data type BLOB
     state_data = pickle.dumps(data, pickle.HIGHEST_PROTOCOL)
 
-    cursor.execute(sql, (filename, state_data))
+    cursor.execute(sql, (filename, state_data, subfolders))
     return cursor.lastrowid
 
 
@@ -400,6 +401,7 @@ def main():
             id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
             filename text NOT NULL,
             state longblob,
+            subfolders text NOT NULL,
             createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
             updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
             finished TIMESTAMP,
