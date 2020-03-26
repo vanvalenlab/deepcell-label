@@ -215,10 +215,21 @@ def tool():
     new_filename = 'caliban-input__caliban-output__test__{}'.format(
         str(filename))
 
+    # if no options passed (how this route will be for now),
+    # still want to pass in default settings
+    rgb = request.args.get('rgb', default = False, type = bool)
+    pixel_only = request.args.get('pixel_only', default = False, type = bool)
+    label_only = request.args.get('label_only', default = False, type = bool)
+    settings = {'rgb': rgb,
+                'pixel_only': pixel_only,
+                'label_only': label_only}
+
     if is_trk_file(new_filename):
         return render_template('index_track.html', filename=new_filename)
     if is_npz_file(new_filename):
-        return render_template('index_zstack.html', filename=new_filename)
+        return render_template('index_zstack.html',
+            filename=new_filename,
+            settings=settings)
 
     error = {
         'error': 'invalid file extension: {}'.format(
@@ -233,11 +244,20 @@ def shortcut(filename):
         request to access a specific data file that has been preloaded to the
         input S3 bucket (ex. http://127.0.0.1:5000/test.npz).
     '''
+    # if no options passed, we get default settings anyway
+    rgb = request.args.get('rgb', default = False, type = bool)
+    pixel_only = request.args.get('pixel_only', default = False, type = bool)
+    label_only = request.args.get('label_only', default = False, type = bool)
+    settings = {'rgb': rgb,
+                'pixel_only': pixel_only,
+                'label_only': label_only}
 
     if is_trk_file(filename):
         return render_template('index_track.html', filename=filename)
     if is_npz_file(filename):
-        return render_template('index_zstack.html', filename=filename)
+        return render_template('index_zstack.html',
+            filename=filename,
+            settings=settings)
 
     error = {
         'error': 'invalid file extension: {}'.format(
