@@ -282,20 +282,21 @@ def initial_connection():
             charset='utf8',
             use_unicode=True)
 
-        # on new server, caliban database won't exist yet
-        try:
-            query = '''CREATE DATABASE {}'''.format(config.MYSQL_DATABASE)
-            conn.cursor().execute(query)
-            conn.commit()
-
-        # it already exists
-        except:
-            pass
-
-        conn.close()
-
     except MySQLdb._exceptions.MySQLError as err:
         print('error', err)
+
+    # on new server, caliban database won't exist yet
+    try:
+        query = '''CREATE DATABASE {}'''.format(config.MYSQL_DATABASE)
+        conn.cursor().execute(query)
+        conn.commit()
+
+    # it already exists
+    except MySQLdb._exceptions.MySQLError as err:
+        print('error', err)
+
+    finally:
+        conn.close()
 
 
 def create_table(conn, create_table_sql):
