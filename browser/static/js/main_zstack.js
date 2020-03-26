@@ -124,7 +124,7 @@ class Mode {
 
   // keybinds that apply when in edit mode
   handle_edit_keybind(key) {
-    if (key === "e") {
+    if (key === "e" && !settings.pixel_only) {
       // toggle edit mode
       edit_mode = !edit_mode;
       render_image_display();
@@ -615,7 +615,7 @@ var scale;
 var mouse_x = 0;
 var mouse_y = 0;
 const padding = 5;
-var edit_mode = false;
+let edit_mode;
 var answer = "(SPACE=YES / ESC=NO)";
 let mousedown = false;
 var tooltype = 'draw';
@@ -1122,6 +1122,11 @@ function action(action, info, frame = current_frame) {
 }
 
 function start_caliban(filename) {
+  if (settings.pixel_only) {
+    edit_mode = true;
+  } else {
+    edit_mode = false;
+  }
   // disable scrolling from scrolling around on page (it should just control brightness)
   document.addEventListener('wheel', function(event) {
     event.preventDefault();
