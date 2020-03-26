@@ -150,7 +150,7 @@ def load(filename):
 
     folders = re.split('__', filename)
     filename = folders[len(folders) - 1]
-    subfolders = folders[2:len(folders)-1]
+    subfolders = folders[2:len(folders) - 1]
 
     subfolders = '/'.join(subfolders)
     full_path = os.path.join(subfolders, filename)
