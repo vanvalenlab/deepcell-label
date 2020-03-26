@@ -26,7 +26,7 @@ app.config.from_object("config")
 def upload_file(project_id):
     ''' Upload .trk/.npz data file to AWS S3 bucket.
     '''
-    conn = create_connection("caliban.db")
+    conn = create_connection()
     # Use id to grab appropriate TrackReview/ZStackReview object from database
     id_exists = get_project(conn, project_id)
 
@@ -60,7 +60,7 @@ def action(project_id, action_type, frame):
     frame = int(frame)
 
     try:
-        conn = create_connection("caliban.db")
+        conn = create_connection()
         # Use id to grab appropriate TrackReview/ZStackReview object from database
         id_exists = get_project(conn, project_id)
 
@@ -112,7 +112,7 @@ def get_frame(frame, project_id):
         cells to .js file.
     '''
     frame = int(frame)
-    conn = create_connection("caliban.db")
+    conn = create_connection()
     # Use id to grab appropriate TrackReview/ZStackReview object from database
     id_exists = get_project(conn, project_id)
     conn.close()
@@ -144,7 +144,7 @@ def load(filename):
     ''' Initate TrackReview/ZStackReview object and load object to database.
         Send specific attributes of the object to the .js file.
     '''
-    conn = create_connection("caliban.db")
+    conn = create_connection()
 
     print(f"Loading track at {filename}", file=sys.stderr)
 
@@ -251,7 +251,7 @@ def shortcut(filename):
     }
     return jsonify(error), 400
 
-def create_connection(_):
+def create_connection():
     ''' Create a database connection to a MySQL database.
     '''
     conn = None
@@ -268,7 +268,7 @@ def create_connection(_):
         print(err)
     return conn
 
-def initial_connection(_):
+def initial_connection():
     ''' Create a connection to a MySQL server. Creates database if
     it doesn't exist yet. Only called when starting app.
     '''
@@ -406,8 +406,8 @@ def main():
     lastUpdate: timestamp that is null by default until file is uploaded, to
         accurately track the last change made to file before upload
     '''
-    initial_connection("caliban.db")
-    conn = create_connection("")
+    initial_connection()
+    conn = create_connection()
 
     sql_create_projects_table = """
         CREATE TABLE IF NOT EXISTS projects (
