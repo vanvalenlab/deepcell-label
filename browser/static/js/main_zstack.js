@@ -695,8 +695,8 @@ function outline(img) {
     for (var i = 0; i < seg_array[j].length; i += 1){ //x
       let jlen = seg_array[j].length;
 
-      // label boundaries have negative values
-      if (seg_array[j][i] < 0) {
+      if (edit_mode && brush.conv && brush.target !== -1
+        && seg_array[j][i] === -brush.target) {
         // fill in all pixels affected by scale
         // k and l get the pixels that are part of the original pixel that has been scaled up
         for (var k = 0; k < scale; k +=1) {
@@ -705,6 +705,21 @@ function outline(img) {
             pixel_num = (scale*(jlen*(scale*j + l) + i)) + k;
 
             // set to red by changing RGB values
+            ann[(pixel_num*4)] = 255;
+            ann[(pixel_num*4) + 1] = 0;
+            ann[(pixel_num*4) + 2] = 0;
+          }
+        }
+      } else if (seg_array[j][i] < 0) {
+      // label boundaries have negative values
+        // fill in all pixels affected by scale
+        // k and l get the pixels that are part of the original pixel that has been scaled up
+        for (var k = 0; k < scale; k +=1) {
+          for (var l = 0; l < scale; l +=1) {
+            // location in 1D array based on i,j, and scale
+            pixel_num = (scale*(jlen*(scale*j + l) + i)) + k;
+
+            // set to white by changing RGB values
             ann[(pixel_num*4)] = 255;
             ann[(pixel_num*4) + 1] = 255;
             ann[(pixel_num*4) + 2] = 255;
