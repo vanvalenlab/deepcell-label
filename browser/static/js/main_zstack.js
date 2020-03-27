@@ -181,7 +181,7 @@ class Mode {
       this.prompt = "First, click on the label you want to overwrite.";
       brush.conv = true;
       render_image_display();
-    } else if (key === 't') {
+    } else if (key === 't' && !rgb) {
       // prompt thresholding with bounding box
       this.kind = Modes.question;
       this.action = "start_threshold";
@@ -221,7 +221,7 @@ class Mode {
         action("change_feature", this.info);
         this.clear();
       }
-    } else if (key === "p") {
+    } else if (key === "p" && !rgb) {
       //iou cell identity prediction
       this.kind = Modes.question;
       this.action = "predict";
@@ -298,7 +298,7 @@ class Mode {
       this.action = "swap_cells";
       this.prompt = "SPACE = SWAP IN ALL FRAMES / S = SWAP IN THIS FRAME ONLY / ESC = CANCEL SWAP";
       render_info_display();
-    } else if (key === "w" ) {
+    } else if (key === "w" && !rgb) {
       // watershed
       this.kind = Modes.question;
       this.action = "watershed";
