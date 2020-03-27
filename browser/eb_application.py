@@ -26,7 +26,7 @@ app.config.from_object("config")
 def upload_file(project_id):
     ''' Upload .trk/.npz data file to AWS S3 bucket.
     '''
-    conn = create_connection("caliban.db")
+    conn = create_connection()
     # Use id to grab appropriate TrackReview/ZStackReview object from database
     id_exists = get_project(conn, project_id)
 
@@ -42,7 +42,7 @@ def upload_file(project_id):
     elif is_npz_file(id_exists[1]):
         state.action_save_zstack()
 
-    # Delete id and object from database
+    # add "finished" timestamp and null out state longblob
     delete_project(conn, project_id)
     conn.close()
 
@@ -60,7 +60,7 @@ def action(project_id, action_type, frame):
     frame = int(frame)
 
     try:
-        conn = create_connection("caliban.db")
+        conn = create_connection()
         # Use id to grab appropriate TrackReview/ZStackReview object from database
         id_exists = get_project(conn, project_id)
 
@@ -77,7 +77,7 @@ def action(project_id, action_type, frame):
         state.frames_changed = state.info_changed = False
 
         # Update object in local database
-        update_object(conn, (id_exists[1], state, project_id))
+        update_object(conn, state, project_id)
         conn.close()
 
     except Exception as e:
@@ -112,7 +112,7 @@ def get_frame(frame, project_id):
         cells to .js file.
     '''
     frame = int(frame)
-    conn = create_connection("caliban.db")
+    conn = create_connection()
     # Use id to grab appropriate TrackReview/ZStackReview object from database
     id_exists = get_project(conn, project_id)
     conn.close()
@@ -144,23 +144,25 @@ def load(filename):
     ''' Initate TrackReview/ZStackReview object and load object to database.
         Send specific attributes of the object to the .js file.
     '''
-    conn = create_connection("caliban.db")
+    conn = create_connection()
 
     print(f"Loading track at {filename}", file=sys.stderr)
 
     folders = re.split('__', filename)
     filename = folders[len(folders) - 1]
-    subfolders = folders[2:len(folders)]
+    subfolders = folders[2:len(folders) - 1]
 
     subfolders = '/'.join(subfolders)
+    full_path = os.path.join(subfolders, filename)
 
     input_bucket = folders[0]
     output_bucket = folders[1]
 
     if is_trk_file(filename):
         # Initate TrackReview object and entry in database
-        track_review = TrackReview(filename, input_bucket, output_bucket, subfolders)
-        project_id = create_project(conn, filename, track_review)
+        track_review = TrackReview(filename, input_bucket, output_bucket, full_path)
+        project_id = create_project(conn, filename, track_review, subfolders)
+
         conn.commit()
         conn.close()
 
@@ -175,8 +177,9 @@ def load(filename):
 
     if is_npz_file(filename):
         # Initate ZStackReview object and entry in database
-        zstack_review = ZStackReview(filename, input_bucket, output_bucket, subfolders)
-        project_id = create_project(conn, filename, zstack_review)
+        zstack_review = ZStackReview(filename, input_bucket, output_bucket, full_path)
+        project_id = create_project(conn, filename, zstack_review, subfolders)
+
         conn.commit()
         conn.close()
 
@@ -248,8 +251,8 @@ def shortcut(filename):
     }
     return jsonify(error), 400
 
-def create_connection(_):
-    ''' Create a database connection to a SQLite database.
+def create_connection():
+    ''' Create a database connection to a MySQL database.
     '''
     conn = None
     try:
@@ -265,6 +268,36 @@ def create_connection(_):
         print(err)
     return conn
 
+def initial_connection():
+    ''' Create a connection to a MySQL server. Creates database if
+    it doesn't exist yet. Only called when starting app.
+    '''
+    try:
+        # connect but don't specify database: it might not exist
+        conn = MySQLdb.connect(
+            user=config.MYSQL_USERNAME,
+            host=config.MYSQL_HOSTNAME,
+            port=config.MYSQL_PORT,
+            passwd=config.MYSQL_PASSWORD,
+            charset='utf8',
+            use_unicode=True)
+
+    except MySQLdb._exceptions.MySQLError as err:
+        print('error', err)
+
+    # on new server, caliban database won't exist yet
+    try:
+        query = '''CREATE DATABASE {}'''.format(config.MYSQL_DATABASE)
+        conn.cursor().execute(query)
+        conn.commit()
+
+    # it already exists
+    except MySQLdb._exceptions.MySQLError as err:
+        print('error', err)
+
+    finally:
+        conn.close()
+
 
 def create_table(conn, create_table_sql):
     ''' Create a table from the create_table_sql statement.
@@ -276,33 +309,39 @@ def create_table(conn, create_table_sql):
         print(err)
 
 
-def create_project(conn, filename, data):
-    ''' Create a new project in the database table.
+def create_project(conn, filename, data, subfolders):
+    ''' Create a new project in the database table. Creates a
+    new row (id autoincrements from whatever id came before it).
+    Populates row with file info (name, subfolders, and the file
+    contents, as a pickled python object).
     '''
-    sql = ''' INSERT INTO projects(filename, state)
-              VALUES(%s, %s) '''
+    sql = ''' INSERT INTO projects(filename, state, subfolders)
+              VALUES(%s, %s, %s) '''
     cursor = conn.cursor()
 
     # convert object to binary data to be stored as data type BLOB
     state_data = pickle.dumps(data, pickle.HIGHEST_PROTOCOL)
 
-    cursor.execute(sql, (filename, state_data))
+    cursor.execute(sql, (filename, state_data, subfolders))
     return cursor.lastrowid
 
 
-def update_object(conn, project):
-    ''' Update filename, state of a project.
+def update_object(conn, state, project_id):
+    ''' Update state of a project. Creates pickle dump of object state
+    and stores it in db in appropriate project row. Also increments numUpdates,
+    and creates timestamp for firstUpdate if appropriate.
     '''
     sql = ''' UPDATE projects
-              SET filename = %s ,
-                  state = %s
+              SET state = %s,
+                  firstUpdate = IF(numUpdates = 0, CURRENT_TIMESTAMP, firstUpdate),
+                  numUpdates = numUpdates + 1
               WHERE id = %s'''
 
     # convert object to binary data to be stored as data type BLOB
-    state_data = pickle.dumps(project[1], pickle.HIGHEST_PROTOCOL)
+    state_data = pickle.dumps(state, pickle.HIGHEST_PROTOCOL)
 
     cur = conn.cursor()
-    cur.execute(sql, (project[0], state_data, project[2]))
+    cur.execute(sql, (state_data, project_id)
     conn.commit()
 
 
@@ -326,26 +365,67 @@ def get_project(conn, project_id):
 
 
 def delete_project(conn, project_id):
-    ''' Delete data object (TrackReview/ZStackReview) by id.
+    ''' Delete data object (TrackReview/ZStackReview) by id. Ie, state data
+    gets overwritten with NULL value in database (it should have been uploaded
+    to AWS as part of upload action) to save space in db. Timestamp metrics
+    are updated appropriately.
     '''
-    sql = 'DELETE FROM projects WHERE id=%s'
     cur = conn.cursor()
-    cur.execute(sql, (project_id,))
+
+    sql = ''' UPDATE {tn}
+              SET lastUpdate = updatedAt
+              WHERE id = {my_id}
+          '''.format(tn = 'projects', my_id = project_id)
+    cur.execute(sql)
+
+    timesql = ''' UPDATE {tn}
+                  SET finished = CURRENT_TIMESTAMP,
+                      state = NULL
+                  WHERE id = {my_id}'''.format(
+                    tn = "projects",
+                    my_id = project_id)
+    cur.execute(timesql)
+
     conn.commit()
 
 
 def main():
     ''' Runs app and initiates database file if it doesn't exist.
+    Columns in table:
+    id: always has a value, used to match actions to the correct file
+    filename: always has a value, does not contain subfolders in filename
+    state: stores python object as longblob while file is open, nulls out
+        when file is uploaded
+    subfolders: directory structure of s3 bucket where file was stored
+    createdAt: timestamp of when the file was opened; should always have a value
+    updatedAt: timestamp of lastest time the file was changed, including upload
+    finished: null value until file is uploaded and it gets a timestamp
+    numUpdates: integer that increments each time the file is updated (note:
+        changing channels counts as an update, changing frames does not)
+    firstUpdate: timestamp that is null by default until an update is made. Is not
+        subsequently changed
+    lastUpdate: timestamp that is null by default until file is uploaded, to
+        accurately track the last change made to file before upload
     '''
-    conn = create_connection("caliban.db")
+    initial_connection()
+    conn = create_connection()
+
     sql_create_projects_table = """
         CREATE TABLE IF NOT EXISTS projects (
             id integer NOT NULL AUTO_INCREMENT PRIMARY KEY,
             filename text NOT NULL,
-            state longblob NOT NULL
+            state longblob,
+            subfolders text NOT NULL,
+            createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+            updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+            finished TIMESTAMP,
+            numUpdates integer NOT NULL DEFAULT 0,
+            firstUpdate TIMESTAMP,
+            lastUpdate TIMESTAMP
         );
     """
     create_table(conn, sql_create_projects_table)
+
     conn.commit()
     conn.close()
 
