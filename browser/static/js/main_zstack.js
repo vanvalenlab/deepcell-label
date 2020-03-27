@@ -927,7 +927,7 @@ function fetch_and_render_frame() {
 function load_file(file) {
   $.ajax({
     type:'POST',
-    url:"load/" + file,
+    url:"load/" + file + `?&rgb=${settings.rgb}`,
     success: function (payload) {
       max_frames = payload.max_frames;
       feature_max = payload.feature_max;

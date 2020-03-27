@@ -171,8 +171,9 @@ def load(filename):
         })
 
     if is_npz_file(filename):
+        rgb = request.args.get('rgb', default = False, type = bool)
         # Initate ZStackReview object and entry in database
-        zstack_review = ZStackReview(filename, input_bucket, output_bucket, subfolders)
+        zstack_review = ZStackReview(filename, input_bucket, output_bucket, subfolders, rgb)
         project_id = create_project(conn, filename, zstack_review)
         conn.commit()
         conn.close()

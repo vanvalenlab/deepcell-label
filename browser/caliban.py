@@ -36,7 +36,7 @@ s3 = boto3.client(
 )
 
 class ZStackReview:
-    def __init__(self, filename, input_bucket, output_bucket, subfolders):
+    def __init__(self, filename, input_bucket, output_bucket, subfolders, rgb = False):
 
         self.filename = filename
         self.input_bucket = input_bucket
