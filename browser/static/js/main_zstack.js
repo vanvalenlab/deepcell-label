@@ -588,6 +588,7 @@ var Modes = Object.freeze({
   "drawing": 7
 });
 
+let rgb;
 var temp_x = 0;
 var temp_y = 0;
 var rendering_raw = false;
@@ -664,10 +665,18 @@ function highlight(img, label) {
             // location in 1D array based on i,j, and scale
             pixel_num = (scale*(jlen*(scale*j + l) + i)) + k;
 
-            // set to red by changing RGB values
-            ann[(pixel_num*4)] = 255;
-            ann[(pixel_num*4) + 1] = 0;
-            ann[(pixel_num*4) + 2] = 0;
+            if (rgb) {
+              // set to white by changing RGB values
+              ann[(pixel_num*4)] += 60;
+              ann[(pixel_num*4) + 1] += 60;
+              ann[(pixel_num*4) + 2] += 60;
+            }
+            else {
+              // set to red by changing RGB values
+              ann[(pixel_num*4)] = 255;
+              ann[(pixel_num*4) + 1] = 0;
+              ann[(pixel_num*4) + 2] = 0;
+            }
           }
         }
       }
@@ -837,34 +846,61 @@ function update_seg_highlight() {
   adjusted_seg.src = canvas.toDataURL();
 }
 
-function render_edit_image(ctx) {
-  ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
-  ctx.drawImage(raw_image, padding, padding, dimensions[0], dimensions[1]);
-  let raw_image_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
+// function rgb_highlight(ctx) {
 
-  // adjust underlying raw image
-  contrast_image(raw_image_data, current_contrast);
-  grayscale(raw_image_data);
-  if (display_invert) {
-    invert(raw_image_data);
-  }
-  ctx.putImageData(raw_image_data, padding, padding);
+// }
 
-  // draw segmentations, highlighted version if highlight is on
-  ctx.save();
-  // ctx.globalCompositeOperation = 'color';
-  ctx.globalAlpha = 0.3;
-  if (current_highlight) {
-    ctx.drawImage(adjusted_seg, padding, padding, dimensions[0], dimensions[1]);
-  } else {
-    ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
-  }
-  ctx.restore();
-
+function outline_all(ctx) {
   // to outline all edges:
-  // let composite = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
-  // outline(composite);
-  // ctx.putImageData(composite, padding, padding);
+  let composite = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
+  outline(composite);
+  ctx.putImageData(composite, padding, padding);
+}
+
+// for rgb, since edit and annotation images are so similar
+function render_label_overlay(ctx) {
+  ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
+  render_raw_image(ctx);
+  outline_all(ctx);
+  if (current_highlight) {
+    let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
+    if (edit_mode) {
+      highlight(img_data, brush.value);
+    } else {
+      highlight(img_data, mode.highlighted_cell_one);
+      highlight(img_data, mode.highlighted_cell_two);
+    }
+    ctx.putImageData(img_data, padding, padding);
+  }
+}
+
+function render_edit_image(ctx) {
+  if (rgb) {
+    render_label_overlay(ctx);
+  } else {
+    ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
+    ctx.drawImage(raw_image, padding, padding, dimensions[0], dimensions[1]);
+    let raw_image_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
+
+    // adjust underlying raw image
+    contrast_image(raw_image_data, current_contrast);
+    grayscale(raw_image_data);
+    if (display_invert) {
+      invert(raw_image_data);
+    }
+    ctx.putImageData(raw_image_data, padding, padding);
+
+    // draw segmentations, highlighted version if highlight is on
+    ctx.save();
+    // ctx.globalCompositeOperation = 'color';
+    ctx.globalAlpha = 0.3;
+    if (current_highlight) {
+      ctx.drawImage(adjusted_seg, padding, padding, dimensions[0], dimensions[1]);
+    } else {
+      ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
+    }
+    ctx.restore();
+  }
 
   // draw brushview on top of cells/annotations
   brush.draw(ctx);
@@ -882,13 +918,17 @@ function render_raw_image(ctx) {
 }
 
 function render_annotation_image(ctx) {
-  ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
-  ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
-  if (current_highlight) {
-    let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
-    highlight(img_data, mode.highlighted_cell_one);
-    highlight(img_data, mode.highlighted_cell_two);
-    ctx.putImageData(img_data, padding, padding);
+  if (!rgb) {
+    ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
+    ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
+    if (current_highlight) {
+      let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
+      highlight(img_data, mode.highlighted_cell_one);
+      highlight(img_data, mode.highlighted_cell_two);
+      ctx.putImageData(img_data, padding, padding);
+    }
+  } else {
+    render_label_overlay(ctx);
   }
 }
 
@@ -1127,6 +1167,7 @@ function start_caliban(filename) {
   } else {
     edit_mode = false;
   }
+  rgb = settings.rgb;
   // disable scrolling from scrolling around on page (it should just control brightness)
   document.addEventListener('wheel', function(event) {
     event.preventDefault();

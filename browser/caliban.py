@@ -42,13 +42,35 @@ class ZStackReview:
         self.input_bucket = input_bucket
         self.output_bucket = output_bucket
         self.subfolders = subfolders
+        self.rgb = rgb
         self.trial = self.load(filename)
         self.raw = self.trial["raw"]
         self.annotated = self.trial["annotated"]
         self.feature = 0
         self.feature_max = self.annotated.shape[-1]
         self.channel = 0
-        self.max_frames, self.height, self.width, self.channel_max = self.raw.shape
+
+        if self.rgb:
+            # possible differences between single channel and rgb displays
+            self.dims = len(self.raw.shape)
+            if self.dims == 3:
+                self.raw = np.expand_dims(self.raw, axis = 0)
+                self.annotated = np.expand_dims(self.annotated, axis = 0)
+            self.max_frames, self.height, self.width, self.rgb_channels = self.raw.shape
+            self.channel_max = 1
+
+            self.rescale_raw()
+            self.reduce_to_RGB()
+            # elif self.dims == 4:
+            #     self.raw = np.squeeze(raw, axis = 0)
+            #     self.annotated = np.squeeze(annotated, axis = 0)
+            #     self.height, self.width, self.channel_max = self.raw.shape
+
+            # self.max_frames = 1
+
+        else:
+            self.max_frames, self.height, self.width, self.channel_max = self.raw.shape
+
         self.dimensions = (self.width, self.height)
 
         #create a dictionary that has frame information about each cell
@@ -90,6 +112,62 @@ class ZStackReview:
             max_label = int(np.max(self.cell_ids[self.feature]))
         return max_label
 
+    def rescale_95(self, img):
+        '''
+        Helper function for rescaling an image. Image can be single-
+        or multi-channel.
+        '''
+        percentiles = np.percentile(img[img > 0], [5, 95])
+        rescaled_img = rescale_intensity(img,
+            in_range=(percentiles[0], percentiles[1]),
+            out_range = 'uint8')
+        rescaled_img = rescaled_img.astype('uint8')
+        return rescaled_img
+
+    def rescale_raw(self):
+        '''
+        Rescale first 6 raw channels individually and store in memory.
+        The rescaled raw array is used subsequently for image display purposes.
+        '''
+        self.rescaled = np.zeros((self.height, self.width, self.rgb_channels), dtype = 'uint8')
+        # this approach allows noise through
+        for channel in range(min(5, self.rgb_channels)):
+            print('rescaling channel', channel)
+            self.rescaled[:,:,channel] = self.rescale_95(self.raw[0,:,:,channel])
+
+    def reduce_to_RGB(self):
+        '''
+        Go from rescaled raw array with up to 6 channels to an RGB image for display.
+        Handles adding in CMY channels as needed, and adjusting each channel if
+        viewing adjusted raw. Used to update self.rgb, which is used to display
+        raw current frame.
+        '''
+        # rgb starts as uint16 so it can handle values above 255 without overflow
+        self.rgb_img = np.zeros((self.height, self.width, 3), dtype = 'uint16')
+
+        # for each of the channels that we have
+        for c in range(min(5, self.rgb_channels)):
+            # straightforward RGB -> RGB
+            if c < 3:
+                self.rgb_img[:,:,c] = (self.rescaled[:,:,c]).astype('uint16')
+            # collapse cyan to G and B
+            if c == 3:
+                self.rgb_img[:,:,1] += (self.rescaled[:,:,3]).astype('uint16')
+                self.rgb_img[:,:,2] += (self.rescaled[:,:,3]).astype('uint16')
+            # collapse magenta to R and B
+            if c == 4:
+                self.rgb_img[:,:,0] += (self.rescaled[:,:,4]).astype('uint16')
+                self.rgb_img[:,:,2] += (self.rescaled[:,:,4]).astype('uint16')
+            # collapse yellow to R and G
+            if c == 5:
+                self.rgb_img[:,:,0] += (self.rescaled[:,:,5]).astype('uint16')
+                self.rgb_img[:,:,1] += (self.rescaled[:,:,5]).astype('uint16')
+
+            # clip values to uint8 range so it can be cast without overflow
+            self.rgb_img[:,:,0:3] = np.clip(self.rgb_img[:,:,0:3], a_min = 0, a_max = 255)
+
+        self.rgb_img = self.rgb_img.astype('uint8')
+
     @property
     def readable_tracks(self):
         """
@@ -109,12 +187,17 @@ class ZStackReview:
         return cell_info
 
     def get_frame(self, frame, raw):
-        if raw:
+        if raw and not self.rgb:
             frame = self.raw[frame][:,:, self.channel]
             return pngify(imgarr=frame,
                           vmin=0,
                           vmax=self.max_intensity[self.channel],
                           cmap="cubehelix")
+        elif raw and self.rgb:
+            frame = self.rgb_img
+            return pngify(imgarr=frame,
+                vmin=None, vmax=None, cmap=None)
+
         else:
             frame = self.annotated[frame][:,:, self.feature]
             frame = np.ma.masked_equal(frame, 0)
