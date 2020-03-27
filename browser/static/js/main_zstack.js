@@ -88,6 +88,9 @@ class Mode {
       brightness = 0;
       current_contrast = 0;
       render_image_display();
+    } else if (key === 'l' && !edit_mode) {
+      display_labels = !display_labels;
+      render_image_display();
     }
   }
 
@@ -593,6 +596,7 @@ var temp_x = 0;
 var temp_y = 0;
 var rendering_raw = false;
 let display_invert = true;
+let display_labels = false;
 var current_contrast;
 let contrastMap = new Map();
 let brightness;
@@ -665,7 +669,7 @@ function highlight(img, label) {
             // location in 1D array based on i,j, and scale
             pixel_num = (scale*(jlen*(scale*j + l) + i)) + k;
 
-            if (rgb) {
+            if (rgb && !display_labels) {
               // set to white by changing RGB values
               ann[(pixel_num*4)] += 60;
               ann[(pixel_num*4) + 1] += 60;
@@ -846,10 +850,6 @@ function update_seg_highlight() {
   adjusted_seg.src = canvas.toDataURL();
 }
 
-// function rgb_highlight(ctx) {
-
-// }
-
 function outline_all(ctx) {
   // to outline all edges:
   let composite = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
@@ -918,7 +918,9 @@ function render_raw_image(ctx) {
 }
 
 function render_annotation_image(ctx) {
-  if (!rgb) {
+  if (rgb && !display_labels) {
+    render_label_overlay(ctx);
+  } else {
     ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
     ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
     if (current_highlight) {
@@ -927,8 +929,6 @@ function render_annotation_image(ctx) {
       highlight(img_data, mode.highlighted_cell_two);
       ctx.putImageData(img_data, padding, padding);
     }
-  } else {
-    render_label_overlay(ctx);
   }
 }
 
