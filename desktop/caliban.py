@@ -3774,6 +3774,8 @@ class RGBNpz(CalibanWindow):
         # open file to first frame of annotation stack
         self.current_frame = 0
 
+        self.show_adjusted_raw = True
+
         # keeps track of information about adjustment of colormap for viewing annotation labels
         self.adjustment_dict = {}
         for feature in range(self.feature_max):
@@ -3782,7 +3784,10 @@ class RGBNpz(CalibanWindow):
         self.adjustment = self.adjustment_dict[self.feature]
 
         self.adjusted_raw = np.zeros(self.raw.shape)
-        self.adjustments = np.zeros(min(self.channel_max, 6))
+        self.adjustments = np.ones(min(self.channel_max, 6))
+        # self.adjustments = np.zeros(min(self.channel_max, 6))
+        self.rescale_raw()
+        self.reduce_to_RGB()
         self.update_adjusted_raw()
 
         # mouse position in coordinates of array being viewed as image, (0,0) is placeholder
@@ -3814,7 +3819,6 @@ class RGBNpz(CalibanWindow):
         super().__init__()
 
         self.draw_raw = False
-        self.show_adjusted_raw = True
         self.show_label_outlines = True
 
         # start pyglet event loop
@@ -3823,77 +3827,60 @@ class RGBNpz(CalibanWindow):
     def helper_update_composite(self):
         pass
 
+    def rescale_95(self, img):
+        '''
+        Helper function for rescaling an image. Image can be single-
+        or multi-channel.
+        '''
+        percentiles = np.percentile(img[img > 0], [5, 95])
+        rescaled_img = rescale_intensity(img,
+            in_range=(percentiles[0], percentiles[1]),
+            out_range = 'uint8')
+        rescaled_img = rescaled_img.astype('uint8')
+        return rescaled_img
+
+    def rescale_raw(self):
+        self.rescaled = np.zeros(self.raw.shape, dtype = 'uint8')
+        # this approach allows noise through
+        for channel in range(min(5, self.channel_max)):
+            self.rescaled[:,:,channel] = self.rescale_95(self.raw[:,:,channel])
+
+        # this approach wipes out dim channels but also removes noise
+        # self.rescaled = self.rescale_95(self.raw[:,:,0:6])
+
+    def reduce_to_RGB(self):
+        self.rgb = np.zeros((self.height, self.width, 3), dtype = 'uint16')
+        if self.show_adjusted_raw:
+            adjustments = self.adjustments
+        else:
+            adjustments = np.ones(min(self.channel_max, 6))
+
+        for c in range(min(5, self.channel_max)):
+            if self.channel_on[c]:
+                if c < 3:
+                    self.rgb[:,:,c] = (self.rescaled[:,:,c] * adjustments[c]).astype('uint16')
+                # collapse cyan to G and B
+                if c == 3:
+                    self.rgb[:,:,1] += (self.rescaled[:,:,3] * adjustments[c]).astype('uint16')
+                    self.rgb[:,:,2] += (self.rescaled[:,:,3] * adjustments[c]).astype('uint16')
+                # collapse magenta to R and B
+                if c == 4:
+                    self.rgb[:,:,0] += (self.rescaled[:,:,4] * adjustments[c]).astype('uint16')
+                    self.rgb[:,:,2] += (self.rescaled[:,:,4] * adjustments[c]).astype('uint16')
+                # collapse yellow to R and G
+                if c == 5:
+                    self.rgb[:,:,0] += (self.rescaled[:,:,5] * adjustments[c]).astype('uint16')
+                    self.rgb[:,:,1] += (self.rescaled[:,:,5] * adjustments[c]).astype('uint16')
+
+                self.rgb[:,:,0:3] = np.clip(self.rgb[:,:,0:3], a_min = 0, a_max = 255)
+
+        self.rgb = self.rgb.astype('uint8')
+
     def update_adjusted_raw(self):
-        # self.raw may not be in 8 bit (0, 255) format; rescale without modifying original
-
-        # get value at 5th and 95th percentile for min and max rescaling, respectively
-        percentiles = np.percentile(self.raw[self.raw > 0], [5, 95])
-        rescaled_raw = rescale_intensity(self.raw[:,:,0:6], in_range=(percentiles[0], percentiles[1]),
-                                         out_range='uint8')
-        rescaled_raw = rescaled_raw.astype('uint8')
-
-        for c, adjust in enumerate(self.adjustments):
-            img_max = np.max(rescaled_raw[:,:,c])
-
-            # catch unreasonable adjustments
-            range_max = min(img_max + adjust, 255)
-            range_max = max(range_max, 1)
-
-            if c < 3:
-                if self.channel_on[c]:
-                    self.adjusted_raw[:,:,c] = rescale_intensity(rescaled_raw[:,:,c],
-                        in_range =(0, range_max), out_range = 'dtype')
-                else:
-                    self.adjusted_raw[:,:,c] = 0
-            # cyan
-            elif c == 3:
-                if self.channel_on[c]:
-                    cyan = rescale_intensity(rescaled_raw[:,:,c], in_range = (0, range_max), out_range = 'dtype')
-                    self.adjusted_raw[:,:,1] = self.adjusted_raw[:,:,1] + cyan
-                    self.adjusted_raw[:,:,2] = self.adjusted_raw[:,:,2] + cyan
-            # magenta
-            elif c == 4:
-                if self.channel_on[c]:
-                    magenta = rescale_intensity(rescaled_raw[:,:,c], in_range = (0, range_max), out_range = 'dtype')
-                    self.adjusted_raw[:,:,0] = self.adjusted_raw[:,:,0] + magenta
-                    self.adjusted_raw[:,:,2] = self.adjusted_raw[:,:,2] + magenta
-
-            # yellow
-            elif c == 5:
-                if self.channel_on[c]:
-                    yellow = rescale_intensity(rescaled_raw[:,:,c], in_range = (0, range_max), out_range = 'dtype')
-                    self.adjusted_raw[:,:,0] = self.adjusted_raw[:,:,0] + yellow
-                    self.adjusted_raw[:,:,1] = self.adjusted_raw[:,:,1] + yellow
+        self.reduce_to_RGB()
 
     def get_raw_current_frame(self):
-        if self.show_adjusted_raw:
-            raw = self.adjusted_raw[:,:,0:3]
-        else:
-            # raw = self.raw[:,:,0:3]
-
-            # get value at 5th and 95th percentile for min and max rescaling, respectively
-            percentiles = np.percentile(self.raw[self.raw > 0], [5, 95])
-            rescaled_raw = rescale_intensity(self.raw[:, :, 0:6], in_range=(percentiles[0], percentiles[1]),
-                                             out_range='uint8')
-            raw = rescaled_raw[:,:,0:3]
-            # add cyan
-            if self.channel_max > 3:
-                raw[:,:,1] = raw[:,:,1] + rescaled_raw[:,:,3]
-                raw[:,:,2] = raw[:,:,2] + rescaled_raw[:,:,3]
-            if self.channel_max > 4:
-                raw[:,:,0] = raw[:,:,0] + rescaled_raw[:,:,4]
-                raw[:,:,2] = raw[:,:,2] + rescaled_raw[:,:,4]
-            if self.channel_max > 5:
-                raw[:,:,0] = raw[:,:,0] + rescaled_raw[:,:,5]
-                raw[:,:,1] = raw[:,:,1] + rescaled_raw[:,:,5]
-
-        if self.channel_max < 3:
-            padded_raw = np.zeros((self.height, self.width, 3))
-            padded_raw[:,:,0:self.channel_max] = raw
-            return padded_raw
-
-        else:
-            return raw
+        return self.rgb
 
     def draw_raw_frame(self):
         '''
@@ -3912,10 +3899,6 @@ class RGBNpz(CalibanWindow):
         '''
         raw = self.get_raw_current_frame()
 
-        # get value at 5th and 95th percentile for min and max rescaling, respectively
-        percentiles = np.percentile(raw[raw > 0], [5, 95])
-        adjusted_raw = rescale_intensity(raw, in_range=(percentiles[0], percentiles[1]),
-                                         out_range='uint8')
         image = self.array_to_img(input_array = adjusted_raw.astype(np.uint8),
             vmax = None,
             cmap = None,
@@ -4123,11 +4106,11 @@ class RGBNpz(CalibanWindow):
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self.draw_raw or self.edit_mode or self.show_label_outlines:
             current_adjustment = self.adjustments[self.channel]
-            current_adjustment += scroll_y
+            current_adjustment += 0.05 * scroll_y
 
-            # these are somewhat arbitrary bounds on the value
-            current_adjustment = min(255, current_adjustment)
-            current_adjustment = max(-255, current_adjustment)
+            # 2x as bright at most, completely dark at min
+            current_adjustment = min(2, current_adjustment)
+            current_adjustment = max(0, current_adjustment)
 
             self.adjustments[self.channel] = current_adjustment
             self.update_adjusted_raw()
