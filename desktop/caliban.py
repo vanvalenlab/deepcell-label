@@ -3788,7 +3788,6 @@ class RGBNpz(CalibanWindow):
         # self.adjustments = np.zeros(min(self.channel_max, 6))
         self.rescale_raw()
         self.reduce_to_RGB()
-        self.update_adjusted_raw()
 
         # mouse position in coordinates of array being viewed as image, (0,0) is placeholder
         # will be updated on mouse motion
@@ -3840,23 +3839,35 @@ class RGBNpz(CalibanWindow):
         return rescaled_img
 
     def rescale_raw(self):
+        '''
+        Rescale first 6 raw channels individually and store in memory.
+        The rescaled raw array is used subsequently for image display purposes.
+        '''
         self.rescaled = np.zeros(self.raw.shape, dtype = 'uint8')
         # this approach allows noise through
         for channel in range(min(5, self.channel_max)):
             self.rescaled[:,:,channel] = self.rescale_95(self.raw[:,:,channel])
 
-        # this approach wipes out dim channels but also removes noise
-        # self.rescaled = self.rescale_95(self.raw[:,:,0:6])
-
     def reduce_to_RGB(self):
+        '''
+        Go from rescaled raw array with up to 6 channels to an RGB image for display.
+        Handles adding in CMY channels as needed, and adjusting each channel if
+        viewing adjusted raw. Used to update self.rgb, which is used to display
+        raw current frame.
+        '''
+        # rgb starts as uint16 so it can handle values above 255 without overflow
         self.rgb = np.zeros((self.height, self.width, 3), dtype = 'uint16')
+
+        # what to multiply each channel by
         if self.show_adjusted_raw:
             adjustments = self.adjustments
         else:
             adjustments = np.ones(min(self.channel_max, 6))
 
+        # for each of the channels that we have
         for c in range(min(5, self.channel_max)):
             if self.channel_on[c]:
+                # straightforward RGB -> RGB
                 if c < 3:
                     self.rgb[:,:,c] = (self.rescaled[:,:,c] * adjustments[c]).astype('uint16')
                 # collapse cyan to G and B
@@ -3872,12 +3883,10 @@ class RGBNpz(CalibanWindow):
                     self.rgb[:,:,0] += (self.rescaled[:,:,5] * adjustments[c]).astype('uint16')
                     self.rgb[:,:,1] += (self.rescaled[:,:,5] * adjustments[c]).astype('uint16')
 
+                # clip values to uint8 range so it can be cast without overflow
                 self.rgb[:,:,0:3] = np.clip(self.rgb[:,:,0:3], a_min = 0, a_max = 255)
 
         self.rgb = self.rgb.astype('uint8')
-
-    def update_adjusted_raw(self):
-        self.reduce_to_RGB()
 
     def get_raw_current_frame(self):
         return self.rgb
@@ -4067,7 +4076,7 @@ class RGBNpz(CalibanWindow):
     def toggle_channel_display(self):
         try:
             self.channel_on[self.channel] = not self.channel_on[self.channel]
-            self.update_adjusted_raw()
+            self.reduce_to_RGB()
         except:
             pass
 
@@ -4104,7 +4113,8 @@ class RGBNpz(CalibanWindow):
                 self.label_mode_question_keypress_helper(symbol, modifiers)
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
-        if self.draw_raw or self.edit_mode or self.show_label_outlines:
+        if ((self.draw_raw or self.edit_mode or self.show_label_outlines)
+            and self.show_adjusted_raw):
             current_adjustment = self.adjustments[self.channel]
             current_adjustment += 0.05 * scroll_y
 
@@ -4113,7 +4123,7 @@ class RGBNpz(CalibanWindow):
             current_adjustment = max(0, current_adjustment)
 
             self.adjustments[self.channel] = current_adjustment
-            self.update_adjusted_raw()
+            self.reduce_to_RGB()
 
     def universal_keypress_helper(self, symbol, modifiers):
         '''
@@ -4144,7 +4154,7 @@ class RGBNpz(CalibanWindow):
 
         elif symbol == key.I:
             self.channel_on = [not c for c in self.channel_on]
-            self.update_adjusted_raw()
+            self.reduce_to_RGB()
 
         elif symbol == key.O:
             self.toggle_channel_display()
@@ -4326,11 +4336,12 @@ class RGBNpz(CalibanWindow):
         if self.draw_raw or self.show_label_outlines:
             if symbol == key.M:
                 self.show_adjusted_raw = not self.show_adjusted_raw
+                self.reduce_to_RGB()
             if self.show_adjusted_raw:
                 # reset adjustments
                 if symbol == key._0:
                     self.adjustments = np.zeros(self.adjustments.shape)
-                    self.update_adjusted_raw()
+                    self.reduce_to_RGB()
 
         if not self.draw_raw:
             if symbol == key.L:
