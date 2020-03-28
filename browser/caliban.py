@@ -61,12 +61,6 @@ class ZStackReview:
 
             self.rescale_raw()
             self.reduce_to_RGB()
-            # elif self.dims == 4:
-            #     self.raw = np.squeeze(raw, axis = 0)
-            #     self.annotated = np.squeeze(annotated, axis = 0)
-            #     self.height, self.width, self.channel_max = self.raw.shape
-
-            # self.max_frames = 1
 
         else:
             self.max_frames, self.height, self.width, self.channel_max = self.raw.shape
@@ -132,7 +126,6 @@ class ZStackReview:
         self.rescaled = np.zeros((self.height, self.width, self.rgb_channels), dtype = 'uint8')
         # this approach allows noise through
         for channel in range(min(5, self.rgb_channels)):
-            print('rescaling channel', channel)
             self.rescaled[:,:,channel] = self.rescale_95(self.raw[0,:,:,channel])
 
     def reduce_to_RGB(self):
@@ -187,13 +180,13 @@ class ZStackReview:
         return cell_info
 
     def get_frame(self, frame, raw):
-        if raw and not self.rgb:
+        if (raw and not self.rgb):
             frame = self.raw[frame][:,:, self.channel]
             return pngify(imgarr=frame,
                           vmin=0,
                           vmax=self.max_intensity[self.channel],
                           cmap="cubehelix")
-        elif raw and self.rgb:
+        elif (raw and self.rgb):
             frame = self.rgb_img
             return pngify(imgarr=frame,
                 vmin=None, vmax=None, cmap=None)
