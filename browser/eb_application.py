@@ -365,7 +365,7 @@ def update_object(conn, state, project_id):
     state_data = pickle.dumps(state, pickle.HIGHEST_PROTOCOL)
 
     cur = conn.cursor()
-    cur.execute(sql, (state_data, project_id)
+    cur.execute(sql, (state_data, project_id))
     conn.commit()
 
 
