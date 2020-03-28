@@ -194,7 +194,7 @@ class Mode {
 
   // keybinds that apply in bulk mode, nothing selected
   handle_mode_none_keybind(key) {
-    if (key === "e") {
+    if (key === "e" && !settings.label_only) {
       // toggle edit mode
       edit_mode = !edit_mode;
       helper_brush_draw();
@@ -1177,7 +1177,7 @@ function action(action, info, frame = current_frame) {
 }
 
 function start_caliban(filename) {
-  if (settings.pixel_only) {
+  if (settings.pixel_only && !settings.label_only) {
     edit_mode = true;
   } else {
     edit_mode = false;
