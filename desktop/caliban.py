@@ -2724,8 +2724,8 @@ class TrackReview(CalibanWindow):
         new_label = self.get_new_label()
 
         # Locally store the frames to work on
-        img_raw = self.raw[self.current_frame]
-        img_ann = self.tracked[self.current_frame]
+        img_raw = self.raw[self.current_frame,:,:,0]
+        img_ann = self.tracked[self.current_frame,:,:,0]
 
         # Pull the 2 seed locations and store locally
         # define a new seeds labeled img that is the same size as raw/annotaiton imgs
@@ -2754,7 +2754,7 @@ class TrackReview(CalibanWindow):
 
         # reintegrate subsection into original mask
         img_ann[minr:maxr, minc:maxc] = img_sub_ann
-        self.tracked[self.current_frame] = img_ann
+        self.tracked[self.current_frame,:,:,0] = img_ann
 
         # current label doesn't change, but add the neccesary bookkeeping for the new track
         self.add_cell_info(add_label = new_label, frame = self.current_frame)
