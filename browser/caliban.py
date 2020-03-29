@@ -972,8 +972,8 @@ class TrackReview:
         new_label = max(self.tracks) + 1
 
         # Locally store the frames to work on
-        img_raw = self.raw[frame]
-        img_ann = self.tracked[frame]
+        img_raw = self.raw[frame,:,:,0]
+        img_ann = self.tracked[frame,:,:,0]
 
         # Pull the 2 seed locations and store locally
         # define a new seeds labeled img that is the same size as raw/annotation imgs
@@ -1007,7 +1007,7 @@ class TrackReview:
 
         #reintegrate subsection into original mask
         img_ann[minr:maxr, minc:maxc] = img_sub_ann
-        self.tracked[frame] = img_ann
+        self.tracked[frame,:,:,0] = img_ann
 
         #update cell_info dict only if new label was created with ws
         if np.any(np.isin(self.tracked[frame,:,:,0], new_label)):
