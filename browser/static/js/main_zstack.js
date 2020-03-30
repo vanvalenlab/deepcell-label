@@ -88,6 +88,9 @@ class Mode {
       brightness = 0;
       current_contrast = 0;
       render_image_display();
+    } else if (key === 'l' && !edit_mode) {
+      display_labels = !display_labels;
+      render_image_display();
     }
   }
 
@@ -124,7 +127,7 @@ class Mode {
 
   // keybinds that apply when in edit mode
   handle_edit_keybind(key) {
-    if (key === "e") {
+    if (key === "e" && !settings.pixel_only) {
       // toggle edit mode
       edit_mode = !edit_mode;
       render_image_display();
@@ -178,7 +181,7 @@ class Mode {
       this.prompt = "First, click on the label you want to overwrite.";
       brush.conv = true;
       render_image_display();
-    } else if (key === 't') {
+    } else if (key === 't' && !rgb) {
       // prompt thresholding with bounding box
       this.kind = Modes.question;
       this.action = "start_threshold";
@@ -191,7 +194,7 @@ class Mode {
 
   // keybinds that apply in bulk mode, nothing selected
   handle_mode_none_keybind(key) {
-    if (key === "e") {
+    if (key === "e" && !settings.label_only) {
       // toggle edit mode
       edit_mode = !edit_mode;
       helper_brush_draw();
@@ -218,7 +221,7 @@ class Mode {
         action("change_feature", this.info);
         this.clear();
       }
-    } else if (key === "p") {
+    } else if (key === "p" && !rgb) {
       //iou cell identity prediction
       this.kind = Modes.question;
       this.action = "predict";
@@ -295,7 +298,7 @@ class Mode {
       this.action = "swap_cells";
       this.prompt = "SPACE = SWAP IN ALL FRAMES / S = SWAP IN THIS FRAME ONLY / ESC = CANCEL SWAP";
       render_info_display();
-    } else if (key === "w" ) {
+    } else if (key === "w" && !rgb) {
       // watershed
       this.kind = Modes.question;
       this.action = "watershed";
@@ -588,10 +591,12 @@ var Modes = Object.freeze({
   "drawing": 7
 });
 
+let rgb;
 var temp_x = 0;
 var temp_y = 0;
 var rendering_raw = false;
 let display_invert = true;
+let display_labels = false;
 var current_contrast;
 let contrastMap = new Map();
 let brightness;
@@ -615,7 +620,7 @@ var scale;
 var mouse_x = 0;
 var mouse_y = 0;
 const padding = 5;
-var edit_mode = false;
+let edit_mode;
 var answer = "(SPACE=YES / ESC=NO)";
 let mousedown = false;
 var tooltype = 'draw';
@@ -664,10 +669,18 @@ function highlight(img, label) {
             // location in 1D array based on i,j, and scale
             pixel_num = (scale*(jlen*(scale*j + l) + i)) + k;
 
-            // set to red by changing RGB values
-            ann[(pixel_num*4)] = 255;
-            ann[(pixel_num*4) + 1] = 0;
-            ann[(pixel_num*4) + 2] = 0;
+            if (rgb && !display_labels) {
+              // set to white by changing RGB values
+              ann[(pixel_num*4)] += 60;
+              ann[(pixel_num*4) + 1] += 60;
+              ann[(pixel_num*4) + 2] += 60;
+            }
+            else {
+              // set to red by changing RGB values
+              ann[(pixel_num*4)] = 255;
+              ann[(pixel_num*4) + 1] = 0;
+              ann[(pixel_num*4) + 2] = 0;
+            }
           }
         }
       }
@@ -682,8 +695,8 @@ function outline(img) {
     for (var i = 0; i < seg_array[j].length; i += 1){ //x
       let jlen = seg_array[j].length;
 
-      // label boundaries have negative values
-      if (seg_array[j][i] < 0) {
+      if (edit_mode && brush.conv && brush.target !== -1
+        && seg_array[j][i] === -brush.target) {
         // fill in all pixels affected by scale
         // k and l get the pixels that are part of the original pixel that has been scaled up
         for (var k = 0; k < scale; k +=1) {
@@ -692,6 +705,21 @@ function outline(img) {
             pixel_num = (scale*(jlen*(scale*j + l) + i)) + k;
 
             // set to red by changing RGB values
+            ann[(pixel_num*4)] = 255;
+            ann[(pixel_num*4) + 1] = 0;
+            ann[(pixel_num*4) + 2] = 0;
+          }
+        }
+      } else if (seg_array[j][i] < 0) {
+      // label boundaries have negative values
+        // fill in all pixels affected by scale
+        // k and l get the pixels that are part of the original pixel that has been scaled up
+        for (var k = 0; k < scale; k +=1) {
+          for (var l = 0; l < scale; l +=1) {
+            // location in 1D array based on i,j, and scale
+            pixel_num = (scale*(jlen*(scale*j + l) + i)) + k;
+
+            // set to white by changing RGB values
             ann[(pixel_num*4)] = 255;
             ann[(pixel_num*4) + 1] = 255;
             ann[(pixel_num*4) + 2] = 255;
@@ -837,34 +865,57 @@ function update_seg_highlight() {
   adjusted_seg.src = canvas.toDataURL();
 }
 
-function render_edit_image(ctx) {
-  ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
-  ctx.drawImage(raw_image, padding, padding, dimensions[0], dimensions[1]);
-  let raw_image_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
-
-  // adjust underlying raw image
-  contrast_image(raw_image_data, current_contrast);
-  grayscale(raw_image_data);
-  if (display_invert) {
-    invert(raw_image_data);
-  }
-  ctx.putImageData(raw_image_data, padding, padding);
-
-  // draw segmentations, highlighted version if highlight is on
-  ctx.save();
-  // ctx.globalCompositeOperation = 'color';
-  ctx.globalAlpha = 0.3;
-  if (current_highlight) {
-    ctx.drawImage(adjusted_seg, padding, padding, dimensions[0], dimensions[1]);
-  } else {
-    ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
-  }
-  ctx.restore();
-
+function outline_all(ctx) {
   // to outline all edges:
-  // let composite = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
-  // outline(composite);
-  // ctx.putImageData(composite, padding, padding);
+  let composite = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
+  outline(composite);
+  ctx.putImageData(composite, padding, padding);
+}
+
+// for rgb, since edit and annotation images are so similar
+function render_label_overlay(ctx) {
+  ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
+  render_raw_image(ctx);
+  outline_all(ctx);
+  if (current_highlight) {
+    let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
+    if (edit_mode) {
+      highlight(img_data, brush.value);
+    } else {
+      highlight(img_data, mode.highlighted_cell_one);
+      highlight(img_data, mode.highlighted_cell_two);
+    }
+    ctx.putImageData(img_data, padding, padding);
+  }
+}
+
+function render_edit_image(ctx) {
+  if (rgb) {
+    render_label_overlay(ctx);
+  } else {
+    ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
+    ctx.drawImage(raw_image, padding, padding, dimensions[0], dimensions[1]);
+    let raw_image_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
+
+    // adjust underlying raw image
+    contrast_image(raw_image_data, current_contrast);
+    grayscale(raw_image_data);
+    if (display_invert) {
+      invert(raw_image_data);
+    }
+    ctx.putImageData(raw_image_data, padding, padding);
+
+    // draw segmentations, highlighted version if highlight is on
+    ctx.save();
+    // ctx.globalCompositeOperation = 'color';
+    ctx.globalAlpha = 0.3;
+    if (current_highlight) {
+      ctx.drawImage(adjusted_seg, padding, padding, dimensions[0], dimensions[1]);
+    } else {
+      ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
+    }
+    ctx.restore();
+  }
 
   // draw brushview on top of cells/annotations
   brush.draw(ctx);
@@ -882,13 +933,17 @@ function render_raw_image(ctx) {
 }
 
 function render_annotation_image(ctx) {
-  ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
-  ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
-  if (current_highlight) {
-    let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
-    highlight(img_data, mode.highlighted_cell_one);
-    highlight(img_data, mode.highlighted_cell_two);
-    ctx.putImageData(img_data, padding, padding);
+  if (rgb && !display_labels) {
+    render_label_overlay(ctx);
+  } else {
+    ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
+    ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
+    if (current_highlight) {
+      let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
+      highlight(img_data, mode.highlighted_cell_one);
+      highlight(img_data, mode.highlighted_cell_two);
+      ctx.putImageData(img_data, padding, padding);
+    }
   }
 }
 
@@ -927,7 +982,7 @@ function fetch_and_render_frame() {
 function load_file(file) {
   $.ajax({
     type:'POST',
-    url:"load/" + file,
+    url:"load/" + file + `?&rgb=${settings.rgb}`,
     success: function (payload) {
       max_frames = payload.max_frames;
       feature_max = payload.feature_max;
@@ -1122,6 +1177,12 @@ function action(action, info, frame = current_frame) {
 }
 
 function start_caliban(filename) {
+  if (settings.pixel_only && !settings.label_only) {
+    edit_mode = true;
+  } else {
+    edit_mode = false;
+  }
+  rgb = settings.rgb;
   // disable scrolling from scrolling around on page (it should just control brightness)
   document.addEventListener('wheel', function(event) {
     event.preventDefault();

@@ -176,10 +176,12 @@ def load(filename):
         })
 
     if is_npz_file(filename):
+        # arg is 'false' which gets parsed to True if casting to bool
+        rgb = request.args.get('rgb', type = str)
+        rgb = json.loads(rgb)
         # Initate ZStackReview object and entry in database
-        zstack_review = ZStackReview(filename, input_bucket, output_bucket, full_path)
+        zstack_review = ZStackReview(filename, input_bucket, output_bucket, full_path, rgb)
         project_id = create_project(conn, filename, zstack_review, subfolders)
-
         conn.commit()
         conn.close()
 
@@ -221,10 +223,21 @@ def tool():
     new_filename = 'caliban-input__caliban-output__test__{}'.format(
         str(filename))
 
+    # if no options passed (how this route will be for now),
+    # still want to pass in default settings
+    rgb = request.args.get('rgb', default = False, type = bool)
+    pixel_only = request.args.get('pixel_only', default = False, type = bool)
+    label_only = request.args.get('label_only', default = False, type = bool)
+    settings = {'rgb': rgb,
+                'pixel_only': pixel_only,
+                'label_only': label_only}
+
     if is_trk_file(new_filename):
         return render_template('index_track.html', filename=new_filename)
     if is_npz_file(new_filename):
-        return render_template('index_zstack.html', filename=new_filename)
+        return render_template('index_zstack.html',
+            filename=new_filename,
+            settings=settings)
 
     error = {
         'error': 'invalid file extension: {}'.format(
@@ -239,12 +252,25 @@ def shortcut(filename):
         request to access a specific data file that has been preloaded to the
         input S3 bucket (ex. http://127.0.0.1:5000/test.npz).
     '''
+    # if no options passed, we get default settings anyway
+    rgb = request.args.get('rgb', default = False, type = bool)
+    pixel_only = request.args.get('pixel_only', default = False, type = bool)
+    label_only = request.args.get('label_only', default = False, type = bool)
+    settings = {'rgb': rgb,
+                'pixel_only': pixel_only,
+                'label_only': label_only}
 
+    # TODO: could this be consolidated into one template with an "is_trk" toggle?
+    # note: not adding options to trk files yet
     if is_trk_file(filename):
         return render_template('index_track.html', filename=filename)
     if is_npz_file(filename):
-        return render_template('index_zstack.html', filename=filename)
+        return render_template('index_zstack.html',
+            filename=filename,
+            settings=settings)
 
+    # TODO: render an error template instead that shows which error,
+    # instead of sending json
     error = {
         'error': 'invalid file extension: {}'.format(
             os.path.splitext(filename)[-1])
@@ -341,7 +367,7 @@ def update_object(conn, state, project_id):
     state_data = pickle.dumps(state, pickle.HIGHEST_PROTOCOL)
 
     cur = conn.cursor()
-    cur.execute(sql, (state_data, project_id)
+    cur.execute(sql, (state_data, project_id))
     conn.commit()
 
 
