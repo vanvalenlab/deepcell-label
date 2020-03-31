@@ -763,7 +763,7 @@ function render_edit_image(ctx) {
     let raw_image_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
 
     // adjust underlying raw image
-    contrast_image(raw_image_data, current_contrast);
+    contrast_image(raw_image_data, current_contrast, brightness);
     grayscale(raw_image_data);
     if (display_invert) {
       invert(raw_image_data);
@@ -792,7 +792,7 @@ function render_raw_image(ctx) {
 
   // contrast image
   image_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
-  contrast_image(image_data, current_contrast);
+  contrast_image(image_data, current_contrast, brightness);
   // draw contrasted image over the original
   ctx.putImageData(image_data, padding, padding);
 }
