@@ -1,3 +1,19 @@
+// helper functions
+function recolorScaled(data, scale, i, j, jlen, r=255, g=255, b=255) {
+  // fill in all pixels affected by scale
+  // k and l get the pixels that are part of the original pixel that has been scaled up
+  for (var k = 0; k < scale; k +=1) {
+    for (var l = 0; l < scale; l +=1) {
+      // location in 1D array based on i,j, and scale
+      pixel_num = (scale*(jlen*(scale*j + l) + i)) + k;
+      // set to color by changing RGB values
+      data[(pixel_num*4)] = r;
+      data[(pixel_num*4) + 1] = g;
+      data[(pixel_num*4) + 2] = b;
+    }
+  }
+}
+
 // image adjustment functions: take img as input and manipulate data attribute
 // pixel data is 1D array of 8bit RGBA values
 function contrast_image(img, contrast = 0, brightness = 0) {
@@ -43,22 +59,20 @@ function highlight(img, label) {
       if (Math.abs(seg_array[j][i]) === label){
         // fill in all pixels affected by scale
         // k and l get the pixels that are part of the original pixel that has been scaled up
-        for (var k = 0; k < scale; k +=1) {
-          for (var l = 0; l < scale; l +=1) {
-            // location in 1D array based on i,j, and scale
-            pixel_num = (scale*(jlen*(scale*j + l) + i)) + k;
-            // set to white by changing RGB values
-            if (rgb && !display_labels) {
-                  ann[(pixel_num*4)] += 60;
-                  ann[(pixel_num*4) + 1] += 60;
-                  ann[(pixel_num*4) + 2] += 60;
-            } else {
-              // set to red by changing RGB values
-              ann[(pixel_num*4)] = 255;
-              ann[(pixel_num*4) + 1] = 0;
-              ann[(pixel_num*4) + 2] = 0;
+        if (rgb && !display_labels) {
+          for (var k = 0; k < scale; k +=1) {
+            for (var l = 0; l < scale; l +=1) {
+              // location in 1D array based on i,j, and scale
+              pixel_num = (scale*(jlen*(scale*j + l) + i)) + k;
+              // set to white by changing RGB values
+              ann[(pixel_num*4)] += 60;
+              ann[(pixel_num*4) + 1] += 60;
+              ann[(pixel_num*4) + 2] += 60;
             }
           }
+        }
+        else {
+          recolorScaled(ann, scale, i, j, jlen, r=255, g=0, b=0);
         }
       }
     }
@@ -71,38 +85,13 @@ function outline(img) {
   for (var j = 0; j < seg_array.length; j += 1){ //y
     for (var i = 0; i < seg_array[j].length; i += 1){ //x
       let jlen = seg_array[j].length;
-
+      // outline conv brush target in red
       if (edit_mode && brush.conv && brush.target !== -1
         && seg_array[j][i] === -brush.target) {
-        // fill in all pixels affected by scale
-        // k and l get the pixels that are part of the original pixel that has been scaled up
-        for (var k = 0; k < scale; k +=1) {
-          for (var l = 0; l < scale; l +=1) {
-            // location in 1D array based on i,j, and scale
-            pixel_num = (scale*(jlen*(scale*j + l) + i)) + k;
-
-            // set to red by changing RGB values
-            ann[(pixel_num*4)] = 255;
-            ann[(pixel_num*4) + 1] = 0;
-            ann[(pixel_num*4) + 2] = 0;
-          }
-        }
+        recolorScaled(ann, scale, i, j, jlen, r=255, g=0, b=0);
+      // all other outlines are white
       } else if (seg_array[j][i] < 0) {
         recolorScaled(ann, scale, i, j, jlen, r=255, g=255, b=255);
-      // label boundaries have negative values
-        // fill in all pixels affected by scale
-        // k and l get the pixels that are part of the original pixel that has been scaled up
-        for (var k = 0; k < scale; k +=1) {
-          for (var l = 0; l < scale; l +=1) {
-            // location in 1D array based on i,j, and scale
-            pixel_num = (scale*(jlen*(scale*j + l) + i)) + k;
-
-            // set to white by changing RGB values
-            ann[(pixel_num*4)] = 255;
-            ann[(pixel_num*4) + 1] = 255;
-            ann[(pixel_num*4) + 2] = 255;
-          }
-        }
       }
     }
   }
