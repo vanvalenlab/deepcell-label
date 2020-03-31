@@ -1,4 +1,6 @@
 // helper functions
+
+// modify image data in place to recolor
 function recolorScaled(data, scale, i, j, jlen, r=255, g=255, b=255) {
   // fill in all pixels affected by scale
   // k and l get the pixels that are part of the original pixel that has been scaled up
@@ -7,9 +9,10 @@ function recolorScaled(data, scale, i, j, jlen, r=255, g=255, b=255) {
       // location in 1D array based on i,j, and scale
       pixel_num = (scale*(jlen*(scale*j + l) + i)) + k;
       // set to color by changing RGB values
-      data[(pixel_num*4)] = r;
-      data[(pixel_num*4) + 1] = g;
-      data[(pixel_num*4) + 2] = b;
+      // data is clamped 8bit type, so +255 sets to 255, -255 sets to 0
+      data[(pixel_num*4)] += r;
+      data[(pixel_num*4) + 1] += g;
+      data[(pixel_num*4) + 2] += b;
     }
   }
 }
@@ -56,23 +59,13 @@ function highlight(img, label) {
     for (var i = 0; i < seg_array[j].length; i += 1){ //x
       let jlen = seg_array[j].length;
 
-      if (Math.abs(seg_array[j][i]) === label){
-        // fill in all pixels affected by scale
-        // k and l get the pixels that are part of the original pixel that has been scaled up
+      if (Math.abs(seg_array[j][i]) === label) {
         if (rgb && !display_labels) {
-          for (var k = 0; k < scale; k +=1) {
-            for (var l = 0; l < scale; l +=1) {
-              // location in 1D array based on i,j, and scale
-              pixel_num = (scale*(jlen*(scale*j + l) + i)) + k;
-              // set to white by changing RGB values
-              ann[(pixel_num*4)] += 60;
-              ann[(pixel_num*4) + 1] += 60;
-              ann[(pixel_num*4) + 2] += 60;
-            }
-          }
-        }
-        else {
-          recolorScaled(ann, scale, i, j, jlen, r=255, g=0, b=0);
+          // add translucent effect
+          recolorScaled(ann, scale, i, j, jlen, r=60, g=60, b=60);
+        } else {
+          // change color to red
+          recolorScaled(ann, scale, i, j, jlen, r=255, g=-255, b=-255);
         }
       }
     }
@@ -88,7 +81,7 @@ function outline(img) {
       // outline conv brush target in red
       if (edit_mode && brush.conv && brush.target !== -1
         && seg_array[j][i] === -brush.target) {
-        recolorScaled(ann, scale, i, j, jlen, r=255, g=0, b=0);
+        recolorScaled(ann, scale, i, j, jlen, r=255, g=-255, b=-255);
       // all other outlines are white
       } else if (seg_array[j][i] < 0) {
         recolorScaled(ann, scale, i, j, jlen, r=255, g=255, b=255);
