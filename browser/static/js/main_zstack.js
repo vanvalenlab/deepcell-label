@@ -737,26 +737,26 @@ function render_info_display() {
   $('#mode').html(mode.render());
 }
 
-// for rgb, since edit and annotation images are so similar
-function render_label_overlay(ctx) {
-  ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
-  render_raw_image(ctx);
-  outline_all(ctx);
-  if (current_highlight) {
-    let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
-    if (edit_mode) {
-      highlight(img_data, brush.value);
-    } else {
-      highlight(img_data, mode.highlighted_cell_one);
-      highlight(img_data, mode.highlighted_cell_two);
-    }
-    ctx.putImageData(img_data, padding, padding);
-  }
-}
-
 function render_edit_image(ctx) {
+  let redOutline, r1, singleOutline, o1, outlineAll, translucent, t1, t2;
   if (rgb) {
-    render_label_overlay(ctx);
+    render_raw_image(ctx);
+    let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
+    // red outline for conversion brush target
+    if (edit_mode && brush.conv && brush.target !== -1) {
+      redOutline = true;
+      r1 = brush.target;
+    }
+    outlineAll = true;
+    // translucent highlight
+    if (current_highlight) {
+      translucent = true;
+      t1 = brush.value;
+    }
+    postCompositeLabelMod(img_data, redOutline, r1, singleOutline, o1,
+      outlineAll, translucent, t1, t2);
+    ctx.putImageData(img_data, padding, padding);
+
   } else {
     ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
     ctx.drawImage(raw_image, padding, padding, dimensions[0], dimensions[1]);
@@ -799,14 +799,25 @@ function render_raw_image(ctx) {
 
 function render_annotation_image(ctx) {
   if (rgb && !display_labels) {
-    render_label_overlay(ctx);
+    let redOutline, r1, singleOutline, o1, outlineAll, translucent, t1, t2;
+    render_raw_image(ctx);
+    let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
+    outlineAll = true;
+    // translucent highlight
+    if (current_highlight) {
+      translucent = true;
+      t1 = mode.highlighted_cell_one;
+      t2 = mode.highlighted_cell_two;
+    }
+    postCompositeLabelMod(img_data, redOutline, r1, singleOutline, o1,
+      outlineAll, translucent, t1, t2);
+    ctx.putImageData(img_data, padding, padding);
   } else {
     ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
     ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
     if (current_highlight) {
       let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
-      highlight(img_data, mode.highlighted_cell_one);
-      highlight(img_data, mode.highlighted_cell_two);
+      preCompositeLabelMod(img_data, mode.highlighted_cell_one, mode.highlighted_cell_two);
       ctx.putImageData(img_data, padding, padding);
     }
   }
