@@ -36,7 +36,7 @@ class Brush {
     this._outlineColor = 'white';
     // opacity only applies to interior
     this._fillColor = 'white';
-    this._opacity = 0.2;
+    this._opacity = 0.3;
 
     // attributes needed to match visible canvas
     this._height = height;
