@@ -22,6 +22,11 @@ app = application
 app.config.from_object("config")
 
 
+@app.route("/health")
+def healthcheck():
+    '''Lets elastic beanstalk know when this app is ready to use'''
+    return 'success'
+
 @app.route("/upload_file/<project_id>", methods=["GET", "POST"])
 def upload_file(project_id):
     ''' Upload .trk/.npz data file to AWS S3 bucket.
