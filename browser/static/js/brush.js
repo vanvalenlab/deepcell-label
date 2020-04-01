@@ -4,7 +4,7 @@ class Brush {
     this.x = 0;
     this.y = 0;
     // size of brush in pixels
-    this._size = 1;
+    this._size = 5;
     // scale of image (and therefore brush preview)
     this.scale = scale;
     // displayed size of brush
