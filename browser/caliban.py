@@ -41,6 +41,7 @@ class ZStackReview:
         self.filename = filename
         self.input_bucket = input_bucket
         self.output_bucket = output_bucket
+        # subfolders is actually the full file path
         self.subfolders = subfolders
         self.rgb = rgb
         self.trial = self.load(filename)
@@ -601,14 +602,13 @@ class ZStackReview:
         self.create_cell_info(feature = self.feature)
 
     def action_save_zstack(self):
-        save_file = self.filename + "_save_version_{}.npz".format(self.save_version)
+        # save file to BytesIO object
+        store_npz = BytesIO()
+        np.savez(store_npz, raw = self.raw, annotated = self.annotated)
+        store_npz.seek(0)
 
-        # save secure version of data before storing on regular file system
-        file = secure_filename(save_file)
-
-        np.savez(file, raw = self.raw, annotated = self.annotated)
-        path = self.subfolders
-        s3.upload_file(file, self.output_bucket, path)
+        # store npz file object in bucket/subfolders (subfolders is full path)
+        s3.upload_fileobj(store_npz, self.output_bucket, self.subfolders)
 
     def add_cell_info(self, feature, add_label, frame):
         '''
