@@ -780,6 +780,22 @@ function render_edit_image(ctx) {
       ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
     }
     ctx.restore();
+
+    // add outlines around conversion brush target/value
+    let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
+    // red outline for conversion brush target
+    if (edit_mode && brush.conv && brush.target !== -1) {
+      redOutline = true;
+      r1 = brush.target;
+    }
+    if (edit_mode && brush.conv && brush.value !== -1) {
+      singleOutline = true;
+      o1 = brush.value;
+    }
+
+    postCompositeLabelMod(img_data, redOutline, r1, singleOutline, o1,
+      outlineAll, translucent, t1, t2);
+    ctx.putImageData(img_data, padding, padding);
   }
 
   // draw brushview on top of cells/annotations
