@@ -3908,7 +3908,7 @@ class RGBNpz(CalibanWindow):
         '''
         raw = self.get_raw_current_frame()
 
-        image = self.array_to_img(input_array = adjusted_raw.astype(np.uint8),
+        image = self.array_to_img(input_array = raw.astype(np.uint8),
             vmax = None,
             cmap = None,
             output = 'pyglet')
