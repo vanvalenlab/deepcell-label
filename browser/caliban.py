@@ -1120,9 +1120,10 @@ class TrackReview:
         for track in empty_tracks:
             del self.tracks[track]
 
-        file = secure_filename(self.filename)
+        # create file object in memory instead of writing to disk
+        trk_file_obj = BytesIO()
 
-        with tarfile.open(file, "w") as trks:
+        with tarfile.open(fileobj=trk_file_obj, mode="w") as trks:
             with tempfile.NamedTemporaryFile("w") as lineage_file:
                 json.dump(self.tracks, lineage_file, indent=1)
                 lineage_file.flush()
@@ -1138,14 +1139,13 @@ class TrackReview:
                 tracked_file.flush()
                 trks.add(tracked_file.name, "tracked.npy")
         try:
-            s3.upload_file(file, self.output_bucket, self.subfolders)
+            # go to beginning of file object
+            trk_file_obj.seek(0)
+            s3.upload_fileobj(trk_file_obj, self.output_bucket, self.subfolders)
 
         except Exception as e:
             print("Something Happened: ", e, file=sys.stderr)
             raise
-
-        #os.remove(file)
-        return "Success!"
 
     def add_cell_info(self, add_label, frame):
         '''
