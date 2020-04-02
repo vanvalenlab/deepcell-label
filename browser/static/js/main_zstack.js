@@ -913,7 +913,8 @@ function load_file(file) {
 // adjust current_contrast upon mouse scroll
 function handle_scroll(evt) {
   // adjust contrast whenever we can see raw
-  if ((rendering_raw || edit_mode) && !evt.originalEvent.shiftKey) {
+  if ((rendering_raw || edit_mode || (rgb && !display_labels))
+    && !evt.originalEvent.shiftKey) {
     // don't use magnitude of scroll
     let mod_contrast = -Math.sign(evt.originalEvent.deltaY) * 4;
     // stop if fully desaturated
@@ -921,7 +922,8 @@ function handle_scroll(evt) {
     // stop at 5x contrast
     current_contrast = Math.min(current_contrast + mod_contrast, 400);
     render_image_display();
-  } else if ((rendering_raw || edit_mode) && evt.originalEvent.shiftKey) {
+  } else if ((rendering_raw || edit_mode || (rgb && !display_labels))
+    && evt.originalEvent.shiftKey) {
     let mod = -Math.sign(evt.originalEvent.deltaY);
     brightness = Math.min(brightness + mod, 255);
     brightness = Math.max(brightness + mod, -512);
