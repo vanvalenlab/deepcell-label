@@ -75,7 +75,7 @@ class Mode {
       // deselect/cancel action/reset highlight
       mode.clear();
       // may want some things here that trigger on ESC but not clear()
-    } else if (key === 'h') {
+    } else if (!rgb && key === 'h') {
       // toggle highlight
       current_highlight = !current_highlight;
       render_image_display();
@@ -603,7 +603,7 @@ let brightness;
 let brightnessMap = new Map();
 var current_frame = 0;
 var current_label = 0;
-var current_highlight = false;
+var current_highlight;
 var max_frames;
 var feature_max;
 var channel_max;
@@ -1077,6 +1077,11 @@ function start_caliban(filename) {
     edit_mode = false;
   }
   rgb = settings.rgb;
+  if (rgb) {
+    current_highlight = true;
+  } else {
+    current_highlight = false;
+  }
   // disable scrolling from scrolling around on page (it should just control brightness)
   document.addEventListener('wheel', function(event) {
     event.preventDefault();
