@@ -382,9 +382,9 @@ def get_project(conn, project_id):
         tuple: all data columns matching the project_id.
     '''
     cur = conn.cursor()
-    cur.execute("SELECT * FROM {tn} WHERE {idf}={my_id}".format(
-        tn="projects",
-        idf="id",
+    cur.execute('SELECT * FROM {tn} WHERE {idf}={my_id}'.format(
+        tn='projects',
+        idf='id',
         my_id=project_id
     ))
     return cur.fetchone()
@@ -401,15 +401,14 @@ def delete_project(conn, project_id):
     sql = ''' UPDATE {tn}
               SET lastUpdate = updatedAt
               WHERE id = {my_id}
-          '''.format(tn = 'projects', my_id = project_id)
+          '''.format(tn='projects', my_id=project_id)
     cur.execute(sql)
 
     timesql = ''' UPDATE {tn}
                   SET finished = CURRENT_TIMESTAMP,
                       state = NULL
-                  WHERE id = {my_id}'''.format(
-                    tn = "projects",
-                    my_id = project_id)
+                  WHERE id = {my_id}
+              '''.format(tn='projects', my_id=project_id)
     cur.execute(timesql)
 
     conn.commit()
