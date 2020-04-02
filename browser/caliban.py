@@ -604,7 +604,7 @@ class ZStackReview:
     def action_save_zstack(self):
         # save file to BytesIO object
         store_npz = BytesIO()
-        np.savez(store_npz, raw = self.raw, annotated = self.annotated)
+        np.savez(store_npz, raw=self.raw, annotated=self.annotated)
         store_npz.seek(0)
 
         # store npz file object in bucket/subfolders (subfolders is full path)

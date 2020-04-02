@@ -23,7 +23,7 @@ app.config.from_object("config")
 
 
 @app.route("/health")
-def healthcheck():
+def health():
     '''Lets elastic beanstalk know when this app is ready to use'''
     return 'success'
 
