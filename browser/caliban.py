@@ -16,7 +16,6 @@ import tarfile
 import tempfile
 import boto3
 import sys
-from werkzeug.utils import secure_filename
 from skimage import filters
 import skimage.morphology
 from skimage.morphology import watershed
