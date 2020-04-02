@@ -57,14 +57,14 @@ class Mode {
   // these keybinds apply regardless of
   // edit_mode, mode.action, or mode.kind
   handle_universal_keybind(key) {
-    if (key === 'a' || key === 'ArrowLeft') {
+    if (!rgb && (key === 'a' || key === 'ArrowLeft')) {
       // go backward one frame
       current_frame -= 1;
       if (current_frame < 0) {
         current_frame = max_frames - 1;
       }
       fetch_and_render_frame();
-    } else if (key === 'd' || key === 'ArrowRight') {
+    } else if (!rgb && (key === 'd' || key === 'ArrowRight')) {
       // go forward one frame
       current_frame += 1;
       if (current_frame >= max_frames) {
@@ -107,7 +107,7 @@ class Mode {
       brush.size += 1;
       // redraw the frame with the updated brush preview
       render_image_display();
-    } else if (key === 'i') {
+    } else if (!rgb && key === 'i') {
       // toggle light/dark inversion of raw img
       display_invert = !display_invert;
       render_image_display();
@@ -242,7 +242,7 @@ class Mode {
 
   // keybinds that apply in bulk mode, one selected
   handle_mode_single_keybind(key) {
-    if (key === "f") {
+    if (key === "f" && !rgb) {
       //hole fill
       this.info = { "label": this.info.label,
                     "frame": current_frame};
@@ -250,7 +250,7 @@ class Mode {
       this.action = "fill_hole";
       this.prompt = "Select hole to fill in cell " + this.info.label;
       render_info_display();
-    } else if (key === "c") {
+    } else if (!rgb && key === "c") {
       // create new
       this.kind = Modes.question;
       this.action = "create_new";
@@ -292,7 +292,7 @@ class Mode {
       this.prompt = ("Replace " + this.info.label_2 + " with " + this.info.label_1 +
         "? // SPACE = Replace in all frames / S = Replace in this frame only / ESC = Cancel replace");
       render_info_display();
-    } else if (key === "s") {
+    } else if (!rgb && key === "s") {
       // swap
       this.kind = Modes.question;
       this.action = "swap_cells";
