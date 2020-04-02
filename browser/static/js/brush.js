@@ -4,7 +4,7 @@ class Brush {
     this.x = 0;
     this.y = 0;
     // size of brush in pixels
-    this._size = 1;
+    this._size = 5;
     // scale of image (and therefore brush preview)
     this.scale = scale;
     // displayed size of brush
@@ -36,7 +36,7 @@ class Brush {
     this._outlineColor = 'white';
     // opacity only applies to interior
     this._fillColor = 'white';
-    this._opacity = 0.2;
+    this._opacity = 0.3;
 
     // attributes needed to match visible canvas
     this._height = height;
