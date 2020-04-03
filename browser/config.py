@@ -23,3 +23,5 @@ TEMPLATES_AUTO_RELOAD = config('TEMPLATES_AUTO_RELOAD', cast=bool, default=True)
 SQLALCHEMY_TRACK_MODIFICATIONS = config('SQLALCHEMY_TRACK_MODIFICATIONS',
                                         cast=bool, default=False)
 
+
+SQLALCHEMY_DATABASE_URI = 'sqlite:////tmp/caliban.db'
