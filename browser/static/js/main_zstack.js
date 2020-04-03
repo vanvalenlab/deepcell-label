@@ -456,8 +456,8 @@ class Mode {
       this.action = "flood_cell";
       this.info = {"label": current_label,
                         "frame": current_frame,
-                        "x_location": mouse_x,
-                        "y_location": mouse_y};
+                        "x_location": imgX,
+                        "y_location": imgY};
       this.prompt = "SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL";
       this.highlighted_cell_one = current_label;
     } else if (evt.shiftKey) {
@@ -466,8 +466,8 @@ class Mode {
       this.action = "trim_pixels";
       this.info = {"label": current_label,
                         "frame": current_frame,
-                        "x_location": mouse_x,
-                        "y_location": mouse_y};
+                        "x_location": imgX,
+                        "y_location": imgY};
       this.prompt = "SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL";
       this.highlighted_cell_one = current_label;
     } else {
@@ -477,8 +477,8 @@ class Mode {
                     "frame": current_frame };
       this.highlighted_cell_one = current_label;
       this.highlighted_cell_two = -1;
-      temp_x = mouse_x;
-      temp_y = mouse_y;
+      storedClickX = imgX;
+      storedClickY = imgY;
     }
   }
 
@@ -486,8 +486,8 @@ class Mode {
     if (this.action === "fill_hole" && current_label === 0) {
       this.info = { "label": this.info.label,
                     "frame": current_frame,
-                    "x_location": mouse_x,
-                    "y_location": mouse_y };
+                    "x_location": imgX,
+                    "y_location": imgY };
       action(this.action, this.info);
       this.clear();
     } else if (this.action === "pick_color"
@@ -521,10 +521,10 @@ class Mode {
                   "label_2": current_label,
                   "frame_1": this.info.frame,
                   "frame_2": current_frame,
-                  "x1_location": temp_x,
-                  "y1_location": temp_y,
-                  "x2_location": mouse_x,
-                  "y2_location": mouse_y };
+                  "x1_location": storedClickX,
+                  "y1_location": storedClickY,
+                  "x2_location": imgX,
+                  "y2_location": imgY };
   }
 
   handle_mode_multiple_click(evt) {
@@ -535,10 +535,10 @@ class Mode {
                 "label_2": current_label,
                 "frame_1": this.info.frame_1,
                 "frame_2": current_frame,
-                "x1_location": temp_x,
-                "y1_location": temp_y,
-                "x2_location": mouse_x,
-                "y2_location": mouse_y};
+                "x1_location": storedClickX,
+                "y1_location": storedClickY,
+                "x2_location": imgX,
+                "y2_location": imgY};
   }
 
   click(evt) {
@@ -592,8 +592,20 @@ var Modes = Object.freeze({
 });
 
 let rgb;
-var temp_x = 0;
-var temp_y = 0;
+
+var scale;
+const padding = 5;
+
+// mouse position variables
+let _rawMouseX;
+let _rawMouseY;
+let canvasPosX;
+let canvasPosY;
+let imgX;
+let imgY;
+let storedClickX;
+let storedClickY;
+
 var rendering_raw = false;
 let display_invert = true;
 let display_labels = false;
@@ -616,10 +628,6 @@ raw_image.onload = render_image_display;
 var seg_image = new Image();
 seg_image.onload = update_seg_highlight;
 var seg_array; // declare here so it is global var
-var scale;
-var mouse_x = 0;
-var mouse_y = 0;
-const padding = 5;
 let edit_mode;
 var answer = "(SPACE=YES / ESC=NO)";
 let mousedown = false;
@@ -642,12 +650,13 @@ function upload_file() {
 
 
 function label_under_mouse() {
-  let img_y = Math.floor(mouse_y/scale);
-  let img_x = Math.floor(mouse_x/scale);
   let new_label;
-  if (img_y >= 0 && img_y < seg_array.length &&
-      img_x >= 0 && img_x < seg_array[0].length) {
-    new_label = Math.abs(seg_array[img_y][img_x]); //check array value at mouse location
+  // convert to image indices, to use for actions and getting label
+  let tempImgX = Math.floor(canvasPosX/scale);
+  let tempImgY = Math.floor(canvasPosY/scale);
+  if (tempImgX >= 0 && tempImgX < seg_array[0].length &&
+      tempImgY >= 0 && tempImgY < seg_array.length) {
+    new_label = Math.abs(seg_array[imgY][imgX]); //check array value at mouse location
   } else {
     new_label = 0;
   }
@@ -876,7 +885,7 @@ function load_file(file) {
       max_frames = payload.max_frames;
       feature_max = payload.feature_max;
       channel_max = payload.channel_max;
-      scale = payload.screen_scale;
+      scale = 2;
       dimensions = [scale * payload.dimensions[0], scale * payload.dimensions[1]];
 
       tracks = payload.tracks; //tracks payload is dict
@@ -933,17 +942,13 @@ function handle_scroll(evt) {
 function handle_mousedown(evt) {
   if (mode.kind !== Modes.prompt) {
     mousedown = true;
-    mouse_x = evt.offsetX - padding;
-    mouse_y = evt.offsetY - padding;
     // begin drawing
     if (edit_mode) {
-      let img_y = Math.floor(mouse_y/scale);
-      let img_x = Math.floor(mouse_x/scale);
       if (!brush.show) {
-        brush.threshX = mouse_x;
-        brush.threshY = mouse_y;
+        brush.threshX = canvasPosX;
+        brush.threshY = canvasPosY;
       } else {
-        mouse_trace.push([img_y, img_x]);
+        mouse_trace.push([imgY, imgX]);
       }
     }
   }
@@ -952,25 +957,42 @@ function handle_mousedown(evt) {
 function helper_brush_draw() {
   if (mousedown) {
     // update mouse_trace
-    let img_y = Math.floor(mouse_y/scale);
-    let img_x = Math.floor(mouse_x/scale);
-    mouse_trace.push([img_y, img_x]);
+    mouse_trace.push([imgY, imgX]);
   } else {
     brush.clearView();
   }
   brush.addToView();
 }
 
+// input will typically be evt.offsetX, evt.offsetY (mouse events)
+function updateMousePos(x, y) {
+  // store raw mouse position, in case of pan without mouse movement
+  _rawMouseX = x;
+  _rawMouseY = y;
+
+  // convert to viewing pane position, to check whether to access label underneath
+  canvasPosX = x - padding;
+  canvasPosY = y - padding;
+
+  // convert to image indices, to use for actions and getting label
+  let tempImgX = Math.floor(canvasPosX/scale);
+  let tempImgY = Math.floor(canvasPosY/scale);
+  if (tempImgX >= 0 && tempImgX < seg_array[0].length &&
+    tempImgY >= 0 && tempImgY < seg_array.length) {
+    imgX = tempImgX;
+    imgY = tempImgY;
+  }
+}
+
 // handles mouse movement, whether or not mouse button is held down
 function handle_mousemove(evt) {
-  // update displayed info depending on where mouse is
-  mouse_x = evt.offsetX - padding;
-  mouse_y = evt.offsetY - padding;
+  updateMousePos(evt.offsetX, evt.offsetY);
+
   render_info_display();
 
   // keeps brush location updated correctly when mouse moves outside edit mode
-  brush.x = mouse_x;
-  brush.y = mouse_y;
+  brush.x = canvasPosX;
+  brush.y = canvasPosY;
 
   // update brush preview
   if (edit_mode) {
@@ -996,8 +1018,8 @@ function handle_mouseup(evt) {
         mode.handle_draw();
       }
       // reset brush preview
-      brush.x = evt.offsetX - padding;
-      brush.y = evt.offsetY - padding;
+      brush.x = canvasPosX;
+      brush.y = canvasPosY;
       brush.refreshView();
     }
   }
