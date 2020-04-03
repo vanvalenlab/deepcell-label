@@ -640,116 +640,6 @@ function upload_file() {
   });
 }
 
-// image adjustment functions: take img as input and manipulate data attribute
-// pixel data is 1D array of 8bit RGBA values
-function contrast_image(img, contrast) {
-  let d = img.data;
-  contrast = (contrast / 100) + 1;
-  for (let i = 0; i < d.length; i += 4) {
-      d[i] = d[i]*contrast + brightness;
-      d[i + 1] = d[i+1]*contrast + brightness;
-      d[i + 2] = d[i+2]*contrast + brightness;
-  }
-  return img;
-}
-
-function highlight(img, label) {
-  let ann = img.data;
-
-  // use label array to figure out which pixels to recolor
-  for (var j = 0; j < seg_array.length; j += 1){ //y
-    for (var i = 0; i < seg_array[j].length; i += 1){ //x
-      let jlen = seg_array[j].length;
-
-      if (Math.abs(seg_array[j][i]) === label){
-        // fill in all pixels affected by scale
-        // k and l get the pixels that are part of the original pixel that has been scaled up
-        for (var k = 0; k < scale; k +=1) {
-          for (var l = 0; l < scale; l +=1) {
-            // location in 1D array based on i,j, and scale
-            pixel_num = (scale*(jlen*(scale*j + l) + i)) + k;
-
-            if (rgb && !display_labels) {
-              // set to white by changing RGB values
-              ann[(pixel_num*4)] += 60;
-              ann[(pixel_num*4) + 1] += 60;
-              ann[(pixel_num*4) + 2] += 60;
-            }
-            else {
-              // set to red by changing RGB values
-              ann[(pixel_num*4)] = 255;
-              ann[(pixel_num*4) + 1] = 0;
-              ann[(pixel_num*4) + 2] = 0;
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-function outline(img) {
-  let ann = img.data;
-  // use label array to figure out which pixels to recolor
-  for (var j = 0; j < seg_array.length; j += 1){ //y
-    for (var i = 0; i < seg_array[j].length; i += 1){ //x
-      let jlen = seg_array[j].length;
-
-      if (edit_mode && brush.conv && brush.target !== -1
-        && seg_array[j][i] === -brush.target) {
-        // fill in all pixels affected by scale
-        // k and l get the pixels that are part of the original pixel that has been scaled up
-        for (var k = 0; k < scale; k +=1) {
-          for (var l = 0; l < scale; l +=1) {
-            // location in 1D array based on i,j, and scale
-            pixel_num = (scale*(jlen*(scale*j + l) + i)) + k;
-
-            // set to red by changing RGB values
-            ann[(pixel_num*4)] = 255;
-            ann[(pixel_num*4) + 1] = 0;
-            ann[(pixel_num*4) + 2] = 0;
-          }
-        }
-      } else if (seg_array[j][i] < 0) {
-      // label boundaries have negative values
-        // fill in all pixels affected by scale
-        // k and l get the pixels that are part of the original pixel that has been scaled up
-        for (var k = 0; k < scale; k +=1) {
-          for (var l = 0; l < scale; l +=1) {
-            // location in 1D array based on i,j, and scale
-            pixel_num = (scale*(jlen*(scale*j + l) + i)) + k;
-
-            // set to white by changing RGB values
-            ann[(pixel_num*4)] = 255;
-            ann[(pixel_num*4) + 1] = 255;
-            ann[(pixel_num*4) + 2] = 255;
-          }
-        }
-      }
-    }
-  }
-}
-
-function grayscale(img) {
-  let data = img.data;
-  for (var i = 0; i < data.length; i += 4) {
-      var avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-      data[i]     = avg; // red
-      data[i + 1] = avg; // green
-      data[i + 2] = avg; // blue
-    }
-  return img;
-}
-
-function invert(img) {
-  let data = img.data;
-  for (var i = 0; i < data.length; i += 4) {
-    data[i]     = 255 - data[i];     // red
-    data[i + 1] = 255 - data[i + 1]; // green
-    data[i + 2] = 255 - data[i + 2]; // blue
-    }
-  return img;
-}
 
 function label_under_mouse() {
   let img_y = Math.floor(mouse_y/scale);
@@ -847,58 +737,33 @@ function render_info_display() {
   $('#mode').html(mode.render());
 }
 
-// apply highlight to edit_value in seg_image, save resulting
-// image as src of adjusted_seg to use to render edit (if needed)
-// additional hidden canvas is used to prevent image flickering
-function update_seg_highlight() {
-  let canvas = document.getElementById('hidden_seg_canvas');
-  let ctx = $('#hidden_seg_canvas').get(0).getContext("2d");
-  ctx.imageSmoothingEnabled = false;
-
-  // draw seg_image so we can extract image data
-  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-  ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
-  let seg_img_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
-  highlight(seg_img_data, brush.value);
-  ctx.putImageData(seg_img_data, 0, 0);
-  // once this new src is loaded, displayed image will be rerendered
-  adjusted_seg.src = canvas.toDataURL();
-}
-
-function outline_all(ctx) {
-  // to outline all edges:
-  let composite = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
-  outline(composite);
-  ctx.putImageData(composite, padding, padding);
-}
-
-// for rgb, since edit and annotation images are so similar
-function render_label_overlay(ctx) {
-  ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
-  render_raw_image(ctx);
-  outline_all(ctx);
-  if (current_highlight) {
-    let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
-    if (edit_mode) {
-      highlight(img_data, brush.value);
-    } else {
-      highlight(img_data, mode.highlighted_cell_one);
-      highlight(img_data, mode.highlighted_cell_two);
-    }
-    ctx.putImageData(img_data, padding, padding);
-  }
-}
-
 function render_edit_image(ctx) {
+  let redOutline, r1, singleOutline, o1, outlineAll, translucent, t1, t2;
   if (rgb) {
-    render_label_overlay(ctx);
+    render_raw_image(ctx);
+    let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
+    // red outline for conversion brush target
+    if (edit_mode && brush.conv && brush.target !== -1) {
+      redOutline = true;
+      r1 = brush.target;
+    }
+    outlineAll = true;
+    // translucent highlight
+    if (current_highlight) {
+      translucent = true;
+      t1 = brush.value;
+    }
+    postCompositeLabelMod(img_data, redOutline, r1, singleOutline, o1,
+      outlineAll, translucent, t1, t2);
+    ctx.putImageData(img_data, padding, padding);
+
   } else {
     ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
     ctx.drawImage(raw_image, padding, padding, dimensions[0], dimensions[1]);
     let raw_image_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
 
     // adjust underlying raw image
-    contrast_image(raw_image_data, current_contrast);
+    contrast_image(raw_image_data, current_contrast, brightness);
     grayscale(raw_image_data);
     if (display_invert) {
       invert(raw_image_data);
@@ -915,6 +780,22 @@ function render_edit_image(ctx) {
       ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
     }
     ctx.restore();
+
+    // add outlines around conversion brush target/value
+    let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
+    // red outline for conversion brush target
+    if (edit_mode && brush.conv && brush.target !== -1) {
+      redOutline = true;
+      r1 = brush.target;
+    }
+    if (edit_mode && brush.conv && brush.value !== -1) {
+      singleOutline = true;
+      o1 = brush.value;
+    }
+
+    postCompositeLabelMod(img_data, redOutline, r1, singleOutline, o1,
+      outlineAll, translucent, t1, t2);
+    ctx.putImageData(img_data, padding, padding);
   }
 
   // draw brushview on top of cells/annotations
@@ -927,21 +808,32 @@ function render_raw_image(ctx) {
 
   // contrast image
   image_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
-  contrast_image(image_data, current_contrast);
+  contrast_image(image_data, current_contrast, brightness);
   // draw contrasted image over the original
   ctx.putImageData(image_data, padding, padding);
 }
 
 function render_annotation_image(ctx) {
   if (rgb && !display_labels) {
-    render_label_overlay(ctx);
+    let redOutline, r1, singleOutline, o1, outlineAll, translucent, t1, t2;
+    render_raw_image(ctx);
+    let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
+    outlineAll = true;
+    // translucent highlight
+    if (current_highlight) {
+      translucent = true;
+      t1 = mode.highlighted_cell_one;
+      t2 = mode.highlighted_cell_two;
+    }
+    postCompositeLabelMod(img_data, redOutline, r1, singleOutline, o1,
+      outlineAll, translucent, t1, t2);
+    ctx.putImageData(img_data, padding, padding);
   } else {
     ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
     ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
     if (current_highlight) {
       let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
-      highlight(img_data, mode.highlighted_cell_one);
-      highlight(img_data, mode.highlighted_cell_two);
+      preCompositeLabelMod(img_data, mode.highlighted_cell_one, mode.highlighted_cell_two);
       ctx.putImageData(img_data, padding, padding);
     }
   }
