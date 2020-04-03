@@ -1,7 +1,10 @@
-import os
-import sys
+"""Configuration options and environment variables."""
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 from decouple import config
+
 
 DEBUG = True
 PORT = config('PORT', cast=int, default=5000)
