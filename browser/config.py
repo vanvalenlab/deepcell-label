@@ -17,3 +17,5 @@ MYSQL_HOSTNAME = config('MYSQL_HOSTNAME')
 MYSQL_PORT = config('MYSQL_PORT', cast=int, default=3306)
 MYSQL_PASSWORD = config('MYSQL_PASSWORD')
 MYSQL_DATABASE = config('MYSQL_DATABASE', default='caliban')
+
+TEMPLATES_AUTO_RELOAD = config('TEMPLATES_AUTO_RELOAD', cast=bool, default=True)
