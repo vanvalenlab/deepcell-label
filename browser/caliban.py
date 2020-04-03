@@ -1,32 +1,30 @@
-from io import BytesIO
-
-from imgutils import pngify
-from matplotlib.colors import hsv_to_rgb, LinearSegmentedColormap
-import matplotlib.pyplot as plt
-from random import random
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import io
 import copy
 import json
-import matplotlib
-import numpy as np
 import os
-import random
+import sys
 import tarfile
 import tempfile
+
 import boto3
-import sys
-from werkzeug.utils import secure_filename
+import matplotlib.pyplot as plt
+import numpy as np
 from skimage import filters
-import skimage.morphology
 from skimage.morphology import watershed
 from skimage.morphology import flood_fill, flood
 from skimage.draw import circle
 from skimage.measure import regionprops
 from skimage.exposure import rescale_intensity
 from skimage.segmentation import find_boundaries
+from werkzeug.utils import secure_filename
 
+from imgutils import pngify
 from config import S3_KEY, S3_SECRET
+
 
 # Connect to the s3 service
 s3 = boto3.client(
@@ -34,6 +32,7 @@ s3 = boto3.client(
     aws_access_key_id=S3_KEY,
     aws_secret_access_key=S3_SECRET
 )
+
 
 class ZStackReview:
     def __init__(self, filename, input_bucket, output_bucket, subfolders, rgb = False):
@@ -1350,7 +1349,7 @@ def relabel_frame(img, start_val = 1):
 
 def load_npz(filename):
 
-    data = BytesIO(filename)
+    data = io.BytesIO(filename)
     npz = np.load(data)
 
     if 'y' in npz.files:
@@ -1380,13 +1379,13 @@ def load_trks(trkfile):
         with tarfile.open(temp.name, 'r') as trks:
 
             # numpy can't read these from disk...
-            array_file = BytesIO()
+            array_file = io.BytesIO()
             array_file.write(trks.extractfile('raw.npy').read())
             array_file.seek(0)
             raw = np.load(array_file)
             array_file.close()
 
-            array_file = BytesIO()
+            array_file = io.BytesIO()
             array_file.write(trks.extractfile('tracked.npy').read())
             array_file.seek(0)
             tracked = np.load(array_file)
