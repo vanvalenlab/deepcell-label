@@ -167,7 +167,7 @@ def load(filename):
         rgb = json.loads(rgb)
         # Initate ZStackReview object and entry in database
         zstack_review = ZStackReview(filename, input_bucket, output_bucket, full_path, rgb)
-        project = Project.create_project(filename, track_review, subfolders)
+        project = Project.create_project(filename, zstack_review, subfolders)
 
         # Send attributes to .js file
         return jsonify({
