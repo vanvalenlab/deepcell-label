@@ -88,7 +88,7 @@ class Mode {
       brightness = 0;
       current_contrast = 0;
       render_image_display();
-    } else if (key === 'l' && !edit_mode) {
+    } else if ((key === 'l' || key === 'L') && !edit_mode) {
       display_labels = !display_labels;
       render_image_display();
     }
@@ -739,8 +739,8 @@ function render_info_display() {
 
 function render_edit_image(ctx) {
   let redOutline, r1, singleOutline, o1, outlineAll, translucent, t1, t2;
-  if (rgb) {
-    render_raw_image(ctx);
+  render_raw_image(ctx);
+  if (rgb && !rendering_raw) {
     let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
     // red outline for conversion brush target
     if (edit_mode && brush.conv && brush.target !== -1) {
@@ -757,13 +757,10 @@ function render_edit_image(ctx) {
       outlineAll, translucent, t1, t2);
     ctx.putImageData(img_data, padding, padding);
 
-  } else {
-    ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
-    ctx.drawImage(raw_image, padding, padding, dimensions[0], dimensions[1]);
+  } else if (!rgb) {
     let raw_image_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
 
     // adjust underlying raw image
-    contrast_image(raw_image_data, current_contrast, brightness);
     grayscale(raw_image_data);
     if (display_invert) {
       invert(raw_image_data);
