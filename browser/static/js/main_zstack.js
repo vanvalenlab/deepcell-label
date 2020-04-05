@@ -885,8 +885,8 @@ function load_file(file) {
       max_frames = payload.max_frames;
       feature_max = payload.feature_max;
       channel_max = payload.channel_max;
-      scale = 2;
-      dimensions = [scale * payload.dimensions[0], scale * payload.dimensions[1]];
+      rawDimensions = payload.dimensions;
+      setCanvasDimensions();
 
       tracks = payload.tracks; //tracks payload is dict
 
@@ -907,13 +907,27 @@ function load_file(file) {
       current_contrast = contrastMap.get(0);
 
       project_id = payload.project_id;
-      $('#canvas').get(0).width = dimensions[0] + 2*padding;
-      $('#canvas').get(0).height = dimensions[1] + 2*padding;
-      $('#hidden_seg_canvas').get(0).width = dimensions[0];
-      $('#hidden_seg_canvas').get(0).height = dimensions[1];
     },
     async: false
   });
+}
+
+function setCanvasDimensions() {
+  // calculate available space and how much to scale x and y to fill it
+  let availWidth = Math.floor(document.documentElement.clientWidth * 0.6);
+  let availHeight = Math.floor(document.documentElement.clientHeight * 0.8);
+  let scaleX = Math.floor(availWidth/rawDimensions[0]);
+  let scaleY = Math.floor(availHeight/rawDimensions[1]);
+
+  // pick scale that accomodates both dimensions
+  scale = Math.max(1, Math.min(scaleX, scaleY));
+  dimensions = [scale * rawDimensions[0], scale * rawDimensions[1]];
+
+  // set canvases size according to scale
+  $('#canvas').get(0).width = dimensions[0] + 2*padding;
+  $('#canvas').get(0).height = dimensions[1] + 2*padding;
+  $('#hidden_seg_canvas').get(0).width = dimensions[0];
+  $('#hidden_seg_canvas').get(0).height = dimensions[1];
 }
 
 // adjust current_contrast upon mouse scroll
