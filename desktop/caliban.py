@@ -43,7 +43,7 @@ import tarfile
 import tempfile
 
 from io import BytesIO
-from skimage.morphology import watershed, flood_fill, flood
+from skimage.morphology import watershed, flood_fill, flood, dilation, disk
 from skimage.draw import circle
 from skimage.measure import regionprops
 from skimage.exposure import rescale_intensity, equalize_adapthist
@@ -2725,8 +2725,8 @@ class TrackReview(CalibanWindow):
         new_label = self.get_new_label()
 
         # Locally store the frames to work on
-        img_raw = self.raw[self.current_frame]
-        img_ann = self.tracked[self.current_frame]
+        img_raw = self.raw[self.current_frame,:,:,0]
+        img_ann = self.tracked[self.current_frame,:,:,0]
 
         # Pull the 2 seed locations and store locally
         # define a new seeds labeled img that is the same size as raw/annotaiton imgs
@@ -2750,12 +2750,26 @@ class TrackReview(CalibanWindow):
         # apply watershed transform to the subsections
         ws = watershed(-img_sub_raw_scaled, img_sub_seeds, mask=img_sub_ann.astype(bool))
 
-        cell_loc = np.where(img_sub_ann == current_label)
-        img_sub_ann[cell_loc] = ws[cell_loc]
+        # did watershed effectively create a new label?
+        new_pixels = np.count_nonzero(np.logical_and(ws == new_label, img_sub_ann == current_label))
+        # if only a few pixels split, dilate them; new label is "brightest"
+        # so will expand over other labels and increase area
+        if new_pixels < 5:
+            ws = dilation(ws, disk(3))
+
+        # ws may only leave a few pixels of old label
+        old_pixels = np.count_nonzero(ws == current_label)
+        if old_pixels < 5:
+            # create dilation image so "dimmer" label is not eroded by "brighter" label
+            dilated_ws = dilation(np.where(ws==current_label, ws, 0), disk(3))
+            ws = np.where(dilated_ws==current_label, dilated_ws, ws)
+
+        # only update img_sub_ann where ws has changed label from current_label to new_label
+        img_sub_ann = np.where(np.logical_and(ws == new_label,img_sub_ann == current_label), ws, img_sub_ann)
 
         # reintegrate subsection into original mask
         img_ann[minr:maxr, minc:maxc] = img_sub_ann
-        self.tracked[self.current_frame] = img_ann
+        self.tracked[self.current_frame,:,:,0] = img_ann
 
         # current label doesn't change, but add the neccesary bookkeeping for the new track
         self.add_cell_info(add_label = new_label, frame = self.current_frame)
@@ -4272,6 +4286,20 @@ class ZStackReview(CalibanWindow):
 
         # apply watershed transform to the subsections
         ws = watershed(-img_sub_raw_scaled, img_sub_seeds, mask=img_sub_ann.astype(bool))
+
+        # did watershed effectively create a new label?
+        new_pixels = np.count_nonzero(np.logical_and(ws == new_label, img_sub_ann == current_label))
+        # if only a few pixels split, dilate them; new label is "brightest"
+        # so will expand over other labels and increase area
+        if new_pixels < 5:
+            ws = dilation(ws, disk(3))
+
+        # ws may only leave a few pixels of old label
+        old_pixels = np.count_nonzero(ws == current_label)
+        if old_pixels < 5:
+            # create dilation image so "dimmer" label is not eroded by "brighter" label
+            dilated_ws = dilation(np.where(ws==current_label, ws, 0), disk(3))
+            ws = np.where(dilated_ws==current_label, dilated_ws, ws)
 
         # only update img_sub_ann where ws has changed label from current_label to new_label
         img_sub_ann = np.where(np.logical_and(ws == new_label,img_sub_ann == current_label), ws, img_sub_ann)
