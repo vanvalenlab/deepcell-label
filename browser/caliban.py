@@ -14,8 +14,8 @@ import boto3
 import matplotlib.pyplot as plt
 import numpy as np
 from skimage import filters
-from skimage.morphology import watershed
 from skimage.morphology import flood_fill, flood
+from skimage.morphology import watershed, dilation, disk
 from skimage.draw import circle
 from skimage.measure import regionprops
 from skimage.exposure import rescale_intensity
@@ -40,6 +40,7 @@ class ZStackReview:
         self.filename = filename
         self.input_bucket = input_bucket
         self.output_bucket = output_bucket
+        # subfolders is actually the full file path
         self.subfolders = subfolders
         self.rgb = rgb
         self.trial = self.load(filename)
@@ -559,6 +560,20 @@ class ZStackReview:
         # apply watershed transform to the subsections
         ws = watershed(-img_sub_raw_scaled, img_sub_seeds, mask=img_sub_ann.astype(bool))
 
+        # did watershed effectively create a new label?
+        new_pixels = np.count_nonzero(np.logical_and(ws == new_label, img_sub_ann == current_label))
+        # if only a few pixels split, dilate them; new label is "brightest"
+        # so will expand over other labels and increase area
+        if new_pixels < 5:
+            ws = dilation(ws, disk(3))
+
+        # ws may only leave a few pixels of old label
+        old_pixels = np.count_nonzero(ws == current_label)
+        if old_pixels < 5:
+            # create dilation image so "dimmer" label is not eroded by "brighter" label
+            dilated_ws = dilation(np.where(ws==current_label, ws, 0), disk(3))
+            ws = np.where(dilated_ws==current_label, dilated_ws, ws)
+
         # only update img_sub_ann where ws has changed label from current_label to new_label
         img_sub_ann = np.where(np.logical_and(ws == new_label, img_sub_ann == current_label),
                                ws, img_sub_ann)
@@ -614,14 +629,13 @@ class ZStackReview:
         self.create_cell_info(feature=self.feature)
 
     def action_save_zstack(self):
-        save_file = self.filename + "_save_version_{}.npz".format(self.save_version)
+        # save file to BytesIO object
+        store_npz = BytesIO()
+        np.savez(store_npz, raw=self.raw, annotated=self.annotated)
+        store_npz.seek(0)
 
-        # save secure version of data before storing on regular file system
-        file = secure_filename(save_file)
-
-        np.savez(file, raw=self.raw, annotated=self.annotated)
-        path = self.subfolders
-        s3.upload_file(file, self.output_bucket, path)
+        # store npz file object in bucket/subfolders (subfolders is full path)
+        s3.upload_fileobj(store_npz, self.output_bucket, self.subfolders)
 
     def add_cell_info(self, feature, add_label, frame):
         '''
@@ -1084,8 +1098,8 @@ class TrackReview:
         new_label = max(self.tracks) + 1
 
         # Locally store the frames to work on
-        img_raw = self.raw[frame]
-        img_ann = self.tracked[frame]
+        img_raw = self.raw[frame,:,:,0]
+        img_ann = self.tracked[frame,:,:,0]
 
         # Pull the 2 seed locations and store locally
         # define a new seeds labeled img that is the same size as raw/annotation imgs
@@ -1114,13 +1128,27 @@ class TrackReview:
         # apply watershed transform to the subsections
         ws = watershed(-img_sub_raw_scaled, img_sub_seeds, mask=img_sub_ann.astype(bool))
 
+        # did watershed effectively create a new label?
+        new_pixels = np.count_nonzero(np.logical_and(ws == new_label, img_sub_ann == current_label))
+        # if only a few pixels split, dilate them; new label is "brightest"
+        # so will expand over other labels and increase area
+        if new_pixels < 5:
+            ws = dilation(ws, disk(3))
+
+        # ws may only leave a few pixels of old label
+        old_pixels = np.count_nonzero(ws == current_label)
+        if old_pixels < 5:
+            # create dilation image so "dimmer" label is not eroded by "brighter" label
+            dilated_ws = dilation(np.where(ws==current_label, ws, 0), disk(3))
+            ws = np.where(dilated_ws==current_label, dilated_ws, ws)
+
         # only update img_sub_ann where ws has changed label from current_label to new_label
         img_sub_ann = np.where(np.logical_and(ws == new_label, img_sub_ann == current_label),
                                ws, img_sub_ann)
 
         # reintegrate subsection into original mask
         img_ann[minr:maxr, minc:maxc] = img_sub_ann
-        self.tracked[frame] = img_ann
+        self.tracked[frame,:,:,0] = img_ann
 
         # update cell_info dict only if new label was created with ws
         if np.any(np.isin(self.tracked[frame, :, :, 0], new_label)):
@@ -1135,9 +1163,10 @@ class TrackReview:
         for track in empty_tracks:
             del self.tracks[track]
 
-        file = secure_filename(self.filename)
+        # create file object in memory instead of writing to disk
+        trk_file_obj = BytesIO()
 
-        with tarfile.open(file, "w") as trks:
+        with tarfile.open(fileobj=trk_file_obj, mode="w") as trks:
             with tempfile.NamedTemporaryFile("w") as lineage_file:
                 json.dump(self.tracks, lineage_file, indent=1)
                 lineage_file.flush()
@@ -1153,14 +1182,13 @@ class TrackReview:
                 tracked_file.flush()
                 trks.add(tracked_file.name, "tracked.npy")
         try:
-            s3.upload_file(file, self.output_bucket, self.subfolders)
+            # go to beginning of file object
+            trk_file_obj.seek(0)
+            s3.upload_fileobj(trk_file_obj, self.output_bucket, self.subfolders)
 
         except Exception as e:
             print("Something Happened: ", e, file=sys.stderr)
             raise
-
-        # os.remove(file)
-        return "Success!"
 
     def add_cell_info(self, add_label, frame):
         '''
