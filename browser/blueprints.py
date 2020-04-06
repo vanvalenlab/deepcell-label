@@ -25,6 +25,12 @@ from models import Project
 bp = Blueprint('caliban', __name__)  # pylint: disable=C0103
 
 
+@bp.route('/health')
+def health():
+    '''Returns success if the application is ready.'''
+    return 'success'
+
+
 @bp.route('/upload_file/<int:project_id>', methods=['GET', 'POST'])
 def upload_file(project_id):
     ''' Upload .trk/.npz data file to AWS S3 bucket.
