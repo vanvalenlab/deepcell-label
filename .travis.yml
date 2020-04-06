@@ -6,11 +6,6 @@ git:
 
 language: python
 
-python:
-  - 3.5
-  - 3.6
-  - 3.7
-
 stages:
   - browser_test
 
@@ -23,6 +18,10 @@ jobs:
   include:
     - stage: browser_test
       name: "Caliban Browser Tests"
+      python:
+        - 3.5
+        - 3.6
+        - 3.7
       install:
         - pip install -r browser/requirements.txt
         - pip install pytest pytest-cov==2.5.1 pytest-pep8
