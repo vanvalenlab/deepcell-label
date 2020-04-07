@@ -914,8 +914,15 @@ function load_file(file) {
 
 function setCanvasDimensions() {
   // calculate available space and how much to scale x and y to fill it
-  let availWidth = Math.floor(document.documentElement.clientWidth * 0.6);
-  let availHeight = Math.floor(document.documentElement.clientHeight * 0.8);
+  // only thing that shares width is the info display on left
+  let availWidth = Math.floor(document.documentElement.clientWidth * 0.75);
+
+  // leave space for navbar, instructions pane, and footer
+  let availHeight = Math.floor((document.documentElement.clientHeight -
+      document.getElementsByClassName('footer-text')[0].clientHeight -
+      document.getElementsByClassName('accordion')[0].clientHeight -
+      document.getElementsByClassName('navbar')[0].clientHeight)*0.95);
+
   let scaleX = Math.floor(availWidth/rawDimensions[0]);
   let scaleY = Math.floor(availHeight/rawDimensions[1]);
 
