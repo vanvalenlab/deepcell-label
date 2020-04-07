@@ -57,14 +57,14 @@ class Mode {
   // these keybinds apply regardless of
   // edit_mode, mode.action, or mode.kind
   handle_universal_keybind(key) {
-    if (key === 'a' || key === 'ArrowLeft') {
+    if (!rgb && (key === 'a' || key === 'ArrowLeft')) {
       // go backward one frame
       current_frame -= 1;
       if (current_frame < 0) {
         current_frame = max_frames - 1;
       }
       fetch_and_render_frame();
-    } else if (key === 'd' || key === 'ArrowRight') {
+    } else if (!rgb && (key === 'd' || key === 'ArrowRight')) {
       // go forward one frame
       current_frame += 1;
       if (current_frame >= max_frames) {
@@ -75,7 +75,7 @@ class Mode {
       // deselect/cancel action/reset highlight
       mode.clear();
       // may want some things here that trigger on ESC but not clear()
-    } else if (key === 'h') {
+    } else if (!rgb && key === 'h') {
       // toggle highlight
       current_highlight = !current_highlight;
       render_image_display();
@@ -88,7 +88,7 @@ class Mode {
       brightness = 0;
       current_contrast = 0;
       render_image_display();
-    } else if (key === 'l' && !edit_mode) {
+    } else if ((key === 'l' || key === 'L') && !edit_mode) {
       display_labels = !display_labels;
       render_image_display();
     }
@@ -107,7 +107,7 @@ class Mode {
       brush.size += 1;
       // redraw the frame with the updated brush preview
       render_image_display();
-    } else if (key === 'i') {
+    } else if (!rgb && key === 'i') {
       // toggle light/dark inversion of raw img
       display_invert = !display_invert;
       render_image_display();
@@ -242,7 +242,7 @@ class Mode {
 
   // keybinds that apply in bulk mode, one selected
   handle_mode_single_keybind(key) {
-    if (key === "f") {
+    if (key === "f" && !rgb) {
       //hole fill
       this.info = { "label": this.info.label,
                     "frame": current_frame};
@@ -250,7 +250,7 @@ class Mode {
       this.action = "fill_hole";
       this.prompt = "Select hole to fill in cell " + this.info.label;
       render_info_display();
-    } else if (key === "c") {
+    } else if (!rgb && key === "c") {
       // create new
       this.kind = Modes.question;
       this.action = "create_new";
@@ -292,7 +292,7 @@ class Mode {
       this.prompt = ("Replace " + this.info.label_2 + " with " + this.info.label_1 +
         "? // SPACE = Replace in all frames / S = Replace in this frame only / ESC = Cancel replace");
       render_info_display();
-    } else if (key === "s") {
+    } else if (!rgb && key === "s") {
       // swap
       this.kind = Modes.question;
       this.action = "swap_cells";
@@ -603,7 +603,7 @@ let brightness;
 let brightnessMap = new Map();
 var current_frame = 0;
 var current_label = 0;
-var current_highlight = false;
+var current_highlight;
 var max_frames;
 var feature_max;
 var channel_max;
@@ -739,8 +739,8 @@ function render_info_display() {
 
 function render_edit_image(ctx) {
   let redOutline, r1, singleOutline, o1, outlineAll, translucent, t1, t2;
-  if (rgb) {
-    render_raw_image(ctx);
+  render_raw_image(ctx);
+  if (rgb && !rendering_raw) {
     let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
     // red outline for conversion brush target
     if (edit_mode && brush.conv && brush.target !== -1) {
@@ -757,13 +757,10 @@ function render_edit_image(ctx) {
       outlineAll, translucent, t1, t2);
     ctx.putImageData(img_data, padding, padding);
 
-  } else {
-    ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
-    ctx.drawImage(raw_image, padding, padding, dimensions[0], dimensions[1]);
+  } else if (!rgb) {
     let raw_image_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
 
     // adjust underlying raw image
-    contrast_image(raw_image_data, current_contrast, brightness);
     grayscale(raw_image_data);
     if (display_invert) {
       invert(raw_image_data);
@@ -913,7 +910,8 @@ function load_file(file) {
 // adjust current_contrast upon mouse scroll
 function handle_scroll(evt) {
   // adjust contrast whenever we can see raw
-  if ((rendering_raw || edit_mode) && !evt.originalEvent.shiftKey) {
+  if ((rendering_raw || edit_mode || (rgb && !display_labels))
+    && !evt.originalEvent.shiftKey) {
     // don't use magnitude of scroll
     let mod_contrast = -Math.sign(evt.originalEvent.deltaY) * 4;
     // stop if fully desaturated
@@ -921,7 +919,8 @@ function handle_scroll(evt) {
     // stop at 5x contrast
     current_contrast = Math.min(current_contrast + mod_contrast, 400);
     render_image_display();
-  } else if ((rendering_raw || edit_mode) && evt.originalEvent.shiftKey) {
+  } else if ((rendering_raw || edit_mode || (rgb && !display_labels))
+    && evt.originalEvent.shiftKey) {
     let mod = -Math.sign(evt.originalEvent.deltaY);
     brightness = Math.min(brightness + mod, 255);
     brightness = Math.max(brightness + mod, -512);
@@ -1075,6 +1074,11 @@ function start_caliban(filename) {
     edit_mode = false;
   }
   rgb = settings.rgb;
+  if (rgb) {
+    current_highlight = true;
+  } else {
+    current_highlight = false;
+  }
   // disable scrolling from scrolling around on page (it should just control brightness)
   document.addEventListener('wheel', function(event) {
     event.preventDefault();
