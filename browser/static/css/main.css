@@ -30,20 +30,13 @@
 }
 
 #container {
-    margin: 0 auto;
-    margin-top: 100px;
+    margin: 20px;
     display: flex;
     box-sizing: border-box;
     flex-shrink: 0;
     flex-direction: row;
     justify-content: center;
-    align-items: center;
-}
-
-#maintable {
-    width: 900px;
-    height: 500px;
-    /* outline: 1px dashed blue; */
+    align-items: flex-start;
 }
 
 .changed-label {
@@ -57,6 +50,12 @@
     box-sizing: border-box;
     border-radius: 1em;
     width: 20em;
+}
+
+#canvascol {
+    display: flex;
+    justify-content: flex-start;
+    /*flex-grow: 1; */ /*turn this on to justify things to the left in page*/
 }
 
 #edit_brush_row, #edit_label_row, #edit_erase_row {
@@ -84,10 +83,6 @@
 
 #hidden_seg_canvas {
     display: none;
-}
-
-#canvascol {
-    vertical-align: top;
 }
 
 #give_filename {
