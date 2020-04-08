@@ -1,0 +1,30 @@
+sudo: true
+dist: xenial
+
+git:
+  depth: false
+
+language: python
+
+stages:
+  - browser_test
+
+cache: pip
+
+script:
+  - pytest --cov=benchmarking --pep8 benchmarking
+
+jobs:
+  include:
+    - stage: browser_test
+      name: "Caliban Browser Tests"
+      python:
+        - 3.5
+        - 3.6
+        - 3.7
+      install:
+        - pip install -r browser/requirements.txt
+        - pip install pytest pytest-cov==2.5.1 pytest-pep8
+      script:
+        - cd browser
+        - pytest --pep8

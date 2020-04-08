@@ -26,17 +26,6 @@
     <body>
         <div id="container">
             {% include "navigation.html" %}
-<!--             <form id="caliban-form" method="POST" action="{{ url_for('tool') }}">
-                <h3 class='call-action'>Caliban</h3>
-                <div class="file-name-input">
-                    <label class="say-label" for="filename">Enter name of existing file to edit.</label>
-                    <input type="text" name="filename" id="filename" value="RAW264_S0_Batch02.trk">
-                </div>
-
-                <div>
-                    <button>Go to Tool</button>
-                </div>
-            </form> -->
             <div class='form-help'>
                 <h3>
                     Click on a file that you would like use to see how Caliban works!
@@ -47,7 +36,7 @@
                     uncorrected HeLa cytoplasm, but is only 5 frames.
                 </p>
             </div>
-            <form id="caliban-form" method="POST" action="{{ url_for('tool') }}">
+            <form id="caliban-form" method="POST" action="{{ url_for('caliban.tool') }}">
               <select name="filename">
 
                 <option value="RAW264_S0_Batch02.trk">RAW264_S0_Batch02.trk </option>
