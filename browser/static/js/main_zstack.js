@@ -648,14 +648,21 @@ function upload_file() {
   });
 }
 
+// check if the mouse position in canvas matches to a displayed part of image
+function inRange(x, y) {
+  let scaledX = Math.floor(x/scale);
+  let scaledY = Math.floor(y/scale);
+  if (scaledX >= 0 && scaledX < seg_array[0].length &&
+      scaledY >= 0 && scaledY < seg_array.length) {
+    return true;
+  } else {
+    return false;
+  }
+}
 
 function label_under_mouse() {
   let new_label;
-  // convert to image indices, to use for actions and getting label
-  let tempImgX = Math.floor(canvasPosX/scale);
-  let tempImgY = Math.floor(canvasPosY/scale);
-  if (tempImgX >= 0 && tempImgX < seg_array[0].length &&
-      tempImgY >= 0 && tempImgY < seg_array.length) {
+  if (inRange(canvasPosX, canvasPosY)) {
     new_label = Math.abs(seg_array[imgY][imgX]); //check array value at mouse location
   } else {
     new_label = 0;
