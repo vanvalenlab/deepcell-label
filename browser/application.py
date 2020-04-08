@@ -28,6 +28,7 @@ def create_app():
     return app
 
 
+application = create_app()  # pylint: disable=C0103
+
 if __name__ == '__main__':
-    application = create_app()  # pylint: disable=C0103
     application.run('0.0.0.0', port=config.PORT, debug=config.DEBUG)
