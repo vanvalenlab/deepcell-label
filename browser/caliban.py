@@ -25,24 +25,60 @@ from imgutils import pngify
 from config import S3_KEY, S3_SECRET
 
 
-# Connect to the s3 service
-s3 = boto3.client(
-    "s3",
-    aws_access_key_id=S3_KEY,
-    aws_secret_access_key=S3_SECRET
-)
+class BaseReview(object):
+    """Base class for all Review objects."""
 
-
-class ZStackReview:
-
-    def __init__(self, filename, input_bucket, output_bucket, subfolders, rgb=False):
+    def __init__(self, filename, input_bucket, output_bucket, subfolders):
         self.filename = filename
         self.input_bucket = input_bucket
         self.output_bucket = output_bucket
-        # subfolders is actually the full file path
-        self.subfolders = subfolders
+        self.subfolders = subfolders  # full file path
+
+        self.current_frame = 0
+        self.scale_factor = 2
+        self.frames_changed = False
+        self.info_changed = False
+
+        self.color_map = plt.get_cmap('viridis')
+        self.color_map.set_bad('black')
+
+    def get_s3_client(self):
+        """Returns a S3 client for sending/receiving data from the bucket"""
+        return boto3.client(
+            's3',
+            aws_access_key_id=S3_KEY,
+            aws_secret_access_key=S3_SECRET
+        )
+
+    def rescale_95(self, img):
+        """Rescale a single- or multi-channel image."""
+        percentiles = np.percentile(img[img > 0], [5, 95])
+        rescaled_img = rescale_intensity(
+            img,
+            in_range=(percentiles[0], percentiles[1]),
+            out_range='uint8')
+        rescaled_img = rescaled_img.astype('uint8')
+        return rescaled_img
+
+    def add_outlines(self, frame):
+        """Indicate label outlines in array with negative values of that label.
+        """
+        # this is sometimes int 32 but may be uint, convert to
+        # int16 to ensure negative numbers and smaller payload than int32
+        frame = frame.astype(np.int16)
+        boundary_mask = find_boundaries(frame, mode='inner')
+        outlined_frame = np.where(boundary_mask == 1, -frame, frame)
+        return outlined_frame
+
+
+class ZStackReview(BaseReview):
+
+    def __init__(self, filename, input_bucket, output_bucket, subfolders, rgb=False):
+        super(ZStackReview, self).__init__(
+            filename, input_bucket, output_bucket, subfolders)
+
         self.rgb = rgb
-        self.trial = self.load(filename)
+        self.trial = self.load()
         self.raw = self.trial["raw"]
         self.annotated = self.trial["annotated"]
         self.feature = 0
@@ -82,15 +118,8 @@ class ZStackReview:
             self.max_intensity[channel] = None
 
         self.dtype_raw = self.raw.dtype
-        self.scale_factor = 2
 
         self.save_version = 0
-
-        self.color_map = plt.get_cmap('viridis')
-        self.color_map.set_bad('black')
-
-        self.frames_changed = False
-        self.info_changed = False
 
     def get_max_label(self):
         '''
@@ -104,19 +133,6 @@ class ZStackReview:
         else:
             max_label = int(np.max(self.cell_ids[self.feature]))
         return max_label
-
-    def rescale_95(self, img):
-        '''
-        Helper function for rescaling an image. Image can be single-
-        or multi-channel.
-        '''
-        percentiles = np.percentile(img[img > 0], [5, 95])
-        rescaled_img = rescale_intensity(
-            img,
-            in_range=(percentiles[0], percentiles[1]),
-            out_range='uint8')
-        rescaled_img = rescaled_img.astype('uint8')
-        return rescaled_img
 
     def rescale_raw(self):
         '''
@@ -206,26 +222,9 @@ class ZStackReview:
         frame = self.add_outlines(frame)
         return frame
 
-    def add_outlines(self, frame):
-        '''
-        Helper function that indicates label outlines in array with
-        negative values of that label.
-        '''
-        # this is sometimes int 32 but may be uint, convert to
-        # int16 to ensure negative numbers and smaller payload than int32
-        frame = frame.astype(np.int16)
-        boundary_mask = find_boundaries(frame, mode='inner')
-        outlined_frame = np.where(boundary_mask == 1, -frame, frame)
-        return outlined_frame
-
-    def load(self, filename):
-        # TODO: we should try to not use global if possible.
-        global original_filename
-        original_filename = filename
-        s3 = boto3.client('s3')  # reassigned from outer call?
-        key = self.subfolders
-        print(key)
-        response = s3.get_object(Bucket=self.input_bucket, Key=key)
+    def load(self):
+        s3 = self.get_s3_client()
+        response = s3.get_object(Bucket=self.input_bucket, Key=self.subfolders)
         return load_npz(response['Body'].read())
 
     def action(self, action_type, info):
@@ -634,6 +633,7 @@ class ZStackReview:
         store_npz.seek(0)
 
         # store npz file object in bucket/subfolders (subfolders is full path)
+        s3 = self.get_s3_client()
         s3.upload_fileobj(store_npz, self.output_bucket, self.subfolders)
 
     def add_cell_info(self, feature, add_label, frame):
@@ -718,12 +718,11 @@ class ZStackReview:
             cell_info["frames"] = self.cell_info[self.feature][cell]['frames']
 
 
-class TrackReview:
+class TrackReview(BaseReview):
     def __init__(self, filename, input_bucket, output_bucket, subfolders):
-        self.filename = filename
-        self.input_bucket = input_bucket
-        self.output_bucket = output_bucket
-        self.subfolders = subfolders
+        super(TrackReview, self).__init__(
+            filename, input_bucket, output_bucket, subfolders)
+
         self.trial = self.load(filename)
         self.raw = self.trial["raw"]
         self.tracked = self.trial["tracked"]
@@ -738,16 +737,6 @@ class TrackReview:
         self.max_frames = self.raw.shape[0]
         self.dimensions = self.raw.shape[1:3][::-1]
         self.width, self.height = self.dimensions
-
-        self.scale_factor = 2
-
-        self.color_map = plt.get_cmap('viridis')
-        self.color_map.set_bad('black')
-
-        self.current_frame = 0
-
-        self.frames_changed = False
-        self.info_changed = False
 
     @property
     def readable_tracks(self):
@@ -787,11 +776,9 @@ class TrackReview:
         return frame
 
     def load(self, filename):
-        global original_filename
-        original_filename = filename
-        s3 = boto3.client('s3')
+        s3 = self.get_s3_client()
         response = s3.get_object(Bucket=self.input_bucket, Key=self.subfolders)
-        return load_trks(response['Body'].read())
+        return load_trks(response['Body'].read(), filename)
 
     def action(self, action_type, info):
 
@@ -800,7 +787,7 @@ class TrackReview:
             self.action_handle_draw(**info)
 
         # modified click actions
-        elif action_type == "flood_cell":
+        elif action_type == "flood_contiguous":
             self.action_flood_contiguous(**info)
         elif action_type == "trim_pixels":
             self.action_trim_pixels(**info)
@@ -1183,6 +1170,7 @@ class TrackReview:
         try:
             # go to beginning of file object
             trk_file_obj.seek(0)
+            s3 = self.get_s3_client()
             s3.upload_fileobj(trk_file_obj, self.output_bucket, self.subfolders)
 
         except Exception as e:
@@ -1414,7 +1402,7 @@ def load_npz(filename):
 
 # copied from:
 # vanvalenlab/deepcell-tf/blob/master/deepcell/utils/tracking_utils.py3
-def load_trks(trkfile):
+def load_trks(trkfile, original_filename):
     """Load a trk/trks file.
     Args:
         trks_file: full path to the file including .trk/.trks
