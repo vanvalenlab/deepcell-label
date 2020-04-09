@@ -789,6 +789,7 @@ class TrackReview:
     def load(self, filename):
         global original_filename
         original_filename = filename
+        s3 = boto3.client('s3')
         response = s3.get_object(Bucket=self.input_bucket, Key=self.subfolders)
         return load_trks(response['Body'].read())
 
