@@ -1,20 +1,14 @@
 // helper functions
 
 // modify image data in place to recolor
-function recolorScaled(data, scale, i, j, jlen, r=255, g=255, b=255) {
-  // fill in all pixels affected by scale
-  // k and l get the pixels that are part of the original pixel that has been scaled up
-  for (var k = 0; k < scale; k +=1) {
-    for (var l = 0; l < scale; l +=1) {
-      // location in 1D array based on i,j, and scale
-      pixel_num = (scale*(jlen*(scale*j + l) + i)) + k;
-      // set to color by changing RGB values
-      // data is clamped 8bit type, so +255 sets to 255, -255 sets to 0
-      data[(pixel_num*4)] += r;
-      data[(pixel_num*4) + 1] += g;
-      data[(pixel_num*4) + 2] += b;
-    }
-  }
+function recolorScaled(data, i, j, jlen, r=255, g=255, b=255) {
+  // location in 1D array based on i and j
+  let pixel_num = jlen*j + i;
+  // set to color by changing RGB values
+  // data is clamped 8bit type, so +255 sets to 255, -255 sets to 0
+  data[(pixel_num*4)] += r;
+  data[(pixel_num*4) + 1] += g;
+  data[(pixel_num*4) + 2] += b;
 }
 
 // image adjustment functions: take img as input and manipulate data attribute
@@ -59,7 +53,7 @@ function preCompositeLabelMod(img, h1, h2) {
       let jlen = seg_array[j].length;
       let currentVal = Math.abs(seg_array[j][i]);
       if (currentVal === h1 || currentVal === h2) {
-        recolorScaled(ann, scale, i, j, jlen, r=255, g=-255, b=-255);
+        recolorScaled(ann, i, j, jlen, r=255, g=-255, b=-255);
       }
     }
   }
@@ -79,20 +73,20 @@ function postCompositeLabelMod(img,
       let currentVal = seg_array[j][i];
       // outline red
       if (redOutline && currentVal === -r1) {
-        recolorScaled(ann, scale, i, j, jlen, r=255, g=-255, b=-255);
+        recolorScaled(ann, i, j, jlen, r=255, g=-255, b=-255);
         continue;
       // outline white single
       } else if (singleOutline && currentVal === -o1) {
-        recolorScaled(ann, scale, i, j, jlen, r=255, g=255, b=255);
+        recolorScaled(ann, i, j, jlen, r=255, g=255, b=255);
         continue;
       // outline all remaining edges with white
       } else if (outlineAll && currentVal < 0) {
-        recolorScaled(ann, scale, i, j, jlen, r=255, g=255, b=255);
+        recolorScaled(ann, i, j, jlen, r=255, g=255, b=255);
         continue;
       // translucent highlight
       } else if (translucent &&
             (Math.abs(currentVal) === t1 || Math.abs(currentVal) === t2)) {
-        recolorScaled(ann, scale, i, j, jlen, r=60, g=60, b=60);
+        recolorScaled(ann, i, j, jlen, r=60, g=60, b=60);
         continue;
       }
     }
@@ -106,9 +100,9 @@ function contrastRaw(contrast, brightness) {
   ctx.imageSmoothingEnabled = false;
 
   // draw seg_image so we can extract image data
-  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-  ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
-  let rawData = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+  ctx.clearRect(0, 0, rawWidth, rawHeight);
+  ctx.drawImage(raw_image, 0, 0, rawWidth, rawHeight);
+  let rawData = ctx.getImageData(0, 0, rawWidth, rawHeight);
   contrast_image(rawData, contrast, brightness);
   ctx.putImageData(rawData, 0, 0);
 
@@ -121,11 +115,11 @@ function preCompAdjust() {
   ctx.imageSmoothingEnabled = false;
 
   // draw seg_image so we can extract image data
-  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-  ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
+  ctx.clearRect(0, 0, rawWidth, rawHeight);
+  ctx.drawImage(seg_image, 0, 0, rawWidth, rawHeight);
 
   if (current_highlight) {
-    let segData = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+    let segData = ctx.getImageData(0, 0, rawWidth, rawHeight);
 
     if (edit_mode) {
       h1 = brush.value;
@@ -151,9 +145,9 @@ function compositeImages() {
   ctx.imageSmoothingEnabled = false;
 
   // further adjust raw image
-  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-  ctx.drawImage(contrastedRaw, 0, 0, dimensions[0], dimensions[1]);
-  let rawData = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+  ctx.clearRect(0, 0, rawWidth, rawHeight);
+  ctx.drawImage(contrastedRaw, 0, 0, rawWidth, rawHeight);
+  let rawData = ctx.getImageData(0, 0, rawWidth, rawHeight);
   grayscale(rawData);
   invert(rawData);
   ctx.putImageData(rawData, 0, 0);
@@ -161,7 +155,7 @@ function compositeImages() {
   // add labels on top
   ctx.save();
   ctx.globalAlpha = 0.3;
-  ctx.drawImage(preCompSeg, 0, 0, dimensions[0], dimensions[1]);
+  ctx.drawImage(preCompSeg, 0, 0, rawWidth, rawHeight);
   ctx.restore();
 
   compositedImg.src = canvas.toDataURL();
@@ -174,11 +168,11 @@ function postCompAdjust() {
   ctx.imageSmoothingEnabled = false;
 
   // draw seg_image so we can extract image data
-  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-  ctx.drawImage(compositedImg, 0, 0, dimensions[0], dimensions[1]);
+  ctx.clearRect(0, 0, rawWidth, rawHeight);
+  ctx.drawImage(compositedImg, 0, 0, rawWidth, rawHeight);
 
   // add outlines around conversion brush target/value
-  let imgData = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+  let imgData = ctx.getImageData(0, 0, rawWidth, rawHeight);
 
   let redOutline, r1, singleOutline, o1, outlineAll, translucent, t1, t2;
   // red outline for conversion brush target
@@ -206,11 +200,11 @@ function postCompAdjustRGB() {
   ctx.imageSmoothingEnabled = false;
 
   // draw seg_image so we can extract image data
-  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-  ctx.drawImage(contrastedRaw, 0, 0, dimensions[0], dimensions[1]);
+  ctx.clearRect(0, 0, rawWidth, rawHeight);
+  ctx.drawImage(contrastedRaw, 0, 0, rawWidth, rawHeight);
 
   // add outlines around conversion brush target/value
-  let imgData = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+  let imgData = ctx.getImageData(0, 0, rawWidth, rawHeight);
 
   let redOutline, r1, singleOutline, o1, outlineAll, translucent, t1, t2;
 

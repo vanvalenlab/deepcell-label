@@ -626,6 +626,9 @@ var Modes = Object.freeze({
 
 let rgb;
 
+let rawWidth;
+let rawHeight;
+
 var scale;
 const padding = 5;
 
@@ -804,7 +807,7 @@ function render_edit_image(ctx) {
 
   } else {
     ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
-    ctx.drawImage(postCompImg, padding, padding, dimensions[0], dimensions[1]);
+    ctx.drawImage(postCompImg, 0, 0, rawWidth, rawHeight, padding, padding, dimensions[0], dimensions[1]);
   }
 
   // draw brushview on top of cells/annotations
@@ -869,6 +872,10 @@ function load_file(file) {
       feature_max = payload.feature_max;
       channel_max = payload.channel_max;
       rawDimensions = payload.dimensions;
+
+      rawWidth = rawDimensions[0];
+      rawHeight = rawDimensions[1];
+
       setCanvasDimensions();
 
       tracks = payload.tracks; //tracks payload is dict
@@ -906,8 +913,8 @@ function setCanvasDimensions() {
       document.getElementsByClassName('accordion')[0].clientHeight -
       document.getElementsByClassName('navbar')[0].clientHeight)*0.95);
 
-  let scaleX = Math.floor(availWidth/rawDimensions[0]);
-  let scaleY = Math.floor(availHeight/rawDimensions[1]);
+  let scaleX = Math.floor(availWidth/rawWidth);
+  let scaleY = Math.floor(availHeight/rawHeight);
 
   // pick scale that accomodates both dimensions
   scale = Math.max(1, Math.min(scaleX, scaleY));
@@ -916,8 +923,8 @@ function setCanvasDimensions() {
   // set canvases size according to scale
   $('#canvas').get(0).width = dimensions[0] + 2*padding;
   $('#canvas').get(0).height = dimensions[1] + 2*padding;
-  $('#hidden_seg_canvas').get(0).width = dimensions[0];
-  $('#hidden_seg_canvas').get(0).height = dimensions[1];
+  $('#hidden_seg_canvas').get(0).width = rawWidth;
+  $('#hidden_seg_canvas').get(0).height = rawHeight;
 }
 
 // adjust current_contrast upon mouse scroll
