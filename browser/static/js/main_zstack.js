@@ -47,11 +47,10 @@ class Mode {
 
     brush.conv = false;
     brush.clearThresh();
-    update_seg_highlight();
 
     this.action = "";
     this.prompt = "";
-    render_image_display();
+    preCompAdjust();
   }
 
   // these keybinds apply regardless of
@@ -78,7 +77,7 @@ class Mode {
     } else if (!rgb && key === 'h') {
       // toggle highlight
       current_highlight = !current_highlight;
-      render_image_display();
+      preCompAdjust();
     } else if (key === 'z') {
       // toggle rendering_raw
       rendering_raw = !rendering_raw;
@@ -87,7 +86,7 @@ class Mode {
       // reset brightness adjustments
       brightness = 0;
       current_contrast = 0;
-      render_image_display();
+      prepareRaw();
     } else if ((key === 'l' || key === 'L') && !edit_mode) {
       display_labels = !display_labels;
       render_image_display();
@@ -110,18 +109,17 @@ class Mode {
     } else if (!rgb && key === 'i') {
       // toggle light/dark inversion of raw img
       display_invert = !display_invert;
-      render_image_display();
+      compositeImages();
     } else if (key === 'n') {
       // set edit value to something unused
       brush.value = maxLabelsMap.get(this.feature) + 1;
-      update_seg_highlight();
       if (this.kind === Modes.prompt && brush.conv) {
         this.prompt = "Now drawing over label " + brush.target + " with label " + brush.value
             + ". Use ESC to leave this mode.";
         this.kind = Modes.drawing;
-        render_image_display();
       }
-      render_info_display();
+      segLoaded = false;
+      preCompAdjust();
     }
   }
 
@@ -130,7 +128,8 @@ class Mode {
     if (key === "e" && !settings.pixel_only) {
       // toggle edit mode
       edit_mode = !edit_mode;
-      render_image_display();
+      segLoaded = false;
+      preCompAdjust();
     } else if (key === "c") {
       // cycle forward one channel, if applicable
       this.channel += 1;
@@ -157,12 +156,18 @@ class Mode {
       // increase edit_value up to max label + 1 (guaranteed unused)
       brush.value = Math.min(brush.value + 1,
           maxLabelsMap.get(this.feature) + 1);
-      update_seg_highlight();
+      if (current_highlight) {
+        segLoaded = false;
+        preCompAdjust();
+      }
       render_info_display();
     } else if (key === "-") {
       // decrease edit_value, minimum 1
       brush.value -= 1;
-      update_seg_highlight();
+      if (current_highlight) {
+        segLoaded = false;
+        preCompAdjust();
+      }
       render_info_display();
     } else if (key === "x") {
       // turn eraser on and off
@@ -198,7 +203,8 @@ class Mode {
       // toggle edit mode
       edit_mode = !edit_mode;
       helper_brush_draw();
-      render_image_display();
+      segLoaded = false;
+      preCompAdjust();
     } else if (key === "c") {
       // cycle forward one channel, if applicable
       this.channel += 1;
@@ -231,12 +237,18 @@ class Mode {
       // cycle highlight to prev label
       this.highlighted_cell_one = this.decrement_value(this.highlighted_cell_one,
           1, maxLabelsMap.get(this.feature));
-      render_image_display();
+      if (current_highlight) {
+        segLoaded = false;
+        preCompAdjust();
+      }
     } else if (key === "=" && this.highlighted_cell_one !== -1) {
       // cycle highlight to next label
       this.highlighted_cell_one = this.increment_value(this.highlighted_cell_one,
           1, maxLabelsMap.get(this.feature));
-      render_image_display();
+      if (current_highlight) {
+        segLoaded = false;
+        preCompAdjust();
+      }
     }
   }
 
@@ -270,7 +282,10 @@ class Mode {
       let temp_highlight = this.highlighted_cell_one;
       this.clear();
       this.highlighted_cell_one = temp_highlight;
-      render_image_display();
+      if (current_highlight) {
+        segLoaded = false;
+        preCompAdjust();
+      }
     } else if (key === "=") {
       // cycle highlight to next label
       this.highlighted_cell_one = this.increment_value(this.highlighted_cell_one,
@@ -279,7 +294,10 @@ class Mode {
       let temp_highlight = this.highlighted_cell_one;
       this.clear();
       this.highlighted_cell_one = temp_highlight;
-      render_image_display();
+      if (current_highlight) {
+        segLoaded = false;
+        preCompAdjust();
+      }
     }
   }
 
@@ -494,12 +512,12 @@ class Mode {
           && current_label !== 0
           && current_label !== brush.target) {
       brush.value = current_label;
-      update_seg_highlight();
       if (brush.target !== 0) {
         this.prompt = "Now drawing over label " + brush.target + " with label " + brush.value
             + ". Use ESC to leave this mode.";
         this.kind = Modes.drawing;
-        render_image_display();
+        segLoaded = false;
+        preCompAdjust();
       } else {
         this.clear();
       }
@@ -552,15 +570,30 @@ class Mode {
     } else if (this.kind === Modes.none) {
       //if nothing selected: shift-, alt-, or normal click
       this.handle_mode_none_click(evt);
-      render_image_display();
+      if (current_highlight) {
+        segLoaded = false;
+        preCompAdjust();
+      } else {
+        render_info_display();
+      }
     } else if (this.kind === Modes.single) {
       // one label already selected
       this.handle_mode_single_click(evt);
-      render_image_display();
+      if (current_highlight) {
+        segLoaded = false;
+        preCompAdjust();
+      } else {
+        render_info_display();
+      }
     } else if (this.kind  === Modes.multiple) {
       // two labels already selected, reselect second label
       this.handle_mode_multiple_click(evt);
-      render_image_display();
+      if (current_highlight) {
+        segLoaded = false;
+        preCompAdjust();
+      } else {
+        render_info_display();
+      }
     }
   }
 
@@ -606,6 +639,24 @@ let imgY;
 let storedClickX;
 let storedClickY;
 
+// raw and adjusted image storage
+// cascasding image updates if raw or seg is reloaded
+let rawLoaded;
+const raw_image = new Image();
+const contrastedRaw = new Image();
+
+let segLoaded;
+const seg_image = new Image();
+const preCompSeg = new Image();
+
+// adjusted raw + annotations
+const compositedImg = new Image();
+
+// composite image + outlines, transparent highlight
+const postCompImg = new Image();
+
+var seg_array; // declare here so it is global var
+
 var rendering_raw = false;
 let display_invert = true;
 let display_labels = false;
@@ -623,11 +674,6 @@ var dimensions;
 var tracks;
 let maxLabelsMap = new Map();
 var mode = new Mode(Modes.none, {});
-var raw_image = new Image();
-raw_image.onload = render_image_display;
-var seg_image = new Image();
-seg_image.onload = update_seg_highlight;
-var seg_array; // declare here so it is global var
 let edit_mode;
 var answer = "(SPACE=YES / ESC=NO)";
 let mousedown = false;
@@ -635,8 +681,6 @@ var tooltype = 'draw';
 var project_id;
 var brush;
 let mouse_trace = [];
-const adjusted_seg = new Image();
-adjusted_seg.onload = render_image_display;
 
 function upload_file() {
   $.ajax({
@@ -754,61 +798,13 @@ function render_info_display() {
 }
 
 function render_edit_image(ctx) {
-  let redOutline, r1, singleOutline, o1, outlineAll, translucent, t1, t2;
-  render_raw_image(ctx);
-  if (rgb && !rendering_raw) {
-    let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
-    // red outline for conversion brush target
-    if (edit_mode && brush.conv && brush.target !== -1) {
-      redOutline = true;
-      r1 = brush.target;
-    }
-    outlineAll = true;
-    // translucent highlight
-    if (current_highlight) {
-      translucent = true;
-      t1 = brush.value;
-    }
-    postCompositeLabelMod(img_data, redOutline, r1, singleOutline, o1,
-      outlineAll, translucent, t1, t2);
-    ctx.putImageData(img_data, padding, padding);
+  // let redOutline, r1, singleOutline, o1, outlineAll, translucent, t1, t2;
+  if (rgb && rendering_raw) {
+    render_raw_image(ctx);
 
-  } else if (!rgb) {
-    let raw_image_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
-
-    // adjust underlying raw image
-    grayscale(raw_image_data);
-    if (display_invert) {
-      invert(raw_image_data);
-    }
-    ctx.putImageData(raw_image_data, padding, padding);
-
-    // draw segmentations, highlighted version if highlight is on
-    ctx.save();
-    // ctx.globalCompositeOperation = 'color';
-    ctx.globalAlpha = 0.3;
-    if (current_highlight) {
-      ctx.drawImage(adjusted_seg, padding, padding, dimensions[0], dimensions[1]);
-    } else {
-      ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
-    }
-    ctx.restore();
-
-    // add outlines around conversion brush target/value
-    let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
-    // red outline for conversion brush target
-    if (edit_mode && brush.conv && brush.target !== -1) {
-      redOutline = true;
-      r1 = brush.target;
-    }
-    if (edit_mode && brush.conv && brush.value !== -1) {
-      singleOutline = true;
-      o1 = brush.value;
-    }
-
-    postCompositeLabelMod(img_data, redOutline, r1, singleOutline, o1,
-      outlineAll, translucent, t1, t2);
-    ctx.putImageData(img_data, padding, padding);
+  } else {
+    ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
+    ctx.drawImage(postCompImg, padding, padding, dimensions[0], dimensions[1]);
   }
 
   // draw brushview on top of cells/annotations
@@ -817,38 +813,15 @@ function render_edit_image(ctx) {
 
 function render_raw_image(ctx) {
   ctx.clearRect(padding, padding, dimensions, dimensions[1]);
-  ctx.drawImage(raw_image, padding, padding, dimensions[0], dimensions[1]);
-
-  // contrast image
-  image_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
-  contrast_image(image_data, current_contrast, brightness);
-  // draw contrasted image over the original
-  ctx.putImageData(image_data, padding, padding);
+  ctx.drawImage(contrastedRaw, padding, padding, dimensions[0], dimensions[1]);
 }
 
 function render_annotation_image(ctx) {
+  ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
   if (rgb && !display_labels) {
-    let redOutline, r1, singleOutline, o1, outlineAll, translucent, t1, t2;
-    render_raw_image(ctx);
-    let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
-    outlineAll = true;
-    // translucent highlight
-    if (current_highlight) {
-      translucent = true;
-      t1 = mode.highlighted_cell_one;
-      t2 = mode.highlighted_cell_two;
-    }
-    postCompositeLabelMod(img_data, redOutline, r1, singleOutline, o1,
-      outlineAll, translucent, t1, t2);
-    ctx.putImageData(img_data, padding, padding);
+    ctx.drawImage(postCompImg, padding, padding, dimensions[0], dimensions[1]);
   } else {
-    ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
-    ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
-    if (current_highlight) {
-      let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
-      preCompositeLabelMod(img_data, mode.highlighted_cell_one, mode.highlighted_cell_two);
-      ctx.putImageData(img_data, padding, padding);
-    }
+    ctx.drawImage(preCompSeg, padding, padding, dimensions[0], dimensions[1]);
   }
 }
 
@@ -874,6 +847,9 @@ function fetch_and_render_frame() {
     type: 'GET',
     url: "frame/" + current_frame + "/" + project_id,
     success: function(payload) {
+      rawLoaded = false;
+      segLoaded = false;
+
       // load new value of seg_array
       // array of arrays, contains annotation data for frame
       seg_array = payload.seg_arr;
@@ -949,19 +925,21 @@ function handle_scroll(evt) {
   // adjust contrast whenever we can see raw
   if ((rendering_raw || edit_mode || (rgb && !display_labels))
     && !evt.originalEvent.shiftKey) {
+    rawLoaded = false;
     // don't use magnitude of scroll
     let mod_contrast = -Math.sign(evt.originalEvent.deltaY) * 4;
     // stop if fully desaturated
     current_contrast = Math.max(current_contrast + mod_contrast, -100);
     // stop at 5x contrast
     current_contrast = Math.min(current_contrast + mod_contrast, 400);
-    render_image_display();
+    prepareRaw();
   } else if ((rendering_raw || edit_mode || (rgb && !display_labels))
     && evt.originalEvent.shiftKey) {
+    rawLoaded = false;
     let mod = -Math.sign(evt.originalEvent.deltaY);
     brightness = Math.min(brightness + mod, 255);
     brightness = Math.max(brightness + mod, -512);
-    render_image_display();
+    prepareRaw();
   }
 }
 
@@ -1094,6 +1072,9 @@ function action(action, info, frame = current_frame) {
         alert(payload.error);
       }
       if (payload.imgs) {
+        rawLoaded = false;
+        segLoaded = false;
+
         // load new value of seg_array
         // array of arrays, contains annotation data for frame
         seg_array = payload.imgs.seg_arr;
@@ -1143,10 +1124,26 @@ function start_caliban(filename) {
       event.preventDefault();
     }
   });
+
+  // define image onload cascade behavior
+  if (rgb) {
+    raw_image.onload = prepareRaw;
+    contrastedRaw.onload = rawAdjust;
+    seg_image.onload = preCompAdjust;
+    preCompSeg.onload = segAdjust;
+    postCompImg.onload = render_image_display;
+  } else {
+    raw_image.onload = prepareRaw;
+    contrastedRaw.onload = rawAdjust;
+    seg_image.onload = preCompAdjust;
+    preCompSeg.onload = segAdjust;
+    compositedImg.onload = postCompAdjust;
+    postCompImg.onload = render_image_display;
+  }
+
   load_file(filename);
   prepare_canvas();
   fetch_and_render_frame();
 
   brush = new Brush(scale=scale, height=dimensions[1], width=dimensions[0], pad = padding);
-  update_seg_highlight();
 }

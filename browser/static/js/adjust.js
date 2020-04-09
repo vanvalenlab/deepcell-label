@@ -51,29 +51,6 @@ function invert(img) {
   return img;
 }
 
-function highlight(img, label) {
-  let ann = img.data;
-
-  // use label array to figure out which pixels to recolor
-  for (var j = 0; j < seg_array.length; j += 1){ //y
-    for (var i = 0; i < seg_array[j].length; i += 1){ //x
-      let jlen = seg_array[j].length;
-
-      if (Math.abs(seg_array[j][i]) === label) {
-        if (rgb && !display_labels) {
-          // add translucent effect
-          recolorScaled(ann, scale, i, j, jlen, r=60, g=60, b=60);
-        } else {
-          // change color to red
-          recolorScaled(ann, scale, i, j, jlen, r=255, g=-255, b=-255);
-        }
-      }
-    }
-  }
-}
-
-// the only change we make to labels before compositing with raw
-// is recoloring the label to solid red for highlighting
 function preCompositeLabelMod(img, h1, h2) {
   let ann = img.data;
   // use label array to figure out which pixels to recolor
@@ -122,11 +99,23 @@ function postCompositeLabelMod(img,
   }
 }
 
+// apply contrast+brightness to raw image
+function contrastRaw(contrast, brightness) {
+  let canvas = document.getElementById('hidden_seg_canvas');
+  let ctx = $('#hidden_seg_canvas').get(0).getContext("2d");
+  ctx.imageSmoothingEnabled = false;
 
-// apply highlight to edit_value in seg_image, save resulting
-// image as src of adjusted_seg to use to render edit (if needed)
-// additional hidden canvas is used to prevent image flickering
-function update_seg_highlight() {
+  // draw seg_image so we can extract image data
+  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
+  ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
+  let rawData = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+  contrast_image(rawData, contrast, brightness);
+  ctx.putImageData(rawData, 0, 0);
+
+  contrastedRaw.src = canvas.toDataURL();
+}
+
+function preCompAdjust() {
   let canvas = document.getElementById('hidden_seg_canvas');
   let ctx = $('#hidden_seg_canvas').get(0).getContext("2d");
   ctx.imageSmoothingEnabled = false;
@@ -134,9 +123,149 @@ function update_seg_highlight() {
   // draw seg_image so we can extract image data
   ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
   ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
-  let seg_img_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
-  highlight(seg_img_data, brush.value);
-  ctx.putImageData(seg_img_data, 0, 0);
+
+  if (current_highlight) {
+    let segData = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+
+    if (edit_mode) {
+      h1 = brush.value;
+      h2 = -1;
+    } else {
+      h1 = mode.highlighted_cell_one;
+      h2 = mode.highlighted_cell_two;
+    }
+
+    // highlight
+    preCompositeLabelMod(segData, h1, h2);
+    ctx.putImageData(segData, 0, 0);
+  }
+
   // once this new src is loaded, displayed image will be rerendered
-  adjusted_seg.src = canvas.toDataURL();
+  preCompSeg.src = canvas.toDataURL();
 }
+
+// adjust raw further (if needed), composite annotations on top
+function compositeImages() {
+  let canvas = document.getElementById('hidden_seg_canvas');
+  let ctx = $('#hidden_seg_canvas').get(0).getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+
+  // further adjust raw image
+  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
+  ctx.drawImage(contrastedRaw, 0, 0, dimensions[0], dimensions[1]);
+  let rawData = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+  grayscale(rawData);
+  invert(rawData);
+  ctx.putImageData(rawData, 0, 0);
+
+  // add labels on top
+  ctx.save();
+  ctx.globalAlpha = 0.3;
+  ctx.drawImage(preCompSeg, 0, 0, dimensions[0], dimensions[1]);
+  ctx.restore();
+
+  compositedImg.src = canvas.toDataURL();
+}
+
+// apply outlines, transparent highlighting
+function postCompAdjust() {
+  let canvas = document.getElementById('hidden_seg_canvas');
+  let ctx = $('#hidden_seg_canvas').get(0).getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+
+  // draw seg_image so we can extract image data
+  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
+  ctx.drawImage(compositedImg, 0, 0, dimensions[0], dimensions[1]);
+
+  // add outlines around conversion brush target/value
+  let imgData = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+
+  let redOutline, r1, singleOutline, o1, outlineAll, translucent, t1, t2;
+  // red outline for conversion brush target
+  if (edit_mode && brush.conv && brush.target !== -1) {
+    redOutline = true;
+    r1 = brush.target;
+  }
+  if (edit_mode && brush.conv && brush.value !== -1) {
+    singleOutline = true;
+    o1 = brush.value;
+  }
+
+  postCompositeLabelMod(imgData, redOutline, r1, singleOutline, o1,
+    outlineAll, translucent, t1, t2);
+
+  ctx.putImageData(imgData, 0, 0);
+
+  postCompImg.src = canvas.toDataURL();
+}
+
+// apply outlines, transparent highlighting for RGB
+function postCompAdjustRGB() {
+  let canvas = document.getElementById('hidden_seg_canvas');
+  let ctx = $('#hidden_seg_canvas').get(0).getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+
+  // draw seg_image so we can extract image data
+  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
+  ctx.drawImage(contrastedRaw, 0, 0, dimensions[0], dimensions[1]);
+
+  // add outlines around conversion brush target/value
+  let imgData = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+
+  let redOutline, r1, singleOutline, o1, outlineAll, translucent, t1, t2;
+
+  // red outline for conversion brush target
+  if (edit_mode && brush.conv && brush.target !== -1) {
+    redOutline = true;
+    r1 = brush.target;
+  }
+
+  // singleOutline never on for RGB
+
+  outlineAll = true;
+
+  // translucent highlight
+  if (current_highlight) {
+    translucent = true;
+    if (edit_mode) {
+      t1 = brush.value;
+    } else {
+      t1 = mode.highlighted_cell_one;
+      t2 = mode.highlighted_cell_two;
+    }
+  }
+
+  postCompositeLabelMod(imgData, redOutline, r1, singleOutline, o1,
+    outlineAll, translucent, t1, t2);
+
+  ctx.putImageData(imgData, 0, 0);
+
+  postCompImg.src = canvas.toDataURL();
+}
+
+function prepareRaw() {
+  contrastRaw(current_contrast, brightness);
+}
+
+function segAdjust() {
+  segLoaded = true;
+  if (rawLoaded && segLoaded) {
+    if (rgb) {
+      postCompAdjustRGB();
+    } else {
+      compositeImages();
+    }
+  }
+}
+
+function rawAdjust() {
+  rawLoaded = true;
+  if (rawLoaded && segLoaded) {
+    if (rgb) {
+      postCompAdjustRGB();
+    } else {
+      compositeImages();
+    }
+  }
+}
+
