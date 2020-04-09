@@ -25,7 +25,7 @@ from imgutils import pngify
 from config import S3_KEY, S3_SECRET
 
 
-class BaseReview(object):
+class BaseReview(object):  # pylint: disable=useless-object-inheritance
     """Base class for all Review objects."""
 
     def __init__(self, filename, input_bucket, output_bucket, subfolders):
