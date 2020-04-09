@@ -1,9 +1,11 @@
 import os
 
+
 ALLOWED_EXTENSIONS = set([
     '.txt', '.md', '.markdown', '.pdf',
     '.png', '.jpg', '.jpeg', '.gif',
 ])
+
 
 def allowed_file(name):
     return os.path.splitext(str(name).lower())[-1] in ALLOWED_EXTENSIONS

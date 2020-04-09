@@ -5,10 +5,38 @@ class Mode {
     this.highlighted_cell_one = -1;
     this.highlighted_cell_two = -1;
     this.feature = 0;
-    this.channel = 0;
+    this._channel = 0;
     this.action = "";
     this.prompt = "";
 
+  }
+
+  get channel() {
+    return this._channel;
+  }
+
+  set channel(num) {
+    // don't try and change channel if no other channels exist
+    if (channel_max > 1) {
+      // save current display settings before changing
+      brightnessMap.set(this._channel, brightness);
+      contrastMap.set(this._channel, current_contrast);
+      // change channel, wrap around if needed
+      if (num === channel_max) {
+        this._channel = 0;
+      } else if (num < 0) {
+        this._channel = channel_max - 1;
+      } else {
+        this._channel = num;
+      }
+      // get new channel image from server
+      this.info = {"channel": this._channel};
+      action("change_channel", this.info);
+      this.clear();
+      // get brightness/contrast vals for new channel
+      brightness = brightnessMap.get(this._channel);
+      current_contrast = contrastMap.get(this._channel);
+    }
   }
 
   clear() {
@@ -17,8 +45,9 @@ class Mode {
     this.highlighted_cell_one = -1;
     this.highlighted_cell_two = -1;
 
-    thresholding = false;
-    target_value = 0;
+    brush.conv = false;
+    brush.clearThresh();
+    update_seg_highlight();
 
     this.action = "";
     this.prompt = "";
@@ -28,14 +57,14 @@ class Mode {
   // these keybinds apply regardless of
   // edit_mode, mode.action, or mode.kind
   handle_universal_keybind(key) {
-    if (key === 'a' || key === 'ArrowLeft') {
+    if (!rgb && (key === 'a' || key === 'ArrowLeft')) {
       // go backward one frame
       current_frame -= 1;
       if (current_frame < 0) {
         current_frame = max_frames - 1;
       }
       fetch_and_render_frame();
-    } else if (key === 'd' || key === 'ArrowRight') {
+    } else if (!rgb && (key === 'd' || key === 'ArrowRight')) {
       // go forward one frame
       current_frame += 1;
       if (current_frame >= max_frames) {
@@ -45,13 +74,22 @@ class Mode {
     } else if (key === "Escape") {
       // deselect/cancel action/reset highlight
       mode.clear();
-    } else if (key === 'h') {
+      // may want some things here that trigger on ESC but not clear()
+    } else if (!rgb && key === 'h') {
       // toggle highlight
       current_highlight = !current_highlight;
       render_image_display();
     } else if (key === 'z') {
       // toggle rendering_raw
       rendering_raw = !rendering_raw;
+      render_image_display();
+    } else if (key === '0') {
+      // reset brightness adjustments
+      brightness = 0;
+      current_contrast = 0;
+      render_image_display();
+    } else if ((key === 'l' || key === 'L') && !edit_mode) {
+      display_labels = !display_labels;
       render_image_display();
     }
   }
@@ -61,40 +99,27 @@ class Mode {
   handle_universal_edit_keybind(key) {
     if (key === "ArrowDown") {
       // decrease brush size, minimum size 1
-      brush_size = Math.max(brush_size - 1, 1);
-
-      // update the brush with its new size
-      clear_hidden_ctx();
-      brush.radius = brush_size * scale;
-      brush.draw(hidden_ctx);
-
+      brush.size -= 1;
       // redraw the frame with the updated brush preview
       render_image_display();
     } else if (key === "ArrowUp") {
-      //increase brush size, shouldn't be larger than the image
-      brush_size = Math.min(self.brush_size + 1,
-          dimensions[0]/scale, dimensions[1]/scale);
-
-      // update the brush with its new size
-      clear_hidden_ctx();
-      brush.radius = brush_size * scale;
-      brush.draw(hidden_ctx);
-
+      // increase brush size, diameter shouldn't be larger than the image
+      brush.size += 1;
       // redraw the frame with the updated brush preview
       render_image_display();
-    } else if (key === 'i') {
+    } else if (!rgb && key === 'i') {
       // toggle light/dark inversion of raw img
       display_invert = !display_invert;
       render_image_display();
     } else if (key === 'n') {
       // set edit value to something unused
-      edit_value = maxLabelsMap.get(this.feature) + 1;
+      brush.value = maxLabelsMap.get(this.feature) + 1;
       update_seg_highlight();
-      if (this.kind === Modes.prompt) {
-        erase = false;
-        this.prompt = "Now drawing over label " + target_value + " with label " + edit_value
+      if (this.kind === Modes.prompt && brush.conv) {
+        this.prompt = "Now drawing over label " + brush.target + " with label " + brush.value
             + ". Use ESC to leave this mode.";
         this.kind = Modes.drawing;
+        render_image_display();
       }
       render_info_display();
     }
@@ -102,26 +127,16 @@ class Mode {
 
   // keybinds that apply when in edit mode
   handle_edit_keybind(key) {
-    if (key === "e") {
+    if (key === "e" && !settings.pixel_only) {
       // toggle edit mode
       edit_mode = !edit_mode;
       render_image_display();
     } else if (key === "c") {
       // cycle forward one channel, if applicable
-      if (channel_max > 1) {
-        this.channel = this.increment_value(this.channel, 0, channel_max -1);
-        this.info = {"channel": this.channel};
-        action("change_channel", this.info);
-        this.clear();
-      }
+      this.channel += 1;
     } else if (key === "C") {
       // cycle backward one channel, if applicable
-      if (channel_max > 1) {
-        this.channel = this.decrement_value(this.channel, 0, channel_max -1);
-        this.info = {"channel": this.channel};
-        action("change_channel", this.info);
-        this.clear();
-      }
+      this.channel -= 1;
     } else if (key === "f") {
       // cycle forward one feature, if applicable
       if (feature_max > 1) {
@@ -140,19 +155,19 @@ class Mode {
       }
     } else if (key === "=") {
       // increase edit_value up to max label + 1 (guaranteed unused)
-      edit_value = Math.min(edit_value + 1,
+      brush.value = Math.min(brush.value + 1,
           maxLabelsMap.get(this.feature) + 1);
       update_seg_highlight();
       render_info_display();
     } else if (key === "-") {
       // decrease edit_value, minimum 1
-      edit_value = Math.max(edit_value - 1, 1);
+      brush.value -= 1;
       update_seg_highlight();
       render_info_display();
     } else if (key === "x") {
       // turn eraser on and off
-      erase = !erase;
-      render_info_display();
+      brush.erase = !brush.erase;
+      render_image_display();
     } else if (key === 'p') {
       // color picker
       this.kind = Modes.prompt;
@@ -164,41 +179,32 @@ class Mode {
       this.kind = Modes.prompt;
       this.action = "pick_target";
       this.prompt = "First, click on the label you want to overwrite.";
-      render_info_display();
-    } else if (key === 't') {
+      brush.conv = true;
+      render_image_display();
+    } else if (key === 't' && !rgb) {
       // prompt thresholding with bounding box
       this.kind = Modes.question;
       this.action = "start_threshold";
       this.prompt = "Click and drag to create a bounding box around the area you want to threshold";
-      thresholding = true;
-      clear_hidden_ctx();
+      brush.show = false;
+      brush.clearView();
       render_image_display();
     }
   }
 
   // keybinds that apply in bulk mode, nothing selected
   handle_mode_none_keybind(key) {
-    if (key === "e") {
+    if (key === "e" && !settings.label_only) {
       // toggle edit mode
       edit_mode = !edit_mode;
       helper_brush_draw();
       render_image_display();
     } else if (key === "c") {
       // cycle forward one channel, if applicable
-      if (channel_max > 1) {
-        this.channel = this.increment_value(this.channel, 0, channel_max -1);
-        this.info = {"channel": this.channel};
-        action("change_channel", this.info);
-        this.clear();
-      }
+      this.channel += 1;
     } else if (key === "C") {
       // cycle backward one channel, if applicable
-      if (channel_max > 1) {
-        this.channel = this.decrement_value(this.channel, 0, channel_max -1);
-        this.info = {"channel": this.channel};
-        action("change_channel", this.info);
-        this.clear();
-      }
+      this.channel -= 1;
     } else if (key === "f") {
       // cycle forward one feature, if applicable
       if (feature_max > 1) {
@@ -215,7 +221,7 @@ class Mode {
         action("change_feature", this.info);
         this.clear();
       }
-    } else if (key === "p") {
+    } else if (key === "p" && !rgb) {
       //iou cell identity prediction
       this.kind = Modes.question;
       this.action = "predict";
@@ -236,7 +242,7 @@ class Mode {
 
   // keybinds that apply in bulk mode, one selected
   handle_mode_single_keybind(key) {
-    if (key === "f") {
+    if (key === "f" && !rgb) {
       //hole fill
       this.info = { "label": this.info.label,
                     "frame": current_frame};
@@ -244,7 +250,7 @@ class Mode {
       this.action = "fill_hole";
       this.prompt = "Select hole to fill in cell " + this.info.label;
       render_info_display();
-    } else if (key === "c") {
+    } else if (!rgb && key === "c") {
       // create new
       this.kind = Modes.question;
       this.action = "create_new";
@@ -286,13 +292,13 @@ class Mode {
       this.prompt = ("Replace " + this.info.label_2 + " with " + this.info.label_1 +
         "? // SPACE = Replace in all frames / S = Replace in this frame only / ESC = Cancel replace");
       render_info_display();
-    } else if (key === "s") {
+    } else if (!rgb && key === "s") {
       // swap
       this.kind = Modes.question;
       this.action = "swap_cells";
       this.prompt = "SPACE = SWAP IN ALL FRAMES / S = SWAP IN THIS FRAME ONLY / ESC = CANCEL SWAP";
       render_info_display();
-    } else if (key === "w" ) {
+    } else if (key === "w" && !rgb) {
       // watershed
       this.kind = Modes.question;
       this.action = "watershed";
@@ -389,10 +395,10 @@ class Mode {
 
   handle_draw() {
     action("handle_draw", { "trace": JSON.stringify(mouse_trace), //stringify array so it doesn't get messed up
-                  "target_value": target_value, //value that we're overwriting
-                  "brush_value": edit_value, //we don't update caliban with edit_value, etc each time they change
-                  "brush_size": brush_size, //so we need to pass them in as args
-                  "erase": erase,
+                  "target_value": brush.target, //value that we're overwriting
+                  "brush_value": brush.value, //we don't update caliban with edit_value, etc each time they change
+                  "brush_size": brush.size, //so we need to pass them in as args
+                  "erase": (brush.erase && !brush.conv),
                   "frame": current_frame});
     mouse_trace = [];
     if (this.kind !== Modes.drawing) {
@@ -401,12 +407,11 @@ class Mode {
   }
 
   handle_threshold(evt) {
-    thresholding = false;
-    let end_y = evt.offsetY;
-    let end_x = evt.offsetX;
+    let end_y = evt.offsetY - padding;
+    let end_x = evt.offsetX - padding;
 
-    let threshold_start_y = Math.floor(box_start_y / scale);
-    let threshold_start_x = Math.floor(box_start_x / scale);
+    let threshold_start_y = Math.floor(brush.threshY / scale);
+    let threshold_start_x = Math.floor(brush.threshX / scale);
     let threshold_end_y = Math.floor(end_y / scale);
     let threshold_end_x = Math.floor(end_x / scale);
 
@@ -487,20 +492,19 @@ class Mode {
       this.clear();
     } else if (this.action === "pick_color"
           && current_label !== 0
-          && current_label !== target_value) {
-      edit_value = current_label;
+          && current_label !== brush.target) {
+      brush.value = current_label;
       update_seg_highlight();
-      if (target_value !== 0) {
-        erase = false;
-        this.prompt = "Now drawing over label " + target_value + " with label " + edit_value
+      if (brush.target !== 0) {
+        this.prompt = "Now drawing over label " + brush.target + " with label " + brush.value
             + ". Use ESC to leave this mode.";
         this.kind = Modes.drawing;
-        render_info_display();
+        render_image_display();
       } else {
         this.clear();
       }
     } else if (this.action === "pick_target" && current_label !== 0) {
-      target_value = current_label;
+      brush.target = current_label;
       this.action = "pick_color";
       this.prompt = "Click on the label you want to draw with, or press 'n' to draw with an unused label.";
       render_info_display();
@@ -577,10 +581,6 @@ class Mode {
   }
 }
 
-
-
-
-
 var Modes = Object.freeze({
   "none": 1,
   "single": 2,
@@ -591,14 +591,19 @@ var Modes = Object.freeze({
   "drawing": 7
 });
 
+let rgb;
 var temp_x = 0;
 var temp_y = 0;
 var rendering_raw = false;
 let display_invert = true;
-var current_contrast = 0;
+let display_labels = false;
+var current_contrast;
+let contrastMap = new Map();
+let brightness;
+let brightnessMap = new Map();
 var current_frame = 0;
 var current_label = 0;
-var current_highlight = false;
+var current_highlight;
 var max_frames;
 var feature_max;
 var channel_max;
@@ -614,21 +619,14 @@ var seg_array; // declare here so it is global var
 var scale;
 var mouse_x = 0;
 var mouse_y = 0;
-var edit_mode = false;
-let edit_value = 1;
-let target_value = 0;
-var brush_size = 1;
-var erase = false;
+const padding = 5;
+let edit_mode;
 var answer = "(SPACE=YES / ESC=NO)";
 let mousedown = false;
 var tooltype = 'draw';
 var project_id;
 var brush;
 let mouse_trace = [];
-let thresholding = false;
-let box_start_x;
-let box_start_y;
-let hidden_ctx;
 const adjusted_seg = new Image();
 adjusted_seg.onload = render_image_display;
 
@@ -642,67 +640,6 @@ function upload_file() {
   });
 }
 
-// image adjustment functions: take img as input and manipulate data attribute
-// pixel data is 1D array of 8bit RGBA values
-function contrast_image(img, contrast) {
-  let d = img.data;
-  contrast = (contrast / 100) + 1;
-  /* let intercept = 128 * (1 - contrast); */
-  for (let i = 0; i < d.length; i += 4) {
-      d[i] *= contrast;
-      d[i + 1] *= contrast;
-      d[i + 2] *= contrast;
-  }
-  return img;
-}
-
-function highlight(img, label) {
-  let ann = img.data;
-
-  // use label array to figure out which pixels to recolor
-  for (var j = 0; j < seg_array.length; j += 1){ //y
-    for (var i = 0; i < seg_array[j].length; i += 1){ //x
-      let jlen = seg_array[j].length;
-
-      if (seg_array[j][i] === label){
-        // fill in all pixels affected by scale
-        // k and l get the pixels that are part of the original pixel that has been scaled up
-        for (var k = 0; k < scale; k +=1) {
-          for (var l = 0; l < scale; l +=1) {
-            // location in 1D array based on i,j, and scale
-            pixel_num = (scale*(jlen*(scale*j + l) + i)) + k;
-
-            // set to red by changing RGB values
-            ann[(pixel_num*4)] = 255;
-            ann[(pixel_num*4) + 1] = 0;
-            ann[(pixel_num*4) + 2] = 0;
-          }
-        }
-      }
-    }
-  }
-}
-
-function grayscale(img) {
-  let data = img.data;
-  for (var i = 0; i < data.length; i += 4) {
-      var avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-      data[i]     = avg; // red
-      data[i + 1] = avg; // green
-      data[i + 2] = avg; // blue
-    }
-  return img;
-}
-
-function invert(img) {
-  let data = img.data;
-  for (var i = 0; i < data.length; i += 4) {
-    data[i]     = 255 - data[i];     // red
-    data[i + 1] = 255 - data[i + 1]; // green
-    data[i + 2] = 255 - data[i + 2]; // blue
-    }
-  return img;
-}
 
 function label_under_mouse() {
   let img_y = Math.floor(mouse_y/scale);
@@ -710,7 +647,7 @@ function label_under_mouse() {
   let new_label;
   if (img_y >= 0 && img_y < seg_array.length &&
       img_x >= 0 && img_x < seg_array[0].length) {
-    new_label = seg_array[img_y][img_x]; //check array value at mouse location
+    new_label = Math.abs(seg_array[img_y][img_x]); //check array value at mouse location
   } else {
     new_label = 0;
   }
@@ -721,7 +658,11 @@ function render_highlight_info() {
   if (current_highlight) {
     $('#highlight').html("ON");
     if (edit_mode) {
-      $('#currently_highlighted').html(edit_value)
+      if (brush.value > 0) {
+        $('#currently_highlighted').html(brush.value)
+      } else {
+        $('#currently_highlighted').html('-')
+      }
     } else {
       if (mode.highlighted_cell_one !== -1) {
         if (mode.highlighted_cell_two !== -1) {
@@ -746,10 +687,14 @@ function render_edit_info() {
     $('#edit_label_row').css('visibility', 'visible');
     $('#edit_erase_row').css('visibility', 'visible');
 
-    $('#edit_brush').html(brush_size);
-    $('#edit_label').html(edit_value);
+    $('#edit_brush').html(brush.size);
+    if (brush.value > 0) {
+      $('#edit_label').html(brush.value);
+    } else {
+      $('#edit_label').html('-');
+    }
 
-    if (erase) {
+    if (brush.erase && !brush.conv) {
       $('#edit_erase').html("ON");
     } else {
       $('#edit_erase').html("OFF");
@@ -792,80 +737,102 @@ function render_info_display() {
   $('#mode').html(mode.render());
 }
 
-function clear_hidden_ctx() {
-  hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1]);
-}
-
-// apply highlight to edit_value in seg_image, save resulting
-// image as src of adjusted_seg to use to render edit (if needed)
-// additional hidden canvas is used to prevent image flickering
-function update_seg_highlight() {
-  let canvas = document.getElementById('hidden_seg_canvas');
-  let ctx = $('#hidden_seg_canvas').get(0).getContext("2d");
-  ctx.imageSmoothingEnabled = false;
-
-  // draw seg_image so we can extract image data
-  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-  ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
-  let seg_img_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
-  highlight(seg_img_data, edit_value);
-  ctx.putImageData(seg_img_data, 0, 0);
-  // once this new src is loaded, displayed image will be rerendered
-  adjusted_seg.src = canvas.toDataURL();
-}
-
 function render_edit_image(ctx) {
-  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-  ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
-  let raw_image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+  let redOutline, r1, singleOutline, o1, outlineAll, translucent, t1, t2;
+  render_raw_image(ctx);
+  if (rgb && !rendering_raw) {
+    let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
+    // red outline for conversion brush target
+    if (edit_mode && brush.conv && brush.target !== -1) {
+      redOutline = true;
+      r1 = brush.target;
+    }
+    outlineAll = true;
+    // translucent highlight
+    if (current_highlight) {
+      translucent = true;
+      t1 = brush.value;
+    }
+    postCompositeLabelMod(img_data, redOutline, r1, singleOutline, o1,
+      outlineAll, translucent, t1, t2);
+    ctx.putImageData(img_data, padding, padding);
 
-  // adjust underlying raw image
-  contrast_image(raw_image_data, current_contrast);
-  grayscale(raw_image_data);
-  if (display_invert) {
-    invert(raw_image_data);
-  }
-  ctx.putImageData(raw_image_data, 0, 0);
+  } else if (!rgb) {
+    let raw_image_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
 
-  // draw segmentations, highlighted version if highlight is on
-  ctx.save();
-  // ctx.globalCompositeOperation = 'color';
-  ctx.globalAlpha = 0.3;
-  if (current_highlight) {
-    ctx.drawImage(adjusted_seg, 0, 0, dimensions[0], dimensions[1]);
-  } else {
-    ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
+    // adjust underlying raw image
+    grayscale(raw_image_data);
+    if (display_invert) {
+      invert(raw_image_data);
+    }
+    ctx.putImageData(raw_image_data, padding, padding);
+
+    // draw segmentations, highlighted version if highlight is on
+    ctx.save();
+    // ctx.globalCompositeOperation = 'color';
+    ctx.globalAlpha = 0.3;
+    if (current_highlight) {
+      ctx.drawImage(adjusted_seg, padding, padding, dimensions[0], dimensions[1]);
+    } else {
+      ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
+    }
+    ctx.restore();
+
+    // add outlines around conversion brush target/value
+    let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
+    // red outline for conversion brush target
+    if (edit_mode && brush.conv && brush.target !== -1) {
+      redOutline = true;
+      r1 = brush.target;
+    }
+    if (edit_mode && brush.conv && brush.value !== -1) {
+      singleOutline = true;
+      o1 = brush.value;
+    }
+
+    postCompositeLabelMod(img_data, redOutline, r1, singleOutline, o1,
+      outlineAll, translucent, t1, t2);
+    ctx.putImageData(img_data, padding, padding);
   }
-  ctx.restore();
 
   // draw brushview on top of cells/annotations
-  ctx.save();
-  ctx.globalAlpha = 0.2;
-  ctx.globalCompositeOperation = 'source-over';
-  let hidden_canvas = document.getElementById('hidden_canvas');
-  ctx.drawImage(hidden_canvas, 0,0,dimensions[0],dimensions[1]);
-  ctx.restore();
+  brush.draw(ctx);
 }
 
 function render_raw_image(ctx) {
-  ctx.clearRect(0, 0, dimensions, dimensions[1]);
-  ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
+  ctx.clearRect(padding, padding, dimensions, dimensions[1]);
+  ctx.drawImage(raw_image, padding, padding, dimensions[0], dimensions[1]);
 
   // contrast image
-  image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
-  contrast_image(image_data, current_contrast);
+  image_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
+  contrast_image(image_data, current_contrast, brightness);
   // draw contrasted image over the original
-  ctx.putImageData(image_data, 0, 0);
+  ctx.putImageData(image_data, padding, padding);
 }
 
 function render_annotation_image(ctx) {
-  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-  ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
-  if (current_highlight) {
-    let img_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
-    highlight(img_data, mode.highlighted_cell_one);
-    highlight(img_data, mode.highlighted_cell_two);
-    ctx.putImageData(img_data, 0, 0);
+  if (rgb && !display_labels) {
+    let redOutline, r1, singleOutline, o1, outlineAll, translucent, t1, t2;
+    render_raw_image(ctx);
+    let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
+    outlineAll = true;
+    // translucent highlight
+    if (current_highlight) {
+      translucent = true;
+      t1 = mode.highlighted_cell_one;
+      t2 = mode.highlighted_cell_two;
+    }
+    postCompositeLabelMod(img_data, redOutline, r1, singleOutline, o1,
+      outlineAll, translucent, t1, t2);
+    ctx.putImageData(img_data, padding, padding);
+  } else {
+    ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
+    ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
+    if (current_highlight) {
+      let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
+      preCompositeLabelMod(img_data, mode.highlighted_cell_one, mode.highlighted_cell_two);
+      ctx.putImageData(img_data, padding, padding);
+    }
   }
 }
 
@@ -904,7 +871,7 @@ function fetch_and_render_frame() {
 function load_file(file) {
   $.ajax({
     type:'POST',
-    url:"load/" + file,
+    url:"load/" + file + `?&rgb=${settings.rgb}`,
     success: function (payload) {
       max_frames = payload.max_frames;
       feature_max = payload.feature_max;
@@ -923,11 +890,16 @@ function load_file(file) {
         maxLabelsMap.set(i, Math.max(... Object.keys(tracks[key]).map(Number)));
       }
 
+      for (let i = 0; i < channel_max; i++) {
+        brightnessMap.set(i, 0);
+        contrastMap.set(i, 0);
+      }
+      brightness = brightnessMap.get(0);
+      current_contrast = contrastMap.get(0);
+
       project_id = payload.project_id;
-      $('#canvas').get(0).width = dimensions[0];
-      $('#canvas').get(0).height = dimensions[1];
-      $('#hidden_canvas').get(0).width = dimensions[0];
-      $('#hidden_canvas').get(0).height = dimensions[1];
+      $('#canvas').get(0).width = dimensions[0] + 2*padding;
+      $('#canvas').get(0).height = dimensions[1] + 2*padding;
       $('#hidden_seg_canvas').get(0).width = dimensions[0];
       $('#hidden_seg_canvas').get(0).height = dimensions[1];
     },
@@ -938,9 +910,20 @@ function load_file(file) {
 // adjust current_contrast upon mouse scroll
 function handle_scroll(evt) {
   // adjust contrast whenever we can see raw
-  if (rendering_raw || edit_mode) {
-    let delta = - evt.originalEvent.deltaY / 2;
-    current_contrast = Math.max(current_contrast + delta, -100);
+  if ((rendering_raw || edit_mode || (rgb && !display_labels))
+    && !evt.originalEvent.shiftKey) {
+    // don't use magnitude of scroll
+    let mod_contrast = -Math.sign(evt.originalEvent.deltaY) * 4;
+    // stop if fully desaturated
+    current_contrast = Math.max(current_contrast + mod_contrast, -100);
+    // stop at 5x contrast
+    current_contrast = Math.min(current_contrast + mod_contrast, 400);
+    render_image_display();
+  } else if ((rendering_raw || edit_mode || (rgb && !display_labels))
+    && evt.originalEvent.shiftKey) {
+    let mod = -Math.sign(evt.originalEvent.deltaY);
+    brightness = Math.min(brightness + mod, 255);
+    brightness = Math.max(brightness + mod, -512);
     render_image_display();
   }
 }
@@ -950,16 +933,15 @@ function handle_scroll(evt) {
 function handle_mousedown(evt) {
   if (mode.kind !== Modes.prompt) {
     mousedown = true;
-    mouse_x = evt.offsetX;
-    mouse_y = evt.offsetY;
+    mouse_x = evt.offsetX - padding;
+    mouse_y = evt.offsetY - padding;
     // begin drawing
     if (edit_mode) {
       let img_y = Math.floor(mouse_y/scale);
       let img_x = Math.floor(mouse_x/scale);
-      if (thresholding) {
-        box_start_x = mouse_x;
-        box_start_y = mouse_y;
-        mode.action = "draw_threshold_box";
+      if (!brush.show) {
+        brush.threshX = mouse_x;
+        brush.threshY = mouse_y;
       } else {
         mouse_trace.push([img_y, img_x]);
       }
@@ -974,35 +956,29 @@ function helper_brush_draw() {
     let img_x = Math.floor(mouse_x/scale);
     mouse_trace.push([img_y, img_x]);
   } else {
-    clear_hidden_ctx();
+    brush.clearView();
   }
-  brush.x = mouse_x;
-  brush.y = mouse_y;
-  brush.draw(hidden_ctx);
-}
-
-function helper_box_draw(start_y, start_x, end_y, end_x) {
-  clear_hidden_ctx();
-  hidden_ctx.fillStyle = 'red';
-  hidden_ctx.fillRect(start_x, start_y, (end_x - start_x), (end_y - start_y));
+  brush.addToView();
 }
 
 // handles mouse movement, whether or not mouse button is held down
 function handle_mousemove(evt) {
   // update displayed info depending on where mouse is
-  mouse_x = evt.offsetX;
-  mouse_y = evt.offsetY;
+  mouse_x = evt.offsetX - padding;
+  mouse_y = evt.offsetY - padding;
   render_info_display();
+
+  // keeps brush location updated correctly when mouse moves outside edit mode
+  brush.x = mouse_x;
+  brush.y = mouse_y;
 
   // update brush preview
   if (edit_mode) {
-    // hidden canvas is keeping track of the brush
-    if (!thresholding) {
+    // brush's canvas is keeping track of the brush
+    if (brush.show) {
       helper_brush_draw();
-    } else if (thresholding && mode.action === "start_threshold") {
-      clear_hidden_ctx();
-    } else if (thresholding && mode.action === "draw_threshold_box") {
-      helper_box_draw(box_start_y, box_start_x, mouse_y, mouse_x);
+    } else {
+      brush.boxView();
     }
     render_image_display();
   }
@@ -1013,17 +989,16 @@ function handle_mouseup(evt) {
   if (mode.kind !== Modes.prompt) {
     mousedown = false;
     if (edit_mode) {
-      if (thresholding) {
+      if (!brush.show) {
         mode.handle_threshold(evt);
       } else {
         //send click&drag coordinates to caliban.py to update annotations
         mode.handle_draw();
       }
       // reset brush preview
-      clear_hidden_ctx();
-      brush.x = evt.offsetX;
-      brush.y = evt.offsetY;
-      brush.draw(hidden_ctx);
+      brush.x = evt.offsetX - padding;
+      brush.y = evt.offsetY - padding;
+      brush.refreshView();
     }
   }
 }
@@ -1093,23 +1068,35 @@ function action(action, info, frame = current_frame) {
 }
 
 function start_caliban(filename) {
+  if (settings.pixel_only && !settings.label_only) {
+    edit_mode = true;
+  } else {
+    edit_mode = false;
+  }
+  rgb = settings.rgb;
+  if (rgb) {
+    current_highlight = true;
+  } else {
+    current_highlight = false;
+  }
+  // disable scrolling from scrolling around on page (it should just control brightness)
+  document.addEventListener('wheel', function(event) {
+    event.preventDefault();
+  }, {passive: false});
+  // disable space and up/down keys from moving around on page
+  $(document).on('keydown', function(event) {
+    if (event.key === " ") {
+      event.preventDefault();
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+    } else if (event.key === "ArrowDown") {
+      event.preventDefault();
+    }
+  });
   load_file(filename);
   prepare_canvas();
   fetch_and_render_frame();
-  update_seg_highlight();
 
-  brush = {
-  x: 0,
-  y: 0,
-  radius: 1,
-  color: 'red',
-  draw: function(ctx) {
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
-    ctx.closePath();
-    ctx.fillStyle = this.color;
-    ctx.fill();
-    }
-  }
-  hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
+  brush = new Brush(scale=scale, height=dimensions[1], width=dimensions[0], pad = padding);
+  update_seg_highlight();
 }

@@ -50,6 +50,11 @@ class Mode {
       // toggle rendering_raw
       rendering_raw = !rendering_raw;
       render_image_display();
+    } else if (key === '0') {
+      // reset brightness adjustments
+      brightness = 0;
+      current_contrast = 0;
+      render_image_display();
     }
   }
 
@@ -61,44 +66,29 @@ class Mode {
       render_image_display();
     } else if (key === "=") {
       // increase edit_value up to max label + 1 (guaranteed unused)
-      edit_value = Math.min(edit_value + 1, maxTrack + 1);
+      brush.value = Math.min(brush.value + 1, maxTrack + 1);
       render_info_display();
     } else if (key === "-") {
       // decrease edit_value, minimum 1
-      edit_value = Math.max(edit_value - 1, 1);
+      brush.value -= 1;
       render_info_display();
     } else if (key === "x") {
       // turn eraser on and off
-      erase = !erase;
-      render_info_display();
+      brush.erase = !brush.erase;
+      render_image_display();
     } else if (key === "ArrowDown") {
       // decrease brush size, minimum size 1
-      brush_size = Math.max(brush_size - 1, 1);
-
-      // update brush object with its new size
-      let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
-      hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1]);
-      brush.radius = brush_size * scale;
-      brush.draw(hidden_ctx);
-
+      brush.size -= 1;
       // redraw the frame with the updated brush preview
       render_image_display();
     } else if (key === "ArrowUp") {
-      // increase brush size, shouldn't be larger than the image
-      brush_size = Math.min(self.brush_size + 1,
-          dimensions[0]/scale, dimensions[1]/scale);
-
-      // update brush with its new size
-      let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
-      hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1]);
-      brush.radius = brush_size * scale;
-      brush.draw(hidden_ctx);
-
+      // increase brush size, diameter shouldn't be larger than the image
+      brush.size += 1;
       // redraw the frame with the updated brush preview
       render_image_display();
     } else if (key === 'n') {
       // set edit value to something unused
-      edit_value = maxTrack + 1;
+      brush.value = maxTrack + 1;
       render_info_display();
       // when value of brush determines color of brush, render_image instead
     } else if (key === 'i') {
@@ -291,9 +281,9 @@ class Mode {
 
   handle_draw() {
     action("handle_draw", { "trace": JSON.stringify(mouse_trace),
-                  "edit_value": edit_value,
-                  "brush_size": brush_size,
-                  "erase": erase,
+                  "edit_value": brush.value,
+                  "brush_size": brush.size,
+                  "erase": brush.erase,
                   "frame": current_frame});
     mouse_trace = [];
     this.clear()
@@ -422,6 +412,7 @@ var temp_y = 0;
 var rendering_raw = false;
 let display_invert = true;
 var current_contrast = 0;
+let brightness = 0;
 var current_frame = 0;
 var current_label = 0;
 var current_highlight = false;
@@ -436,10 +427,8 @@ var seg_array;
 var scale;
 var mouse_x = 0;
 var mouse_y = 0;
+const padding = 5;
 var edit_mode = false;
-var edit_value = 1;
-var brush_size = 1;
-var erase = false;
 let mousedown = false;
 var answer = "(SPACE=YES / ESC=NO)";
 var project_id = undefined;
@@ -461,11 +450,10 @@ function upload_file() {
 function contrast_image(img, contrast) {
   let d = img.data;
   contrast = (contrast / 100) + 1;
-  /* let intercept = 128 * (1 - contrast); */
   for (let i = 0; i < d.length; i += 4) {
-      d[i] *= contrast;
-      d[i + 1] *= contrast;
-      d[i + 2] *= contrast;
+      d[i] = d[i]*contrast + brightness;
+      d[i + 1] = d[i+1]*contrast + brightness;
+      d[i + 2] = d[i+2]*contrast + brightness;
   }
   return img;
 }
@@ -478,7 +466,7 @@ function highlight(img, label) {
     for (var i = 0; i < seg_array[j].length; i += 1){ //x
       let jlen = seg_array[j].length;
 
-      if (seg_array[j][i] === label){
+      if (Math.abs(seg_array[j][i]) === label){
         // fill in all pixels affected by scale
         // k and l get the pixels that are part of the original pixel that has been scaled up
         for (var k = 0; k < scale; k +=1) {
@@ -524,7 +512,7 @@ function label_under_mouse() {
   let new_label;
   if (img_y >= 0 && img_y < seg_array.length &&
       img_x >= 0 && img_x < seg_array[0].length) {
-    new_label = seg_array[img_y][img_x]; //check array value at mouse location
+    new_label = Math.abs(seg_array[img_y][img_x]); //check array value at mouse location
   } else {
     new_label = 0;
   }
@@ -556,10 +544,10 @@ function render_edit_info() {
     $('#edit_label_row').css('visibility', 'visible');
     $('#edit_erase_row').css('visibility', 'visible');
 
-    $('#edit_brush').html(brush_size);
-    $('#edit_label').html(edit_value);
+    $('#edit_brush').html(brush.size);
+    $('#edit_label').html(brush.value);
 
-    if (erase) {
+    if (brush.erase) {
       $('#edit_erase').html("ON");
     } else {
       $('#edit_erase').html("OFF");
@@ -610,11 +598,9 @@ function render_info_display() {
 }
 
 function render_edit_image(ctx) {
-  let hidden_canvas = document.getElementById('hidden_canvas');
-
-  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-  ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
-  let image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+  ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
+  ctx.drawImage(raw_image, padding, padding, dimensions[0], dimensions[1]);
+  let image_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
 
   // adjust underlying raw image
   contrast_image(image_data, current_contrast);
@@ -622,39 +608,36 @@ function render_edit_image(ctx) {
   if (display_invert) {
     invert(image_data);
   }
-  ctx.putImageData(image_data, 0, 0);
+  ctx.putImageData(image_data, padding, padding);
+
   ctx.save();
   ctx.globalCompositeOperation = 'color';
-  ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
+  ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
   ctx.restore();
 
   // draw brushview on top of cells/annotations
-  ctx.save();
-  ctx.globalAlpha = 0.7;
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.drawImage(hidden_canvas, 0, 0, dimensions[0], dimensions[1]);
-  ctx.restore();
+  brush.draw(ctx);
 }
 
 function render_raw_image(ctx) {
-  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-  ctx.drawImage(raw_image, 0, 0, dimensions[0], dimensions[1]);
+  ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
+  ctx.drawImage(raw_image, padding, padding, dimensions[0], dimensions[1]);
 
   // contrast image
-  image_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+  image_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
   contrast_image(image_data, current_contrast);
   // draw contrasted image over the original
-  ctx.putImageData(image_data, 0, 0);
+  ctx.putImageData(image_data, padding, padding);
 }
 
 function render_annotation_image(ctx) {
-  ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
-  ctx.drawImage(seg_image, 0, 0, dimensions[0], dimensions[1]);
+  ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
+  ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
   if (current_highlight) {
-    let img_data = ctx.getImageData(0, 0, dimensions[0], dimensions[1]);
+    let img_data = ctx.getImageData(padding, padding, dimensions[0], dimensions[1]);
     highlight(img_data, mode.highlighted_cell_one);
     highlight(img_data, mode.highlighted_cell_two);
-    ctx.putImageData(img_data, 0, 0);
+    ctx.putImageData(img_data, padding, padding);
   }
 }
 
@@ -705,11 +688,8 @@ function load_file(file) {
       maxTrack = Math.max(... Object.keys(tracks).map(Number));
 
       project_id = payload.project_id;
-      $('#canvas').get(0).width = dimensions[0];
-      $('#canvas').get(0).height = dimensions[1];
-
-      $('#hidden_canvas').get(0).width = dimensions[0];
-      $('#hidden_canvas').get(0).height = dimensions[1];
+      $('#canvas').get(0).width = dimensions[0] + 2*padding;
+      $('#canvas').get(0).height = dimensions[1] + 2*padding;
     },
     async: false
   });
@@ -718,9 +698,18 @@ function load_file(file) {
 // adjust current_contrast upon mouse scroll
 function handle_scroll(evt) {
   // adjust contrast whenever we can see raw
-  if (rendering_raw || edit_mode) {
-    let delta = - evt.originalEvent.deltaY / 2;
-    current_contrast = Math.max(current_contrast + delta, -100);
+  if ((rendering_raw || edit_mode) && !evt.originalEvent.shiftKey) {
+    // don't use magnitude of scroll
+    let mod_contrast = -Math.sign(evt.originalEvent.deltaY) * 4;
+    // stop if fully desaturated
+    current_contrast = Math.max(current_contrast + mod_contrast, -100);
+    // stop at 5x contrast
+    current_contrast = Math.min(current_contrast + mod_contrast, 400);
+    render_image_display();
+  } else if ((rendering_raw || edit_mode) && evt.originalEvent.shiftKey) {
+    let mod = -Math.sign(evt.originalEvent.deltaY);
+    brightness = Math.min(brightness + mod, 255);
+    brightness = Math.max(brightness + mod, -512);
     render_image_display();
   }
 }
@@ -729,8 +718,8 @@ function handle_scroll(evt) {
 // of click&drag, since clicks are handled by Mode.click)
 function handle_mousedown(evt) {
   mousedown = true;
-  mouse_x = evt.offsetX;
-  mouse_y = evt.offsetY;
+  mouse_x = evt.offsetX - padding;
+  mouse_y = evt.offsetY - padding;
   // begin drawing
   if (edit_mode) {
     let img_y = Math.floor(mouse_y/scale);
@@ -742,26 +731,24 @@ function handle_mousedown(evt) {
 // handles mouse movement, whether or not mouse button is held down
 function handle_mousemove(evt) {
   // update displayed info depending on where mouse is
-  mouse_x = evt.offsetX;
-  mouse_y = evt.offsetY;
+  mouse_x = evt.offsetX - padding;
+  mouse_y = evt.offsetY - padding;
+  brush.x = mouse_x;
+  brush.y = mouse_y;
   render_info_display();
 
   // update brush preview
   if (edit_mode) {
-    // hidden canvas is keeping track of the brush
-    let hidden_canvas = document.getElementById('hidden_canvas');
-    let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
+    // brush's canvas is keeping track of the brush
     if (mousedown) {
       // update mouse_trace
       let img_y = Math.floor(mouse_y/scale);
       let img_x = Math.floor(mouse_x/scale);
       mouse_trace.push([img_y, img_x]);
     } else {
-      hidden_ctx.clearRect(0,0,dimensions[0],dimensions[1])
+      brush.clearView();
     }
-    brush.x = mouse_x;
-    brush.y = mouse_y;
-    brush.draw(hidden_ctx);
+    brush.addToView();
     render_image_display();
   }
 }
@@ -773,9 +760,7 @@ function handle_mouseup(evt) {
     //send click&drag coordinates to caliban.py to update annotations
     mode.handle_draw();
     // reset brush preview
-    let hidden_canvas = document.getElementById('hidden_canvas');
-    let hidden_ctx = $('#hidden_canvas').get(0).getContext("2d");
-    hidden_ctx.clearRect(0, 0, dimensions[0], dimensions[1]);
+    brush.refreshView();
   }
 }
 
@@ -840,21 +825,24 @@ function action(action, info, frame = current_frame) {
 }
 
 function start_caliban(filename) {
+  // disable scrolling from scrolling around on page (it should just control brightness)
+  document.addEventListener('wheel', function(event) {
+    event.preventDefault();
+  }, {passive: false});
+  // disable space and up/down keys from moving around on page
+  $(document).on('keydown', function(event) {
+    if (event.key === " ") {
+      event.preventDefault();
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+    } else if (event.key === "ArrowDown") {
+      event.preventDefault();
+    }
+  });
+
   load_file(filename);
   prepare_canvas();
   fetch_and_render_frame();
 
-  brush = {
-  x: 0,
-  y: 0,
-  radius: 1,
-  color: 'red',
-  draw: function(ctx) {
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
-    ctx.closePath();
-    ctx.fillStyle = this.color;
-    ctx.fill();
-    }
-  }
+  brush = new Brush(scale=scale, height=dimensions[1], width=dimensions[0], pad = padding);
 }
