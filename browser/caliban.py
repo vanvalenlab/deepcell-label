@@ -22,6 +22,7 @@ from skimage.exposure import rescale_intensity
 from skimage.segmentation import find_boundaries
 
 from imgutils import pngify
+from helpers import is_npz_file, is_trk_file
 from config import S3_KEY, S3_SECRET
 
 
@@ -49,6 +50,19 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
             aws_access_key_id=S3_KEY,
             aws_secret_access_key=S3_SECRET
         )
+
+    def load(self, filename):
+        """Load a file from the S3 input bucket"""
+        if is_npz_file(filename):
+            _load = load_npz
+        elif is_trk_file(filename):
+            _load = load_trks
+        else:
+            raise ValueError('Cannot load file: {}'.format(filename))
+
+        s3 = self.get_s3_client()
+        response = s3.get_object(Bucket=self.input_bucket, Key=self.subfolders)
+        return _load(response['Body'].read())
 
     def rescale_95(self, img):
         """Rescale a single- or multi-channel image."""
@@ -87,7 +101,7 @@ class ZStackReview(BaseReview):
             filename, input_bucket, output_bucket, subfolders)
 
         self.rgb = rgb
-        self.trial = self.load()
+        self.trial = self.load(filename)
         self.raw = self.trial["raw"]
         self.annotated = self.trial["annotated"]
         self.feature = 0
@@ -230,11 +244,6 @@ class ZStackReview(BaseReview):
         frame = self.annotated[frame][:, :, self.feature]
         frame = self.add_outlines(frame)
         return frame
-
-    def load(self):
-        s3 = self.get_s3_client()
-        response = s3.get_object(Bucket=self.input_bucket, Key=self.subfolders)
-        return load_npz(response['Body'].read())
 
     def action_change_channel(self, channel):
         self.channel = channel
@@ -733,11 +742,6 @@ class TrackReview(BaseReview):
         frame = self.tracked[frame][:, :, 0]
         return frame
 
-    def load(self, filename):
-        s3 = self.get_s3_client()
-        response = s3.get_object(Bucket=self.input_bucket, Key=self.subfolders)
-        return load_trks(response['Body'].read(), filename)
-
     def action_handle_draw(self, trace, edit_value, brush_size, erase, frame):
 
         annotated = np.copy(self.tracked[frame])
@@ -780,7 +784,6 @@ class TrackReview(BaseReview):
         flood fill a cell with a unique new label; alternative to watershed
         for fixing duplicate label issue if cells are not touching
         '''
-        img_ann = self.tracked[frame, :, :, 0]
         old_label = label
         new_label = max(self.tracks) + 1
 
@@ -1319,7 +1322,7 @@ def load_npz(filename):
 
 # copied from:
 # vanvalenlab/deepcell-tf/blob/master/deepcell/utils/tracking_utils.py3
-def load_trks(trkfile, original_filename):
+def load_trks(trkfile):
     """Load a trk/trks file.
     Args:
         trks_file: full path to the file including .trk/.trks
@@ -1344,7 +1347,7 @@ def load_trks(trkfile, original_filename):
             array_file.close()
 
             # trks.extractfile opens a file in bytes mode, json can't use bytes.
-            __, file_extension = os.path.splitext(original_filename)
+            __, file_extension = os.path.splitext(trkfile)
 
             if file_extension == '.trks':
                 trk_data = trks.getmember('lineages.json')
