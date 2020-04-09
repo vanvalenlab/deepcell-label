@@ -228,55 +228,13 @@ class ZStackReview(BaseReview):
         return load_npz(response['Body'].read())
 
     def action(self, action_type, info):
-
-        # change displayed channel or feature
-        if action_type == "change_channel":
-            self.action_change_channel(**info)
-        elif action_type == "change_feature":
-            self.action_change_feature(**info)
-
-        # edit mode actions
-        elif action_type == "handle_draw":
-            self.action_handle_draw(**info)
-        elif action_type == "threshold":
-            self.action_threshold(**info)
-
-        # modified click actions
-        elif action_type == "flood_cell":
-            self.action_flood_contiguous(**info)
-        elif action_type == "trim_pixels":
-            self.action_trim_pixels(**info)
-
-        # single click actions
-        elif action_type == "fill_hole":
-            self.action_fill_hole(**info)
-        elif action_type == "new_single_cell":
-            self.action_new_single_cell(**info)
-        elif action_type == "new_cell_stack":
-            self.action_new_cell_stack(**info)
-        elif action_type == "delete":
-            self.action_delete_mask(**info)
-
-        # multiple click actions
-        elif action_type == "replace_single":
-            self.action_replace_single(**info)
-        elif action_type == "replace":
-            self.action_replace(**info)
-        elif action_type == "swap_single_frame":
-            self.action_swap_single_frame(**info)
-        elif action_type == "swap_all_frame":
-            self.action_swap_all_frame(**info)
-        elif action_type == "watershed":
-            self.action_watershed(**info)
-
-        # misc
-        elif action_type == "predict_single":
-            self.action_predict_single(**info)
-        elif action_type == "predict_zstack":
-            self.action_predict_zstack(**info)
-
-        else:
-            raise ValueError("Invalid action '{}'".format(action_type))
+        """Call an action method based on an action type."""
+        attr_name = 'action_{}'.format(action_type)
+        try:
+            action = getattr(self, attr_name)
+            action(**info)
+        except AttributeError:
+            raise ValueError('Invalid action "{}"'.format(action_type))
 
     def action_change_channel(self, channel):
         self.channel = channel
