@@ -70,6 +70,15 @@ class BaseReview(object):
         outlined_frame = np.where(boundary_mask == 1, -frame, frame)
         return outlined_frame
 
+    def action(self, action_type, info):
+        """Call an action method based on an action type."""
+        attr_name = 'action_{}'.format(action_type)
+        try:
+            action = getattr(self, attr_name)
+            action(**info)
+        except AttributeError:
+            raise ValueError('Invalid action "{}"'.format(action_type))
+
 
 class ZStackReview(BaseReview):
 
@@ -226,15 +235,6 @@ class ZStackReview(BaseReview):
         s3 = self.get_s3_client()
         response = s3.get_object(Bucket=self.input_bucket, Key=self.subfolders)
         return load_npz(response['Body'].read())
-
-    def action(self, action_type, info):
-        """Call an action method based on an action type."""
-        attr_name = 'action_{}'.format(action_type)
-        try:
-            action = getattr(self, attr_name)
-            action(**info)
-        except AttributeError:
-            raise ValueError('Invalid action "{}"'.format(action_type))
 
     def action_change_channel(self, channel):
         self.channel = channel
@@ -737,15 +737,6 @@ class TrackReview(BaseReview):
         s3 = self.get_s3_client()
         response = s3.get_object(Bucket=self.input_bucket, Key=self.subfolders)
         return load_trks(response['Body'].read(), filename)
-
-    def action(self, action_type, info):
-        """Call an action method based on an action type."""
-        attr_name = 'action_{}'.format(action_type)
-        try:
-            action = getattr(self, attr_name)
-            action(**info)
-        except AttributeError:
-            raise ValueError('Invalid action "{}"'.format(action_type))
 
     def action_handle_draw(self, trace, edit_value, brush_size, erase, frame):
 
