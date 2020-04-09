@@ -11,13 +11,16 @@ services:
     environment:
       S3_KEY: ''
       S3_SECRET: ''
-      SQLALCHEMY_DATABASE_URI: mysql://root:root@db:3306
+      SQLALCHEMY_DATABASE_URI: mysql://root:password@db:3306/caliban
   db:
     image: mysql:8.0
     command: mysqld --default-authentication-plugin=mysql_native_password
     ports:
       - 3306:3306
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: root
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: caliban
     volumes:
       - ./db:/docker-entrypoint-initdb.d/:rw
