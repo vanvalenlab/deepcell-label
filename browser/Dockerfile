@@ -10,4 +10,4 @@ COPY . .
 
 EXPOSE 5000
 
-CMD ["/bin/sh", "-c", "python eb_application.py"]
+CMD ["/bin/sh", "-c", "python application.py"]
