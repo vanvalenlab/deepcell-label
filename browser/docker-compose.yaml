@@ -9,7 +9,8 @@ services:
     depends_on:
       - db
     environment:
-      ''
+      S3_KEY: ''
+      S3_SECRET: ''
       SQLALCHEMY_DATABASE_URI: mysql://root:root@db:3306
   db:
     image: mysql:8.0
