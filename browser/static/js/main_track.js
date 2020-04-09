@@ -142,7 +142,7 @@ class Mode {
     } else if (key === "x") {
       // delete label from frame
       this.kind = Modes.question;
-      this.action = "delete_cell";
+      this.action = "delete";
       this.prompt = "delete label " + this.info.label + " in frame " + this.info.frame + "? " + answer;
       render_info_display();
     } else if (key === "-") {
@@ -209,8 +209,8 @@ class Mode {
       } else if (this.action === "trim_pixels") {
         action("trim_pixels", this.info);
       } if (this.action === "new_track") {
-        action("create_all_new", this.info);
-      } else if (this.action === "delete_cell") {
+        action("new_track", this.info);
+      } else if (this.action === "delete") {
         action(this.action, this.info);
       } else if (this.action === "set_parent") {
         if (this.info.label_1 !== this.info.label_2 &&
@@ -246,7 +246,7 @@ class Mode {
       this.clear();
     } else if (key === "s") {
       if (this.action === "new_track") {
-        action("create_single_new", this.info);
+        action("new_single_cell", this.info);
       } else if (this.action === "swap_cells") {
         if (this.info.label_1 !== this.info.label_2 &&
           this.info.frame_1 === this.info.frame_2) {
