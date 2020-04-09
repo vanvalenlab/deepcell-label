@@ -43,6 +43,9 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
         self.color_map = plt.get_cmap('viridis')
         self.color_map.set_bad('black')
 
+        self.feature = 0
+        self.channel = 0
+
     def get_s3_client(self):
         """Returns a S3 client for sending/receiving data from the bucket"""
         return boto3.client(
@@ -104,9 +107,7 @@ class ZStackReview(BaseReview):
         self.trial = self.load(filename)
         self.raw = self.trial["raw"]
         self.annotated = self.trial["annotated"]
-        self.feature = 0
         self.feature_max = self.annotated.shape[-1]
-        self.channel = 0
 
         if self.rgb:
             # possible differences between single channel and rgb displays
@@ -129,8 +130,6 @@ class ZStackReview(BaseReview):
         # analogous to .trk lineage but do not need relationships between cells included
         self.cell_ids = {}
         self.cell_info = {}
-
-        self.current_frame = 0
 
         for feature in range(self.feature_max):
             self.create_cell_info(feature)
@@ -725,13 +724,13 @@ class TrackReview(BaseReview):
     def get_frame(self, frame, raw):
         self.current_frame = frame
         if raw:
-            frame = self.raw[frame][:, :, 0]
+            frame = self.raw[frame][:, :, self.channel]
             return pngify(imgarr=frame,
                           vmin=0,
                           vmax=None,
                           cmap="cubehelix")
         else:
-            frame = self.tracked[frame][:, :, 0]
+            frame = self.tracked[frame][:, :, self.feature]
             frame = np.ma.masked_equal(frame, 0)
             return pngify(imgarr=frame,
                           vmin=0,
@@ -739,7 +738,7 @@ class TrackReview(BaseReview):
                           cmap=self.color_map)
 
     def get_array(self, frame):
-        frame = self.tracked[frame][:, :, 0]
+        frame = self.tracked[frame][:, :, self.feature]
         return frame
 
     def action_handle_draw(self, trace, edit_value, brush_size, erase, frame):
@@ -784,6 +783,7 @@ class TrackReview(BaseReview):
         flood fill a cell with a unique new label; alternative to watershed
         for fixing duplicate label issue if cells are not touching
         '''
+        img_ann = self.tracked[frame, :, :, self.feature]
         old_label = label
         new_label = max(self.tracks) + 1
 
@@ -793,7 +793,7 @@ class TrackReview(BaseReview):
                                     (int(y_location / self.scale_factor),
                                      int(x_location / self.scale_factor)),
                                     new_label)
-        self.tracked[frame, :, :, 0] = filled_img_ann
+        self.tracked[frame, :, :, self.feature] = filled_img_ann
 
         in_modified = np.any(np.isin(filled_img_ann, old_label))
 
@@ -809,7 +809,7 @@ class TrackReview(BaseReview):
         that are not connected to the cell selected will be removed from annotation in that frame
         '''
 
-        img_ann = self.tracked[frame, :, :, 0]
+        img_ann = self.tracked[frame, :, :, self.feature]
         contig_cell = flood(image=img_ann, seed_point=(int(y_location / self.scale_factor),
                                                        int(x_location / self.scale_factor)))
         img_trimmed = np.where(np.logical_and(np.invert(contig_cell), img_ann == label), 0, img_ann)
@@ -817,7 +817,7 @@ class TrackReview(BaseReview):
         comparison = np.where(img_trimmed != img_ann)
         self.frames_changed = np.any(comparison)
 
-        self.tracked[frame, :, :, 0] = img_trimmed
+        self.tracked[frame, :, :, self.feature] = img_trimmed
 
     def action_fill_hole(self, label, frame, x_location, y_location):
         '''
@@ -830,9 +830,9 @@ class TrackReview(BaseReview):
         # rescale click location -> corresponding location in annotation array
         hole_fill_seed = (y_location // self.scale_factor, x_location // self.scale_factor)
         # fill hole with label
-        img_ann = self.tracked[frame, :, :, 0]
+        img_ann = self.tracked[frame, :, :, self.feature]
         filled_img_ann = flood_fill(img_ann, hole_fill_seed, label, connectivity=1)
-        self.tracked[frame, :, :, 0] = filled_img_ann
+        self.tracked[frame, :, :, self.feature] = filled_img_ann
 
         self.frames_changed = True
 
@@ -964,12 +964,12 @@ class TrackReview(BaseReview):
         '''swap the labels of two cells in one frame, but do not
         change any of the lineage information'''
 
-        ann_img = self.tracked[frame, :, :, 0]
+        ann_img = self.tracked[frame, :, :, self.feature]
         ann_img = np.where(ann_img == label_1, -1, ann_img)
         ann_img = np.where(ann_img == label_2, label_1, ann_img)
         ann_img = np.where(ann_img == -1, label_2, ann_img)
 
-        self.tracked[frame, :, :, 0] = ann_img
+        self.tracked[frame, :, :, self.feature] = ann_img
 
         self.frames_changed = True
 
@@ -1004,8 +1004,8 @@ class TrackReview(BaseReview):
         new_label = max(self.tracks) + 1
 
         # Locally store the frames to work on
-        img_raw = self.raw[frame, :, :, 0]
-        img_ann = self.tracked[frame, :, :, 0]
+        img_raw = self.raw[frame, :, :, self.channel]
+        img_ann = self.tracked[frame, :, :, self.feature]
 
         # Pull the 2 seed locations and store locally
         # define a new seeds labeled img that is the same size as raw/annotation imgs
@@ -1054,7 +1054,7 @@ class TrackReview(BaseReview):
 
         # reintegrate subsection into original mask
         img_ann[minr:maxr, minc:maxc] = img_sub_ann
-        self.tracked[frame, :, :, 0] = img_ann
+        self.tracked[frame, :, :, self.feature] = img_ann
 
         # update cell_info dict only if new label was created with ws
         if np.any(np.isin(self.tracked[frame, :, :, 0], new_label)):
