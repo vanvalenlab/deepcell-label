@@ -739,45 +739,13 @@ class TrackReview(BaseReview):
         return load_trks(response['Body'].read(), filename)
 
     def action(self, action_type, info):
-
-        # edit mode action
-        if action_type == "handle_draw":
-            self.action_handle_draw(**info)
-
-        # modified click actions
-        elif action_type == "flood_contiguous":
-            self.action_flood_contiguous(**info)
-        elif action_type == "trim_pixels":
-            self.action_trim_pixels(**info)
-
-        # single click actions
-        elif action_type == "fill_hole":
-            self.action_fill_hole(**info)
-        elif action_type == "create_single_new":
-            self.action_new_single_cell(**info)
-        elif action_type == "create_all_new":
-            self.action_new_track(**info)
-        elif action_type == "delete_cell":
-            self.action_delete(**info)
-
-        # multiple click actions
-        elif action_type == "set_parent":
-            self.action_set_parent(**info)
-        elif action_type == "replace":
-            self.action_replace(**info)
-        elif action_type == "swap_single_frame":
-            self.action_swap_single_frame(**info)
-        elif action_type == "swap_tracks":
-            self.action_swap_tracks(**info)
-        elif action_type == "watershed":
-            self.action_watershed(**info)
-
-        # misc
-        elif action_type == "save_track":
-            self.action_save_track(**info)
-
-        else:
-            raise ValueError("Invalid action '{}'".format(action_type))
+        """Call an action method based on an action type."""
+        attr_name = 'action_{}'.format(action_type)
+        try:
+            action = getattr(self, attr_name)
+            action(**info)
+        except AttributeError:
+            raise ValueError('Invalid action "{}"'.format(action_type))
 
     def action_handle_draw(self, trace, edit_value, brush_size, erase, frame):
 
