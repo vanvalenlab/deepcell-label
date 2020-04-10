@@ -1,3 +1,4 @@
+"""Review classes for editing np arrays"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -29,7 +30,8 @@ from config import S3_KEY, S3_SECRET
 class BaseReview(object):  # pylint: disable=useless-object-inheritance
     """Base class for all Review objects."""
 
-    def __init__(self, filename, input_bucket, output_bucket, subfolders):
+    def __init__(self, filename, input_bucket, output_bucket, subfolders,
+                 raw_key='raw', annotated_key='annotated'):
         self.filename = filename
         self.input_bucket = input_bucket
         self.output_bucket = output_bucket
@@ -46,13 +48,24 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
         self.feature = 0
         self.channel = 0
 
+        self.trial = self.load(filename)
+        self.raw = self.trial[raw_key]
+        self.annotated = self.trial[annotated_key]
+
+        self.channel_max = self.raw.shape[-1]
+        self.feature_max = self.annotated.shape[-1]
+        self.max_frames = self.raw.shape[0]
+
+        self.max_intensity = {}
+        for channel in range(self.channel_max):
+            self.max_intensity[channel] = None
+
     def get_s3_client(self):
         """Returns a S3 client for sending/receiving data from the bucket"""
         return boto3.client(
             's3',
             aws_access_key_id=S3_KEY,
-            aws_secret_access_key=S3_SECRET
-        )
+            aws_secret_access_key=S3_SECRET)
 
     def load(self, filename):
         """Load a file from the S3 input bucket"""
@@ -87,6 +100,12 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
         outlined_frame = np.where(boundary_mask == 1, -frame, frame)
         return outlined_frame
 
+    def get_array(self, frame, add_outlines=True):
+        frame = self.annotated[frame][:, :, self.feature]
+        if add_outlines:
+            frame = self.add_outlines(frame)
+        return frame
+
     def action(self, action_type, info):
         """Call an action method based on an action type."""
         attr_name = 'action_{}'.format(action_type)
@@ -96,18 +115,65 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
         except AttributeError:
             raise ValueError('Invalid action "{}"'.format(action_type))
 
+    def action_change_channel(self, channel):
+        """Change selected channel."""
+        if channel < 0 or channel > self.channel_max:
+            raise ValueError('Channel {} is outside of range [0, {}].'.format(
+                channel, self.channel_max))
+        self.channel = channel
+        self.frames_changed = True
+
+    def action_change_feature(self, feature):
+        """Change selected feature."""
+        if feature < 0 or feature > self.feature_max:
+            raise ValueError('Feature {} is outside of range [0, {}].'.format(
+                feature, self.feature_max))
+        self.feature = feature
+        self.frames_changed = True
+
+    def action_trim_pixels(self, label, frame, x_location, y_location):
+        """Remove any pixels with value label that are not connected to the
+        selected cell in the given frame.
+        """
+        img_ann = self.annotated[frame, ..., self.feature]
+
+        seed_point = (y_location // self.scale_factor,
+                      x_location // self.scale_factor)
+
+        contig_cell = flood(image=img_ann, seed_point=seed_point)
+        stray_pixels = np.logical_and(np.invert(contig_cell), img_ann == label)
+        img_trimmed = np.where(stray_pixels, 0, img_ann)
+
+        self.frames_changed = np.any(np.where(img_trimmed != img_ann))
+        self.annotated[frame, ..., self.feature] = img_trimmed
+
+    def action_fill_hole(self, label, frame, x_location, y_location):
+        '''
+        fill a "hole" in a cell annotation with the cell label. Doesn't check
+        if annotation at (y,x) is zero (hole to fill) because that logic is handled in
+        javascript. Just takes the click location, scales it to match the actual annotation
+        size, then fills the hole with label (using skimage flood_fill). connectivity = 1
+        prevents hole fill from spilling out into background in some cases
+        '''
+        # rescale click location -> corresponding location in annotation array
+        hole_fill_seed = (y_location // self.scale_factor, x_location // self.scale_factor)
+        # fill hole with label
+        img_ann = self.annotated[frame, :, :, self.feature]
+        filled_img_ann = flood_fill(img_ann, hole_fill_seed, label, connectivity=1)
+        self.annotated[frame, :, :, self.feature] = filled_img_ann
+
+        # never changes info but always changes annotation
+        self.frames_changed = True
+
 
 class ZStackReview(BaseReview):
 
     def __init__(self, filename, input_bucket, output_bucket, subfolders, rgb=False):
         super(ZStackReview, self).__init__(
-            filename, input_bucket, output_bucket, subfolders)
+            filename, input_bucket, output_bucket, subfolders,
+            raw_key='raw', annotated_key='annotated')
 
         self.rgb = rgb
-        self.trial = self.load(filename)
-        self.raw = self.trial["raw"]
-        self.annotated = self.trial["annotated"]
-        self.feature_max = self.annotated.shape[-1]
 
         if self.rgb:
             # possible differences between single channel and rgb displays
@@ -124,8 +190,6 @@ class ZStackReview(BaseReview):
         else:
             self.max_frames, self.height, self.width, self.channel_max = self.raw.shape
 
-        self.dimensions = (self.width, self.height)
-
         # create a dictionary that has frame information about each cell
         # analogous to .trk lineage but do not need relationships between cells included
         self.cell_ids = {}
@@ -133,15 +197,6 @@ class ZStackReview(BaseReview):
 
         for feature in range(self.feature_max):
             self.create_cell_info(feature)
-
-        self.draw_raw = False
-        self.max_intensity = {}
-        for channel in range(self.channel_max):
-            self.max_intensity[channel] = None
-
-        self.dtype_raw = self.raw.dtype
-
-        self.save_version = 0
 
     def get_max_label(self):
         '''
@@ -239,19 +294,6 @@ class ZStackReview(BaseReview):
                           vmax=self.get_max_label(),
                           cmap=self.color_map)
 
-    def get_array(self, frame):
-        frame = self.annotated[frame][:, :, self.feature]
-        frame = self.add_outlines(frame)
-        return frame
-
-    def action_change_channel(self, channel):
-        self.channel = channel
-        self.frames_changed = True
-
-    def action_change_feature(self, feature):
-        self.feature = feature
-        self.frames_changed = True
-
     def action_handle_draw(self, trace, target_value, brush_value, brush_size, erase, frame):
 
         annotated = np.copy(self.annotated[frame, :, :, self.feature])
@@ -335,6 +377,7 @@ class ZStackReview(BaseReview):
         img_ann = self.annotated[frame, :, :, self.feature]
         old_label = label
         new_label = np.max(self.cell_ids[self.feature]) + 1
+        # new_label = max(self.tracks) + 1
 
         in_original = np.any(np.isin(img_ann, old_label))
 
@@ -348,45 +391,11 @@ class ZStackReview(BaseReview):
 
         # update cell info dicts since labels are changing
         self.add_cell_info(feature=self.feature, add_label=new_label, frame=frame)
+        # self.add_cell_info(add_label=new_label, frame=frame)
 
         if in_original and not in_modified:
             self.del_cell_info(feature=self.feature, del_label=old_label, frame=frame)
-
-    def action_trim_pixels(self, label, frame, x_location, y_location):
-        '''
-        get rid of any stray pixels of selected label; pixels of value label
-        that are not connected to the cell selected will be removed from annotation in that frame
-        '''
-
-        img_ann = self.annotated[frame, :, :, self.feature]
-        contig_cell = flood(image=img_ann, seed_point=(int(y_location / self.scale_factor),
-                                                       int(x_location / self.scale_factor)))
-        img_trimmed = np.where(np.logical_and(np.invert(contig_cell), img_ann == label), 0, img_ann)
-
-        # check if image changed
-        comparison = np.where(img_trimmed != img_ann)
-        self.frames_changed = np.any(comparison)
-        # this action should never change the cell info
-
-        self.annotated[frame, :, :, self.feature] = img_trimmed
-
-    def action_fill_hole(self, label, frame, x_location, y_location):
-        '''
-        fill a "hole" in a cell annotation with the cell label. Doesn't check
-        if annotation at (y,x) is zero (hole to fill) because that logic is handled in
-        javascript. Just takes the click location, scales it to match the actual annotation
-        size, then fills the hole with label (using skimage flood_fill). connectivity = 1
-        prevents hole fill from spilling out into background in some cases
-        '''
-        # rescale click location -> corresponding location in annotation array
-        hole_fill_seed = (y_location // self.scale_factor, x_location // self.scale_factor)
-        # fill hole with label
-        img_ann = self.annotated[frame, :, :, self.feature]
-        filled_img_ann = flood_fill(img_ann, hole_fill_seed, label, connectivity=1)
-        self.annotated[frame, :, :, self.feature] = filled_img_ann
-
-        # never changes info but always changes annotation
-        self.frames_changed = True
+            # self.del_cell_info(del_label=old_label, frame=frame)
 
     def action_new_single_cell(self, label, frame):
         """
@@ -687,11 +696,8 @@ class ZStackReview(BaseReview):
 class TrackReview(BaseReview):
     def __init__(self, filename, input_bucket, output_bucket, subfolders):
         super(TrackReview, self).__init__(
-            filename, input_bucket, output_bucket, subfolders)
-
-        self.trial = self.load(filename)
-        self.raw = self.trial["raw"]
-        self.annotated = self.trial["tracked"]
+            filename, input_bucket, output_bucket, subfolders,
+            raw_key='raw', annotated_key='tracked')
 
         # lineages is a list of dictionaries. There should be only a single one
         # when using a .trk file
@@ -700,9 +706,7 @@ class TrackReview(BaseReview):
 
         self.tracks = self.trial["lineages"][0]
 
-        self.max_frames = self.raw.shape[0]
-        self.dimensions = self.raw.shape[1:3][::-1]
-        self.width, self.height = self.dimensions
+        self.width, self.height = self.raw.shape[1:3][::-1]
 
     @property
     def readable_tracks(self):
@@ -727,7 +731,7 @@ class TrackReview(BaseReview):
             frame = self.raw[frame][:, :, self.channel]
             return pngify(imgarr=frame,
                           vmin=0,
-                          vmax=None,
+                          vmax=self.max_intensity[self.channel],
                           cmap="cubehelix")
         else:
             frame = self.annotated[frame][:, :, self.feature]
@@ -736,10 +740,6 @@ class TrackReview(BaseReview):
                           vmin=0,
                           vmax=max(self.tracks),
                           cmap=self.color_map)
-
-    def get_array(self, frame):
-        frame = self.annotated[frame][:, :, self.feature]
-        return frame
 
     def action_handle_draw(self, trace, edit_value, brush_size, erase, frame):
 
@@ -802,39 +802,6 @@ class TrackReview(BaseReview):
 
         if in_original and not in_modified:
             self.del_cell_info(del_label=old_label, frame=frame)
-
-    def action_trim_pixels(self, label, frame, x_location, y_location):
-        '''
-        get rid of any stray pixels of selected label; pixels of value label
-        that are not connected to the cell selected will be removed from annotation in that frame
-        '''
-
-        img_ann = self.annotated[frame, :, :, self.feature]
-        contig_cell = flood(image=img_ann, seed_point=(int(y_location / self.scale_factor),
-                                                       int(x_location / self.scale_factor)))
-        img_trimmed = np.where(np.logical_and(np.invert(contig_cell), img_ann == label), 0, img_ann)
-
-        comparison = np.where(img_trimmed != img_ann)
-        self.frames_changed = np.any(comparison)
-
-        self.annotated[frame, :, :, self.feature] = img_trimmed
-
-    def action_fill_hole(self, label, frame, x_location, y_location):
-        '''
-        fill a "hole" in a cell annotation with the cell label. Doesn't check
-        if annotation at (y,x) is zero (hole to fill) because that logic is handled in
-        javascript. Just takes the click location, scales it to match the actual annotation
-        size, then fills the hole with label (using skimage flood_fill). connectivity = 1
-        prevents hole fill from spilling out into background in some cases
-        '''
-        # rescale click location -> corresponding location in annotation array
-        hole_fill_seed = (y_location // self.scale_factor, x_location // self.scale_factor)
-        # fill hole with label
-        img_ann = self.annotated[frame, :, :, self.feature]
-        filled_img_ann = flood_fill(img_ann, hole_fill_seed, label, connectivity=1)
-        self.annotated[frame, :, :, self.feature] = filled_img_ann
-
-        self.frames_changed = True
 
     def action_new_single_cell(self, label, frame):
         """
