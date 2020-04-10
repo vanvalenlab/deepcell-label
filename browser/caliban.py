@@ -22,14 +22,14 @@ from skimage.exposure import rescale_intensity
 from skimage.segmentation import find_boundaries
 
 from imgutils import pngify
-from config import S3_KEY, S3_SECRET
+from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 
 
 # Connect to the s3 service
 s3 = boto3.client(
     "s3",
-    aws_access_key_id=S3_KEY,
-    aws_secret_access_key=S3_SECRET
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY
 )
 
 
