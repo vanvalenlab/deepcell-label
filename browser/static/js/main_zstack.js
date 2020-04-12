@@ -852,6 +852,7 @@ function render_info_display() {
   $('#frame').html(current_frame);
   $('#feature').html(mode.feature);
   $('#channel').html(mode.channel);
+  $('#zoom').html(`${zoom}%`);
 
   render_highlight_info();
 
