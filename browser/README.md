@@ -34,7 +34,7 @@ You can now go to 0.0.0.0:5000 in a browser window to access the local version o
 To interact with the local mysql database:
 ```
 sudo docker exec -it browser_db_1 bash
-mysql
+mysql -p
 ```
 When finished:
 ```
