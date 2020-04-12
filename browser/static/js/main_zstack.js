@@ -978,19 +978,23 @@ function load_file(file) {
 function setCanvasDimensions() {
   // calculate available space and how much to scale x and y to fill it
   // only thing that shares width is the info display on left
-  let availWidth = Math.floor(document.documentElement.clientWidth * 0.75);
+
+  let maxWidth = Math.floor(document.documentElement.clientWidth * 0.75);
 
   // leave space for navbar, instructions pane, and footer
-  let availHeight = Math.floor((document.documentElement.clientHeight -
+  let maxHeight = Math.floor((document.documentElement.clientHeight -
+      parseInt($("#container").css('marginTop')) -
+      parseInt($("#container").css('marginBottom')) -
       document.getElementsByClassName('footer-text')[0].clientHeight -
       document.getElementsByClassName('accordion')[0].clientHeight -
       document.getElementsByClassName('navbar')[0].clientHeight)*0.95);
 
-  let scaleX = Math.floor(availWidth/rawWidth);
-  let scaleY = Math.floor(availHeight/rawHeight);
+  let scaleX = maxWidth/rawWidth;
+  let scaleY = maxHeight/rawHeight;
 
-  // pick scale that accomodates both dimensions
-  scale = Math.max(1, Math.min(scaleX, scaleY));
+  // pick scale that accomodates both dimensions; can be less than 1
+  scale = Math.min(scaleX, scaleY);
+  // dimensions need to maintain aspect ratio for drawing purposes
   dimensions = [scale * rawDimensions[0], scale * rawDimensions[1]];
 
   zoom = 100;
