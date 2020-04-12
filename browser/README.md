@@ -18,6 +18,32 @@ pip install -r requirements.txt
 ```bash
 python3 application.py
 ```
+## To use docker-compose for local development
+Add your AWS credentials to ```docker-compose.yaml```.
+
+From the ```caliban/browser``` folder, run:
+```bash
+sudo docker-compose up --build -d
+```
+Wait a minute for the database to finish setting up before running:
+```
+sudo docker-compose restart app
+```
+You can now go to 0.0.0.0:5000 in a browser window to access the local version of the tool.
+
+To interact with the local mysql database:
+```
+sudo docker exec -it browser_db_1 bash
+mysql
+```
+When finished:
+```
+sudo docker-compose down
+```
+(optional)
+```
+sudo docker system prune --volumes
+```
 
 ## Structure of Browser Version
 
