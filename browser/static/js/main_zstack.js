@@ -853,6 +853,8 @@ function render_info_display() {
   $('#feature').html(mode.feature);
   $('#channel').html(mode.channel);
   $('#zoom').html(`${zoom}%`);
+  $('#displayedX').html(`${Math.floor(sx)}-${Math.ceil(sx+swidth)}`);
+  $('#displayedY').html(`${Math.floor(sy)}-${Math.ceil(sy+sheight)}`);
 
   render_highlight_info();
 
