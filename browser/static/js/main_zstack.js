@@ -428,10 +428,10 @@ class Mode {
     let end_y = evt.offsetY - padding;
     let end_x = evt.offsetX - padding;
 
-    let threshold_start_y = Math.floor(brush.threshY / scale);
-    let threshold_start_x = Math.floor(brush.threshX / scale);
-    let threshold_end_y = Math.floor(end_y / scale);
-    let threshold_end_x = Math.floor(end_x / scale);
+    let threshold_start_y = brush.threshY;
+    let threshold_start_x = brush.threshX;
+    let threshold_end_x = imgX;
+    let threshold_end_y = imgY;
 
     if (threshold_start_y !== threshold_end_y &&
         threshold_start_x !== threshold_end_x) {
@@ -626,6 +626,7 @@ var Modes = Object.freeze({
 
 let rgb;
 
+// dimensions of raw arrays
 let rawWidth;
 let rawHeight;
 
@@ -633,14 +634,31 @@ var scale;
 const padding = 5;
 
 // mouse position variables
+// mouse position on canvas, no adjustment for padding
 let _rawMouseX;
 let _rawMouseY;
+// adjusted for padding
 let canvasPosX;
 let canvasPosY;
+// coordinates in original image (used for actions, labels, etc)
 let imgX;
 let imgY;
+// in original image coords
 let storedClickX;
 let storedClickY;
+
+// zoom, starts at 100 percent (value set in ___)
+let zoom;
+// farthest amount to zoom out
+let zoomLimit;
+
+// starting indices (original coords) for displaying image
+// (starts at 0, values set in ______)
+let sx;
+let sy;
+// how far past starting indices to display
+let swidth;
+let sheight;
 
 // raw and adjusted image storage
 // cascasding image updates if raw or seg is reloaded
@@ -680,6 +698,7 @@ var mode = new Mode(Modes.none, {});
 let edit_mode;
 var answer = "(SPACE=YES / ESC=NO)";
 let mousedown = false;
+let spacedown = false;
 var tooltype = 'draw';
 var project_id;
 var brush;
@@ -695,12 +714,56 @@ function upload_file() {
   });
 }
 
+// based on dx and dy, update sx and sy
+function panCanvas(dx, dy) {
+  let tempPanX = sx - dx;
+  let tempPanY = sy - dy;
+  let oldY = sy;
+  let oldX = sx;
+  if (tempPanX >= 0 && tempPanX + swidth < rawWidth) {
+    sx = tempPanX;
+  } else {
+    tempPanX = Math.max(0, tempPanX);
+    sx = Math.min(rawWidth - swidth, tempPanX);
+  }
+  if (tempPanY >= 0 && tempPanY + sheight < rawHeight) {
+    sy = tempPanY;
+  } else {
+    tempPanY = Math.max(0, tempPanY);
+    sy = Math.min(rawHeight - sheight, tempPanY);
+  }
+  if (sx !== oldX || sy !== oldY) {
+    render_image_display();
+  }
+}
+
+function changeZoom(dzoom) {
+  let newZoom = zoom - 10*dzoom;
+  let oldZoom = zoom;
+  let newHeight = rawHeight*100/newZoom;
+  let newWidth = rawWidth*100/newZoom;
+  let oldHeight = sheight;
+  let oldWidth = swidth;
+  if (newZoom >= zoomLimit) {
+    zoom = newZoom;
+    sheight = newHeight;
+    swidth = newWidth;
+  }
+  if (oldZoom !== newZoom) {
+    let propX = canvasPosX/dimensions[0];
+    let propY = canvasPosY/dimensions[1];
+    let dx = propX*(newWidth - oldWidth);
+    let dy = propY*(newHeight - oldHeight);
+    panCanvas(dx, dy);
+  }
+  updateMousePos(_rawMouseX, _rawMouseY);
+  render_image_display();
+}
+
 // check if the mouse position in canvas matches to a displayed part of image
 function inRange(x, y) {
-  let scaledX = Math.floor(x/scale);
-  let scaledY = Math.floor(y/scale);
-  if (scaledX >= 0 && scaledX < seg_array[0].length &&
-      scaledY >= 0 && scaledY < seg_array.length) {
+  if (x >= 0 && x < dimensions[0] &&
+      y >= 0 && y < dimensions[1]) {
     return true;
   } else {
     return false;
@@ -801,36 +864,44 @@ function render_info_display() {
 }
 
 function render_edit_image(ctx) {
-  // let redOutline, r1, singleOutline, o1, outlineAll, translucent, t1, t2;
   if (rgb && rendering_raw) {
     render_raw_image(ctx);
 
   } else {
     ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
-    ctx.drawImage(postCompImg, 0, 0, rawWidth, rawHeight, padding, padding, dimensions[0], dimensions[1]);
+    ctx.drawImage(postCompImg, sx, sy, swidth, sheight, padding, padding, dimensions[0], dimensions[1]);
   }
+  ctx.save();
+  let region = new Path2D();
+  region.rect(padding, padding, dimensions[0], dimensions[1]);
+  ctx.clip(region);
+  ctx.imageSmoothingEnabled = true;
 
   // draw brushview on top of cells/annotations
-  brush.draw(ctx);
+  brush.draw(ctx, sx, sy, swidth, sheight, scale*zoom/100);
+
+  ctx.restore();
 }
 
 function render_raw_image(ctx) {
   ctx.clearRect(padding, padding, dimensions, dimensions[1]);
-  ctx.drawImage(contrastedRaw, padding, padding, dimensions[0], dimensions[1]);
+  ctx.drawImage(contrastedRaw, sx, sy, swidth, sheight, padding, padding, dimensions[0], dimensions[1]);
 }
 
 function render_annotation_image(ctx) {
   ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
   if (rgb && !display_labels) {
-    ctx.drawImage(postCompImg, padding, padding, dimensions[0], dimensions[1]);
+    ctx.drawImage(postCompImg, sx, sy, swidth, sheight, padding, padding, dimensions[0], dimensions[1]);
   } else {
-    ctx.drawImage(preCompSeg, padding, padding, dimensions[0], dimensions[1]);
+    ctx.drawImage(preCompSeg, sx, sy, swidth, sheight, padding, padding, dimensions[0], dimensions[1]);
   }
 }
 
 function render_image_display() {
   let ctx = $('#canvas').get(0).getContext("2d");
   ctx.imageSmoothingEnabled = false;
+  ctx.save();
+  ctx.clearRect(0,0, 2*padding+dimensions[0], 2*padding+dimensions[1]);
 
   if (edit_mode) {
     // edit mode (annotations overlaid on raw + brush preview)
@@ -873,8 +944,10 @@ function load_file(file) {
       channel_max = payload.channel_max;
       rawDimensions = payload.dimensions;
 
-      rawWidth = rawDimensions[0];
-      rawHeight = rawDimensions[1];
+      sx = 0;
+      sy = 0;
+      swidth = rawWidth = rawDimensions[0];
+      sheight = rawHeight = rawDimensions[1];
 
       setCanvasDimensions();
 
@@ -920,6 +993,9 @@ function setCanvasDimensions() {
   scale = Math.max(1, Math.min(scaleX, scaleY));
   dimensions = [scale * rawDimensions[0], scale * rawDimensions[1]];
 
+  zoom = 100;
+  zoomLimit = 100;
+
   // set canvases size according to scale
   $('#canvas').get(0).width = dimensions[0] + 2*padding;
   $('#canvas').get(0).height = dimensions[1] + 2*padding;
@@ -929,9 +1005,11 @@ function setCanvasDimensions() {
 
 // adjust current_contrast upon mouse scroll
 function handle_scroll(evt) {
-  // adjust contrast whenever we can see raw
-  if ((rendering_raw || edit_mode || (rgb && !display_labels))
+  if (evt.altKey) {
+    changeZoom(Math.sign(evt.originalEvent.deltaY));
+  } else if ((rendering_raw || edit_mode || (rgb && !display_labels))
     && !evt.originalEvent.shiftKey) {
+    // adjust contrast whenever we can see raw
     rawLoaded = false;
     // don't use magnitude of scroll
     let mod_contrast = -Math.sign(evt.originalEvent.deltaY) * 4;
@@ -953,22 +1031,25 @@ function handle_scroll(evt) {
 // handle pressing mouse button (treats this as the beginning
 // of click&drag, since clicks are handled by Mode.click)
 function handle_mousedown(evt) {
-  if (mode.kind !== Modes.prompt) {
-    mousedown = true;
-    // begin drawing
-    if (edit_mode) {
-      if (!brush.show) {
-        brush.threshX = canvasPosX;
-        brush.threshY = canvasPosY;
-      } else {
-        mouse_trace.push([imgY, imgX]);
+  // TODO: refactor "mousedown + mousemove" into ondrag?
+  mousedown = true;
+  if (!spacedown) {
+    if (mode.kind !== Modes.prompt) {
+      // begin drawing
+      if (edit_mode) {
+        if (!brush.show) {
+          brush.threshX = imgX;
+          brush.threshY = imgY;
+        } else {
+          mouse_trace.push([imgY, imgX]);
+        }
       }
     }
   }
 }
 
 function helper_brush_draw() {
-  if (mousedown) {
+  if (mousedown && !spacedown) {
     // update mouse_trace
     mouse_trace.push([imgY, imgX]);
   } else {
@@ -988,52 +1069,50 @@ function updateMousePos(x, y) {
   canvasPosY = y - padding;
 
   // convert to image indices, to use for actions and getting label
-  let tempImgX = Math.floor(canvasPosX/scale);
-  let tempImgY = Math.floor(canvasPosY/scale);
-  if (tempImgX >= 0 && tempImgX < seg_array[0].length &&
-    tempImgY >= 0 && tempImgY < seg_array.length) {
-    imgX = tempImgX;
-    imgY = tempImgY;
+  if (inRange(canvasPosX, canvasPosY)) {
+    imgX = Math.floor((canvasPosX*100/(scale*zoom) + sx));
+    imgY = Math.floor((canvasPosY*100/(scale*zoom) + sy));
+    brush.x = imgX;
+    brush.y = imgY;
+    // update brush preview
+    if (edit_mode) {
+      // brush's canvas is keeping track of the brush
+      if (brush.show) {
+        helper_brush_draw();
+      } else {
+        brush.boxView();
+      }
+      render_image_display();
+    }
   }
 }
 
 // handles mouse movement, whether or not mouse button is held down
 function handle_mousemove(evt) {
+  if (spacedown && mousedown) {
+    panCanvas(evt.originalEvent.movementX*100/(zoom*scale),
+      evt.originalEvent.movementY*100/(zoom*scale));
+  }
+
   updateMousePos(evt.offsetX, evt.offsetY);
 
   render_info_display();
-
-  // keeps brush location updated correctly when mouse moves outside edit mode
-  brush.x = canvasPosX;
-  brush.y = canvasPosY;
-
-  // update brush preview
-  if (edit_mode) {
-    // brush's canvas is keeping track of the brush
-    if (brush.show) {
-      helper_brush_draw();
-    } else {
-      brush.boxView();
-    }
-    render_image_display();
-  }
 }
 
 // handles end of click&drag (different from click())
 function handle_mouseup(evt) {
-  if (mode.kind !== Modes.prompt) {
-    mousedown = false;
-    if (edit_mode) {
-      if (!brush.show) {
-        mode.handle_threshold(evt);
-      } else {
-        //send click&drag coordinates to caliban.py to update annotations
-        mode.handle_draw();
+  mousedown = false;
+  if (!spacedown) {
+    if (mode.kind !== Modes.prompt) {
+      if (edit_mode) {
+        if (!brush.show) {
+          mode.handle_threshold(evt);
+        } else {
+          //send click&drag coordinates to caliban.py to update annotations
+          mode.handle_draw();
+        }
+        brush.refreshView();
       }
-      // reset brush preview
-      brush.x = canvasPosX;
-      brush.y = canvasPosY;
-      brush.refreshView();
     }
   }
 }
@@ -1066,6 +1145,16 @@ function prepare_canvas() {
   // bind keypress
   window.addEventListener('keydown', function(evt) {
     mode.handle_key(evt.key);
+  }, false);
+  window.addEventListener('keydown', function(evt) {
+    if (evt.key === ' ') {
+      spacedown = true;
+    }
+  }, false);
+  window.addEventListener('keyup', function(evt) {
+    if (evt.key === ' ') {
+      spacedown = false;
+    }
   }, false);
 }
 
@@ -1152,5 +1241,5 @@ function start_caliban(filename) {
   prepare_canvas();
   fetch_and_render_frame();
 
-  brush = new Brush(scale=scale, height=dimensions[1], width=dimensions[0], pad = padding);
+  brush = new Brush(scale=scale, height=rawHeight, width=rawWidth, pad = padding);
 }
