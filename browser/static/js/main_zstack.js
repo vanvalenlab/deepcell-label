@@ -152,7 +152,7 @@ class Mode {
         action("change_feature", this.info);
         this.clear();
       }
-    } else if (key === "=") {
+    } else if (key === "]") {
       // increase edit_value up to max label + 1 (guaranteed unused)
       brush.value = Math.min(brush.value + 1,
           maxLabelsMap.get(this.feature) + 1);
@@ -161,7 +161,7 @@ class Mode {
         preCompAdjust();
       }
       render_info_display();
-    } else if (key === "-") {
+    } else if (key === "[") {
       // decrease edit_value, minimum 1
       brush.value -= 1;
       if (current_highlight) {
@@ -233,7 +233,7 @@ class Mode {
       this.action = "predict";
       this.prompt = "Predict cell ids for zstack? / S=PREDICT THIS FRAME / SPACE=PREDICT ALL FRAMES / ESC=CANCEL PREDICTION";
       render_info_display();
-    } else if (key === "-" && this.highlighted_cell_one !== -1) {
+    } else if (key === "[" && this.highlighted_cell_one !== -1) {
       // cycle highlight to prev label
       this.highlighted_cell_one = this.decrement_value(this.highlighted_cell_one,
           1, maxLabelsMap.get(this.feature));
@@ -241,7 +241,7 @@ class Mode {
         segLoaded = false;
         preCompAdjust();
       }
-    } else if (key === "=" && this.highlighted_cell_one !== -1) {
+    } else if (key === "]" && this.highlighted_cell_one !== -1) {
       // cycle highlight to next label
       this.highlighted_cell_one = this.increment_value(this.highlighted_cell_one,
           1, maxLabelsMap.get(this.feature));
@@ -274,7 +274,7 @@ class Mode {
       this.action = "delete";
       this.prompt = "delete label " + this.info.label + " in frame " + this.info.frame + "? " + answer;
       render_info_display();
-    } else if (key === "-") {
+    } else if (key === "[") {
       // cycle highlight to prev label
       this.highlighted_cell_one = this.decrement_value(this.highlighted_cell_one,
           1, maxLabelsMap.get(this.feature));
@@ -286,7 +286,7 @@ class Mode {
         segLoaded = false;
         preCompAdjust();
       }
-    } else if (key === "=") {
+    } else if (key === "]") {
       // cycle highlight to next label
       this.highlighted_cell_one = this.increment_value(this.highlighted_cell_one,
           1, maxLabelsMap.get(this.feature));
