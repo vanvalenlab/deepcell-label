@@ -678,6 +678,11 @@ const postCompImg = new Image();
 
 var seg_array; // declare here so it is global var
 
+let topBorder = new Path2D();
+let bottomBorder = new Path2D();
+let rightBorder = new Path2D();
+let leftBorder = new Path2D();
+
 var rendering_raw = false;
 let display_invert = true;
 let display_labels = false;
@@ -900,6 +905,44 @@ function render_annotation_image(ctx) {
   }
 }
 
+function drawBorders(ctx) {
+  ctx.save();
+  // left border
+  if (Math.floor(sx) === 0) {
+    ctx.fillStyle = 'white';
+  } else {
+    ctx.fillStyle = 'black';
+  }
+  ctx.fill(leftBorder);
+
+  // right border
+  if (Math.ceil(sx + swidth) === rawWidth) {
+    ctx.fillStyle = 'white';
+  } else {
+    ctx.fillStyle = 'black';
+  }
+  ctx.fill(rightBorder);
+
+  // top border
+  if (Math.floor(sy) === 0) {
+    ctx.fillStyle = 'white';
+  } else {
+    ctx.fillStyle = 'black';
+  }
+  ctx.fill(topBorder);
+
+  // bottom border
+  if (Math.ceil(sy + sheight) === rawHeight) {
+    ctx.fillStyle = 'white';
+  } else {
+    ctx.fillStyle = 'black';
+  }
+  ctx.fill(bottomBorder);
+
+  ctx.restore();
+}
+
+
 function render_image_display() {
   let ctx = $('#canvas').get(0).getContext("2d");
   ctx.imageSmoothingEnabled = false;
@@ -916,6 +959,7 @@ function render_image_display() {
     // draw annotations
     render_annotation_image(ctx);
   }
+  drawBorders(ctx);
   render_info_display();
 }
 
@@ -1008,6 +1052,31 @@ function setCanvasDimensions() {
   $('#canvas').get(0).height = dimensions[1] + 2*padding;
   $('#hidden_seg_canvas').get(0).width = rawWidth;
   $('#hidden_seg_canvas').get(0).height = rawHeight;
+
+  // create paths for recoloring borders
+  topBorder.moveTo(0, 0);
+  topBorder.lineTo(padding, padding);
+  topBorder.lineTo(dimensions[0] + padding, padding);
+  topBorder.lineTo(dimensions[0] + 2*padding, 0);
+  topBorder.closePath();
+
+  bottomBorder.moveTo(0, dimensions[1] + 2*padding);
+  bottomBorder.lineTo(padding, dimensions[1] + padding);
+  bottomBorder.lineTo(dimensions[0] + padding, dimensions[1] + padding);
+  bottomBorder.lineTo(dimensions[0] + 2*padding, dimensions[1] + 2*padding);
+  bottomBorder.closePath();
+
+  leftBorder.moveTo(0, 0);
+  leftBorder.lineTo(0, dimensions[1] + 2*padding);
+  leftBorder.lineTo(padding, dimensions[1] + padding);
+  leftBorder.lineTo(padding, padding);
+  leftBorder.closePath();
+
+  rightBorder.moveTo(dimensions[0] + 2*padding, 0);
+  rightBorder.lineTo(dimensions[0] + padding, padding);
+  rightBorder.lineTo(dimensions[0] + padding, dimensions[1] + padding);
+  rightBorder.lineTo(dimensions[0] + 2*padding, dimensions[1] + 2*padding);
+  rightBorder.closePath();
 }
 
 // adjust current_contrast upon mouse scroll
