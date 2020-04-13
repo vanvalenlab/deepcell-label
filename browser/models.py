@@ -16,9 +16,9 @@ class Project(db.Model):
     # pylint: disable=E1101
     __tablename__ = 'projects'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    filename = db.Column(db.String, nullable=False)
+    filename = db.Column(db.Text, nullable=False)
     state = db.Column(db.LargeBinary(length=(2 ** 32) - 1))
-    subfolders = db.Column(db.String, nullable=False)
+    subfolders = db.Column(db.Text, nullable=False)
     createdAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now())
     updatedAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now(),
                           onupdate=db.func.current_timestamp())
