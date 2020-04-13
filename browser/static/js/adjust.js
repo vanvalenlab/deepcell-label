@@ -149,7 +149,9 @@ function compositeImages() {
   ctx.drawImage(contrastedRaw, 0, 0, rawWidth, rawHeight);
   let rawData = ctx.getImageData(0, 0, rawWidth, rawHeight);
   grayscale(rawData);
-  invert(rawData);
+  if (display_invert) {
+    invert(rawData);
+  }
   ctx.putImageData(rawData, 0, 0);
 
   // add labels on top
