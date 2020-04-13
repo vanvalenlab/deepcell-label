@@ -222,7 +222,7 @@ class ZStackReview:
         # TODO: we should try to not use global if possible.
         global original_filename
         original_filename = filename
-        s3 = boto3.client('s3')  # reassigned from outer call?
+        # s3 = boto3.client('s3')  # reassigned from outer call?
         key = self.subfolders
         print(key)
         response = s3.get_object(Bucket=self.input_bucket, Key=key)
@@ -789,7 +789,7 @@ class TrackReview:
     def load(self, filename):
         global original_filename
         original_filename = filename
-        s3 = boto3.client('s3')
+        # s3 = boto3.client('s3')
         response = s3.get_object(Bucket=self.input_bucket, Key=self.subfolders)
         return load_trks(response['Body'].read())
 

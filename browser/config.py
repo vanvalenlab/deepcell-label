@@ -6,7 +6,7 @@ from __future__ import print_function
 from decouple import config
 
 
-DEBUG = True
+DEBUG = config('DEBUG', cast=bool, default=True)
 PORT = config('PORT', cast=int, default=5000)
 
 S3_KEY = config('S3_KEY')
