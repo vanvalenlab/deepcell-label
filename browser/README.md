@@ -107,7 +107,7 @@ Keybinds in pixel editing mode are different from those in the label-editing mod
 
 Annotation mode focuses on using an adjustable brush to modify annotations on a pixel level, rather than using operations that apply to every instance of a label within a frame or set of frames. The brush tool will only make changes to the currently selected value. Ie, a brush set to edit cell 5 will only add or erase "5" to the annotated image.
 
-*-/=* - increment value that brush is applying
+*[ (left bracket) / ] (right bracket)* - increment value that brush is applying
 
 *&darr; &uarr;* - change size of brush tool
 
@@ -125,6 +125,10 @@ Annotation mode focuses on using an adjustable brush to modify annotations on a 
 
 
 ### Viewing Options:
+
+*spacebar + click and drag* - pan across canvas
+
+*-/= keys or alt + scroll wheel* - zoom in and out
 
 *c* - cycle between different channels when no cells are selected
 
