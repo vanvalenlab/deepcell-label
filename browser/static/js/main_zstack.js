@@ -428,10 +428,7 @@ class Mode {
     }
   }
 
-  handle_threshold(evt) {
-    let end_y = evt.offsetY - padding;
-    let end_x = evt.offsetX - padding;
-
+  handle_threshold() {
     let threshold_start_y = brush.threshY;
     let threshold_start_x = brush.threshX;
     let threshold_end_x = imgX;
@@ -1180,13 +1177,13 @@ function handle_mousemove(evt) {
 }
 
 // handles end of click&drag (different from click())
-function handle_mouseup(evt) {
+function handle_mouseup() {
   mousedown = false;
   if (!spacedown) {
     if (mode.kind !== Modes.prompt) {
       if (edit_mode) {
         if (!brush.show) {
-          mode.handle_threshold(evt);
+          mode.handle_threshold();
         } else {
           //send click&drag coordinates to caliban.py to update annotations
           mode.handle_draw();
@@ -1218,10 +1215,7 @@ function prepare_canvas() {
     // handle brush preview
     handle_mousemove(evt);
   });
-  // bind mouse button release (end of click&drag)
-  $('#canvas').mouseup(function(evt) {
-    handle_mouseup(evt);
-  });
+  // mouse button release (end of click&drag) bound to document, not just canvas
   // bind keypress
   window.addEventListener('keydown', function(evt) {
     mode.handle_key(evt.key);
@@ -1300,6 +1294,10 @@ function start_caliban(filename) {
       event.preventDefault();
     }
   });
+
+  document.addEventListener('mouseup', function() {
+    handle_mouseup();
+   });
 
   // define image onload cascade behavior
   if (rgb) {
