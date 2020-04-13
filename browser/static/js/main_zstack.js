@@ -90,6 +90,10 @@ class Mode {
     } else if ((key === 'l' || key === 'L') && !edit_mode) {
       display_labels = !display_labels;
       render_image_display();
+    } else if (key === '-') {
+      changeZoom(1);
+    } else if (key === '=') {
+      changeZoom(-1);
     }
   }
 
