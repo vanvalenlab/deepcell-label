@@ -1197,7 +1197,7 @@ function handle_mouseup() {
 function prepare_canvas() {
   // bind click on canvas
   $('#canvas').click(function(evt) {
-    if (!edit_mode || mode.kind === Modes.prompt) {
+    if (!spacedown && (!edit_mode || mode.kind === Modes.prompt)) {
       mode.click(evt);
     }
   });
