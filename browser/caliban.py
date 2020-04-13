@@ -22,15 +22,7 @@ from skimage.exposure import rescale_intensity
 from skimage.segmentation import find_boundaries
 
 from imgutils import pngify
-from config import S3_KEY, S3_SECRET
-
-
-# Connect to the s3 service
-s3 = boto3.client(
-    "s3",
-    aws_access_key_id=S3_KEY,
-    aws_secret_access_key=S3_SECRET
-)
+from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 
 
 class ZStackReview:
@@ -91,6 +83,13 @@ class ZStackReview:
 
         self.frames_changed = False
         self.info_changed = False
+
+    def _get_s3_client(self):
+        return boto3.client(
+            's3',
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+        )
 
     def get_max_label(self):
         '''
@@ -222,7 +221,7 @@ class ZStackReview:
         # TODO: we should try to not use global if possible.
         global original_filename
         original_filename = filename
-        # s3 = boto3.client('s3')  # reassigned from outer call?
+        s3 = self._get_s3_client()
         key = self.subfolders
         print(key)
         response = s3.get_object(Bucket=self.input_bucket, Key=key)
@@ -634,6 +633,7 @@ class ZStackReview:
         store_npz.seek(0)
 
         # store npz file object in bucket/subfolders (subfolders is full path)
+        s3 = self._get_s3_client()
         s3.upload_fileobj(store_npz, self.output_bucket, self.subfolders)
 
     def add_cell_info(self, feature, add_label, frame):
@@ -749,6 +749,13 @@ class TrackReview:
         self.frames_changed = False
         self.info_changed = False
 
+    def _get_s3_client(self):
+        return boto3.client(
+            's3',
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+        )
+
     @property
     def readable_tracks(self):
         """
@@ -789,7 +796,7 @@ class TrackReview:
     def load(self, filename):
         global original_filename
         original_filename = filename
-        # s3 = boto3.client('s3')
+        s3 = self._get_s3_client()
         response = s3.get_object(Bucket=self.input_bucket, Key=self.subfolders)
         return load_trks(response['Body'].read())
 
@@ -1183,6 +1190,7 @@ class TrackReview:
         try:
             # go to beginning of file object
             trk_file_obj.seek(0)
+            s3 = self._get_s3_client()
             s3.upload_fileobj(trk_file_obj, self.output_bucket, self.subfolders)
 
         except Exception as e:
