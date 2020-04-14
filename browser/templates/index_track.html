@@ -105,22 +105,29 @@
       </table>
     </div>
 
-  <!-- START CALIBAN FUNCTION CALL -->
-  <script>
-    var file = "{{filename}}";
+    <!-- START FOOTER -->
+    {% include "footer.html" %}
+    <!-- END FOOTER -->
 
-    function upload() {
+    <!-- START JS IMPORTS -->
+    <!--JavaScript at end of body for optimized loading-->
+    {% include "js.html" %}
+    <script type="text/javascript" src="{{ url_for('static', filename='js/main_track.js') }}"></script>
+    <!-- END JS IMPORTS -->
+
+    <!-- START CALIBAN FUNCTION CALL -->
+    <script>
+      var file = "{{filename}}";
+      function upload() {
         document.getElementById("submit").innerHTML = "";
         document.getElementById("give_filename").innerHTML = "Loading file to our database... (wait 10-15 seconds)";
         upload_file();
         document.getElementById("submit").innerHTML = "";
         document.getElementById("give_filename").innerHTML = "Filename to COPY/PASTE: " + file;
-    }
+      }
+      start_caliban(file);
+    </script>
+    <!-- END CALIBAN FUNCTION CALL -->
 
-    start_caliban(file);
-  </script>
-  <script type="text/javascript" src="{{ url_for('static', filename='js/infopane.js') }}"></script>
-<!-- END CALIBAN FUNCTION CALL -->
-    {% include "footer.html" %}
   </body>
 </html>
