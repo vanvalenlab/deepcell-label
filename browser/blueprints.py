@@ -206,7 +206,11 @@ def tool():
     ''' Request HTML caliban tool page to be rendered after user inputs
         filename in the landing page.
     '''
+    if 'filename' not in request.form:
+        return redirect('/')
+
     filename = request.form['filename']
+
     current_app.logger.info('%s is filename', filename)
 
     # TODO: better name template?
