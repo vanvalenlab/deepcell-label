@@ -4,10 +4,6 @@
 <!-- Load Materialize JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 
-<!-- Load Custom JavaScript -->
-<script type="text/javascript" src="{{ url_for('static', filename='js/adjust.js') }}"></script>
-<script type="text/javascript" src="{{ url_for('static', filename='js/brush.js') }}"></script>
-
 <!-- Materialize AutoInit -->
 <script>M.AutoInit();</script>
 
@@ -26,3 +22,7 @@
     });
   });
 </script>
+
+<!-- Load Custom JavaScript -->
+<script type="text/javascript" src="{{ url_for('static', filename='js/adjust.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/brush.js') }}"></script>
