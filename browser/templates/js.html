@@ -1,5 +1,10 @@
+<!-- Load JQuery -->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+<!-- Load Materialize JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+<!-- Load Custom JavaScript -->
 <script type="text/javascript" src="{{ url_for('static', filename='js/adjust.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/brush.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/infopane.js') }}"></script>
@@ -7,10 +12,11 @@
 <!-- Materialize AutoInit -->
 <script>M.AutoInit();</script>
 
-<!-- Initialize forms -->
+<!-- Initialize Materialize elements -->
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+    // Initialize forms
     var elems = document.querySelectorAll('select');
-    var instances = M.FormSelect.init(elems, options);
+    var instances = M.FormSelect.init(elems, {});
   });
 </script>
