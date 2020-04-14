@@ -7,7 +7,6 @@
 <!-- Load Custom JavaScript -->
 <script type="text/javascript" src="{{ url_for('static', filename='js/adjust.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/brush.js') }}"></script>
-<script type="text/javascript" src="{{ url_for('static', filename='js/infopane.js') }}"></script>
 
 <!-- Materialize AutoInit -->
 <script>M.AutoInit();</script>
@@ -18,5 +17,12 @@
     // Initialize forms
     var elems = document.querySelectorAll('select');
     var instances = M.FormSelect.init(elems, {});
+    // Initialize collapsibles
+    var elems = document.querySelectorAll('.collapsible');
+    var instances = M.Collapsible.init(elems, {
+      accordion: true,
+      inDuration: 400,
+      outDuration: 400,
+    });
   });
 </script>

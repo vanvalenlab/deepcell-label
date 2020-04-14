@@ -17,6 +17,23 @@ main {
 }
 /* END navbar CSS */
 
+/* START infopane CSS */
+.infopane {
+  margin-top: 0;
+  border: 0;
+}
+
+.infopane li.active div.collapsible-header,
+.infopane li div.collapsible-header:hover {
+  background-color: #ccc!important;
+  transition: 0.4s
+}
+
+.infopane li div.collapsible-body {
+  padding-top: 0;
+}
+/* END infopane CSS */
+
 #container {
   margin: 0 auto;
   margin-top: 100px;
@@ -80,30 +97,4 @@ main {
   word-wrap: break-word;
   overflow-wrap: break-word;
   max-width: 300px;
-}
-
-/* infopane.css */
-
-.accordion {
-  background-color: #eee;
-  color: #444;
-  cursor: pointer;
-  padding: 18px;
-  width: 100%;
-  border: none;
-  text-align: left;
-  outline: none;
-  font-size: 15px;
-  transition: 0.4s;
-}
-
-.active, .accordion:hover {
-  background-color: #ccc;
-}
-
-.panel {
-  padding: 0 18px;
-  display: none;
-  background-color: white;
-  overflow: hidden;
 }
