@@ -1,24 +1,15 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Caliban</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-    <script>
-    var file = "{{filename}}";
-    var settings = {{settings|tojson}};
-    </script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/brush.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/adjust.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/main_zstack.js') }}"></script>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/navigation.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/normalize.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/infopane.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/footer.css') }}">
+    {% include "head.html" %}
+    <script>var settings = {{settings|tojson}};</script>
   </head>
 
   <body>
+    <!-- START NAVBAR -->
     {% include "navigation.html" %}
+    <!-- END NAVBAR -->
+
     {% if settings['rgb'] %}
     {% include "infopane_abridged.html" %}
     {% else %}

@@ -1,28 +1,4 @@
 <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <title>Caliban</title>
-      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-      <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/navigation.css') }}">
-      <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/normalize.css') }}">
-      <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/form.css') }}">
-      <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/footer.css') }}">
-      <script>
-        $(function(){
-            //This function allows the input text to automatically resize according to it's length, allowing user to be able to comfortably view the filename they uplaod
-            function resizeInput() {
-                $(this).attr('size', $(this).val().length);
-            }
-
-            $('input[type="text"]')
-            // event handler
-            .keyup(resizeInput)
-            // resize on page load
-            .each(resizeInput);
-        });
-    </script>
-    </head>
     <body>
         <div id="container">
             {% include "navigation.html" %}
@@ -38,6 +14,10 @@
             </div>
             <form id="caliban-form" method="POST" action="{{ url_for('caliban.tool') }}">
               <select name="filename">
+<html>
+  <head>
+    {% include "head.html" %}
+  </head>
 
                 <option value="RAW264_S0_Batch02.trk">RAW264_S0_Batch02.trk </option>
                 <option value="RAW264_S0_Batch05.trk">RAW264_S0_Batch05.trk</option>
