@@ -1,24 +1,38 @@
 <!DOCTYPE html>
-    <body>
-        <div id="container">
-            {% include "navigation.html" %}
-            <div class='form-help'>
-                <h3>
-                    Click on a file that you would like use to see how Caliban works!
-                </h5>
-                <p>The .trk files allow you to annotate RAW264 cells across time-lapse frames while preserving relationship information.</p>
-                <p>
-                    The .npz files allow you to annotate different types of data. test.npz is an example of organoid annotation across z-stack frames. test2.npz is an example of untracked HeLa cytoplasm in a time-lapse movie (45 frames). test3.npz is another of untracked and
-                    uncorrected HeLa cytoplasm, but is only 5 frames.
-                </p>
-            </div>
-            <form id="caliban-form" method="POST" action="{{ url_for('caliban.tool') }}">
-              <select name="filename">
 <html>
   <head>
     {% include "head.html" %}
   </head>
 
+  <body>
+    <!-- START NAVBAR -->
+    {% include "navigation.html" %}
+    <!-- END NAVBAR -->
+
+    <main class="container">
+
+      <div class="section center-align">
+        <h5>
+          Click on a file that you would like use to see how Caliban works!
+        </h5>
+        <p>
+          The .trk files allow you to annotate RAW264 cells across time-lapse frames while preserving relationship information.
+        </p>
+        <p>
+          The .npz files allow you to annotate different types of data.
+          test.npz is an example of organoid annotation across z-stack frames.
+          test2.npz is an example of untracked HeLa cytoplasm in a time-lapse movie (45 frames).
+          test3.npz is another of untracked and uncorrected HeLa cytoplasm, but is only 5 frames.
+        </p>
+      </div>
+
+      <form method="POST" action="{{ url_for('caliban.tool') }}" class="section">
+
+        <div class="container row">
+
+          <div class="col s12">
+            <p class="center-align">
+              <select name="filename" class="browser-default center-align">
                 <option value="RAW264_S0_Batch02.trk">RAW264_S0_Batch02.trk </option>
                 <option value="RAW264_S0_Batch05.trk">RAW264_S0_Batch05.trk</option>
                 <option value="RAW264_S0_Batch06.trk">RAW264_S0_Batch06.trk</option>
@@ -27,12 +41,50 @@
                 <!-- untracked cytoplasm movie test npz -->
                 <option value="HeLa-S3_cyto_movie_s2b05_all_channels.npz">test2.npz</option>
                 <option value="HeLa_movie_s0_uncorrected_fullsize_all_channels_x_00_y_01_frames_5-9.npz">test3.npz</option>
-
               </select>
-              <br><br>
-              <input type="submit">
-            </form>
+            </p>
+          </div>
+
+          <div class="col s12">
+            <p class="center-align">
+              <button class="btn waves-effect waves-light indigo" type="submit" name="action">Submit
+                <i class="material-icons right">send</i>
+              </button>
+            </p>
+          </div>
+
         </div>
-        {% include "footer.html" %}
-    </body>
-  </html>
+
+      </form>
+
+    </main>
+
+    <!-- START FOOTER -->
+    {% include "footer.html" %}
+    <!-- END FOOTER -->
+
+    <!-- START JS IMPORTS -->
+    <!--JavaScript at end of body for optimized loading-->
+    {% include "js.html" %}
+    <!-- END JS IMPORTS -->
+
+    <!-- this script is not affecting anything. -->
+    <!-- <script>
+      $(function(){
+        // This function allows the input text to automatically resize according
+        // to it's length, allowing user to be able to comfortably view the
+        // filename they uplaod
+        function resizeInput() {
+          $(this).attr('size', $(this).val().length);
+        }
+
+        $('input[type="submit"]')
+          // event handler
+          .keyup(resizeInput)
+          // resize on page load
+          .each(resizeInput);
+      });
+    </script> -->
+
+  </body>
+</html>
