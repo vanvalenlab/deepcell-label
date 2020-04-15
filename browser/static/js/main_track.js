@@ -127,8 +127,10 @@ class Mode {
   handle_mode_single_keybind(key) {
     if (key === "f") {
       // hole fill
-      this.info = { "label": this.info['label'],
-                    "frame": current_frame};
+      this.info = {
+        "label": this.info['label'],
+        "frame": current_frame
+      };
       this.kind = Modes.question;
       this.action = "fill_hole";
       this.prompt = "Select hole to fill in cell " + this.info['label'];
@@ -215,20 +217,26 @@ class Mode {
       } else if (this.action === "set_parent") {
         if (this.info.label_1 !== this.info.label_2 &&
           this.info.frame_1 < this.info.frame_2) {
-          let send_info = {"label_1": this.info.label_1,
-                           "label_2": this.info.label_2};
+          let send_info = {
+            "label_1": this.info.label_1,
+            "label_2": this.info.label_2
+          };
           action(this.action, send_info);
         }
       } else if (this.action === "replace") {
         if (this.info.label_1 !== this.info.label_2) {
-          let send_info = {"label_1": this.info.label_1,
-                           "label_2": this.info.label_2};
+          let send_info = {
+            "label_1": this.info.label_1,
+            "label_2": this.info.label_2
+          };
           action(this.action, send_info);
         }
       } else if (this.action === "swap_cells") {
         if (this.info.label_1 !== this.info.label_2) {
-          let send_info = {"label_1": this.info.label_1,
-                           "label_2": this.info.label_2}
+          let send_info = {
+            "label_1": this.info.label_1,
+            "label_2": this.info.label_2
+          };
           action("swap_tracks", send_info);
         }
       } else if (this.action === "watershed") {
@@ -250,9 +258,11 @@ class Mode {
       } else if (this.action === "swap_cells") {
         if (this.info.label_1 !== this.info.label_2 &&
           this.info.frame_1 === this.info.frame_2) {
-          let send_info = {"label_1": this.info.label_1,
-                           "label_2": this.info.label_2,
-                           "frame": this.info.frame_1};
+          let send_info = {
+            "label_1": this.info.label_1,
+            "label_2": this.info.label_2,
+            "frame": this.info.frame_1
+          };
           action("swap_single_frame", send_info);
         }
       }
@@ -280,11 +290,13 @@ class Mode {
   }
 
   handle_draw() {
-    action("handle_draw", { "trace": JSON.stringify(mouse_trace),
-                  "edit_value": brush.value,
-                  "brush_size": brush.size,
-                  "erase": brush.erase,
-                  "frame": current_frame});
+    action("handle_draw", {
+      "trace": JSON.stringify(mouse_trace),
+      "edit_value": brush.value,
+      "brush_size": brush.size,
+      "erase": brush.erase,
+      "frame": current_frame
+    });
     mouse_trace = [];
     this.clear()
   }
@@ -294,27 +306,33 @@ class Mode {
       // alt+click
       this.kind = Modes.question;
       this.action = "flood_cell";
-      this.info = {"label": current_label,
-                        "frame": current_frame,
-                        "x_location": mouse_x,
-                        "y_location": mouse_y}
+      this.info = {
+        "label": current_label,
+        "frame": current_frame,
+        "x_location": mouse_x,
+        "y_location": mouse_y
+      }
       this.prompt = "SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL";
       this.highlighted_cell_one = current_label;
     } else if (evt.shiftKey) {
       // shift+click
       this.kind = Modes.question;
       this.action = "trim_pixels";
-      this.info = {"label": current_label,
-                    "frame": current_frame,
-                    "x_location": mouse_x,
-                    "y_location": mouse_y};
+      this.info = {
+        "label": current_label,
+        "frame": current_frame,
+        "x_location": mouse_x,
+        "y_location": mouse_y
+      };
       this.prompt = "SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL";
       this.highlighted_cell_one = current_label;
     } else {
       // normal click
       this.kind = Modes.single;
-      this.info = {"label": current_label,
-                  "frame": current_frame};
+      this.info = {
+        "label": current_label,
+        "frame": current_frame
+      };
       this.highlighted_cell_one = current_label;
       this.highlighted_cell_two = -1;
       temp_x = mouse_x;
@@ -324,10 +342,12 @@ class Mode {
 
   handle_mode_question_click(evt) {
     if (this.action === "fill_hole" && current_label === 0) {
-      this.info = { "label": this.info['label'],
-                    "frame": current_frame,
-                    "x_location": mouse_x,
-                    "y_location": mouse_y };
+      this.info = {
+        "label": this.info['label'],
+        "frame": current_frame,
+        "x_location": mouse_x,
+        "y_location": mouse_y
+      };
       action(this.action, this.info);
       this.clear();
     }
@@ -339,28 +359,32 @@ class Mode {
     this.highlighted_cell_one = this.info.label;
     this.highlighted_cell_two = current_label;
 
-    this.info = {"label_1": this.info.label,
-                "label_2": current_label,
-                "frame_1": this.info.frame,
-                "frame_2": current_frame,
-                "x1_location": temp_x,
-                "y1_location": temp_y,
-                "x2_location": mouse_x,
-                "y2_location": mouse_y};
+    this.info = {
+      "label_1": this.info.label,
+      "label_2": current_label,
+      "frame_1": this.info.frame,
+      "frame_2": current_frame,
+      "x1_location": temp_x,
+      "y1_location": temp_y,
+      "x2_location": mouse_x,
+      "y2_location": mouse_y
+    };
   }
 
   handle_mode_multiple_click(evt) {
     this.highlighted_cell_one = this.info.label_1;
     this.highlighted_cell_two = current_label;
 
-    this.info = {"label_1": this.info.label_1,
-                "label_2": current_label,
-                "frame_1": this.info.frame_1,
-                "frame_2": current_frame,
-                "x1_location": temp_x,
-                "y1_location": temp_y,
-                "x2_location": mouse_x,
-                "y2_location": mouse_y};
+    this.info = {
+      "label_1": this.info.label_1,
+      "label_2": current_label,
+      "frame_1": this.info.frame_1,
+      "frame_2": current_frame,
+      "x1_location": temp_x,
+      "y1_location": temp_y,
+      "x2_location": mouse_x,
+      "y2_location": mouse_y
+    };
   }
 
   click(evt) {
@@ -437,8 +461,8 @@ let mouse_trace = [];
 
 function upload_file() {
   $.ajax({
-    type:'POST',
-    url:"upload_file/" + project_id,
+    type: "POST",
+    url: "upload_file/" + project_id,
     success: function (payload) {
     },
     async: false
@@ -451,9 +475,9 @@ function contrast_image(img, contrast) {
   let d = img.data;
   contrast = (contrast / 100) + 1;
   for (let i = 0; i < d.length; i += 4) {
-      d[i] = d[i]*contrast + brightness;
-      d[i + 1] = d[i+1]*contrast + brightness;
-      d[i + 2] = d[i+2]*contrast + brightness;
+    d[i] = d[i]*contrast + brightness;
+    d[i + 1] = d[i+1]*contrast + brightness;
+    d[i + 2] = d[i+2]*contrast + brightness;
   }
   return img;
 }
@@ -677,8 +701,8 @@ function fetch_and_render_frame() {
 
 function load_file(file) {
   $.ajax({
-    type:'POST',
-    url:"load/" + file,
+    type: 'POST',
+    url: 'load/' + file,
     success: function (payload) {
       max_frames = payload.max_frames;
       scale = payload.screen_scale;
