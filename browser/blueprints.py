@@ -197,7 +197,7 @@ def form():
     ''' Request HTML landing page to be rendered if user requests for
         http://127.0.0.1:5000/.
     '''
-    return render_template('form.html')
+    return render_template('index.html')
 
 
 @bp.route('/tool', methods=['GET', 'POST'])
