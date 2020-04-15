@@ -1046,11 +1046,11 @@ function setCanvasDimensions() {
 
   // leave space for navbar, instructions pane, and footer
   let maxHeight = Math.floor((document.documentElement.clientHeight -
-      parseInt($("#container").css('marginTop')) -
-      parseInt($("#container").css('marginBottom')) -
-      document.getElementsByClassName('footer-text')[0].clientHeight -
-      document.getElementsByClassName('accordion')[0].clientHeight -
-      document.getElementsByClassName('navbar')[0].clientHeight)*0.95);
+      parseInt($('main').css('marginTop')) -
+      parseInt($('main').css('marginBottom')) -
+      document.getElementsByClassName('page-footer')[0].clientHeight -
+      document.getElementsByClassName('collapsible')[0].clientHeight -
+      document.getElementsByClassName('navbar-fixed')[0].clientHeight)*0.95);
 
   let scaleX = maxWidth/rawWidth;
   let scaleY = maxHeight/rawHeight;

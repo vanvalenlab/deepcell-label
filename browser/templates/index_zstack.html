@@ -19,22 +19,70 @@
     <!-- END INFOPANE -->
 
     <canvas width=600 height=400 id="hidden_seg_canvas"></canvas>
-    <main id="container">
-      <table id="infotable">
-        <tr>
-          <td id="logcol">
 
-          <h1>Z-Stack Tool</h1>
+    <main class="container">
+      <div class="row">
+
+        <div class="col s6 left">
+
+          <h4>Z-Stack Tool</h4>
           <p>Filename will be given after submit button is pressed.</p>
 
-          <p id="submit" onclick="upload() ">
-            <strong>CLICK HERE TO SUBMIT</strong>
-          </p>
+          <div class="row">
 
-          <p id="give_filename" ></p>
+            <div class="col s6">
+              <button id="submit" class="btn waves-effect waves-light indigo" onClick="upload()">
+                Submit<i class="material-icons right">send</i>
+              </button>
+            </div>
 
-          <table id="log">
-            <tr height="50%" valign="top"><td>frame: </td><td id="frame"></td></tr>
+            <div class="col s6">
+              <div id="loading-bar" class="preloader-wrapper small">
+                <div class="spinner-layer spinner-blue">
+                  <div class="circle-clipper left">
+                    <div class="circle"></div>
+                  </div><div class="gap-patch">
+                    <div class="circle"></div>
+                  </div><div class="circle-clipper right">
+                    <div class="circle"></div>
+                  </div>
+                </div>
+                <div class="spinner-layer spinner-red">
+                  <div class="circle-clipper left">
+                    <div class="circle"></div>
+                  </div><div class="gap-patch">
+                    <div class="circle"></div>
+                  </div><div class="circle-clipper right">
+                    <div class="circle"></div>
+                  </div>
+                </div>
+                <div class="spinner-layer spinner-yellow">
+                  <div class="circle-clipper left">
+                    <div class="circle"></div>
+                  </div><div class="gap-patch">
+                    <div class="circle"></div>
+                  </div><div class="circle-clipper right">
+                    <div class="circle"></div>
+                  </div>
+                </div>
+                <div class="spinner-layer spinner-green">
+                  <div class="circle-clipper left">
+                    <div class="circle"></div>
+                  </div><div class="gap-patch">
+                    <div class="circle"></div>
+                  </div><div class="circle-clipper right">
+                    <div class="circle"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <p id="give_filename"></p>
+
+          <table class="center-align">
+            <tr><td>frame: </td><td id="frame"></td></tr>
             <tr><td>channel: </td><td id="channel"></td></tr>
             <tr><td>feature: </td><td id="feature"></td></tr>
             <tr><td>zoom: </td><td id="zoom"></td></tr>
@@ -56,11 +104,14 @@
             <tr><td>slices:</td><td><div id="slices"></div></td></tr>
             <tr><td>state:</td><td id="mode"></td></tr>
           </table>
-        </td>
-      </table>
-      <div id="canvascol">
-        <canvas width=600 height=400 id="canvas"></canvas>
-        <div id="output"></div>
+
+        </div>
+
+        <div class="col s6 right">
+          <canvas width=100% height=100% id="canvas" class="z-depth-2"></canvas>
+          <div id="output"></div>
+        </div>
+
       </div>
     </main>
 
@@ -76,15 +127,14 @@
 
     <!-- START CALIBAN FUNCTION CALL -->
     <script>
-      var file = "{{filename}}";
       function upload() {
-        document.getElementById("submit").innerHTML = "";
-        document.getElementById("give_filename").innerHTML = "Loading file to our database... (wait 10-15 seconds)";
+        document.getElementById("submit").classList.add("disabled");
+        document.getElementById("loading-bar").classList.add("active");
         upload_file();
-        document.getElementById("submit").innerHTML = "";
-        document.getElementById("give_filename").innerHTML = "Filename to COPY/PASTE: " + file;
+        document.getElementById("loading-bar").classList.remove("active");
+        document.getElementById("give_filename").innerHTML = "Filename to COPY/PASTE: {{filename}}";
       }
-      start_caliban(file);
+      start_caliban("{{filename}}");
     </script>
     <!-- END CALIBAN FUNCTION CALL -->
 
