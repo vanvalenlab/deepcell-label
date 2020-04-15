@@ -42,7 +42,12 @@
 
           </div>
 
-          <p id="give_filename"></p>
+          <div class="row hide" id="output">
+            <div class="col s12">
+              <p>Filename to COPY/PASTE:</p>
+              <p>{{ filename }}</p>
+            </div>
+          </div>
 
           {% if filetype == "zstack" %}
             {% include "partials/zstack_table.html" %}
@@ -83,7 +88,7 @@
         upload_file();
         // disable loading bar and remove show output filename
         document.getElementById("loading-bar").classList.remove("active");
-        document.getElementById("give_filename").innerHTML = "Filename to COPY/PASTE: {{filename}}";
+        document.getElementById("output").classList.remove("hide");
       }
       start_caliban("{{filename}}");
     </script>
