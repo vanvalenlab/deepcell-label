@@ -60,6 +60,12 @@ main {
     /*flex-grow: 1; */ /*turn this on to justify things to the left in page*/
 }
 
+#canvascol {
+    display: flex;
+    justify-content: flex-start;
+    /*flex-grow: 1; */ /*turn this on to justify things to the left in page*/
+}
+
 #edit_brush_row, #edit_label_row, #edit_erase_row {
   visibility: hidden;
 }
