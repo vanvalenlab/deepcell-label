@@ -96,7 +96,7 @@ function postCompositeLabelMod(img,
 // apply contrast+brightness to raw image
 function contrastRaw(contrast, brightness) {
   let canvas = document.getElementById('hidden_seg_canvas');
-  let ctx = $('#hidden_seg_canvas').get(0).getContext("2d");
+  let ctx = $('#hidden_seg_canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;
 
   // draw seg_image so we can extract image data
@@ -111,7 +111,7 @@ function contrastRaw(contrast, brightness) {
 
 function preCompAdjust() {
   let canvas = document.getElementById('hidden_seg_canvas');
-  let ctx = $('#hidden_seg_canvas').get(0).getContext("2d");
+  let ctx = $('#hidden_seg_canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;
 
   // draw seg_image so we can extract image data
@@ -141,7 +141,7 @@ function preCompAdjust() {
 // adjust raw further (if needed), composite annotations on top
 function compositeImages() {
   let canvas = document.getElementById('hidden_seg_canvas');
-  let ctx = $('#hidden_seg_canvas').get(0).getContext("2d");
+  let ctx = $('#hidden_seg_canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;
 
   // further adjust raw image
@@ -166,7 +166,7 @@ function compositeImages() {
 // apply outlines, transparent highlighting
 function postCompAdjust() {
   let canvas = document.getElementById('hidden_seg_canvas');
-  let ctx = $('#hidden_seg_canvas').get(0).getContext("2d");
+  let ctx = $('#hidden_seg_canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;
 
   // draw seg_image so we can extract image data
@@ -188,7 +188,7 @@ function postCompAdjust() {
   }
 
   postCompositeLabelMod(imgData, redOutline, r1, singleOutline, o1,
-    outlineAll, translucent, t1, t2);
+                        outlineAll, translucent, t1, t2);
 
   ctx.putImageData(imgData, 0, 0);
 
@@ -198,7 +198,7 @@ function postCompAdjust() {
 // apply outlines, transparent highlighting for RGB
 function postCompAdjustRGB() {
   let canvas = document.getElementById('hidden_seg_canvas');
-  let ctx = $('#hidden_seg_canvas').get(0).getContext("2d");
+  let ctx = $('#hidden_seg_canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;
 
   // draw seg_image so we can extract image data
