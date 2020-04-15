@@ -74,7 +74,6 @@ class ZStackReview:
             self.max_intensity[channel] = None
 
         self.dtype_raw = self.raw.dtype
-        self.scale_factor = 2
 
         self.save_version = 0
 
@@ -372,10 +371,7 @@ class ZStackReview:
 
         in_original = np.any(np.isin(img_ann, old_label))
 
-        filled_img_ann = flood_fill(img_ann,
-                                    (int(y_location / self.scale_factor),
-                                     int(x_location / self.scale_factor)),
-                                    new_label)
+        filled_img_ann = flood_fill(img_ann, (y_location, x_location), new_label)
         self.annotated[frame, :, :, self.feature] = filled_img_ann
 
         in_modified = np.any(np.isin(filled_img_ann, old_label))
@@ -393,8 +389,7 @@ class ZStackReview:
         '''
 
         img_ann = self.annotated[frame, :, :, self.feature]
-        contig_cell = flood(image=img_ann, seed_point=(int(y_location / self.scale_factor),
-                                                       int(x_location / self.scale_factor)))
+        contig_cell = flood(image=img_ann, seed_point=(y_location, x_location))
         img_trimmed = np.where(np.logical_and(np.invert(contig_cell), img_ann == label), 0, img_ann)
 
         # check if image changed
@@ -412,8 +407,7 @@ class ZStackReview:
         size, then fills the hole with label (using skimage flood_fill). connectivity = 1
         prevents hole fill from spilling out into background in some cases
         '''
-        # rescale click location -> corresponding location in annotation array
-        hole_fill_seed = (y_location // self.scale_factor, x_location // self.scale_factor)
+        hole_fill_seed = (y_location, x_location)
         # fill hole with label
         img_ann = self.annotated[frame, :, :, self.feature]
         filled_img_ann = flood_fill(img_ann, hole_fill_seed, label, connectivity=1)
@@ -537,10 +531,8 @@ class ZStackReview:
         # define a new seeds labeled img that is the same size as raw/annotation imgs
         seeds_labeled = np.zeros(img_ann.shape)
         # create two seed locations
-        seeds_labeled[int(y1_location / self.scale_factor),
-                      int(x1_location / self.scale_factor)] = current_label
-        seeds_labeled[int(y2_location / self.scale_factor),
-                      int(x2_location / self.scale_factor)] = new_label
+        seeds_labeled[y1_location, x1_location] = current_label
+        seeds_labeled[y2_location, x2_location] = new_label
 
         # define the bounding box to apply the transform on and select
         # appropriate sections of 3 inputs (raw, seeds, annotation mask)
