@@ -2,6 +2,7 @@
 <html>
   <head>
     {% include "partials/head.html" %}
+    <script>var settings = {{settings|tojson}};</script>
   </head>
 
   <body>
@@ -10,7 +11,11 @@
     <!-- END NAVBAR -->
 
     <!-- START INFOPANE -->
-    {% include "partials/infopane.html" %}
+    {% if settings['rgb'] %}
+      {% include "partials/infopane_abridged.html" %}
+    {% else %}
+      {% include "partials/infopane.html" %}
+    {% endif %}
     <!-- END INFOPANE -->
 
     <canvas width=600 height=400 id="hidden_seg_canvas"></canvas>
@@ -20,7 +25,7 @@
 
         <div class="col s6 left">
 
-          <h4>Tracking Tool</h4>
+          <h4>{{ title }}</h4>
           <p>Filename will be given after submit button is pressed.</p>
 
           <div class="row">
@@ -39,7 +44,11 @@
 
           <p id="give_filename"></p>
 
-          {% include "partials/track_table.html" %}
+          {% if filetype == "zstack" %}
+            {% include "partials/zstack_table.html" %}
+          {% elif filetype == "track" %}
+            {% include "partials/track_table.html" %}
+          {% endif %}
 
         </div>
 
@@ -58,7 +67,12 @@
     <!-- START JS IMPORTS -->
     <!--JavaScript at end of body for optimized loading-->
     {% include "partials/js.html" %}
-    <script type="text/javascript" src="{{ url_for('static', filename='js/main_track.js') }}"></script>
+
+    {% if filetype == "zstack" %}
+      <script type="text/javascript" src="{{ url_for('static', filename='js/main_zstack.js') }}"></script>
+    {% elif filetype == "track" %}
+      <script type="text/javascript" src="{{ url_for('static', filename='js/main_track.js') }}"></script>
+    {% endif %}
     <!-- END JS IMPORTS -->
 
     <!-- START CALIBAN FUNCTION CALL -->
@@ -68,6 +82,7 @@
         document.getElementById("submit").classList.add("disabled");
         document.getElementById("loading-bar").classList.add("active");
         upload_file();
+        // disable loading bar and remove show output filename
         document.getElementById("loading-bar").classList.remove("active");
         document.getElementById("give_filename").innerHTML = "Filename to COPY/PASTE: {{filename}}";
       }
