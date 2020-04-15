@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html>
   <head>
-    {% include "head.html" %}
+    {% include "partials/head.html" %}
   </head>
 
   <body>
     <!-- START NAVBAR -->
-    {% include "navigation.html" %}
+    {% include "partials/navigation.html" %}
     <!-- END NAVBAR -->
 
     <!-- START INFOPANE -->
-    {% include "infopane.html" %}
+    {% include "partials/infopane.html" %}
     <!-- END INFOPANE -->
 
     <canvas width=600 height=400 id="hidden_seg_canvas"></canvas>
@@ -121,12 +121,12 @@
     </main>
 
     <!-- START FOOTER -->
-    {% include "footer.html" %}
+    {% include "partials/footer.html" %}
     <!-- END FOOTER -->
 
     <!-- START JS IMPORTS -->
     <!--JavaScript at end of body for optimized loading-->
-    {% include "js.html" %}
+    {% include "partials/js.html" %}
     <script type="text/javascript" src="{{ url_for('static', filename='js/main_track.js') }}"></script>
     <!-- END JS IMPORTS -->
 

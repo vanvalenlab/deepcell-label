@@ -1,20 +1,20 @@
 <!DOCTYPE html>
 <html>
   <head>
-    {% include "head.html" %}
+    {% include "partials/head.html" %}
     <script>var settings = {{settings|tojson}};</script>
   </head>
 
   <body>
     <!-- START NAVBAR -->
-    {% include "navigation.html" %}
+    {% include "partials/navigation.html" %}
     <!-- END NAVBAR -->
 
     <!-- START INFOPANE -->
     {% if settings['rgb'] %}
-      {% include "infopane_abridged.html" %}
+      {% include "partials/infopane_abridged.html" %}
     {% else %}
-      {% include "infopane.html" %}
+      {% include "partials/infopane.html" %}
     {% endif %}
     <!-- END INFOPANE -->
 
@@ -79,12 +79,12 @@
     </main>
 
     <!-- START FOOTER -->
-    {% include "footer.html" %}
+    {% include "partials/footer.html" %}
     <!-- END FOOTER -->
 
     <!-- START JS IMPORTS -->
     <!--JavaScript at end of body for optimized loading-->
-    {% include "js.html" %}
+    {% include "partials/js.html" %}
     <script type="text/javascript" src="{{ url_for('static', filename='js/main_zstack.js') }}"></script>
     <!-- END JS IMPORTS -->
 
