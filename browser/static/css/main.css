@@ -35,7 +35,10 @@ main {
 /* END infopane CSS */
 
 /* START log table CSS */
-
+#info-table tr td {
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+}
 /* END log table CSS */
 
 #edit_brush_row, #edit_label_row, #edit_erase_row {
