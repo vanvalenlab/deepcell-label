@@ -10,11 +10,14 @@
     {% include "navigation.html" %}
     <!-- END NAVBAR -->
 
+    <!-- START INFOPANE -->
     {% if settings['rgb'] %}
-    {% include "infopane_abridged.html" %}
+      {% include "infopane_abridged.html" %}
     {% else %}
-    {% include "infopane.html" %}
+      {% include "infopane.html" %}
     {% endif %}
+    <!-- END INFOPANE -->
+
     <canvas width=600 height=400 id="hidden_seg_canvas"></canvas>
     <main id="container">
       <table id="infotable">
