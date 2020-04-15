@@ -6,17 +6,14 @@
   </head>
 
   <body>
-    <!-- START NAVBAR -->
-    {% include "partials/navigation.html" %}
-    <!-- END NAVBAR -->
 
-    <!-- START INFOPANE -->
+    {% include "partials/navigation.html" %}
+
     {% if settings['rgb'] %}
       {% include "partials/infopane_abridged.html" %}
     {% else %}
       {% include "partials/infopane.html" %}
     {% endif %}
-    <!-- END INFOPANE -->
 
     <canvas id="hidden_seg_canvas" class="hide"></canvas>
 
@@ -64,11 +61,8 @@
       </div>
     </main>
 
-    <!-- START FOOTER -->
     {% include "partials/footer.html" %}
-    <!-- END FOOTER -->
 
-    <!-- START JS IMPORTS -->
     <!--JavaScript at end of body for optimized loading-->
     {% include "partials/js.html" %}
 
@@ -77,7 +71,6 @@
     {% elif filetype == "track" %}
       <script type="text/javascript" src="{{ url_for('static', filename='js/main_track.js') }}"></script>
     {% endif %}
-    <!-- END JS IMPORTS -->
 
     <!-- START CALIBAN FUNCTION CALL -->
     <script>
