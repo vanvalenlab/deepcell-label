@@ -159,7 +159,7 @@ class Mode {
     } else if (key === "]") {
       // increase edit_value up to max label + 1 (guaranteed unused)
       brush.value = Math.min(brush.value + 1,
-          maxLabelsMap.get(this.feature) + 1);
+                             maxLabelsMap.get(this.feature) + 1);
       if (current_highlight) {
         segLoaded = false;
         preCompAdjust();
@@ -260,8 +260,10 @@ class Mode {
   handle_mode_single_keybind(key) {
     if (key === "f" && !rgb) {
       //hole fill
-      this.info = { "label": this.info.label,
-                    "frame": current_frame};
+      this.info = {
+        "label": this.info.label,
+        "frame": current_frame
+      };
       this.kind = Modes.prompt;
       this.action = "fill_hole";
       this.prompt = "Select hole to fill in cell " + this.info.label;
@@ -416,12 +418,14 @@ class Mode {
   }
 
   handle_draw() {
-    action("handle_draw", { "trace": JSON.stringify(mouse_trace), //stringify array so it doesn't get messed up
-                  "target_value": brush.target, //value that we're overwriting
-                  "brush_value": brush.value, //we don't update caliban with edit_value, etc each time they change
-                  "brush_size": brush.size, //so we need to pass them in as args
-                  "erase": (brush.erase && !brush.conv),
-                  "frame": current_frame});
+    action("handle_draw", {
+      "trace": JSON.stringify(mouse_trace), // stringify array so it doesn't get messed up
+      "target_value": brush.target, // value that we're overwriting
+      "brush_value": brush.value, // we don't update caliban with edit_value, etc each time they change
+      "brush_size": brush.size, // so we need to pass them in as args
+      "erase": (brush.erase && !brush.conv),
+      "frame": current_frame
+    });
     mouse_trace = [];
     if (this.kind !== Modes.drawing) {
       this.clear();
@@ -437,12 +441,14 @@ class Mode {
     if (threshold_start_y !== threshold_end_y &&
         threshold_start_x !== threshold_end_x) {
 
-      action("threshold", {"y1": threshold_start_y,
-                          "x1": threshold_start_x,
-                          "y2": threshold_end_y,
-                          "x2": threshold_end_x,
-                          "frame": current_frame,
-                          "label": maxLabelsMap.get(this.feature) + 1});
+      action("threshold", {
+        "y1": threshold_start_y,
+        "x1": threshold_start_x,
+        "y2": threshold_end_y,
+        "x2": threshold_end_x,
+        "frame": current_frame,
+        "label": maxLabelsMap.get(this.feature) + 1
+      });
     }
     this.clear();
     render_image_display();
@@ -473,27 +479,33 @@ class Mode {
       // alt+click
       this.kind = Modes.question;
       this.action = "flood_cell";
-      this.info = {"label": current_label,
-                        "frame": current_frame,
-                        "x_location": imgX,
-                        "y_location": imgY};
+      this.info = {
+        "label": current_label,
+        "frame": current_frame,
+        "x_location": imgX,
+        "y_location": imgY
+      };
       this.prompt = "SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL";
       this.highlighted_cell_one = current_label;
     } else if (evt.shiftKey) {
       // shift+click
       this.kind = Modes.question;
       this.action = "trim_pixels";
-      this.info = {"label": current_label,
-                        "frame": current_frame,
-                        "x_location": imgX,
-                        "y_location": imgY};
+      this.info = {
+        "label": current_label,
+        "frame": current_frame,
+        "x_location": imgX,
+        "y_location": imgY
+      };
       this.prompt = "SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL";
       this.highlighted_cell_one = current_label;
     } else {
       // normal click
       this.kind = Modes.single;
-      this.info = { "label": current_label,
-                    "frame": current_frame };
+      this.info = {
+        "label": current_label,
+        "frame": current_frame
+      };
       this.highlighted_cell_one = current_label;
       this.highlighted_cell_two = -1;
       storedClickX = imgX;
@@ -503,10 +515,12 @@ class Mode {
 
   handle_mode_prompt_click(evt) {
     if (this.action === "fill_hole" && current_label === 0) {
-      this.info = { "label": this.info.label,
-                    "frame": current_frame,
-                    "x_location": imgX,
-                    "y_location": imgY };
+      this.info = {
+        "label": this.info.label,
+        "frame": current_frame,
+        "x_location": imgX,
+        "y_location": imgY
+      };
       action(this.action, this.info);
       this.clear();
     } else if (this.action === "pick_color"
@@ -536,28 +550,31 @@ class Mode {
     this.highlighted_cell_one = this.info.label;
     this.highlighted_cell_two = current_label;
 
-    this.info = { "label_1": this.info.label,
-                  "label_2": current_label,
-                  "frame_1": this.info.frame,
-                  "frame_2": current_frame,
-                  "x1_location": storedClickX,
-                  "y1_location": storedClickY,
-                  "x2_location": imgX,
-                  "y2_location": imgY };
+    this.info = {
+      "label_1": this.info.label,
+      "label_2": current_label,
+      "frame_1": this.info.frame,
+      "frame_2": current_frame,
+      "x1_location": storedClickX,
+      "y1_location": storedClickY,
+      "x2_location": imgX,
+      "y2_location": imgY
+    };
   }
 
   handle_mode_multiple_click(evt) {
     this.highlighted_cell_one = this.info.label_1;
     this.highlighted_cell_two = current_label;
-
-    this.info = {"label_1": this.info.label_1,
-                "label_2": current_label,
-                "frame_1": this.info.frame_1,
-                "frame_2": current_frame,
-                "x1_location": storedClickX,
-                "y1_location": storedClickY,
-                "x2_location": imgX,
-                "y2_location": imgY};
+    this.info = {
+      "label_1": this.info.label_1,
+      "label_2": current_label,
+      "frame_1": this.info.frame_1,
+      "frame_2": current_frame,
+      "x1_location": storedClickX,
+      "y1_location": storedClickY,
+      "x2_location": imgX,
+      "y2_location": imgY
+    };
   }
 
   click(evt) {
@@ -712,8 +729,8 @@ let mouse_trace = [];
 
 function upload_file() {
   $.ajax({
-    type:'POST',
-    url:"upload_file/" + project_id,
+    type: 'POST',
+    url: 'upload_file/' + project_id,
     success: function (payload) {
     },
     async: false
@@ -875,7 +892,6 @@ function render_info_display() {
 function render_edit_image(ctx) {
   if (rgb && rendering_raw) {
     render_raw_image(ctx);
-
   } else {
     ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
     ctx.drawImage(postCompImg, sx, sy, swidth, sheight, padding, padding, dimensions[0], dimensions[1]);
@@ -943,9 +959,8 @@ function drawBorders(ctx) {
   ctx.restore();
 }
 
-
 function render_image_display() {
-  let ctx = $('#canvas').get(0).getContext("2d");
+  let ctx = $('#canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;
   ctx.save();
   ctx.clearRect(0,0, 2*padding+dimensions[0], 2*padding+dimensions[1]);
@@ -984,8 +999,8 @@ function fetch_and_render_frame() {
 
 function load_file(file) {
   $.ajax({
-    type:'POST',
-    url:"load/" + file + `?&rgb=${settings.rgb}`,
+    type: 'POST',
+    url: "load/" + file + `?&rgb=${settings.rgb}`,
     success: function (payload) {
       max_frames = payload.max_frames;
       feature_max = payload.feature_max;
@@ -999,11 +1014,11 @@ function load_file(file) {
 
       setCanvasDimensions();
 
-      tracks = payload.tracks; //tracks payload is dict
+      tracks = payload.tracks; // tracks payload is dict
 
-      //for each feature, get list of cell labels that are in that feature
-      //(each is a key in that dict), cast to numbers, then get the maximum
-      //value from each array and store it in a map
+      // for each feature, get list of cell labels that are in that feature
+      // (each is a key in that dict), cast to numbers, then get the maximum
+      // value from each array and store it in a map
       for (let i = 0; i < Object.keys(tracks).length; i++){
         let key = Object.keys(tracks)[i]; //the keys are strings
         //use i as key in this map because it is an int, mode.feature is also int
@@ -1234,8 +1249,8 @@ function prepare_canvas() {
 
 function action(action, info, frame = current_frame) {
   $.ajax({
-    type:'POST',
-    url:"action/" + project_id + "/" + action + "/" + frame,
+    type: 'POST',
+    url: "action/" + project_id + "/" + action + "/" + frame,
     data: info,
     success: function (payload) {
       if (payload.error) {
@@ -1254,7 +1269,7 @@ function action(action, info, frame = current_frame) {
       }
       if (payload.tracks) {
         tracks = payload.tracks;
-      //update maxLabelsMap when we get new track info
+        // update maxLabelsMap when we get new track info
         for (let i = 0; i < Object.keys(tracks).length; i++){
           let key = Object.keys(tracks)[i]; //the keys are strings
           maxLabelsMap.set(i, Math.max(... Object.keys(tracks[key]).map(Number)));
