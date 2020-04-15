@@ -38,38 +38,6 @@ main {
 
 /* END log table CSS */
 
-#container {
-    margin: 20px;
-    display: flex;
-    box-sizing: border-box;
-    flex-shrink: 0;
-    flex-direction: row;
-    justify-content: center;
-    align-items: flex-start;
-}
-
-#logcol, #canvascol{
-  vertical-align: top;
- }
-
-#logcol {
-  box-sizing: border-box;
-  border-radius: 1em;
-  width: 20em;
-}
-
-#canvascol {
-    display: flex;
-    justify-content: flex-start;
-    /*flex-grow: 1; */ /*turn this on to justify things to the left in page*/
-}
-
-#canvascol {
-    display: flex;
-    justify-content: flex-start;
-    /*flex-grow: 1; */ /*turn this on to justify things to the left in page*/
-}
-
 #edit_brush_row, #edit_label_row, #edit_erase_row {
   visibility: hidden;
 }
