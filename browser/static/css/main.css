@@ -69,5 +69,5 @@ main {
   display: block;
   word-wrap: break-word;
   overflow-wrap: break-word;
-  max-width: 300px;
+  max-width: 100%;
 }
