@@ -8,11 +8,11 @@
 
     {% include "partials/navigation.html" %}
 
-    {% if settings['rgb'] %}
+    {%- if settings['rgb'] -%}
       {% include "partials/infopane_abridged.html" %}
-    {% else %}
+    {%- else -%}
       {% include "partials/infopane.html" %}
-    {% endif %}
+    {%- endif -%}
 
     <canvas id="hidden_seg_canvas" class="hide"></canvas>
 
@@ -45,11 +45,11 @@
             </div>
           </div>
 
-          {% if filetype == "zstack" %}
+          {%- if filetype == "zstack" -%}
             {% include "partials/zstack_table.html" %}
-          {% elif filetype == "track" %}
+          {%- elif filetype == "track" -%}
             {% include "partials/track_table.html" %}
-          {% endif %}
+          {%- endif -%}
 
         </div>
 
@@ -65,11 +65,11 @@
     <!--JavaScript at end of body for optimized loading-->
     {% include "partials/js.html" %}
 
-    {% if filetype == "zstack" %}
+    {%- if filetype == "zstack" -%}
       <script type="text/javascript" src="{{ url_for('static', filename='js/main_zstack.js') }}"></script>
-    {% elif filetype == "track" %}
+    {%- elif filetype == "track" -%}
       <script type="text/javascript" src="{{ url_for('static', filename='js/main_track.js') }}"></script>
-    {% endif %}
+    {%- endif -%}
 
     <!-- START CALIBAN FUNCTION CALL -->
     <script>
