@@ -2,7 +2,6 @@
 <html>
   <head>
     {% include "partials/head.html" %}
-    <script>var settings = {{settings|tojson}};</script>
   </head>
 
   <body>
@@ -74,6 +73,7 @@
 
     <!-- START CALIBAN FUNCTION CALL -->
     <script>
+      var settings = {{settings | tojson}};
       function upload() {
         // disable button and show loading bar
         document.getElementById("submit").classList.add("disabled");
