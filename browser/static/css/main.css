@@ -1,8 +1,8 @@
 /* START Materialize Sticky Footer */
 body {
   display: flex;
-  min-height: 100vh;
   flex-direction: column;
+  min-height: 100vh;
 }
 
 main {
@@ -12,32 +12,32 @@ main {
 
 /* START navbar CSS */
 .nav-wrapper {
-  padding-right: 1em;
   padding-left: 1em;
+  padding-right: 1em;
 }
 /* END navbar CSS */
 
 /* START infopane CSS */
 .infopane {
-  margin-top: 0;
   border: 0;
+  margin-top: 0;
 }
 
-.infopane li.active div.collapsible-header,
+.infopane .active div.collapsible-header,
 .infopane li div.collapsible-header:hover {
   background-color: #ccc!important;
   transition: 0.4s
 }
 
-.infopane li div.collapsible-body {
+.infopane li .collapsible-body {
   padding-top: 0;
 }
 /* END infopane CSS */
 
 /* START log table CSS */
 #info-table tr td {
-  padding-top: 0.5em;
   padding-bottom: 0.5em;
+  padding-top: 0.5em;
 }
 /* END log table CSS */
 
@@ -46,28 +46,24 @@ main {
 }
 
 #frames, #slices {
-  width: 180px;
-  word-wrap: break-word;  /*All browsers since IE 5.5+*/
-  overflow-wrap: break-word;
-  max-height: 68px;
   overflow: auto;
+  overflow-wrap: break-word;
+  word-wrap: break-word;  /*All browsers since IE 5.5+*/
 }
 
 #mode {
-  width: 180px;
-  word-wrap: break-word;
   overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 #canvas {
-  cursor: crosshair;
   background: black;
-  /* box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0, 0, 0, 0.12); */
+  cursor: crosshair;
 }
 
 #output {
   display: block;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
   max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
