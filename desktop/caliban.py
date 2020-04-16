@@ -5060,7 +5060,7 @@ class RGBNpz(CalibanWindow):
         '''
         self.rescaled = np.zeros(self.raw.shape, dtype = 'uint8')
         # this approach allows noise through
-        for channel in range(min(5, self.channel_max)):
+        for channel in range(min(6, self.channel_max)):
             self.rescaled[:,:,channel] = self.rescale_95(self.raw[:,:,channel])
 
     def reduce_to_RGB(self):
@@ -5080,19 +5080,23 @@ class RGBNpz(CalibanWindow):
             adjustments = np.ones(min(self.channel_max, 6))
 
         # for each of the channels that we have
-        for c in range(min(5, self.channel_max)):
+        for c in range(min(6, self.channel_max)):
+
             if self.channel_on[c]:
                 # straightforward RGB -> RGB
                 if c < 3:
                     self.rgb[:,:,c] = (self.rescaled[:,:,c] * adjustments[c]).astype('uint16')
+
                 # collapse cyan to G and B
                 if c == 3:
                     self.rgb[:,:,1] += (self.rescaled[:,:,3] * adjustments[c]).astype('uint16')
                     self.rgb[:,:,2] += (self.rescaled[:,:,3] * adjustments[c]).astype('uint16')
+
                 # collapse magenta to R and B
                 if c == 4:
                     self.rgb[:,:,0] += (self.rescaled[:,:,4] * adjustments[c]).astype('uint16')
                     self.rgb[:,:,2] += (self.rescaled[:,:,4] * adjustments[c]).astype('uint16')
+
                 # collapse yellow to R and G
                 if c == 5:
                     self.rgb[:,:,0] += (self.rescaled[:,:,5] * adjustments[c]).astype('uint16')
