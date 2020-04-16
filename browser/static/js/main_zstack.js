@@ -831,7 +831,7 @@ function render_highlight_info() {
 
 function render_edit_info() {
   if (edit_mode) {
-    $('#edit_mode').html("ON");
+    $('#edit_mode').html('pixels');
     $('#edit_brush_row').css('visibility', 'visible');
     $('#edit_label_row').css('visibility', 'visible');
     $('#edit_erase_row').css('visibility', 'visible');
@@ -850,7 +850,7 @@ function render_edit_info() {
     }
 
   } else {
-    $('#edit_mode').html("OFF");
+    $('#edit_mode').html('whole labels');
     $('#edit_brush_row').css('visibility', 'hidden');
     $('#edit_label_row').css('visibility', 'hidden');
     $('#edit_erase_row').css('visibility', 'hidden');
