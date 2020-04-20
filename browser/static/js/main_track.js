@@ -459,13 +459,12 @@ var project_id = undefined;
 var brush;
 let mouse_trace = [];
 
-function upload_file() {
+function upload_file(cb) {
   $.ajax({
-    type: "POST",
-    url: "upload_file/" + project_id,
-    success: function (payload) {
-    },
-    async: false
+    type: 'POST',
+    url: `upload_file/${project_id}`,
+    success: cb,
+    async: true
   });
 }
 

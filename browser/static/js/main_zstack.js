@@ -740,13 +740,12 @@ var waitForFinalEvent = (function () {
   };
 })();
 
-function upload_file() {
+function upload_file(cb) {
   $.ajax({
     type: 'POST',
     url: `upload_file/${project_id}`,
-    success: function (payload) {
-    },
-    async: false
+    success: cb,
+    async: true
   });
 }
 

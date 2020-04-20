@@ -73,10 +73,11 @@
     // disable button and show loading bar
     document.getElementById("submit").classList.add("disabled");
     document.getElementById("loading-bar").classList.add("active");
-    upload_file();
-    // disable loading bar and remove show output filename
-    document.getElementById("loading-bar").classList.remove("active");
-    document.getElementById("output").classList.remove("hide");
+    upload_file(function(payload) {
+      // disable loading bar and remove show output filename
+      document.getElementById("loading-bar").classList.remove("active");
+      document.getElementById("output").classList.remove("hide");
+    });
   }
   start_caliban("{{filename}}");
 </script>
