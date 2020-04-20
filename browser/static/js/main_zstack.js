@@ -1053,13 +1053,6 @@ function load_file(file) {
 function setCanvasDimensions(rawDims) {
   // calculate available space and how much to scale x and y to fill it
   // only thing that shares width is the info display on left
-  let width = window.innerWidth ||
-              document.documentElement.clientWidth ||
-              document.body.clientWidth;
-
-  let height = window.innerHeight ||
-               document.documentElement.clientHeight ||
-               document.body.clientHeight;
 
   let maxWidth = Math.floor(
     document.getElementsByTagName('main')[0].clientWidth -
@@ -1075,10 +1068,12 @@ function setCanvasDimensions(rawDims) {
   // leave space for navbar, instructions pane, and footer
   let maxHeight = Math.floor(
     (
-      height -
-      parseInt($('main').css('marginTop')) -
-      parseInt($('main').css('marginBottom')
+      window.innerHeight ||
+      document.documentElement.clientHeight ||
+      document.body.clientHeight
     ) -
+    parseInt($('main').css('marginTop')) -
+    parseInt($('main').css('marginBottom') -
     document.getElementsByClassName('page-footer')[0].clientHeight -
     document.getElementsByClassName('collapsible')[0].clientHeight -
     document.getElementsByClassName('navbar-fixed')[0].clientHeight
