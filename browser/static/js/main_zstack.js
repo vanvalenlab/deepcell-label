@@ -1333,22 +1333,22 @@ function start_caliban(filename) {
   }, {passive: false});
   // disable space and up/down keys from moving around on page
   $(document).on('keydown', function(event) {
-    if (event.key === " ") {
+    if (event.key === ' ') {
       event.preventDefault();
-    } else if (event.key === "ArrowUp") {
+    } else if (event.key === 'ArrowUp') {
       event.preventDefault();
-    } else if (event.key === "ArrowDown") {
+    } else if (event.key === 'ArrowDown') {
       event.preventDefault();
     }
   });
 
   // resize the canvas every time the window is resized
   $(window).resize(function () {
-      waitForFinalEvent(function() {
-        mode.clear();
-        setCanvasDimensions(rawDimensions);
-        brush.refreshView();
-      }, 500, "canvasResize");
+    waitForFinalEvent(function() {
+      mode.clear();
+      setCanvasDimensions(rawDimensions);
+      brush.refreshView();
+    }, 500, 'canvasResize');
   });
 
   document.addEventListener('mouseup', function() {
