@@ -1051,6 +1051,33 @@ function load_file(file) {
   });
 }
 
+function createBorders(dimensions) {
+  // TODO: clear previous borders before setting the new ones.
+  topBorder.moveTo(0, 0);
+  topBorder.lineTo(padding, padding);
+  topBorder.lineTo(dimensions[0] + padding, padding);
+  topBorder.lineTo(dimensions[0] + 2 * padding, 0);
+  topBorder.closePath();
+
+  bottomBorder.moveTo(0, dimensions[1] + 2 * padding);
+  bottomBorder.lineTo(padding, dimensions[1] + padding);
+  bottomBorder.lineTo(dimensions[0] + padding, dimensions[1] + padding);
+  bottomBorder.lineTo(dimensions[0] + 2 * padding, dimensions[1] + 2 * padding);
+  bottomBorder.closePath();
+
+  leftBorder.moveTo(0, 0);
+  leftBorder.lineTo(0, dimensions[1] + 2 * padding);
+  leftBorder.lineTo(padding, dimensions[1] + padding);
+  leftBorder.lineTo(padding, padding);
+  leftBorder.closePath();
+
+  rightBorder.moveTo(dimensions[0] + 2 * padding, 0);
+  rightBorder.lineTo(dimensions[0] + padding, padding);
+  rightBorder.lineTo(dimensions[0] + padding, dimensions[1] + padding);
+  rightBorder.lineTo(dimensions[0] + 2 * padding, dimensions[1] + 2 * padding);
+  rightBorder.closePath();
+}
+
 function setCanvasDimensions(rawDims) {
   // calculate available space and how much to scale x and y to fill it
   // only thing that shares width is the info display on left
@@ -1096,29 +1123,7 @@ function setCanvasDimensions(rawDims) {
   $('#hidden_seg_canvas').get(0).height = rawDims[1];
 
   // create paths for recoloring borders
-  topBorder.moveTo(0, 0);
-  topBorder.lineTo(padding, padding);
-  topBorder.lineTo(dimensions[0] + padding, padding);
-  topBorder.lineTo(dimensions[0] + 2*padding, 0);
-  topBorder.closePath();
-
-  bottomBorder.moveTo(0, dimensions[1] + 2*padding);
-  bottomBorder.lineTo(padding, dimensions[1] + padding);
-  bottomBorder.lineTo(dimensions[0] + padding, dimensions[1] + padding);
-  bottomBorder.lineTo(dimensions[0] + 2*padding, dimensions[1] + 2*padding);
-  bottomBorder.closePath();
-
-  leftBorder.moveTo(0, 0);
-  leftBorder.lineTo(0, dimensions[1] + 2*padding);
-  leftBorder.lineTo(padding, dimensions[1] + padding);
-  leftBorder.lineTo(padding, padding);
-  leftBorder.closePath();
-
-  rightBorder.moveTo(dimensions[0] + 2*padding, 0);
-  rightBorder.lineTo(dimensions[0] + padding, padding);
-  rightBorder.lineTo(dimensions[0] + padding, dimensions[1] + padding);
-  rightBorder.lineTo(dimensions[0] + 2*padding, dimensions[1] + 2*padding);
-  rightBorder.closePath();
+  // createBorders(dimensions);
 }
 
 // adjust current_contrast upon mouse scroll
