@@ -10,7 +10,7 @@
 <main class="container">
   <div class="row">
 
-    <div class="col s4 left">
+    <div id="table-col" class="col s4 left">
 
       <h4>{{ title | title }}</h4>
       <p>Filename will be given after submit button is pressed.</p>
@@ -48,7 +48,7 @@
 
     </div>
 
-    <div class="col s8 right">
+    <div id="canvas-col" class="col s8 right">
       <!-- Canvas used to display image and capture user input -->
       <canvas width=600 height=400 id="canvas" class="z-depth-2"></canvas>
       <!-- Second canvas used for acutal image processing, hidden -->
