@@ -1093,7 +1093,10 @@ function setCanvasDimensions(rawDims) {
                document.body.clientHeight;
 
   let maxWidth = Math.floor(
-    document.getElementsByTagName('main')[0].clientWidth
+    document.getElementsByTagName('main')[0].clientWidth -
+    parseInt($('main').css('marginTop')) -
+    parseInt($('main').css('marginBottom')) -
+    document.getElementById('table-col').clientWidth
   );
 
   // leave space for navbar, instructions pane, and footer
