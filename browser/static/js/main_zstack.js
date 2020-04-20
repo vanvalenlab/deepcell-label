@@ -1096,7 +1096,11 @@ function setCanvasDimensions(rawDims) {
     document.getElementsByTagName('main')[0].clientWidth -
     parseInt($('main').css('marginTop')) -
     parseInt($('main').css('marginBottom')) -
-    document.getElementById('table-col').clientWidth
+    document.getElementById('table-col').clientWidth -
+    parseFloat($('#table-col').css('padding-left')) -
+    parseFloat($('#table-col').css('padding-right')) -
+    parseFloat($('#canvas-col').css('padding-left')) -
+    parseFloat($('#canvas-col').css('padding-right'))
   );
 
   // leave space for navbar, instructions pane, and footer
