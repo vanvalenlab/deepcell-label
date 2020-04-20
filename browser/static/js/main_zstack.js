@@ -730,7 +730,7 @@ let mouse_trace = [];
 function upload_file() {
   $.ajax({
     type: 'POST',
-    url: 'upload_file/' + project_id,
+    url: `upload_file/${project_id}`,
     success: function (payload) {
     },
     async: false
@@ -1000,7 +1000,7 @@ function fetch_and_render_frame() {
 function load_file(file) {
   $.ajax({
     type: 'POST',
-    url: "load/" + file + `?&rgb=${settings.rgb}`,
+    url: `load/${file}?&rgb=${settings.rgb}`,
     success: function (payload) {
       max_frames = payload.max_frames;
       feature_max = payload.feature_max;
@@ -1252,7 +1252,7 @@ function prepare_canvas() {
 function action(action, info, frame = current_frame) {
   $.ajax({
     type: 'POST',
-    url: "action/" + project_id + "/" + action + "/" + frame,
+    url: `action/${project_id}/${action}/${frame}`,
     data: info,
     success: function (payload) {
       if (payload.error) {
