@@ -1012,7 +1012,7 @@ function load_file(file) {
       swidth = rawWidth = rawDimensions[0];
       sheight = rawHeight = rawDimensions[1];
 
-      setCanvasDimensions();
+      setCanvasDimensions(rawDimensions);
 
       tracks = payload.tracks; // tracks payload is dict
 
@@ -1038,36 +1038,49 @@ function load_file(file) {
   });
 }
 
-function setCanvasDimensions() {
+function setCanvasDimensions(rawDims) {
   // calculate available space and how much to scale x and y to fill it
   // only thing that shares width is the info display on left
+  let width = window.innerWidth ||
+              document.documentElement.clientWidth ||
+              document.body.clientWidth;
 
-  let maxWidth = Math.floor(document.documentElement.clientWidth * 0.75);
+  let height = window.innerHeight ||
+               document.documentElement.clientHeight ||
+               document.body.clientHeight;
+
+  let maxWidth = Math.floor(
+    document.getElementsByTagName('main')[0].clientWidth
+  );
 
   // leave space for navbar, instructions pane, and footer
-  let maxHeight = Math.floor((document.documentElement.clientHeight -
+  let maxHeight = Math.floor(
+    (
+      height -
       parseInt($('main').css('marginTop')) -
-      parseInt($('main').css('marginBottom')) -
-      document.getElementsByClassName('page-footer')[0].clientHeight -
-      document.getElementsByClassName('collapsible')[0].clientHeight -
-      document.getElementsByClassName('navbar-fixed')[0].clientHeight)*0.95);
+      parseInt($('main').css('marginBottom')
+    ) -
+    document.getElementsByClassName('page-footer')[0].clientHeight -
+    document.getElementsByClassName('collapsible')[0].clientHeight -
+    document.getElementsByClassName('navbar-fixed')[0].clientHeight
+  ) * 0.95);
 
-  let scaleX = maxWidth/rawWidth;
-  let scaleY = maxHeight/rawHeight;
+  let scaleX = maxWidth / rawDims[0];
+  let scaleY = maxHeight / rawDims[1];
 
   // pick scale that accomodates both dimensions; can be less than 1
   scale = Math.min(scaleX, scaleY);
   // dimensions need to maintain aspect ratio for drawing purposes
-  dimensions = [scale * rawDimensions[0], scale * rawDimensions[1]];
+  dimensions = [scale * rawDims[0], scale * rawDims[1]];
 
   zoom = 100;
   zoomLimit = 100;
 
   // set canvases size according to scale
-  $('#canvas').get(0).width = dimensions[0] + 2*padding;
-  $('#canvas').get(0).height = dimensions[1] + 2*padding;
-  $('#hidden_seg_canvas').get(0).width = rawWidth;
-  $('#hidden_seg_canvas').get(0).height = rawHeight;
+  $('#canvas').get(0).width = dimensions[0] + 2 * padding;
+  $('#canvas').get(0).height = dimensions[1] + 2 * padding;
+  $('#hidden_seg_canvas').get(0).width = rawDims[0];
+  $('#hidden_seg_canvas').get(0).height = rawDims[1];
 
   // create paths for recoloring borders
   topBorder.moveTo(0, 0);
