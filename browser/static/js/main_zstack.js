@@ -963,7 +963,7 @@ function render_image_display() {
   let ctx = $('#canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;
   ctx.save();
-  ctx.clearRect(0,0, 2*padding+dimensions[0], 2*padding+dimensions[1]);
+  ctx.clearRect(0, 0, 2 * padding + dimensions[0], 2 * padding + dimensions[1]);
 
   if (edit_mode) {
     // edit mode (annotations overlaid on raw + brush preview)
@@ -1162,8 +1162,8 @@ function updateMousePos(x, y) {
 
   // convert to image indices, to use for actions and getting label
   if (inRange(canvasPosX, canvasPosY)) {
-    imgX = Math.floor((canvasPosX*100/(scale*zoom) + sx));
-    imgY = Math.floor((canvasPosY*100/(scale*zoom) + sy));
+    imgX = Math.floor((canvasPosX * 100 / (scale * zoom) + sx));
+    imgY = Math.floor((canvasPosY * 100 / (scale * zoom) + sy));
     brush.x = imgX;
     brush.y = imgY;
     // update brush preview
@@ -1182,8 +1182,10 @@ function updateMousePos(x, y) {
 // handles mouse movement, whether or not mouse button is held down
 function handle_mousemove(evt) {
   if (spacedown && mousedown) {
-    panCanvas(evt.originalEvent.movementX*100/(zoom*scale),
-      evt.originalEvent.movementY*100/(zoom*scale));
+    panCanvas(
+      evt.originalEvent.movementX * 100 / (zoom * scale),
+      evt.originalEvent.movementY * 100 / (zoom * scale)
+    );
   }
 
   updateMousePos(evt.offsetX, evt.offsetY);
@@ -1271,8 +1273,8 @@ function action(action, info, frame = current_frame) {
         tracks = payload.tracks;
         // update maxLabelsMap when we get new track info
         for (let i = 0; i < Object.keys(tracks).length; i++){
-          let key = Object.keys(tracks)[i]; //the keys are strings
-          maxLabelsMap.set(i, Math.max(... Object.keys(tracks[key]).map(Number)));
+          let key = Object.keys(tracks)[i]; // the keys are strings
+          maxLabelsMap.set(i, Math.max(...Object.keys(tracks[key]).map(Number)));
         }
       }
       if (payload.tracks || payload.imgs) {
