@@ -727,6 +727,19 @@ var project_id;
 var brush;
 let mouse_trace = [];
 
+var waitForFinalEvent = (function () {
+  var timers = {};
+  return function (callback, ms, uniqueId) {
+    if (!uniqueId) {
+      uniqueId = "Don't call this twice without a uniqueId";
+    }
+    if (timers[uniqueId]) {
+      clearTimeout (timers[uniqueId]);
+    }
+    timers[uniqueId] = setTimeout(callback, ms);
+  };
+})();
+
 function upload_file() {
   $.ajax({
     type: 'POST',
@@ -1323,6 +1336,16 @@ function start_caliban(filename) {
     } else if (event.key === "ArrowDown") {
       event.preventDefault();
     }
+  });
+
+  // resize the canvas every time the window is resized
+  $(window).resize(function () {
+      waitForFinalEvent(function() {
+        mode.clear();
+        setCanvasDimensions(rawDimensions);
+        mode.handle_draw();
+        brush.refreshView();
+      }, 500, "canvasResize");
   });
 
   document.addEventListener('mouseup', function() {
