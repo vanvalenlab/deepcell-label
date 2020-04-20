@@ -1343,7 +1343,6 @@ function start_caliban(filename) {
       waitForFinalEvent(function() {
         mode.clear();
         setCanvasDimensions(rawDimensions);
-        mode.handle_draw();
         brush.refreshView();
       }, 500, "canvasResize");
   });
