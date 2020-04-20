@@ -745,7 +745,7 @@ function upload_file(cb) {
     type: 'POST',
     url: `upload_file/${project_id}`,
     success: cb,
-    async: true
+    async: false
   });
 }
 
