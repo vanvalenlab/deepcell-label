@@ -10,6 +10,29 @@ main {
 }
 /* END Materialize Sticky Footer */
 
+/* START container width override */
+.container {
+  margin: 0 auto;
+  max-width: 1280px;
+  width: 90%;
+}
+@media only screen and (min-width: 601px) {
+  .container {
+    width: 85%;
+  }
+}
+@media only screen and (min-width: 993px) {
+  .container {
+    width: 80%;
+  }
+}
+@media only screen and (min-width: 1201px) {
+  .container {
+    width: 80%;
+  }
+}
+/* END container width override */
+
 /* START navbar CSS */
 .nav-wrapper {
   padding-left: 1em;
