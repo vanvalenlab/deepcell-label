@@ -1073,7 +1073,7 @@ function setCanvasDimensions(rawDims) {
       document.body.clientHeight
     ) -
     parseInt($('main').css('marginTop')) -
-    parseInt($('main').css('marginBottom') -
+    parseInt($('main').css('marginBottom')) -
     document.getElementsByClassName('page-footer')[0].clientHeight -
     document.getElementsByClassName('collapsible')[0].clientHeight -
     document.getElementsByClassName('navbar-fixed')[0].clientHeight
