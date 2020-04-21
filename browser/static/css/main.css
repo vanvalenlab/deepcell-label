@@ -58,7 +58,7 @@ main {
 /* END infopane CSS */
 
 /* START log table CSS */
-#info-table tr td {
+.info-table tr td {
   padding-bottom: 0.5em;
   padding-top: 0.5em;
 }
