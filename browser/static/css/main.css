@@ -61,6 +61,13 @@ main {
 .info-table tr td {
   padding-bottom: 0.5em;
   padding-top: 0.5em;
+  text-align: left;
+}
+.info-table tr td:nth-child(odd) {
+  width: 40%;
+}
+.info-table tr td:nth-child(even) {
+  width: 60%;
 }
 /* END log table CSS */
 
