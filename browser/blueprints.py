@@ -28,7 +28,7 @@ bp = Blueprint('caliban', __name__)  # pylint: disable=C0103
 @bp.route('/health')
 def health():
     '''Returns success if the application is ready.'''
-    return 'success'
+    return jsonify({'message': 'success'})
 
 
 @bp.route('/upload_file/<int:project_id>', methods=['GET', 'POST'])
