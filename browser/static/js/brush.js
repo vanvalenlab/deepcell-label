@@ -5,10 +5,6 @@ class Brush {
     this.y = 0;
     // size of brush in pixels
     this._size = 5;
-    // scale of image (and therefore brush preview)
-    this.scale = scale;
-    // displayed size of brush
-    this.radius = this._size * this.scale;
 
     // status of eraser
     this._erase = false;
@@ -60,15 +56,13 @@ class Brush {
     return this._size;
   }
 
-  // set bounds on size of brush, update radius and brushview appropriately
+  // set bounds on size of brush, update brushview appropriately
   set size(newSize) {
     // don't need brush to take up whole frame
-    if (newSize > 0 && newSize < this._height/(2*this.scale)
-        && newSize < this._width/(2*this.scale) && newSize !== this._size) {
+    if (newSize > 0 && newSize < this._height/2
+        && newSize < this._width/2 && newSize !== this._size) {
       // size is size in pixels, used to modify source array
       this._size = newSize;
-      // radius is how large brush needs to be drawn on screen
-      this.radius = this._size * this.scale;
       // update brush preview with new size
       this.refreshView();
     }
@@ -205,7 +199,7 @@ class Brush {
   // adds brush shadow to ctx
   addToView() {
     this.ctx.beginPath();
-    this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
+    this.ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2, true);
     this.ctx.closePath();
     // no opacity needed; just shows where brush has been
     this.ctx.fill();
@@ -230,39 +224,34 @@ class Brush {
   }
 
   // draw brush preview onto destination ctx
-  draw(ctxDst) {
-    // save here so we can revert clipped region after drawing
-    ctxDst.save();
-
-    // clip region to displayed image to prevent drawing brush onto
-    // empty canvas padding region
-    let region = new Path2D();
-    region.rect(this._padding, this._padding, this._width, this._height);
-    ctxDst.clip(region);
-
+  draw(ctxDst, sx, sy, swidth, sheight, mag) {
     // draw translucent brush trace
     ctxDst.save();
     ctxDst.globalAlpha = this._opacity;
     ctxDst.globalCompositeOperation = 'source-over';
-    ctxDst.drawImage(this.canvas, this._padding, this._padding, this._width, this._height);
+    let ctxDstHeight = ctxDst.canvas.height;
+    let ctxDstWidth = ctxDst.canvas.width;
+    ctxDst.drawImage(this.canvas, sx, sy, swidth, sheight,
+      this._padding, this._padding, ctxDstWidth - 2*this._padding, ctxDstHeight - 2*this._padding);
     ctxDst.restore();
 
     // add solid outline around current brush location
     if (this.show) {
       ctxDst.beginPath();
-      ctxDst.arc(this.x + this._padding, this.y + this._padding, this.radius, 0, Math.PI * 2, true);
+      let cX = (this.x - sx) * mag + this._padding;
+      let cY = (this.y - sy) * mag + this._padding;
+      ctxDst.arc(cX, cY, mag*this.size, 0, Math.PI*2, true);
       ctxDst.strokeStyle = this._outlineColor; // either red or white
       ctxDst.closePath();
       ctxDst.stroke();
     }  else if (this._showBox) {
       // draw box around threshold area
       ctxDst.strokeStyle = 'white';
-      ctxDst.strokeRect(this.threshX + this._padding, this.threshY + this._padding,
-        this.x-this.threshX, this.y-this.threshY);
+      let boxStartX = (this.threshX - sx) * mag + this._padding;
+      let boxStartY = (this.threshY - sy) * mag + this._padding;
+      let boxWidth = (this.x - this.threshX) * mag;
+      let boxHeight = (this.y - this.threshY) * mag;
+      ctxDst.strokeRect(boxStartX, boxStartY, boxWidth, boxHeight);
     }
-
-    // restore unclipped canvas context
-    ctxDst.restore();
   }
-
 }

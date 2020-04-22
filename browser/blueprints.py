@@ -182,8 +182,7 @@ def load(filename):
             'feature_max': zstack_review.feature_max,
             'tracks': zstack_review.readable_tracks,
             'dimensions': zstack_review.dimensions,
-            'project_id': project.id,
-            'screen_scale': zstack_review.scale_factor
+            'project_id': project.id
         })
 
     error = {
@@ -198,7 +197,7 @@ def form():
     ''' Request HTML landing page to be rendered if user requests for
         http://127.0.0.1:5000/.
     '''
-    return render_template('form.html')
+    return render_template('index.html')
 
 
 @bp.route('/tool', methods=['GET', 'POST'])
@@ -206,7 +205,11 @@ def tool():
     ''' Request HTML caliban tool page to be rendered after user inputs
         filename in the landing page.
     '''
+    if 'filename' not in request.form:
+        return redirect('/')
+
     filename = request.form['filename']
+
     current_app.logger.info('%s is filename', filename)
 
     # TODO: better name template?
@@ -226,17 +229,27 @@ def tool():
     }
 
     if is_trk_file(new_filename):
-        return render_template('index_track.html', filename=new_filename)
+        filetype = 'track'
+        title = 'Tracking Tool'
 
-    if is_npz_file(new_filename):
-        return render_template(
-            'index_zstack.html', filename=new_filename, settings=settings)
+    elif is_npz_file(new_filename):
+        filetype = 'zstack'
+        title = 'Z-Stack Tool'
 
-    error = {
-        'error': 'invalid file extension: {}'.format(
-            os.path.splitext(filename)[-1])
-    }
-    return jsonify(error), 400
+    else:
+        # TODO: render an error template instead of JSON.
+        error = {
+            'error': 'invalid file extension: {}'.format(
+                os.path.splitext(filename)[-1])
+        }
+        return jsonify(error), 400
+
+    return render_template(
+        'tool.html',
+        filetype=filetype,
+        title=title,
+        filename=new_filename,
+        settings=settings)
 
 
 @bp.route('/<filename>', methods=['GET', 'POST'])
@@ -245,7 +258,6 @@ def shortcut(filename):
         request to access a specific data file that has been preloaded to the
         input S3 bucket (ex. http://127.0.0.1:5000/test.npz).
     '''
-    # if no options passed, we get default settings anyway
     rgb = request.args.get('rgb', default=False, type=bool)
     pixel_only = request.args.get('pixel_only', default=False, type=bool)
     label_only = request.args.get('label_only', default=False, type=bool)
@@ -256,18 +268,25 @@ def shortcut(filename):
         'label_only': label_only
     }
 
-    # TODO: could this be consolidated into one template with an "is_trk" toggle?
-    # note: not adding options to trk files yet
     if is_trk_file(filename):
-        return render_template('index_track.html', filename=filename)
-    if is_npz_file(filename):
-        return render_template(
-            'index_zstack.html', filename=filename, settings=settings)
+        filetype = 'track'
+        title = 'Tracking Tool'
 
-    # TODO: render an error template instead that shows which error,
-    # instead of sending json
-    error = {
-        'error': 'invalid file extension: {}'.format(
-            os.path.splitext(filename)[-1])
-    }
-    return jsonify(error), 400
+    elif is_npz_file(filename):
+        filetype = 'zstack'
+        title = 'Z-Stack Tool'
+
+    else:
+        # TODO: render an error template instead of JSON.
+        error = {
+            'error': 'invalid file extension: {}'.format(
+                os.path.splitext(filename)[-1])
+        }
+        return jsonify(error), 400
+
+    return render_template(
+        'tool.html',
+        filetype=filetype,
+        title=title,
+        filename=filename,
+        settings=settings)

@@ -24,7 +24,7 @@ from skimage.segmentation import find_boundaries
 
 from imgutils import pngify
 from helpers import is_npz_file, is_trk_file
-from config import S3_KEY, S3_SECRET
+from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 
 
 class BaseReview(object):  # pylint: disable=useless-object-inheritance
@@ -60,12 +60,12 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
         for channel in range(self.channel_max):
             self.max_intensity[channel] = None
 
-    def get_s3_client(self):
-        """Returns a S3 client for sending/receiving data from the bucket"""
+    def _get_s3_client(self):
         return boto3.client(
             's3',
-            aws_access_key_id=S3_KEY,
-            aws_secret_access_key=S3_SECRET)
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+        )
 
     def load(self, filename):
         """Load a file from the S3 input bucket"""
@@ -76,7 +76,7 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
         else:
             raise ValueError('Cannot load file: {}'.format(filename))
 
-        s3 = self.get_s3_client()
+        s3 = self._get_s3_client()
         response = s3.get_object(Bucket=self.input_bucket, Key=self.subfolders)
         return _load(response['Body'].read())
 
@@ -381,10 +381,7 @@ class ZStackReview(BaseReview):
 
         in_original = np.any(np.isin(img_ann, old_label))
 
-        filled_img_ann = flood_fill(img_ann,
-                                    (int(y_location / self.scale_factor),
-                                     int(x_location / self.scale_factor)),
-                                    new_label)
+        filled_img_ann = flood_fill(img_ann, (y_location, x_location), new_label)
         self.annotated[frame, :, :, self.feature] = filled_img_ann
 
         in_modified = np.any(np.isin(filled_img_ann, old_label))
@@ -395,7 +392,6 @@ class ZStackReview(BaseReview):
 
         if in_original and not in_modified:
             self.del_cell_info(feature=self.feature, del_label=old_label, frame=frame)
-            # self.del_cell_info(del_label=old_label, frame=frame)
 
     def action_new_single_cell(self, label, frame):
         """
@@ -512,10 +508,8 @@ class ZStackReview(BaseReview):
         # define a new seeds labeled img that is the same size as raw/annotation imgs
         seeds_labeled = np.zeros(img_ann.shape)
         # create two seed locations
-        seeds_labeled[int(y1_location / self.scale_factor),
-                      int(x1_location / self.scale_factor)] = current_label
-        seeds_labeled[int(y2_location / self.scale_factor),
-                      int(x2_location / self.scale_factor)] = new_label
+        seeds_labeled[y1_location, x1_location] = current_label
+        seeds_labeled[y2_location, x2_location] = new_label
 
         # define the bounding box to apply the transform on and select
         # appropriate sections of 3 inputs (raw, seeds, annotation mask)
@@ -608,7 +602,7 @@ class ZStackReview(BaseReview):
         store_npz.seek(0)
 
         # store npz file object in bucket/subfolders (subfolders is full path)
-        s3 = self.get_s3_client()
+        s3 = self._get_s3_client()
         s3.upload_fileobj(store_npz, self.output_bucket, self.subfolders)
 
     def add_cell_info(self, feature, add_label, frame):
@@ -1057,7 +1051,7 @@ class TrackReview(BaseReview):
         try:
             # go to beginning of file object
             trk_file_obj.seek(0)
-            s3 = self.get_s3_client()
+            s3 = self._get_s3_client()
             s3.upload_fileobj(trk_file_obj, self.output_bucket, self.subfolders)
 
         except Exception as e:
