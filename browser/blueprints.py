@@ -34,8 +34,8 @@ def health():
 
 @bp.route('/upload_file/<int:project_id>', methods=['GET', 'POST'])
 def upload_file(project_id):
-    ''' Upload .trk/.npz data file to AWS S3 bucket.
-    '''
+    '''Upload .trk/.npz data file to AWS S3 bucket.'''
+    start = timeit.default_timer()
     # Use id to grab appropriate TrackReview/ZStackReview object from database
     project = Project.get_project_by_id(project_id)
 
@@ -53,6 +53,9 @@ def upload_file(project_id):
     # add "finished" timestamp and null out state longblob
     Project.finish_project(project)
 
+    current_app.logger.debug('Finished project in %s s.',
+                             timeit.default_timer() - start)
+
     return redirect('/')
 
 
@@ -61,6 +64,7 @@ def action(project_id, action_type, frame):
     ''' Make an edit operation to the data file and update the object
         in the database.
     '''
+    start = timeit.default_timer()
     # obtain 'info' parameter data sent by .js script
     info = {k: json.loads(v) for k, v in request.values.to_dict().items()}
 
@@ -103,6 +107,9 @@ def action(project_id, action_type, frame):
     else:
         img_payload = False
 
+    current_app.logger.debug('Action "%s" finished in %s s.',
+                             action_type, timeit.default_timer() - start)
+
     return jsonify({'tracks': tracks, 'imgs': img_payload})
 
 
@@ -111,6 +118,7 @@ def get_frame(frame, project_id):
     ''' Serve modes of frames as pngs. Send pngs and color mappings of
         cells to .js file.
     '''
+    start = timeit.default_timer()
     # Use id to grab appropriate TrackReview/ZStackReview object from database
     project = Project.get_project_by_id(project_id)
 
@@ -134,6 +142,9 @@ def get_frame(frame, project_id):
         'seg_arr': edit_arr.tolist()
     }
 
+    current_app.logger.debug('Got frame %s in %s s.',
+                             frame, timeit.default_timer() - start)
+
     return jsonify(payload)
 
 
@@ -142,6 +153,7 @@ def load(filename):
     ''' Initate TrackReview/ZStackReview object and load object to database.
         Send specific attributes of the object to the .js file.
     '''
+    start = timeit.default_timer()
     current_app.logger.info('Loading track at %s', filename)
 
     folders = re.split('__', filename)
@@ -158,7 +170,8 @@ def load(filename):
         # Initate TrackReview object and entry in database
         track_review = TrackReview(filename, input_bucket, output_bucket, full_path)
         project = Project.create_project(filename, track_review, subfolders)
-
+        current_app.logger.debug('Loaded trk file in %s s.',
+                                 timeit.default_timer() - start)
         # Send attributes to .js file
         return jsonify({
             'max_frames': track_review.max_frames,
@@ -175,7 +188,8 @@ def load(filename):
         # Initate ZStackReview object and entry in database
         zstack_review = ZStackReview(filename, input_bucket, output_bucket, full_path, rgb)
         project = Project.create_project(filename, zstack_review, subfolders)
-
+        current_app.logger.debug('Loaded npz file in %s s.',
+                                 timeit.default_timer() - start)
         # Send attributes to .js file
         return jsonify({
             'max_frames': zstack_review.max_frames,
@@ -195,9 +209,7 @@ def load(filename):
 
 @bp.route('/', methods=['GET', 'POST'])
 def form():
-    ''' Request HTML landing page to be rendered if user requests for
-        http://127.0.0.1:5000/.
-    '''
+    '''Request HTML landing page to be rendered.'''
     return render_template('index.html')
 
 
@@ -214,8 +226,7 @@ def tool():
     current_app.logger.info('%s is filename', filename)
 
     # TODO: better name template?
-    new_filename = 'caliban-input__caliban-output__test__{}'.format(
-        str(filename))
+    new_filename = 'caliban-input__caliban-output__test__{}'.format(filename)
 
     # if no options passed (how this route will be for now),
     # still want to pass in default settings
