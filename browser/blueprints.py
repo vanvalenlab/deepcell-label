@@ -53,8 +53,8 @@ def upload_file(project_id):
     # add "finished" timestamp and null out state longblob
     Project.finish_project(project)
 
-    current_app.logger.debug('Finished project in %s s.',
-                             timeit.default_timer() - start)
+    current_app.logger.debug('Finished project "%s" in %s s.',
+                             project_id, timeit.default_timer() - start)
 
     return redirect('/')
 
@@ -107,8 +107,9 @@ def action(project_id, action_type, frame):
     else:
         img_payload = False
 
-    current_app.logger.debug('Action "%s" finished in %s s.',
-                             action_type, timeit.default_timer() - start)
+    current_app.logger.debug('Action "%s" for project "%s" finished in %s s.',
+                             action_type, project_id,
+                             timeit.default_timer() - start)
 
     return jsonify({'tracks': tracks, 'imgs': img_payload})
 
@@ -142,8 +143,8 @@ def get_frame(frame, project_id):
         'seg_arr': edit_arr.tolist()
     }
 
-    current_app.logger.debug('Got frame %s in %s s.',
-                             frame, timeit.default_timer() - start)
+    current_app.logger.debug('Got frame %s of project "%s" in %s s.',
+                             frame, project_id, timeit.default_timer() - start)
 
     return jsonify(payload)
 
@@ -170,8 +171,8 @@ def load(filename):
         # Initate TrackReview object and entry in database
         track_review = TrackReview(filename, input_bucket, output_bucket, full_path)
         project = Project.create_project(filename, track_review, subfolders)
-        current_app.logger.debug('Loaded trk file in %s s.',
-                                 timeit.default_timer() - start)
+        current_app.logger.debug('Loaded trk file "%s" in %s s.',
+                                 filename, timeit.default_timer() - start)
         # Send attributes to .js file
         return jsonify({
             'max_frames': track_review.max_frames,
@@ -188,8 +189,8 @@ def load(filename):
         # Initate ZStackReview object and entry in database
         zstack_review = ZStackReview(filename, input_bucket, output_bucket, full_path, rgb)
         project = Project.create_project(filename, zstack_review, subfolders)
-        current_app.logger.debug('Loaded npz file in %s s.',
-                                 timeit.default_timer() - start)
+        current_app.logger.debug('Loaded npz file "%s" in %s s.',
+                                 filename, timeit.default_timer() - start)
         # Send attributes to .js file
         return jsonify({
             'max_frames': zstack_review.max_frames,
