@@ -124,7 +124,12 @@ class ZStackReview:
         self.rescaled = np.zeros((self.height, self.width, self.rgb_channels), dtype='uint8')
         # this approach allows noise through
         for channel in range(min(5, self.rgb_channels)):
-            self.rescaled[:, :, channel] = self.rescale_95(self.raw[0, :, :, channel])
+            try:
+                self.rescaled[:, :, channel] = self.rescale_95(self.raw[0, :, :, channel])
+
+            # if the channel is totally empty, rescaling will fail
+            except IndexError:
+                self.rescaled[:, :, channel] = np.copy(self.raw[0, :, :, channel])
 
     def reduce_to_RGB(self):
         '''
