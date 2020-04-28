@@ -5061,7 +5061,11 @@ class RGBNpz(CalibanWindow):
         self.rescaled = np.zeros(self.raw.shape, dtype = 'uint8')
         # this approach allows noise through
         for channel in range(min(6, self.channel_max)):
-            self.rescaled[:,:,channel] = self.rescale_95(self.raw[:,:,channel])
+            if np.sum(self.raw[:,:,channel]) == 0:
+                # don't empty channels
+                pass
+            else:
+                self.rescaled[:,:,channel] = self.rescale_95(self.raw[:,:,channel])
 
     def reduce_to_RGB(self):
         '''
