@@ -4,6 +4,7 @@ from __future__ import division
 from __future__ import print_function
 
 import base64
+import distutils
 import json
 import os
 import pickle
@@ -184,8 +185,8 @@ def load(filename):
 
     if is_npz_file(filename):
         # arg is 'false' which gets parsed to True if casting to bool
-        rgb = request.args.get('rgb', type=str)
-        rgb = json.loads(rgb)
+        rgb = request.args.get('rgb', default='false', type=str)
+        rgb = bool(distutils.util.strtobool(rgb))
         # Initate ZStackReview object and entry in database
         zstack_review = ZStackReview(filename, input_bucket, output_bucket, full_path, rgb)
         project = Project.create_project(filename, zstack_review, subfolders)
@@ -231,14 +232,15 @@ def tool():
 
     # if no options passed (how this route will be for now),
     # still want to pass in default settings
-    rgb = request.args.get('rgb', default=False, type=bool)
-    pixel_only = request.args.get('pixel_only', default=False, type=bool)
-    label_only = request.args.get('label_only', default=False, type=bool)
+    rgb = request.args.get('rgb', default='false', type=str)
+    pixel_only = request.args.get('pixel_only', default='false', type=str)
+    label_only = request.args.get('label_only', default='false', type=str)
 
+    # Using distutils to cast string arguments to bools
     settings = {
-        'rgb': rgb,
-        'pixel_only': pixel_only,
-        'label_only': label_only
+        'rgb': bool(distutils.util.strtobool(rgb)),
+        'pixel_only': bool(distutils.util.strtobool(pixel_only)),
+        'label_only': bool(distutils.util.strtobool(label_only))
     }
 
     if is_trk_file(new_filename):
@@ -271,14 +273,14 @@ def shortcut(filename):
         request to access a specific data file that has been preloaded to the
         input S3 bucket (ex. http://127.0.0.1:5000/test.npz).
     '''
-    rgb = request.args.get('rgb', default=False, type=bool)
-    pixel_only = request.args.get('pixel_only', default=False, type=bool)
-    label_only = request.args.get('label_only', default=False, type=bool)
+    rgb = request.args.get('rgb', default='false', type=str)
+    pixel_only = request.args.get('pixel_only', default='false', type=str)
+    label_only = request.args.get('label_only', default='false', type=str)
 
     settings = {
-        'rgb': rgb,
-        'pixel_only': pixel_only,
-        'label_only': label_only
+        'rgb': bool(distutils.util.strtobool(rgb)),
+        'pixel_only': bool(distutils.util.strtobool(pixel_only)),
+        'label_only': bool(distutils.util.strtobool(label_only))
     }
 
     if is_trk_file(filename):
