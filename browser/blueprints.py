@@ -4,6 +4,7 @@ from __future__ import division
 from __future__ import print_function
 
 import base64
+import distutils
 import json
 import os
 import pickle
@@ -231,14 +232,15 @@ def tool():
 
     # if no options passed (how this route will be for now),
     # still want to pass in default settings
-    rgb = request.args.get('rgb', default=False, type=bool)
-    pixel_only = request.args.get('pixel_only', default=False, type=bool)
-    label_only = request.args.get('label_only', default=False, type=bool)
+    rgb = request.args.get('rgb', default='false', type=str)
+    pixel_only = request.args.get('pixel_only', default='false', type=str)
+    label_only = request.args.get('label_only', default='false', type=str)
 
+    # Using distutils to cast string arguments to bools
     settings = {
-        'rgb': rgb,
-        'pixel_only': pixel_only,
-        'label_only': label_only
+        'rgb': bool(distutils.util.strtobool(rgb)),
+        'pixel_only': bool(distutils.util.strtobool(pixel_only)),
+        'label_only': bool(distutils.util.strtobool(label_only))
     }
 
     if is_trk_file(new_filename):
