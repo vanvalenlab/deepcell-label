@@ -123,7 +123,7 @@ class ZStackReview:
         '''
         self.rescaled = np.zeros((self.height, self.width, self.rgb_channels), dtype='uint8')
         # this approach allows noise through
-        for channel in range(min(5, self.rgb_channels)):
+        for channel in range(min(6, self.rgb_channels)):
             try:
                 self.rescaled[:, :, channel] = self.rescale_95(self.raw[0, :, :, channel])
 
@@ -142,7 +142,7 @@ class ZStackReview:
         self.rgb_img = np.zeros((self.height, self.width, 3), dtype='uint16')
 
         # for each of the channels that we have
-        for c in range(min(5, self.rgb_channels)):
+        for c in range(min(6, self.rgb_channels)):
             # straightforward RGB -> RGB
             if c < 3:
                 self.rgb_img[:, :, c] = (self.rescaled[:, :, c]).astype('uint16')
