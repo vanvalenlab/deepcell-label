@@ -273,14 +273,14 @@ def shortcut(filename):
         request to access a specific data file that has been preloaded to the
         input S3 bucket (ex. http://127.0.0.1:5000/test.npz).
     '''
-    rgb = request.args.get('rgb', default=False, type=bool)
-    pixel_only = request.args.get('pixel_only', default=False, type=bool)
-    label_only = request.args.get('label_only', default=False, type=bool)
+    rgb = request.args.get('rgb', default='false', type=str)
+    pixel_only = request.args.get('pixel_only', default='false', type=str)
+    label_only = request.args.get('label_only', default='false', type=str)
 
     settings = {
-        'rgb': rgb,
-        'pixel_only': pixel_only,
-        'label_only': label_only
+        'rgb': bool(distutils.util.strtobool(rgb)),
+        'pixel_only': bool(distutils.util.strtobool(pixel_only)),
+        'label_only': bool(distutils.util.strtobool(label_only))
     }
 
     if is_trk_file(filename):
