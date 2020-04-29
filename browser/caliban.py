@@ -41,6 +41,8 @@ class ZStackReview:
         self.feature_max = self.annotated.shape[-1]
         self.channel = 0
 
+        self.current_frame = 0
+
         if self.rgb:
             # possible differences between single channel and rgb displays
             self.dims = len(self.raw.shape)
@@ -62,8 +64,6 @@ class ZStackReview:
         # analogous to .trk lineage but do not need relationships between cells included
         self.cell_ids = {}
         self.cell_info = {}
-
-        self.current_frame = 0
 
         for feature in range(self.feature_max):
             self.create_cell_info(feature)
