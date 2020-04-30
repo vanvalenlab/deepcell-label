@@ -41,6 +41,8 @@ class ZStackReview:
         self.feature_max = self.annotated.shape[-1]
         self.channel = 0
 
+        self.current_frame = 0
+
         if self.rgb:
             # possible differences between single channel and rgb displays
             self.dims = len(self.raw.shape)
@@ -62,8 +64,6 @@ class ZStackReview:
         # analogous to .trk lineage but do not need relationships between cells included
         self.cell_ids = {}
         self.cell_info = {}
-
-        self.current_frame = 0
 
         for feature in range(self.feature_max):
             self.create_cell_info(feature)
@@ -123,8 +123,13 @@ class ZStackReview:
         '''
         self.rescaled = np.zeros((self.height, self.width, self.rgb_channels), dtype='uint8')
         # this approach allows noise through
-        for channel in range(min(5, self.rgb_channels)):
-            self.rescaled[:, :, channel] = self.rescale_95(self.raw[0, :, :, channel])
+        for channel in range(min(6, self.rgb_channels)):
+            raw_channel = self.raw[self.current_frame, :, :, channel]
+            if np.sum(raw_channel) == 0:
+                # don't rescale empty channels
+                pass
+            else:
+                self.rescaled[:, :, channel] = self.rescale_95(raw_channel)
 
     def reduce_to_RGB(self):
         '''
@@ -137,7 +142,7 @@ class ZStackReview:
         self.rgb_img = np.zeros((self.height, self.width, 3), dtype='uint16')
 
         # for each of the channels that we have
-        for c in range(min(5, self.rgb_channels)):
+        for c in range(min(6, self.rgb_channels)):
             # straightforward RGB -> RGB
             if c < 3:
                 self.rgb_img[:, :, c] = (self.rescaled[:, :, c]).astype('uint16')
