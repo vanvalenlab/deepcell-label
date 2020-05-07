@@ -9,9 +9,20 @@ from logging.config import dictConfig
 from flask import Flask
 from flask.logging import default_handler
 
+from flask_compress import Compress
+
 import config
 from blueprints import bp
 from models import db
+
+
+# Compression settings
+COMPRESS_MIMETYPES = ['text/html', 'text/css', 'text/xml',
+                      'application/json', 'application/javascript']
+COMPRESS_LEVEL = 6
+COMPRESS_MIN_SIZE = 500
+COMPRESS_ALGORITHM = 'gzip'
+compress = Compress()
 
 
 class ReverseProxied(object):
@@ -64,6 +75,8 @@ def create_app():
     db.create_all()
 
     app.register_blueprint(bp)
+
+    compress.init_app(app)
 
     return app
 
