@@ -1,8 +1,8 @@
 flask==1.1.1
 flask-sqlalchemy==2.4.1
 matplotlib==3.0.3
-mysqlclient==1.4.5
 numpy==1.16.4
 boto3==1.9.182
 scikit-image==0.15.0
 python-decouple==3.1
+pillow==6.2.2
