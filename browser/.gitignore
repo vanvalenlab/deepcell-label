@@ -6,3 +6,5 @@
 
 # python-decouple
 .env
+
+node_modules/
