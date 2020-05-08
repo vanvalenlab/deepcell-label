@@ -1304,7 +1304,13 @@ function action(action, info, frame = current_frame) {
         seg_array = payload.imgs.seg_arr;
 
         seg_image.src = payload.imgs.segmented;
-        raw_image.src = payload.imgs.raw;
+
+        if (payload.imgs.hasOwnProperty('raw')) {
+          rawLoaded = false;
+          raw_image.src = payload.imgs.raw;
+        } else {
+          rawLoaded = true;
+        }
       }
       if (payload.tracks) {
         tracks = payload.tracks;

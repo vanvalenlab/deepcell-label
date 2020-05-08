@@ -833,7 +833,9 @@ function action(action, info, frame = current_frame) {
         // array of arrays, contains annotation data for frame
         seg_array = payload.imgs.seg_arr;
         seg_image.src = payload.imgs.segmented;
-        raw_image.src = payload.imgs.raw;
+        if (payload.imgs.hasOwnProperty('raw')) {
+          raw_image.src = payload.imgs.raw;
+        }
       }
       if (payload.tracks) {
         tracks = payload.tracks;
