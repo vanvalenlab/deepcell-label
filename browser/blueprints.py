@@ -38,8 +38,8 @@ def load_project_state(project):
 
 @bp.route('/health')
 def health():
-    '''Returns success if the application is ready.'''
-    return jsonify({'message': 'success'})
+    """Returns success if the application is ready."""
+    return jsonify({'message': 'success'}), 200
 
 
 @bp.route('/upload_file/<int:project_id>', methods=['GET', 'POST'])
