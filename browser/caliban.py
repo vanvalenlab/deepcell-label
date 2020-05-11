@@ -84,10 +84,6 @@ class ZStackReview:
         self._y_changed = False
         self.info_changed = False
 
-    @property
-    def frames_changed(self):
-        return self._x_changed or self._y_changed
-
     def _get_s3_client(self):
         return boto3.client(
             's3',
@@ -739,10 +735,6 @@ class TrackReview:
         self._y_changed = False
         self.info_changed = False
 
-    @property
-    def frames_changed(self):
-        return self._x_changed or self._y_changed
-
     def _get_s3_client(self):
         return boto3.client(
             's3',
@@ -908,7 +900,7 @@ class TrackReview:
         img_trimmed = np.where(np.logical_and(np.invert(contig_cell), img_ann == label), 0, img_ann)
 
         comparison = np.where(img_trimmed != img_ann)
-        self._y_frames = np.any(comparison)
+        self._y_changed = np.any(comparison)
 
         self.tracked[frame, :, :, 0] = img_trimmed
 
