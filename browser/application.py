@@ -15,7 +15,8 @@ import config
 from blueprints import bp
 from models import db
 
-compress = Compress()
+
+compress = Compress()  # pylint: disable=C0103
 
 
 class ReverseProxied(object):
