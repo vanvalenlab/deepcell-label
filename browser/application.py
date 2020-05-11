@@ -19,6 +19,10 @@ compress = Compress()
 
 
 class ReverseProxied(object):
+    """Enable TLS for internal requests.
+
+    Found in: https://stackoverflow.com/questions/30743696
+    """
     def __init__(self, app):
         self.app = app
 
