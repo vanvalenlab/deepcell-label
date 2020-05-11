@@ -64,7 +64,7 @@ def upload_file(project_id):
     # Use id to grab appropriate TrackReview/ZStackReview object from database
     project = Project.get_project_by_id(project_id)
 
-    if project is None:
+    if not project:
         return jsonify({'error': 'project_id not found'}), 404
 
     state = load_project_state(project)
