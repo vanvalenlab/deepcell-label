@@ -18,6 +18,7 @@ from flask import render_template
 from flask import request
 from flask import redirect
 from flask import current_app
+from werkzeug.exceptions import HTTPException
 
 from helpers import is_trk_file, is_npz_file
 from caliban import TrackReview, ZStackReview
@@ -40,6 +41,20 @@ def load_project_state(project):
 def health():
     """Returns success if the application is ready."""
     return jsonify({'message': 'success'}), 200
+
+
+@bp.errorhandler(Exception)
+def handle_exception(error):
+    """Handle all uncaught exceptions"""
+    # pass through HTTP errors
+    if isinstance(error, HTTPException):
+        return error
+
+    current_app.logger.error('Encountered %s: %s',
+                             error.__class__.__name__, error)
+
+    # now you're handling non-HTTP exceptions only
+    return jsonify({'message': str(error)}), 500
 
 
 @bp.route('/upload_file/<int:project_id>', methods=['GET', 'POST'])
