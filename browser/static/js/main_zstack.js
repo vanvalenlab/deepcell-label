@@ -1301,9 +1301,16 @@ function action(action, info, frame = current_frame) {
 
         // load new value of seg_array
         // array of arrays, contains annotation data for frame
-        seg_array = payload.imgs.seg_arr;
+        if (payload.imgs.hasOwnProperty('seg_arr')) {
+          seg_arr = payload.imgs.seg_arr;
+        }
 
-        seg_image.src = payload.imgs.segmented;
+        if (payload.imgs.hasOwnProperty('segmented')) {
+          segLoaded = false;
+          seg_image.src = payload.imgs.segmented;
+        } else {
+          segLoaded = true;
+        }
 
         if (payload.imgs.hasOwnProperty('raw')) {
           rawLoaded = false;
