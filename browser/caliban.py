@@ -80,7 +80,8 @@ class ZStackReview:
         self.color_map = plt.get_cmap('viridis')
         self.color_map.set_bad('black')
 
-        self.frames_changed = False
+        self._x_changed = False
+        self._y_changed = False
         self.info_changed = False
 
     def _get_s3_client(self):
@@ -284,11 +285,11 @@ class ZStackReview:
 
     def action_change_channel(self, channel):
         self.channel = channel
-        self.frames_changed = True
+        self._x_changed = True
 
     def action_change_feature(self, feature):
         self.feature = feature
-        self.frames_changed = True
+        self._y_changed = True
 
     def action_handle_draw(self, trace, target_value, brush_value, brush_size, erase, frame):
 
@@ -324,7 +325,7 @@ class ZStackReview:
 
         # check for image change, in case pixels changed but no new or del cell
         comparison = np.where(annotated != self.annotated[frame, :, :, self.feature])
-        self.frames_changed = np.any(comparison)
+        self._y_changed = np.any(comparison)
         # if info changed, self.info_changed set to true with info helper functions
 
         self.annotated[frame, :, :, self.feature] = annotated
@@ -399,7 +400,7 @@ class ZStackReview:
 
         # check if image changed
         comparison = np.where(img_trimmed != img_ann)
-        self.frames_changed = np.any(comparison)
+        self._y_changed = np.any(comparison)
         # this action should never change the cell info
 
         self.annotated[frame, :, :, self.feature] = img_trimmed
@@ -419,7 +420,7 @@ class ZStackReview:
         self.annotated[frame, :, :, self.feature] = filled_img_ann
 
         # never changes info but always changes annotation
-        self.frames_changed = True
+        self._y_changed = True
 
     def action_new_single_cell(self, label, frame):
         """
@@ -504,7 +505,7 @@ class ZStackReview:
 
         self.annotated[frame, :, :, self.feature] = ann_img
 
-        self.frames_changed = self.info_changed = True
+        self._y_changed = self.info_changed = True
 
     def action_swap_all_frame(self, label_1, label_2):
 
@@ -521,7 +522,7 @@ class ZStackReview:
         self.cell_info[self.feature][label_1].update({'frames': cell_info_2['frames']})
         self.cell_info[self.feature][label_2].update({'frames': cell_info_1['frames']})
 
-        self.frames_changed = self.info_changed = True
+        self._y_changed = self.info_changed = True
 
     def action_watershed(self, label, frame, x1_location, y1_location, x2_location, y2_location):
         # Pull the label that is being split and find a new valid label
@@ -597,10 +598,10 @@ class ZStackReview:
 
             # check if image changed
             comparison = np.where(next_img != updated_slice)
-            self.frames_changed = np.any(comparison)
+            self._y_changed = np.any(comparison)
 
             # if the image changed, update self.annotated and remake cell info
-            if self.frames_changed:
+            if self._y_changed:
                 self.annotated[current_slice, :, :, int(self.feature)] = updated_slice
                 self.create_cell_info(feature=int(self.feature))
 
@@ -620,7 +621,7 @@ class ZStackReview:
             self.annotated[zslice + 1, :, :, self.feature] = predicted_next
 
         # remake cell_info dict based on new annotations
-        self.frames_changed = True
+        self._y_changed = True
         self.create_cell_info(feature=self.feature)
 
     def action_save_zstack(self):
@@ -655,7 +656,7 @@ class ZStackReview:
             self.cell_ids[feature] = np.append(self.cell_ids[feature], add_label)
 
         # if adding cell, frames and info have necessarily changed
-        self.frames_changed = self.info_changed = True
+        self._y_changed = self.info_changed = True
 
     def del_cell_info(self, feature, del_label, frame):
         '''
@@ -675,7 +676,7 @@ class ZStackReview:
             self.cell_ids[feature] = np.delete(ids, np.where(ids == np.int64(del_label)))
 
         # if deleting cell, frames and info have necessarily changed
-        self.frames_changed = self.info_changed = True
+        self._y_changed = self.info_changed = True
 
     def create_cell_info(self, feature):
         '''
@@ -743,7 +744,8 @@ class TrackReview:
 
         self.current_frame = 0
 
-        self.frames_changed = False
+        self._x_changed = False
+        self._y_changed = False
         self.info_changed = False
 
     def _get_s3_client(self):
@@ -871,7 +873,7 @@ class TrackReview:
             self.add_cell_info(add_label=edit_value, frame=frame)
 
         comparison = np.where(annotated != self.tracked[frame])
-        self.frames_changed = np.any(comparison)
+        self._y_changed = np.any(comparison)
 
         self.tracked[frame] = annotated
 
@@ -912,7 +914,7 @@ class TrackReview:
         img_trimmed = np.where(np.logical_and(np.invert(contig_cell), img_ann == label), 0, img_ann)
 
         comparison = np.where(img_trimmed != img_ann)
-        self.frames_changed = np.any(comparison)
+        self._y_changed = np.any(comparison)
 
         self.tracked[frame, :, :, 0] = img_trimmed
 
@@ -931,7 +933,7 @@ class TrackReview:
         filled_img_ann = flood_fill(img_ann, hole_fill_seed, label, connectivity=1)
         self.tracked[frame, :, :, 0] = filled_img_ann
 
-        self.frames_changed = True
+        self._y_changed = True
 
     def action_new_single_cell(self, label, frame):
         """
@@ -988,7 +990,7 @@ class TrackReview:
             track_old["frame_div"] = None
             track_old["capped"] = True
 
-            self.frames_changed = self.info_changed = True
+            self._y_changed = self.info_changed = True
 
     def action_delete(self, label, frame):
         """
@@ -1055,7 +1057,7 @@ class TrackReview:
             except ValueError:
                 pass
 
-        self.frames_changed = self.info_changed = True
+        self._y_changed = self.info_changed = True
 
     def action_swap_single_frame(self, label_1, label_2, frame):
         '''swap the labels of two cells in one frame, but do not
@@ -1068,7 +1070,7 @@ class TrackReview:
 
         self.tracked[frame, :, :, 0] = ann_img
 
-        self.frames_changed = True
+        self._y_changed = True
 
     def action_swap_tracks(self, label_1, label_2):
         def relabel(old_label, new_label):
@@ -1092,7 +1094,7 @@ class TrackReview:
         relabel(label_2, label_1)
         relabel(-1, label_2)
 
-        self.frames_changed = self.info_changed = True
+        self._y_changed = self.info_changed = True
 
     def action_watershed(self, label, frame, x1_location, y1_location, x2_location, y2_location):
 
@@ -1214,7 +1216,7 @@ class TrackReview:
             self.tracks[add_label].update({'parent': None})
             self.tracks[add_label].update({'capped': False})
 
-        self.frames_changed = self.info_changed = True
+        self._y_changed = self.info_changed = True
 
     def del_cell_info(self, del_label, frame):
         '''
@@ -1238,7 +1240,7 @@ class TrackReview:
                 if track["parent"] == del_label:
                     track["parent"] = None
 
-        self.frames_changed = self.info_changed = True
+        self._y_changed = self.info_changed = True
 
 
 def consecutive(data, stepsize=1):

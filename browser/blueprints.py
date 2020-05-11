@@ -79,10 +79,12 @@ def action(project_id, action_type, frame):
         state = pickle.loads(project.state)
         # Perform edit operation on the data file
         state.action(action_type, info)
-        frames_changed = state.frames_changed
+
+        x_changed = state._x_changed
+        y_changed = state._y_changed
         info_changed = state.info_changed
 
-        state.frames_changed = state.info_changed = False
+        state._x_changed = state._y_changed = state.info_changed = False
 
         # Update object in local database
         Project.update_project(project, state)
@@ -93,18 +95,19 @@ def action(project_id, action_type, frame):
 
     tracks = state.readable_tracks if info_changed else False
 
-    if frames_changed:
-        img = state.get_frame(frame, raw=False)
-        raw = state.get_frame(frame, raw=True)
-        edit_arr = state.get_array(frame)
-
+    if x_changed or y_changed:
         encode = lambda x: base64.encodebytes(x.read()).decode()
+        img_payload = {}
 
-        img_payload = {
-            'raw': f'data:image/png;base64,{encode(raw)}',
-            'segmented': f'data:image/png;base64,{encode(img)}',
-            'seg_arr': edit_arr.tolist()
-        }
+        if x_changed:
+            raw = state.get_frame(frame, raw=True)
+            img_payload['raw'] = f'data:image/png;base64,{encode(raw)}'
+        if y_changed:
+            img = state.get_frame(frame, raw=False)
+            img_payload['segmented'] = f'data:image/png;base64,{encode(img)}'
+            edit_arr = state.get_array(frame)
+            img_payload['seg_arr'] = edit_arr.tolist()
+
     else:
         img_payload = False
 

@@ -1296,15 +1296,21 @@ function action(action, info, frame = current_frame) {
         alert(payload.error);
       }
       if (payload.imgs) {
-        rawLoaded = false;
-        segLoaded = false;
-
         // load new value of seg_array
         // array of arrays, contains annotation data for frame
-        seg_array = payload.imgs.seg_arr;
+        if (payload.imgs.hasOwnProperty('seg_arr')) {
+          seg_array = payload.imgs.seg_arr;
+        }
 
-        seg_image.src = payload.imgs.segmented;
-        raw_image.src = payload.imgs.raw;
+        if (payload.imgs.hasOwnProperty('segmented')) {
+          segLoaded = false;
+          seg_image.src = payload.imgs.segmented;
+        }
+
+        if (payload.imgs.hasOwnProperty('raw')) {
+          rawLoaded = false;
+          raw_image.src = payload.imgs.raw;
+        }
       }
       if (payload.tracks) {
         tracks = payload.tracks;
