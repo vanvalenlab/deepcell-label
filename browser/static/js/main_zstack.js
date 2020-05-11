@@ -1302,7 +1302,7 @@ function action(action, info, frame = current_frame) {
         // load new value of seg_array
         // array of arrays, contains annotation data for frame
         if (payload.imgs.hasOwnProperty('seg_arr')) {
-          seg_arr = payload.imgs.seg_arr;
+          seg_array = payload.imgs.seg_arr;
         }
 
         if (payload.imgs.hasOwnProperty('segmented')) {
