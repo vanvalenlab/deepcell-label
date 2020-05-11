@@ -56,9 +56,6 @@ def configure_logging():
         }
     })
 
-    # set up 3rd party logging.
-    logging.getLogger('sqlalchemy').addHandler(default_handler)
-
 
 def create_app():
     """Factory to create the Flask application"""
@@ -83,6 +80,7 @@ def create_app():
 
 
 application = create_app()  # pylint: disable=C0103
+
 
 if __name__ == '__main__':
     configure_logging()
