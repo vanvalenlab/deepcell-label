@@ -98,7 +98,7 @@ def action(project_id, action_type, frame):
     if frames_changed:
         encode = lambda x: base64.encodebytes(x.read()).decode()
         edit_arr = state.get_array(frame)
-        img_payload = {'seg_arr': edit_arr.tolist()}
+        img_payload = {}
 
         if x_changed:
             raw = state.get_frame(frame, raw=True)
@@ -106,6 +106,7 @@ def action(project_id, action_type, frame):
         if y_changed:
             img = state.get_frame(frame, raw=False)
             img_payload['segmented'] = f'data:image/png;base64,{encode(img)}'
+            img_payload['seg_arr'] = edit_arr.tolist()
 
     else:
         img_payload = False
