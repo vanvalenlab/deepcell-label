@@ -27,6 +27,15 @@ from models import Project
 bp = Blueprint('caliban', __name__)  # pylint: disable=C0103
 
 
+def load_project_state(project):
+    """Unpickle the project's state into a Caliban object"""
+    start = timeit.default_timer()
+    state = pickle.loads(project.state)
+    current_app.logger.debug('Unpickled project "%s" state in %s s.',
+                             project.id, timeit.default_timer() - start)
+    return state
+
+
 @bp.route('/health')
 def health():
     '''Returns success if the application is ready.'''
@@ -43,7 +52,7 @@ def upload_file(project_id):
     if project is None:
         return jsonify({'error': 'project_id not found'}), 404
 
-    state = pickle.loads(project.state)
+    state = load_project_state(project)
 
     # Call function in caliban.py to save data file and send to S3 bucket
     if is_trk_file(project.filename):
@@ -76,7 +85,7 @@ def action(project_id, action_type, frame):
         if not project:
             return jsonify({'error': 'project_id not found'}), 404
 
-        state = pickle.loads(project.state)
+        state = load_project_state(project)
         # Perform edit operation on the data file
         state.action(action_type, info)
 
@@ -130,7 +139,7 @@ def get_frame(frame, project_id):
     if not project:
         return jsonify({'error': 'project_id not found'}), 404
 
-    state = pickle.loads(project.state)
+    state = load_project_state(project)
 
     # Obtain raw, mask, and edit mode frames
     img = state.get_frame(frame, raw=False)
