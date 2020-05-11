@@ -79,7 +79,7 @@ def action(project_id, action_type, frame):
         state = pickle.loads(project.state)
         # Perform edit operation on the data file
         state.action(action_type, info)
-        frames_changed = state.frames_changed
+
         x_changed = state._x_changed
         y_changed = state._y_changed
         info_changed = state.info_changed
@@ -95,7 +95,7 @@ def action(project_id, action_type, frame):
 
     tracks = state.readable_tracks if info_changed else False
 
-    if frames_changed:
+    if x_changed or y_changed:
         encode = lambda x: base64.encodebytes(x.read()).decode()
         img_payload = {}
 
