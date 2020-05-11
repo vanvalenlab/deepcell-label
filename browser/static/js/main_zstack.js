@@ -1296,9 +1296,6 @@ function action(action, info, frame = current_frame) {
         alert(payload.error);
       }
       if (payload.imgs) {
-        rawLoaded = false;
-        segLoaded = false;
-
         // load new value of seg_array
         // array of arrays, contains annotation data for frame
         if (payload.imgs.hasOwnProperty('seg_arr')) {
@@ -1308,15 +1305,11 @@ function action(action, info, frame = current_frame) {
         if (payload.imgs.hasOwnProperty('segmented')) {
           segLoaded = false;
           seg_image.src = payload.imgs.segmented;
-        } else {
-          segLoaded = true;
         }
 
         if (payload.imgs.hasOwnProperty('raw')) {
           rawLoaded = false;
           raw_image.src = payload.imgs.raw;
-        } else {
-          rawLoaded = true;
         }
       }
       if (payload.tracks) {
