@@ -828,7 +828,7 @@ class TrackReview:
 
     def action_handle_draw(self, trace, edit_value, brush_size, erase, frame):
 
-        annotated = np.copy(self.tracked[frame])
+        annotated = np.copy(self.annotated[frame])
 
         in_original = np.any(np.isin(annotated, edit_value))
 
@@ -858,17 +858,17 @@ class TrackReview:
         elif in_modified and not in_original:
             self.add_cell_info(add_label=edit_value, frame=frame)
 
-        comparison = np.where(annotated != self.tracked[frame])
+        comparison = np.where(annotated != self.annotated[frame])
         self._y_changed = np.any(comparison)
 
-        self.tracked[frame] = annotated
+        self.annotated[frame] = annotated
 
     def action_flood_contiguous(self, label, frame, x_location, y_location):
         '''
         flood fill a cell with a unique new label; alternative to watershed
         for fixing duplicate label issue if cells are not touching
         '''
-        img_ann = self.tracked[frame, :, :, 0]
+        img_ann = self.annotated[frame, :, :, 0]
         old_label = label
         new_label = max(self.tracks) + 1
 
@@ -878,7 +878,7 @@ class TrackReview:
                                     (int(y_location / self.scale_factor),
                                      int(x_location / self.scale_factor)),
                                     new_label)
-        self.tracked[frame, :, :, 0] = filled_img_ann
+        self.annotated[frame, :, :, 0] = filled_img_ann
 
         in_modified = np.any(np.isin(filled_img_ann, old_label))
 
@@ -894,7 +894,7 @@ class TrackReview:
         that are not connected to the cell selected will be removed from annotation in that frame
         '''
 
-        img_ann = self.tracked[frame, :, :, 0]
+        img_ann = self.annotated[frame, :, :, 0]
         contig_cell = flood(image=img_ann, seed_point=(int(y_location / self.scale_factor),
                                                        int(x_location / self.scale_factor)))
         img_trimmed = np.where(np.logical_and(np.invert(contig_cell), img_ann == label), 0, img_ann)
@@ -902,7 +902,7 @@ class TrackReview:
         comparison = np.where(img_trimmed != img_ann)
         self._y_changed = np.any(comparison)
 
-        self.tracked[frame, :, :, 0] = img_trimmed
+        self.annotated[frame, :, :, 0] = img_trimmed
 
     def action_fill_hole(self, label, frame, x_location, y_location):
         '''
@@ -915,9 +915,9 @@ class TrackReview:
         # rescale click location -> corresponding location in annotation array
         hole_fill_seed = (y_location // self.scale_factor, x_location // self.scale_factor)
         # fill hole with label
-        img_ann = self.tracked[frame, :, :, 0]
+        img_ann = self.annotated[frame, :, :, 0]
         filled_img_ann = flood_fill(img_ann, hole_fill_seed, label, connectivity=1)
-        self.tracked[frame, :, :, 0] = filled_img_ann
+        self.annotated[frame, :, :, 0] = filled_img_ann
 
         self._y_changed = True
 
@@ -929,8 +929,8 @@ class TrackReview:
         new_label = max(self.tracks) + 1
 
         # replace frame labels
-        self.tracked[frame] = np.where(self.tracked[frame] == old_label,
-                                       new_label, self.tracked[frame])
+        self.annotated[frame] = np.where(self.annotated[frame] == old_label,
+                                       new_label, self.annotated[frame])
 
         # replace fields
         self.del_cell_info(del_label=old_label, frame=frame)
@@ -946,7 +946,7 @@ class TrackReview:
         if start_frame != 0:
             # replace frame labels
             # TODO: which frame is this meant to be?
-            for frame in self.tracked[start_frame:]:
+            for frame in self.annotated[start_frame:]:
                 frame[frame == old_label] = new_label
 
             # replace fields
@@ -983,9 +983,9 @@ class TrackReview:
         Deletes label from current frame only
         """
         # Set frame labels to 0
-        ann_img = self.tracked[frame]
+        ann_img = self.annotated[frame]
         ann_img = np.where(ann_img == label, 0, ann_img)
-        self.tracked[frame] = ann_img
+        self.annotated[frame] = ann_img
 
         self.del_cell_info(del_label=label, frame=frame)
 
@@ -1018,10 +1018,10 @@ class TrackReview:
         Replacing label_2 with label_1
         """
         # replace arrays
-        for frame in range(self.max_frames):
-            annotated = self.tracked[frame]
+        for frame in range(self.annotated.shape[0]):
+            annotated = self.annotated[frame]
             annotated = np.where(annotated == label_2, label_1, annotated)
-            self.tracked[frame] = annotated
+            self.annotated[frame] = annotated
 
         # replace fields
         track_1 = self.tracks[label_1]
@@ -1049,18 +1049,18 @@ class TrackReview:
         '''swap the labels of two cells in one frame, but do not
         change any of the lineage information'''
 
-        ann_img = self.tracked[frame, :, :, 0]
+        ann_img = self.annotated[frame, :, :, 0]
         ann_img = np.where(ann_img == label_1, -1, ann_img)
         ann_img = np.where(ann_img == label_2, label_1, ann_img)
         ann_img = np.where(ann_img == -1, label_2, ann_img)
 
-        self.tracked[frame, :, :, 0] = ann_img
+        self.annotated[frame, :, :, 0] = ann_img
 
         self._y_changed = True
 
     def action_swap_tracks(self, label_1, label_2):
         def relabel(old_label, new_label):
-            for frame in self.tracked:
+            for frame in self.annotated:
                 frame[frame == old_label] = new_label
 
             # replace fields
@@ -1090,7 +1090,7 @@ class TrackReview:
 
         # Locally store the frames to work on
         img_raw = self.raw[frame, :, :, 0]
-        img_ann = self.tracked[frame, :, :, 0]
+        img_ann = self.annotated[frame, :, :, 0]
 
         # Pull the 2 seed locations and store locally
         # define a new seeds labeled img that is the same size as raw/annotation imgs
@@ -1139,10 +1139,10 @@ class TrackReview:
 
         # reintegrate subsection into original mask
         img_ann[minr:maxr, minc:maxc] = img_sub_ann
-        self.tracked[frame, :, :, 0] = img_ann
+        self.annotated[frame, :, :, 0] = img_ann
 
         # update cell_info dict only if new label was created with ws
-        if np.any(np.isin(self.tracked[frame, :, :, 0], new_label)):
+        if np.any(np.isin(self.annotated[frame, :, :, 0], new_label)):
             self.add_cell_info(add_label=new_label, frame=frame)
 
     def action_save_track(self):
@@ -1169,7 +1169,7 @@ class TrackReview:
                 trks.add(raw_file.name, "raw.npy")
 
             with tempfile.NamedTemporaryFile() as tracked_file:
-                np.save(tracked_file, self.tracked)
+                np.save(tracked_file, self.annotated)
                 tracked_file.flush()
                 trks.add(tracked_file.name, "tracked.npy")
         try:
