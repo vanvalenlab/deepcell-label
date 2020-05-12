@@ -627,7 +627,9 @@ class ZStackReview:
     def action_save_zstack(self):
         # save file to BytesIO object
         store_npz = io.BytesIO()
-        np.savez(store_npz, raw=self.raw, annotated=self.annotated)
+
+        # X and y are array names by convention
+        np.savez(store_npz, X=self.raw, y=self.annotated)
         store_npz.seek(0)
 
         # store npz file object in bucket/subfolders (subfolders is full path)
@@ -1405,13 +1407,17 @@ def load_npz(filename):
     data = io.BytesIO(filename)
     npz = np.load(data)
 
+    # standard nomenclature for image (X) and annotation (y)
     if 'y' in npz.files:
         raw_stack = npz['X']
         annotation_stack = npz['y']
 
+    # some files may have alternate names 'raw' and 'annotated'
     elif 'raw' in npz.files:
         raw_stack = npz['raw']
         annotation_stack = npz['annotated']
+
+    # if files are named something different, give it a try anyway
     else:
         raw_stack = npz[npz.files[0]]
         annotation_stack = npz[npz.files[1]]
