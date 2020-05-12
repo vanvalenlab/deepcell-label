@@ -627,6 +627,8 @@ class ZStackReview:
     def action_save_zstack(self):
         # save file to BytesIO object
         store_npz = io.BytesIO()
+
+        # X and y are array names by convention
         np.savez(store_npz, X=self.raw, y=self.annotated)
         store_npz.seek(0)
 
