@@ -1405,13 +1405,17 @@ def load_npz(filename):
     data = io.BytesIO(filename)
     npz = np.load(data)
 
+    # standard nomenclature for image (X) and annotation (y)
     if 'y' in npz.files:
         raw_stack = npz['X']
         annotation_stack = npz['y']
 
+    # some files may have alternate names 'raw' and 'annotated'
     elif 'raw' in npz.files:
         raw_stack = npz['raw']
         annotation_stack = npz['annotated']
+
+    # if files are named something different, give it a try anyway
     else:
         raw_stack = npz[npz.files[0]]
         annotation_stack = npz[npz.files[1]]
