@@ -142,7 +142,7 @@ docker build -t caliban .
 ```bash
 docker run \
 -p 5900:5900 \
--v $PWD/caliban/desktop:/usr/src/app/desktop  \
+-v $PWD/desktop:/usr/src/app/desktop  \
 --privileged \
 caliban:latest
 ```
