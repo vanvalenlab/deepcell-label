@@ -1032,9 +1032,14 @@ function load_file(file) {
       // (each is a key in that dict), cast to numbers, then get the maximum
       // value from each array and store it in a map
       for (let i = 0; i < Object.keys(tracks).length; i++){
-        let key = Object.keys(tracks)[i]; //the keys are strings
-        //use i as key in this map because it is an int, mode.feature is also int
-        maxLabelsMap.set(i, Math.max(... Object.keys(tracks[key]).map(Number)));
+        let key = Object.keys(tracks)[i]; // the keys are strings
+        if (Object.keys(tracks[key]).length > 0) {
+          // use i as key in this map because it is an int, mode.feature is also int
+          maxLabelsMap.set(i, Math.max(... Object.keys(tracks[key]).map(Number)));
+        } else {
+          // if no labels in feature, explicitly set max label to 0
+          maxLabelsMap.set(i, 0);
+        }
       }
 
       for (let i = 0; i < channel_max; i++) {
@@ -1317,7 +1322,13 @@ function action(action, info, frame = current_frame) {
         // update maxLabelsMap when we get new track info
         for (let i = 0; i < Object.keys(tracks).length; i++){
           let key = Object.keys(tracks)[i]; // the keys are strings
-          maxLabelsMap.set(i, Math.max(...Object.keys(tracks[key]).map(Number)));
+          if (Object.keys(tracks[key]).length > 0) {
+            // use i as key in this map because it is an int, mode.feature is also int
+            maxLabelsMap.set(i, Math.max(... Object.keys(tracks[key]).map(Number)));
+          } else {
+            // if no labels in feature, explicitly set max label to 0
+            maxLabelsMap.set(i, 0);
+          }
         }
       }
       if (payload.tracks || payload.imgs) {
