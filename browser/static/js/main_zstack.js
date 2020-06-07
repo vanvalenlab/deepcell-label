@@ -1174,7 +1174,8 @@ function handle_mousedown(evt) {
         if (!brush.show) {
           brush.threshX = imgX;
           brush.threshY = imgY;
-        } else {
+        } else if (mode.kind !== Modes.prompt) {
+          // not if turning on conv brush
           mouse_trace.push([imgY, imgX]);
         }
       }
@@ -1184,8 +1185,10 @@ function handle_mousedown(evt) {
 
 function helper_brush_draw() {
   if (mousedown && !spacedown) {
-    // update mouse_trace
-    mouse_trace.push([imgY, imgX]);
+    // update mouse_trace, but not if turning on conv brush
+    if (mode.kind !== Modes.prompt) {
+      mouse_trace.push([imgY, imgX]);
+    }
   } else {
     brush.clearView();
   }
