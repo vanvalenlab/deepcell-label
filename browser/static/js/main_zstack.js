@@ -708,6 +708,10 @@ let leftBorder = new Path2D();
 var rendering_raw = false;
 let display_invert = true;
 let display_labels;
+
+const MIN_CONTRAST = -100;
+const MAX_CONTRAST = 700;
+
 var current_contrast;
 let contrastMap = new Map();
 let brightness;
@@ -1155,9 +1159,9 @@ function handle_scroll(evt) {
     // don't use magnitude of scroll
     let mod_contrast = -Math.sign(evt.originalEvent.deltaY) * 4;
     // stop if fully desaturated
-    current_contrast = Math.max(current_contrast + mod_contrast, -100);
+    current_contrast = Math.max(current_contrast + mod_contrast, MIN_CONTRAST);
     // stop at 8x contrast
-    current_contrast = Math.min(current_contrast + mod_contrast, 700);
+    current_contrast = Math.min(current_contrast + mod_contrast, MAX_CONTRAST);
     prepareRaw();
   } else if ((rendering_raw || edit_mode || (rgb && !display_labels))
     && evt.originalEvent.shiftKey) {
