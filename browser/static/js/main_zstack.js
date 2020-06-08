@@ -87,7 +87,7 @@ class Mode {
       brightness = 0;
       current_contrast = 0;
       prepareRaw();
-    } else if ((key === 'l' || key === 'L') && !edit_mode) {
+    } else if ((key === 'l' || key === 'L') && rgb && !edit_mode) {
       display_labels = !display_labels;
       render_image_display();
     } else if (key === '-') {
@@ -113,7 +113,10 @@ class Mode {
     } else if (!rgb && key === 'i') {
       // toggle light/dark inversion of raw img
       display_invert = !display_invert;
-      compositeImages();
+      preCompRawAdjust();
+    } else if (!rgb && settings.pixel_only && (key === 'l' || key === 'L')) {
+      display_labels = !display_labels;
+      render_image_display();
     } else if (key === 'n') {
       // set edit value to something unused
       brush.value = maxLabelsMap.get(this.feature) + 1;
@@ -683,6 +686,7 @@ let sheight;
 let rawLoaded;
 const raw_image = new Image();
 const contrastedRaw = new Image();
+const preCompRaw = new Image();
 
 let segLoaded;
 const seg_image = new Image();
@@ -703,7 +707,7 @@ let leftBorder = new Path2D();
 
 var rendering_raw = false;
 let display_invert = true;
-let display_labels = false;
+let display_labels;
 var current_contrast;
 let contrastMap = new Map();
 let brightness;
@@ -904,6 +908,9 @@ function render_info_display() {
 function render_edit_image(ctx) {
   if (rgb && rendering_raw) {
     render_raw_image(ctx);
+  } else if (!rgb && !display_labels) {
+    ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
+    ctx.drawImage(preCompRaw, sx, sy, swidth, sheight, padding, padding, dimensions[0], dimensions[1]);
   } else {
     ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
     ctx.drawImage(postCompImg, sx, sy, swidth, sheight, padding, padding, dimensions[0], dimensions[1]);
@@ -1351,8 +1358,10 @@ function start_caliban(filename) {
   rgb = settings.rgb;
   if (rgb) {
     current_highlight = true;
+    display_labels = false;
   } else {
     current_highlight = false;
+    display_labels = true;
   }
   // disable scrolling from scrolling around on page (it should just control brightness)
   document.addEventListener('wheel', function(event) {
@@ -1391,7 +1400,8 @@ function start_caliban(filename) {
     postCompImg.onload = render_image_display;
   } else {
     raw_image.onload = prepareRaw;
-    contrastedRaw.onload = rawAdjust;
+    contrastedRaw.onload = preCompRawAdjust;
+    preCompRaw.onload = rawAdjust;
     seg_image.onload = preCompAdjust;
     preCompSeg.onload = segAdjust;
     compositedImg.onload = postCompAdjust;

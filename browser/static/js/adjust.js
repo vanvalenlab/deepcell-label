@@ -138,8 +138,8 @@ function preCompAdjust() {
   preCompSeg.src = canvas.toDataURL();
 }
 
-// adjust raw further (if needed), composite annotations on top
-function compositeImages() {
+// adjust raw further, pre-compositing (use to draw when labels hidden)
+function preCompRawAdjust() {
   let canvas = document.getElementById('hidden_seg_canvas');
   let ctx = $('#hidden_seg_canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;
@@ -153,6 +153,17 @@ function compositeImages() {
     invert(rawData);
   }
   ctx.putImageData(rawData, 0, 0);
+
+  preCompRaw.src = canvas.toDataURL();
+}
+
+// composite annotations on top of adjusted raw image
+function compositeImages() {
+  let canvas = document.getElementById('hidden_seg_canvas');
+  let ctx = $('#hidden_seg_canvas').get(0).getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  ctx.drawImage(preCompRaw, 0, 0, rawWidth, rawHeight);
 
   // add labels on top
   ctx.save();
