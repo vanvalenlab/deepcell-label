@@ -1156,8 +1156,8 @@ function handle_scroll(evt) {
     let mod_contrast = -Math.sign(evt.originalEvent.deltaY) * 4;
     // stop if fully desaturated
     current_contrast = Math.max(current_contrast + mod_contrast, -100);
-    // stop at 5x contrast
-    current_contrast = Math.min(current_contrast + mod_contrast, 400);
+    // stop at 8x contrast
+    current_contrast = Math.min(current_contrast + mod_contrast, 700);
     prepareRaw();
   } else if ((rendering_raw || edit_mode || (rgb && !display_labels))
     && evt.originalEvent.shiftKey) {
