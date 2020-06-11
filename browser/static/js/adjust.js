@@ -1,4 +1,9 @@
 // helper functions
+// TODO: collect these functions into a Module?
+// functions like recolorScaled, grayscale, etc as private functions
+// functions like compositeImages are returned as public functions
+
+// could store rawHeight and rawWidth as part of module?
 
 // modify image data in place to recolor
 function recolorScaled(data, i, j, jlen, r=255, g=255, b=255) {
@@ -109,6 +114,8 @@ function contrastRaw(contrast, brightness) {
   contrastedRaw.src = canvas.toDataURL();
 }
 
+// TODO: should 'hidden_seg_canvas' get passed to this function?
+// or is it okay to grab it from the page like this?
 function preCompAdjust() {
   let canvas = document.getElementById('hidden_seg_canvas');
   let ctx = $('#hidden_seg_canvas').get(0).getContext('2d');
@@ -254,6 +261,9 @@ function prepareRaw() {
   contrastRaw(current_contrast, brightness);
 }
 
+// TODO: not sure how to scope segLoaded and rawLoaded.
+// they are changed by these adjust functions so the image composite
+// will only be generated when both source images are ready to use
 function segAdjust() {
   segLoaded = true;
   if (rawLoaded && segLoaded) {
