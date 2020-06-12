@@ -99,7 +99,7 @@ function postCompositeLabelMod(img,
 }
 
 // apply contrast+brightness to raw image
-function contrastRaw(contrast, brightness) {
+function contrastRaw(rawWidth, rawHeight, contrast, brightness) {
   let canvas = document.getElementById('hidden_seg_canvas');
   let ctx = $('#hidden_seg_canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;
@@ -255,10 +255,6 @@ function postCompAdjustRGB(rawWidth, rawHeight) {
   ctx.putImageData(imgData, 0, 0);
 
   postCompImg.src = canvas.toDataURL();
-}
-
-function prepareRaw() {
-  contrastRaw(current_contrast, brightness);
 }
 
 // TODO: not sure how to scope segLoaded and rawLoaded.
