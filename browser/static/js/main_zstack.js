@@ -684,7 +684,7 @@ let sheight;
 // raw and adjusted image storage
 // cascasding image updates if raw or seg is reloaded
 let rawLoaded;
-const raw_image = new Image();
+const rawImage = new Image();
 const contrastedRaw = new Image();
 const preCompRaw = new Image();
 
@@ -1014,7 +1014,7 @@ function fetch_and_render_frame() {
       // array of arrays, contains annotation data for frame
       seg_array = payload.seg_arr;
       seg_image.src = payload.segmented;
-      raw_image.src = payload.raw;
+      rawImage.src = payload.raw;
     },
     async: false
   });
@@ -1328,7 +1328,7 @@ function action(action, info, frame = current_frame) {
 
         if (payload.imgs.hasOwnProperty('raw')) {
           rawLoaded = false;
-          raw_image.src = payload.imgs.raw;
+          rawImage.src = payload.imgs.raw;
         }
       }
       if (payload.tracks) {
@@ -1397,13 +1397,13 @@ function start_caliban(filename) {
 
   // define image onload cascade behavior
   if (rgb) {
-    raw_image.onload = () => contrastRaw(rawWidth, rawHeight, current_contrast, brightness);
+    rawImage.onload = () => contrastRaw(rawWidth, rawHeight, current_contrast, brightness);
     contrastedRaw.onload = () => rawAdjust(rawWidth, rawHeight);
     seg_image.onload = () => preCompAdjust(rawWidth, rawHeight);
     preCompSeg.onload = () => segAdjust(rawWidth, rawHeight);
     postCompImg.onload = render_image_display;
   } else {
-    raw_image.onload = () => contrastRaw(rawWidth, rawHeight, current_contrast, brightness);
+    rawImage.onload = () => contrastRaw(rawWidth, rawHeight, current_contrast, brightness);
     contrastedRaw.onload = () => preCompRawAdjust(rawWidth, rawHeight);
     preCompRaw.onload = () => rawAdjust(rawWidth, rawHeight);
     seg_image.onload = () => preCompAdjust(rawWidth, rawHeight);

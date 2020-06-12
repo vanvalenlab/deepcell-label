@@ -106,7 +106,7 @@ function contrastRaw(rawWidth, rawHeight, contrast, brightness) {
 
   // draw seg_image so we can extract image data
   ctx.clearRect(0, 0, rawWidth, rawHeight);
-  ctx.drawImage(raw_image, 0, 0, rawWidth, rawHeight);
+  ctx.drawImage(rawImage, 0, 0, rawWidth, rawHeight);
   let rawData = ctx.getImageData(0, 0, rawWidth, rawHeight);
   contrast_image(rawData, contrast, brightness);
   ctx.putImageData(rawData, 0, 0);
