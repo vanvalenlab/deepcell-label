@@ -104,7 +104,7 @@ function contrastRaw(rawWidth, rawHeight, rawImage, contrastedRaw, contrast, bri
   let ctx = $('#hidden_seg_canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;
 
-  // draw seg_image so we can extract image data
+  // draw rawImage so we can extract image data
   ctx.clearRect(0, 0, rawWidth, rawHeight);
   ctx.drawImage(rawImage, 0, 0, rawWidth, rawHeight);
   let rawData = ctx.getImageData(0, 0, rawWidth, rawHeight);
@@ -121,7 +121,7 @@ function preCompAdjust(rawWidth, rawHeight) {
   let ctx = $('#hidden_seg_canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;
 
-  // draw seg_image so we can extract image data
+  // draw segImage so we can extract image data
   ctx.clearRect(0, 0, rawWidth, rawHeight);
   ctx.drawImage(segImage, 0, 0, rawWidth, rawHeight);
 
@@ -187,7 +187,7 @@ function postCompAdjust(rawWidth, rawHeight) {
   let ctx = $('#hidden_seg_canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;
 
-  // draw seg_image so we can extract image data
+  // draw compositedImg so we can extract image data
   ctx.clearRect(0, 0, rawWidth, rawHeight);
   ctx.drawImage(compositedImg, 0, 0, rawWidth, rawHeight);
 
@@ -219,7 +219,7 @@ function postCompAdjustRGB(rawWidth, rawHeight) {
   let ctx = $('#hidden_seg_canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;
 
-  // draw seg_image so we can extract image data
+  // draw contrastedRaw so we can extract image data
   ctx.clearRect(0, 0, rawWidth, rawHeight);
   ctx.drawImage(contrastedRaw, 0, 0, rawWidth, rawHeight);
 
