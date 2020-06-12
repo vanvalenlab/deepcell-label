@@ -215,7 +215,8 @@ function postCompAdjust(rawWidth, rawHeight, compositedImg, postCompImg, edit_mo
 }
 
 // apply outlines, transparent highlighting for RGB
-function postCompAdjustRGB(rawWidth, rawHeight) {
+function postCompAdjustRGB(rawWidth, rawHeight, contrastedRaw, postCompImg,
+    current_highlight, edit_mode, brush, mode) {
   let canvas = document.getElementById('hidden_seg_canvas');
   let ctx = $('#hidden_seg_canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;
@@ -261,22 +262,26 @@ function postCompAdjustRGB(rawWidth, rawHeight) {
 // TODO: not sure how to scope segLoaded and rawLoaded.
 // they are changed by these adjust functions so the image composite
 // will only be generated when both source images are ready to use
-function segAdjust(rawWidth, rawHeight, preCompRaw, preCompSeg, compositedImg) {
+function segAdjust(rawWidth, rawHeight, rgb, contrastedRaw, postCompImg,
+    preCompRaw, preCompSeg, compositedImg, current_highlight, edit_mode, brush, mode) {
   segLoaded = true;
   if (rawLoaded && segLoaded) {
     if (rgb) {
-      postCompAdjustRGB(rawWidth, rawHeight);
+      postCompAdjustRGB(rawWidth, rawHeight, contrastedRaw, postCompImg,
+        current_highlight, edit_mode, brush, mode);
     } else {
       compositeImages(rawWidth, rawHeight, preCompRaw, preCompSeg, compositedImg);
     }
   }
 }
 
-function rawAdjust(rawWidth, rawHeight, preCompRaw, preCompSeg, compositedImg) {
+function rawAdjust(rawWidth, rawHeight, rgb, contrastedRaw, postCompImg,
+    preCompRaw, preCompSeg, compositedImg, current_highlight, edit_mode, brush, mode) {
   rawLoaded = true;
   if (rawLoaded && segLoaded) {
     if (rgb) {
-      postCompAdjustRGB(rawWidth, rawHeight);
+      postCompAdjustRGB(rawWidth, rawHeight, contrastedRaw, postCompImg,
+    current_highlight, edit_mode, brush, mode);
     } else {
       compositeImages(rawWidth, rawHeight, preCompRaw, preCompSeg, compositedImg);
     }
