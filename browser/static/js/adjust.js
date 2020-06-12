@@ -18,7 +18,7 @@ function recolorScaled(data, i, j, jlen, r=255, g=255, b=255) {
 
 // image adjustment functions: take img as input and manipulate data attribute
 // pixel data is 1D array of 8bit RGBA values
-function contrast_image(img, contrast = 0, brightness = 0) {
+function contrast_image(img, contrast=0, brightness=0) {
   let d = img.data;
   contrast = (contrast / 100) + 1;
   for (let i = 0; i < d.length; i += 4) {
