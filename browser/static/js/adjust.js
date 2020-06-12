@@ -123,7 +123,7 @@ function preCompAdjust(rawWidth, rawHeight) {
 
   // draw seg_image so we can extract image data
   ctx.clearRect(0, 0, rawWidth, rawHeight);
-  ctx.drawImage(seg_image, 0, 0, rawWidth, rawHeight);
+  ctx.drawImage(segImage, 0, 0, rawWidth, rawHeight);
 
   if (current_highlight) {
     let segData = ctx.getImageData(0, 0, rawWidth, rawHeight);

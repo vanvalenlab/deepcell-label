@@ -689,7 +689,7 @@ const contrastedRaw = new Image();
 const preCompRaw = new Image();
 
 let segLoaded;
-const seg_image = new Image();
+const segImage = new Image();
 const preCompSeg = new Image();
 
 // adjusted raw + annotations
@@ -1013,7 +1013,7 @@ function fetch_and_render_frame() {
       // load new value of seg_array
       // array of arrays, contains annotation data for frame
       seg_array = payload.seg_arr;
-      seg_image.src = payload.segmented;
+      segImage.src = payload.segmented;
       rawImage.src = payload.raw;
     },
     async: false
@@ -1323,7 +1323,7 @@ function action(action, info, frame = current_frame) {
 
         if (payload.imgs.hasOwnProperty('segmented')) {
           segLoaded = false;
-          seg_image.src = payload.imgs.segmented;
+          segImage.src = payload.imgs.segmented;
         }
 
         if (payload.imgs.hasOwnProperty('raw')) {
@@ -1399,14 +1399,14 @@ function start_caliban(filename) {
   if (rgb) {
     rawImage.onload = () => contrastRaw(rawWidth, rawHeight, rawImage, contrastedRaw, current_contrast, brightness);
     contrastedRaw.onload = () => rawAdjust(rawWidth, rawHeight);
-    seg_image.onload = () => preCompAdjust(rawWidth, rawHeight);
+    segImage.onload = () => preCompAdjust(rawWidth, rawHeight);
     preCompSeg.onload = () => segAdjust(rawWidth, rawHeight);
     postCompImg.onload = render_image_display;
   } else {
     rawImage.onload = () => contrastRaw(rawWidth, rawHeight, rawImage, contrastedRaw, current_contrast, brightness);
     contrastedRaw.onload = () => preCompRawAdjust(rawWidth, rawHeight);
     preCompRaw.onload = () => rawAdjust(rawWidth, rawHeight);
-    seg_image.onload = () => preCompAdjust(rawWidth, rawHeight);
+    segImage.onload = () => preCompAdjust(rawWidth, rawHeight);
     preCompSeg.onload = () => segAdjust(rawWidth, rawHeight);
     compositedImg.onload = () => postCompAdjust(rawWidth, rawHeight);
     postCompImg.onload = render_image_display;
