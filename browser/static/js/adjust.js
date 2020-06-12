@@ -116,7 +116,7 @@ function contrastRaw(contrast, brightness) {
 
 // TODO: should 'hidden_seg_canvas' get passed to this function?
 // or is it okay to grab it from the page like this?
-function preCompAdjust() {
+function preCompAdjust(rawWidth, rawHeight) {
   let canvas = document.getElementById('hidden_seg_canvas');
   let ctx = $('#hidden_seg_canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;
@@ -146,7 +146,7 @@ function preCompAdjust() {
 }
 
 // adjust raw further, pre-compositing (use to draw when labels hidden)
-function preCompRawAdjust() {
+function preCompRawAdjust(rawWidth, rawHeight) {
   let canvas = document.getElementById('hidden_seg_canvas');
   let ctx = $('#hidden_seg_canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;
@@ -165,7 +165,7 @@ function preCompRawAdjust() {
 }
 
 // composite annotations on top of adjusted raw image
-function compositeImages() {
+function compositeImages(rawWidth, rawHeight) {
   let canvas = document.getElementById('hidden_seg_canvas');
   let ctx = $('#hidden_seg_canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;
@@ -182,7 +182,7 @@ function compositeImages() {
 }
 
 // apply outlines, transparent highlighting
-function postCompAdjust() {
+function postCompAdjust(rawWidth, rawHeight) {
   let canvas = document.getElementById('hidden_seg_canvas');
   let ctx = $('#hidden_seg_canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;
@@ -214,7 +214,7 @@ function postCompAdjust() {
 }
 
 // apply outlines, transparent highlighting for RGB
-function postCompAdjustRGB() {
+function postCompAdjustRGB(rawWidth, rawHeight) {
   let canvas = document.getElementById('hidden_seg_canvas');
   let ctx = $('#hidden_seg_canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;
@@ -264,24 +264,24 @@ function prepareRaw() {
 // TODO: not sure how to scope segLoaded and rawLoaded.
 // they are changed by these adjust functions so the image composite
 // will only be generated when both source images are ready to use
-function segAdjust() {
+function segAdjust(rawWidth, rawHeight) {
   segLoaded = true;
   if (rawLoaded && segLoaded) {
     if (rgb) {
-      postCompAdjustRGB();
+      postCompAdjustRGB(rawWidth, rawHeight);
     } else {
-      compositeImages();
+      compositeImages(rawWidth, rawHeight);
     }
   }
 }
 
-function rawAdjust() {
+function rawAdjust(rawWidth, rawHeight) {
   rawLoaded = true;
   if (rawLoaded && segLoaded) {
     if (rgb) {
-      postCompAdjustRGB();
+      postCompAdjustRGB(rawWidth, rawHeight);
     } else {
-      compositeImages();
+      compositeImages(rawWidth, rawHeight);
     }
   }
 }

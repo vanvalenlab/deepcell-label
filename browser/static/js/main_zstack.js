@@ -50,7 +50,7 @@ class Mode {
 
     this.action = "";
     this.prompt = "";
-    preCompAdjust();
+    preCompAdjust(rawWidth, rawHeight);
   }
 
   // these keybinds apply regardless of
@@ -77,7 +77,7 @@ class Mode {
     } else if (!rgb && key === 'h') {
       // toggle highlight
       current_highlight = !current_highlight;
-      preCompAdjust();
+      preCompAdjust(rawWidth, rawHeight);
     } else if (key === 'z') {
       // toggle rendering_raw
       rendering_raw = !rendering_raw;
@@ -113,7 +113,7 @@ class Mode {
     } else if (!rgb && key === 'i') {
       // toggle light/dark inversion of raw img
       display_invert = !display_invert;
-      preCompRawAdjust();
+      preCompRawAdjust(rawWidth, rawHeight);
     } else if (!rgb && settings.pixel_only && (key === 'l' || key === 'L')) {
       display_labels = !display_labels;
       render_image_display();
@@ -126,7 +126,7 @@ class Mode {
         this.kind = Modes.drawing;
       }
       segLoaded = false;
-      preCompAdjust();
+      preCompAdjust(rawWidth, rawHeight);
     }
   }
 
@@ -136,7 +136,7 @@ class Mode {
       // toggle edit mode
       edit_mode = !edit_mode;
       segLoaded = false;
-      preCompAdjust();
+      preCompAdjust(rawWidth, rawHeight);
     } else if (key === "c") {
       // cycle forward one channel, if applicable
       this.channel += 1;
@@ -165,7 +165,7 @@ class Mode {
                              maxLabelsMap.get(this.feature) + 1);
       if (current_highlight) {
         segLoaded = false;
-        preCompAdjust();
+        preCompAdjust(rawWidth, rawHeight);
       }
       render_info_display();
     } else if (key === "[") {
@@ -173,7 +173,7 @@ class Mode {
       brush.value -= 1;
       if (current_highlight) {
         segLoaded = false;
-        preCompAdjust();
+        preCompAdjust(rawWidth, rawHeight);
       }
       render_info_display();
     } else if (key === "x") {
@@ -211,7 +211,7 @@ class Mode {
       edit_mode = !edit_mode;
       helper_brush_draw();
       segLoaded = false;
-      preCompAdjust();
+      preCompAdjust(rawWidth, rawHeight);
     } else if (key === "c") {
       // cycle forward one channel, if applicable
       this.channel += 1;
@@ -246,7 +246,7 @@ class Mode {
           1, maxLabelsMap.get(this.feature));
       if (current_highlight) {
         segLoaded = false;
-        preCompAdjust();
+        preCompAdjust(rawWidth, rawHeight);
       }
     } else if (key === "]" && this.highlighted_cell_one !== -1) {
       // cycle highlight to next label
@@ -254,7 +254,7 @@ class Mode {
           1, maxLabelsMap.get(this.feature));
       if (current_highlight) {
         segLoaded = false;
-        preCompAdjust();
+        preCompAdjust(rawWidth, rawHeight);
       }
     }
   }
@@ -293,7 +293,7 @@ class Mode {
       this.highlighted_cell_one = temp_highlight;
       if (current_highlight) {
         segLoaded = false;
-        preCompAdjust();
+        preCompAdjust(rawWidth, rawHeight);
       }
     } else if (key === "]") {
       // cycle highlight to next label
@@ -305,7 +305,7 @@ class Mode {
       this.highlighted_cell_one = temp_highlight;
       if (current_highlight) {
         segLoaded = false;
-        preCompAdjust();
+        preCompAdjust(rawWidth, rawHeight);
       }
     }
   }
@@ -535,7 +535,7 @@ class Mode {
             + ". Use ESC to leave this mode.";
         this.kind = Modes.drawing;
         segLoaded = false;
-        preCompAdjust();
+        preCompAdjust(rawWidth, rawHeight);
       } else {
         this.clear();
       }
@@ -593,7 +593,7 @@ class Mode {
       this.handle_mode_none_click(evt);
       if (current_highlight) {
         segLoaded = false;
-        preCompAdjust();
+        preCompAdjust(rawWidth, rawHeight);
       } else {
         render_info_display();
       }
@@ -602,7 +602,7 @@ class Mode {
       this.handle_mode_single_click(evt);
       if (current_highlight) {
         segLoaded = false;
-        preCompAdjust();
+        preCompAdjust(rawWidth, rawHeight);
       } else {
         render_info_display();
       }
@@ -611,7 +611,7 @@ class Mode {
       this.handle_mode_multiple_click(evt);
       if (current_highlight) {
         segLoaded = false;
-        preCompAdjust();
+        preCompAdjust(rawWidth, rawHeight);
       } else {
         render_info_display();
       }
@@ -1398,17 +1398,17 @@ function start_caliban(filename) {
   // define image onload cascade behavior
   if (rgb) {
     raw_image.onload = prepareRaw;
-    contrastedRaw.onload = rawAdjust;
-    seg_image.onload = preCompAdjust;
-    preCompSeg.onload = segAdjust;
+    contrastedRaw.onload = () => rawAdjust(rawWidth, rawHeight);
+    seg_image.onload = () => preCompAdjust(rawWidth, rawHeight);
+    preCompSeg.onload = () => segAdjust(rawWidth, rawHeight);
     postCompImg.onload = render_image_display;
   } else {
     raw_image.onload = prepareRaw;
-    contrastedRaw.onload = preCompRawAdjust;
-    preCompRaw.onload = rawAdjust;
-    seg_image.onload = preCompAdjust;
-    preCompSeg.onload = segAdjust;
-    compositedImg.onload = postCompAdjust;
+    contrastedRaw.onload = () => preCompRawAdjust(rawWidth, rawHeight);
+    preCompRaw.onload = () => rawAdjust(rawWidth, rawHeight);
+    seg_image.onload = () => preCompAdjust(rawWidth, rawHeight);
+    preCompSeg.onload = () => segAdjust(rawWidth, rawHeight);
+    compositedImg.onload = () => postCompAdjust(rawWidth, rawHeight);
     postCompImg.onload = render_image_display;
   }
 
