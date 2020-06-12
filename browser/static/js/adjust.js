@@ -147,7 +147,7 @@ function preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg,
 }
 
 // adjust raw further, pre-compositing (use to draw when labels hidden)
-function preCompRawAdjust(rawWidth, rawHeight) {
+function preCompRawAdjust(rawWidth, rawHeight, contrastedRaw, preCompRaw, display_invert) {
   let canvas = document.getElementById('hidden_seg_canvas');
   let ctx = $('#hidden_seg_canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;

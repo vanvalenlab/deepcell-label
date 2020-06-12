@@ -115,7 +115,7 @@ class Mode {
     } else if (!rgb && key === 'i') {
       // toggle light/dark inversion of raw img
       display_invert = !display_invert;
-      preCompRawAdjust(rawWidth, rawHeight);
+      preCompRawAdjust(rawWidth, rawHeight, contrastedRaw, preCompRaw, display_invert);
     } else if (!rgb && settings.pixel_only && (key === 'l' || key === 'L')) {
       display_labels = !display_labels;
       render_image_display();
@@ -1420,7 +1420,7 @@ function start_caliban(filename) {
     postCompImg.onload = render_image_display;
   } else {
     rawImage.onload = () => contrastRaw(rawWidth, rawHeight, rawImage, contrastedRaw, current_contrast, brightness);
-    contrastedRaw.onload = () => preCompRawAdjust(rawWidth, rawHeight);
+    contrastedRaw.onload = () => preCompRawAdjust(rawWidth, rawHeight, contrastedRaw, preCompRaw, display_invert);
     preCompRaw.onload = () => rawAdjust(rawWidth, rawHeight);
     segImage.onload = () => preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg,
       current_highlight, edit_mode, brush, mode);
