@@ -183,7 +183,7 @@ function compositeImages(rawWidth, rawHeight, preCompRaw, preCompSeg, composited
 }
 
 // apply outlines, transparent highlighting
-function postCompAdjust(rawWidth, rawHeight) {
+function postCompAdjust(rawWidth, rawHeight, compositedImg, postCompImg, edit_mode, brush) {
   let canvas = document.getElementById('hidden_seg_canvas');
   let ctx = $('#hidden_seg_canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;

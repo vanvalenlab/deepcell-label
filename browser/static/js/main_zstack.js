@@ -1425,7 +1425,7 @@ function start_caliban(filename) {
     segImage.onload = () => preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg,
       current_highlight, edit_mode, brush, mode);
     preCompSeg.onload = () => segAdjust(rawWidth, rawHeight, preCompRaw, preCompSeg, compositedImg);
-    compositedImg.onload = () => postCompAdjust(rawWidth, rawHeight);
+    compositedImg.onload = () => postCompAdjust(rawWidth, rawHeight, compositedImg, postCompImg, edit_mode, brush);
     postCompImg.onload = render_image_display;
   }
 
