@@ -86,7 +86,7 @@ class Mode {
       // reset brightness adjustments
       brightness = 0;
       current_contrast = 0;
-      contrastRaw(rawWidth, rawHeight, current_contrast, brightness);
+      contrastRaw(rawWidth, rawHeight, rawImage, contrastedRaw, current_contrast, brightness);
     } else if ((key === 'l' || key === 'L') && rgb && !edit_mode) {
       display_labels = !display_labels;
       render_image_display();
@@ -1162,14 +1162,14 @@ function handle_scroll(evt) {
     current_contrast = Math.max(current_contrast + mod_contrast, MIN_CONTRAST);
     // stop at 8x contrast
     current_contrast = Math.min(current_contrast + mod_contrast, MAX_CONTRAST);
-    contrastRaw(rawWidth, rawHeight, current_contrast, brightness);
+    contrastRaw(rawWidth, rawHeight, rawImage, contrastedRaw, current_contrast, brightness);
   } else if ((rendering_raw || edit_mode || (rgb && !display_labels))
     && evt.originalEvent.shiftKey) {
     rawLoaded = false;
     let mod = -Math.sign(evt.originalEvent.deltaY);
     brightness = Math.min(brightness + mod, 255);
     brightness = Math.max(brightness + mod, -512);
-    contrastRaw(rawWidth, rawHeight, current_contrast, brightness);
+    contrastRaw(rawWidth, rawHeight, rawImage, contrastedRaw, current_contrast, brightness);
   }
 }
 
@@ -1397,13 +1397,13 @@ function start_caliban(filename) {
 
   // define image onload cascade behavior
   if (rgb) {
-    rawImage.onload = () => contrastRaw(rawWidth, rawHeight, current_contrast, brightness);
+    rawImage.onload = () => contrastRaw(rawWidth, rawHeight, rawImage, contrastedRaw, current_contrast, brightness);
     contrastedRaw.onload = () => rawAdjust(rawWidth, rawHeight);
     seg_image.onload = () => preCompAdjust(rawWidth, rawHeight);
     preCompSeg.onload = () => segAdjust(rawWidth, rawHeight);
     postCompImg.onload = render_image_display;
   } else {
-    rawImage.onload = () => contrastRaw(rawWidth, rawHeight, current_contrast, brightness);
+    rawImage.onload = () => contrastRaw(rawWidth, rawHeight, rawImage, contrastedRaw, current_contrast, brightness);
     contrastedRaw.onload = () => preCompRawAdjust(rawWidth, rawHeight);
     preCompRaw.onload = () => rawAdjust(rawWidth, rawHeight);
     seg_image.onload = () => preCompAdjust(rawWidth, rawHeight);

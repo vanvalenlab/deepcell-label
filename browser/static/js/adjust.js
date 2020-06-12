@@ -99,7 +99,7 @@ function postCompositeLabelMod(img,
 }
 
 // apply contrast+brightness to raw image
-function contrastRaw(rawWidth, rawHeight, contrast, brightness) {
+function contrastRaw(rawWidth, rawHeight, rawImage, contrastedRaw, contrast, brightness) {
   let canvas = document.getElementById('hidden_seg_canvas');
   let ctx = $('#hidden_seg_canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;
