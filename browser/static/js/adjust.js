@@ -116,7 +116,8 @@ function contrastRaw(rawWidth, rawHeight, rawImage, contrastedRaw, contrast, bri
 
 // TODO: should 'hidden_seg_canvas' get passed to this function?
 // or is it okay to grab it from the page like this?
-function preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg) {
+function preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg,
+    current_highlight, edit_mode, brush, mode) {
   let canvas = document.getElementById('hidden_seg_canvas');
   let ctx = $('#hidden_seg_canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;

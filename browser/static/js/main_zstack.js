@@ -50,7 +50,8 @@ class Mode {
 
     this.action = "";
     this.prompt = "";
-    preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg);
+    preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg,
+      current_highlight, edit_mode, brush, this);
   }
 
   // these keybinds apply regardless of
@@ -77,7 +78,8 @@ class Mode {
     } else if (!rgb && key === 'h') {
       // toggle highlight
       current_highlight = !current_highlight;
-      preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg);
+      preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg,
+        current_highlight, edit_mode, brush, this);
     } else if (key === 'z') {
       // toggle rendering_raw
       rendering_raw = !rendering_raw;
@@ -126,7 +128,8 @@ class Mode {
         this.kind = Modes.drawing;
       }
       segLoaded = false;
-      preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg);
+      preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg,
+        current_highlight, edit_mode, brush, this);
     }
   }
 
@@ -136,7 +139,8 @@ class Mode {
       // toggle edit mode
       edit_mode = !edit_mode;
       segLoaded = false;
-      preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg);
+      preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg,
+        current_highlight, edit_mode, brush, this);
     } else if (key === "c") {
       // cycle forward one channel, if applicable
       this.channel += 1;
@@ -165,7 +169,8 @@ class Mode {
                              maxLabelsMap.get(this.feature) + 1);
       if (current_highlight) {
         segLoaded = false;
-        preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg);
+        preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg,
+          current_highlight, edit_mode, brush, this);
       }
       render_info_display();
     } else if (key === "[") {
@@ -173,7 +178,8 @@ class Mode {
       brush.value -= 1;
       if (current_highlight) {
         segLoaded = false;
-        preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg);
+        preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg,
+          current_highlight, edit_mode, brush, this);
       }
       render_info_display();
     } else if (key === "x") {
@@ -211,7 +217,8 @@ class Mode {
       edit_mode = !edit_mode;
       helper_brush_draw();
       segLoaded = false;
-      preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg);
+      preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg,
+        current_highlight, edit_mode, brush, this);
     } else if (key === "c") {
       // cycle forward one channel, if applicable
       this.channel += 1;
@@ -246,7 +253,8 @@ class Mode {
           1, maxLabelsMap.get(this.feature));
       if (current_highlight) {
         segLoaded = false;
-        preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg);
+        preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg,
+          current_highlight, edit_mode, brush, this);
       }
     } else if (key === "]" && this.highlighted_cell_one !== -1) {
       // cycle highlight to next label
@@ -254,7 +262,8 @@ class Mode {
           1, maxLabelsMap.get(this.feature));
       if (current_highlight) {
         segLoaded = false;
-        preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg);
+        preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg,
+          current_highlight, edit_mode, brush, this);
       }
     }
   }
@@ -293,7 +302,8 @@ class Mode {
       this.highlighted_cell_one = temp_highlight;
       if (current_highlight) {
         segLoaded = false;
-        preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg);
+        preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg,
+          current_highlight, edit_mode, brush, this);
       }
     } else if (key === "]") {
       // cycle highlight to next label
@@ -305,7 +315,8 @@ class Mode {
       this.highlighted_cell_one = temp_highlight;
       if (current_highlight) {
         segLoaded = false;
-        preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg);
+        preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg,
+          current_highlight, edit_mode, brush, this);
       }
     }
   }
@@ -535,7 +546,8 @@ class Mode {
             + ". Use ESC to leave this mode.";
         this.kind = Modes.drawing;
         segLoaded = false;
-        preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg);
+        preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg,
+          current_highlight, edit_mode, brush, this);
       } else {
         this.clear();
       }
@@ -593,7 +605,8 @@ class Mode {
       this.handle_mode_none_click(evt);
       if (current_highlight) {
         segLoaded = false;
-        preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg);
+        preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg,
+          current_highlight, edit_mode, brush, this);
       } else {
         render_info_display();
       }
@@ -602,7 +615,8 @@ class Mode {
       this.handle_mode_single_click(evt);
       if (current_highlight) {
         segLoaded = false;
-        preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg);
+        preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg,
+          current_highlight, edit_mode, brush, this);
       } else {
         render_info_display();
       }
@@ -611,7 +625,8 @@ class Mode {
       this.handle_mode_multiple_click(evt);
       if (current_highlight) {
         segLoaded = false;
-        preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg);
+        preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg,
+          current_highlight, edit_mode, brush, this);
       } else {
         render_info_display();
       }
@@ -1399,14 +1414,16 @@ function start_caliban(filename) {
   if (rgb) {
     rawImage.onload = () => contrastRaw(rawWidth, rawHeight, rawImage, contrastedRaw, current_contrast, brightness);
     contrastedRaw.onload = () => rawAdjust(rawWidth, rawHeight);
-    segImage.onload = () => preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg);
+    segImage.onload = () => preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg,
+      current_highlight, edit_mode, brush, mode);
     preCompSeg.onload = () => segAdjust(rawWidth, rawHeight);
     postCompImg.onload = render_image_display;
   } else {
     rawImage.onload = () => contrastRaw(rawWidth, rawHeight, rawImage, contrastedRaw, current_contrast, brightness);
     contrastedRaw.onload = () => preCompRawAdjust(rawWidth, rawHeight);
     preCompRaw.onload = () => rawAdjust(rawWidth, rawHeight);
-    segImage.onload = () => preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg);
+    segImage.onload = () => preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg,
+      current_highlight, edit_mode, brush, mode);
     preCompSeg.onload = () => segAdjust(rawWidth, rawHeight);
     compositedImg.onload = () => postCompAdjust(rawWidth, rawHeight);
     postCompImg.onload = render_image_display;
