@@ -166,7 +166,7 @@ function preCompRawAdjust(rawWidth, rawHeight, contrastedRaw, preCompRaw, displa
 }
 
 // composite annotations on top of adjusted raw image
-function compositeImages(rawWidth, rawHeight) {
+function compositeImages(rawWidth, rawHeight, preCompRaw, preCompSeg, compositedImg) {
   let canvas = document.getElementById('hidden_seg_canvas');
   let ctx = $('#hidden_seg_canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;
@@ -261,24 +261,24 @@ function postCompAdjustRGB(rawWidth, rawHeight) {
 // TODO: not sure how to scope segLoaded and rawLoaded.
 // they are changed by these adjust functions so the image composite
 // will only be generated when both source images are ready to use
-function segAdjust(rawWidth, rawHeight) {
+function segAdjust(rawWidth, rawHeight, preCompRaw, preCompSeg, compositedImg) {
   segLoaded = true;
   if (rawLoaded && segLoaded) {
     if (rgb) {
       postCompAdjustRGB(rawWidth, rawHeight);
     } else {
-      compositeImages(rawWidth, rawHeight);
+      compositeImages(rawWidth, rawHeight, preCompRaw, preCompSeg, compositedImg);
     }
   }
 }
 
-function rawAdjust(rawWidth, rawHeight) {
+function rawAdjust(rawWidth, rawHeight, preCompRaw, preCompSeg, compositedImg) {
   rawLoaded = true;
   if (rawLoaded && segLoaded) {
     if (rgb) {
       postCompAdjustRGB(rawWidth, rawHeight);
     } else {
-      compositeImages(rawWidth, rawHeight);
+      compositeImages(rawWidth, rawHeight, preCompRaw, preCompSeg, compositedImg);
     }
   }
 }

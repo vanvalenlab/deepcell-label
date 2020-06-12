@@ -1413,18 +1413,18 @@ function start_caliban(filename) {
   // define image onload cascade behavior
   if (rgb) {
     rawImage.onload = () => contrastRaw(rawWidth, rawHeight, rawImage, contrastedRaw, current_contrast, brightness);
-    contrastedRaw.onload = () => rawAdjust(rawWidth, rawHeight);
+    contrastedRaw.onload = () => rawAdjust(rawWidth, rawHeight, preCompRaw, preCompSeg, compositedImg);
     segImage.onload = () => preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg,
       current_highlight, edit_mode, brush, mode);
-    preCompSeg.onload = () => segAdjust(rawWidth, rawHeight);
+    preCompSeg.onload = () => segAdjust(rawWidth, rawHeight, preCompRaw, preCompSeg, compositedImg);
     postCompImg.onload = render_image_display;
   } else {
     rawImage.onload = () => contrastRaw(rawWidth, rawHeight, rawImage, contrastedRaw, current_contrast, brightness);
     contrastedRaw.onload = () => preCompRawAdjust(rawWidth, rawHeight, contrastedRaw, preCompRaw, display_invert);
-    preCompRaw.onload = () => rawAdjust(rawWidth, rawHeight);
+    preCompRaw.onload = () => rawAdjust(rawWidth, rawHeight, preCompRaw, preCompSeg, compositedImg);
     segImage.onload = () => preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg,
       current_highlight, edit_mode, brush, mode);
-    preCompSeg.onload = () => segAdjust(rawWidth, rawHeight);
+    preCompSeg.onload = () => segAdjust(rawWidth, rawHeight, preCompRaw, preCompSeg, compositedImg);
     compositedImg.onload = () => postCompAdjust(rawWidth, rawHeight);
     postCompImg.onload = render_image_display;
   }
