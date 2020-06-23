@@ -1413,18 +1413,22 @@ function start_caliban(filename) {
   // define image onload cascade behavior
   if (rgb) {
     rawImage.onload = () => contrastRaw(rawWidth, rawHeight, rawImage, contrastedRaw, current_contrast, brightness);
-    contrastedRaw.onload = () => rawAdjust(rawWidth, rawHeight, preCompRaw, preCompSeg, compositedImg);
+    contrastedRaw.onload = () => rawAdjust(rawWidth, rawHeight, rgb, contrastedRaw, postCompImg,
+        preCompRaw, preCompSeg, compositedImg, current_highlight, edit_mode, brush, mode);
     segImage.onload = () => preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg,
-      current_highlight, edit_mode, brush, mode);
-    preCompSeg.onload = () => segAdjust(rawWidth, rawHeight, preCompRaw, preCompSeg, compositedImg);
+        current_highlight, edit_mode, brush, mode);
+    preCompSeg.onload = () => segAdjust(rawWidth, rawHeight, rgb, contrastedRaw, postCompImg,
+        preCompRaw, preCompSeg, compositedImg, current_highlight, edit_mode, brush, mode);
     postCompImg.onload = render_image_display;
   } else {
     rawImage.onload = () => contrastRaw(rawWidth, rawHeight, rawImage, contrastedRaw, current_contrast, brightness);
     contrastedRaw.onload = () => preCompRawAdjust(rawWidth, rawHeight, contrastedRaw, preCompRaw, display_invert);
-    preCompRaw.onload = () => rawAdjust(rawWidth, rawHeight, preCompRaw, preCompSeg, compositedImg);
+    preCompRaw.onload = () => rawAdjust(rawWidth, rawHeight, rgb, contrastedRaw, postCompImg,
+        preCompRaw, preCompSeg, compositedImg, current_highlight, edit_mode, brush, mode);
     segImage.onload = () => preCompAdjust(rawWidth, rawHeight, segImage, preCompSeg,
-      current_highlight, edit_mode, brush, mode);
-    preCompSeg.onload = () => segAdjust(rawWidth, rawHeight, preCompRaw, preCompSeg, compositedImg);
+        current_highlight, edit_mode, brush, mode);
+    preCompSeg.onload = () => segAdjust(rawWidth, rawHeight, rgb, contrastedRaw, postCompImg,
+        preCompRaw, preCompSeg, compositedImg, current_highlight, edit_mode, brush, mode);
     compositedImg.onload = () => postCompAdjust(rawWidth, rawHeight, compositedImg, postCompImg, edit_mode, brush);
     postCompImg.onload = render_image_display;
   }
