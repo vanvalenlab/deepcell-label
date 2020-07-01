@@ -71,8 +71,8 @@ class ImageAdjustment{
     let r, g, b;
     let ann = img.data;
     // use label array to figure out which pixels to recolor
-    for (var j = 0; j < seg_array.length; j += 1){ //y
-      for (var i = 0; i < seg_array[j].length; i += 1){ //x
+    for (var j = 0; j < seg_array.length; j += 1){ // y
+      for (var i = 0; i < seg_array[j].length; i += 1){ // x
         let jlen = seg_array[j].length;
         let currentVal = Math.abs(seg_array[j][i]);
         if (currentVal === h1 || currentVal === h2) {
@@ -91,8 +91,8 @@ class ImageAdjustment{
     let r, g, b;
     let ann = img.data;
     // use label array to figure out which pixels to recolor
-    for (var j = 0; j < seg_array.length; j += 1){ //y
-      for (var i = 0; i < seg_array[j].length; i += 1){ //x
+    for (var j = 0; j < seg_array.length; j += 1){ // y
+      for (var i = 0; i < seg_array[j].length; i += 1){ // x
         let jlen = seg_array[j].length;
         let currentVal = seg_array[j][i];
         // outline red
