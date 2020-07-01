@@ -50,7 +50,7 @@ class Mode {
 
     this.action = "";
     this.prompt = "";
-    adjust.preCompAdjust(segImage, preCompSeg,
+    adjuster.preCompAdjust(segImage, preCompSeg,
       current_highlight, edit_mode, brush, this);
   }
 
@@ -78,7 +78,7 @@ class Mode {
     } else if (!rgb && key === 'h') {
       // toggle highlight
       current_highlight = !current_highlight;
-      adjust.preCompAdjust(segImage, preCompSeg,
+      adjuster.preCompAdjust(segImage, preCompSeg,
         current_highlight, edit_mode, brush, this);
     } else if (key === 'z') {
       // toggle rendering_raw
@@ -88,7 +88,7 @@ class Mode {
       // reset brightness adjustments
       brightness = 0;
       current_contrast = 0;
-      adjust.contrastRaw(rawImage, contrastedRaw, current_contrast, brightness);
+      adjuster.contrastRaw(rawImage, contrastedRaw, current_contrast, brightness);
     } else if ((key === 'l' || key === 'L') && rgb && !edit_mode) {
       display_labels = !display_labels;
       render_image_display();
@@ -115,7 +115,7 @@ class Mode {
     } else if (!rgb && key === 'i') {
       // toggle light/dark inversion of raw img
       display_invert = !display_invert;
-      adjust.preCompRawAdjust(contrastedRaw, preCompRaw, display_invert);
+      adjuster.preCompRawAdjust(contrastedRaw, preCompRaw, display_invert);
     } else if (!rgb && settings.pixel_only && (key === 'l' || key === 'L')) {
       display_labels = !display_labels;
       render_image_display();
@@ -128,7 +128,7 @@ class Mode {
         this.kind = Modes.drawing;
       }
       segLoaded = false;
-      adjust.preCompAdjust(segImage, preCompSeg,
+      adjuster.preCompAdjust(segImage, preCompSeg,
         current_highlight, edit_mode, brush, this);
     }
   }
@@ -139,7 +139,7 @@ class Mode {
       // toggle edit mode
       edit_mode = !edit_mode;
       segLoaded = false;
-      adjust.preCompAdjust(segImage, preCompSeg,
+      adjuster.preCompAdjust(segImage, preCompSeg,
         current_highlight, edit_mode, brush, this);
     } else if (key === "c") {
       // cycle forward one channel, if applicable
@@ -169,7 +169,7 @@ class Mode {
                              maxLabelsMap.get(this.feature) + 1);
       if (current_highlight) {
         segLoaded = false;
-        adjust.preCompAdjust(segImage, preCompSeg,
+        adjuster.preCompAdjust(segImage, preCompSeg,
           current_highlight, edit_mode, brush, this);
       }
       render_info_display();
@@ -178,7 +178,7 @@ class Mode {
       brush.value -= 1;
       if (current_highlight) {
         segLoaded = false;
-        adjust.preCompAdjust(segImage, preCompSeg,
+        adjuster.preCompAdjust(segImage, preCompSeg,
           current_highlight, edit_mode, brush, this);
       }
       render_info_display();
@@ -217,7 +217,7 @@ class Mode {
       edit_mode = !edit_mode;
       helper_brush_draw();
       segLoaded = false;
-      adjust.preCompAdjust(segImage, preCompSeg,
+      adjuster.preCompAdjust(segImage, preCompSeg,
         current_highlight, edit_mode, brush, this);
     } else if (key === "c") {
       // cycle forward one channel, if applicable
@@ -253,7 +253,7 @@ class Mode {
           1, maxLabelsMap.get(this.feature));
       if (current_highlight) {
         segLoaded = false;
-        adjust.preCompAdjust(segImage, preCompSeg,
+        adjuster.preCompAdjust(segImage, preCompSeg,
           current_highlight, edit_mode, brush, this);
       }
     } else if (key === "]" && this.highlighted_cell_one !== -1) {
@@ -262,7 +262,7 @@ class Mode {
           1, maxLabelsMap.get(this.feature));
       if (current_highlight) {
         segLoaded = false;
-        adjust.preCompAdjust(segImage, preCompSeg,
+        adjuster.preCompAdjust(segImage, preCompSeg,
           current_highlight, edit_mode, brush, this);
       }
     }
@@ -302,7 +302,7 @@ class Mode {
       this.highlighted_cell_one = temp_highlight;
       if (current_highlight) {
         segLoaded = false;
-        adjust.preCompAdjust(segImage, preCompSeg,
+        adjuster.preCompAdjust(segImage, preCompSeg,
           current_highlight, edit_mode, brush, this);
       }
     } else if (key === "]") {
@@ -315,7 +315,7 @@ class Mode {
       this.highlighted_cell_one = temp_highlight;
       if (current_highlight) {
         segLoaded = false;
-        adjust.preCompAdjust(segImage, preCompSeg,
+        adjuster.preCompAdjust(segImage, preCompSeg,
           current_highlight, edit_mode, brush, this);
       }
     }
@@ -546,7 +546,7 @@ class Mode {
             + ". Use ESC to leave this mode.";
         this.kind = Modes.drawing;
         segLoaded = false;
-        adjust.preCompAdjust(segImage, preCompSeg,
+        adjuster.preCompAdjust(segImage, preCompSeg,
           current_highlight, edit_mode, brush, this);
       } else {
         this.clear();
@@ -605,7 +605,7 @@ class Mode {
       this.handle_mode_none_click(evt);
       if (current_highlight) {
         segLoaded = false;
-        adjust.preCompAdjust(segImage, preCompSeg,
+        adjuster.preCompAdjust(segImage, preCompSeg,
           current_highlight, edit_mode, brush, this);
       } else {
         render_info_display();
@@ -615,7 +615,7 @@ class Mode {
       this.handle_mode_single_click(evt);
       if (current_highlight) {
         segLoaded = false;
-        adjust.preCompAdjust(segImage, preCompSeg,
+        adjuster.preCompAdjust(segImage, preCompSeg,
           current_highlight, edit_mode, brush, this);
       } else {
         render_info_display();
@@ -625,7 +625,7 @@ class Mode {
       this.handle_mode_multiple_click(evt);
       if (current_highlight) {
         segLoaded = false;
-        adjust.preCompAdjust(segImage, preCompSeg,
+        adjuster.preCompAdjust(segImage, preCompSeg,
           current_highlight, edit_mode, brush, this);
       } else {
         render_info_display();
@@ -1177,14 +1177,14 @@ function handle_scroll(evt) {
     current_contrast = Math.max(current_contrast + mod_contrast, MIN_CONTRAST);
     // stop at 8x contrast
     current_contrast = Math.min(current_contrast + mod_contrast, MAX_CONTRAST);
-    adjust.contrastRaw(rawImage, contrastedRaw, current_contrast, brightness);
+    adjuster.contrastRaw(rawImage, contrastedRaw, current_contrast, brightness);
   } else if ((rendering_raw || edit_mode || (rgb && !display_labels))
     && evt.originalEvent.shiftKey) {
     rawLoaded = false;
     let mod = -Math.sign(evt.originalEvent.deltaY);
     brightness = Math.min(brightness + mod, 255);
     brightness = Math.max(brightness + mod, -512);
-    adjust.contrastRaw(rawImage, contrastedRaw, current_contrast, brightness);
+    adjuster.contrastRaw(rawImage, contrastedRaw, current_contrast, brightness);
   }
 }
 
@@ -1413,28 +1413,28 @@ function start_caliban(filename) {
   load_file(filename);
 
   // define image onload cascade behavior, need rawHeight and rawWidth first
-  adjust = new ImageAdjustment(width=rawWidth, height=rawHeight)
+  adjuster = new ImageAdjuster(width=rawWidth, height=rawHeight)
   brush = new Brush(scale=scale, height=rawHeight, width=rawWidth, pad=padding);
 
   if (rgb) {
-    rawImage.onload = () => adjust.contrastRaw(rawImage, contrastedRaw, current_contrast, brightness);
-    contrastedRaw.onload = () => adjust.rawAdjust(rgb, contrastedRaw, postCompImg,
+    rawImage.onload = () => adjuster.contrastRaw(rawImage, contrastedRaw, current_contrast, brightness);
+    contrastedRaw.onload = () => adjuster.rawAdjust(rgb, contrastedRaw, postCompImg,
       preCompRaw, preCompSeg, compositedImg, current_highlight, edit_mode, brush, mode);
-    segImage.onload = () => adjust.preCompAdjust(segImage, preCompSeg,
+    segImage.onload = () => adjuster.preCompAdjust(segImage, preCompSeg,
       current_highlight, edit_mode, brush, mode);
-    preCompSeg.onload = () => adjust.segAdjust(rgb, contrastedRaw, postCompImg,
+    preCompSeg.onload = () => adjuster.segAdjust(rgb, contrastedRaw, postCompImg,
       preCompRaw, preCompSeg, compositedImg, current_highlight, edit_mode, brush, mode);
     postCompImg.onload = render_image_display;
   } else {
-    rawImage.onload = () => adjust.contrastRaw(rawImage, contrastedRaw, current_contrast, brightness);
-    contrastedRaw.onload = () => adjust.preCompRawAdjust(contrastedRaw, preCompRaw, display_invert);
-    preCompRaw.onload = () => adjust.rawAdjust(rgb, contrastedRaw, postCompImg,
+    rawImage.onload = () => adjuster.contrastRaw(rawImage, contrastedRaw, current_contrast, brightness);
+    contrastedRaw.onload = () => adjuster.preCompRawAdjust(contrastedRaw, preCompRaw, display_invert);
+    preCompRaw.onload = () => adjuster.rawAdjust(rgb, contrastedRaw, postCompImg,
       preCompRaw, preCompSeg, compositedImg, current_highlight, edit_mode, brush, mode);
-    segImage.onload = () => adjust.preCompAdjust(segImage, preCompSeg,
+    segImage.onload = () => adjuster.preCompAdjust(segImage, preCompSeg,
       current_highlight, edit_mode, brush, mode);
-    preCompSeg.onload = () => adjust.segAdjust(rgb, contrastedRaw, postCompImg,
+    preCompSeg.onload = () => adjuster.segAdjust(rgb, contrastedRaw, postCompImg,
       preCompRaw, preCompSeg, compositedImg, current_highlight, edit_mode, brush, mode);
-    compositedImg.onload = () => adjust.postCompAdjust(compositedImg, postCompImg, edit_mode, brush);
+    compositedImg.onload = () => adjuster.postCompAdjust(compositedImg, postCompImg, edit_mode, brush);
     postCompImg.onload = render_image_display;
   }
 

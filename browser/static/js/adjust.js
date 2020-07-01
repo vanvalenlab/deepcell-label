@@ -1,6 +1,6 @@
 // helper functions
 
-class ImageAdjustment{
+class ImageAdjuster{
   constructor(width, height) {
     // canvas element used for image processing
     this.canvas = document.createElement('canvas');
