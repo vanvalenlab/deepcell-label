@@ -14,7 +14,7 @@ class ImageAdjuster{
     this.canvas.width = width;
     document.body.appendChild(this.canvas);
 
-    this.ctx = $('#adjustCanvas').get(0).getContext("2d");
+    this.ctx = this.canvas.getContext("2d");
     this.ctx.imageSmoothingEnabled = false;
 
     // these will never change once initialized
