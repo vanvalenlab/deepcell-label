@@ -43,7 +43,6 @@ class ImageAdjuster{
         d[i + 1] = d[i+1]*contrast + brightness;
         d[i + 2] = d[i+2]*contrast + brightness;
     }
-    return img;
   }
 
   _grayscale(img) {
@@ -53,8 +52,7 @@ class ImageAdjuster{
         data[i]     = avg; // red
         data[i + 1] = avg; // green
         data[i + 2] = avg; // blue
-      }
-    return img;
+    }
   }
 
   _invert(img) {
@@ -63,8 +61,7 @@ class ImageAdjuster{
       data[i]     = 255 - data[i];     // red
       data[i + 1] = 255 - data[i + 1]; // green
       data[i + 2] = 255 - data[i + 2]; // blue
-      }
-    return img;
+    }
   }
 
   preCompositeLabelMod(img, h1, h2) {
