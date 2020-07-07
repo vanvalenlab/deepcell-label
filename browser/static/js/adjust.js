@@ -20,6 +20,9 @@ class ImageAdjuster{
     // these will never change once initialized
     this.height = height;
     this.width = width;
+
+    this.rawLoaded = false;
+    this.segLoaded = false;
   }
 
   // modify image data in place to recolor
@@ -129,6 +132,8 @@ class ImageAdjuster{
 
   preCompAdjust(segImage, preCompSeg,
       current_highlight, edit_mode, brush, mode) {
+
+    this.segLoaded = false;
 
     // draw segImage so we can extract image data
     this.ctx.clearRect(0, 0, this.width, this.height);
@@ -256,13 +261,10 @@ class ImageAdjuster{
     postCompImg.src = this.canvas.toDataURL();
   }
 
-  // TODO: not sure how to scope segLoaded and rawLoaded.
-  // they are changed by these adjust functions so the image composite
-  // will only be generated when both source images are ready to use
   segAdjust(rgb, contrastedRaw, postCompImg,
       preCompRaw, preCompSeg, compositedImg, current_highlight, edit_mode, brush, mode) {
-    segLoaded = true;
-    if (rawLoaded && segLoaded) {
+    this.segLoaded = true;
+    if (this.rawLoaded && this.segLoaded) {
       if (rgb) {
         this.postCompAdjustRGB(contrastedRaw, postCompImg,
           current_highlight, edit_mode, brush, mode);
@@ -274,8 +276,8 @@ class ImageAdjuster{
 
   rawAdjust(rgb, contrastedRaw, postCompImg,
       preCompRaw, preCompSeg, compositedImg, current_highlight, edit_mode, brush, mode) {
-    rawLoaded = true;
-    if (rawLoaded && segLoaded) {
+    this.rawLoaded = true;
+    if (this.rawLoaded && this.segLoaded) {
       if (rgb) {
         this.postCompAdjustRGB(contrastedRaw, postCompImg,
       current_highlight, edit_mode, brush, mode);

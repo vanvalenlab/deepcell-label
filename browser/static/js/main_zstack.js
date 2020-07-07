@@ -127,7 +127,6 @@ class Mode {
             + ". Use ESC to leave this mode.";
         this.kind = Modes.drawing;
       }
-      segLoaded = false;
       adjuster.preCompAdjust(segImage, preCompSeg,
         current_highlight, edit_mode, brush, this);
     }
@@ -138,7 +137,6 @@ class Mode {
     if (key === "e" && !settings.pixel_only) {
       // toggle edit mode
       edit_mode = !edit_mode;
-      segLoaded = false;
       adjuster.preCompAdjust(segImage, preCompSeg,
         current_highlight, edit_mode, brush, this);
     } else if (key === "c") {
@@ -168,7 +166,6 @@ class Mode {
       brush.value = Math.min(brush.value + 1,
                              maxLabelsMap.get(this.feature) + 1);
       if (current_highlight) {
-        segLoaded = false;
         adjuster.preCompAdjust(segImage, preCompSeg,
           current_highlight, edit_mode, brush, this);
       }
@@ -177,7 +174,6 @@ class Mode {
       // decrease edit_value, minimum 1
       brush.value -= 1;
       if (current_highlight) {
-        segLoaded = false;
         adjuster.preCompAdjust(segImage, preCompSeg,
           current_highlight, edit_mode, brush, this);
       }
@@ -216,7 +212,6 @@ class Mode {
       // toggle edit mode
       edit_mode = !edit_mode;
       helper_brush_draw();
-      segLoaded = false;
       adjuster.preCompAdjust(segImage, preCompSeg,
         current_highlight, edit_mode, brush, this);
     } else if (key === "c") {
@@ -252,7 +247,6 @@ class Mode {
       this.highlighted_cell_one = this.decrement_value(this.highlighted_cell_one,
           1, maxLabelsMap.get(this.feature));
       if (current_highlight) {
-        segLoaded = false;
         adjuster.preCompAdjust(segImage, preCompSeg,
           current_highlight, edit_mode, brush, this);
       }
@@ -261,7 +255,6 @@ class Mode {
       this.highlighted_cell_one = this.increment_value(this.highlighted_cell_one,
           1, maxLabelsMap.get(this.feature));
       if (current_highlight) {
-        segLoaded = false;
         adjuster.preCompAdjust(segImage, preCompSeg,
           current_highlight, edit_mode, brush, this);
       }
@@ -301,7 +294,6 @@ class Mode {
       this.clear();
       this.highlighted_cell_one = temp_highlight;
       if (current_highlight) {
-        segLoaded = false;
         adjuster.preCompAdjust(segImage, preCompSeg,
           current_highlight, edit_mode, brush, this);
       }
@@ -314,7 +306,6 @@ class Mode {
       this.clear();
       this.highlighted_cell_one = temp_highlight;
       if (current_highlight) {
-        segLoaded = false;
         adjuster.preCompAdjust(segImage, preCompSeg,
           current_highlight, edit_mode, brush, this);
       }
@@ -545,7 +536,6 @@ class Mode {
         this.prompt = "Now drawing over label " + brush.target + " with label " + brush.value
             + ". Use ESC to leave this mode.";
         this.kind = Modes.drawing;
-        segLoaded = false;
         adjuster.preCompAdjust(segImage, preCompSeg,
           current_highlight, edit_mode, brush, this);
       } else {
@@ -604,7 +594,6 @@ class Mode {
       //if nothing selected: shift-, alt-, or normal click
       this.handle_mode_none_click(evt);
       if (current_highlight) {
-        segLoaded = false;
         adjuster.preCompAdjust(segImage, preCompSeg,
           current_highlight, edit_mode, brush, this);
       } else {
@@ -614,7 +603,6 @@ class Mode {
       // one label already selected
       this.handle_mode_single_click(evt);
       if (current_highlight) {
-        segLoaded = false;
         adjuster.preCompAdjust(segImage, preCompSeg,
           current_highlight, edit_mode, brush, this);
       } else {
@@ -624,7 +612,6 @@ class Mode {
       // two labels already selected, reselect second label
       this.handle_mode_multiple_click(evt);
       if (current_highlight) {
-        segLoaded = false;
         adjuster.preCompAdjust(segImage, preCompSeg,
           current_highlight, edit_mode, brush, this);
       } else {
@@ -698,12 +685,10 @@ let sheight;
 
 // raw and adjusted image storage
 // cascasding image updates if raw or seg is reloaded
-let rawLoaded;
 const rawImage = new Image();
 const contrastedRaw = new Image();
 const preCompRaw = new Image();
 
-let segLoaded;
 const segImage = new Image();
 const preCompSeg = new Image();
 
@@ -1024,8 +1009,8 @@ function fetch_and_render_frame() {
     type: 'GET',
     url: "frame/" + current_frame + "/" + project_id,
     success: function(payload) {
-      rawLoaded = false;
-      segLoaded = false;
+      adjuster.rawLoaded = false;
+      adjuster.segLoaded = false;
 
       // load new value of seg_array
       // array of arrays, contains annotation data for frame
@@ -1170,7 +1155,7 @@ function handle_scroll(evt) {
   } else if ((rendering_raw || edit_mode || (rgb && !display_labels))
     && !evt.originalEvent.shiftKey) {
     // adjust contrast whenever we can see raw
-    rawLoaded = false;
+    adjuster.rawLoaded = false;
     // don't use magnitude of scroll
     let mod_contrast = -Math.sign(evt.originalEvent.deltaY) * 4;
     // stop if fully desaturated
@@ -1180,7 +1165,7 @@ function handle_scroll(evt) {
     adjuster.contrastRaw(rawImage, contrastedRaw, current_contrast, brightness);
   } else if ((rendering_raw || edit_mode || (rgb && !display_labels))
     && evt.originalEvent.shiftKey) {
-    rawLoaded = false;
+    adjuster.rawLoaded = false;
     let mod = -Math.sign(evt.originalEvent.deltaY);
     brightness = Math.min(brightness + mod, 255);
     brightness = Math.max(brightness + mod, -512);
@@ -1337,12 +1322,12 @@ function action(action, info, frame = current_frame) {
         }
 
         if (payload.imgs.hasOwnProperty('segmented')) {
-          segLoaded = false;
+          adjuster.segLoaded = false;
           segImage.src = payload.imgs.segmented;
         }
 
         if (payload.imgs.hasOwnProperty('raw')) {
-          rawLoaded = false;
+          adjuster.rawLoaded = false;
           rawImage.src = payload.imgs.raw;
         }
       }
