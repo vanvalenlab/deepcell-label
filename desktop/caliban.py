@@ -3119,10 +3119,17 @@ class ZStackReview(CalibanWindow):
         try:
             first_key = list(self.cell_info[0])[0]
             display_info_types = self.cell_info[0][first_key]
-            self.display_info = [*sorted(set(display_info_types) - {'frames'})]
+            if self.num_frames == 1:
+                self.display_info = [*sorted(set(display_info_types) - {'frames'} - {'slices'})]
+            else:
+                self.display_info = [*sorted(set(display_info_types) - {'frames'})]
+
         # if there are no labels in the feature, hardcode the display info
         except:
-            self.display_info = ['label', 'slices']
+            if self.num_frames == 1:
+                self.display_info = ['label']
+            else:
+                self.display_info = ['label', 'slices']
 
         # open file to first frame of annotation stack
         self.current_frame = 0
