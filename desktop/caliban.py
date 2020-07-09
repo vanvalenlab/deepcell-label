@@ -3092,6 +3092,16 @@ class ZStackReview(CalibanWindow):
         # file opens to the first channel
         self.channel = 0
 
+        # should be robust to 3D, 4D, and some cases of 5D array sizes
+        self.dims = raw.ndim
+        if self.dims == 3:
+            self.raw = np.expand_dims(self.raw, axis=0)
+            self.annotated = np.expand_dims(self.annotated, axis=0)
+
+        elif self.dims == 5:
+            self.raw = np.squeeze(self.raw, axis=0)
+            self.annotated = np.squeeze(self.annotated, axis=0)
+
         # unpack the shape of the raw array
         self.num_frames, self.height, self.width, self.channel_max = raw.shape
 
@@ -4685,14 +4695,25 @@ class ZStackReview(CalibanWindow):
             self.raw and self.annotated are arrays to save in npz (self.raw should always
                 remain unmodified, but self.annotated may be modified)
         '''
+        # make sure has same dims as original
+        if self.dims == 3:
+            raw = np.squeeze(self.raw, axis=0)
+            ann = np.squeeze(self.raw, axis=0)
+        elif self.dims == 4:
+            raw = self.raw
+            ann = self.annotated
+        elif self.dims == 5:
+            raw = np.expand_dims(self.raw, axis=0)
+            ann = np.expand_dims(self.annotated, axis=0)
+
         # create filename to save as
         save_file = self.filename + "_save_version_{}.npz".format(self.save_version)
         # if file was opened with variable names raw and annotated, save them that way
         if self.save_vars_mode == 0:
-            np.savez(save_file, raw = self.raw, annotated = self.annotated)
+            np.savez(save_file, raw = raw, annotated = ann)
         # otherwise, save as X and y
         else:
-            np.savez(save_file, X = self.raw, y = self.annotated)
+            np.savez(save_file, X = raw, y = ann)
         # keep track of which version of the file this is
         self.save_version += 1
 
