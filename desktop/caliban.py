@@ -3175,9 +3175,10 @@ class ZStackReview(CalibanWindow):
         pyglet.app.run()
 
     def custom_prompt(self):
-        if self.mode.kind == "QUESTION":
-            if self.mode.action == "SAVE":
-                self.mode.text = ZStackReview.save_prompt_text
+        if self.num_frames > 1:
+            if self.mode.kind == "QUESTION":
+                if self.mode.action == "SAVE":
+                    self.mode.text = ZStackReview.save_prompt_text
 
     def handle_threshold(self):
         '''
@@ -3626,7 +3627,7 @@ class ZStackReview(CalibanWindow):
             if symbol == key.SPACE:
                 self.save()
                 self.mode.clear()
-            if symbol == key.T:
+            if symbol == key.T and self.num_frames > 1:
                 self.save_as_trk()
                 self.mode.clear()
 
@@ -3878,7 +3879,7 @@ class ZStackReview(CalibanWindow):
         '''
         # RESPOND TO SAVE QUESTION
         if self.mode.action == "SAVE":
-            if symbol == key.T:
+            if symbol == key.T and self.num_frames > 1:
                 self.save_as_trk()
                 self.mode.clear()
             if symbol == key.SPACE:
