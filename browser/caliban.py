@@ -932,7 +932,7 @@ class TrackReview:
 
         # replace frame labels
         self.annotated[frame] = np.where(self.annotated[frame] == old_label,
-                                       new_label, self.annotated[frame])
+                                         new_label, self.annotated[frame])
 
         # replace fields
         self.del_cell_info(del_label=old_label, frame=frame)
