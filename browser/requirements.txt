@@ -7,3 +7,4 @@ boto3==1.9.182
 scikit-image==0.15.0
 python-decouple==3.1
 pillow==6.2.2
+flask-compress==1.5.0
