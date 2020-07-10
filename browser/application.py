@@ -8,6 +8,7 @@ from logging.config import dictConfig
 
 from flask import Flask
 from flask.logging import default_handler
+from flask_cors import CORS
 
 import config
 from blueprints import bp
@@ -51,6 +52,8 @@ def configure_logging():
 def create_app():
     """Factory to create the Flask application"""
     app = Flask(__name__)
+
+    CORS(app)
 
     app.config.from_object('config')
 
