@@ -24,7 +24,7 @@
 # limitations under the License.
 # ==============================================================================
 """Displaying and Curating annotations tracked over time in multiple frames."""
-from mode import Mode
+from mode import Mode, Mode2D
 
 import cv2
 import json
@@ -3161,7 +3161,10 @@ class ZStackReview(CalibanWindow):
         # self.mode keeps track of selected labels, pending actions, displaying
         # prompts and confirmation dialogue, using Mode class; start with Mode.none()
         # (nothing selected, no actions pending)
-        self.mode = Mode.none()
+        if self.num_frames == 1:
+            self.mode = Mode2D.none()
+        else:
+            self.mode = Mode.none()
         self.mode.update_prompt_additions = self.custom_prompt
 
         # start with highlighting option turned off and no labels highlighted

@@ -162,3 +162,92 @@ class Mode:
     @staticmethod
     def none():
         return Mode(None)
+
+class Mode2D(Mode):
+    '''
+    don't need any information about frames
+    '''
+
+    def update_prompt(self):
+        text = ""
+        answer = "\nSPACE = CONFIRM\nESC = CANCEL"
+
+        if self.kind == "SELECTED":
+            text = "\nSELECTED {}".format(self.label)
+
+        elif self.kind == "MULTIPLE":
+            text = "\nSELECTED {}, {}".format(self.label_1, self.label_2)
+
+        elif self.kind == "QUESTION":
+            if self.action == "SAVE":
+                text = ("\nSave current file?"
+                    "\nSPACE = SAVE"
+                    "\nESC = CANCEL")
+
+            elif self.action == "REPLACE":
+                text = ("\nReplace {} with {}?"
+                        + answer).format(self.label_2, self.label_1)
+
+            elif self.action == "SWAP":
+                text = ("\nSwap {} & {}?"
+                        + answer).format(self.label_1, self.label_2)
+
+            elif self.action == "CREATE NEW":
+                text = ("\nCreate new label from label {0}?"
+                        + answer).format(self.label)
+
+            elif self.action == "FLOOD CELL":
+                text = ("\nFlood selected region of {} with new label?"
+                        + answer).format(self.label)
+
+            elif self.action == "TRIM PIXELS":
+                text = ("\nTrim unconnected pixels away from selected region of label {}?"
+                    "\n{}").format(self.label, answer)
+
+            elif self.action == "DELETE":
+                text = ("\nDelete label {}?"
+                        + answer).format(self.label)
+
+            elif self.action == "WATERSHED":
+                text = ("\nPerform watershed to split {}?"
+                        + answer).format(self.label_1)
+
+            elif self.action == "RELABEL":
+                text = ("\nRelabel annotations?"
+                        + answer)
+
+        elif self.kind == "PROMPT":
+            if self.action == "FILL HOLE":
+                text = "\nSelect hole to fill in label {}.".format(self.label)
+
+            elif self.action == "PICK COLOR":
+                text = "\nClick on a label to change the brush value to that value."
+
+            elif self.action == "DRAW BOX":
+                text = "\nDraw a bounding box around the area you want to threshold."
+
+            elif self.action == "CONVERSION BRUSH TARGET":
+                text = "\nClick on the label you want to draw OVER."
+
+            elif self.action == "CONVERSION BRUSH VALUE":
+                text = ("\nClick on the label you want to draw WITH,"
+                " or press N to set the brush to an unused label.")
+
+        elif self.kind == "DRAW":
+            text = ("\nUsing conversion brush to replace {} with {}."
+                "\nUse ESC to stop using the conversion brush.").format(self.conversion_brush_target,
+                self.conversion_brush_value)
+
+        self.text = text
+        self.update_prompt_additions()
+
+    @staticmethod
+    def none():
+        return Mode2D(None)
+
+
+# TODO: further subclassing would probably be appropriate
+# class Mode3D(Mode):
+
+
+# class ModeTrack(Mode3D):
