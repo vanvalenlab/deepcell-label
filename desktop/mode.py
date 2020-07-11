@@ -56,6 +56,25 @@ class Mode:
         '''
         pass
 
+    def get_prompt_text(self):
+        if self.action == "FILL HOLE":
+            text = "\nSelect hole to fill in label {}.".format(self.label)
+
+        elif self.action == "PICK COLOR":
+            text = "\nClick on a label to change the brush value to that value."
+
+        elif self.action == "DRAW BOX":
+            text = "\nDraw a bounding box around the area you want to threshold."
+
+        elif self.action == "CONVERSION BRUSH TARGET":
+            text = "\nClick on the label you want to draw OVER."
+
+        elif self.action == "CONVERSION BRUSH VALUE":
+            text = ("\nClick on the label you want to draw WITH,"
+            " or press N to set the brush to an unused label.")
+
+        return text
+
     def update_prompt(self):
         text = ""
         answer = "SPACE = CONFIRM\nESC = CANCEL"
@@ -135,21 +154,7 @@ class Mode:
                     "\nESC = CANCEL")
 
         elif self.kind == "PROMPT":
-            if self.action == "FILL HOLE":
-                text = "\nSelect hole to fill in label {}.".format(self.label)
-
-            elif self.action == "PICK COLOR":
-                text = "\nClick on a label to change the brush value to that value."
-
-            elif self.action == "DRAW BOX":
-                text = "\nDraw a bounding box around the area you want to threshold."
-
-            elif self.action == "CONVERSION BRUSH TARGET":
-                text = "\nClick on the label you want to draw OVER."
-
-            elif self.action == "CONVERSION BRUSH VALUE":
-                text = ("\nClick on the label you want to draw WITH,"
-                " or press N to set the brush to an unused label.")
+            text = self.get_prompt_text()
 
         elif self.kind == "DRAW":
             text = ("\nUsing conversion brush to replace {} with {}."
@@ -217,21 +222,7 @@ class Mode2D(Mode):
                         + answer)
 
         elif self.kind == "PROMPT":
-            if self.action == "FILL HOLE":
-                text = "\nSelect hole to fill in label {}.".format(self.label)
-
-            elif self.action == "PICK COLOR":
-                text = "\nClick on a label to change the brush value to that value."
-
-            elif self.action == "DRAW BOX":
-                text = "\nDraw a bounding box around the area you want to threshold."
-
-            elif self.action == "CONVERSION BRUSH TARGET":
-                text = "\nClick on the label you want to draw OVER."
-
-            elif self.action == "CONVERSION BRUSH VALUE":
-                text = ("\nClick on the label you want to draw WITH,"
-                " or press N to set the brush to an unused label.")
+            text = self.get_prompt_text()
 
         elif self.kind == "DRAW":
             text = ("\nUsing conversion brush to replace {} with {}."
