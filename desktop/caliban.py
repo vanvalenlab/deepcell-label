@@ -24,7 +24,7 @@
 # limitations under the License.
 # ==============================================================================
 """Displaying and Curating annotations tracked over time in multiple frames."""
-from mode import Mode, Mode2D
+from mode import Mode, Mode2D, Mode3D
 
 import cv2
 import json
@@ -3164,7 +3164,7 @@ class ZStackReview(CalibanWindow):
         if self.num_frames == 1:
             self.mode = Mode2D.none()
         else:
-            self.mode = Mode.none()
+            self.mode = Mode3D.none()
         self.mode.update_prompt_additions = self.custom_prompt
 
         # start with highlighting option turned off and no labels highlighted

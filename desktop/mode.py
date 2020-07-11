@@ -29,7 +29,10 @@ class Mode:
         self.kind = kind
         self.info = info
         self.text = ""
-        self.update_prompt()
+        self.frame_text = ""
+        self.simple_answer = "SPACE = CONFIRM\nESC = CANCEL"
+
+        # self.update_prompt()
 
     def __getattr__(self, attrib):
         if attrib in self.info:
@@ -50,103 +53,113 @@ class Mode:
         self.info = info
         self.update_prompt()
 
+    def fill_frame_text(self):
+        return ""
+
     def update_prompt_additions(self):
         '''
         Can be overridden by custom Caliban classes to implement specific prompts.
         '''
         pass
 
-    def get_prompt_text(self):
+    def set_prompt_text(self):
         if self.action == "FILL HOLE":
-            text = "\nSelect hole to fill in label {}.".format(self.label)
+            self.text = "\nSelect hole to fill in label {}.".format(self.label)
 
         elif self.action == "PICK COLOR":
-            text = "\nClick on a label to change the brush value to that value."
+            self.text = "\nClick on a label to change the brush value to that value."
 
         elif self.action == "DRAW BOX":
-            text = "\nDraw a bounding box around the area you want to threshold."
+            self.text = "\nDraw a bounding box around the area you want to threshold."
 
         elif self.action == "CONVERSION BRUSH TARGET":
-            text = "\nClick on the label you want to draw OVER."
+            self.text = "\nClick on the label you want to draw OVER."
 
         elif self.action == "CONVERSION BRUSH VALUE":
-            text = ("\nClick on the label you want to draw WITH,"
+            self.text = ("\nClick on the label you want to draw WITH,"
             " or press N to set the brush to an unused label.")
 
-        return text
+    def set_question_single(self):
+        if self.action == "FLOOD CELL":
+            frame_insert = self.fill_frame_text()
+            self.text = ("\nFlood selected region of {} with new label{}?"
+                "\n{}").format(self.label, frame_insert, self.simple_answer)
+
+        elif self.action == "TRIM PIXELS":
+            frame_insert = self.fill_frame_text()
+            self.text = ("\nTrim unconnected pixels away from selected region of label {}{}?"
+                "\n{}").format(self.label, frame_insert, self.simple_answer)
+
+        elif self.action == "DELETE":
+            frame_insert = self.fill_frame_text()
+            self.text = ("\nDelete label {}{}?"
+                "\n{}").format(self.label, frame_insert, self.simple_answer)
+
+    def set_question_multiframe_options(self):
+        if self.action == "REPLACE":
+            self.text = ("\nReplace {} with {}?"
+                "\nSPACE = REPLACE IN ALL FRAMES"
+                 "\nS = REPLACE IN FRAME {} ONLY"
+                 "\nESC = CANCEL").format(self.label_2, self.label_1, self.frame_2)
+
+        elif self.action == "SWAP":
+            if self.frame_1 == self.frame_2:
+                self.text = ("\nSwap {} & {}?"
+                    "\nSPACE = SWAP IN ALL FRAMES"
+                    "\nS = SWAP IN FRAME {} ONLY"
+                    "\nESC = CANCEL").format(self.label_2, self.label_1, self.frame_2)
+            else:
+                self.text = ("\nSwap {} & {}?"
+                    "\nSPACE = SWAP IN ALL FRAMES"
+                    "\nESC = CANCEL").format(self.label_2, self.label_1)
 
     def update_prompt(self):
-        text = ""
-        answer = "SPACE = CONFIRM\nESC = CANCEL"
+        self.text = ""
 
         if self.kind == "SELECTED":
-            text = "\nSELECTED {}".format(self.label)
+            self.text = "\nSELECTED {}".format(self.label)
 
         elif self.kind == "MULTIPLE":
-            text = "\nSELECTED {}, {}".format(self.label_1, self.label_2)
+            self.text = "\nSELECTED {}, {}".format(self.label_1, self.label_2)
 
         elif self.kind == "QUESTION":
+
+            self.set_question_single()
+
+            self.set_question_multiframe_options()
+
             if self.action == "SAVE":
-                text = ("\nSave current file?"
+                self.text = ("\nSave current file?"
                     "\nSPACE = SAVE"
                     "\nESC = CANCEL")
 
-            elif self.action == "REPLACE":
-                text = ("\nReplace {} with {}?"
-                    "\nSPACE = REPLACE IN ALL FRAMES"
-                     "\nS = REPLACE IN FRAME {} ONLY"
-                     "\nESC = CANCEL").format(self.label_2, self.label_1, self.frame_2)
-
-            elif self.action == "SWAP":
-                if self.frame_1 == self.frame_2:
-                    text = ("\nSwap {} & {}?"
-                        "\nSPACE = SWAP IN ALL FRAMES"
-                        "\nS = SWAP IN FRAME {} ONLY"
-                        "\nESC = CANCEL").format(self.label_2, self.label_1, self.frame_2)
-                else:
-                    text = ("\nSwap {} & {}?"
-                        "\nSPACE = SWAP IN ALL FRAMES"
-                        "\nESC = CANCEL").format(self.label_2, self.label_1)
-
             elif self.action == "PARENT":
-                text = "\nMake {} a daughter of {}?\n{}".format(self.label_2, self.label_1, answer)
+                self.text = "\nMake {} a daughter of {}?\n{}".format(self.label_2, self.label_1, self.simple_answer)
 
             elif self.action == "NEW TRACK":
-                text = ("\nCreate new track from {0} in frame {1}?"
+                self.text = ("\nCreate new track from {0} in frame {1}?"
                     "\nSPACE = CREATE IN FRAME {1} AND ALL SUBSEQUENT FRAMES"
                     "\nS = CREATE IN FRAME {1} ONLY"
                     "\nESC = CANCEL").format(self.label, self.frame)
 
             elif self.action == "CREATE NEW":
-                text = ("\nCreate new label from {0} in frame {1}?"
+                self.text = ("\nCreate new label from {0} in frame {1}?"
                     "\nSPACE = CREATE IN FRAME {1} AND ALL SUBSEQUENT FRAMES"
                     "\nS = CREATE IN FRAME {1} ONLY"
                     "\nESC = CANCEL").format(self.label, self.frame)
 
-            elif self.action == "FLOOD CELL":
-                text = ("\nFlood selected region of {} with new label in frame {}?"
-                    "\n{}").format(self.label, self.frame, answer)
-
-            elif self.action == "TRIM PIXELS":
-                text = ("\nTrim unconnected pixels away from selected region of label {} in frame {}?"
-                    "\n{}").format(self.label, self.frame, answer)
-
-            elif self.action == "DELETE":
-                text = ("\nDelete label {} in frame {}?"
-                    "\n{}").format(self.label, self.frame, answer)
-
             elif self.action == "WATERSHED":
-                text = ("\nPerform watershed to split {}?"
-                    "\n{}").format(self.label_1, answer)
+                self.text = ("\nPerform watershed to split {}?"
+                    "\n{}").format(self.label_1, self.simple_answer)
 
             elif self.action == "PREDICT":
-                text = ("\nPredict 3D relationships between labels?"
+                self.text = ("\nPredict 3D relationships between labels?"
                     "\nS = PREDICT THIS FRAME FROM PREVIOUS FRAME"
                     "\nSPACE = PREDICT ALL FRAMES"
                     "\nESC = CANCEL")
 
             elif self.action == "RELABEL":
-                text = ("\nRelabel annotations?"
+                self.text = ("\nRelabel annotations?"
                     "\nSPACE = RELABEL IN ALL FRAMES"
                     "\nP = PRESERVE 3D INFO WHILE RELABELING"
                     "\nS = RELABEL THIS FRAME ONLY"
@@ -154,14 +167,13 @@ class Mode:
                     "\nESC = CANCEL")
 
         elif self.kind == "PROMPT":
-            text = self.get_prompt_text()
+            self.text = self.get_prompt_text()
 
         elif self.kind == "DRAW":
-            text = ("\nUsing conversion brush to replace {} with {}."
+            self.text = ("\nUsing conversion brush to replace {} with {}."
                 "\nUse ESC to stop using the conversion brush.").format(self.conversion_brush_target,
                 self.conversion_brush_value)
 
-        self.text = text
         self.update_prompt_additions()
 
     @staticmethod
@@ -173,63 +185,56 @@ class Mode2D(Mode):
     don't need any information about frames
     '''
 
+    def __init__(self, kind, **info):
+        super().__init__(kind, **info)
+        self.update_prompt()
+
     def update_prompt(self):
         text = ""
-        answer = "\nSPACE = CONFIRM\nESC = CANCEL"
 
         if self.kind == "SELECTED":
-            text = "\nSELECTED {}".format(self.label)
+            self.text = "\nSELECTED {}".format(self.label)
 
         elif self.kind == "MULTIPLE":
-            text = "\nSELECTED {}, {}".format(self.label_1, self.label_2)
+            self.text = "\nSELECTED {}, {}".format(self.label_1, self.label_2)
 
         elif self.kind == "QUESTION":
+
+            self.set_question_single()
+
             if self.action == "SAVE":
-                text = ("\nSave current file?"
+                self.text = ("\nSave current file?"
                     "\nSPACE = SAVE"
                     "\nESC = CANCEL")
 
             elif self.action == "REPLACE":
-                text = ("\nReplace {} with {}?"
-                        + answer).format(self.label_2, self.label_1)
+                self.text = ("\nReplace {} with {}?"
+                        + self.simple_answer).format(self.label_2, self.label_1)
 
             elif self.action == "SWAP":
-                text = ("\nSwap {} & {}?"
-                        + answer).format(self.label_1, self.label_2)
+                self.text = ("\nSwap {} & {}?"
+                        + self.simple_answer).format(self.label_1, self.label_2)
 
             elif self.action == "CREATE NEW":
-                text = ("\nCreate new label from label {0}?"
-                        + answer).format(self.label)
-
-            elif self.action == "FLOOD CELL":
-                text = ("\nFlood selected region of {} with new label?"
-                        + answer).format(self.label)
-
-            elif self.action == "TRIM PIXELS":
-                text = ("\nTrim unconnected pixels away from selected region of label {}?"
-                    "\n{}").format(self.label, answer)
-
-            elif self.action == "DELETE":
-                text = ("\nDelete label {}?"
-                        + answer).format(self.label)
+                self.text = ("\nCreate new label from label {0}?"
+                        + self.simple_answer).format(self.label)
 
             elif self.action == "WATERSHED":
-                text = ("\nPerform watershed to split {}?"
-                        + answer).format(self.label_1)
+                self.text = ("\nPerform watershed to split {}?"
+                        + self.simple_answer).format(self.label_1)
 
             elif self.action == "RELABEL":
-                text = ("\nRelabel annotations?"
-                        + answer)
+                self.text = ("\nRelabel annotations?"
+                        + self.simple_answer)
 
         elif self.kind == "PROMPT":
-            text = self.get_prompt_text()
+            self.text = self.get_prompt_text()
 
         elif self.kind == "DRAW":
-            text = ("\nUsing conversion brush to replace {} with {}."
+            self.text = ("\nUsing conversion brush to replace {} with {}."
                 "\nUse ESC to stop using the conversion brush.").format(self.conversion_brush_target,
                 self.conversion_brush_value)
 
-        self.text = text
         self.update_prompt_additions()
 
     @staticmethod
@@ -237,8 +242,19 @@ class Mode2D(Mode):
         return Mode2D(None)
 
 
-# TODO: further subclassing would probably be appropriate
-# class Mode3D(Mode):
+class Mode3D(Mode):
+
+    def __init__(self, kind, **info):
+        super().__init__(kind, **info)
+        self.frame_text = " in frame {}"
+        self.update_prompt()
+
+    def fill_frame_text(self):
+        return self.frame_text.format(self.frame)
+
+    @staticmethod
+    def none():
+        return Mode3D(None)
 
 
 # class ModeTrack(Mode3D):
