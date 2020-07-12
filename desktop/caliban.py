@@ -3783,7 +3783,7 @@ class ZStackReview(CalibanWindow):
             self.mode.update("QUESTION", action="SAVE")
 
         # PREDICT
-        if symbol == key.P:
+        if symbol == key.P and not self.single_frame:
             self.mode.update("QUESTION", action="PREDICT", **self.mode.info)
 
         # RELABEL
@@ -3880,7 +3880,7 @@ class ZStackReview(CalibanWindow):
         '''
         # RESPOND TO SAVE QUESTION
         if self.mode.action == "SAVE":
-            if symbol == key.T and self.num_frames > 1:
+            if symbol == key.T and not self.single_frame:
                 self.save_as_trk()
                 self.mode.clear()
             if symbol == key.SPACE:
@@ -3889,18 +3889,19 @@ class ZStackReview(CalibanWindow):
 
         # RESPOND TO RELABEL QUESTION
         elif self.mode.action == "RELABEL":
-            if symbol == key.U:
-                self.action_relabel_unique()
-                self.mode.clear()
-            if symbol == key.P:
-                self.action_relabel_preserve()
-                self.mode.clear()
-            if symbol == key.S:
-                self.action_relabel_frame()
-                self.mode.clear()
             if symbol == key.SPACE:
                 self.action_relabel_all_frames()
                 self.mode.clear()
+            if not self.single_frame:
+                if symbol == key.U:
+                    self.action_relabel_unique()
+                    self.mode.clear()
+                if symbol == key.P:
+                    self.action_relabel_preserve()
+                    self.mode.clear()
+                if symbol == key.S:
+                    self.action_relabel_frame()
+                    self.mode.clear()
 
         # RESPOND TO PREDICT QUESTION
         elif self.mode.action == "PREDICT":
@@ -3913,7 +3914,7 @@ class ZStackReview(CalibanWindow):
 
         # RESPOND TO CREATE QUESTION
         elif self.mode.action == "CREATE NEW":
-            if symbol == key.S:
+            if symbol == key.S and not self.single_frame:
                 self.action_new_single_cell()
                 self.mode.clear()
             if symbol == key.SPACE:
@@ -3922,7 +3923,7 @@ class ZStackReview(CalibanWindow):
 
         # RESPOND TO REPLACE QUESTION
         elif self.mode.action == "REPLACE":
-            if symbol == key.S:
+            if symbol == key.S and not self.single_frame:
                 self.action_replace_single()
                 self.mode.clear()
             if symbol == key.SPACE:
@@ -3931,7 +3932,7 @@ class ZStackReview(CalibanWindow):
 
         # RESPOND TO SWAP QUESTION
         elif self.mode.action == "SWAP":
-            if symbol == key.S:
+            if symbol == key.S and not self.single_frame:
                 self.action_swap_single_frame()
                 self.mode.clear()
             if symbol == key.SPACE:
