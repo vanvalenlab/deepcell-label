@@ -3087,7 +3087,7 @@ class ZStackReview(CalibanWindow):
             self.annotated = np.squeeze(self.annotated, axis=0)
 
         # unpack the shape of the raw array
-        self.num_frames, self.height, self.width, self.channel_max = raw.shape
+        self.num_frames, self.height, self.width, self.channel_max = self.raw.shape
         if self.num_frames == 1:
             self.single_frame = True
         else:
