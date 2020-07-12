@@ -187,11 +187,11 @@ class Mode2D(Mode):
                         + self.simple_answer).format(self.label_2, self.label_1)
 
             elif self.action == "SWAP":
-                self.text = ("\nSwap {} & {}\n?"
+                self.text = ("\nSwap {} & {}?\n"
                         + self.simple_answer).format(self.label_1, self.label_2)
 
             elif self.action == "CREATE NEW":
-                self.text = ("\nCreate new label from label {0}\n?"
+                self.text = ("\nCreate new label from label {0}?\n"
                         + self.simple_answer).format(self.label)
 
             elif self.action == "RELABEL":
