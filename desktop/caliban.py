@@ -3057,11 +3057,6 @@ class TrackReview(CalibanWindow):
 
 class ZStackReview(CalibanWindow):
 
-    save_prompt_text = ("\nSave current file?"
-                        "\nSPACE = SAVE"
-                        "\nT = SAVE AS .TRK FILE"
-                        "\nESC = CANCEL")
-
     def __init__(self, filename, raw, annotated, save_vars_mode):
         '''
         Set object attributes to store raw and annotated images (arrays),
@@ -3165,7 +3160,6 @@ class ZStackReview(CalibanWindow):
             self.mode = Mode2D.none()
         else:
             self.mode = Mode3D.none()
-        self.mode.update_prompt_additions = self.custom_prompt
 
         # start with highlighting option turned off and no labels highlighted
         self.highlight = False
@@ -3193,12 +3187,6 @@ class ZStackReview(CalibanWindow):
 
         # start pyglet event loop
         pyglet.app.run()
-
-    def custom_prompt(self):
-        if self.num_frames > 1:
-            if self.mode.kind == "QUESTION":
-                if self.mode.action == "SAVE":
-                    self.mode.text = ZStackReview.save_prompt_text
 
     def handle_threshold(self):
         '''

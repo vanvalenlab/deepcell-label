@@ -32,8 +32,6 @@ class Mode:
         self.frame_text = ""
         self.simple_answer = "SPACE = CONFIRM\nESC = CANCEL"
 
-        # self.update_prompt()
-
     def __getattr__(self, attrib):
         if attrib in self.info:
             return self.info[attrib]
@@ -113,6 +111,26 @@ class Mode:
                     "\nSPACE = SWAP IN ALL FRAMES"
                     "\nESC = CANCEL").format(self.label_2, self.label_1)
 
+        elif self.action == "CREATE NEW":
+            self.text = ("\nCreate new label from {0} in frame {1}?"
+                "\nSPACE = CREATE IN FRAME {1} AND ALL SUBSEQUENT FRAMES"
+                "\nS = CREATE IN FRAME {1} ONLY"
+                "\nESC = CANCEL").format(self.label, self.frame)
+
+        elif self.action == "PREDICT":
+            self.text = ("\nPredict 3D relationships between labels?"
+                "\nS = PREDICT THIS FRAME FROM PREVIOUS FRAME"
+                "\nSPACE = PREDICT ALL FRAMES"
+                "\nESC = CANCEL")
+
+        elif self.action == "RELABEL":
+            self.text = ("\nRelabel annotations?"
+                "\nSPACE = RELABEL IN ALL FRAMES"
+                "\nP = PRESERVE 3D INFO WHILE RELABELING"
+                "\nS = RELABEL THIS FRAME ONLY"
+                "\nU = UNIQUELY RELABEL EACH LABEL"
+                "\nESC = CANCEL")
+
     def update_prompt(self):
         self.text = ""
 
@@ -152,22 +170,8 @@ class Mode:
                 self.text = ("\nPerform watershed to split {}?"
                     "\n{}").format(self.label_1, self.simple_answer)
 
-            elif self.action == "PREDICT":
-                self.text = ("\nPredict 3D relationships between labels?"
-                    "\nS = PREDICT THIS FRAME FROM PREVIOUS FRAME"
-                    "\nSPACE = PREDICT ALL FRAMES"
-                    "\nESC = CANCEL")
-
-            elif self.action == "RELABEL":
-                self.text = ("\nRelabel annotations?"
-                    "\nSPACE = RELABEL IN ALL FRAMES"
-                    "\nP = PRESERVE 3D INFO WHILE RELABELING"
-                    "\nS = RELABEL THIS FRAME ONLY"
-                    "\nU = UNIQUELY RELABEL EACH LABEL"
-                    "\nESC = CANCEL")
-
         elif self.kind == "PROMPT":
-            self.text = self.get_prompt_text()
+            self.set_prompt_text()
 
         elif self.kind == "DRAW":
             self.text = ("\nUsing conversion brush to replace {} with {}."
@@ -180,6 +184,7 @@ class Mode:
     def none():
         return Mode(None)
 
+
 class Mode2D(Mode):
     '''
     don't need any information about frames
@@ -189,53 +194,24 @@ class Mode2D(Mode):
         super().__init__(kind, **info)
         self.update_prompt()
 
-    def update_prompt(self):
-        text = ""
+    def set_question_multiframe_options(self):
+        if self.kind == "QUESTION":
 
-        if self.kind == "SELECTED":
-            self.text = "\nSELECTED {}".format(self.label)
-
-        elif self.kind == "MULTIPLE":
-            self.text = "\nSELECTED {}, {}".format(self.label_1, self.label_2)
-
-        elif self.kind == "QUESTION":
-
-            self.set_question_single()
-
-            if self.action == "SAVE":
-                self.text = ("\nSave current file?"
-                    "\nSPACE = SAVE"
-                    "\nESC = CANCEL")
-
-            elif self.action == "REPLACE":
-                self.text = ("\nReplace {} with {}?"
+            if self.action == "REPLACE":
+                self.text = ("\nReplace {} with {}?\n"
                         + self.simple_answer).format(self.label_2, self.label_1)
 
             elif self.action == "SWAP":
-                self.text = ("\nSwap {} & {}?"
+                self.text = ("\nSwap {} & {}\n?"
                         + self.simple_answer).format(self.label_1, self.label_2)
 
             elif self.action == "CREATE NEW":
-                self.text = ("\nCreate new label from label {0}?"
+                self.text = ("\nCreate new label from label {0}\n?"
                         + self.simple_answer).format(self.label)
 
-            elif self.action == "WATERSHED":
-                self.text = ("\nPerform watershed to split {}?"
-                        + self.simple_answer).format(self.label_1)
-
             elif self.action == "RELABEL":
-                self.text = ("\nRelabel annotations?"
+                self.text = ("\nRelabel annotations?\n"
                         + self.simple_answer)
-
-        elif self.kind == "PROMPT":
-            self.text = self.get_prompt_text()
-
-        elif self.kind == "DRAW":
-            self.text = ("\nUsing conversion brush to replace {} with {}."
-                "\nUse ESC to stop using the conversion brush.").format(self.conversion_brush_target,
-                self.conversion_brush_value)
-
-        self.update_prompt_additions()
 
     @staticmethod
     def none():
@@ -251,6 +227,16 @@ class Mode3D(Mode):
 
     def fill_frame_text(self):
         return self.frame_text.format(self.frame)
+
+    def update_prompt(self):
+        super().update_prompt()
+
+        if self.kind == "QUESTION":
+            if self.action == "SAVE":
+                self.text = ("\nSave current file?"
+                        "\nSPACE = SAVE"
+                        "\nT = SAVE AS .TRK FILE"
+                        "\nESC = CANCEL")
 
     @staticmethod
     def none():
