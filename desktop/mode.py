@@ -151,21 +151,6 @@ class Mode:
                     "\nSPACE = SAVE"
                     "\nESC = CANCEL")
 
-            elif self.action == "PARENT":
-                self.text = "\nMake {} a daughter of {}?\n{}".format(self.label_2, self.label_1, self.simple_answer)
-
-            elif self.action == "NEW TRACK":
-                self.text = ("\nCreate new track from {0} in frame {1}?"
-                    "\nSPACE = CREATE IN FRAME {1} AND ALL SUBSEQUENT FRAMES"
-                    "\nS = CREATE IN FRAME {1} ONLY"
-                    "\nESC = CANCEL").format(self.label, self.frame)
-
-            elif self.action == "CREATE NEW":
-                self.text = ("\nCreate new label from {0} in frame {1}?"
-                    "\nSPACE = CREATE IN FRAME {1} AND ALL SUBSEQUENT FRAMES"
-                    "\nS = CREATE IN FRAME {1} ONLY"
-                    "\nESC = CANCEL").format(self.label, self.frame)
-
             elif self.action == "WATERSHED":
                 self.text = ("\nPerform watershed to split {}?"
                     "\n{}").format(self.label_1, self.simple_answer)
@@ -243,4 +228,31 @@ class Mode3D(Mode):
         return Mode3D(None)
 
 
-# class ModeTrack(Mode3D):
+class ModeTrack(Mode3D):
+
+    def update_prompt(self):
+        super().update_prompt()
+
+        if self.kind == "QUESTION":
+            if self.action == "SAVE":
+                self.text = ("\nSave current file?"
+                    "\nSPACE = SAVE"
+                    "\nESC = CANCEL")
+
+            elif self.action == "PARENT":
+                self.text = "\nMake {} a daughter of {}?\n{}".format(self.label_2, self.label_1, self.simple_answer)
+
+            elif self.action == "NEW TRACK":
+                self.text = ("\nCreate new track from {0} in frame {1}?"
+                    "\nSPACE = CREATE IN FRAME {1} AND ALL SUBSEQUENT FRAMES"
+                    "\nS = CREATE IN FRAME {1} ONLY"
+                    "\nESC = CANCEL").format(self.label, self.frame)
+
+            elif self.action == "REPLACE":
+                self.text = ("\nReplace {} with {}?"
+                     "\nSPACE = REPLACE IN ALL FRAMES"
+                     "\nESC = CANCEL").format(self.label_2, self.label_1)
+
+    @staticmethod
+    def none():
+        return ModeTrack(None)
