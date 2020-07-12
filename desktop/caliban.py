@@ -3088,6 +3088,10 @@ class ZStackReview(CalibanWindow):
 
         # unpack the shape of the raw array
         self.num_frames, self.height, self.width, self.channel_max = raw.shape
+        if self.num_frames == 1:
+            self.single_frame = True
+        else:
+            self.single_frame = False
 
         # info dictionaries that will be populated with info about labels for
         # each feature of annotation array
@@ -3103,14 +3107,14 @@ class ZStackReview(CalibanWindow):
         try:
             first_key = list(self.cell_info[0])[0]
             display_info_types = self.cell_info[0][first_key]
-            if self.num_frames == 1:
+            if self.single_frame:
                 self.display_info = [*sorted(set(display_info_types) - {'frames'} - {'slices'})]
             else:
                 self.display_info = [*sorted(set(display_info_types) - {'frames'})]
 
         # if there are no labels in the feature, hardcode the display info
         except:
-            if self.num_frames == 1:
+            if self.single_frame:
                 self.display_info = ['label']
             else:
                 self.display_info = ['label', 'slices']
@@ -3145,7 +3149,7 @@ class ZStackReview(CalibanWindow):
         # self.mode keeps track of selected labels, pending actions, displaying
         # prompts and confirmation dialogue, using Mode class; start with Mode.none()
         # (nothing selected, no actions pending)
-        if self.num_frames == 1:
+        if self.single_frame:
             self.mode = Mode2D.none()
         else:
             self.mode = Mode3D.none()
