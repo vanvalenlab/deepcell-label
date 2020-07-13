@@ -78,8 +78,9 @@ def upload_file(project_id):
     # add "finished" timestamp and null out state longblob
     Project.finish_project(project)
 
-    current_app.logger.debug('Finished project "%s" in %s s.',
-                             project_id, timeit.default_timer() - start)
+    current_app.logger.debug('Uploaded file "%s" for project "%s" in %s s.',
+                             project.filename, project_id,
+                             timeit.default_timer() - start)
 
     return redirect('/')
 
