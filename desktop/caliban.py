@@ -4687,7 +4687,7 @@ class ZStackReview(CalibanWindow):
         # make sure has same dims as original
         if self.dims == 3:
             raw = np.squeeze(self.raw, axis=0)
-            ann = np.squeeze(self.raw, axis=0)
+            ann = np.squeeze(self.annotated, axis=0)
         elif self.dims == 4:
             raw = self.raw
             ann = self.annotated
