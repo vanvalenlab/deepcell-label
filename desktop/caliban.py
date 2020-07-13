@@ -3088,10 +3088,7 @@ class ZStackReview(CalibanWindow):
 
         # unpack the shape of the raw array
         self.num_frames, self.height, self.width, self.channel_max = self.raw.shape
-        if self.num_frames == 1:
-            self.single_frame = True
-        else:
-            self.single_frame = False
+        self.single_frame = self.num_frames == 1
 
         # info dictionaries that will be populated with info about labels for
         # each feature of annotation array
@@ -5180,4 +5177,3 @@ def review(filename):
 
 if __name__ == "__main__":
     review(sys.argv[1])
-
