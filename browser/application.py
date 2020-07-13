@@ -4,18 +4,26 @@ from __future__ import division
 from __future__ import print_function
 
 import logging
-from logging.config import dictConfig
 
 from flask import Flask
 from flask.logging import default_handler
 from flask_cors import CORS
+
+from flask_compress import Compress
 
 import config
 from blueprints import bp
 from models import db
 
 
+compress = Compress()  # pylint: disable=C0103
+
+
 class ReverseProxied(object):
+    """Enable TLS for internal requests.
+
+    Found in: https://stackoverflow.com/questions/30743696
+    """
     def __init__(self, app):
         self.app = app
 
@@ -26,27 +34,27 @@ class ReverseProxied(object):
         return self.app(environ, start_response)
 
 
-def configure_logging():
-    """Set up logging format and instantiate loggers"""
-    # Set up logging
-    dictConfig({
-        'version': 1,
-        'formatters': {'default': {
-            'format': '[%(asctime)s]:[%(levelname)s]:[%(name)s]: %(message)s',
-        }},
-        'handlers': {'wsgi': {
-            'class': 'logging.StreamHandler',
-            'stream': 'ext://flask.logging.wsgi_errors_stream',
-            'formatter': 'default'
-        }},
-        'root': {
-            'level': 'INFO',
-            'handlers': ['wsgi']
-        }
-    })
+def initialize_logger():
+    """Set up logger format and level"""
+    formatter = logging.Formatter(
+        '[%(asctime)s]:[%(levelname)s]:[%(name)s]: %(message)s')
 
-    # set up 3rd party logging.
-    logging.getLogger('sqlalchemy').addHandler(default_handler)
+    default_handler.setFormatter(formatter)
+    default_handler.setLevel(logging.DEBUG)
+
+    wsgi_handler = logging.StreamHandler(
+        stream='ext://flask.logging.wsgi_errors_stream')
+    wsgi_handler.setFormatter(formatter)
+    wsgi_handler.setLevel(logging.DEBUG)
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(default_handler)
+
+    # 3rd party loggers
+    logging.getLogger('sqlalchemy').addHandler(logging.DEBUG)
+    logging.getLogger('botocore').setLevel(logging.INFO)
+    logging.getLogger('urllib3').setLevel(logging.INFO)
 
 
 def create_app():
@@ -68,11 +76,14 @@ def create_app():
 
     app.register_blueprint(bp)
 
+    compress.init_app(app)
+
     return app
 
 
 application = create_app()  # pylint: disable=C0103
 
+
 if __name__ == '__main__':
-    configure_logging()
+    initialize_logger()
     application.run('0.0.0.0', port=config.PORT, debug=config.DEBUG)

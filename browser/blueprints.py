@@ -18,6 +18,7 @@ from flask import render_template
 from flask import request
 from flask import redirect
 from flask import current_app
+from werkzeug.exceptions import HTTPException
 
 from helpers import is_trk_file, is_npz_file
 from caliban import TrackReview, ZStackReview
@@ -27,10 +28,33 @@ from models import Project
 bp = Blueprint('caliban', __name__)  # pylint: disable=C0103
 
 
+def load_project_state(project):
+    """Unpickle the project's state into a Caliban object"""
+    start = timeit.default_timer()
+    state = pickle.loads(project.state)
+    current_app.logger.debug('Unpickled project "%s" state in %s s.',
+                             project.id, timeit.default_timer() - start)
+    return state
+
+
 @bp.route('/health')
 def health():
-    '''Returns success if the application is ready.'''
-    return jsonify({'message': 'success'})
+    """Returns success if the application is ready."""
+    return jsonify({'message': 'success'}), 200
+
+
+@bp.errorhandler(Exception)
+def handle_exception(error):
+    """Handle all uncaught exceptions"""
+    # pass through HTTP errors
+    if isinstance(error, HTTPException):
+        return error
+
+    current_app.logger.error('Encountered %s: %s',
+                             error.__class__.__name__, error)
+
+    # now you're handling non-HTTP exceptions only
+    return jsonify({'message': str(error)}), 500
 
 
 @bp.route('/upload_file/<int:project_id>', methods=['GET', 'POST'])
@@ -40,10 +64,10 @@ def upload_file(project_id):
     # Use id to grab appropriate TrackReview/ZStackReview object from database
     project = Project.get_project_by_id(project_id)
 
-    if project is None:
+    if not project:
         return jsonify({'error': 'project_id not found'}), 404
 
-    state = pickle.loads(project.state)
+    state = load_project_state(project)
 
     # Call function in caliban.py to save data file and send to S3 bucket
     if is_trk_file(project.filename):
@@ -54,8 +78,9 @@ def upload_file(project_id):
     # add "finished" timestamp and null out state longblob
     Project.finish_project(project)
 
-    current_app.logger.debug('Finished project "%s" in %s s.',
-                             project_id, timeit.default_timer() - start)
+    current_app.logger.debug('Uploaded file "%s" for project "%s" in %s s.',
+                             project.filename, project_id,
+                             timeit.default_timer() - start)
 
     return redirect('/')
 
@@ -76,7 +101,7 @@ def action(project_id, action_type, frame):
         if not project:
             return jsonify({'error': 'project_id not found'}), 404
 
-        state = pickle.loads(project.state)
+        state = load_project_state(project)
         # Perform edit operation on the data file
         state.action(action_type, info)
 
@@ -130,7 +155,7 @@ def get_frame(frame, project_id):
     if not project:
         return jsonify({'error': 'project_id not found'}), 404
 
-    state = pickle.loads(project.state)
+    state = load_project_state(project)
 
     # Obtain raw, mask, and edit mode frames
     img = state.get_frame(frame, raw=False)
