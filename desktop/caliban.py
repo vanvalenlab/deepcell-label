@@ -3105,7 +3105,7 @@ class ZStackReview(CalibanWindow):
             first_key = list(self.cell_info[0])[0]
             display_info_types = self.cell_info[0][first_key]
             if self.single_frame:
-                self.display_info = list((set(display_info_types) - {'frames'} - {'slices'}))
+                self.display_info = list(sorted(set(display_info_types) - {'frames', 'slices'}))
             else:
                 self.display_info = list(sorted(set(display_info_types) - {'frames'}))
 
