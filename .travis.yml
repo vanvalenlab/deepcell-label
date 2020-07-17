@@ -26,5 +26,4 @@ jobs:
         - pip install -r browser/requirements.txt
         - pip install -r browser/requirements-test.txt
       script:
-        - cd browser
-        - pytest --cov . --pep8
+        - pytest browser --cov browser --pep8
