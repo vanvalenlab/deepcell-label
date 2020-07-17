@@ -27,4 +27,4 @@ jobs:
         - pip install pytest pytest-cov==2.5.1 pytest-pep8
       script:
         - cd browser
-        - pytest --pep8
+        - pytest --cov . --pep8
