@@ -57,13 +57,15 @@ def initialize_logger():
     logging.getLogger('urllib3').setLevel(logging.INFO)
 
 
-def create_app():
+def create_app(**config_overrides):
     """Factory to create the Flask application"""
     app = Flask(__name__)
 
     CORS(app)
 
-    app.config.from_object('config')
+    app.config.from_object(config)
+    # apply overrides
+    app.config.update(config_overrides)
 
     app.wsgi_app = ReverseProxied(app.wsgi_app)
 
@@ -86,4 +88,6 @@ application = create_app()  # pylint: disable=C0103
 
 if __name__ == '__main__':
     initialize_logger()
-    application.run('0.0.0.0', port=config.PORT, debug=config.DEBUG)
+    application.run('0.0.0.0',
+                    port=application.config['PORT'],
+                    debug=application.config['DEBUG'])
