@@ -24,7 +24,7 @@ jobs:
         - 3.8
       install:
         - pip install -r browser/requirements.txt
-        - pip install pytest pytest-cov==2.5.1 pytest-pep8
+        - pip install -r browser/requirements-test.txt
       script:
         - cd browser
         - pytest --cov . --pep8
