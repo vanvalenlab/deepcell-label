@@ -6,9 +6,6 @@ from flask_sqlalchemy import SQLAlchemy
 
 import pytest
 
-os.environ['AWS_ACCESS_KEY_ID'] = 'AWS_ACCESS_KEY_ID'
-os.environ['AWS_SECRET_ACCESS_KEY'] = 'AWS_SECRET_ACCESS_KEY'
-
 from application import create_app  # pylint: disable=C0413
 
 # flask-sqlalchemy fixtures from http://alexmic.net/flask-sqlalchemy-pytest/
