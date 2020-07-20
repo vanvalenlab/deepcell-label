@@ -14,10 +14,10 @@ class Bunch(object):
         self.__dict__.update(kwds)
 
 
-class DummyState(object):
+class DummyState(io.BytesIO):
 
     def __init__(self, *_, **__):
-        pass
+        super().__init__()
 
     def __getattr__(self, *_, **__):
         return self
