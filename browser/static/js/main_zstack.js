@@ -87,7 +87,7 @@ class Mode {
       brightness = 0;
       current_contrast = 0;
       prepareRaw();
-    } else if ((key === 'l' || key === 'L') && !edit_mode) {
+    } else if ((key === 'l' || key === 'L') && rgb && !edit_mode) {
       display_labels = !display_labels;
       render_image_display();
     } else if (key === '-') {
@@ -113,7 +113,10 @@ class Mode {
     } else if (!rgb && key === 'i') {
       // toggle light/dark inversion of raw img
       display_invert = !display_invert;
-      compositeImages();
+      preCompRawAdjust();
+    } else if (!rgb && settings.pixel_only && (key === 'l' || key === 'L')) {
+      display_labels = !display_labels;
+      render_image_display();
     } else if (key === 'n') {
       // set edit value to something unused
       brush.value = maxLabelsMap.get(this.feature) + 1;
@@ -683,6 +686,7 @@ let sheight;
 let rawLoaded;
 const raw_image = new Image();
 const contrastedRaw = new Image();
+const preCompRaw = new Image();
 
 let segLoaded;
 const seg_image = new Image();
@@ -703,7 +707,11 @@ let leftBorder = new Path2D();
 
 var rendering_raw = false;
 let display_invert = true;
-let display_labels = false;
+let display_labels;
+
+const MIN_CONTRAST = -100;
+const MAX_CONTRAST = 700;
+
 var current_contrast;
 let contrastMap = new Map();
 let brightness;
@@ -904,6 +912,9 @@ function render_info_display() {
 function render_edit_image(ctx) {
   if (rgb && rendering_raw) {
     render_raw_image(ctx);
+  } else if (!rgb && !display_labels) {
+    ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
+    ctx.drawImage(preCompRaw, sx, sy, swidth, sheight, padding, padding, dimensions[0], dimensions[1]);
   } else {
     ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
     ctx.drawImage(postCompImg, sx, sy, swidth, sheight, padding, padding, dimensions[0], dimensions[1]);
@@ -1032,9 +1043,14 @@ function load_file(file) {
       // (each is a key in that dict), cast to numbers, then get the maximum
       // value from each array and store it in a map
       for (let i = 0; i < Object.keys(tracks).length; i++){
-        let key = Object.keys(tracks)[i]; //the keys are strings
-        //use i as key in this map because it is an int, mode.feature is also int
-        maxLabelsMap.set(i, Math.max(... Object.keys(tracks[key]).map(Number)));
+        let key = Object.keys(tracks)[i]; // the keys are strings
+        if (Object.keys(tracks[key]).length > 0) {
+          // use i as key in this map because it is an int, mode.feature is also int
+          maxLabelsMap.set(i, Math.max(... Object.keys(tracks[key]).map(Number)));
+        } else {
+          // if no labels in feature, explicitly set max label to 0
+          maxLabelsMap.set(i, 0);
+        }
       }
 
       for (let i = 0; i < channel_max; i++) {
@@ -1143,9 +1159,9 @@ function handle_scroll(evt) {
     // don't use magnitude of scroll
     let mod_contrast = -Math.sign(evt.originalEvent.deltaY) * 4;
     // stop if fully desaturated
-    current_contrast = Math.max(current_contrast + mod_contrast, -100);
-    // stop at 5x contrast
-    current_contrast = Math.min(current_contrast + mod_contrast, 400);
+    current_contrast = Math.max(current_contrast + mod_contrast, MIN_CONTRAST);
+    // stop at 8x contrast
+    current_contrast = Math.min(current_contrast + mod_contrast, MAX_CONTRAST);
     prepareRaw();
   } else if ((rendering_raw || edit_mode || (rgb && !display_labels))
     && evt.originalEvent.shiftKey) {
@@ -1169,7 +1185,8 @@ function handle_mousedown(evt) {
         if (!brush.show) {
           brush.threshX = imgX;
           brush.threshY = imgY;
-        } else {
+        } else if (mode.kind !== Modes.prompt) {
+          // not if turning on conv brush
           mouse_trace.push([imgY, imgX]);
         }
       }
@@ -1179,8 +1196,10 @@ function handle_mousedown(evt) {
 
 function helper_brush_draw() {
   if (mousedown && !spacedown) {
-    // update mouse_trace
-    mouse_trace.push([imgY, imgX]);
+    // update mouse_trace, but not if turning on conv brush
+    if (mode.kind !== Modes.prompt) {
+      mouse_trace.push([imgY, imgX]);
+    }
   } else {
     brush.clearView();
   }
@@ -1296,22 +1315,34 @@ function action(action, info, frame = current_frame) {
         alert(payload.error);
       }
       if (payload.imgs) {
-        rawLoaded = false;
-        segLoaded = false;
-
         // load new value of seg_array
         // array of arrays, contains annotation data for frame
-        seg_array = payload.imgs.seg_arr;
+        if (payload.imgs.hasOwnProperty('seg_arr')) {
+          seg_array = payload.imgs.seg_arr;
+        }
 
-        seg_image.src = payload.imgs.segmented;
-        raw_image.src = payload.imgs.raw;
+        if (payload.imgs.hasOwnProperty('segmented')) {
+          segLoaded = false;
+          seg_image.src = payload.imgs.segmented;
+        }
+
+        if (payload.imgs.hasOwnProperty('raw')) {
+          rawLoaded = false;
+          raw_image.src = payload.imgs.raw;
+        }
       }
       if (payload.tracks) {
         tracks = payload.tracks;
         // update maxLabelsMap when we get new track info
         for (let i = 0; i < Object.keys(tracks).length; i++){
           let key = Object.keys(tracks)[i]; // the keys are strings
-          maxLabelsMap.set(i, Math.max(...Object.keys(tracks[key]).map(Number)));
+          if (Object.keys(tracks[key]).length > 0) {
+            // use i as key in this map because it is an int, mode.feature is also int
+            maxLabelsMap.set(i, Math.max(... Object.keys(tracks[key]).map(Number)));
+          } else {
+            // if no labels in feature, explicitly set max label to 0
+            maxLabelsMap.set(i, 0);
+          }
         }
       }
       if (payload.tracks || payload.imgs) {
@@ -1331,8 +1362,10 @@ function start_caliban(filename) {
   rgb = settings.rgb;
   if (rgb) {
     current_highlight = true;
+    display_labels = false;
   } else {
     current_highlight = false;
+    display_labels = true;
   }
   // disable scrolling from scrolling around on page (it should just control brightness)
   document.addEventListener('wheel', function(event) {
@@ -1371,7 +1404,8 @@ function start_caliban(filename) {
     postCompImg.onload = render_image_display;
   } else {
     raw_image.onload = prepareRaw;
-    contrastedRaw.onload = rawAdjust;
+    contrastedRaw.onload = preCompRawAdjust;
+    preCompRaw.onload = rawAdjust;
     seg_image.onload = preCompAdjust;
     preCompSeg.onload = segAdjust;
     compositedImg.onload = postCompAdjust;

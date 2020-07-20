@@ -218,8 +218,13 @@ class ZStackReview(BaseReview):
         '''
         self.rescaled = np.zeros((self.height, self.width, self.rgb_channels), dtype='uint8')
         # this approach allows noise through
-        for channel in range(min(5, self.rgb_channels)):
-            self.rescaled[:, :, channel] = self.rescale_95(self.raw[0, :, :, channel])
+        for channel in range(min(6, self.rgb_channels)):
+            raw_channel = self.raw[self.current_frame, :, :, channel]
+            if np.sum(raw_channel) == 0:
+                # don't rescale empty channels
+                pass
+            else:
+                self.rescaled[:, :, channel] = self.rescale_95(raw_channel)
 
     def reduce_to_RGB(self):
         '''
@@ -232,7 +237,7 @@ class ZStackReview(BaseReview):
         self.rgb_img = np.zeros((self.height, self.width, 3), dtype='uint16')
 
         # for each of the channels that we have
-        for c in range(min(5, self.rgb_channels)):
+        for c in range(min(6, self.rgb_channels)):
             # straightforward RGB -> RGB
             if c < 3:
                 self.rgb_img[:, :, c] = (self.rescaled[:, :, c]).astype('uint16')
@@ -328,7 +333,7 @@ class ZStackReview(BaseReview):
 
         # check for image change, in case pixels changed but no new or del cell
         comparison = np.where(annotated != self.annotated[frame, :, :, self.feature])
-        self.frames_changed = np.any(comparison)
+        self._y_changed = np.any(comparison)
         # if info changed, self.info_changed set to true with info helper functions
 
         self.annotated[frame, :, :, self.feature] = annotated
@@ -476,7 +481,7 @@ class ZStackReview(BaseReview):
 
         self.annotated[frame, :, :, self.feature] = ann_img
 
-        self.frames_changed = self.info_changed = True
+        self._y_changed = self.info_changed = True
 
     def action_swap_all_frame(self, label_1, label_2):
 
@@ -493,7 +498,7 @@ class ZStackReview(BaseReview):
         self.cell_info[self.feature][label_1].update({'frames': cell_info_2['frames']})
         self.cell_info[self.feature][label_2].update({'frames': cell_info_1['frames']})
 
-        self.frames_changed = self.info_changed = True
+        self._y_changed = self.info_changed = True
 
     def action_watershed(self, label, frame, x1_location, y1_location, x2_location, y2_location):
         # Pull the label that is being split and find a new valid label
@@ -569,10 +574,10 @@ class ZStackReview(BaseReview):
 
             # check if image changed
             comparison = np.where(next_img != updated_slice)
-            self.frames_changed = np.any(comparison)
+            self._y_changed = np.any(comparison)
 
             # if the image changed, update self.annotated and remake cell info
-            if self.frames_changed:
+            if self._y_changed:
                 self.annotated[current_slice, :, :, int(self.feature)] = updated_slice
                 self.create_cell_info(feature=int(self.feature))
 
@@ -592,13 +597,15 @@ class ZStackReview(BaseReview):
             self.annotated[zslice + 1, :, :, self.feature] = predicted_next
 
         # remake cell_info dict based on new annotations
-        self.frames_changed = True
+        self._y_changed = True
         self.create_cell_info(feature=self.feature)
 
     def action_save_zstack(self):
         # save file to BytesIO object
         store_npz = io.BytesIO()
-        np.savez(store_npz, raw=self.raw, annotated=self.annotated)
+
+        # X and y are array names by convention
+        np.savez(store_npz, X=self.raw, y=self.annotated)
         store_npz.seek(0)
 
         # store npz file object in bucket/subfolders (subfolders is full path)
@@ -627,7 +634,7 @@ class ZStackReview(BaseReview):
             self.cell_ids[feature] = np.append(self.cell_ids[feature], add_label)
 
         # if adding cell, frames and info have necessarily changed
-        self.frames_changed = self.info_changed = True
+        self._y_changed = self.info_changed = True
 
     def del_cell_info(self, feature, del_label, frame):
         '''
@@ -647,7 +654,7 @@ class ZStackReview(BaseReview):
             self.cell_ids[feature] = np.delete(ids, np.where(ids == np.int64(del_label)))
 
         # if deleting cell, frames and info have necessarily changed
-        self.frames_changed = self.info_changed = True
+        self._y_changed = self.info_changed = True
 
     def create_cell_info(self, feature):
         '''
@@ -852,7 +859,7 @@ class TrackReview(BaseReview):
             track_old["frame_div"] = None
             track_old["capped"] = True
 
-            self.frames_changed = self.info_changed = True
+            self._y_changed = self.info_changed = True
 
     def action_delete(self, label, frame):
         """
@@ -919,7 +926,7 @@ class TrackReview(BaseReview):
             except ValueError:
                 pass
 
-        self.frames_changed = self.info_changed = True
+        self._y_changed = self.info_changed = True
 
     def action_swap_single_frame(self, label_1, label_2, frame):
         '''swap the labels of two cells in one frame, but do not
@@ -932,7 +939,7 @@ class TrackReview(BaseReview):
 
         self.annotated[frame, :, :, self.feature] = ann_img
 
-        self.frames_changed = True
+        self._y_changed = True
 
     def action_swap_tracks(self, label_1, label_2):
         def relabel(old_label, new_label):
@@ -956,7 +963,7 @@ class TrackReview(BaseReview):
         relabel(label_2, label_1)
         relabel(-1, label_2)
 
-        self.frames_changed = self.info_changed = True
+        self._y_changed = self.info_changed = True
 
     def action_watershed(self, label, frame, x1_location, y1_location, x2_location, y2_location):
 
@@ -1078,7 +1085,7 @@ class TrackReview(BaseReview):
             self.tracks[add_label].update({'parent': None})
             self.tracks[add_label].update({'capped': False})
 
-        self.frames_changed = self.info_changed = True
+        self._y_changed = self.info_changed = True
 
     def del_cell_info(self, del_label, frame):
         '''
@@ -1102,7 +1109,7 @@ class TrackReview(BaseReview):
                 if track["parent"] == del_label:
                     track["parent"] = None
 
-        self.frames_changed = self.info_changed = True
+        self._y_changed = self.info_changed = True
 
 
 def consecutive(data, stepsize=1):
@@ -1267,13 +1274,17 @@ def load_npz(filename):
     data = io.BytesIO(filename)
     npz = np.load(data)
 
+    # standard nomenclature for image (X) and annotation (y)
     if 'y' in npz.files:
         raw_stack = npz['X']
         annotation_stack = npz['y']
 
+    # some files may have alternate names 'raw' and 'annotated'
     elif 'raw' in npz.files:
         raw_stack = npz['raw']
         annotation_stack = npz['annotated']
+
+    # if files are named something different, give it a try anyway
     else:
         raw_stack = npz[npz.files[0]]
         annotation_stack = npz[npz.files[1]]

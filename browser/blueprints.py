@@ -4,10 +4,12 @@ from __future__ import division
 from __future__ import print_function
 
 import base64
+import distutils
 import json
 import os
 import pickle
 import re
+import timeit
 import traceback
 
 from flask import Blueprint
@@ -16,6 +18,7 @@ from flask import render_template
 from flask import request
 from flask import redirect
 from flask import current_app
+from werkzeug.exceptions import HTTPException
 
 from helpers import is_trk_file, is_npz_file
 from caliban import TrackReview, ZStackReview
@@ -25,23 +28,46 @@ from models import Project
 bp = Blueprint('caliban', __name__)  # pylint: disable=C0103
 
 
+def load_project_state(project):
+    """Unpickle the project's state into a Caliban object"""
+    start = timeit.default_timer()
+    state = pickle.loads(project.state)
+    current_app.logger.debug('Unpickled project "%s" state in %s s.',
+                             project.id, timeit.default_timer() - start)
+    return state
+
+
 @bp.route('/health')
 def health():
-    '''Returns success if the application is ready.'''
-    return 'success'
+    """Returns success if the application is ready."""
+    return jsonify({'message': 'success'}), 200
+
+
+@bp.errorhandler(Exception)
+def handle_exception(error):
+    """Handle all uncaught exceptions"""
+    # pass through HTTP errors
+    if isinstance(error, HTTPException):
+        return error
+
+    current_app.logger.error('Encountered %s: %s',
+                             error.__class__.__name__, error)
+
+    # now you're handling non-HTTP exceptions only
+    return jsonify({'message': str(error)}), 500
 
 
 @bp.route('/upload_file/<int:project_id>', methods=['GET', 'POST'])
 def upload_file(project_id):
-    ''' Upload .trk/.npz data file to AWS S3 bucket.
-    '''
+    '''Upload .trk/.npz data file to AWS S3 bucket.'''
+    start = timeit.default_timer()
     # Use id to grab appropriate TrackReview/ZStackReview object from database
     project = Project.get_project_by_id(project_id)
 
-    if project is None:
+    if not project:
         return jsonify({'error': 'project_id not found'}), 404
 
-    state = pickle.loads(project.state)
+    state = load_project_state(project)
 
     # Call function in caliban.py to save data file and send to S3 bucket
     if is_trk_file(project.filename):
@@ -52,6 +78,10 @@ def upload_file(project_id):
     # add "finished" timestamp and null out state longblob
     Project.finish_project(project)
 
+    current_app.logger.debug('Uploaded file "%s" for project "%s" in %s s.',
+                             project.filename, project_id,
+                             timeit.default_timer() - start)
+
     return redirect('/')
 
 
@@ -60,6 +90,7 @@ def action(project_id, action_type, frame):
     ''' Make an edit operation to the data file and update the object
         in the database.
     '''
+    start = timeit.default_timer()
     # obtain 'info' parameter data sent by .js script
     info = {k: json.loads(v) for k, v in request.values.to_dict().items()}
 
@@ -70,13 +101,15 @@ def action(project_id, action_type, frame):
         if not project:
             return jsonify({'error': 'project_id not found'}), 404
 
-        state = pickle.loads(project.state)
+        state = load_project_state(project)
         # Perform edit operation on the data file
         state.action(action_type, info)
-        frames_changed = state.frames_changed
+
+        x_changed = state._x_changed
+        y_changed = state._y_changed
         info_changed = state.info_changed
 
-        state.frames_changed = state.info_changed = False
+        state._x_changed = state._y_changed = state.info_changed = False
 
         # Update object in local database
         Project.update_project(project, state)
@@ -87,20 +120,25 @@ def action(project_id, action_type, frame):
 
     tracks = state.readable_tracks if info_changed else False
 
-    if frames_changed:
-        img = state.get_frame(frame, raw=False)
-        raw = state.get_frame(frame, raw=True)
-        edit_arr = state.get_array(frame)
-
+    if x_changed or y_changed:
         encode = lambda x: base64.encodebytes(x.read()).decode()
+        img_payload = {}
 
-        img_payload = {
-            'raw': f'data:image/png;base64,{encode(raw)}',
-            'segmented': f'data:image/png;base64,{encode(img)}',
-            'seg_arr': edit_arr.tolist()
-        }
+        if x_changed:
+            raw = state.get_frame(frame, raw=True)
+            img_payload['raw'] = f'data:image/png;base64,{encode(raw)}'
+        if y_changed:
+            img = state.get_frame(frame, raw=False)
+            img_payload['segmented'] = f'data:image/png;base64,{encode(img)}'
+            edit_arr = state.get_array(frame)
+            img_payload['seg_arr'] = edit_arr.tolist()
+
     else:
         img_payload = False
+
+    current_app.logger.debug('Action "%s" for project "%s" finished in %s s.',
+                             action_type, project_id,
+                             timeit.default_timer() - start)
 
     return jsonify({'tracks': tracks, 'imgs': img_payload})
 
@@ -110,13 +148,14 @@ def get_frame(frame, project_id):
     ''' Serve modes of frames as pngs. Send pngs and color mappings of
         cells to .js file.
     '''
+    start = timeit.default_timer()
     # Use id to grab appropriate TrackReview/ZStackReview object from database
     project = Project.get_project_by_id(project_id)
 
     if not project:
         return jsonify({'error': 'project_id not found'}), 404
 
-    state = pickle.loads(project.state)
+    state = load_project_state(project)
 
     # Obtain raw, mask, and edit mode frames
     img = state.get_frame(frame, raw=False)
@@ -133,6 +172,9 @@ def get_frame(frame, project_id):
         'seg_arr': edit_arr.tolist()
     }
 
+    current_app.logger.debug('Got frame %s of project "%s" in %s s.',
+                             frame, project_id, timeit.default_timer() - start)
+
     return jsonify(payload)
 
 
@@ -141,6 +183,7 @@ def load(filename):
     ''' Initate TrackReview/ZStackReview object and load object to database.
         Send specific attributes of the object to the .js file.
     '''
+    start = timeit.default_timer()
     current_app.logger.info('Loading track at %s', filename)
 
     folders = re.split('__', filename)
@@ -157,7 +200,8 @@ def load(filename):
         # Initate TrackReview object and entry in database
         track_review = TrackReview(filename, input_bucket, output_bucket, full_path)
         project = Project.create_project(filename, track_review, subfolders)
-
+        current_app.logger.debug('Loaded trk file "%s" in %s s.',
+                                 filename, timeit.default_timer() - start)
         # Send attributes to .js file
         return jsonify({
             'max_frames': track_review.max_frames,
@@ -169,12 +213,13 @@ def load(filename):
 
     if is_npz_file(filename):
         # arg is 'false' which gets parsed to True if casting to bool
-        rgb = request.args.get('rgb', type=str)
-        rgb = json.loads(rgb)
+        rgb = request.args.get('rgb', default='false', type=str)
+        rgb = bool(distutils.util.strtobool(rgb))
         # Initate ZStackReview object and entry in database
         zstack_review = ZStackReview(filename, input_bucket, output_bucket, full_path, rgb)
         project = Project.create_project(filename, zstack_review, subfolders)
-
+        current_app.logger.debug('Loaded npz file "%s" in %s s.',
+                                 filename, timeit.default_timer() - start)
         # Send attributes to .js file
         return jsonify({
             'max_frames': zstack_review.max_frames,
@@ -194,9 +239,7 @@ def load(filename):
 
 @bp.route('/', methods=['GET', 'POST'])
 def form():
-    ''' Request HTML landing page to be rendered if user requests for
-        http://127.0.0.1:5000/.
-    '''
+    '''Request HTML landing page to be rendered.'''
     return render_template('index.html')
 
 
@@ -213,19 +256,19 @@ def tool():
     current_app.logger.info('%s is filename', filename)
 
     # TODO: better name template?
-    new_filename = 'caliban-input__caliban-output__test__{}'.format(
-        str(filename))
+    new_filename = 'caliban-input__caliban-output__test__{}'.format(filename)
 
     # if no options passed (how this route will be for now),
     # still want to pass in default settings
-    rgb = request.args.get('rgb', default=False, type=bool)
-    pixel_only = request.args.get('pixel_only', default=False, type=bool)
-    label_only = request.args.get('label_only', default=False, type=bool)
+    rgb = request.args.get('rgb', default='false', type=str)
+    pixel_only = request.args.get('pixel_only', default='false', type=str)
+    label_only = request.args.get('label_only', default='false', type=str)
 
+    # Using distutils to cast string arguments to bools
     settings = {
-        'rgb': rgb,
-        'pixel_only': pixel_only,
-        'label_only': label_only
+        'rgb': bool(distutils.util.strtobool(rgb)),
+        'pixel_only': bool(distutils.util.strtobool(pixel_only)),
+        'label_only': bool(distutils.util.strtobool(label_only))
     }
 
     if is_trk_file(new_filename):
@@ -258,14 +301,14 @@ def shortcut(filename):
         request to access a specific data file that has been preloaded to the
         input S3 bucket (ex. http://127.0.0.1:5000/test.npz).
     '''
-    rgb = request.args.get('rgb', default=False, type=bool)
-    pixel_only = request.args.get('pixel_only', default=False, type=bool)
-    label_only = request.args.get('label_only', default=False, type=bool)
+    rgb = request.args.get('rgb', default='false', type=str)
+    pixel_only = request.args.get('pixel_only', default='false', type=str)
+    label_only = request.args.get('label_only', default='false', type=str)
 
     settings = {
-        'rgb': rgb,
-        'pixel_only': pixel_only,
-        'label_only': label_only
+        'rgb': bool(distutils.util.strtobool(rgb)),
+        'pixel_only': bool(distutils.util.strtobool(pixel_only)),
+        'label_only': bool(distutils.util.strtobool(label_only))
     }
 
     if is_trk_file(filename):
