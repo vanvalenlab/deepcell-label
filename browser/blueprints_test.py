@@ -115,6 +115,10 @@ def test_load(client, mocker):
     response = client.post('/load/{}.npz'.format(basefile))
     assert response.status_code == 200
 
+    # rgb mode only for npzs.
+    response = client.post('/load/{}.npz?rgb=true'.format(basefile))
+    assert response.status_code == 200
+
     response = client.post('/load/{}.trk'.format(basefile))
     assert response.status_code == 200
 
@@ -150,11 +154,20 @@ def test_tool(client):
 
 
 def test_shortcut(client):
+    options = 'rgb=true&pixel_only=true&label_only=true'
     response = client.get('/test-file.npz')
     assert response.status_code == 200
     assert b'<body>' in response.data
 
+    response = client.get('/test-file.npz?{}'.format(options))
+    assert response.status_code == 200
+    assert b'<body>' in response.data
+
     response = client.get('/test-file.trk')
+    assert response.status_code == 200
+    assert b'<body>' in response.data
+
+    response = client.get('/test-file.trk?{}'.format(options))
     assert response.status_code == 200
     assert b'<body>' in response.data
 
