@@ -4,7 +4,7 @@ from __future__ import division
 from __future__ import print_function
 
 import base64
-import distutils.util
+import distutils
 import json
 import os
 import pickle
