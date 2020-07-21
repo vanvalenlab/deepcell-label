@@ -1,0 +1,9 @@
+pytest>=5.2
+pytest-cov==2.5.1
+pytest-mock
+pytest-pep8
+pytest-flask
+pytest-flask-sqlalchemy
+fakeredis
+six>=1.12
+coveralls
