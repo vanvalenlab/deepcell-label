@@ -681,18 +681,6 @@ class ZStackReview(BaseReview):
 
         self.info_changed = True
 
-    def create_lineage(self):
-        for cell in self.cell_ids[self.feature]:
-            self.lineage[str(cell)] = {}  # TODO: what is self.lineage?
-            cell_info = self.lineage[str(cell)]
-
-            cell_info["label"] = int(cell)
-            cell_info["daughters"] = []
-            cell_info["frame_div"] = None
-            cell_info["parent"] = None
-            cell_info["capped"] = False
-            cell_info["frames"] = self.cell_info[self.feature][cell]['frames']
-
 
 class TrackReview(BaseReview):
     def __init__(self, filename, input_bucket, output_bucket, subfolders):
