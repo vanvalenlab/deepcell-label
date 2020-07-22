@@ -29,7 +29,8 @@ jobs:
         pip install -r browser/requirements-test.txt
 
     - name: Test
-      env: GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         pytest browser --cov browser --pep8
         coveralls
