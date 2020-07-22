@@ -31,8 +31,4 @@ jobs:
     - name: Test
       run: |
         pytest browser --cov browser --pep8
-
-    - name: Coveralls
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        coveralls
