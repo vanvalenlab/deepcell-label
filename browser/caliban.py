@@ -116,6 +116,13 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
                           vmin=0,
                           vmax=self.max_intensity[self.channel],
                           cmap="cubehelix")
+        elif (raw and self.rgb):
+            frame = self.rgb_img
+            return pngify(imgarr=frame,
+                          vmin=None,
+                          vmax=None,
+                          cmap=None)
+
         else:
             frame = self.annotated[frame, ..., self.feature]
             frame = np.ma.masked_equal(frame, 0)
@@ -148,7 +155,7 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
             raise ValueError('Channel {} is outside of range [0, {}].'.format(
                 channel, self.channel_max))
         self.channel = channel
-        self.frames_changed = True
+        self._x_changed = True
 
     def action_change_feature(self, feature):
         """Change selected feature."""
@@ -156,7 +163,7 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
             raise ValueError('Feature {} is outside of range [0, {}].'.format(
                 feature, self.feature_max))
         self.feature = feature
-        self.frames_changed = True
+        self._y_changed = True
 
     def action_new_single_cell(self, label, frame):
         """Create new label in just one frame"""
@@ -713,6 +720,13 @@ class TrackReview(BaseReview):
             max_label = int(np.max(self.tracks[self.feature]))
         return max_label
 
+    def _get_s3_client(self):
+        return boto3.client(
+            's3',
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+        )
+
     @property
     def readable_tracks(self):
         """
@@ -1113,6 +1127,7 @@ def load_npz(filename):
         annotation_stack = npz[npz.files[1]]
 
     return {'raw': raw_stack, 'annotated': annotation_stack}
+
 
 
 # copied from:
