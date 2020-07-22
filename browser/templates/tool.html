@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{%- block content -%}
+{%- if settings['rgb'] -%}
+  {% include "partials/infopane_abridged.html" %}
+{%- else -%}
+  {% include "partials/infopane.html" %}
+{%- endif -%}
+
+<main class="container">
+  <div class="row">
+
+    <div id="table-col" class="col s5">
+
+      <h4>{{ title | title }}</h4>
+      <p>Filename will be given after submit button is pressed.</p>
+
+      <div class="row">
+
+        <div class="col s6">
+          <button id="submit" class="btn waves-effect waves-light indigo" onClick="upload()">
+            Submit<i class="material-icons right">send</i>
+          </button>
+        </div>
+
+        <div class="col s6">
+          {% include "partials/loading-bar.html" %}
+        </div>
+
+      </div>
+
+      <div class="row hide" id="output">
+        <div class="col s12">
+          <p>Filename to COPY/PASTE:</p>
+          <blockquote>{{ filename }}</blockquote>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col s12">
+          {%- if filetype == "zstack" -%}
+            {% include "partials/zstack_table.html" %}
+          {%- elif filetype == "track" -%}
+            {% include "partials/track_table.html" %}
+          {%- endif -%}
+        </div>
+      </div>
+
+    </div>
+
+    <div id="canvas-col" class="col s6 offset-s1">
+      <!-- Canvas used to display image and capture user input -->
+      <canvas id="canvas" class="z-depth-2"></canvas>
+      <!-- Second canvas used for acutal image processing, hidden -->
+      <canvas id="hidden_seg_canvas" class="hide"></canvas>
+    </div>
+
+  </div>
+</main>
+{%- endblock -%}
+
+{%- block extraJs -%}
+{%- if filetype == "zstack" -%}
+  <script type="text/javascript" src="{{ url_for('static', filename='js/main_zstack.js') }}"></script>
+{%- elif filetype == "track" -%}
+  <script type="text/javascript" src="{{ url_for('static', filename='js/main_track.js') }}"></script>
+{%- endif -%}
+
+<!-- START CALIBAN FUNCTION CALL -->
+<script>
+  var settings = {{settings | tojson}};
+  function upload() {
+    // disable button and show loading bar
+    document.getElementById("submit").classList.add("disabled");
+    document.getElementById("loading-bar").classList.add("active");
+    upload_file(function(payload) {
+      // disable loading bar and remove show output filename
+      document.getElementById("loading-bar").classList.remove("active");
+      document.getElementById("output").classList.remove("hide");
+    });
+  }
+  start_caliban("{{filename}}");
+</script>
+<!-- END CALIBAN FUNCTION CALL -->
+{%- endblock -%}

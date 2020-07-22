@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main class="container">
+
+  <div class="section center-align">
+    <h5>
+      Click on a file that you would like use to see how Caliban works!
+    </h5>
+    <p>
+      The .trk files allow you to annotate RAW264 cells across time-lapse frames while preserving relationship information.
+    </p>
+    <p>
+      The .npz files allow you to annotate different types of data.
+      test.npz is an example of organoid annotation across z-stack frames.
+      test2.npz is a 3D example of nuclei in tissue.
+      test3.npz is an example of untracked and uncorrected HeLa cytoplasm across time.
+    </p>
+  </div>
+
+  <form method="POST" action="{{ url_for('caliban.tool') }}" class="section">
+
+    <div class="container row">
+
+      <div class="col s12">
+        <p class="center-align">
+          <select name="filename" class="browser-default center-align">
+            <option value="RAW264_S0_Batch02.trk">RAW264_S0_Batch02.trk </option>
+            <option value="RAW264_S0_Batch05.trk">RAW264_S0_Batch05.trk</option>
+            <option value="RAW264_S0_Batch06.trk">RAW264_S0_Batch06.trk</option>
+            <!-- zstack test npzs -->
+            <option value="test.npz">test.npz</option>
+            <option value="mouse_s1_uncorrected_fullsize_all_channels_x_05_y_03_save_version_0.npz">test2.npz</option>
+            <!-- uncorrected cytoplasm movie test npz -->
+            <option value="HeLa_movie_s0_uncorrected_fullsize_all_channels_x_00_y_01_frames_5-9.npz">test3.npz</option>
+            <!-- big file tests -->
+            <option value="fov_4b55271de34c40fcba5ec13fac73f57b_crop_0_crop_0_slice_0_fake_cyto.npz">512-single-channel.npz</option>
+            <option value="fov_4b55271de34c40fcba5ec13fac73f57b_crop_0_crop_0_slice_0.npz">512-RGB.npz</option>
+          </select>
+        </p>
+      </div>
+
+      <div class="col s12">
+        <p class="center-align">
+          <button class="btn waves-effect waves-light indigo" type="submit" name="action">Submit
+            <i class="material-icons right">send</i>
+          </button>
+        </p>
+      </div>
+
+    </div>
+
+  </form>
+
+</main>
+{% endblock %}
+
+{% block extraJs %}
+<!-- this script is not affecting anything. -->
+<!-- <script>
+  $(function(){
+    // This function allows the input text to automatically resize according
+    // to it's length, allowing user to be able to comfortably view the
+    // filename they uplaod
+    function resizeInput() {
+      $(this).attr('size', $(this).val().length);
+    }
+
+    $('input[type="submit"]')
+      // event handler
+      .keyup(resizeInput)
+      // resize on page load
+      .each(resizeInput);
+  });
+</script> -->
+{% endblock %}

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, shrink-to-fit=no" />
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" />
+
+    <title>Caliban</title>
+
+    <!--Import Google Icon Font-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!--Import materialize.css-->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/materialize.min.css') }}" />
+    <!--Import normalize.css-->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/normalize.css') }}" />
+    <!--Import custom CSS-->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}" />
+  </head>
+
+  <body>
+
+    <header>
+      <div class="navbar-fixed">
+        <nav class="z-depth-0">
+          <div class="nav-wrapper indigo">
+            <a href="#" class="brand-logo">Caliban</a>
+            <ul id="nav-mobile" class="right hide-on-small-and-down">
+              <li><a href="http://deepcell.org" target="_blank">DeepCell</a></li>
+              <li><a href="https://github.com/vanvalenlab/caliban" target="_blank">GitHub</a></li>
+            </ul>
+          </div>
+        </nav>
+      </div>
+    </header>
+
+    {% block content %}
+    {% endblock %}
+
+    <footer class="page-footer white">
+      <div class="footer-copyright white">
+        <div class="container center-align grey-text darken-5-text">
+        © 2016-2020 The Van Valen Lab at the California Institute of Technology (Caltech). All rights reserved.
+        </div>
+      </div>
+    </footer>
+
+    <!--JavaScript at end of body for optimized loading-->
+    <!-- Load JQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <!-- Load Materialize JS -->
+    <script type="text/javascript" src="{{ url_for('static', filename='js/materialize.min.js') }}"></script>
+    <!-- Initialize Materialize elements -->
+    <script>
+      M.AutoInit();
+      document.addEventListener('DOMContentLoaded', function() {
+        // Initialize forms
+        var elems = document.querySelectorAll('select');
+        var instances = M.FormSelect.init(elems, {});
+        // Initialize collapsibles
+        var elems = document.querySelectorAll('.collapsible');
+        var instances = M.Collapsible.init(elems, {
+          accordion: true,
+          inDuration: 400,
+          outDuration: 400,
+        });
+      });
+    </script>
+    <!-- Load Custom JavaScript -->
+    <script type="text/javascript" src="{{ url_for('static', filename='js/adjust.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/brush.js') }}"></script>
+    {% block extraJs %}
+    {% endblock %}
+
+  </body>
+</html>

@@ -18,6 +18,32 @@ pip install -r requirements.txt
 ```bash
 python3 application.py
 ```
+## To use docker-compose for local development
+Add your AWS credentials to ```docker-compose.yaml```.
+
+From the ```caliban/browser``` folder, run:
+```bash
+sudo docker-compose up --build -d
+```
+Wait a minute for the database to finish setting up before running:
+```
+sudo docker-compose restart app
+```
+You can now go to 0.0.0.0:5000 in a browser window to access the local version of the tool.
+
+To interact with the local mysql database:
+```
+sudo docker exec -it browser_db_1 bash
+mysql -p
+```
+When finished:
+```
+sudo docker-compose down
+```
+(optional)
+```
+sudo docker system prune --volumes
+```
 
 ## Structure of Browser Version
 
@@ -81,7 +107,7 @@ Keybinds in pixel editing mode are different from those in the label-editing mod
 
 Annotation mode focuses on using an adjustable brush to modify annotations on a pixel level, rather than using operations that apply to every instance of a label within a frame or set of frames. The brush tool will only make changes to the currently selected value. Ie, a brush set to edit cell 5 will only add or erase "5" to the annotated image.
 
-*-/=* - increment value that brush is applying
+*[ (left bracket) / ] (right bracket)* - increment value that brush is applying
 
 *&darr; &uarr;* - change size of brush tool
 
@@ -99,6 +125,10 @@ Annotation mode focuses on using an adjustable brush to modify annotations on a 
 
 
 ### Viewing Options:
+
+*spacebar + click and drag* - pan across canvas
+
+*-/= keys or alt + scroll wheel* - zoom in and out
 
 *c* - cycle between different channels when no cells are selected
 

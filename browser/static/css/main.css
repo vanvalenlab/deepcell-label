@@ -1,98 +1,99 @@
-.frame-info {
-    padding: 1em;
+/* START Materialize Sticky Footer */
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
-.file-input {
-    padding: 1em;
+main {
+  flex: 1 0 auto;
+}
+/* END Materialize Sticky Footer */
+
+/* START container width override */
+.container {
+  margin: 0 auto;
+  max-width: 1280px;
+  width: 90%;
+}
+@media only screen and (min-width: 601px) {
+  .container {
+    width: 90%;
+  }
+}
+@media only screen and (min-width: 993px) {
+  .container {
+    width: 90%;
+  }
+}
+@media only screen and (min-width: 1201px) {
+  .container {
+    width: 90%;
+  }
+}
+/* END container width override */
+
+/* START navbar CSS */
+.nav-wrapper {
+  padding-left: 1em;
+  padding-right: 1em;
+}
+/* END navbar CSS */
+
+/* START infopane CSS */
+.infopane {
+  border: 0;
+  margin-top: 0;
 }
 
-.frame-info * {
-    display: block;
+.infopane .active div.collapsible-header,
+.infopane li div.collapsible-header:hover {
+  background-color: #ccc!important;
+  transition: 0.4s
 }
 
-.view_mode * {
-    display: block;
+.infopane li .collapsible-body {
+  padding-top: 0;
 }
+/* END infopane CSS */
 
-.cell-info-block {
-    margin: 1em 1em 1em 0em;
-    padding: 1em;
-    border-radius: 1em;
-    box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0, 0, 0, 0.12);
+/* START log table CSS */
+.info-table tr td {
+  padding-bottom: 0.5em;
+  padding-top: 0.5em;
+  text-align: left;
 }
-
-.image-state {
-    padding: 1em;
+.info-table tr td:nth-child(odd) {
+  width: 40%;
 }
-
-.cell-info-block * {
-    display: block;
+.info-table tr td:nth-child(even) {
+  width: 60%;
 }
-
-#container {
-    margin: 0 auto;
-    margin-top: 100px;
-    display: flex;
-    box-sizing: border-box;
-    flex-shrink: 0;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-}
-
-#maintable {
-    width: 900px;
-    height: 500px;
-    /* outline: 1px dashed blue; */
-}
-
-.changed-label {
-    text-align: center;
-}
- #logcol, #canvascol{
-    vertical-align: top;
- }
-
-#logcol {
-    box-sizing: border-box;
-    border-radius: 1em;
-    width: 20em;
-}
+/* END log table CSS */
 
 #edit_brush_row, #edit_label_row, #edit_erase_row {
-    visibility: hidden;
+  visibility: hidden;
 }
 
 #frames, #slices {
-    width: 180px;
-    word-wrap: break-word;          /*All browsers since IE 5.5+*/
-    overflow-wrap: break-word;
-    max-height: 68px;
-    overflow: auto;
+  overflow: auto;
+  overflow-wrap: break-word;
+  word-wrap: break-word;  /*All browsers since IE 5.5+*/
 }
 
 #mode {
-    width: 180px;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 #canvas {
-    cursor: crosshair;
-    box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0, 0, 0, 0.12);
+  background: black;
+  cursor: crosshair;
 }
 
-#hidden_canvas, #hidden_seg_canvas {
-    display: none;
-}
-
-#canvascol {
-    vertical-align: top;
-}
-
-#give_filename {
-    display: block;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    max-width: 300px;
+#output {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
