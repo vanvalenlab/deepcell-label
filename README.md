@@ -1,4 +1,5 @@
 # Caliban: Data Curation Tools for DeepCell.
+[![Actions Status](https://github.com/vanvalenlab/caliban/workflows/browser/badge.svg)](https://github.com/vanvalenlab/caliban/actions)
 
 Caliban is a segmentation and tracking tool used for human-in-the-loop data curation. It displays lineage data along with raw and annotated images. The output files prepare this information as training data for DeepCell.
 
@@ -62,7 +63,7 @@ You can use *esc* to return back to a state where no labels are selected.
 
 Keybinds in pixel editing mode are different from those in the label-editing mode.
 
-Annotation mode focuses on using an adjustable brush to modify annotations on a pixel level, rather than using operations that apply to every instance of a label within a frame or set of frames. The brush tool will only make changes to the currently selected value. Ie, a brush set to edit label 5 will only add or erase "5" to the annotated image. 
+Annotation mode focuses on using an adjustable brush to modify annotations on a pixel level, rather than using operations that apply to every instance of a label within a frame or set of frames. The brush tool will only make changes to the currently selected value. Ie, a brush set to edit label 5 will only add or erase "5" to the annotated image.
 
 *[ (left bracket) / ] (right bracket)* - decrement/increment value that brush is applying
 
@@ -76,7 +77,7 @@ Annotation mode focuses on using an adjustable brush to modify annotations on a 
 
 *r* - turn on "conversion brush" setting, which changes brush behavior so that one label value is overwritten with another label value. No other labels are affected, and conversion brush will not draw on background. After turning on conversion brush, click on cell labels as prompted to set brush values.
 
-*t* - threshold to predict annotations based on brightness. After turning this on, click and drag to draw a bounding box around the cell you wish to threshold. Make sure to include some background in the bounding box for accurate threshold predictions. Whatever was thresholded as foreground within the bounding box will be added to the annotation as a new cell with unique label. 
+*t* - threshold to predict annotations based on brightness. After turning this on, click and drag to draw a bounding box around the cell you wish to threshold. Make sure to include some background in the bounding box for accurate threshold predictions. Whatever was thresholded as foreground within the bounding box will be added to the annotation as a new cell with unique label.
 
 
 ### Viewing Options:
@@ -90,7 +91,7 @@ Annotation mode focuses on using an adjustable brush to modify annotations on a 
 *h* - switch between highlighted mode and non-highlighted mode (highlight exists in label- and pixel-editing modes but is displayed differently; label-editing highlighting recolors solid label with red, pixel-editing highlighting adds white or red outline around label in image). Once highlight mode is on, use *[ (left bracket) / ] (right bracket)* to decrement/increment selected cell label number.
 
 *shift+h* - switch between showing and hiding annotation masks in the pixel editor
-    
+
 *z* - switch between annotations and raw images (outside of pixel editor)
 
 *i* - invert greyscale raw image (viewing raw image or in pixel editor)
@@ -116,7 +117,7 @@ Annotation mode focuses on using an adjustable brush to modify annotations on a 
 
 ### To Save:
 
-Once done, use the following key to save the changed file. 
+Once done, use the following key to save the changed file.
 The tool will also save the original file in the same folder.
 In npz mode, a new npz file will be saved with a version number. An npz can be saved as a trk file (select "t" in response to save prompt). This will bundle together the current channel and feature of the npz along with a generated lineage file, which will contain label and frame information and empty parent/daughter entries for each cell. The new trk file can then be edited in Caliban's trk mode to add relationship information.
 
@@ -125,7 +126,7 @@ In npz mode, a new npz file will be saved with a version number. An npz can be s
 
 ## Instructions for Running Caliban in a Docker Container
 
-In addition to having Docker, you will also need to have a VNC viewer to view the application inside the container. 
+In addition to having Docker, you will also need to have a VNC viewer to view the application inside the container.
 
 To install one, you can go to http://realvnc.com to download a free VNC viewer.
 [Direct Link to Download Page](https://www.realvnc.com/en/connect/download/viewer/)
@@ -160,11 +161,9 @@ cd desktop
 python3 caliban.py [input file location]
 ```
 
-To see an immediate example with a sample .trk file, you can run 
+To see an immediate example with a sample .trk file, you can run
 
 ```bash
 cd desktop
 python3 caliban.py examples/trackfile1.trk
 ```
-
-
