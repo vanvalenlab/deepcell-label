@@ -144,7 +144,7 @@ class Mode {
     } else if (key === "x") {
       // delete label from frame
       this.kind = Modes.question;
-      this.action = "delete";
+      this.action = "delete_mask";
       this.prompt = "delete label " + this.info.label + " in frame " + this.info.frame + "? " + answer;
       render_info_display();
     } else if (key === "-") {
@@ -207,12 +207,12 @@ class Mode {
   handle_mode_question_keybind(key) {
     if (key === " ") {
       if (this.action === "flood_cell") {
-        action("flood_cell", this.info);
+        action("flood_contiguous", this.info);
       } else if (this.action === "trim_pixels") {
         action("trim_pixels", this.info);
       } if (this.action === "new_track") {
         action("new_track", this.info);
-      } else if (this.action === "delete") {
+      } else if (this.action === "delete_mask") {
         action(this.action, this.info);
       } else if (this.action === "set_parent") {
         if (this.info.label_1 !== this.info.label_2 &&
@@ -305,7 +305,7 @@ class Mode {
     if (evt.altKey) {
       // alt+click
       this.kind = Modes.question;
-      this.action = "flood_cell";
+      this.action = "flood_contiguous";
       this.info = {
         "label": current_label,
         "frame": current_frame,
