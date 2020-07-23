@@ -1129,9 +1129,9 @@ def load_npz(filename):
     return {'raw': raw_stack, 'annotated': annotation_stack}
 
 
-
 # copied from:
 # vanvalenlab/deepcell-tf/blob/master/deepcell/utils/tracking_utils.py3
+
 def load_trks(trkfile):
     """Load a trk/trks file.
     Args:
