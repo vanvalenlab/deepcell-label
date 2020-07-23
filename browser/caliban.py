@@ -720,13 +720,6 @@ class TrackReview(BaseReview):
             max_label = int(np.max(self.tracks[self.feature]))
         return max_label
 
-    def _get_s3_client(self):
-        return boto3.client(
-            's3',
-            aws_access_key_id=AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=AWS_SECRET_ACCESS_KEY
-        )
-
     @property
     def readable_tracks(self):
         """
