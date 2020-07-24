@@ -71,6 +71,7 @@ class ImageAdjuster{
     this.segLoaded = false;
   }
 
+  // TODO: getters/setters for brightness and contrast?
   changeContrast(inputChange) {
     let modContrast = -Math.sign(inputChange) * 4;
     // stop if fully desaturated
@@ -96,6 +97,13 @@ class ImageAdjuster{
       this.brightness = newBrightness;
       this.contrastRaw();
     }
+  }
+
+  resetBrightnessContrast() {
+    this.brightness = 0;
+    this.contrast = 0;
+    this.rawLoaded = false;
+    this.contrastRaw();
   }
 
   // modify image data in place to recolor

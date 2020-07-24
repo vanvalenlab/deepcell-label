@@ -84,9 +84,7 @@ class Mode {
       render_image_display();
     } else if (key === '0') {
       // reset brightness adjustments
-      adjuster.brightness = 0;
-      adjuster.contrast = 0;
-      adjuster.contrastRaw();
+      adjuster.resetBrightnessContrast();
     } else if ((key === 'l' || key === 'L') && rgb && !edit_mode) {
       display_labels = !display_labels;
       render_image_display();
