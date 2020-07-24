@@ -17,15 +17,15 @@ class Mode {
 
   set channel(num) {
     // don't try and change channel if no other channels exist
-    if (channel_max > 1) {
+    if (channelMax > 1) {
       // save current display settings before changing
       brightnessMap.set(this._channel, brightness);
       contrastMap.set(this._channel, current_contrast);
       // change channel, wrap around if needed
-      if (num === channel_max) {
+      if (num === channelMax) {
         this._channel = 0;
       } else if (num < 0) {
-        this._channel = channel_max - 1;
+        this._channel = channelMax - 1;
       } else {
         this._channel = num;
       }
@@ -691,7 +691,7 @@ var current_label = 0;
 var current_highlight;
 var max_frames;
 var feature_max;
-var channel_max;
+var channelMax;
 var dimensions;
 var tracks;
 let maxLabelsMap = new Map();
@@ -999,7 +999,7 @@ function load_file(file) {
     success: function (payload) {
       max_frames = payload.max_frames;
       feature_max = payload.feature_max;
-      channel_max = payload.channel_max;
+      channelMax = payload.channel_max;
       rawDimensions = payload.dimensions;
 
       sx = 0;
@@ -1025,7 +1025,7 @@ function load_file(file) {
         }
       }
 
-      for (let i = 0; i < channel_max; i++) {
+      for (let i = 0; i < channelMax; i++) {
         brightnessMap.set(i, 0);
         contrastMap.set(i, 0);
       }
