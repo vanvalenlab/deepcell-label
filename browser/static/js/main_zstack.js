@@ -481,7 +481,7 @@ class Mode {
     if (evt.altKey) {
       // alt+click
       this.kind = Modes.question;
-      this.action = "flood_cell";
+      this.action = "flood_contiguous";
       this.info = {
         "label": current_label,
         "frame": current_frame,
