@@ -19,8 +19,8 @@ class Mode {
     // don't try and change channel if no other channels exist
     if (channelMax > 1) {
       // save current display settings before changing
-      brightnessMap.set(this._channel, brightness);
-      contrastMap.set(this._channel, current_contrast);
+      adjuster.brightnessMap.set(this._channel, adjuster.brightness);
+      adjuster.contrastMap.set(this._channel, adjuster.current_contrast);
       // change channel, wrap around if needed
       if (num === channelMax) {
         this._channel = 0;
@@ -34,8 +34,8 @@ class Mode {
       action("change_channel", this.info);
       this.clear();
       // get brightness/contrast vals for new channel
-      brightness = brightnessMap.get(this._channel);
-      current_contrast = contrastMap.get(this._channel);
+      adjuster.brightness = adjuster.brightnessMap.get(this._channel);
+      adjuster.current_contrast = adjuster.contrastMap.get(this._channel);
     }
   }
 
@@ -84,9 +84,9 @@ class Mode {
       render_image_display();
     } else if (key === '0') {
       // reset brightness adjustments
-      brightness = 0;
-      current_contrast = 0;
-      adjuster.contrastRaw(current_contrast, brightness);
+      adjuster.brightness = 0;
+      adjuster.current_contrast = 0;
+      adjuster.contrastRaw(adjuster.current_contrast, adjuster.brightness);
     } else if ((key === 'l' || key === 'L') && rgb && !edit_mode) {
       display_labels = !display_labels;
       render_image_display();
@@ -679,13 +679,6 @@ var rendering_raw = false;
 let display_invert = true;
 let display_labels;
 
-const MIN_CONTRAST = -100;
-const MAX_CONTRAST = 700;
-
-var current_contrast;
-let contrastMap = new Map();
-let brightness;
-let brightnessMap = new Map();
 var current_frame = 0;
 var current_label = 0;
 var current_highlight;
@@ -1024,14 +1017,6 @@ function load_file(file) {
           maxLabelsMap.set(i, 0);
         }
       }
-
-      for (let i = 0; i < channelMax; i++) {
-        brightnessMap.set(i, 0);
-        contrastMap.set(i, 0);
-      }
-      brightness = brightnessMap.get(0);
-      current_contrast = contrastMap.get(0);
-
       project_id = payload.project_id;
     },
     async: false
@@ -1124,22 +1109,10 @@ function handle_scroll(evt) {
     changeZoom(Math.sign(evt.originalEvent.deltaY));
   } else if ((rendering_raw || edit_mode || (rgb && !display_labels))
     && !evt.originalEvent.shiftKey) {
-    // adjust contrast whenever we can see raw
-    adjuster.rawLoaded = false;
-    // don't use magnitude of scroll
-    let mod_contrast = -Math.sign(evt.originalEvent.deltaY) * 4;
-    // stop if fully desaturated
-    current_contrast = Math.max(current_contrast + mod_contrast, MIN_CONTRAST);
-    // stop at 8x contrast
-    current_contrast = Math.min(current_contrast + mod_contrast, MAX_CONTRAST);
-    adjuster.contrastRaw(current_contrast, brightness);
+    adjuster.changeContrast(evt.originalEvent.deltaY);
   } else if ((rendering_raw || edit_mode || (rgb && !display_labels))
     && evt.originalEvent.shiftKey) {
-    adjuster.rawLoaded = false;
-    let mod = -Math.sign(evt.originalEvent.deltaY);
-    brightness = Math.min(brightness + mod, 255);
-    brightness = Math.max(brightness + mod, -512);
-    adjuster.contrastRaw(current_contrast, brightness);
+    adjuster.changeBrightness(evt.originalEvent.deltaY);
   }
 }
 
@@ -1368,7 +1341,8 @@ function start_caliban(filename) {
   load_file(filename);
 
   // define image onload cascade behavior, need rawHeight and rawWidth first
-  adjuster = new ImageAdjuster(width=rawWidth, height=rawHeight, rgb=rgb)
+  adjuster = new ImageAdjuster(width=rawWidth, height=rawHeight,
+                               rgb=rgb, channelMax=channelMax);
   brush = new Brush(scale=scale, height=rawHeight, width=rawWidth, pad=padding);
 
   adjuster.postCompImg.onload = render_image_display;

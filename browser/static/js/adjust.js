@@ -1,7 +1,7 @@
 // helper functions
 
 class ImageAdjuster{
-  constructor(width, height, rgb) {
+  constructor(width, height, rgb, channelMax) {
     // canvas element used for image processing
     this.canvas = document.createElement('canvas');
     this.canvas.id = 'adjustCanvas';
@@ -23,6 +23,21 @@ class ImageAdjuster{
 
     this.rgb = rgb;
 
+    // brightness and contrast adjustment
+    // TODO: have this returned by a getter w/o a setter?
+    this.MIN_CONTRAST = -100;
+    this.MAX_CONTRAST = 700;
+
+    this.contrastMap = new Map();
+    this.brightnessMap = new Map();
+
+    for (let i = 0; i < channelMax; i++) {
+        this.brightnessMap.set(i, 0);
+        this.contrastMap.set(i, 0);
+      }
+    this.brightness = this.brightnessMap.get(0);
+    this.current_contrast = this.contrastMap.get(0);
+
     // raw and adjusted image storage
     // cascasding image updates if raw or seg is reloaded
     this.rawImage = new Image();
@@ -39,12 +54,12 @@ class ImageAdjuster{
     this.postCompImg = new Image();
 
     if (rgb) {
-      this.rawImage.onload = () => this.contrastRaw(current_contrast, brightness);
+      this.rawImage.onload = () => this.contrastRaw(this.current_contrast, this.brightness);
       this.contrastedRaw.onload = () => this.rawAdjust(current_highlight, edit_mode, brush, mode);
       this.segImage.onload = () => this.preCompAdjust(current_highlight, edit_mode, brush, mode);
       this.preCompSeg.onload = () => this.segAdjust(current_highlight, edit_mode, brush, mode);
     } else {
-      this.rawImage.onload = () => this.contrastRaw(current_contrast, brightness);
+      this.rawImage.onload = () => this.contrastRaw(this.current_contrast, this.brightness);
       this.contrastedRaw.onload = () => this.preCompRawAdjust(display_invert);
       this.preCompRaw.onload = () => this.rawAdjust(current_highlight, edit_mode, brush, mode);
       this.segImage.onload = () => this.preCompAdjust(current_highlight, edit_mode, brush, mode);
@@ -54,6 +69,33 @@ class ImageAdjuster{
 
     this.rawLoaded = false;
     this.segLoaded = false;
+  }
+
+  changeContrast(inputChange) {
+    let modContrast = -Math.sign(inputChange) * 4;
+    // stop if fully desaturated
+    let newContrast = Math.max(this.current_contrast + modContrast, this.MIN_CONTRAST);
+    // stop at 8x contrast
+    newContrast = Math.min(newContrast, this.MAX_CONTRAST);
+
+    if (newContrast !== this.current_contrast) {
+      // need to retrigger downstream image adjustments
+      this.rawLoaded = false;
+      this.current_contrast = newContrast;
+      this.contrastRaw(this.current_contrast, this.brightness);
+    }
+  }
+
+  changeBrightness(inputChange) {
+    let modBrightness = -Math.sign(inputChange);
+    let newBrightness = Math.min(this.brightness + modBrightness, 255);
+    newBrightness = Math.max(newBrightness + modBrightness, -512);
+
+    if (newBrightness !== this.brightness) {
+      this.rawLoaded = false;
+      this.brightness = newBrightness;
+      this.contrastRaw(this.current_contrast, this.brightness);
+    }
   }
 
   // modify image data in place to recolor
