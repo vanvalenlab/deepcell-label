@@ -1,7 +1,7 @@
 // helper functions
 
 class ImageAdjuster{
-  constructor(width, height) {
+  constructor(width, height, rgb) {
     // canvas element used for image processing
     this.canvas = document.createElement('canvas');
     this.canvas.id = 'adjustCanvas';
@@ -20,6 +20,8 @@ class ImageAdjuster{
     // these will never change once initialized
     this.height = height;
     this.width = width;
+
+    this.rgb = rgb;
 
     this.rawLoaded = false;
     this.segLoaded = false;
@@ -261,11 +263,11 @@ class ImageAdjuster{
     postCompImg.src = this.canvas.toDataURL();
   }
 
-  segAdjust(rgb, contrastedRaw, postCompImg,
+  segAdjust(contrastedRaw, postCompImg,
       preCompRaw, preCompSeg, compositedImg, current_highlight, edit_mode, brush, mode) {
     this.segLoaded = true;
     if (this.rawLoaded && this.segLoaded) {
-      if (rgb) {
+      if (this.rgb) {
         this.postCompAdjustRGB(contrastedRaw, postCompImg,
           current_highlight, edit_mode, brush, mode);
       } else {
@@ -274,11 +276,11 @@ class ImageAdjuster{
     }
   }
 
-  rawAdjust(rgb, contrastedRaw, postCompImg,
+  rawAdjust(contrastedRaw, postCompImg,
       preCompRaw, preCompSeg, compositedImg, current_highlight, edit_mode, brush, mode) {
     this.rawLoaded = true;
     if (this.rawLoaded && this.segLoaded) {
-      if (rgb) {
+      if (this.rgb) {
         this.postCompAdjustRGB(contrastedRaw, postCompImg,
       current_highlight, edit_mode, brush, mode);
       } else {

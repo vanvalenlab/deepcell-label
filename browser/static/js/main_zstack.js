@@ -1398,26 +1398,26 @@ function start_caliban(filename) {
   load_file(filename);
 
   // define image onload cascade behavior, need rawHeight and rawWidth first
-  adjuster = new ImageAdjuster(width=rawWidth, height=rawHeight)
+  adjuster = new ImageAdjuster(width=rawWidth, height=rawHeight, rgb=rgb)
   brush = new Brush(scale=scale, height=rawHeight, width=rawWidth, pad=padding);
 
   if (rgb) {
     rawImage.onload = () => adjuster.contrastRaw(rawImage, contrastedRaw, current_contrast, brightness);
-    contrastedRaw.onload = () => adjuster.rawAdjust(rgb, contrastedRaw, postCompImg,
+    contrastedRaw.onload = () => adjuster.rawAdjust(contrastedRaw, postCompImg,
       preCompRaw, preCompSeg, compositedImg, current_highlight, edit_mode, brush, mode);
     segImage.onload = () => adjuster.preCompAdjust(segImage, preCompSeg,
       current_highlight, edit_mode, brush, mode);
-    preCompSeg.onload = () => adjuster.segAdjust(rgb, contrastedRaw, postCompImg,
+    preCompSeg.onload = () => adjuster.segAdjust(contrastedRaw, postCompImg,
       preCompRaw, preCompSeg, compositedImg, current_highlight, edit_mode, brush, mode);
     postCompImg.onload = render_image_display;
   } else {
     rawImage.onload = () => adjuster.contrastRaw(rawImage, contrastedRaw, current_contrast, brightness);
     contrastedRaw.onload = () => adjuster.preCompRawAdjust(contrastedRaw, preCompRaw, display_invert);
-    preCompRaw.onload = () => adjuster.rawAdjust(rgb, contrastedRaw, postCompImg,
+    preCompRaw.onload = () => adjuster.rawAdjust(contrastedRaw, postCompImg,
       preCompRaw, preCompSeg, compositedImg, current_highlight, edit_mode, brush, mode);
     segImage.onload = () => adjuster.preCompAdjust(segImage, preCompSeg,
       current_highlight, edit_mode, brush, mode);
-    preCompSeg.onload = () => adjuster.segAdjust(rgb, contrastedRaw, postCompImg,
+    preCompSeg.onload = () => adjuster.segAdjust(contrastedRaw, postCompImg,
       preCompRaw, preCompSeg, compositedImg, current_highlight, edit_mode, brush, mode);
     compositedImg.onload = () => adjuster.postCompAdjust(compositedImg, postCompImg, edit_mode, brush);
     postCompImg.onload = render_image_display;
