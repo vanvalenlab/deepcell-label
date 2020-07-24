@@ -23,6 +23,21 @@ class ImageAdjuster{
 
     this.rgb = rgb;
 
+    // raw and adjusted image storage
+    // cascasding image updates if raw or seg is reloaded
+    this.rawImage = new Image();
+    this.contrastedRaw = new Image();
+    this.preCompRaw = new Image();
+
+    this.segImage = new Image();
+    this.preCompSeg = new Image();
+
+    // adjusted raw + annotations
+    this.compositedImg = new Image();
+
+    // composite image + outlines, transparent highlight
+    this.postCompImg = new Image();
+
     this.rawLoaded = false;
     this.segLoaded = false;
   }
@@ -120,26 +135,25 @@ class ImageAdjuster{
   }
 
   // apply contrast+brightness to raw image
-  contrastRaw(rawImage, contrastedRaw, contrast, brightness) {
+  contrastRaw(contrast, brightness) {
 
     // draw rawImage so we can extract image data
     this.ctx.clearRect(0, 0, this.width, this.height);
-    this.ctx.drawImage(rawImage, 0, 0, this.width, this.height);
+    this.ctx.drawImage(this.rawImage, 0, 0, this.width, this.height);
     let rawData = this.ctx.getImageData(0, 0, this.width, this.height);
     this._contrast_image(rawData, contrast, brightness);
     this.ctx.putImageData(rawData, 0, 0);
 
-    contrastedRaw.src = this.canvas.toDataURL();
+    this.contrastedRaw.src = this.canvas.toDataURL();
   }
 
-  preCompAdjust(segImage, preCompSeg,
-      current_highlight, edit_mode, brush, mode) {
+  preCompAdjust(current_highlight, edit_mode, brush, mode) {
 
     this.segLoaded = false;
 
     // draw segImage so we can extract image data
     this.ctx.clearRect(0, 0, this.width, this.height);
-    this.ctx.drawImage(segImage, 0, 0, this.width, this.height);
+    this.ctx.drawImage(this.segImage, 0, 0, this.width, this.height);
 
     if (current_highlight) {
       let segData = this.ctx.getImageData(0, 0, this.width, this.height);
@@ -159,15 +173,15 @@ class ImageAdjuster{
     }
 
     // once this new src is loaded, displayed image will be rerendered
-    preCompSeg.src = this.canvas.toDataURL();
+    this.preCompSeg.src = this.canvas.toDataURL();
   }
 
   // adjust raw further, pre-compositing (use to draw when labels hidden)
-  preCompRawAdjust(contrastedRaw, preCompRaw, display_invert) {
+  preCompRawAdjust(display_invert) {
 
     // further adjust raw image
     this.ctx.clearRect(0, 0, this.width, this.height);
-    this.ctx.drawImage(contrastedRaw, 0, 0, this.width, this.height);
+    this.ctx.drawImage(this.contrastedRaw, 0, 0, this.width, this.height);
     let rawData = this.ctx.getImageData(0, 0, this.width, this.height);
     this._grayscale(rawData);
     if (display_invert) {
@@ -175,29 +189,29 @@ class ImageAdjuster{
     }
     this.ctx.putImageData(rawData, 0, 0);
 
-    preCompRaw.src = this.canvas.toDataURL();
+    this.preCompRaw.src = this.canvas.toDataURL();
   }
 
   // composite annotations on top of adjusted raw image
-  compositeImages(preCompRaw, preCompSeg, compositedImg) {
+  compositeImages() {
 
-    this.ctx.drawImage(preCompRaw, 0, 0, this.width, this.height);
+    this.ctx.drawImage(this.preCompRaw, 0, 0, this.width, this.height);
 
     // add labels on top
     this.ctx.save();
     this.ctx.globalAlpha = 0.3;
-    this.ctx.drawImage(preCompSeg, 0, 0, this.width, this.height);
+    this.ctx.drawImage(this.preCompSeg, 0, 0, this.width, this.height);
     this.ctx.restore();
 
-    compositedImg.src = this.canvas.toDataURL();
+    this.compositedImg.src = this.canvas.toDataURL();
   }
 
   // apply outlines, transparent highlighting
-  postCompAdjust(compositedImg, postCompImg, edit_mode, brush) {
+  postCompAdjust(edit_mode, brush) {
 
     // draw compositedImg so we can extract image data
     this.ctx.clearRect(0, 0, this.width, this.height);
-    this.ctx.drawImage(compositedImg, 0, 0, this.width, this.height);
+    this.ctx.drawImage(this.compositedImg, 0, 0, this.width, this.height);
 
     // add outlines around conversion brush target/value
     let imgData = this.ctx.getImageData(0, 0, this.width, this.height);
@@ -218,16 +232,15 @@ class ImageAdjuster{
 
     this.ctx.putImageData(imgData, 0, 0);
 
-    postCompImg.src = this.canvas.toDataURL();
+    this.postCompImg.src = this.canvas.toDataURL();
   }
 
   // apply outlines, transparent highlighting for RGB
-  postCompAdjustRGB(contrastedRaw, postCompImg,
-      current_highlight, edit_mode, brush, mode) {
+  postCompAdjustRGB(current_highlight, edit_mode, brush, mode) {
 
     // draw contrastedRaw so we can extract image data
     this.ctx.clearRect(0, 0, this.width, this.height);
-    this.ctx.drawImage(contrastedRaw, 0, 0, this.width, this.height);
+    this.ctx.drawImage(this.contrastedRaw, 0, 0, this.width, this.height);
 
     // add outlines around conversion brush target/value
     let imgData = this.ctx.getImageData(0, 0, this.width, this.height);
@@ -260,31 +273,27 @@ class ImageAdjuster{
 
     this.ctx.putImageData(imgData, 0, 0);
 
-    postCompImg.src = this.canvas.toDataURL();
+    this.postCompImg.src = this.canvas.toDataURL();
   }
 
-  segAdjust(contrastedRaw, postCompImg,
-      preCompRaw, preCompSeg, compositedImg, current_highlight, edit_mode, brush, mode) {
+  segAdjust(current_highlight, edit_mode, brush, mode) {
     this.segLoaded = true;
     if (this.rawLoaded && this.segLoaded) {
       if (this.rgb) {
-        this.postCompAdjustRGB(contrastedRaw, postCompImg,
-          current_highlight, edit_mode, brush, mode);
+        this.postCompAdjustRGB(current_highlight, edit_mode, brush, mode);
       } else {
-        this.compositeImages(preCompRaw, preCompSeg, compositedImg);
+        this.compositeImages();
       }
     }
   }
 
-  rawAdjust(contrastedRaw, postCompImg,
-      preCompRaw, preCompSeg, compositedImg, current_highlight, edit_mode, brush, mode) {
+  rawAdjust(current_highlight, edit_mode, brush, mode) {
     this.rawLoaded = true;
     if (this.rawLoaded && this.segLoaded) {
       if (this.rgb) {
-        this.postCompAdjustRGB(contrastedRaw, postCompImg,
-      current_highlight, edit_mode, brush, mode);
+        this.postCompAdjustRGB(current_highlight, edit_mode, brush, mode);
       } else {
-        this.compositeImages(preCompRaw, preCompSeg, compositedImg);
+        this.compositeImages();
       }
     }
   }
