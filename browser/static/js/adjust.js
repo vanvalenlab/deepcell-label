@@ -54,12 +54,12 @@ class ImageAdjuster{
     this.postCompImg = new Image();
 
     if (rgb) {
-      this.rawImage.onload = () => this.contrastRaw(this.contrast, this.brightness);
+      this.rawImage.onload = () => this.contrastRaw();
       this.contrastedRaw.onload = () => this.rawAdjust(current_highlight, edit_mode, brush, mode);
       this.segImage.onload = () => this.preCompAdjust(current_highlight, edit_mode, brush, mode);
       this.preCompSeg.onload = () => this.segAdjust(current_highlight, edit_mode, brush, mode);
     } else {
-      this.rawImage.onload = () => this.contrastRaw(this.contrast, this.brightness);
+      this.rawImage.onload = () => this.contrastRaw();
       this.contrastedRaw.onload = () => this.preCompRawAdjust(display_invert);
       this.preCompRaw.onload = () => this.rawAdjust(current_highlight, edit_mode, brush, mode);
       this.segImage.onload = () => this.preCompAdjust(current_highlight, edit_mode, brush, mode);
@@ -82,7 +82,7 @@ class ImageAdjuster{
       // need to retrigger downstream image adjustments
       this.rawLoaded = false;
       this.contrast = newContrast;
-      this.contrastRaw(this.contrast, this.brightness);
+      this.contrastRaw();
     }
   }
 
@@ -94,7 +94,7 @@ class ImageAdjuster{
     if (newBrightness !== this.brightness) {
       this.rawLoaded = false;
       this.brightness = newBrightness;
-      this.contrastRaw(this.contrast, this.brightness);
+      this.contrastRaw();
     }
   }
 
@@ -111,6 +111,7 @@ class ImageAdjuster{
 
   // image adjustment functions: take img as input and manipulate data attribute
   // pixel data is 1D array of 8bit RGBA values
+  // TODO: do we want to pass in B&C values or use object attributes?
   _contrast_image(img, contrast=0, brightness=0) {
     let d = img.data;
     contrast = (contrast / 100) + 1;
@@ -191,13 +192,13 @@ class ImageAdjuster{
   }
 
   // apply contrast+brightness to raw image
-  contrastRaw(contrast, brightness) {
+  contrastRaw() {
 
     // draw rawImage so we can extract image data
     this.ctx.clearRect(0, 0, this.width, this.height);
     this.ctx.drawImage(this.rawImage, 0, 0, this.width, this.height);
     let rawData = this.ctx.getImageData(0, 0, this.width, this.height);
-    this._contrast_image(rawData, contrast, brightness);
+    this._contrast_image(rawData, this.contrast, this.brightness);
     this.ctx.putImageData(rawData, 0, 0);
 
     this.contrastedRaw.src = this.canvas.toDataURL();
