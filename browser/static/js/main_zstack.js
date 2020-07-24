@@ -110,8 +110,7 @@ class Mode {
       render_image_display();
     } else if (!rgb && key === 'i') {
       // toggle light/dark inversion of raw img
-      display_invert = !display_invert;
-      adjuster.preCompRawAdjust(display_invert);
+      adjuster.toggleInvert();
     } else if (!rgb && settings.pixel_only && (key === 'l' || key === 'L')) {
       display_labels = !display_labels;
       render_image_display();
@@ -674,7 +673,6 @@ let rightBorder = new Path2D();
 let leftBorder = new Path2D();
 
 var rendering_raw = false;
-let display_invert = true;
 let display_labels;
 
 var current_frame = 0;

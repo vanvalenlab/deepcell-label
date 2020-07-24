@@ -23,6 +23,10 @@ class ImageAdjuster{
 
     this.rgb = rgb;
 
+    // TODO: also want invertMap for better adjustments
+    // when toggling between different channels
+    this.displayInvert = true;
+
     // brightness and contrast adjustment
     // TODO: have this returned by a getter w/o a setter?
     this.MIN_CONTRAST = -100;
@@ -60,7 +64,7 @@ class ImageAdjuster{
       this.preCompSeg.onload = () => this.segAdjust(current_highlight, edit_mode, brush, mode);
     } else {
       this.rawImage.onload = () => this.contrastRaw();
-      this.contrastedRaw.onload = () => this.preCompRawAdjust(display_invert);
+      this.contrastedRaw.onload = () => this.preCompRawAdjust();
       this.preCompRaw.onload = () => this.rawAdjust(current_highlight, edit_mode, brush, mode);
       this.segImage.onload = () => this.preCompAdjust(current_highlight, edit_mode, brush, mode);
       this.preCompSeg.onload = () => this.segAdjust(current_highlight, edit_mode, brush, mode);
@@ -72,6 +76,8 @@ class ImageAdjuster{
   }
 
   // TODO: getters/setters for brightness and contrast?
+  // or use this group of methods?
+
   changeContrast(inputChange) {
     let modContrast = -Math.sign(inputChange) * 4;
     // stop if fully desaturated
@@ -104,6 +110,11 @@ class ImageAdjuster{
     this.contrast = 0;
     this.rawLoaded = false;
     this.contrastRaw();
+  }
+
+  toggleInvert() {
+    this.displayInvert = !this.displayInvert;
+    this.preCompRawAdjust();
   }
 
   // modify image data in place to recolor
@@ -242,14 +253,14 @@ class ImageAdjuster{
   }
 
   // adjust raw further, pre-compositing (use to draw when labels hidden)
-  preCompRawAdjust(display_invert) {
+  preCompRawAdjust() {
 
     // further adjust raw image
     this.ctx.clearRect(0, 0, this.width, this.height);
     this.ctx.drawImage(this.contrastedRaw, 0, 0, this.width, this.height);
     let rawData = this.ctx.getImageData(0, 0, this.width, this.height);
     this._grayscale(rawData);
-    if (display_invert) {
+    if (this.displayInvert) {
       this._invert(rawData);
     }
     this.ctx.putImageData(rawData, 0, 0);
