@@ -20,7 +20,7 @@ class Mode {
     if (channelMax > 1) {
       // save current display settings before changing
       adjuster.brightnessMap.set(this._channel, adjuster.brightness);
-      adjuster.contrastMap.set(this._channel, adjuster.current_contrast);
+      adjuster.contrastMap.set(this._channel, adjuster.contrast);
       // change channel, wrap around if needed
       if (num === channelMax) {
         this._channel = 0;
@@ -35,7 +35,7 @@ class Mode {
       this.clear();
       // get brightness/contrast vals for new channel
       adjuster.brightness = adjuster.brightnessMap.get(this._channel);
-      adjuster.current_contrast = adjuster.contrastMap.get(this._channel);
+      adjuster.contrast = adjuster.contrastMap.get(this._channel);
     }
   }
 
@@ -85,8 +85,8 @@ class Mode {
     } else if (key === '0') {
       // reset brightness adjustments
       adjuster.brightness = 0;
-      adjuster.current_contrast = 0;
-      adjuster.contrastRaw(adjuster.current_contrast, adjuster.brightness);
+      adjuster.contrast = 0;
+      adjuster.contrastRaw(adjuster.contrast, adjuster.brightness);
     } else if ((key === 'l' || key === 'L') && rgb && !edit_mode) {
       display_labels = !display_labels;
       render_image_display();
@@ -1103,7 +1103,7 @@ function setCanvasDimensions(rawDims) {
   rightBorder.closePath();
 }
 
-// adjust current_contrast upon mouse scroll
+// adjust contrast, brightness, or zoom upon mouse scroll
 function handle_scroll(evt) {
   if (evt.altKey) {
     changeZoom(Math.sign(evt.originalEvent.deltaY));

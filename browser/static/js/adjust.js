@@ -36,7 +36,7 @@ class ImageAdjuster{
         this.contrastMap.set(i, 0);
       }
     this.brightness = this.brightnessMap.get(0);
-    this.current_contrast = this.contrastMap.get(0);
+    this.contrast = this.contrastMap.get(0);
 
     // raw and adjusted image storage
     // cascasding image updates if raw or seg is reloaded
@@ -54,12 +54,12 @@ class ImageAdjuster{
     this.postCompImg = new Image();
 
     if (rgb) {
-      this.rawImage.onload = () => this.contrastRaw(this.current_contrast, this.brightness);
+      this.rawImage.onload = () => this.contrastRaw(this.contrast, this.brightness);
       this.contrastedRaw.onload = () => this.rawAdjust(current_highlight, edit_mode, brush, mode);
       this.segImage.onload = () => this.preCompAdjust(current_highlight, edit_mode, brush, mode);
       this.preCompSeg.onload = () => this.segAdjust(current_highlight, edit_mode, brush, mode);
     } else {
-      this.rawImage.onload = () => this.contrastRaw(this.current_contrast, this.brightness);
+      this.rawImage.onload = () => this.contrastRaw(this.contrast, this.brightness);
       this.contrastedRaw.onload = () => this.preCompRawAdjust(display_invert);
       this.preCompRaw.onload = () => this.rawAdjust(current_highlight, edit_mode, brush, mode);
       this.segImage.onload = () => this.preCompAdjust(current_highlight, edit_mode, brush, mode);
@@ -74,15 +74,15 @@ class ImageAdjuster{
   changeContrast(inputChange) {
     let modContrast = -Math.sign(inputChange) * 4;
     // stop if fully desaturated
-    let newContrast = Math.max(this.current_contrast + modContrast, this.MIN_CONTRAST);
+    let newContrast = Math.max(this.contrast + modContrast, this.MIN_CONTRAST);
     // stop at 8x contrast
     newContrast = Math.min(newContrast, this.MAX_CONTRAST);
 
-    if (newContrast !== this.current_contrast) {
+    if (newContrast !== this.contrast) {
       // need to retrigger downstream image adjustments
       this.rawLoaded = false;
-      this.current_contrast = newContrast;
-      this.contrastRaw(this.current_contrast, this.brightness);
+      this.contrast = newContrast;
+      this.contrastRaw(this.contrast, this.brightness);
     }
   }
 
@@ -94,7 +94,7 @@ class ImageAdjuster{
     if (newBrightness !== this.brightness) {
       this.rawLoaded = false;
       this.brightness = newBrightness;
-      this.contrastRaw(this.current_contrast, this.brightness);
+      this.contrastRaw(this.contrast, this.brightness);
     }
   }
 
