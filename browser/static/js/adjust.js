@@ -38,6 +38,20 @@ class ImageAdjuster{
     // composite image + outlines, transparent highlight
     this.postCompImg = new Image();
 
+    if (rgb) {
+      this.rawImage.onload = () => this.contrastRaw(current_contrast, brightness);
+      this.contrastedRaw.onload = () => this.rawAdjust(current_highlight, edit_mode, brush, mode);
+      this.segImage.onload = () => this.preCompAdjust(current_highlight, edit_mode, brush, mode);
+      this.preCompSeg.onload = () => this.segAdjust(current_highlight, edit_mode, brush, mode);
+    } else {
+      this.rawImage.onload = () => this.contrastRaw(current_contrast, brightness);
+      this.contrastedRaw.onload = () => this.preCompRawAdjust(display_invert);
+      this.preCompRaw.onload = () => this.rawAdjust(current_highlight, edit_mode, brush, mode);
+      this.segImage.onload = () => this.preCompAdjust(current_highlight, edit_mode, brush, mode);
+      this.preCompSeg.onload = () => this.segAdjust(current_highlight, edit_mode, brush, mode);
+      this.compositedImg.onload = () => this.postCompAdjust(edit_mode, brush);
+    }
+
     this.rawLoaded = false;
     this.segLoaded = false;
   }

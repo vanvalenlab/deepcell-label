@@ -1371,21 +1371,7 @@ function start_caliban(filename) {
   adjuster = new ImageAdjuster(width=rawWidth, height=rawHeight, rgb=rgb)
   brush = new Brush(scale=scale, height=rawHeight, width=rawWidth, pad=padding);
 
-  if (rgb) {
-    adjuster.rawImage.onload = () => adjuster.contrastRaw(current_contrast, brightness);
-    adjuster.contrastedRaw.onload = () => adjuster.rawAdjust(current_highlight, edit_mode, brush, mode);
-    adjuster.segImage.onload = () => adjuster.preCompAdjust(current_highlight, edit_mode, brush, mode);
-    adjuster.preCompSeg.onload = () => adjuster.segAdjust(current_highlight, edit_mode, brush, mode);
-    adjuster.postCompImg.onload = render_image_display;
-  } else {
-    adjuster.rawImage.onload = () => adjuster.contrastRaw(current_contrast, brightness);
-    adjuster.contrastedRaw.onload = () => adjuster.preCompRawAdjust(display_invert);
-    adjuster.preCompRaw.onload = () => adjuster.rawAdjust(current_highlight, edit_mode, brush, mode);
-    adjuster.segImage.onload = () => adjuster.preCompAdjust(current_highlight, edit_mode, brush, mode);
-    adjuster.preCompSeg.onload = () => adjuster.segAdjust(current_highlight, edit_mode, brush, mode);
-    adjuster.compositedImg.onload = () => adjuster.postCompAdjust(edit_mode, brush);
-    adjuster.postCompImg.onload = render_image_display;
-  }
+  adjuster.postCompImg.onload = render_image_display;
 
   prepare_canvas();
   fetch_and_render_frame();
