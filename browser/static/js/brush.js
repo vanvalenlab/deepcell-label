@@ -47,7 +47,7 @@ class Brush {
     this.canvas.height = height;
     this.canvas.width = width;
     document.body.appendChild(this.canvas);
-    this.ctx = $('#brushCanvas').get(0).getContext("2d");
+    this.ctx = document.getElementById('brushCanvas').getContext('2d');
     // set fillStyle here, it will never change
     this.ctx.fillStyle = this._fillColor;
   }
