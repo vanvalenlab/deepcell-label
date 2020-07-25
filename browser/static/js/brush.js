@@ -231,8 +231,8 @@ class Brush {
     ctxDst.save();
     ctxDst.globalAlpha = this._opacity;
     ctxDst.globalCompositeOperation = 'source-over';
-    let ctxDstHeight = ctxDst.canvas.height;
-    let ctxDstWidth = ctxDst.canvas.width;
+    const ctxDstHeight = ctxDst.canvas.height;
+    const ctxDstWidth = ctxDst.canvas.width;
     ctxDst.drawImage(
       this.canvas, sx, sy, swidth, sheight,
       this._padding, this._padding,
@@ -243,8 +243,8 @@ class Brush {
     // add solid outline around current brush location
     if (this.show) {
       ctxDst.beginPath();
-      let cX = (this.x - sx) * mag + this._padding;
-      let cY = (this.y - sy) * mag + this._padding;
+      const cX = (this.x - sx) * mag + this._padding;
+      const cY = (this.y - sy) * mag + this._padding;
       ctxDst.arc(cX, cY, mag * this.size, 0, Math.PI * 2, true);
       ctxDst.strokeStyle = this._outlineColor; // either red or white
       ctxDst.closePath();
@@ -252,10 +252,10 @@ class Brush {
     } else if (this._showBox) {
       // draw box around threshold area
       ctxDst.strokeStyle = 'white';
-      let boxStartX = (this.threshX - sx) * mag + this._padding;
-      let boxStartY = (this.threshY - sy) * mag + this._padding;
-      let boxWidth = (this.x - this.threshX) * mag;
-      let boxHeight = (this.y - this.threshY) * mag;
+      const boxStartX = (this.threshX - sx) * mag + this._padding;
+      const boxStartY = (this.threshY - sy) * mag + this._padding;
+      const boxWidth = (this.x - this.threshX) * mag;
+      const boxHeight = (this.y - this.threshY) * mag;
       ctxDst.strokeRect(boxStartX, boxStartY, boxWidth, boxHeight);
     }
   }
