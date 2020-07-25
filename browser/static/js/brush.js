@@ -24,8 +24,8 @@ class Brush {
     this.show = true; // showing brush shape
     // -2*pad will always be out of range for annotators
     // anchored corner of bounding box
-    this._threshX = -2*pad;
-    this._threshY = -2*pad;
+    this._threshX = -2 * pad;
+    this._threshY = -2 * pad;
     this._showBox = false;
 
     // how to draw brush/box shadow
@@ -59,8 +59,8 @@ class Brush {
   // set bounds on size of brush, update brushview appropriately
   set size(newSize) {
     // don't need brush to take up whole frame
-    if (newSize > 0 && newSize < this._height/2
-        && newSize < this._width/2 && newSize !== this._size) {
+    if (newSize > 0 && newSize < this._height / 2 &&
+        newSize < this._width / 2 && newSize !== this._size) {
       // size is size in pixels, used to modify source array
       this._size = newSize;
       // update brush preview with new size
@@ -152,7 +152,7 @@ class Brush {
 
   set threshX(x) {
     // clearing anchor corner
-    if (x === -2*this._padding) {
+    if (x === -2 * this._padding) {
       this._threshX = x;
       this._showBox = false;
       this.clearView();
@@ -170,7 +170,7 @@ class Brush {
 
   set threshY(y) {
     // clearing anchor corner
-    if (y === -2*this._padding) {
+    if (y === -2 * this._padding) {
       this._threshY = y;
       this._showBox = false;
       this.clearView();
@@ -184,8 +184,8 @@ class Brush {
 
   // reset thresholding box anchor corner
   clearThresh() {
-    this.threshX = -2*this._padding;
-    this.threshY = -2*this._padding;
+    this.threshX = -2 * this._padding;
+    this.threshY = -2 * this._padding;
     // restore normal brush view
     this.show = true;
     this.addToView();
@@ -193,7 +193,7 @@ class Brush {
 
   // clear ctx
   clearView() {
-    this.ctx.clearRect(0,0,this._width,this._height);
+    this.ctx.clearRect(0, 0, this._width, this._height);
   }
 
   // adds brush shadow to ctx
@@ -218,8 +218,10 @@ class Brush {
     // only if actively drawing box (anchor corner set)
     if (this._showBox) {
       // interior of box; will be added to visible canvas with opacity
-      this.ctx.fillRect(this.threshX, this.threshY,
-        this.x-this.threshX, this.y-this.threshY);
+      this.ctx.fillRect(
+        this.threshX, this.threshY,
+        this.x - this.threshX,
+        this.y - this.threshY);
     }
   }
 
@@ -231,8 +233,11 @@ class Brush {
     ctxDst.globalCompositeOperation = 'source-over';
     let ctxDstHeight = ctxDst.canvas.height;
     let ctxDstWidth = ctxDst.canvas.width;
-    ctxDst.drawImage(this.canvas, sx, sy, swidth, sheight,
-      this._padding, this._padding, ctxDstWidth - 2*this._padding, ctxDstHeight - 2*this._padding);
+    ctxDst.drawImage(
+      this.canvas, sx, sy, swidth, sheight,
+      this._padding, this._padding,
+      ctxDstWidth - 2 * this._padding,
+      ctxDstHeight - 2 * this._padding);
     ctxDst.restore();
 
     // add solid outline around current brush location
@@ -240,11 +245,11 @@ class Brush {
       ctxDst.beginPath();
       let cX = (this.x - sx) * mag + this._padding;
       let cY = (this.y - sy) * mag + this._padding;
-      ctxDst.arc(cX, cY, mag*this.size, 0, Math.PI*2, true);
+      ctxDst.arc(cX, cY, mag * this.size, 0, Math.PI * 2, true);
       ctxDst.strokeStyle = this._outlineColor; // either red or white
       ctxDst.closePath();
       ctxDst.stroke();
-    }  else if (this._showBox) {
+    } else if (this._showBox) {
       // draw box around threshold area
       ctxDst.strokeStyle = 'white';
       let boxStartX = (this.threshX - sx) * mag + this._padding;
