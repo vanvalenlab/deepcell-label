@@ -23,6 +23,10 @@ class ImageAdjuster {
 
     this.rgb = rgb;
 
+    // this can be between 0.0 and 1.0, inclusive (1 is fully opaque)
+    // want to make user-adjustable in future
+    this.labelTransparency = 0.3;
+
     // TODO: also want invertMap for better adjustments
     // when toggling between different channels
     this.displayInvert = true;
@@ -273,7 +277,7 @@ class ImageAdjuster {
 
     // add labels on top
     this.ctx.save();
-    this.ctx.globalAlpha = 0.3;
+    this.ctx.globalAlpha = this.labelTransparency;
     this.ctx.drawImage(this.preCompSeg, 0, 0, this.width, this.height);
     this.ctx.restore();
 
