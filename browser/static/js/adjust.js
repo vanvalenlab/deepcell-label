@@ -120,8 +120,10 @@ class ImageAdjuster {
 
   changeBrightness(inputChange) {
     const modBrightness = -Math.sign(inputChange);
-    let newBrightness = Math.min(this.brightness + modBrightness, this.maxBrightness);
-    newBrightness = Math.max(newBrightness + modBrightness, this.minBrightness);
+    // limit how dim image can go
+    let newBrightness = Math.max(this.brightness + modBrightness, this.minBrightness);
+    // limit how bright image can go
+    newBrightness = Math.min(newBrightness, this.maxBrightness);
 
     if (newBrightness !== this.brightness) {
       this.rawLoaded = false;
