@@ -50,7 +50,7 @@ class Mode {
 
     this.action = "";
     this.prompt = "";
-    adjuster.preCompAdjust(current_highlight, edit_mode, brush, this);
+    adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
   }
 
   // these keybinds apply regardless of
@@ -77,7 +77,7 @@ class Mode {
     } else if (!rgb && key === 'h') {
       // toggle highlight
       current_highlight = !current_highlight;
-      adjuster.preCompAdjust(current_highlight, edit_mode, brush, this);
+      adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
     } else if (key === 'z') {
       // toggle rendering_raw
       rendering_raw = !rendering_raw;
@@ -122,7 +122,7 @@ class Mode {
             + ". Use ESC to leave this mode.";
         this.kind = Modes.drawing;
       }
-      adjuster.preCompAdjust(current_highlight, edit_mode, brush, this);
+      adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
     }
   }
 
@@ -131,7 +131,7 @@ class Mode {
     if (key === "e" && !settings.pixel_only) {
       // toggle edit mode
       edit_mode = !edit_mode;
-      adjuster.preCompAdjust(current_highlight, edit_mode, brush, this);
+      adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
     } else if (key === "c") {
       // cycle forward one channel, if applicable
       this.channel += 1;
@@ -159,14 +159,14 @@ class Mode {
       brush.value = Math.min(brush.value + 1,
                              maxLabelsMap.get(this.feature) + 1);
       if (current_highlight) {
-        adjuster.preCompAdjust(current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       }
       render_info_display();
     } else if (key === "[") {
       // decrease edit_value, minimum 1
       brush.value -= 1;
       if (current_highlight) {
-        adjuster.preCompAdjust(current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       }
       render_info_display();
     } else if (key === "x") {
@@ -203,7 +203,7 @@ class Mode {
       // toggle edit mode
       edit_mode = !edit_mode;
       helper_brush_draw();
-      adjuster.preCompAdjust(current_highlight, edit_mode, brush, this);
+      adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
     } else if (key === "c") {
       // cycle forward one channel, if applicable
       this.channel += 1;
@@ -237,14 +237,14 @@ class Mode {
       this.highlighted_cell_one = this.decrement_value(this.highlighted_cell_one,
           1, maxLabelsMap.get(this.feature));
       if (current_highlight) {
-        adjuster.preCompAdjust(current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       }
     } else if (key === "]" && this.highlighted_cell_one !== -1) {
       // cycle highlight to next label
       this.highlighted_cell_one = this.increment_value(this.highlighted_cell_one,
           1, maxLabelsMap.get(this.feature));
       if (current_highlight) {
-        adjuster.preCompAdjust(current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       }
     }
   }
@@ -282,7 +282,7 @@ class Mode {
       this.clear();
       this.highlighted_cell_one = temp_highlight;
       if (current_highlight) {
-        adjuster.preCompAdjust(current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       }
     } else if (key === "]") {
       // cycle highlight to next label
@@ -293,7 +293,7 @@ class Mode {
       this.clear();
       this.highlighted_cell_one = temp_highlight;
       if (current_highlight) {
-        adjuster.preCompAdjust(current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       }
     }
   }
@@ -522,7 +522,7 @@ class Mode {
         this.prompt = "Now drawing over label " + brush.target + " with label " + brush.value
             + ". Use ESC to leave this mode.";
         this.kind = Modes.drawing;
-        adjuster.preCompAdjust(current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       } else {
         this.clear();
       }
@@ -579,7 +579,7 @@ class Mode {
       //if nothing selected: shift-, alt-, or normal click
       this.handle_mode_none_click(evt);
       if (current_highlight) {
-        adjuster.preCompAdjust(current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       } else {
         render_info_display();
       }
@@ -587,7 +587,7 @@ class Mode {
       // one label already selected
       this.handle_mode_single_click(evt);
       if (current_highlight) {
-        adjuster.preCompAdjust(current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       } else {
         render_info_display();
       }
@@ -595,7 +595,7 @@ class Mode {
       // two labels already selected, reselect second label
       this.handle_mode_multiple_click(evt);
       if (current_highlight) {
-        adjuster.preCompAdjust(current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       } else {
         render_info_display();
       }

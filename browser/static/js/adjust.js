@@ -64,16 +64,16 @@ class ImageAdjuster {
     // TODO: undefined variables
     if (rgb) {
       this.rawImage.onload = () => this.contrastRaw();
-      this.contrastedRaw.onload = () => this.rawAdjust(current_highlight, edit_mode, brush, mode);
-      this.segImage.onload = () => this.preCompAdjust(current_highlight, edit_mode, brush, mode);
-      this.preCompSeg.onload = () => this.segAdjust(current_highlight, edit_mode, brush, mode);
+      this.contrastedRaw.onload = () => this.rawAdjust(seg_array, current_highlight, edit_mode, brush, mode);
+      this.segImage.onload = () => this.preCompAdjust(seg_array, current_highlight, edit_mode, brush, mode);
+      this.preCompSeg.onload = () => this.segAdjust(seg_array, current_highlight, edit_mode, brush, mode);
     } else {
       this.rawImage.onload = () => this.contrastRaw();
       this.contrastedRaw.onload = () => this.preCompRawAdjust();
-      this.preCompRaw.onload = () => this.rawAdjust(current_highlight, edit_mode, brush, mode);
-      this.segImage.onload = () => this.preCompAdjust(current_highlight, edit_mode, brush, mode);
-      this.preCompSeg.onload = () => this.segAdjust(current_highlight, edit_mode, brush, mode);
-      this.compositedImg.onload = () => this.postCompAdjust(edit_mode, brush);
+      this.preCompRaw.onload = () => this.rawAdjust(seg_array, current_highlight, edit_mode, brush, mode);
+      this.segImage.onload = () => this.preCompAdjust(seg_array, current_highlight, edit_mode, brush, mode);
+      this.preCompSeg.onload = () => this.segAdjust(seg_array, current_highlight, edit_mode, brush, mode);
+      this.compositedImg.onload = () => this.postCompAdjust(seg_array, edit_mode, brush);
     }
 
     this.rawLoaded = false;
@@ -165,15 +165,14 @@ class ImageAdjuster {
     }
   }
 
-  preCompositeLabelMod(img, h1, h2) {
+  preCompositeLabelMod(img, segArray, h1, h2) {
     let r, g, b;
     const ann = img.data;
     // use label array to figure out which pixels to recolor
-    // TODO: seg_array is not defined.
-    for (let j = 0; j < seg_array.length; j += 1) { // y
-      for (let i = 0; i < seg_array[j].length; i += 1) { // x
-        const jlen = seg_array[j].length;
-        const currentVal = Math.abs(seg_array[j][i]);
+    for (let j = 0; j < segArray.length; j += 1) { // y
+      for (let i = 0; i < segArray[j].length; i += 1) { // x
+        const jlen = segArray[j].length;
+        const currentVal = Math.abs(segArray[j][i]);
         if (currentVal === h1 || currentVal === h2) {
           this._recolorScaled(ann, i, j, jlen, r = 255, g = -255, b = -255);
         }
@@ -181,7 +180,7 @@ class ImageAdjuster {
     }
   }
 
-  postCompositeLabelMod(img,
+  postCompositeLabelMod(img, segArray,
     redOutline = false, r1 = -1,
     singleOutline = false, o1 = -1,
     outlineAll = false,
@@ -189,11 +188,10 @@ class ImageAdjuster {
     let r, g, b;
     const ann = img.data;
     // use label array to figure out which pixels to recolor
-    // TODO: seg_array is not defined.
-    for (let j = 0; j < seg_array.length; j += 1) { // y
-      for (let i = 0; i < seg_array[j].length; i += 1) { // x
-        const jlen = seg_array[j].length;
-        const currentVal = seg_array[j][i];
+    for (let j = 0; j < segArray.length; j += 1) { // y
+      for (let i = 0; i < segArray[j].length; i += 1) { // x
+        const jlen = segArray[j].length;
+        const currentVal = segArray[j][i];
         // outline red
         if (redOutline && currentVal === -r1) {
           this._recolorScaled(ann, i, j, jlen, r = 255, g = -255, b = -255);
@@ -228,7 +226,7 @@ class ImageAdjuster {
     this.contrastedRaw.src = this.canvas.toDataURL();
   }
 
-  preCompAdjust(currentHighlight, editMode, brush, mode) {
+  preCompAdjust(segArray, currentHighlight, editMode, brush, mode) {
     this.segLoaded = false;
 
     // draw segImage so we can extract image data
@@ -248,7 +246,7 @@ class ImageAdjuster {
       }
 
       // highlight
-      this.preCompositeLabelMod(segData, h1, h2);
+      this.preCompositeLabelMod(segData, segArray, h1, h2);
       this.ctx.putImageData(segData, 0, 0);
     }
 
@@ -285,7 +283,7 @@ class ImageAdjuster {
   }
 
   // apply outlines, transparent highlighting
-  postCompAdjust(editMode, brush) {
+  postCompAdjust(segArray, editMode, brush) {
     // draw compositedImg so we can extract image data
     this.ctx.clearRect(0, 0, this.width, this.height);
     this.ctx.drawImage(this.compositedImg, 0, 0, this.width, this.height);
@@ -305,7 +303,7 @@ class ImageAdjuster {
     }
 
     this.postCompositeLabelMod(
-      imgData, redOutline, r1, singleOutline, o1,
+      imgData, segArray, redOutline, r1, singleOutline, o1,
       outlineAll, translucent, t1, t2);
 
     this.ctx.putImageData(imgData, 0, 0);
@@ -314,7 +312,7 @@ class ImageAdjuster {
   }
 
   // apply outlines, transparent highlighting for RGB
-  postCompAdjustRGB(currentHighlight, editMode, brush, mode) {
+  postCompAdjustRGB(segArray, currentHighlight, editMode, brush, mode) {
     // draw contrastedRaw so we can extract image data
     this.ctx.clearRect(0, 0, this.width, this.height);
     this.ctx.drawImage(this.contrastedRaw, 0, 0, this.width, this.height);
@@ -346,7 +344,7 @@ class ImageAdjuster {
     }
 
     this.postCompositeLabelMod(
-      imgData, redOutline, r1, singleOutline, o1,
+      imgData, segArray, redOutline, r1, singleOutline, o1,
       outlineAll, translucent, t1, t2);
 
     this.ctx.putImageData(imgData, 0, 0);
@@ -354,22 +352,22 @@ class ImageAdjuster {
     this.postCompImg.src = this.canvas.toDataURL();
   }
 
-  segAdjust(currentHighlight, editMode, brush, mode) {
+  segAdjust(segArray, currentHighlight, editMode, brush, mode) {
     this.segLoaded = true;
     if (this.rawLoaded && this.segLoaded) {
       if (this.rgb) {
-        this.postCompAdjustRGB(currentHighlight, editMode, brush, mode);
+        this.postCompAdjustRGB(segArray, currentHighlight, editMode, brush, mode);
       } else {
         this.compositeImages();
       }
     }
   }
 
-  rawAdjust(currentHighlight, editMode, brush, mode) {
+  rawAdjust(segArray, currentHighlight, editMode, brush, mode) {
     this.rawLoaded = true;
     if (this.rawLoaded && this.segLoaded) {
       if (this.rgb) {
-        this.postCompAdjustRGB(currentHighlight, editMode, brush, mode);
+        this.postCompAdjustRGB(segArray, currentHighlight, editMode, brush, mode);
       } else {
         this.compositeImages();
       }
