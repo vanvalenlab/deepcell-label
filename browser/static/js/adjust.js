@@ -32,9 +32,11 @@ class ImageAdjuster {
     this.displayInvert = true;
 
     // brightness and contrast adjustment
-    // TODO: have this returned by a getter w/o a setter?
-    this.MIN_CONTRAST = -100;
-    this.MAX_CONTRAST = 700;
+    this._minContrast = -100;
+    this._maxContrast = 700;
+
+    this._minBrightness = -512;
+    this._maxBrightness = 255;
 
     this.contrastMap = new Map();
     this.brightnessMap = new Map();
@@ -80,15 +82,33 @@ class ImageAdjuster {
     this.segLoaded = false;
   }
 
+  // getters for brightness/contrast allowed ranges
+  // no setters; these should remain fixed
+  get minBrightness() {
+    return this._minBrightness;
+  }
+
+  get maxBrightness() {
+    return this._maxBrightness;
+  }
+
+  get minContrast() {
+    return this._minContrast;
+  }
+
+  get maxContrast() {
+    return this._maxContrast;
+  }
+
   // TODO: getters/setters for brightness and contrast?
   // or use this group of methods?
 
   changeContrast(inputChange) {
     const modContrast = -Math.sign(inputChange) * 4;
     // stop if fully desaturated
-    let newContrast = Math.max(this.contrast + modContrast, this.MIN_CONTRAST);
+    let newContrast = Math.max(this.contrast + modContrast, this.minContrast);
     // stop at 8x contrast
-    newContrast = Math.min(newContrast, this.MAX_CONTRAST);
+    newContrast = Math.min(newContrast, this.maxContrast);
 
     if (newContrast !== this.contrast) {
       // need to retrigger downstream image adjustments
@@ -100,8 +120,8 @@ class ImageAdjuster {
 
   changeBrightness(inputChange) {
     const modBrightness = -Math.sign(inputChange);
-    let newBrightness = Math.min(this.brightness + modBrightness, 255);
-    newBrightness = Math.max(newBrightness + modBrightness, -512);
+    let newBrightness = Math.min(this.brightness + modBrightness, this.maxBrightness);
+    newBrightness = Math.max(newBrightness + modBrightness, this.minBrightness);
 
     if (newBrightness !== this.brightness) {
       this.rawLoaded = false;
