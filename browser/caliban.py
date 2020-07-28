@@ -118,14 +118,7 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
             return pngify(imgarr=frame,
                           vmin=0,
                           vmax=self.max_intensity[self.channel],
-                          cmap="cubehelix")
-        elif (raw and self.rgb):
-            frame = self.rgb_img
-            return pngify(imgarr=frame,
-                          vmin=None,
-                          vmax=None,
-                          cmap=None)
-
+                          cmap='cubehelix')
         else:
             frame = self.annotated[frame, ..., self.feature]
             frame = np.ma.masked_equal(frame, 0)
