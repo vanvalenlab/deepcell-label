@@ -58,6 +58,9 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
         self.height = self.raw.shape[1]
         self.width = self.raw.shape[2]
 
+        self._x_changed = False
+        self._y_changed = False
+
         self.max_intensity = {}
         for channel in range(self.channel_max):
             self.max_intensity[channel] = None
