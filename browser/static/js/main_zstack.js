@@ -21,6 +21,7 @@ class Mode {
       // save current display settings before changing
       adjuster.brightnessMap.set(this._channel, adjuster.brightness);
       adjuster.contrastMap.set(this._channel, adjuster.contrast);
+      adjuster.invertMap.set(this._channel, adjuster.displayInvert);
       // change channel, wrap around if needed
       if (num === channelMax) {
         this._channel = 0;
@@ -36,6 +37,7 @@ class Mode {
       // get brightness/contrast vals for new channel
       adjuster.brightness = adjuster.brightnessMap.get(this._channel);
       adjuster.contrast = adjuster.contrastMap.get(this._channel);
+      adjuster.displayInvert = adjuster.invertMap.get(this._channel);
     }
   }
 

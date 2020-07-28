@@ -27,10 +27,6 @@ class ImageAdjuster {
     // want to make user-adjustable in future
     this.labelTransparency = 0.3;
 
-    // TODO: also want invertMap for better adjustments
-    // when toggling between different channels
-    this.displayInvert = true;
-
     // brightness and contrast adjustment
     this._minContrast = -100;
     this._maxContrast = 700;
@@ -38,15 +34,19 @@ class ImageAdjuster {
     this._minBrightness = -512;
     this._maxBrightness = 255;
 
+    // image adjustments are stored per channel for better viewing
     this.contrastMap = new Map();
     this.brightnessMap = new Map();
+    this.invertMap = new Map();
 
     for (let i = 0; i < channelMax; i++) {
       this.brightnessMap.set(i, 0);
       this.contrastMap.set(i, 0);
+      this.invertMap.set(i, true);
     }
     this.brightness = this.brightnessMap.get(0);
     this.contrast = this.contrastMap.get(0);
+    this.displayInvert = this.invertMap.get(0);
 
     // raw and adjusted image storage
     // cascasding image updates if raw or seg is reloaded
