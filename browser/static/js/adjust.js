@@ -63,7 +63,7 @@ class ImageAdjuster {
     // composite image + outlines, transparent highlight
     this.postCompImg = new Image();
 
-    // TODO: undefined variables
+    // TODO: these still rely on main js global variables, revisit in future
     if (rgb) {
       this.rawImage.onload = () => this.contrastRaw();
       this.contrastedRaw.onload = () => this.rawAdjust(seg_array, current_highlight, edit_mode, brush, mode);
@@ -99,9 +99,6 @@ class ImageAdjuster {
   get maxContrast() {
     return this._maxContrast;
   }
-
-  // TODO: getters/setters for brightness and contrast?
-  // or use this group of methods?
 
   changeContrast(inputChange) {
     const modContrast = -Math.sign(inputChange) * 4;
@@ -157,7 +154,6 @@ class ImageAdjuster {
 
   // image adjustment functions: take img as input and manipulate data attribute
   // pixel data is 1D array of 8bit RGBA values
-  // TODO: do we want to pass in B&C values or use object attributes?
   _contrastImage(img, contrast = 0, brightness = 0) {
     const d = img.data;
     contrast = (contrast / 100) + 1;
