@@ -17,15 +17,16 @@ class Mode {
 
   set channel(num) {
     // don't try and change channel if no other channels exist
-    if (channel_max > 1) {
+    if (channelMax > 1) {
       // save current display settings before changing
-      brightnessMap.set(this._channel, brightness);
-      contrastMap.set(this._channel, current_contrast);
+      adjuster.brightnessMap.set(this._channel, adjuster.brightness);
+      adjuster.contrastMap.set(this._channel, adjuster.contrast);
+      adjuster.invertMap.set(this._channel, adjuster.displayInvert);
       // change channel, wrap around if needed
-      if (num === channel_max) {
+      if (num === channelMax) {
         this._channel = 0;
       } else if (num < 0) {
-        this._channel = channel_max - 1;
+        this._channel = channelMax - 1;
       } else {
         this._channel = num;
       }
@@ -34,8 +35,9 @@ class Mode {
       action("change_channel", this.info);
       this.clear();
       // get brightness/contrast vals for new channel
-      brightness = brightnessMap.get(this._channel);
-      current_contrast = contrastMap.get(this._channel);
+      adjuster.brightness = adjuster.brightnessMap.get(this._channel);
+      adjuster.contrast = adjuster.contrastMap.get(this._channel);
+      adjuster.displayInvert = adjuster.invertMap.get(this._channel);
     }
   }
 
@@ -50,7 +52,7 @@ class Mode {
 
     this.action = "";
     this.prompt = "";
-    preCompAdjust();
+    adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
   }
 
   // these keybinds apply regardless of
@@ -77,16 +79,14 @@ class Mode {
     } else if (!rgb && key === 'h') {
       // toggle highlight
       current_highlight = !current_highlight;
-      preCompAdjust();
+      adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
     } else if (key === 'z') {
       // toggle rendering_raw
       rendering_raw = !rendering_raw;
       render_image_display();
     } else if (key === '0') {
       // reset brightness adjustments
-      brightness = 0;
-      current_contrast = 0;
-      prepareRaw();
+      adjuster.resetBrightnessContrast();
     } else if ((key === 'l' || key === 'L') && rgb && !edit_mode) {
       display_labels = !display_labels;
       render_image_display();
@@ -112,8 +112,7 @@ class Mode {
       render_image_display();
     } else if (!rgb && key === 'i') {
       // toggle light/dark inversion of raw img
-      display_invert = !display_invert;
-      preCompRawAdjust();
+      adjuster.toggleInvert();
     } else if (!rgb && settings.pixel_only && (key === 'l' || key === 'L')) {
       display_labels = !display_labels;
       render_image_display();
@@ -125,8 +124,7 @@ class Mode {
             + ". Use ESC to leave this mode.";
         this.kind = Modes.drawing;
       }
-      segLoaded = false;
-      preCompAdjust();
+      adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
     }
   }
 
@@ -135,8 +133,7 @@ class Mode {
     if (key === "e" && !settings.pixel_only) {
       // toggle edit mode
       edit_mode = !edit_mode;
-      segLoaded = false;
-      preCompAdjust();
+      adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
     } else if (key === "c") {
       // cycle forward one channel, if applicable
       this.channel += 1;
@@ -164,16 +161,14 @@ class Mode {
       brush.value = Math.min(brush.value + 1,
                              maxLabelsMap.get(this.feature) + 1);
       if (current_highlight) {
-        segLoaded = false;
-        preCompAdjust();
+        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       }
       render_info_display();
     } else if (key === "[") {
       // decrease edit_value, minimum 1
       brush.value -= 1;
       if (current_highlight) {
-        segLoaded = false;
-        preCompAdjust();
+        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       }
       render_info_display();
     } else if (key === "x") {
@@ -210,8 +205,7 @@ class Mode {
       // toggle edit mode
       edit_mode = !edit_mode;
       helper_brush_draw();
-      segLoaded = false;
-      preCompAdjust();
+      adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
     } else if (key === "c") {
       // cycle forward one channel, if applicable
       this.channel += 1;
@@ -245,16 +239,14 @@ class Mode {
       this.highlighted_cell_one = this.decrement_value(this.highlighted_cell_one,
           1, maxLabelsMap.get(this.feature));
       if (current_highlight) {
-        segLoaded = false;
-        preCompAdjust();
+        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       }
     } else if (key === "]" && this.highlighted_cell_one !== -1) {
       // cycle highlight to next label
       this.highlighted_cell_one = this.increment_value(this.highlighted_cell_one,
           1, maxLabelsMap.get(this.feature));
       if (current_highlight) {
-        segLoaded = false;
-        preCompAdjust();
+        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       }
     }
   }
@@ -292,8 +284,7 @@ class Mode {
       this.clear();
       this.highlighted_cell_one = temp_highlight;
       if (current_highlight) {
-        segLoaded = false;
-        preCompAdjust();
+        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       }
     } else if (key === "]") {
       // cycle highlight to next label
@@ -304,8 +295,7 @@ class Mode {
       this.clear();
       this.highlighted_cell_one = temp_highlight;
       if (current_highlight) {
-        segLoaded = false;
-        preCompAdjust();
+        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       }
     }
   }
@@ -534,8 +524,7 @@ class Mode {
         this.prompt = "Now drawing over label " + brush.target + " with label " + brush.value
             + ". Use ESC to leave this mode.";
         this.kind = Modes.drawing;
-        segLoaded = false;
-        preCompAdjust();
+        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       } else {
         this.clear();
       }
@@ -592,8 +581,7 @@ class Mode {
       //if nothing selected: shift-, alt-, or normal click
       this.handle_mode_none_click(evt);
       if (current_highlight) {
-        segLoaded = false;
-        preCompAdjust();
+        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       } else {
         render_info_display();
       }
@@ -601,8 +589,7 @@ class Mode {
       // one label already selected
       this.handle_mode_single_click(evt);
       if (current_highlight) {
-        segLoaded = false;
-        preCompAdjust();
+        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       } else {
         render_info_display();
       }
@@ -610,8 +597,7 @@ class Mode {
       // two labels already selected, reselect second label
       this.handle_mode_multiple_click(evt);
       if (current_highlight) {
-        segLoaded = false;
-        preCompAdjust();
+        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       } else {
         render_info_display();
       }
@@ -681,23 +667,6 @@ let sy;
 let swidth;
 let sheight;
 
-// raw and adjusted image storage
-// cascasding image updates if raw or seg is reloaded
-let rawLoaded;
-const raw_image = new Image();
-const contrastedRaw = new Image();
-const preCompRaw = new Image();
-
-let segLoaded;
-const seg_image = new Image();
-const preCompSeg = new Image();
-
-// adjusted raw + annotations
-const compositedImg = new Image();
-
-// composite image + outlines, transparent highlight
-const postCompImg = new Image();
-
 var seg_array; // declare here so it is global var
 
 let topBorder = new Path2D();
@@ -706,22 +675,14 @@ let rightBorder = new Path2D();
 let leftBorder = new Path2D();
 
 var rendering_raw = false;
-let display_invert = true;
 let display_labels;
 
-const MIN_CONTRAST = -100;
-const MAX_CONTRAST = 700;
-
-var current_contrast;
-let contrastMap = new Map();
-let brightness;
-let brightnessMap = new Map();
 var current_frame = 0;
 var current_label = 0;
 var current_highlight;
 var max_frames;
 var feature_max;
-var channel_max;
+var channelMax;
 var dimensions;
 var tracks;
 let maxLabelsMap = new Map();
@@ -732,8 +693,10 @@ let mousedown = false;
 let spacedown = false;
 var tooltype = 'draw';
 var project_id;
-var brush;
 let mouse_trace = [];
+
+var brush;
+var adjust;
 
 var waitForFinalEvent = (function () {
   var timers = {};
@@ -914,10 +877,10 @@ function render_edit_image(ctx) {
     render_raw_image(ctx);
   } else if (!rgb && !display_labels) {
     ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
-    ctx.drawImage(preCompRaw, sx, sy, swidth, sheight, padding, padding, dimensions[0], dimensions[1]);
+    ctx.drawImage(adjuster.preCompRaw, sx, sy, swidth, sheight, padding, padding, dimensions[0], dimensions[1]);
   } else {
     ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
-    ctx.drawImage(postCompImg, sx, sy, swidth, sheight, padding, padding, dimensions[0], dimensions[1]);
+    ctx.drawImage(adjuster.postCompImg, sx, sy, swidth, sheight, padding, padding, dimensions[0], dimensions[1]);
   }
   ctx.save();
   let region = new Path2D();
@@ -933,15 +896,15 @@ function render_edit_image(ctx) {
 
 function render_raw_image(ctx) {
   ctx.clearRect(padding, padding, dimensions, dimensions[1]);
-  ctx.drawImage(contrastedRaw, sx, sy, swidth, sheight, padding, padding, dimensions[0], dimensions[1]);
+  ctx.drawImage(adjuster.contrastedRaw, sx, sy, swidth, sheight, padding, padding, dimensions[0], dimensions[1]);
 }
 
 function render_annotation_image(ctx) {
   ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
   if (rgb && !display_labels) {
-    ctx.drawImage(postCompImg, sx, sy, swidth, sheight, padding, padding, dimensions[0], dimensions[1]);
+    ctx.drawImage(adjuster.postCompImg, sx, sy, swidth, sheight, padding, padding, dimensions[0], dimensions[1]);
   } else {
-    ctx.drawImage(preCompSeg, sx, sy, swidth, sheight, padding, padding, dimensions[0], dimensions[1]);
+    ctx.drawImage(adjuster.preCompSeg, sx, sy, swidth, sheight, padding, padding, dimensions[0], dimensions[1]);
   }
 }
 
@@ -1007,14 +970,14 @@ function fetch_and_render_frame() {
     type: 'GET',
     url: "frame/" + current_frame + "/" + project_id,
     success: function(payload) {
-      rawLoaded = false;
-      segLoaded = false;
+      adjuster.rawLoaded = false;
+      adjuster.segLoaded = false;
 
       // load new value of seg_array
       // array of arrays, contains annotation data for frame
       seg_array = payload.seg_arr;
-      seg_image.src = payload.segmented;
-      raw_image.src = payload.raw;
+      adjuster.segImage.src = payload.segmented;
+      adjuster.rawImage.src = payload.raw;
     },
     async: false
   });
@@ -1027,7 +990,7 @@ function load_file(file) {
     success: function (payload) {
       max_frames = payload.max_frames;
       feature_max = payload.feature_max;
-      channel_max = payload.channel_max;
+      channelMax = payload.channel_max;
       rawDimensions = payload.dimensions;
 
       sx = 0;
@@ -1052,14 +1015,6 @@ function load_file(file) {
           maxLabelsMap.set(i, 0);
         }
       }
-
-      for (let i = 0; i < channel_max; i++) {
-        brightnessMap.set(i, 0);
-        contrastMap.set(i, 0);
-      }
-      brightness = brightnessMap.get(0);
-      current_contrast = contrastMap.get(0);
-
       project_id = payload.project_id;
     },
     async: false
@@ -1115,8 +1070,6 @@ function setCanvasDimensions(rawDims) {
   // set canvases size according to scale
   $('#canvas').get(0).width = dimensions[0] + 2 * padding;
   $('#canvas').get(0).height = dimensions[1] + 2 * padding;
-  $('#hidden_seg_canvas').get(0).width = rawDims[0];
-  $('#hidden_seg_canvas').get(0).height = rawDims[1];
 
   // create paths for recoloring borders
   topBorder = new Path2D();
@@ -1148,28 +1101,16 @@ function setCanvasDimensions(rawDims) {
   rightBorder.closePath();
 }
 
-// adjust current_contrast upon mouse scroll
+// adjust contrast, brightness, or zoom upon mouse scroll
 function handle_scroll(evt) {
   if (evt.altKey) {
     changeZoom(Math.sign(evt.originalEvent.deltaY));
   } else if ((rendering_raw || edit_mode || (rgb && !display_labels))
     && !evt.originalEvent.shiftKey) {
-    // adjust contrast whenever we can see raw
-    rawLoaded = false;
-    // don't use magnitude of scroll
-    let mod_contrast = -Math.sign(evt.originalEvent.deltaY) * 4;
-    // stop if fully desaturated
-    current_contrast = Math.max(current_contrast + mod_contrast, MIN_CONTRAST);
-    // stop at 8x contrast
-    current_contrast = Math.min(current_contrast + mod_contrast, MAX_CONTRAST);
-    prepareRaw();
+    adjuster.changeContrast(evt.originalEvent.deltaY);
   } else if ((rendering_raw || edit_mode || (rgb && !display_labels))
     && evt.originalEvent.shiftKey) {
-    rawLoaded = false;
-    let mod = -Math.sign(evt.originalEvent.deltaY);
-    brightness = Math.min(brightness + mod, 255);
-    brightness = Math.max(brightness + mod, -512);
-    prepareRaw();
+    adjuster.changeBrightness(evt.originalEvent.deltaY);
   }
 }
 
@@ -1322,13 +1263,13 @@ function action(action, info, frame = current_frame) {
         }
 
         if (payload.imgs.hasOwnProperty('segmented')) {
-          segLoaded = false;
-          seg_image.src = payload.imgs.segmented;
+          adjuster.segLoaded = false;
+          adjuster.segImage.src = payload.imgs.segmented;
         }
 
         if (payload.imgs.hasOwnProperty('raw')) {
-          rawLoaded = false;
-          raw_image.src = payload.imgs.raw;
+          adjuster.rawLoaded = false;
+          adjuster.rawImage.src = payload.imgs.raw;
         }
       }
       if (payload.tracks) {
@@ -1395,26 +1336,16 @@ function start_caliban(filename) {
     handle_mouseup();
    });
 
-  // define image onload cascade behavior
-  if (rgb) {
-    raw_image.onload = prepareRaw;
-    contrastedRaw.onload = rawAdjust;
-    seg_image.onload = preCompAdjust;
-    preCompSeg.onload = segAdjust;
-    postCompImg.onload = render_image_display;
-  } else {
-    raw_image.onload = prepareRaw;
-    contrastedRaw.onload = preCompRawAdjust;
-    preCompRaw.onload = rawAdjust;
-    seg_image.onload = preCompAdjust;
-    preCompSeg.onload = segAdjust;
-    compositedImg.onload = postCompAdjust;
-    postCompImg.onload = render_image_display;
-  }
-
   load_file(filename);
+
+  // define image onload cascade behavior, need rawHeight and rawWidth first
+  adjuster = new ImageAdjuster(width=rawWidth, height=rawHeight,
+                               rgb=rgb, channelMax=channelMax);
+  brush = new Brush(scale=scale, height=rawHeight, width=rawWidth, pad=padding);
+
+  adjuster.postCompImg.onload = render_image_display;
+
   prepare_canvas();
   fetch_and_render_frame();
 
-  brush = new Brush(scale=scale, height=rawHeight, width=rawWidth, pad=padding);
 }
