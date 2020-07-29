@@ -1145,21 +1145,20 @@ def load_trks(trkfile):
             tracked = np.load(array_file)
             array_file.close()
 
-            # trks.extractfile opens a file in bytes mode, json can't use bytes.
-            __, file_extension = os.path.splitext(trkfile)
-
-            if file_extension == '.trks':
+            try:
                 trk_data = trks.getmember('lineages.json')
-                lineages = json.loads(trks.extractfile(trk_data).read().decode())
-                # JSON only allows strings as keys, so convert them back to ints
-                for i, tracks in enumerate(lineages):
-                    lineages[i] = {int(k): v for k, v in tracks.items()}
+            except KeyError:
+                try:
+                    trk_data = trks.getmember('lineage.json')
+                except KeyError:
+                    raise ValueError('Invalid .trk file, no lineage data found.')
 
-            elif file_extension == '.trk':
-                trk_data = trks.getmember('lineage.json')
-                lineage = json.loads(trks.extractfile(trk_data).read().decode())
-                # JSON only allows strings as keys, so convert them back to ints
-                lineages = []
-                lineages.append({int(k): v for k, v in lineage.items()})
+            lineages = json.loads(trks.extractfile(trk_data).read().decode())
+
+            if not isinstance(lineages, list):
+                lineages = [lineages]
+            # JSON only allows strings as keys, so convert them back to ints
+            for i, tracks in enumerate(lineages):
+                lineages[i] = {int(k): v for k, v in tracks.items()}
 
         return {'lineages': lineages, 'raw': raw, 'tracked': tracked}
