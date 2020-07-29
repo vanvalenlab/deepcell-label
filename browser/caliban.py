@@ -720,7 +720,7 @@ class TrackReview(BaseReview):
             frames = '[' + ', '.join(["{}".format(a[0])
                                       if len(a) == 1 else "{}-{}".format(a[0], a[-1])
                                       for a in frames]) + ']'
-            track["frames"] = frames
+            track['frames'] = frames
 
         return tracks
 
