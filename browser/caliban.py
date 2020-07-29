@@ -704,17 +704,8 @@ class TrackReview(BaseReview):
         self.scale_factor = 2
 
     def get_max_label(self):
-        """Get the highest label in use in currently-viewed feature.
-
-        If feature is empty, returns 0 to prevent other functions from crashing.
-        """
-        # check this first, np.max of empty array will crash
-        if len(self.tracks[self.feature]) == 0:
-            max_label = 0
-        # if any labels exist in feature, find the max label
-        else:
-            max_label = int(np.max(self.tracks[self.feature]))
-        return max_label
+        """Get the highest label in the lineage data."""
+        return max(self.tracks)
 
     @property
     def readable_tracks(self):
@@ -738,7 +729,7 @@ class TrackReview(BaseReview):
         Replacing label - create in all subsequent frames
         """
         old_label, start_frame = label, frame
-        new_label = max(self.tracks) + 1
+        new_label = self.get_max_label() + 1
 
         if start_frame != 0:
             # replace frame labels
