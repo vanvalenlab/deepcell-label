@@ -39,7 +39,7 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
 
         self.current_frame = 0
         self.scale_factor = 1
-        self.frames_changed = False
+        self._y_changed = False
         self.info_changed = False
 
         self.color_map = plt.get_cmap('viridis')
@@ -249,7 +249,7 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
         stray_pixels = np.logical_and(np.invert(contig_cell), img_ann == label)
         img_trimmed = np.where(stray_pixels, 0, img_ann)
 
-        self.frames_changed = np.any(np.where(img_trimmed != img_ann))
+        self._y_changed = np.any(np.where(img_trimmed != img_ann))
         self.annotated[frame, ..., self.feature] = img_trimmed
 
     def action_fill_hole(self, label, frame, x_location, y_location):
@@ -268,7 +268,7 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
         self.annotated[frame, :, :, self.feature] = filled_img_ann
 
         # never changes info but always changes annotation
-        self.frames_changed = True
+        self._y_changed = True
 
     def action_flood_contiguous(self, label, frame, x_location, y_location):
         """Flood fill a cell with a unique new label.
