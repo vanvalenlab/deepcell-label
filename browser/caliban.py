@@ -1154,9 +1154,8 @@ def load_trks(trkfile):
                     raise ValueError('Invalid .trk file, no lineage data found.')
 
             lineages = json.loads(trks.extractfile(trk_data).read().decode())
+            lineages = lineages if isinstance(lineages, list) else [lineages]
 
-            if not isinstance(lineages, list):
-                lineages = [lineages]
             # JSON only allows strings as keys, so convert them back to ints
             for i, tracks in enumerate(lineages):
                 lineages[i] = {int(k): v for k, v in tracks.items()}
