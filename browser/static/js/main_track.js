@@ -640,7 +640,7 @@ function render_edit_image(ctx) {
   ctx.restore();
 
   ctx.save();
-  let region = new Path2D();
+  const region = new Path2D();
   region.rect(padding, padding, dimensions[0], dimensions[1]);
   ctx.clip(region);
   ctx.imageSmoothingEnabled = true;
