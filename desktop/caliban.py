@@ -3039,21 +3039,27 @@ class TrackReview(CalibanWindow):
         for track in empty_tracks:
         	del self.tracks[track]
 
-        with tarfile.open(self.filename + ".trk", "w") as trks:
-            with tempfile.NamedTemporaryFile("w") as lineage_file:
-                json.dump(self.tracks, lineage_file, indent=1)
-                lineage_file.flush()
-                trks.add(lineage_file.name, "lineage.json")
+        try:
+            with tarfile.open(self.filename + ".trk", "w") as trks:
+                with tempfile.NamedTemporaryFile("w") as lineage_file:
+                    json.dump(self.tracks, lineage_file, indent=1)
+                    lineage_file.flush()
+                    trks.add(lineage_file.name, "lineage.json")
 
-            with tempfile.NamedTemporaryFile() as raw_file:
-                np.save(raw_file, self.raw)
-                raw_file.flush()
-                trks.add(raw_file.name, "raw.npy")
+                with tempfile.NamedTemporaryFile() as raw_file:
+                    np.save(raw_file, self.raw)
+                    raw_file.flush()
+                    trks.add(raw_file.name, "raw.npy")
 
-            with tempfile.NamedTemporaryFile() as tracked_file:
-                np.save(tracked_file, self.tracked)
-                tracked_file.flush()
-                trks.add(tracked_file.name, "tracked.npy")
+                with tempfile.NamedTemporaryFile() as tracked_file:
+                    np.save(tracked_file, self.tracked)
+                    tracked_file.flush()
+                    trks.add(tracked_file.name, "tracked.npy")
+
+        # don't want a case where we raise an exception,
+        # that would defeat the purpose of trying to save the file
+        except:
+            print('Error saving file.')
 
 class ZStackReview(CalibanWindow):
 
@@ -4686,14 +4692,21 @@ class ZStackReview(CalibanWindow):
         '''
         # create filename to save as
         save_file = self.filename + "_save_version_{}.npz".format(self.save_version)
-        # if file was opened with variable names raw and annotated, save them that way
-        if self.save_vars_mode == 0:
-            np.savez(save_file, raw = self.raw, annotated = self.annotated)
-        # otherwise, save as X and y
-        else:
-            np.savez(save_file, X = self.raw, y = self.annotated)
-        # keep track of which version of the file this is
-        self.save_version += 1
+
+        try:
+            # if file was opened with variable names raw and annotated, save them that way
+            if self.save_vars_mode == 0:
+                np.savez(save_file, raw = self.raw, annotated = self.annotated)
+            # otherwise, save as X and y
+            else:
+                np.savez(save_file, X = self.raw, y = self.annotated)
+            # keep track of which version of the file this is
+            self.save_version += 1
+
+        # don't want a case where we raise an exception,
+        # that would defeat the purpose of trying to save the file
+        except:
+            print('Error saving file.')
 
     def add_cell_info(self, feature, add_label, frame):
         '''
@@ -4909,21 +4922,27 @@ class ZStackReview(CalibanWindow):
         trk_ann = np.zeros((self.num_frames, self.height, self.width,1), dtype = self.annotated.dtype)
         trk_ann[:,:,:,0] = self.annotated[:,:,:,self.feature]
 
-        with tarfile.open(filename + ".trk", "w") as trks:
-            with tempfile.NamedTemporaryFile("w") as lineage_file:
-                json.dump(self.lineage, lineage_file, indent=1)
-                lineage_file.flush()
-                trks.add(lineage_file.name, "lineage.json")
+        try:
+            with tarfile.open(filename + ".trk", "w") as trks:
+                with tempfile.NamedTemporaryFile("w") as lineage_file:
+                    json.dump(self.lineage, lineage_file, indent=1)
+                    lineage_file.flush()
+                    trks.add(lineage_file.name, "lineage.json")
 
-            with tempfile.NamedTemporaryFile() as raw_file:
-                np.save(raw_file, trk_raw)
-                raw_file.flush()
-                trks.add(raw_file.name, "raw.npy")
+                with tempfile.NamedTemporaryFile() as raw_file:
+                    np.save(raw_file, trk_raw)
+                    raw_file.flush()
+                    trks.add(raw_file.name, "raw.npy")
 
-            with tempfile.NamedTemporaryFile() as tracked_file:
-                np.save(tracked_file, trk_ann)
-                tracked_file.flush()
-                trks.add(tracked_file.name, "tracked.npy")
+                with tempfile.NamedTemporaryFile() as tracked_file:
+                    np.save(tracked_file, trk_ann)
+                    tracked_file.flush()
+                    trks.add(tracked_file.name, "tracked.npy")
+
+        # don't want a case where we raise an exception,
+        # that would defeat the purpose of trying to save the file
+        except:
+            print('Error saving file.')
 
 def on_or_off(toggle):
     if toggle:
