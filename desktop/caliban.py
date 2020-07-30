@@ -3056,10 +3056,15 @@ class TrackReview(CalibanWindow):
                     tracked_file.flush()
                     trks.add(tracked_file.name, "tracked.npy")
 
+        except FileNotFoundError:
+            print('Encountered FileNotFoundError when trying to save.\n'
+                  'Make sure you are still connected to the directory you loaded this file from.')
+
         # don't want a case where we raise an exception,
         # that would defeat the purpose of trying to save the file
-        except:
-            print('Error saving file.')
+        except Exception as e:
+            print('Unexpected error saving file.')
+            print(e.message)
 
 class ZStackReview(CalibanWindow):
 
@@ -4703,10 +4708,15 @@ class ZStackReview(CalibanWindow):
             # keep track of which version of the file this is
             self.save_version += 1
 
+        except FileNotFoundError:
+            print('Encountered FileNotFoundError when trying to save.\n'
+                  'Make sure you are still connected to the directory you loaded this file from.')
+
         # don't want a case where we raise an exception,
         # that would defeat the purpose of trying to save the file
-        except:
-            print('Error saving file.')
+        except Exception as e:
+            print('Unexpected error saving file.')
+            print(e.message)
 
     def add_cell_info(self, feature, add_label, frame):
         '''
@@ -4939,10 +4949,15 @@ class ZStackReview(CalibanWindow):
                     tracked_file.flush()
                     trks.add(tracked_file.name, "tracked.npy")
 
+        except FileNotFoundError:
+            print('Encountered FileNotFoundError when trying to save.\n'
+                  'Make sure you are still connected to the directory you loaded this file from.')
+
         # don't want a case where we raise an exception,
         # that would defeat the purpose of trying to save the file
-        except:
-            print('Error saving file.')
+        except Exception as e:
+            print('Unexpected error saving file.')
+            print(e.message)
 
 def on_or_off(toggle):
     if toggle:
