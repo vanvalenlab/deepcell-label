@@ -211,7 +211,9 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
             x_loc = loc[1]
             y_loc = loc[0]
 
-            brush_area = circle(y_loc, x_loc, brush_size, (self.height, self.width))
+            brush_area = circle(y_loc, x_loc,
+                                brush_size // self.scale_factor,
+                                (self.height, self.width))
 
             # do not overwrite or erase labels other than the one you're editing
             if not erase:

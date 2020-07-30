@@ -639,8 +639,15 @@ function render_edit_image(ctx) {
   ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
   ctx.restore();
 
+  ctx.save();
+  let region = new Path2D();
+  region.rect(padding, padding, dimensions[0], dimensions[1]);
+  ctx.clip(region);
+  ctx.imageSmoothingEnabled = true;
+
   // draw brushview on top of cells/annotations
-  brush.draw(ctx);
+  brush.draw(ctx, 0, 0, dimensions[0], dimensions[1], 1);
+  ctx.restore();
 }
 
 function render_raw_image(ctx) {
