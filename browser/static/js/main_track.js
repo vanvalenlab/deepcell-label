@@ -206,7 +206,7 @@ class Mode {
   // keybinds that apply in bulk mode, answering question/prompt
   handle_mode_question_keybind(key) {
     if (key === " ") {
-      if (this.action === "flood_cell") {
+      if (this.action === "flood_contiguous") {
         action("flood_contiguous", this.info);
       } else if (this.action === "trim_pixels") {
         action("trim_pixels", this.info);
