@@ -291,10 +291,11 @@ class Mode {
 
   handle_draw() {
     action("handle_draw", {
-      "trace": JSON.stringify(mouse_trace),
-      "edit_value": brush.value,
-      "brush_size": brush.size,
-      "erase": brush.erase,
+      "trace": JSON.stringify(mouse_trace), // stringify array so it doesn't get messed up
+      "target_value": brush.target, // value that we're overwriting
+      "brush_value": brush.value, // we don't update caliban with edit_value, etc each time they change
+      "brush_size": brush.size, // so we need to pass them in as args
+      "erase": (brush.erase && !brush.conv),
       "frame": current_frame
     });
     mouse_trace = [];
@@ -638,8 +639,15 @@ function render_edit_image(ctx) {
   ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
   ctx.restore();
 
+  ctx.save();
+  const region = new Path2D();
+  region.rect(padding, padding, dimensions[0], dimensions[1]);
+  ctx.clip(region);
+  ctx.imageSmoothingEnabled = true;
+
   // draw brushview on top of cells/annotations
-  brush.draw(ctx);
+  brush.draw(ctx, 0, 0, dimensions[0], dimensions[1], 1);
+  ctx.restore();
 }
 
 function render_raw_image(ctx) {
