@@ -144,7 +144,7 @@ class Mode {
     } else if (key === "x") {
       // delete label from frame
       this.kind = Modes.question;
-      this.action = "delete_cell";
+      this.action = "delete_mask";
       this.prompt = "delete label " + this.info.label + " in frame " + this.info.frame + "? " + answer;
       render_info_display();
     } else if (key === "-") {
@@ -206,13 +206,13 @@ class Mode {
   // keybinds that apply in bulk mode, answering question/prompt
   handle_mode_question_keybind(key) {
     if (key === " ") {
-      if (this.action === "flood_cell") {
-        action("flood_cell", this.info);
+      if (this.action === "flood_contiguous") {
+        action("flood_contiguous", this.info);
       } else if (this.action === "trim_pixels") {
         action("trim_pixels", this.info);
       } if (this.action === "new_track") {
-        action("create_all_new", this.info);
-      } else if (this.action === "delete_cell") {
+        action("new_track", this.info);
+      } else if (this.action === "delete_mask") {
         action(this.action, this.info);
       } else if (this.action === "set_parent") {
         if (this.info.label_1 !== this.info.label_2 &&
@@ -254,7 +254,7 @@ class Mode {
       this.clear();
     } else if (key === "s") {
       if (this.action === "new_track") {
-        action("create_single_new", this.info);
+        action("new_single_cell", this.info);
       } else if (this.action === "swap_cells") {
         if (this.info.label_1 !== this.info.label_2 &&
           this.info.frame_1 === this.info.frame_2) {
@@ -291,10 +291,11 @@ class Mode {
 
   handle_draw() {
     action("handle_draw", {
-      "trace": JSON.stringify(mouse_trace),
-      "edit_value": brush.value,
-      "brush_size": brush.size,
-      "erase": brush.erase,
+      "trace": JSON.stringify(mouse_trace), // stringify array so it doesn't get messed up
+      "target_value": brush.target, // value that we're overwriting
+      "brush_value": brush.value, // we don't update caliban with edit_value, etc each time they change
+      "brush_size": brush.size, // so we need to pass them in as args
+      "erase": (brush.erase && !brush.conv),
       "frame": current_frame
     });
     mouse_trace = [];
@@ -305,7 +306,7 @@ class Mode {
     if (evt.altKey) {
       // alt+click
       this.kind = Modes.question;
-      this.action = "flood_cell";
+      this.action = "flood_contiguous";
       this.info = {
         "label": current_label,
         "frame": current_frame,
@@ -638,8 +639,15 @@ function render_edit_image(ctx) {
   ctx.drawImage(seg_image, padding, padding, dimensions[0], dimensions[1]);
   ctx.restore();
 
+  ctx.save();
+  const region = new Path2D();
+  region.rect(padding, padding, dimensions[0], dimensions[1]);
+  ctx.clip(region);
+  ctx.imageSmoothingEnabled = true;
+
   // draw brushview on top of cells/annotations
-  brush.draw(ctx);
+  brush.draw(ctx, 0, 0, dimensions[0], dimensions[1], 1);
+  ctx.restore();
 }
 
 function render_raw_image(ctx) {

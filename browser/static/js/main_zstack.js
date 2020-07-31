@@ -272,7 +272,7 @@ class Mode {
     } else if (key === "x") {
       // delete label from frame
       this.kind = Modes.question;
-      this.action = "delete";
+      this.action = "delete_mask";
       this.prompt = "delete label " + this.info.label + " in frame " + this.info.frame + "? " + answer;
       render_info_display();
     } else if (key === "[") {
@@ -327,14 +327,14 @@ class Mode {
   // keybinds that apply in bulk mode, answering question/prompt
   handle_mode_question_keybind(key) {
     if (key === " ") {
-      if (this.action === "flood_cell") {
-        action("flood_cell", this.info);
+      if (this.action === "flood_contiguous") {
+        action("flood_contiguous", this.info);
       } else if (this.action === "trim_pixels") {
         action("trim_pixels", this.info);
       } else if (this.action === "create_new") {
         action("new_cell_stack", this.info);
-      } else if (this.action === "delete") {
-        action("delete", this.info);
+      } else if (this.action === "delete_mask") {
+        action("delete_mask", this.info);
       } else if (this.action === "predict") {
         action("predict_zstack", this.info);
       } else if (this.action === "replace") {
@@ -471,7 +471,7 @@ class Mode {
     if (evt.altKey) {
       // alt+click
       this.kind = Modes.question;
-      this.action = "flood_cell";
+      this.action = "flood_contiguous";
       this.info = {
         "label": current_label,
         "frame": current_frame,
