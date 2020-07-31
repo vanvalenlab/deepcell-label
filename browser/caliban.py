@@ -39,6 +39,7 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
 
         self.current_frame = 0
         self.scale_factor = 1
+        self._x_changed = False
         self._y_changed = False
         self.info_changed = False
 
@@ -57,9 +58,6 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
         self.max_frames = self.raw.shape[0]
         self.height = self.raw.shape[1]
         self.width = self.raw.shape[2]
-
-        self._x_changed = False
-        self._y_changed = False
 
         self.max_intensity = {}
         for channel in range(self.channel_max):
