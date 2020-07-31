@@ -207,7 +207,7 @@ def load(filename):
         return jsonify({
             'max_frames': track_review.max_frames,
             'tracks': track_review.readable_tracks,
-            'dimensions': track_review.dimensions,
+            'dimensions': (track_review.width, track_review.height),
             'project_id': project.id,
             'screen_scale': track_review.scale_factor
         })
@@ -227,7 +227,7 @@ def load(filename):
             'channel_max': zstack_review.channel_max,
             'feature_max': zstack_review.feature_max,
             'tracks': zstack_review.readable_tracks,
-            'dimensions': zstack_review.dimensions,
+            'dimensions': (zstack_review.width, zstack_review.height),
             'project_id': project.id
         })
 
