@@ -55,6 +55,7 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
 
         self.channel_max = self.raw.shape[-1]
         self.feature_max = self.annotated.shape[-1]
+        # TODO: is there a potential IndexError here?
         self.max_frames = self.raw.shape[0]
         self.height = self.raw.shape[1]
         self.width = self.raw.shape[2]
@@ -416,6 +417,11 @@ class ZStackReview(BaseReview):
             if self.raw.ndim == 3:
                 self.raw = np.expand_dims(self.raw, axis=0)
                 self.annotated = np.expand_dims(self.annotated, axis=0)
+
+                # reassigning height/width for new shape.
+                self.max_frames = self.raw.shape[0]
+                self.height = self.raw.shape[1]
+                self.width = self.raw.shape[2]
 
             self.rgb_img = self.reduce_to_RGB()
 
