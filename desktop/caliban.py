@@ -3090,10 +3090,14 @@ class ZStackReview(CalibanWindow):
         # should be robust to 3D, 4D, and some cases of 5D array sizes
         self.dims = raw.ndim
         if self.dims == 3:
+            print('Warning: Caliban is intended to open 4D arrays.'
+                  ' Did you mean to open a 3D file?')
             self.raw = np.expand_dims(self.raw, axis=0)
             self.annotated = np.expand_dims(self.annotated, axis=0)
 
         elif self.dims == 5:
+            print('Warning: Caliban is intended to open 4D arrays.'
+                  ' Did you mean to open a 5D file?')
             self.raw = np.squeeze(self.raw, axis=0)
             self.annotated = np.squeeze(self.annotated, axis=0)
 
