@@ -743,19 +743,10 @@ function changeZoom(dzoom) {
   render_image_display();
 }
 
-// check if the mouse position in canvas matches to a displayed part of image
-function inRange(x, y) {
-  if (x >= 0 && x < dimensions[0] &&
-      y >= 0 && y < dimensions[1]) {
-    return true;
-  } else {
-    return false;
-  }
-}
 
 function label_under_mouse() {
   let new_label;
-  if (inRange(canvasPosX, canvasPosY)) {
+  if (cursor.inRange(canvasPosX, canvasPosY)) {
     new_label = Math.abs(seg_array[imgY][imgX]); //check array value at mouse location
   } else {
     new_label = 0;
@@ -1147,7 +1138,7 @@ function updateMousePos(x, y) {
   canvasPosY = y - padding;
 
   // convert to image indices, to use for actions and getting label
-  if (inRange(canvasPosX, canvasPosY)) {
+  if (cursor.inRange(canvasPosX, canvasPosY)) {
     imgX = Math.floor((canvasPosX * 100 / (scale * zoom) + viewer.sx));
     imgY = Math.floor((canvasPosY * 100 / (scale * zoom) + viewer.sy));
     brush.x = imgX;

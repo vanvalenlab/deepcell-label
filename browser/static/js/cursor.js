@@ -7,6 +7,17 @@ class CalibanCursor {
     this.pressed = false;
     this.trace = [];
   }
+
+  // check if the mouse position in canvas matches to a displayed part of image
+  inRange(x, y) {
+    if (x >= 0 && x < this.width * this.scale &&
+        y >= 0 && y < this.height * this.scale) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
 }
 
 // handle updating zooming and panning attributes
