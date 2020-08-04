@@ -697,6 +697,7 @@ let mouse_trace = [];
 var brush;
 var adjust;
 let cursor;
+let viewer;
 
 var waitForFinalEvent = (function () {
   var timers = {};
@@ -1339,6 +1340,7 @@ function start_caliban(filename) {
   load_file(filename);
 
   cursor = new CalibanCursor();
+  viewer = new CanvasView(width=rawWidth, height=rawHeight);
 
   // define image onload cascade behavior, need rawHeight and rawWidth first
   adjuster = new ImageAdjuster(width=rawWidth, height=rawHeight,
