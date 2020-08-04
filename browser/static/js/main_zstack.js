@@ -689,7 +689,6 @@ let maxLabelsMap = new Map();
 var mode = new Mode(Modes.none, {});
 let edit_mode;
 var answer = "(SPACE=YES / ESC=NO)";
-let mousedown = false;
 let spacedown = false;
 var tooltype = 'draw';
 var project_id;
@@ -697,6 +696,7 @@ let mouse_trace = [];
 
 var brush;
 var adjust;
+let cursor;
 
 var waitForFinalEvent = (function () {
   var timers = {};
@@ -1118,7 +1118,7 @@ function handle_scroll(evt) {
 // of click&drag, since clicks are handled by Mode.click)
 function handle_mousedown(evt) {
   // TODO: refactor "mousedown + mousemove" into ondrag?
-  mousedown = true;
+  cursor.pressed = true;
   if (!spacedown) {
     if (mode.kind !== Modes.prompt) {
       // begin drawing
@@ -1136,7 +1136,7 @@ function handle_mousedown(evt) {
 }
 
 function helper_brush_draw() {
-  if (mousedown && !spacedown) {
+  if (cursor.pressed && !spacedown) {
     // update mouse_trace, but not if turning on conv brush
     if (mode.kind !== Modes.prompt) {
       mouse_trace.push([imgY, imgX]);
@@ -1178,7 +1178,7 @@ function updateMousePos(x, y) {
 
 // handles mouse movement, whether or not mouse button is held down
 function handle_mousemove(evt) {
-  if (spacedown && mousedown) {
+  if (cursor.pressed && spacedown) {
     panCanvas(
       evt.originalEvent.movementX * 100 / (zoom * scale),
       evt.originalEvent.movementY * 100 / (zoom * scale)
@@ -1192,7 +1192,7 @@ function handle_mousemove(evt) {
 
 // handles end of click&drag (different from click())
 function handle_mouseup() {
-  mousedown = false;
+  cursor.pressed = false;
   if (!spacedown) {
     if (mode.kind !== Modes.prompt) {
       if (edit_mode) {
@@ -1337,6 +1337,8 @@ function start_caliban(filename) {
    });
 
   load_file(filename);
+
+  cursor = new CalibanCursor();
 
   // define image onload cascade behavior, need rawHeight and rawWidth first
   adjuster = new ImageAdjuster(width=rawWidth, height=rawHeight,
