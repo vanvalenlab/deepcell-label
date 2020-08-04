@@ -656,8 +656,6 @@ let storedClickY;
 
 // zoom, starts at 100 percent (value set in ___)
 let zoom;
-// farthest amount to zoom out
-let zoomLimit;
 
 var seg_array; // declare here so it is global var
 
@@ -730,7 +728,7 @@ function changeZoom(dzoom) {
   let newWidth = rawWidth*100/newZoom;
   let oldHeight = viewer.sHeight;
   let oldWidth = viewer.sWidth;
-  if (newZoom >= zoomLimit) {
+  if (newZoom >= viewer.zoomLimit) {
     zoom = newZoom;
     viewer.sHeight = newHeight;
     viewer.sWidth = newWidth;
@@ -1058,7 +1056,6 @@ function setCanvasDimensions(rawDims) {
   dimensions = [scale * rawDims[0], scale * rawDims[1]];
 
   zoom = 100;
-  zoomLimit = 100;
 
   // set canvases size according to scale
   $('#canvas').get(0).width = dimensions[0] + 2 * padding;
