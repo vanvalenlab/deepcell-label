@@ -659,14 +659,6 @@ let zoom;
 // farthest amount to zoom out
 let zoomLimit;
 
-// starting indices (original coords) for displaying image
-// (starts at 0, values set in ______)
-let sx;
-let sy;
-// how far past starting indices to display
-let swidth;
-let sheight;
-
 var seg_array; // declare here so it is global var
 
 let topBorder = new Path2D();
@@ -723,23 +715,10 @@ function upload_file(cb) {
 
 // based on dx and dy, update sx and sy
 function panCanvas(dx, dy) {
-  let tempPanX = sx - dx;
-  let tempPanY = sy - dy;
-  let oldY = sy;
-  let oldX = sx;
-  if (tempPanX >= 0 && tempPanX + swidth < rawWidth) {
-    sx = tempPanX;
-  } else {
-    tempPanX = Math.max(0, tempPanX);
-    sx = Math.min(rawWidth - swidth, tempPanX);
-  }
-  if (tempPanY >= 0 && tempPanY + sheight < rawHeight) {
-    sy = tempPanY;
-  } else {
-    tempPanY = Math.max(0, tempPanY);
-    sy = Math.min(rawHeight - sheight, tempPanY);
-  }
-  if (sx !== oldX || sy !== oldY) {
+  const oldX = viewer.sx;
+  const oldY = viewer.sy;
+  viewer.pan(dx, dy);
+  if (viewer.sx !== oldX || viewer.sy !== oldY) {
     render_image_display();
   }
 }
@@ -749,12 +728,12 @@ function changeZoom(dzoom) {
   let oldZoom = zoom;
   let newHeight = rawHeight*100/newZoom;
   let newWidth = rawWidth*100/newZoom;
-  let oldHeight = sheight;
-  let oldWidth = swidth;
+  let oldHeight = viewer.sHeight;
+  let oldWidth = viewer.sWidth;
   if (newZoom >= zoomLimit) {
     zoom = newZoom;
-    sheight = newHeight;
-    swidth = newWidth;
+    viewer.sHeight = newHeight;
+    viewer.sWidth = newWidth;
   }
   if (oldZoom !== newZoom) {
     let propX = canvasPosX/dimensions[0];
@@ -860,8 +839,8 @@ function render_info_display() {
   $('#feature').html(mode.feature);
   $('#channel').html(mode.channel);
   $('#zoom').html(`${zoom}%`);
-  $('#displayedX').html(`${Math.floor(sx)}-${Math.ceil(sx+swidth)}`);
-  $('#displayedY').html(`${Math.floor(sy)}-${Math.ceil(sy+sheight)}`);
+  $('#displayedX').html(`${Math.floor(viewer.sx)}-${Math.ceil(viewer.sx+viewer.sWidth)}`);
+  $('#displayedY').html(`${Math.floor(viewer.sy)}-${Math.ceil(viewer.sy+viewer.sHeight)}`);
 
   render_highlight_info();
 
@@ -878,10 +857,16 @@ function render_edit_image(ctx) {
     render_raw_image(ctx);
   } else if (!rgb && !display_labels) {
     ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
-    ctx.drawImage(adjuster.preCompRaw, sx, sy, swidth, sheight, padding, padding, dimensions[0], dimensions[1]);
+    ctx.drawImage(adjuster.preCompRaw,
+                  viewer.sx, viewer.sy,
+                  viewer.sWidth, viewer.sHeight,
+                  padding, padding, dimensions[0], dimensions[1]);
   } else {
     ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
-    ctx.drawImage(adjuster.postCompImg, sx, sy, swidth, sheight, padding, padding, dimensions[0], dimensions[1]);
+    ctx.drawImage(adjuster.postCompImg,
+                  viewer.sx, viewer.sy,
+                  viewer.sWidth, viewer.sHeight,
+                  padding, padding, dimensions[0], dimensions[1]);
   }
   ctx.save();
   let region = new Path2D();
@@ -890,29 +875,38 @@ function render_edit_image(ctx) {
   ctx.imageSmoothingEnabled = true;
 
   // draw brushview on top of cells/annotations
-  brush.draw(ctx, sx, sy, swidth, sheight, scale*zoom/100);
+  brush.draw(ctx, viewer.sx, viewer.sy, viewer.sWidth, viewer.sHeight, scale*zoom/100);
 
   ctx.restore();
 }
 
 function render_raw_image(ctx) {
   ctx.clearRect(padding, padding, dimensions, dimensions[1]);
-  ctx.drawImage(adjuster.contrastedRaw, sx, sy, swidth, sheight, padding, padding, dimensions[0], dimensions[1]);
+  ctx.drawImage(adjuster.contrastedRaw,
+                viewer.sx, viewer.sy,
+                viewer.sWidth, viewer.sHeight,
+                padding, padding, dimensions[0], dimensions[1]);
 }
 
 function render_annotation_image(ctx) {
   ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
   if (rgb && !display_labels) {
-    ctx.drawImage(adjuster.postCompImg, sx, sy, swidth, sheight, padding, padding, dimensions[0], dimensions[1]);
+    ctx.drawImage(adjuster.postCompImg,
+                  viewer.sx, viewer.sy,
+                  viewer.sWidth, viewer.sHeight,
+                  padding, padding, dimensions[0], dimensions[1]);
   } else {
-    ctx.drawImage(adjuster.preCompSeg, sx, sy, swidth, sheight, padding, padding, dimensions[0], dimensions[1]);
+    ctx.drawImage(adjuster.preCompSeg,
+                  viewer.sx, viewer.sy,
+                  viewer.sWidth, viewer.sHeight,
+                  padding, padding, dimensions[0], dimensions[1]);
   }
 }
 
 function drawBorders(ctx) {
   ctx.save();
   // left border
-  if (Math.floor(sx) === 0) {
+  if (Math.floor(viewer.sx) === 0) {
     ctx.fillStyle = 'white';
   } else {
     ctx.fillStyle = 'black';
@@ -920,7 +914,7 @@ function drawBorders(ctx) {
   ctx.fill(leftBorder);
 
   // right border
-  if (Math.ceil(sx + swidth) === rawWidth) {
+  if (Math.ceil(viewer.sx + viewer.sWidth) === rawWidth) {
     ctx.fillStyle = 'white';
   } else {
     ctx.fillStyle = 'black';
@@ -928,7 +922,7 @@ function drawBorders(ctx) {
   ctx.fill(rightBorder);
 
   // top border
-  if (Math.floor(sy) === 0) {
+  if (Math.floor(viewer.sy) === 0) {
     ctx.fillStyle = 'white';
   } else {
     ctx.fillStyle = 'black';
@@ -936,7 +930,7 @@ function drawBorders(ctx) {
   ctx.fill(topBorder);
 
   // bottom border
-  if (Math.ceil(sy + sheight) === rawHeight) {
+  if (Math.ceil(viewer.sy + viewer.sHeight) === rawHeight) {
     ctx.fillStyle = 'white';
   } else {
     ctx.fillStyle = 'black';
@@ -994,10 +988,8 @@ function load_file(file) {
       channelMax = payload.channel_max;
       rawDimensions = payload.dimensions;
 
-      sx = 0;
-      sy = 0;
-      swidth = rawWidth = rawDimensions[0];
-      sheight = rawHeight = rawDimensions[1];
+      rawWidth = rawDimensions[0];
+      rawHeight = rawDimensions[1];
 
       setCanvasDimensions(rawDimensions);
 
@@ -1160,8 +1152,8 @@ function updateMousePos(x, y) {
 
   // convert to image indices, to use for actions and getting label
   if (inRange(canvasPosX, canvasPosY)) {
-    imgX = Math.floor((canvasPosX * 100 / (scale * zoom) + sx));
-    imgY = Math.floor((canvasPosY * 100 / (scale * zoom) + sy));
+    imgX = Math.floor((canvasPosX * 100 / (scale * zoom) + viewer.sx));
+    imgY = Math.floor((canvasPosY * 100 / (scale * zoom) + viewer.sy));
     brush.x = imgX;
     brush.y = imgY;
     // update brush preview

@@ -13,8 +13,8 @@ class CanvasView {
     this.height = height;
     this.sx = 0;
     this.sy = 0;
-    this.sWidth = 0;
-    this.sHeight = 0;
+    this.sWidth = width;
+    this.sHeight = height;
     this.zoom = 100;
     this.zoomLimit = 100;
 
