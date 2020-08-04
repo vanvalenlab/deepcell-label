@@ -1317,6 +1317,7 @@ function start_caliban(filename) {
     waitForFinalEvent(function() {
       mode.clear();
       setCanvasDimensions(rawDimensions);
+      cursor.scale = scale;
       brush.refreshView();
     }, 500, 'canvasResize');
   });
@@ -1327,7 +1328,7 @@ function start_caliban(filename) {
 
   load_file(filename);
 
-  cursor = new CalibanCursor();
+  cursor = new CalibanCursor(width=rawWidth, height=rawHeight, scale=scale);
   viewer = new CanvasView(width=rawWidth, height=rawHeight);
 
   // define image onload cascade behavior, need rawHeight and rawWidth first

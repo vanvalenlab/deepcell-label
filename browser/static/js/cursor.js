@@ -1,6 +1,9 @@
 // cursor to handle mouse movement and attributes
 class CalibanCursor {
-  constructor() {
+  constructor(width, height, scale) {
+    this.width = width
+    this.height = height
+    this.scale = scale;
     this.pressed = false;
     this.trace = [];
   }
