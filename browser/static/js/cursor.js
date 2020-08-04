@@ -2,6 +2,7 @@
 class CalibanCursor {
   constructor() {
     this.pressed = false;
+    this.trace = [];
   }
 }
 

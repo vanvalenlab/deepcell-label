@@ -412,14 +412,14 @@ class Mode {
 
   handle_draw() {
     action("handle_draw", {
-      "trace": JSON.stringify(mouse_trace), // stringify array so it doesn't get messed up
+      "trace": JSON.stringify(cursor.trace), // stringify array so it doesn't get messed up
       "target_value": brush.target, // value that we're overwriting
       "brush_value": brush.value, // we don't update caliban with edit_value, etc each time they change
       "brush_size": brush.size, // so we need to pass them in as args
       "erase": (brush.erase && !brush.conv),
       "frame": current_frame
     });
-    mouse_trace = [];
+    cursor.trace = [];
     if (this.kind !== Modes.drawing) {
       this.clear();
     }
@@ -682,7 +682,6 @@ var answer = "(SPACE=YES / ESC=NO)";
 let spacedown = false;
 var tooltype = 'draw';
 var project_id;
-let mouse_trace = [];
 
 var brush;
 var adjust;
@@ -1118,7 +1117,7 @@ function handle_mousedown(evt) {
           brush.threshY = imgY;
         } else if (mode.kind !== Modes.prompt) {
           // not if turning on conv brush
-          mouse_trace.push([imgY, imgX]);
+          cursor.trace.push([imgY, imgX]);
         }
       }
     }
@@ -1129,7 +1128,7 @@ function helper_brush_draw() {
   if (cursor.pressed && !spacedown) {
     // update mouse_trace, but not if turning on conv brush
     if (mode.kind !== Modes.prompt) {
-      mouse_trace.push([imgY, imgX]);
+      cursor.trace.push([imgY, imgX]);
     }
   } else {
     brush.clearView();
