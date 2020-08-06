@@ -39,6 +39,8 @@ class Brush {
     this._width = width;
     this._padding = pad;
 
+    this.scale = scale;
+
     // create hidden canvas to store brush preview
     this.canvas = document.createElement('canvas');
     this.canvas.id = 'brushCanvas';
