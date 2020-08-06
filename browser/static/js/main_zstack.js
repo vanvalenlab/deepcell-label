@@ -654,9 +654,6 @@ let imgY;
 let storedClickX;
 let storedClickY;
 
-// zoom, starts at 100 percent (value set in ___)
-let zoom;
-
 var seg_array; // declare here so it is global var
 
 let topBorder = new Path2D();
@@ -721,14 +718,14 @@ function panCanvas(dx, dy) {
 }
 
 function changeZoom(dzoom) {
-  let newZoom = zoom - 10*dzoom;
-  let oldZoom = zoom;
-  let newHeight = rawHeight*100/newZoom;
-  let newWidth = rawWidth*100/newZoom;
-  let oldHeight = viewer.sHeight;
-  let oldWidth = viewer.sWidth;
+  const newZoom = viewer.zoom - 10*dzoom;
+  const oldZoom = viewer.zoom;
+  const newHeight = rawHeight*100/newZoom;
+  const newWidth = rawWidth*100/newZoom;
+  const oldHeight = viewer.sHeight;
+  const oldWidth = viewer.sWidth;
   if (newZoom >= viewer.zoomLimit) {
-    zoom = newZoom;
+    viewer.zoom = newZoom;
     viewer.sHeight = newHeight;
     viewer.sWidth = newWidth;
   }
@@ -826,7 +823,7 @@ function render_info_display() {
   $('#frame').html(current_frame);
   $('#feature').html(mode.feature);
   $('#channel').html(mode.channel);
-  $('#zoom').html(`${zoom}%`);
+  $('#zoom').html(`${viewer.zoom}%`);
   $('#displayedX').html(`${Math.floor(viewer.sx)}-${Math.ceil(viewer.sx+viewer.sWidth)}`);
   $('#displayedY').html(`${Math.floor(viewer.sy)}-${Math.ceil(viewer.sy+viewer.sHeight)}`);
 
@@ -863,7 +860,7 @@ function render_edit_image(ctx) {
   ctx.imageSmoothingEnabled = true;
 
   // draw brushview on top of cells/annotations
-  brush.draw(ctx, viewer.sx, viewer.sy, viewer.sWidth, viewer.sHeight, scale*zoom/100);
+  brush.draw(ctx, viewer.sx, viewer.sy, viewer.sWidth, viewer.sHeight, scale*viewer.zoom/100);
 
   ctx.restore();
 }
@@ -1045,7 +1042,7 @@ function setCanvasDimensions(rawDims) {
   // dimensions need to maintain aspect ratio for drawing purposes
   dimensions = [scale * rawDims[0], scale * rawDims[1]];
 
-  zoom = 100;
+  viewer.zoom = 100;
 
   // set canvases size according to scale
   $('#canvas').get(0).width = dimensions[0] + 2 * padding;
@@ -1145,8 +1142,8 @@ function updateMousePos(x, y) {
 
   // convert to image indices, to use for actions and getting label
   if (cursor.inRange(canvasPosX, canvasPosY)) {
-    imgX = Math.floor((canvasPosX * 100 / (scale * zoom) + viewer.sx));
-    imgY = Math.floor((canvasPosY * 100 / (scale * zoom) + viewer.sy));
+    imgX = Math.floor((canvasPosX * 100 / (scale * viewer.zoom) + viewer.sx));
+    imgY = Math.floor((canvasPosY * 100 / (scale * viewer.zoom) + viewer.sy));
     brush.x = imgX;
     brush.y = imgY;
     // update brush preview
@@ -1166,8 +1163,8 @@ function updateMousePos(x, y) {
 function handle_mousemove(evt) {
   if (cursor.pressed && spacedown) {
     panCanvas(
-      evt.originalEvent.movementX * 100 / (zoom * scale),
-      evt.originalEvent.movementY * 100 / (zoom * scale)
+      evt.originalEvent.movementX * 100 / (viewer.zoom * scale),
+      evt.originalEvent.movementY * 100 / (viewer.zoom * scale)
     );
   }
 
