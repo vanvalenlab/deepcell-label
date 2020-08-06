@@ -1129,6 +1129,12 @@ function helper_brush_draw() {
 
 // input will typically be evt.offsetX, evt.offsetY (mouse events)
 function updateMousePos(x, y) {
+
+  // get old imgX and imgY
+  // run cursor.updatePos(x, y, viewer)
+  // check new imgX and imgY
+  // update brush if these have changed
+
   // store raw mouse position, in case of pan without mouse movement
   _rawMouseX = x;
   _rawMouseY = y;
