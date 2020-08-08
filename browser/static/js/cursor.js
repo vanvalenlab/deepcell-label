@@ -11,6 +11,9 @@ class CalibanCursor {
     // mouse position on canvas, no adjustment for padding
     this.rawX = 0;
     this.rawY = 0;
+    // adjusted for padding
+    this.canvasPosX = -5;
+    this.canvasPosY = -5;
   }
 
   // check if the mouse position in canvas matches to a displayed part of image
