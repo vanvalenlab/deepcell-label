@@ -712,24 +712,7 @@ function panCanvas(dx, dy) {
 }
 
 function changeZoom(dzoom) {
-  const newZoom = viewer.zoom - 10*dzoom;
-  const oldZoom = viewer.zoom;
-  const newHeight = rawHeight*100/newZoom;
-  const newWidth = rawWidth*100/newZoom;
-  const oldHeight = viewer.sHeight;
-  const oldWidth = viewer.sWidth;
-  if (newZoom >= viewer.zoomLimit) {
-    viewer.zoom = newZoom;
-    viewer.sHeight = newHeight;
-    viewer.sWidth = newWidth;
-  }
-  if (oldZoom !== newZoom) {
-    let propX = canvasPosX/dimensions[0];
-    let propY = canvasPosY/dimensions[1];
-    let dx = propX*(newWidth - oldWidth);
-    let dy = propY*(newHeight - oldHeight);
-    panCanvas(dx, dy);
-  }
+  viewer.changeZoom(dzoom, canvasPosX, canvasPosY);
   updateMousePos(_rawMouseX, _rawMouseY);
   render_image_display();
 }
