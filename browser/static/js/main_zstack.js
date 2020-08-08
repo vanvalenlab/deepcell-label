@@ -1313,7 +1313,6 @@ function start_caliban(filename) {
     waitForFinalEvent(function() {
       mode.clear();
       setCanvasDimensions(rawDimensions);
-      brush.scale = viewer.scale;
       cursor.scale = viewer.scale;
       brush.refreshView();
     }, 500, 'canvasResize');
@@ -1330,7 +1329,7 @@ function start_caliban(filename) {
   // define image onload cascade behavior, need rawHeight and rawWidth first
   adjuster = new ImageAdjuster(width=rawWidth, height=rawHeight,
                                rgb=rgb, channelMax=channelMax);
-  brush = new Brush(viewer.scale=scale, height=rawHeight, width=rawWidth, pad=padding);
+  brush = new Brush(height=rawHeight, width=rawWidth, pad=padding);
 
   adjuster.postCompImg.onload = render_image_display;
 

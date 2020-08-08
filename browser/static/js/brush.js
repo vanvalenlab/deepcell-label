@@ -1,5 +1,5 @@
 class Brush {
-  constructor(scale, height, width, pad) {
+  constructor(height, width, pad) {
     // center of brush (scaled)
     this.x = 0;
     this.y = 0;
@@ -38,8 +38,6 @@ class Brush {
     this._height = height;
     this._width = width;
     this._padding = pad;
-
-    this.scale = scale;
 
     // create hidden canvas to store brush preview
     this.canvas = document.createElement('canvas');
