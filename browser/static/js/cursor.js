@@ -35,7 +35,84 @@ class CanvasView {
 
     this.scale = 1;
 
+    this.topBorder = new Path2D();
+    this.bottomBorder = new Path2D();
+    this.rightBorder = new Path2D();
+    this.leftBorder = new Path2D();
+
   }
+
+  setBorders(padding) {
+    const scaledWidth = this.scale * this.width;
+    const scaledHeight = this.scale * this.height;
+
+    // create paths for recoloring borders
+    this.topBorder = new Path2D();
+    this.topBorder.moveTo(0, 0);
+    this.topBorder.lineTo(padding, padding);
+    this.topBorder.lineTo(scaledWidth + padding, padding);
+    this.topBorder.lineTo(scaledWidth + 2 * padding, 0);
+    this.topBorder.closePath();
+
+    this.bottomBorder = new Path2D();
+    this.bottomBorder.moveTo(0, scaledHeight + 2 * padding);
+    this.bottomBorder.lineTo(padding, scaledHeight + padding);
+    this.bottomBorder.lineTo(scaledWidth + padding, scaledHeight + padding);
+    this.bottomBorder.lineTo(scaledWidth + 2 * padding, scaledHeight + 2 * padding);
+    this.bottomBorder.closePath();
+
+    this.leftBorder = new Path2D();
+    this.leftBorder.moveTo(0, 0);
+    this.leftBorder.lineTo(0, scaledHeight + 2 * padding);
+    this.leftBorder.lineTo(padding, scaledHeight + padding);
+    this.leftBorder.lineTo(padding, padding);
+    this.leftBorder.closePath();
+
+    this.rightBorder = new Path2D();
+    this.rightBorder.moveTo(scaledWidth + 2 * padding, 0);
+    this.rightBorder.lineTo(scaledWidth + padding, padding);
+    this.rightBorder.lineTo(scaledWidth + padding, scaledHeight + padding);
+    this.rightBorder.lineTo(scaledWidth + 2 * padding, scaledHeight + 2 * padding);
+    this.rightBorder.closePath();
+  }
+
+  drawBorders(ctx) {
+    ctx.save();
+    // left border
+    if (Math.floor(this.sx) === 0) {
+      ctx.fillStyle = 'white';
+    } else {
+      ctx.fillStyle = 'black';
+    }
+    ctx.fill(this.leftBorder);
+
+    // right border
+    if (Math.ceil(this.sx + this.sWidth) === this.width) {
+      ctx.fillStyle = 'white';
+    } else {
+      ctx.fillStyle = 'black';
+    }
+    ctx.fill(this.rightBorder);
+
+    // top border
+    if (Math.floor(this.sy) === 0) {
+      ctx.fillStyle = 'white';
+    } else {
+      ctx.fillStyle = 'black';
+    }
+    ctx.fill(this.topBorder);
+
+    // bottom border
+    if (Math.ceil(this.sy + this.sHeight) === this.height) {
+      ctx.fillStyle = 'white';
+    } else {
+      ctx.fillStyle = 'black';
+    }
+    ctx.fill(this.bottomBorder);
+
+    ctx.restore();
+  }
+
 
   pan(dx, dy) {
     let tempPanX = this.sx - dx;
