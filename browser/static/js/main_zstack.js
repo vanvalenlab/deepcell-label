@@ -859,7 +859,7 @@ function render_edit_image(ctx) {
   ctx.imageSmoothingEnabled = true;
 
   // draw brushview on top of cells/annotations
-  brush.draw(ctx, viewer.sx, viewer.sy, viewer.sWidth, viewer.sHeight, viewer.scale*viewer.zoom/100);
+  brush.draw(ctx, viewer);
 
   ctx.restore();
 }
