@@ -6,6 +6,11 @@ class CalibanCursor {
     this.scale = scale;
     this.pressed = false;
     this.trace = [];
+
+    // mouse coords
+    // mouse position on canvas, no adjustment for padding
+    this.rawX = 0;
+    this.rawY = 0;
   }
 
   // check if the mouse position in canvas matches to a displayed part of image

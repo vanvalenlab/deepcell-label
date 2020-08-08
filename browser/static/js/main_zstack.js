@@ -640,9 +640,6 @@ let rawHeight;
 const padding = 5;
 
 // mouse position variables
-// mouse position on canvas, no adjustment for padding
-let _rawMouseX;
-let _rawMouseY;
 // adjusted for padding
 let canvasPosX;
 let canvasPosY;
@@ -713,7 +710,7 @@ function panCanvas(dx, dy) {
 
 function changeZoom(dzoom) {
   viewer.changeZoom(dzoom, canvasPosX, canvasPosY);
-  updateMousePos(_rawMouseX, _rawMouseY);
+  updateMousePos(cursor.rawX, cursor.rawY);
   render_image_display();
 }
 
@@ -1048,8 +1045,8 @@ function updateMousePos(x, y) {
   // update brush if these have changed
 
   // store raw mouse position, in case of pan without mouse movement
-  _rawMouseX = x;
-  _rawMouseY = y;
+  cursor.rawX = x;
+  cursor.rawY = y;
 
   // convert to viewing pane position, to check whether to access label underneath
   canvasPosX = x - padding;
