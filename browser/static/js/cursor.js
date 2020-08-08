@@ -33,6 +33,8 @@ class CanvasView {
     this.zoom = 100;
     this.zoomLimit = 100;
 
+    this.scale = 1;
+
   }
 
   pan(dx, dy) {

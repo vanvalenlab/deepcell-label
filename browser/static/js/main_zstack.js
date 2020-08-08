@@ -637,7 +637,6 @@ let rgb;
 let rawWidth;
 let rawHeight;
 
-var scale;
 const padding = 5;
 
 // mouse position variables
@@ -860,7 +859,7 @@ function render_edit_image(ctx) {
   ctx.imageSmoothingEnabled = true;
 
   // draw brushview on top of cells/annotations
-  brush.draw(ctx, viewer.sx, viewer.sy, viewer.sWidth, viewer.sHeight, scale*viewer.zoom/100);
+  brush.draw(ctx, viewer.sx, viewer.sy, viewer.sWidth, viewer.sHeight, viewer.scale*viewer.zoom/100);
 
   ctx.restore();
 }
@@ -976,6 +975,8 @@ function load_file(file) {
       rawWidth = rawDimensions[0];
       rawHeight = rawDimensions[1];
 
+      viewer = new CanvasView(width=rawWidth, height=rawHeight);
+
       setCanvasDimensions(rawDimensions);
 
       tracks = payload.tracks; // tracks payload is dict
@@ -1034,15 +1035,16 @@ function setCanvasDimensions(rawDims) {
     )
   );
 
-  let scaleX = maxWidth / rawDims[0];
-  let scaleY = maxHeight / rawDims[1];
+  const scaleX = maxWidth / rawDims[0];
+  const scaleY = maxHeight / rawDims[1];
 
   // pick scale that accomodates both dimensions; can be less than 1
-  scale = Math.min(scaleX, scaleY);
+  const scale = Math.min(scaleX, scaleY);
   // dimensions need to maintain aspect ratio for drawing purposes
   dimensions = [scale * rawDims[0], scale * rawDims[1]];
 
   viewer.zoom = 100;
+  viewer.scale = scale;
 
   // set canvases size according to scale
   $('#canvas').get(0).width = dimensions[0] + 2 * padding;
@@ -1142,8 +1144,8 @@ function updateMousePos(x, y) {
 
   // convert to image indices, to use for actions and getting label
   if (cursor.inRange(canvasPosX, canvasPosY)) {
-    imgX = Math.floor((canvasPosX * 100 / (scale * viewer.zoom) + viewer.sx));
-    imgY = Math.floor((canvasPosY * 100 / (scale * viewer.zoom) + viewer.sy));
+    imgX = Math.floor((canvasPosX * 100 / (viewer.scale * viewer.zoom) + viewer.sx));
+    imgY = Math.floor((canvasPosY * 100 / (viewer.scale * viewer.zoom) + viewer.sy));
     brush.x = imgX;
     brush.y = imgY;
     // update brush preview
@@ -1163,8 +1165,8 @@ function updateMousePos(x, y) {
 function handle_mousemove(evt) {
   if (cursor.pressed && spacedown) {
     panCanvas(
-      evt.originalEvent.movementX * 100 / (viewer.zoom * scale),
-      evt.originalEvent.movementY * 100 / (viewer.zoom * scale)
+      evt.originalEvent.movementX * 100 / (viewer.zoom * viewer.scale),
+      evt.originalEvent.movementY * 100 / (viewer.zoom * viewer.scale)
     );
   }
 
@@ -1311,8 +1313,8 @@ function start_caliban(filename) {
     waitForFinalEvent(function() {
       mode.clear();
       setCanvasDimensions(rawDimensions);
-      brush.scale = scale;
-      cursor.scale = scale;
+      brush.scale = viewer.scale;
+      cursor.scale = viewer.scale;
       brush.refreshView();
     }, 500, 'canvasResize');
   });
@@ -1323,13 +1325,12 @@ function start_caliban(filename) {
 
   load_file(filename);
 
-  cursor = new CalibanCursor(width=rawWidth, height=rawHeight, scale=scale);
-  viewer = new CanvasView(width=rawWidth, height=rawHeight);
+  cursor = new CalibanCursor(width=rawWidth, height=rawHeight, scale=viewer.scale);
 
   // define image onload cascade behavior, need rawHeight and rawWidth first
   adjuster = new ImageAdjuster(width=rawWidth, height=rawHeight,
                                rgb=rgb, channelMax=channelMax);
-  brush = new Brush(scale=scale, height=rawHeight, width=rawWidth, pad=padding);
+  brush = new Brush(viewer.scale=scale, height=rawHeight, width=rawWidth, pad=padding);
 
   adjuster.postCompImg.onload = render_image_display;
 
