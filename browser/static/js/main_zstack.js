@@ -428,8 +428,8 @@ class Mode {
   handle_threshold() {
     let threshold_start_y = brush.threshY;
     let threshold_start_x = brush.threshX;
-    let threshold_end_x = imgX;
-    let threshold_end_y = imgY;
+    let threshold_end_x = cursor.imgX;
+    let threshold_end_y = cursor.imgY;
 
     if (threshold_start_y !== threshold_end_y &&
         threshold_start_x !== threshold_end_x) {
@@ -475,8 +475,8 @@ class Mode {
       this.info = {
         "label": current_label,
         "frame": current_frame,
-        "x_location": imgX,
-        "y_location": imgY
+        "x_location": cursor.imgX,
+        "y_location": cursor.imgY
       };
       this.prompt = "SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL";
       this.highlighted_cell_one = current_label;
@@ -487,8 +487,8 @@ class Mode {
       this.info = {
         "label": current_label,
         "frame": current_frame,
-        "x_location": imgX,
-        "y_location": imgY
+        "x_location": cursor.imgX,
+        "y_location": cursor.imgY
       };
       this.prompt = "SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL";
       this.highlighted_cell_one = current_label;
@@ -501,8 +501,8 @@ class Mode {
       };
       this.highlighted_cell_one = current_label;
       this.highlighted_cell_two = -1;
-      storedClickX = imgX;
-      storedClickY = imgY;
+      storedClickX = cursor.imgX;
+      storedClickY = cursor.imgY;
     }
   }
 
@@ -511,8 +511,8 @@ class Mode {
       this.info = {
         "label": this.info.label,
         "frame": current_frame,
-        "x_location": imgX,
-        "y_location": imgY
+        "x_location": cursor.imgX,
+        "y_location": cursor.imgY
       };
       action(this.action, this.info);
       this.clear();
@@ -549,8 +549,8 @@ class Mode {
       "frame_2": current_frame,
       "x1_location": storedClickX,
       "y1_location": storedClickY,
-      "x2_location": imgX,
-      "y2_location": imgY
+      "x2_location": cursor.imgX,
+      "y2_location": cursor.imgY
     };
   }
 
@@ -564,8 +564,8 @@ class Mode {
       "frame_2": current_frame,
       "x1_location": storedClickX,
       "y1_location": storedClickY,
-      "x2_location": imgX,
-      "y2_location": imgY
+      "x2_location": cursor.imgX,
+      "y2_location": cursor.imgY
     };
   }
 
@@ -640,9 +640,6 @@ let rawHeight;
 const padding = 5;
 
 // mouse position variables
-// coordinates in original image (used for actions, labels, etc)
-let imgX;
-let imgY;
 // in original image coords
 let storedClickX;
 let storedClickY;
@@ -715,7 +712,7 @@ function changeZoom(dzoom) {
 function label_under_mouse() {
   let new_label;
   if (cursor.inRange()) {
-    new_label = Math.abs(seg_array[imgY][imgX]); //check array value at mouse location
+    new_label = Math.abs(seg_array[cursor.imgY][cursor.imgX]); //check array value at mouse location
   } else {
     new_label = 0;
   }
@@ -1010,11 +1007,11 @@ function handle_mousedown(evt) {
       // begin drawing
       if (edit_mode) {
         if (!brush.show) {
-          brush.threshX = imgX;
-          brush.threshY = imgY;
+          brush.threshX = cursor.imgX;
+          brush.threshY = cursor.imgY;
         } else if (mode.kind !== Modes.prompt) {
           // not if turning on conv brush
-          cursor.trace.push([imgY, imgX]);
+          cursor.trace.push([cursor.imgY, cursor.imgX]);
         }
       }
     }
@@ -1025,7 +1022,7 @@ function helper_brush_draw() {
   if (cursor.pressed && !spacedown) {
     // update mouse_trace, but not if turning on conv brush
     if (mode.kind !== Modes.prompt) {
-      cursor.trace.push([imgY, imgX]);
+      cursor.trace.push([cursor.imgY, cursor.imgX]);
     }
   } else {
     brush.clearView();
@@ -1035,26 +1032,15 @@ function helper_brush_draw() {
 
 // input will typically be evt.offsetX, evt.offsetY (mouse events)
 function updateMousePos(x, y) {
+  const oldImgX = cursor.imgX;
+  const oldImgY = cursor.imgY;
 
-  // get old imgX and imgY
-  // run cursor.updatePos(x, y, viewer)
-  // check new imgX and imgY
-  // update brush if these have changed
+  cursor.updatePos(x, y, padding, viewer);
 
-  // store raw mouse position, in case of pan without mouse movement
-  cursor.rawX = x;
-  cursor.rawY = y;
-
-  // convert to viewing pane position, to check whether to access label underneath
-  cursor.canvasPosX = x - padding;
-  cursor.canvasPosY = y - padding;
-
-  // convert to image indices, to use for actions and getting label
-  if (cursor.inRange()) {
-    imgX = Math.floor((cursor.canvasPosX * 100 / (viewer.scale * viewer.zoom) + viewer.sx));
-    imgY = Math.floor((cursor.canvasPosY * 100 / (viewer.scale * viewer.zoom) + viewer.sy));
-    brush.x = imgX;
-    brush.y = imgY;
+  // if cursor has actually changed location in image
+  if (oldImgX !== cursor.imgX || oldImgY !== cursor.imgY) {
+    brush.x = cursor.imgX;
+    brush.y = cursor.imgY;
     // update brush preview
     if (edit_mode) {
       // brush's canvas is keeping track of the brush

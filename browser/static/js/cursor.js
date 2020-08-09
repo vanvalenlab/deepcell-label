@@ -14,6 +14,9 @@ class CalibanCursor {
     // adjusted for padding
     this.canvasPosX = -5;
     this.canvasPosY = -5;
+    // coordinates in original image (used for actions, labels, etc)
+    this.imgX;
+    this.imgY;
   }
 
   // check if the mouse position in canvas matches to a displayed part of image
@@ -23,6 +26,22 @@ class CalibanCursor {
       return true;
     } else {
       return false;
+    }
+  }
+
+  updatePos(x, y, padding, viewer) {
+    // store raw mouse position, in case of pan without mouse movement
+    this.rawX = x;
+    this.rawY = y;
+
+    // convert to viewing pane position, to check whether to access label underneath
+    this.canvasPosX = x - padding;
+    this.canvasPosY = y - padding;
+
+    // convert to image indices, to use for actions and getting label
+    if (this.inRange()) {
+      this.imgX = Math.floor((this.canvasPosX * 100 / (viewer.scale * viewer.zoom) + viewer.sx));
+      this.imgY = Math.floor((this.canvasPosY * 100 / (viewer.scale * viewer.zoom) + viewer.sy));
     }
   }
 
