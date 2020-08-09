@@ -412,6 +412,7 @@ class Mode {
 
   handle_draw() {
     action("handle_draw", {
+      // TODO: getter for cursor.trace that stringifies it
       "trace": JSON.stringify(cursor.trace), // stringify array so it doesn't get messed up
       "target_value": brush.target, // value that we're overwriting
       "brush_value": brush.value, // we don't update caliban with edit_value, etc each time they change
@@ -419,6 +420,7 @@ class Mode {
       "erase": (brush.erase && !brush.conv),
       "frame": current_frame
     });
+    // TODO: cursor.clearTrace ?
     cursor.trace = [];
     if (this.kind !== Modes.drawing) {
       this.clear();
@@ -467,6 +469,7 @@ class Mode {
     return currentValue;
   }
 
+  // TODO: cursor.click(evt, mode) ?
   handle_mode_none_click(evt) {
     if (evt.altKey) {
       // alt+click
@@ -536,6 +539,8 @@ class Mode {
     }
   }
 
+  // TODO: storedClick1 and storedClick2? not a huge fan of the
+  // current way click locations get stored in mode object
   handle_mode_single_click(evt) {
     this.kind = Modes.multiple;
 
@@ -569,6 +574,9 @@ class Mode {
     };
   }
 
+  // TODO: lots of objects being used here, would be great to disentangle
+  // or at least move out of Mode class--should act on mode object and others
+  // but not sure this makes sense as a Mode method
   click(evt) {
     if (this.kind === Modes.prompt) {
       // hole fill or color picking options
@@ -637,6 +645,10 @@ let rgb;
 let rawWidth;
 let rawHeight;
 
+// TODO: move dimensions into cursor or viewer object?
+// raw image dimensions * screen scaling
+var dimensions;
+
 const padding = 5;
 
 var seg_array; // declare here so it is global var
@@ -650,7 +662,6 @@ var current_highlight;
 var max_frames;
 var feature_max;
 var channelMax;
-var dimensions;
 var tracks;
 let maxLabelsMap = new Map();
 var mode = new Mode(Modes.none, {});
@@ -792,6 +803,10 @@ function render_info_display() {
   $('#mode').html(mode.render());
 }
 
+// TODO for ctx.drawImage calls--write a wrapper for these?
+// they all use the same viewer attributes (and padding and dimension args)
+// to use all optional args for ctx.drawImage call
+// possibly a CalibanCanvas class that has ctx, padding, dimensions attributes
 function render_edit_image(ctx) {
   if (rgb && rendering_raw) {
     render_raw_image(ctx);
@@ -846,6 +861,7 @@ function render_annotation_image(ctx) {
 function render_image_display() {
   let ctx = $('#canvas').get(0).getContext('2d');
   ctx.imageSmoothingEnabled = false;
+  // TODO: is there a corresponding ctx.restore to match this ctx.save?
   ctx.save();
   ctx.clearRect(0, 0, 2 * padding + dimensions[0], 2 * padding + dimensions[1]);
 
@@ -896,6 +912,8 @@ function load_file(file) {
 
       viewer = new CanvasView(width=rawWidth, height=rawHeight);
 
+      // TODO: does this need to be in load_file?
+      // we could probably call it right after load_file to decouple them better
       setCanvasDimensions(rawDimensions);
 
       tracks = payload.tracks; // tracks payload is dict

@@ -1,3 +1,7 @@
+// NOTE: cursor and viewer are more abstract than the brush,
+// how they should relate to each other is an open question.
+// eg, should scale/dimensions be attributes only of viewer? etc
+
 // cursor to handle mouse movement and attributes
 class CalibanCursor {
   constructor(width, height, scale) {
