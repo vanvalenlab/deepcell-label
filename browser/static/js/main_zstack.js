@@ -476,33 +476,33 @@ class Mode {
       this.kind = Modes.question;
       this.action = "flood_contiguous";
       this.info = {
-        "label": current_label,
+        "label": cursor.label,
         "frame": current_frame,
         "x_location": cursor.imgX,
         "y_location": cursor.imgY
       };
       this.prompt = "SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL";
-      this.highlighted_cell_one = current_label;
+      this.highlighted_cell_one = cursor.label;
     } else if (evt.shiftKey) {
       // shift+click
       this.kind = Modes.question;
       this.action = "trim_pixels";
       this.info = {
-        "label": current_label,
+        "label": cursor.label,
         "frame": current_frame,
         "x_location": cursor.imgX,
         "y_location": cursor.imgY
       };
       this.prompt = "SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL";
-      this.highlighted_cell_one = current_label;
+      this.highlighted_cell_one = cursor.label;
     } else {
       // normal click
       this.kind = Modes.single;
       this.info = {
-        "label": current_label,
+        "label": cursor.label,
         "frame": current_frame
       };
-      this.highlighted_cell_one = current_label;
+      this.highlighted_cell_one = cursor.label;
       this.highlighted_cell_two = -1;
       cursor.storedClickX = cursor.imgX;
       cursor.storedClickY = cursor.imgY;
@@ -510,7 +510,7 @@ class Mode {
   }
 
   handle_mode_prompt_click(evt) {
-    if (this.action === "fill_hole" && current_label === 0) {
+    if (this.action === "fill_hole" && cursor.label === 0) {
       this.info = {
         "label": this.info.label,
         "frame": current_frame,
@@ -520,9 +520,9 @@ class Mode {
       action(this.action, this.info);
       this.clear();
     } else if (this.action === "pick_color"
-          && current_label !== 0
-          && current_label !== brush.target) {
-      brush.value = current_label;
+          && cursor.label !== 0
+          && cursor.label !== brush.target) {
+      brush.value = cursor.label;
       if (brush.target !== 0) {
         this.prompt = "Now drawing over label " + brush.target + " with label " + brush.value
             + ". Use ESC to leave this mode.";
@@ -531,8 +531,8 @@ class Mode {
       } else {
         this.clear();
       }
-    } else if (this.action === "pick_target" && current_label !== 0) {
-      brush.target = current_label;
+    } else if (this.action === "pick_target" && cursor.label !== 0) {
+      brush.target = cursor.label;
       this.action = "pick_color";
       this.prompt = "Click on the label you want to draw with, or press 'n' to draw with an unused label.";
       render_info_display();
@@ -545,11 +545,11 @@ class Mode {
     this.kind = Modes.multiple;
 
     this.highlighted_cell_one = this.info.label;
-    this.highlighted_cell_two = current_label;
+    this.highlighted_cell_two = cursor.label;
 
     this.info = {
       "label_1": this.info.label,
-      "label_2": current_label,
+      "label_2": cursor.label,
       "frame_1": this.info.frame,
       "frame_2": current_frame,
       "x1_location": cursor.storedClickX,
@@ -561,10 +561,10 @@ class Mode {
 
   handle_mode_multiple_click(evt) {
     this.highlighted_cell_one = this.info.label_1;
-    this.highlighted_cell_two = current_label;
+    this.highlighted_cell_two = cursor.label;
     this.info = {
       "label_1": this.info.label_1,
-      "label_2": current_label,
+      "label_2": cursor.label,
       "frame_1": this.info.frame_1,
       "frame_2": current_frame,
       "x1_location": cursor.storedClickX,
@@ -581,7 +581,7 @@ class Mode {
     if (this.kind === Modes.prompt) {
       // hole fill or color picking options
       this.handle_mode_prompt_click(evt);
-    } else if (current_label === 0) {
+    } else if (cursor.label === 0) {
       // same as ESC
       this.clear();
       return; //not sure why we return here
@@ -659,7 +659,6 @@ var rendering_raw = false;
 let display_labels;
 
 var current_frame = 0;
-var current_label = 0;
 var current_highlight;
 var max_frames;
 var feature_max;
@@ -771,13 +770,9 @@ function render_edit_info() {
 }
 
 function render_cell_info() {
-  // TODO: could also change to add seg_array as attribute of cursor object
-  // so that current_label becomes cursor.label and is updated on mouse movement,
-  // cursor.seg_array updated on new seg_array being loaded
-  current_label = cursor.getCurrentLabel();
-  if (current_label !== 0) {
-    $('#label').html(current_label);
-    let track = tracks[mode.feature][current_label.toString()];
+  if (cursor.label !== 0) {
+    $('#label').html(cursor.label);
+    let track = tracks[mode.feature][cursor.label.toString()];
     $('#slices').text(track.slices.toString());
   } else {
     $('#label').html("");

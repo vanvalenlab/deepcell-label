@@ -25,8 +25,23 @@ class CalibanCursor {
     this.storedClickX;
     this.storedClickY;
 
+    this.label = 0;
     // store as part of object to be able to get current label
-    this.segArray;
+    this._segArray;
+  }
+
+  get segArray() {
+    return this._segArray;
+  }
+
+  set segArray(newSegArray) {
+    this._segArray = newSegArray;
+    if (this.inRange()) {
+      this.label = Math.abs(this.segArray[this.imgY][this.imgX]);
+    } else {
+      this.label = 0;
+    }
+
   }
 
   // check if the mouse position in canvas matches to a displayed part of image
@@ -52,17 +67,10 @@ class CalibanCursor {
     if (this.inRange()) {
       this.imgX = Math.floor((this.canvasPosX * 100 / (viewer.scale * viewer.zoom) + viewer.sx));
       this.imgY = Math.floor((this.canvasPosY * 100 / (viewer.scale * viewer.zoom) + viewer.sy));
-    }
-  }
-
-  getCurrentLabel() {
-    let label;
-    if (this.inRange()) {
-      label = Math.abs(this.segArray[this.imgY][this.imgX]);
+      this.label = Math.abs(this.segArray[this.imgY][this.imgX]);
     } else {
-      label = 0;
+      this.label = 0;
     }
-    return label;
   }
 
 }
