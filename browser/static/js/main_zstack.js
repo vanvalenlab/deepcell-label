@@ -708,17 +708,6 @@ function changeZoom(dzoom) {
   render_image_display();
 }
 
-
-function label_under_mouse() {
-  let new_label;
-  if (cursor.inRange()) {
-    new_label = Math.abs(seg_array[cursor.imgY][cursor.imgX]); //check array value at mouse location
-  } else {
-    new_label = 0;
-  }
-  return new_label;
-}
-
 function render_highlight_info() {
   if (current_highlight) {
     $('#highlight').html("ON");
@@ -774,7 +763,10 @@ function render_edit_info() {
 }
 
 function render_cell_info() {
-  current_label = label_under_mouse();
+  // TODO: could also change to add seg_array as attribute of cursor object
+  // so that current_label becomes cursor.label and is updated on mouse movement,
+  // cursor.seg_array updated on new seg_array being loaded
+  current_label = cursor.getCurrentLabel(seg_array);
   if (current_label !== 0) {
     $('#label').html(current_label);
     let track = tracks[mode.feature][current_label.toString()];

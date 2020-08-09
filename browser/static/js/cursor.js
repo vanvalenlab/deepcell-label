@@ -45,6 +45,16 @@ class CalibanCursor {
     }
   }
 
+  getCurrentLabel(segArray) {
+    let label;
+    if (this.inRange()) {
+      label = Math.abs(segArray[this.imgY][this.imgX]);
+    } else {
+      label = 0;
+    }
+    return label;
+  }
+
 }
 
 // handle updating zooming and panning attributes
