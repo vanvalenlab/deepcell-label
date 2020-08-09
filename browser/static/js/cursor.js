@@ -24,6 +24,9 @@ class CalibanCursor {
     // what imgX and imgY were upon most recent click
     this.storedClickX;
     this.storedClickY;
+
+    // store as part of object to be able to get current label
+    this.segArray;
   }
 
   // check if the mouse position in canvas matches to a displayed part of image
@@ -52,10 +55,10 @@ class CalibanCursor {
     }
   }
 
-  getCurrentLabel(segArray) {
+  getCurrentLabel() {
     let label;
     if (this.inRange()) {
-      label = Math.abs(segArray[this.imgY][this.imgX]);
+      label = Math.abs(this.segArray[this.imgY][this.imgX]);
     } else {
       label = 0;
     }

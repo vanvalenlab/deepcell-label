@@ -651,6 +651,8 @@ var dimensions;
 
 const padding = 5;
 
+// TODO: this could go into adjuster and cursor classes
+// upon update, not needed by any other objects
 var seg_array; // declare here so it is global var
 
 var rendering_raw = false;
@@ -772,7 +774,7 @@ function render_cell_info() {
   // TODO: could also change to add seg_array as attribute of cursor object
   // so that current_label becomes cursor.label and is updated on mouse movement,
   // cursor.seg_array updated on new seg_array being loaded
-  current_label = cursor.getCurrentLabel(seg_array);
+  current_label = cursor.getCurrentLabel();
   if (current_label !== 0) {
     $('#label').html(current_label);
     let track = tracks[mode.feature][current_label.toString()];
@@ -890,6 +892,7 @@ function fetch_and_render_frame() {
       // load new value of seg_array
       // array of arrays, contains annotation data for frame
       seg_array = payload.seg_arr;
+      cursor.segArray = seg_array;
       adjuster.segImage.src = payload.segmented;
       adjuster.rawImage.src = payload.raw;
     },
@@ -1143,6 +1146,7 @@ function action(action, info, frame = current_frame) {
         // array of arrays, contains annotation data for frame
         if (payload.imgs.hasOwnProperty('seg_arr')) {
           seg_array = payload.imgs.seg_arr;
+          cursor.segArray = seg_array;
         }
 
         if (payload.imgs.hasOwnProperty('segmented')) {
