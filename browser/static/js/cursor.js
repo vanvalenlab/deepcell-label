@@ -17,6 +17,9 @@ class CalibanCursor {
     // coordinates in original image (used for actions, labels, etc)
     this.imgX;
     this.imgY;
+    // what imgX and imgY were upon most recent click
+    this.storedClickX;
+    this.storedClickY;
   }
 
   // check if the mouse position in canvas matches to a displayed part of image

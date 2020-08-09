@@ -501,8 +501,8 @@ class Mode {
       };
       this.highlighted_cell_one = current_label;
       this.highlighted_cell_two = -1;
-      storedClickX = cursor.imgX;
-      storedClickY = cursor.imgY;
+      cursor.storedClickX = cursor.imgX;
+      cursor.storedClickY = cursor.imgY;
     }
   }
 
@@ -547,8 +547,8 @@ class Mode {
       "label_2": current_label,
       "frame_1": this.info.frame,
       "frame_2": current_frame,
-      "x1_location": storedClickX,
-      "y1_location": storedClickY,
+      "x1_location": cursor.storedClickX,
+      "y1_location": cursor.storedClickY,
       "x2_location": cursor.imgX,
       "y2_location": cursor.imgY
     };
@@ -562,8 +562,8 @@ class Mode {
       "label_2": current_label,
       "frame_1": this.info.frame_1,
       "frame_2": current_frame,
-      "x1_location": storedClickX,
-      "y1_location": storedClickY,
+      "x1_location": cursor.storedClickX,
+      "y1_location": cursor.storedClickY,
       "x2_location": cursor.imgX,
       "y2_location": cursor.imgY
     };
@@ -638,11 +638,6 @@ let rawWidth;
 let rawHeight;
 
 const padding = 5;
-
-// mouse position variables
-// in original image coords
-let storedClickX;
-let storedClickY;
 
 var seg_array; // declare here so it is global var
 
