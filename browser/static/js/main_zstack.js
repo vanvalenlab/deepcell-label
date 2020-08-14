@@ -853,7 +853,7 @@ function fetch_and_render_frame() {
       // load new value of seg_array
       // array of arrays, contains annotation data for frame
       seg_array = payload.seg_arr;
-      cursor.segArray = seg_array;
+      viewer.segArray = seg_array;
       adjuster.segImage.src = payload.segmented;
       adjuster.rawImage.src = payload.raw;
     },
@@ -938,8 +938,8 @@ function handle_scroll(evt) {
 // handle pressing mouse button (treats this as the beginning
 // of click&drag, since clicks are handled by Mode.click)
 function handle_mousedown(evt) {
+  viewer.toggleIsPressed();
   // TODO: refactor "mousedown + mousemove" into ondrag?
-  cursor.pressed = true;
   if (!spacedown) {
     if (mode.kind !== Modes.prompt) {
       // begin drawing
@@ -1010,7 +1010,7 @@ function handle_mousemove(evt) {
 
 // handles end of click&drag (different from click())
 function handle_mouseup() {
-  this.viwer.isPressed = false;
+  viewer.toggleIsPressed();
   if (!spacedown) {
     if (mode.kind !== Modes.prompt) {
       if (edit_mode) {
