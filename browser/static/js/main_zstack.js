@@ -119,8 +119,7 @@ class Mode {
       // set edit value to something unused
       brush.value = maxLabelsMap.get(this.feature) + 1;
       if (this.kind === Modes.prompt && brush.conv) {
-        this.prompt = "Now drawing over label " + brush.target + " with label " + brush.value
-            + ". Use ESC to leave this mode.";
+        this.prompt = `Now drawing over label ${brush.target} with label ${brush.value}. Use ESC to leave this mode.`;
         this.kind = Modes.drawing;
       }
       adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
@@ -147,7 +146,7 @@ class Mode {
         action('change_feature', this.info);
         this.clear();
       }
-    } else if (key === "F") {
+    } else if (key === 'F') {
       // cycle backward one feature, if applicable
       if (feature_max > 1) {
         this.feature = this.decrement_value(this.feature, 0, feature_max - 1);
@@ -643,7 +642,7 @@ class Mode {
   }
 }
 
-var Modes = Object.freeze({
+const Modes = Object.freeze({
   none: 1,
   single: 2,
   multiple: 3,
@@ -652,6 +651,10 @@ var Modes = Object.freeze({
   prompt: 6,
   drawing: 7
 });
+
+const padding = 5;
+
+const maxLabelsMap = new Map();
 
 let rgb;
 
@@ -663,14 +666,12 @@ let rawHeight;
 // raw image dimensions * screen scaling
 var dimensions;
 
-const padding = 5;
-
 // TODO: this could go into adjuster and cursor classes
 // upon update, not needed by any other objects
 var seg_array; // declare here so it is global var
 
 var rendering_raw = false;
-let display_labels;
+var display_labels;
 
 var current_frame = 0;
 var current_highlight;
@@ -678,12 +679,9 @@ var max_frames;
 var feature_max;
 var channelMax;
 var tracks;
-let maxLabelsMap = new Map();
 var mode = new Mode(Modes.none, {});
-let edit_mode;
+var edit_mode;
 var answer = '(SPACE=YES / ESC=NO)';
-let spacedown = false;
-var tooltype = 'draw';
 var project_id;
 
 var brush;
