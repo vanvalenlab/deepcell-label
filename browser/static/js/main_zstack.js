@@ -861,42 +861,11 @@ function fetch_and_render_frame() {
   });
 }
 
-function load_file(file) {
+function loadFile(file, rgb = false, cb) {
   $.ajax({
     type: 'POST',
-    url: `load/${file}?&rgb=${settings.rgb}`,
-    success: function (payload) {
-      max_frames = payload.max_frames;
-      feature_max = payload.feature_max;
-      channelMax = payload.channel_max;
-      rawDimensions = payload.dimensions;
-
-      rawWidth = rawDimensions[0];
-      rawHeight = rawDimensions[1];
-
-      viewer = new CanvasView(width=rawWidth, height=rawHeight);
-
-      // TODO: does this need to be in load_file?
-      // we could probably call it right after load_file to decouple them better
-      setCanvasDimensions(rawDimensions);
-
-      tracks = payload.tracks; // tracks payload is dict
-
-      // for each feature, get list of cell labels that are in that feature
-      // (each is a key in that dict), cast to numbers, then get the maximum
-      // value from each array and store it in a map
-      for (let i = 0; i < Object.keys(tracks).length; i++){
-        let key = Object.keys(tracks)[i]; // the keys are strings
-        if (Object.keys(tracks[key]).length > 0) {
-          // use i as key in this map because it is an int, mode.feature is also int
-          maxLabelsMap.set(i, Math.max(... Object.keys(tracks[key]).map(Number)));
-        } else {
-          // if no labels in feature, explicitly set max label to 0
-          maxLabelsMap.set(i, 0);
-        }
-      }
-      project_id = payload.project_id;
-    },
+    url: `load/${file}?&rgb=${rgb}`,
+    success: cb,
     async: false
   });
 }
@@ -1144,26 +1113,19 @@ function action(action, info, frame = current_frame) {
   });
 }
 
-function start_caliban(filename) {
-  if (settings.pixel_only && !settings.label_only) {
-    edit_mode = true;
-  } else {
-    edit_mode = false;
-  }
+function startCaliban(filename, settings) {
   rgb = settings.rgb;
-  if (rgb) {
-    current_highlight = true;
-    display_labels = false;
-  } else {
-    current_highlight = false;
-    display_labels = true;
-  }
+  current_highlight = settings.rgb;
+  display_labels = !settings.rgb;
+  edit_mode = (settings.pixel_only && !settings.label_only);
+
   // disable scrolling from scrolling around on page (it should just control brightness)
   document.addEventListener('wheel', function(event) {
     event.preventDefault();
-  }, {passive: false});
+  }, { passive: false });
+
   // disable space and up/down keys from moving around on page
-  $(document).on('keydown', function(event) {
+  document.addEventListener('keydown', (event) => {
     if (event.key === ' ') {
       event.preventDefault();
     } else if (event.key === 'ArrowUp') {
@@ -1173,32 +1135,58 @@ function start_caliban(filename) {
     }
   });
 
-  // resize the canvas every time the window is resized
-  $(window).resize(function () {
-    waitForFinalEvent(function() {
-      mode.clear();
-      setCanvasDimensions(rawDimensions);
-      cursor.scale = viewer.scale;
-      brush.refreshView();
-    }, 500, 'canvasResize');
+  document.addEventListener('mouseup', handleMouseup);
+
+  loadFile(filename, (payload) => {
+    max_frames = payload.max_frames;
+    feature_max = payload.feature_max;
+    channelMax = payload.channel_max;
+    rawDimensions = payload.dimensions;
+    project_id = payload.project_id;
+
+    rawWidth = payload.dimensions[0];
+    rawHeight = payload.dimensions[1];
+
+    viewer = new CalibanCanvas(rawWidth, rawHeight, 1, padding);
+
+    document.addEventListener('keydown', (e) => viewer.toggleIsSpacedown());
+    document.addEventListener('keyup', (e) => viewer.toggleIsSpacedown());
+
+    setCanvasDimensions(payload.dimensions);
+
+    tracks = payload.tracks; // tracks payload is dict
+
+    // for each feature, get list of cell labels that are in that feature
+    // (each is a key in that dict), cast to numbers, then get the maximum
+    // value from each array and store it in a map
+    for (let i = 0; i < Object.keys(tracks).length; i++) {
+      const key = Object.keys(tracks)[i]; // the keys are strings
+      if (Object.keys(tracks[key]).length > 0) {
+        // use i as key in this map because it is an int, mode.feature is also int
+        maxLabelsMap.set(i, Math.max(...Object.keys(tracks[key]).map(Number)));
+      } else {
+        // if no labels in feature, explicitly set max label to 0
+        maxLabelsMap.set(i, 0);
+      }
+    }
+
+    // define image onload cascade behavior, need rawHeight and rawWidth first
+    adjuster = new ImageAdjuster(rawWidth, rawHeight, rgb, channelMax);
+
+    brush = new Brush(rawHeight, rawWidth, padding);
+
+    adjuster.postCompImg.onload = render_image_display;
+
+    // resize the canvas every time the window is resized
+    window.addEventListener('resize', function() {
+      waitForFinalEvent(() => {
+        mode.clear();
+        setCanvasDimensions(payload.dimensions);
+        brush.refreshView();
+      }, 500, 'canvasResize');
+    });
+
+    prepare_canvas();
+    fetch_and_render_frame();
   });
-
-  document.addEventListener('mouseup', function() {
-    handle_mouseup();
-   });
-
-  load_file(filename);
-
-  cursor = new CalibanCursor(width=rawWidth, height=rawHeight, scale=viewer.scale);
-
-  // define image onload cascade behavior, need rawHeight and rawWidth first
-  adjuster = new ImageAdjuster(width=rawWidth, height=rawHeight,
-                               rgb=rgb, channelMax=channelMax);
-  brush = new Brush(height=rawHeight, width=rawWidth, pad=padding);
-
-  adjuster.postCompImg.onload = render_image_display;
-
-  prepare_canvas();
-  fetch_and_render_frame();
-
 }
