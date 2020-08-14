@@ -6,9 +6,8 @@ class Mode {
     this.highlighted_cell_two = -1;
     this.feature = 0;
     this._channel = 0;
-    this.action = "";
-    this.prompt = "";
-
+    this.action = '';
+    this.prompt = '';
   }
 
   get channel() {
@@ -31,8 +30,8 @@ class Mode {
         this._channel = num;
       }
       // get new channel image from server
-      this.info = {"channel": this._channel};
-      action("change_channel", this.info);
+      this.info = { channel: this._channel };
+      action('change_channel', this.info);
       this.clear();
       // get brightness/contrast vals for new channel
       adjuster.brightness = adjuster.brightnessMap.get(this._channel);
@@ -50,8 +49,8 @@ class Mode {
     brush.conv = false;
     brush.clearThresh();
 
-    this.action = "";
-    this.prompt = "";
+    this.action = '';
+    this.prompt = '';
     adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
   }
 
@@ -72,7 +71,7 @@ class Mode {
         current_frame = 0;
       }
       fetch_and_render_frame();
-    } else if (key === "Escape") {
+    } else if (key === 'Escape') {
       // deselect/cancel action/reset highlight
       mode.clear();
       // may want some things here that trigger on ESC but not clear()
@@ -100,12 +99,12 @@ class Mode {
   // keybinds that always apply in edit mode
   // (invert, change brush size)
   handle_universal_edit_keybind(key) {
-    if (key === "ArrowDown") {
+    if (key === 'ArrowDown') {
       // decrease brush size, minimum size 1
       brush.size -= 1;
       // redraw the frame with the updated brush preview
       render_image_display();
-    } else if (key === "ArrowUp") {
+    } else if (key === 'ArrowUp') {
       // increase brush size, diameter shouldn't be larger than the image
       brush.size += 1;
       // redraw the frame with the updated brush preview
@@ -130,69 +129,71 @@ class Mode {
 
   // keybinds that apply when in edit mode
   handle_edit_keybind(key) {
-    if (key === "e" && !settings.pixel_only) {
+    if (key === 'e' && !settings.pixel_only) {
       // toggle edit mode
       edit_mode = !edit_mode;
       adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
-    } else if (key === "c") {
+    } else if (key === 'c') {
       // cycle forward one channel, if applicable
       this.channel += 1;
-    } else if (key === "C") {
+    } else if (key === 'C') {
       // cycle backward one channel, if applicable
       this.channel -= 1;
-    } else if (key === "f") {
+    } else if (key === 'f') {
       // cycle forward one feature, if applicable
       if (feature_max > 1) {
-        this.feature = this.increment_value(this.feature, 0, feature_max -1);
-        this.info = {"feature": this.feature};
-        action("change_feature", this.info);
+        this.feature = this.increment_value(this.feature, 0, feature_max - 1);
+        this.info = { feature: this.feature };
+        action('change_feature', this.info);
         this.clear();
       }
     } else if (key === "F") {
       // cycle backward one feature, if applicable
       if (feature_max > 1) {
-        this.feature = this.decrement_value(this.feature, 0, feature_max -1);
-        this.info = {"feature": this.feature};
-        action("change_feature", this.info);
+        this.feature = this.decrement_value(this.feature, 0, feature_max - 1);
+        this.info = { feature: this.feature };
+        action('change_feature', this.info);
         this.clear();
       }
-    } else if (key === "]") {
+    } else if (key === ']') {
       // increase edit_value up to max label + 1 (guaranteed unused)
-      brush.value = Math.min(brush.value + 1,
-                             maxLabelsMap.get(this.feature) + 1);
+      brush.value = Math.min(
+        brush.value + 1,
+        maxLabelsMap.get(this.feature) + 1
+      );
       if (current_highlight) {
         adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       }
       render_info_display();
-    } else if (key === "[") {
+    } else if (key === '[') {
       // decrease edit_value, minimum 1
       brush.value -= 1;
       if (current_highlight) {
         adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       }
       render_info_display();
-    } else if (key === "x") {
+    } else if (key === 'x') {
       // turn eraser on and off
       brush.erase = !brush.erase;
       render_image_display();
     } else if (key === 'p') {
       // color picker
       this.kind = Modes.prompt;
-      this.action = "pick_color";
-      this.prompt = "Click on a label to change the brush value to that value.";
+      this.action = 'pick_color';
+      this.prompt = 'Click on a label to change the brush value to that value.';
       render_info_display();
     } else if (key === 'r') {
       // conversion brush
       this.kind = Modes.prompt;
-      this.action = "pick_target";
-      this.prompt = "First, click on the label you want to overwrite.";
+      this.action = 'pick_target';
+      this.prompt = 'First, click on the label you want to overwrite.';
       brush.conv = true;
       render_image_display();
     } else if (key === 't' && !rgb) {
       // prompt thresholding with bounding box
       this.kind = Modes.question;
-      this.action = "start_threshold";
-      this.prompt = "Click and drag to create a bounding box around the area you want to threshold";
+      this.action = 'start_threshold';
+      this.prompt = 'Click and drag to create a bounding box around the area you want to threshold.';
       brush.show = false;
       brush.clearView();
       render_image_display();
@@ -201,50 +202,56 @@ class Mode {
 
   // keybinds that apply in bulk mode, nothing selected
   handle_mode_none_keybind(key) {
-    if (key === "e" && !settings.label_only) {
+    if (key === 'e' && !settings.label_only) {
       // toggle edit mode
       edit_mode = !edit_mode;
       helper_brush_draw();
       adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
-    } else if (key === "c") {
+    } else if (key === 'c') {
       // cycle forward one channel, if applicable
       this.channel += 1;
-    } else if (key === "C") {
+    } else if (key === 'C') {
       // cycle backward one channel, if applicable
       this.channel -= 1;
-    } else if (key === "f") {
+    } else if (key === 'f') {
       // cycle forward one feature, if applicable
       if (feature_max > 1) {
-        this.feature = this.increment_value(this.feature, 0, feature_max -1);
-        this.info = {"feature": this.feature};
-        action("change_feature", this.info);
+        this.feature = this.increment_value(this.feature, 0, feature_max - 1);
+        this.info = { feature: this.feature };
+        action('change_feature', this.info);
         this.clear();
       }
-    } else if (key === "F") {
+    } else if (key === 'F') {
       // cycle backward one feature, if applicable
       if (feature_max > 1) {
-        this.feature = this.decrement_value(this.feature, 0, feature_max -1);
-        this.info = {"feature": this.feature};
-        action("change_feature", this.info);
+        this.feature = this.decrement_value(this.feature, 0, feature_max - 1);
+        this.info = { feature: this.feature };
+        action('change_feature', this.info);
         this.clear();
       }
-    } else if (key === "p" && !rgb) {
+    } else if (key === 'p' && !rgb) {
       //iou cell identity prediction
       this.kind = Modes.question;
-      this.action = "predict";
-      this.prompt = "Predict cell ids for zstack? / S=PREDICT THIS FRAME / SPACE=PREDICT ALL FRAMES / ESC=CANCEL PREDICTION";
+      this.action = 'predict';
+      this.prompt = 'Predict cell ids for zstack? / S=PREDICT THIS FRAME / SPACE=PREDICT ALL FRAMES / ESC=CANCEL PREDICTION';
       render_info_display();
-    } else if (key === "[" && this.highlighted_cell_one !== -1) {
+    } else if (key === '[' && this.highlighted_cell_one !== -1) {
       // cycle highlight to prev label
-      this.highlighted_cell_one = this.decrement_value(this.highlighted_cell_one,
-          1, maxLabelsMap.get(this.feature));
+      this.highlighted_cell_one = this.decrement_value(
+        this.highlighted_cell_one,
+        1,
+        maxLabelsMap.get(this.feature)
+      );
       if (current_highlight) {
         adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       }
     } else if (key === "]" && this.highlighted_cell_one !== -1) {
       // cycle highlight to next label
-      this.highlighted_cell_one = this.increment_value(this.highlighted_cell_one,
-          1, maxLabelsMap.get(this.feature));
+      this.highlighted_cell_one = this.increment_value(
+        this.highlighted_cell_one,
+        1,
+        maxLabelsMap.get(this.feature)
+      );
       if (current_highlight) {
         adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       }
@@ -253,32 +260,35 @@ class Mode {
 
   // keybinds that apply in bulk mode, one selected
   handle_mode_single_keybind(key) {
-    if (key === "f" && !rgb) {
+    if (key === 'f' && !rgb) {
       //hole fill
       this.info = {
-        "label": this.info.label,
-        "frame": current_frame
+        label: this.info.label,
+        frame: current_frame
       };
       this.kind = Modes.prompt;
       this.action = "fill_hole";
-      this.prompt = "Select hole to fill in cell " + this.info.label;
+      this.prompt = `Select hole to fill in cell ${this.info.label}`;
       render_info_display();
     } else if (!rgb && key === "c") {
       // create new
       this.kind = Modes.question;
-      this.action = "create_new";
-      this.prompt = "CREATE NEW(S=SINGLE FRAME / SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)";
+      this.action = 'create_new';
+      this.prompt = 'CREATE NEW(S=SINGLE FRAME / SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)';
       render_info_display();
-    } else if (key === "x") {
+    } else if (key === 'x') {
       // delete label from frame
       this.kind = Modes.question;
-      this.action = "delete_mask";
-      this.prompt = "delete label " + this.info.label + " in frame " + this.info.frame + "? " + answer;
+      this.action = 'delete_mask';
+      this.prompt = `delete label ${this.info.label} in frame ${this.info.frame}? ${answer}`;
       render_info_display();
-    } else if (key === "[") {
+    } else if (key === '[') {
       // cycle highlight to prev label
-      this.highlighted_cell_one = this.decrement_value(this.highlighted_cell_one,
-          1, maxLabelsMap.get(this.feature));
+      this.highlighted_cell_one = this.decrement_value(
+        this.highlighted_cell_one,
+        1,
+        maxLabelsMap.get(this.feature)
+      );
       // clear info but show new highlighted cell
       let temp_highlight = this.highlighted_cell_one;
       this.clear();
@@ -286,10 +296,13 @@ class Mode {
       if (current_highlight) {
         adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       }
-    } else if (key === "]") {
+    } else if (key === ']') {
       // cycle highlight to next label
-      this.highlighted_cell_one = this.increment_value(this.highlighted_cell_one,
-          1, maxLabelsMap.get(this.feature));
+      this.highlighted_cell_one = this.increment_value(
+        this.highlighted_cell_one,
+        1,
+        maxLabelsMap.get(this.feature)
+      );
       // clear info but show new highlighted cell
       let temp_highlight = this.highlighted_cell_one;
       this.clear();
@@ -302,54 +315,56 @@ class Mode {
 
   // keybinds that apply in bulk mode, two selected
   handle_mode_multiple_keybind(key) {
-    if (key === "r") {
+    if (key === 'r') {
       // replace
       this.kind = Modes.question;
-      this.action = "replace";
+      this.action = 'replace';
       this.prompt = ("Replace " + this.info.label_2 + " with " + this.info.label_1 +
         "? // SPACE = Replace in all frames / S = Replace in this frame only / ESC = Cancel replace");
       render_info_display();
-    } else if (!rgb && key === "s") {
+    } else if (!rgb && key === 's') {
       // swap
       this.kind = Modes.question;
-      this.action = "swap_cells";
-      this.prompt = "SPACE = SWAP IN ALL FRAMES / S = SWAP IN THIS FRAME ONLY / ESC = CANCEL SWAP";
+      this.action = 'swap_cells';
+      this.prompt = 'SPACE = SWAP IN ALL FRAMES / S = SWAP IN THIS FRAME ONLY / ESC = CANCEL SWAP';
       render_info_display();
-    } else if (key === "w" && !rgb) {
+    } else if (key === 'w' && !rgb) {
       // watershed
       this.kind = Modes.question;
-      this.action = "watershed";
-      this.prompt = "Perform watershed to split " + this.info.label_1 + "? " + answer;
+      this.action = 'watershed';
+      this.prompt = `Perform watershed to split ${this.info.label_1}? ${answer}`;
       render_info_display();
     }
   }
 
   // keybinds that apply in bulk mode, answering question/prompt
   handle_mode_question_keybind(key) {
-    if (key === " ") {
-      if (this.action === "flood_contiguous") {
-        action("flood_contiguous", this.info);
-      } else if (this.action === "trim_pixels") {
-        action("trim_pixels", this.info);
-      } else if (this.action === "create_new") {
-        action("new_cell_stack", this.info);
-      } else if (this.action === "delete_mask") {
-        action("delete_mask", this.info);
-      } else if (this.action === "predict") {
-        action("predict_zstack", this.info);
-      } else if (this.action === "replace") {
+    if (key === ' ') {
+      if (this.action === 'flood_contiguous') {
+        action(this.action, this.info);
+      } else if (this.action === 'trim_pixels') {
+        action(this.action, this.info);
+      } else if (this.action === 'create_new') {
+        action('new_cell_stack', this.info);
+      } else if (this.action === 'delete_mask') {
+        action(this.action, this.info);
+      } else if (this.action === 'predict') {
+        action('predict_zstack', this.info);
+      } else if (this.action === 'replace') {
         if (this.info.label_1 !== this.info.label_2) {
-          let send_info = {"label_1": this.info.label_1,
-                          "label_2": this.info.label_2};
-          action("replace", send_info);
+          action(this.action, {
+            label_1: this.info.label_1,
+            label_2: this.info.label_2
+          });
         }
-      } else if (this.action === "swap_cells") {
+      } else if (this.action === 'swap_cells') {
         if (this.info.label_1 !== this.info.label_2) {
-          let send_info = {"label_1": this.info.label_1,
-                          "label_2": this.info.label_2};
-          action("swap_all_frame", send_info);
+          action('swap_all_frame', {
+            label_1: this.info.label_1,
+            label_2: this.info.label_2
+          });
         }
-      } else if (this.action === "watershed") {
+      } else if (this.action === 'watershed') {
         if (this.info.label_1 === this.info.label_2 &&
             this.info.frame_1 === this.info.frame_2) {
           this.info.frame = this.info.frame_1;
@@ -362,26 +377,28 @@ class Mode {
         }
       }
       this.clear();
-    } else if (key === "s") {
-      if(this.action === "create_new") {
-        action("new_single_cell", this.info);
-      } else if (this.action === "predict") {
-        action("predict_single", {"frame": current_frame});
-      } else if (this.action === "replace") {
+    } else if (key === 's') {
+      if (this.action === 'create_new') {
+        action('new_single_cell', this.info);
+      } else if (this.action === 'predict') {
+        action('predict_single', { frame: current_frame });
+      } else if (this.action === 'replace') {
         if (this.info.label_1 !== this.info.label_2 &&
             this.info.frame_1 === this.info.frame_2) {
-          let send_info = {"label_1": this.info.label_1,
-                            "label_2": this.info.label_2,
-                            "frame": this.info.frame_1};
-          action("replace_single", send_info);
+          action('replace_single', {
+            label_1: this.info.label_1,
+            label_2: this.info.label_2,
+            frame: this.info.frame_1
+          });
         }
-      } else if (this.action === "swap_cells") {
+      } else if (this.action === 'swap_cells') {
         if (this.info.label_1 !== this.info.label_2 &&
             this.info.frame_1 === this.info.frame_2) {
-          let send_info = {"label_1": this.info.label_1,
-                            "label_2": this.info.label_2,
-                            "frame": this.info.frame_1};
-          action("swap_single_frame", send_info);
+          action('swap_single_frame', {
+            label_1: this.info.label_1,
+            label_2: this.info.label_2,
+            frame: this.info.frame_1
+          });
         }
       }
       this.clear();
@@ -411,38 +428,37 @@ class Mode {
   }
 
   handle_draw() {
-    action("handle_draw", {
-      // TODO: getter for cursor.trace that stringifies it
-      "trace": JSON.stringify(cursor.trace), // stringify array so it doesn't get messed up
-      "target_value": brush.target, // value that we're overwriting
-      "brush_value": brush.value, // we don't update caliban with edit_value, etc each time they change
-      "brush_size": brush.size, // so we need to pass them in as args
-      "erase": (brush.erase && !brush.conv),
-      "frame": current_frame
+    action('handle_draw', {
+      trace: JSON.stringify(viewer.trace), // stringify array so it doesn't get messed up
+      target_value: brush.target, // value that we're overwriting
+      brush_value: brush.value, // we don't update caliban with edit_value, etc each time they change
+      brush_size: brush.size, // so we need to pass them in as args
+      erase: (brush.erase && !brush.conv),
+      frame: current_frame
     });
-    // TODO: cursor.clearTrace ?
-    cursor.trace = [];
+    // TODO: viewer.clearTrace ?
+    viewer.trace = [];
     if (this.kind !== Modes.drawing) {
       this.clear();
     }
   }
 
   handle_threshold() {
-    let threshold_start_y = brush.threshY;
-    let threshold_start_x = brush.threshX;
-    let threshold_end_x = cursor.imgX;
-    let threshold_end_y = cursor.imgY;
+    const threshold_start_y = brush.threshY;
+    const threshold_start_x = brush.threshX;
+    const threshold_end_x = viewer.imgX;
+    const threshold_end_y = viewer.imgY;
 
     if (threshold_start_y !== threshold_end_y &&
         threshold_start_x !== threshold_end_x) {
 
-      action("threshold", {
-        "y1": threshold_start_y,
-        "x1": threshold_start_x,
-        "y2": threshold_end_y,
-        "x2": threshold_end_x,
-        "frame": current_frame,
-        "label": maxLabelsMap.get(this.feature) + 1
+      action('threshold', {
+        y1: threshold_start_y,
+        x1: threshold_start_x,
+        y2: threshold_end_y,
+        x2: threshold_end_x,
+        frame: current_frame,
+        label: maxLabelsMap.get(this.feature) + 1
       });
     }
     this.clear();
@@ -469,72 +485,70 @@ class Mode {
     return currentValue;
   }
 
-  // TODO: cursor.click(evt, mode) ?
+  // TODO: viewer.click(evt, mode) ?
   handle_mode_none_click(evt) {
     if (evt.altKey) {
       // alt+click
       this.kind = Modes.question;
-      this.action = "flood_contiguous";
+      this.action = 'flood_contiguous';
       this.info = {
-        "label": cursor.label,
-        "frame": current_frame,
-        "x_location": cursor.imgX,
-        "y_location": cursor.imgY
+        label: viewer.label,
+        frame: current_frame,
+        x_location: viewer.imgX,
+        y_location: viewer.imgY
       };
-      this.prompt = "SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL";
-      this.highlighted_cell_one = cursor.label;
+      this.prompt = 'SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL';
+      this.highlighted_cell_one = viewer.label;
     } else if (evt.shiftKey) {
       // shift+click
       this.kind = Modes.question;
-      this.action = "trim_pixels";
+      this.action = 'trim_pixels';
       this.info = {
-        "label": cursor.label,
-        "frame": current_frame,
-        "x_location": cursor.imgX,
-        "y_location": cursor.imgY
+        label: viewer.label,
+        frame: current_frame,
+        x_location: viewer.imgX,
+        y_location: viewer.imgY
       };
-      this.prompt = "SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL";
-      this.highlighted_cell_one = cursor.label;
+      this.prompt = 'SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL';
+      this.highlighted_cell_one = viewer.label;
     } else {
       // normal click
       this.kind = Modes.single;
       this.info = {
-        "label": cursor.label,
-        "frame": current_frame
+        label: viewer.label,
+        frame: current_frame
       };
-      this.highlighted_cell_one = cursor.label;
+      this.highlighted_cell_one = viewer.label;
       this.highlighted_cell_two = -1;
-      cursor.storedClickX = cursor.imgX;
-      cursor.storedClickY = cursor.imgY;
+      viewer.storedClickX = viewer.imgX;
+      viewer.storedClickY = viewer.imgY;
     }
   }
 
   handle_mode_prompt_click(evt) {
-    if (this.action === "fill_hole" && cursor.label === 0) {
+    if (this.action === 'fill_hole' && viewer.label === 0) {
       this.info = {
-        "label": this.info.label,
-        "frame": current_frame,
-        "x_location": cursor.imgX,
-        "y_location": cursor.imgY
+        label: this.info.label,
+        frame: current_frame,
+        x_location: viewer.imgX,
+        y_location: viewer.imgY
       };
       action(this.action, this.info);
       this.clear();
-    } else if (this.action === "pick_color"
-          && cursor.label !== 0
-          && cursor.label !== brush.target) {
-      brush.value = cursor.label;
+    } else if (this.action === 'pick_color' && viewer.label !== 0 &&
+               viewer.label !== brush.target) {
+      brush.value = viewer.label;
       if (brush.target !== 0) {
-        this.prompt = "Now drawing over label " + brush.target + " with label " + brush.value
-            + ". Use ESC to leave this mode.";
+        this.prompt = `Now drawing over label ${brush.target} with label ${brush.value}. Use ESC to leave this mode.`;
         this.kind = Modes.drawing;
         adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
       } else {
         this.clear();
       }
-    } else if (this.action === "pick_target" && cursor.label !== 0) {
-      brush.target = cursor.label;
-      this.action = "pick_color";
-      this.prompt = "Click on the label you want to draw with, or press 'n' to draw with an unused label.";
+    } else if (this.action === 'pick_target' && viewer.label !== 0) {
+      brush.target = viewer.label;
+      this.action = 'pick_color';
+      this.prompt = 'Click on the label you want to draw with, or press "n" to draw with an unused label.';
       render_info_display();
     }
   }
@@ -545,32 +559,32 @@ class Mode {
     this.kind = Modes.multiple;
 
     this.highlighted_cell_one = this.info.label;
-    this.highlighted_cell_two = cursor.label;
+    this.highlighted_cell_two = viewer.label;
 
     this.info = {
-      "label_1": this.info.label,
-      "label_2": cursor.label,
-      "frame_1": this.info.frame,
-      "frame_2": current_frame,
-      "x1_location": cursor.storedClickX,
-      "y1_location": cursor.storedClickY,
-      "x2_location": cursor.imgX,
-      "y2_location": cursor.imgY
+      label_1: this.info.label,
+      label_2: viewer.label,
+      frame_1: this.info.frame,
+      frame_2: current_frame,
+      x1_location: viewer.storedClickX,
+      y1_location: viewer.storedClickY,
+      x2_location: viewer.imgX,
+      y2_location: viewer.imgY
     };
   }
 
   handle_mode_multiple_click(evt) {
     this.highlighted_cell_one = this.info.label_1;
-    this.highlighted_cell_two = cursor.label;
+    this.highlighted_cell_two = viewer.label;
     this.info = {
-      "label_1": this.info.label_1,
-      "label_2": cursor.label,
-      "frame_1": this.info.frame_1,
-      "frame_2": current_frame,
-      "x1_location": cursor.storedClickX,
-      "y1_location": cursor.storedClickY,
-      "x2_location": cursor.imgX,
-      "y2_location": cursor.imgY
+      label_1: this.info.label_1,
+      label_2: viewer.label,
+      frame_1: this.info.frame_1,
+      frame_2: current_frame,
+      x1_location: viewer.storedClickX,
+      y1_location: viewer.storedClickY,
+      x2_location: viewer.imgX,
+      y2_location: viewer.imgY
     };
   }
 
@@ -584,9 +598,9 @@ class Mode {
     } else if (cursor.label === 0) {
       // same as ESC
       this.clear();
-      return; //not sure why we return here
+      return; // not sure why we return here
     } else if (this.kind === Modes.none) {
-      //if nothing selected: shift-, alt-, or normal click
+      // if nothing selected: shift-, alt-, or normal click
       this.handle_mode_none_click(evt);
       if (current_highlight) {
         adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
@@ -612,16 +626,16 @@ class Mode {
     }
   }
 
-  //shows up in info display as text for "state:"
+  // shows up in info display as text for "state:"
   render() {
     if (this.kind === Modes.none) {
-      return "";
+      return '';
     }
     if (this.kind === Modes.single) {
-      return "SELECTED " + this.info.label;
+      return `SELECTED ${this.info.label}`;
     }
     if (this.kind === Modes.multiple) {
-      return "SELECTED " + this.info.label_1 + ", " + this.info.label_2;
+      return `SELECTED ${this.info.label_1}, ${this.info.label_2}`;
     }
     if (this.kind === Modes.question || this.kind === Modes.prompt || this.kind === Modes.drawing) {
       return this.prompt;
@@ -630,13 +644,13 @@ class Mode {
 }
 
 var Modes = Object.freeze({
-  "none": 1,
-  "single": 2,
-  "multiple": 3,
-  "question": 4,
-  "info": 5,
-  "prompt": 6,
-  "drawing": 7
+  none: 1,
+  single: 2,
+  multiple: 3,
+  question: 4,
+  info: 5,
+  prompt: 6,
+  drawing: 7
 });
 
 let rgb;
