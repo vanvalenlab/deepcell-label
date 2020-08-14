@@ -26,7 +26,7 @@ from imgutils import pngify
 from helpers import is_npz_file, is_trk_file
 from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 
-class CalibanFile():
+class CalibanFile(object): # pylint: disable=useless-object-inheritance
     """Class for the files viewed in Caliban."""
     
     def __init__(self, filename, bucket, path,
@@ -62,16 +62,14 @@ class CalibanFile():
         response = s3.get_object(Bucket=self.bucket, Key=self.path)
         return _load(response['Body'].read())        
 
+class BaseView(object): # pylint: disable=useless-object-inheritance
+    """
+    Base class for viewing a file in Caliban.
+    Implements everything but actions on the file."""
 
-class BaseReview(object):  # pylint: disable=useless-object-inheritance
-    """Base class for all Review objects."""
-
-    def __init__(self, filename, input_bucket, output_bucket, path,
+    def __init__(self, filename, bucket, path,
                  raw_key='raw', annotated_key='annotated'):
-        self.file = CalibanFile(filename, input_bucket, path, raw_key, annotated_key)
-        
-        self.output_bucket = output_bucket
-        self.path = path
+        self.file = CalibanFile(filename, bucket, path, raw_key, annotated_key)
 
         self.current_frame = 0
         self.scale_factor = 1
@@ -95,7 +93,6 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
         self.max_intensity = {}
         for channel in range(self.channel_max):
             self.max_intensity[channel] = None
-
 
     def rescale_95(self, img):
         """Rescale a single- or multi-channel image."""
@@ -139,13 +136,24 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
                           vmax=self.get_max_label(),
                           cmap=self.color_map)
 
+    def get_max_label(self):
+        raise NotImplementedError('get_max_label is not implemented in BaseReview')
+    
+
+class BaseReview(BaseView):
+    """Base class for all Review objects."""
+
+    def __init__(self, filename, input_bucket, output_bucket, path,
+                 raw_key='raw', annotated_key='annotated'):
+        super(BaseReview, self).__init__(
+            filename, input_bucket, path, raw_key, annotated_key)
+        
+        self.output_bucket = output_bucket
+
     def add_cell_info(self, add_label, frame):
         raise NotImplementedError('add_cell_info is not implemented in BaseReview')
 
     def del_cell_info(self, del_label, frame):
-        raise NotImplementedError('del_cell_info is not implemented in BaseReview')
-
-    def get_max_label(self):
         raise NotImplementedError('del_cell_info is not implemented in BaseReview')
 
     def action(self, action_type, info):
@@ -641,8 +649,8 @@ class ZStackReview(BaseReview):
         store_npz.seek(0)
 
         # store npz file object in bucket/path
-        s3 = self._get_s3_client()
-        s3.upload_fileobj(store_npz, self.output_bucket, self.path)
+        s3 = self.file._get_s3_client()
+        s3.upload_fileobj(store_npz, self.output_bucket, self.file.path)
 
     def add_cell_info(self, add_label, frame):
         """Add a cell to the npz"""
@@ -896,8 +904,8 @@ class TrackReview(BaseReview):
         try:
             # go to beginning of file object
             trk_file_obj.seek(0)
-            s3 = self._get_s3_client()
-            s3.upload_fileobj(trk_file_obj, self.output_bucket, self.path)
+            s3 = self.file._get_s3_client()
+            s3.upload_fileobj(trk_file_obj, self.output_bucket, self.file.path)
 
         except Exception as e:
             print('Something Happened: ', e, file=sys.stderr)
