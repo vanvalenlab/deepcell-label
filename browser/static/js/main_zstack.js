@@ -667,7 +667,7 @@ var tracks;
 let maxLabelsMap = new Map();
 var mode = new Mode(Modes.none, {});
 let edit_mode;
-var answer = "(SPACE=YES / ESC=NO)";
+var answer = '(SPACE=YES / ESC=NO)';
 let spacedown = false;
 var tooltype = 'draw';
 var project_id;
@@ -677,14 +677,14 @@ var adjust;
 let cursor;
 let viewer;
 
-var waitForFinalEvent = (function () {
+const waitForFinalEvent = (function () {
   var timers = {};
   return function (callback, ms, uniqueId) {
     if (!uniqueId) {
       uniqueId = "Don't call this twice without a uniqueId";
     }
     if (timers[uniqueId]) {
-      clearTimeout (timers[uniqueId]);
+      clearTimeout(timers[uniqueId]);
     }
     timers[uniqueId] = setTimeout(callback, ms);
   };
@@ -788,7 +788,7 @@ function render_edit_image(ctx) {
     this.viewer.drawImage(ctx, adjuster.postCompImg, padding);
   }
   ctx.save();
-  let region = new Path2D();
+  const region = new Path2D();
   region.rect(padding, padding, dimensions[0], dimensions[1]);
   ctx.clip(region);
   ctx.imageSmoothingEnabled = true;
@@ -812,7 +812,7 @@ function render_annotation_image(ctx) {
 }
 
 function render_image_display() {
-  let ctx = $('#canvas').get(0).getContext('2d');
+  const ctx = document.getElementById('canvas').getContext('2d');
   ctx.imageSmoothingEnabled = false;
   // TODO: is there a corresponding ctx.restore to match this ctx.save?
   ctx.save();
@@ -835,7 +835,7 @@ function render_image_display() {
 function fetch_and_render_frame() {
   $.ajax({
     type: 'GET',
-    url: "frame/" + current_frame + "/" + project_id,
+    url: `frame/${current_frame}/${project_id}`,
     success: function(payload) {
       adjuster.rawLoaded = false;
       adjuster.segLoaded = false;
@@ -916,11 +916,11 @@ function setCanvasDimensions(rawDims) {
 function handle_scroll(evt) {
   if (evt.altKey) {
     changeZoom(Math.sign(evt.originalEvent.deltaY));
-  } else if ((rendering_raw || edit_mode || (rgb && !display_labels))
-    && !evt.originalEvent.shiftKey) {
+  } else if ((rendering_raw || edit_mode || (rgb && !display_labels)) &&
+      !evt.originalEvent.shiftKey) {
     adjuster.changeContrast(evt.originalEvent.deltaY);
-  } else if ((rendering_raw || edit_mode || (rgb && !display_labels))
-    && evt.originalEvent.shiftKey) {
+  } else if ((rendering_raw || edit_mode || (rgb && !display_labels)) &&
+      evt.originalEvent.shiftKey) {
     adjuster.changeBrightness(evt.originalEvent.deltaY);
   }
 }
@@ -983,7 +983,7 @@ function updateMousePos(x, y) {
 }
 
 // handles mouse movement, whether or not mouse button is held down
-function handle_mousemove(evt) {
+function handleMousemove(evt) {
   if (viewer.isCursorPressed() && spacedown) {
     // get the old values to see if rendering is reqiured.
     const oldX = viewer.sx;
@@ -999,7 +999,7 @@ function handle_mousemove(evt) {
 }
 
 // handles end of click&drag (different from click())
-function handle_mouseup() {
+function handleMouseup() {
   viewer.toggleIsPressed();
   if (!spacedown) {
     if (mode.kind !== Modes.prompt) {
@@ -1007,7 +1007,7 @@ function handle_mouseup() {
         if (!brush.show) {
           mode.handle_threshold();
         } else {
-          //send click&drag coordinates to caliban.py to update annotations
+          // send click&drag coordinates to caliban.py to update annotations
           mode.handle_draw();
         }
         brush.refreshView();
@@ -1061,17 +1061,17 @@ function action(action, info, frame = current_frame) {
       if (payload.imgs) {
         // load new value of seg_array
         // array of arrays, contains annotation data for frame
-        if (payload.imgs.hasOwnProperty('seg_arr')) {
+        if (Object.prototype.hasOwnProperty.call(payload.imgs, 'seg_arr')) {
           seg_array = payload.imgs.seg_arr;
-          cursor.segArray = seg_array;
+          viewer.segArray = seg_array;
         }
 
-        if (payload.imgs.hasOwnProperty('segmented')) {
+        if (Object.prototype.hasOwnProperty.call(payload.imgs, 'segmented')) {
           adjuster.segLoaded = false;
           adjuster.segImage.src = payload.imgs.segmented;
         }
 
-        if (payload.imgs.hasOwnProperty('raw')) {
+        if (Object.prototype.hasOwnProperty.call(payload.imgs, 'raw')) {
           adjuster.rawLoaded = false;
           adjuster.rawImage.src = payload.imgs.raw;
         }
@@ -1079,11 +1079,11 @@ function action(action, info, frame = current_frame) {
       if (payload.tracks) {
         tracks = payload.tracks;
         // update maxLabelsMap when we get new track info
-        for (let i = 0; i < Object.keys(tracks).length; i++){
-          let key = Object.keys(tracks)[i]; // the keys are strings
+        for (let i = 0; i < Object.keys(tracks).length; i++) {
+          const key = Object.keys(tracks)[i]; // the keys are strings
           if (Object.keys(tracks[key]).length > 0) {
             // use i as key in this map because it is an int, mode.feature is also int
-            maxLabelsMap.set(i, Math.max(... Object.keys(tracks[key]).map(Number)));
+            maxLabelsMap.set(i, Math.max(...Object.keys(tracks[key]).map(Number)));
           } else {
             // if no labels in feature, explicitly set max label to 0
             maxLabelsMap.set(i, 0);
