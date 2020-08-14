@@ -51,7 +51,7 @@ class Mode {
 
     this.action = '';
     this.prompt = '';
-    adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
+    adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
   }
 
   // these keybinds apply regardless of
@@ -78,7 +78,7 @@ class Mode {
     } else if (!rgb && key === 'h') {
       // toggle highlight
       current_highlight = !current_highlight;
-      adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
+      adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
     } else if (key === 'z') {
       // toggle rendering_raw
       rendering_raw = !rendering_raw;
@@ -122,7 +122,7 @@ class Mode {
         this.prompt = `Now drawing over label ${brush.target} with label ${brush.value}. Use ESC to leave this mode.`;
         this.kind = Modes.drawing;
       }
-      adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
+      adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
     }
   }
 
@@ -131,7 +131,7 @@ class Mode {
     if (key === 'e' && !settings.pixel_only) {
       // toggle edit mode
       edit_mode = !edit_mode;
-      adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
+      adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
     } else if (key === 'c') {
       // cycle forward one channel, if applicable
       this.channel += 1;
@@ -161,14 +161,14 @@ class Mode {
         maxLabelsMap.get(this.feature) + 1
       );
       if (current_highlight) {
-        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
       }
       render_info_display();
     } else if (key === '[') {
       // decrease edit_value, minimum 1
       brush.value -= 1;
       if (current_highlight) {
-        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
       }
       render_info_display();
     } else if (key === 'x') {
@@ -205,7 +205,7 @@ class Mode {
       // toggle edit mode
       edit_mode = !edit_mode;
       helper_brush_draw();
-      adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
+      adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
     } else if (key === 'c') {
       // cycle forward one channel, if applicable
       this.channel += 1;
@@ -242,7 +242,7 @@ class Mode {
         maxLabelsMap.get(this.feature)
       );
       if (current_highlight) {
-        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
       }
     } else if (key === "]" && this.highlighted_cell_one !== -1) {
       // cycle highlight to next label
@@ -252,7 +252,7 @@ class Mode {
         maxLabelsMap.get(this.feature)
       );
       if (current_highlight) {
-        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
       }
     }
   }
@@ -293,7 +293,7 @@ class Mode {
       this.clear();
       this.highlighted_cell_one = temp_highlight;
       if (current_highlight) {
-        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
       }
     } else if (key === ']') {
       // cycle highlight to next label
@@ -307,7 +307,7 @@ class Mode {
       this.clear();
       this.highlighted_cell_one = temp_highlight;
       if (current_highlight) {
-        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
       }
     }
   }
@@ -540,7 +540,7 @@ class Mode {
       if (brush.target !== 0) {
         this.prompt = `Now drawing over label ${brush.target} with label ${brush.value}. Use ESC to leave this mode.`;
         this.kind = Modes.drawing;
-        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
       } else {
         this.clear();
       }
@@ -602,7 +602,7 @@ class Mode {
       // if nothing selected: shift-, alt-, or normal click
       this.handle_mode_none_click(evt);
       if (current_highlight) {
-        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
       } else {
         render_info_display();
       }
@@ -610,7 +610,7 @@ class Mode {
       // one label already selected
       this.handle_mode_single_click(evt);
       if (current_highlight) {
-        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
       } else {
         render_info_display();
       }
@@ -618,7 +618,7 @@ class Mode {
       // two labels already selected, reselect second label
       this.handle_mode_multiple_click(evt);
       if (current_highlight) {
-        adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
       } else {
         render_info_display();
       }
@@ -657,18 +657,6 @@ const padding = 5;
 const maxLabelsMap = new Map();
 
 let rgb;
-
-// dimensions of raw arrays
-let rawWidth;
-let rawHeight;
-
-// TODO: move dimensions into cursor or viewer object?
-// raw image dimensions * screen scaling
-var dimensions;
-
-// TODO: this could go into adjuster and cursor classes
-// upon update, not needed by any other objects
-var seg_array; // declare here so it is global var
 
 var rendering_raw = false;
 var display_labels;
@@ -862,7 +850,7 @@ function render_edit_image(ctx) {
   }
   ctx.save();
   const region = new Path2D();
-  region.rect(padding, padding, dimensions[0], dimensions[1]);
+  region.rect(padding, padding, viewer.scaledWidth, viewer.scaledHeight);
   ctx.clip(region);
   ctx.imageSmoothingEnabled = true;
 
@@ -889,7 +877,11 @@ function render_image_display() {
   ctx.imageSmoothingEnabled = false;
   // TODO: is there a corresponding ctx.restore to match this ctx.save?
   ctx.save();
-  ctx.clearRect(0, 0, 2 * padding + dimensions[0], 2 * padding + dimensions[1]);
+  ctx.clearRect(
+    0, 0,
+    2 * padding + viewer.scaledWidth,
+    2 * padding + viewer.scaledHeight
+  );
 
   if (edit_mode) {
     // edit mode (annotations overlaid on raw + brush preview)
@@ -915,8 +907,7 @@ function fetch_and_render_frame() {
 
       // load new value of seg_array
       // array of arrays, contains annotation data for frame
-      seg_array = payload.seg_arr;
-      viewer.segArray = seg_array;
+      viewer.segArray = payload.seg_arr;
       adjuster.segImage.src = payload.segmented;
       adjuster.rawImage.src = payload.raw;
     },
@@ -946,16 +937,14 @@ function setCanvasDimensions(rawDims) {
 
   // pick scale that accomodates both dimensions; can be less than 1
   const scale = Math.min(scaleX, scaleY);
-  // dimensions need to maintain aspect ratio for drawing purposes
-  dimensions = [scale * rawDims[0], scale * rawDims[1]];
 
   viewer.zoom = 100;
   viewer.scale = scale;
   viewer.setBorders(padding);
 
   // set canvases size according to scale
-  document.getElementById('canvas').width = dimensions[0] + 2 * padding;
-  document.getElementById('canvas').height = dimensions[1] + 2 * padding;
+  document.getElementById('canvas').width = viewer.scaledWidth + 2 * padding;
+  document.getElementById('canvas').height = viewer.scaledHeight + 2 * padding;
 }
 
 // adjust contrast, brightness, or zoom upon mouse scroll
@@ -1074,8 +1063,7 @@ function action(action, info, frame = current_frame) {
         // load new value of seg_array
         // array of arrays, contains annotation data for frame
         if (Object.prototype.hasOwnProperty.call(payload.imgs, 'seg_arr')) {
-          seg_array = payload.imgs.seg_arr;
-          viewer.segArray = seg_array;
+          viewer.segArray = payload.imgs.seg_arr;
         }
 
         if (Object.prototype.hasOwnProperty.call(payload.imgs, 'segmented')) {
@@ -1136,11 +1124,10 @@ function startCaliban(filename, settings) {
     max_frames = payload.max_frames;
     feature_max = payload.feature_max;
     channelMax = payload.channel_max;
-    rawDimensions = payload.dimensions;
     project_id = payload.project_id;
 
-    rawWidth = payload.dimensions[0];
-    rawHeight = payload.dimensions[1];
+    const rawWidth = payload.dimensions[0];
+    const rawHeight = payload.dimensions[1];
 
     viewer = new CalibanCanvas(rawWidth, rawHeight, 1, padding);
 

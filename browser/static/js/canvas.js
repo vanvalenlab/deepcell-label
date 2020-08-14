@@ -59,6 +59,14 @@ class CalibanCanvas {
     }
   }
 
+  get scaledWidth() {
+    return this.scale * this.width;
+  }
+
+  get scaledHeight() {
+    return this.scale * this.height;
+  }
+
   // clear the current trace
   clearTrace() {
     this.trace = [];
@@ -100,8 +108,8 @@ class CalibanCanvas {
   }
 
   setBorders(padding) {
-    const scaledWidth = this.scale * this.width;
-    const scaledHeight = this.scale * this.height;
+    const scaledWidth = this.scaledWidth;
+    const scaledHeight = this.scaledHeight;
 
     // create paths for recoloring borders
     this.topBorder = new Path2D();
