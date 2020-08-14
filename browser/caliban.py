@@ -37,6 +37,9 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
         self.output_bucket = output_bucket
         self.subfolders = subfolders  # full file path
 
+        self.raw_key = raw_key
+        self.annotated_key = annotated_key
+
         self.current_frame = 0
         self.scale_factor = 1
         self._x_changed = False
