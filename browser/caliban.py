@@ -71,8 +71,11 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
             aws_secret_access_key=AWS_SECRET_ACCESS_KEY
         )
 
-    def load(self, filename):
+    def load(self, filename, bucket=None):
         """Load a file from the S3 input bucket"""
+        if bucket is None:
+            bucket = self.input_bucket
+        
         if is_npz_file(filename):
             _load = load_npz
         elif is_trk_file(filename):
@@ -81,7 +84,7 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
             raise ValueError('Cannot load file: {}'.format(filename))
 
         s3 = self._get_s3_client()
-        response = s3.get_object(Bucket=self.input_bucket, Key=self.subfolders)
+        response = s3.get_object(Bucket=bucket, Key=self.subfolders)
         return _load(response['Body'].read())
 
     def rescale_95(self, img):
