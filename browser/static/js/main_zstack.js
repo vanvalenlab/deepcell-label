@@ -705,79 +705,69 @@ function changeZoom(dzoom) {
 }
 
 function render_highlight_info() {
+  const highlightText = (current_highlight) ? 'ON' : 'OFF';
+  let currentlyHighlighted = 'none';
   if (current_highlight) {
-    $('#highlight').html("ON");
     if (edit_mode) {
-      if (brush.value > 0) {
-        $('#currently_highlighted').html(brush.value)
-      } else {
-        $('#currently_highlighted').html('-')
-      }
+      currentlyHighlighted = (brush.value > 0) ? brush.value : '-';
     } else {
       if (mode.highlighted_cell_one !== -1) {
         if (mode.highlighted_cell_two !== -1) {
-          $('#currently_highlighted').html(mode.highlighted_cell_one + " , " + mode.highlighted_cell_two);
+          currentlyHighlighted = `${mode.highlighted_cell_one}, ${mode.highlighted_cell_two}`;
         } else {
-          $('#currently_highlighted').html(mode.highlighted_cell_one);
+          currentlyHighlighted = mode.highlighted_cell_one;
         }
-      } else {
-        $('#currently_highlighted').html("none");
       }
     }
-  } else {
-    $('#highlight').html("OFF");
-    $('#currently_highlighted').html("none");
   }
+  document.getElementById('highlight').innerHTML = highlightText;
+  document.getElementById('currently_highlighted').innerHTML = currentlyHighlighted;
 }
 
 function render_edit_info() {
+  const editModeText = (edit_mode) ? 'pixels' : 'whole labels';
+  document.getElementById('edit_mode').innerHTML = editModeText;
+
+  const rowVisibility = (edit_mode) ? 'visible' : 'hidden';
+  $('#edit_brush_row').css('visibility', rowVisibility);
+  $('#edit_label_row').css('visibility', rowVisibility);
+  $('#edit_erase_row').css('visibility', rowVisibility);
+
   if (edit_mode) {
-    $('#edit_mode').html('pixels');
-    $('#edit_brush_row').css('visibility', 'visible');
-    $('#edit_label_row').css('visibility', 'visible');
-    $('#edit_erase_row').css('visibility', 'visible');
+    document.getElementById('edit_brush').innerHTML = brush.size;
 
-    $('#edit_brush').html(brush.size);
-    if (brush.value > 0) {
-      $('#edit_label').html(brush.value);
-    } else {
-      $('#edit_label').html('-');
-    }
+    const editLabelText = (brush.value > 0) ? brush.value : '-';
+    document.getElementById('edit_label').innerHTML = editLabelText;
 
-    if (brush.erase && !brush.conv) {
-      $('#edit_erase').html("ON");
-    } else {
-      $('#edit_erase').html("OFF");
-    }
-
-  } else {
-    $('#edit_mode').html('whole labels');
-    $('#edit_brush_row').css('visibility', 'hidden');
-    $('#edit_label_row').css('visibility', 'hidden');
-    $('#edit_erase_row').css('visibility', 'hidden');
+    const editEraseText = (brush.erase && !brush.conv) ? 'ON' : 'OFF';
+    document.getElementById('edit_erase').innerHTML = editEraseText;
   }
 }
 
 function render_cell_info() {
   if (cursor.label !== 0) {
-    $('#label').html(cursor.label);
+    document.getElementById('label').innerHTML = viewer.label;
     let track = tracks[mode.feature][cursor.label.toString()];
     $('#slices').text(track.slices.toString());
   } else {
-    $('#label').html("");
-    $('#slices').text("");
+    document.getElementById('label').innerHTML = '';
+    $('#slices').text('');
   }
 }
 
 // updates html display of side info panel
 function render_info_display() {
   // always show current frame, feature, channel
-  $('#frame').html(current_frame);
-  $('#feature').html(mode.feature);
-  $('#channel').html(mode.channel);
-  $('#zoom').html(`${viewer.zoom}%`);
-  $('#displayedX').html(`${Math.floor(viewer.sx)}-${Math.ceil(viewer.sx+viewer.sWidth)}`);
-  $('#displayedY').html(`${Math.floor(viewer.sy)}-${Math.ceil(viewer.sy+viewer.sHeight)}`);
+  document.getElementById('frame').innerHTML = current_frame;
+  document.getElementById('feature').innerHTML = mode.feature;
+  document.getElementById('channel').innerHTML = mode.channel;
+  document.getElementById('zoom').innerHTML = `${viewer.zoom}%`;
+
+  const displayedX = `${Math.floor(viewer.sx)}-${Math.ceil(viewer.sx + viewer.sWidth)}`;
+  document.getElementById('displayedX').innerHTML = displayedX;
+
+  const displayedY = `${Math.floor(viewer.sy)}-${Math.ceil(viewer.sy + viewer.sHeight)}`
+  document.getElementById('displayedY').innerHTML = displayedY;
 
   render_highlight_info();
 
@@ -786,7 +776,7 @@ function render_info_display() {
   render_cell_info();
 
   // always show 'state'
-  $('#mode').html(mode.render());
+  document.getElementById('mode').innerHTML = mode.render();
 }
 
 function render_edit_image(ctx) {
@@ -1027,37 +1017,32 @@ function handle_mouseup() {
 }
 
 function prepare_canvas() {
+  const canvasElement = document.getElementById('canvas');
   // bind click on canvas
-  $('#canvas').click(function(evt) {
+  canvasElement.addEventListener('click', function(evt) {
     if (!spacedown && (!edit_mode || mode.kind === Modes.prompt)) {
       mode.click(evt);
     }
   });
-  // bind scroll wheel
-  $('#canvas').on('wheel', function(evt) {
-    // adjusts contrast of raw when scrolled
-    handle_scroll(evt);
-  });
+
+  // bind scroll wheel, change contrast of raw when scrolled
+  canvasElement.addEventListener('wheel', handle_scroll);
+
   // mousedown for click&drag/handle_draw DIFFERENT FROM CLICK
-  $('#canvas').mousedown(function(evt) {
-    handle_mousedown(evt);
-  });
+  canvasElement.addEventListener('mousedown', handle_mousedown);
+
   // bind mouse movement
-  $('#canvas').mousemove(function(evt) {
-    // handle brush preview
-    handle_mousemove(evt);
-  });
+  canvasElement.addEventListener('mousemove', handleMousemove);
+
   // mouse button release (end of click&drag) bound to document, not just canvas
   // bind keypress
-  window.addEventListener('keydown', function(evt) {
-    mode.handle_key(evt.key);
-  }, false);
-  window.addEventListener('keydown', function(evt) {
+  window.addEventListener('keydown', (evt) => mode.handle_key(evt.key), false);
+  window.addEventListener('keydown', (evt) => {
     if (evt.key === ' ') {
       spacedown = true;
     }
   }, false);
-  window.addEventListener('keyup', function(evt) {
+  window.addEventListener('keyup', (evt) => {
     if (evt.key === ' ') {
       spacedown = false;
     }
