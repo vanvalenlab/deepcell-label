@@ -774,6 +774,7 @@ function upload_file(cb) {
 function changeZoom(dzoom) {
   viewer.changeZoom(dzoom, viewer.canvasPosX, viewer.canvasPosY);
   updateMousePos(viewer.rawX, viewer.rawY);
+  render_image_display();
 }
 
 function render_highlight_info() {
