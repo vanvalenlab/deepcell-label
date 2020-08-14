@@ -689,6 +689,9 @@ var adjuster;
 var cursor;
 var viewer;
 
+/**
+ * Delays an event callback to prevent calling the callback too frequently.
+ */
 const waitForFinalEvent = (function () {
   var timers = {};
   return function (callback, ms, uniqueId) {
@@ -701,6 +704,63 @@ const waitForFinalEvent = (function () {
     timers[uniqueId] = setTimeout(callback, ms);
   };
 })();
+
+/**
+ * Calculate the maximum width of the canvas display area.
+ * The canvas only shares width with the table display on its left.
+ */
+const _calculateMaxWidth = () => {
+  const mainSection = window.getComputedStyle(
+    document.getElementsByTagName('main')[0]
+  );
+  const tableColumn = window.getComputedStyle(
+    document.getElementById('table-col')
+  );
+  const canvasColumn = window.getComputedStyle(
+    document.getElementById('canvas-col')
+  );
+  const maxWidth = Math.floor(
+    document.getElementsByTagName('main')[0].clientWidth -
+    parseInt(mainSection.marginTop) -
+    parseInt(mainSection.marginBottom) -
+    document.getElementById('table-col').clientWidth -
+    parseFloat(tableColumn.paddingLeft) -
+    parseFloat(tableColumn.paddingRight) -
+    parseFloat(tableColumn.marginLeft) -
+    parseFloat(tableColumn.marginRight) -
+    parseFloat(canvasColumn.paddingLeft) -
+    parseFloat(canvasColumn.paddingRight) -
+    parseFloat(canvasColumn.marginLeft) -
+    parseFloat(canvasColumn.marginRight)
+  );
+  return maxWidth;
+}
+
+/**
+ * Calculate the maximum height for the canvas display area,
+ * leaving space for navbar, instructions pane, and footer.
+ */
+const _calculateMaxHeight = () => {
+  const mainSection = window.getComputedStyle(
+    document.getElementsByTagName('main')[0]
+  );
+  // leave space for navbar, instructions pane, and footer
+  const maxHeight = Math.floor(
+    (
+      (
+        window.innerHeight ||
+        document.documentElement.clientHeight ||
+        document.body.clientHeight
+      ) -
+      parseInt(mainSection.marginTop) -
+      parseInt(mainSection.marginBottom) -
+      document.getElementsByClassName('page-footer')[0].clientHeight -
+      document.getElementsByClassName('collapsible')[0].clientHeight -
+      document.getElementsByClassName('navbar-fixed')[0].clientHeight
+    )
+  );
+  return maxHeight;
+}
 
 function upload_file(cb) {
   $.ajax({
@@ -872,40 +932,13 @@ function loadFile(file, rgb = false, cb) {
   });
 }
 
+/**
+ * Calculate available space and how much to scale x and y to fill it
+ * @param {*} rawDims the raw dimensions of the input image.
+ */
 function setCanvasDimensions(rawDims) {
-  // calculate available space and how much to scale x and y to fill it
-  // only thing that shares width is the info display on left
-
-  let maxWidth = Math.floor(
-    document.getElementsByTagName('main')[0].clientWidth -
-    parseInt($('main').css('marginTop')) -
-    parseInt($('main').css('marginBottom')) -
-    document.getElementById('table-col').clientWidth -
-    parseFloat($('#table-col').css('padding-left')) -
-    parseFloat($('#table-col').css('padding-right')) -
-    parseFloat($('#table-col').css('margin-left')) -
-    parseFloat($('#table-col').css('margin-right')) -
-    parseFloat($('#canvas-col').css('padding-left')) -
-    parseFloat($('#canvas-col').css('padding-right')) -
-    parseFloat($('#canvas-col').css('margin-left')) -
-    parseFloat($('#canvas-col').css('margin-right'))
-  );
-
-  // leave space for navbar, instructions pane, and footer
-  let maxHeight = Math.floor(
-    (
-      (
-        window.innerHeight ||
-        document.documentElement.clientHeight ||
-        document.body.clientHeight
-      ) -
-      parseInt($('main').css('marginTop')) -
-      parseInt($('main').css('marginBottom')) -
-      document.getElementsByClassName('page-footer')[0].clientHeight -
-      document.getElementsByClassName('collapsible')[0].clientHeight -
-      document.getElementsByClassName('navbar-fixed')[0].clientHeight
-    )
-  );
+  const maxWidth = _calculateMaxWidth()
+  const maxHeight = _calculateMaxHeight()
 
   const scaleX = maxWidth / rawDims[0];
   const scaleY = maxHeight / rawDims[1];
