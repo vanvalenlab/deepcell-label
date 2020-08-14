@@ -1061,39 +1061,6 @@ function handleMouseup() {
   }
 }
 
-function prepare_canvas() {
-  const canvasElement = document.getElementById('canvas');
-  // bind click on canvas
-  canvasElement.addEventListener('click', function(evt) {
-    if (!spacedown && (!edit_mode || mode.kind === Modes.prompt)) {
-      mode.click(evt);
-    }
-  });
-
-  // bind scroll wheel, change contrast of raw when scrolled
-  canvasElement.addEventListener('wheel', handle_scroll);
-
-  // mousedown for click&drag/handle_draw DIFFERENT FROM CLICK
-  canvasElement.addEventListener('mousedown', handle_mousedown);
-
-  // bind mouse movement
-  canvasElement.addEventListener('mousemove', handleMousemove);
-
-  // mouse button release (end of click&drag) bound to document, not just canvas
-  // bind keypress
-  window.addEventListener('keydown', (evt) => mode.handle_key(evt.key), false);
-  window.addEventListener('keydown', (evt) => {
-    if (evt.key === ' ') {
-      spacedown = true;
-    }
-  }, false);
-  window.addEventListener('keyup', (evt) => {
-    if (evt.key === ' ') {
-      spacedown = false;
-    }
-  }, false);
-}
-
 function action(action, info, frame = current_frame) {
   $.ajax({
     type: 'POST',
@@ -1150,7 +1117,7 @@ function startCaliban(filename, settings) {
   edit_mode = (settings.pixel_only && !settings.label_only);
 
   // disable scrolling from scrolling around on page (it should just control brightness)
-  document.addEventListener('wheel', function(event) {
+  document.addEventListener('wheel', (event) => {
     event.preventDefault();
   }, { passive: false });
 
@@ -1165,8 +1132,6 @@ function startCaliban(filename, settings) {
     }
   });
 
-  document.addEventListener('mouseup', handleMouseup);
-
   loadFile(filename, settings.rgb, (payload) => {
     max_frames = payload.max_frames;
     feature_max = payload.feature_max;
@@ -1179,10 +1144,16 @@ function startCaliban(filename, settings) {
 
     viewer = new CalibanCanvas(rawWidth, rawHeight, 1, padding);
 
-    document.addEventListener('keydown', (e) => viewer.toggleIsSpacedown());
-    document.addEventListener('keyup', (e) => viewer.toggleIsSpacedown());
-
-    setCanvasDimensions(payload.dimensions);
+    window.addEventListener('keydown', (e) => {
+      if (e.key === ' ') {
+        viewer.toggleIsSpacedown();
+      }
+    }, false);
+    window.addEventListener('keyup', (e) => {
+      if (e.key === ' ') {
+        viewer.toggleIsSpacedown();
+      }
+    }, false);
 
     tracks = payload.tracks; // tracks payload is dict
 
@@ -1207,6 +1178,10 @@ function startCaliban(filename, settings) {
 
     adjuster.postCompImg.onload = render_image_display;
 
+    document.addEventListener('mouseup', handleMouseup);
+
+    setCanvasDimensions(payload.dimensions);
+
     // resize the canvas every time the window is resized
     window.addEventListener('resize', function() {
       waitForFinalEvent(() => {
@@ -1216,7 +1191,27 @@ function startCaliban(filename, settings) {
       }, 500, 'canvasResize');
     });
 
-    prepare_canvas();
+    window.addEventListener('keydown', (evt) => {
+      mode.handle_key(evt.key);
+    }, false);
+
+    const canvasElement = document.getElementById('canvas');
+    // bind click on canvas
+    canvasElement.addEventListener('click', (evt) => {
+      if (!viewer.isSpacedown && (!edit_mode || mode.kind === Modes.prompt)) {
+        mode.click(evt);
+      }
+    });
+
+    // bind scroll wheel, change contrast of raw when scrolled
+    canvasElement.addEventListener('wheel', handle_scroll);
+
+    // mousedown for click&drag/handle_draw DIFFERENT FROM CLICK
+    canvasElement.addEventListener('mousedown', handle_mousedown);
+
+    // bind mouse movement
+    canvasElement.addEventListener('mousemove', handleMousemove);
+
     fetch_and_render_frame();
   });
 }
