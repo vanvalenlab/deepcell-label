@@ -699,20 +699,9 @@ function upload_file(cb) {
   });
 }
 
-// based on dx and dy, update sx and sy
-function panCanvas(dx, dy) {
-  const oldX = viewer.sx;
-  const oldY = viewer.sy;
-  viewer.pan(dx, dy);
-  if (viewer.sx !== oldX || viewer.sy !== oldY) {
-    render_image_display();
-  }
-}
-
 function changeZoom(dzoom) {
-  viewer.changeZoom(dzoom, cursor.canvasPosX, cursor.canvasPosY);
-  updateMousePos(cursor.rawX, cursor.rawY);
-  render_image_display();
+  viewer.changeZoom(dzoom, viewer.canvasPosX, viewer.canvasPosY);
+  updateMousePos(cursor.rawX, viewer.rawY);
 }
 
 function render_highlight_info() {
@@ -800,25 +789,13 @@ function render_info_display() {
   $('#mode').html(mode.render());
 }
 
-// TODO for ctx.drawImage calls--write a wrapper for these?
-// they all use the same viewer attributes (and padding and dimension args)
-// to use all optional args for ctx.drawImage call
-// possibly a CalibanCanvas class that has ctx, padding, dimensions attributes
 function render_edit_image(ctx) {
   if (rgb && rendering_raw) {
     render_raw_image(ctx);
   } else if (!rgb && !display_labels) {
-    ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
-    ctx.drawImage(adjuster.preCompRaw,
-                  viewer.sx, viewer.sy,
-                  viewer.sWidth, viewer.sHeight,
-                  padding, padding, dimensions[0], dimensions[1]);
+    this.viewer.drawImage(ctx, adjuster.preCompRaw, padding);
   } else {
-    ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
-    ctx.drawImage(adjuster.postCompImg,
-                  viewer.sx, viewer.sy,
-                  viewer.sWidth, viewer.sHeight,
-                  padding, padding, dimensions[0], dimensions[1]);
+    this.viewer.drawImage(ctx, adjuster.postCompImg, padding);
   }
   ctx.save();
   let region = new Path2D();
@@ -833,25 +810,14 @@ function render_edit_image(ctx) {
 }
 
 function render_raw_image(ctx) {
-  ctx.clearRect(padding, padding, dimensions, dimensions[1]);
-  ctx.drawImage(adjuster.contrastedRaw,
-                viewer.sx, viewer.sy,
-                viewer.sWidth, viewer.sHeight,
-                padding, padding, dimensions[0], dimensions[1]);
+  this.viewer.drawImage(ctx, adjuster.contrastedRaw, padding);
 }
 
 function render_annotation_image(ctx) {
-  ctx.clearRect(padding, padding, dimensions[0], dimensions[1]);
   if (rgb && !display_labels) {
-    ctx.drawImage(adjuster.postCompImg,
-                  viewer.sx, viewer.sy,
-                  viewer.sWidth, viewer.sHeight,
-                  padding, padding, dimensions[0], dimensions[1]);
+    this.viewer.drawImage(ctx, adjuster.postCompImg, padding);
   } else {
-    ctx.drawImage(adjuster.preCompSeg,
-                  viewer.sx, viewer.sy,
-                  viewer.sWidth, viewer.sHeight,
-                  padding, padding, dimensions[0], dimensions[1]);
+    this.viewer.drawImage(ctx, adjuster.preCompSeg, padding);
   }
 }
 
@@ -1010,11 +976,11 @@ function handle_mousedown(evt) {
       // begin drawing
       if (edit_mode) {
         if (!brush.show) {
-          brush.threshX = cursor.imgX;
-          brush.threshY = cursor.imgY;
+          brush.threshX = viewer.imgX;
+          brush.threshY = viewer.imgY;
         } else if (mode.kind !== Modes.prompt) {
           // not if turning on conv brush
-          cursor.trace.push([cursor.imgY, cursor.imgX]);
+          viewer.trace.push([cursor.imgY, viewer.imgX]);
         }
       }
     }
@@ -1022,10 +988,10 @@ function handle_mousedown(evt) {
 }
 
 function helper_brush_draw() {
-  if (cursor.pressed && !spacedown) {
+  if (viewer.isCursorPressed() && !spacedown) {
     // update mouse_trace, but not if turning on conv brush
     if (mode.kind !== Modes.prompt) {
-      cursor.trace.push([cursor.imgY, cursor.imgX]);
+      viewer.trace.push([cursor.imgY, viewer.imgX]);
     }
   } else {
     brush.clearView();
@@ -1035,15 +1001,15 @@ function helper_brush_draw() {
 
 // input will typically be evt.offsetX, evt.offsetY (mouse events)
 function updateMousePos(x, y) {
-  const oldImgX = cursor.imgX;
-  const oldImgY = cursor.imgY;
+  const oldImgX = viewer.imgX;
+  const oldImgY = viewer.imgY;
 
-  cursor.updatePos(x, y, padding, viewer);
+  viewer.updateCursorPosition(x, y, padding);
 
   // if cursor has actually changed location in image
-  if (oldImgX !== cursor.imgX || oldImgY !== cursor.imgY) {
-    brush.x = cursor.imgX;
-    brush.y = cursor.imgY;
+  if (oldImgX !== viewer.imgX || oldImgY !== viewer.imgY) {
+    brush.x = viewer.imgX;
+    brush.y = viewer.imgY;
     // update brush preview
     if (edit_mode) {
       // brush's canvas is keeping track of the brush
@@ -1059,21 +1025,23 @@ function updateMousePos(x, y) {
 
 // handles mouse movement, whether or not mouse button is held down
 function handle_mousemove(evt) {
-  if (cursor.pressed && spacedown) {
-    panCanvas(
-      evt.originalEvent.movementX * 100 / (viewer.zoom * viewer.scale),
-      evt.originalEvent.movementY * 100 / (viewer.zoom * viewer.scale)
-    );
+  if (viewer.isCursorPressed() && spacedown) {
+    // get the old values to see if rendering is reqiured.
+    const oldX = viewer.sx;
+    const oldY = viewer.sy;
+
+    viewer.pan(evt.originalEvent.movementX, evt.originalEvent.movementY);
+
+    if (viewer.sx !== oldX || viewer.sy !== oldY) {
+      render_image_display();
+    }
   }
-
   updateMousePos(evt.offsetX, evt.offsetY);
-
-  render_info_display();
 }
 
 // handles end of click&drag (different from click())
 function handle_mouseup() {
-  cursor.pressed = false;
+  this.viwer.isPressed = false;
   if (!spacedown) {
     if (mode.kind !== Modes.prompt) {
       if (edit_mode) {
