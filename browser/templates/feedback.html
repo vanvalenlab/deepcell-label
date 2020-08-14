@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{%- block content -%}
+
+<main class="container">
+  <div class="row">
+    <div id="canvas-col" class="col s12"></div>
+  </div>
+</main>
+{%- endblock -%}
+
+{%- block extraJs -%}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/konva/7.0.5/konva.min.js" integrity="sha512-M1bxIW2Kl+fQWEbWA59q+0qJ8yjyn0kmQeLEVmHzoC8OnJsr8zkrnNScsVRpbBDzq19LP/pwEsB+/sVW9+w+Zg==" crossorigin="anonymous"></script>
+  <script type="text/javascript" src="{{ url_for('static', filename='js/feedback.js') }}"></script>
+
+  <script>
+    var settings = {{settings | tojson}};
+    startCaliban("{{filename}}", settings);
+  </script>
+{%- endblock -%}
