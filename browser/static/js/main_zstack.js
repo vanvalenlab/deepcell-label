@@ -802,9 +802,9 @@ function render_edit_info() {
   document.getElementById('edit_mode').innerHTML = editModeText;
 
   const rowVisibility = (edit_mode) ? 'visible' : 'hidden';
-  $('#edit_brush_row').css('visibility', rowVisibility);
-  $('#edit_label_row').css('visibility', rowVisibility);
-  $('#edit_erase_row').css('visibility', rowVisibility);
+  document.getElementById('edit_brush_row').style.visibility = rowVisibility;
+  document.getElementById('edit_label_row').style.visibility = rowVisibility;
+  document.getElementById('edit_erase_row').style.visibility = rowVisibility;
 
   if (edit_mode) {
     document.getElementById('edit_brush').innerHTML = brush.size;
@@ -820,11 +820,11 @@ function render_edit_info() {
 function render_cell_info() {
   if (viewer.label !== 0) {
     document.getElementById('label').innerHTML = viewer.label;
-    let track = tracks[mode.feature][viewer.label.toString()];
-    $('#slices').text(track.slices.toString());
+    const track = tracks[mode.feature][viewer.label.toString()];
+    document.getElementById('slices').textContent = track.slices.toString();
   } else {
     document.getElementById('label').innerHTML = '';
-    $('#slices').text('');
+    document.getElementById('slices').textContent = '';
   }
 }
 
@@ -954,26 +954,25 @@ function setCanvasDimensions(rawDims) {
   viewer.setBorders(padding);
 
   // set canvases size according to scale
-  $('#canvas').get(0).width = dimensions[0] + 2 * padding;
-  $('#canvas').get(0).height = dimensions[1] + 2 * padding;
+  document.getElementById('canvas').width = dimensions[0] + 2 * padding;
+  document.getElementById('canvas').height = dimensions[1] + 2 * padding;
 }
 
 // adjust contrast, brightness, or zoom upon mouse scroll
-function handle_scroll(evt) {
+function handleScroll(evt) {
+  const canEdit = (rendering_raw || edit_mode || (rgb && !display_labels));
   if (evt.altKey) {
-    changeZoom(Math.sign(evt.originalEvent.deltaY));
-  } else if ((rendering_raw || edit_mode || (rgb && !display_labels)) &&
-      !evt.originalEvent.shiftKey) {
-    adjuster.changeContrast(evt.originalEvent.deltaY);
-  } else if ((rendering_raw || edit_mode || (rgb && !display_labels)) &&
-      evt.originalEvent.shiftKey) {
-    adjuster.changeBrightness(evt.originalEvent.deltaY);
+    changeZoom(Math.sign(evt.deltaY));
+  } else if (canEdit && !evt.shiftKey) {
+    adjuster.changeContrast(evt.deltaY);
+  } else if (canEdit && evt.shiftKey) {
+    adjuster.changeBrightness(evt.deltaY);
   }
 }
 
 // handle pressing mouse button (treats this as the beginning
 // of click&drag, since clicks are handled by Mode.click)
-function handle_mousedown(evt) {
+function handleMousedown(evt) {
   viewer.toggleIsPressed();
   // TODO: refactor "mousedown + mousemove" into ondrag?
   if (!viewer.isSpacedown) {
@@ -1179,7 +1178,7 @@ function startCaliban(filename, settings) {
 
     adjuster.postCompImg.onload = render_image_display;
 
-    document.addEventListener('mouseup', handleMouseup);
+    document.addEventListener('mouseup', (e) => handleMouseup(e));
 
     setCanvasDimensions(payload.dimensions);
 
@@ -1205,13 +1204,13 @@ function startCaliban(filename, settings) {
     });
 
     // bind scroll wheel, change contrast of raw when scrolled
-    canvasElement.addEventListener('wheel', handle_scroll);
+    canvasElement.addEventListener('wheel', (e) => handleScroll(e));
 
     // mousedown for click&drag/handle_draw DIFFERENT FROM CLICK
-    canvasElement.addEventListener('mousedown', handle_mousedown);
+    canvasElement.addEventListener('mousedown', (e) => handleMousedown(e));
 
     // bind mouse movement
-    canvasElement.addEventListener('mousemove', handleMousemove);
+    canvasElement.addEventListener('mousemove', (e) => handleMousemove(e));
 
     fetch_and_render_frame();
   });
