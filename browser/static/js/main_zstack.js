@@ -595,7 +595,7 @@ class Mode {
     if (this.kind === Modes.prompt) {
       // hole fill or color picking options
       this.handle_mode_prompt_click(evt);
-    } else if (cursor.label === 0) {
+    } else if (viewer.label === 0) {
       // same as ESC
       this.clear();
       return; // not sure why we return here
@@ -687,9 +687,9 @@ var tooltype = 'draw';
 var project_id;
 
 var brush;
-var adjust;
-let cursor;
-let viewer;
+var adjuster;
+var cursor;
+var viewer;
 
 const waitForFinalEvent = (function () {
   var timers = {};
@@ -715,7 +715,7 @@ function upload_file(cb) {
 
 function changeZoom(dzoom) {
   viewer.changeZoom(dzoom, viewer.canvasPosX, viewer.canvasPosY);
-  updateMousePos(cursor.rawX, viewer.rawY);
+  updateMousePos(viewer.rawX, viewer.rawY);
 }
 
 function render_highlight_info() {
@@ -759,9 +759,9 @@ function render_edit_info() {
 }
 
 function render_cell_info() {
-  if (cursor.label !== 0) {
+  if (viewer.label !== 0) {
     document.getElementById('label').innerHTML = viewer.label;
-    let track = tracks[mode.feature][cursor.label.toString()];
+    let track = tracks[mode.feature][viewer.label.toString()];
     $('#slices').text(track.slices.toString());
   } else {
     document.getElementById('label').innerHTML = '';
@@ -944,7 +944,7 @@ function handle_scroll(evt) {
 function handle_mousedown(evt) {
   viewer.toggleIsPressed();
   // TODO: refactor "mousedown + mousemove" into ondrag?
-  if (!spacedown) {
+  if (!viewer.isSpacedown) {
     if (mode.kind !== Modes.prompt) {
       // begin drawing
       if (edit_mode) {
@@ -953,7 +953,7 @@ function handle_mousedown(evt) {
           brush.threshY = viewer.imgY;
         } else if (mode.kind !== Modes.prompt) {
           // not if turning on conv brush
-          viewer.trace.push([cursor.imgY, viewer.imgX]);
+          viewer.trace.push([viewer.imgY, viewer.imgX]);
         }
       }
     }
@@ -961,10 +961,10 @@ function handle_mousedown(evt) {
 }
 
 function helper_brush_draw() {
-  if (viewer.isCursorPressed() && !spacedown) {
+  if (viewer.isCursorPressed() && !viewer.isSpacedown) {
     // update mouse_trace, but not if turning on conv brush
     if (mode.kind !== Modes.prompt) {
-      viewer.trace.push([cursor.imgY, viewer.imgX]);
+      viewer.trace.push([viewer.imgY, viewer.imgX]);
     }
   } else {
     brush.clearView();
@@ -998,7 +998,7 @@ function updateMousePos(x, y) {
 
 // handles mouse movement, whether or not mouse button is held down
 function handleMousemove(evt) {
-  if (viewer.isCursorPressed() && spacedown) {
+  if (viewer.isCursorPressed() && viewer.isSpacedown) {
     // get the old values to see if rendering is reqiured.
     const oldX = viewer.sx;
     const oldY = viewer.sy;
@@ -1015,7 +1015,7 @@ function handleMousemove(evt) {
 // handles end of click&drag (different from click())
 function handleMouseup() {
   viewer.toggleIsPressed();
-  if (!spacedown) {
+  if (!viewer.isSpacedown) {
     if (mode.kind !== Modes.prompt) {
       if (edit_mode) {
         if (!brush.show) {
@@ -1136,7 +1136,7 @@ function startCaliban(filename, settings) {
 
   document.addEventListener('mouseup', handleMouseup);
 
-  loadFile(filename, (payload) => {
+  loadFile(filename, settings.rgb, (payload) => {
     max_frames = payload.max_frames;
     feature_max = payload.feature_max;
     channelMax = payload.channel_max;

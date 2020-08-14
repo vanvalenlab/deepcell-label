@@ -211,15 +211,16 @@ class CalibanCanvas {
       this.sx, this.sy,
       this.sWidth, this.sHeight,
       padding, padding,
-      this.width, this.height
+      this.width * this.scale,
+      this.height * this.scale
     );
   }
 
   updateCursorPosition(x, y, padding) {
-    this.cursor.updatePos(x, y, padding, this);
+    this.updatePos(x, y, padding, this);
   }
 
   isCursorPressed() {
-    return this.cursor.isPressed;
+    return this.isPressed;
   }
 }
