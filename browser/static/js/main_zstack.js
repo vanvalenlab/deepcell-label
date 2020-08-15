@@ -435,8 +435,7 @@ class Mode {
       erase: (brush.erase && !brush.conv),
       frame: current_frame
     });
-    // TODO: viewer.clearTrace ?
-    viewer.trace = [];
+    viewer.clearTrace();
     if (this.kind !== Modes.drawing) {
       this.clear();
     }
