@@ -244,7 +244,7 @@ class Mode {
       if (current_highlight) {
         adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
       }
-    } else if (key === "]" && this.highlighted_cell_one !== -1) {
+    } else if (key === ']' && this.highlighted_cell_one !== -1) {
       // cycle highlight to next label
       this.highlighted_cell_one = this.increment_value(
         this.highlighted_cell_one,
@@ -266,10 +266,10 @@ class Mode {
         frame: current_frame
       };
       this.kind = Modes.prompt;
-      this.action = "fill_hole";
+      this.action = 'fill_hole';
       this.prompt = `Select hole to fill in cell ${this.info.label}`;
       render_info_display();
-    } else if (!rgb && key === "c") {
+    } else if (!rgb && key === 'c') {
       // create new
       this.kind = Modes.question;
       this.action = 'create_new';
@@ -289,7 +289,7 @@ class Mode {
         maxLabelsMap.get(this.feature)
       );
       // clear info but show new highlighted cell
-      let temp_highlight = this.highlighted_cell_one;
+      const temp_highlight = this.highlighted_cell_one;
       this.clear();
       this.highlighted_cell_one = temp_highlight;
       if (current_highlight) {
@@ -303,7 +303,7 @@ class Mode {
         maxLabelsMap.get(this.feature)
       );
       // clear info but show new highlighted cell
-      let temp_highlight = this.highlighted_cell_one;
+      const temp_highlight = this.highlighted_cell_one;
       this.clear();
       this.highlighted_cell_one = temp_highlight;
       if (current_highlight) {
@@ -318,8 +318,8 @@ class Mode {
       // replace
       this.kind = Modes.question;
       this.action = 'replace';
-      this.prompt = ("Replace " + this.info.label_2 + " with " + this.info.label_1 +
-        "? // SPACE = Replace in all frames / S = Replace in this frame only / ESC = Cancel replace");
+      this.prompt = ('Replace ' + this.info.label_2 + ' with ' + this.info.label_1 +
+        '? // SPACE = Replace in all frames / S = Replace in this frame only / ESC = Cancel replace');
       render_info_display();
     } else if (!rgb && key === 's') {
       // swap
@@ -443,19 +443,18 @@ class Mode {
   }
 
   handle_threshold() {
-    const threshold_start_y = brush.threshY;
-    const threshold_start_x = brush.threshX;
-    const threshold_end_x = viewer.imgX;
-    const threshold_end_y = viewer.imgY;
+    const thresholdStartY = brush.threshY;
+    const thresholdStartX = brush.threshX;
+    const thresholdEndX = viewer.imgX;
+    const thresholdEndY = viewer.imgY;
 
-    if (threshold_start_y !== threshold_end_y &&
-        threshold_start_x !== threshold_end_x) {
-
+    if (thresholdStartY !== thresholdEndY &&
+        thresholdStartX !== thresholdEndX) {
       action('threshold', {
-        y1: threshold_start_y,
-        x1: threshold_start_x,
-        y2: threshold_end_y,
-        x2: threshold_end_x,
+        y1: thresholdStartY,
+        x1: thresholdStartX,
+        y2: thresholdEndY,
+        x2: thresholdEndX,
         frame: current_frame,
         label: maxLabelsMap.get(this.feature) + 1
       });
