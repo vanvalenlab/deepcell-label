@@ -918,7 +918,7 @@ function loadFile(file, rgb = false, cb) {
     type: 'POST',
     url: `load/${file}?&rgb=${rgb}`,
     success: cb,
-    async: false
+    async: true
   });
 }
 
