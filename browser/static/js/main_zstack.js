@@ -1158,10 +1158,22 @@ function startCaliban(filename, settings) {
       }
     }
 
+    brush = new Brush(rawHeight, rawWidth, padding);
+
     // define image onload cascade behavior, need rawHeight and rawWidth first
     adjuster = new ImageAdjuster(rawWidth, rawHeight, rgb, channelMax);
 
-    brush = new Brush(rawHeight, rawWidth, padding);
+    adjuster.rawImage.onload = () => adjuster.contrastRaw();
+    adjuster.segImage.onload = () => adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, mode);
+    if (rgb) {
+      adjuster.contrastedRaw.onload = () => adjuster.rawAdjust(viewer.segArray, current_highlight, edit_mode, brush, mode);
+      this.preCompSeg.onload = () => adjuster.segAdjust(viewer.segArray, current_highlight, edit_mode, brush, mode);
+    } else {
+      adjuster.contrastedRaw.onload = () => adjuster.preCompRawAdjust();
+      adjuster.preCompRaw.onload = () => adjuster.rawAdjust(viewer.segArray, current_highlight, edit_mode, brush, mode);
+      adjuster.preCompSeg.onload = () => adjuster.segAdjust(viewer.segArray, current_highlight, edit_mode, brush, mode);
+      adjuster.compositedImg.onload = () => adjuster.postCompAdjust(viewer.segArray, edit_mode, brush);
+    }
 
     adjuster.postCompImg.onload = render_image_display;
 
