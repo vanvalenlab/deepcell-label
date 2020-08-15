@@ -229,7 +229,7 @@ class Mode {
         this.clear();
       }
     } else if (key === 'p' && !rgb) {
-      //iou cell identity prediction
+      // iou cell identity prediction
       this.kind = Modes.question;
       this.action = 'predict';
       this.prompt = 'Predict cell ids for zstack? / S=PREDICT THIS FRAME / SPACE=PREDICT ALL FRAMES / ESC=CANCEL PREDICTION';
@@ -260,7 +260,7 @@ class Mode {
   // keybinds that apply in bulk mode, one selected
   handle_mode_single_keybind(key) {
     if (key === 'f' && !rgb) {
-      //hole fill
+      // hole fill
       this.info = {
         label: this.info.label,
         frame: current_frame
@@ -289,9 +289,9 @@ class Mode {
         maxLabelsMap.get(this.feature)
       );
       // clear info but show new highlighted cell
-      const temp_highlight = this.highlighted_cell_one;
+      const tempHighlight = this.highlighted_cell_one;
       this.clear();
-      this.highlighted_cell_one = temp_highlight;
+      this.highlighted_cell_one = tempHighlight;
       if (current_highlight) {
         adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
       }
@@ -303,9 +303,9 @@ class Mode {
         maxLabelsMap.get(this.feature)
       );
       // clear info but show new highlighted cell
-      const temp_highlight = this.highlighted_cell_one;
+      const tempHighlight = this.highlighted_cell_one;
       this.clear();
-      this.highlighted_cell_one = temp_highlight;
+      this.highlighted_cell_one = tempHighlight;
       if (current_highlight) {
         adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
       }
@@ -595,7 +595,6 @@ class Mode {
     } else if (state.label === 0) {
       // same as ESC
       this.clear();
-      return; // not sure why we return here
     } else if (this.kind === Modes.none) {
       // if nothing selected: shift-, alt-, or normal click
       this.handle_mode_none_click(evt);
