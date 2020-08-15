@@ -1,7 +1,7 @@
 /**
  * Handles zooming and panning of the canvas.
  */
-class CalibanCanvas {
+class CanvasState {
   constructor(width, height, scale, padding) {
     this.width = width;
     this.height = height;

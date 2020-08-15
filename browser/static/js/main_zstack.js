@@ -51,7 +51,7 @@ class Mode {
 
     this.action = '';
     this.prompt = '';
-    adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
+    adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
   }
 
   // these keybinds apply regardless of
@@ -78,7 +78,7 @@ class Mode {
     } else if (!rgb && key === 'h') {
       // toggle highlight
       current_highlight = !current_highlight;
-      adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
+      adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
     } else if (key === 'z') {
       // toggle rendering_raw
       rendering_raw = !rendering_raw;
@@ -122,7 +122,7 @@ class Mode {
         this.prompt = `Now drawing over label ${brush.target} with label ${brush.value}. Use ESC to leave this mode.`;
         this.kind = Modes.drawing;
       }
-      adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
+      adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
     }
   }
 
@@ -131,7 +131,7 @@ class Mode {
     if (key === 'e' && !settings.pixel_only) {
       // toggle edit mode
       edit_mode = !edit_mode;
-      adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
+      adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
     } else if (key === 'c') {
       // cycle forward one channel, if applicable
       this.channel += 1;
@@ -161,14 +161,14 @@ class Mode {
         maxLabelsMap.get(this.feature) + 1
       );
       if (current_highlight) {
-        adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
       }
       render_info_display();
     } else if (key === '[') {
       // decrease edit_value, minimum 1
       brush.value -= 1;
       if (current_highlight) {
-        adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
       }
       render_info_display();
     } else if (key === 'x') {
@@ -205,7 +205,7 @@ class Mode {
       // toggle edit mode
       edit_mode = !edit_mode;
       helper_brush_draw();
-      adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
+      adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
     } else if (key === 'c') {
       // cycle forward one channel, if applicable
       this.channel += 1;
@@ -242,7 +242,7 @@ class Mode {
         maxLabelsMap.get(this.feature)
       );
       if (current_highlight) {
-        adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
       }
     } else if (key === ']' && this.highlighted_cell_one !== -1) {
       // cycle highlight to next label
@@ -252,7 +252,7 @@ class Mode {
         maxLabelsMap.get(this.feature)
       );
       if (current_highlight) {
-        adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
       }
     }
   }
@@ -293,7 +293,7 @@ class Mode {
       this.clear();
       this.highlighted_cell_one = temp_highlight;
       if (current_highlight) {
-        adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
       }
     } else if (key === ']') {
       // cycle highlight to next label
@@ -307,7 +307,7 @@ class Mode {
       this.clear();
       this.highlighted_cell_one = temp_highlight;
       if (current_highlight) {
-        adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
       }
     }
   }
@@ -428,14 +428,14 @@ class Mode {
 
   handle_draw() {
     action('handle_draw', {
-      trace: JSON.stringify(viewer.trace), // stringify array so it doesn't get messed up
+      trace: JSON.stringify(state.trace), // stringify array so it doesn't get messed up
       target_value: brush.target, // value that we're overwriting
       brush_value: brush.value, // we don't update caliban with edit_value, etc each time they change
       brush_size: brush.size, // so we need to pass them in as args
       erase: (brush.erase && !brush.conv),
       frame: current_frame
     });
-    viewer.clearTrace();
+    state.clearTrace();
     if (this.kind !== Modes.drawing) {
       this.clear();
     }
@@ -444,8 +444,8 @@ class Mode {
   handle_threshold() {
     const thresholdStartY = brush.threshY;
     const thresholdStartX = brush.threshX;
-    const thresholdEndX = viewer.imgX;
-    const thresholdEndY = viewer.imgY;
+    const thresholdEndX = state.imgX;
+    const thresholdEndY = state.imgY;
 
     if (thresholdStartY !== thresholdEndY &&
         thresholdStartX !== thresholdEndX) {
@@ -482,68 +482,68 @@ class Mode {
     return currentValue;
   }
 
-  // TODO: viewer.click(evt, mode) ?
+  // TODO: state.click(evt, mode) ?
   handle_mode_none_click(evt) {
     if (evt.altKey) {
       // alt+click
       this.kind = Modes.question;
       this.action = 'flood_contiguous';
       this.info = {
-        label: viewer.label,
+        label: state.label,
         frame: current_frame,
-        x_location: viewer.imgX,
-        y_location: viewer.imgY
+        x_location: state.imgX,
+        y_location: state.imgY
       };
       this.prompt = 'SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL';
-      this.highlighted_cell_one = viewer.label;
+      this.highlighted_cell_one = state.label;
     } else if (evt.shiftKey) {
       // shift+click
       this.kind = Modes.question;
       this.action = 'trim_pixels';
       this.info = {
-        label: viewer.label,
+        label: state.label,
         frame: current_frame,
-        x_location: viewer.imgX,
-        y_location: viewer.imgY
+        x_location: state.imgX,
+        y_location: state.imgY
       };
       this.prompt = 'SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL';
-      this.highlighted_cell_one = viewer.label;
+      this.highlighted_cell_one = state.label;
     } else {
       // normal click
       this.kind = Modes.single;
       this.info = {
-        label: viewer.label,
+        label: state.label,
         frame: current_frame
       };
-      this.highlighted_cell_one = viewer.label;
+      this.highlighted_cell_one = state.label;
       this.highlighted_cell_two = -1;
-      viewer.storedClickX = viewer.imgX;
-      viewer.storedClickY = viewer.imgY;
+      state.storedClickX = state.imgX;
+      state.storedClickY = state.imgY;
     }
   }
 
   handle_mode_prompt_click(evt) {
-    if (this.action === 'fill_hole' && viewer.label === 0) {
+    if (this.action === 'fill_hole' && state.label === 0) {
       this.info = {
         label: this.info.label,
         frame: current_frame,
-        x_location: viewer.imgX,
-        y_location: viewer.imgY
+        x_location: state.imgX,
+        y_location: state.imgY
       };
       action(this.action, this.info);
       this.clear();
-    } else if (this.action === 'pick_color' && viewer.label !== 0 &&
-               viewer.label !== brush.target) {
-      brush.value = viewer.label;
+    } else if (this.action === 'pick_color' && state.label !== 0 &&
+               state.label !== brush.target) {
+      brush.value = state.label;
       if (brush.target !== 0) {
         this.prompt = `Now drawing over label ${brush.target} with label ${brush.value}. Use ESC to leave this mode.`;
         this.kind = Modes.drawing;
-        adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
       } else {
         this.clear();
       }
-    } else if (this.action === 'pick_target' && viewer.label !== 0) {
-      brush.target = viewer.label;
+    } else if (this.action === 'pick_target' && state.label !== 0) {
+      brush.target = state.label;
       this.action = 'pick_color';
       this.prompt = 'Click on the label you want to draw with, or press "n" to draw with an unused label.';
       render_info_display();
@@ -556,32 +556,32 @@ class Mode {
     this.kind = Modes.multiple;
 
     this.highlighted_cell_one = this.info.label;
-    this.highlighted_cell_two = viewer.label;
+    this.highlighted_cell_two = state.label;
 
     this.info = {
       label_1: this.info.label,
-      label_2: viewer.label,
+      label_2: state.label,
       frame_1: this.info.frame,
       frame_2: current_frame,
-      x1_location: viewer.storedClickX,
-      y1_location: viewer.storedClickY,
-      x2_location: viewer.imgX,
-      y2_location: viewer.imgY
+      x1_location: state.storedClickX,
+      y1_location: state.storedClickY,
+      x2_location: state.imgX,
+      y2_location: state.imgY
     };
   }
 
   handle_mode_multiple_click(evt) {
     this.highlighted_cell_one = this.info.label_1;
-    this.highlighted_cell_two = viewer.label;
+    this.highlighted_cell_two = state.label;
     this.info = {
       label_1: this.info.label_1,
-      label_2: viewer.label,
+      label_2: state.label,
       frame_1: this.info.frame_1,
       frame_2: current_frame,
-      x1_location: viewer.storedClickX,
-      y1_location: viewer.storedClickY,
-      x2_location: viewer.imgX,
-      y2_location: viewer.imgY
+      x1_location: state.storedClickX,
+      y1_location: state.storedClickY,
+      x2_location: state.imgX,
+      y2_location: state.imgY
     };
   }
 
@@ -592,7 +592,7 @@ class Mode {
     if (this.kind === Modes.prompt) {
       // hole fill or color picking options
       this.handle_mode_prompt_click(evt);
-    } else if (viewer.label === 0) {
+    } else if (state.label === 0) {
       // same as ESC
       this.clear();
       return; // not sure why we return here
@@ -600,7 +600,7 @@ class Mode {
       // if nothing selected: shift-, alt-, or normal click
       this.handle_mode_none_click(evt);
       if (current_highlight) {
-        adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
       } else {
         render_info_display();
       }
@@ -608,7 +608,7 @@ class Mode {
       // one label already selected
       this.handle_mode_single_click(evt);
       if (current_highlight) {
-        adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
       } else {
         render_info_display();
       }
@@ -616,7 +616,7 @@ class Mode {
       // two labels already selected, reselect second label
       this.handle_mode_multiple_click(evt);
       if (current_highlight) {
-        adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
       } else {
         render_info_display();
       }
@@ -673,7 +673,7 @@ var project_id;
 var brush;
 var adjuster;
 var cursor;
-var viewer;
+var state;
 
 /**
  * Delays an event callback to prevent calling the callback too frequently.
@@ -758,8 +758,8 @@ function upload_file(cb) {
 }
 
 function changeZoom(dzoom) {
-  viewer.changeZoom(dzoom, viewer.canvasPosX, viewer.canvasPosY);
-  updateMousePos(viewer.rawX, viewer.rawY);
+  state.changeZoom(dzoom, state.canvasPosX, state.canvasPosY);
+  updateMousePos(state.rawX, state.rawY);
   render_image_display();
 }
 
@@ -804,9 +804,9 @@ function render_edit_info() {
 }
 
 function render_cell_info() {
-  if (viewer.label !== 0) {
-    document.getElementById('label').innerHTML = viewer.label;
-    const track = tracks[mode.feature][viewer.label.toString()];
+  if (state.label !== 0) {
+    document.getElementById('label').innerHTML = state.label;
+    const track = tracks[mode.feature][state.label.toString()];
     document.getElementById('slices').textContent = track.slices.toString();
   } else {
     document.getElementById('label').innerHTML = '';
@@ -820,12 +820,12 @@ function render_info_display() {
   document.getElementById('frame').innerHTML = current_frame;
   document.getElementById('feature').innerHTML = mode.feature;
   document.getElementById('channel').innerHTML = mode.channel;
-  document.getElementById('zoom').innerHTML = `${viewer.zoom}%`;
+  document.getElementById('zoom').innerHTML = `${state.zoom}%`;
 
-  const displayedX = `${Math.floor(viewer.sx)}-${Math.ceil(viewer.sx + viewer.sWidth)}`;
+  const displayedX = `${Math.floor(state.sx)}-${Math.ceil(state.sx + state.sWidth)}`;
   document.getElementById('displayedX').innerHTML = displayedX;
 
-  const displayedY = `${Math.floor(viewer.sy)}-${Math.ceil(viewer.sy + viewer.sHeight)}`
+  const displayedY = `${Math.floor(state.sy)}-${Math.ceil(state.sy + state.sHeight)}`
   document.getElementById('displayedY').innerHTML = displayedY;
 
   render_highlight_info();
@@ -842,31 +842,31 @@ function render_edit_image(ctx) {
   if (rgb && rendering_raw) {
     render_raw_image(ctx);
   } else if (!rgb && !display_labels) {
-    this.viewer.drawImage(ctx, adjuster.preCompRaw, padding);
+    this.state.drawImage(ctx, adjuster.preCompRaw, padding);
   } else {
-    this.viewer.drawImage(ctx, adjuster.postCompImg, padding);
+    this.state.drawImage(ctx, adjuster.postCompImg, padding);
   }
   ctx.save();
   const region = new Path2D();
-  region.rect(padding, padding, viewer.scaledWidth, viewer.scaledHeight);
+  region.rect(padding, padding, state.scaledWidth, state.scaledHeight);
   ctx.clip(region);
   ctx.imageSmoothingEnabled = true;
 
   // draw brushview on top of cells/annotations
-  brush.draw(ctx, viewer);
+  brush.draw(ctx, state);
 
   ctx.restore();
 }
 
 function render_raw_image(ctx) {
-  this.viewer.drawImage(ctx, adjuster.contrastedRaw, padding);
+  this.state.drawImage(ctx, adjuster.contrastedRaw, padding);
 }
 
 function render_annotation_image(ctx) {
   if (rgb && !display_labels) {
-    this.viewer.drawImage(ctx, adjuster.postCompImg, padding);
+    this.state.drawImage(ctx, adjuster.postCompImg, padding);
   } else {
-    this.viewer.drawImage(ctx, adjuster.preCompSeg, padding);
+    this.state.drawImage(ctx, adjuster.preCompSeg, padding);
   }
 }
 
@@ -877,8 +877,8 @@ function render_image_display() {
   ctx.save();
   ctx.clearRect(
     0, 0,
-    2 * padding + viewer.scaledWidth,
-    2 * padding + viewer.scaledHeight
+    2 * padding + state.scaledWidth,
+    2 * padding + state.scaledHeight
   );
 
   if (edit_mode) {
@@ -891,7 +891,7 @@ function render_image_display() {
     // draw annotations
     render_annotation_image(ctx);
   }
-  viewer.drawBorders(ctx);
+  state.drawBorders(ctx);
   render_info_display();
 }
 
@@ -905,7 +905,7 @@ function fetch_and_render_frame() {
 
       // load new value of seg_array
       // array of arrays, contains annotation data for frame
-      viewer.segArray = payload.seg_arr;
+      state.segArray = payload.seg_arr;
       adjuster.segImage.src = payload.segmented;
       adjuster.rawImage.src = payload.raw;
     },
@@ -936,13 +936,13 @@ function setCanvasDimensions(rawDims) {
   // pick scale that accomodates both dimensions; can be less than 1
   const scale = Math.min(scaleX, scaleY);
 
-  viewer.zoom = 100;
-  viewer.scale = scale;
-  viewer.setBorders(padding);
+  state.zoom = 100;
+  state.scale = scale;
+  state.setBorders(padding);
 
   // set canvases size according to scale
-  document.getElementById('canvas').width = viewer.scaledWidth + 2 * padding;
-  document.getElementById('canvas').height = viewer.scaledHeight + 2 * padding;
+  document.getElementById('canvas').width = state.scaledWidth + 2 * padding;
+  document.getElementById('canvas').height = state.scaledHeight + 2 * padding;
 }
 
 // adjust contrast, brightness, or zoom upon mouse scroll
@@ -960,18 +960,18 @@ function handleScroll(evt) {
 // handle pressing mouse button (treats this as the beginning
 // of click&drag, since clicks are handled by Mode.click)
 function handleMousedown(evt) {
-  viewer.toggleIsPressed();
+  state.toggleIsPressed();
   // TODO: refactor "mousedown + mousemove" into ondrag?
-  if (!viewer.isSpacedown) {
+  if (!state.isSpacedown) {
     if (mode.kind !== Modes.prompt) {
       // begin drawing
       if (edit_mode) {
         if (!brush.show) {
-          brush.threshX = viewer.imgX;
-          brush.threshY = viewer.imgY;
+          brush.threshX = state.imgX;
+          brush.threshY = state.imgY;
         } else if (mode.kind !== Modes.prompt) {
           // not if turning on conv brush
-          viewer.trace.push([viewer.imgY, viewer.imgX]);
+          state.trace.push([state.imgY, state.imgX]);
         }
       }
     }
@@ -979,10 +979,10 @@ function handleMousedown(evt) {
 }
 
 function helper_brush_draw() {
-  if (viewer.isCursorPressed() && !viewer.isSpacedown) {
+  if (state.isCursorPressed() && !state.isSpacedown) {
     // update mouse_trace, but not if turning on conv brush
     if (mode.kind !== Modes.prompt) {
-      viewer.trace.push([viewer.imgY, viewer.imgX]);
+      state.trace.push([state.imgY, state.imgX]);
     }
   } else {
     brush.clearView();
@@ -992,15 +992,15 @@ function helper_brush_draw() {
 
 // input will typically be evt.offsetX, evt.offsetY (mouse events)
 function updateMousePos(x, y) {
-  const oldImgX = viewer.imgX;
-  const oldImgY = viewer.imgY;
+  const oldImgX = state.imgX;
+  const oldImgY = state.imgY;
 
-  viewer.updateCursorPosition(x, y, padding);
+  state.updateCursorPosition(x, y, padding);
 
   // if cursor has actually changed location in image
-  if (oldImgX !== viewer.imgX || oldImgY !== viewer.imgY) {
-    brush.x = viewer.imgX;
-    brush.y = viewer.imgY;
+  if (oldImgX !== state.imgX || oldImgY !== state.imgY) {
+    brush.x = state.imgX;
+    brush.y = state.imgY;
     // update brush preview
     if (edit_mode) {
       // brush's canvas is keeping track of the brush
@@ -1016,14 +1016,14 @@ function updateMousePos(x, y) {
 
 // handles mouse movement, whether or not mouse button is held down
 function handleMousemove(evt) {
-  if (viewer.isCursorPressed() && viewer.isSpacedown) {
+  if (state.isCursorPressed() && state.isSpacedown) {
     // get the old values to see if rendering is reqiured.
-    const oldX = viewer.sx;
-    const oldY = viewer.sy;
+    const oldX = state.sx;
+    const oldY = state.sy;
 
-    viewer.pan(evt.originalEvent.movementX, evt.originalEvent.movementY);
+    state.pan(evt.originalEvent.movementX, evt.originalEvent.movementY);
 
-    if (viewer.sx !== oldX || viewer.sy !== oldY) {
+    if (state.sx !== oldX || state.sy !== oldY) {
       render_image_display();
     }
   }
@@ -1032,8 +1032,8 @@ function handleMousemove(evt) {
 
 // handles end of click&drag (different from click())
 function handleMouseup() {
-  viewer.toggleIsPressed();
-  if (!viewer.isSpacedown) {
+  state.toggleIsPressed();
+  if (!state.isSpacedown) {
     if (mode.kind !== Modes.prompt) {
       if (edit_mode) {
         if (!brush.show) {
@@ -1061,7 +1061,7 @@ function action(action, info, frame = current_frame) {
         // load new value of seg_array
         // array of arrays, contains annotation data for frame
         if (Object.prototype.hasOwnProperty.call(payload.imgs, 'seg_arr')) {
-          viewer.segArray = payload.imgs.seg_arr;
+          state.segArray = payload.imgs.seg_arr;
         }
 
         if (Object.prototype.hasOwnProperty.call(payload.imgs, 'segmented')) {
@@ -1127,16 +1127,16 @@ function startCaliban(filename, settings) {
     const rawWidth = payload.dimensions[0];
     const rawHeight = payload.dimensions[1];
 
-    viewer = new CalibanCanvas(rawWidth, rawHeight, 1, padding);
+    state = new CanvasState(rawWidth, rawHeight, 1, padding);
 
     window.addEventListener('keydown', (e) => {
       if (e.key === ' ') {
-        viewer.toggleIsSpacedown();
+        state.toggleIsSpacedown();
       }
     }, false);
     window.addEventListener('keyup', (e) => {
       if (e.key === ' ') {
-        viewer.toggleIsSpacedown();
+        state.toggleIsSpacedown();
       }
     }, false);
 
@@ -1162,15 +1162,15 @@ function startCaliban(filename, settings) {
     adjuster = new ImageAdjuster(rawWidth, rawHeight, rgb, channelMax);
 
     adjuster.rawImage.onload = () => adjuster.contrastRaw();
-    adjuster.segImage.onload = () => adjuster.preCompAdjust(viewer.segArray, current_highlight, edit_mode, brush, mode);
+    adjuster.segImage.onload = () => adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, mode);
     if (rgb) {
-      adjuster.contrastedRaw.onload = () => adjuster.rawAdjust(viewer.segArray, current_highlight, edit_mode, brush, mode);
-      this.preCompSeg.onload = () => adjuster.segAdjust(viewer.segArray, current_highlight, edit_mode, brush, mode);
+      adjuster.contrastedRaw.onload = () => adjuster.rawAdjust(state.segArray, current_highlight, edit_mode, brush, mode);
+      this.preCompSeg.onload = () => adjuster.segAdjust(state.segArray, current_highlight, edit_mode, brush, mode);
     } else {
       adjuster.contrastedRaw.onload = () => adjuster.preCompRawAdjust();
-      adjuster.preCompRaw.onload = () => adjuster.rawAdjust(viewer.segArray, current_highlight, edit_mode, brush, mode);
-      adjuster.preCompSeg.onload = () => adjuster.segAdjust(viewer.segArray, current_highlight, edit_mode, brush, mode);
-      adjuster.compositedImg.onload = () => adjuster.postCompAdjust(viewer.segArray, edit_mode, brush);
+      adjuster.preCompRaw.onload = () => adjuster.rawAdjust(state.segArray, current_highlight, edit_mode, brush, mode);
+      adjuster.preCompSeg.onload = () => adjuster.segAdjust(state.segArray, current_highlight, edit_mode, brush, mode);
+      adjuster.compositedImg.onload = () => adjuster.postCompAdjust(state.segArray, edit_mode, brush);
     }
 
     adjuster.postCompImg.onload = render_image_display;
@@ -1195,7 +1195,7 @@ function startCaliban(filename, settings) {
     const canvasElement = document.getElementById('canvas');
     // bind click on canvas
     canvasElement.addEventListener('click', (evt) => {
-      if (!viewer.isSpacedown && (!edit_mode || mode.kind === Modes.prompt)) {
+      if (!state.isSpacedown && (!edit_mode || mode.kind === Modes.prompt)) {
         mode.click(evt);
       }
     });
