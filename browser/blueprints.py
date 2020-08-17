@@ -126,12 +126,12 @@ def action(project_id, action_type, frame):
         img_payload = {}
 
         if x_changed:
-            raw = state.get_frame(frame, raw=True)
+            raw = state.view.get_frame(frame, raw=True)
             img_payload['raw'] = f'data:image/png;base64,{encode(raw)}'
         if y_changed:
-            img = state.get_frame(frame, raw=False)
+            img = state.view.get_frame(frame, raw=False)
             img_payload['segmented'] = f'data:image/png;base64,{encode(img)}'
-            edit_arr = state.get_array(frame)
+            edit_arr = state.view.get_array(frame)
             img_payload['seg_arr'] = edit_arr.tolist()
 
     else:
@@ -159,11 +159,11 @@ def get_frame(frame, project_id):
     state = load_project_state(project)
 
     # Obtain raw, mask, and edit mode frames
-    img = state.get_frame(frame, raw=False)
-    raw = state.get_frame(frame, raw=True)
+    img = state.view.get_frame(frame, raw=False)
+    raw = state.view.get_frame(frame, raw=True)
 
     # Obtain color map of the cells
-    edit_arr = state.get_array(frame)
+    edit_arr = state.view.get_array(frame)
 
     encode = lambda x: base64.encodebytes(x.read()).decode()
 
@@ -205,11 +205,11 @@ def load(filename):
                                  filename, timeit.default_timer() - start)
         # Send attributes to .js file
         return jsonify({
-            'max_frames': track_review.max_frames,
+            'max_frames': track_review.file.max_frames,
             'tracks': track_review.readable_tracks,
-            'dimensions': (track_review.width, track_review.height),
+            'dimensions': (track_review.file.width, track_review.file.height),
             'project_id': project.id,
-            'screen_scale': track_review.scale_factor
+            'screen_scale': track_review.view.scale_factor
         })
 
     if is_npz_file(filename):
@@ -223,11 +223,11 @@ def load(filename):
                                  filename, timeit.default_timer() - start)
         # Send attributes to .js file
         return jsonify({
-            'max_frames': zstack_review.max_frames,
-            'channel_max': zstack_review.channel_max,
-            'feature_max': zstack_review.feature_max,
+            'max_frames': zstack_review.file.max_frames,
+            'channel_max': zstack_review.file.channel_max,
+            'feature_max': zstack_review.file.feature_max,
             'tracks': zstack_review.readable_tracks,
-            'dimensions': (zstack_review.width, zstack_review.height),
+            'dimensions': (zstack_review.file.width, zstack_review.file.height),
             'project_id': project.id
         })
 
