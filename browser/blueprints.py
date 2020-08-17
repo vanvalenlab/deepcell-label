@@ -22,7 +22,7 @@ from flask import current_app
 from werkzeug.exceptions import HTTPException
 
 from helpers import is_trk_file, is_npz_file
-from caliban import TrackReview, ZStackReview
+from caliban import TrackFile, TrackReview, ZStackFile, ZStackReview
 from models import Project
 
 
@@ -69,18 +69,19 @@ def upload_file(project_id):
         return jsonify({'error': 'project_id not found'}), 404
 
     state = load_project_state(project)
+    filename = project.file.filename
 
     # Call function in caliban.py to save data file and send to S3 bucket
-    if is_trk_file(project.filename):
+    if is_trk_file(filename):
         state.action_save_track()
-    elif is_npz_file(project.filename):
+    elif is_npz_file(filename):
         state.action_save_zstack()
 
     # add "finished" timestamp and null out state longblob
     Project.finish_project(project)
 
     current_app.logger.debug('Uploaded file "%s" for project "%s" in %s s.',
-                             project.filename, project_id,
+                             filename, project_id,
                              timeit.default_timer() - start)
 
     return redirect('/')
@@ -126,12 +127,12 @@ def action(project_id, action_type, frame):
         img_payload = {}
 
         if x_changed:
-            raw = state.view.get_frame(frame, raw=True)
+            raw = state.get_frame(frame, raw=True)
             img_payload['raw'] = f'data:image/png;base64,{encode(raw)}'
         if y_changed:
-            img = state.view.get_frame(frame, raw=False)
+            img = state.get_frame(frame, raw=False)
             img_payload['segmented'] = f'data:image/png;base64,{encode(img)}'
-            edit_arr = state.view.get_array(frame)
+            edit_arr = state.get_array(frame)
             img_payload['seg_arr'] = edit_arr.tolist()
 
     else:
@@ -159,11 +160,11 @@ def get_frame(frame, project_id):
     state = load_project_state(project)
 
     # Obtain raw, mask, and edit mode frames
-    img = state.view.get_frame(frame, raw=False)
-    raw = state.view.get_frame(frame, raw=True)
+    img = state.get_frame(frame, raw=False)
+    raw = state.get_frame(frame, raw=True)
 
     # Obtain color map of the cells
-    edit_arr = state.view.get_array(frame)
+    edit_arr = state.get_array(frame)
 
     encode = lambda x: base64.encodebytes(x.read()).decode()
 
@@ -199,17 +200,18 @@ def load(filename):
 
     if is_trk_file(filename):
         # Initate TrackReview object and entry in database
-        track_review = TrackReview(filename, input_bucket, output_bucket, full_path)
+        track_file = TrackFile(filename, input_bucket, full_path)
+        track_review = TrackReview(track_file, output_bucket)
         project = Project.create_project(filename, track_review, subfolders)
         current_app.logger.debug('Loaded trk file "%s" in %s s.',
                                  filename, timeit.default_timer() - start)
         # Send attributes to .js file
         return jsonify({
-            'max_frames': track_review.file.max_frames,
+            'max_frames': track_file.max_frames,
             'tracks': track_review.readable_tracks,
-            'dimensions': (track_review.file.width, track_review.file.height),
+            'dimensions': (track_file.width, track_file.height),
             'project_id': project.id,
-            'screen_scale': track_review.view.scale_factor
+            'screen_scale': track_review.scale_factor
         })
 
     if is_npz_file(filename):
@@ -217,17 +219,18 @@ def load(filename):
         rgb = request.args.get('rgb', default='false', type=str)
         rgb = bool(distutils.util.strtobool(rgb))
         # Initate ZStackReview object and entry in database
-        zstack_review = ZStackReview(filename, input_bucket, output_bucket, full_path, rgb)
+        zstack_file = ZStackFile(filename, input_bucket, full_path)
+        zstack_review = ZStackReview(zstack_file, output_bucket, rgb)
         project = Project.create_project(filename, zstack_review, subfolders)
         current_app.logger.debug('Loaded npz file "%s" in %s s.',
                                  filename, timeit.default_timer() - start)
         # Send attributes to .js file
         return jsonify({
-            'max_frames': zstack_review.file.max_frames,
-            'channel_max': zstack_review.file.channel_max,
-            'feature_max': zstack_review.file.feature_max,
+            'max_frames': zstack_file.max_frames,
+            'channel_max': zstack_file.channel_max,
+            'feature_max': zstack_file.feature_max,
             'tracks': zstack_review.readable_tracks,
-            'dimensions': (zstack_review.file.width, zstack_review.file.height),
+            'dimensions': (zstack_file.width, zstack_file.height),
             'project_id': project.id
         })
 

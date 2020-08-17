@@ -124,6 +124,10 @@ class BaseView(object):  # pylint: disable=useless-object-inheritance
         for channel in range(self.file.channel_max):
             self.max_intensity[channel] = None
 
+        self._x_changed = False
+        self._y_changed = False
+        self.info_changed = False
+
     def rescale_95(self, img):
         """Rescale a single- or multi-channel image."""
         percentiles = np.percentile(img[img > 0], [5, 95])
@@ -168,6 +172,31 @@ class BaseView(object):  # pylint: disable=useless-object-inheritance
 
     def get_max_label(self):
         raise NotImplementedError('get_max_label is not implemented in BaseView')
+
+    def action(self, action_type, info):
+        """Call an action method based on an action type."""
+        attr_name = 'action_{}'.format(action_type)
+        try:
+            action = getattr(self, attr_name)
+            action(**info)
+        except AttributeError:
+            raise ValueError('Invalid action "{}"'.format(action_type))
+
+    def action_change_channel(self, channel):
+        """Change selected channel."""
+        if channel < 0 or channel > self.file.channel_max:
+            raise ValueError('Channel {} is outside of range [0, {}].'.format(
+                channel, self.file.channel_max))
+        self.channel = channel
+        self._x_changed = True
+
+    def action_change_feature(self, feature):
+        """Change selected feature."""
+        if feature < 0 or feature > self.file.feature_max:
+            raise ValueError('Feature {} is outside of range [0, {}].'.format(
+                feature, self.file.feature_max))
+        self.feature = feature
+        self._y_changed = True
 
 
 class ZStackView(BaseView):
@@ -269,34 +298,13 @@ class TrackView(BaseView):
         return max(self.file.tracks)
 
 
-# class Feedback():
-#     """Class for viewing feedback from quality control."""
-
-#     # TODO: @tddough98 use qc_bucket to show changes from QC
-#     def __init__(self, filename, input_bucket, output_bucket, path,
-#                  raw_key='raw', annotated_key='annotated'):
-
-#         self.input_file = BaseFile(filename, input_bucket, path, raw_key, annotated_key)
-#         self.output_file = BaseFile(filename, output_bucket, path, raw_key, annotated_key)
-
-#         self.input_view = BaseView(self.input_file)
-#         self.output_view = BaseView(self.output_file)
-
-
-class BaseReview(object):
+class BaseReview(BaseView):
     """Base class for all Review objects."""
 
-    def __init__(self, filename, input_bucket, output_bucket, path,
-                 raw_key='raw', annotated_key='annotated'):
-
-        self.file = BaseFile(filename, input_bucket, path, raw_key, annotated_key)
-        self.view = BaseView(self.file)
+    def __init__(self, file_, output_bucket):
+        super(BaseReview, self).__init__(file_)
         
         self.output_bucket = output_bucket
-
-        self._x_changed = False
-        self._y_changed = False
-        self.info_changed = False
 
     def add_cell_info(self, add_label, frame):
         raise NotImplementedError('add_cell_info is not implemented in BaseReview')
@@ -304,34 +312,9 @@ class BaseReview(object):
     def del_cell_info(self, del_label, frame):
         raise NotImplementedError('del_cell_info is not implemented in BaseReview')
 
-    def action(self, action_type, info):
-        """Call an action method based on an action type."""
-        attr_name = 'action_{}'.format(action_type)
-        try:
-            action = getattr(self, attr_name)
-            action(**info)
-        except AttributeError:
-            raise ValueError('Invalid action "{}"'.format(action_type))
-
-    def action_change_channel(self, channel):
-        """Change selected channel."""
-        if channel < 0 or channel > self.file.channel_max:
-            raise ValueError('Channel {} is outside of range [0, {}].'.format(
-                channel, self.file.channel_max))
-        self.channel = channel
-        self._x_changed = True
-
-    def action_change_feature(self, feature):
-        """Change selected feature."""
-        if feature < 0 or feature > self.file.feature_max:
-            raise ValueError('Feature {} is outside of range [0, {}].'.format(
-                feature, self.file.feature_max))
-        self.feature = feature
-        self._y_changed = True
-
     def action_new_single_cell(self, label, frame):
         """Create new label in just one frame"""
-        new_label = self.view.get_max_label() + 1
+        new_label = self.get_max_label() + 1
 
         # replace frame labels
         img = self.file.annotated[frame, ..., self.feature]
@@ -380,7 +363,7 @@ class BaseReview(object):
             y_loc = loc[0]
 
             brush_area = circle(y_loc, x_loc,
-                                brush_size // self.view.scale_factor,
+                                brush_size // self.scale_factor,
                                 (self.file.height, self.file.width))
 
             # do not overwrite or erase labels other than the one you're editing
@@ -412,8 +395,8 @@ class BaseReview(object):
         """
         img_ann = self.file.annotated[frame, ..., self.feature]
 
-        seed_point = (y_location // self.view.scale_factor,
-                      x_location // self.view.scale_factor)
+        seed_point = (y_location // self.scale_factor,
+                      x_location // self.scale_factor)
 
         contig_cell = flood(image=img_ann, seed_point=seed_point)
         stray_pixels = np.logical_and(np.invert(contig_cell), img_ann == label)
@@ -431,8 +414,8 @@ class BaseReview(object):
         prevents hole fill from spilling out into background in some cases
         '''
         # rescale click location -> corresponding location in annotation array
-        hole_fill_seed = (y_location // self.view.scale_factor,
-                          x_location // self.view.scale_factor)
+        hole_fill_seed = (y_location // self.scale_factor,
+                          x_location // self.scale_factor)
         # fill hole with label
         img_ann = self.file.annotated[frame, :, :, self.feature]
         filled_img_ann = flood_fill(img_ann, hole_fill_seed, label, connectivity=1)
@@ -449,13 +432,13 @@ class BaseReview(object):
         """
         img_ann = self.file.annotated[frame, ..., self.feature]
         old_label = label
-        new_label = self.view.get_max_label() + 1
+        new_label = self.get_max_label() + 1
 
         in_original = np.any(np.isin(img_ann, old_label))
 
         filled_img_ann = flood_fill(img_ann,
-                                    (int(y_location / self.view.scale_factor),
-                                     int(x_location / self.view.scale_factor)),
+                                    (int(y_location / self.scale_factor),
+                                     int(x_location / self.scale_factor)),
                                     new_label)
         self.file.annotated[frame, ..., self.feature] = filled_img_ann
 
@@ -471,7 +454,7 @@ class BaseReview(object):
         """Use watershed to segment different objects"""
         # Pull the label that is being split and find a new valid label
         current_label = label
-        new_label = self.view.get_max_label() + 1
+        new_label = self.get_max_label() + 1
 
         # Locally store the frames to work on
         img_raw = self.file.raw[frame, ..., self.channel]
@@ -482,11 +465,11 @@ class BaseReview(object):
         seeds_labeled = np.zeros(img_ann.shape)
 
         # create two seed locations
-        seeds_labeled[int(y1_location / self.view.scale_factor),
-                      int(x1_location / self.view.scale_factor)] = current_label
+        seeds_labeled[int(y1_location / self.scale_factor),
+                      int(x1_location / self.scale_factor)] = current_label
 
-        seeds_labeled[int(y2_location / self.view.scale_factor),
-                      int(x2_location / self.view.scale_factor)] = new_label
+        seeds_labeled[int(y2_location / self.scale_factor),
+                      int(x2_location / self.scale_factor)] = new_label
 
         # define the bounding box to apply the transform on and select
         # appropriate sections of 3 inputs (raw, seeds, annotation mask)
@@ -573,15 +556,11 @@ class BaseReview(object):
             self.add_cell_info(add_label=label, frame=frame)
 
 
-class ZStackReview(BaseReview):
+class ZStackReview(ZStackView, BaseReview):
 
-    def __init__(self, filename, input_bucket, output_bucket, path, rgb=False):
-        super(ZStackReview, self).__init__(
-            filename, input_bucket, output_bucket, path,
-            raw_key='raw', annotated_key='annotated')
-
-        self.file = ZStackFile(filename, input_bucket, path, 'raw', 'annotated', rgb)
-        self.view = ZStackView(self.file)
+    def __init__(self, file_, output_bucket, rgb=False):
+        ZStackView.__init__(self, file_, rgb)
+        BaseReview.__init__(self, file_, output_bucket)
 
         for feature in range(self.file.feature_max):
             self.create_cell_info(feature)
@@ -609,7 +588,7 @@ class ZStackReview(BaseReview):
         Creates new cell label and replaces original label with it in all subsequent frames
         """
         old_label, start_frame = label, frame
-        new_label = self.view.get_max_label() + 1
+        new_label = self.get_max_label() + 1
 
         # replace frame labels
         for frame in self.file.annotated[start_frame:, ..., self.feature]:
@@ -778,16 +757,12 @@ class ZStackReview(BaseReview):
         self.info_changed = True
 
 
-class TrackReview(BaseReview):
-    def __init__(self, filename, input_bucket, output_bucket, path):
-        super(TrackReview, self).__init__(
-            filename, input_bucket, output_bucket, path,
-            raw_key='raw', annotated_key='tracked')
+class TrackReview(TrackView, BaseReview):
+    def __init__(self, file_, output_bucket):
+        TrackView.__init__(self, file_)
+        BaseReview.__init__(self, file_, output_bucket)
 
-        self.file = TrackFile(filename, input_bucket, path)
-        self.view = TrackView(self.file)
-
-        self.view.scale_factor = 2
+        self.scale_factor = 2
 
     @property
     def readable_tracks(self):
@@ -811,7 +786,7 @@ class TrackReview(BaseReview):
         Replacing label - create in all subsequent frames
         """
         old_label, start_frame = label, frame
-        new_label = self.view.get_max_label() + 1
+        new_label = self.get_max_label() + 1
 
         if start_frame != 0:
             # replace frame labels
