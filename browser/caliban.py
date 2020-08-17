@@ -26,9 +26,10 @@ from imgutils import pngify
 from helpers import is_npz_file, is_trk_file
 from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 
-class BaseFile(object): # pylint: disable=useless-object-inheritance
+
+class BaseFile(object):  # pylint: disable=useless-object-inheritance
     """Base class for the files viewed in Caliban."""
-    
+
     def __init__(self, filename, bucket, path, raw_key, annotated_key):
         self.filename = filename
         self.bucket = bucket
@@ -101,7 +102,7 @@ class TrackFile(BaseFile):
         self.tracks = self.trial['lineages'][0]
 
 
-class BaseView(object): # pylint: disable=useless-object-inheritance
+class BaseView(object):  # pylint: disable=useless-object-inheritance
     """
     Base class for viewing a file in Caliban.
     Implements everything but actions on the file.
@@ -170,7 +171,7 @@ class BaseView(object): # pylint: disable=useless-object-inheritance
 
 
 class ZStackView(BaseView):
-    
+
     def __init__(self, file_, rgb=False):
         super(ZStackView, self).__init__(file_)
 
@@ -188,7 +189,7 @@ class ZStackView(BaseView):
                 self.file.width = self.file.raw.shape[2]
 
             self.rgb_img = self.reduce_to_RGB()
-    
+
     def get_max_label(self):
         """Get the highest label in use in currently-viewed feature.
 
@@ -251,23 +252,23 @@ class ZStackView(BaseView):
 
         The rescaled raw array is used subsequently for image display purposes.
         """
-        rescaled = np.zeros((self.file.height, self.file.width, self.file.channel_max), 
+        rescaled = np.zeros((self.file.height, self.file.width, self.file.channel_max),
                             dtype='uint8')
         # this approach allows noise through
         for channel in range(min(6, self.file.channel_max)):
             raw_channel = self.file.raw[self.current_frame, ..., channel]
             if np.sum(raw_channel) != 0:
                 rescaled[..., channel] = self.rescale_95(raw_channel)
-        return rescaled 
+        return rescaled
 
 
 class TrackView(BaseView):
-    
+
     def get_max_label(self):
         """Get the highest label in the lineage data."""
         return max(self.file.tracks)
-        
-    
+
+
 # class Feedback():
 #     """Class for viewing feedback from quality control."""
 
@@ -430,7 +431,8 @@ class BaseReview(object):
         prevents hole fill from spilling out into background in some cases
         '''
         # rescale click location -> corresponding location in annotation array
-        hole_fill_seed = (y_location // self.view.scale_factor, x_location // self.view.scale_factor)
+        hole_fill_seed = (y_location // self.view.scale_factor,
+                          x_location // self.view.scale_factor)
         # fill hole with label
         img_ann = self.file.annotated[frame, :, :, self.feature]
         filled_img_ann = flood_fill(img_ann, hole_fill_seed, label, connectivity=1)
@@ -544,7 +546,7 @@ class BaseReview(object):
 
         # pull out the selection portion of the raw frame
         predict_area = self.file.raw[frame, top_edge:bottom_edge,
-                                left_edge:right_edge, self.channel]
+                                     left_edge:right_edge, self.channel]
 
         # triangle threshold picked after trying a few on one dataset
         # may not be the best threshold approach for other datasets!
@@ -560,7 +562,7 @@ class BaseReview(object):
 
         # put prediction in without overwriting
         predict_area = self.file.annotated[frame, top_edge:bottom_edge,
-                                      left_edge:right_edge, self.feature]
+                                           left_edge:right_edge, self.feature]
         safe_overlay = np.where(predict_area == 0, ann_threshold, predict_area)
 
         self.file.annotated[frame, top_edge:bottom_edge,
@@ -580,7 +582,7 @@ class ZStackReview(BaseReview):
 
         self.file = ZStackFile(filename, input_bucket, path, 'raw', 'annotated', rgb)
         self.view = ZStackView(self.file)
-        
+
         for feature in range(self.file.feature_max):
             self.create_cell_info(feature)
 
