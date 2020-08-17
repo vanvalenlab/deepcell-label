@@ -69,7 +69,7 @@ def upload_file(project_id):
         return jsonify({'error': 'project_id not found'}), 404
 
     state = load_project_state(project)
-    filename = project.file.filename
+    filename = state.file.filename
 
     # Call function in caliban.py to save data file and send to S3 bucket
     if is_trk_file(filename):
