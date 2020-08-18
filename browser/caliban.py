@@ -76,7 +76,7 @@ class ZStackFile(BaseFile):
     """
 
     def __init__(self, filename, bucket, path,
-                 raw_key='raw', annotated_key='annotated', rgb=False):
+                 raw_key='raw', annotated_key='annotated'):
         super(ZStackFile, self).__init__(filename, bucket, path, raw_key, annotated_key)
 
         # create a dictionary that has frame information about each cell
@@ -202,7 +202,9 @@ class BaseView(object):  # pylint: disable=useless-object-inheritance
 class ZStackView(BaseView):
 
     def __init__(self, file_, rgb=False):
-        super(ZStackView, self).__init__(file_)
+        # a call to super(ZStackView, self).__init__ says that the output_bucket argument is missing
+        # must be calling BaseReview constructor...
+        BaseView.__init__(self, file_)
 
         self.rgb = rgb
 
@@ -303,7 +305,6 @@ class BaseReview(BaseView):
 
     def __init__(self, file_, output_bucket):
         super(BaseReview, self).__init__(file_)
-        
         self.output_bucket = output_bucket
 
     def add_cell_info(self, add_label, frame):
