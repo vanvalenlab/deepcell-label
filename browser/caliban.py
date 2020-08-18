@@ -57,7 +57,7 @@ class BaseFile(object):  # pylint: disable=useless-object-inheritance
         )
 
     def load(self):
-        """Load a file from the S3 input bucket"""    
+        """Load a file from the S3 input bucket"""
         if is_npz_file(self.filename):
             _load = load_npz
         elif is_trk_file(self.filename):
@@ -84,7 +84,7 @@ class ZStackFile(BaseFile):
         self.cell_ids = {}
         self.cell_info = {}
 
-    
+
 class TrackFile(BaseFile):
     """
     Class for .trk files for cell tracking.
@@ -550,7 +550,7 @@ class BaseReview(BaseView):
         safe_overlay = np.where(predict_area == 0, ann_threshold, predict_area)
 
         self.file.annotated[frame, top_edge:bottom_edge,
-                       left_edge:right_edge, self.feature] = safe_overlay
+                            left_edge:right_edge, self.feature] = safe_overlay
 
         # don't need to update cell_info unless an annotation has been added
         if np.any(np.isin(self.file.annotated[frame, ..., self.feature], label)):
@@ -711,7 +711,8 @@ class ZStackReview(ZStackView, BaseReview):
                 'frames': [frame],
                 'slices': ''
             }
-            self.file.cell_ids[self.feature] = np.append(self.file.cell_ids[self.feature], add_label)
+            self.file.cell_ids[self.feature] = np.append(self.file.cell_ids[self.feature], 
+                                                         add_label)
 
         # if adding cell, frames and info have necessarily changed
         self._y_changed = self.info_changed = True
