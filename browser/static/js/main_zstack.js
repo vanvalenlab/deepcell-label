@@ -1164,7 +1164,7 @@ function startCaliban(filename, settings) {
     adjuster.segImage.onload = () => adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, mode);
     if (rgb) {
       adjuster.contrastedRaw.onload = () => adjuster.rawAdjust(state.segArray, current_highlight, edit_mode, brush, mode);
-      this.preCompSeg.onload = () => adjuster.segAdjust(state.segArray, current_highlight, edit_mode, brush, mode);
+      adjuster.preCompSeg.onload = () => adjuster.segAdjust(state.segArray, current_highlight, edit_mode, brush, mode);
     } else {
       adjuster.contrastedRaw.onload = () => adjuster.preCompRawAdjust();
       adjuster.preCompRaw.onload = () => adjuster.rawAdjust(state.segArray, current_highlight, edit_mode, brush, mode);
