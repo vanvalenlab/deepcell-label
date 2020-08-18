@@ -711,7 +711,7 @@ class ZStackReview(ZStackView, BaseReview):
                 'frames': [frame],
                 'slices': ''
             }
-            self.file.cell_ids[self.feature] = np.append(self.file.cell_ids[self.feature], 
+            self.file.cell_ids[self.feature] = np.append(self.file.cell_ids[self.feature],
                                                          add_label)
 
         # if adding cell, frames and info have necessarily changed
