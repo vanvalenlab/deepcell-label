@@ -53,7 +53,7 @@ class CanvasState {
   set segArray(newSegArray) {
     this._segArray = newSegArray;
     if (this.inRange()) {
-      this.label = Math.abs(this.segArray[this.imgY][this.imgX]);
+      this.label = Math.abs(this._segArray[this.imgY][this.imgX]);
     } else {
       this.label = 0;
     }
@@ -93,7 +93,7 @@ class CanvasState {
     if (this.inRange()) {
       this.imgX = Math.floor((this.canvasPosX * 100 / (this.scale * this.zoom) + this.sx));
       this.imgY = Math.floor((this.canvasPosY * 100 / (this.scale * this.zoom) + this.sy));
-      this.label = Math.abs(this.segArray[this.imgY][this.imgX]);
+      this.label = Math.abs(this._segArray[this.imgY][this.imgX]);
     } else {
       this.label = 0;
     }
