@@ -162,10 +162,7 @@ class CanvasState {
     ctx.restore();
   }
 
-  pan(x, y) {
-    const dx = x * 100 / (this.zoom * this.scale);
-    const dy = y * 100 / (this.zoom * this.scale);
-
+  pan(dx, dy) {
     let tempPanX = this.sx - dx;
     let tempPanY = this.sy - dy;
 
