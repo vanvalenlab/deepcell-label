@@ -60,6 +60,17 @@
 // layer_diff.draw();
 // layer_qc.draw();
 
+
+//////////////////
+
+/**
+Caliban.JS
+A KonvaJS based tool for creating instance segmentation masks.
+*/
+
+// const Konva = require('konva');
+// const $ = require('jquery');
+
 // constants
 const padding = 5;
 const translucentOpacity = 0.3;
@@ -89,23 +100,43 @@ class Caliban {
     this._editMode = pixelOnly && !labelOnly;
     this._currentHighlight = this._rgb;
     this._displayLabels = !this._rgb;
-    this._inverted = true;
     this._renderingRaw = false;
 
+    // currently viewing state
     this._channel = 0;
     this._feature = 0;
     this._frame = 0;
+
     this._minScale = 1; // update this when resizing canvas.
 
     // drawing with Konva: https://konvajs.org/docs/sandbox/Free_Drawing.html
-    this._isPaint = false;
     this.brush = new Brush(null, this._rawHeight, this._rawWidth, padding);
 
+    // brightness and contrast adjustment
+    this._minContrast = -100;
+    this._maxContrast = 100;
+
+    this._minBrightness = -1;
+    this._maxBrightness = 0.7;
+
+    // image adjustments are stored per channel for better viewing
+    this.contrastMap = new Map();
+    this.brightnessMap = new Map();
+    this.invertMap = new Map();
+
+    this.maxLabelsMap = new Map();
+
+    this.brightness = 0;
+    this.contrast = 0;
+    this.inverted = true;
+
+    // Konva stage, layers, and shapes.
     this.stage = new Konva.Stage({
       container: 'canvas-col',
       width: this._rawWidth,
       height: this._rawHeight
     });
+    this.stage.container().style.cursor = 'crosshair';
 
     this.stage.on('wheel', (event) => {
       // don't scroll the page
@@ -124,26 +155,6 @@ class Caliban {
 
     // this.stage.getContainer().style.backgroundColor = 'black';
     this.fitStageIntoParentContainer();
-
-    // brightness and contrast adjustment
-    this._minContrast = -100;
-    this._maxContrast = 100;
-
-    this._minBrightness = -1;
-    this._maxBrightness = 0.7;
-
-    // image adjustments are stored per channel for better viewing
-    this.contrastMap = new Map();
-    this.brightnessMap = new Map();
-    this.invertMap = new Map();
-
-    for (let i = 0; i < this._maxChannels; i++) {
-      this.brightnessMap.set(i, 0);
-      this.contrastMap.set(i, 0);
-      this.invertMap.set(i, true);
-    }
-
-    this.maxLabelsMap = new Map();
 
     this.layer = new Konva.Layer();
     this.stage.add(this.layer);
@@ -185,6 +196,19 @@ class Caliban {
         this.renderImageDisplay();
       }
     };
+
+    this.brushShape = new Konva.Circle({
+      x: this.stage.width() / 2,
+      y: this.stage.height() / 2,
+      radius: 3,
+      fill: 'white',
+      visible: false,
+      opacity: 0.4,
+      listening: false,
+      stroke: 'black',
+      strokeWidth: 1
+    });
+    this.layer.add(this.brushShape);
   }
 
   /** Getters and Setters for individual channel settings */
@@ -224,7 +248,7 @@ class Caliban {
 
     if (grayscale) {
       filters.push(Konva.Filters.Grayscale);
-      if (this._inverted) {
+      if (this.inverted) {
         filters.push(Konva.Filters.Invert);
       }
     }
@@ -236,7 +260,6 @@ class Caliban {
   }
 
   _prepareSegImage() {
-    this.layer.imageSmoothingEnabled(false);
     this.segImage.cache();
     this.segImage.opacity(1);
     this.segImage.filters([]);
@@ -263,13 +286,35 @@ class Caliban {
   }
 
   /** Render the raw image with Grayscale and Invert filters. */
-  _prepareGrayscaleRawImage() {
+  renderGrayscaleRawImage() {
     this._prepareRawImage(true);
+    this.rawImage.getLayer().batchDraw();
   }
 
-  renderGrayscaleRawImage() {
-    this._prepareGrayscaleRawImage();
-    this.rawImage.getLayer().batchDraw();
+  /** Render brush circle on mouse */
+  _prepareBrushShape(event) {
+    this.brushShape.cache();
+    this.brushShape.visible(this._editMode);
+
+    let x, y;
+    if (event) {
+      x = event.evt.offsetX;
+      y = event.evt.offsetY;
+    } else {
+      const pos = this.stage.getPointerPosition();
+      x = (pos !== null) ? pos.x : this.stage.width() / 2;
+      y = (pos !== null) ? pos.y : this.stage.height() / 2;
+    }
+
+    const scale = this.stage.scaleX()
+
+    this.brushShape.x(x / scale);
+    this.brushShape.y(y / scale);
+  }
+
+  renderBrushShape(event) {
+    this._prepareBrushShape(event);
+    this.renderImageDisplay();
   }
 
   /** Render Composite Image - inverted raw with transparent labels on top. */
@@ -324,13 +369,6 @@ class Caliban {
     this.segImage.filters(filters);
   }
 
-  renderPostAnnotationImage() {
-    // create composite images
-    this._prepareGrayscaleRawImage();
-    this._preparePostCompositeImage();
-    this.layer.batchDraw();
-  }
-
   _preparePostCompositeImageRGB() {
     // add outlines around conversion brush target/value
     const r1 = this.brush.target;
@@ -368,17 +406,19 @@ class Caliban {
 
   renderCompositeImageRGB() {
     // draw contrastedRaw so we can extract image data
-    this._prepareGrayscaleRawImage();
+    this._prepareRawImage(true);
     // add outlines around conversion brush target/value
     this._preparePostCompositeImageRGB();
+    // make brush visible
     this.layer.batchDraw();
   }
 
   renderCompositeImage() {
     // grayscale and invert (if required) raw data
     // TODO: filter is much darker than production
-    this._prepareGrayscaleRawImage();
+    this._prepareRawImage(true);
     this._preparePostCompositeImage();
+    this._prepareBrushShape();
     this.segImage.opacity(translucentOpacity);
     this.rawImage.visible(true);
     this.segImage.visible(true);
@@ -396,12 +436,11 @@ class Caliban {
         // render postCompImg
         this.renderCompositeImage();
       }
-      // this.brush.draw(ctx, sx, sy, swidth, sheight, scale * zoom / 100);
     } else if (!this._renderingRaw && this._rgb && !this._displayLabels) {
       // render postCompImg, calculated via postCompAdjustRGB
       this.renderCompositeImage();
     } else {
-      this.renderSourceImages(); // looking good!
+      this.renderSourceImages();
     }
     this.renderInfoDisplay();
   }
@@ -411,10 +450,17 @@ class Caliban {
     document.getElementById('frame').innerHTML = this._frame;
     document.getElementById('feature').innerHTML = this._feature;
     document.getElementById('channel').innerHTML = this._channel;
-    const zoom = `${this.stage.scaleX() / 100}%`;
+    const zoom = `${(this.stage.scaleX() / this._minScale) * 100}%`;
     document.getElementById('zoom').innerHTML = zoom;
-    // document.getElementById('displayedX').innerHTML = `${Math.floor(sx)}-${Math.ceil(sx+swidth)}`;
-    // document.getElementById('displayedY').innerHTML = `${Math.floor(sx)}-${Math.ceil(sx+swidth)}`;
+
+    // TODO stage position is absolute, not changing
+    const sx = this.stage.x();
+    const displayedX = `${Math.floor(sx)}-${Math.ceil(sx + this.stage.width())}`
+    document.getElementById('displayedX').innerHTML = displayedX;
+
+    const sy = this.stage.y();
+    const displayedY = `${Math.floor(sy)}-${Math.ceil(sy + this.stage.height())}`;
+    document.getElementById('displayedY').innerHTML = displayedY;
 
     this.renderHighlightInfo();
 
@@ -453,7 +499,7 @@ class Caliban {
     const visibility = this._editMode ? 'visible' : 'hidden';
 
     if (this._editMode) {
-      document.getElementById('edit_brush').innerHTML = this.brush.size;
+      document.getElementById('edit_brush').innerHTML = this.brushShape.radius();
 
       const editLabel = this.brush.value > 0 ? this.brush.value : '-';
       document.getElementById('edit_label').innerHTML = editLabel;
@@ -470,16 +516,6 @@ class Caliban {
 
   /** Render Object Information */
   renderCellInfo() {
-  }
-
-  /** Render brush strokes */
-  renderBrushDraw() {
-    if (this._isPaint) {
-      const pos = this.stage.getPointerPosition();
-      var newPoints = lastLine.points().concat([pos.x, pos.y]);
-      lastLine.points(newPoints);
-      layer.batchDraw();
-    }
   }
 
   /** Change the current contrast and render the raw image. */
@@ -518,7 +554,7 @@ class Caliban {
   }
 
   /** Remove brightness and contrast filters and display the raw image. */
-  resetBrightnessContrast() {
+  resetBrightnessAndContrast() {
     this.brightness = 0;
     this.contrast = 0;
     this.renderImageDisplay();
@@ -536,6 +572,9 @@ class Caliban {
     const oldScale = this.stage.scaleX();
     const pointer = this.stage.getPointerPosition();
 
+    const oldHeight = this.stage.height();
+    const oldWidth = this.stage.width();
+
     const newScale = zoomDelta > 0 ? oldScale * scaleBy : oldScale / scaleBy;
 
     // update mouse position if mouse is on the canvas
@@ -547,6 +586,8 @@ class Caliban {
         });
       }
       this.stage.scale({ x: newScale, y: newScale });
+      this.stage.height(oldHeight);
+      this.stage.width(oldWidth);
       this.stage.batchDraw();
     }
   }
@@ -554,6 +595,7 @@ class Caliban {
   /** Change current channel of raw data */
   changeChannel(newChannel) {
     // don't try and change channel if no other channels exist
+    console.log('changing channel, max = ' + self._maxChannels);
     if (self._maxChannels > 1) {
       // change channel, wrap around if needed
       if (newChannel === this._maxChannels) {
@@ -593,9 +635,19 @@ class Caliban {
     }
   }
 
+  /** Change brush radius */
+  changeBrushRadius(newRadius) {
+    const maxSize = Math.min(this._rawHeight, this._rawWidth);
+    // don't need brush to take up whole frame
+    if (newRadius > 0 && newRadius < maxSize / 2) {
+      this.brushShape.radius(newRadius);
+      this.renderImageDisplay()
+    }
+  }
+
   /** Toggle the Invert filter and apply a Grayscale filter to the raw Image. */
   toggleInvert() {
-    this._inverted = !this._inverted;
+    this.inverted = !this.inverted;
     this.renderImageDisplay();
   }
 
@@ -610,7 +662,14 @@ class Caliban {
   /** Toggle Edit Mode - Display grayscale raw with segmentations on top */
   toggleEditMode() {
     this._editMode = !this._editMode;
-    console.log(`Edit mode is: ${this._editMode ? 'enabled' : 'disabled'}`)
+    if (this._editMode) {
+      this.stage.on('mousemove', (event) => {
+        this.renderBrushShape(event);
+      });
+    } else {
+      this.stage.off('mousemove');
+      this.brushShape.visible(false);
+    }
     this.renderImageDisplay();
   }
 
@@ -809,7 +868,7 @@ class Caliban {
     if (key === 'e') {
       this.toggleEditMode();
     } else if (key === '0') {
-      this.resetBrightnessContrast();
+      this.resetBrightnessAndContrast();
     } else if (key === 'z' && !this._editMode) {
       this.toggleDisplayedImage();
     } else if (key === '-') {
@@ -844,8 +903,6 @@ class Caliban {
         this.renderPreviousFrame();
       } else if ((key === 'd' || key === 'ArrowRight')) {
         this.renderNextFrame();
-      } else if (key === 'h' && this._editMode) {
-        this.toggleHighlightMode();
       }
     }
   }
@@ -862,15 +919,13 @@ class Caliban {
     if (this._editMode) {
       const key = event.key;
       if (key === 'ArrowDown') {
+        event.preventDefault();
         // decrease brush size, minimum size 1
-        this.brush.size -= 1;
-        // redraw the frame with the updated brush preview
-        this.renderImageDisplay();
+        this.changeBrushRadius(this.brushShape.radius() - 1);
       } else if (key === 'ArrowUp') {
+        event.preventDefault();
         // increase brush size, diameter shouldn't be larger than the image
-        this.brush.size += 1;
-        // redraw the frame with the updated brush preview
-        this.renderImageDisplay();
+        this.changeBrushRadius(this.brushShape.radius() + 1);
       } else if (key === 'i' && !this._rgb) {
         this.toggleInvert();
       } else if (key === 'h' && !this._rgb) {
@@ -885,6 +940,9 @@ const _calculateMaxWidth = () => {
   const mainSection = window.getComputedStyle(
     document.getElementsByTagName('main')[0]
   );
+  const tableColumn = window.getComputedStyle(
+    document.getElementById('table-col')
+  );
   const canvasColumn = window.getComputedStyle(
     document.getElementById('canvas-col')
   );
@@ -892,6 +950,11 @@ const _calculateMaxWidth = () => {
     document.getElementsByTagName('main')[0].clientWidth -
     parseInt(mainSection.marginTop) -
     parseInt(mainSection.marginBottom) -
+    document.getElementById('table-col').clientWidth -
+    parseFloat(tableColumn.paddingLeft) -
+    parseFloat(tableColumn.paddingRight) -
+    parseFloat(tableColumn.marginLeft) -
+    parseFloat(tableColumn.marginRight) -
     parseFloat(canvasColumn.paddingLeft) -
     parseFloat(canvasColumn.paddingRight) -
     parseFloat(canvasColumn.marginLeft) -
@@ -915,6 +978,7 @@ const _calculateMaxHeight = () => {
       parseInt(mainSection.marginTop) -
       parseInt(mainSection.marginBottom) -
       document.getElementsByClassName('page-footer')[0].clientHeight -
+      document.getElementsByClassName('collapsible')[0].clientHeight -
       document.getElementsByClassName('navbar-fixed')[0].clientHeight
     )
   );
@@ -953,6 +1017,8 @@ function startCaliban(filename, settings) {
       payload.dimensions[0],
       payload.dimensions[1],
       payload.max_frames,
+      payload.feature_max,
+      payload.channel_max,
       payload.seg_arr,
       settings.rgb,
       settings.pixel_only,
