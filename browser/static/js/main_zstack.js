@@ -959,7 +959,7 @@ function handleScroll(evt) {
 // handle pressing mouse button (treats this as the beginning
 // of click&drag, since clicks are handled by Mode.click)
 function handleMousedown(evt) {
-  state.toggleIsPressed();
+  state.isPressed = true;
   // TODO: refactor "mousedown + mousemove" into ondrag?
   if (!state.isSpacedown) {
     if (mode.kind !== Modes.prompt) {
@@ -1031,7 +1031,7 @@ function handleMousemove(evt) {
 
 // handles end of click&drag (different from click())
 function handleMouseup() {
-  state.toggleIsPressed();
+  state.isPressed = false;
   if (!state.isSpacedown) {
     if (mode.kind !== Modes.prompt) {
       if (edit_mode) {
