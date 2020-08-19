@@ -75,8 +75,8 @@ class CanvasState {
   // check if the mouse position in canvas matches to a displayed part of image
   inRange() {
     return (
-      this.canvasPosX >= 0 && this.canvasPosX < this.width * this.scale &&
-      this.canvasPosY >= 0 && this.canvasPosY < this.height * this.scale
+      this.canvasPosX >= 0 && this.canvasPosX < this.scaledWidth &&
+      this.canvasPosY >= 0 && this.canvasPosY < this.scaledHeight
     );
   }
 
@@ -199,10 +199,8 @@ class CanvasState {
       this.sWidth = newWidth;
     }
     if (oldZoom !== newZoom) {
-      const scaledWidth = this.scale * this.width;
-      const scaledHeight = this.scale * this.height;
-      const propX = canvasPosX / scaledWidth;
-      const propY = canvasPosY / scaledHeight;
+      const propX = canvasPosX / this.scaledWidth;
+      const propY = canvasPosY / this.scaledHeight;
       const dx = propX * (newWidth - oldWidth);
       const dy = propY * (newHeight - oldHeight);
       this.pan(dx, dy);
@@ -216,8 +214,8 @@ class CanvasState {
       this.sx, this.sy,
       this.sWidth, this.sHeight,
       padding, padding,
-      this.width * this.scale,
-      this.height * this.scale
+      this.scaledWidth,
+      this.scaledHeight
     );
   }
 
