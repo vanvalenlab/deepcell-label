@@ -1020,7 +1020,7 @@ function handleMousemove(evt) {
     const oldX = state.sx;
     const oldY = state.sy;
 
-    state.pan(evt.originalEvent.movementX, evt.originalEvent.movementY);
+    state.pan(evt.movementX, evt.movementY);
 
     if (state.sx !== oldX || state.sy !== oldY) {
       render_image_display();
