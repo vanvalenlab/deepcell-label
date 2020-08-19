@@ -625,7 +625,7 @@ class Caliban {
     console.log(`Fetching frame ${frame}...`);
     $.ajax({
       type: 'GET',
-      url: document.location.origin + `frame/${frame}/${this._projectId}`,
+      url: document.location.origin + `/frame/${frame}/${this._projectId}`,
       success: (payload) => {
         this._segImage.src = payload.segmented;
         this._rawImage.src = payload.raw;
@@ -658,7 +658,7 @@ class Caliban {
   action(action, info, frame) {
     $.ajax({
       type: 'POST',
-      url: document.location.origin + `action/${this._projectId}/${action}/${frame}`,
+      url: document.location.origin + `/action/${this._projectId}/${action}/${frame}`,
       data: info,
       success: (payload) => {
         if (payload.error) alert(payload.error);
@@ -937,7 +937,7 @@ const waitForFinalEvent = (function () {
 const loadFile = (file, rgb, cb) => {
   $.ajax({
     type: 'POST',
-    url: document.location.origin + `load/${file}?&rgb=${rgb}`,
+    url: document.location.origin + `/load/${file}?&rgb=${rgb}`,
     success: cb,
     async: true
   });
