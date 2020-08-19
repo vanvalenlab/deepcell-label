@@ -669,6 +669,8 @@ var edit_mode;
 var answer = '(SPACE=YES / ESC=NO)';
 var project_id;
 
+var tracks;
+
 var brush;
 var adjuster;
 var cursor;
