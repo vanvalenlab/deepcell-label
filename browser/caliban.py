@@ -83,6 +83,30 @@ class ZStackFile(BaseFile):
         # analogous to .trk lineage but do not need relationships between cells included
         self.cell_ids = {}
         self.cell_info = {}
+    
+        for feature in range(self.file.feature_max):
+            self.create_cell_info(feature)
+
+    def create_cell_info(self, feature):
+        """Make or remake the entire cell info dict"""
+        feature = int(feature)
+        annotated = self.annotated[..., feature]
+
+        self.cell_ids[feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))]
+
+        self.cell_info[feature] = {}
+
+        for cell in self.cell_ids[feature]:
+            cell = int(cell)
+
+            self.cell_info[feature][cell] = {}
+            self.cell_info[feature][cell]['label'] = str(cell)
+            self.cell_info[feature][cell]['frames'] = []
+
+            for frame in range(self.annotated.shape[0]):
+                if cell in annotated[frame, ...]:
+                    self.cell_info[feature][cell]['frames'].append(int(frame))
+            self.cell_info[feature][cell]['slices'] = ''
 
 
 class TrackFile(BaseFile):
@@ -563,9 +587,6 @@ class ZStackReview(ZStackView, BaseReview):
         ZStackView.__init__(self, file_, rgb)
         BaseReview.__init__(self, file_, output_bucket)
 
-        for feature in range(self.file.feature_max):
-            self.create_cell_info(feature)
-
     @property
     def readable_tracks(self):
         """
@@ -737,25 +758,7 @@ class ZStackReview(ZStackView, BaseReview):
 
     def create_cell_info(self, feature):
         """Make or remake the entire cell info dict"""
-        feature = int(feature)
-        annotated = self.file.annotated[..., feature]
-
-        self.file.cell_ids[feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))]
-
-        self.file.cell_info[feature] = {}
-
-        for cell in self.file.cell_ids[feature]:
-            cell = int(cell)
-
-            self.file.cell_info[feature][cell] = {}
-            self.file.cell_info[feature][cell]['label'] = str(cell)
-            self.file.cell_info[feature][cell]['frames'] = []
-
-            for frame in range(self.file.annotated.shape[0]):
-                if cell in annotated[frame, ...]:
-                    self.file.cell_info[feature][cell]['frames'].append(int(frame))
-            self.file.cell_info[feature][cell]['slices'] = ''
-
+        self.file.create_cell_info(feature)
         self.info_changed = True
 
 
