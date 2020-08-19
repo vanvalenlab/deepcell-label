@@ -1133,12 +1133,12 @@ function startCaliban(filename, settings) {
 
     window.addEventListener('keydown', (e) => {
       if (e.key === ' ') {
-        state.toggleIsSpacedown();
+        state.isSpacedown = true;
       }
     }, false);
     window.addEventListener('keyup', (e) => {
       if (e.key === ' ') {
-        state.toggleIsSpacedown();
+        state.isSpacedown = false;
       }
     }, false);
 
