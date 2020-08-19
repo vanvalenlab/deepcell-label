@@ -84,7 +84,7 @@ class ZStackFile(BaseFile):
         self.cell_ids = {}
         self.cell_info = {}
     
-        for feature in range(self.file.feature_max):
+        for feature in range(self.feature_max):
             self.create_cell_info(feature)
 
     def create_cell_info(self, feature):
