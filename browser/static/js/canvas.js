@@ -99,14 +99,6 @@ class CanvasState {
     }
   }
 
-  toggleIsSpacedown() {
-    this.isSpacedown = !this.isSpacedown;
-  }
-
-  toggleIsPressed() {
-    this.isPressed = !this.isPressed;
-  }
-
   setBorders(padding) {
     const scaledWidth = this.scaledWidth;
     const scaledHeight = this.scaledHeight;
