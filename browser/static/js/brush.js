@@ -1,5 +1,5 @@
 class Brush {
-  constructor(scale, height, width, pad) {
+  constructor(height, width, pad) {
     // center of brush (scaled)
     this.x = 0;
     this.y = 0;
@@ -226,7 +226,14 @@ class Brush {
   }
 
   // draw brush preview onto destination ctx
-  draw(ctxDst, sx, sy, swidth, sheight, mag) {
+  draw(ctxDst, viewer) {
+    // get attributes from viewer object
+    const sx = viewer.sx;
+    const sy = viewer.sy;
+    const swidth = viewer.sWidth;
+    const sheight = viewer.sHeight;
+    const mag = viewer.scale * viewer.zoom / 100;
+
     // draw translucent brush trace
     ctxDst.save();
     ctxDst.globalAlpha = this._opacity;
