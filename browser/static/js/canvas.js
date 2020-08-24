@@ -80,7 +80,7 @@ class CanvasState {
     );
   }
 
-  updatePos(x, y, padding) {
+  updateCursorPosition(x, y, padding) {
     // store raw mouse position, in case of pan without mouse movement
     this.rawX = x;
     this.rawY = y;
@@ -209,10 +209,6 @@ class CanvasState {
       this.scaledWidth,
       this.scaledHeight
     );
-  }
-
-  updateCursorPosition(x, y, padding) {
-    this.updatePos(x, y, padding, this);
   }
 
   isCursorPressed() {
