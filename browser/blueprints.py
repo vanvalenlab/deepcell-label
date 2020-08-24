@@ -339,6 +339,7 @@ def shortcut(filename):
         filename=filename,
         settings=settings)
 
+
 @bp.route('/<filename>/feedback', methods=['GET', 'POST'])
 def feedback(filename):
     ''' Initate ZStackFeedback object and load object to database.
@@ -377,6 +378,7 @@ def feedback(filename):
         title=title,
         filename=filename,
         settings=settings)
+
 
 @bp.route('/load/feedback/<filename>', methods=['POST'])
 def load_feedback(filename):
@@ -422,6 +424,7 @@ def load_feedback(filename):
             os.path.splitext(filename)[-1])
     }
     return jsonify(error), 400
+
 
 @bp.route('/feedback/<source>/<int:frame>/<int:project_id>')
 def get_diff_frame(source, frame, project_id):

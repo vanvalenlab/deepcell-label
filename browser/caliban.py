@@ -83,7 +83,7 @@ class ZStackFile(BaseFile):
         # analogous to .trk lineage but do not need relationships between cells included
         self.cell_ids = {}
         self.cell_info = {}
-    
+
         for feature in range(self.feature_max):
             self.create_cell_info(feature)
 
@@ -262,7 +262,7 @@ class ZStackView(BaseView):
                 label['slices'] = str(slices)
 
         return cell_info
-    
+
     def get_max_label(self):
         """Get the highest label in use in currently-viewed feature.
 
