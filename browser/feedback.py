@@ -6,8 +6,6 @@ from __future__ import print_function
 import numpy as np
 from matplotlib import pyplot as plt
 
-import deepcell_toolbox
-
 from caliban import ZStackView
 from imgutils import pngify
 
@@ -97,7 +95,7 @@ class ZStackFeedback(ZStackView):
         
 
         return stats
-        
+
 
 def total_labels(input_labels, output_labels):
     """Returns the number of unique labels in the input and output labelings."""
