@@ -1,14 +1,21 @@
-// NOTE: cursor and viewer are more abstract than the brush,
-// how they should relate to each other is an open question.
-// eg, should scale/dimensions be attributes only of viewer? etc
+/**
+ * Handles zooming and panning of the canvas.
+ */
+class CanvasState {
+  constructor(width, height, scale, padding) {
+    this.width = width;
+    this.height = height;
 
-// cursor to handle mouse movement and attributes
-class CalibanCursor {
-  constructor(width, height, scale) {
-    this.width = width
-    this.height = height
-    this.scale = scale;
-    this.pressed = false;
+    // attributes for viewing the canvas.
+    this.sx = 0;
+    this.sy = 0;
+    this.sWidth = width;
+    this.sHeight = height;
+    this.zoom = 100;
+    this.zoomLimit = 100;
+
+    // attributes for mouse on the canvas.
+    this.isPressed = false;
     this.trace = [];
 
     // mouse coords
@@ -16,18 +23,27 @@ class CalibanCursor {
     this.rawX = 0;
     this.rawY = 0;
     // adjusted for padding
-    this.canvasPosX = -5;
-    this.canvasPosY = -5;
+    this.canvasPosX = -1 * padding;
+    this.canvasPosY = -1 * padding;
     // coordinates in original image (used for actions, labels, etc)
-    this.imgX;
-    this.imgY;
+    this.imgX = null;
+    this.imgY = null;
     // what imgX and imgY were upon most recent click
-    this.storedClickX;
-    this.storedClickY;
+    this.storedClickX = null;
+    this.storedClickY = null;
 
     this.label = 0;
     // store as part of object to be able to get current label
-    this._segArray;
+    this._segArray = null;
+
+    this.scale = scale;
+
+    this.topBorder = new Path2D();
+    this.bottomBorder = new Path2D();
+    this.rightBorder = new Path2D();
+    this.leftBorder = new Path2D();
+
+    this.isSpacedown = false;
   }
 
   get segArray() {
@@ -37,24 +53,34 @@ class CalibanCursor {
   set segArray(newSegArray) {
     this._segArray = newSegArray;
     if (this.inRange()) {
-      this.label = Math.abs(this.segArray[this.imgY][this.imgX]);
+      this.label = Math.abs(this._segArray[this.imgY][this.imgX]);
     } else {
       this.label = 0;
     }
+  }
 
+  get scaledWidth() {
+    return this.scale * this.width;
+  }
+
+  get scaledHeight() {
+    return this.scale * this.height;
+  }
+
+  // clear the current trace
+  clearTrace() {
+    this.trace = [];
   }
 
   // check if the mouse position in canvas matches to a displayed part of image
   inRange() {
-    if (this.canvasPosX >= 0 && this.canvasPosX < this.width * this.scale &&
-        this.canvasPosY >= 0 && this.canvasPosY < this.height * this.scale) {
-      return true;
-    } else {
-      return false;
-    }
+    return (
+      this.canvasPosX >= 0 && this.canvasPosX < this.scaledWidth &&
+      this.canvasPosY >= 0 && this.canvasPosY < this.scaledHeight
+    );
   }
 
-  updatePos(x, y, padding, viewer) {
+  updateCursorPosition(x, y, padding) {
     // store raw mouse position, in case of pan without mouse movement
     this.rawX = x;
     this.rawY = y;
@@ -65,41 +91,17 @@ class CalibanCursor {
 
     // convert to image indices, to use for actions and getting label
     if (this.inRange()) {
-      this.imgX = Math.floor((this.canvasPosX * 100 / (viewer.scale * viewer.zoom) + viewer.sx));
-      this.imgY = Math.floor((this.canvasPosY * 100 / (viewer.scale * viewer.zoom) + viewer.sy));
-      this.label = Math.abs(this.segArray[this.imgY][this.imgX]);
+      this.imgX = Math.floor((this.canvasPosX * 100 / (this.scale * this.zoom) + this.sx));
+      this.imgY = Math.floor((this.canvasPosY * 100 / (this.scale * this.zoom) + this.sy));
+      this.label = Math.abs(this._segArray[this.imgY][this.imgX]);
     } else {
       this.label = 0;
     }
   }
 
-}
-
-// handle updating zooming and panning attributes
-class CanvasView {
-  constructor(width, height) {
-
-    this.width = width;
-    this.height = height;
-    this.sx = 0;
-    this.sy = 0;
-    this.sWidth = width;
-    this.sHeight = height;
-    this.zoom = 100;
-    this.zoomLimit = 100;
-
-    this.scale = 1;
-
-    this.topBorder = new Path2D();
-    this.bottomBorder = new Path2D();
-    this.rightBorder = new Path2D();
-    this.leftBorder = new Path2D();
-
-  }
-
   setBorders(padding) {
-    const scaledWidth = this.scale * this.width;
-    const scaledHeight = this.scale * this.height;
+    const scaledWidth = this.scaledWidth;
+    const scaledHeight = this.scaledHeight;
 
     // create paths for recoloring borders
     this.topBorder = new Path2D();
@@ -134,40 +136,23 @@ class CanvasView {
   drawBorders(ctx) {
     ctx.save();
     // left border
-    if (Math.floor(this.sx) === 0) {
-      ctx.fillStyle = 'white';
-    } else {
-      ctx.fillStyle = 'black';
-    }
+    ctx.fillStyle = (Math.floor(this.sx) === 0) ? 'white' : 'black';
     ctx.fill(this.leftBorder);
 
     // right border
-    if (Math.ceil(this.sx + this.sWidth) === this.width) {
-      ctx.fillStyle = 'white';
-    } else {
-      ctx.fillStyle = 'black';
-    }
+    ctx.fillStyle = (Math.ceil(this.sx + this.sWidth) === this.width) ? 'white' : 'black';
     ctx.fill(this.rightBorder);
 
     // top border
-    if (Math.floor(this.sy) === 0) {
-      ctx.fillStyle = 'white';
-    } else {
-      ctx.fillStyle = 'black';
-    }
+    ctx.fillStyle = (Math.floor(this.sy) === 0) ? 'white' : 'black';
     ctx.fill(this.topBorder);
 
     // bottom border
-    if (Math.ceil(this.sy + this.sHeight) === this.height) {
-      ctx.fillStyle = 'white';
-    } else {
-      ctx.fillStyle = 'black';
-    }
+    ctx.fillStyle = (Math.ceil(this.sy + this.sHeight) === this.height) ? 'white' : 'black';
     ctx.fill(this.bottomBorder);
 
     ctx.restore();
   }
-
 
   pan(dx, dy) {
     let tempPanX = this.sx - dx;
@@ -191,7 +176,7 @@ class CanvasView {
   }
 
   changeZoom(dZoom, canvasPosX, canvasPosY) {
-    const newZoom = this.zoom - 10*dZoom;
+    const newZoom = this.zoom - 10 * dZoom;
     const oldZoom = this.zoom;
     const newHeight = this.height * 100 / newZoom;
     const newWidth = this.width * 100 / newZoom;
@@ -206,15 +191,27 @@ class CanvasView {
       this.sWidth = newWidth;
     }
     if (oldZoom !== newZoom) {
-      const scaledWidth = this.scale * this.width;
-      const scaledHeight = this.scale * this.height;
-      const propX = canvasPosX / scaledWidth;
-      const propY = canvasPosY / scaledHeight;
+      const propX = canvasPosX / this.scaledWidth;
+      const propY = canvasPosY / this.scaledHeight;
       const dx = propX * (newWidth - oldWidth);
       const dy = propY * (newHeight - oldHeight);
       this.pan(dx, dy);
     }
   }
 
+  drawImage(ctx, image, padding = 0) {
+    ctx.clearRect(padding, padding, this.width, this.height);
+    ctx.drawImage(
+      image,
+      this.sx, this.sy,
+      this.sWidth, this.sHeight,
+      padding, padding,
+      this.scaledWidth,
+      this.scaledHeight
+    );
+  }
 
+  isCursorPressed() {
+    return this.isPressed;
+  }
 }

@@ -63,21 +63,6 @@ class ImageAdjuster {
     // composite image + outlines, transparent highlight
     this.postCompImg = new Image();
 
-    // TODO: these still rely on main js global variables, revisit in future
-    if (rgb) {
-      this.rawImage.onload = () => this.contrastRaw();
-      this.contrastedRaw.onload = () => this.rawAdjust(seg_array, current_highlight, edit_mode, brush, mode);
-      this.segImage.onload = () => this.preCompAdjust(seg_array, current_highlight, edit_mode, brush, mode);
-      this.preCompSeg.onload = () => this.segAdjust(seg_array, current_highlight, edit_mode, brush, mode);
-    } else {
-      this.rawImage.onload = () => this.contrastRaw();
-      this.contrastedRaw.onload = () => this.preCompRawAdjust();
-      this.preCompRaw.onload = () => this.rawAdjust(seg_array, current_highlight, edit_mode, brush, mode);
-      this.segImage.onload = () => this.preCompAdjust(seg_array, current_highlight, edit_mode, brush, mode);
-      this.preCompSeg.onload = () => this.segAdjust(seg_array, current_highlight, edit_mode, brush, mode);
-      this.compositedImg.onload = () => this.postCompAdjust(seg_array, edit_mode, brush);
-    }
-
     this.rawLoaded = false;
     this.segLoaded = false;
   }
