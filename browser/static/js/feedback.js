@@ -1,24 +1,16 @@
-
-function start_feedback(filename) {
-  if (settings.pixel_only && !settings.label_only) {
-    edit_mode = true;
-  } else {
-    edit_mode = false;
-  }
+function startFeedback(filename, settings) {
   rgb = settings.rgb;
-  if (rgb) {
-    current_highlight = true;
-    display_labels = false;
-  } else {
-    current_highlight = false;
-    display_labels = true;
-  }
+  current_highlight = settings.rgb;
+  display_labels = !settings.rgb;
+  edit_mode = (settings.pixel_only && !settings.label_only);
+
   // disable scrolling from scrolling around on page (it should just control brightness)
-  document.addEventListener('wheel', function(event) {
+  document.addEventListener('wheel', (event) => {
     event.preventDefault();
-  }, {passive: false});
+  }, { passive: false });
+
   // disable space and up/down keys from moving around on page
-  $(document).on('keydown', function(event) {
+  document.addEventListener('keydown', (event) => {
     if (event.key === ' ') {
       event.preventDefault();
     } else if (event.key === 'ArrowUp') {
@@ -28,31 +20,99 @@ function start_feedback(filename) {
     }
   });
 
-  // resize the canvas every time the window is resized
-  $(window).resize(function () {
-    waitForFinalEvent(function() {
-      mode.clear();
-      setCanvasDimensions(rawDimensions);
-      brush.refreshView();
-    }, 500, 'canvasResize');
+  loadFeedback(filename, settings.rgb, (payload) => {
+    max_frames = payload.max_frames;
+    feature_max = payload.feature_max;
+    channelMax = payload.channel_max;
+    project_id = payload.project_id;
+
+    const rawWidth = payload.dimensions[0];
+    const rawHeight = payload.dimensions[1];
+
+    state = new CanvasState(rawWidth, rawHeight, 1, padding);
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === ' ') {
+        state.isSpacedown = true;
+      }
+    }, false);
+    window.addEventListener('keyup', (e) => {
+      if (e.key === ' ') {
+        state.isSpacedown = false;
+      }
+    }, false);
+
+    tracks = payload.tracks; // tracks payload is dict
+
+    // for each feature, get list of cell labels that are in that feature
+    // (each is a key in that dict), cast to numbers, then get the maximum
+    // value from each array and store it in a map
+    for (let i = 0; i < Object.keys(tracks).length; i++) {
+      const key = Object.keys(tracks)[i]; // the keys are strings
+      if (Object.keys(tracks[key]).length > 0) {
+        // use i as key in this map because it is an int, mode.feature is also int
+        maxLabelsMap.set(i, Math.max(...Object.keys(tracks[key]).map(Number)));
+      } else {
+        // if no labels in feature, explicitly set max label to 0
+        maxLabelsMap.set(i, 0);
+      }
+    }
+
+    brush = new Brush(rawHeight, rawWidth, padding);
+
+    // define image onload cascade behavior, need rawHeight and rawWidth first
+    adjuster = new ImageAdjuster(rawWidth, rawHeight, rgb, channelMax);
+
+    adjuster.rawImage.onload = () => adjuster.contrastRaw();
+    adjuster.segImage.onload = () => adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, mode);
+    if (rgb) {
+      adjuster.contrastedRaw.onload = () => adjuster.rawAdjust(state.segArray, current_highlight, edit_mode, brush, mode);
+      adjuster.preCompSeg.onload = () => adjuster.segAdjust(state.segArray, current_highlight, edit_mode, brush, mode);
+    } else {
+      adjuster.contrastedRaw.onload = () => adjuster.preCompRawAdjust();
+      adjuster.preCompRaw.onload = () => adjuster.rawAdjust(state.segArray, current_highlight, edit_mode, brush, mode);
+      adjuster.preCompSeg.onload = () => adjuster.segAdjust(state.segArray, current_highlight, edit_mode, brush, mode);
+      adjuster.compositedImg.onload = () => adjuster.postCompAdjust(state.segArray, edit_mode, brush);
+    }
+
+    adjuster.postCompImg.onload = render_image_display;
+
+    document.addEventListener('mouseup', (e) => handleMouseup(e));
+
+    setCanvasDimensions(payload.dimensions);
+
+    // resize the canvas every time the window is resized
+    window.addEventListener('resize', function() {
+      waitForFinalEvent(() => {
+        mode.clear();
+        setCanvasDimensions(payload.dimensions);
+        brush.refreshView();
+      }, 500, 'canvasResize');
+    });
+
+    window.addEventListener('keydown', (evt) => {
+      mode.handle_key(evt.key);
+    }, false);
+
+    const canvasElement = document.getElementById('canvas');
+    // bind click on canvas
+    canvasElement.addEventListener('click', (evt) => {
+      if (!state.isSpacedown && (!edit_mode || mode.kind === Modes.prompt)) {
+        mode.click(evt);
+      }
+    });
+
+    // bind scroll wheel, change contrast of raw when scrolled
+    canvasElement.addEventListener('wheel', (e) => handleScroll(e));
+
+    // mousedown for click&drag/handle_draw DIFFERENT FROM CLICK
+    canvasElement.addEventListener('mousedown', (e) => handleMousedown(e));
+
+    // bind mouse movement
+    canvasElement.addEventListener('mousemove', (e) => handleMousemove(e));
+
+    fetch_and_render_frame();
   });
-
-  document.addEventListener('mouseup', function() {
-    handle_mouseup();
-   });
-
-  load_feedback(filename);
-
-  // define image onload cascade behavior, need rawHeight and rawWidth first
-  adjuster = new ImageAdjuster(width=rawWidth, height=rawHeight,
-                               rgb=rgb, channelMax=channelMax);
-  brush = new Brush(scale=scale, height=rawHeight, width=rawWidth, pad=padding);
-
-  adjuster.postCompImg.onload = render_image_display;
-
-  prepare_canvas();
-  fetch_and_render_frame();
-
 }
 
 
@@ -72,14 +132,14 @@ Mode.prototype.handle_universal_keybind = function (key) {
       current_frame = 0;
     }
     fetch_and_render_frame();
-  } else if (key === "Escape") {
+  } else if (key === 'Escape') {
     // deselect/cancel action/reset highlight
     mode.clear();
     // may want some things here that trigger on ESC but not clear()
   } else if (!rgb && key === 'h') {
     // toggle highlight
     current_highlight = !current_highlight;
-    adjuster.preCompAdjust(seg_array, current_highlight, edit_mode, brush, this);
+    adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
   } else if (key === 'z') {
     // toggle rendering_raw
     rendering_raw = !rendering_raw;
@@ -95,16 +155,16 @@ Mode.prototype.handle_universal_keybind = function (key) {
   } else if (key === '=') {
     changeZoom(-1);
   } else if (key === 't') {
-    toggle_feedback_view();
-    fetch_and_render_diff(source);
+    toggleFeedbackView();
   }
 }
 
 // new functions below here
 
+// TODO: @tddough98 don't use global variable
 var source = 'input';
 
-function fetch_and_render_diff(source) {
+function fetchAndRenderDiff(source) {
   $.ajax({
     type: 'GET',
     url: document.location.origin +  "/feedback/" + source + "/" + current_frame + "/" + project_id,
@@ -120,8 +180,7 @@ function fetch_and_render_diff(source) {
   });
 }
 
-function toggle_feedback_view() {
-  console.log("Toggling from " + source);
+function toggleFeedbackView() {
   if (source === 'input') {
     source = 'output';
   } else if (source === 'output') {
@@ -131,45 +190,16 @@ function toggle_feedback_view() {
     source = 'input';
     document.getElementById('label_change_legend').style.display = 'none';
   }
-  console.log("Toggled to " + source);
-  fetch_and_render_diff(source);
-  console.log("Diff frame rendered");
+  fetchAndRenderDiff(source);
 }
 
-function load_feedback(file) {
+
+
+function loadFeedback(file, rgb = false, cb) {
   $.ajax({
     type: 'POST',
-    url: document.location.origin + `/load/feedback/${file}?&rgb=${settings.rgb}`,
-    success: function (payload) {
-      max_frames = payload.max_frames;
-      feature_max = payload.feature_max;
-      channelMax = payload.channel_max;
-      rawDimensions = payload.dimensions;
-
-      sx = 0;
-      sy = 0;
-      swidth = rawWidth = rawDimensions[0];
-      sheight = rawHeight = rawDimensions[1];
-
-      setCanvasDimensions(rawDimensions);
-
-      tracks = payload.tracks; // tracks payload is dict
-
-      // for each feature, get list of cell labels that are in that feature
-      // (each is a key in that dict), cast to numbers, then get the maximum
-      // value from each array and store it in a map
-      for (let i = 0; i < Object.keys(tracks).length; i++){
-        let key = Object.keys(tracks)[i]; // the keys are strings
-        if (Object.keys(tracks[key]).length > 0) {
-          // use i as key in this map because it is an int, mode.feature is also int
-          maxLabelsMap.set(i, Math.max(... Object.keys(tracks[key]).map(Number)));
-        } else {
-          // if no labels in feature, explicitly set max label to 0
-          maxLabelsMap.set(i, 0);
-        }
-      }
-      project_id = payload.project_id;
-    },
-    async: false
+    url: document.location.origin + `/load/feedback/${file}?&rgb=${rgb}`,
+    success: cb,
+    async: true
   });
 }
