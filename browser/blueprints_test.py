@@ -13,7 +13,6 @@ class Bunch(object):
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
 
-
 class DummyState(io.BytesIO):
 
     def __init__(self, *_, **__):
@@ -108,6 +107,8 @@ def test_load(client, mocker):
         in_bucket, out_bucket, 'subfolder1', 'subfolder2', base_filename
     )
 
+    mocker.patch('blueprints.TrackFile', DummyState)
+    mocker.patch('blueprints.ZStackFile', DummyState)
     mocker.patch('blueprints.TrackReview', DummyState)
     mocker.patch('blueprints.ZStackReview', DummyState)
 
