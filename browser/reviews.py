@@ -805,5 +805,3 @@ def relabel_frame(img, start_val=1):
         relabeled_img = np.where(img == cell, relabeled_cell_list[i], relabeled_img)
 
     return relabeled_img
-
-

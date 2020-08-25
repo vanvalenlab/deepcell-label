@@ -1,4 +1,4 @@
-"""Test for Caliban classes"""
+"""Test for File classes"""
 
 import pytest
 import numpy as np
@@ -29,7 +29,7 @@ def test_empty_file(mocker):
     assert basefile.annotated.shape == (5, 100, 50, 1)
 
 
-def test_empty_zstack(mocker): 
+def test_empty_zstack(mocker):
     mocker.patch('files.ZStackFile.load', new=load_empty)
     zstack = ZStackFile('filename', 'bucket', 'path')
 
@@ -41,6 +41,8 @@ def test_empty_zstack(mocker):
     # No annotations
     np.testing.assert_array_equal(zstack.cell_ids[0], np.array([]))
     assert zstack.cell_info[0] == {}
+    assert zstack.readable_tracks == zstack.cell_info
+
 
 def test_one_label_stack(mocker):
     mocker.patch('files.ZStackFile.load', new=load_one_label)
@@ -53,24 +55,26 @@ def test_one_label_stack(mocker):
     assert len(zstack.cell_info) == 1
     # One annotation
     np.testing.assert_array_equal(zstack.cell_ids[0], np.array([1]))
-    assert zstack.cell_info[0] == {1 : {'label': '1', 
-                                        'frames': list(range(zstack.max_frames)),
-                                        'slices': ''}} 
+    assert zstack.cell_info[0] == {1: {'label': '1',
+                                       'frames': list(range(zstack.max_frames)),
+                                       'slices': ''}}
+
 
 def test_empty_track(mocker):
     def load(self):
-        return {'raw': np.zeros((5, 100, 50, 2)), 
-                'tracked': np.zeros((5, 100, 50, 1)), 
+        return {'raw': np.zeros((5, 100, 50, 2)),
+                'tracked': np.zeros((5, 100, 50, 1)),
                 'lineages': [{}]}
     mocker.patch('files.TrackFile.load', new=load)
     track = TrackFile('filename', 'bucket', 'path')
 
     assert hasattr(track, 'tracks')
 
+
 def test_multiple_lineages(mocker):
     def load(self):
-        return {'raw': np.zeros((5, 100, 50, 2)), 
-                'tracked': np.zeros((5, 100, 50, 1)), 
+        return {'raw': np.zeros((5, 100, 50, 2)),
+                'tracked': np.zeros((5, 100, 50, 1)),
                 'lineages': [{}, {}]}
     mocker.patch('files.TrackFile.load', new=load)
     with pytest.raises(ValueError):
