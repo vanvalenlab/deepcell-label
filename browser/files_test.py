@@ -7,7 +7,7 @@ from files import BaseFile, ZStackFile, TrackFile
 
 
 def test_empty_file(mocker):
-    mocker.patch('BaseFile.load', new=load_empty)
+    mocker.patch('files.BaseFile.load', new=load_empty)
 
     basefile = BaseFile('filename', 'bucket', 'path', 'raw', 'annotated')
 
@@ -30,7 +30,7 @@ def test_empty_file(mocker):
 
 
 def test_empty_zstack(mocker): 
-    mocker.patch('ZStackFile.load', new=load_empty)
+    mocker.patch('files.ZStackFile.load', new=load_empty)
     zstack = ZStackFile('filename', 'bucket', 'path')
 
     assert hasattr(zstack, 'cell_ids')
@@ -43,7 +43,7 @@ def test_empty_zstack(mocker):
     assert zstack.cell_info[0] == {}
 
 def test_one_label_stack(mocker):
-    mocker.patch('ZStackFile.load', new=load_one_label)
+    mocker.patch('files.ZStackFile.load', new=load_one_label)
     zstack = ZStackFile('filename', 'bucket', 'path')
 
     assert hasattr(zstack, 'cell_ids')
@@ -62,7 +62,7 @@ def test_empty_track(mocker):
         return {'raw': np.zeros((5, 100, 50, 2)), 
                 'tracked': np.zeros((5, 100, 50, 1)), 
                 'lineages': [{}]}
-    mocker.patch('TrackFile.load', new=load)
+    mocker.patch('files.TrackFile.load', new=load)
     track = TrackFile('filename', 'bucket', 'path')
 
     assert hasattr(track, 'tracks')
@@ -72,7 +72,7 @@ def test_multiple_lineages(mocker):
         return {'raw': np.zeros((5, 100, 50, 2)), 
                 'tracked': np.zeros((5, 100, 50, 1)), 
                 'lineages': [{}, {}]}
-    mocker.patch('TrackFile.load', new=load)
+    mocker.patch('files.TrackFile.load', new=load)
     with pytest.raises(ValueError):
         track = TrackFile('filename', 'bucket', 'path')
 
