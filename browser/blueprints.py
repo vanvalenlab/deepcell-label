@@ -73,7 +73,7 @@ def upload_file(project_id):
     state = load_project_state(project)
     filename = state.file.filename
 
-    # Call function in caliban.py to save data file and send to S3 bucket
+    # Call function in reviews.py to save data file and send to S3 bucket
     if is_trk_file(filename):
         state.action_save_track()
     elif is_npz_file(filename):

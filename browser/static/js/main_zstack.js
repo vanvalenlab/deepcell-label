@@ -1041,7 +1041,7 @@ function handleMouseup() {
         if (!brush.show) {
           mode.handle_threshold();
         } else {
-          // send click&drag coordinates to caliban.py to update annotations
+          // send click&drag coordinates to reviews.py to update annotations
           mode.handle_draw();
         }
         brush.refreshView();

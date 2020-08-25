@@ -788,7 +788,7 @@ function handle_mousemove(evt) {
 function handle_mouseup(evt) {
   mousedown = false;
   if (edit_mode) {
-    //send click&drag coordinates to caliban.py to update annotations
+    //send click&drag coordinates to reviews.py to update annotations
     mode.handle_draw();
     // reset brush preview
     brush.refreshView();
