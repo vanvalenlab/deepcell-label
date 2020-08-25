@@ -3,8 +3,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import copy
-
 import matplotlib.pyplot as plt
 import numpy as np
 from skimage.exposure import rescale_intensity
@@ -16,7 +14,7 @@ from imgutils import pngify
 class BaseView(object):  # pylint: disable=useless-object-inheritance
     """
     Base class for viewing a file in Caliban.
-    Implements everything but actions on the file.
+    Implements everything but actions that edit labels.
     """
 
     def __init__(self, file_):
@@ -132,24 +130,6 @@ class ZStackView(BaseView):
 
             self.rgb_img = self.reduce_to_RGB()
 
-    @property
-    def readable_tracks(self):
-        """
-        Preprocesses tracks for presentation on browser. For example,
-        simplifying track['frames'] into something like [0-29] instead of
-        [0,1,2,3,...].
-        """
-        cell_info = copy.deepcopy(self.file.cell_info)
-        for _, feature in cell_info.items():
-            for _, label in feature.items():
-                slices = list(map(list, consecutive(label['frames'])))
-                slices = '[' + ', '.join(["{}".format(a[0])
-                                          if len(a) == 1 else "{}-{}".format(a[0], a[-1])
-                                          for a in slices]) + ']'
-                label['slices'] = str(slices)
-
-        return cell_info
-
     def get_max_label(self):
         """Get the highest label in use in currently-viewed feature.
 
@@ -227,24 +207,3 @@ class TrackView(BaseView):
     def get_max_label(self):
         """Get the highest label in the lineage data."""
         return max(self.file.tracks)
-
-    @property
-    def readable_tracks(self):
-        """
-        Preprocesses tracks for presentation on browser. For example,
-        simplifying track['frames'] into something like [0-29] instead of
-        [0,1,2,3,...].
-        """
-        tracks = copy.deepcopy(self.file.tracks)
-        for _, track in tracks.items():
-            frames = list(map(list, consecutive(track["frames"])))
-            frames = '[' + ', '.join(["{}".format(a[0])
-                                      if len(a) == 1 else "{}-{}".format(a[0], a[-1])
-                                      for a in frames]) + ']'
-            track['frames'] = frames
-
-        return tracks
-
-
-def consecutive(data, stepsize=1):
-    return np.split(data, np.where(np.diff(data) != stepsize)[0] + 1)

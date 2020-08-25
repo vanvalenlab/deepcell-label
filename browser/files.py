@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import copy
 import io
 import json
 import tarfile
@@ -95,6 +96,24 @@ class ZStackFile(BaseFile):
                     self.cell_info[feature][cell]['frames'].append(int(frame))
             self.cell_info[feature][cell]['slices'] = ''
 
+    @property
+    def readable_tracks(self):
+        """
+        Preprocesses tracks for presentation on browser. For example,
+        simplifying track['frames'] into something like [0-29] instead of
+        [0,1,2,3,...].
+        """
+        cell_info = copy.deepcopy(self.cell_info)
+        for _, feature in cell_info.items():
+            for _, label in feature.items():
+                slices = list(map(list, consecutive(label['frames'])))
+                slices = '[' + ', '.join(["{}".format(a[0])
+                                          if len(a) == 1 else "{}-{}".format(a[0], a[-1])
+                                          for a in slices]) + ']'
+                label['slices'] = str(slices)
+
+        return cell_info
+
 
 class TrackFile(BaseFile):
     """
@@ -111,6 +130,27 @@ class TrackFile(BaseFile):
             raise ValueError('Input file has multiple trials/lineages.')
 
         self.tracks = self.trial['lineages'][0]
+
+    @property
+    def readable_tracks(self):
+        """
+        Preprocesses tracks for presentation on browser. For example,
+        simplifying track['frames'] into something like [0-29] instead of
+        [0,1,2,3,...].
+        """
+        tracks = copy.deepcopy(self.file.tracks)
+        for _, track in tracks.items():
+            frames = list(map(list, consecutive(track["frames"])))
+            frames = '[' + ', '.join(["{}".format(a[0])
+                                      if len(a) == 1 else "{}-{}".format(a[0], a[-1])
+                                      for a in frames]) + ']'
+            track['frames'] = frames
+
+        return tracks
+
+
+def consecutive(data, stepsize=1):
+    return np.split(data, np.where(np.diff(data) != stepsize)[0] + 1)
 
 
 def load_npz(filename):

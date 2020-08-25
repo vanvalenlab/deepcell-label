@@ -122,7 +122,7 @@ def action(project_id, action_type, frame):
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
-    tracks = state.readable_tracks if info_changed else False
+    tracks = state.file.readable_tracks if info_changed else False
 
     if x_changed or y_changed:
         encode = lambda x: base64.encodebytes(x.read()).decode()
@@ -210,7 +210,7 @@ def load(filename):
         # Send attributes to .js file
         return jsonify({
             'max_frames': track_file.max_frames,
-            'tracks': track_review.readable_tracks,
+            'tracks': track_file.readable_tracks,
             'dimensions': (track_file.width, track_file.height),
             'project_id': project.id,
             'screen_scale': track_review.scale_factor
@@ -231,7 +231,7 @@ def load(filename):
             'max_frames': zstack_file.max_frames,
             'channel_max': zstack_file.channel_max,
             'feature_max': zstack_file.feature_max,
-            'tracks': zstack_review.readable_tracks,
+            'tracks': zstack_file.readable_tracks,
             'dimensions': (zstack_file.width, zstack_file.height),
             'project_id': project.id
         })
@@ -415,7 +415,7 @@ def load_feedback(filename):
             'max_frames': input_file.max_frames,
             'channel_max': input_file.channel_max,
             'feature_max': input_file.feature_max,
-            'tracks': zstack_feedback.readable_tracks,
+            'tracks': input_file.readable_tracks,
             'dimensions': (input_file.width, input_file.height),
             'project_id': project.id
         })
