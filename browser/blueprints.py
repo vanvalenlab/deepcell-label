@@ -22,9 +22,10 @@ from flask import current_app
 from werkzeug.exceptions import HTTPException
 
 from helpers import is_trk_file, is_npz_file
-from caliban import TrackFile, TrackReview, ZStackFile, ZStackReview
 from feedback import ZStackFeedback
+from files import TrackFile, ZStackFile
 from models import Project
+from reviews import TrackReview, ZStackReview
 
 
 bp = Blueprint('caliban', __name__)  # pylint: disable=C0103

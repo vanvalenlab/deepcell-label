@@ -6,7 +6,7 @@ from __future__ import print_function
 import numpy as np
 from matplotlib import pyplot as plt
 
-from caliban import ZStackView
+from views import ZStackView
 from imgutils import pngify
 
 
