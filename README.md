@@ -100,8 +100,6 @@ Annotation mode focuses on using an adjustable brush to modify annotations on a 
 
 *j* - apply adaptive histogram equalization to raw image (viewing raw image or in pixel editor)
 
-*v* - switch between showing and hiding cursor
-
 *f* - cycle between different annotations when no labels are selected (label-editing mode)
 
 *c* - cycle between different channels when no labels are selected (label-editing mode)
