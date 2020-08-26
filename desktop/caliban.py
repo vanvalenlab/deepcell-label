@@ -168,9 +168,6 @@ class CalibanWindow:
         self.key_states = key.KeyStateHandler()
         self.window.push_handlers(self.key_states)
 
-        # start with cursor visible, but this can be toggled
-        self.mouse_visible = True
-
         # start in label-editing mode
         self.edit_mode = False
         # start with display showing annotations
@@ -2112,7 +2109,6 @@ class TrackReview(CalibanWindow):
         Keybinds:
             a or left arrow key: view previous frame
             d or right arrow key: view next frame
-            v: toggle cursor visibility
             h: toggle highlighting
             escape: clear selection
             minus: zoom out
@@ -2145,12 +2141,6 @@ class TrackReview(CalibanWindow):
                 if self.edit_mode and not self.hide_annotations:
                     self.helper_update_composite()
                 self.update_image = True
-
-        # TOGGLE CURSOR VISIBILITY
-        # most useful in edit mode, but inconvenient if can't be turned back on elsewhere
-        elif symbol == key.V:
-            self.mouse_visible = not self.mouse_visible
-            self.window.set_mouse_visible(self.mouse_visible)
 
         # TOGGLE HIGHLIGHT
         # note: shift+H is conditional keybind elsewhere
@@ -3384,7 +3374,6 @@ class ZStackReview(CalibanWindow):
         Keybinds:
             a or left arrow key: view previous frame
             d or right arrow key: view next frame
-            v: toggle cursor visibility
             h: toggle highlighting
             escape: clear selection or cancel action
             minus: zoom out
@@ -3417,12 +3406,6 @@ class ZStackReview(CalibanWindow):
                 if self.edit_mode and not self.hide_annotations:
                     self.helper_update_composite()
                 self.update_image = True
-
-        # TOGGLE CURSOR VISIBILITY
-        # most useful in edit mode, but inconvenient if can't be turned back on elsewhere
-        elif symbol == key.V:
-            self.mouse_visible = not self.mouse_visible
-            self.window.set_mouse_visible(self.mouse_visible)
 
         # TOGGLE HIGHLIGHT
         # note: shift+H is conditional keybind elsewhere
