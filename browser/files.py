@@ -38,6 +38,39 @@ class BaseFile(object):  # pylint: disable=useless-object-inheritance
         self.height = self.raw.shape[1]
         self.width = self.raw.shape[2]
 
+        # create a dictionary with frame information about each cell
+        # analogous to .trk lineage but doesn't include cells relationships 
+        self.cell_ids = {}
+        self.cell_info = {}
+        for feature in range(self.feature_max):
+            self.create_cell_info(feature)
+
+        # If we have a track file, overwrite cell_info with lineages to include cell relationships
+        if is_trk_file(filename):
+            if len(self.trial['lineages']) != 1:
+                raise ValueError('Input file has multiple trials/lineages.')
+            self.cell_info = {0: self.trial['lineages'][0]}  # Track files have only one feature
+        
+
+    @property
+    def readable_tracks(self):
+        """
+        Preprocesses tracks for presentation on browser. For example,
+        simplifying track['frames'] into something like [0-29] instead of
+        [0,1,2,3,...].
+        """
+        cell_info = copy.deepcopy(self.cell_info)
+        for _, feature in cell_info.items():
+            for _, label in feature.items():
+                slices = list(map(list, consecutive(label['frames'])))
+                slices = '[' + ', '.join(["{}".format(a[0])
+                                          if len(a) == 1 else "{}-{}".format(a[0], a[-1])
+                                          for a in slices]) + ']'
+                label['slices'] = str(slices)
+
+        return cell_info
+    
+
     def _get_s3_client(self):
         return boto3.client(
             's3',
@@ -57,24 +90,6 @@ class BaseFile(object):  # pylint: disable=useless-object-inheritance
         s3 = self._get_s3_client()
         response = s3.get_object(Bucket=self.bucket, Key=self.path)
         return _load(response['Body'].read())
-
-
-class ZStackFile(BaseFile):
-    """
-    Class for .npz files for Z-stack images.
-    """
-
-    def __init__(self, filename, bucket, path,
-                 raw_key='raw', annotated_key='annotated'):
-        super(ZStackFile, self).__init__(filename, bucket, path, raw_key, annotated_key)
-
-        # create a dictionary that has frame information about each cell
-        # analogous to .trk lineage but do not need relationships between cells included
-        self.cell_ids = {}
-        self.cell_info = {}
-
-        for feature in range(self.feature_max):
-            self.create_cell_info(feature)
 
     def create_cell_info(self, feature):
         """Make or remake the entire cell info dict"""
@@ -96,58 +111,6 @@ class ZStackFile(BaseFile):
                 if cell in annotated[frame, ...]:
                     self.cell_info[feature][cell]['frames'].append(int(frame))
             self.cell_info[feature][cell]['slices'] = ''
-
-    @property
-    def readable_tracks(self):
-        """
-        Preprocesses tracks for presentation on browser. For example,
-        simplifying track['frames'] into something like [0-29] instead of
-        [0,1,2,3,...].
-        """
-        cell_info = copy.deepcopy(self.cell_info)
-        for _, feature in cell_info.items():
-            for _, label in feature.items():
-                slices = list(map(list, consecutive(label['frames'])))
-                slices = '[' + ', '.join(["{}".format(a[0])
-                                          if len(a) == 1 else "{}-{}".format(a[0], a[-1])
-                                          for a in slices]) + ']'
-                label['slices'] = str(slices)
-
-        return cell_info
-
-
-class TrackFile(BaseFile):
-    """
-    Class for .trk files for cell tracking.
-    """
-
-    def __init__(self, filename, bucket, path,
-                 raw_key='raw', annotated_key='tracked'):
-        super(TrackFile, self).__init__(filename, bucket, path, raw_key, annotated_key)
-
-        # lineages is a list of dictionaries. There should be only a single one
-        # when using a .trk file
-        if len(self.trial['lineages']) != 1:
-            raise ValueError('Input file has multiple trials/lineages.')
-
-        self.tracks = self.trial['lineages'][0]
-
-    @property
-    def readable_tracks(self):
-        """
-        Preprocesses tracks for presentation on browser. For example,
-        simplifying track['frames'] into something like [0-29] instead of
-        [0,1,2,3,...].
-        """
-        tracks = copy.deepcopy(self.file.tracks)
-        for _, track in tracks.items():
-            frames = list(map(list, consecutive(track["frames"])))
-            frames = '[' + ', '.join(["{}".format(a[0])
-                                      if len(a) == 1 else "{}-{}".format(a[0], a[-1])
-                                      for a in frames]) + ']'
-            track['frames'] = frames
-
-        return tracks
 
 
 def consecutive(data, stepsize=1):
