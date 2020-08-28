@@ -39,7 +39,7 @@ class BaseFile(object):  # pylint: disable=useless-object-inheritance
         self.width = self.raw.shape[2]
 
         # create a dictionary with frame information about each cell
-        # analogous to .trk lineage but doesn't include cells relationships 
+        # analogous to .trk lineage but doesn't include cells relationships
         self.cell_ids = {}
         self.cell_info = {}
         for feature in range(self.feature_max):
@@ -55,7 +55,6 @@ class BaseFile(object):  # pylint: disable=useless-object-inheritance
     def tracks(self):
         """Alias for .trk for backward compatibility"""
         return self.cell_info[0]
-        
 
     @property
     def readable_tracks(self):
@@ -74,7 +73,6 @@ class BaseFile(object):  # pylint: disable=useless-object-inheritance
                 label['slices'] = str(slices)
 
         return cell_info
-    
 
     def _get_s3_client(self):
         return boto3.client(

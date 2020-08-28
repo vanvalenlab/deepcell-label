@@ -78,8 +78,8 @@ class BaseReview(BaseView):
             trace (list): list of (x, y) coordinates where the brush has painted
             target_value (int):
             brush_value (int):
-            brush_size (int): radius of the 
-            erase (bool): sets target_value in trace area to 0 when True 
+            brush_size (int): radius of the brush
+            erase (bool): sets target_value in trace area to 0 when True
             frame (int): the frame to edit
         """
         annotated = np.copy(self.file.annotated[frame, ..., self.feature])

@@ -13,12 +13,11 @@ def test_zstack_init(file_):
     assert raw.shape[:-1] == ann.shape[:-1]
     assert raw.shape[-1] == file_.channel_max
     assert ann.shape[-1] == file_.feature_max
-    assert raw.shape[0] == file_.max_frames 
-    assert raw.shape[1] == file_.height 
+    assert raw.shape[0] == file_.max_frames
+    assert raw.shape[1] == file_.height
     assert raw.shape[2] == file_.width
 
     assert len(file_.cell_ids) == file_.feature_max
     assert len(file_.cell_info) == file_.feature_max
     for feature in range(file_.feature_max):
         assert len(file_.cell_ids[feature]) == len(file_.cell_info[feature])
-

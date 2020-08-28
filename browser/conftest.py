@@ -51,8 +51,8 @@ FRAMES = 5
 CHANNELS = 3
 FEATURES = 2
 
-TEST_NAMES = ["empty", "full1", "full2", "iden", "tril1", 
-              "triu1", "tril2", "triu2", "triu1l2", "tril1u2", 
+TEST_NAMES = ["empty", "full1", "full2", "iden", "tril1",
+              "triu1", "tril2", "triu2", "triu1l2", "tril1u2",
               "checkerboard01", "checkerboard12"]
 tri_12 = np.triu(np.ones(RES, dtype=np.int16))
 tri_12[tri_12 == 0] = 2
@@ -72,22 +72,23 @@ TEST_FRAMES = [np.zeros(RES, dtype=np.int16),  # empty
                tri_21,
                np.tile(check01, (HEIGHT // 2, WIDTH // 2)),
                np.tile(check12, (HEIGHT // 2, WIDTH // 2)),
-              ]
+               ]
 assert len(TEST_NAMES) == len(TEST_FRAMES)
+
 
 def repeat_feature(feature, n):
     """Repeats a feature n times along the last axis."""
     return np.repeat(
-        np.expand_dims(feature, axis=-1), 
-        n, 
+        np.expand_dims(feature, axis=-1),
+        n,
         axis=-1)
 
 
 def repeat_frame(frame, n):
-    """Repeats a frame n times along the first axis.""" 
+    """Repeats a frame n times along the first axis."""
     return np.repeat(
-        np.expand_dims(frame, axis=0), 
-        n, 
+        np.expand_dims(frame, axis=0),
+        n,
         axis=0)
 
 
@@ -120,10 +121,10 @@ def track_file(mocker, request):
     mocker.patch('files.BaseFile.load', load)
     return BaseFile('filename.trk', 'bucket', 'path', 'raw', 'tracked')
 
+
 @pytest.fixture(params=[
-    lazy_fixture('zstack_file'), 
+    lazy_fixture('zstack_file'),
     lazy_fixture('track_file'),
 ])
 def file_(request):
     return request.param
-
