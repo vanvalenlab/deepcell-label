@@ -23,7 +23,7 @@ from werkzeug.exceptions import HTTPException
 
 from helpers import is_trk_file, is_npz_file
 from feedback import ZStackFeedback
-from files import TrackFile, ZStackFile
+from files import BaseFile
 from models import Project
 from reviews import TrackReview, ZStackReview
 
@@ -202,7 +202,7 @@ def load(filename):
 
     if is_trk_file(filename):
         # Initate TrackReview object and entry in database
-        track_file = TrackFile(filename, input_bucket, full_path)
+        track_file = BaseFile(filename, input_bucket, full_path, 'raw', 'tracked')
         track_review = TrackReview(track_file, output_bucket)
         project = Project.create_project(filename, track_review, subfolders)
         current_app.logger.debug('Loaded trk file "%s" in %s s.',
@@ -221,7 +221,7 @@ def load(filename):
         rgb = request.args.get('rgb', default='false', type=str)
         rgb = bool(distutils.util.strtobool(rgb))
         # Initate ZStackReview object and entry in database
-        zstack_file = ZStackFile(filename, input_bucket, full_path)
+        zstack_file = BaseFile(filename, input_bucket, full_path, 'raw', 'annotated')
         zstack_review = ZStackReview(zstack_file, output_bucket, rgb)
         project = Project.create_project(filename, zstack_review, subfolders)
         current_app.logger.debug('Loaded npz file "%s" in %s s.',
@@ -404,8 +404,8 @@ def load_feedback(filename):
         rgb = request.args.get('rgb', default='false', type=str)
         rgb = bool(distutils.util.strtobool(rgb))
         # Initate ZStackReview object and entry in database
-        input_file = ZStackFile(filename, input_bucket, full_path)
-        output_file = ZStackFile(filename, output_bucket, full_path)
+        input_file = BaseFile(filename, input_bucket, full_path)
+        output_file = BaseFile(filename, output_bucket, full_path)
         zstack_feedback = ZStackFeedback(input_file, output_file)
         project = Project.create_project(filename, zstack_feedback, subfolders)
         current_app.logger.debug('Loaded npz feedback file "%s" in %s s.',

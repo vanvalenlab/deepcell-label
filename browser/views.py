@@ -206,4 +206,4 @@ class TrackView(BaseView):
 
     def get_max_label(self):
         """Get the highest label in the lineage data."""
-        return max(self.file.tracks)
+        return max(self.file.cell_info[0])
