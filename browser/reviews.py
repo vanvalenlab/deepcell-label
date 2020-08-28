@@ -628,6 +628,8 @@ class TrackReview(TrackView, BaseReview):
                 'parent': None,
                 'capped': False,
             }
+            self.file.cell_ids[self.feature] = np.append(self.file.cell_ids[self.feature],
+                                                         add_label)
 
         self._y_changed = self.info_changed = True
 
@@ -641,6 +643,10 @@ class TrackReview(TrackView, BaseReview):
         # if that was the last frame, delete the entry for that cell
         if self.file.tracks[del_label]['frames'] == []:
             del self.file.tracks[del_label]
+
+            # also remove from list of cell_ids
+            ids = self.file.cell_ids[self.feature]
+            self.file.cell_ids[self.feature] = np.delete(ids, np.where(ids == np.int64(del_label)))
 
             # If deleting lineage data, remove parent/daughter entries
             for _, track in self.file.tracks.items():
