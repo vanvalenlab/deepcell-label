@@ -3,10 +3,11 @@
 import os
 
 from flask_sqlalchemy import SQLAlchemy
-
+import numpy as np
 import pytest
 
 from application import create_app  # pylint: disable=C0413
+from files import BaseFile, BaseFile
 
 # flask-sqlalchemy fixtures from http://alexmic.net/flask-sqlalchemy-pytest/
 
@@ -40,3 +41,74 @@ def _db(app):
     """
     db = SQLAlchemy(app=app)
     return db
+
+# File fixtures
+HEIGHT = 32
+WIDTH = 32
+RES = (HEIGHT, WIDTH)
+FRAMES = 5
+CHANNELS = 3
+FEATURES = 2
+
+TEST_NAMES = ["empty", "full1", "full2", "iden", "tril1", "triu1", "tril2", "triu2", "triu1l2", "tril1u2"]
+tri_12 = np.triu(np.ones(RES, dtype=np.int16))
+tri_12[tri_12 == 0] = 2
+tri_21 = np.tril(np.ones(RES, dtype=np.int16))
+tri_21[tri_21 == 0] = 2
+TEST_FRAMES = [np.zeros(RES, dtype=np.int16),  # empty
+               np.ones(RES, dtype=np.int16),  # all ones
+               np.full(RES, 2, dtype=np.int16),  # all twos
+               np.identity(HEIGHT, dtype=np.int16),  # identity
+               np.tril(np.ones(RES, dtype=np.int16)),  # lower triangular ones
+               np.triu(np.ones(RES, dtype=np.int16)),  # upper triangular ones
+               np.tril(np.full(RES, 2, dtype=np.int16)),  # lower triangular twos
+               np.triu(np.full(RES, 2, dtype=np.int16)),  # upper triangular twos
+               tri_12,
+               tri_21,
+              ]
+assert len(TEST_NAMES) == len(TEST_FRAMES)
+
+def repeat_feature(feature, n):
+    """Repeats a feature n times along the last axis."""
+    return np.repeat(
+        np.expand_dims(feature, axis=-1), 
+        n, 
+        axis=-1)
+
+
+def repeat_frame(frame, n):
+    """Repeats a frame n times along the first axis.""" 
+    return np.repeat(
+        np.expand_dims(frame, axis=0), 
+        n, 
+        axis=0)
+
+
+@pytest.fixture(params=TEST_FRAMES, ids=TEST_NAMES)
+def zstack_file(mocker, request):
+    def load(self):
+        data = {'raw': np.zeros((FRAMES, HEIGHT, WIDTH, CHANNELS))}
+        data['annotated'] = repeat_frame(repeat_feature(request.param, FEATURES), FRAMES)
+        return data
+    mocker.patch('files.BaseFile.load', load)
+    return BaseFile('filename.npz', 'bucket', 'path', 'raw', 'annotated')
+
+
+@pytest.fixture(params=TEST_FRAMES, ids=TEST_NAMES)
+def track_file(mocker, request):
+    def load(self):
+        data = {'raw': np.zeros((FRAMES, HEIGHT, WIDTH, CHANNELS))}
+        data['tracked'] = repeat_frame(repeat_feature(request.param, 1), FRAMES)
+        # All labels are present in all frames
+        # as we repeat the same frame in every frame
+        lineages = [{label: {'frame_div': None,
+                             'daughters': [],
+                             'frames': list(range(FRAMES)),
+                             'label': label,
+                             'capped': False,  # TODO: what does this mean?
+                             'parent': None}
+                    for label in np.unique(request.param) if label != 0}]
+        data['lineages'] = lineages
+        return data
+    mocker.patch('files.BaseFile.load', load)
+    return BaseFile('filename.trk', 'bucket', 'path', 'raw', 'tracked')
