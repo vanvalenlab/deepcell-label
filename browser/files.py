@@ -50,6 +50,11 @@ class BaseFile(object):  # pylint: disable=useless-object-inheritance
             if len(self.trial['lineages']) != 1:
                 raise ValueError('Input file has multiple trials/lineages.')
             self.cell_info = {0: self.trial['lineages'][0]}  # Track files have only one feature
+
+    @property
+    def tracks(self):
+        """Alias for .trk for backward compatibility"""
+        return self.cell_info[0]
         
 
     @property
