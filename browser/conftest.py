@@ -5,6 +5,7 @@ import os
 from flask_sqlalchemy import SQLAlchemy
 import numpy as np
 import pytest
+from pytest_lazyfixture import lazy_fixture
 
 from application import create_app  # pylint: disable=C0413
 from files import BaseFile, BaseFile
@@ -50,11 +51,15 @@ FRAMES = 5
 CHANNELS = 3
 FEATURES = 2
 
-TEST_NAMES = ["empty", "full1", "full2", "iden", "tril1", "triu1", "tril2", "triu2", "triu1l2", "tril1u2"]
+TEST_NAMES = ["empty", "full1", "full2", "iden", "tril1", 
+              "triu1", "tril2", "triu2", "triu1l2", "tril1u2", 
+              "checkerboard01", "checkerboard12"]
 tri_12 = np.triu(np.ones(RES, dtype=np.int16))
 tri_12[tri_12 == 0] = 2
 tri_21 = np.tril(np.ones(RES, dtype=np.int16))
 tri_21[tri_21 == 0] = 2
+check01 = np.array([[0, 1], [1, 0]], dtype=np.int16)
+check12 = np.array([[1, 2], [2, 1]], dtype=np.int16)
 TEST_FRAMES = [np.zeros(RES, dtype=np.int16),  # empty
                np.ones(RES, dtype=np.int16),  # all ones
                np.full(RES, 2, dtype=np.int16),  # all twos
@@ -65,6 +70,8 @@ TEST_FRAMES = [np.zeros(RES, dtype=np.int16),  # empty
                np.triu(np.full(RES, 2, dtype=np.int16)),  # upper triangular twos
                tri_12,
                tri_21,
+               np.tile(check01, (HEIGHT // 2, WIDTH // 2)),
+               np.tile(check12, (HEIGHT // 2, WIDTH // 2)),
               ]
 assert len(TEST_NAMES) == len(TEST_FRAMES)
 
@@ -112,3 +119,11 @@ def track_file(mocker, request):
         return data
     mocker.patch('files.BaseFile.load', load)
     return BaseFile('filename.trk', 'bucket', 'path', 'raw', 'tracked')
+
+@pytest.fixture(params=[
+    lazy_fixture('zstack_file'), 
+    lazy_fixture('track_file'),
+])
+def file_(request):
+    return request.param
+
