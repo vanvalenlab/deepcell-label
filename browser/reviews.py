@@ -70,8 +70,17 @@ class BaseReview(BaseView):
         self._y_changed = self.info_changed = True
 
     def action_handle_draw(self, trace, target_value, brush_value, brush_size, erase, frame):
-        """Use a "brush" to draw in the brush value along trace locations of
+        """
+        Use a "brush" to draw in the brush value along trace locations of
         the annotated data.
+
+        Args:
+            trace (list): list of (x, y) coordinates where the brush has painted
+            target_value (int):
+            brush_value (int):
+            brush_size (int): radius of the 
+            erase (bool): sets target_value in trace area to 0 when True 
+            frame (int): the frame to edit
         """
         annotated = np.copy(self.file.annotated[frame, ..., self.feature])
 
