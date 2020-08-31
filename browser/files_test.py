@@ -6,8 +6,7 @@ import numpy as np
 from files import BaseFile
 
 
-def test_zstack_init(file_):
-
+def test_init(file_):
     raw = file_.raw
     ann = file_.annotated
     assert raw.shape[:-1] == ann.shape[:-1]
