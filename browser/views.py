@@ -80,7 +80,17 @@ class BaseView(object):  # pylint: disable=useless-object-inheritance
                           cmap=self.color_map)
 
     def get_max_label(self):
-        raise NotImplementedError('get_max_label is not implemented in BaseView')
+        """Get the highest label in use in currently-viewed feature.
+
+        If feature is empty, returns 0 to prevent other functions from crashing.
+        """
+        # check this first, np.max of empty array will crash
+        if len(self.file.cell_ids[self.feature]) == 0:
+            max_label = 0
+        # if any labels exist in feature, find the max label
+        else:
+            max_label = int(np.max(self.file.cell_ids[self.feature]))
+        return max_label
 
     def action(self, action_type, info):
         """Call an action method based on an action type."""
@@ -129,19 +139,6 @@ class ZStackView(BaseView):
                 self.file.width = self.file.raw.shape[2]
 
             self.rgb_img = self.reduce_to_RGB()
-
-    def get_max_label(self):
-        """Get the highest label in use in currently-viewed feature.
-
-        If feature is empty, returns 0 to prevent other functions from crashing.
-        """
-        # check this first, np.max of empty array will crash
-        if len(self.file.cell_ids[self.feature]) == 0:
-            max_label = 0
-        # if any labels exist in feature, find the max label
-        else:
-            max_label = int(np.max(self.file.cell_ids[self.feature]))
-        return max_label
 
     def get_frame(self, frame, raw):
         self.current_frame = frame
@@ -200,10 +197,3 @@ class ZStackView(BaseView):
             if np.sum(raw_channel) != 0:
                 rescaled[..., channel] = self.rescale_95(raw_channel)
         return rescaled
-
-
-class TrackView(BaseView):
-
-    def get_max_label(self):
-        """Get the highest label in the lineage data."""
-        return max(self.file.cell_info[0])
