@@ -171,16 +171,16 @@ class BaseView(object):  # pylint: disable=useless-object-inheritance
 
     def action_change_channel(self, channel):
         """Change selected channel."""
-        if channel < 0 or channel > self.file.channel_max:
+        if channel < 0 or channel > self.file.channel_max - 1:
             raise ValueError('Channel {} is outside of range [0, {}].'.format(
-                channel, self.file.channel_max))
+                channel, self.file.channel_max - 1))
         self.channel = channel
         self._x_changed = True
 
     def action_change_feature(self, feature):
         """Change selected feature."""
-        if feature < 0 or feature > self.file.feature_max:
+        if feature < 0 or feature > self.file.feature_max - 1:
             raise ValueError('Feature {} is outside of range [0, {}].'.format(
-                feature, self.file.feature_max))
+                feature, self.file.feature_max - 1))
         self.feature = feature
         self._y_changed = True
