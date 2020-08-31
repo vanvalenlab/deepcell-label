@@ -17,7 +17,7 @@ class BaseView(object):  # pylint: disable=useless-object-inheritance
     Implements everything but actions that edit labels.
     """
 
-    def __init__(self, file_):
+    def __init__(self, file_, rgb=False):
         self.file = file_
 
         self.current_frame = 0
@@ -32,6 +32,20 @@ class BaseView(object):  # pylint: disable=useless-object-inheritance
         self.max_intensity = {}
         for channel in range(self.file.channel_max):
             self.max_intensity[channel] = None
+
+        self.rgb = rgb
+        if self.rgb:
+            # possible differences between single channel and rgb displays
+            if self.file.raw.ndim == 3:
+                self.file.raw = np.expand_dims(self.file.raw, axis=0)
+                self.file.annotated = np.expand_dims(self.file.__setattr__annotated, axis=0)
+
+                # reassigning height/width for new shape.
+                self.file.max_frames = self.file.raw.shape[0]
+                self.file.height = self.file.raw.shape[1]
+                self.file.width = self.file.raw.shape[2]
+
+            self.rgb_img = self.reduce_to_RGB()
 
         self._x_changed = False
         self._y_changed = False
@@ -65,6 +79,11 @@ class BaseView(object):  # pylint: disable=useless-object-inheritance
 
     def get_frame(self, frame, raw):
         self.current_frame = frame
+        if (raw and self.rgb):
+            return pngify(imgarr=self.rgb_img,
+                          vmin=None,
+                          vmax=None,
+                          cmap=None)
         if raw:
             frame = self.file.raw[frame, ..., self.channel]
             return pngify(imgarr=frame,
@@ -91,63 +110,6 @@ class BaseView(object):  # pylint: disable=useless-object-inheritance
         else:
             max_label = int(np.max(self.file.cell_ids[self.feature]))
         return max_label
-
-    def action(self, action_type, info):
-        """Call an action method based on an action type."""
-        attr_name = 'action_{}'.format(action_type)
-        try:
-            action = getattr(self, attr_name)
-            action(**info)
-        except AttributeError:
-            raise ValueError('Invalid action "{}"'.format(action_type))
-
-    def action_change_channel(self, channel):
-        """Change selected channel."""
-        if channel < 0 or channel > self.file.channel_max:
-            raise ValueError('Channel {} is outside of range [0, {}].'.format(
-                channel, self.file.channel_max))
-        self.channel = channel
-        self._x_changed = True
-
-    def action_change_feature(self, feature):
-        """Change selected feature."""
-        if feature < 0 or feature > self.file.feature_max:
-            raise ValueError('Feature {} is outside of range [0, {}].'.format(
-                feature, self.file.feature_max))
-        self.feature = feature
-        self._y_changed = True
-
-
-class ZStackView(BaseView):
-
-    def __init__(self, file_, rgb=False):
-        # a call to super(ZStackView, self).__init__ says that the output_bucket argument is missing
-        # must be calling BaseReview constructor...
-        BaseView.__init__(self, file_)
-
-        self.rgb = rgb
-
-        if self.rgb:
-            # possible differences between single channel and rgb displays
-            if self.file.raw.ndim == 3:
-                self.file.raw = np.expand_dims(self.file.raw, axis=0)
-                self.file.annotated = np.expand_dims(self.file.__setattr__annotated, axis=0)
-
-                # reassigning height/width for new shape.
-                self.file.max_frames = self.file.raw.shape[0]
-                self.file.height = self.file.raw.shape[1]
-                self.file.width = self.file.raw.shape[2]
-
-            self.rgb_img = self.reduce_to_RGB()
-
-    def get_frame(self, frame, raw):
-        self.current_frame = frame
-        if (raw and self.rgb):
-            return pngify(imgarr=self.rgb_img,
-                          vmin=None,
-                          vmax=None,
-                          cmap=None)
-        return super(ZStackView, self).get_frame(frame, raw)
 
     def reduce_to_RGB(self):
         '''
@@ -197,3 +159,28 @@ class ZStackView(BaseView):
             if np.sum(raw_channel) != 0:
                 rescaled[..., channel] = self.rescale_95(raw_channel)
         return rescaled
+
+    def action(self, action_type, info):
+        """Call an action method based on an action type."""
+        attr_name = 'action_{}'.format(action_type)
+        try:
+            action = getattr(self, attr_name)
+            action(**info)
+        except AttributeError:
+            raise ValueError('Invalid action "{}"'.format(action_type))
+
+    def action_change_channel(self, channel):
+        """Change selected channel."""
+        if channel < 0 or channel > self.file.channel_max:
+            raise ValueError('Channel {} is outside of range [0, {}].'.format(
+                channel, self.file.channel_max))
+        self.channel = channel
+        self._x_changed = True
+
+    def action_change_feature(self, feature):
+        """Change selected feature."""
+        if feature < 0 or feature > self.file.feature_max:
+            raise ValueError('Feature {} is outside of range [0, {}].'.format(
+                feature, self.file.feature_max))
+        self.feature = feature
+        self._y_changed = True
