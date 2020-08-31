@@ -107,11 +107,9 @@ def track_file(mocker, request):
     def load(self):
         data = {'raw': np.zeros((FRAMES, HEIGHT, WIDTH, CHANNELS))}
         data['tracked'] = repeat_frame(repeat_feature(request.param, 1), FRAMES)
-        # All labels are present in all frames
-        # as we repeat the same frame in every frame
         lineages = [{label: {'frame_div': None,
                              'daughters': [],
-                             'frames': list(range(FRAMES)),
+                             'frames': list(range(FRAMES)),  # All labels are in all frames
                              'label': label,
                              'capped': False,  # TODO: what does this mean?
                              'parent': None}
