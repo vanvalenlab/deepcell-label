@@ -286,7 +286,7 @@ class ImageAdjuster {
   }
 
   // apply outlines, transparent highlighting
-  postCompAdjust(segArray, editMode, brush) {
+  postCompAdjust(segArray, editMode, brush, currentHighlight) {
     // draw compositedImg so we can extract image data
     this.ctx.clearRect(0, 0, this.width, this.height);
     this.ctx.drawImage(this.compositedImg, 0, 0, this.width, this.height);
@@ -301,6 +301,10 @@ class ImageAdjuster {
       r1 = brush.target;
     }
     if (editMode && brush.conv && brush.value !== -1) {
+      singleOutline = true;
+      o1 = brush.value;
+    }
+    if (editMode && currentHighlight && !brush.conv) {
       singleOutline = true;
       o1 = brush.value;
     }
