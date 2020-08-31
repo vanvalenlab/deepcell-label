@@ -8,7 +8,7 @@ import pytest
 from pytest_lazyfixture import lazy_fixture
 
 from application import create_app  # pylint: disable=C0413
-from files import BaseFile, BaseFile
+from files import BaseFile
 
 # flask-sqlalchemy fixtures from http://alexmic.net/flask-sqlalchemy-pytest/
 

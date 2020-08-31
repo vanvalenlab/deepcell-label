@@ -22,7 +22,7 @@ from flask import current_app
 from werkzeug.exceptions import HTTPException
 
 from helpers import is_trk_file, is_npz_file
-from feedback import ZStackFeedback
+from feedback import Feedback
 from files import BaseFile
 from models import Project
 from reviews import TrackReview, ZStackReview

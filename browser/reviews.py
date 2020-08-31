@@ -19,14 +19,14 @@ from skimage.draw import circle
 from skimage.exposure import rescale_intensity
 from skimage.measure import regionprops
 
-from views import BaseView, ZStackView, TrackView
+from views import BaseView
 
 
 class BaseReview(BaseView):
     """Base class for all Review objects."""
 
-    def __init__(self, file_, output_bucket):
-        super(BaseReview, self).__init__(file_)
+    def __init__(self, file_, output_bucket, rgb=False):
+        super(BaseReview, self).__init__(file_, rgb)
         self.output_bucket = output_bucket
 
     def add_cell_info(self, add_label, frame):
@@ -288,11 +288,10 @@ class BaseReview(BaseView):
             self.add_cell_info(add_label=label, frame=frame)
 
 
-class ZStackReview(ZStackView, BaseReview):
+class ZStackReview(BaseReview):
 
     def __init__(self, file_, output_bucket, rgb=False):
-        ZStackView.__init__(self, file_, rgb)
-        BaseReview.__init__(self, file_, output_bucket)
+        super(ZStackReview, self).__init__(file_, output_bucket, rgb)
 
     def action_new_cell_stack(self, label, frame):
         """
@@ -451,10 +450,9 @@ class ZStackReview(ZStackView, BaseReview):
         self.info_changed = True
 
 
-class TrackReview(TrackView, BaseReview):
+class TrackReview(BaseReview):
     def __init__(self, file_, output_bucket):
-        TrackView.__init__(self, file_)
-        BaseReview.__init__(self, file_, output_bucket)
+        super(TrackReview, self).__init__(file_, output_bucket)
 
         self.scale_factor = 2
 
