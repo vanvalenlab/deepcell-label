@@ -1030,6 +1030,7 @@ function handleMousemove(evt) {
     }
   }
   updateMousePos(evt.offsetX, evt.offsetY);
+  render_info_display();
 }
 
 // handles end of click&drag (different from click())
