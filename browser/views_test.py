@@ -47,6 +47,32 @@ def test_get_frame(view):
                                         vmax=view.get_max_label(), 
                                         cmap=view.color_map)
             assert expected_ann_frame.getvalue() == ann_frame.getvalue()
-            
-def test_action(view):
-    
+
+def test_get_max_label(view):
+    for feature in range(view.file.feature_max):
+        view.action_change_feature(feature)
+        max_label = view.get_max_label()
+        assert max_label in view.file.annotated[..., feature]
+        assert max_label + 1 not in view.file.annotated[..., feature]
+        assert max_label == view.file.annotated[..., feature].max()
+        if max_label == 0:
+            assert (view.file.annotated[..., feature] == 0).all()
+
+def test_action_change_channel(view):
+    for channel in range(view.file.channel_max):
+        view.action_change_channel(channel)
+        assert view.channel == channel
+    with pytest.raises(ValueError):
+        view.action_change_channel(-1)
+    with pytest.raises(ValueError):
+        view.action_change_channel(view.file.channel_max)
+
+
+def test_action_change_feature(view):
+    for feature in range(view.file.feature_max):
+        view.action_change_feature(feature)
+        assert view.feature == feature
+    with pytest.raises(ValueError):
+        view.action_change_feature(-1)
+    with pytest.raises(ValueError):
+        view.action_change_feature(view.file.feature_max)
