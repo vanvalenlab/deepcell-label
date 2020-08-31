@@ -6,11 +6,11 @@ from __future__ import print_function
 import numpy as np
 from matplotlib import pyplot as plt
 
-from views import ZStackView
+from views import BaseView
 from imgutils import pngify
 
 
-class ZStackFeedback(ZStackView):
+class Feedback(BaseView):
     """Class to view feedback from quality control on zstack images."""
 
     # TODO: @tddough98 replace input_file/output_file with worker_file/qc_file
@@ -19,7 +19,7 @@ class ZStackFeedback(ZStackView):
         self.input_file = input_file
         self.output_file = output_file
 
-        super(ZStackFeedback, self).__init__(input_file)
+        super(Feedback, self).__init__(input_file)
 
         self.diff_cmap = plt.get_cmap('Dark2')
 
