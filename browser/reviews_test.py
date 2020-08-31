@@ -241,6 +241,7 @@ def test_action_new_cell_stack(zstack_review):
         for frame in frames:
             assert new_label in zstack_review.file.annotated[frame, ..., feature]
 
+
 def test_action_replace_single(zstack_review):
     for feature in range(zstack_review.file.feature_max):
         zstack_review.action_change_feature(feature)
@@ -262,6 +263,7 @@ def test_action_replace_single(zstack_review):
                 assert cell2 not in new_ann
                 assert ((new_ann == cell1) == ((annotated == cell1) | (annotated == cell2))).all()
 
+
 def test_action_replace(zstack_review):
     for feature in range(zstack_review.file.feature_max):
         zstack_review.action_change_feature(feature)
@@ -277,6 +279,7 @@ def test_action_replace(zstack_review):
             assert cell2 not in ann
             assert (ann[old_ann == cell2] == cell1).all()
 
+
 def test_action_swap_all_frame(zstack_review):
     for feature in range(zstack_review.file.feature_max):
         zstack_review.action_change_feature(feature)
@@ -291,56 +294,3 @@ def test_action_swap_all_frame(zstack_review):
             assert (ann[old_ann == cell2] == cell1).all()
             assert old_cell_info[feature][cell1]['frames'] == cell_info[feature][cell2]['frames']
             assert old_cell_info[feature][cell2]['frames'] == cell_info[feature][cell1]['frames']
-
-# def test_action_predict_single(zstack_review):
-
-#     zstack_review.action_predict_single(frame)
-
-# def test_action_predict_zstack(zstack_review):
-
-#     zstack_review.action_predict_zstack()
-
-# def test_action_save_zstack(zstack_review):
-
-#     zstack_review.action_save_zstack()
-
-# # add_cell_info?
-# # del_cell_info?
-# # create_cell_info?
-
-# # tests for TrackReview specific actions
-
-# def test_action_new_track(track_review):
-#     old_tracks = track_review.tracks.copy()
-#     for label in old_tracks:
-#         new_label = track_review.get_max_label() + 1
-#         # Replacing on first frame has no effect
-#         track_review.action_new_track(label, 0)
-#         assert new_label not in track_review.tracks
-#         assert label in track_review.tracks
-#         assert track_review.tracks[label] == old_tracks[label]
-#         # Replace on second frame
-#         track_review.action_new_track(label, 1)
-#         assert new_label in tracks
-#         assert 
-
-#     track_review.action_new_track(label, frame)
-
-# def test_action_set_parent(track_review):
-
-#     track_review.action_set_parent(label_1, label_2)
-
-# def test_action_replace(track_review):
-
-#     track_review.action_replace(label_1, label_2)
-
-# def test_action_swap_tracks(track_review):
-
-#     track_review.action_swap_tracks(label_1, label_2)
-
-# def test_action_save_track(track_review):
-
-#     track_review.action_save_track()
-
-# # add_cell_info?
-# # del_cell_info?
