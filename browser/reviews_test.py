@@ -215,3 +215,132 @@ def test_action_swap_single_frame(review):
 # def test_action_threshold(review):
 
 #     review.action_threshold(y1, x1, y2, x2, frame, label):
+
+
+# Tests for zstack specific actions
+
+def test_action_new_cell_stack(zstack_review):
+    for feature in range(zstack_review.file.feature_max):
+        zstack_review.action_change_feature(feature)
+        label = zstack_review.get_max_label()
+        if label == 0:  # no labels in feature
+            continue
+        frames = zstack_review.file.cell_info[feature][label]['frames']
+        # replace from back to front
+        for frame in frames[::-1]:
+            new_label = zstack_review.get_max_label() + 1
+            zstack_review.action_new_cell_stack(label, frame)
+            assert new_label in zstack_review.file.annotated[frame, ..., feature]
+            assert label not in zstack_review.file.annotated[frame:, ..., feature]
+        # replace only in first frame
+        label = zstack_review.get_max_label()
+        frames = zstack_review.file.cell_info[feature][label]['frames']
+        new_label = label + 1
+        zstack_review.action_new_cell_stack(label, frames[0])
+        assert label not in zstack_review.file.annotated[..., feature]
+        for frame in frames:
+            assert new_label in zstack_review.file.annotated[frame, ..., feature]
+
+def test_action_replace_single(zstack_review):
+    for feature in range(zstack_review.file.feature_max):
+        zstack_review.action_change_feature(feature)
+        labels = zstack_review.file.cell_ids[feature]
+        for cell1, cell2 in itertools.product(labels, labels):
+            # Front end checks labels are different
+            if cell1 == cell2:
+                continue
+            for frame in range(zstack_review.file.max_frames):
+                annotated = zstack_review.file.annotated[frame, ..., feature].copy()
+                # Front end checks labels selected in the same frame
+                if (cell1 not in annotated or cell2 not in annotated):
+                    continue
+                assert cell1 in annotated
+                assert cell2 in annotated
+                zstack_review.action_replace_single(cell1, cell2, frame)
+                new_ann = zstack_review.file.annotated[frame, ..., feature]
+                assert cell1 in new_ann
+                assert cell2 not in new_ann
+                assert ((new_ann == cell1) == ((annotated == cell1) | (annotated == cell2))).all()
+
+def test_action_replace(zstack_review):
+    for feature in range(zstack_review.file.feature_max):
+        zstack_review.action_change_feature(feature)
+        labels = zstack_review.file.cell_ids[feature]
+        for cell1, cell2 in itertools.product(labels, labels):
+            old_ann = zstack_review.file.annotated[..., feature].copy()
+            # Front end checks labels are different
+            if cell1 == cell2:
+                continue
+            zstack_review.action_replace(cell1, cell2)
+            ann = zstack_review.file.annotated[..., feature]
+            assert cell1 in ann
+            assert cell2 not in ann
+            assert (ann[old_ann == cell2] == cell1).all()
+
+def test_action_swap_all_frame(zstack_review):
+    for feature in range(zstack_review.file.feature_max):
+        zstack_review.action_change_feature(feature)
+        labels = zstack_review.file.cell_ids[feature]
+        for cell1, cell2 in itertools.product(labels, labels):
+            old_ann = zstack_review.file.annotated[..., feature].copy()
+            old_cell_info = zstack_review.file.cell_info.copy()
+            zstack_review.action_swap_all_frame(cell1, cell2)
+            ann = zstack_review.file.annotated[..., feature]
+            cell_info = zstack_review.file.cell_info
+            assert (ann[old_ann == cell1] == cell2).all()
+            assert (ann[old_ann == cell2] == cell1).all()
+            assert old_cell_info[feature][cell1]['frames'] == cell_info[feature][cell2]['frames']
+            assert old_cell_info[feature][cell2]['frames'] == cell_info[feature][cell1]['frames']
+
+# def test_action_predict_single(zstack_review):
+
+#     zstack_review.action_predict_single(frame)
+
+# def test_action_predict_zstack(zstack_review):
+
+#     zstack_review.action_predict_zstack()
+
+# def test_action_save_zstack(zstack_review):
+
+#     zstack_review.action_save_zstack()
+
+# # add_cell_info?
+# # del_cell_info?
+# # create_cell_info?
+
+# # tests for TrackReview specific actions
+
+# def test_action_new_track(track_review):
+#     old_tracks = track_review.tracks.copy()
+#     for label in old_tracks:
+#         new_label = track_review.get_max_label() + 1
+#         # Replacing on first frame has no effect
+#         track_review.action_new_track(label, 0)
+#         assert new_label not in track_review.tracks
+#         assert label in track_review.tracks
+#         assert track_review.tracks[label] == old_tracks[label]
+#         # Replace on second frame
+#         track_review.action_new_track(label, 1)
+#         assert new_label in tracks
+#         assert 
+
+#     track_review.action_new_track(label, frame)
+
+# def test_action_set_parent(track_review):
+
+#     track_review.action_set_parent(label_1, label_2)
+
+# def test_action_replace(track_review):
+
+#     track_review.action_replace(label_1, label_2)
+
+# def test_action_swap_tracks(track_review):
+
+#     track_review.action_swap_tracks(label_1, label_2)
+
+# def test_action_save_track(track_review):
+
+#     track_review.action_save_track()
+
+# # add_cell_info?
+# # del_cell_info?
