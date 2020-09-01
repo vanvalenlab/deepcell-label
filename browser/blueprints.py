@@ -24,7 +24,7 @@ from werkzeug.exceptions import HTTPException
 from helpers import is_trk_file, is_npz_file
 from files import CalibanFile
 from models import Project
-from reviews import TrackReview, ZStackReview
+from edits import TrackEdit, ZStackEdit
 
 
 bp = Blueprint('caliban', __name__)  # pylint: disable=C0103
@@ -63,7 +63,7 @@ def handle_exception(error):
 def upload_file(project_id):
     '''Upload .trk/.npz data file to AWS S3 bucket.'''
     start = timeit.default_timer()
-    # Use id to grab appropriate TrackReview/ZStackReview object from database
+    # Use id to grab appropriate TrackEdit/ZStackEdit object from database
     project = Project.get_project_by_id(project_id)
 
     if not project:
@@ -72,7 +72,7 @@ def upload_file(project_id):
     state = load_project_state(project)
     filename = state.file.filename
 
-    # Call function in reviews.py to save data file and send to S3 bucket
+    # Call function in edits.py to save data file and send to S3 bucket
     if is_trk_file(filename):
         state.action_save_track()
     elif is_npz_file(filename):
@@ -98,7 +98,7 @@ def action(project_id, action_type, frame):
     info = {k: json.loads(v) for k, v in request.values.to_dict().items()}
 
     try:
-        # Use id to grab appropriate TrackReview/ZStackReview object from database
+        # Use id to grab appropriate TrackEdit/ZStackEdit object from database
         project = Project.get_project_by_id(project_id)
 
         if not project:
@@ -152,7 +152,7 @@ def get_frame(frame, project_id):
         cells to .js file.
     '''
     start = timeit.default_timer()
-    # Use id to grab appropriate TrackReview/ZStackReview object from database
+    # Use id to grab appropriate TrackEdit/ZStackEdit object from database
     project = Project.get_project_by_id(project_id)
 
     if not project:
@@ -183,7 +183,7 @@ def get_frame(frame, project_id):
 
 @bp.route('/load/<filename>', methods=['POST'])
 def load(filename):
-    ''' Initate TrackReview/ZStackReview object and load object to database.
+    ''' Initate TrackEdit/ZStackEdit object and load object to database.
         Send specific attributes of the object to the .js file.
     '''
     start = timeit.default_timer()
@@ -200,10 +200,10 @@ def load(filename):
     output_bucket = folders[1]
 
     if is_trk_file(filename):
-        # Initate TrackReview object and entry in database
+        # Initate TrackEdit object and entry in database
         track_file = CalibanFile(filename, input_bucket, full_path, 'raw', 'tracked')
-        track_review = TrackReview(track_file, output_bucket)
-        project = Project.create_project(filename, track_review, subfolders)
+        track_edit = TrackEdit(track_file, output_bucket)
+        project = Project.create_project(filename, track_edit, subfolders)
         current_app.logger.debug('Loaded trk file "%s" in %s s.',
                                  filename, timeit.default_timer() - start)
         # Send attributes to .js file
@@ -212,17 +212,17 @@ def load(filename):
             'tracks': track_file.readable_tracks,
             'dimensions': (track_file.width, track_file.height),
             'project_id': project.id,
-            'screen_scale': track_review.scale_factor
+            'screen_scale': track_edit.scale_factor
         })
 
     if is_npz_file(filename):
         # arg is 'false' which gets parsed to True if casting to bool
         rgb = request.args.get('rgb', default='false', type=str)
         rgb = bool(distutils.util.strtobool(rgb))
-        # Initate ZStackReview object and entry in database
+        # Initate ZStackEdit object and entry in database
         zstack_file = CalibanFile(filename, input_bucket, full_path, 'raw', 'annotated')
-        zstack_review = ZStackReview(zstack_file, output_bucket, rgb)
-        project = Project.create_project(filename, zstack_review, subfolders)
+        zstack_edit = ZStackEdit(zstack_file, output_bucket, rgb)
+        project = Project.create_project(filename, zstack_edit, subfolders)
         current_app.logger.debug('Loaded npz file "%s" in %s s.',
                                  filename, timeit.default_timer() - start)
         # Send attributes to .js file

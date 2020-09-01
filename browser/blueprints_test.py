@@ -109,8 +109,8 @@ def test_load(client, mocker):
     )
 
     mocker.patch('blueprints.CalibanFile', DummyState)
-    mocker.patch('blueprints.TrackReview', DummyState)
-    mocker.patch('blueprints.ZStackReview', DummyState)
+    mocker.patch('blueprints.TrackEdit', DummyState)
+    mocker.patch('blueprints.ZStackEdit', DummyState)
 
     # TODO: correctness tests
     response = client.post('/load/{}.npz'.format(filename))
