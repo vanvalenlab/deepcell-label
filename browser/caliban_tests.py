@@ -8,23 +8,23 @@ import pytest
 from matplotlib import pyplot as plt
 import numpy as np
 
-import edits
+import caliban
 from imgutils import pngify
 
 
 @pytest.fixture
 def view(file_):
-    return edits.BaseView(file_)
+    return caliban.BaseView(file_)
 
 
 @pytest.fixture()
 def zstack_edit(zstack_file):
-    return edits.ZStackEdit(zstack_file, 'output_bucket')
+    return caliban.ZStackEdit(zstack_file, 'output_bucket')
 
 
 @pytest.fixture
 def track_edit(track_file):
-    return edits.TrackEdit(track_file, 'output_bucket')
+    return caliban.TrackEdit(track_file, 'output_bucket')
 
 
 @pytest.fixture(params=[
