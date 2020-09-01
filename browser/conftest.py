@@ -8,7 +8,7 @@ import pytest
 from pytest_lazyfixture import lazy_fixture
 
 from application import create_app  # pylint: disable=C0413
-from files import BaseFile
+from files import CalibanFile
 
 # flask-sqlalchemy fixtures from http://alexmic.net/flask-sqlalchemy-pytest/
 
@@ -98,8 +98,8 @@ def zstack_file(mocker, request):
         data = {'raw': np.zeros((FRAMES, HEIGHT, WIDTH, CHANNELS))}
         data['annotated'] = repeat_frame(repeat_feature(request.param, FEATURES), FRAMES)
         return data
-    mocker.patch('files.BaseFile.load', load)
-    return BaseFile('filename.npz', 'bucket', 'path', 'raw', 'annotated')
+    mocker.patch('files.CalibanFile.load', load)
+    return CalibanFile('filename.npz', 'bucket', 'path', 'raw', 'annotated')
 
 
 @pytest.fixture(params=TEST_FRAMES, ids=TEST_NAMES)
@@ -116,8 +116,8 @@ def track_file(mocker, request):
                     for label in np.unique(request.param) if label != 0}]
         data['lineages'] = lineages
         return data
-    mocker.patch('files.BaseFile.load', load)
-    return BaseFile('filename.trk', 'bucket', 'path', 'raw', 'tracked')
+    mocker.patch('files.CalibanFile.load', load)
+    return CalibanFile('filename.trk', 'bucket', 'path', 'raw', 'tracked')
 
 
 @pytest.fixture(params=[

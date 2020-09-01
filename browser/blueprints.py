@@ -22,7 +22,7 @@ from flask import current_app
 from werkzeug.exceptions import HTTPException
 
 from helpers import is_trk_file, is_npz_file
-from files import BaseFile
+from files import CalibanFile
 from models import Project
 from reviews import TrackReview, ZStackReview
 
@@ -201,7 +201,7 @@ def load(filename):
 
     if is_trk_file(filename):
         # Initate TrackReview object and entry in database
-        track_file = BaseFile(filename, input_bucket, full_path, 'raw', 'tracked')
+        track_file = CalibanFile(filename, input_bucket, full_path, 'raw', 'tracked')
         track_review = TrackReview(track_file, output_bucket)
         project = Project.create_project(filename, track_review, subfolders)
         current_app.logger.debug('Loaded trk file "%s" in %s s.',
@@ -220,7 +220,7 @@ def load(filename):
         rgb = request.args.get('rgb', default='false', type=str)
         rgb = bool(distutils.util.strtobool(rgb))
         # Initate ZStackReview object and entry in database
-        zstack_file = BaseFile(filename, input_bucket, full_path, 'raw', 'annotated')
+        zstack_file = CalibanFile(filename, input_bucket, full_path, 'raw', 'annotated')
         zstack_review = ZStackReview(zstack_file, output_bucket, rgb)
         project = Project.create_project(filename, zstack_review, subfolders)
         current_app.logger.debug('Loaded npz file "%s" in %s s.',

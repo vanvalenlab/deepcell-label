@@ -29,6 +29,7 @@ class BaseView(object):  # pylint: disable=useless-object-inheritance
         self.feature = 0
         self.channel = 0
 
+        # TODO: is this attributed necessary?
         self.max_intensity = {}
         for channel in range(self.file.channel_max):
             self.max_intensity[channel] = None

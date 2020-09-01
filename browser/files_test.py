@@ -3,7 +3,7 @@
 import pytest
 import numpy as np
 
-from files import BaseFile
+from files import CalibanFile
 
 
 def test_init(file_):

@@ -16,7 +16,7 @@ from helpers import is_npz_file, is_trk_file
 from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 
 
-class BaseFile(object):  # pylint: disable=useless-object-inheritance
+class CalibanFile(object):  # pylint: disable=useless-object-inheritance
     """Base class for the files viewed in Caliban."""
 
     def __init__(self, filename, bucket, path, raw_key, annotated_key):

@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import pytest
 
-from files import BaseFile
+from files import CalibanFile
 from imgutils import pngify
 from views import BaseView
 

@@ -103,27 +103,27 @@ def test_load(client, mocker):
     # TODO: parsing the filename is a bit awkward.
     in_bucket = 'inputBucket'
     out_bucket = 'inputBucket'
-    base_filename = 'testfile'
-    basefile = '{}__{}__{}__{}__{}'.format(
-        in_bucket, out_bucket, 'subfolder1', 'subfolder2', base_filename
+    filename = 'testfile'
+    caliban_file = '{}__{}__{}__{}__{}'.format(
+        in_bucket, out_bucket, 'subfolder1', 'subfolder2', filename
     )
 
-    mocker.patch('blueprints.BaseFile', DummyState)
+    mocker.patch('blueprints.CalibanFile', DummyState)
     mocker.patch('blueprints.TrackReview', DummyState)
     mocker.patch('blueprints.ZStackReview', DummyState)
 
     # TODO: correctness tests
-    response = client.post('/load/{}.npz'.format(basefile))
+    response = client.post('/load/{}.npz'.format(filename))
     assert response.status_code == 200
 
     # rgb mode only for npzs.
-    response = client.post('/load/{}.npz?rgb=true'.format(basefile))
+    response = client.post('/load/{}.npz?rgb=true'.format(filename))
     assert response.status_code == 200
 
-    response = client.post('/load/{}.trk'.format(basefile))
+    response = client.post('/load/{}.trk'.format(filename))
     assert response.status_code == 200
 
-    response = client.post('/load/{}.badext'.format(basefile))
+    response = client.post('/load/{}.badext'.format(filename))
     assert response.status_code == 400
 
 
