@@ -43,7 +43,7 @@ def test_get_array(view):
     for feature in range(view.file.feature_max):
         for frame in range(view.file.max_frames):
             arr = view.get_array(frame, add_outlines=False)
-            assert (arr == view.file.annotated[frame, ..., feature]).all()
+            assert (arr == view.annotated[frame, ..., feature]).all()
             arr_o = view.get_array(frame, add_outlines=True)
             assert (arr_o[arr_o >= 0] == arr[arr_o >= 0]).all()
             assert (arr_o[arr_o < 0] == -arr[arr_o < 0]).all()
@@ -65,7 +65,7 @@ def test_get_frame(view):
         for frame in range(view.file.max_frames):
             ann_frame = view.get_frame(frame, False)
             assert view.current_frame == frame
-            expected_ann = np.ma.masked_equal(view.file.annotated[frame, ..., feature], 0)
+            expected_ann = np.ma.masked_equal(view.annotated[frame, ..., feature], 0)
             expected_ann_frame = pngify(expected_ann,
                                         vmin=0,
                                         vmax=view.get_max_label(),
@@ -77,11 +77,11 @@ def test_get_max_label(view):
     for feature in range(view.file.feature_max):
         view.action_change_feature(feature)
         max_label = view.get_max_label()
-        assert max_label in view.file.annotated[..., feature]
-        assert max_label + 1 not in view.file.annotated[..., feature]
-        assert max_label == view.file.annotated[..., feature].max()
+        assert max_label in view.annotated[..., feature]
+        assert max_label + 1 not in view.annotated[..., feature]
+        assert max_label == view.annotated[..., feature].max()
         if max_label == 0:
-            assert (view.file.annotated[..., feature] == 0).all()
+            assert (view.annotated[..., feature] == 0).all()
 
 
 def test_action_change_channel(view):
@@ -208,12 +208,12 @@ def test_action_new_single_cell(edit):
             for frame in range(max_frames - 1):
                 edit.action_new_single_cell(cell, frame)
                 new_label = edit.get_max_label()
-                assert new_label in edit.file.annotated[frame, ..., feature]
-                assert cell not in edit.file.annotated[frame, ..., feature]
+                assert new_label in edit.annotated[frame, ..., feature]
+                assert cell not in edit.annotated[frame, ..., feature]
             edit.action_new_single_cell(cell, max_frames - 1)
             new_label = edit.get_max_label()
-            assert new_label in edit.file.annotated[max_frames - 1]
-            assert cell not in edit.file.annotated[..., feature]
+            assert new_label in edit.annotated[max_frames - 1]
+            assert cell not in edit.annotated[..., feature]
 
 
 def test_action_delete_mask(edit):
@@ -224,14 +224,14 @@ def test_action_delete_mask(edit):
         for cell in cell_ids[feature]:
             for frame in range(max_frames - 1):
                 edit.action_delete_mask(cell, frame)
-                assert cell not in edit.file.annotated[frame, ..., feature]
+                assert cell not in edit.annotated[frame, ..., feature]
             edit.action_new_single_cell(cell, max_frames - 1)
-            assert cell not in edit.file.annotated[..., feature]
+            assert cell not in edit.annotated[..., feature]
 
 
 def test_action_swap_single_frame(edit):
     max_frames = edit.file.max_frames
-    ann = edit.file.annotated
+    ann = edit.annotated
     cell_ids = deepcopy(edit.file.cell_ids)
     assert not edit._y_changed
     assert not edit.info_changed
@@ -260,7 +260,7 @@ def test_action_swap_single_frame(edit):
 
 # def test_action_trim_pixels(edit):
 #     max_frames = edit.file.max_frames
-#     ann = edit.file.annotated
+#     ann = edit.annotated
 #     cell_ids = deepcopy(edit.file.cell_ids)
 #     assert not edit._y_changed
 #     assert not edit.info_changed
@@ -306,16 +306,16 @@ def test_action_new_cell_stack(zstack_edit):
         for frame in frames[::-1]:
             new_label = zstack_edit.get_max_label() + 1
             zstack_edit.action_new_cell_stack(label, frame)
-            assert new_label in zstack_edit.file.annotated[frame, ..., feature]
-            assert label not in zstack_edit.file.annotated[frame:, ..., feature]
+            assert new_label in zstack_edit.annotated[frame, ..., feature]
+            assert label not in zstack_edit.annotated[frame:, ..., feature]
         # replace only in first frame
         label = zstack_edit.get_max_label()
         frames = zstack_edit.file.cell_info[feature][label]['frames']
         new_label = label + 1
         zstack_edit.action_new_cell_stack(label, frames[0])
-        assert label not in zstack_edit.file.annotated[..., feature]
+        assert label not in zstack_edit.annotated[..., feature]
         for frame in frames:
-            assert new_label in zstack_edit.file.annotated[frame, ..., feature]
+            assert new_label in zstack_edit.annotated[frame, ..., feature]
 
 
 def test_action_replace_single(zstack_edit):
@@ -327,14 +327,14 @@ def test_action_replace_single(zstack_edit):
             if cell1 == cell2:
                 continue
             for frame in range(zstack_edit.file.max_frames):
-                annotated = zstack_edit.file.annotated[frame, ..., feature].copy()
+                annotated = zstack_edit.annotated[frame, ..., feature].copy()
                 # Front end checks labels selected in the same frame
                 if (cell1 not in annotated or cell2 not in annotated):
                     continue
                 assert cell1 in annotated
                 assert cell2 in annotated
                 zstack_edit.action_replace_single(cell1, cell2, frame)
-                new_ann = zstack_edit.file.annotated[frame, ..., feature]
+                new_ann = zstack_edit.annotated[frame, ..., feature]
                 assert cell1 in new_ann
                 assert cell2 not in new_ann
                 assert ((new_ann == cell1) == ((annotated == cell1) | (annotated == cell2))).all()
@@ -345,12 +345,12 @@ def test_action_replace(zstack_edit):
         zstack_edit.action_change_feature(feature)
         labels = zstack_edit.file.cell_ids[feature]
         for cell1, cell2 in itertools.product(labels, labels):
-            old_ann = zstack_edit.file.annotated[..., feature].copy()
+            old_ann = zstack_edit.annotated[..., feature].copy()
             # Front end checks labels are different
             if cell1 == cell2:
                 continue
             zstack_edit.action_replace(cell1, cell2)
-            ann = zstack_edit.file.annotated[..., feature]
+            ann = zstack_edit.annotated[..., feature]
             assert cell1 in ann
             assert cell2 not in ann
             assert (ann[old_ann == cell2] == cell1).all()
@@ -361,10 +361,10 @@ def test_action_swap_all_frame(zstack_edit):
         zstack_edit.action_change_feature(feature)
         labels = zstack_edit.file.cell_ids[feature]
         for cell1, cell2 in itertools.product(labels, labels):
-            old_ann = zstack_edit.file.annotated[..., feature].copy()
+            old_ann = zstack_edit.annotated[..., feature].copy()
             old_cell_info = zstack_edit.file.cell_info.copy()
             zstack_edit.action_swap_all_frame(cell1, cell2)
-            ann = zstack_edit.file.annotated[..., feature]
+            ann = zstack_edit.annotated[..., feature]
             cell_info = zstack_edit.file.cell_info
             assert (ann[old_ann == cell1] == cell2).all()
             assert (ann[old_ann == cell2] == cell1).all()
