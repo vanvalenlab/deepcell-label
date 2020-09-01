@@ -285,8 +285,8 @@ class ImageAdjuster {
     this.compositedImg.src = this.canvas.toDataURL();
   }
 
-  // apply outlines, transparent highlighting
-  postCompAdjust(segArray, editMode, brush) {
+  // apply white (and sometimes red) opaque outlines around cells, if needed
+  postCompAdjust(segArray, editMode, brush, currentHighlight) {
     // draw compositedImg so we can extract image data
     this.ctx.clearRect(0, 0, this.width, this.height);
     this.ctx.drawImage(this.compositedImg, 0, 0, this.width, this.height);
@@ -300,7 +300,14 @@ class ImageAdjuster {
       redOutline = true;
       r1 = brush.target;
     }
+    // white outline for conversion brush drawing value
     if (editMode && brush.conv && brush.value !== -1) {
+      singleOutline = true;
+      o1 = brush.value;
+    }
+    // add an outline around the currently highlighted cell, if there is one
+    // but only if the brush isn't set to conversion brush mode
+    if (editMode && currentHighlight && !brush.conv) {
       singleOutline = true;
       o1 = brush.value;
     }
