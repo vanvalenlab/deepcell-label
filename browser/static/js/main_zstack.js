@@ -1173,7 +1173,7 @@ function startCaliban(filename, settings) {
       adjuster.contrastedRaw.onload = () => adjuster.preCompRawAdjust();
       adjuster.preCompRaw.onload = () => adjuster.rawAdjust(state.segArray, current_highlight, edit_mode, brush, mode);
       adjuster.preCompSeg.onload = () => adjuster.segAdjust(state.segArray, current_highlight, edit_mode, brush, mode);
-      adjuster.compositedImg.onload = () => adjuster.postCompAdjust(state.segArray, edit_mode, brush);
+      adjuster.compositedImg.onload = () => adjuster.postCompAdjust(state.segArray, edit_mode, brush, current_highlight);
     }
 
     adjuster.postCompImg.onload = render_image_display;
