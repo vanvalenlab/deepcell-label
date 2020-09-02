@@ -251,7 +251,10 @@ class View(object):  # pylint: disable=useless-object-inheritance
 
 
 class BaseEdit(View):
-    """Base class for Edit objects."""
+    """
+    Base class for Edit objects that extends View.
+    Adds actions to edit annotations and helper functions to update metadata.
+    """
 
     def __init__(self, file_, output_bucket, rgb=False):
         super(BaseEdit, self).__init__(file_, rgb)
@@ -264,7 +267,14 @@ class BaseEdit(View):
         raise NotImplementedError('del_cell_info is not implemented in BaseEdit')
 
     def action_new_single_cell(self, label, frame):
-        """Create new label in just one frame"""
+        """
+        Create new label that replaces an existing label in one frame.
+        Updates metadata for these labels.
+        
+        Args:
+            label (int): label to replace
+            frame (int): index of frame that we replace label in
+        """
         new_label = self.get_max_label() + 1
 
         # replace frame labels
@@ -276,7 +286,14 @@ class BaseEdit(View):
         self.add_cell_info(add_label=new_label, frame=frame)
 
     def action_delete_mask(self, label, frame):
-        """Deletes label from the frame"""
+        """
+        Deletes label from one frame, replacing the label with 0.
+        Updates the metadata for this label.
+        
+        Args:
+            label (int): label to delete
+            frames (int): frame to delete label in
+        """
         # TODO: update the action name?
         ann_img = self.annotated[frame, ..., self.feature]
         ann_img = np.where(ann_img == label, 0, ann_img)
@@ -287,7 +304,15 @@ class BaseEdit(View):
         self.del_cell_info(del_label=label, frame=frame)
 
     def action_swap_single_frame(self, label_1, label_2, frame):
-        """Swap labels of two objects in the frame."""
+        """
+        Swap labels of two objects in one frame.
+        Does not update metadata as the frames for the labels do not change.
+        
+        Args:
+            label_1 (int): first label to swap
+            label_2 (int): second label to swap
+            frame (int): index of frame to swap in
+        """
         ann_img = self.annotated[frame, ..., self.feature]
         ann_img = np.where(ann_img == label_1, -1, ann_img)
         ann_img = np.where(ann_img == label_2, label_1, ann_img)
@@ -295,17 +320,19 @@ class BaseEdit(View):
 
         self.annotated[frame, ..., self.feature] = ann_img
 
+        # TODO: does info change?
         self._y_changed = self.info_changed = True
 
     def action_handle_draw(self, trace, target_value, brush_value, brush_size, erase, frame):
         """
         Use a "brush" to draw in the brush value along trace locations of
         the annotated data.
+        Updates label metadata if a change is detected.
 
         Args:
             trace (list): list of (x, y) coordinates where the brush has painted
-            target_value (int):
-            brush_value (int):
+            target_value (int): label overwritten by the brush
+            brush_value (int): label written by the bush
             brush_size (int): radius of the brush
             erase (bool): sets target_value in trace area to 0 when True
             frame (int): the frame to edit
@@ -350,8 +377,16 @@ class BaseEdit(View):
         self.annotated[frame, ..., self.feature] = annotated
 
     def action_trim_pixels(self, label, frame, x_location, y_location):
-        """Remove any pixels with value label that are not connected to the
+        """
+        Remove any pixels with value label that are not connected to the
         selected cell in the given frame.
+
+        Args:
+            label (int): label to trim
+            frame (int): index of frame to trim in
+            x_location (int): x position of seed
+                              remove label that is not connect to this seed
+            y_location (int): y position of seed
         """
         img_ann = self.annotated[frame, ..., self.feature]
 
