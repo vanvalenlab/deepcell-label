@@ -14,7 +14,7 @@ from imgutils import pngify
 
 @pytest.fixture
 def view(file_):
-    return caliban.BaseView(file_)
+    return caliban.View(file_)
 
 
 @pytest.fixture()

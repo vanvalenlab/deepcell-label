@@ -23,9 +23,9 @@ from skimage.segmentation import find_boundaries
 from imgutils import pngify
 
 
-class BaseView(object):  # pylint: disable=useless-object-inheritance
+class View(object):  # pylint: disable=useless-object-inheritance
     """
-    Base class for viewing a file in Caliban.
+    Class for viewing a file in Caliban.
     Implements everything but actions that edit labels.
     """
 
@@ -197,7 +197,7 @@ class BaseView(object):  # pylint: disable=useless-object-inheritance
         self._y_changed = True
 
 
-class BaseEdit(BaseView):
+class BaseEdit(View):
     """Base class for all Edit objects."""
 
     def __init__(self, file_, output_bucket, rgb=False):
