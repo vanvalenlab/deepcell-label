@@ -94,13 +94,7 @@ class CalibanFile(object):  # pylint: disable=useless-object-inheritance
 
     def load(self):
         """Load a file from the S3 input bucket"""
-        if is_npz_file(self.filename):
-            _load = load_npz
-        elif is_trk_file(self.filename):
-            _load = load_trks
-        else:
-            raise ValueError('Cannot load file: {}'.format(self.filename))
-
+        _load = get_load(self.filename)
         s3 = self._get_s3_client()
         response = s3.get_object(Bucket=self.bucket, Key=self.path)
         return _load(response['Body'].read())
@@ -130,6 +124,14 @@ class CalibanFile(object):  # pylint: disable=useless-object-inheritance
 def consecutive(data, stepsize=1):
     return np.split(data, np.where(np.diff(data) != stepsize)[0] + 1)
 
+def get_load(filename):
+    if is_npz_file(filename):
+        _load = load_npz
+    elif is_trk_file(filename):
+        _load = load_trks
+    else:
+        raise ValueError('Cannot load file: {}'.format(filename))
+    return _load
 
 def load_npz(filename):
 
