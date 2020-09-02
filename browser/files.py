@@ -19,17 +19,17 @@ from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 class CalibanFile(object):  # pylint: disable=useless-object-inheritance
     """Base class for the files viewed in Caliban."""
 
-    def __init__(self, filename, bucket, path, raw_key, annotated_key):
+    def __init__(self, filename, bucket, path, raw_key=None, annotated_key=None):
         self.filename = filename
         self.bucket = bucket
         self.path = path
 
-        self.raw_key = raw_key
-        self.annotated_key = annotated_key
+        self.raw_key = raw_key if raw_key is not None else 'raw'
+        self.annotated_key = annotated_key if annotated_key is not None else get_ann_key(filename)
 
         self.trial = self.load()
-        self.raw = self.trial[raw_key]
-        self.annotated = self.trial[annotated_key]
+        self.raw = self.trial[self.raw_key]
+        self.annotated = self.trial[self.annotated_key]
 
         self.channel_max = self.raw.shape[-1]
         self.feature_max = self.annotated.shape[-1]
@@ -123,6 +123,11 @@ class CalibanFile(object):  # pylint: disable=useless-object-inheritance
 
 def consecutive(data, stepsize=1):
     return np.split(data, np.where(np.diff(data) != stepsize)[0] + 1)
+
+def get_ann_key(filename):
+    if is_trk_file(filename):
+        return 'tracked'
+    return 'annotated'  # 'annotated' is the default key
 
 def get_load(filename):
     if is_npz_file(filename):
