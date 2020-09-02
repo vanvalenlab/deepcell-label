@@ -199,47 +199,46 @@ def load(filename):
     input_bucket = folders[0]
     output_bucket = folders[1]
 
+    # arg is 'false' which gets parsed to True if casting to bool
+    rgb = request.args.get('rgb', default='false', type=str)
+    rgb = bool(distutils.util.strtobool(rgb))
+    
+    if not is_trk_file(filename) and not is_npz_file(filename):
+        error = {
+            'error': 'invalid file extension: {}'.format(
+                os.path.splitext(filename)[-1])
+        }
+        return jsonify(error), 400
+    
+    # Initate Edit object and entry in database
+    caliban_file = CalibanFile(filename, input_bucket, full_path)
+    edit = get_edit(caliban_file, output_bucket, rgb)
+    project = Project.create_project(filename, edit, subfolders)
+
     if is_trk_file(filename):
-        # Initate TrackEdit object and entry in database
-        track_file = CalibanFile(filename, input_bucket, full_path, 'raw', 'tracked')
-        track_edit = TrackEdit(track_file, output_bucket)
-        project = Project.create_project(filename, track_edit, subfolders)
         current_app.logger.debug('Loaded trk file "%s" in %s s.',
                                  filename, timeit.default_timer() - start)
         # Send attributes to .js file
         return jsonify({
-            'max_frames': track_file.max_frames,
-            'tracks': track_file.readable_tracks,
-            'dimensions': (track_file.width, track_file.height),
+            'max_frames': caliban_file.max_frames,
+            'tracks': caliban_file.readable_tracks,
+            'dimensions': (caliban_file.width, caliban_file.height),
             'project_id': project.id,
-            'screen_scale': track_edit.scale_factor
+            'screen_scale': edit.scale_factor
         })
 
     if is_npz_file(filename):
-        # arg is 'false' which gets parsed to True if casting to bool
-        rgb = request.args.get('rgb', default='false', type=str)
-        rgb = bool(distutils.util.strtobool(rgb))
-        # Initate ZStackEdit object and entry in database
-        zstack_file = CalibanFile(filename, input_bucket, full_path, 'raw', 'annotated')
-        zstack_edit = ZStackEdit(zstack_file, output_bucket, rgb)
-        project = Project.create_project(filename, zstack_edit, subfolders)
         current_app.logger.debug('Loaded npz file "%s" in %s s.',
                                  filename, timeit.default_timer() - start)
         # Send attributes to .js file
         return jsonify({
-            'max_frames': zstack_file.max_frames,
-            'channel_max': zstack_file.channel_max,
-            'feature_max': zstack_file.feature_max,
-            'tracks': zstack_file.readable_tracks,
-            'dimensions': (zstack_file.width, zstack_file.height),
+            'max_frames': caliban_file.max_frames,
+            'channel_max': caliban_file.channel_max,
+            'feature_max': caliban_file.feature_max,
+            'tracks': caliban_file.readable_tracks,
+            'dimensions': (caliban_file.width, caliban_file.height),
             'project_id': project.id
         })
-
-    error = {
-        'error': 'invalid file extension: {}'.format(
-            os.path.splitext(filename)[-1])
-    }
-    return jsonify(error), 400
 
 
 @bp.route('/', methods=['GET', 'POST'])
@@ -338,3 +337,10 @@ def shortcut(filename):
         title=title,
         filename=filename,
         settings=settings)
+
+# Factory for Edit objects
+def get_edit(file_, output_bucket, rgb):
+    if is_npz_file(file_.filename):
+        return ZStackEdit(file_, output_bucket, rgb)
+    elif is_trk_file(file_.filename):
+        return TrackEdit(file_, output_bucket)  # don't use RGB mode with track files

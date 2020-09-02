@@ -14,6 +14,18 @@ class Bunch(object):
         self.__dict__.update(kwds)
 
 
+class DummyFile():
+
+    def __init__(self, filename, *_, **__):
+        self.filename = filename
+
+    def __getattr__(self, *_, **__):
+        return self
+
+    def __call__(self, *_, **__):
+        return self
+
+
 class DummyState(io.BytesIO):
 
     def __init__(self, *_, **__):
@@ -107,8 +119,8 @@ def test_load(client, mocker):
     caliban_file = '{}__{}__{}__{}__{}'.format(
         in_bucket, out_bucket, 'subfolder1', 'subfolder2', filename
     )
-
-    mocker.patch('blueprints.CalibanFile', DummyState)
+    
+    mocker.patch('blueprints.CalibanFile', DummyFile)
     mocker.patch('blueprints.TrackEdit', DummyState)
     mocker.patch('blueprints.ZStackEdit', DummyState)
 
