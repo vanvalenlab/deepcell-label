@@ -124,10 +124,12 @@ class CalibanFile(object):  # pylint: disable=useless-object-inheritance
 def consecutive(data, stepsize=1):
     return np.split(data, np.where(np.diff(data) != stepsize)[0] + 1)
 
+
 def get_ann_key(filename):
     if is_trk_file(filename):
         return 'tracked'
     return 'annotated'  # 'annotated' is the default key
+
 
 def get_load(filename):
     if is_npz_file(filename):
@@ -137,6 +139,7 @@ def get_load(filename):
     else:
         raise ValueError('Cannot load file: {}'.format(filename))
     return _load
+
 
 def load_npz(filename):
 

@@ -119,7 +119,7 @@ def test_load(client, mocker):
     caliban_file = '{}__{}__{}__{}__{}'.format(
         in_bucket, out_bucket, 'subfolder1', 'subfolder2', filename
     )
-    
+
     mocker.patch('blueprints.CalibanFile', DummyFile)
     mocker.patch('blueprints.TrackEdit', DummyState)
     mocker.patch('blueprints.ZStackEdit', DummyState)

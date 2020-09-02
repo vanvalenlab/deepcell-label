@@ -202,14 +202,14 @@ def load(filename):
     # arg is 'false' which gets parsed to True if casting to bool
     rgb = request.args.get('rgb', default='false', type=str)
     rgb = bool(distutils.util.strtobool(rgb))
-    
+
     if not is_trk_file(filename) and not is_npz_file(filename):
         error = {
             'error': 'invalid file extension: {}'.format(
                 os.path.splitext(filename)[-1])
         }
         return jsonify(error), 400
-    
+
     # Initate Edit object and entry in database
     caliban_file = CalibanFile(filename, input_bucket, full_path)
     edit = get_edit(caliban_file, output_bucket, rgb)
@@ -337,6 +337,7 @@ def shortcut(filename):
         title=title,
         filename=filename,
         settings=settings)
+
 
 # Factory for Edit objects
 def get_edit(file_, output_bucket, rgb):

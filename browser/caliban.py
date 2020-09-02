@@ -53,7 +53,7 @@ class View(object):  # pylint: disable=useless-object-inheritance
         self._x_changed = False
         self._y_changed = False
         self.info_changed = False
-    
+
     @property
     def raw(self):
         return self.file.raw
@@ -112,7 +112,7 @@ class View(object):  # pylint: disable=useless-object-inheritance
 
         Args:
             frame (int):
-            raw (bool): when 
+            raw (bool): when
 
         Returns:
             BytesIO: contains a .png of the ith frames
@@ -220,10 +220,10 @@ class View(object):  # pylint: disable=useless-object-inheritance
     def action_change_channel(self, channel):
         """
         Change selected channel.
-        
+
         Args:
             channel (int): which channel to switch to
-        
+
         Raises:
             ValueError: if channel is not in [0, channel_max)
         """
@@ -236,10 +236,10 @@ class View(object):  # pylint: disable=useless-object-inheritance
     def action_change_feature(self, feature):
         """
         Change selected feature.
-        
+
         Args:
             feature (int): which feature to switch to
-            
+
         Raises:
             ValueError: if feature is not in [0, feature_max)
         """
@@ -270,7 +270,7 @@ class BaseEdit(View):
         """
         Create new label that replaces an existing label in one frame.
         Updates metadata for these labels.
-        
+
         Args:
             label (int): label to replace
             frame (int): index of frame that we replace label in
@@ -289,7 +289,7 @@ class BaseEdit(View):
         """
         Deletes label from one frame, replacing the label with 0.
         Updates the metadata for this label.
-        
+
         Args:
             label (int): label to delete
             frames (int): frame to delete label in
@@ -307,7 +307,7 @@ class BaseEdit(View):
         """
         Swap labels of two objects in one frame.
         Does not update metadata as the frames for the labels do not change.
-        
+
         Args:
             label_1 (int): first label to swap
             label_2 (int): second label to swap
@@ -524,7 +524,7 @@ class BaseEdit(View):
 
         # pull out the selection portion of the raw frame
         predict_area = self.raw[frame, top_edge:bottom_edge,
-                                     left_edge:right_edge, self.channel]
+                                left_edge:right_edge, self.channel]
 
         # triangle threshold picked after trying a few on one dataset
         # may not be the best threshold approach for other datasets!
@@ -540,11 +540,11 @@ class BaseEdit(View):
 
         # put prediction in without overwriting
         predict_area = self.annotated[frame, top_edge:bottom_edge,
-                                           left_edge:right_edge, self.feature]
+                                      left_edge:right_edge, self.feature]
         safe_overlay = np.where(predict_area == 0, ann_threshold, predict_area)
 
         self.annotated[frame, top_edge:bottom_edge,
-                            left_edge:right_edge, self.feature] = safe_overlay
+                       left_edge:right_edge, self.feature] = safe_overlay
 
         # don't need to update cell_info unless an annotation has been added
         if np.any(np.isin(self.annotated[frame, ..., self.feature], label)):
