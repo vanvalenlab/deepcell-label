@@ -38,6 +38,17 @@ class CalibanFile(object):  # pylint: disable=useless-object-inheritance
         self.height = self.raw.shape[1]
         self.width = self.raw.shape[2]
 
+        # possible differences between single channel and rgb displays
+        # moved from the rgb block in View Constructor
+        if self.raw.ndim == 3:
+            self.raw = np.expand_dims(self.raw, axis=0)
+            self.annotated = np.expand_dims(self.annotated, axis=0)
+
+            # reassigning height/width for new shape.
+            self.max_frames = self.raw.shape[0]
+            self.height = self.raw.shape[1]
+            self.width = self.raw.shape[2]
+
         # create a dictionary with frame information about each cell
         # analogous to .trk lineage but doesn't include cells relationships
         self.cell_ids = {}

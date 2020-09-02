@@ -48,16 +48,6 @@ class BaseView(object):  # pylint: disable=useless-object-inheritance
 
         self.rgb = rgb
         if self.rgb:
-            # possible differences between single channel and rgb displays
-            if self.file.raw.ndim == 3:
-                self.file.raw = np.expand_dims(self.file.raw, axis=0)
-                self.file.annotated = np.expand_dims(self.file.__setattr__annotated, axis=0)
-
-                # reassigning height/width for new shape.
-                self.file.max_frames = self.file.raw.shape[0]
-                self.file.height = self.file.raw.shape[1]
-                self.file.width = self.file.raw.shape[2]
-
             self.rgb_img = self.reduce_to_RGB()
 
         self._x_changed = False
