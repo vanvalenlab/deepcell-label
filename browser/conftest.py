@@ -99,7 +99,7 @@ def zstack_file(mocker, request):
         data['annotated'] = repeat_frame(repeat_feature(request.param, FEATURES), FRAMES)
         return data
     mocker.patch('files.CalibanFile.load', load)
-    return CalibanFile('filename.npz', 'bucket', 'path', 'raw', 'annotated')
+    return CalibanFile('filename.npz', 'bucket', 'path')
 
 
 @pytest.fixture(params=TEST_FRAMES, ids=TEST_NAMES)
@@ -117,7 +117,7 @@ def track_file(mocker, request):
         data['lineages'] = lineages
         return data
     mocker.patch('files.CalibanFile.load', load)
-    return CalibanFile('filename.trk', 'bucket', 'path', 'raw', 'tracked')
+    return CalibanFile('filename.trk', 'bucket', 'path')
 
 
 @pytest.fixture(params=[
