@@ -113,17 +113,17 @@ def test_load(client, mocker):
     mocker.patch('blueprints.ZStackEdit', DummyState)
 
     # TODO: correctness tests
-    response = client.post('/load/{}.npz'.format(filename))
+    response = client.post('/load/{}.npz'.format(caliban_file))
     assert response.status_code == 200
 
     # rgb mode only for npzs.
-    response = client.post('/load/{}.npz?rgb=true'.format(filename))
+    response = client.post('/load/{}.npz?rgb=true'.format(caliban_file))
     assert response.status_code == 200
 
-    response = client.post('/load/{}.trk'.format(filename))
+    response = client.post('/load/{}.trk'.format(caliban_file))
     assert response.status_code == 200
 
-    response = client.post('/load/{}.badext'.format(filename))
+    response = client.post('/load/{}.badext'.format(caliban_file))
     assert response.status_code == 400
 
 
