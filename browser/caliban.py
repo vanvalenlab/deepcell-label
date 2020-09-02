@@ -73,7 +73,14 @@ class View(object):  # pylint: disable=useless-object-inheritance
         return rescaled_img
 
     def add_outlines(self, frame):
-        """Indicate label outlines in array with negative values of that label.
+        """
+        Shows label outlines in array with negative values of that label.
+
+        Args:
+            frame (np.array): array with labels
+
+        Returns:
+            np.array: array with negative borders around labels
         """
         # this is sometimes int 32 but may be uint, convert to
         # int16 to ensure negative numbers and smaller payload than int32
@@ -83,12 +90,33 @@ class View(object):  # pylint: disable=useless-object-inheritance
         return outlined_frame
 
     def get_array(self, frame, add_outlines=True):
+        """
+        Returns the labels on the ith frame.
+
+        Args:
+            frame (int): index of frame to return
+            add_outlines (bool): adds borders to labels when True
+
+        Returns:
+            np.array: labels on the ith frame.
+        """
         frame = self.annotated[frame, ..., self.feature]
         if add_outlines:
             frame = self.add_outlines(frame)
         return frame
 
     def get_frame(self, frame, raw):
+        """
+        Returns the ith frame to display on the front end.
+        Also changes the current frame of this View.
+
+        Args:
+            frame (int):
+            raw (bool): when 
+
+        Returns:
+            BytesIO: contains a .png of the ith frames
+        """
         self.current_frame = frame
         if (raw and self.rgb):
             return pngify(imgarr=self.rgb_img,
@@ -110,9 +138,12 @@ class View(object):  # pylint: disable=useless-object-inheritance
                           cmap=self.color_map)
 
     def get_max_label(self):
-        """Get the highest label in use in currently-viewed feature.
-
+        """
+        Get the highest label in use in currently-viewed feature.
         If feature is empty, returns 0 to prevent other functions from crashing.
+
+        Returns:
+            int: highest label in the current feature
         """
         # check this first, np.max of empty array will crash
         if len(self.file.cell_ids[self.feature]) == 0:
@@ -123,12 +154,15 @@ class View(object):  # pylint: disable=useless-object-inheritance
         return max_label
 
     def reduce_to_RGB(self):
-        '''
+        """
         Go from rescaled raw array with up to 6 channels to an RGB image for display.
         Handles adding in CMY channels as needed, and adjusting each channel if
         viewing adjusted raw. Used to update self.rgb, which is used to display
         raw current frame.
-        '''
+
+        Returns:
+            np.array: 3-channel image
+        """
         rescaled = self.rescale_raw()
         # rgb starts as uint16 so it can handle values above 255 without overflow
         rgb_img = np.zeros((self.file.height, self.file.width, 3), dtype='uint16')
@@ -158,9 +192,12 @@ class View(object):  # pylint: disable=useless-object-inheritance
         return rgb_img.astype('uint8')
 
     def rescale_raw(self):
-        """Rescale first 6 raw channels individually and store in memory.
-
+        """
+        Rescale first 6 raw channels individually and store in memory.
         The rescaled raw array is used subsequently for image display purposes.
+
+        Returns:
+            np.array
         """
         rescaled = np.zeros((self.file.height, self.file.width, self.file.channel_max),
                             dtype='uint8')
@@ -181,7 +218,15 @@ class View(object):  # pylint: disable=useless-object-inheritance
             raise ValueError('Invalid action "{}"'.format(action_type))
 
     def action_change_channel(self, channel):
-        """Change selected channel."""
+        """
+        Change selected channel.
+        
+        Args:
+            channel (int): which channel to switch to
+        
+        Raises:
+            ValueError: if channel is not in [0, channel_max)
+        """
         if channel < 0 or channel > self.file.channel_max - 1:
             raise ValueError('Channel {} is outside of range [0, {}].'.format(
                 channel, self.file.channel_max - 1))
@@ -189,7 +234,15 @@ class View(object):  # pylint: disable=useless-object-inheritance
         self._x_changed = True
 
     def action_change_feature(self, feature):
-        """Change selected feature."""
+        """
+        Change selected feature.
+        
+        Args:
+            feature (int): which feature to switch to
+            
+        Raises:
+            ValueError: if feature is not in [0, feature_max)
+        """
         if feature < 0 or feature > self.file.feature_max - 1:
             raise ValueError('Feature {} is outside of range [0, {}].'.format(
                 feature, self.file.feature_max - 1))
@@ -198,7 +251,7 @@ class View(object):  # pylint: disable=useless-object-inheritance
 
 
 class BaseEdit(View):
-    """Base class for all Edit objects."""
+    """Base class for Edit objects."""
 
     def __init__(self, file_, output_bucket, rgb=False):
         super(BaseEdit, self).__init__(file_, rgb)
