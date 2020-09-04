@@ -203,13 +203,17 @@ def test_action_new_single_cell(edit):
     for feature in cell_ids:
         edit.action_change_feature(feature)
         for cell in cell_ids[feature]:
+            # Replace cell in all frames but last
             for frame in range(max_frames - 1):
                 edit.action_new_single_cell(cell, frame)
                 new_label = edit.get_max_label()
+                # TODO: @tddough98 this assert assumes that cell is present in every frame
                 assert new_label in edit.annotated[frame, ..., feature]
                 assert cell not in edit.annotated[frame, ..., feature]
+            # Replace cell in last frame
             edit.action_new_single_cell(cell, max_frames - 1)
             new_label = edit.get_max_label()
+            # TODO: @tddough98 this assert assumes that cell is present in every frame
             assert new_label in edit.annotated[max_frames - 1]
             assert cell not in edit.annotated[..., feature]
 
@@ -304,6 +308,7 @@ def test_action_new_cell_stack(zstack_edit):
         for frame in frames[::-1]:
             new_label = zstack_edit.get_max_label() + 1
             zstack_edit.action_new_cell_stack(label, frame)
+            # TODO: this assert assumes that label was in every frame
             assert new_label in zstack_edit.annotated[frame, ..., feature]
             assert label not in zstack_edit.annotated[frame:, ..., feature]
         # replace only in first frame
@@ -313,6 +318,7 @@ def test_action_new_cell_stack(zstack_edit):
         zstack_edit.action_new_cell_stack(label, frames[0])
         assert label not in zstack_edit.annotated[..., feature]
         for frame in frames:
+            # TODO: this assert assumes that label is in every frame
             assert new_label in zstack_edit.annotated[frame, ..., feature]
 
 
@@ -322,11 +328,13 @@ def test_action_replace_single(zstack_edit):
         labels = zstack_edit.file.cell_ids[feature]
         for cell1, cell2 in itertools.product(labels, labels):
             # Front end checks labels are different
+            # TODO: check on backend and make tests for the check
             if cell1 == cell2:
                 continue
             for frame in range(zstack_edit.file.max_frames):
                 annotated = zstack_edit.annotated[frame, ..., feature].copy()
                 # Front end checks labels selected in the same frame
+                # TODO: check on backend and make tests for the check
                 if (cell1 not in annotated or cell2 not in annotated):
                     continue
                 assert cell1 in annotated
@@ -345,6 +353,7 @@ def test_action_replace(zstack_edit):
         for cell1, cell2 in itertools.product(labels, labels):
             old_ann = zstack_edit.annotated[..., feature].copy()
             # Front end checks labels are different
+            # TODO: check on backend and make tests for these checks
             if cell1 == cell2:
                 continue
             zstack_edit.action_replace(cell1, cell2)
