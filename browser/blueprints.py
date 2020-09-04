@@ -24,7 +24,7 @@ from werkzeug.exceptions import HTTPException
 from helpers import is_trk_file, is_npz_file
 from files import CalibanFile
 from models import Project
-from caliban import TrackEdit, ZStackEdit
+from caliban import TrackEdit, ZStackEdit, BaseEdit
 
 
 bp = Blueprint('caliban', __name__)  # pylint: disable=C0103
