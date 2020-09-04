@@ -35,4 +35,3 @@ def test_create_cell_info(file_):
             no_label_frames = [i for i in range(file_.max_frames) if i not in label_frames]
             assert label_in_frame[label_frames].all()
             assert not label_in_frame[no_label_frames].any()
-
