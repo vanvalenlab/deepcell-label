@@ -108,10 +108,10 @@ def test_zstack_add_cell_info(zstack_edit):
     max_frames = zstack_edit.file.max_frames
     cell_ids = zstack_edit.file.cell_ids
     cell_info = zstack_edit.file.cell_info
-    new_label = 999
     assert not zstack_edit._y_changed
     assert not zstack_edit.info_changed
     for feature in cell_ids:
+        new_label = cell_ids[feature].max() + 1
         assert new_label not in cell_ids[feature]
         zstack_edit.action_change_feature(feature)
         # Add new label to first frame
@@ -136,13 +136,12 @@ def test_zstack_add_cell_info(zstack_edit):
 def test_track_add_cell_info(track_edit):
     max_frames = track_edit.file.max_frames
     tracks = track_edit.file.tracks
+    new_label = max(tracks) + 1
     assert not track_edit._y_changed
     assert not track_edit.info_changed
-    new_label = 999
-    # Add new label to first frame
     assert new_label not in tracks
+    # Add new label to first frame
     track_edit.add_cell_info(new_label, 0)
-    assert new_label in tracks
     assert tracks[new_label] == {
         'label': int(new_label),
         'frames': [0],
@@ -155,7 +154,6 @@ def test_track_add_cell_info(track_edit):
     assert track_edit.info_changed
     # Add new label to all frames (including first frame again)
     for frame in range(max_frames):
-        assert new_label in tracks
         track_edit.add_cell_info(new_label, frame)
         assert tracks[new_label] == {
             'label': int(new_label),
