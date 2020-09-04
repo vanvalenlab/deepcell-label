@@ -463,7 +463,7 @@ let mouse_trace = [];
 function upload_file(cb) {
   $.ajax({
     type: 'POST',
-    url: `upload_file/${project_id}`,
+    url: `${document.location.origin}/upload_file/${project_id}`,
     success: cb,
     async: true
   });
@@ -692,7 +692,7 @@ function render_image_display() {
 function fetch_and_render_frame() {
   $.ajax({
     type: 'GET',
-    url: "frame/" + current_frame + "/" + project_id,
+    url: `${document.location.origin}/frame/${current_frame}/${project_id}`,
     success: function(payload) {
       // load new value of seg_array
       // array of arrays, contains annotation data for frame
@@ -709,7 +709,7 @@ function fetch_and_render_frame() {
 function load_file(file) {
   $.ajax({
     type: 'POST',
-    url: 'load/' + file,
+    url: `${document.location.origin}/load/${file}`,
     success: function (payload) {
       max_frames = payload.max_frames;
       scale = payload.screen_scale;
@@ -830,7 +830,7 @@ function prepare_canvas() {
 function action(action, info, frame = current_frame) {
   $.ajax({
     type:'POST',
-    url:"action/" + project_id + "/" + action + "/" + frame,
+    url:`${document.location.origin}/action/${project_id}/${action}/${frame}`,
     data: info,
     success: function (payload) {
       if (payload.error) {
