@@ -88,7 +88,7 @@ TEST_FRAMES = [np.zeros(RES, dtype=np.int16),  # empty
                np.tile(check12, (HEIGHT // 2, WIDTH // 2)),
                ]
 # Convert single frames to 4 dim (frames, height, width, features)
-TEST_LABELS = list(map(lambda frame: repeat_frame(repeat_feature(frame, FEATURES), FRAMES), 
+TEST_LABELS = list(map(lambda frame: repeat_frame(repeat_feature(frame, FEATURES), FRAMES),
                        TEST_FRAMES))
 # Append single frame, 3 dim test (height, width, features)
 TEST_LABELS += [repeat_feature(np.zeros(RES, dtype=np.int16), FEATURES)]
@@ -114,7 +114,7 @@ def zstack_file(mocker, request):
 @pytest.fixture(params=TEST_LABELS, ids=TEST_IDS)
 def track_file(mocker, request):
     def load(self):
-        # Match the 
+        # Match the size of the raw image with the labels
         if len(request.param.shape) == 4:
             raw = np.zeros((FRAMES, HEIGHT, WIDTH, CHANNELS))
         else:
