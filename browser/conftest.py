@@ -43,6 +43,23 @@ def _db(app):
     db = SQLAlchemy(app=app)
     return db
 
+
+def repeat_feature(feature, n):
+    """Repeats a feature n times along the last axis."""
+    return np.repeat(
+        np.expand_dims(feature, axis=-1),
+        n,
+        axis=-1)
+
+
+def repeat_frame(frame, n):
+    """Repeats a frame n times along the first axis."""
+    return np.repeat(
+        np.expand_dims(frame, axis=0),
+        n,
+        axis=0)
+
+
 # File fixtures
 HEIGHT = 32
 WIDTH = 32
@@ -51,9 +68,6 @@ FRAMES = 5
 CHANNELS = 3
 FEATURES = 2
 
-TEST_NAMES = ["empty", "full1", "full2", "iden", "tril1",
-              "triu1", "tril2", "triu2", "triu1l2", "tril1u2",
-              "checkerboard01", "checkerboard12"]
 tri_12 = np.triu(np.ones(RES, dtype=np.int16))
 tri_12[tri_12 == 0] = 2
 tri_21 = np.tril(np.ones(RES, dtype=np.int16))
@@ -73,40 +87,41 @@ TEST_FRAMES = [np.zeros(RES, dtype=np.int16),  # empty
                np.tile(check01, (HEIGHT // 2, WIDTH // 2)),
                np.tile(check12, (HEIGHT // 2, WIDTH // 2)),
                ]
-assert len(TEST_NAMES) == len(TEST_FRAMES)
+# Convert single frames to 4 dim (frames, height, width, features)
+TEST_LABELS = list(map(lambda frame: repeat_frame(repeat_feature(frame, FEATURES), FRAMES), 
+                       TEST_FRAMES))
+# Append single frame, 3 dim test (height, width, features)
+TEST_LABELS += [repeat_feature(np.zeros(RES, dtype=np.int16), FEATURES)]
+TEST_IDS = ['empty', 'full1', 'full2', 'iden', 'tril1',
+            'triu1', 'tril2', 'triu2', 'triu1l2', 'tril1u2',
+            'checkerboard01', 'checkerboard12', 'singleframe']
 
 
-def repeat_feature(feature, n):
-    """Repeats a feature n times along the last axis."""
-    return np.repeat(
-        np.expand_dims(feature, axis=-1),
-        n,
-        axis=-1)
-
-
-def repeat_frame(frame, n):
-    """Repeats a frame n times along the first axis."""
-    return np.repeat(
-        np.expand_dims(frame, axis=0),
-        n,
-        axis=0)
-
-
-@pytest.fixture(params=TEST_FRAMES, ids=TEST_NAMES)
+@pytest.fixture(params=TEST_LABELS, ids=TEST_IDS)
 def zstack_file(mocker, request):
     def load(self):
-        data = {'raw': np.zeros((FRAMES, HEIGHT, WIDTH, CHANNELS))}
-        data['annotated'] = repeat_frame(repeat_feature(request.param, FEATURES), FRAMES)
+        if len(request.param.shape) == 4:
+            raw = np.zeros((FRAMES, HEIGHT, WIDTH, CHANNELS))
+        else:
+            raw = np.zeros((HEIGHT, WIDTH, CHANNELS))
+        data = {'raw': raw}
+        data['annotated'] = request.param.copy()
         return data
     mocker.patch('files.CalibanFile.load', load)
     return CalibanFile('filename.npz', 'bucket', 'path')
 
 
-@pytest.fixture(params=TEST_FRAMES, ids=TEST_NAMES)
+@pytest.fixture(params=TEST_LABELS, ids=TEST_IDS)
 def track_file(mocker, request):
     def load(self):
-        data = {'raw': np.zeros((FRAMES, HEIGHT, WIDTH, CHANNELS))}
-        data['tracked'] = repeat_frame(repeat_feature(request.param, 1), FRAMES)
+        # Match the 
+        if len(request.param.shape) == 4:
+            raw = np.zeros((FRAMES, HEIGHT, WIDTH, CHANNELS))
+        else:
+            raw = np.zeros((HEIGHT, WIDTH, CHANNELS))
+        data = {'raw': raw}
+        # Tracked files should only have one feature
+        data['tracked'] = request.param[..., [0]].copy()
         lineages = [{label: {'frame_div': None,
                              'daughters': [],
                              'frames': list(range(FRAMES)),  # All labels are in all frames
