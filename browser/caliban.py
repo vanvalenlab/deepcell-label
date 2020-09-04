@@ -111,11 +111,11 @@ class View(object):  # pylint: disable=useless-object-inheritance
         Also changes the current frame of this View.
 
         Args:
-            frame (int):
-            raw (bool): when
+            frame (int): the index of the frame
+            raw (bool): returns the raw image when True and labels when False
 
         Returns:
-            BytesIO: contains a .png of the ith frames
+            BytesIO: contains a .png of the ith frame
         """
         self.current_frame = frame
         if (raw and self.rgb):
