@@ -339,9 +339,11 @@ def shortcut(filename):
         settings=settings)
 
 
-# Factory for Edit objects
 def get_edit(file_, output_bucket, rgb):
+    """Factory for Edit objects"""
     if is_npz_file(file_.filename):
         return ZStackEdit(file_, output_bucket, rgb)
     elif is_trk_file(file_.filename):
-        return TrackEdit(file_, output_bucket)  # don't use RGB mode with track files
+        # don't use RGB mode with track files
+        return TrackEdit(file_, output_bucket)
+    return BaseEdit(file_, output_bucket)
