@@ -27,9 +27,9 @@ class CalibanFile(object):  # pylint: disable=useless-object-inheritance
         self.raw_key = raw_key if raw_key is not None else 'raw'
         self.annotated_key = annotated_key if annotated_key is not None else get_ann_key(filename)
 
-        self.trial = self.load()
-        self.raw = self.trial[self.raw_key]
-        self.annotated = self.trial[self.annotated_key]
+        trial = self.load()
+        self.raw = trial[self.raw_key]
+        self.annotated = trial[self.annotated_key]
 
         self.channel_max = self.raw.shape[-1]
         self.feature_max = self.annotated.shape[-1]
@@ -58,9 +58,9 @@ class CalibanFile(object):  # pylint: disable=useless-object-inheritance
 
         # If we have a track file, overwrite cell_info with lineages to include cell relationships
         if is_trk_file(filename):
-            if len(self.trial['lineages']) != 1:
+            if len(trial['lineages']) != 1:
                 raise ValueError('Input file has multiple trials/lineages.')
-            self.cell_info = {0: self.trial['lineages'][0]}  # Track files have only one feature
+            self.cell_info = {0: trial['lineages'][0]}  # Track files have only one feature
 
     @property
     def tracks(self):
