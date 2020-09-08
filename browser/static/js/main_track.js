@@ -595,7 +595,7 @@ function render_cell_info() {
     $('#frame_div').text(track.frame_div || "None");
     let capped = track.capped.toString();
     $('#capped').text(capped[0].toUpperCase() + capped.substring(1));
-    $('#frames').text(track.frames.toString());
+    $('#frames').text(track.slices.toString());
   } else {
     $('#label').html("");
     $('#capped').text("");
@@ -714,7 +714,7 @@ function load_file(file) {
       max_frames = payload.max_frames;
       scale = payload.screen_scale;
       dimensions = [scale * payload.dimensions[0], scale * payload.dimensions[1]];
-      tracks = payload.tracks;
+      tracks = payload.tracks[0];
 
       maxTrack = Math.max(... Object.keys(tracks).map(Number));
 
@@ -852,7 +852,7 @@ function action(action, info, frame = current_frame) {
         }
       }
       if (payload.tracks) {
-        tracks = payload.tracks;
+        tracks = payload.tracks[0];
         maxTrack = Math.max(... Object.keys(tracks).map(Number));
       }
       if (payload.tracks || payload.imgs) {
