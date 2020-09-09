@@ -759,6 +759,8 @@ class TrackEdit(BaseEdit):
             track_old['frame_div'] = None
             track_old['capped'] = True
 
+            self.file.cell_ids[0] = np.append(self.file.cell_ids[0], new_label)
+
             self._y_changed = self.info_changed = True
 
     def action_set_parent(self, label_1, label_2):
