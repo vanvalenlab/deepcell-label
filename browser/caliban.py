@@ -722,46 +722,52 @@ class TrackEdit(BaseEdit):
     def action_new_track(self, label, frame):
         """
         Replacing label - create in all subsequent frames
+
+        Args:
+            label (int)
         """
-        old_label, start_frame = label, frame
+        start_frame = frame
         new_label = self.get_max_label() + 1
+        track = self.file.tracks[label]
 
-        if start_frame != 0:
-            # replace frame labels
-            # TODO: which frame is this meant to be?
-            for frame in self.annotated[start_frame:]:
-                frame[frame == old_label] = new_label
+        # Don't create a new track on the first frame of a track
+        if start_frame == track['frames'][0]:
+            return
 
-            # replace fields
-            track_old = self.file.tracks[old_label]
-            track_new = self.file.tracks[new_label] = {}
+        # replace frame labels
+        # TODO: which frame is this meant to be?
+        for frame in self.annotated[start_frame:]:
+            frame[frame == label] = new_label
 
-            idx = track_old['frames'].index(start_frame)
+        # replace fields
+        track_new = self.file.tracks[new_label] = {}
 
-            frames_before = track_old['frames'][:idx]
-            frames_after = track_old['frames'][idx:]
+        idx = track['frames'].index(start_frame)
 
-            track_old['frames'] = frames_before
-            track_new['frames'] = frames_after
-            track_new['label'] = new_label
+        frames_before = track['frames'][:idx]
+        frames_after = track['frames'][idx:]
 
-            # only add daughters if they aren't in the same frame as the new track
-            track_new['daughters'] = []
-            for d in track_old['daughters']:
-                if start_frame not in self.file.tracks[d]['frames']:
-                    track_new['daughters'].append(d)
+        track['frames'] = frames_before
+        track_new['frames'] = frames_after
+        track_new['label'] = new_label
 
-            track_new['frame_div'] = track_old['frame_div']
-            track_new['capped'] = track_old['capped']
-            track_new['parent'] = None
+        # only add daughters if they aren't in the same frame as the new track
+        track_new['daughters'] = []
+        for d in track['daughters']:
+            if start_frame not in self.file.tracks[d]['frames']:
+                track_new['daughters'].append(d)
 
-            track_old['daughters'] = []
-            track_old['frame_div'] = None
-            track_old['capped'] = True
+        track_new['frame_div'] = track['frame_div']
+        track_new['capped'] = track['capped']
+        track_new['parent'] = None
 
-            self.file.cell_ids[0] = np.append(self.file.cell_ids[0], new_label)
+        track['daughters'] = []
+        track['frame_div'] = None
+        track['capped'] = True
 
-            self._y_changed = self.info_changed = True
+        self.file.cell_ids[0] = np.append(self.file.cell_ids[0], new_label)
+
+        self._y_changed = self.info_changed = True
 
     def action_set_parent(self, label_1, label_2):
         """
