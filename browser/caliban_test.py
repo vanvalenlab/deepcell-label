@@ -377,3 +377,22 @@ def test_action_swap_all_frame(zstack_edit):
             assert (ann[old_ann == cell2] == cell1).all()
             assert old_cell_info[feature][cell1]['frames'] == cell_info[feature][cell2]['frames']
             assert old_cell_info[feature][cell2]['frames'] == cell_info[feature][cell1]['frames']
+
+
+# Tests for TrackEdit specific actions
+
+def test_action_new_track(track_edit):
+    for label in track_edit.file.cell_ids[0]:
+        track = track_edit.file.tracks[label].copy()
+        # New track on first frame of the track has no effect
+        track_edit.action_new_track(label, track['frames'][0])
+        assert track == track_edit.file.tracks[label]
+        # New track on other frames replaces label on all following frames
+        for frame in track['frames'][1:]:
+            new_label = track_edit.get_max_label() + 1
+            track_edit.action_new_track(label, frame)
+            assert new_label in track_edit.file.cell_ids[0]
+            assert track['frames'] == (track_edit.file.tracks[label]['frames'] +
+                                       track_edit.file.tracks[new_label]['frames'])
+            # Only create a one new track
+            break
