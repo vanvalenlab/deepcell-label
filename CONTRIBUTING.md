@@ -15,21 +15,21 @@ Before sending your pull requests, make sure you have followed this list.
 
 ### Contributing code
 
-If you have improvements to deepcell-tf, please send us your pull requests! If you are new to the process, Github has a
+If you have improvements to Caliban, please send us your pull requests! If you are new to the process, Github has a
 [how-to](https://help.github.com/articles/using-pull-requests/).
 
 If you want to contribute, start working through the codebase. Navigate to the
-[Github "issues" tab](https://github.com/vanvalenlab/deepcell-tf/issues) and start
+[Github "issues" tab](https://github.com/vanvalenlab/caliban/issues) and start
 looking through interesting issues. If you are not sure of where to start, look for one of the smaller/easier issues here i.e.
-[issues with the "good first issue" label](https://github.com/vanvalenlab/deepcell-tf/labels/good%20first%20issue)
+[issues with the "good first issue" label](https://github.com/vanvalenlab/caliban/labels/good%20first%20issue)
 and then take a look at the
-[issues with the "contributions welcome" label](https://github.com/vanvalenlab/deepcell-tf/labels/stat%3Acontributions%20welcome).
+[issues with the "contributions welcome" label](https://github.com/vanvalenlab/caliban/labels/stat%3Acontributions%20welcome).
 These are issues that we believe are well suited for outside contributions. If you decide to start on an issue, leave a comment so that other people know that you're working on it. If you want to help out, but not alone, use the issue comment thread to coordinate.
 
 ### Contribution guidelines and standards
 
 Before sending your pull request for
-[review](https://github.com/vanvalenlab/deepcell-tf/pulls),
+[review](https://github.com/vanvalenlab/caliban/pulls),
 make sure your changes are consistent with the guidelines and follow the
 DeepCell coding style.
 
@@ -40,8 +40,8 @@ DeepCell coding style.
     changes to lower the maintenance cost.
 *   Bug fixes also generally require unit tests, because the presence of bugs
     usually indicates insufficient test coverage.
-*   When you contribute a new feature to deepcell-tf, the maintenance burden is
-    (by default) transferred to the DeepCell team. This means that the benefit
+*   When you contribute a new feature to Caliban, the maintenance burden is
+    (by default) transferred to the Caliban team. This means that the benefit
     of the contribution must be compared against the cost of maintaining the
     feature.
 *   As every PR requires CI/CD testing, we discourage
@@ -58,19 +58,19 @@ with `pylint` against our custom style definition:
 
 ```bash
 pip install pylint
-pylint --rcfile=deepcell-tf/.pylintrc myfile.py
+pylint --rcfile=.pylintrc myfile.py
 ```
 
-Note `pylint --rcfile=deepcell-tf/.pylintrc` should run from the
-top level directory.
+Note `pylint --rcfile=.pylintrc` should run from the
+either the browser or the desktop directory.
 
 #### Running tests
 
-Use the following commands to run all tests locally:
+Use the following commands within browser or desktop to run all tests locally:
 
 ```bash
 pip install -r requirements.txt
 pip install -r requirements-test.txt
 
-pytest --cov=deepcell --pep8
+pytest --cov --pep8
 ```
