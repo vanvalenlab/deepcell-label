@@ -1,47 +1,39 @@
-"""Review classes for editing np arrays"""
+"""Classes to view and edit CalibanFiles"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 import io
-import copy
 import json
 import os
 import sys
 import tarfile
 import tempfile
 
-import boto3
 import matplotlib.pyplot as plt
 import numpy as np
 from skimage import filters
 from skimage.morphology import flood_fill, flood
 from skimage.morphology import watershed, dilation, disk
 from skimage.draw import circle
-from skimage.measure import regionprops
 from skimage.exposure import rescale_intensity
+from skimage.measure import regionprops
 from skimage.segmentation import find_boundaries
 
 from imgutils import pngify
-from helpers import is_npz_file, is_trk_file
-from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 
 
-class BaseReview(object):  # pylint: disable=useless-object-inheritance
-    """Base class for all Review objects."""
+class View(object):  # pylint: disable=useless-object-inheritance
+    """
+    Class for viewing a file in Caliban.
+    Implements everything but actions that edit labels.
+    """
 
-    def __init__(self, filename, input_bucket, output_bucket, subfolders,
-                 raw_key='raw', annotated_key='annotated'):
-        self.filename = filename
-        self.input_bucket = input_bucket
-        self.output_bucket = output_bucket
-        self.subfolders = subfolders  # full file path
+    def __init__(self, file_, rgb=False):
+        self.file = file_
 
         self.current_frame = 0
         self.scale_factor = 1
-        self._x_changed = False
-        self._y_changed = False
-        self.info_changed = False
 
         self.color_map = plt.get_cmap('viridis')
         self.color_map.set_bad('black')
@@ -49,40 +41,26 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
         self.feature = 0
         self.channel = 0
 
-        self.trial = self.load(filename)
-        self.raw = self.trial[raw_key]
-        self.annotated = self.trial[annotated_key]
-
-        self.channel_max = self.raw.shape[-1]
-        self.feature_max = self.annotated.shape[-1]
-        # TODO: is there a potential IndexError here?
-        self.max_frames = self.raw.shape[0]
-        self.height = self.raw.shape[1]
-        self.width = self.raw.shape[2]
-
+        # TODO: is this attributed necessary?
         self.max_intensity = {}
-        for channel in range(self.channel_max):
+        for channel in range(self.file.channel_max):
             self.max_intensity[channel] = None
 
-    def _get_s3_client(self):
-        return boto3.client(
-            's3',
-            aws_access_key_id=AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=AWS_SECRET_ACCESS_KEY
-        )
+        self.rgb = rgb
+        if self.rgb:
+            self.rgb_img = self.reduce_to_RGB()
 
-    def load(self, filename):
-        """Load a file from the S3 input bucket"""
-        if is_npz_file(filename):
-            _load = load_npz
-        elif is_trk_file(filename):
-            _load = load_trks
-        else:
-            raise ValueError('Cannot load file: {}'.format(filename))
+        self._x_changed = False
+        self._y_changed = False
+        self.info_changed = False
 
-        s3 = self._get_s3_client()
-        response = s3.get_object(Bucket=self.input_bucket, Key=self.subfolders)
-        return _load(response['Body'].read())
+    @property
+    def raw(self):
+        return self.file.raw
+
+    @property
+    def annotated(self):
+        return self.file.annotated
 
     def rescale_95(self, img):
         """Rescale a single- or multi-channel image."""
@@ -95,7 +73,14 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
         return rescaled_img
 
     def add_outlines(self, frame):
-        """Indicate label outlines in array with negative values of that label.
+        """
+        Shows label outlines in array with negative values of that label.
+
+        Args:
+            frame (np.array): array with labels
+
+        Returns:
+            np.array: array with negative borders around labels
         """
         # this is sometimes int 32 but may be uint, convert to
         # int16 to ensure negative numbers and smaller payload than int32
@@ -105,13 +90,39 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
         return outlined_frame
 
     def get_array(self, frame, add_outlines=True):
+        """
+        Returns the labels on the ith frame.
+
+        Args:
+            frame (int): index of frame to return
+            add_outlines (bool): adds borders to labels when True
+
+        Returns:
+            np.array: labels on the ith frame.
+        """
         frame = self.annotated[frame, ..., self.feature]
         if add_outlines:
             frame = self.add_outlines(frame)
         return frame
 
     def get_frame(self, frame, raw):
+        """
+        Returns the ith frame to display on the front end.
+        Also changes the current frame of this View.
+
+        Args:
+            frame (int): the index of the frame
+            raw (bool): returns the raw image when True and labels when False
+
+        Returns:
+            BytesIO: contains a .png of the ith frame
+        """
         self.current_frame = frame
+        if (raw and self.rgb):
+            return pngify(imgarr=self.rgb_img,
+                          vmin=None,
+                          vmax=None,
+                          cmap=None)
         if raw:
             frame = self.raw[frame, ..., self.channel]
             return pngify(imgarr=frame,
@@ -126,14 +137,76 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
                           vmax=self.get_max_label(),
                           cmap=self.color_map)
 
-    def add_cell_info(self, add_label, frame):
-        raise NotImplementedError('add_cell_info is not implemented in BaseReview')
-
-    def del_cell_info(self, del_label, frame):
-        raise NotImplementedError('del_cell_info is not implemented in BaseReview')
-
     def get_max_label(self):
-        raise NotImplementedError('del_cell_info is not implemented in BaseReview')
+        """
+        Get the highest label in use in currently-viewed feature.
+        If feature is empty, returns 0 to prevent other functions from crashing.
+
+        Returns:
+            int: highest label in the current feature
+        """
+        # check this first, np.max of empty array will crash
+        if len(self.file.cell_ids[self.feature]) == 0:
+            max_label = 0
+        # if any labels exist in feature, find the max label
+        else:
+            max_label = int(np.max(self.file.cell_ids[self.feature]))
+        return max_label
+
+    def reduce_to_RGB(self):
+        """
+        Go from rescaled raw array with up to 6 channels to an RGB image for display.
+        Handles adding in CMY channels as needed, and adjusting each channel if
+        viewing adjusted raw. Used to update self.rgb, which is used to display
+        raw current frame.
+
+        Returns:
+            np.array: 3-channel image
+        """
+        rescaled = self.rescale_raw()
+        # rgb starts as uint16 so it can handle values above 255 without overflow
+        rgb_img = np.zeros((self.file.height, self.file.width, 3), dtype='uint16')
+
+        # for each of the channels that we have
+        for c in range(min(6, self.file.channel_max)):
+            # straightforward RGB -> RGB
+            new_channel = (rescaled[..., c]).astype('uint16')
+            if c < 3:
+                rgb_img[..., c] = new_channel
+            # collapse cyan to G and B
+            if c == 3:
+                rgb_img[..., 1] += new_channel
+                rgb_img[..., 2] += new_channel
+            # collapse magenta to R and B
+            if c == 4:
+                rgb_img[..., 0] += new_channel
+                rgb_img[..., 2] += new_channel
+            # collapse yellow to R and G
+            if c == 5:
+                rgb_img[..., 0] += new_channel
+                rgb_img[..., 1] += new_channel
+
+            # clip values to uint8 range so it can be cast without overflow
+            rgb_img[..., 0:3] = np.clip(rgb_img[..., 0:3], a_min=0, a_max=255)
+
+        return rgb_img.astype('uint8')
+
+    def rescale_raw(self):
+        """
+        Rescale first 6 raw channels individually and store in memory.
+        The rescaled raw array is used subsequently for image display purposes.
+
+        Returns:
+            np.array
+        """
+        rescaled = np.zeros((self.file.height, self.file.width, self.file.channel_max),
+                            dtype='uint8')
+        # this approach allows noise through
+        for channel in range(min(6, self.file.channel_max)):
+            raw_channel = self.raw[self.current_frame, ..., channel]
+            if np.sum(raw_channel) != 0:
+                rescaled[..., channel] = self.rescale_95(raw_channel)
+        return rescaled
 
     def action(self, action_type, info):
         """Call an action method based on an action type."""
@@ -145,23 +218,63 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
             raise ValueError('Invalid action "{}"'.format(action_type))
 
     def action_change_channel(self, channel):
-        """Change selected channel."""
-        if channel < 0 or channel > self.channel_max:
+        """
+        Change selected channel.
+
+        Args:
+            channel (int): which channel to switch to
+
+        Raises:
+            ValueError: if channel is not in [0, channel_max)
+        """
+        if channel < 0 or channel > self.file.channel_max - 1:
             raise ValueError('Channel {} is outside of range [0, {}].'.format(
-                channel, self.channel_max))
+                channel, self.file.channel_max - 1))
         self.channel = channel
         self._x_changed = True
 
     def action_change_feature(self, feature):
-        """Change selected feature."""
-        if feature < 0 or feature > self.feature_max:
+        """
+        Change selected feature.
+
+        Args:
+            feature (int): which feature to switch to
+
+        Raises:
+            ValueError: if feature is not in [0, feature_max)
+        """
+        if feature < 0 or feature > self.file.feature_max - 1:
             raise ValueError('Feature {} is outside of range [0, {}].'.format(
-                feature, self.feature_max))
+                feature, self.file.feature_max - 1))
         self.feature = feature
         self._y_changed = True
 
+
+class BaseEdit(View):
+    """
+    Base class for Edit objects that extends View.
+    Adds actions to edit annotations and helper functions to update metadata.
+    """
+
+    def __init__(self, file_, output_bucket, rgb=False):
+        super(BaseEdit, self).__init__(file_, rgb)
+        self.output_bucket = output_bucket
+
+    def add_cell_info(self, add_label, frame):
+        raise NotImplementedError('add_cell_info is not implemented in BaseEdit')
+
+    def del_cell_info(self, del_label, frame):
+        raise NotImplementedError('del_cell_info is not implemented in BaseEdit')
+
     def action_new_single_cell(self, label, frame):
-        """Create new label in just one frame"""
+        """
+        Create new label that replaces an existing label in one frame.
+        Updates metadata for these labels.
+
+        Args:
+            label (int): label to replace
+            frame (int): index of frame that we replace label in
+        """
         new_label = self.get_max_label() + 1
 
         # replace frame labels
@@ -173,7 +286,14 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
         self.add_cell_info(add_label=new_label, frame=frame)
 
     def action_delete_mask(self, label, frame):
-        """Deletes label from the frame"""
+        """
+        Deletes label from one frame, replacing the label with 0.
+        Updates the metadata for this label.
+
+        Args:
+            label (int): label to delete
+            frames (int): frame to delete label in
+        """
         # TODO: update the action name?
         ann_img = self.annotated[frame, ..., self.feature]
         ann_img = np.where(ann_img == label, 0, ann_img)
@@ -184,7 +304,15 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
         self.del_cell_info(del_label=label, frame=frame)
 
     def action_swap_single_frame(self, label_1, label_2, frame):
-        """Swap labels of two objects in the frame."""
+        """
+        Swap labels of two objects in one frame.
+        Does not update metadata as the frames for the labels do not change.
+
+        Args:
+            label_1 (int): first label to swap
+            label_2 (int): second label to swap
+            frame (int): index of frame to swap in
+        """
         ann_img = self.annotated[frame, ..., self.feature]
         ann_img = np.where(ann_img == label_1, -1, ann_img)
         ann_img = np.where(ann_img == label_2, label_1, ann_img)
@@ -192,11 +320,22 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
 
         self.annotated[frame, ..., self.feature] = ann_img
 
+        # TODO: does info change?
         self._y_changed = self.info_changed = True
 
     def action_handle_draw(self, trace, target_value, brush_value, brush_size, erase, frame):
-        """Use a "brush" to draw in the brush value along trace locations of
+        """
+        Use a "brush" to draw in the brush value along trace locations of
         the annotated data.
+        Updates label metadata if a change is detected.
+
+        Args:
+            trace (list): list of (x, y) coordinates where the brush has painted
+            target_value (int): label overwritten by the brush
+            brush_value (int): label written by the bush
+            brush_size (int): radius of the brush
+            erase (bool): sets target_value in trace area to 0 when True
+            frame (int): the frame to edit
         """
         annotated = np.copy(self.annotated[frame, ..., self.feature])
 
@@ -212,7 +351,7 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
 
             brush_area = circle(y_loc, x_loc,
                                 brush_size // self.scale_factor,
-                                (self.height, self.width))
+                                (self.file.height, self.file.width))
 
             # do not overwrite or erase labels other than the one you're editing
             if not erase:
@@ -238,8 +377,16 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
         self.annotated[frame, ..., self.feature] = annotated
 
     def action_trim_pixels(self, label, frame, x_location, y_location):
-        """Remove any pixels with value label that are not connected to the
+        """
+        Remove any pixels with value label that are not connected to the
         selected cell in the given frame.
+
+        Args:
+            label (int): label to trim
+            frame (int): index of frame to trim in
+            x_location (int): x position of seed
+                              remove label that is not connect to this seed
+            y_location (int): y position of seed
         """
         img_ann = self.annotated[frame, ..., self.feature]
 
@@ -262,7 +409,8 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
         prevents hole fill from spilling out into background in some cases
         '''
         # rescale click location -> corresponding location in annotation array
-        hole_fill_seed = (y_location // self.scale_factor, x_location // self.scale_factor)
+        hole_fill_seed = (y_location // self.scale_factor,
+                          x_location // self.scale_factor)
         # fill hole with label
         img_ann = self.annotated[frame, :, :, self.feature]
         filled_img_ann = flood_fill(img_ann, hole_fill_seed, label, connectivity=1)
@@ -403,123 +551,10 @@ class BaseReview(object):  # pylint: disable=useless-object-inheritance
             self.add_cell_info(add_label=label, frame=frame)
 
 
-class ZStackReview(BaseReview):
+class ZStackEdit(BaseEdit):
 
-    def __init__(self, filename, input_bucket, output_bucket, subfolders, rgb=False):
-        super(ZStackReview, self).__init__(
-            filename, input_bucket, output_bucket, subfolders,
-            raw_key='raw', annotated_key='annotated')
-
-        self.rgb = rgb
-
-        if self.rgb:
-            # possible differences between single channel and rgb displays
-            if self.raw.ndim == 3:
-                self.raw = np.expand_dims(self.raw, axis=0)
-                self.annotated = np.expand_dims(self.annotated, axis=0)
-
-                # reassigning height/width for new shape.
-                self.max_frames = self.raw.shape[0]
-                self.height = self.raw.shape[1]
-                self.width = self.raw.shape[2]
-
-            self.rgb_img = self.reduce_to_RGB()
-
-        # create a dictionary that has frame information about each cell
-        # analogous to .trk lineage but do not need relationships between cells included
-        self.cell_ids = {}
-        self.cell_info = {}
-
-        for feature in range(self.feature_max):
-            self.create_cell_info(feature)
-
-    def get_max_label(self):
-        """Get the highest label in use in currently-viewed feature.
-
-        If feature is empty, returns 0 to prevent other functions from crashing.
-        """
-        # check this first, np.max of empty array will crash
-        if len(self.cell_ids[self.feature]) == 0:
-            max_label = 0
-        # if any labels exist in feature, find the max label
-        else:
-            max_label = int(np.max(self.cell_ids[self.feature]))
-        return max_label
-
-    def rescale_raw(self):
-        """Rescale first 6 raw channels individually and store in memory.
-
-        The rescaled raw array is used subsequently for image display purposes.
-        """
-        rescaled = np.zeros((self.height, self.width, self.channel_max), dtype='uint8')
-        # this approach allows noise through
-        for channel in range(min(6, self.channel_max)):
-            raw_channel = self.raw[self.current_frame, ..., channel]
-            if np.sum(raw_channel) != 0:
-                rescaled[..., channel] = self.rescale_95(raw_channel)
-        return rescaled
-
-    def reduce_to_RGB(self):
-        '''
-        Go from rescaled raw array with up to 6 channels to an RGB image for display.
-        Handles adding in CMY channels as needed, and adjusting each channel if
-        viewing adjusted raw. Used to update self.rgb, which is used to display
-        raw current frame.
-        '''
-        rescaled = self.rescale_raw()
-        # rgb starts as uint16 so it can handle values above 255 without overflow
-        rgb_img = np.zeros((self.height, self.width, 3), dtype='uint16')
-
-        # for each of the channels that we have
-        for c in range(min(6, self.channel_max)):
-            # straightforward RGB -> RGB
-            new_channel = (rescaled[..., c]).astype('uint16')
-            if c < 3:
-                rgb_img[..., c] = new_channel
-            # collapse cyan to G and B
-            if c == 3:
-                rgb_img[..., 1] += new_channel
-                rgb_img[..., 2] += new_channel
-            # collapse magenta to R and B
-            if c == 4:
-                rgb_img[..., 0] += new_channel
-                rgb_img[..., 2] += new_channel
-            # collapse yellow to R and G
-            if c == 5:
-                rgb_img[..., 0] += new_channel
-                rgb_img[..., 1] += new_channel
-
-            # clip values to uint8 range so it can be cast without overflow
-            rgb_img[..., 0:3] = np.clip(rgb_img[..., 0:3], a_min=0, a_max=255)
-
-        return rgb_img.astype('uint8')
-
-    @property
-    def readable_tracks(self):
-        """
-        Preprocesses tracks for presentation on browser. For example,
-        simplifying track['frames'] into something like [0-29] instead of
-        [0,1,2,3,...].
-        """
-        cell_info = copy.deepcopy(self.cell_info)
-        for _, feature in cell_info.items():
-            for _, label in feature.items():
-                slices = list(map(list, consecutive(label['frames'])))
-                slices = '[' + ', '.join(["{}".format(a[0])
-                                          if len(a) == 1 else "{}-{}".format(a[0], a[-1])
-                                          for a in slices]) + ']'
-                label['slices'] = str(slices)
-
-        return cell_info
-
-    def get_frame(self, frame, raw):
-        self.current_frame = frame
-        if (raw and self.rgb):
-            return pngify(imgarr=self.rgb_img,
-                          vmin=None,
-                          vmax=None,
-                          cmap=None)
-        return super(ZStackReview, self).get_frame(frame, raw)
+    def __init__(self, file_, output_bucket, rgb=False):
+        super(ZStackEdit, self).__init__(file_, output_bucket, rgb)
 
     def action_new_cell_stack(self, label, frame):
         """
@@ -532,7 +567,7 @@ class ZStackReview(BaseReview):
         for frame in self.annotated[start_frame:, ..., self.feature]:
             frame[frame == old_label] = new_label
 
-        for frame in range(self.max_frames):
+        for frame in range(self.file.max_frames):
             if new_label in self.annotated[frame, ..., self.feature]:
                 self.del_cell_info(del_label=old_label, frame=frame)
                 self.add_cell_info(add_label=new_label, frame=frame)
@@ -557,7 +592,7 @@ class ZStackReview(BaseReview):
         are different before sending action
         """
         # check each frame
-        for frame in range(self.max_frames):
+        for frame in range(self.file.max_frames):
             annotated = self.annotated[frame, ..., self.feature]
             # if label being replaced is present, remove it from image and update cell info dict
             if np.any(np.isin(annotated, label_2)):
@@ -576,10 +611,10 @@ class ZStackReview(BaseReview):
             self.annotated[frame, ..., self.feature] = ann_img
 
         # update cell_info
-        cell_info_1 = self.cell_info[self.feature][label_1].copy()
-        cell_info_2 = self.cell_info[self.feature][label_2].copy()
-        self.cell_info[self.feature][label_1]['frames'] = cell_info_2['frames']
-        self.cell_info[self.feature][label_2]['frames'] = cell_info_1['frames']
+        cell_info_1 = self.file.cell_info[self.feature][label_1].copy()
+        cell_info_2 = self.file.cell_info[self.feature][label_2].copy()
+        self.file.cell_info[self.feature][label_1]['frames'] = cell_info_2['frames']
+        self.file.cell_info[self.feature][label_2]['frames'] = cell_info_1['frames']
 
         self._y_changed = self.info_changed = True
 
@@ -627,9 +662,9 @@ class ZStackReview(BaseReview):
         np.savez(store_npz, X=self.raw, y=self.annotated)
         store_npz.seek(0)
 
-        # store npz file object in bucket/subfolders (subfolders is full path)
-        s3 = self._get_s3_client()
-        s3.upload_fileobj(store_npz, self.output_bucket, self.subfolders)
+        # store npz file object in bucket/path
+        s3 = self.file._get_s3_client()
+        s3.upload_fileobj(store_npz, self.output_bucket, self.file.path)
 
     def add_cell_info(self, add_label, frame):
         """Add a cell to the npz"""
@@ -637,18 +672,19 @@ class ZStackReview(BaseReview):
         add_label = int(add_label)
 
         try:
-            old_frames = self.cell_info[self.feature][add_label]['frames']
+            old_frames = self.file.cell_info[self.feature][add_label]['frames']
             updated_frames = np.append(old_frames, frame)
             updated_frames = np.unique(updated_frames).tolist()
-            self.cell_info[self.feature][add_label]['frames'] = updated_frames
+            self.file.cell_info[self.feature][add_label]['frames'] = updated_frames
         # cell does not exist anywhere in npz:
         except KeyError:
-            self.cell_info[self.feature][add_label] = {
+            self.file.cell_info[self.feature][add_label] = {
                 'label': str(add_label),
                 'frames': [frame],
                 'slices': ''
             }
-            self.cell_ids[self.feature] = np.append(self.cell_ids[self.feature], add_label)
+            self.file.cell_ids[self.feature] = np.append(self.file.cell_ids[self.feature],
+                                                         add_label)
 
         # if adding cell, frames and info have necessarily changed
         self._y_changed = self.info_changed = True
@@ -656,128 +692,89 @@ class ZStackReview(BaseReview):
     def del_cell_info(self, del_label, frame):
         """Remove a cell from the npz"""
         # remove cell from frame
-        old_frames = self.cell_info[self.feature][del_label]['frames']
+        old_frames = self.file.cell_info[self.feature][del_label]['frames']
         updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame))).tolist()
-        self.cell_info[self.feature][del_label]['frames'] = updated_frames
+        self.file.cell_info[self.feature][del_label]['frames'] = updated_frames
 
         # if that was the last frame, delete the entry for that cell
-        if self.cell_info[self.feature][del_label]['frames'] == []:
-            del self.cell_info[self.feature][del_label]
+        if self.file.cell_info[self.feature][del_label]['frames'] == []:
+            del self.file.cell_info[self.feature][del_label]
 
             # also remove from list of cell_ids
-            ids = self.cell_ids[self.feature]
-            self.cell_ids[self.feature] = np.delete(ids, np.where(ids == np.int64(del_label)))
+            ids = self.file.cell_ids[self.feature]
+            self.file.cell_ids[self.feature] = np.delete(ids, np.where(ids == np.int64(del_label)))
 
         # if deleting cell, frames and info have necessarily changed
         self._y_changed = self.info_changed = True
 
     def create_cell_info(self, feature):
         """Make or remake the entire cell info dict"""
-        feature = int(feature)
-        annotated = self.annotated[..., feature]
-
-        self.cell_ids[feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))]
-
-        self.cell_info[feature] = {}
-
-        for cell in self.cell_ids[feature]:
-            cell = int(cell)
-
-            self.cell_info[feature][cell] = {}
-            self.cell_info[feature][cell]['label'] = str(cell)
-            self.cell_info[feature][cell]['frames'] = []
-
-            for frame in range(self.annotated.shape[0]):
-                if cell in annotated[frame, ...]:
-                    self.cell_info[feature][cell]['frames'].append(int(frame))
-            self.cell_info[feature][cell]['slices'] = ''
-
+        self.file.create_cell_info(feature)
         self.info_changed = True
 
 
-class TrackReview(BaseReview):
-    def __init__(self, filename, input_bucket, output_bucket, subfolders):
-        super(TrackReview, self).__init__(
-            filename, input_bucket, output_bucket, subfolders,
-            raw_key='raw', annotated_key='tracked')
+class TrackEdit(BaseEdit):
+    def __init__(self, file_, output_bucket):
+        super(TrackEdit, self).__init__(file_, output_bucket)
 
-        # lineages is a list of dictionaries. There should be only a single one
-        # when using a .trk file
-        if len(self.trial['lineages']) != 1:
-            raise ValueError('Input file has multiple trials/lineages.')
-
-        self.tracks = self.trial['lineages'][0]
         self.scale_factor = 2
-
-    def get_max_label(self):
-        """Get the highest label in the lineage data."""
-        return max(self.tracks)
-
-    @property
-    def readable_tracks(self):
-        """
-        Preprocesses tracks for presentation on browser. For example,
-        simplifying track['frames'] into something like [0-29] instead of
-        [0,1,2,3,...].
-        """
-        tracks = copy.deepcopy(self.tracks)
-        for _, track in tracks.items():
-            frames = list(map(list, consecutive(track["frames"])))
-            frames = '[' + ', '.join(["{}".format(a[0])
-                                      if len(a) == 1 else "{}-{}".format(a[0], a[-1])
-                                      for a in frames]) + ']'
-            track['frames'] = frames
-
-        return tracks
 
     def action_new_track(self, label, frame):
         """
         Replacing label - create in all subsequent frames
+
+        Args:
+            label (int)
         """
-        old_label, start_frame = label, frame
+        start_frame = frame
         new_label = self.get_max_label() + 1
+        track = self.file.tracks[label]
 
-        if start_frame != 0:
-            # replace frame labels
-            # TODO: which frame is this meant to be?
-            for frame in self.annotated[start_frame:]:
-                frame[frame == old_label] = new_label
+        # Don't create a new track on the first frame of a track
+        if start_frame == track['frames'][0]:
+            return
 
-            # replace fields
-            track_old = self.tracks[old_label]
-            track_new = self.tracks[new_label] = {}
+        # replace frame labels
+        # TODO: which frame is this meant to be?
+        for frame in self.annotated[start_frame:]:
+            frame[frame == label] = new_label
 
-            idx = track_old['frames'].index(start_frame)
+        # replace fields
+        track_new = self.file.tracks[new_label] = {}
 
-            frames_before = track_old['frames'][:idx]
-            frames_after = track_old['frames'][idx:]
+        idx = track['frames'].index(start_frame)
 
-            track_old['frames'] = frames_before
-            track_new['frames'] = frames_after
-            track_new['label'] = new_label
+        frames_before = track['frames'][:idx]
+        frames_after = track['frames'][idx:]
 
-            # only add daughters if they aren't in the same frame as the new track
-            track_new['daughters'] = []
-            for d in track_old['daughters']:
-                if start_frame not in self.tracks[d]['frames']:
-                    track_new['daughters'].append(d)
+        track['frames'] = frames_before
+        track_new['frames'] = frames_after
+        track_new['label'] = new_label
 
-            track_new['frame_div'] = track_old['frame_div']
-            track_new['capped'] = track_old['capped']
-            track_new['parent'] = None
+        # only add daughters if they aren't in the same frame as the new track
+        track_new['daughters'] = []
+        for d in track['daughters']:
+            if start_frame not in self.file.tracks[d]['frames']:
+                track_new['daughters'].append(d)
 
-            track_old['daughters'] = []
-            track_old['frame_div'] = None
-            track_old['capped'] = True
+        track_new['frame_div'] = track['frame_div']
+        track_new['capped'] = track['capped']
+        track_new['parent'] = None
 
-            self._y_changed = self.info_changed = True
+        track['daughters'] = []
+        track['frame_div'] = None
+        track['capped'] = True
+
+        self.file.cell_ids[0] = np.append(self.file.cell_ids[0], new_label)
+
+        self._y_changed = self.info_changed = True
 
     def action_set_parent(self, label_1, label_2):
         """
         label_1 gave birth to label_2
         """
-        track_1 = self.tracks[label_1]
-        track_2 = self.tracks[label_2]
+        track_1 = self.file.tracks[label_1]
+        track_2 = self.file.tracks[label_2]
 
         last_frame_parent = max(track_1['frames'])
         first_frame_daughter = min(track_2['frames'])
@@ -801,18 +798,18 @@ class TrackReview(BaseReview):
         Replacing label_2 with label_1
         """
         # replace arrays
-        for frame in range(self.max_frames):
+        for frame in range(self.file.max_frames):
             annotated = self.annotated[frame]
             annotated = np.where(annotated == label_2, label_1, annotated)
             self.annotated[frame] = annotated
 
         # TODO: is this the same as add/remove?
         # replace fields
-        track_1 = self.tracks[label_1]
-        track_2 = self.tracks[label_2]
+        track_1 = self.file.tracks[label_1]
+        track_2 = self.file.tracks[label_2]
 
         for d in track_1['daughters']:
-            self.tracks[d]['parent'] = None
+            self.file.tracks[d]['parent'] = None
 
         track_1['frames'].extend(track_2['frames'])
         track_1['frames'] = sorted(set(track_1['frames']))
@@ -820,8 +817,8 @@ class TrackReview(BaseReview):
         track_1['frame_div'] = track_2['frame_div']
         track_1['capped'] = track_2['capped']
 
-        del self.tracks[label_2]
-        for _, track in self.tracks.items():
+        del self.file.tracks[label_2]
+        for _, track in self.file.tracks.items():
             try:
                 track['daughters'].remove(label_2)
             except ValueError:
@@ -835,15 +832,15 @@ class TrackReview(BaseReview):
                 frame[frame == old_label] = new_label
 
             # replace fields
-            track_new = self.tracks[new_label] = self.tracks[old_label]
+            track_new = self.file.tracks[new_label] = self.file.tracks[old_label]
             track_new['label'] = new_label
-            del self.tracks[old_label]
+            del self.file.tracks[old_label]
 
             for d in track_new['daughters']:
-                self.tracks[d]['parent'] = new_label
+                self.file.tracks[d]['parent'] = new_label
 
             if track_new['parent'] is not None:
-                parent_track = self.tracks[track_new['parent']]
+                parent_track = self.file.tracks[track_new['parent']]
                 parent_track['daughters'].remove(old_label)
                 parent_track['daughters'].append(new_label)
 
@@ -856,18 +853,18 @@ class TrackReview(BaseReview):
     def action_save_track(self):
         # clear any empty tracks before saving file
         empty_tracks = []
-        for key in self.tracks:
-            if not self.tracks[key]['frames']:
-                empty_tracks.append(self.tracks[key]['label'])
+        for key in self.file.tracks:
+            if not self.file.tracks[key]['frames']:
+                empty_tracks.append(self.file.tracks[key]['label'])
         for track in empty_tracks:
-            del self.tracks[track]
+            del self.file.tracks[track]
 
         # create file object in memory instead of writing to disk
         trk_file_obj = io.BytesIO()
 
         with tarfile.open(fileobj=trk_file_obj, mode='w') as trks:
             with tempfile.NamedTemporaryFile('w') as lineage_file:
-                json.dump(self.tracks, lineage_file, indent=1)
+                json.dump(self.file.tracks, lineage_file, indent=1)
                 lineage_file.flush()
                 trks.add(lineage_file.name, 'lineage.json')
 
@@ -883,8 +880,8 @@ class TrackReview(BaseReview):
         try:
             # go to beginning of file object
             trk_file_obj.seek(0)
-            s3 = self._get_s3_client()
-            s3.upload_fileobj(trk_file_obj, self.output_bucket, self.subfolders)
+            s3 = self.file._get_s3_client()
+            s3.upload_fileobj(trk_file_obj, self.output_bucket, self.file.path)
 
         except Exception as e:
             print('Something Happened: ', e, file=sys.stderr)
@@ -895,13 +892,13 @@ class TrackReview(BaseReview):
         # if cell already exists elsewhere in trk:
         add_label = int(add_label)
         try:
-            old_frames = self.tracks[add_label]['frames']
+            old_frames = self.file.tracks[add_label]['frames']
             updated_frames = np.append(old_frames, frame)
             updated_frames = np.unique(updated_frames).tolist()
-            self.tracks[add_label]['frames'] = updated_frames
+            self.file.tracks[add_label]['frames'] = updated_frames
         # cell does not exist anywhere in trk:
         except KeyError:
-            self.tracks[add_label] = {
+            self.file.tracks[add_label] = {
                 'label': int(add_label),
                 'frames': [frame],
                 'daughters': [],
@@ -909,22 +906,28 @@ class TrackReview(BaseReview):
                 'parent': None,
                 'capped': False,
             }
+            self.file.cell_ids[self.feature] = np.append(self.file.cell_ids[self.feature],
+                                                         add_label)
 
         self._y_changed = self.info_changed = True
 
     def del_cell_info(self, del_label, frame):
         """Remove a cell from the trk"""
         # remove cell from frame
-        old_frames = self.tracks[del_label]['frames']
+        old_frames = self.file.tracks[del_label]['frames']
         updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame))).tolist()
-        self.tracks[del_label]['frames'] = updated_frames
+        self.file.tracks[del_label]['frames'] = updated_frames
 
         # if that was the last frame, delete the entry for that cell
-        if self.tracks[del_label]['frames'] == []:
-            del self.tracks[del_label]
+        if self.file.tracks[del_label]['frames'] == []:
+            del self.file.tracks[del_label]
+
+            # also remove from list of cell_ids
+            ids = self.file.cell_ids[self.feature]
+            self.file.cell_ids[self.feature] = np.delete(ids, np.where(ids == np.int64(del_label)))
 
             # If deleting lineage data, remove parent/daughter entries
-            for _, track in self.tracks.items():
+            for _, track in self.file.tracks.items():
                 try:
                     track['daughters'].remove(del_label)
                 except ValueError:
@@ -933,10 +936,6 @@ class TrackReview(BaseReview):
                     track['parent'] = None
 
         self._y_changed = self.info_changed = True
-
-
-def consecutive(data, stepsize=1):
-    return np.split(data, np.where(np.diff(data) != stepsize)[0] + 1)
 
 
 def predict_zstack_cell_ids(img, next_img, threshold=0.1):
@@ -1090,71 +1089,3 @@ def relabel_frame(img, start_val=1):
         relabeled_img = np.where(img == cell, relabeled_cell_list[i], relabeled_img)
 
     return relabeled_img
-
-
-def load_npz(filename):
-
-    data = io.BytesIO(filename)
-    npz = np.load(data)
-
-    # standard nomenclature for image (X) and annotation (y)
-    if 'y' in npz.files:
-        raw_stack = npz['X']
-        annotation_stack = npz['y']
-
-    # some files may have alternate names 'raw' and 'annotated'
-    elif 'raw' in npz.files:
-        raw_stack = npz['raw']
-        annotation_stack = npz['annotated']
-
-    # if files are named something different, give it a try anyway
-    else:
-        raw_stack = npz[npz.files[0]]
-        annotation_stack = npz[npz.files[1]]
-
-    return {'raw': raw_stack, 'annotated': annotation_stack}
-
-
-# copied from:
-# vanvalenlab/deepcell-tf/blob/master/deepcell/utils/tracking_utils.py3
-
-def load_trks(trkfile):
-    """Load a trk/trks file.
-    Args:
-        trks_file: full path to the file including .trk/.trks
-    Returns:
-        A dictionary with raw, tracked, and lineage data
-    """
-    with tempfile.NamedTemporaryFile() as temp:
-        temp.write(trkfile)
-        with tarfile.open(temp.name, 'r') as trks:
-
-            # numpy can't read these from disk...
-            array_file = io.BytesIO()
-            array_file.write(trks.extractfile('raw.npy').read())
-            array_file.seek(0)
-            raw = np.load(array_file)
-            array_file.close()
-
-            array_file = io.BytesIO()
-            array_file.write(trks.extractfile('tracked.npy').read())
-            array_file.seek(0)
-            tracked = np.load(array_file)
-            array_file.close()
-
-            try:
-                trk_data = trks.getmember('lineages.json')
-            except KeyError:
-                try:
-                    trk_data = trks.getmember('lineage.json')
-                except KeyError:
-                    raise ValueError('Invalid .trk file, no lineage data found.')
-
-            lineages = json.loads(trks.extractfile(trk_data).read().decode())
-            lineages = lineages if isinstance(lineages, list) else [lineages]
-
-            # JSON only allows strings as keys, so convert them back to ints
-            for i, tracks in enumerate(lineages):
-                lineages[i] = {int(k): v for k, v in tracks.items()}
-
-        return {'lineages': lineages, 'raw': raw, 'tracked': tracked}

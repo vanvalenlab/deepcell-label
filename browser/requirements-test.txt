@@ -4,6 +4,7 @@ pytest-mock
 pytest-pep8
 pytest-flask
 pytest-flask-sqlalchemy
+pytest-lazy-fixture
 fakeredis
 six>=1.12
 coveralls

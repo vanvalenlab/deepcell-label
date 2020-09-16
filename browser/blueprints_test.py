@@ -14,6 +14,18 @@ class Bunch(object):
         self.__dict__.update(kwds)
 
 
+class DummyFile():
+
+    def __init__(self, filename, *_, **__):
+        self.filename = filename
+
+    def __getattr__(self, *_, **__):
+        return self
+
+    def __call__(self, *_, **__):
+        return self
+
+
 class DummyState(io.BytesIO):
 
     def __init__(self, *_, **__):
@@ -103,26 +115,27 @@ def test_load(client, mocker):
     # TODO: parsing the filename is a bit awkward.
     in_bucket = 'inputBucket'
     out_bucket = 'inputBucket'
-    base_filename = 'testfile'
-    basefile = '{}__{}__{}__{}__{}'.format(
-        in_bucket, out_bucket, 'subfolder1', 'subfolder2', base_filename
+    filename = 'testfile'
+    caliban_file = '{}__{}__{}__{}__{}'.format(
+        in_bucket, out_bucket, 'subfolder1', 'subfolder2', filename
     )
 
-    mocker.patch('blueprints.TrackReview', DummyState)
-    mocker.patch('blueprints.ZStackReview', DummyState)
+    mocker.patch('blueprints.CalibanFile', DummyFile)
+    mocker.patch('blueprints.TrackEdit', DummyState)
+    mocker.patch('blueprints.ZStackEdit', DummyState)
 
     # TODO: correctness tests
-    response = client.post('/load/{}.npz'.format(basefile))
+    response = client.post('/load/{}.npz'.format(caliban_file))
     assert response.status_code == 200
 
     # rgb mode only for npzs.
-    response = client.post('/load/{}.npz?rgb=true'.format(basefile))
+    response = client.post('/load/{}.npz?rgb=true'.format(caliban_file))
     assert response.status_code == 200
 
-    response = client.post('/load/{}.trk'.format(basefile))
+    response = client.post('/load/{}.trk'.format(caliban_file))
     assert response.status_code == 200
 
-    response = client.post('/load/{}.badext'.format(basefile))
+    response = client.post('/load/{}.badext'.format(caliban_file))
     assert response.status_code == 400
 
 

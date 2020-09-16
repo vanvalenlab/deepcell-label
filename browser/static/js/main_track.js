@@ -463,7 +463,7 @@ let mouse_trace = [];
 function upload_file(cb) {
   $.ajax({
     type: 'POST',
-    url: `upload_file/${project_id}`,
+    url: `${document.location.origin}/upload_file/${project_id}`,
     success: cb,
     async: true
   });
@@ -595,7 +595,7 @@ function render_cell_info() {
     $('#frame_div').text(track.frame_div || "None");
     let capped = track.capped.toString();
     $('#capped').text(capped[0].toUpperCase() + capped.substring(1));
-    $('#frames').text(track.frames.toString());
+    $('#frames').text(track.slices.toString());
   } else {
     $('#label').html("");
     $('#capped').text("");
@@ -692,7 +692,7 @@ function render_image_display() {
 function fetch_and_render_frame() {
   $.ajax({
     type: 'GET',
-    url: "frame/" + current_frame + "/" + project_id,
+    url: `${document.location.origin}/frame/${current_frame}/${project_id}`,
     success: function(payload) {
       // load new value of seg_array
       // array of arrays, contains annotation data for frame
@@ -709,12 +709,12 @@ function fetch_and_render_frame() {
 function load_file(file) {
   $.ajax({
     type: 'POST',
-    url: 'load/' + file,
+    url: `${document.location.origin}/load/${file}`,
     success: function (payload) {
       max_frames = payload.max_frames;
       scale = payload.screen_scale;
       dimensions = [scale * payload.dimensions[0], scale * payload.dimensions[1]];
-      tracks = payload.tracks;
+      tracks = payload.tracks[0];
 
       maxTrack = Math.max(... Object.keys(tracks).map(Number));
 
@@ -830,7 +830,7 @@ function prepare_canvas() {
 function action(action, info, frame = current_frame) {
   $.ajax({
     type:'POST',
-    url:"action/" + project_id + "/" + action + "/" + frame,
+    url:`${document.location.origin}/action/${project_id}/${action}/${frame}`,
     data: info,
     success: function (payload) {
       if (payload.error) {
@@ -852,7 +852,7 @@ function action(action, info, frame = current_frame) {
         }
       }
       if (payload.tracks) {
-        tracks = payload.tracks;
+        tracks = payload.tracks[0];
         maxTrack = Math.max(... Object.keys(tracks).map(Number));
       }
       if (payload.tracks || payload.imgs) {
