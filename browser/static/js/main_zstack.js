@@ -937,9 +937,8 @@ function setCanvasDimensions(rawDims) {
   // pick scale that accomodates both dimensions; can be less than 1
   const scale = Math.min(scaleX, scaleY);
 
-  state.zoom = 100;
-  state.scale = scale;
-  state.setBorders(padding);
+  // change the scale and reset viewing window attributes
+  state.reset(scale, padding);
 
   // set canvases size according to scale
   document.getElementById('canvas').width = state.scaledWidth + 2 * padding;
@@ -1185,9 +1184,10 @@ function startCaliban(filename, settings) {
     // resize the canvas every time the window is resized
     window.addEventListener('resize', function() {
       waitForFinalEvent(() => {
+        // why do we need to clear mode here?
         mode.clear();
         setCanvasDimensions(payload.dimensions);
-        brush.refreshView();
+        render_image_display();
       }, 500, 'canvasResize');
     });
 

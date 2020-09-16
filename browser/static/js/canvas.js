@@ -46,6 +46,18 @@ class CanvasState {
     this.isSpacedown = false;
   }
 
+  reset(scale, padding) {
+    this.scale = scale;
+    this.zoom = 100;
+
+    // set viewing coords back to show full image
+    this.sx = 0;
+    this.sy = 0;
+    this.sWidth = this.width;
+    this.sHeight = this.height;
+    this.setBorders(padding);
+  }
+
   get segArray() {
     return this._segArray;
   }
