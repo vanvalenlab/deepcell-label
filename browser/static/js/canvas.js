@@ -38,7 +38,7 @@ class CanvasState {
     // store as part of object to be able to get current label
     this._segArray = null;
 
-    this.scale = scale;
+    this._scale = scale;
 
     this.topBorder = new Path2D();
     this.bottomBorder = new Path2D();
@@ -48,16 +48,23 @@ class CanvasState {
     this.isSpacedown = false;
   }
 
-  reset(scale) {
-    this.scale = scale;
-    this.zoom = 100;
+  get scale() {
+    return this._scale;
+  }
 
-    // set viewing coords back to show full image
-    this.sx = 0;
-    this.sy = 0;
-    this.sWidth = this.width;
-    this.sHeight = this.height;
-    this.setBorders();
+  set scale(newScale) {
+    // no need to reset zoom, etc if scale has not actually changed
+    if (this.scale !== newScale) {
+      this._scale = newScale;
+      this.zoom = 100;
+
+      // set viewing coords back to show full image
+      this.sx = 0;
+      this.sy = 0;
+      this.sWidth = this.width;
+      this.sHeight = this.height;
+      this.setBorders();
+    }
   }
 
   get segArray() {

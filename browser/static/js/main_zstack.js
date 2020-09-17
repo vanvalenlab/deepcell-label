@@ -932,7 +932,7 @@ function setCanvasDimensions(rawDims) {
   const scale = Math.min(scaleX, scaleY);
 
   // change the scale and reset viewing window attributes
-  state.reset(scale);
+  state.scale = scale;
 
   // set canvases size according to scale
   document.getElementById('canvas').width = state.paddedWidth;
