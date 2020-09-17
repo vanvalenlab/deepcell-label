@@ -349,8 +349,13 @@ class BaseEdit(View):
         annotated_draw = np.where(annotated == target_value, brush_value, annotated)
         annotated_erase = np.where(annotated == brush_value, target_value, annotated)
 
-        for loc in trace:
-            # each element of trace is an array with [y,x] coordinates of array
+        # remove any duplicate coords that may have gotten through
+        unique_trace = set([tuple(t) for t in trace])
+
+        # TODO: could try speeding this up a bit by restricting the area of array
+        # that this applies to--brush only affects a small portion of the whole image
+        for loc in unique_trace:
+            # each element of trace is a tuple holding (y, x) coordinates of img
             x_loc = loc[1]
             y_loc = loc[0]
 
