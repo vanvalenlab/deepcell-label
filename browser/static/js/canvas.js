@@ -18,7 +18,7 @@ class CanvasState {
 
     // attributes for mouse on the canvas.
     this.isPressed = false;
-    this.trace = [];
+    this._trace = [];
 
     // mouse coords
     // mouse position on canvas, no adjustment for padding
@@ -106,9 +106,19 @@ class CanvasState {
     return region;
   }
 
+  // only time trace needs to be accessed externally
+  // is to be passed to caliban.py in JSON format
+  get trace() {
+    return JSON.stringify(this._trace);
+  }
+
   // clear the current trace
   clearTrace() {
-    this.trace = [];
+    this._trace = [];
+  }
+
+  addToTrace() {
+    this._trace.push([this.imgY, this.imgX]);
   }
 
   // check if the mouse position in canvas matches to a displayed part of image

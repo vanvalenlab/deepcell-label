@@ -428,7 +428,7 @@ class Mode {
 
   handle_draw() {
     action('handle_draw', {
-      trace: JSON.stringify(state.trace), // stringify array so it doesn't get messed up
+      trace: state.trace, // trace is formatted properly by getter function
       target_value: brush.target, // value that we're overwriting
       brush_value: brush.value, // we don't update caliban with edit_value, etc each time they change
       brush_size: brush.size, // so we need to pass them in as args
@@ -965,7 +965,7 @@ function handleMousedown(evt) {
           brush.threshY = state.imgY;
         } else if (mode.kind !== Modes.prompt) {
           // not if turning on conv brush
-          state.trace.push([state.imgY, state.imgX]);
+          state.addToTrace();
         }
       }
     }
@@ -976,7 +976,7 @@ function helper_brush_draw() {
   if (state.isCursorPressed() && !state.isSpacedown) {
     // update mouse_trace, but not if turning on conv brush
     if (mode.kind !== Modes.prompt) {
-      state.trace.push([state.imgY, state.imgX]);
+      state.addToTrace();
     }
   } else {
     brush.clearView();
