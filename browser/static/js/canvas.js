@@ -117,8 +117,25 @@ class CanvasState {
     this._trace = [];
   }
 
+  // addToTrace should not add duplicate coordinates
   addToTrace() {
-    this._trace.push([this.imgY, this.imgX]);
+    const newCoord = [this.imgY, this.imgX];
+    if (!this.inTrace(newCoord)) {
+      this._trace.push(newCoord);
+    }
+  }
+
+  // check if coordinate already exists in trace
+  inTrace(newCoord) {
+    let duplicate = false;
+    for (var i=0; i < this._trace.length; i++) {
+      let coord = this._trace[i];
+      if (coord[0] === newCoord[0] && coord[1] === newCoord[1]) {
+        duplicate = true;
+        break;
+      }
+    }
+    return duplicate;
   }
 
   // check if the mouse position in canvas matches to a displayed part of image
