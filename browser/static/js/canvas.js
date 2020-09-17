@@ -81,6 +81,14 @@ class CanvasState {
     return this.scale * this.height;
   }
 
+  get paddedWidth() {
+    return this.scaledWidth + 2 * this.padding;
+  }
+
+  get paddedHeight() {
+    return this.scaledHeight + 2 * this.padding;
+  }
+
   // clear the current trace
   clearTrace() {
     this.trace = [];
@@ -118,32 +126,35 @@ class CanvasState {
     const scaledHeight = this.scaledHeight;
 
     // create paths for recoloring borders
+    // TODO: would it be more intuitive to move the line to this.paddedWidth - this.padding
+    // instead of scaledWidth + this.padding? same value but maybe it'll make the path
+    // a little more clear
     this.topBorder = new Path2D();
     this.topBorder.moveTo(0, 0);
     this.topBorder.lineTo(this.padding, this.padding);
     this.topBorder.lineTo(scaledWidth + this.padding, this.padding);
-    this.topBorder.lineTo(scaledWidth + 2 * this.padding, 0);
+    this.topBorder.lineTo(this.paddedWidth, 0);
     this.topBorder.closePath();
 
     this.bottomBorder = new Path2D();
-    this.bottomBorder.moveTo(0, scaledHeight + 2 * this.padding);
+    this.bottomBorder.moveTo(0, this.paddedHeight);
     this.bottomBorder.lineTo(this.padding, scaledHeight + this.padding);
     this.bottomBorder.lineTo(scaledWidth + this.padding, scaledHeight + this.padding);
-    this.bottomBorder.lineTo(scaledWidth + 2 * this.padding, scaledHeight + 2 * this.padding);
+    this.bottomBorder.lineTo(this.paddedWidth, this.paddedHeight);
     this.bottomBorder.closePath();
 
     this.leftBorder = new Path2D();
     this.leftBorder.moveTo(0, 0);
-    this.leftBorder.lineTo(0, scaledHeight + 2 * this.padding);
+    this.leftBorder.lineTo(0, this.paddedHeight);
     this.leftBorder.lineTo(this.padding, scaledHeight + this.padding);
     this.leftBorder.lineTo(this.padding, this.padding);
     this.leftBorder.closePath();
 
     this.rightBorder = new Path2D();
-    this.rightBorder.moveTo(scaledWidth + 2 * this.padding, 0);
+    this.rightBorder.moveTo(this.paddedWidth, 0);
     this.rightBorder.lineTo(scaledWidth + this.padding, this.padding);
     this.rightBorder.lineTo(scaledWidth + this.padding, scaledHeight + this.padding);
-    this.rightBorder.lineTo(scaledWidth + 2 * this.padding, scaledHeight + 2 * this.padding);
+    this.rightBorder.lineTo(this.paddedWidth, this.paddedHeight);
     this.rightBorder.closePath();
   }
 

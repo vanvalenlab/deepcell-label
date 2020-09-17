@@ -876,8 +876,8 @@ function render_image_display() {
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(
     0, 0,
-    2 * padding + state.scaledWidth,
-    2 * padding + state.scaledHeight
+    state.paddedWidth,
+    state.paddedHeight
   );
 
   if (edit_mode) {
@@ -939,8 +939,8 @@ function setCanvasDimensions(rawDims) {
   state.reset(scale);
 
   // set canvases size according to scale
-  document.getElementById('canvas').width = state.scaledWidth + 2 * padding;
-  document.getElementById('canvas').height = state.scaledHeight + 2 * padding;
+  document.getElementById('canvas').width = state.paddedWidth;
+  document.getElementById('canvas').height = state.paddedHeight;
 }
 
 // adjust contrast, brightness, or zoom upon mouse scroll
