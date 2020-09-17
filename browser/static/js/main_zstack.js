@@ -874,8 +874,6 @@ function render_annotation_image(ctx) {
 function render_image_display() {
   const ctx = document.getElementById('canvas').getContext('2d');
   ctx.imageSmoothingEnabled = false;
-  // TODO: is there a corresponding ctx.restore to match this ctx.save?
-  ctx.save();
   ctx.clearRect(
     0, 0,
     2 * padding + state.scaledWidth,
