@@ -649,26 +649,30 @@ const Modes = Object.freeze({
   drawing: 7
 });
 
+// TODO: object that holds file info such as below attributes?
 const maxLabelsMap = new Map();
+var current_frame = 0;
+var max_frames;
+var feature_max;
+var channelMax;
+var tracks;
+
+// TODO: highlighter object that moves some attributes out of Mode?
+var current_highlight;
 
 let rgb;
 
 var rendering_raw = false;
 var display_labels;
 
-var current_frame = 0;
-var current_highlight;
-var max_frames;
-var feature_max;
-var channelMax;
-var tracks;
-var mode = new Mode(Modes.none, {});
 var edit_mode;
 var answer = '(SPACE=YES / ESC=NO)';
 var project_id;
 
 var tracks;
 
+// objects that need to remain globally accessible for now
+var mode = new Mode(Modes.none, {});
 var brush;
 var adjuster;
 var cursor;
@@ -1200,6 +1204,8 @@ function startCaliban(filename, settings) {
     });
 
     // bind scroll wheel, change contrast of raw when scrolled
+    // TODO: it would be nice to add in waitForFinalEvent here
+    // with a short timer for brightness/contrast adjustments
     canvasElement.addEventListener('wheel', (e) => handleScroll(e));
 
     // mousedown for click&drag/handle_draw DIFFERENT FROM CLICK

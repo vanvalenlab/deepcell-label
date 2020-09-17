@@ -203,7 +203,9 @@ class CanvasState {
   }
 
   drawBorders(ctx) {
+    // save now, restore at end to prevent overwriting current ctx fillStyle
     ctx.save();
+
     // left border
     ctx.fillStyle = (Math.floor(this.sx) === 0) ? 'white' : 'black';
     ctx.fill(this.leftBorder);
