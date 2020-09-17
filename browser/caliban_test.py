@@ -35,10 +35,6 @@ def edit(request):
     return request.param
 
 
-def test_init(view):
-    assert len(view.max_intensity) == view.file.channel_max
-
-
 def test_get_array(view):
     for feature in range(view.file.feature_max):
         for frame in range(view.file.max_frames):
@@ -57,7 +53,7 @@ def test_get_frame(view):
             assert view.current_frame == frame
             expected_raw_frame = pngify(view.file.raw[frame, ..., channel],
                                         vmin=0,
-                                        vmax=view.max_intensity[view.channel],
+                                        vmax=None,
                                         cmap='cubehelix')
             assert expected_raw_frame.getbuffer() == raw_frame.getbuffer()
     for feature in range(view.file.feature_max):

@@ -41,11 +41,6 @@ class View(object):  # pylint: disable=useless-object-inheritance
         self.feature = 0
         self.channel = 0
 
-        # TODO: is this attributed necessary?
-        self.max_intensity = {}
-        for channel in range(self.file.channel_max):
-            self.max_intensity[channel] = None
-
         self.rgb = rgb
         if self.rgb:
             self.rgb_img = self.reduce_to_RGB()
@@ -127,7 +122,7 @@ class View(object):  # pylint: disable=useless-object-inheritance
             frame = self.raw[frame, ..., self.channel]
             return pngify(imgarr=frame,
                           vmin=0,
-                          vmax=self.max_intensity[self.channel],
+                          vmax=None,
                           cmap='cubehelix')
         else:
             frame = self.annotated[frame, ..., self.feature]
