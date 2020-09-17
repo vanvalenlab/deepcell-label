@@ -6,6 +6,8 @@ class CanvasState {
     this.width = width;
     this.height = height;
 
+    this.padding = padding;
+
     // attributes for viewing the canvas.
     this.sx = 0;
     this.sy = 0;
@@ -23,8 +25,8 @@ class CanvasState {
     this.rawX = 0;
     this.rawY = 0;
     // adjusted for padding
-    this.canvasPosX = -1 * padding;
-    this.canvasPosY = -1 * padding;
+    this.canvasPosX = -1 * this.padding;
+    this.canvasPosY = -1 * this.padding;
     // coordinates in original image (used for actions, labels, etc)
     this.imgX = null;
     this.imgY = null;
@@ -46,7 +48,7 @@ class CanvasState {
     this.isSpacedown = false;
   }
 
-  reset(scale, padding) {
+  reset(scale) {
     this.scale = scale;
     this.zoom = 100;
 
@@ -55,7 +57,7 @@ class CanvasState {
     this.sy = 0;
     this.sWidth = this.width;
     this.sHeight = this.height;
-    this.setBorders(padding);
+    this.setBorders();
   }
 
   get segArray() {
@@ -92,14 +94,14 @@ class CanvasState {
     );
   }
 
-  updateCursorPosition(x, y, padding) {
+  updateCursorPosition(x, y) {
     // store raw mouse position, in case of pan without mouse movement
     this.rawX = x;
     this.rawY = y;
 
     // convert to viewing pane position, to check whether to access label underneath
-    this.canvasPosX = x - padding;
-    this.canvasPosY = y - padding;
+    this.canvasPosX = x - this.padding;
+    this.canvasPosY = y - this.padding;
 
     // convert to image indices, to use for actions and getting label
     if (this.inRange()) {
@@ -111,37 +113,37 @@ class CanvasState {
     }
   }
 
-  setBorders(padding) {
+  setBorders() {
     const scaledWidth = this.scaledWidth;
     const scaledHeight = this.scaledHeight;
 
     // create paths for recoloring borders
     this.topBorder = new Path2D();
     this.topBorder.moveTo(0, 0);
-    this.topBorder.lineTo(padding, padding);
-    this.topBorder.lineTo(scaledWidth + padding, padding);
-    this.topBorder.lineTo(scaledWidth + 2 * padding, 0);
+    this.topBorder.lineTo(this.padding, this.padding);
+    this.topBorder.lineTo(scaledWidth + this.padding, this.padding);
+    this.topBorder.lineTo(scaledWidth + 2 * this.padding, 0);
     this.topBorder.closePath();
 
     this.bottomBorder = new Path2D();
-    this.bottomBorder.moveTo(0, scaledHeight + 2 * padding);
-    this.bottomBorder.lineTo(padding, scaledHeight + padding);
-    this.bottomBorder.lineTo(scaledWidth + padding, scaledHeight + padding);
-    this.bottomBorder.lineTo(scaledWidth + 2 * padding, scaledHeight + 2 * padding);
+    this.bottomBorder.moveTo(0, scaledHeight + 2 * this.padding);
+    this.bottomBorder.lineTo(this.padding, scaledHeight + this.padding);
+    this.bottomBorder.lineTo(scaledWidth + this.padding, scaledHeight + this.padding);
+    this.bottomBorder.lineTo(scaledWidth + 2 * this.padding, scaledHeight + 2 * this.padding);
     this.bottomBorder.closePath();
 
     this.leftBorder = new Path2D();
     this.leftBorder.moveTo(0, 0);
-    this.leftBorder.lineTo(0, scaledHeight + 2 * padding);
-    this.leftBorder.lineTo(padding, scaledHeight + padding);
-    this.leftBorder.lineTo(padding, padding);
+    this.leftBorder.lineTo(0, scaledHeight + 2 * this.padding);
+    this.leftBorder.lineTo(this.padding, scaledHeight + this.padding);
+    this.leftBorder.lineTo(this.padding, this.padding);
     this.leftBorder.closePath();
 
     this.rightBorder = new Path2D();
-    this.rightBorder.moveTo(scaledWidth + 2 * padding, 0);
-    this.rightBorder.lineTo(scaledWidth + padding, padding);
-    this.rightBorder.lineTo(scaledWidth + padding, scaledHeight + padding);
-    this.rightBorder.lineTo(scaledWidth + 2 * padding, scaledHeight + 2 * padding);
+    this.rightBorder.moveTo(scaledWidth + 2 * this.padding, 0);
+    this.rightBorder.lineTo(scaledWidth + this.padding, this.padding);
+    this.rightBorder.lineTo(scaledWidth + this.padding, scaledHeight + this.padding);
+    this.rightBorder.lineTo(scaledWidth + 2 * this.padding, scaledHeight + 2 * this.padding);
     this.rightBorder.closePath();
   }
 
@@ -211,13 +213,13 @@ class CanvasState {
     }
   }
 
-  drawImage(ctx, image, padding = 0) {
-    ctx.clearRect(padding, padding, this.width, this.height);
+  drawImage(ctx, image) {
+    ctx.clearRect(this.padding, this.padding, this.width, this.height);
     ctx.drawImage(
       image,
       this.sx, this.sy,
       this.sWidth, this.sHeight,
-      padding, padding,
+      this.padding, this.padding,
       this.scaledWidth,
       this.scaledHeight
     );

@@ -843,9 +843,9 @@ function render_edit_image(ctx) {
   if (rgb && rendering_raw) {
     render_raw_image(ctx);
   } else if (!rgb && !display_labels) {
-    this.state.drawImage(ctx, adjuster.preCompRaw, padding);
+    this.state.drawImage(ctx, adjuster.preCompRaw);
   } else {
-    this.state.drawImage(ctx, adjuster.postCompImg, padding);
+    this.state.drawImage(ctx, adjuster.postCompImg);
   }
   ctx.save();
   const region = new Path2D();
@@ -860,14 +860,14 @@ function render_edit_image(ctx) {
 }
 
 function render_raw_image(ctx) {
-  this.state.drawImage(ctx, adjuster.contrastedRaw, padding);
+  this.state.drawImage(ctx, adjuster.contrastedRaw);
 }
 
 function render_annotation_image(ctx) {
   if (rgb && !display_labels) {
-    this.state.drawImage(ctx, adjuster.postCompImg, padding);
+    this.state.drawImage(ctx, adjuster.postCompImg);
   } else {
-    this.state.drawImage(ctx, adjuster.preCompSeg, padding);
+    this.state.drawImage(ctx, adjuster.preCompSeg);
   }
 }
 
@@ -936,7 +936,7 @@ function setCanvasDimensions(rawDims) {
   const scale = Math.min(scaleX, scaleY);
 
   // change the scale and reset viewing window attributes
-  state.reset(scale, padding);
+  state.reset(scale);
 
   // set canvases size according to scale
   document.getElementById('canvas').width = state.scaledWidth + 2 * padding;
@@ -993,7 +993,7 @@ function updateMousePos(x, y) {
   const oldImgX = state.imgX;
   const oldImgY = state.imgY;
 
-  state.updateCursorPosition(x, y, padding);
+  state.updateCursorPosition(x, y);
 
   // if cursor has actually changed location in image
   if (oldImgX !== state.imgX || oldImgY !== state.imgY) {
