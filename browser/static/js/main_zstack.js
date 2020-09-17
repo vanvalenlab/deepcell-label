@@ -848,9 +848,7 @@ function render_edit_image(ctx) {
     this.state.drawImage(ctx, adjuster.postCompImg);
   }
   ctx.save();
-  const region = new Path2D();
-  region.rect(padding, padding, state.scaledWidth, state.scaledHeight);
-  ctx.clip(region);
+  ctx.clip(state.visibleRegion);
   ctx.imageSmoothingEnabled = true;
 
   // draw brushview on top of cells/annotations

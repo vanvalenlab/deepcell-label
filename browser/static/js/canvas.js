@@ -89,6 +89,16 @@ class CanvasState {
     return this.scaledHeight + 2 * this.padding;
   }
 
+  /**
+  * Creates 2D path for clipping to prevent other object methods (eg, the brush)
+  * from drawing in blank padding regions.
+  */
+  get visibleRegion() {
+    const region = new Path2D();
+    region.rect(this.padding, this.padding, this.scaledWidth, this.scaledHeight);
+    return region;
+  }
+
   // clear the current trace
   clearTrace() {
     this.trace = [];
