@@ -428,7 +428,7 @@ class Mode {
 
   handle_draw() {
     action('handle_draw', {
-      trace: JSON.stringify(state.trace), // stringify array so it doesn't get messed up
+      trace: state.trace, // trace is formatted properly by getter function
       target_value: brush.target, // value that we're overwriting
       brush_value: brush.value, // we don't update caliban with edit_value, etc each time they change
       brush_size: brush.size, // so we need to pass them in as args
@@ -649,31 +649,30 @@ const Modes = Object.freeze({
   drawing: 7
 });
 
-const padding = 5;
-
+// TODO: object that holds file info such as below attributes?
 const maxLabelsMap = new Map();
+var current_frame = 0;
+var max_frames;
+var feature_max;
+var channelMax;
+var tracks;
+
+// TODO: highlighter object that moves some attributes out of Mode?
+var current_highlight;
 
 let rgb;
 
 var rendering_raw = false;
 var display_labels;
 
-var current_frame = 0;
-var current_highlight;
-var max_frames;
-var feature_max;
-var channelMax;
-var tracks;
-var mode = new Mode(Modes.none, {});
 var edit_mode;
 var answer = '(SPACE=YES / ESC=NO)';
 var project_id;
 
-var tracks;
-
+// objects that need to remain globally accessible for now
+var mode = new Mode(Modes.none, {});
 var brush;
 var adjuster;
-var cursor;
 var state;
 
 /**
@@ -843,14 +842,12 @@ function render_edit_image(ctx) {
   if (rgb && rendering_raw) {
     render_raw_image(ctx);
   } else if (!rgb && !display_labels) {
-    this.state.drawImage(ctx, adjuster.preCompRaw, padding);
+    this.state.drawImage(ctx, adjuster.preCompRaw);
   } else {
-    this.state.drawImage(ctx, adjuster.postCompImg, padding);
+    this.state.drawImage(ctx, adjuster.postCompImg);
   }
   ctx.save();
-  const region = new Path2D();
-  region.rect(padding, padding, state.scaledWidth, state.scaledHeight);
-  ctx.clip(region);
+  ctx.clip(state.visibleRegion);
   ctx.imageSmoothingEnabled = true;
 
   // draw brushview on top of cells/annotations
@@ -860,26 +857,24 @@ function render_edit_image(ctx) {
 }
 
 function render_raw_image(ctx) {
-  this.state.drawImage(ctx, adjuster.contrastedRaw, padding);
+  this.state.drawImage(ctx, adjuster.contrastedRaw);
 }
 
 function render_annotation_image(ctx) {
   if (rgb && !display_labels) {
-    this.state.drawImage(ctx, adjuster.postCompImg, padding);
+    this.state.drawImage(ctx, adjuster.postCompImg);
   } else {
-    this.state.drawImage(ctx, adjuster.preCompSeg, padding);
+    this.state.drawImage(ctx, adjuster.preCompSeg);
   }
 }
 
 function render_image_display() {
   const ctx = document.getElementById('canvas').getContext('2d');
   ctx.imageSmoothingEnabled = false;
-  // TODO: is there a corresponding ctx.restore to match this ctx.save?
-  ctx.save();
   ctx.clearRect(
     0, 0,
-    2 * padding + state.scaledWidth,
-    2 * padding + state.scaledHeight
+    state.paddedWidth,
+    state.paddedHeight
   );
 
   if (edit_mode) {
@@ -937,13 +932,12 @@ function setCanvasDimensions(rawDims) {
   // pick scale that accomodates both dimensions; can be less than 1
   const scale = Math.min(scaleX, scaleY);
 
-  state.zoom = 100;
+  // change the scale and reset viewing window attributes
   state.scale = scale;
-  state.setBorders(padding);
 
   // set canvases size according to scale
-  document.getElementById('canvas').width = state.scaledWidth + 2 * padding;
-  document.getElementById('canvas').height = state.scaledHeight + 2 * padding;
+  document.getElementById('canvas').width = state.paddedWidth;
+  document.getElementById('canvas').height = state.paddedHeight;
 }
 
 // adjust contrast, brightness, or zoom upon mouse scroll
@@ -972,7 +966,7 @@ function handleMousedown(evt) {
           brush.threshY = state.imgY;
         } else if (mode.kind !== Modes.prompt) {
           // not if turning on conv brush
-          state.trace.push([state.imgY, state.imgX]);
+          state.addToTrace();
         }
       }
     }
@@ -983,7 +977,7 @@ function helper_brush_draw() {
   if (state.isCursorPressed() && !state.isSpacedown) {
     // update mouse_trace, but not if turning on conv brush
     if (mode.kind !== Modes.prompt) {
-      state.trace.push([state.imgY, state.imgX]);
+      state.addToTrace();
     }
   } else {
     brush.clearView();
@@ -996,7 +990,7 @@ function updateMousePos(x, y) {
   const oldImgX = state.imgX;
   const oldImgY = state.imgY;
 
-  state.updateCursorPosition(x, y, padding);
+  state.updateCursorPosition(x, y);
 
   // if cursor has actually changed location in image
   if (oldImgX !== state.imgX || oldImgY !== state.imgY) {
@@ -1100,6 +1094,8 @@ function action(action, info, frame = current_frame) {
 }
 
 function startCaliban(filename, settings) {
+  const padding = 5;
+
   rgb = settings.rgb;
   current_highlight = settings.rgb;
   display_labels = !settings.rgb;
@@ -1185,9 +1181,10 @@ function startCaliban(filename, settings) {
     // resize the canvas every time the window is resized
     window.addEventListener('resize', function() {
       waitForFinalEvent(() => {
+        // why do we need to clear mode here?
         mode.clear();
         setCanvasDimensions(payload.dimensions);
-        brush.refreshView();
+        render_image_display();
       }, 500, 'canvasResize');
     });
 
@@ -1204,6 +1201,8 @@ function startCaliban(filename, settings) {
     });
 
     // bind scroll wheel, change contrast of raw when scrolled
+    // TODO: it would be nice to add in waitForFinalEvent here
+    // with a short timer for brightness/contrast adjustments
     canvasElement.addEventListener('wheel', (e) => handleScroll(e));
 
     // mousedown for click&drag/handle_draw DIFFERENT FROM CLICK

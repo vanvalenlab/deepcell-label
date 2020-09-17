@@ -339,13 +339,23 @@ class BaseEdit(View):
         """
         annotated = np.copy(self.annotated[frame, ..., self.feature])
 
+        # any brush
         in_original = np.any(np.isin(annotated, brush_value))
+
+        # conversion brush
+        if target_value != 0:
+            target_in_original = np.any(np.isin(annotated, target_value))
 
         annotated_draw = np.where(annotated == target_value, brush_value, annotated)
         annotated_erase = np.where(annotated == brush_value, target_value, annotated)
 
-        for loc in trace:
-            # each element of trace is an array with [y,x] coordinates of array
+        # remove any duplicate coords that may have gotten through
+        unique_trace = set([tuple(t) for t in trace])
+
+        # TODO: could try speeding this up a bit by restricting the area of array
+        # that this applies to--brush only affects a small portion of the whole image
+        for loc in unique_trace:
+            # each element of trace is a tuple holding (y, x) coordinates of img
             x_loc = loc[1]
             y_loc = loc[0]
 
@@ -360,6 +370,12 @@ class BaseEdit(View):
                 annotated[brush_area] = annotated_erase[brush_area]
 
         in_modified = np.any(np.isin(annotated, brush_value))
+
+        # conversion brush
+        if target_value != 0:
+            target_in_modified = np.any(np.isin(annotated, target_value))
+            if target_in_original and not target_in_modified:
+                self.del_cell_info(del_label=target_value, frame=frame)
 
         # cell deletion
         if in_original and not in_modified:
