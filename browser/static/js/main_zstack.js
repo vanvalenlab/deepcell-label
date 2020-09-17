@@ -649,8 +649,6 @@ const Modes = Object.freeze({
   drawing: 7
 });
 
-const padding = 5;
-
 const maxLabelsMap = new Map();
 
 let rgb;
@@ -1095,6 +1093,8 @@ function action(action, info, frame = current_frame) {
 }
 
 function startCaliban(filename, settings) {
+  const padding = 5;
+
   rgb = settings.rgb;
   current_highlight = settings.rgb;
   display_labels = !settings.rgb;
