@@ -32,7 +32,7 @@ class View(object):  # pylint: disable=useless-object-inheritance
     def __init__(self, file_, rgb=False):
         self.file = file_
 
-        self.current_frame = 0
+        self.frame = 0
         self.scale_factor = 1
 
         self.color_map = plt.get_cmap('viridis')
@@ -112,7 +112,7 @@ class View(object):  # pylint: disable=useless-object-inheritance
         Returns:
             BytesIO: contains a .png of the ith frame
         """
-        self.current_frame = frame
+        self.frame = frame
         if (raw and self.rgb):
             return pngify(imgarr=self.rgb_img,
                           vmin=None,
@@ -198,7 +198,7 @@ class View(object):  # pylint: disable=useless-object-inheritance
                             dtype='uint8')
         # this approach allows noise through
         for channel in range(min(6, self.file.channel_max)):
-            raw_channel = self.raw[self.current_frame, ..., channel]
+            raw_channel = self.raw[self.frame, ..., channel]
             if np.sum(raw_channel) != 0:
                 rescaled[..., channel] = self.rescale_95(raw_channel)
         return rescaled
@@ -509,8 +509,17 @@ class BaseEdit(View):
             self.add_cell_info(add_label=new_label, frame=frame)
 
     def action_threshold(self, y1, x1, y2, x2, frame, label):
-        """Threshold the raw image for annotation prediction within the
+        """
+        Threshold the raw image for annotation prediction within the
         user-determined bounding box.
+
+        Args:
+            y1 (int): first y coordinate to bound threshold area
+            x1 (int): first x coordinate to bound threshold area
+            y2 (int): second y coordinate to bound threshold area
+            x2 (int): second x coordinate to bound threshold area
+            frame (int): index of frame to threshold in
+            label (int): label drawn in threshold area
         """
         top_edge = min(y1, y2)
         bottom_edge = max(y1, y2)
