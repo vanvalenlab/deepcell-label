@@ -23,7 +23,6 @@ from werkzeug.exceptions import HTTPException
 import numpy as np
 
 from helpers import is_trk_file, is_npz_file
-from files import CalibanFile
 from models import Project, RawFrame, LabelFrame, Metadata
 from caliban import TrackEdit, ZStackEdit, BaseEdit
 from imgutils import pngify, add_outlines
@@ -162,7 +161,6 @@ def get_frame(frame, project_id):
     # Select current channel/feature
     raw_arr = raw_frame.frame[..., metadata.channel]
     label_arr = label_frame.frame[..., metadata.feature]
-    label_arr = add_outlines(label_arr)
 
     raw_png = pngify(imgarr=raw_arr,
                      vmin=0,
@@ -171,14 +169,14 @@ def get_frame(frame, project_id):
     label_png = pngify(imgarr=np.ma.masked_equal(label_arr, 0),
                        vmin=0,
                        vmax=metadata.get_max_label(),
-                       cmap=metadata.color_map)
+                       cmap=metadata.colormap)
 
     encode = lambda x: base64.encodebytes(x.read()).decode()
 
     payload = {
         'raw': f'data:image/png;base64,{encode(raw_png)}',
         'segmented': f'data:image/png;base64,{encode(label_png)}',
-        'seg_arr': label_arr.tolist()
+        'seg_arr': add_outlines(label_arr).tolist()
     }
 
     current_app.logger.debug('Got frame %s of project "%s" in %s s.',
