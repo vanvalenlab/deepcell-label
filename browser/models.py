@@ -140,7 +140,7 @@ class Metadata(db.Model):
                            primary_key=True, nullable=False)
     # Project metadata
     filename = db.Column(db.Text, nullable=False)
-    subfolders = db.Column(db.Text, nullable=True)
+    path = db.Column(db.Text, nullable=False)
     height = db.Column(db.Integer, nullable=False)
     width = db.Column(db.Integer, nullable=False)
     numFrames = db.Column(db.Integer, nullable=False)
@@ -151,20 +151,23 @@ class Metadata(db.Model):
     channel = db.Column(db.Integer, default=0)
     feature = db.Column(db.Integer, default=0)
     scale_factor = db.Column(db.Float, default=1)
-    color_map = db.Column(db.PickleType, default=plt.get_cmap('viridis').set_bad('black'))
+    colormap = db.Column(db.PickleType)
     # Label metadata
     cell_ids = db.Column(db.PickleType)
     cell_info = db.Column(db.PickleType)
 
-    def __init__(self, project_id, filename, subfolders, raw, annotated, trial):
+    def __init__(self, project_id, filename, path, raw, annotated, trial):
         self.project_id = project_id
         self.filename = filename
-        self.subfolders = subfolders
+        self.path = path
         self.numFrames = raw.shape[0]
         self.height = raw.shape[1]
         self.width = raw.shape[2]
         self.numChannels = raw.shape[-1]
         self.numFeatures = annotated.shape[-1]
+
+        self.colormap = plt.get_cmap('viridis')
+        self.colormap.set_bad('black')
 
         # Label metadata
         # create a dictionary with frame information about each cell
