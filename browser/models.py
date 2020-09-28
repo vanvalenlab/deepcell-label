@@ -18,6 +18,7 @@ from flask import current_app
 from matplotlib import pyplot as plt
 import numpy as np
 from skimage.exposure import rescale_intensity
+from sqlalchemy.ext.compiler import compiles
 
 from helpers import is_npz_file, is_trk_file
 from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
@@ -26,6 +27,15 @@ from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 logger = logging.getLogger('models.Project')  # pylint: disable=C0103
 db = SQLAlchemy()  # pylint: disable=C0103
 
+
+@compiles(db.PickleType, "mysql")
+def compile_pickle_mysql(type_, compiler, **kw):
+    """
+    Replaces default BLOB with LONGBLOB for PickleType columns on MySQL backend. 
+    BLOB (64 kB) truncates pickled objects, while LONGBLOB (4 GB) stores it in full.
+    TODO: change to MEDIUMBLOB (16 MB)?
+    """
+    return "LONGBLOB"
 
 class Project(db.Model):
     """Project table definition."""
