@@ -164,7 +164,6 @@ def get_frame(frame, project_id):
     """
     start = timeit.default_timer()
     # Get frames from database
-    # import pdb; pdb.set_trace()
     raw_frame = RawFrame.get_frame(project_id, frame)
     label_frame = LabelFrame.get_frame(project_id, frame)
 
