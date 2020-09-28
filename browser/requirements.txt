@@ -9,3 +9,4 @@ scikit-image>=0.15.0,<0.17.0
 python-decouple==3.1
 pillow>=7.1.0
 flask-compress==1.5.0
+flask_monitoringdashboard==3.0.7
