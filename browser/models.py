@@ -39,7 +39,8 @@ class Project(db.Model):
     label_frames = db.relationship('LabelFrame', backref='project')
     metadata_ = db.relationship('Metadata', backref='project', uselist=False)
 
-    def __init__(self, filename, bucket, path, rgb=False, raw_key=None, annotated_key=None):
+    def __init__(self, filename, input_bucket, output_bucket, path,
+                 rgb=False, raw_key=None, annotated_key=None):
         init_start = timeit.default_timer()
         if raw_key is None:
             raw_key = 'raw'
@@ -47,7 +48,7 @@ class Project(db.Model):
             annotated_key = get_ann_key(filename)
 
         start = timeit.default_timer()
-        trial = self.load(filename, bucket, path)
+        trial = self.load(filename, input_bucket, path)
         current_app.logger.debug('Loaded file %s from S3 in %s s.',
                                  filename, timeit.default_timer() - start)
         raw = trial[raw_key]
@@ -59,7 +60,7 @@ class Project(db.Model):
 
         start = timeit.default_timer()
         # Create metadata
-        self.metadata_ = Metadata(self.id, filename, path, raw, annotated, trial)
+        self.metadata_ = Metadata(self.id, filename, path, output_bucket, raw, annotated, trial)
         current_app.logger.debug('Created metadata for %s in %ss.',
                                  filename, timeit.default_timer() - start)
 
@@ -105,13 +106,13 @@ class Project(db.Model):
         return project
 
     @staticmethod
-    def create_project(filename, bucket, path):
+    def create_project(filename, input_bucket, output_bucket, path):
         """Create a new project."""
         start = timeit.default_timer()
-        new_project = Project(filename, bucket, path)
+        new_project = Project(filename, input_bucket, output_bucket, path)
         db.session.add(new_project)
         db.session.commit()
-        logger.debug('Created new project with ID = "%s" in %ss.',
+        current_app.logger.debug('Created new project with ID = "%s" in %ss.',
                      new_project.id, timeit.default_timer() - start)
         return new_project
 
@@ -141,6 +142,7 @@ class Metadata(db.Model):
     # Project metadata
     filename = db.Column(db.Text, nullable=False)
     path = db.Column(db.Text, nullable=False)
+    output_bucket = db.Column(db.Text, nullable=False)
     height = db.Column(db.Integer, nullable=False)
     width = db.Column(db.Integer, nullable=False)
     numFrames = db.Column(db.Integer, nullable=False)
@@ -156,18 +158,19 @@ class Metadata(db.Model):
     cell_ids = db.Column(db.PickleType)
     cell_info = db.Column(db.PickleType)
 
-    def __init__(self, project_id, filename, path, raw, annotated, trial):
+    def __init__(self, project_id, filename, path, output_bucket, raw, annotated, trial):
         self.project_id = project_id
         self.filename = filename
         self.path = path
+        self.output_bucket = output_bucket
         self.numFrames = raw.shape[0]
         self.height = raw.shape[1]
         self.width = raw.shape[2]
         self.numChannels = raw.shape[-1]
         self.numFeatures = annotated.shape[-1]
-
-        self.colormap = plt.get_cmap('viridis')
-        self.colormap.set_bad('black')
+        cmap = plt.get_cmap('viridis')
+        cmap.set_bad('black')
+        self.colormap = cmap
 
         # Label metadata
         # create a dictionary with frame information about each cell
@@ -258,30 +261,11 @@ class Metadata(db.Model):
         return metadata
 
     @staticmethod
-    def create_metadata(project_id, filename, path, raw, annotated, trial):
+    def update_metadata(project_id, metadata):
         """
-        Create a metadata row for a project.
-
-        Args:
-            project_id (int): project that the frame belongs to
-            frame (CalibanMetadata): object with projcet metadata about the file and labels
+        Update the metadata in the database.
         """
         start = timeit.default_timer()
-        new_metadata = Metadata(project_id, filename, path, raw, annotated, trial)
-        db.session.add(new_metadata)
-        db.session.commit()
-        logger.debug('Created metadata for project %s in %ss.',
-                     project_id, timeit.default_timer() - start)
-        return new_metadata
-
-    @staticmethod
-    def update_metadata(metadata, caliban_metadata):
-        """
-        Only updates cell_ids and cell_info.
-        """
-        start = timeit.default_timer()
-        metadata.cell_ids = caliban_metadata.cell_ids
-        metadata.cell_info = caliban_metadata.cell_ifno
         db.session.commit()
         logger.debug('Updated metadata in project %s in %ss.',
                      metadata.project_id, timeit.default_timer() - start)
@@ -296,68 +280,6 @@ class Metadata(db.Model):
         logger.debug('Finished metadata from project %s in %ss.',
                      metadata.project_id, timeit.default_timer() - start)
 
-    def action_change_channel(self, channel):
-        """
-        Change current channel.
-
-        Args:
-            channel (int): which channel to switch to
-
-        Raises:
-            ValueError: if channel is not in [0, numChannels)
-
-        Returns:
-            bool: whether to redraw X
-            bool: whether to redraw y
-            bool: whether to redraw info
-        """
-        if channel < 0 or channel > self.numChannels - 1:
-            raise ValueError('Channel {} is outside of range [0, {}].'.format(
-                channel, self.numChannels - 1))
-        self.channel = channel
-        return True, False, False
-
-    def action_change_feature(self, feature):
-        """
-        Change current feature.
-
-        Args:
-            feature (int): which feature to switch to
-
-        Raises:
-            ValueError: if feature is not in [0, feature_max)
-
-        Returns:
-            bool: whether to redraw X
-            bool: whether to redraw y
-            bool: whether to redraw info
-        """
-        if feature < 0 or feature > self.numFeatures - 1:
-            raise ValueError('Feature {} is outside of range [0, {}].'.format(
-                feature, self.numFeatures - 1))
-        self.feature = feature
-        return False, True, False
-
-    def action_change_frame(self, frame):
-        """
-        Change current frame.
-
-        Args:
-            feature (int): which frame to view
-
-        Raises:
-            ValueError: if feature is not in [0, numFrames)
-
-        Returns:
-            bool: whether to redraw X
-            bool: whether to redraw y
-            bool: whether to redraw info
-        """
-        if frame < 0 or frame > self.frame - 1:
-            raise ValueError('Frame {} is outside of range [0, {}].'.format(
-                frame, self.numFrames - 1))
-        self.frame = frame
-        return True, True, False
 
 class RawFrame(db.Model):
     """
@@ -447,25 +369,6 @@ class RawFrame(db.Model):
                      frame_id, project_id, timeit.default_timer() - start)
         return frame
 
-    @staticmethod
-    def create_frame(project_id, frame):
-        """
-        Create a new project.
-
-        Args:
-            project_id (int): project that the frame belongs to
-            frame (CalibanFrame): object with image data
-        """
-        start = timeit.default_timer()
-        new_frame = RawFrame(
-            project_id=project_id,
-            frame_id=frame.frame_id,
-            frame=frame.frame)
-        db.session.add(new_frame)
-        db.session.commit()
-        logger.debug('Created frame %s in project %s in %ss.',
-                     frame.frame_id, project_id, timeit.default_timer() - start)
-        return new_frame
 
 class LabelFrame(db.Model):
     """
@@ -508,25 +411,6 @@ class LabelFrame(db.Model):
                      frame_id, project_id, timeit.default_timer() - start)
         return frame
 
-    @staticmethod
-    def create_frame(project_id, frame):
-        """
-        Create a new project.
-
-        Args:
-            project_id (int): project that the frame belongs to
-            frame (CalibanFrame): object with image data
-        """
-        start = timeit.default_timer()
-        new_frame = LabelFrame(
-            project_id=project_id,
-            frame_id=frame.frame_id,
-            frame=frame.frame)
-        db.session.add(new_frame)
-        db.session.commit()
-        logger.debug('Created frame %s in project %s in %ss.',
-                     frame.frame_id, project_id, timeit.default_timer() - start)
-        return new_frame    
 
     @staticmethod
     def update_frame(frame, caliban_frame):

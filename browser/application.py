@@ -8,6 +8,9 @@ import logging
 from flask import Flask
 from flask.logging import default_handler
 from flask_cors import CORS
+import flask_monitoringdashboard as dashboard
+
+
 
 from flask_compress import Compress
 
@@ -79,6 +82,9 @@ def create_app(**config_overrides):
     app.register_blueprint(bp)
 
     compress.init_app(app)
+
+    # For flask monitoring dashboard
+    dashboard.bind(app)
 
     return app
 
