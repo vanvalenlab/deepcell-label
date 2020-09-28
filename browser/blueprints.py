@@ -22,8 +22,9 @@ from flask import current_app
 from werkzeug.exceptions import HTTPException
 import numpy as np
 
+
 from helpers import is_trk_file, is_npz_file
-from models import Project, RawFrame, LabelFrame, Metadata
+from models import db, Project, RawFrame, LabelFrame, Metadata
 from caliban import TrackEdit, ZStackEdit, BaseEdit
 from imgutils import pngify, add_outlines
 
@@ -90,50 +91,64 @@ def action(project_id, action_type, frame):
     # obtain 'info' parameter data sent by .js script
     info = {k: json.loads(v) for k, v in request.values.to_dict().items()}
 
+    # TODO: remove frame from request values in front-end
+    # Frame is instead tracked by the frame column in the Metadata column
+    if 'frame' in info:
+        del info['frame']
+
     try:
         # Get project and current label frame from database
         project = Project.get_project(project_id)
-        # Use project_id and frame to grab row from database
-        frame = LabelFrame.get_frame(project_id, frame)
-
         if not project:
             return jsonify({'error': 'project_id not found'}), 404
+        # Get frames from database
+        label_frame = LabelFrame.get_frame(project_id, frame)
+        raw_frame = RawFrame.get_frame(project_id, frame)
+        # Get metadata from project
+        metadata = project.metadata_
 
-        frame = load_frame(frame_row)
+        # Create Edit object to perform action
+        edit = get_edit(metadata, label_frame, raw_frame)
+
         # Perform edit operation on the data file
-        state.action(action_type, info)
-
-        x_changed = state._x_changed
-        y_changed = state._y_changed
-        info_changed = state.info_changed
-
-        state._x_changed = state._y_changed = state.info_changed = False
-
-        # Update object in local database
-        LabelFrame.update_frame(project, state)
+        edit.action(action_type, info)
+        # Check what changed during the action
+        x_changed = edit._x_changed
+        y_changed = edit._y_changed
+        info_changed = edit.info_changed
 
     except Exception as e:  # TODO: more error handling to identify problem
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
-    tracks = state.file.readable_tracks if info_changed else False
+    tracks = False # Default payload
+    if info_changed:
+        tracks = metadata.readable_tracks
+        metadata.cell_info = metadata.cell_info.copy()
+        metadata.cell_ids = metadata.cell_ids.copy()
 
+    img_payload = False # Default payload
     if x_changed or y_changed:
         encode = lambda x: base64.encodebytes(x.read()).decode()
         img_payload = {}
-
         if x_changed:
-            raw = state.get_frame(frame, raw=True)
-            img_payload['raw'] = f'data:image/png;base64,{encode(raw)}'
+            raw_arr = raw_frame.frame[..., metadata.channel]
+            raw_png = pngify(imgarr=raw_arr,
+                             vmin=0,
+                             vmax=None,
+                             cmap='cubehelix')
+            img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
         if y_changed:
-            img = state.get_frame(frame, raw=False)
-            img_payload['segmented'] = f'data:image/png;base64,{encode(img)}'
-            edit_arr = state.get_array(frame)
-            img_payload['seg_arr'] = edit_arr.tolist()
+            label_frame.frame = label_frame.frame.copy()
+            label_arr = label_frame.frame[..., metadata.feature]
+            label_png = pngify(imgarr=np.ma.masked_equal(label_arr, 0),
+                               vmin=0,
+                               vmax=metadata.get_max_label(),
+                               cmap=metadata.colormap)
+            img_payload['segmented'] = f'data:image/png;base64,{encode(label_png)}'
+            img_payload['seg_arr'] = add_outlines(label_arr).tolist()
 
-    else:
-        img_payload = False
-
+    db.session.commit()
     current_app.logger.debug('Action "%s" for project "%s" finished in %s s.',
                              action_type, project_id,
                              timeit.default_timer() - start)
@@ -149,6 +164,7 @@ def get_frame(frame, project_id):
     """
     start = timeit.default_timer()
     # Get frames from database
+    # import pdb; pdb.set_trace()
     raw_frame = RawFrame.get_frame(project_id, frame)
     label_frame = LabelFrame.get_frame(project_id, frame)
 
@@ -216,8 +232,11 @@ def load(filename):
         return jsonify(error), 400
 
     # Initate Project entry in database
-    project = Project.create_project(filename, input_bucket, full_path)
+    project = Project.create_project(filename, input_bucket, output_bucket, full_path)
+    metadata_start = timeit.default_timer()
     metadata = project.metadata_
+    current_app.logger.debug('Got metadata for "%s" in %s s.',
+                                 filename, timeit.default_timer() - metadata_start)
 
     if is_trk_file(filename):
         current_app.logger.debug('Loaded trk file "%s" in %s s.',
@@ -345,11 +364,12 @@ def shortcut(filename):
         settings=settings)
 
 
-def get_edit(file_, output_bucket, rgb):
+def get_edit(metadata, label_frame, raw_frame=None):
     """Factory for Edit objects"""
-    if is_npz_file(file_.filename):
-        return ZStackEdit(file_, output_bucket, rgb)
-    elif is_trk_file(file_.filename):
+    filename = metadata.filename
+    if is_npz_file(filename):
+        return ZStackEdit(metadata, label_frame, raw_frame)
+    elif is_trk_file(filename):
         # don't use RGB mode with track files
-        return TrackEdit(file_, output_bucket)
-    return BaseEdit(file_, output_bucket)
+        return TrackEdit(metadata, label_frame, raw_frame)
+    return BaseEdit(metadata, label_frame, raw_frame)
