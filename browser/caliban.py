@@ -68,7 +68,6 @@ class BaseEdit(object):
             action = getattr(self, attr_name)
             action(**info)
         except AttributeError:
-            import pdb; pdb.set_trace()
             raise ValueError('Invalid action "{}"'.format(action_type))
 
     def action_change_channel(self, channel):
