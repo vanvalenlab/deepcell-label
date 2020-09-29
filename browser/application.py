@@ -84,6 +84,7 @@ def create_app(**config_overrides):
     compress.init_app(app)
 
     # For flask monitoring dashboard
+    dashboard.config.init_from(file='fmd_config.cfg')
     dashboard.bind(app)
 
     return app
