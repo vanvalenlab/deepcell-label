@@ -44,9 +44,11 @@ class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     createdAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now())
     finished = db.Column(db.TIMESTAMP)
-
+    
     raw_frames = db.relationship('RawFrame', backref='project')
+    rgb_frames = db.relationship('RGBFrame', backref='project')
     label_frames = db.relationship('LabelFrame', backref='project')
+    # Includes underscore to avoid conflict with metadata (MetaData) attribute from SQLAlchemy
     metadata_ = db.relationship('Metadata', backref='project', uselist=False)
 
     def __init__(self, filename, input_bucket, output_bucket, path,
@@ -68,29 +70,41 @@ class Project(db.Model):
             raw = np.expand_dims(raw, axis=0)
             annotated = np.expand_dims(annotated, axis=0)
 
-        start = timeit.default_timer()
         # Create metadata
+        start = timeit.default_timer()
         self.metadata_ = Metadata(self.id, filename, path, output_bucket, raw, annotated, trial)
         current_app.logger.debug('Created metadata for %s in %ss.',
                                  filename, timeit.default_timer() - start)
 
-        # Create frames from raw and labeled images
+        # Create frames from raw, RGB, and labeled images
         start = timeit.default_timer()
         self.raw_frames = [RawFrame(self.id, i, frame) 
                            for i, frame in enumerate(raw)]
         current_app.logger.debug('Created raw frames for %s in %ss.',
             filename, timeit.default_timer() - start)
+
+        start = timeit.default_timer()
+        self.rgb_frames = [RGBFrame(self.id, i, frame)
+                           for i, frame in enumerate(raw)]
+        current_app.logger.debug('Created RGB frames for %s in %ss.',
+            filename, timeit.default_timer() - start)
+
+        start = timeit.default_timer()
         self.label_frames = [LabelFrame(self.id, i, frame) 
                              for i, frame in enumerate(annotated)]
         current_app.logger.debug('Created label frames for %s in %ss.',
                                  filename, timeit.default_timer() - start)
-
-        # # Create rgb frames
-        # self.rgb = rgb
-        # if self.rgb:
-        #     self.rgb_frames = [Frame(self.id, i, frame, rgb=True) for i, frame in enumerate(raw)]
+        # Log total time in constructor
         current_app.logger.debug('Total time in __init__ for %s: %s s.',
                                  filename, timeit.default_timer() - init_start)
+
+    @property
+    def label_array(self):
+        return np.array([frame.frame for frame in self.label_frames])
+    
+    @property
+    def raw_array(self):
+        return np.array([frame.frame for frame in self.raw_frames])
 
     def _get_s3_client(self):
         return boto3.client(
@@ -302,18 +316,48 @@ class RawFrame(db.Model):
     frame = db.Column(db.PickleType)
     createdAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now())
 
-    def __init__(self, project_id, frame_id, frame, rgb=False):
+    def __init__(self, project_id, frame_id, frame):
         self.project_id = project_id
         self.frame_id = frame_id
-        self.rgb = rgb
-        if self.rgb:
-            self.frame = self.reduce_to_RGB(frame)
-        else:
-            self.frame = frame
+        self.frame = frame
+
+    @staticmethod
+    def get_frame(project_id, frame_id):
+        """
+        Return the given frame from the given project.
+
+        Args:
+            project_id (int): project that the frame belongs to
+            frame_id (int): index of frame to return
+        """
+        start = timeit.default_timer()
+        frame = RawFrame.query.filter_by(project_id=project_id, frame_id=frame_id).first()
+        logger.debug('Got frame %s from project %s in %ss.',
+                     frame_id, project_id, timeit.default_timer() - start)
+        return frame
+
+class RGBFrame(db.Model):
+    """
+    Table definition for the raw RGB frames in our projects.
+    """
+    # pylint: disable=E1101
+    __tablename__ = 'rgbframes'
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), primary_key=True, nullable=False)
+    frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
+    frame = db.Column(db.PickleType)
+    createdAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now())
+
+    def __init__(self, project_id, frame_id, frame):
+        self.project_id = project_id
+        self.frame_id = frame_id
+        self.frame = self.reduce_to_RGB(frame)
 
     def rescale_95(self, frame):
         """
         Rescale a single- or multi-channel image.
+
+        Args:
+            frame (np.array): 2d image frame to rescale
 
         Returns:
             np.array: rescaled image
@@ -332,6 +376,9 @@ class RawFrame(db.Model):
         Handles adding in CMY channels as needed, and adjusting each channel if
         viewing adjusted raw. Used to update self.rgb, which is used to display
         raw current frame.
+
+        Args:
+            frame (np.array): upto 6-channel image to reduce to 3-channel image
 
         Returns:
             np.array: 3-channel image
@@ -364,26 +411,11 @@ class RawFrame(db.Model):
 
         return rgb_img.astype('uint8')
 
-    @staticmethod
-    def get_frame(project_id, frame_id):
-        """
-        Return the given frame from the given project.
-
-        Args:
-            project_id (int): project that the frame belongs to
-            frame_id (int): index of frame to return
-        """
-        start = timeit.default_timer()
-        frame = RawFrame.query.filter_by(project_id=project_id, frame_id=frame_id).first()
-        logger.debug('Got frame %s from project %s in %ss.',
-                     frame_id, project_id, timeit.default_timer() - start)
-        return frame
-
 
 class LabelFrame(db.Model):
     """
     Table definition for the label frames in our projects.
-    Extends the Frame class with functions to update and finish the frame.
+    Allows us to update and finish each frame.
     """
     # pylint: disable=E1101
     __tablename__ = 'labelframes'
@@ -397,9 +429,6 @@ class LabelFrame(db.Model):
     numUpdates = db.Column(db.Integer, nullable=False, default=0)
     firstUpdate = db.Column(db.TIMESTAMP)
     lastUpdate = db.Column(db.TIMESTAMP)
-
-    # TODO: could this causes issues as LabelFrame extends RawFrame?
-    # project = db.relationship('Project', backref=db.backref('labelframes'))
 
     def __init__(self, project_id, frame_id, frame):
         self.project_id = project_id
