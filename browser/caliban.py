@@ -22,14 +22,6 @@ from skimage.segmentation import find_boundaries
 
 from imgutils import pngify
 
-# # for raw rgb images
-# self.frame = frame
-# if (raw and self.rgb):
-#     return pngify(imgarr=self.rgb_img,
-#                     vmin=None,
-#                     vmax=None,
-#                     cmap=None)
-
 
 class BaseEdit(object):
     """
