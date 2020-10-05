@@ -22,6 +22,7 @@ from sqlalchemy.ext.compiler import compiles
 
 from helpers import is_npz_file, is_trk_file
 from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+from imgutils import pngify, add_outlines
 
 
 logger = logging.getLogger('models.Project')  # pylint: disable=C0103
@@ -151,6 +152,55 @@ class Project(db.Model):
         db.session.commit()  # commit the changes
         logger.debug('Finished project with ID = "%s" in %ss.',
                      project.id, timeit.default_timer() - start)
+
+    def get_label_arr(self):
+        """
+        Returns:
+            list: nested list of labels at each positions, with negative label outlines 
+        """
+        metadata = self.metadata_
+        label_frame = self.label_frames[metadata.frame]
+        label_arr = label_frame.frame[..., metadata.feature]
+        return add_outlines(label_arr).tolist()
+
+    def get_label_png(self):
+        """
+        Returns:
+            BytesIO: returns the current label frame as a .png
+        """
+        metadata = self.metadata_
+        # Label png
+        label_frame = self.label_frames[metadata.frame]
+        label_arr = label_frame.frame[..., metadata.feature]
+        label_png = pngify(imgarr=np.ma.masked_equal(label_arr, 0),
+                            vmin=0,
+                            vmax=metadata.get_max_label(),
+                            cmap=metadata.colormap)
+        return label_png
+
+    def get_raw_png(self):
+        """        
+        Returns:
+            BytesIO: contains the current raw frame as a .png
+        """
+        metadata = self.metadata_
+        # RGB png
+        if metadata.rgb: 
+            raw_frame = self.rgb_frames[metadata.frame]
+            raw_arr = raw_frame.frame
+            raw_png = pngify(imgarr=raw_arr,
+                             vmin=None,
+                             vmax=None,
+                             cmap=None)
+            return raw_png
+        # Raw png
+        raw_frame = self.raw_frames[metadata.frame]
+        raw_arr = raw_frame.frame[..., metadata.channel]
+        raw_png = pngify(imgarr=raw_arr,
+                            vmin=0,
+                            vmax=None,
+                            cmap='cubehelix')
+        return raw_png
 
 
 class Metadata(db.Model):

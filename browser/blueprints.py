@@ -124,6 +124,7 @@ def action(project_id, action_type, frame):
     tracks = False # Default payload
     if info_changed:
         tracks = metadata.readable_tracks
+        # Force copy PickleType column so db commits changes
         metadata.cell_info = metadata.cell_info.copy()
         metadata.cell_ids = metadata.cell_ids.copy()
 
@@ -132,28 +133,14 @@ def action(project_id, action_type, frame):
         encode = lambda x: base64.encodebytes(x.read()).decode()
         img_payload = {}
         if x_changed:
-            if metadata.rgb:
-                raw_arr = raw_frame.frame
-                raw_png = pngify(imgarr=raw_arr,
-                                 vmin=None,
-                                 vmax=None,
-                                 cmap=None)
-            else:
-                raw_arr = raw_frame.frame[..., metadata.channel]
-                raw_png = pngify(imgarr=raw_arr,
-                                 vmin=0,
-                                 vmax=None,
-                                 cmap='cubehelix')
+            raw_png = project.get_raw_png()
             img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
         if y_changed:
+            # Force copy PickleType column so db commits changes
             label_frame.frame = label_frame.frame.copy()
-            label_arr = label_frame.frame[..., metadata.feature]
-            label_png = pngify(imgarr=np.ma.masked_equal(label_arr, 0),
-                               vmin=0,
-                               vmax=metadata.get_max_label(),
-                               cmap=metadata.colormap)
+            label_png = project.get_label_png()
             img_payload['segmented'] = f'data:image/png;base64,{encode(label_png)}'
-            img_payload['seg_arr'] = add_outlines(label_arr).tolist()
+            img_payload['seg_arr'] = project.get_label_arr()
 
     db.session.commit()
     current_app.logger.debug('Action "%s" for project "%s" finished in %s s.',
@@ -170,46 +157,21 @@ def get_frame(frame, project_id):
     cells to .js file.
     """
     start = timeit.default_timer()
-    # Get frames from database
+    # Get project from database
     project = Project.get_project(project_id)
-    metadata = project.metadata_
-    if metadata.rgb:
-        raw_frame = RGBFrame.get_frame(project_id, frame)
-    else:
-        raw_frame = RawFrame.get_frame(project_id, frame)    
-    label_frame = LabelFrame.get_frame(project_id, frame)
-
-    if not raw_frame or not label_frame:
-        return jsonify({'error': 'frame not found'}), 404
+    if not project:
+        return jsonify({'error': 'project_id not found'}), 404
+    # Get pngs and array from project
+    raw_png = project.get_raw_png()
+    label_png = project.get_label_png()
+    label_arr = project.get_label_arr()
     
-    # Get metadata from database to draw images (max label and colormap)
-    metadata = Metadata.get_metadata(project_id)
-    
-    # Select current channel/feature
-    label_arr = label_frame.frame[..., metadata.feature]
-    if metadata.rgb:
-        raw_arr = raw_frame.frame
-        raw_png = pngify(imgarr=raw_arr,
-                         vmin=None,
-                         vmax=None,
-                         cmap=None)
-    else:
-        raw_arr = raw_frame.frame[..., metadata.channel]
-        raw_png = pngify(imgarr=raw_arr,
-                         vmin=0,
-                         vmax=None,
-                         cmap='cubehelix')
-    label_png = pngify(imgarr=np.ma.masked_equal(label_arr, 0),
-                       vmin=0,
-                       vmax=metadata.get_max_label(),
-                       cmap=metadata.colormap)
-
+    # Create payload
     encode = lambda x: base64.encodebytes(x.read()).decode()
-
     payload = {
         'raw': f'data:image/png;base64,{encode(raw_png)}',
         'segmented': f'data:image/png;base64,{encode(label_png)}',
-        'seg_arr': add_outlines(label_arr).tolist()
+        'seg_arr': label_arr
     }
 
     current_app.logger.debug('Got frame %s of project "%s" in %s s.',
