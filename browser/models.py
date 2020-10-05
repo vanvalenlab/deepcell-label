@@ -44,7 +44,7 @@ class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     createdAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now())
     finished = db.Column(db.TIMESTAMP)
-    
+
     raw_frames = db.relationship('RawFrame', backref='project')
     rgb_frames = db.relationship('RGBFrame', backref='project')
     label_frames = db.relationship('LabelFrame', backref='project')
@@ -332,7 +332,7 @@ class RawFrame(db.Model):
         """
         start = timeit.default_timer()
         frame = RawFrame.query.filter_by(project_id=project_id, frame_id=frame_id).first()
-        logger.debug('Got frame %s from project %s in %ss.',
+        logger.debug('Got raw frame %s from project %s in %ss.',
                      frame_id, project_id, timeit.default_timer() - start)
         return frame
 
@@ -352,6 +352,21 @@ class RGBFrame(db.Model):
         self.frame_id = frame_id
         self.frame = self.reduce_to_RGB(frame)
 
+    @staticmethod
+    def get_frame(project_id, frame_id):
+        """
+        Return the given frame from the given project.
+
+        Args:
+            project_id (int): project that the frame belongs to
+            frame_id (int): index of frame to return
+        """
+        start = timeit.default_timer()
+        frame = RGBFrame.query.filter_by(project_id=project_id, frame_id=frame_id).first()
+        logger.debug('Got RGB frame %s from project %s in %ss.',
+                     frame_id, project_id, timeit.default_timer() - start)
+        return frame
+
     def rescale_95(self, frame):
         """
         Rescale a single- or multi-channel image.
@@ -370,6 +385,24 @@ class RGBFrame(db.Model):
         rescaled_frame = rescaled_frame.astype('uint8')
         return rescaled_frame
 
+    def rescale_raw(self, frame):
+        """
+        Rescale first 6 raw channels individually and store in memory.
+        The rescaled raw array is used subsequently for image display purposes.
+        
+        Args: multi-channel frame to rescale
+        
+        Returns:
+            np.array: upto 6-channel rescaled image
+        """
+        rescaled = np.zeros(frame.shape, dtype='uint8')
+        # this approach allows noise through
+        for channel in range(min(6, frame.shape[-1])):
+            raw_channel = frame[..., channel]
+            if np.sum(raw_channel) != 0:
+                rescaled[..., channel] = self.rescale_95(raw_channel)
+        return rescaled
+
     def reduce_to_RGB(self, frame):
         """
         Go from rescaled raw array with up to 6 channels to an RGB image for display.
@@ -383,7 +416,7 @@ class RGBFrame(db.Model):
         Returns:
             np.array: 3-channel image
         """
-        rescaled = self.rescale_raw()
+        rescaled = self.rescale_raw(frame)
         # rgb starts as uint16 so it can handle values above 255 without overflow
         rgb_img = np.zeros((frame.shape[0], frame.shape[1], 3), dtype='uint16')
 
@@ -446,7 +479,7 @@ class LabelFrame(db.Model):
         """
         start = timeit.default_timer()
         frame = LabelFrame.query.filter_by(project_id=project_id, frame_id=frame_id).first()
-        logger.debug('Got frame %s from project %s in %ss.',
+        logger.debug('Got label frame %s from project %s in %ss.',
                      frame_id, project_id, timeit.default_timer() - start)
         return frame
 
