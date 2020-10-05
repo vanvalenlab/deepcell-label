@@ -8,7 +8,7 @@ import pytest
 from pytest_lazyfixture import lazy_fixture
 
 from application import create_app  # pylint: disable=C0413
-from files import CalibanFile
+from models import Project
 
 # flask-sqlalchemy fixtures from http://alexmic.net/flask-sqlalchemy-pytest/
 
@@ -98,46 +98,51 @@ TEST_IDS = ['empty', 'full1', 'full2', 'iden', 'tril1',
 
 
 @pytest.fixture(params=TEST_LABELS, ids=TEST_IDS)
-def zstack_file(mocker, request):
-    def load(self):
-        if len(request.param.shape) == 4:
-            raw = np.zeros((FRAMES, HEIGHT, WIDTH, CHANNELS))
-        else:
-            raw = np.zeros((HEIGHT, WIDTH, CHANNELS))
-        data = {'raw': raw}
-        data['annotated'] = request.param.copy()
-        return data
-    mocker.patch('files.CalibanFile.load', load)
-    return CalibanFile('filename.npz', 'bucket', 'path')
+def zstack_project(app, mocker, request):
+    with app.app_context():
+        def load(self, *args):
+            if len(request.param.shape) == 4:
+                raw = np.zeros((FRAMES, HEIGHT, WIDTH, CHANNELS))
+            else:
+                raw = np.zeros((HEIGHT, WIDTH, CHANNELS))
+            data = {'raw': raw}
+            data['annotated'] = request.param.copy()
+            return data
+        mocker.patch('models.Project.load', load)
+        return Project('filename.npz', 'input_bucket', 'output_bucket', 'path')
 
 
 @pytest.fixture(params=TEST_LABELS, ids=TEST_IDS)
-def track_file(mocker, request):
-    def load(self):
-        # Match the size of the raw image with the labels
-        if len(request.param.shape) == 4:
-            raw = np.zeros((FRAMES, HEIGHT, WIDTH, CHANNELS))
-        else:
-            raw = np.zeros((HEIGHT, WIDTH, CHANNELS))
-        data = {'raw': raw}
-        # Tracked files should only have one feature
-        data['tracked'] = request.param[..., [0]].copy()
-        lineages = [{label: {'frame_div': None,
-                             'daughters': [],
-                             'frames': list(range(FRAMES)),  # All labels are in all frames
-                             'label': label,
-                             'capped': False,  # TODO: what does this mean?
-                             'parent': None}
-                    for label in np.unique(request.param) if label != 0}]
-        data['lineages'] = lineages
-        return data
-    mocker.patch('files.CalibanFile.load', load)
-    return CalibanFile('filename.trk', 'bucket', 'path')
+def track_project(app, mocker, request):
+    with app.app_context():
+        def load(self, *args):
+            # Match the size of the raw image with the labels
+            if len(request.param.shape) == 4:
+                raw = np.zeros((FRAMES, HEIGHT, WIDTH, CHANNELS))
+            else:
+                raw = np.zeros((HEIGHT, WIDTH, CHANNELS))
+            data = {'raw': raw}
+            # Tracked files should only have one feature
+            data['tracked'] = request.param[..., [0]].copy()
+            lineages = [{label: {'frame_div': None,
+                                'daughters': [],
+                                'frames': list(range(FRAMES)),  # All labels are in all frames
+                                'label': label,
+                                'capped': False,
+                                'parent': None}
+                        for label in np.unique(request.param) if label != 0}]
+            data['lineages'] = lineages
+            return data
+        mocker.patch('models.Project.load', load)
+        return Project('filename.trk', 'input_bucket', 'output_bucket', 'path')
 
 
 @pytest.fixture(params=[
-    lazy_fixture('zstack_file'),
-    lazy_fixture('track_file'),
+    lazy_fixture('zstack_project'),
+    lazy_fixture('track_project'),
 ])
-def file_(request):
-    return request.param
+def project(request, db_session):
+    row = request.param
+    db_session.add(row)
+    db_session.commit()
+    return row
