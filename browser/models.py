@@ -72,7 +72,7 @@ class Project(db.Model):
 
         # Create metadata
         start = timeit.default_timer()
-        self.metadata_ = Metadata(self.id, filename, path, output_bucket, raw, annotated, trial)
+        self.metadata_ = Metadata(self.id, filename, path, output_bucket, raw, annotated, trial, rgb)
         current_app.logger.debug('Created metadata for %s in %ss.',
                                  filename, timeit.default_timer() - start)
 
@@ -130,10 +130,10 @@ class Project(db.Model):
         return project
 
     @staticmethod
-    def create_project(filename, input_bucket, output_bucket, path):
+    def create_project(filename, input_bucket, output_bucket, path, rgb):
         """Create a new project."""
         start = timeit.default_timer()
-        new_project = Project(filename, input_bucket, output_bucket, path)
+        new_project = Project(filename, input_bucket, output_bucket, path, rgb=rgb)
         db.session.add(new_project)
         db.session.commit()
         current_app.logger.debug('Created new project with ID = "%s" in %ss.',
@@ -173,6 +173,7 @@ class Metadata(db.Model):
     numChannels = db.Column(db.Integer, nullable=False)
     numFeatures = db.Column(db.Integer, nullable=False)
     # View metadata
+    rgb = db.Column(db.Boolean, default=False)
     frame = db.Column(db.Integer, default=0)
     channel = db.Column(db.Integer, default=0)
     feature = db.Column(db.Integer, default=0)
@@ -182,7 +183,7 @@ class Metadata(db.Model):
     cell_ids = db.Column(db.PickleType)
     cell_info = db.Column(db.PickleType)
 
-    def __init__(self, project_id, filename, path, output_bucket, raw, annotated, trial):
+    def __init__(self, project_id, filename, path, output_bucket, raw, annotated, trial, rgb):
         self.project_id = project_id
         self.filename = filename
         self.path = path
@@ -195,6 +196,7 @@ class Metadata(db.Model):
         cmap = plt.get_cmap('viridis')
         cmap.set_bad('black')
         self.colormap = cmap
+        self.rgb = rgb
 
         # Label metadata
         # create a dictionary with frame information about each cell

@@ -132,11 +132,18 @@ def action(project_id, action_type, frame):
         encode = lambda x: base64.encodebytes(x.read()).decode()
         img_payload = {}
         if x_changed:
-            raw_arr = raw_frame.frame[..., metadata.channel]
-            raw_png = pngify(imgarr=raw_arr,
-                             vmin=0,
-                             vmax=None,
-                             cmap='cubehelix')
+            if metadata.rgb:
+                raw_arr = raw_frame.frame
+                raw_png = pngify(imgarr=raw_arr,
+                                 vmin=None,
+                                 vmax=None,
+                                 cmap=None)
+            else:
+                raw_arr = raw_frame.frame[..., metadata.channel]
+                raw_png = pngify(imgarr=raw_arr,
+                                 vmin=0,
+                                 vmax=None,
+                                 cmap='cubehelix')
             img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
         if y_changed:
             label_frame.frame = label_frame.frame.copy()
@@ -163,11 +170,10 @@ def get_frame(frame, project_id):
     cells to .js file.
     """
     start = timeit.default_timer()
-    # Get rgb parameter from URL
-    rgb = request.args.get('rgb', default='false', type=str)
-    rgb = bool(distutils.util.strtobool(rgb))
     # Get frames from database
-    if rgb:
+    project = Project.get_project(project_id)
+    metadata = project.metadata_
+    if metadata.rgb:
         raw_frame = RGBFrame.get_frame(project_id, frame)
     else:
         raw_frame = RawFrame.get_frame(project_id, frame)    
@@ -181,8 +187,7 @@ def get_frame(frame, project_id):
     
     # Select current channel/feature
     label_arr = label_frame.frame[..., metadata.feature]
-    print(rgb)
-    if rgb:
+    if metadata.rgb:
         raw_arr = raw_frame.frame
         raw_png = pngify(imgarr=raw_arr,
                          vmin=None,
@@ -244,7 +249,7 @@ def load(filename):
         return jsonify(error), 400
 
     # Initate Project entry in database
-    project = Project.create_project(filename, input_bucket, output_bucket, full_path)
+    project = Project.create_project(filename, input_bucket, output_bucket, full_path, rgb)
     metadata_start = timeit.default_timer()
     metadata = project.metadata_
     current_app.logger.debug('Got metadata for "%s" in %s s.',
