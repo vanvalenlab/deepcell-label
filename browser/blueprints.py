@@ -124,7 +124,7 @@ def action(project_id, action_type, frame):
     tracks = False # Default payload
     if info_changed:
         tracks = metadata.readable_tracks
-        # Force copy PickleType column so db commits changes
+        # Copy PickleType column so db commits changes
         metadata.cell_info = metadata.cell_info.copy()
         metadata.cell_ids = metadata.cell_ids.copy()
 
@@ -136,12 +136,11 @@ def action(project_id, action_type, frame):
             raw_png = project.get_raw_png()
             img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
         if y_changed:
-            # Force copy PickleType column so db commits changes
+            # Copy PickleType column so db commits changes
             label_frame.frame = label_frame.frame.copy()
             label_png = project.get_label_png()
             img_payload['segmented'] = f'data:image/png;base64,{encode(label_png)}'
             img_payload['seg_arr'] = project.get_label_arr()
-
     db.session.commit()
     current_app.logger.debug('Action "%s" for project "%s" finished in %s s.',
                              action_type, project_id,

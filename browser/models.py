@@ -20,6 +20,7 @@ import numpy as np
 from skimage.exposure import rescale_intensity
 from sqlalchemy.ext.compiler import compiles
 
+
 from helpers import is_npz_file, is_trk_file
 from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 from imgutils import pngify, add_outlines
@@ -230,8 +231,8 @@ class Metadata(db.Model):
     scale_factor = db.Column(db.Float, default=1)
     colormap = db.Column(db.PickleType)
     # Label metadata
-    cell_ids = db.Column(db.PickleType)
-    cell_info = db.Column(db.PickleType)
+    cell_ids = db.Column(db.PickleType(comparator=lambda *a: False))
+    cell_info = db.Column(db.PickleType(comparator=lambda *a: False))
 
     def __init__(self, project_id, filename, path, output_bucket, raw, annotated, trial, rgb):
         self.project_id = project_id
