@@ -899,7 +899,7 @@ function render_image_display() {
 function fetch_and_render_frame() {
   $.ajax({
     type: 'GET',
-    url: `${document.location.origin}/frame/${current_frame}/${project_id}`,
+    url: `${document.location.origin}/frame/${current_frame}/${project_id}?rgb=${rgb}`,
     success: function(payload) {
       adjuster.rawLoaded = false;
       adjuster.segLoaded = false;
