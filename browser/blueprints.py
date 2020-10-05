@@ -24,7 +24,7 @@ import numpy as np
 
 
 from helpers import is_trk_file, is_npz_file
-from models import db, Project, RawFrame, LabelFrame, Metadata
+from models import db, Project, RawFrame, LabelFrame, RGBFrame, Metadata
 from caliban import TrackEdit, ZStackEdit, BaseEdit
 from imgutils import pngify, add_outlines
 
@@ -163,8 +163,14 @@ def get_frame(frame, project_id):
     cells to .js file.
     """
     start = timeit.default_timer()
+    # Get rgb parameter from URL
+    rgb = request.args.get('rgb', default='false', type=str)
+    rgb = bool(distutils.util.strtobool(rgb))
     # Get frames from database
-    raw_frame = RawFrame.get_frame(project_id, frame)
+    if rgb:
+        raw_frame = RGBFrame.get_frame(project_id, frame)
+    else:
+        raw_frame = RawFrame.get_frame(project_id, frame)    
     label_frame = LabelFrame.get_frame(project_id, frame)
 
     if not raw_frame or not label_frame:
@@ -174,13 +180,20 @@ def get_frame(frame, project_id):
     metadata = Metadata.get_metadata(project_id)
     
     # Select current channel/feature
-    raw_arr = raw_frame.frame[..., metadata.channel]
     label_arr = label_frame.frame[..., metadata.feature]
-
-    raw_png = pngify(imgarr=raw_arr,
-                     vmin=0,
-                     vmax=None,
-                     cmap='cubehelix')
+    print(rgb)
+    if rgb:
+        raw_arr = raw_frame.frame
+        raw_png = pngify(imgarr=raw_arr,
+                         vmin=None,
+                         vmax=None,
+                         cmap=None)
+    else:
+        raw_arr = raw_frame.frame[..., metadata.channel]
+        raw_png = pngify(imgarr=raw_arr,
+                         vmin=0,
+                         vmax=None,
+                         cmap='cubehelix')
     label_png = pngify(imgarr=np.ma.masked_equal(label_arr, 0),
                        vmin=0,
                        vmax=metadata.get_max_label(),
