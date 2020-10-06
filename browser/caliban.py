@@ -468,8 +468,8 @@ class ZStackEdit(BaseEdit):
             frame[frame == label] = new_label
             # Update metadata for this frame
             if new_label in frame:
-                self.del_cell_info(del_label=label, frame=frame)
-                self.add_cell_info(add_label=new_label, frame=frame)
+                self.del_cell_info(del_label=label, frame=label_frame.frame_id)
+                self.add_cell_info(add_label=new_label, frame=label_frame.frame_id)
                 self.multi_changed = True
 
     def action_replace_single(self, label_1, label_2):
