@@ -123,6 +123,9 @@ def get_frame(frame, project_id):
     project = Project.get_project(project_id)
     if not project:
         return jsonify({'error': 'project_id not found'}), 404
+    # Change the frame
+    project.metadata_.frame = frame
+    db.session.commit()
     # Get pngs and array from project
     raw_png = project.get_raw_png()
     label_png = project.get_label_png()

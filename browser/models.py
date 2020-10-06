@@ -160,6 +160,7 @@ class Project(db.Model):
             list: nested list of labels at each positions, with negative label outlines 
         """
         metadata = self.metadata_
+        # Create label array
         label_frame = self.label_frames[metadata.frame]
         label_arr = label_frame.frame[..., metadata.feature]
         return add_outlines(label_arr).tolist()
@@ -170,7 +171,7 @@ class Project(db.Model):
             BytesIO: returns the current label frame as a .png
         """
         metadata = self.metadata_
-        # Label png
+        # Create label png
         label_frame = self.label_frames[metadata.frame]
         label_arr = label_frame.frame[..., metadata.feature]
         label_png = pngify(imgarr=np.ma.masked_equal(label_arr, 0),
