@@ -440,9 +440,9 @@ class BaseEdit(object):
             self.metadata.cell_ids = self.metadata.cell_ids.copy()
         if self.multi_changed:
             for label_frame in self.project.label_frames:
-                    label_frame.frame = label_frame.frame.copy()
+                label_frame.frame = label_frame.frame.copy()
         elif self.y_changed:
-            self.frame = self.frame.copy()
+            self.project.label_frames[self.frame_id].frame = self.frame.copy()
         db.session.commit()
                 
 
