@@ -56,16 +56,12 @@ def handle_exception(error):
 def upload_file(project_id):
     '''Upload .trk/.npz data file to AWS S3 bucket.'''
     start = timeit.default_timer()
-    # Use id to grab appropriate TrackEdit/ZStackEdit object from database
-    project = Project.get_project_by_id(project_id)
-
+    project = Project.get_project(project_id)
     if not project:
         return jsonify({'error': 'project_id not found'}), 404
 
-    state = load_project_state(project)
-    filename = state.file.filename
-
     # Call function in caliban.py to save data file and send to S3 bucket
+    filename = project.metadata.filename
     if is_trk_file(filename):
         state.action_save_track()
     elif is_npz_file(filename):
@@ -101,14 +97,9 @@ def action(project_id, action_type, frame):
         project = Project.get_project(project_id)
         if not project:
             return jsonify({'error': 'project_id not found'}), 404
-        # Get frames from database
-        label_frame = LabelFrame.get_frame(project_id, frame)
-        raw_frame = RawFrame.get_frame(project_id, frame)
-        # Get metadata from project
-        metadata = project.metadata_
 
         # Create Edit object to perform action
-        edit = get_edit(metadata, label_frame, raw_frame)
+        edit = get_edit(project, frame)
 
         # Perform edit operation on the data file
         edit.action(action_type, info)
@@ -342,12 +333,12 @@ def shortcut(filename):
         settings=settings)
 
 
-def get_edit(metadata, label_frame, raw_frame=None):
+def get_edit(project, frame_id):
     """Factory for Edit objects"""
-    filename = metadata.filename
+    filename = project.metadata_.filename
     if is_npz_file(filename):
-        return ZStackEdit(metadata, label_frame, raw_frame)
+        return ZStackEdit(project, frame_id)
     elif is_trk_file(filename):
         # don't use RGB mode with track files
-        return TrackEdit(metadata, label_frame, raw_frame)
-    return BaseEdit(metadata, label_frame, raw_frame)
+        return TrackEdit(project, frame_id)
+    return BaseEdit(project, frame_id)
