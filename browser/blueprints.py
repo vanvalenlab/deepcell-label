@@ -96,7 +96,7 @@ def action(project_id, action_type, frame):
         project = Project.get_project(project_id)
         if not project:
             return jsonify({'error': 'project_id not found'}), 404
-        edit = get_edit(project, frame)
+        edit = get_edit(project)
         edit.action(action_type, info)
         payload = edit.make_payload()
         edit.persist_changes()  # Must explicitly copy PickleType columns to persist
@@ -308,12 +308,12 @@ def shortcut(filename):
         settings=settings)
 
 
-def get_edit(project, frame_id):
+def get_edit(project):
     """Factory for Edit objects"""
     filename = project.metadata_.filename
     if is_npz_file(filename):
-        return ZStackEdit(project, frame_id)
+        return ZStackEdit(project)
     elif is_trk_file(filename):
         # don't use RGB mode with track files
-        return TrackEdit(project, frame_id)
-    return BaseEdit(project, frame_id)
+        return TrackEdit(project)
+    return BaseEdit(project)
