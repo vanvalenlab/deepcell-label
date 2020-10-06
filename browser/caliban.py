@@ -34,7 +34,7 @@ class BaseEdit(object):
     to redraw them on the front-end app.
     """
 
-    def __init__(self, metadata, frame_id):
+    def __init__(self, project, frame_id):
         self.project = project
         self.metadata = project.metadata_
         self.frame_id = frame_id
@@ -410,8 +410,8 @@ class BaseEdit(object):
 
 class ZStackEdit(BaseEdit):
 
-    def __init__(self, metadata, frame, raw_frame=None):
-        super(ZStackEdit, self).__init__(metadata, frame, raw_frame)
+    def __init__(self, project, frame_id):
+        super(ZStackEdit, self).__init__(project, frame_id)
 
     def action_new_cell_stack(self, label):
         """
@@ -582,8 +582,8 @@ class ZStackEdit(BaseEdit):
 
 
 class TrackEdit(BaseEdit):
-    def __init__(self, metadata, label_frames, raw_frames=None):
-        super(ZStackEdit, self).__init__(metadata, label_frames, raw_frames)
+    def __init__(self, project, frame_id):
+        super(ZStackEdit, self).__init__(project, frame_id)
 
         # TODO: do we need this?
         # self.scale_factor = 2
