@@ -93,10 +93,11 @@ def action(project_id, action_type, frame):
         del info['frame']
 
     try:
-        # Get project and current label frame from database
+        # Get project from database
         project = Project.get_project(project_id)
         if not project:
             return jsonify({'error': 'project_id not found'}), 404
+        metadata = project.metadata_
 
         # Create Edit object to perform action
         edit = get_edit(project, frame)
@@ -128,7 +129,7 @@ def action(project_id, action_type, frame):
             img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
         if y_changed:
             # Copy PickleType column so db commits changes
-            label_frame.frame = label_frame.frame.copy()
+            edit.frame = edit.frame.copy()
             label_png = project.get_label_png()
             img_payload['segmented'] = f'data:image/png;base64,{encode(label_png)}'
             img_payload['seg_arr'] = project.get_label_arr()
