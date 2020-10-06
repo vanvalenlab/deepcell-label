@@ -93,52 +93,23 @@ def action(project_id, action_type, frame):
         del info['frame']
 
     try:
-        # Get project from database
         project = Project.get_project(project_id)
         if not project:
             return jsonify({'error': 'project_id not found'}), 404
-        metadata = project.metadata_
-
-        # Create Edit object to perform action
         edit = get_edit(project, frame)
-
-        # Perform edit operation on the data file
         edit.action(action_type, info)
+        payload = edit.make_payload()
+        edit.persist_changes()  # Must explicitly copy PickleType columns to persist
 
     except Exception as e:  # TODO: more error handling to identify problem
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
-    tracks = False # Default payload
-    if edit.info_changed:
-        tracks = metadata.readable_tracks
-        # Copy PickleType column so db commits changes
-        metadata.cell_info = metadata.cell_info.copy()
-        metadata.cell_ids = metadata.cell_ids.copy()
-
-    img_payload = False # Default payload
-    if edit.x_changed or edit.y_changed:
-        encode = lambda x: base64.encodebytes(x.read()).decode()
-        img_payload = {}
-        if edit.x_changed:
-            raw_png = project.get_raw_png()
-            img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
-        if edit.y_changed:
-            # Copy PickleType column so db commits changes
-            edit.frame = edit.frame.copy()
-            label_png = project.get_label_png()
-            img_payload['segmented'] = f'data:image/png;base64,{encode(label_png)}'
-            img_payload['seg_arr'] = project.get_label_arr()
-        if edit.multi_changed:
-            # Copy every frame so db commits changes in all frames
-            for label_frame in project.label_frames:
-                label_frame.frame = label_frame.frame.copy()
-    db.session.commit()
     current_app.logger.debug('Action "%s" for project "%s" finished in %s s.',
                              action_type, project_id,
                              timeit.default_timer() - start)
 
-    return jsonify({'tracks': tracks, 'imgs': img_payload})
+    return jsonify(payload)
 
 
 @bp.route('/frame/<int:frame>/<int:project_id>')

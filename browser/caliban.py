@@ -407,6 +407,44 @@ class BaseEdit(object):
         if np.any(np.isin(self.frame[..., self.feature], label)):
             self.add_cell_info(add_label=label, frame=self.frame_id)
 
+    def make_payload(self):
+        """
+        Creates a payload to send to the front-end after completing an action.
+        """
+        tracks = False # Default tracks payload
+        if self.info_changed:
+            tracks = metadata.readable_tracks
+
+        img_payload = False # Default image payload
+        if self.x_changed or self.y_changed:
+            encode = lambda x: base64.encodebytes(x.read()).decode()
+            img_payload = {}
+            if self.x_changed:
+                raw_png = self.project.get_raw_png()
+                img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
+            if self.y_changed:
+                label_png = self.project.get_label_png()
+                img_payload['segmented'] = f'data:image/png;base64,{encode(label_png)}'
+                img_payload['seg_arr'] = self.project.get_label_arr()
+        
+        return {'tracks': tracks, 'imgs': img_payload}
+
+    def persist_changes(self):
+        """
+        Copy the PickleType columns that have changed to persist them.
+        """
+        if self.info_changed:
+            self.metadata.cell_info = self.metadata.cell_info.copy()
+            self.metadata.cell_ids = self.metadata.cell_ids.copy()
+        if self.multi_changed:
+            for label_frame in self.project.label_frames:
+                    label_frame.frame = label_frame.frame.copy()
+        elif self.y_changed:
+            self.frame = edit.frame.copy()
+        db.session.commit()
+                
+
+
 
 class ZStackEdit(BaseEdit):
 
