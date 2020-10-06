@@ -133,6 +133,10 @@ def action(project_id, action_type, frame):
             label_png = project.get_label_png()
             img_payload['segmented'] = f'data:image/png;base64,{encode(label_png)}'
             img_payload['seg_arr'] = project.get_label_arr()
+        if multi_changed:
+            # Copy every frame so db commits changes in all frames
+            for label_frame in project.label_frames:
+                label_frame.frame = label_frame.frame.copy()
     db.session.commit()
     current_app.logger.debug('Action "%s" for project "%s" finished in %s s.',
                              action_type, project_id,
