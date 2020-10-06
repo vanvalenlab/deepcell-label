@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import base64
 import io
 import json
 import os
@@ -21,6 +22,7 @@ from skimage.measure import regionprops
 from skimage.segmentation import find_boundaries
 
 from imgutils import pngify
+from models import db
 
 
 class BaseEdit(object):
@@ -39,7 +41,7 @@ class BaseEdit(object):
         self.metadata = project.metadata_
         self.frame_id = frame_id
         self.frame = project.label_frames[frame_id].frame # Numpy array from LabelFrame row
-        self.raw_frame = project.raw_frame[frame_id].frame # Numpy array from RawFrame row
+        self.raw_frame = project.raw_frames[frame_id].frame # Numpy array from RawFrame row
 
         # Unpack some info from metadata for easy access
         self.feature = self.metadata.feature
@@ -413,7 +415,7 @@ class BaseEdit(object):
         """
         tracks = False # Default tracks payload
         if self.info_changed:
-            tracks = metadata.readable_tracks
+            tracks = self.metadata.readable_tracks
 
         img_payload = False # Default image payload
         if self.x_changed or self.y_changed:
@@ -440,7 +442,7 @@ class BaseEdit(object):
             for label_frame in self.project.label_frames:
                     label_frame.frame = label_frame.frame.copy()
         elif self.y_changed:
-            self.frame = edit.frame.copy()
+            self.frame = self.frame.copy()
         db.session.commit()
                 
 
@@ -570,7 +572,7 @@ class ZStackEdit(BaseEdit):
 
         # store npz file object in bucket/path
         s3 = self.project._get_s3_client()
-        s3.upload_fileobj(store_npz, self.metdata.output_bucket, self.metadata.path)
+        s3.upload_fileobj(store_npz, self.metadata.output_bucket, self.metadata.path)
 
     def add_cell_info(self, add_label, frame):
         """Add a cell to the npz"""
@@ -621,7 +623,7 @@ class ZStackEdit(BaseEdit):
 
 class TrackEdit(BaseEdit):
     def __init__(self, project, frame_id):
-        super(ZStackEdit, self).__init__(project, frame_id)
+        super(TrackEdit, self).__init__(project, frame_id)
 
         # TODO: do we need this?
         # self.scale_factor = 2
