@@ -49,9 +49,9 @@ class BaseEdit(object):
         self.width = self.metadata.width
 
         # Flags to report whether we need to update (in database) or redraw (on front-end)
-        self._x_changed = False # Only used to redraw; raw images never change
+        self.x_changed = False # Only used to redraw; raw images never change
         # Only tracks if PickleType columns change, as other columns update automatically
-        self._y_changed = False # PickleType columns: frame
+        self.y_changed = False # PickleType columns: frame
         self.info_changed = False # PickleType columns: colormap, cell_ids, cell_info
         # Track whether multiple frames have changed
         self.multi_changed = False
@@ -79,7 +79,7 @@ class BaseEdit(object):
             raise ValueError('Channel {} is outside of range [0, {}].'.format(
                 channel, self.metadata.numChannels - 1))
         self.metadata.channel = channel
-        self._x_changed = True
+        self.x_changed = True
 
     def action_change_feature(self, feature):
         """
@@ -95,7 +95,7 @@ class BaseEdit(object):
             raise ValueError('Feature {} is outside of range [0, {}].'.format(
                 feature, self.metadata.numFeatures - 1))
         self.metadata.feature = feature
-        self._y_changed = True
+        self.y_changed = True
 
     def action_change_frame(self, frame):
         """
@@ -111,8 +111,8 @@ class BaseEdit(object):
             raise ValueError('Frame {} is outside of range [0, {}].'.format(
                 frame, self.metadata.numFrames - 1))
         self.metadata.frame = frame
-        self._x_changed = True
-        self._y_changed = True
+        self.x_changed = True
+        self.y_changed = True
 
     def add_cell_info(self, add_label, frame):
         raise NotImplementedError('add_cell_info is not implemented in BaseEdit')
@@ -172,7 +172,7 @@ class BaseEdit(object):
         self.frame[..., self.feature] = ann_img
 
         # TODO: does info change?
-        self._y_changed = self.info_changed = True
+        self.y_changed = self.info_changed = True
 
     def action_handle_draw(self, trace, target_value, brush_value, brush_size, erase):
         """
@@ -221,7 +221,7 @@ class BaseEdit(object):
 
         # check for image change, in case pixels changed but no new or del cell
         comparison = np.where(annotated != self.frame[..., self.feature])
-        self._y_changed = np.any(comparison)
+        self.y_changed = np.any(comparison)
         # if info changed, self.info_changed set to true with info helper functions
 
         self.frame[..., self.feature] = annotated
@@ -246,7 +246,7 @@ class BaseEdit(object):
         stray_pixels = np.logical_and(np.invert(contig_cell), img_ann == label)
         img_trimmed = np.where(stray_pixels, 0, img_ann)
 
-        self._y_changed = np.any(np.where(img_trimmed != img_ann))
+        self.y_changed = np.any(np.where(img_trimmed != img_ann))
         self.frame[..., self.feature] = img_trimmed
 
     def action_fill_hole(self, label, x_location, y_location):
@@ -266,7 +266,7 @@ class BaseEdit(object):
         self.frame[..., self.feature] = filled_img_ann
 
         # never changes info but always changes annotation
-        self._y_changed = True
+        self.y_changed = True
 
     def action_flood_contiguous(self, label, x_location, y_location):
         """Flood fill a cell with a unique new label.
@@ -483,7 +483,7 @@ class ZStackEdit(BaseEdit):
         self.metadata.cell_info[self.feature][label_1]['frames'] = cell_info_2['frames']
         self.metadata.cell_info[self.feature][label_2]['frames'] = cell_info_1['frames']
 
-        self._y_changed = self.info_changed = self.multi_changed = True
+        self.y_changed = self.info_changed = self.multi_changed = True
 
     # TODO: access previous frame
     def action_predict_single(self):
@@ -499,10 +499,10 @@ class ZStackEdit(BaseEdit):
 
             # check if image changed
             comparison = np.where(next_img != updated_slice)
-            self._y_changed = np.any(comparison)
+            self.y_changed = np.any(comparison)
 
             # if the image changed, update self.annotated and remake cell info
-            if self._y_changed:
+            if self.y_changed:
                 self.frame[..., self.feature] = updated_slice
                 self.create_cell_info(feature=self.feature)
 
@@ -518,7 +518,7 @@ class ZStackEdit(BaseEdit):
             self.project.label_frames[frame_id + 1].frame[..., self.feature] = predicted_next
 
         # remake cell_info dict based on new annotations
-        self._y_changed = True
+        self.y_changed = True
         self.multi_changed = True
         self.create_cell_info(feature=self.feature)
 
@@ -555,7 +555,7 @@ class ZStackEdit(BaseEdit):
                                                              add_label)
 
         # if adding cell, frames and info have necessarily changed
-        self._y_changed = self.info_changed = True
+        self.y_changed = self.info_changed = True
 
     def del_cell_info(self, del_label, frame):
         """Remove a cell from the npz"""
@@ -573,7 +573,7 @@ class ZStackEdit(BaseEdit):
             self.metadata.cell_ids[self.feature] = np.delete(ids, np.where(ids == np.int64(del_label)))
 
         # if deleting cell, frames and info have necessarily changed
-        self._y_changed = self.info_changed = True
+        self.y_changed = self.info_changed = True
 
     def create_cell_info(self, feature):
         """Make or remake the entire cell info dict"""
@@ -637,7 +637,7 @@ class TrackEdit(BaseEdit):
 
         self.metadata.cell_ids[0] = np.append(self.metadata.cell_ids[0], new_label)
 
-        self._y_changed = self.info_changed = self.multi_changed = True
+        self.y_changed = self.info_changed = self.multi_changed = True
 
     def action_set_parent(self, label_1, label_2):
         """
@@ -695,7 +695,7 @@ class TrackEdit(BaseEdit):
             except ValueError:
                 pass
 
-        self._y_changed = self.info_changed = self.multi_changed = True
+        self.y_changed = self.info_changed = self.multi_changed = True
 
     def action_swap_tracks(self, label_1, label_2):
         """
@@ -723,7 +723,7 @@ class TrackEdit(BaseEdit):
         relabel(label_2, label_1)
         relabel(-1, label_2)
 
-        self._y_changed = self.info_changed = self.multi_changed = True
+        self.y_changed = self.info_changed = self.multi_changed = True
 
     def action_save_track(self):
         # clear any empty tracks before saving file
@@ -784,7 +784,7 @@ class TrackEdit(BaseEdit):
             self.metadata.cell_ids[self.feature] = np.append(self.metadata.cell_ids[self.feature],
                                                              add_label)
 
-        self._y_changed = self.info_changed = True
+        self.y_changed = self.info_changed = True
 
     def del_cell_info(self, del_label, frame):
         """Remove a cell from the trk"""
@@ -812,7 +812,7 @@ class TrackEdit(BaseEdit):
                 if track['parent'] == del_label:
                     track['parent'] = None
 
-        self._y_changed = self.info_changed = True
+        self.y_changed = self.info_changed = True
 
 
 def predict_zstack_cell_ids(img, next_img, threshold=0.1):
