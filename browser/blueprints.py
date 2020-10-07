@@ -52,6 +52,7 @@ def handle_exception(error):
     return jsonify({'message': str(error)}), 500
 
 
+
 @bp.route('/upload_file/<int:project_id>', methods=['GET', 'POST'])
 def upload_file(project_id):
     '''Upload .trk/.npz data file to AWS S3 bucket.'''
@@ -61,13 +62,14 @@ def upload_file(project_id):
         return jsonify({'error': 'project_id not found'}), 404
 
     # Call function in caliban.py to save data file and send to S3 bucket
+    edit = get_edit(project)
     filename = project.metadata.filename
     if is_trk_file(filename):
-        state.action_save_track()
+        edit.action_save_track()
     elif is_npz_file(filename):
-        state.action_save_zstack()
+        edit.action_save_zstack()
 
-    # add "finished" timestamp and null out state longblob
+    # add "finished" timestamp and null out PickleType columns
     Project.finish_project(project)
 
     current_app.logger.debug('Uploaded file "%s" for project "%s" in %s s.',
@@ -99,7 +101,7 @@ def action(project_id, action_type, frame):
         edit = get_edit(project)
         edit.action(action_type, info)
         payload = edit.make_payload()
-        edit.persist_changes()  # Must explicitly copy PickleType columns to persist
+        edit.persist_pickles()  # Must explicitly copy PickleType columns to persist in database
 
     except Exception as e:  # TODO: more error handling to identify problem
         traceback.print_exc()

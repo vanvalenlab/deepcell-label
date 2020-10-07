@@ -132,7 +132,7 @@ class Project(db.Model):
         return project
 
     @staticmethod
-    def create_project(filename, input_bucket, output_bucket, path, rgb):
+    def create_project(filename, input_bucket, output_bucket, path, rgb=False):
         """Create a new project."""
         start = timeit.default_timer()
         new_project = Project(filename, input_bucket, output_bucket, path, rgb=rgb)
@@ -148,8 +148,15 @@ class Project(db.Model):
         start = timeit.default_timer()
         project.lastUpdate = project.updatedAt
         project.finished = db.func.current_timestamp()
+        # Set PickleType columns in metadata_ to None
         project.metadata_.finish()
-        # TODO: finish frames
+        # Set PickleType columns in frames to None
+        for label_frame in project.label_frames:
+            label_frame.finish()
+        for raw_frame in project.raw_frames:
+            raw_frame.finish()
+        for rgb_frame in project.rgb_frames:
+            rgb_frame.finish()
         db.session.commit()  # commit the changes
         logger.debug('Finished project with ID = "%s" in %ss.',
                      project.id, timeit.default_timer() - start)
@@ -215,6 +222,14 @@ class Metadata(db.Model):
     __tablename__ = 'metadata'
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), 
                            primary_key=True, nullable=False)
+    createdAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now())
+    updatedAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now(),
+                          onupdate=db.func.current_timestamp())
+    finished = db.Column(db.TIMESTAMP)
+    numUpdates = db.Column(db.Integer, nullable=False, default=0)
+    firstUpdate = db.Column(db.TIMESTAMP)
+    lastUpdate = db.Column(db.TIMESTAMP)
+    
     # Project metadata
     filename = db.Column(db.Text, nullable=False)
     path = db.Column(db.Text, nullable=False)
@@ -323,40 +338,17 @@ class Metadata(db.Model):
         else:
             max_label = int(np.max(self.cell_ids[self.feature]))
         return max_label
+    
+    def update(self):
+        self.cell_ids = self.cell_ids.copy()
+        self.cell_info = self.cell_info.copy()
 
-    @staticmethod
-    def get_metadata(project_id):
-        """
-        Return the metadata from the given project.
-
-        Args:
-            project_id (int): project that the metadata belongs to
-        """
-        start = timeit.default_timer()
-        metadata = Metadata.query.filter_by(project_id=project_id).first()
-        logger.debug('Got metadata from project %s in %ss.',
-                     project_id, timeit.default_timer() - start)
-        return metadata
-
-    @staticmethod
-    def update_metadata(project_id, metadata):
-        """
-        Update the metadata in the database.
-        """
-        start = timeit.default_timer()
-        db.session.commit()
-        logger.debug('Updated metadata in project %s in %ss.',
-                     metadata.project_id, timeit.default_timer() - start)
-
-    @staticmethod
-    def finish_metadata(metadata):
-        """Complete a project and set its frames to null."""
-        start = timeit.default_timer()
-        metadata.cell_ids = None
-        metadata.cell_info = None
-        db.session.commit()  # commit the changes
-        logger.debug('Finished metadata from project %s in %ss.',
-                     metadata.project_id, timeit.default_timer() - start)
+    def finish(self):
+        """Complete metadata and set its PickleType column to null."""
+        self.lastUpdate = self.updatedAt
+        self.finished = db.func.current_timestamp()
+        self.cell_ids = None
+        self.cell_info = None
 
 
 class RawFrame(db.Model):
@@ -374,21 +366,12 @@ class RawFrame(db.Model):
         self.project_id = project_id
         self.frame_id = frame_id
         self.frame = frame
-
-    @staticmethod
-    def get_frame(project_id, frame_id):
+    
+    def finish(self):
         """
-        Return the given frame from the given project.
-
-        Args:
-            project_id (int): project that the frame belongs to
-            frame_id (int): index of frame to return
+        Finish the frame by setting its PickleType column to null.
         """
-        start = timeit.default_timer()
-        frame = RawFrame.query.filter_by(project_id=project_id, frame_id=frame_id).first()
-        logger.debug('Got raw frame %s from project %s in %ss.',
-                     frame_id, project_id, timeit.default_timer() - start)
-        return frame
+        self.frame = None
 
 class RGBFrame(db.Model):
     """
@@ -405,21 +388,10 @@ class RGBFrame(db.Model):
         self.project_id = project_id
         self.frame_id = frame_id
         self.frame = self.reduce_to_RGB(frame)
-
-    @staticmethod
-    def get_frame(project_id, frame_id):
-        """
-        Return the given frame from the given project.
-
-        Args:
-            project_id (int): project that the frame belongs to
-            frame_id (int): index of frame to return
-        """
-        start = timeit.default_timer()
-        frame = RGBFrame.query.filter_by(project_id=project_id, frame_id=frame_id).first()
-        logger.debug('Got RGB frame %s from project %s in %ss.',
-                     frame_id, project_id, timeit.default_timer() - start)
-        return frame
+    
+    def finish(self):
+        """Finish a frame by setting its frame to null."""
+        self.frame = None
 
     def rescale_95(self, frame):
         """
@@ -522,51 +494,20 @@ class LabelFrame(db.Model):
         self.frame_id = frame_id
         self.frame = frame
 
-    @staticmethod
-    def get_frame(project_id, frame_id):
-        """
-        Return the given frame from the given project.
-
-        Args:
-            project_id (int): project that the frame belongs to
-            frame_id (int): index of frame to return
-        """
-        start = timeit.default_timer()
-        frame = LabelFrame.query.filter_by(project_id=project_id, frame_id=frame_id).first()
-        logger.debug('Got label frame %s from project %s in %ss.',
-                     frame_id, project_id, timeit.default_timer() - start)
-        return frame
-
-
-    @staticmethod
-    def update_frame(frame, caliban_frame):
-        """
-        Update a frame's data.
-
-        Args:
-            frame (LabelFrame): row in the labelframes table to update
-            caliban_frame (CalibanFrame): updated object to write to database
-        """
-        start = timeit.default_timer()
-        if not frame.firstUpdate:
-            frame.firstUpdate = db.func.current_timestamp()
-
-        frame.frame = caliban_frame.frame
-        frame.numUpdates += 1
-
-        db.session.commit()
-        logger.debug('Updated frame %s in project %s in %ss.',
-                     frame.frame_index, frame.project_id, timeit.default_timer() - start)
-
-    def finish_frame(self):
-        """Complete a frame and set its frame data to null."""
-        start = timeit.default_timer()
+    def finish(self):
+        """Finish a frame by setting its frame to null."""
         self.lastUpdate = self.updatedAt
         self.finished = db.func.current_timestamp()
         self.frame = None
-        db.session.commit()  # commit the changes
-        logger.debug('Finished frame %s in project %s in %ss.',
-                     self.frame_index, self.project_id, timeit.default_timer() - start)
+
+    def update(self):
+        """
+        Update a frame's data.
+        """
+        if not self.firstUpdate:
+            self.firstUpdate = db.func.current_timestamp()
+        self.frame = self.frame.copy()
+        self.numUpdates += 1
 
 
 def consecutive(data, stepsize=1):
