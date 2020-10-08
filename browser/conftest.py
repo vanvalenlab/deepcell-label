@@ -107,7 +107,10 @@ def zstack_project(app, mocker, request):
             data['annotated'] = request.param.copy()
             return data
         mocker.patch('models.Project.load', load)
-        return Project('filename.npz', 'input_bucket', 'output_bucket', 'path')
+        project = Project('filename.npz', 'input_bucket', 'output_bucket', 'path')
+        db_session.add(project)
+        db_session.commit()
+        return project
 
 
 @pytest.fixture(params=TEST_LABELS, ids=TEST_IDS)
@@ -132,7 +135,10 @@ def track_project(app, mocker, request):
             data['lineages'] = lineages
             return data
         mocker.patch('models.Project.load', load)
-        return Project('filename.trk', 'input_bucket', 'output_bucket', 'path')
+        project = Project('filename.trk', 'input_bucket', 'output_bucket', 'path')
+        db_session.add(project)
+        db_session.commit()
+        return project
 
 
 @pytest.fixture(params=[
@@ -140,7 +146,4 @@ def track_project(app, mocker, request):
     lazy_fixture('track_project'),
 ])
 def project(request, db_session):
-    row = request.param
-    db_session.add(row)
-    db_session.commit()
-    return row
+    return request.param
