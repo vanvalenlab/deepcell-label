@@ -52,7 +52,6 @@ def handle_exception(error):
     return jsonify({'message': str(error)}), 500
 
 
-
 @bp.route('/upload_file/<int:project_id>', methods=['GET', 'POST'])
 def upload_file(project_id):
     '''Upload .trk/.npz data file to AWS S3 bucket.'''
@@ -132,7 +131,7 @@ def get_frame(frame, project_id):
     raw_png = project.get_raw_png()
     label_png = project.get_label_png()
     label_arr = project.get_label_arr()
-    
+
     # Create payload
     encode = lambda x: base64.encodebytes(x.read()).decode()
     payload = {
@@ -182,7 +181,7 @@ def load(filename):
     metadata_start = timeit.default_timer()
     metadata = project.metadata_
     current_app.logger.debug('Got metadata for "%s" in %s s.',
-                                 filename, timeit.default_timer() - metadata_start)
+                             filename, timeit.default_timer() - metadata_start)
 
     if is_trk_file(filename):
         current_app.logger.debug('Loaded trk file "%s" in %s s.',

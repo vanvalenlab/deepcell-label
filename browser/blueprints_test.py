@@ -41,13 +41,6 @@ class DummyState(io.BytesIO):
     def get_frame(self, frame, raw=False):
         return io.BytesIO()
 
-@pytest.fixture
-def mock_load_project(mocker):
-    def load(self, *args):
-        return {'raw': np.zeros((1, 1, 1, 1)),
-                'annotated': np.zeros((1, 1, 1, 1))}
-    mocker.patch('models.Project.load', load)
-
 
 def test_health(client, mocker):
     response = client.get('/health')
@@ -65,7 +58,7 @@ def test_upload_file(mocker, client):
         return {'raw': np.zeros((1, 1, 1, 1)),
                 'annotated': np.zeros((1, 1, 1, 1)),
                 'tracked': np.zeros((1, 1, 1, 1)),
-                'lineages': {0 : {}}}
+                'lineages': {0: {}}}
     mocker.patch('blueprints.Project.load', load)
     # Mock out upload to S3 bucket
     mocker.patch('blueprints.TrackEdit.action_save_track', lambda *a: None)
@@ -100,13 +93,13 @@ def test_upload_file(mocker, client):
     assert response.status_code == 302
 
 
-def test_get_frame(mocker,client):
+def test_get_frame(mocker, client):
     # Mock out load from S3 bucket
     def load(self, *args):
         return {'raw': np.zeros((1, 1, 1, 1)),
                 'annotated': np.zeros((1, 1, 1, 1)),
                 'tracked': np.zeros((1, 1, 1, 1)),
-                'lineages': {0 : {}}}
+                'lineages': {0: {}}}
     mocker.patch('blueprints.Project.load', load)
 
     response = client.get('/frame/0/999999')
@@ -143,12 +136,13 @@ def test_load(client, mocker):
     caliban_file = '{}__{}__{}__{}__{}'.format(
         in_bucket, out_bucket, 'subfolder1', 'subfolder2', filename
     )
+
     # Mock load from S3 bucket
     def load(self, *args):
         return {'raw': np.zeros((1, 1, 1, 1)),
                 'annotated': np.zeros((1, 1, 1, 1)),
                 'tracked': np.zeros((1, 1, 1, 1)),
-                'lineages': {0 : {}}}
+                'lineages': {0: {}}}
     mocker.patch('blueprints.Project.load', load)
 
     # TODO: correctness tests

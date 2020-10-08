@@ -95,6 +95,7 @@ TEST_IDS = ['empty', 'full1', 'iden', 'tril',
 TEST_LABELS += [repeat_feature(np.zeros(RES, dtype=np.int16), FEATURES)]
 TEST_IDS += ['singleframe']
 
+
 @pytest.fixture(params=TEST_LABELS, ids=TEST_IDS)
 def zstack_project(app, mocker, request, db_session):
     with app.app_context():
@@ -126,11 +127,11 @@ def track_project(app, mocker, request, db_session):
             # Tracked files should only have one feature
             data['tracked'] = request.param[..., [0]].copy()
             lineages = [{label: {'frame_div': None,
-                                'daughters': [],
-                                'frames': list(range(FRAMES)),  # All labels are in all frames
-                                'label': label,
-                                'capped': False,
-                                'parent': None}
+                                 'daughters': [],
+                                 'frames': list(range(FRAMES)),  # All labels are in all frames
+                                 'label': label,
+                                 'capped': False,
+                                 'parent': None}
                         for label in np.unique(request.param) if label != 0}]
             data['lineages'] = lineages
             return data

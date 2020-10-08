@@ -33,11 +33,12 @@ db = SQLAlchemy()  # pylint: disable=C0103
 @compiles(db.PickleType, "mysql")
 def compile_pickle_mysql(type_, compiler, **kw):
     """
-    Replaces default BLOB with LONGBLOB for PickleType columns on MySQL backend. 
+    Replaces default BLOB with LONGBLOB for PickleType columns on MySQL backend.
     BLOB (64 kB) truncates pickled objects, while LONGBLOB (4 GB) stores it in full.
     TODO: change to MEDIUMBLOB (16 MB)?
     """
     return "LONGBLOB"
+
 
 class Project(db.Model):
     """Project table definition."""
@@ -74,25 +75,26 @@ class Project(db.Model):
 
         # Create metadata
         start = timeit.default_timer()
-        self.metadata_ = Metadata(self.id, filename, path, output_bucket, raw, annotated, trial, rgb)
+        self.metadata_ = Metadata(self.id, filename, path, output_bucket,
+                                  raw, annotated, trial, rgb)
         current_app.logger.debug('Created metadata for %s in %ss.',
                                  filename, timeit.default_timer() - start)
 
         # Create frames from raw, RGB, and labeled images
         start = timeit.default_timer()
-        self.raw_frames = [RawFrame(self.id, i, frame) 
+        self.raw_frames = [RawFrame(self.id, i, frame)
                            for i, frame in enumerate(raw)]
         current_app.logger.debug('Created raw frames for %s in %ss.',
-            filename, timeit.default_timer() - start)
+                                 filename, timeit.default_timer() - start)
 
         start = timeit.default_timer()
         self.rgb_frames = [RGBFrame(self.id, i, frame)
                            for i, frame in enumerate(raw)]
         current_app.logger.debug('Created RGB frames for %s in %ss.',
-            filename, timeit.default_timer() - start)
+                                 filename, timeit.default_timer() - start)
 
         start = timeit.default_timer()
-        self.label_frames = [LabelFrame(self.id, i, frame) 
+        self.label_frames = [LabelFrame(self.id, i, frame)
                              for i, frame in enumerate(annotated)]
         current_app.logger.debug('Created label frames for %s in %ss.',
                                  filename, timeit.default_timer() - start)
@@ -103,7 +105,7 @@ class Project(db.Model):
     @property
     def label_array(self):
         return np.array([frame.frame for frame in self.label_frames])
-    
+
     @property
     def raw_array(self):
         return np.array([frame.frame for frame in self.raw_frames])
@@ -139,7 +141,7 @@ class Project(db.Model):
         db.session.add(new_project)
         db.session.commit()
         current_app.logger.debug('Created new project with ID = "%s" in %ss.',
-                     new_project.id, timeit.default_timer() - start)
+                                 new_project.id, timeit.default_timer() - start)
         return new_project
 
     @staticmethod
@@ -181,19 +183,19 @@ class Project(db.Model):
         label_frame = self.label_frames[metadata.frame]
         label_arr = label_frame.frame[..., metadata.feature]
         label_png = pngify(imgarr=np.ma.masked_equal(label_arr, 0),
-                            vmin=0,
-                            vmax=metadata.get_max_label(),
-                            cmap=metadata.colormap)
+                           vmin=0,
+                           vmax=metadata.get_max_label(),
+                           cmap=metadata.colormap)
         return label_png
 
     def get_raw_png(self):
-        """        
+        """
         Returns:
             BytesIO: contains the current raw frame as a .png
         """
         metadata = self.metadata_
         # RGB png
-        if metadata.rgb: 
+        if metadata.rgb:
             raw_frame = self.rgb_frames[metadata.frame]
             raw_arr = raw_frame.frame
             raw_png = pngify(imgarr=raw_arr,
@@ -205,9 +207,9 @@ class Project(db.Model):
         raw_frame = self.raw_frames[metadata.frame]
         raw_arr = raw_frame.frame[..., metadata.channel]
         raw_png = pngify(imgarr=raw_arr,
-                            vmin=0,
-                            vmax=None,
-                            cmap='cubehelix')
+                         vmin=0,
+                         vmax=None,
+                         cmap='cubehelix')
         return raw_png
 
 
@@ -219,7 +221,7 @@ class Metadata(db.Model):
     """
     # pylint: disable=E1101
     __tablename__ = 'metadata'
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), 
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
                            primary_key=True, nullable=False)
     createdAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now())
     updatedAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now(),
@@ -228,7 +230,7 @@ class Metadata(db.Model):
     numUpdates = db.Column(db.Integer, nullable=False, default=0)
     firstUpdate = db.Column(db.TIMESTAMP)
     lastUpdate = db.Column(db.TIMESTAMP)
-    
+
     # Project metadata
     filename = db.Column(db.Text, nullable=False)
     path = db.Column(db.Text, nullable=False)
@@ -337,7 +339,7 @@ class Metadata(db.Model):
         else:
             max_label = int(np.max(self.cell_ids[self.feature]))
         return max_label
-    
+
     def update(self):
         if not self.firstUpdate:
             self.firstUpdate = db.func.current_timestamp()
@@ -360,7 +362,8 @@ class RawFrame(db.Model):
     """
     # pylint: disable=E1101
     __tablename__ = 'rawframes'
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), primary_key=True, nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
+                           primary_key=True, nullable=False)
     frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
     frame = db.Column(db.PickleType)
     createdAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now())
@@ -369,12 +372,13 @@ class RawFrame(db.Model):
         self.project_id = project_id
         self.frame_id = frame_id
         self.frame = frame
-    
+
     def finish(self):
         """
         Finish the frame by setting its PickleType column to null.
         """
         self.frame = None
+
 
 class RGBFrame(db.Model):
     """
@@ -382,7 +386,8 @@ class RGBFrame(db.Model):
     """
     # pylint: disable=E1101
     __tablename__ = 'rgbframes'
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), primary_key=True, nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
+                           primary_key=True, nullable=False)
     frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
     frame = db.Column(db.PickleType)
     createdAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now())
@@ -391,7 +396,7 @@ class RGBFrame(db.Model):
         self.project_id = project_id
         self.frame_id = frame_id
         self.frame = self.reduce_to_RGB(frame)
-    
+
     def finish(self):
         """Finish a frame by setting its frame to null."""
         self.frame = None
@@ -418,9 +423,9 @@ class RGBFrame(db.Model):
         """
         Rescale first 6 raw channels individually and store in memory.
         The rescaled raw array is used subsequently for image display purposes.
-        
+
         Args: multi-channel frame to rescale
-        
+
         Returns:
             np.array: upto 6-channel rescaled image
         """
@@ -481,7 +486,8 @@ class LabelFrame(db.Model):
     """
     # pylint: disable=E1101
     __tablename__ = 'labelframes'
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), primary_key=True, nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
+                           primary_key=True, nullable=False)
     frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
     frame = db.Column(db.PickleType)
     createdAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now())
@@ -520,7 +526,7 @@ def consecutive(data, stepsize=1):
 def get_ann_key(filename):
     if is_trk_file(filename):
         return 'tracked'
-    return 'annotated'  # 'annotated' is the default key
+    return 'annotated'  # default key
 
 
 def get_load(filename):

@@ -30,7 +30,7 @@ class BaseEdit(object):
     Base class for editing frames in Caliban.
     Takes a project, performs an action, and updates the metadata.
     Lives only during a single action.
-    
+
     Maintains boolean flags y_changed and info_changed
     to track whether the label frame or the metadata have been changed, respectively.
     We use these flags to force these objects to update in the database and
@@ -41,16 +41,15 @@ class BaseEdit(object):
         self.project = project
         self.metadata = project.metadata_
 
-
         # Unpack some static info from metadata for easy access
         self.height = self.metadata.height
         self.width = self.metadata.width
 
         # Flags to report whether we need to update (in database) or redraw (on front-end)
-        self.x_changed = False # Only used to redraw; raw images never change
+        self.x_changed = False  # Only used to redraw; raw images never change
         # Only tracks if PickleType columns change, as other columns update automatically
-        self.y_changed = False # PickleType columns: frame
-        self.info_changed = False # PickleType columns: colormap, cell_ids, cell_info
+        self.y_changed = False  # PickleType columns: frame
+        self.info_changed = False  # PickleType columns: colormap, cell_ids, cell_info
         # Track whether multiple frames have changed
         self.multi_changed = False
 
@@ -61,7 +60,7 @@ class BaseEdit(object):
             ndarray: the current label frame
         """
         return self.project.label_frames[self.frame_id].frame
-    
+
     @property
     def raw_frame(self):
         """
@@ -69,7 +68,7 @@ class BaseEdit(object):
             ndarray: the current raw frame
         """
         return self.project.raw_frames[self.frame_id].frame
-    
+
     # Access dynamic metadata columns
     @property
     def frame_id(self):
@@ -94,7 +93,7 @@ class BaseEdit(object):
             int: index of the current channel
         """
         return self.metadata.channel
-    
+
     @property
     def scale_factor(self):
         """
@@ -235,7 +234,6 @@ class BaseEdit(object):
             erase (bool): sets target_value in trace area to 0 when True
         """
         annotated = np.copy(self.frame[..., self.feature])
- 
         in_original = np.any(np.isin(annotated, brush_value))
 
         annotated_draw = np.where(annotated == target_value, brush_value, annotated)
@@ -428,7 +426,7 @@ class BaseEdit(object):
 
         # pull out the selection portion of the raw frame
         predict_area = self.raw_frame.frame[top_edge:bottom_edge,
-                                left_edge:right_edge, self.channel]
+                                            left_edge:right_edge, self.channel]
 
         # triangle threshold picked after trying a few on one dataset
         # may not be the best threshold approach for other datasets!
@@ -444,11 +442,11 @@ class BaseEdit(object):
 
         # put prediction in without overwriting
         predict_area = self.frame[top_edge:bottom_edge,
-                                        left_edge:right_edge, self.feature]
+                                  left_edge:right_edge, self.feature]
         safe_overlay = np.where(predict_area == 0, ann_threshold, predict_area)
 
         self.frame[top_edge:bottom_edge,
-                         left_edge:right_edge, self.feature] = safe_overlay
+                   left_edge:right_edge, self.feature] = safe_overlay
 
         # don't need to update cell_info unless an annotation has been added
         if np.any(np.isin(self.frame[..., self.feature], label)):
@@ -458,11 +456,11 @@ class BaseEdit(object):
         """
         Creates a payload to send to the front-end after completing an action.
         """
-        tracks = False # Default tracks payload
+        tracks = False  # Default tracks payload
         if self.info_changed:
             tracks = self.metadata.readable_tracks
 
-        img_payload = False # Default image payload
+        img_payload = False  # Default image payload
         if self.x_changed or self.y_changed:
             encode = lambda x: base64.encodebytes(x.read()).decode()
             img_payload = {}
@@ -473,7 +471,7 @@ class BaseEdit(object):
                 label_png = self.project.get_label_png()
                 img_payload['segmented'] = f'data:image/png;base64,{encode(label_png)}'
                 img_payload['seg_arr'] = self.project.get_label_arr()
-        
+
         return {'tracks': tracks, 'imgs': img_payload}
 
     def persist_pickles(self):
@@ -488,8 +486,6 @@ class BaseEdit(object):
         elif self.y_changed:
             self.project.label_frames[self.frame_id].update()
         db.session.commit()
-                
-
 
 
 class ZStackEdit(BaseEdit):
@@ -508,7 +504,7 @@ class ZStackEdit(BaseEdit):
 
         # Replace old label with new in every frame until end
         for label_frame in self.project.label_frames[self.frame_id:]:
-            frame = label_frame.frame[..., self.metadata.feature] # Select right feature
+            frame = label_frame.frame[..., self.metadata.feature]  # Select right feature
             frame[frame == label] = new_label
             # Update metadata for this frame
             if new_label in frame:
@@ -549,7 +545,7 @@ class ZStackEdit(BaseEdit):
 
     def action_swap_all_frame(self, label_1, label_2):
         """
-        Replaces all label_1 pixels with label_2 across all frames 
+        Replaces all label_1 pixels with label_2 across all frames
         in the current feature and vice versa.
         """
 
@@ -654,7 +650,8 @@ class ZStackEdit(BaseEdit):
 
             # also remove from list of cell_ids
             ids = self.metadata.cell_ids[self.feature]
-            self.metadata.cell_ids[self.feature] = np.delete(ids, np.where(ids == np.int64(del_label)))
+            self.metadata.cell_ids[self.feature] = np.delete(ids,
+                                                             np.where(ids == np.int64(del_label)))
 
         # if deleting cell, frames and info have necessarily changed
         self.y_changed = self.info_changed = True

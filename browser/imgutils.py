@@ -23,6 +23,7 @@ def pngify(imgarr, vmin, vmax, cmap=None):
     out.seek(0)
     return out
 
+
 def add_outlines(frame):
     """
     Shows the frame with each label outlined with negative label values.

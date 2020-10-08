@@ -12,7 +12,6 @@ import caliban
 from imgutils import pngify
 
 
-
 @pytest.fixture()
 def zstack_edit(zstack_project):
     return caliban.ZStackEdit(zstack_project)
@@ -21,6 +20,7 @@ def zstack_edit(zstack_project):
 @pytest.fixture
 def track_edit(track_project):
     return caliban.TrackEdit(track_project)
+
 
 @pytest.fixture(params=[
     pytest.lazy_fixture('zstack_edit'),
@@ -173,7 +173,7 @@ def test_action_delete_mask(edit):
         edit.action_change_feature(feature)
         for cell in cell_ids[feature]:
             for frame in range(numFrames - 1):
-                edit.metadata.frame = frame 
+                edit.metadata.frame = frame
                 edit.action_delete_mask(cell)
                 assert cell not in edit.project.label_array[frame, ..., feature]
             edit.metadata.frame = numFrames - 1

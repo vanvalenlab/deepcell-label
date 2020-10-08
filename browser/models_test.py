@@ -9,20 +9,22 @@ import pytest
 import models
 from imgutils import pngify
 
+
 def test_project_init(project):
     """
     Test constructor for Project table.
     Checks for relationships to metadata and frames.
     """
-    # Check columns are made (except finished) 
+    # Check columns are made (except finished)
     assert project.id is not None
     assert project.createdAt is not None
-    assert project.finished is None # None until project is done
+    assert project.finished is None  # None until project is done
 
     # Check relationship columns have been made
     assert project.metadata_ is not None
     assert project.raw_frames is not None
     assert project.label_frames is not None
+
 
 def test_get_project(mocker, db_session):
     """
@@ -39,7 +41,7 @@ def test_get_project(mocker, db_session):
     mocker.patch('models.Project.load', load)
     project = models.Project.create_project(
         filename='filename',
-        input_bucket='input_bucket', 
+        input_bucket='input_bucket',
         output_bucket='output_bucket',
         path='path')
 
@@ -47,6 +49,7 @@ def test_get_project(mocker, db_session):
     valid_id = project.id
     found_project = models.Project.get_project(valid_id)
     assert found_project == project
+
 
 def test_get_label_array(project):
     """
@@ -62,6 +65,7 @@ def test_get_label_array(project):
     assert (label_frame[label_frame >= 0] == expected_frame[label_frame >= 0]).all()
     assert (label_frame[label_frame < 0] == -expected_frame[label_frame < 0]).all()
 
+
 def test_get_label_png(project):
     """
     Test label frame PNGs to send to the front-end.
@@ -71,8 +75,12 @@ def test_get_label_png(project):
     assert type(label_png) is io.BytesIO
     expected_frame = project.label_frames[metadata.frame].frame[..., metadata.feature]
     expected_frame = np.ma.masked_equal(expected_frame, 0)
-    expected_png = pngify(expected_frame, vmin=0, vmax=metadata.get_max_label(), cmap=metadata.colormap)
+    expected_png = pngify(expected_frame,
+                          vmin=0,
+                          vmax=metadata.get_max_label(),
+                          cmap=metadata.colormap)
     assert label_png.getvalue() == expected_png.getvalue()
+
 
 def test_get_raw_png(project):
     """
@@ -111,7 +119,7 @@ def test_finish_project(mocker, db_session):
     mocker.patch('models.Project.load', load)
     project = models.Project.create_project(
         filename='filename',
-        input_bucket='input_bucket', 
+        input_bucket='input_bucket',
         output_bucket='output_bucket',
         path='path')
 
@@ -123,14 +131,15 @@ def test_finish_project(mocker, db_session):
     assert found_project.metadata_.cell_ids is None
     assert found_project.metadata_.cell_info is None
     # test finish frames
-    for raw, rgb, label in zip(found_project.raw_frames, 
-                               found_project.rgb_frames, 
+    for raw, rgb, label in zip(found_project.raw_frames,
+                               found_project.rgb_frames,
                                found_project.label_frames):
         assert raw.frame is None
         assert rgb.frame is None
         assert label.frame is None
         assert label.finished is not None
         assert label.lastUpdate is not None
+
 
 def test_update_metadata(mocker, db_session):
     """Test updating metadata."""
@@ -140,7 +149,7 @@ def test_update_metadata(mocker, db_session):
     mocker.patch('models.Project.load', load)
     project = models.Project.create_project(
         filename='filename',
-        input_bucket='input_bucket', 
+        input_bucket='input_bucket',
         output_bucket='output_bucket',
         path='path')
 
@@ -157,10 +166,10 @@ def test_update_label_frame(mocker, db_session):
     mocker.patch('models.Project.load', load)
     project = models.Project.create_project(
         filename='filename',
-        input_bucket='input_bucket', 
+        input_bucket='input_bucket',
         output_bucket='output_bucket',
         path='path')
-    
+
     # Update label frame
     for label_frame in project.label_frames:
         label_frame.update()
@@ -172,22 +181,24 @@ def test_raw_frame_init(project):
     """Test constructing the raw frames for a project."""
     raw_frames = project.raw_frames
     for frame in raw_frames:
-        assert len(frame.frame.shape) == 3 # Height, width, channels
+        assert len(frame.frame.shape) == 3  # Height, width, channels
         assert frame.frame_id is not None
-    
+
+
 def test_rgb_frame_init(project):
     """Test constructing the RGB frames for a project."""
     rgb_frames = project.rgb_frames
     for frame in rgb_frames:
-        assert len(frame.frame.shape) == 3 # Height, width, features
+        assert len(frame.frame.shape) == 3  # Height, width, features
         assert frame.frame_id is not None
-        assert frame.frame.shape[2] == 3 # RGB channels
+        assert frame.frame.shape[2] == 3  # RGB channels
+
 
 def test_label_frame_init(project):
     """Test constructing the label frames for a project."""
     label_frames = project.label_frames
     for frame in label_frames:
-        assert len(frame.frame.shape) == 3 # Height, width, features
+        assert len(frame.frame.shape) == 3  # Height, width, features
         assert frame.frame_id is not None
         assert frame.createdAt is not None
         assert frame.updatedAt is not None
@@ -196,6 +207,7 @@ def test_label_frame_init(project):
         assert frame.finished is None
         assert frame.firstUpdate is None
         assert frame.lastUpdate is None
+
 
 def test_frames_init(project):
     """Test that raw, RGB, and label frames within a project are all compatible."""
@@ -211,6 +223,7 @@ def test_frames_init(project):
         assert raw_frame.frame.shape[:-1] == rgb_frame.frame.shape[:-1]
         assert raw_frame.frame_id == rgb_frame.frame_id
         assert raw_frame.project_id == rgb_frame.project_id
+
 
 def test_metadata_init(project):
     """Test constructing the metadata for a project."""
@@ -244,7 +257,7 @@ def test_create_cell_info(project):
         for label in labels_uniq:
             assert label in metadata.cell_ids[feature]
             assert str(label) == metadata.cell_info[feature][label]['label']
-            label_in_frame = np.isin(label_array, label).any(axis=(1, 2)) # Height and width axes
+            label_in_frame = np.isin(label_array, label).any(axis=(1, 2))  # Height and width axes
             label_frames = metadata.cell_info[feature][label]['frames']
             no_label_frames = [i for i in range(metadata.numFrames) if i not in label_frames]
             assert label_in_frame[label_frames].all()
