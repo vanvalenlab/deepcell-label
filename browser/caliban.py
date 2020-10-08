@@ -143,23 +143,6 @@ class BaseEdit(object):
         self.metadata.feature = feature
         self.y_changed = True
 
-    def action_change_frame(self, frame):
-        """
-        Change current frame.
-
-        Args:
-            feature (int): which frame to view
-
-        Raises:
-            ValueError: if feature is not in [0, numFrames)
-        """
-        if frame < 0 or frame > self.metadata.frame - 1:
-            raise ValueError('Frame {} is outside of range [0, {}].'.format(
-                frame, self.metadata.numFrames - 1))
-        self.metadata.frame = frame
-        self.x_changed = True
-        self.y_changed = True
-
     def add_cell_info(self, add_label, frame):
         raise NotImplementedError('add_cell_info is not implemented in BaseEdit')
 
