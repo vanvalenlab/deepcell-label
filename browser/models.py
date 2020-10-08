@@ -97,7 +97,7 @@ class Project(db.Model):
         current_app.logger.debug('Created label frames for %s in %ss.',
                                  filename, timeit.default_timer() - start)
         # Log total time in constructor
-        current_app.logger.debug('Total time in __init__ for %s: %s s.',
+        current_app.logger.debug('Total time in project __init__ for %s: %s s.',
                                  filename, timeit.default_timer() - init_start)
 
     @property
@@ -146,7 +146,6 @@ class Project(db.Model):
     def finish_project(project):
         """Complete a project and set its frames to null."""
         start = timeit.default_timer()
-        project.lastUpdate = project.updatedAt
         project.finished = db.func.current_timestamp()
         # Set PickleType columns in metadata_ to None
         project.metadata_.finish()
@@ -164,7 +163,7 @@ class Project(db.Model):
     def get_label_arr(self):
         """
         Returns:
-            list: nested list of labels at each positions, with negative label outlines 
+            list: nested list of labels at each positions, with negative label outlines.
         """
         metadata = self.metadata_
         # Create label array
@@ -340,6 +339,10 @@ class Metadata(db.Model):
         return max_label
     
     def update(self):
+        if not self.firstUpdate:
+            self.firstUpdate = db.func.current_timestamp()
+        self.numUpdates += 1
+
         self.cell_ids = self.cell_ids.copy()
         self.cell_info = self.cell_info.copy()
 
