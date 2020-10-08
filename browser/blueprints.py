@@ -63,7 +63,7 @@ def upload_file(project_id):
 
     # Call function in caliban.py to save data file and send to S3 bucket
     edit = get_edit(project)
-    filename = project.metadata.filename
+    filename = project.metadata_.filename
     if is_trk_file(filename):
         edit.action_save_track()
     elif is_npz_file(filename):
