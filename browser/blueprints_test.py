@@ -3,6 +3,7 @@
 import io
 
 import pytest
+import numpy as np
 
 # from flask_sqlalchemy import SQLAlchemy
 
@@ -40,6 +41,13 @@ class DummyState(io.BytesIO):
     def get_frame(self, frame, raw=False):
         return io.BytesIO()
 
+@pytest.fixture
+def mock_load_project(mocker):
+    def load(self, *args):
+        return {'raw': np.zeros((1, 1, 1, 1)),
+                'annotated': np.zeros((1, 1, 1, 1))}
+    mocker.patch('models.Project.load', load)
+
 
 def test_health(client, mocker):
     response = client.get('/health')
@@ -51,34 +59,56 @@ def test_create(client):
     pass
 
 
-def test_upload_file(client):
+def test_upload_file(mocker, client):
+    # Mock out load from S3 bucket
+    def load(self, *args):
+        return {'raw': np.zeros((1, 1, 1, 1)),
+                'annotated': np.zeros((1, 1, 1, 1)),
+                'tracked': np.zeros((1, 1, 1, 1)),
+                'lineages': {0 : {}}}
+    mocker.patch('blueprints.Project.load', load)
+    # Mock out upload to S3 bucket
+    mocker.patch('blueprints.TrackEdit.action_save_track', lambda *a: None)
+    mocker.patch('blueprints.ZStackEdit.action_save_zstack', lambda *a: None)
+
     response = client.get('/upload_file/1')
     assert response.status_code == 404
 
     filename_npz = 'filename.npz'
     filename_trk = 'filename.trk'
-    state = DummyState()
-    subfolders = 'subfolders'
+    input_bucket = 'input_bucket'
+    output_bucket = 'output_bucket'
+    path = 'path'
 
     # Create a project.
     project = models.Project.create_project(
         filename=filename_npz,
-        state=state,
-        subfolders=subfolders)
+        input_bucket=input_bucket,
+        output_bucket=output_bucket,
+        path=path)
 
     response = client.get('/upload_file/{}'.format(project.id))
     assert response.status_code == 302
 
     project = models.Project.create_project(
         filename=filename_trk,
-        state=state,
-        subfolders=subfolders)
+        input_bucket=input_bucket,
+        output_bucket=output_bucket,
+        path=path)
 
     response = client.get('/upload_file/{}'.format(project.id))
     assert response.status_code == 302
 
 
-def test_get_frame(client):
+def test_get_frame(mocker,client):
+    # Mock out load from S3 bucket
+    def load(self, *args):
+        return {'raw': np.zeros((1, 1, 1, 1)),
+                'annotated': np.zeros((1, 1, 1, 1)),
+                'tracked': np.zeros((1, 1, 1, 1)),
+                'lineages': {0 : {}}}
+    mocker.patch('blueprints.Project.load', load)
+
     response = client.get('/frame/0/999999')
     assert response.status_code == 404
 
@@ -87,8 +117,9 @@ def test_get_frame(client):
         # Create a project.
         project = models.Project.create_project(
             filename=filename,
-            state=DummyState(),
-            subfolders='subfolders')
+            input_bucket='input_bucket',
+            output_bucket='output_bucket',
+            path='path')
 
         response = client.get('/frame/0/{}'.format(project.id))
 
@@ -97,14 +128,7 @@ def test_get_frame(client):
         assert 'segmented' in response.json
         assert 'seg_arr' in response.json
 
-    # test handle error
-    project = models.Project.create_project(
-        filename=filename,
-        state='invalid state data',
-        subfolders='subfolders')
-
-    response = client.get('/frame/0/{}'.format(project.id))
-    assert response.status_code == 500
+    # TODO: test handle error
 
 
 def test_action(client):
@@ -119,10 +143,13 @@ def test_load(client, mocker):
     caliban_file = '{}__{}__{}__{}__{}'.format(
         in_bucket, out_bucket, 'subfolder1', 'subfolder2', filename
     )
-
-    mocker.patch('blueprints.CalibanFile', DummyFile)
-    mocker.patch('blueprints.TrackEdit', DummyState)
-    mocker.patch('blueprints.ZStackEdit', DummyState)
+    # Mock load from S3 bucket
+    def load(self, *args):
+        return {'raw': np.zeros((1, 1, 1, 1)),
+                'annotated': np.zeros((1, 1, 1, 1)),
+                'tracked': np.zeros((1, 1, 1, 1)),
+                'lineages': {0 : {}}}
+    mocker.patch('blueprints.Project.load', load)
 
     # TODO: correctness tests
     response = client.post('/load/{}.npz'.format(caliban_file))
