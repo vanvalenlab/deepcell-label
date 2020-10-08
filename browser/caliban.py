@@ -28,7 +28,8 @@ from models import db
 class BaseEdit(object):
     """
     Base class for editing frames in Caliban.
-    Takes a project, edits the labels on a frame, and updates the metadata.
+    Takes a project, performs an action, and updates the metadata.
+    Lives only during a single action.
     
     Maintains boolean flags y_changed and info_changed
     to track whether the label frame or the metadata have been changed, respectively.
@@ -39,14 +40,9 @@ class BaseEdit(object):
     def __init__(self, project):
         self.project = project
         self.metadata = project.metadata_
-        self.frame_id = self.metadata.frame
-        self.frame = project.label_frames[self.frame_id].frame # Numpy array from LabelFrame row
-        self.raw_frame = project.raw_frames[self.frame_id].frame # Numpy array from RawFrame row
 
-        # Unpack some info from metadata for easy access
-        self.feature = self.metadata.feature
-        self.channel = self.metadata.channel
-        self.scale_factor = self.metadata.scale_factor
+
+        # Unpack some static info from metadata for easy access
         self.height = self.metadata.height
         self.width = self.metadata.width
 
@@ -57,6 +53,55 @@ class BaseEdit(object):
         self.info_changed = False # PickleType columns: colormap, cell_ids, cell_info
         # Track whether multiple frames have changed
         self.multi_changed = False
+
+    @property
+    def frame(self):
+        """
+        Returns:
+            ndarray: the current label frame
+        """
+        return self.project.label_frames[self.frame_id].frame
+    
+    @property
+    def raw_frame(self):
+        """
+        Returns:
+            ndarray: the current raw frame
+        """
+        return self.project.raw_frames[self.frame_id].frame
+    
+    # Access dynamic metadata columns
+    @property
+    def frame_id(self):
+        """
+        Returns:
+            int: index of the current frame
+        """
+        return self.metadata.frame
+
+    @property
+    def feature(self):
+        """
+        Returns:
+            int: index of the current feature
+        """
+        return self.metadata.feature
+
+    @property
+    def channel(self):
+        """
+        Returns:
+            int: index of the current channel
+        """
+        return self.metadata.channel
+    
+    @property
+    def scale_factor(self):
+        """
+        Returns:
+            float: current scale_factor
+        """
+        return self.metadata.scale_factor
 
     def action(self, action_type, info):
         """Call an action method based on an action type."""
