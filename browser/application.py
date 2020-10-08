@@ -82,6 +82,12 @@ def create_app(**config_overrides):
 
     # For flask monitoring dashboard
     dashboard.config.init_from(file='fmd_config.cfg')
+    # Add custom graph to dashboard
+    def every_ten_seconds():
+        print(f"every_ten_seconds!!! {datetime.datetime.now()}")
+        return int(random() * 100 // 10)
+    every_ten_seconds_schedule = {'seconds': 10}
+    dashboard.add_graph("Every 10 Seconds", every_ten_seconds, "interval", **every_ten_seconds_schedule)
     dashboard.bind(app)
 
     return app
