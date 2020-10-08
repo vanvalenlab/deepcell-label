@@ -1,14 +1,19 @@
 """Test for Caliban Models"""
 
+import io
 import pickle
 
 import numpy as np
 import pytest
 
 import models
-
+from imgutils import pngify
 
 def test_project_init(project):
+    """
+    Test constructor for Project table.
+    Checks for relationships to metadata and frames.
+    """
     # Check columns are made (except finished) 
     assert project.id is not None
     assert project.createdAt is not None
@@ -20,6 +25,10 @@ def test_project_init(project):
     assert project.label_frames is not None
 
 def test_get_project(mocker, db_session):
+    """
+    Test getting a project from the Projects table.
+    Gets a project before it exists, creates a project, then gets it again.
+    """
     # test that no projects exist
     project = models.Project.get_project(1)
     assert project is None
@@ -39,16 +48,135 @@ def test_get_project(mocker, db_session):
     found_project = models.Project.get_project(valid_id)
     assert found_project == project
 
-def test_finish_project(db_session):
-    pass
+def test_get_label_array(project):
+    """
+    Test outlined label arrays to send to the front-end.
+    """
+    metadata = project.metadata_
+    label_arr = project.get_label_arr()
+    assert len(label_arr) == metadata.height
+    for row in label_arr:
+        assert len(row) == metadata.width
+    label_frame = np.array(label_arr)
+    expected_frame = project.label_frames[metadata.frame].frame[..., metadata.channel]
+    assert (label_frame[label_frame >= 0] == expected_frame[label_frame >= 0]).all()
+    assert (label_frame[label_frame < 0] == -expected_frame[label_frame < 0]).all()
+
+def test_get_label_png(project):
+    """
+    Test label frame PNGs to send to the front-end.
+    """
+    metadata = project.metadata_
+    label_png = project.get_label_png()
+    assert type(label_png) is io.BytesIO
+    expected_frame = project.label_frames[metadata.frame].frame[..., metadata.feature]
+    expected_frame = np.ma.masked_equal(expected_frame, 0)
+    expected_png = pngify(expected_frame, vmin=0, vmax=metadata.get_max_label(), cmap=metadata.colormap)
+    assert label_png.getvalue() == expected_png.getvalue()
+
+def test_get_raw_png(project):
+    """
+    Test raw frame PNGs to send to the front-end.
+    """
+    metadata = project.metadata_
+    raw_png = project.get_raw_png()
+    assert type(raw_png) is io.BytesIO
+    if metadata.rgb:
+        expected_frame = project.rgb_frames[metadata.frame].frame
+        expected_png = pngify(expected_frame, vmin=None, vmax=None, cmap=None)
+    else:
+        expected_frame = project.raw_frames[metadata.frame].frame[..., metadata.channel]
+        expected_png = pngify(expected_frame, vmin=0, vmax=None, cmap='cubehelix')
+    assert raw_png.getvalue() == expected_png.getvalue()
+
+
+def test_get_max_label(project):
+    metadata = project.metadata_
+    max_label = metadata.get_max_label()
+    assert max_label in project.label_array[..., metadata.feature]
+    assert max_label + 1 not in project.label_array[..., metadata.feature]
+    assert max_label == project.label_array[..., metadata.feature].max()
+    if max_label == 0:
+        assert (project.label_array[..., metadata.feature] == 0).all()
+
+
+def test_finish_project(mocker, db_session):
+    """
+    Test finishing a project.
+    Checks that the project's relationship are also finished.
+    """
+    # create project
+    def load(self, *args):
+        return {'raw': np.zeros((1, 1, 1, 1)), 'annotated': np.zeros((1, 1, 1, 1))}
+    mocker.patch('models.Project.load', load)
+    project = models.Project.create_project(
+        filename='filename',
+        input_bucket='input_bucket', 
+        output_bucket='output_bucket',
+        path='path')
+
+    # test finish project
+    models.Project.finish_project(project)
+    found_project = models.Project.get_project(project.id)
+    assert found_project.finished is not None
+    # test finish metadata
+    assert found_project.metadata_.cell_ids is None
+    assert found_project.metadata_.cell_info is None
+    # test finish frames
+    for raw, rgb, label in zip(found_project.raw_frames, 
+                               found_project.rgb_frames, 
+                               found_project.label_frames):
+        assert raw.frame is None
+        assert rgb.frame is None
+        assert label.frame is None
+        assert label.finished is not None
+        assert label.lastUpdate is not None
+
+def test_update_metadata(mocker, db_session):
+    """Test updating metadata."""
+    # create project
+    def load(self, *args):
+        return {'raw': np.zeros((1, 1, 1, 1)), 'annotated': np.zeros((1, 1, 1, 1))}
+    mocker.patch('models.Project.load', load)
+    project = models.Project.create_project(
+        filename='filename',
+        input_bucket='input_bucket', 
+        output_bucket='output_bucket',
+        path='path')
+
+    project.metadata_.update()
+    assert project.metadata_.numUpdates > 0
+    assert project.metadata_.firstUpdate is not None
+
+
+def test_update_label_frame(mocker, db_session):
+    """Test updating label frames."""
+    # create project
+    def load(self, *args):
+        return {'raw': np.zeros((1, 1, 1, 1)), 'annotated': np.zeros((1, 1, 1, 1))}
+    mocker.patch('models.Project.load', load)
+    project = models.Project.create_project(
+        filename='filename',
+        input_bucket='input_bucket', 
+        output_bucket='output_bucket',
+        path='path')
+    
+    # Update label frame
+    for label_frame in project.label_frames:
+        label_frame.update()
+        assert label_frame.numUpdates > 0
+        assert label_frame.firstUpdate is not None
+
 
 def test_raw_frame_init(project):
+    """Test constructing the raw frames for a project."""
     raw_frames = project.raw_frames
     for frame in raw_frames:
         assert len(frame.frame.shape) == 3 # Height, width, channels
         assert frame.frame_id is not None
     
 def test_rgb_frame_init(project):
+    """Test constructing the RGB frames for a project."""
     rgb_frames = project.rgb_frames
     for frame in rgb_frames:
         assert len(frame.frame.shape) == 3 # Height, width, features
@@ -56,6 +184,7 @@ def test_rgb_frame_init(project):
         assert frame.frame.shape[2] == 3 # RGB channels
 
 def test_label_frame_init(project):
+    """Test constructing the label frames for a project."""
     label_frames = project.label_frames
     for frame in label_frames:
         assert len(frame.frame.shape) == 3 # Height, width, features
@@ -69,6 +198,7 @@ def test_label_frame_init(project):
         assert frame.lastUpdate is None
 
 def test_frames_init(project):
+    """Test that raw, RGB, and label frames within a project are all compatible."""
     raw_frames = project.raw_frames
     label_frames = project.label_frames
     rgb_frames = project.rgb_frames
@@ -83,6 +213,7 @@ def test_frames_init(project):
         assert raw_frame.project_id == rgb_frame.project_id
 
 def test_metadata_init(project):
+    """Test constructing the metadata for a project."""
     raw_frames = project.raw_frames
     raw_frame = raw_frames[0].frame
     label_frames = project.label_frames
@@ -99,49 +230,9 @@ def test_metadata_init(project):
     for feature in range(metadata.numFeatures):
         assert len(metadata.cell_ids[feature]) == len(metadata.cell_info[feature])
 
-# def test_project(project, db_session):
-#     # TODO: is there a good way to separate these tests into unit tests?
-
-#     # test that no projects exist
-#     project = models.Project.get_project(1)
-#     assert project is None
-
-#     # test create project
-#     filename = 'filename'
-#     input_bucket = 'input_bucket'
-#     output_bucket = 'output_bucket' 
-#     path = 'path'
-
-#     project = models.Project.create_project(
-#         filename = 'filename',
-#         input_bucket = 'input_bucket', 
-#         output_bucket = 'output_bucket',
-#         path = 'path')
-
-#     valid_id = models.Project.id
-
-#     # test that the project can be found and is the same as the created one
-#     found_project = models.Project.get_project(valid_id)
-#     assert found_project == project
-
-#     # test project is updated
-#     new_state = b'updated state data'
-#     models.Project.update_project(project, new_state)
-
-#     # get the updated project and make sure the data is updated.
-#     found_project = models.Project.get_project_by_id(valid_id)
-#     pickled_state = pickle.dumps(new_state, pickle.HIGHEST_PROTOCOL)
-#     assert found_project.state == pickled_state
-
-#     # test project is finished
-#     models.Project.finish_project(project)
-#     found_project = models.Project.get_project_by_id(valid_id)
-#     assert found_project.state is None
-#     assert found_project.finished is not None
-#     assert found_project.lastUpdate is not None
-
 
 def test_create_cell_info(project):
+    """Test creating the cell info dict in the metadata for a project."""
     metadata = project.metadata_
     # Combine all frames into one numpy array with shape (frames, height, width, features)
     label_array = np.array([frame.frame for frame in project.label_frames])
