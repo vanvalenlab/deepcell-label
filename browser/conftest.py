@@ -96,7 +96,7 @@ TEST_LABELS += [repeat_feature(np.zeros(RES, dtype=np.int16), FEATURES)]
 TEST_IDS += ['singleframe']
 
 @pytest.fixture(params=TEST_LABELS, ids=TEST_IDS)
-def zstack_project(app, mocker, request):
+def zstack_project(app, mocker, request, db_session):
     with app.app_context():
         def load(self, *args):
             if len(request.param.shape) == 4:
@@ -114,7 +114,7 @@ def zstack_project(app, mocker, request):
 
 
 @pytest.fixture(params=TEST_LABELS, ids=TEST_IDS)
-def track_project(app, mocker, request):
+def track_project(app, mocker, request, db_session):
     with app.app_context():
         def load(self, *args):
             # Match the size of the raw image with the labels
@@ -145,5 +145,5 @@ def track_project(app, mocker, request):
     lazy_fixture('zstack_project'),
     lazy_fixture('track_project'),
 ])
-def project(request, db_session):
+def project(request):
     return request.param
