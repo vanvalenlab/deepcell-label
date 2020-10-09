@@ -1,7 +1,6 @@
 """Test for Caliban Models"""
 
 import io
-import pickle
 
 import numpy as np
 import pytest

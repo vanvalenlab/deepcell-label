@@ -6,12 +6,10 @@ from __future__ import print_function
 import base64
 import io
 import json
-import os
 import sys
 import tarfile
 import tempfile
 
-import matplotlib.pyplot as plt
 import numpy as np
 from skimage import filters
 from skimage.morphology import flood_fill, flood
@@ -19,9 +17,7 @@ from skimage.morphology import watershed, dilation, disk
 from skimage.draw import circle
 from skimage.exposure import rescale_intensity
 from skimage.measure import regionprops
-from skimage.segmentation import find_boundaries
 
-from imgutils import pngify
 from models import db
 
 
@@ -658,7 +654,6 @@ class TrackEdit(BaseEdit):
         Args:
             label (int): label to replace in subsequent frames
         """
-        start_frame = self.frame_id
         new_label = self.metadata.get_max_label() + 1
         track = self.metadata.tracks[label]
 
