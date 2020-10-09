@@ -267,9 +267,8 @@ class BaseEdit(object):
         """
         img_ann = self.frame[..., self.feature]
 
-        seed_point = (y_location // self.scale_factor,
-                      x_location // self.scale_factor)
-
+        seed_point = (int(y_location // self.scale_factor),
+                      int(x_location // self.scale_factor))
         contig_cell = flood(image=img_ann, seed_point=seed_point)
         stray_pixels = np.logical_and(np.invert(contig_cell), img_ann == label)
         img_trimmed = np.where(stray_pixels, 0, img_ann)
@@ -286,8 +285,8 @@ class BaseEdit(object):
         prevents hole fill from spilling out into background in some cases
         '''
         # rescale click location -> corresponding location in annotation array
-        hole_fill_seed = (y_location // self.scale_factor,
-                          x_location // self.scale_factor)
+        hole_fill_seed = (int(y_location // self.scale_factor),
+                          int(x_location // self.scale_factor))
         # fill hole with label
         img_ann = self.frame[..., self.feature]
         filled_img_ann = flood_fill(img_ann, hole_fill_seed, label, connectivity=1)
