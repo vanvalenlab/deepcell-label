@@ -553,7 +553,7 @@ class LabelFrame(db.Model):
             self.firstUpdate = db.func.current_timestamp()
         self.frame = self.frame.copy()
         self.numUpdates += 1
-    
+
     def finish(self):
         """Finish a frame by setting its frame to null."""
         self.lastUpdate = self.updatedAt
