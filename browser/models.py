@@ -534,7 +534,6 @@ class LabelFrame(db.Model):
     frame = db.Column(db.PickleType)
     updatedAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now(),
                           onupdate=db.func.current_timestamp())
-    finished = db.Column(db.TIMESTAMP)
     numUpdates = db.Column(db.Integer, nullable=False, default=0)
     firstUpdate = db.Column(db.TIMESTAMP)
     lastUpdate = db.Column(db.TIMESTAMP)
@@ -557,7 +556,6 @@ class LabelFrame(db.Model):
     def finish(self):
         """Finish a frame by setting its frame to null."""
         self.lastUpdate = self.updatedAt
-        self.finished = db.func.current_timestamp()
         self.frame = None
 
 
