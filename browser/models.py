@@ -7,7 +7,6 @@ import copy
 import io
 import json
 import logging
-import pickle
 import tarfile
 import tempfile
 import timeit
@@ -104,10 +103,12 @@ class Project(db.Model):
 
     @property
     def label_array(self):
+        """Compiles all label frames into a single numpy array."""
         return np.array([frame.frame for frame in self.label_frames])
 
     @property
     def raw_array(self):
+        """Compiles all raw frames into a single numpy array."""
         return np.array([frame.frame for frame in self.raw_frames])
 
     def _get_s3_client(self):
@@ -118,7 +119,14 @@ class Project(db.Model):
         )
 
     def load(self, filename, bucket, path):
-        """Load a file from the S3 input bucket"""
+        """
+        Load a file from the S3 input bucket.
+
+        Args:
+            filename (str): filename; used to check if loading .npz or .trk file
+            bucket (str): bucket to pull from on S3
+            path (str): full path to the file within the bucket, including the filename
+        """
         _load = get_load(filename)
         s3 = self._get_s3_client()
         response = s3.get_object(Bucket=bucket, Key=path)
@@ -126,7 +134,15 @@ class Project(db.Model):
 
     @staticmethod
     def get_project(project_id):
-        """Return the project with the given ID, if it exists."""
+        """
+        Return the project with the given ID, if it exists.
+
+        Args:
+            project_id (int): primary key of project to get
+
+        Returns:
+            Project: row from the Project table
+        """
         start = timeit.default_timer()
         project = Project.query.filter_by(id=project_id).first()
         logger.debug('Got project %s in %ss.',
@@ -135,7 +151,20 @@ class Project(db.Model):
 
     @staticmethod
     def create_project(filename, input_bucket, output_bucket, path, rgb=False):
-        """Create a new project."""
+        """
+        Create a new project. 
+        Wraps the Project constructor with logging and database commits.
+        
+        Args:
+            filename (str): filename including .npz or .trk extension
+            input_bucket (str): S3 bucket to download file
+            output_bucket (str): S3 bucket to upload file
+            path (str): full path to download & upload file in buckets; includes filename
+            rgb (bool): whether to display raw frames in RGB mode
+
+        Returns:
+            Project: new row in the Project table
+        """
         start = timeit.default_timer()
         new_project = Project(filename, input_bucket, output_bucket, path, rgb=rgb)
         db.session.add(new_project)
@@ -146,7 +175,13 @@ class Project(db.Model):
 
     @staticmethod
     def finish_project(project):
-        """Complete a project and set its frames to null."""
+        """
+        Complete a project and its associated frames and metadata.
+        Sets the PickleType columns of the frames and metadata to None.
+
+        Args:
+            project (Project): row in the Project table to complete
+        """
         start = timeit.default_timer()
         project.finished = db.func.current_timestamp()
         # Set PickleType columns in metadata_ to None
@@ -216,8 +251,8 @@ class Project(db.Model):
 class Metadata(db.Model):
     """
     Table definition that stores the project metadata.
-    Includes both static project info, like filename and data dimensions, and
-    label metadata that is updated by actions.
+    Includes both static project info, like filename and data dimensions,
+    and label metadata that is updated by actions.
     """
     # pylint: disable=E1101
     __tablename__ = 'metadata'
@@ -304,7 +339,13 @@ class Metadata(db.Model):
         return cell_info
 
     def create_cell_info(self, feature, labels):
-        """Make or remake the entire cell info dict"""
+        """
+        Make or remake the entire cell info dict.
+
+        Args:
+            feature (int): which feature to create the cell info dict
+            labels (ndarray): the complete label array (all frames, all features)
+        """
         feature = int(feature)
         annotated = labels[..., feature]
 
@@ -341,6 +382,10 @@ class Metadata(db.Model):
         return max_label
 
     def update(self):
+        """
+        Update the metadata by explicitly copying the PickleType
+        columns so the database knows to commit them.
+        """
         if not self.firstUpdate:
             self.firstUpdate = db.func.current_timestamp()
         self.numUpdates += 1
@@ -511,7 +556,8 @@ class LabelFrame(db.Model):
 
     def update(self):
         """
-        Update a frame's data.
+        Update a frame's data by explicitly copying the PickleType
+        columns so the database knows to commit the changes.
         """
         if not self.firstUpdate:
             self.firstUpdate = db.func.current_timestamp()
@@ -524,12 +570,20 @@ def consecutive(data, stepsize=1):
 
 
 def get_ann_key(filename):
+    """
+    Returns:
+        str: expected key for the label array depending on the filename
+    """
     if is_trk_file(filename):
         return 'tracked'
     return 'annotated'  # default key
 
 
 def get_load(filename):
+    """
+    Returns:
+        function: loads a response body from S3
+    """
     if is_npz_file(filename):
         _load = load_npz
     elif is_trk_file(filename):
@@ -540,7 +594,15 @@ def get_load(filename):
 
 
 def load_npz(filename):
+    """
+    Loads a NPZ file.
 
+    Args:
+        filename: full path to the file including .npz extension
+
+    Returns:
+        dict: contains raw and annotated images as numpy arrays
+    """
     data = io.BytesIO(filename)
     npz = np.load(data)
 
@@ -566,11 +628,14 @@ def load_npz(filename):
 # vanvalenlab/deepcell-tf/blob/master/deepcell/utils/tracking_utils.py3
 
 def load_trks(trkfile):
-    """Load a trk/trks file.
+    """
+    Load a trk/trks file.
+
     Args:
-        trks_file: full path to the file including .trk/.trks
+        trks_file (str): full path to the file including .trk/.trks
+
     Returns:
-        A dictionary with raw, tracked, and lineage data
+        dict: contains raw, tracked, and lineage data
     """
     with tempfile.NamedTemporaryFile() as temp:
         temp.write(trkfile)
