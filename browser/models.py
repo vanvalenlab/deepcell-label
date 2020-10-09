@@ -258,7 +258,6 @@ class Metadata(db.Model):
     __tablename__ = 'metadata'
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
                            primary_key=True, nullable=False)
-    createdAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now())
     updatedAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now(),
                           onupdate=db.func.current_timestamp())
     finished = db.Column(db.TIMESTAMP)
@@ -411,7 +410,6 @@ class RawFrame(db.Model):
                            primary_key=True, nullable=False)
     frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
     frame = db.Column(db.PickleType)
-    createdAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now())
 
     def __init__(self, project_id, frame_id, frame):
         self.project_id = project_id
@@ -435,7 +433,6 @@ class RGBFrame(db.Model):
                            primary_key=True, nullable=False)
     frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
     frame = db.Column(db.PickleType)
-    createdAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now())
 
     def __init__(self, project_id, frame_id, frame):
         self.project_id = project_id
@@ -535,7 +532,6 @@ class LabelFrame(db.Model):
                            primary_key=True, nullable=False)
     frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
     frame = db.Column(db.PickleType)
-    createdAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now())
     updatedAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now(),
                           onupdate=db.func.current_timestamp())
     finished = db.Column(db.TIMESTAMP)
