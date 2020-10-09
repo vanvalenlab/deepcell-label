@@ -329,7 +329,7 @@ class BaseEdit(object):
         new_label = self.metadata.get_max_label() + 1
 
         # Locally store the frames to work on
-        img_raw = self.raw_frame.frame[..., self.metadata.channel]
+        img_raw = self.raw_frame[..., self.channel]
         img_ann = self.frame[..., self.feature]
 
         # Pull the 2 seed locations and store locally
@@ -408,8 +408,8 @@ class BaseEdit(object):
         right_edge = max(x1, x2)
 
         # pull out the selection portion of the raw frame
-        predict_area = self.raw_frame.frame[top_edge:bottom_edge,
-                                            left_edge:right_edge, self.channel]
+        predict_area = self.raw_frame[top_edge:bottom_edge,
+                                      left_edge:right_edge, self.channel]
 
         # triangle threshold picked after trying a few on one dataset
         # may not be the best threshold approach for other datasets!
