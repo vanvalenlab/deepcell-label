@@ -544,12 +544,6 @@ class LabelFrame(db.Model):
         self.frame_id = frame_id
         self.frame = frame
 
-    def finish(self):
-        """Finish a frame by setting its frame to null."""
-        self.lastUpdate = self.updatedAt
-        self.finished = db.func.current_timestamp()
-        self.frame = None
-
     def update(self):
         """
         Update a frame's data by explicitly copying the PickleType
@@ -559,6 +553,12 @@ class LabelFrame(db.Model):
             self.firstUpdate = db.func.current_timestamp()
         self.frame = self.frame.copy()
         self.numUpdates += 1
+    
+    def finish(self):
+        """Finish a frame by setting its frame to null."""
+        self.lastUpdate = self.updatedAt
+        self.finished = db.func.current_timestamp()
+        self.frame = None
 
 
 def consecutive(data, stepsize=1):
