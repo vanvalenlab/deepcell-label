@@ -152,9 +152,9 @@ class Project(db.Model):
     @staticmethod
     def create_project(filename, input_bucket, output_bucket, path, rgb=False):
         """
-        Create a new project. 
+        Create a new project.
         Wraps the Project constructor with logging and database commits.
-        
+
         Args:
             filename (str): filename including .npz or .trk extension
             input_bucket (str): S3 bucket to download file
