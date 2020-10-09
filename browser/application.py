@@ -82,12 +82,15 @@ def create_app(**config_overrides):
 
     # For flask monitoring dashboard
     dashboard.config.init_from(file='fmd_config.cfg')
-    # Add custom graph to dashboard
-    def every_ten_seconds():
-        print(f"every_ten_seconds!!! {datetime.datetime.now()}")
-        return int(random() * 100 // 10)
-    every_ten_seconds_schedule = {'seconds': 10}
-    dashboard.add_graph("Every 10 Seconds", every_ten_seconds, "interval", **every_ten_seconds_schedule)
+    
+    # Add custom grouping for actions
+    def group_action():
+        """Apply custom grouping for action endpoint"""
+        from flask import request
+        if request.endpoint == 'caliban.action':
+            return request.view_args['action_type']
+
+    dashboard.config.group_by = group_action
     dashboard.bind(app)
 
     return app
