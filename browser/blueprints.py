@@ -43,7 +43,7 @@ def handle_exception(error):
         return error
 
     current_app.logger.error('Encountered %s: %s',
-                             error.__class__.__name__, error, exc_info=1)
+                             error.__class__.__name__, error)
 
     # now you're handling non-HTTP exceptions only
     return jsonify({'message': str(error)}), 500
