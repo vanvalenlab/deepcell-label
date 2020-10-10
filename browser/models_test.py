@@ -136,7 +136,6 @@ def test_finish_project(mocker, db_session):
         assert raw.frame is None
         assert rgb.frame is None
         assert label.frame is None
-        assert label.finished is not None
         assert label.lastUpdate is not None
 
 
@@ -199,11 +198,9 @@ def test_label_frame_init(project):
     for frame in label_frames:
         assert len(frame.frame.shape) == 3  # Height, width, features
         assert frame.frame_id is not None
-        assert frame.createdAt is not None
         assert frame.updatedAt is not None
         assert frame.numUpdates == 0
         # Must be set by methods
-        assert frame.finished is None
         assert frame.firstUpdate is None
         assert frame.lastUpdate is None
 
