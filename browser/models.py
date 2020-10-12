@@ -19,7 +19,6 @@ import numpy as np
 from skimage.exposure import rescale_intensity
 from sqlalchemy.ext.compiler import compiles
 
-
 from helpers import is_npz_file, is_trk_file
 from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 from imgutils import pngify, add_outlines
