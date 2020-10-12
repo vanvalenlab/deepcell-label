@@ -182,25 +182,21 @@ class Project(db.Model):
         logger.debug('Updated project %s in %ss.',
                      self.id, timeit.default_timer() - start)
 
-    @staticmethod
-    def finish_project(project):
+    def finish(self):
         """
         Complete a project and its associated frames and metadata.
         Sets the PickleType columns of the frames and metadata to None.
-
-        Args:
-            project (Project): row in the Project table to complete
         """
         start = timeit.default_timer()
-        project.finished = db.func.current_timestamp()
+        self.finished = db.func.current_timestamp()
         # Set PickleType columns in metadata_ to None
-        project.metadata_.finish()
+        self.metadata_.finish()
         # Set PickleType columns in frames to None
-        for label_frame in project.label_frames:
+        for label_frame in self.label_frames:
             label_frame.finish()
-        for raw_frame in project.raw_frames:
+        for raw_frame in self.raw_frames:
             raw_frame.finish()
-        for rgb_frame in project.rgb_frames:
+        for rgb_frame in self.rgb_frames:
             rgb_frame.finish()
         db.session.commit()  # commit the changes
         logger.debug('Finished project with ID = "%s" in %ss.',

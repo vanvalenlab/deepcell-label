@@ -65,7 +65,7 @@ def upload_file(project_id):
         edit.action_save_zstack()
 
     # add "finished" timestamp and null out PickleType columns
-    Project.finish_project(project)
+    project.finish()
 
     current_app.logger.debug('Uploaded file "%s" for project "%s" in %s s.',
                              filename, project_id,
