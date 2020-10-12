@@ -83,7 +83,6 @@ def create_app(**config_overrides):
     # For flask monitoring dashboard
     dashboard.config.init_from(file='fmd_config.cfg')
 
-    # Add custom grouping for actions
     def group_action():
         """Apply custom grouping for action endpoint"""
         from flask import request
