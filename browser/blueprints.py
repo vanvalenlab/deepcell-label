@@ -20,7 +20,6 @@ from flask import redirect
 from flask import current_app
 from werkzeug.exceptions import HTTPException
 
-
 from helpers import is_trk_file, is_npz_file
 from models import db, Project
 from caliban import TrackEdit, ZStackEdit, BaseEdit
