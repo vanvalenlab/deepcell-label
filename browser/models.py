@@ -173,6 +173,15 @@ class Project(db.Model):
                                  new_project.id, timeit.default_timer() - start)
         return new_project
 
+    def update(self):
+        """
+        Commit the project changes from an action.
+        """
+        start = timeit.default_timer()
+        db.session.commit()
+        logger.debug('Updated project %s in %ss.',
+                     self.id, timeit.default_timer() - start)
+
     @staticmethod
     def finish_project(project):
         """

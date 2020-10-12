@@ -96,7 +96,7 @@ def action(project_id, action_type, frame):
         edit = get_edit(project)
         edit.action(action_type, info)
         payload = edit.make_payload()
-        edit.persist_pickles()  # Must explicitly copy PickleType columns to persist in database
+        edit.commit_changes()
 
     except Exception as e:  # TODO: more error handling to identify problem
         traceback.print_exc()

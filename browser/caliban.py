@@ -452,7 +452,7 @@ class BaseEdit(object):
 
         return {'tracks': tracks, 'imgs': img_payload}
 
-    def persist_pickles(self):
+    def commit_changes(self):
         """
         Copy the PickleType columns that have changed to persist them in the database.
         """
@@ -463,7 +463,8 @@ class BaseEdit(object):
                 label_frame.update()
         elif self.y_changed:
             self.project.label_frames[self.frame_id].update()
-        db.session.commit()
+        # Only the project update contains db.session.commit() so updates happen atomically
+        self.project.update()
 
 
 class ZStackEdit(BaseEdit):
