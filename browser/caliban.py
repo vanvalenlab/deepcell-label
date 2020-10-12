@@ -18,8 +18,6 @@ from skimage.draw import circle
 from skimage.exposure import rescale_intensity
 from skimage.measure import regionprops
 
-from models import db
-
 
 class BaseEdit(object):
     """
