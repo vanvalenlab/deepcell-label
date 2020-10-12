@@ -200,7 +200,7 @@ class Project(db.Model):
             rgb_frame.finish()
         db.session.commit()  # commit the changes
         logger.debug('Finished project with ID = "%s" in %ss.',
-                     project.id, timeit.default_timer() - start)
+                     self.id, timeit.default_timer() - start)
 
     def get_label_arr(self):
         """
