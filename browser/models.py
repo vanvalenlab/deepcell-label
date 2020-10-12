@@ -95,7 +95,7 @@ class Project(db.Model):
         current_app.logger.debug('Created label frames for %s in %ss.',
                                  filename, timeit.default_timer() - start)
         # Log total time in constructor
-        current_app.logger.debug('Project for %s initialized in %s s.',
+        current_app.logger.debug('Initialized project for %s in %s s.',
                                  filename, timeit.default_timer() - init_start)
 
     @property
