@@ -53,10 +53,8 @@ class Project(db.Model):
     metadata_ = db.relationship('Metadata', backref='project', uselist=False)
 
     def __init__(self, filename, input_bucket, output_bucket, path,
-                 rgb=False, raw_key=None, annotated_key=None):
+                 rgb=False, raw_key='raw', annotated_key=None):
         init_start = timeit.default_timer()
-        if raw_key is None:
-            raw_key = 'raw'
         if annotated_key is None:
             annotated_key = get_ann_key(filename)
 
