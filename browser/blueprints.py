@@ -50,7 +50,7 @@ def handle_exception(error):
 
 @bp.route('/upload_file/<int:project_id>', methods=['GET', 'POST'])
 def upload_file(project_id):
-    '''Upload .trk/.npz data file to AWS S3 bucket.'''
+    """Upload .trk/.npz data file to AWS S3 bucket."""
     start = timeit.default_timer()
     project = Project.get_project(project_id)
     if not project:
