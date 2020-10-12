@@ -123,7 +123,7 @@ def test_finish_project(mocker, db_session):
         path='path')
 
     # test finish project
-    models.Project.finish_project(project)
+    project.finish()
     found_project = models.Project.get_project(project.id)
     assert found_project.finished is not None
     # test finish metadata
