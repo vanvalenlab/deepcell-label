@@ -52,7 +52,7 @@ def handle_exception(error):
 def upload_file(project_id):
     """Upload .trk/.npz data file to AWS S3 bucket."""
     start = timeit.default_timer()
-    project = Project.get_project(project_id)
+    project = Project.get(project_id)
     if not project:
         return jsonify({'error': 'project_id not found'}), 404
 
@@ -90,7 +90,7 @@ def action(project_id, action_type, frame):
         del info['frame']
 
     try:
-        project = Project.get_project(project_id)
+        project = Project.get(project_id)
         if not project:
             return jsonify({'error': 'project_id not found'}), 404
         edit = get_edit(project)
@@ -117,7 +117,7 @@ def get_frame(frame, project_id):
     """
     start = timeit.default_timer()
     # Get project from database
-    project = Project.get_project(project_id)
+    project = Project.get(project_id)
     if not project:
         return jsonify({'error': 'project_id not found'}), 404
     # Change the frame
@@ -173,7 +173,7 @@ def load(filename):
         return jsonify(error), 400
 
     # Initate Project entry in database
-    project = Project.create_project(filename, input_bucket, output_bucket, full_path, rgb)
+    project = Project.create(filename, input_bucket, output_bucket, full_path, rgb)
     metadata_start = timeit.default_timer()
     metadata = project.metadata_
     current_app.logger.debug('Got metadata for "%s" in %s s.',

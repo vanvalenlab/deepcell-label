@@ -74,7 +74,7 @@ def test_upload_file(mocker, client):
     path = 'path'
 
     # Create a project.
-    project = models.Project.create_project(
+    project = models.Project.create(
         filename=filename_npz,
         input_bucket=input_bucket,
         output_bucket=output_bucket,
@@ -83,7 +83,7 @@ def test_upload_file(mocker, client):
     response = client.get('/upload_file/{}'.format(project.id))
     assert response.status_code == 302
 
-    project = models.Project.create_project(
+    project = models.Project.create(
         filename=filename_trk,
         input_bucket=input_bucket,
         output_bucket=output_bucket,
@@ -108,7 +108,7 @@ def test_get_frame(mocker, client):
     for filename in ('filename.npz', 'filename.trk'):
 
         # Create a project.
-        project = models.Project.create_project(
+        project = models.Project.create(
             filename=filename,
             input_bucket='input_bucket',
             output_bucket='output_bucket',

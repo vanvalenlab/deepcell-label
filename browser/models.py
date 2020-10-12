@@ -133,7 +133,7 @@ class Project(db.Model):
         return _load(response['Body'].read())
 
     @staticmethod
-    def get_project(project_id):
+    def get(project_id):
         """
         Return the project with the given ID, if it exists.
 
@@ -150,7 +150,7 @@ class Project(db.Model):
         return project
 
     @staticmethod
-    def create_project(filename, input_bucket, output_bucket, path, rgb=False):
+    def create(filename, input_bucket, output_bucket, path, rgb=False):
         """
         Create a new project.
         Wraps the Project constructor with logging and database commits.

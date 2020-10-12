@@ -25,20 +25,20 @@ def test_project_init(project):
     assert project.label_frames is not None
 
 
-def test_get_project(mocker, db_session):
+def test_get(mocker, db_session):
     """
     Test getting a project from the Projects table.
     Gets a project before it exists, creates a project, then gets it again.
     """
     # test that no projects exist
-    project = models.Project.get_project(1)
+    project = models.Project.get(1)
     assert project is None
 
     # create project
     def load(self, *args):
         return {'raw': np.zeros((1, 1, 1, 1)), 'annotated': np.zeros((1, 1, 1, 1))}
     mocker.patch('models.Project.load', load)
-    project = models.Project.create_project(
+    project = models.Project.create(
         filename='filename',
         input_bucket='input_bucket',
         output_bucket='output_bucket',
@@ -46,7 +46,7 @@ def test_get_project(mocker, db_session):
 
     # test that the project can be found and is the same as the created one
     valid_id = project.id
-    found_project = models.Project.get_project(valid_id)
+    found_project = models.Project.get(valid_id)
     assert found_project == project
 
 
@@ -116,7 +116,7 @@ def test_finish_project(mocker, db_session):
     def load(self, *args):
         return {'raw': np.zeros((1, 1, 1, 1)), 'annotated': np.zeros((1, 1, 1, 1))}
     mocker.patch('models.Project.load', load)
-    project = models.Project.create_project(
+    project = models.Project.create(
         filename='filename',
         input_bucket='input_bucket',
         output_bucket='output_bucket',
@@ -124,7 +124,7 @@ def test_finish_project(mocker, db_session):
 
     # test finish project
     project.finish()
-    found_project = models.Project.get_project(project.id)
+    found_project = models.Project.get(project.id)
     assert found_project.finished is not None
     # test finish metadata
     assert found_project.metadata_.cell_ids is None
@@ -145,7 +145,7 @@ def test_update_metadata(mocker, db_session):
     def load(self, *args):
         return {'raw': np.zeros((1, 1, 1, 1)), 'annotated': np.zeros((1, 1, 1, 1))}
     mocker.patch('models.Project.load', load)
-    project = models.Project.create_project(
+    project = models.Project.create(
         filename='filename',
         input_bucket='input_bucket',
         output_bucket='output_bucket',
@@ -162,7 +162,7 @@ def test_update_label_frame(mocker, db_session):
     def load(self, *args):
         return {'raw': np.zeros((1, 1, 1, 1)), 'annotated': np.zeros((1, 1, 1, 1))}
     mocker.patch('models.Project.load', load)
-    project = models.Project.create_project(
+    project = models.Project.create(
         filename='filename',
         input_bucket='input_bucket',
         output_bucket='output_bucket',
