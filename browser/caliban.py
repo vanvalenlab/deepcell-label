@@ -22,22 +22,22 @@ from skimage.measure import regionprops
 class BaseEdit(object):
     """
     Base class for editing frames in Caliban.
-    Takes a project, performs an action, and updates the metadata.
+    Takes a project, performs an action, and updates the state.
     Lives only during a single action.
 
     Maintains boolean flags y_changed and info_changed
-    to track whether the label frame or the metadata have been changed, respectively.
+    to track whether the label frame or the state have been changed, respectively.
     We use these flags to force these objects to update in the database and
     to redraw them on the front-end app.
     """
 
     def __init__(self, project):
         self.project = project
-        self.metadata = project.metadata_
+        self.state = project.state
 
-        # Unpack some static info from metadata for easy access
-        self.height = self.metadata.height
-        self.width = self.metadata.width
+        # Unpack some static info from state for easy access
+        self.height = self.state.height
+        self.width = self.state.width
 
         # Flags to report whether we need to update (in database) or redraw (on front-end)
         self.x_changed = False  # Only used to redraw; raw images never change
@@ -63,14 +63,14 @@ class BaseEdit(object):
         """
         return self.project.raw_frames[self.frame_id].frame
 
-    # Access dynamic metadata columns
+    # Access dynamic state columns
     @property
     def frame_id(self):
         """
         Returns:
             int: index of the current frame
         """
-        return self.metadata.frame
+        return self.state.frame
 
     @property
     def feature(self):
@@ -78,7 +78,7 @@ class BaseEdit(object):
         Returns:
             int: index of the current feature
         """
-        return self.metadata.feature
+        return self.state.feature
 
     @property
     def channel(self):
@@ -86,7 +86,7 @@ class BaseEdit(object):
         Returns:
             int: index of the current channel
         """
-        return self.metadata.channel
+        return self.state.channel
 
     @property
     def scale_factor(self):
@@ -94,7 +94,7 @@ class BaseEdit(object):
         Returns:
             float: current scale_factor
         """
-        return self.metadata.scale_factor
+        return self.state.scale_factor
 
     def action(self, action_type, info):
         """Call an action method based on an action type."""
@@ -115,10 +115,10 @@ class BaseEdit(object):
         Raises:
             ValueError: if channel is not in [0, numChannels)
         """
-        if channel < 0 or channel > self.metadata.numChannels - 1:
+        if channel < 0 or channel > self.state.numChannels - 1:
             raise ValueError('Channel {} is outside of range [0, {}].'.format(
-                channel, self.metadata.numChannels - 1))
-        self.metadata.channel = channel
+                channel, self.state.numChannels - 1))
+        self.state.channel = channel
         self.x_changed = True
 
     def action_change_feature(self, feature):
@@ -131,10 +131,10 @@ class BaseEdit(object):
         Raises:
             ValueError: if feature is not in [0, feature_max)
         """
-        if feature < 0 or feature > self.metadata.numFeatures - 1:
+        if feature < 0 or feature > self.state.numFeatures - 1:
             raise ValueError('Feature {} is outside of range [0, {}].'.format(
-                feature, self.metadata.numFeatures - 1))
-        self.metadata.feature = feature
+                feature, self.state.numFeatures - 1))
+        self.state.feature = feature
         self.y_changed = True
 
     def add_cell_info(self, add_label, frame):
@@ -146,12 +146,12 @@ class BaseEdit(object):
     def action_new_single_cell(self, label):
         """
         Create new label that replaces an existing label in one frame.
-        Updates metadata for these labels.
+        Updates state for these labels.
 
         Args:
             label (int): label to replace
         """
-        new_label = self.metadata.get_max_label() + 1
+        new_label = self.state.get_max_label() + 1
 
         # replace frame labels
         img = self.frame[..., self.feature]
@@ -164,7 +164,7 @@ class BaseEdit(object):
     def action_delete_mask(self, label):
         """
         Deletes label from one frame, replacing the label with 0.
-        Updates the metadata for this label.
+        Updates the state for this label.
 
         Args:
             label (int): label to delete
@@ -181,7 +181,7 @@ class BaseEdit(object):
     def action_swap_single_frame(self, label_1, label_2):
         """
         Swap labels of two objects in one frame.
-        Does not update metadata as the frames for the labels do not change.
+        Does not update state as the frames for the labels do not change.
 
         Args:
             label_1 (int): first label to swap
@@ -201,7 +201,7 @@ class BaseEdit(object):
         """
         Use a "brush" to draw in the brush value along trace locations of
         the annotated data.
-        Updates label metadata if a change is detected.
+        Updates label state if a change is detected.
 
         Args:
             trace (list): list of (x, y) coordinates where the brush has painted
@@ -297,7 +297,7 @@ class BaseEdit(object):
         """
         img_ann = self.frame[..., self.feature]
         old_label = label
-        new_label = self.metadata.get_max_label() + 1
+        new_label = self.state.get_max_label() + 1
 
         in_original = np.any(np.isin(img_ann, old_label))
 
@@ -319,7 +319,7 @@ class BaseEdit(object):
         """Use watershed to segment different objects"""
         # Pull the label that is being split and find a new valid label
         current_label = label
-        new_label = self.metadata.get_max_label() + 1
+        new_label = self.state.get_max_label() + 1
 
         # Locally store the frames to work on
         img_raw = self.raw_frame[..., self.channel]
@@ -434,7 +434,7 @@ class BaseEdit(object):
         """
         tracks = False  # Default tracks payload
         if self.info_changed:
-            tracks = self.metadata.readable_tracks
+            tracks = self.state.readable_tracks
 
         img_payload = False  # Default image payload
         if self.x_changed or self.y_changed:
@@ -455,7 +455,7 @@ class BaseEdit(object):
         Copy the PickleType columns that have changed to persist them in the database.
         """
         if self.info_changed:
-            self.metadata.update()
+            self.state.update()
         if self.multi_changed:
             for label_frame in self.project.label_frames:
                 label_frame.update()
@@ -477,13 +477,13 @@ class ZStackEdit(BaseEdit):
         Args:
             label (int): label to replace with a new label
         """
-        new_label = self.metadata.get_max_label() + 1
+        new_label = self.state.get_max_label() + 1
 
         # Replace old label with new in every frame until end
         for label_frame in self.project.label_frames[self.frame_id:]:
-            frame = label_frame.frame[..., self.metadata.feature]  # Select right feature
+            frame = label_frame.frame[..., self.state.feature]  # Select right feature
             frame[frame == label] = new_label
-            # Update metadata for this frame
+            # Update state for this frame
             if new_label in frame:
                 self.del_cell_info(del_label=label, frame=label_frame.frame_id)
                 self.add_cell_info(add_label=new_label, frame=label_frame.frame_id)
@@ -535,10 +535,10 @@ class ZStackEdit(BaseEdit):
             frame[..., self.feature] = ann_img
 
         # update cell_info
-        cell_info_1 = self.metadata.cell_info[self.feature][label_1].copy()
-        cell_info_2 = self.metadata.cell_info[self.feature][label_2].copy()
-        self.metadata.cell_info[self.feature][label_1]['frames'] = cell_info_2['frames']
-        self.metadata.cell_info[self.feature][label_2]['frames'] = cell_info_1['frames']
+        cell_info_1 = self.state.cell_info[self.feature][label_1].copy()
+        cell_info_2 = self.state.cell_info[self.feature][label_2].copy()
+        self.state.cell_info[self.feature][label_1]['frames'] = cell_info_2['frames']
+        self.state.cell_info[self.feature][label_2]['frames'] = cell_info_1['frames']
 
         self.y_changed = self.info_changed = self.multi_changed = True
 
@@ -568,7 +568,7 @@ class ZStackEdit(BaseEdit):
         use location of cells in image to predict which annotations are
         different slices of the same cell
         """
-        for frame_id in range(self.metadata.numFrames - 1):
+        for frame_id in range(self.state.numFrames - 1):
             img = self.project.label_frames[frame_id].frame[..., self.feature]
             next_img = self.project.label_frames[frame_id + 1].frame[..., self.feature]
             predicted_next = predict_zstack_cell_ids(img, next_img)
@@ -589,7 +589,7 @@ class ZStackEdit(BaseEdit):
 
         # store npz file object in bucket/path
         s3 = self.project._get_s3_client()
-        s3.upload_fileobj(store_npz, self.metadata.output_bucket, self.metadata.path)
+        s3.upload_fileobj(store_npz, self.state.output_bucket, self.state.path)
 
     def add_cell_info(self, add_label, frame):
         """Add a cell to the npz"""
@@ -597,18 +597,18 @@ class ZStackEdit(BaseEdit):
         add_label = int(add_label)
 
         try:
-            old_frames = self.metadata.cell_info[self.feature][add_label]['frames']
+            old_frames = self.state.cell_info[self.feature][add_label]['frames']
             updated_frames = np.append(old_frames, frame)
             updated_frames = np.unique(updated_frames).tolist()
-            self.metadata.cell_info[self.feature][add_label]['frames'] = updated_frames
+            self.state.cell_info[self.feature][add_label]['frames'] = updated_frames
         # cell does not exist anywhere in npz:
         except KeyError:
-            self.metadata.cell_info[self.feature][add_label] = {
+            self.state.cell_info[self.feature][add_label] = {
                 'label': str(add_label),
                 'frames': [frame],
                 'slices': ''
             }
-            self.metadata.cell_ids[self.feature] = np.append(self.metadata.cell_ids[self.feature],
+            self.state.cell_ids[self.feature] = np.append(self.state.cell_ids[self.feature],
                                                              add_label)
 
         # if adding cell, frames and info have necessarily changed
@@ -617,17 +617,17 @@ class ZStackEdit(BaseEdit):
     def del_cell_info(self, del_label, frame):
         """Remove a cell from the npz"""
         # remove cell from frame
-        old_frames = self.metadata.cell_info[self.feature][del_label]['frames']
+        old_frames = self.state.cell_info[self.feature][del_label]['frames']
         updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame))).tolist()
-        self.metadata.cell_info[self.feature][del_label]['frames'] = updated_frames
+        self.state.cell_info[self.feature][del_label]['frames'] = updated_frames
 
         # if that was the last frame, delete the entry for that cell
-        if self.metadata.cell_info[self.feature][del_label]['frames'] == []:
-            del self.metadata.cell_info[self.feature][del_label]
+        if self.state.cell_info[self.feature][del_label]['frames'] == []:
+            del self.state.cell_info[self.feature][del_label]
 
             # also remove from list of cell_ids
-            ids = self.metadata.cell_ids[self.feature]
-            self.metadata.cell_ids[self.feature] = np.delete(ids,
+            ids = self.state.cell_ids[self.feature]
+            self.state.cell_ids[self.feature] = np.delete(ids,
                                                              np.where(ids == np.int64(del_label)))
 
         # if deleting cell, frames and info have necessarily changed
@@ -635,7 +635,7 @@ class ZStackEdit(BaseEdit):
 
     def create_cell_info(self, feature):
         """Make or remake the entire cell info dict"""
-        self.metadata.create_cell_info(feature)
+        self.state.create_cell_info(feature)
         self.info_changed = True
 
 
@@ -653,8 +653,8 @@ class TrackEdit(BaseEdit):
         Args:
             label (int): label to replace in subsequent frames
         """
-        new_label = self.metadata.get_max_label() + 1
-        track = self.metadata.tracks[label]
+        new_label = self.state.get_max_label() + 1
+        track = self.state.tracks[label]
 
         # Don't create a new track on the first frame of a track
         if self.frame_id == track['frames'][0]:
@@ -667,7 +667,7 @@ class TrackEdit(BaseEdit):
             frame[frame == label] = new_label
 
         # replace fields
-        track_new = self.metadata.tracks[new_label] = {}
+        track_new = self.state.tracks[new_label] = {}
 
         idx = track['frames'].index(self.frame_id)
 
@@ -681,7 +681,7 @@ class TrackEdit(BaseEdit):
         # only add daughters if they aren't in the same frame as the new track
         track_new['daughters'] = []
         for d in track['daughters']:
-            if self.frame_id not in self.metadata.tracks[d]['frames']:
+            if self.frame_id not in self.state.tracks[d]['frames']:
                 track_new['daughters'].append(d)
 
         track_new['frame_div'] = track['frame_div']
@@ -692,7 +692,7 @@ class TrackEdit(BaseEdit):
         track['frame_div'] = None
         track['capped'] = True
 
-        self.metadata.cell_ids[0] = np.append(self.metadata.cell_ids[0], new_label)
+        self.state.cell_ids[0] = np.append(self.state.cell_ids[0], new_label)
 
         self.y_changed = self.info_changed = self.multi_changed = True
 
@@ -700,8 +700,8 @@ class TrackEdit(BaseEdit):
         """
         label_1 gave birth to label_2
         """
-        track_1 = self.metadata.tracks[label_1]
-        track_2 = self.metadata.tracks[label_2]
+        track_1 = self.state.tracks[label_1]
+        track_2 = self.state.tracks[label_2]
 
         last_frame_parent = max(track_1['frames'])
         first_frame_daughter = min(track_2['frames'])
@@ -733,11 +733,11 @@ class TrackEdit(BaseEdit):
 
         # TODO: is this the same as add/remove?
         # replace fields
-        track_1 = self.metadata.tracks[label_1]
-        track_2 = self.metadata.tracks[label_2]
+        track_1 = self.state.tracks[label_1]
+        track_2 = self.state.tracks[label_2]
 
         for d in track_1['daughters']:
-            self.metadata.tracks[d]['parent'] = None
+            self.state.tracks[d]['parent'] = None
 
         track_1['frames'].extend(track_2['frames'])
         track_1['frames'] = sorted(set(track_1['frames']))
@@ -745,8 +745,8 @@ class TrackEdit(BaseEdit):
         track_1['frame_div'] = track_2['frame_div']
         track_1['capped'] = track_2['capped']
 
-        del self.metadata.tracks[label_2]
-        for _, track in self.metadata.tracks.items():
+        del self.state.tracks[label_2]
+        for _, track in self.state.tracks.items():
             try:
                 track['daughters'].remove(label_2)
             except ValueError:
@@ -764,15 +764,15 @@ class TrackEdit(BaseEdit):
                 frame[frame == old_label] = new_label
 
             # replace fields
-            track_new = self.metadata.tracks[new_label] = self.metadata.tracks[old_label]
+            track_new = self.state.tracks[new_label] = self.state.tracks[old_label]
             track_new['label'] = new_label
-            del self.metadata.tracks[old_label]
+            del self.state.tracks[old_label]
 
             for d in track_new['daughters']:
-                self.metadata.tracks[d]['parent'] = new_label
+                self.state.tracks[d]['parent'] = new_label
 
             if track_new['parent'] is not None:
-                parent_track = self.metadata.tracks[track_new['parent']]
+                parent_track = self.state.tracks[track_new['parent']]
                 parent_track['daughters'].remove(old_label)
                 parent_track['daughters'].append(new_label)
 
@@ -785,18 +785,18 @@ class TrackEdit(BaseEdit):
     def action_save_track(self):
         # clear any empty tracks before saving file
         empty_tracks = []
-        for key in self.metadata.tracks:
-            if not self.metadata.tracks[key]['frames']:
-                empty_tracks.append(self.metadata.tracks[key]['label'])
+        for key in self.state.tracks:
+            if not self.state.tracks[key]['frames']:
+                empty_tracks.append(self.state.tracks[key]['label'])
         for track in empty_tracks:
-            del self.metadata.tracks[track]
+            del self.state.tracks[track]
 
         # create file object in memory instead of writing to disk
         trk_file_obj = io.BytesIO()
 
         with tarfile.open(fileobj=trk_file_obj, mode='w') as trks:
             with tempfile.NamedTemporaryFile('w') as lineage_file:
-                json.dump(self.metadata.tracks, lineage_file, indent=1)
+                json.dump(self.state.tracks, lineage_file, indent=1)
                 lineage_file.flush()
                 trks.add(lineage_file.name, 'lineage.json')
 
@@ -813,7 +813,7 @@ class TrackEdit(BaseEdit):
             # go to beginning of file object
             trk_file_obj.seek(0)
             s3 = self.project._get_s3_client()
-            s3.upload_fileobj(trk_file_obj, self.metadata.output_bucket, self.metadata.path)
+            s3.upload_fileobj(trk_file_obj, self.state.output_bucket, self.state.path)
 
         except Exception as e:
             print('Something Happened: ', e, file=sys.stderr)
@@ -824,13 +824,13 @@ class TrackEdit(BaseEdit):
         # if cell already exists elsewhere in trk:
         add_label = int(add_label)
         try:
-            old_frames = self.metadata.tracks[add_label]['frames']
+            old_frames = self.state.tracks[add_label]['frames']
             updated_frames = np.append(old_frames, frame)
             updated_frames = np.unique(updated_frames).tolist()
-            self.metadata.tracks[add_label]['frames'] = updated_frames
+            self.state.tracks[add_label]['frames'] = updated_frames
         # cell does not exist anywhere in trk:
         except KeyError:
-            self.metadata.tracks[add_label] = {
+            self.state.tracks[add_label] = {
                 'label': int(add_label),
                 'frames': [frame],
                 'daughters': [],
@@ -838,7 +838,7 @@ class TrackEdit(BaseEdit):
                 'parent': None,
                 'capped': False,
             }
-            self.metadata.cell_ids[self.feature] = np.append(self.metadata.cell_ids[self.feature],
+            self.state.cell_ids[self.feature] = np.append(self.state.cell_ids[self.feature],
                                                              add_label)
 
         self.y_changed = self.info_changed = True
@@ -846,22 +846,22 @@ class TrackEdit(BaseEdit):
     def del_cell_info(self, del_label, frame):
         """Remove a cell from the trk"""
         # remove cell from frame
-        old_frames = self.metadata.tracks[del_label]['frames']
+        old_frames = self.state.tracks[del_label]['frames']
         updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame))).tolist()
-        self.metadata.tracks[del_label]['frames'] = updated_frames
+        self.state.tracks[del_label]['frames'] = updated_frames
 
         # if that was the last frame, delete the entry for that cell
-        if self.metadata.tracks[del_label]['frames'] == []:
-            del self.metadata.tracks[del_label]
+        if self.state.tracks[del_label]['frames'] == []:
+            del self.state.tracks[del_label]
 
             # also remove from list of cell_ids
-            ids = self.metadata.cell_ids[self.feature]
-            self.metadata.cell_ids[self.feature] = np.delete(
+            ids = self.state.cell_ids[self.feature]
+            self.state.cell_ids[self.feature] = np.delete(
                 ids, np.where(ids == np.int64(del_label))
             )
 
             # If deleting lineage data, remove parent/daughter entries
-            for _, track in self.metadata.tracks.items():
+            for _, track in self.state.tracks.items():
                 try:
                     track['daughters'].remove(del_label)
                 except ValueError:

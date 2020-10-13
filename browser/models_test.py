@@ -12,7 +12,7 @@ from imgutils import pngify
 def test_project_init(project):
     """
     Test constructor for Project table.
-    Checks for relationships to metadata and frames.
+    Checks for relationships to state and frames.
     """
     # Check columns are made (except finished)
     assert project.id is not None
@@ -20,7 +20,7 @@ def test_project_init(project):
     assert project.finished is None  # None until project is done
 
     # Check relationship columns have been made
-    assert project.metadata_ is not None
+    assert project.state is not None
     assert project.raw_frames is not None
     assert project.label_frames is not None
 
@@ -54,13 +54,13 @@ def test_get_label_array(project):
     """
     Test outlined label arrays to send to the front-end.
     """
-    metadata = project.metadata_
+    state = project.state
     label_arr = project.get_label_arr()
-    assert len(label_arr) == metadata.height
+    assert len(label_arr) == state.height
     for row in label_arr:
-        assert len(row) == metadata.width
+        assert len(row) == state.width
     label_frame = np.array(label_arr)
-    expected_frame = project.label_frames[metadata.frame].frame[..., metadata.channel]
+    expected_frame = project.label_frames[state.frame].frame[..., state.channel]
     assert (label_frame[label_frame >= 0] == expected_frame[label_frame >= 0]).all()
     assert (label_frame[label_frame < 0] == -expected_frame[label_frame < 0]).all()
 
@@ -69,15 +69,15 @@ def test_get_label_png(project):
     """
     Test label frame PNGs to send to the front-end.
     """
-    metadata = project.metadata_
+    state = project.state
     label_png = project.get_label_png()
     assert type(label_png) is io.BytesIO
-    expected_frame = project.label_frames[metadata.frame].frame[..., metadata.feature]
+    expected_frame = project.label_frames[state.frame].frame[..., state.feature]
     expected_frame = np.ma.masked_equal(expected_frame, 0)
     expected_png = pngify(expected_frame,
                           vmin=0,
-                          vmax=metadata.get_max_label(),
-                          cmap=metadata.colormap)
+                          vmax=state.get_max_label(),
+                          cmap=state.colormap)
     assert label_png.getvalue() == expected_png.getvalue()
 
 
@@ -85,26 +85,26 @@ def test_get_raw_png(project):
     """
     Test raw frame PNGs to send to the front-end.
     """
-    metadata = project.metadata_
+    state = project.state
     raw_png = project.get_raw_png()
     assert type(raw_png) is io.BytesIO
-    if metadata.rgb:
-        expected_frame = project.rgb_frames[metadata.frame].frame
+    if state.rgb:
+        expected_frame = project.rgb_frames[state.frame].frame
         expected_png = pngify(expected_frame, vmin=None, vmax=None, cmap=None)
     else:
-        expected_frame = project.raw_frames[metadata.frame].frame[..., metadata.channel]
+        expected_frame = project.raw_frames[state.frame].frame[..., state.channel]
         expected_png = pngify(expected_frame, vmin=0, vmax=None, cmap='cubehelix')
     assert raw_png.getvalue() == expected_png.getvalue()
 
 
 def test_get_max_label(project):
-    metadata = project.metadata_
-    max_label = metadata.get_max_label()
-    assert max_label in project.label_array[..., metadata.feature]
-    assert max_label + 1 not in project.label_array[..., metadata.feature]
-    assert max_label == project.label_array[..., metadata.feature].max()
+    state = project.state
+    max_label = state.get_max_label()
+    assert max_label in project.label_array[..., state.feature]
+    assert max_label + 1 not in project.label_array[..., state.feature]
+    assert max_label == project.label_array[..., state.feature].max()
     if max_label == 0:
-        assert (project.label_array[..., metadata.feature] == 0).all()
+        assert (project.label_array[..., state.feature] == 0).all()
 
 
 def test_finish_project(mocker, db_session):
@@ -126,9 +126,9 @@ def test_finish_project(mocker, db_session):
     project.finish()
     found_project = models.Project.get(project.id)
     assert found_project.finished is not None
-    # test finish metadata
-    assert found_project.metadata_.cell_ids is None
-    assert found_project.metadata_.cell_info is None
+    # test finish state
+    assert found_project.state.cell_ids is None
+    assert found_project.state.cell_info is None
     # test finish frames
     for raw, rgb, label in zip(found_project.raw_frames,
                                found_project.rgb_frames,
@@ -139,8 +139,8 @@ def test_finish_project(mocker, db_session):
         assert label.lastUpdate is not None
 
 
-def test_update_metadata(mocker, db_session):
-    """Test updating metadata."""
+def test_update_state(mocker, db_session):
+    """Test updating state."""
     # create project
     def load(self, *args):
         return {'raw': np.zeros((1, 1, 1, 1)), 'annotated': np.zeros((1, 1, 1, 1))}
@@ -151,9 +151,9 @@ def test_update_metadata(mocker, db_session):
         output_bucket='output_bucket',
         path='path')
 
-    project.metadata_.update()
-    assert project.metadata_.numUpdates > 0
-    assert project.metadata_.firstUpdate is not None
+    project.state.update()
+    assert project.state.numUpdates > 0
+    assert project.state.firstUpdate is not None
 
 
 def test_update_label_frame(mocker, db_session):
@@ -221,40 +221,40 @@ def test_frames_init(project):
         assert raw_frame.project_id == rgb_frame.project_id
 
 
-def test_metadata_init(project):
-    """Test constructing the metadata for a project."""
+def test_state_init(project):
+    """Test constructing the state for a project."""
     raw_frames = project.raw_frames
     raw_frame = raw_frames[0].frame
     label_frames = project.label_frames
     label_frame = label_frames[0].frame
-    metadata = project.metadata_
-    assert raw_frame.shape[-1] == metadata.numChannels
-    assert label_frame.shape[-1] == metadata.numFeatures
-    assert len(raw_frames) == metadata.numFrames
-    assert raw_frame.shape[0] == metadata.height
-    assert raw_frame.shape[1] == metadata.width
+    state = project.state
+    assert raw_frame.shape[-1] == state.numChannels
+    assert label_frame.shape[-1] == state.numFeatures
+    assert len(raw_frames) == state.numFrames
+    assert raw_frame.shape[0] == state.height
+    assert raw_frame.shape[1] == state.width
 
-    assert len(metadata.cell_ids) == metadata.numFeatures
-    assert len(metadata.cell_info) == metadata.numFeatures
-    for feature in range(metadata.numFeatures):
-        assert len(metadata.cell_ids[feature]) == len(metadata.cell_info[feature])
+    assert len(state.cell_ids) == state.numFeatures
+    assert len(state.cell_info) == state.numFeatures
+    for feature in range(state.numFeatures):
+        assert len(state.cell_ids[feature]) == len(state.cell_info[feature])
 
 
 def test_create_cell_info(project):
-    """Test creating the cell info dict in the metadata for a project."""
-    metadata = project.metadata_
+    """Test creating the cell info dict in the state for a project."""
+    state = project.state
     # Combine all frames into one numpy array with shape (frames, height, width, features)
     label_array = np.array([frame.frame for frame in project.label_frames])
-    for feature in range(metadata.numFeatures):
+    for feature in range(state.numFeatures):
         labels = label_array[..., feature]
         labels_uniq = np.unique(labels[labels != 0])
-        metadata.create_cell_info(feature, label_array)
-        assert 0 not in metadata.cell_ids[feature]
+        state.create_cell_info(feature, label_array)
+        assert 0 not in state.cell_ids[feature]
         for label in labels_uniq:
-            assert label in metadata.cell_ids[feature]
-            assert str(label) == metadata.cell_info[feature][label]['label']
+            assert label in state.cell_ids[feature]
+            assert str(label) == state.cell_info[feature][label]['label']
             label_in_frame = np.isin(label_array, label).any(axis=(1, 2))  # Height and width axes
-            label_frames = metadata.cell_info[feature][label]['frames']
-            no_label_frames = [i for i in range(metadata.numFrames) if i not in label_frames]
+            label_frames = state.cell_info[feature][label]['frames']
+            no_label_frames = [i for i in range(state.numFrames) if i not in label_frames]
             assert label_in_frame[label_frames].all()
             assert not label_in_frame[no_label_frames].any()

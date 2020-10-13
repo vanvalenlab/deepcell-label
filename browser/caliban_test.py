@@ -29,29 +29,29 @@ def edit(request):
 
 
 def test_action_change_channel(edit):
-    for channel in range(edit.metadata.numChannels):
+    for channel in range(edit.state.numChannels):
         edit.action_change_channel(channel)
-        assert edit.metadata.channel == channel
+        assert edit.state.channel == channel
     with pytest.raises(ValueError):
         edit.action_change_channel(-1)
     with pytest.raises(ValueError):
-        edit.action_change_channel(edit.metadata.numChannels)
+        edit.action_change_channel(edit.state.numChannels)
 
 
 def test_action_change_feature(edit):
-    for feature in range(edit.metadata.numFeatures):
+    for feature in range(edit.state.numFeatures):
         edit.action_change_feature(feature)
-        assert edit.metadata.feature == feature
+        assert edit.state.feature == feature
     with pytest.raises(ValueError):
         edit.action_change_feature(-1)
     with pytest.raises(ValueError):
-        edit.action_change_feature(edit.metadata.numFeatures)
+        edit.action_change_feature(edit.state.numFeatures)
 
 
 def test_zstack_add_cell_info(zstack_edit):
-    numFrames = zstack_edit.metadata.numFrames
-    cell_ids = zstack_edit.metadata.cell_ids
-    cell_info = zstack_edit.metadata.cell_info
+    numFrames = zstack_edit.state.numFrames
+    cell_ids = zstack_edit.state.cell_ids
+    cell_info = zstack_edit.state.cell_info
     assert not zstack_edit.y_changed
     assert not zstack_edit.info_changed
     for feature in cell_ids:
@@ -78,8 +78,8 @@ def test_zstack_add_cell_info(zstack_edit):
 
 
 def test_track_add_cell_info(track_edit):
-    numFrames = track_edit.metadata.numFrames
-    tracks = track_edit.metadata.tracks
+    numFrames = track_edit.state.numFrames
+    tracks = track_edit.state.tracks
     new_label = max(tracks) + 1 if len(tracks) != 0 else 1
     assert not track_edit.y_changed
     assert not track_edit.info_changed
@@ -112,9 +112,9 @@ def test_track_add_cell_info(track_edit):
 
 
 def test_del_cell_info(edit):
-    numFrames = edit.metadata.numFrames
-    cell_ids = edit.metadata.cell_ids
-    cell_info = edit.metadata.cell_info
+    numFrames = edit.state.numFrames
+    cell_ids = edit.state.cell_ids
+    cell_info = edit.state.cell_info
     assert not edit.y_changed
     assert not edit.info_changed
     for feature in cell_ids:
@@ -138,50 +138,50 @@ def test_del_cell_info(edit):
             assert edit.info_changed
         # All cells removed from feature
         np.testing.assert_array_equal(cell_ids[feature], np.array([]))
-        assert edit.metadata.cell_info[feature] == {}
+        assert edit.state.cell_info[feature] == {}
 
 
 def test_action_new_single_cell(edit):
-    numFrames = edit.metadata.numFrames
-    cell_ids = deepcopy(edit.metadata.cell_ids)
+    numFrames = edit.state.numFrames
+    cell_ids = deepcopy(edit.state.cell_ids)
     for feature in cell_ids:
         edit.action_change_feature(feature)
         for cell in cell_ids[feature]:
             # Replace cell in all frames but last
             for frame in range(numFrames - 1):
-                edit.metadata.frame = frame
+                edit.state.frame = frame
                 edit.action_new_single_cell(cell)
-                new_label = edit.metadata.get_max_label()
+                new_label = edit.state.get_max_label()
                 # TODO: @tddough98 this assert assumes that cell is present in every frame
                 assert new_label in edit.project.label_array[frame, ..., feature]
                 assert cell not in edit.project.label_array[frame, ..., feature]
             # Replace cell in last frame
-            edit.metadata.frame = numFrames - 1
+            edit.state.frame = numFrames - 1
             edit.action_new_single_cell(cell)
-            new_label = edit.metadata.get_max_label()
+            new_label = edit.state.get_max_label()
             # TODO: @tddough98 this assert assumes that cell is present in every frame
             assert new_label in edit.project.label_array[numFrames - 1]
             assert cell not in edit.project.label_array[..., feature]
 
 
 def test_action_delete_mask(edit):
-    numFrames = edit.metadata.numFrames
-    cell_ids = deepcopy(edit.metadata.cell_ids)
+    numFrames = edit.state.numFrames
+    cell_ids = deepcopy(edit.state.cell_ids)
     for feature in cell_ids:
         edit.action_change_feature(feature)
         for cell in cell_ids[feature]:
             for frame in range(numFrames - 1):
-                edit.metadata.frame = frame
+                edit.state.frame = frame
                 edit.action_delete_mask(cell)
                 assert cell not in edit.project.label_array[frame, ..., feature]
-            edit.metadata.frame = numFrames - 1
+            edit.state.frame = numFrames - 1
             edit.action_delete_mask(cell)
             assert cell not in edit.project.label_array[..., feature]
 
 
 def test_action_swap_single_frame(edit):
-    numFrames = edit.metadata.numFrames
-    cell_ids = deepcopy(edit.metadata.cell_ids)
+    numFrames = edit.state.numFrames
+    cell_ids = deepcopy(edit.state.cell_ids)
     assert not edit.y_changed
     assert not edit.info_changed
     for feature in cell_ids:
@@ -189,7 +189,7 @@ def test_action_swap_single_frame(edit):
         # All pairs of labels in that feature
         for cell1, cell2 in itertools.product(cell_ids[feature], cell_ids[feature]):
             for frame in range(numFrames):
-                edit.metadata.frame = frame
+                edit.state.frame = frame
                 cell1_ann = edit.frame[..., feature] == cell1
                 cell2_ann = edit.frame[..., feature] == cell2
                 edit.action_swap_single_frame(cell1, cell2)
@@ -246,43 +246,43 @@ def test_action_swap_single_frame(edit):
 # Tests for zstack specific actions
 
 def test_action_new_cell_stack(zstack_edit):
-    for feature in range(zstack_edit.metadata.numFeatures):
+    for feature in range(zstack_edit.state.numFeatures):
         zstack_edit.action_change_feature(feature)
-        label = zstack_edit.metadata.get_max_label()
+        label = zstack_edit.state.get_max_label()
         if label == 0:  # no labels in feature
             continue
-        frames = zstack_edit.metadata.cell_info[feature][label]['frames']
+        frames = zstack_edit.state.cell_info[feature][label]['frames']
         # replace from back to front
         for frame in frames[::-1]:
-            zstack_edit.metadata.frame = frame
-            new_label = zstack_edit.metadata.get_max_label() + 1
+            zstack_edit.state.frame = frame
+            new_label = zstack_edit.state.get_max_label() + 1
             zstack_edit.action_new_cell_stack(label)
             # TODO: this assert assumes that label was in every frame
             assert new_label in zstack_edit.project.label_array[frame, ..., feature]
             assert label not in zstack_edit.project.label_array[frame:, ..., feature]
         # replace only in first frame
-        label = zstack_edit.metadata.get_max_label()
+        label = zstack_edit.state.get_max_label()
         new_label = label + 1
-        frames = zstack_edit.metadata.cell_info[feature][label]['frames']
-        zstack_edit.metadata.frame = frames[0]
+        frames = zstack_edit.state.cell_info[feature][label]['frames']
+        zstack_edit.state.frame = frames[0]
         zstack_edit.action_new_cell_stack(label)
         assert label not in zstack_edit.project.label_array[..., feature]
         for frame in frames:
             # TODO: this assert assumes that label is in every frame
-            zstack_edit.metadata.frame = frame
+            zstack_edit.state.frame = frame
             assert new_label in zstack_edit.frame[..., feature]
 
 
 def test_action_replace_single(zstack_edit):
-    for feature in range(zstack_edit.metadata.numFeatures):
+    for feature in range(zstack_edit.state.numFeatures):
         zstack_edit.action_change_feature(feature)
-        labels = zstack_edit.metadata.cell_ids[feature]
+        labels = zstack_edit.state.cell_ids[feature]
         for cell1, cell2 in itertools.product(labels, labels):
             # Front end checks labels are different
             # TODO: check on backend and make tests for the check
             if cell1 == cell2:
                 continue
-            for frame in range(zstack_edit.metadata.numFrames):
+            for frame in range(zstack_edit.state.numFrames):
                 annotated = zstack_edit.project.label_array[frame, ..., feature].copy()
                 # Front end checks labels selected in the same frame
                 # TODO: check on backend and make tests for the check
@@ -290,7 +290,7 @@ def test_action_replace_single(zstack_edit):
                     continue
                 assert cell1 in annotated
                 assert cell2 in annotated
-                zstack_edit.metadata.frame = frame
+                zstack_edit.state.frame = frame
                 zstack_edit.action_replace_single(cell1, cell2)
                 new_ann = zstack_edit.project.label_array[frame, ..., feature]
                 assert cell1 in new_ann
@@ -299,9 +299,9 @@ def test_action_replace_single(zstack_edit):
 
 
 def test_action_replace(zstack_edit):
-    for feature in range(zstack_edit.metadata.numFeatures):
+    for feature in range(zstack_edit.state.numFeatures):
         zstack_edit.action_change_feature(feature)
-        labels = zstack_edit.metadata.cell_ids[feature]
+        labels = zstack_edit.state.cell_ids[feature]
         for cell1, cell2 in itertools.product(labels, labels):
             old_ann = zstack_edit.project.label_array[..., feature].copy()
             # Front end checks labels are different
@@ -316,15 +316,15 @@ def test_action_replace(zstack_edit):
 
 
 def test_action_swap_all_frame(zstack_edit):
-    for feature in range(zstack_edit.metadata.numFeatures):
+    for feature in range(zstack_edit.state.numFeatures):
         zstack_edit.action_change_feature(feature)
-        labels = zstack_edit.metadata.cell_ids[feature]
+        labels = zstack_edit.state.cell_ids[feature]
         for cell1, cell2 in itertools.product(labels, labels):
             old_ann = zstack_edit.project.label_array[..., feature].copy()
-            old_cell_info = zstack_edit.metadata.cell_info.copy()
+            old_cell_info = zstack_edit.state.cell_info.copy()
             zstack_edit.action_swap_all_frame(cell1, cell2)
             ann = zstack_edit.project.label_array[..., feature]
-            cell_info = zstack_edit.metadata.cell_info
+            cell_info = zstack_edit.state.cell_info
             assert (ann[old_ann == cell1] == cell2).all()
             assert (ann[old_ann == cell2] == cell1).all()
             assert old_cell_info[feature][cell1]['frames'] == cell_info[feature][cell2]['frames']
@@ -334,19 +334,19 @@ def test_action_swap_all_frame(zstack_edit):
 # Tests for TrackEdit specific actions
 
 def test_action_new_track(track_edit):
-    for label in track_edit.metadata.cell_ids[0]:
-        track = track_edit.metadata.tracks[label].copy()
+    for label in track_edit.state.cell_ids[0]:
+        track = track_edit.state.tracks[label].copy()
         # New track on first frame of the track has no effect
-        track_edit.metadata.frame = track['frames'][0]
+        track_edit.state.frame = track['frames'][0]
         track_edit.action_new_track(label)
-        assert track == track_edit.metadata.tracks[label]
+        assert track == track_edit.state.tracks[label]
         # New track on other frames replaces label on all following frames
         for frame in track['frames'][1:]:
-            track_edit.metadata.frame = frame
-            new_label = track_edit.metadata.get_max_label() + 1
+            track_edit.state.frame = frame
+            new_label = track_edit.state.get_max_label() + 1
             track_edit.action_new_track(label)
-            assert new_label in track_edit.metadata.cell_ids[0]
-            assert track['frames'] == (track_edit.metadata.tracks[label]['frames'] +
-                                       track_edit.metadata.tracks[new_label]['frames'])
+            assert new_label in track_edit.state.cell_ids[0]
+            assert track['frames'] == (track_edit.state.tracks[label]['frames'] +
+                                       track_edit.state.tracks[new_label]['frames'])
             # Only create a one new track
             break

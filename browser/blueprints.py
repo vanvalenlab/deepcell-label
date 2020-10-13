@@ -58,7 +58,7 @@ def upload_file(project_id):
 
     # Call function in caliban.py to save data file and send to S3 bucket
     edit = get_edit(project)
-    filename = project.metadata_.filename
+    filename = project.state.filename
     if is_trk_file(filename):
         edit.action_save_track()
     elif is_npz_file(filename):
@@ -85,7 +85,7 @@ def action(project_id, action_type, frame):
     info = {k: json.loads(v) for k, v in request.values.to_dict().items()}
 
     # TODO: remove frame from request values in front-end
-    # Frame is instead tracked by the frame column in the Metadata column
+    # Frame is instead tracked by the frame column in the State column
     if 'frame' in info:
         del info['frame']
 
@@ -121,7 +121,7 @@ def get_frame(frame, project_id):
     if not project:
         return jsonify({'error': 'project_id not found'}), 404
     # Change the frame
-    project.metadata_.frame = frame
+    project.state.frame = frame
     project.update()
     # Get pngs and array from project
     raw_png = project.get_raw_png()
@@ -174,21 +174,21 @@ def load(filename):
 
     # Initate Project entry in database
     project = Project.create(filename, input_bucket, output_bucket, full_path, rgb)
-    metadata_start = timeit.default_timer()
-    metadata = project.metadata_
-    current_app.logger.debug('Got metadata for "%s" in %s s.',
-                             filename, timeit.default_timer() - metadata_start)
+    state_start = timeit.default_timer()
+    state = project.state
+    current_app.logger.debug('Got state for "%s" in %s s.',
+                             filename, timeit.default_timer() - state_start)
 
     if is_trk_file(filename):
         current_app.logger.debug('Loaded trk file "%s" in %s s.',
                                  filename, timeit.default_timer() - start)
         # Send attributes to .js file
         return jsonify({
-            'max_frames': metadata.numFrames,
-            'tracks': metadata.readable_tracks,
-            'dimensions': (metadata.width, metadata.height),
+            'max_frames': state.numFrames,
+            'tracks': state.readable_tracks,
+            'dimensions': (state.width, state.height),
             'project_id': project.id,
-            'screen_scale': metadata.scale_factor
+            'screen_scale': state.scale_factor
         })
 
     if is_npz_file(filename):
@@ -196,11 +196,11 @@ def load(filename):
                                  filename, timeit.default_timer() - start)
         # Send attributes to .js file
         return jsonify({
-            'max_frames': metadata.numFrames,
-            'channel_max': metadata.numChannels,
-            'feature_max': metadata.numFeatures,
-            'tracks': metadata.readable_tracks,
-            'dimensions': (metadata.width, metadata.height),
+            'max_frames': state.numFrames,
+            'channel_max': state.numChannels,
+            'feature_max': state.numFeatures,
+            'tracks': state.readable_tracks,
+            'dimensions': (state.width, state.height),
             'project_id': project.id
         })
 
@@ -307,7 +307,7 @@ def shortcut(filename):
 
 def get_edit(project):
     """Factory for Edit objects"""
-    filename = project.metadata_.filename
+    filename = project.state.filename
     if is_npz_file(filename):
         return ZStackEdit(project)
     elif is_trk_file(filename):

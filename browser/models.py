@@ -49,8 +49,7 @@ class Project(db.Model):
     raw_frames = db.relationship('RawFrame', backref='project')
     rgb_frames = db.relationship('RGBFrame', backref='project')
     label_frames = db.relationship('LabelFrame', backref='project')
-    # Includes underscore to avoid conflict with metadata (MetaData) attribute from SQLAlchemy
-    metadata_ = db.relationship('Metadata', backref='project', uselist=False)
+    state = db.relationship('State', backref='project', uselist=False)
 
     def __init__(self, filename, input_bucket, output_bucket, path,
                  rgb=False, raw_key='raw', annotated_key=None):
@@ -69,11 +68,11 @@ class Project(db.Model):
             raw = np.expand_dims(raw, axis=0)
             annotated = np.expand_dims(annotated, axis=0)
 
-        # Create metadata
+        # Create state
         start = timeit.default_timer()
-        self.metadata_ = Metadata(self.id, filename, path, output_bucket,
+        self.state = State(self.id, filename, path, output_bucket,
                                   raw, annotated, trial, rgb)
-        current_app.logger.debug('Created metadata for %s in %ss.',
+        current_app.logger.debug('Created state for %s in %ss.',
                                  filename, timeit.default_timer() - start)
 
         # Create frames from raw, RGB, and labeled images
@@ -181,13 +180,13 @@ class Project(db.Model):
 
     def finish(self):
         """
-        Complete a project and its associated frames and metadata.
-        Sets the PickleType columns of the frames and metadata to None.
+        Complete a project and its associated frames and state.
+        Sets the PickleType columns of the frames and state to None.
         """
         start = timeit.default_timer()
         self.finished = db.func.current_timestamp()
-        # Set PickleType columns in metadata_ to None
-        self.metadata_.finish()
+        # Set PickleType columns in state to None
+        self.state.finish()
         # Set PickleType columns in frames to None
         for label_frame in self.label_frames:
             label_frame.finish()
@@ -204,10 +203,10 @@ class Project(db.Model):
         Returns:
             list: nested list of labels at each positions, with negative label outlines.
         """
-        metadata = self.metadata_
+        state = self.state
         # Create label array
-        label_frame = self.label_frames[metadata.frame]
-        label_arr = label_frame.frame[..., metadata.feature]
+        label_frame = self.label_frames[state.frame]
+        label_arr = label_frame.frame[..., state.feature]
         return add_outlines(label_arr).tolist()
 
     def get_label_png(self):
@@ -215,14 +214,14 @@ class Project(db.Model):
         Returns:
             BytesIO: returns the current label frame as a .png
         """
-        metadata = self.metadata_
+        state = self.state
         # Create label png
-        label_frame = self.label_frames[metadata.frame]
-        label_arr = label_frame.frame[..., metadata.feature]
+        label_frame = self.label_frames[state.frame]
+        label_arr = label_frame.frame[..., state.feature]
         label_png = pngify(imgarr=np.ma.masked_equal(label_arr, 0),
                            vmin=0,
-                           vmax=metadata.get_max_label(),
-                           cmap=metadata.colormap)
+                           vmax=state.get_max_label(),
+                           cmap=state.colormap)
         return label_png
 
     def get_raw_png(self):
@@ -230,10 +229,10 @@ class Project(db.Model):
         Returns:
             BytesIO: contains the current raw frame as a .png
         """
-        metadata = self.metadata_
+        state = self.state
         # RGB png
-        if metadata.rgb:
-            raw_frame = self.rgb_frames[metadata.frame]
+        if state.rgb:
+            raw_frame = self.rgb_frames[state.frame]
             raw_arr = raw_frame.frame
             raw_png = pngify(imgarr=raw_arr,
                              vmin=None,
@@ -241,8 +240,8 @@ class Project(db.Model):
                              cmap=None)
             return raw_png
         # Raw png
-        raw_frame = self.raw_frames[metadata.frame]
-        raw_arr = raw_frame.frame[..., metadata.channel]
+        raw_frame = self.raw_frames[state.frame]
+        raw_arr = raw_frame.frame[..., state.channel]
         raw_png = pngify(imgarr=raw_arr,
                          vmin=0,
                          vmax=None,
@@ -250,14 +249,14 @@ class Project(db.Model):
         return raw_png
 
 
-class Metadata(db.Model):
+class State(db.Model):
     """
-    Table definition that stores the project metadata.
+    Table definition that stores the project state.
     Includes both static project info, like filename and data dimensions,
     and label metadata that is updated by actions.
     """
     # pylint: disable=E1101
-    __tablename__ = 'metadata'
+    __tablename__ = 'state'
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
                            primary_key=True, nullable=False)
     updatedAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now(),
@@ -267,7 +266,7 @@ class Metadata(db.Model):
     firstUpdate = db.Column(db.TIMESTAMP)
     lastUpdate = db.Column(db.TIMESTAMP)
 
-    # Project metadata
+    # Static Project info
     filename = db.Column(db.Text, nullable=False)
     path = db.Column(db.Text, nullable=False)
     output_bucket = db.Column(db.Text, nullable=False)
@@ -276,7 +275,7 @@ class Metadata(db.Model):
     numFrames = db.Column(db.Integer, nullable=False)
     numChannels = db.Column(db.Integer, nullable=False)
     numFeatures = db.Column(db.Integer, nullable=False)
-    # View metadata
+    # View info
     rgb = db.Column(db.Boolean, default=False)
     frame = db.Column(db.Integer, default=0)
     channel = db.Column(db.Integer, default=0)
@@ -384,7 +383,7 @@ class Metadata(db.Model):
 
     def update(self):
         """
-        Update the metadata by explicitly copying the PickleType
+        Update the state by explicitly copying the PickleType
         columns so the database knows to commit them.
         """
         if not self.firstUpdate:
@@ -395,7 +394,7 @@ class Metadata(db.Model):
         self.cell_info = self.cell_info.copy()
 
     def finish(self):
-        """Complete metadata and set its PickleType column to null."""
+        """Complete state and set its PickleType column to null."""
         self.lastUpdate = self.updatedAt
         self.finished = db.func.current_timestamp()
         self.cell_ids = None
