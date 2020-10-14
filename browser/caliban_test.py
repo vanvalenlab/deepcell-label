@@ -27,7 +27,7 @@ def track_edit(track_project):
 def edit(request):
     return request.param
 
-# Tests can mock a series of actions on different frames 
+# Tests can mock a series of actions on different frames
 # by manually setting edit.state.frame in the test
 
 
