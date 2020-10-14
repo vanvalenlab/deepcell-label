@@ -83,6 +83,7 @@ TEST_FRAMES = [np.zeros(RES, dtype=np.int16),  # empty
                tri_21,
                np.tile(check01, (HEIGHT // 2, WIDTH // 2)),
                np.tile(check12, (HEIGHT // 2, WIDTH // 2)),
+               np.zeros(RES, dtype=np.int16),  # RGB mode
                ]
 # Convert single frames to 4 dim (frames, height, width, features)
 TEST_LABELS = list(map(lambda frame: repeat_frame(repeat_feature(frame, FEATURES), FRAMES),
@@ -90,7 +91,7 @@ TEST_LABELS = list(map(lambda frame: repeat_frame(repeat_feature(frame, FEATURES
 # Append single frame, 3 dim test (height, width, features)
 TEST_IDS = ['empty', 'full1', 'iden', 'tril',
             'triu', 'triu1l2', 'tril1u2',
-            'checkerboard01', 'checkerboard12']
+            'checkerboard01', 'checkerboard12', 'RGB']
 # Append single frame, 3 dim test (height, width, features)
 TEST_LABELS += [repeat_feature(np.zeros(RES, dtype=np.int16), FEATURES)]
 TEST_IDS += ['singleframe']
@@ -108,7 +109,8 @@ def zstack_project(app, mocker, request, db_session):
             data['annotated'] = request.param.copy()
             return data
         mocker.patch('models.Project.load', load)
-        project = Project('filename.npz', 'input_bucket', 'output_bucket', 'path')
+        project = Project('filename.npz', 'input_bucket', 'output_bucket', 'path', 
+                          rgb='RGB' in request.node.name)
         db_session.add(project)
         db_session.commit()
         return project
