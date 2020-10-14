@@ -382,12 +382,10 @@ class Mode {
       } else if (this.action === 'predict') {
         action('predict_single', { frame: current_frame });
       } else if (this.action === 'replace') {
-        if (this.info.label_1 !== this.info.label_2 &&
-            this.info.frame_1 === this.info.frame_2) {
+        if (this.info.label_1 !== this.info.label_2) {
           action('replace_single', {
             label_1: this.info.label_1,
-            label_2: this.info.label_2,
-            frame: this.info.frame_1
+            label_2: this.info.label_2
           });
         }
       } else if (this.action === 'swap_cells') {
