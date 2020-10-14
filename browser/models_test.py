@@ -228,15 +228,15 @@ def test_state_init(project):
     label_frames = project.label_frames
     label_frame = label_frames[0].frame
     state = project.state
-    assert raw_frame.shape[-1] == state.numChannels
-    assert label_frame.shape[-1] == state.numFeatures
-    assert len(raw_frames) == state.numFrames
+    assert raw_frame.shape[-1] == state.num_channels
+    assert label_frame.shape[-1] == state.num_features
+    assert len(raw_frames) == state.num_frames
     assert raw_frame.shape[0] == state.height
     assert raw_frame.shape[1] == state.width
 
-    assert len(state.cell_ids) == state.numFeatures
-    assert len(state.cell_info) == state.numFeatures
-    for feature in range(state.numFeatures):
+    assert len(state.cell_ids) == state.num_features
+    assert len(state.cell_info) == state.num_features
+    for feature in range(state.num_features):
         assert len(state.cell_ids[feature]) == len(state.cell_info[feature])
 
 
@@ -245,7 +245,7 @@ def test_create_cell_info(project):
     state = project.state
     # Combine all frames into one numpy array with shape (frames, height, width, features)
     label_array = np.array([frame.frame for frame in project.label_frames])
-    for feature in range(state.numFeatures):
+    for feature in range(state.num_features):
         labels = label_array[..., feature]
         labels_uniq = np.unique(labels[labels != 0])
         state.create_cell_info(feature, label_array)
@@ -255,6 +255,6 @@ def test_create_cell_info(project):
             assert str(label) == state.cell_info[feature][label]['label']
             label_in_frame = np.isin(label_array, label).any(axis=(1, 2))  # Height and width axes
             label_frames = state.cell_info[feature][label]['frames']
-            no_label_frames = [i for i in range(state.numFrames) if i not in label_frames]
+            no_label_frames = [i for i in range(state.num_frames) if i not in label_frames]
             assert label_in_frame[label_frames].all()
             assert not label_in_frame[no_label_frames].any()

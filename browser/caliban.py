@@ -113,11 +113,11 @@ class BaseEdit(object):
             channel (int): which channel to switch to
 
         Raises:
-            ValueError: if channel is not in [0, numChannels)
+            ValueError: if channel is not in [0, num_channels)
         """
-        if channel < 0 or channel > self.state.numChannels - 1:
+        if channel < 0 or channel > self.state.num_channels - 1:
             raise ValueError('Channel {} is outside of range [0, {}].'.format(
-                channel, self.state.numChannels - 1))
+                channel, self.state.num_channels - 1))
         self.state.channel = channel
         self.x_changed = True
 
@@ -131,9 +131,9 @@ class BaseEdit(object):
         Raises:
             ValueError: if feature is not in [0, feature_max)
         """
-        if feature < 0 or feature > self.state.numFeatures - 1:
+        if feature < 0 or feature > self.state.num_features - 1:
             raise ValueError('Feature {} is outside of range [0, {}].'.format(
-                feature, self.state.numFeatures - 1))
+                feature, self.state.num_features - 1))
         self.state.feature = feature
         self.y_changed = True
 
@@ -568,7 +568,7 @@ class ZStackEdit(BaseEdit):
         use location of cells in image to predict which annotations are
         different slices of the same cell
         """
-        for frame_id in range(self.state.numFrames - 1):
+        for frame_id in range(self.state.num_frames - 1):
             img = self.project.label_frames[frame_id].frame[..., self.feature]
             next_img = self.project.label_frames[frame_id + 1].frame[..., self.feature]
             predicted_next = predict_zstack_cell_ids(img, next_img)

@@ -272,9 +272,9 @@ class State(db.Model):
     output_bucket = db.Column(db.Text, nullable=False)
     height = db.Column(db.Integer, nullable=False)
     width = db.Column(db.Integer, nullable=False)
-    numFrames = db.Column(db.Integer, nullable=False)
-    numChannels = db.Column(db.Integer, nullable=False)
-    numFeatures = db.Column(db.Integer, nullable=False)
+    num_frames = db.Column(db.Integer, nullable=False)
+    num_channels = db.Column(db.Integer, nullable=False)
+    num_features = db.Column(db.Integer, nullable=False)
     # View info
     rgb = db.Column(db.Boolean, default=False)
     frame = db.Column(db.Integer, default=0)
@@ -291,11 +291,11 @@ class State(db.Model):
         self.filename = filename
         self.path = path
         self.output_bucket = output_bucket
-        self.numFrames = raw.shape[0]
+        self.num_frames = raw.shape[0]
         self.height = raw.shape[1]
         self.width = raw.shape[2]
-        self.numChannels = raw.shape[-1]
-        self.numFeatures = annotated.shape[-1]
+        self.num_channels = raw.shape[-1]
+        self.num_features = annotated.shape[-1]
         cmap = plt.get_cmap('viridis')
         cmap.set_bad('black')
         self.colormap = cmap
@@ -306,7 +306,7 @@ class State(db.Model):
         # analogous to .trk lineage but doesn't include cells relationships
         self.cell_ids = {}
         self.cell_info = {}
-        for feature in range(self.numFeatures):
+        for feature in range(self.num_features):
             self.create_cell_info(feature, annotated)
 
         # Overwrite cell_info with lineages to include cell relationships for .trk files

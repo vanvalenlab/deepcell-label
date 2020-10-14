@@ -184,7 +184,7 @@ def load(filename):
                                  filename, timeit.default_timer() - start)
         # Send attributes to .js file
         return jsonify({
-            'max_frames': state.numFrames,
+            'max_frames': state.num_frames,
             'tracks': state.readable_tracks,
             'dimensions': (state.width, state.height),
             'project_id': project.id,
@@ -196,9 +196,9 @@ def load(filename):
                                  filename, timeit.default_timer() - start)
         # Send attributes to .js file
         return jsonify({
-            'max_frames': state.numFrames,
-            'channel_max': state.numChannels,
-            'feature_max': state.numFeatures,
+            'max_frames': state.num_frames,
+            'channel_max': state.num_channels,
+            'feature_max': state.num_features,
             'tracks': state.readable_tracks,
             'dimensions': (state.width, state.height),
             'project_id': project.id
