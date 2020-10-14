@@ -609,7 +609,7 @@ class ZStackEdit(BaseEdit):
                 'slices': ''
             }
             self.state.cell_ids[self.feature] = np.append(self.state.cell_ids[self.feature],
-                                                             add_label)
+                                                          add_label)
 
         # if adding cell, frames and info have necessarily changed
         self.y_changed = self.info_changed = True
@@ -628,7 +628,7 @@ class ZStackEdit(BaseEdit):
             # also remove from list of cell_ids
             ids = self.state.cell_ids[self.feature]
             self.state.cell_ids[self.feature] = np.delete(ids,
-                                                             np.where(ids == np.int64(del_label)))
+                                                          np.where(ids == np.int64(del_label)))
 
         # if deleting cell, frames and info have necessarily changed
         self.y_changed = self.info_changed = True
@@ -839,7 +839,7 @@ class TrackEdit(BaseEdit):
                 'capped': False,
             }
             self.state.cell_ids[self.feature] = np.append(self.state.cell_ids[self.feature],
-                                                             add_label)
+                                                          add_label)
 
         self.y_changed = self.info_changed = True
 

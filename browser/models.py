@@ -71,7 +71,7 @@ class Project(db.Model):
         # Create state
         start = timeit.default_timer()
         self.state = State(self.id, filename, path, output_bucket,
-                                  raw, annotated, trial, rgb)
+                           raw, annotated, trial, rgb)
         current_app.logger.debug('Created state for %s in %ss.',
                                  filename, timeit.default_timer() - start)
 
