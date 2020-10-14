@@ -40,3 +40,11 @@ def test_pngify(tmpdir):
     loaded_image = np.uint16(imread(outfile))
     print(imgarr.shape, loaded_image.shape)
     np.testing.assert_equal(imgarr.shape, loaded_image.shape[:-1])
+
+def test_add_outlines(project):
+    for label_frame in project.label_frames:
+        frame = label_frame.frame[..., project.state.channel]
+        outlined = imgutils.add_outlines(frame)
+        assert (outlined[outlined >= 0] == frame[outlined >= 0]).all()
+        assert (outlined[outlined < 0] == -frame[outlined < 0]).all()
+    
