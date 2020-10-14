@@ -78,9 +78,7 @@ TEST_FRAMES = [np.zeros(RES, dtype=np.int16),  # empty
                np.ones(RES, dtype=np.int16),  # all ones
                np.identity(HEIGHT, dtype=np.int16),  # identity
                np.tril(np.ones(RES, dtype=np.int16)),  # lower triangular ones
-               np.triu(np.ones(RES, dtype=np.int16)),  # upper triangular ones
                tri_12,
-               tri_21,
                np.tile(check01, (HEIGHT // 2, WIDTH // 2)),
                np.tile(check12, (HEIGHT // 2, WIDTH // 2)),
                np.zeros(RES, dtype=np.int16),  # RGB mode
@@ -89,8 +87,7 @@ TEST_FRAMES = [np.zeros(RES, dtype=np.int16),  # empty
 TEST_LABELS = list(map(lambda frame: repeat_frame(repeat_feature(frame, FEATURES), FRAMES),
                        TEST_FRAMES))
 # Append single frame, 3 dim test (height, width, features)
-TEST_IDS = ['empty', 'full1', 'iden', 'tril',
-            'triu', 'triu1l2', 'tril1u2',
+TEST_IDS = ['empty', 'full1', 'iden', 'tril', 'triu1l2',
             'checkerboard01', 'checkerboard12', 'RGB']
 # Append single frame, 3 dim test (height, width, features)
 TEST_LABELS += [repeat_feature(np.zeros(RES, dtype=np.int16), FEATURES)]
