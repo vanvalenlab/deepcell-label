@@ -701,6 +701,9 @@ function fetch_and_render_frame() {
       seg_image.onload = render_image_display;
       raw_image.src = payload.raw;
       raw_image.onload = render_image_display;
+
+      // actions must start and end on the same frame
+      if (mode.action !== '') { mode.clear() };
     },
     async: false
   });

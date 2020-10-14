@@ -909,6 +909,9 @@ function fetch_and_render_frame() {
       state.segArray = payload.seg_arr;
       adjuster.segImage.src = payload.segmented;
       adjuster.rawImage.src = payload.raw;
+
+      // actions must start and end on the same frame
+      if (mode.action !== '') { mode.clear() };
     },
     async: false
   });
