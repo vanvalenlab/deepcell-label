@@ -279,16 +279,19 @@ class Project(db.Model):
         """
         start = timeit.default_timer()
         self.finished = db.func.current_timestamp()
-        # Set PickleType columns in state to None
+        # Clear project state
         self.state.finish()
-        # Set PickleType columns in frames to None
+        # Clear frames
         for label_frame in self.label_frames:
             label_frame.finish()
         for raw_frame in self.raw_frames:
             raw_frame.finish()
         for rgb_frame in self.rgb_frames:
             rgb_frame.finish()
-        db.session.commit()  # commit the changes
+        # Clear ActionHistory
+        for action in self.actions:
+            action.finish()
+        db.session.commit()
         logger.debug('Finished project with ID = "%s" in %ss.',
                      self.id, timeit.default_timer() - start)
 
@@ -341,6 +344,7 @@ class Project(db.Model):
                          vmax=None,
                          cmap='cubehelix')
         return raw_png
+
 
 
 class State(db.Model):
@@ -653,18 +657,11 @@ class LabelFrame(db.Model):
         self.lastUpdate = self.updatedAt
         self.frame = None
 
-# @event.listens_for(LabelFrame.frame, 'set', active_history=True)
-# def frame_history(target, value, oldvalue, initiator):
-#     import pdb; pdb.set_trace()
-
-# @event.listens_for(db.session, 'before_flush')
-# def before_flush(session, flush_context, instances):
-#     import pdb; pdb.set_trace()
 
 class Action(db.Model):
     """
     Records a sequence of actions and
-    records the label frames and project state at the before each action.
+    records the label frames and state at the before each action.
     """
     # pylint: disable=E1101
     __tablename__ = 'actions'
@@ -678,13 +675,16 @@ class Action(db.Model):
     state = db.relationship('StateHistory', backref='action', uselist=False)
 
     def __init__(self, project):
-        self.project_id = project.id
         self.action_id = project.next_action_id
-        self.state = StateHistory(project=project,
-                                  state=project.state)
+        self.state = StateHistory(project=project)
         self.frames = [FrameHistory(project=project,
                                     frame=frame)
                        for frame in project.label_frames]
+
+    def finish(self):
+        for frame in self.frames:
+            frame.finish()
+        self.action.finish()
 
 
 class FrameHistory(db.Model):
@@ -707,6 +707,9 @@ class FrameHistory(db.Model):
         self.frame = frame.frame
         self.frame_id = frame.frame_id
 
+    def finish(self):
+        self.frame = None
+
 
 class StateHistory(db.Model):
     """
@@ -718,14 +721,17 @@ class StateHistory(db.Model):
                            primary_key=True, nullable=False)
     action_id = db.Column(db.Integer, db.ForeignKey('actions.action_id'),
                           primary_key=True, nullable=False)
+    # TODO: copy state columns (inherit?) ?
     state = db.Column(db.PickleType)
 
     project = db.relationship('Project')
-    # TODO: copy state columns (inherit?)
 
-    def __init__(self, project, state):
+    def __init__(self, project):
         self.project = project
         self.state = project.state
+
+    def finish(self):
+        self.state = None
 
     
 
