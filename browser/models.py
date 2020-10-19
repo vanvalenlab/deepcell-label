@@ -17,7 +17,11 @@ from flask import current_app
 from matplotlib import pyplot as plt
 import numpy as np
 from skimage.exposure import rescale_intensity
+from sqlalchemy import event
 from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.ext.mutable import Mutable
+from sqlalchemy.orm import column_property
+from sqlalchemy.sql import select, func
 
 from helpers import is_npz_file, is_trk_file
 from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
@@ -37,6 +41,37 @@ def compile_pickle_mysql(type_, compiler, **kw):
     """
     return 'LONGBLOB'
 
+class MutableNdarray(Mutable, np.ndarray):
+    @classmethod
+    def coerce(cls, key, value):
+        "Convert plain numpy arrays to MutableNdarray."
+        if not isinstance(value, MutableNdarray):
+            if isinstance(value, np.ndarray):
+                mutable_array = MutableNdarray(shape=value.shape, dtype=value.dtype, buffer=value)
+                return mutable_array
+
+            # this call will raise ValueError
+            return Mutable.coerce(key, value)
+        else:
+            return value
+
+    def __setitem__(self, key, value):
+        "Detect array set events and emit change events."
+        np.ndarray.__setitem__(self, key, value)
+        self.changed()
+        
+
+    def __delitem__(self, key):
+        "Detect array del events and emit change events."
+        np.ndarray.__delitem__(self, key)
+        self.changed()
+
+
+    # def __getstate__(self):
+    #     d = self.__dict__.copy()
+    #     d.pop('_parents', None)
+    #     return d
+
 
 class Project(db.Model):
     """Project table definition."""
@@ -50,6 +85,11 @@ class Project(db.Model):
     rgb_frames = db.relationship('RGBFrame', backref='project')
     label_frames = db.relationship('LabelFrame', backref='project')
     state = db.relationship('State', backref='project', uselist=False)
+
+    # Action history
+    action_id = db.Column(db.Integer, nullable=False, default=0)
+    next_action_id = db.Column(db.Integer, nullable=False, default=0)
+    actions = db.relationship('Action', backref='project')
 
     def __init__(self, filename, input_bucket, output_bucket, path,
                  rgb=False, raw_key='raw', annotated_key=None):
@@ -93,6 +133,12 @@ class Project(db.Model):
                              for i, frame in enumerate(annotated)]
         current_app.logger.debug('Created label frames for %s in %ss.',
                                  filename, timeit.default_timer() - start)
+
+        # Create the first action for the project
+        self.prev_action_id = 0
+        self.next_action_id = 0
+        self.actions = [Action(project=self)]
+
         # Log total time in constructor
         current_app.logger.debug('Initialized project for %s in %s s.',
                                  filename, timeit.default_timer() - init_start)
@@ -172,11 +218,59 @@ class Project(db.Model):
     def update(self):
         """
         Commit the project changes from an action.
+        Records the effects of the action in the Actions table.
         """
         start = timeit.default_timer()
+        # TODO: Identify and record the edited frames and state attributes
+        action = self.actions[self.action_id]
+        self.next_action_id += 1
+        # Create a new row in the action history for the next action
+        # TODO: record the action type (e.g. "handle_draw") to store in action history
+        new_action = Action(project=self)
+        action.next_action_id = new_action.action_id
+        self.action_id = new_action.action_id
+        db.session.add(new_action)
+        # Commit changes
         db.session.commit()
-        logger.debug('Updated project %s in %ss.',
-                     self.id, timeit.default_timer() - start)
+        current_app.logger.debug('Updated action %s in project %s in %ss.',
+                    action.action_id, self.id, timeit.default_timer() - start)
+
+    def undo(self):
+        """
+        Restores the project to before the most recent action.
+        """
+        start = timeit.default_timer()
+        action = self.actions[self.action_id]
+        if action.prev_action_id is None:
+            # TODO: error handling when there is no action to undo
+            return
+        prev_action = self.actions[action.prev_action_id]
+        # Assumes that we store every frames and the entire state before every action
+        # TODO: only store and restore edited frames and state attributes
+        self.label_frames = prev_action.frames
+        self.state = prev_action.state
+        self.action_id = prev_action.action_id
+        logger.debug('Undo action %s project %s in %ss.',
+                     self.action_id, self.id, timeit.default_timer() - start)
+
+    def redo(self):
+        """
+        Redo an undone action.
+        Restores the project to its state after the undone action.
+        """
+        start = timeit.default_timer()
+        action = self.actions[self.action_id]
+        if action.next_action_id is None:
+            # TODO: error handling when there is no action to redo
+            return
+        next_action = self.actions[action.next_action_id]
+        # Assumes that we store every frames and the entire state before every action
+        # TODO: only store and restore edited frames and state attributes
+        self.label_frames = next_action.frames
+        self.state = next_action.state
+        self.action_id = next_action.action_id
+        logger.debug('Redo action %s project %s in %ss.',
+                     self.action_id, self.id, timeit.default_timer() - start)
 
     def finish(self):
         """
@@ -532,7 +626,7 @@ class LabelFrame(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
                            primary_key=True, nullable=False)
     frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
-    frame = db.Column(db.PickleType)
+    frame = db.Column(MutableNdarray.as_mutable(db.PickleType))
     updatedAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now(),
                           onupdate=db.func.current_timestamp())
     numUpdates = db.Column(db.Integer, nullable=False, default=0)
@@ -559,6 +653,81 @@ class LabelFrame(db.Model):
         self.lastUpdate = self.updatedAt
         self.frame = None
 
+# @event.listens_for(LabelFrame.frame, 'set', active_history=True)
+# def frame_history(target, value, oldvalue, initiator):
+#     import pdb; pdb.set_trace()
+
+# @event.listens_for(db.session, 'before_flush')
+# def before_flush(session, flush_context, instances):
+#     import pdb; pdb.set_trace()
+
+class Action(db.Model):
+    """
+    Records a sequence of actions and
+    records the label frames and project state at the before each action.
+    """
+    # pylint: disable=E1101
+    __tablename__ = 'actions'
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
+                           primary_key=True, nullable=False, autoincrement=False)
+    action_id = db.Column(db.Integer, primary_key=True, nullable=False)
+    prev_action_id = db.Column(db.Integer)
+    next_action_id = db.Column(db.Integer)
+    prev_action = db.Column(db.String)
+    frames = db.relationship('FrameHistory', backref='action')
+    state = db.relationship('StateHistory', backref='action', uselist=False)
+
+    def __init__(self, project):
+        self.project_id = project.id
+        self.action_id = project.next_action_id
+        self.state = StateHistory(project=project,
+                                  state=project.state)
+        self.frames = [FrameHistory(project=project,
+                                    frame=frame)
+                       for frame in project.label_frames]
+
+
+class FrameHistory(db.Model):
+    """
+    Table to store label frames before an action edits them. 
+    """
+    # pylint: disable=E1101
+    __tablename__ = 'framehistories'
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
+                           primary_key=True, nullable=False)
+    action_id = db.Column(db.Integer, db.ForeignKey('actions.action_id'),
+                          primary_key=True, nullable=False)
+    frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
+    frame = db.Column(db.PickleType)
+
+    project = db.relationship('Project')
+
+    def __init__(self, project, frame):
+        self.project = project
+        self.frame = frame.frame
+        self.frame_id = frame.frame_id
+
+
+class StateHistory(db.Model):
+    """
+    Table to store the state of a project before an action edits it.
+    """
+    # pylint: disable=E1101
+    __tablename__ = 'statehistories'
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
+                           primary_key=True, nullable=False)
+    action_id = db.Column(db.Integer, db.ForeignKey('actions.action_id'),
+                          primary_key=True, nullable=False)
+    state = db.Column(db.PickleType)
+
+    project = db.relationship('Project')
+    # TODO: copy state columns (inherit?)
+
+    def __init__(self, project, state):
+        self.project = project
+        self.state = project.state
+
+    
 
 def consecutive(data, stepsize=1):
     return np.split(data, np.where(np.diff(data) != stepsize)[0] + 1)
