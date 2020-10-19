@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import base64
 import copy
 import io
 import json
@@ -144,6 +145,10 @@ class Project(db.Model):
                                  filename, timeit.default_timer() - init_start)
 
     @property
+    def action(self):
+        return self.actions[self.action_id]
+
+    @property
     def label_array(self):
         """Compiles all label frames into a single numpy array."""
         return np.array([frame.frame for frame in self.label_frames])
@@ -221,6 +226,14 @@ class Project(db.Model):
         Records the effects of the action in the Actions table.
         """
         start = timeit.default_timer()
+        # Copy the PickleType columns to ensure that we persist the changes
+        if self.action.state_changed:
+            self.state.update()
+        if self.action.multi_changed:
+            for label_frame in self.label_frames:
+                label_frame.update()
+        elif self.action.y_changed:
+            self.label_frames[self.state.frame].update()
         # TODO: Identify and record the edited frames and state attributes
         action = self.actions[self.action_id]
         self.next_action_id += 1
@@ -344,6 +357,28 @@ class Project(db.Model):
                          vmax=None,
                          cmap='cubehelix')
         return raw_png
+
+    def make_payload(self):
+        """
+        Creates a payload to send to the front-end after completing an action.
+        """
+        tracks = False  # Default tracks payload
+        if self.action.state_changed:
+            tracks = self.state.readable_tracks
+
+        img_payload = False  # Default image payload
+        if self.action.x_changed or self.action.y_changed:
+            img_payload = {}
+            encode = lambda x: base64.encodebytes(x.read()).decode()
+            if self.action.x_changed:
+                raw_png = self.get_raw_png()
+                img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
+            if self.action.y_changed:
+                label_png = self.get_label_png()
+                img_payload['segmented'] = f'data:image/png;base64,{encode(label_png)}'
+                img_payload['seg_arr'] = self.get_label_arr()
+
+        return {'tracks': tracks, 'imgs': img_payload}
 
 
 
@@ -671,10 +706,16 @@ class Action(db.Model):
     prev_action_id = db.Column(db.Integer)
     next_action_id = db.Column(db.Integer)
     prev_action = db.Column(db.String)
-    frames = db.relationship('FrameHistory', backref='action')
+    x_changed = db.Column(db.Boolean, default=False)
+    y_changed = db.Column(db.Boolean, default=False)
+    multi_changed = db.Column(db.Boolean, default=False)
+    state_changed = db.Column(db.Boolean, default=False)
+    frames = db.relationship('FrameHistory', backref='action',
+                             cascade='save-update, merge, delete, delete-orphan')
     state = db.relationship('StateHistory', backref='action', uselist=False)
 
     def __init__(self, project):
+        self.project = project
         self.action_id = project.next_action_id
         self.state = StateHistory(project=project)
         self.frames = [FrameHistory(project=project,

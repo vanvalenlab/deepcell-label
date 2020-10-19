@@ -42,7 +42,7 @@ def handle_exception(error):
         return error
 
     current_app.logger.error('Encountered %s: %s',
-                             error.__class__.__name__, error)
+                             error.__class__.__name__, error, exc_info=1)
 
     # now you're handling non-HTTP exceptions only
     return jsonify({'message': str(error)}), 500
@@ -95,8 +95,8 @@ def action(project_id, action_type, frame):
             return jsonify({'error': 'project_id not found'}), 404
         edit = get_edit(project)
         edit.action(action_type, info)
-        payload = edit.make_payload()
-        edit.commit_changes()
+        payload = project.make_payload()
+        project.update()
 
     except Exception as e:  # TODO: more error handling to identify problem
         traceback.print_exc()
