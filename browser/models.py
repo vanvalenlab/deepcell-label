@@ -84,8 +84,12 @@ class Project(db.Model):
 
     raw_frames = db.relationship('RawFrame', backref='project')
     rgb_frames = db.relationship('RGBFrame', backref='project')
-    label_frames = db.relationship('LabelFrame', backref='project')
-    state = db.relationship('State', backref='project', uselist=False)
+    label_frames = db.relationship('LabelFrame', backref='project',
+                                   # Delete frames detached by undo/redo
+                                   cascade='save-update, merge, delete, delete-orphan')
+    state = db.relationship('State', backref='project', uselist=False,
+                            # Delete state detached by undo/redo
+                            cascade='save-update, merge, delete, delete-orphan')
 
     # Action history
     action_id = db.Column(db.Integer, nullable=False, default=0)
@@ -139,6 +143,7 @@ class Project(db.Model):
         self.prev_action_id = 0
         self.next_action_id = 0
         self.actions = [Action(project=self)]
+        self.next_action_id = 1
 
         # Log total time in constructor
         current_app.logger.debug('Initialized project for %s in %s s.',
@@ -236,12 +241,12 @@ class Project(db.Model):
             self.label_frames[self.state.frame].update()
         # TODO: Identify and record the edited frames and state attributes
         action = self.actions[self.action_id]
-        self.next_action_id += 1
         # Create a new row in the action history for the next action
         # TODO: record the action type (e.g. "handle_draw") to store in action history
         new_action = Action(project=self)
         action.next_action_id = new_action.action_id
         self.action_id = new_action.action_id
+        self.next_action_id += 1
         db.session.add(new_action)
         # Commit changes
         db.session.commit()
@@ -251,39 +256,62 @@ class Project(db.Model):
     def undo(self):
         """
         Restores the project to before the most recent action.
+
+        Returns:
+            dict: payload to send to frontend
         """
         start = timeit.default_timer()
-        action = self.actions[self.action_id]
-        if action.prev_action_id is None:
+        # import pdb; pdb.set_trace()
+        if self.action.prev_action_id is None:
             # TODO: error handling when there is no action to undo
             return
-        prev_action = self.actions[action.prev_action_id]
+        prev_action = self.actions[self.action.prev_action_id]
+        # Restore label frames
         # Assumes that we store every frames and the entire state before every action
-        # TODO: only store and restore edited frames and state attributes
-        self.label_frames = prev_action.frames
+        # TODO: only store/restore edited frames
+        for frame, prev_frame in zip(self.label_frames, prev_action.frames):
+            frame.frame = prev_frame.frame
+        # Restore project state
+        # TODO: only store/restore edited attributes
+        db.session.expunge(self.state)
         self.state = prev_action.state
+        db.session.add(self.state)
+        # Make the payload using _changed flags for the previous action
         self.action_id = prev_action.action_id
-        logger.debug('Undo action %s project %s in %ss.',
+        payload = self.make_payload()
+        db.session.commit()
+        current_app.logger.debug('Undo action %s project %s in %ss.',
                      self.action_id, self.id, timeit.default_timer() - start)
+        return payload
 
     def redo(self):
         """
-        Redo an undone action.
-        Restores the project to its state after the undone action.
+        Restore the project to its state after the next action.
+
+        Returns:
+            dict: payload to send to frontend
         """
         start = timeit.default_timer()
-        action = self.actions[self.action_id]
-        if action.next_action_id is None:
+        if self.action.next_action_id is None:
             # TODO: error handling when there is no action to redo
             return
-        next_action = self.actions[action.next_action_id]
+        next_action = self.actions[self.action.next_action_id]
+        # Restore label frames 
         # Assumes that we store every frames and the entire state before every action
         # TODO: only store and restore edited frames and state attributes
-        self.label_frames = next_action.frames
+        for frame, next_frame in zip(self.label_frames, next_action.frames):
+            frame.frame = next_frame.frame
+        # Restore project sate
+        db.session.expunge(self.state)
         self.state = next_action.state
+        db.session.add(self.state)
+        # Make the payload using the _changed flags for the current action
+        payload = self.make_payload()
         self.action_id = next_action.action_id
-        logger.debug('Redo action %s project %s in %ss.',
+        db.session.commit()
+        current_app.logger.debug('Redo action %s project %s in %ss.',
                      self.action_id, self.id, timeit.default_timer() - start)
+        return payload
 
     def finish(self):
         """
@@ -711,15 +739,17 @@ class Action(db.Model):
     multi_changed = db.Column(db.Boolean, default=False)
     state_changed = db.Column(db.Boolean, default=False)
     frames = db.relationship('FrameHistory', backref='action',
-                             cascade='save-update, merge, delete, delete-orphan')
-    state = db.relationship('StateHistory', backref='action', uselist=False)
+                             # cascade='save-update, merge, delete, delete-orphan',
+                             primaryjoin="and_(foreign(FrameHistory.action_id) == Action.action_id, "
+                             "FrameHistory.project_id == Action.project_id)")
+    state = db.Column(db.PickleType)
 
     def __init__(self, project):
         self.project = project
         self.action_id = project.next_action_id
-        self.state = StateHistory(project=project)
-        self.frames = [FrameHistory(project=project,
-                                    frame=frame)
+        self.prev_action_id = project.action_id
+        self.state = project.state
+        self.frames = [FrameHistory(project=project, frame=frame)
                        for frame in project.label_frames]
 
     def finish(self):
@@ -750,30 +780,6 @@ class FrameHistory(db.Model):
 
     def finish(self):
         self.frame = None
-
-
-class StateHistory(db.Model):
-    """
-    Table to store the state of a project before an action edits it.
-    """
-    # pylint: disable=E1101
-    __tablename__ = 'statehistories'
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
-                           primary_key=True, nullable=False)
-    action_id = db.Column(db.Integer, db.ForeignKey('actions.action_id'),
-                          primary_key=True, nullable=False)
-    # TODO: copy state columns (inherit?) ?
-    state = db.Column(db.PickleType)
-
-    project = db.relationship('Project')
-
-    def __init__(self, project):
-        self.project = project
-        self.state = project.state
-
-    def finish(self):
-        self.state = None
-
     
 
 def consecutive(data, stepsize=1):

@@ -84,13 +84,24 @@ class BaseEdit(object):
         return self.state.scale_factor
 
     def action(self, action_type, info):
-        """Call an action method based on an action type."""
+        """
+        Call an action method based on an action type.
+        
+        Args:
+            action_type (str): name of action method after "action_"
+                               e.g. "handle_draw" to call "action_handle_draw"
+            info (dict): key value pairs with arguments for action
+
+        Returns:
+            dict: payload to send to frontend application
+        """
         attr_name = 'action_{}'.format(action_type)
         try:
             action = getattr(self, attr_name)
             action(**info)
         except AttributeError:
             raise ValueError('Invalid action "{}"'.format(action_type))
+        return self.project.make_payload()
 
     def action_change_channel(self, channel):
         """

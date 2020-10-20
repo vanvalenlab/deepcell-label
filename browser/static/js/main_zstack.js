@@ -1052,50 +1052,70 @@ function handleMouseup() {
   }
 }
 
+function handlePayload(payload) {
+  if (payload.error) {
+    alert(payload.error);
+  }
+  if (payload.imgs) {
+    // load new value of seg_array
+    // array of arrays, contains annotation data for frame
+    if (Object.prototype.hasOwnProperty.call(payload.imgs, 'seg_arr')) {
+      state.segArray = payload.imgs.seg_arr;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload.imgs, 'segmented')) {
+      adjuster.segLoaded = false;
+      adjuster.segImage.src = payload.imgs.segmented;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload.imgs, 'raw')) {
+      adjuster.rawLoaded = false;
+      adjuster.rawImage.src = payload.imgs.raw;
+    }
+  }
+  if (payload.tracks) {
+    tracks = payload.tracks;
+    // update maxLabelsMap when we get new track info
+    for (let i = 0; i < Object.keys(tracks).length; i++) {
+      const key = Object.keys(tracks)[i]; // the keys are strings
+      if (Object.keys(tracks[key]).length > 0) {
+        // use i as key in this map because it is an int, mode.feature is also int
+        maxLabelsMap.set(i, Math.max(...Object.keys(tracks[key]).map(Number)));
+      } else {
+        // if no labels in feature, explicitly set max label to 0
+        maxLabelsMap.set(i, 0);
+      }
+    }
+  }
+  if (payload.tracks || payload.imgs) {
+    render_image_display();
+  }
+}
+
 function action(action, info, frame = current_frame) {
   $.ajax({
     type: 'POST',
     url: `${document.location.origin}/action/${project_id}/${action}/${frame}`,
     data: info,
-    success: function (payload) {
-      if (payload.error) {
-        alert(payload.error);
-      }
-      if (payload.imgs) {
-        // load new value of seg_array
-        // array of arrays, contains annotation data for frame
-        if (Object.prototype.hasOwnProperty.call(payload.imgs, 'seg_arr')) {
-          state.segArray = payload.imgs.seg_arr;
-        }
+    success: handlePayload,
+    async: false
+  });
+}
 
-        if (Object.prototype.hasOwnProperty.call(payload.imgs, 'segmented')) {
-          adjuster.segLoaded = false;
-          adjuster.segImage.src = payload.imgs.segmented;
-        }
+function undo() {
+  $.ajax({
+    type: 'POST',
+    url: `${document.location.origin}/undo/${project_id}`,
+    success: handlePayload,
+    async: false
+  });
+}
 
-        if (Object.prototype.hasOwnProperty.call(payload.imgs, 'raw')) {
-          adjuster.rawLoaded = false;
-          adjuster.rawImage.src = payload.imgs.raw;
-        }
-      }
-      if (payload.tracks) {
-        tracks = payload.tracks;
-        // update maxLabelsMap when we get new track info
-        for (let i = 0; i < Object.keys(tracks).length; i++) {
-          const key = Object.keys(tracks)[i]; // the keys are strings
-          if (Object.keys(tracks[key]).length > 0) {
-            // use i as key in this map because it is an int, mode.feature is also int
-            maxLabelsMap.set(i, Math.max(...Object.keys(tracks[key]).map(Number)));
-          } else {
-            // if no labels in feature, explicitly set max label to 0
-            maxLabelsMap.set(i, 0);
-          }
-        }
-      }
-      if (payload.tracks || payload.imgs) {
-        render_image_display();
-      }
-    },
+function redo() {
+  $.ajax({
+    type: 'POST',
+    url: `${document.location.origin}/redo/${project_id}`,
+    success: handlePayload,
     async: false
   });
 }

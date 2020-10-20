@@ -94,8 +94,7 @@ def action(project_id, action_type, frame):
         if not project:
             return jsonify({'error': 'project_id not found'}), 404
         edit = get_edit(project)
-        edit.action(action_type, info)
-        payload = project.make_payload()
+        payload = edit.action(action_type, info)
         project.update()
 
     except Exception as e:  # TODO: more error handling to identify problem
@@ -106,6 +105,39 @@ def action(project_id, action_type, frame):
                              action_type, project_id,
                              timeit.default_timer() - start)
 
+    return jsonify(payload)
+
+@bp.route('/undo/<int:project_id>', methods=['POST'])
+def undo(project_id):
+    start = timeit.default_timer()
+    try:
+        project = Project.get(project_id)
+        if not project:
+            return jsonify({'error': 'project_id not found'}), 404
+        payload = project.undo()
+    except Exception as e:  # TODO: more error handling to identify problem
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+    
+    current_app.logger.debug('Undid action for project %s finished in %s s.',
+                             project_id, timeit.default_timer() - start)
+    return jsonify(payload)
+
+
+@bp.route('/redo/<int:project_id>', methods=['POST'])
+def redo(project_id):
+    start = timeit.default_timer()
+    try:
+        project = Project.get(project_id)
+        if not project:
+            return jsonify({'error': 'project_id not found'}), 404
+        payload = project.redo()
+    except Exception as e:  # TODO: more error handling to identify problem
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+    
+    current_app.logger.debug('Redid action for project %s finished in %s s.',
+                             project_id, timeit.default_timer() - start)
     return jsonify(payload)
 
 
