@@ -1942,15 +1942,23 @@ class TrackReview(CalibanWindow):
         self.tracked = tracked
 
         # if not all of these keys are present, actions are not supported
-        self.incomplete = {*self.tracks[1]} < TrackReview.possible_keys
+        for label, track in self.tracks.items():
+            if {*track} < TrackReview.possible_keys:
+                self.invalid_tracks[label] = TrackReview.possible_keys - {*track}
 
-        if self.incomplete:
-            print("Incomplete trk file loaded. Missing keys: {}".format(
-                TrackReview.possible_keys - {*self.tracks[1]}))
+        if self.invalid_tracks:
+            self.incomplete = True
+            print("The following tracks are invalid:")
+
+            for label, missing in self.invalid_tracks.items():
+                print("Track {}: {}".format(label, missing))
+
             print("Actions will not be supported")
-
+        else:
+            self.incomplete = False
+            
         # `label` should appear first
-        self.display_info = ["label", *sorted(set(self.tracks[1]) - {"label"})]
+        self.display_info = ["label", *sorted(set(self.tracks[min(self.tracks)]) - {"label"})]
 
         self.num_frames, self.height, self.width, _ = raw.shape
         self.dtype_raw = raw.dtype
@@ -1986,8 +1994,12 @@ class TrackReview(CalibanWindow):
         if self.incomplete:
             print()
             print("This .trk file is incomplete.")
-            print("Missing keys: {}".format(
-                TrackReview.possible_keys - {*self.tracks[1]}))
+
+            print("The following tracks are invalid:")
+
+            for label, missing in self.invalid_tracks.items():
+                print("Track {}: {}".format(label, missing))
+
             print("Actions will not be supported.")
             return
 
