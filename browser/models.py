@@ -30,7 +30,9 @@ from imgutils import pngify, add_outlines
 
 
 logger = logging.getLogger('models.Project')  # pylint: disable=C0103
-db = SQLAlchemy()  # pylint: disable=C0103
+# Accessing one-to-many relationships (like project.label_frames) issues a Query, causing a flush
+# autoflush=False prevents the flush, so we still access the db.session.dirty after the query
+db = SQLAlchemy(session_options={"autoflush": False})  # pylint: disable=C0103
 
 
 @compiles(db.PickleType, 'mysql')
@@ -82,14 +84,26 @@ class Project(db.Model):
     createdAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now())
     finished = db.Column(db.TIMESTAMP)
 
+    filename = db.Column(db.Text, nullable=False)
+    path = db.Column(db.Text, nullable=False)
+    output_bucket = db.Column(db.Text, nullable=False)
+    height = db.Column(db.Integer, nullable=False)
+    width = db.Column(db.Integer, nullable=False)
+    num_frames = db.Column(db.Integer, nullable=False)
+    num_channels = db.Column(db.Integer, nullable=False)
+    num_features = db.Column(db.Integer, nullable=False)
+
     raw_frames = db.relationship('RawFrame', backref='project')
     rgb_frames = db.relationship('RGBFrame', backref='project')
     label_frames = db.relationship('LabelFrame', backref='project',
                                    # Delete frames detached by undo/redo
                                    cascade='save-update, merge, delete, delete-orphan')
-    state = db.relationship('State', backref='project', uselist=False,
-                            # Delete state detached by undo/redo
-                            cascade='save-update, merge, delete, delete-orphan')
+    view = db.relationship('View', backref='project', uselist=False,
+                           # Delete view row detached by undo/redo
+                           cascade='save-update, merge, delete, delete-orphan')
+    labels = db.relationship('Labels', backref='project', uselist=False,
+                             # Delete labels detached by undo/redo
+                             cascade='save-update, merge, delete, delete-orphan')
 
     # Action history
     action_id = db.Column(db.Integer, nullable=False, default=0)
@@ -97,11 +111,12 @@ class Project(db.Model):
     actions = db.relationship('Action', backref='project')
 
     def __init__(self, filename, input_bucket, output_bucket, path,
-                 rgb=False, raw_key='raw', annotated_key=None):
+                 raw_key='raw', annotated_key=None):
         init_start = timeit.default_timer()
+        
+        # Load data
         if annotated_key is None:
             annotated_key = get_ann_key(filename)
-
         start = timeit.default_timer()
         trial = self.load(filename, input_bucket, path)
         current_app.logger.debug('Loaded file %s from S3 in %s s.',
@@ -113,31 +128,36 @@ class Project(db.Model):
             raw = np.expand_dims(raw, axis=0)
             annotated = np.expand_dims(annotated, axis=0)
 
-        # Create state
-        start = timeit.default_timer()
-        self.state = State(self.id, filename, path, output_bucket,
-                           raw, annotated, trial, rgb)
-        current_app.logger.debug('Created state for %s in %ss.',
-                                 filename, timeit.default_timer() - start)
+        # Record static project attributes
+        self.filename = filename
+        self.path = path
+        self.output_bucket = output_bucket
+        self.num_frames = raw.shape[0]
+        self.height = raw.shape[1]
+        self.width = raw.shape[2]
+        self.num_channels = raw.shape[-1]
+        self.num_features = annotated.shape[-1]
+
+        # Create view row
+        self.view = View()
+        
+        # Create label metadata
+        self.labels = Labels()
+        for feature in range(self.num_features):
+            self.labels.create_cell_info(feature, annotated)
+        # Overwrite cell_info with lineages to include cell relationships for .trk files
+        if is_trk_file(self.filename):
+            if len(trial['lineages']) != 1:
+                raise ValueError('Input file has multiple trials/lineages.')
+            self.labels.cell_info = {0: trial['lineages'][0]}
 
         # Create frames from raw, RGB, and labeled images
-        start = timeit.default_timer()
-        self.raw_frames = [RawFrame(self.id, i, frame)
+        self.raw_frames = [RawFrame(i, frame)
                            for i, frame in enumerate(raw)]
-        current_app.logger.debug('Created raw frames for %s in %ss.',
-                                 filename, timeit.default_timer() - start)
-
-        start = timeit.default_timer()
-        self.rgb_frames = [RGBFrame(self.id, i, frame)
+        self.rgb_frames = [RGBFrame(i, frame)
                            for i, frame in enumerate(raw)]
-        current_app.logger.debug('Created RGB frames for %s in %ss.',
-                                 filename, timeit.default_timer() - start)
-
-        start = timeit.default_timer()
-        self.label_frames = [LabelFrame(self.id, i, frame)
+        self.label_frames = [LabelFrame(i, frame)
                              for i, frame in enumerate(annotated)]
-        current_app.logger.debug('Created label frames for %s in %ss.',
-                                 filename, timeit.default_timer() - start)
 
         # Create the first action for the project
         self.prev_action_id = 0
@@ -145,7 +165,6 @@ class Project(db.Model):
         self.actions = [Action(project=self)]
         self.next_action_id = 1
 
-        # Log total time in constructor
         current_app.logger.debug('Initialized project for %s in %s s.',
                                  filename, timeit.default_timer() - init_start)
 
@@ -202,7 +221,7 @@ class Project(db.Model):
         return project
 
     @staticmethod
-    def create(filename, input_bucket, output_bucket, path, rgb=False):
+    def create(filename, input_bucket, output_bucket, path):
         """
         Create a new project.
         Wraps the Project constructor with logging and database commits.
@@ -212,13 +231,12 @@ class Project(db.Model):
             input_bucket (str): S3 bucket to download file
             output_bucket (str): S3 bucket to upload file
             path (str): full path to download & upload file in buckets; includes filename
-            rgb (bool): whether to display raw frames in RGB mode
 
         Returns:
             Project: new row in the Project table
         """
         start = timeit.default_timer()
-        new_project = Project(filename, input_bucket, output_bucket, path, rgb=rgb)
+        new_project = Project(filename, input_bucket, output_bucket, path)
         db.session.add(new_project)
         db.session.commit()
         current_app.logger.debug('Created new project with ID = "%s" in %ss.',
@@ -232,14 +250,14 @@ class Project(db.Model):
         """
         start = timeit.default_timer()
         # Copy the PickleType columns to ensure that we persist the changes
-        if self.action.state_changed:
-            self.state.update()
+        if self.action.labels_changed:
+            self.labels.update()
         if self.action.multi_changed:
             for label_frame in self.label_frames:
                 label_frame.update()
         elif self.action.y_changed:
-            self.label_frames[self.state.frame].update()
-        # TODO: Identify and record the edited frames and state attributes
+            self.label_frames[self.view.frame].update()
+        # TODO: Identify and record the edited frames/view attributes/label metadata
         action = self.actions[self.action_id]
         # Create a new row in the action history for the next action
         # TODO: record the action type (e.g. "handle_draw") to store in action history
@@ -261,21 +279,26 @@ class Project(db.Model):
             dict: payload to send to frontend
         """
         start = timeit.default_timer()
-        # import pdb; pdb.set_trace()
+        import pdb; pdb.set_trace()
         if self.action.prev_action_id is None:
             # TODO: error handling when there is no action to undo
             return
         prev_action = self.actions[self.action.prev_action_id]
         # Restore label frames
-        # Assumes that we store every frames and the entire state before every action
+        # Assumes that we store every frame before every action
         # TODO: only store/restore edited frames
         for frame, prev_frame in zip(self.label_frames, prev_action.frames):
             frame.frame = prev_frame.frame
-        # Restore project state
-        # TODO: only store/restore edited attributes
-        db.session.expunge(self.state)
-        self.state = prev_action.state
-        db.session.add(self.state)
+        # Restore label metadata
+        # TODO: only store/restore if changed
+        db.session.expunge(self.labels)
+        self.labels = prev_action.labels
+        db.session.add(self.labels)
+        # Restore view
+        # TODO: only store/restore changed attributes
+        db.session.expunge(self.view)
+        self.view = prev_action.view
+        db.session.add(self.view)
         # Make the payload using _changed flags for the previous action
         self.action_id = prev_action.action_id
         payload = self.make_payload()
@@ -286,7 +309,7 @@ class Project(db.Model):
 
     def redo(self):
         """
-        Restore the project to its state after the next action.
+        Restore the project to after the next action.
 
         Returns:
             dict: payload to send to frontend
@@ -297,14 +320,20 @@ class Project(db.Model):
             return
         next_action = self.actions[self.action.next_action_id]
         # Restore label frames 
-        # Assumes that we store every frames and the entire state before every action
-        # TODO: only store and restore edited frames and state attributes
+        # Assumes that we store every frame before every action
+        # TODO: only store and restore edited frames
         for frame, next_frame in zip(self.label_frames, next_action.frames):
             frame.frame = next_frame.frame
-        # Restore project sate
-        db.session.expunge(self.state)
-        self.state = next_action.state
-        db.session.add(self.state)
+        # Restore label metadata
+        # TODO: only store/restore if changed
+        db.session.expunge(self.labels)
+        self.labels = next_action.labels
+        db.session.add(self.labels)
+        # Restore view
+        # TODO: only store/restore changed attributes
+        db.session.expunge(self.view)
+        self.view = next_action.view
+        db.session.add(self.view)
         # Make the payload using the _changed flags for the current action
         payload = self.make_payload()
         self.action_id = next_action.action_id
@@ -315,13 +344,15 @@ class Project(db.Model):
 
     def finish(self):
         """
-        Complete a project and its associated frames and state.
-        Sets the PickleType columns of the frames and state to None.
+        Complete a project and its associated objects.
+        Sets the PickleType columns to None.
         """
         start = timeit.default_timer()
         self.finished = db.func.current_timestamp()
-        # Clear project state
-        self.state.finish()
+        # Clear label metadata
+        self.labels.finish()
+        # Clear view
+        self.view.finish()
         # Clear frames
         for label_frame in self.label_frames:
             label_frame.finish()
@@ -335,16 +366,31 @@ class Project(db.Model):
         db.session.commit()
         logger.debug('Finished project with ID = "%s" in %ss.',
                      self.id, timeit.default_timer() - start)
+    
+    def get_max_label(self):
+        """
+        Get the highest label in use in currently-viewed feature.
+        If feature is empty, returns 0 to prevent other functions from crashing.
+
+        Returns:
+            int: highest label in the current feature
+        """
+        # check this first, np.max of empty array will crash
+        if len(self.labels.cell_ids[self.view.feature]) == 0:
+            max_label = 0
+        # if any labels exist in feature, find the max label
+        else:
+            max_label = int(np.max(self.labels.cell_ids[self.view.feature]))
+        return max_label
 
     def get_label_arr(self):
         """
         Returns:
             list: nested list of labels at each positions, with negative label outlines.
         """
-        state = self.state
         # Create label array
-        label_frame = self.label_frames[state.frame]
-        label_arr = label_frame.frame[..., state.feature]
+        label_frame = self.label_frames[self.view.frame]
+        label_arr = label_frame.frame[..., self.view.feature]
         return add_outlines(label_arr).tolist()
 
     def get_label_png(self):
@@ -352,14 +398,13 @@ class Project(db.Model):
         Returns:
             BytesIO: returns the current label frame as a .png
         """
-        state = self.state
         # Create label png
-        label_frame = self.label_frames[state.frame]
-        label_arr = label_frame.frame[..., state.feature]
+        label_frame = self.label_frames[self.view.frame]
+        label_arr = label_frame.frame[..., self.view.feature]
         label_png = pngify(imgarr=np.ma.masked_equal(label_arr, 0),
                            vmin=0,
-                           vmax=state.get_max_label(),
-                           cmap=state.colormap)
+                           vmax=self.get_max_label(),
+                           cmap=self.view.colormap)
         return label_png
 
     def get_raw_png(self):
@@ -367,10 +412,9 @@ class Project(db.Model):
         Returns:
             BytesIO: contains the current raw frame as a .png
         """
-        state = self.state
         # RGB png
-        if state.rgb:
-            raw_frame = self.rgb_frames[state.frame]
+        if self.view.rgb:
+            raw_frame = self.rgb_frames[self.view.frame]
             raw_arr = raw_frame.frame
             raw_png = pngify(imgarr=raw_arr,
                              vmin=None,
@@ -378,8 +422,8 @@ class Project(db.Model):
                              cmap=None)
             return raw_png
         # Raw png
-        raw_frame = self.raw_frames[state.frame]
-        raw_arr = raw_frame.frame[..., state.channel]
+        raw_frame = self.raw_frames[self.view.frame]
+        raw_arr = raw_frame.frame[..., self.view.channel]
         raw_png = pngify(imgarr=raw_arr,
                          vmin=0,
                          vmax=None,
@@ -391,8 +435,8 @@ class Project(db.Model):
         Creates a payload to send to the front-end after completing an action.
         """
         tracks = False  # Default tracks payload
-        if self.action.state_changed:
-            tracks = self.state.readable_tracks
+        if self.action.labels_changed:
+            tracks = self.labels.readable_tracks
 
         img_payload = False  # Default image payload
         if self.action.x_changed or self.action.y_changed:
@@ -408,73 +452,46 @@ class Project(db.Model):
 
         return {'tracks': tracks, 'imgs': img_payload}
 
-
-
-class State(db.Model):
+class View(db.Model):
     """
-    Table definition that stores the project state.
-    Includes both static project info, like filename and data dimensions,
-    and label metadata that is updated by actions.
+    Table definition that stores dynamic project attributes,
+    such as the current frame, feature, and channel.
     """
     # pylint: disable=E1101
-    __tablename__ = 'state'
+    __tablename__ = 'views'
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
                            primary_key=True, nullable=False)
-    updatedAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now(),
-                          onupdate=db.func.current_timestamp())
-    finished = db.Column(db.TIMESTAMP)
-    numUpdates = db.Column(db.Integer, nullable=False, default=0)
-    firstUpdate = db.Column(db.TIMESTAMP)
-    lastUpdate = db.Column(db.TIMESTAMP)
-
-    # Static Project info
-    filename = db.Column(db.Text, nullable=False)
-    path = db.Column(db.Text, nullable=False)
-    output_bucket = db.Column(db.Text, nullable=False)
-    height = db.Column(db.Integer, nullable=False)
-    width = db.Column(db.Integer, nullable=False)
-    num_frames = db.Column(db.Integer, nullable=False)
-    num_channels = db.Column(db.Integer, nullable=False)
-    num_features = db.Column(db.Integer, nullable=False)
-    # View info
     rgb = db.Column(db.Boolean, default=False)
     frame = db.Column(db.Integer, default=0)
     channel = db.Column(db.Integer, default=0)
     feature = db.Column(db.Integer, default=0)
     scale_factor = db.Column(db.Float, default=1)
     colormap = db.Column(db.PickleType)
+
+    def __init__(self):
+        cmap = plt.get_cmap('viridis')
+        cmap.set_bad('black')
+        self.colormap = cmap
+
+    def finish(self):
+        self.colormap = None
+
+class Labels(db.Model):
+    """
+    Table definition that stores metadata about the labeling.
+    Cell_info stores a dictionary with frame information about each cell.
+    """
+    # pylint: disable=E1101
+    __tablename__ = 'labels'
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
+                           primary_key=True, nullable=False)
     # Label metadata
     cell_ids = db.Column(db.PickleType(comparator=lambda *a: False))
     cell_info = db.Column(db.PickleType(comparator=lambda *a: False))
 
-    def __init__(self, project_id, filename, path, output_bucket, raw, annotated, trial, rgb):
-        self.project_id = project_id
-        self.filename = filename
-        self.path = path
-        self.output_bucket = output_bucket
-        self.num_frames = raw.shape[0]
-        self.height = raw.shape[1]
-        self.width = raw.shape[2]
-        self.num_channels = raw.shape[-1]
-        self.num_features = annotated.shape[-1]
-        cmap = plt.get_cmap('viridis')
-        cmap.set_bad('black')
-        self.colormap = cmap
-        self.rgb = rgb
-
-        # Label metadata
-        # create a dictionary with frame information about each cell
-        # analogous to .trk lineage but doesn't include cells relationships
+    def __init__(self):
         self.cell_ids = {}
         self.cell_info = {}
-        for feature in range(self.num_features):
-            self.create_cell_info(feature, annotated)
-
-        # Overwrite cell_info with lineages to include cell relationships for .trk files
-        if is_trk_file(filename):
-            if len(trial['lineages']) != 1:
-                raise ValueError('Input file has multiple trials/lineages.')
-            self.cell_info = {0: trial['lineages'][0]}
 
     @property
     def tracks(self):
@@ -526,38 +543,17 @@ class State(db.Model):
                     self.cell_info[feature][cell]['frames'].append(int(frame))
             self.cell_info[feature][cell]['slices'] = ''
 
-    def get_max_label(self):
-        """
-        Get the highest label in use in currently-viewed feature.
-        If feature is empty, returns 0 to prevent other functions from crashing.
-
-        Returns:
-            int: highest label in the current feature
-        """
-        # check this first, np.max of empty array will crash
-        if len(self.cell_ids[self.feature]) == 0:
-            max_label = 0
-        # if any labels exist in feature, find the max label
-        else:
-            max_label = int(np.max(self.cell_ids[self.feature]))
-        return max_label
-
     def update(self):
         """
-        Update the state by explicitly copying the PickleType
+        Update the label metatdata by explicitly copying the PickleType
         columns so the database knows to commit them.
         """
-        if not self.firstUpdate:
-            self.firstUpdate = db.func.current_timestamp()
-        self.numUpdates += 1
-
+        # TODO: use Mutable mixin to avoid explicit copying
         self.cell_ids = self.cell_ids.copy()
         self.cell_info = self.cell_info.copy()
 
     def finish(self):
-        """Complete state and set its PickleType column to null."""
-        self.lastUpdate = self.updatedAt
-        self.finished = db.func.current_timestamp()
+        """Set PickleType columns to null."""
         self.cell_ids = None
         self.cell_info = None
 
@@ -573,8 +569,8 @@ class RawFrame(db.Model):
     frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
     frame = db.Column(db.PickleType)
 
-    def __init__(self, project_id, frame_id, frame):
-        self.project_id = project_id
+    def __init__(self, frame_id, frame):
+        # self.project_id = project_id
         self.frame_id = frame_id
         self.frame = frame
 
@@ -596,8 +592,8 @@ class RGBFrame(db.Model):
     frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
     frame = db.Column(db.PickleType)
 
-    def __init__(self, project_id, frame_id, frame):
-        self.project_id = project_id
+    def __init__(self, frame_id, frame):
+        # self.project_id = project_id
         self.frame_id = frame_id
         self.frame = self.reduce_to_RGB(frame)
 
@@ -700,8 +696,8 @@ class LabelFrame(db.Model):
     firstUpdate = db.Column(db.TIMESTAMP)
     lastUpdate = db.Column(db.TIMESTAMP)
 
-    def __init__(self, project_id, frame_id, frame):
-        self.project_id = project_id
+    def __init__(self, frame_id, frame):
+        # self.project = project
         self.frame_id = frame_id
         self.frame = frame
 
@@ -724,7 +720,7 @@ class LabelFrame(db.Model):
 class Action(db.Model):
     """
     Records a sequence of actions and
-    records the label frames and state at the before each action.
+    records the label frames, view, and label metadata at the before each action.
     """
     # pylint: disable=E1101
     __tablename__ = 'actions'
@@ -737,18 +733,21 @@ class Action(db.Model):
     x_changed = db.Column(db.Boolean, default=False)
     y_changed = db.Column(db.Boolean, default=False)
     multi_changed = db.Column(db.Boolean, default=False)
-    state_changed = db.Column(db.Boolean, default=False)
+    labels_changed = db.Column(db.Boolean, default=False)
+    view_changed = db.Column(db.Boolean, default=False)
     frames = db.relationship('FrameHistory', backref='action',
-                             # cascade='save-update, merge, delete, delete-orphan',
-                             primaryjoin="and_(foreign(FrameHistory.action_id) == Action.action_id, "
-                             "FrameHistory.project_id == Action.project_id)")
-    state = db.Column(db.PickleType)
+                             primaryjoin="and_("
+                             "Action.action_id == foreign(FrameHistory.action_id), "
+                             "Action.project_id == FrameHistory.project_id)")
+    view = db.Column(db.PickleType)
+    labels = db.Column(db.PickleType)
 
     def __init__(self, project):
         self.project = project
         self.action_id = project.next_action_id
         self.prev_action_id = project.action_id
-        self.state = project.state
+        self.view = project.view
+        self.labels = project.labels
         self.frames = [FrameHistory(project=project, frame=frame)
                        for frame in project.label_frames]
 
