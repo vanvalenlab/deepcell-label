@@ -673,6 +673,7 @@ var brush;
 var adjuster;
 var cursor;
 var state;
+var actions;
 
 /**
  * Delays an event callback to prevent calling the callback too frequently.
@@ -757,8 +758,9 @@ function upload_file(cb) {
 }
 
 function changeZoom(dzoom) {
-  state.changeZoom(dzoom, state.canvasPosX, state.canvasPosY);
+  zoom = new Zoom(state, dzoom);
   updateMousePos(state.rawX, state.rawY);
+  actions.doAndAddAction(zoom);
   render_image_display();
 }
 
@@ -1024,8 +1026,8 @@ function handleMousemove(evt) {
     const oldY = state.sy;
 
     const zoom = 100 / (state.zoom * state.scale)
-    state.pan(evt.movementX * zoom, evt.movementY * zoom);
-
+    pan = new Pan(state, evt.movementX * zoom, evt.movementY * zoom);
+    actions.doAndAddAction(pan);
     if (state.sx !== oldX || state.sy !== oldY) {
       render_image_display();
     }
@@ -1103,21 +1105,25 @@ function action(action, info, frame = current_frame) {
 }
 
 function undo() {
-  $.ajax({
-    type: 'POST',
-    url: `${document.location.origin}/undo/${project_id}`,
-    success: handlePayload,
-    async: false
-  });
+  actions.undo();
+  render_image_display();
+  // $.ajax({
+  //   type: 'POST',
+  //   url: `${document.location.origin}/undo/${project_id}`,
+  //   success: handlePayload,
+  //   async: false
+  // });
 }
 
 function redo() {
-  $.ajax({
-    type: 'POST',
-    url: `${document.location.origin}/redo/${project_id}`,
-    success: handlePayload,
-    async: false
-  });
+  actions.redo();
+  render_image_display();
+  // $.ajax({
+  //   type: 'POST',
+  //   url: `${document.location.origin}/redo/${project_id}`,
+  //   success: handlePayload,
+  //   async: false
+  // });
 }
 
 function startCaliban(filename, settings) {
@@ -1152,6 +1158,7 @@ function startCaliban(filename, settings) {
     const rawHeight = payload.dimensions[1];
 
     state = new CanvasState(rawWidth, rawHeight, 1, padding);
+    actions = new History();
 
     window.addEventListener('keydown', (e) => {
       if (e.key === ' ') {
