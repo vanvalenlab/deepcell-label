@@ -1057,18 +1057,16 @@ function handleMousemove(evt) {
 // handles end of click&drag (different from click())
 function handleMouseup() {
   state.isPressed = false;
-  if (!state.isSpacedown) {
-    if (mode.kind !== Modes.prompt) {
-      if (edit_mode) {
-        if (!brush.show) {
-          mode.handle_threshold();
-        } else {
-          // send click&drag coordinates to caliban.py to update annotations
-          mode.handle_draw();
-        }
-        brush.refreshView();
-      }
+  if (!state.isSpacedown 
+      && mode.kind !== Modes.prompt 
+      && edit_mode) {
+    if (!brush.show) {
+      mode.handle_threshold();
+    } else if (state.inRange()) {
+      // send click&drag coordinates to caliban.py to update annotations
+      mode.handle_draw();
     }
+    brush.refreshView();
   }
 }
 
