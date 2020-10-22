@@ -1094,36 +1094,58 @@ function handlePayload(payload) {
   }
 }
 
+class BackendAction {
+
+  constructor(action, info, frame = current_frame) {
+    this.action = action;
+    this.info = info;
+    this.frame = frame;
+  }
+
+  do() {
+    $.ajax({
+      type: 'POST',
+      url: `${document.location.origin}/action/${project_id}/${this.action}/${this.frame}`,
+      data: this.info,
+      success: handlePayload,
+      async: false
+    });
+  }
+
+  undo() {
+    $.ajax({
+      type: 'POST',
+      url: `${document.location.origin}/undo/${project_id}`,
+      success: handlePayload,
+      async: false
+    });
+  }
+
+  redo() {
+    $.ajax({
+      type: 'POST',
+      url: `${document.location.origin}/redo/${project_id}`,
+      success: handlePayload,
+      async: false
+    });
+  }
+}
+
 function action(action, info, frame = current_frame) {
-  $.ajax({
-    type: 'POST',
-    url: `${document.location.origin}/action/${project_id}/${action}/${frame}`,
-    data: info,
-    success: handlePayload,
-    async: false
-  });
+  backendAction = new BackendAction(action, info, frame);
+  actions.addFence();
+  actions.doAndAddAction(backendAction);
+  actions.addFence();
 }
 
 function undo() {
   actions.undo();
   render_image_display();
-  // $.ajax({
-  //   type: 'POST',
-  //   url: `${document.location.origin}/undo/${project_id}`,
-  //   success: handlePayload,
-  //   async: false
-  // });
 }
 
 function redo() {
   actions.redo();
   render_image_display();
-  // $.ajax({
-  //   type: 'POST',
-  //   url: `${document.location.origin}/redo/${project_id}`,
-  //   success: handlePayload,
-  //   async: false
-  // });
 }
 
 function startCaliban(filename, settings) {
