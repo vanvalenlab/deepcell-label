@@ -52,6 +52,7 @@ class History{
         action.do();
         this.undoStack.push(action);
         this.redoStack = [];
+        this.formatButtons();
     }
 
     /**
@@ -60,9 +61,7 @@ class History{
      * and when a fense is added after, the action will be the last in the group.
      */
     addFence() {
-        if (this.undoStack.peek() !== 'fencepost') {
-            this.undoStack.push('fencepost');
-        }
+        this.undoStack.push('fencepost')
     }
     /**
      * Undoes the most recent group of actions, if any.
@@ -77,12 +76,17 @@ class History{
         while(this.canUndo && action === 'fencepost') {
             action = this.undoStack.pop();
         }
-        while(this.canUndo && action !== 'fencepost') {
-            console.log(action);
+        while(true) {
+            if (!this.canUndo) break;
+            if (action === 'fencepost') {
+                this.redoStack.push('fencepost');
+                break;
+            }
             action.undo();
             this.redoStack.push(action);
             action = this.undoStack.pop();
         }
+        this.formatButtons();
     }
 
     /**
@@ -99,11 +103,21 @@ class History{
         while(this.canRedo && action === 'fencepost') {
             action = this.redoStack.pop();
         }
-        while (this.canRedo && 'fencepost' !== action) {
-            console.log(action);
+        while (true) {
+            if (!this.canRedo) break;
+            if (action === 'fencepost') {
+                this.undoStack.push('fencepost');
+                break;
+            }
             action.redo();
             this.undoStack.push(action);
-            action = this.undoStack.pop();
+            action = this.redoStack.pop();
         }
+        this.formatButtons();
+    }
+
+    formatButtons() {
+        document.getElementById('undo').disabled = !this.canUndo;
+        document.getElementById('redo').disabled = !this.canRedo;
     }
 }
