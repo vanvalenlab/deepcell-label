@@ -896,25 +896,43 @@ function render_image_display() {
   render_info_display();
 }
 
-function fetch_and_render_frame() {
-  $.ajax({
-    type: 'GET',
-    url: `${document.location.origin}/frame/${current_frame}/${project_id}`,
-    success: function(payload) {
-      adjuster.rawLoaded = false;
-      adjuster.segLoaded = false;
+class ChangeFrame {
+  
+  do() {
+    $.ajax({
+      type: 'GET',
+      url: `${document.location.origin}/frame/${current_frame}/${project_id}`,
+      success: function(payload) {
+        adjuster.rawLoaded = false;
+        adjuster.segLoaded = false;
+  
+        // load new value of seg_array
+        // array of arrays, contains annotation data for frame
+        state.segArray = payload.seg_arr;
+        adjuster.segImage.src = payload.segmented;
+        adjuster.rawImage.src = payload.raw;
+  
+        // actions must start and end on the same frame
+        if (mode.action !== '') { mode.clear() };
+      },
+      async: false
+    });
+  }
 
-      // load new value of seg_array
-      // array of arrays, contains annotation data for frame
-      state.segArray = payload.seg_arr;
-      adjuster.segImage.src = payload.segmented;
-      adjuster.rawImage.src = payload.raw;
+  undo() {
+    backendUndo();
+  }
 
-      // actions must start and end on the same frame
-      if (mode.action !== '') { mode.clear() };
-    },
-    async: false
-  });
+  redo() {
+    backendRedo();
+  }
+}
+
+function fetch_and_render_frame() { 
+  let changeFrame = new ChangeFrame();
+  actions.addFence();
+  actions.doAndAddAction(changeFrame);
+  actions.addFence();
 }
 
 function loadFile(file, rgb = false, cb) {
@@ -1113,22 +1131,30 @@ class BackendAction {
   }
 
   undo() {
-    $.ajax({
-      type: 'POST',
-      url: `${document.location.origin}/undo/${project_id}`,
-      success: handlePayload,
-      async: false
-    });
+    backendUndo()
   }
 
   redo() {
-    $.ajax({
-      type: 'POST',
-      url: `${document.location.origin}/redo/${project_id}`,
-      success: handlePayload,
-      async: false
-    });
+    backendRedo()
   }
+}
+
+function backendUndo() {
+  $.ajax({
+    type: 'POST',
+    url: `${document.location.origin}/undo/${project_id}`,
+    success: handlePayload,
+    async: false
+  });
+}
+
+function backendRedo() {
+  $.ajax({
+    type: 'POST',
+    url: `${document.location.origin}/redo/${project_id}`,
+    success: handlePayload,
+    async: false
+  });
 }
 
 function action(action, info, frame = current_frame) {
