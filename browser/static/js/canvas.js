@@ -214,12 +214,14 @@ class Pan {
 }
 
 class Zoom {
-  constructor(canvas, dZoom) {
+  constructor(canvas, dZoom, posX, posY) {
     this.canvas = canvas;
     this.dZoom = dZoom;
+    this.posX = x;
+    this.posY = y;
   }
 
-  changeZoom(canvas, dZoom) {
+  changeZoom(canvas, dZoom, posX, posY) {
     const newZoom = canvas.zoom - 10 * dZoom;
     const oldZoom = canvas.zoom;
     const newHeight = canvas.height * 100 / newZoom;
@@ -235,8 +237,8 @@ class Zoom {
       canvas.sWidth = newWidth;
     }
     if (oldZoom !== newZoom) {
-      const propX = canvas.canvasPosX / canvas.scaledWidth;
-      const propY = canvas.canvasPosY / canvas.scaledHeight;
+      const propX = posX / canvas.scaledWidth;
+      const propY = posY / canvas.scaledHeight;
       const dx = propX * (newWidth - oldWidth);
       const dy = propY * (newHeight - oldHeight);
       this.pan(canvas, dx, dy);
@@ -266,15 +268,15 @@ class Zoom {
 
 
   do() {
-    this.changeZoom(this.canvas, this.dZoom);
+    this.changeZoom(this.canvas, this.dZoom, this.posX, this.posY);
   }
 
   redo() {
-    this.changeZoom(this.canvas, this.dZoom);
+    this.changeZoom(this.canvas, this.dZoom, this.posX, this.posY);
   }
 
   undo() {
-    this.changeZoom(this.canvas, -this.dZoom, );
+    this.changeZoom(this.canvas, -this.dZoom, this.posX, this.posY);
   }
 }
 
