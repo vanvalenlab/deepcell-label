@@ -49,10 +49,10 @@
     </div>
 
     <div id="canvas-col" class="col s6 offset-s1">
-      <button class="waves-effect waves-light btn indigo" type="submit" name="undo" onClick="undo()">
+      <button class="waves-effect waves-light btn indigo" type="submit" id="undo" onClick="undo()" disabled=true>
         <i class="material-icons left">undo</i>Undo
       </button>
-      <button class="waves-effect waves-light btn indigo" type="submit" name="redo" onClick="redo()">
+      <button class="waves-effect waves-light btn indigo" type="submit" id="redo" onClick="redo()", disabled=true>
         <i class="material-icons left">redo</i>Redo
       </button>
       <!-- Canvas used to display image and capture user input -->
