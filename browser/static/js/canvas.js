@@ -214,11 +214,11 @@ class Pan {
 }
 
 class Zoom {
-  constructor(canvas, dZoom, posX, posY) {
+  constructor(canvas, dZoom) {
     this.canvas = canvas;
     this.dZoom = dZoom;
-    this.posX = x;
-    this.posY = y;
+    this.posX = canvas.canvasPosX;
+    this.posY = canvas.canvasPosY;
   }
 
   changeZoom(canvas, dZoom, posX, posY) {
