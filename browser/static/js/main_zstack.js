@@ -144,7 +144,8 @@ class Mode {
     } else if (key === 'F') {
       // cycle backward one feature, if applicable
       if (feature_max > 1) {
-        this.feature = this.decrement_value(this.feature, 0, feature_max - 1);
+        // add feature_max to ensure positive remainder
+        this.feature = (this.feature + feature_max - 1) % feature_max;
         this.info = { feature: this.feature };
         action('change_feature', this.info);
         this.clear();
@@ -221,7 +222,8 @@ class Mode {
     } else if (key === 'F') {
       // cycle backward one feature, if applicable
       if (feature_max > 1) {
-        this.feature = this.decrement_value(this.feature, 0, feature_max - 1);
+        // add feature_max to ensure positive remainder
+        this.feature = (this.feature + feature_max - 1) % feature_max;
         this.info = { feature: this.feature };
         action('change_feature', this.info);
         this.clear();
@@ -234,6 +236,7 @@ class Mode {
       render_info_display();
     } else if (key === '[' && this.highlighted_cell_one !== -1) {
       // cycle highlight to prev label
+      this.feature = (this.feature + feature_max - 1) % feature_max;
       this.highlighted_cell_one = this.decrement_value(
         this.highlighted_cell_one,
         1,
@@ -244,8 +247,8 @@ class Mode {
       }
     } else if (key === ']' && this.highlighted_cell_one !== -1) {
       // cycle highlight to next label (skipping 0)
-      let max_label = maxLabelsMap.get(this.feature);
-      this.highlighted_cell_one = (this.highlighted_cell_one + 1) % max_label + 1;
+      let maxLabel = 1 + maxLabelsMap.get(this.feature);
+      this.highlighted_cell_one = (this.highlighted_cell_one + 1) % (maxLabel) + 1;
       if (current_highlight) {
         adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
       }
@@ -292,8 +295,8 @@ class Mode {
       }
     } else if (key === ']') {
       // cycle highlight to next label
-      let max_label = maxLabelsMap.get(this.feature);
-      this.highlighted_cell_one = (this.highlighted_cell_one + 1) % max_label + 1;
+      let maxLabel = 1 + maxLabelsMap.get(this.feature);
+      this.highlighted_cell_one = (this.highlighted_cell_one + 1) % maxLabel + 1;
       // clear info but show new highlighted cell
       const tempHighlight = this.highlighted_cell_one;
       this.clear();
