@@ -210,7 +210,7 @@ class Zoom {
   }
 
   changeZoom(canvas, dZoom, posX, posY) {
-    const newZoom = canvas.zoom - 10 * dZoom;
+    const newZoom = Math.max(canvas.zoom - 10 * dZoom, canvas.zoomLimit);
     const oldZoom = canvas.zoom;
     const newHeight = canvas.height * 100 / newZoom;
     const newWidth = canvas.width * 100 / newZoom;
@@ -219,12 +219,10 @@ class Zoom {
     const oldHeight = canvas.sHeight;
     const oldWidth = canvas.sWidth;
 
-    if (newZoom >= canvas.zoomLimit) {
+    if (oldZoom !== newZoom) {
       canvas.zoom = newZoom;
       canvas.sHeight = newHeight;
       canvas.sWidth = newWidth;
-    }
-    if (oldZoom !== newZoom) {
       const propX = posX / canvas.scaledWidth;
       const propY = posY / canvas.scaledHeight;
       const dx = propX * (newWidth - oldWidth);
