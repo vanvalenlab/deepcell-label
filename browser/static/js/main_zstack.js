@@ -136,7 +136,7 @@ class Mode {
     } else if (key === 'f') {
       // cycle forward one feature, if applicable
       if (feature_max > 1) {
-        this.feature = this.increment_value(this.feature, 0, feature_max - 1);
+        this.feature = (this.feature + 1) % feature_max;
         this.info = { feature: this.feature };
         action('change_feature', this.info);
         this.clear();
@@ -213,7 +213,7 @@ class Mode {
     } else if (key === 'f') {
       // cycle forward one feature, if applicable
       if (feature_max > 1) {
-        this.feature = this.increment_value(this.feature, 0, feature_max - 1);
+        this.feature = (this.feature + 1) % feature_max;
         this.info = { feature: this.feature };
         action('change_feature', this.info);
         this.clear();
@@ -243,12 +243,9 @@ class Mode {
         adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
       }
     } else if (key === ']' && this.highlighted_cell_one !== -1) {
-      // cycle highlight to next label
-      this.highlighted_cell_one = this.increment_value(
-        this.highlighted_cell_one,
-        1,
-        maxLabelsMap.get(this.feature)
-      );
+      // cycle highlight to next label (skipping 0)
+      let max_label = maxLabelsMap.get(this.feature);
+      this.highlighted_cell_one = (this.highlighted_cell_one + 1) % max_label + 1;
       if (current_highlight) {
         adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
       }
@@ -295,11 +292,8 @@ class Mode {
       }
     } else if (key === ']') {
       // cycle highlight to next label
-      this.highlighted_cell_one = this.increment_value(
-        this.highlighted_cell_one,
-        1,
-        maxLabelsMap.get(this.feature)
-      );
+      let max_label = maxLabelsMap.get(this.feature);
+      this.highlighted_cell_one = (this.highlighted_cell_one + 1) % max_label + 1;
       // clear info but show new highlighted cell
       const tempHighlight = this.highlighted_cell_one;
       this.clear();
@@ -456,16 +450,6 @@ class Mode {
     }
     this.clear();
     render_image_display();
-  }
-
-  // helper function to increment value but cycle around if needed
-  increment_value(currentValue, minValue, maxValue) {
-    if (currentValue < maxValue) {
-      currentValue += 1;
-    } else {
-      currentValue = minValue;
-    }
-    return currentValue;
   }
 
   // helper function to decrement value but cycle around if needed
