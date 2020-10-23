@@ -21,14 +21,8 @@ class Mode {
       adjuster.brightnessMap.set(this._channel, adjuster.brightness);
       adjuster.contrastMap.set(this._channel, adjuster.contrast);
       adjuster.invertMap.set(this._channel, adjuster.displayInvert);
-      // change channel, wrap around if needed
-      if (num === channelMax) {
-        this._channel = 0;
-      } else if (num < 0) {
-        this._channel = channelMax - 1;
-      } else {
-        this._channel = num;
-      }
+      // set channel to num mod channelMax
+      this._channel = ((num % channelMax) + channelMax) % channelMax;
       // get new channel image from server
       this.info = { channel: this._channel };
       action('change_channel', this.info);
@@ -59,10 +53,12 @@ class Mode {
   handle_universal_keybind(key) {
     if (!rgb && (key === 'a' || key === 'ArrowLeft')) {
       // go backward one frame
-      change_frame(-1);
+      let changeFrame = new ChangeFrame(this, current_frame - 1);
+      actions.addFencedAction(changeFrame);
     } else if (!rgb && (key === 'd' || key === 'ArrowRight')) {
       // go forward one frame
-      change_frame(1);
+      let changeFrame = new ChangeFrame(this, current_frame + 1);
+      actions.addFencedAction(changeFrame);
     } else if (key === 'Escape') {
       // deselect/cancel action/reset highlight
       mode.clear();
@@ -123,33 +119,25 @@ class Mode {
     if (key === 'e' && !settings.pixel_only) {
       // toggle edit mode
       let toggleEdit = new ToggleEdit();
-      actions.addFence();
-      actions.doAndAddAction(toggleEdit);
-      actions.addFence();
+      actions.addFencedAction(toggleEdit);
       adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
     } else if (key === 'c') {
-      // cycle forward one channel, if applicable
-      this.channel += 1;
+      // cycle forward one channel
+      let action = new ChangeChannel(this, this.channel + 1);
+      actions.addFencedAction(action);
     } else if (key === 'C') {
-      // cycle backward one channel, if applicable
-      this.channel -= 1;
-    } else if (key === 'f') {
-      // cycle forward one feature, if applicable
-      if (feature_max > 1) {
-        this.feature = (this.feature + 1) % feature_max;
-        this.info = { feature: this.feature };
-        action('change_feature', this.info);
-        this.clear();
-      }
+      // cycle backward one channel
+      let action = new ChangeChannel(this, this.channel - 1);
+      actions.addFencedAction(action);
+    } else if (key === 'f' || key === 'F') {
+      // cycle forward one feature
+      let dFeature = 1 ? key === 'f' : -1;
+      let changeFeature = new ChangeFeature(this, this.feature + dFeature);
+      actions.addFencedAction(changeFeature);
     } else if (key === 'F') {
-      // cycle backward one feature, if applicable
-      if (feature_max > 1) {
-        // add feature_max to ensure positive remainder
-        this.feature = (this.feature + feature_max - 1) % feature_max;
-        this.info = { feature: this.feature };
-        action('change_feature', this.info);
-        this.clear();
-      }
+      // cycle backward one feature
+      let changeFeature = new ChangeFeature(this, this.feature - 1);
+      actions.addFencedAction(changeFeature);
     } else if (key === ']') {
       // increase edit_value up to max label + 1 (guaranteed unused)
       brush.value = Math.min(
@@ -200,34 +188,24 @@ class Mode {
     if (key === 'e' && !settings.label_only) {
       // toggle edit mode
       let toggleEdit = new ToggleEdit(this);
-      actions.addFence();
-      actions.doAndAddAction(toggleEdit);
-      actions.addFence();
+      actions.addFencedAction(toggleEdit);
       helper_brush_draw();
       adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
     } else if (key === 'c') {
-      // cycle forward one channel, if applicable
-      this.channel += 1;
+      // cycle forward one channel
+      let action = new ChangeChannel(this, this.channel + 1);
+      actions.addFencedAction(action);
     } else if (key === 'C') {
-      // cycle backward one channel, if applicable
-      this.channel -= 1;
+      // cycle backward one channel
+      let action = new ChangeChannel(this, this.channel - 1);
+      actions.addFencedAction(action);
     } else if (key === 'f') {
-      // cycle forward one feature, if applicable
-      if (feature_max > 1) {
-        this.feature = (this.feature + 1) % feature_max;
-        this.info = { feature: this.feature };
-        action('change_feature', this.info);
-        this.clear();
-      }
+      // cycle forward one feature
+      let action = new ChangeFeature(this, this.feature + 1);
+      actions.addFencedAction(action);
     } else if (key === 'F') {
-      // cycle backward one feature, if applicable
-      if (feature_max > 1) {
-        // add feature_max to ensure positive remainder
-        this.feature = (this.feature + feature_max - 1) % feature_max;
-        this.info = { feature: this.feature };
-        action('change_feature', this.info);
-        this.clear();
-      }
+      let action = new ChangeFeature(this, this.feature - 1);
+      actions.addFencedAction(action);
     } else if (key === 'p' && !rgb) {
       // iou cell identity prediction
       this.kind = Modes.question;
@@ -236,7 +214,6 @@ class Mode {
       render_info_display();
     } else if (key === '[' && this.highlighted_cell_one !== -1) {
       // cycle highlight to prev label
-      this.feature = (this.feature + feature_max - 1) % feature_max;
       this.highlighted_cell_one = this.decrement_value(
         this.highlighted_cell_one,
         1,
@@ -745,7 +722,7 @@ function upload_file(cb) {
 function changeZoom(dzoom) {
   zoom = new Zoom(state, dzoom);
   updateMousePos(state.rawX, state.rawY);
-  actions.doAndAddAction(zoom);
+  actions.addAction(zoom);
   render_image_display();
 }
 
@@ -881,12 +858,6 @@ function render_image_display() {
   render_info_display();
 }
 
-function change_frame(dFrame) {
-  let changeFrame = new ChangeFrame(dFrame);
-  actions.addFence();
-  actions.doAndAddAction(changeFrame);
-  actions.addFence();
-}
 
 function loadFile(file, rgb = false, cb) {
   $.ajax({
@@ -998,7 +969,7 @@ function handleMousemove(evt) {
 
     const zoom = 100 / (state.zoom * state.scale)
     pan = new Pan(state, evt.movementX * zoom, evt.movementY * zoom);
-    actions.doAndAddAction(pan);
+    actions.addAction(pan);
     if (state.sx !== oldX || state.sy !== oldY) {
       render_image_display();
     }
@@ -1081,11 +1052,9 @@ function backendRedo() {
   });
 }
 
-function action(action, info, frame = current_frame) {
-  backendAction = new BackendAction(action, info, frame);
-  actions.addFence();
-  actions.doAndAddAction(backendAction);
-  actions.addFence();
+function action(action, info) {
+  backendAction = new BackendAction(action, info);
+  actions.addFencedAction(backendAction);
 }
 
 function undo() {
