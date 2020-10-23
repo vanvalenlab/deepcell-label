@@ -14,89 +14,130 @@ class ToggleEdit {
   }
 
 class ChangeFrame {
-  constructor(dFrame) {
-    this.prev_frame = current_frame;
-    this.frame = (current_frame + dFrame) % max_frames;
-  }
-  
-  do() {
-    $.ajax({
-      type: 'GET',
-      url: `${document.location.origin}/frame/${this.frame}/${project_id}`,
-      success: function(payload) {
-        adjuster.rawLoaded = false;
-        adjuster.segLoaded = false;
-  
-        // load new value of seg_array
-        // array of arrays, contains annotation data for frame
-        state.segArray = payload.seg_arr;
-        adjuster.segImage.src = payload.segmented;
-        adjuster.rawImage.src = payload.raw;
-  
-        // actions must start and end on the same frame
-        if (mode.action !== '') { mode.clear() };
-      },
-      async: false
-    });
-    current_frame = this.frame;
-    render_info_display();
-  }
 
-  undo() {
-    backendUndo();
-    current_frame = this.prev_frame;
-    render_info_display();
-  }
-
-  redo() {
-    backendRedo();
-    current_frame = this.frame;
-    render_info_display();
-  }
-}
-
-// TODO: implement change view route
-// TODO: finish change view class
-class ChangeView {
-
-  constructor(view, current, change) {
-    this.view = view;
-    // this.prev_value = current;
-    // this.value
+  constructor(mode, frame) {
+    this.mode = mode;
+    this.oldValue = current_frame;
+    // frame mod max_frames
+    this.newValue = ((frame % max_frames) + max_frames) % max_frames;
   }
 
   do() {
     $.ajax({
       type: 'POST',
-      url: `${document.location.origin}/action/${project_id}/${this.action}/${this.frame}`,
-      data: this.info,
+      url: `${document.location.origin}/changeview/${project_id}/frame/${this.newValue}`,
       success: handlePayload,
       async: false
     });
+    current_frame = this.newValue;
+    this.reset_action()
   }
 
+
   undo() {
-    backendUndo()
+    backendUndo();
+    current_frame = this.oldValue;
+    this.reset_action()
+    render_info_display();
   }
 
   redo() {
-    backendRedo()
+    backendRedo();
+    current_frame = this.newValue;
+    this.reset_action()
+    render_info_display();
+  }
+
+  reset_action() {
+    // actions need to start and end on the same frame
+    if (this.mode.action !== '') { this.mode.clear() };
+  }
+}
+
+class ChangeFeature {
+  constructor(mode, feature) {
+    this.mode = mode;
+    this.oldValue = mode.feature;
+    // feature mod feature_max (implemented with remainder operator %)
+    this.newValue = ((feature % feature_max) + feature_max) % feature_max;
+  }
+
+  do() {
+    $.ajax({
+      type: 'POST',
+      url: `${document.location.origin}/changeview/${project_id}/feature/${this.newValue}`,
+      success: handlePayload,
+      async: false
+    });
+    this.mode.feature = this.newValue;
+    this.mode.clear();
+  }
+
+  undo() {
+    backendUndo();
+    this.mode.feature = this.oldValue;
+  }
+
+  redo() {
+    backendRedo();
+    this.mode.feature = this.newValue;
+  }
+}
+
+class ChangeChannel {
+  constructor(mode, adjuster, channel) {
+    this.mode = mode;
+    this.adjuster = adjuster;
+    this.oldValue = mode.channel;
+    // channel mode channelMax (implemented with remainder operator %)
+    this.newValue = ((channel % channelMax) + channelMax) % channelMax;
+  }
+
+  do() {
+    $.ajax({
+      type: 'POST',
+      url: `${document.location.origin}/changeview/${project_id}/channel/${this.newValue}`,
+      success: handlePayload,
+      async: false
+    });
+    this.mode.clear();
+    this.adjust(this.oldValue, this.newValue);
+  }
+
+  undo() {
+    backendUndo();
+    this.adjust(this.newValue, this.oldValue);
+  }
+
+  reddo() {
+    backendRedo();
+    this.adjust(this.oldValue, this.newValue);
+  }
+
+  adjust(oldValue, newValue) {
+    // save current display settings before changing
+    adjuster.brightnessMap.set(oldValue, adjuster.brightness);
+    adjuster.contrastMap.set(oldValue, adjuster.contrast);
+    adjuster.invertMap.set(oldValue, adjuster.displayInvert);
+    // get brightness/contrast vals for new channel
+    adjuster.brightness = adjuster.brightnessMap.get(newValue);
+    adjuster.contrast = adjuster.contrastMap.get(newValue);
+    adjuster.displayInvert = adjuster.invertMap.get(newValue);
   }
 }
 
 // TODO: adapt this class to only handle label editing actions
 class BackendAction {
 
-  constructor(action, info, frame = current_frame) {
+  constructor(action, info) {
     this.action = action;
     this.info = info;
-    this.frame = frame;
   }
 
   do() {
     $.ajax({
       type: 'POST',
-      url: `${document.location.origin}/action/${project_id}/${this.action}/${this.frame}`,
+      url: `${document.location.origin}/edit/${project_id}/${this.action}`,
       data: this.info,
       success: handlePayload,
       async: false
@@ -104,11 +145,11 @@ class BackendAction {
   }
 
   undo() {
-    backendUndo()
+    backendUndo();
   }
 
   redo() {
-    backendRedo()
+    backendRedo();
   }
 }
 
