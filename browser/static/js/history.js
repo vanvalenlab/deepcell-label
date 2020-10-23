@@ -48,11 +48,24 @@ class History{
      * 
      * @param {Action} action 
      */
-    doAndAddAction(action) {
+    addAction(action) {
         action.do();
         this.undoStack.push(action);
         this.redoStack = [];
         this.formatButtons();
+    }
+
+    /**
+     * Executes an action,
+     * fences it in to be undone alone,
+     * and clears the actions to be redone.
+     * 
+     * @param {Action} action 
+     */
+    addFencedAction(action) {
+        this.addFence();
+        this.addAction(action);
+        this.addFence();
     }
 
     /**
