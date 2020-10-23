@@ -225,10 +225,16 @@ class Zoom {
       canvas.sWidth = newWidth;
       const propX = posX / canvas.scaledWidth;
       const propY = posY / canvas.scaledHeight;
-      const dx = propX * (newWidth - oldWidth);
-      const dy = propY * (newHeight - oldHeight);
-      this.canvas.sx = this.canvas.sx - dx;
-      this.canvas.sy = this.canvas.sy - dy;
+      // change in x position of scaled window
+      const dx = Math.min(Math.max(propX * (oldWidth - newWidth), // no edges
+          -canvas.sx), // move to right edge 
+        canvas.width - canvas.sWidth - canvas.sx) // move to left edge
+      // change in y position of scaled window
+      const dy = Math.min(Math.max(propY * (oldHeight - newHeight), // no edges
+          -canvas.sy), // move to top edge 
+        canvas.height - canvas.sHeight - canvas.sy) // move to bottom edge
+      this.canvas.sx = this.canvas.sx + dx;
+      this.canvas.sy = this.canvas.sy + dy;
     }
   }
 
