@@ -229,8 +229,8 @@ class Zoom {
       const propY = posY / canvas.scaledHeight;
       const dx = propX * (newWidth - oldWidth);
       const dy = propY * (newHeight - oldHeight);
-      let pan = new Pan(this.canvas, dx, dy);
-      actions.addAction(pan);
+      this.canvas.sx = this.canvas.sx - dx;
+      this.canvas.sy = this.canvas.sy - dy;
     }
   }
 
