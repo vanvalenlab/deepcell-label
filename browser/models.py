@@ -106,8 +106,8 @@ class Project(db.Model):
                              cascade='save-update, merge, delete, delete-orphan')
 
     # Action history
-    action_id = db.Column(db.Integer, nullable=False, default=0)
-    next_action_id = db.Column(db.Integer, nullable=False, default=0)
+    action_id = db.Column(db.Integer)
+    next_action_id = db.Column(db.Integer, default=0)
     actions = db.relationship('Action', backref='project')
 
     def __init__(self, filename, input_bucket, output_bucket, path,
@@ -158,17 +158,6 @@ class Project(db.Model):
                            for i, frame in enumerate(raw)]
         self.label_frames = [LabelFrame(i, frame)
                              for i, frame in enumerate(annotated)]
-
-        # Create the first action for the project
-        self.prev_action_id = 0
-        self.next_action_id = 0
-        self.actions = [Action(project=self)]
-        # Set changed flags to true to get full payload
-        action = self.actions[0]
-        action.labels_changed = True
-        action.x_changed = True
-        action.y_changed = True
-        self.next_action_id = 1
 
         current_app.logger.debug('Initialized project for %s in %s s.',
                                  filename, timeit.default_timer() - init_start)
@@ -243,6 +232,16 @@ class Project(db.Model):
         start = timeit.default_timer()
         new_project = Project(filename, input_bucket, output_bucket, path)
         db.session.add(new_project)
+        db.session.commit()
+        # Initialize the first action after the projec has persisted so
+        # pickled rows (View and Labels) don't reference a transient project
+        new_project.actions = [Action(project=new_project)]
+        action = new_project.actions[0]
+        action.labels_changed = True  # TODO: does this need to be true
+        action.x_changed = True
+        action.y_changed = True
+        new_project.action_id = 0
+        new_project.next_action_id = 1
         db.session.commit()
         current_app.logger.debug('Created new project with ID = "%s" in %ss.',
                                  new_project.id, timeit.default_timer() - start)
@@ -748,7 +747,7 @@ class Action(db.Model):
 
     def __init__(self, project):
         """
-        Called when completing an action and 
+        Called when completing an action and
         creating a new, empty action row for the next action."""
         self.project = project
         self.action_id = project.next_action_id
