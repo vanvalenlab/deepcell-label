@@ -175,29 +175,17 @@ class Pan {
   // Implements command pattern for an undoable pan
   constructor(canvas, dx, dy) {
     this.canvas = canvas;
-    this.dx = dx;
-    this.dy = dy;
+    // change in x position of scaled window
+    this.dx = Math.min(Math.max(-dx, -canvas.sx), // move to right edge 
+      canvas.width - canvas.sWidth - canvas.sx) // move to left edge
+    // change in y position of scaled window
+    this.dy = Math.min(Math.max(-dy, -canvas.sy), // move to top edge 
+      canvas.height - canvas.sHeight - canvas.sy) // move to bottom edge
   }
 
   pan(canvas, dx, dy) {
-    let tempPanX = canvas.sx - dx;
-    let tempPanY = canvas.sy - dy;
-
-    // stop panning if at the edge of image (x)
-    if (tempPanX >= 0 && tempPanX + canvas.sWidth < canvas.width) {
-      canvas.sx = tempPanX;
-    } else {
-      tempPanX = Math.max(0, tempPanX);
-      canvas.sx = Math.min(canvas.width - canvas.sWidth, tempPanX);
-    }
-
-    // stop panning if at the edge of image (y)
-    if (tempPanY >= 0 && tempPanY + canvas.sHeight < canvas.height) {
-      canvas.sy = tempPanY;
-    } else {
-      tempPanY = Math.max(0, tempPanY);
-      canvas.sy = Math.min(canvas.height - canvas.sHeight, tempPanY);
-    }
+    canvas.sx = canvas.sx + dx;
+    canvas.sy = canvas.sy + dy;
   }
 
   do() {
@@ -241,31 +229,10 @@ class Zoom {
       const propY = posY / canvas.scaledHeight;
       const dx = propX * (newWidth - oldWidth);
       const dy = propY * (newHeight - oldHeight);
-      this.pan(canvas, dx, dy);
+      let pan = new Pan(this.canvas, dx, dy);
+      actions.addAction(pan);
     }
   }
-
-  pan(canvas, dx, dy) {
-    let tempPanX = canvas.sx - dx;
-    let tempPanY = canvas.sy - dy;
-
-    // stop panning if at the edge of image (x)
-    if (tempPanX >= 0 && tempPanX + canvas.sWidth < canvas.width) {
-      canvas.sx = tempPanX;
-    } else {
-      tempPanX = Math.max(0, tempPanX);
-      canvas.sx = Math.min(canvas.width - canvas.sWidth, tempPanX);
-    }
-
-    // stop panning if at the edge of image (y)
-    if (tempPanY >= 0 && tempPanY + canvas.sHeight < canvas.height) {
-      canvas.sy = tempPanY;
-    } else {
-      tempPanY = Math.max(0, tempPanY);
-      canvas.sy = Math.min(canvas.height - canvas.sHeight, tempPanY);
-    }
-  }
-
 
   do() {
     this.changeZoom(this.canvas, this.dZoom, this.posX, this.posY);
