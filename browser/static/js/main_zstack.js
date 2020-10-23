@@ -397,14 +397,16 @@ class Mode {
   }
 
   handle_draw() {
-    action('handle_draw', {
-      trace: JSON.stringify(state.trace), // stringify array so it doesn't get messed up
-      target_value: brush.target, // value that we're overwriting
-      brush_value: brush.value, // we don't update caliban with edit_value, etc each time they change
-      brush_size: brush.size, // so we need to pass them in as args
-      erase: (brush.erase && !brush.conv),
-      frame: current_frame
-    });
+    if (state.trace.length !== 0) {
+      action('handle_draw', {
+        trace: JSON.stringify(state.trace), // stringify array so it doesn't get messed up
+        target_value: brush.target, // value that we're overwriting
+        brush_value: brush.value, // we don't update caliban with edit_value, etc each time they change
+        brush_size: brush.size, // so we need to pass them in as args
+        erase: (brush.erase && !brush.conv),
+        frame: current_frame
+      });
+    }
     state.clearTrace();
     if (this.kind !== Modes.drawing) {
       this.clear();
