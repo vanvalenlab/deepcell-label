@@ -17,6 +17,81 @@ from skimage.draw import circle
 from skimage.exposure import rescale_intensity
 from skimage.measure import regionprops
 
+class EditView(object):
+    """
+    Class to modify the dynamic view attributes of a Caliban Project,
+    like the frame, feature, or channel.
+    """
+
+    def __init__(self, project):
+        self.project = project
+        self.view = project.view
+        self.action = project.action
+        self.num_frames = project.num_frames
+        self.num_channels = project.num_channels
+        self.num_features = project.num_features
+
+    def change_view(self, view, value):
+        """
+        Call a change view based on the passed view attribute name.
+        
+        Args:
+            view (str): name of view attribute to change
+            value (int): value to set for view attribute
+
+        Returns:
+            dict: payload to send to frontend application
+        """
+        attr_name = 'change_{}'.format(view)
+        try:
+            change_fn = getattr(self, attr_name)
+            change_fn(value)
+        except AttributeError:
+            raise ValueError('Invalid view attribute "{}"'.format(view))
+        return self.project.make_payload()
+
+    def change_frame(self, frame):
+        """
+        Args:
+            frame (int): index of frame to display
+
+        Raises:
+            ValueError: raised by out-of-range frame index
+        """
+        if frame < 0 or frame > self.num_frames - 1:
+            raise ValueError('Frame {} is outside of range [0, {}].'.format(
+                frame, self.num_frames - 1))
+        self.view.frame = frame
+        self.action.x_changed = True
+        self.action.y_changed = True
+
+    def change_channel(self, channel):
+        """
+        Args:
+            channel (int): index of channel to display
+
+        Raises:
+            ValueError: raised by out of range channel index
+        """
+        if channel < 0 or channel > self.num_channels - 1:
+            raise ValueError('Channel {} is outside of range [0, {}].'.format(
+                channel, self.num_channels - 1))
+        self.view.channel = channel
+        self.action.x_changed = True
+
+    def change_feature(self, feature):
+        """
+        Args:
+            feature (int): index of feature to display
+
+        Raises:
+            ValueError: raised by out of range channel index
+        """
+        if feature < 0 or feature > self.num_features - 1:
+            raise ValueError('Feature {} is outside of range [0, {}].'.format(
+                feature, self.num_features - 1))
+        self.view.feature = feature
+        self.action.y_changed = True
 
 class BaseEdit(object):
     """
@@ -30,13 +105,6 @@ class BaseEdit(object):
         self.view = project.view
         self.labels = project.labels
         self.curr_action = project.action
-
-        # Unpack static project info
-        self.height = project.height
-        self.width = project.width
-        self.num_frames = project.num_frames
-        self.num_channels = project.num_channels
-        self.num_features = project.num_features
 
     @property
     def frame(self):
@@ -106,38 +174,6 @@ class BaseEdit(object):
         except AttributeError:
             raise ValueError('Invalid action "{}"'.format(action_type))
         return self.project.make_payload()
-
-    def action_change_channel(self, channel):
-        """
-        Change current channel.
-
-        Args:
-            channel (int): which channel to switch to
-
-        Raises:
-            ValueError: if channel is not in [0, num_channels)
-        """
-        if channel < 0 or channel > self.num_channels - 1:
-            raise ValueError('Channel {} is outside of range [0, {}].'.format(
-                channel, self.num_channels - 1))
-        self.view.channel = channel
-        self.curr_action.x_changed = True
-
-    def action_change_feature(self, feature):
-        """
-        Change current feature.
-
-        Args:
-            feature (int): which feature to switch to
-
-        Raises:
-            ValueError: if feature is not in [0, feature_max)
-        """
-        if feature < 0 or feature > self.num_features - 1:
-            raise ValueError('Feature {} is outside of range [0, {}].'.format(
-                feature, self.num_features - 1))
-        self.view.feature = feature
-        self.curr_action.y_changed = True
 
     def add_cell_info(self, add_label, frame):
         raise NotImplementedError('add_cell_info is not implemented in BaseEdit')
@@ -225,7 +261,7 @@ class BaseEdit(object):
 
             brush_area = circle(y_loc, x_loc,
                                 brush_size // self.scale_factor,
-                                (self.height, self.width))
+                                (self.project.height, self.project.width))
 
             # do not overwrite or erase labels other than the one you're editing
             if not erase:
@@ -534,7 +570,7 @@ class ZStackEdit(BaseEdit):
         use location of cells in image to predict which annotations are
         different slices of the same cell
         """
-        for frame_id in range(self.num_frames - 1):
+        for frame_id in range(self.project.num_frames - 1):
             img = self.project.label_frames[frame_id].frame[..., self.feature]
             next_img = self.project.label_frames[frame_id + 1].frame[..., self.feature]
             predicted_next = predict_zstack_cell_ids(img, next_img)

@@ -22,7 +22,7 @@ from werkzeug.exceptions import HTTPException
 
 from helpers import is_trk_file, is_npz_file
 from models import Project
-from caliban import TrackEdit, ZStackEdit, BaseEdit
+from caliban import TrackEdit, ZStackEdit, BaseEdit, EditView
 
 
 bp = Blueprint('caliban', __name__)  # pylint: disable=C0103
@@ -74,11 +74,11 @@ def upload_file(project_id):
     return redirect('/')
 
 
-@bp.route('/action/<int:project_id>/<action_type>/<int:frame>', methods=['POST'])
-def action(project_id, action_type, frame):
+@bp.route('/edit/<int:project_id>/<action_type>', methods=['POST'])
+def action(project_id, action_type):
     """
-    Make an edit operation to the data file and update the object
-    in the database.
+    Edit the labeling of the project and
+    update the project in the database.
     """
     start = timeit.default_timer()
     # obtain 'info' parameter data sent by .js script
@@ -101,10 +101,42 @@ def action(project_id, action_type, frame):
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
-    current_app.logger.debug('Action "%s" for project "%s" finished in %s s.',
+    current_app.logger.debug('Finished action %s for project %s in %s s.',
                              action_type, project_id,
                              timeit.default_timer() - start)
 
+    return jsonify(payload)
+
+@bp.route('/changeview/<int:project_id>/<view>/<int:value>', methods=['POST'])
+def change_view(project_id, view, value):
+    """
+    Change the displayed frame, feature, or channel.
+
+    Args:
+        project_id (int): ID of project to change
+        view (str): choice between 'frame', 'feature', or 'channel'
+        value (int): index of frame, feature, or channel to display
+
+    Returns:
+        dict: contains the raw and labeled images, if changed
+    """
+    start = timeit.default_timer()
+
+    try:
+        project = Project.get(project_id)
+        if not project:
+            return jsonify({'error': 'project_id not found'}), 404
+        edit_view = EditView(project)
+        payload = edit_view.change_view(view, value)
+        project.update()
+
+    except Exception as e:  # TODO: more error handling to identify problem
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+    current_app.logger.debug('Changed to %s %s for project %s in %s s.',
+                             view, value, project_id,
+                             timeit.default_timer() - start)
     return jsonify(payload)
 
 @bp.route('/undo/<int:project_id>', methods=['POST'])
@@ -207,17 +239,15 @@ def load(filename):
         return jsonify(error), 400
 
     # Initate Project entry in database
-    project_start = timeit.default_timer()
     project = Project.create(filename, input_bucket, output_bucket, full_path)
     project.view.rgb = rgb
-    current_app.logger.debug('Made project for "%s" in %s s.',
-                             filename, timeit.default_timer() - project_start)
-    # Contains raw image, labeled image, and seg_array
+    # Make payload with raw image, labeled image, and seg_array
     payload = project.make_payload()
+    # Add other attributes to initialize frontend variables
     payload['max_frames'] = project.num_frames
     payload['project_id'] = project.id
     payload['dimensions'] = (project.width, project.height)
-    
+    # Attributes specific to filetype
     if is_trk_file(filename):
         payload['screen_scale'] = project.view.scale_factor
     if is_npz_file(filename):
