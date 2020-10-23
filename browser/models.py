@@ -163,6 +163,11 @@ class Project(db.Model):
         self.prev_action_id = 0
         self.next_action_id = 0
         self.actions = [Action(project=self)]
+        # Set changed flags to true to get full payload
+        action = self.actions[0]
+        action.labels_changed = True
+        action.x_changed = True
+        action.y_changed = True
         self.next_action_id = 1
 
         current_app.logger.debug('Initialized project for %s in %s s.',
@@ -279,7 +284,6 @@ class Project(db.Model):
             dict: payload to send to frontend
         """
         start = timeit.default_timer()
-        import pdb; pdb.set_trace()
         if self.action.prev_action_id is None:
             # TODO: error handling when there is no action to undo
             return
@@ -743,6 +747,9 @@ class Action(db.Model):
     labels = db.Column(db.PickleType)
 
     def __init__(self, project):
+        """
+        Called when completing an action and 
+        creating a new, empty action row for the next action."""
         self.project = project
         self.action_id = project.next_action_id
         self.prev_action_id = project.action_id

@@ -59,18 +59,10 @@ class Mode {
   handle_universal_keybind(key) {
     if (!rgb && (key === 'a' || key === 'ArrowLeft')) {
       // go backward one frame
-      current_frame -= 1;
-      if (current_frame < 0) {
-        current_frame = max_frames - 1;
-      }
-      fetch_and_render_frame();
+      change_frame(-1);
     } else if (!rgb && (key === 'd' || key === 'ArrowRight')) {
       // go forward one frame
-      current_frame += 1;
-      if (current_frame >= max_frames) {
-        current_frame = 0;
-      }
-      fetch_and_render_frame();
+      change_frame(1);
     } else if (key === 'Escape') {
       // deselect/cancel action/reset highlight
       mode.clear();
@@ -130,7 +122,10 @@ class Mode {
   handle_edit_keybind(key) {
     if (key === 'e' && !settings.pixel_only) {
       // toggle edit mode
-      edit_mode = !edit_mode;
+      let toggleEdit = new ToggleEdit();
+      actions.addFence();
+      actions.doAndAddAction(toggleEdit);
+      actions.addFence();
       adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
     } else if (key === 'c') {
       // cycle forward one channel, if applicable
@@ -203,7 +198,10 @@ class Mode {
   handle_mode_none_keybind(key) {
     if (key === 'e' && !settings.label_only) {
       // toggle edit mode
-      edit_mode = !edit_mode;
+      let toggleEdit = new ToggleEdit(this);
+      actions.addFence();
+      actions.doAndAddAction(toggleEdit);
+      actions.addFence();
       helper_brush_draw();
       adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
     } else if (key === 'c') {
@@ -896,40 +894,8 @@ function render_image_display() {
   render_info_display();
 }
 
-class ChangeFrame {
-  
-  do() {
-    $.ajax({
-      type: 'GET',
-      url: `${document.location.origin}/frame/${current_frame}/${project_id}`,
-      success: function(payload) {
-        adjuster.rawLoaded = false;
-        adjuster.segLoaded = false;
-  
-        // load new value of seg_array
-        // array of arrays, contains annotation data for frame
-        state.segArray = payload.seg_arr;
-        adjuster.segImage.src = payload.segmented;
-        adjuster.rawImage.src = payload.raw;
-  
-        // actions must start and end on the same frame
-        if (mode.action !== '') { mode.clear() };
-      },
-      async: false
-    });
-  }
-
-  undo() {
-    backendUndo();
-  }
-
-  redo() {
-    backendRedo();
-  }
-}
-
-function fetch_and_render_frame() { 
-  let changeFrame = new ChangeFrame();
+function change_frame(dFrame) {
+  let changeFrame = new ChangeFrame(dFrame);
   actions.addFence();
   actions.doAndAddAction(changeFrame);
   actions.addFence();
@@ -1110,33 +1076,6 @@ function handlePayload(payload) {
   }
 }
 
-class BackendAction {
-
-  constructor(action, info, frame = current_frame) {
-    this.action = action;
-    this.info = info;
-    this.frame = frame;
-  }
-
-  do() {
-    $.ajax({
-      type: 'POST',
-      url: `${document.location.origin}/action/${project_id}/${this.action}/${this.frame}`,
-      data: this.info,
-      success: handlePayload,
-      async: false
-    });
-  }
-
-  undo() {
-    backendUndo()
-  }
-
-  redo() {
-    backendRedo()
-  }
-}
-
 function backendUndo() {
   $.ajax({
     type: 'POST',
@@ -1285,7 +1224,12 @@ function startCaliban(filename, settings) {
 
     // bind mouse movement
     canvasElement.addEventListener('mousemove', (e) => handleMousemove(e));
-
-    fetch_and_render_frame();
+  
+    // Load images and seg_array from payload
+    state.segArray = payload.imgs.seg_arr;
+    adjuster.rawLoaded = false;
+    adjuster.segLoaded = false;
+    adjuster.segImage.src = payload.imgs.segmented;
+    adjuster.rawImage.src = payload.imgs.raw;
   });
 }

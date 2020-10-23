@@ -95,7 +95,6 @@ def action(project_id, action_type, frame):
             return jsonify({'error': 'project_id not found'}), 404
         edit = get_edit(project)
         payload = edit.action(action_type, info)
-        # import pdb; pdb.set_trace()
         project.update()
 
     except Exception as e:  # TODO: more error handling to identify problem
@@ -155,6 +154,8 @@ def get_frame(frame, project_id):
         return jsonify({'error': 'project_id not found'}), 404
     # Change the frame
     project.view.frame = frame
+    project.action.x_changed = True
+    project.action.y_changed = True
     project.update()
     # Get pngs and array from project
     raw_png = project.get_raw_png()
@@ -211,31 +212,21 @@ def load(filename):
     project.view.rgb = rgb
     current_app.logger.debug('Made project for "%s" in %s s.',
                              filename, timeit.default_timer() - project_start)
-
+    # Contains raw image, labeled image, and seg_array
+    payload = project.make_payload()
+    payload['max_frames'] = project.num_frames
+    payload['project_id'] = project.id
+    payload['dimensions'] = (project.width, project.height)
+    
     if is_trk_file(filename):
-        current_app.logger.debug('Loaded trk file "%s" in %s s.',
-                                 filename, timeit.default_timer() - start)
-        # Send attributes to .js file
-        return jsonify({
-            'max_frames': project.num_frames,
-            'tracks': project.labels.readable_tracks,
-            'dimensions': (project.width, project.height),
-            'project_id': project.id,
-            'screen_scale': project.view.scale_factor
-        })
-
+        payload['screen_scale'] = project.view.scale_factor
     if is_npz_file(filename):
-        current_app.logger.debug('Loaded npz file "%s" in %s s.',
-                                 filename, timeit.default_timer() - start)
-        # Send attributes to .js file
-        return jsonify({
-            'max_frames': project.num_frames,
-            'channel_max': project.num_channels,
-            'feature_max': project.num_features,
-            'tracks': project.labels.readable_tracks,
-            'dimensions': (project.width, project.height),
-            'project_id': project.id
-        })
+        payload['channel_max'] = project.num_channels
+        payload['feature_max'] = project.num_features
+
+    current_app.logger.debug('Loaded file %s in %s s.',
+                             filename, timeit.default_timer() - start)
+    return jsonify(payload)
 
 
 @bp.route('/', methods=['GET', 'POST'])

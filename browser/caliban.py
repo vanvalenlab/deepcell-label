@@ -120,7 +120,6 @@ class BaseEdit(object):
         if channel < 0 or channel > self.num_channels - 1:
             raise ValueError('Channel {} is outside of range [0, {}].'.format(
                 channel, self.num_channels - 1))
-        import pdb; pdb.set_trace()
         self.view.channel = channel
         self.curr_action.x_changed = True
 
