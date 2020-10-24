@@ -85,47 +85,6 @@ class ImageAdjuster {
     return this._maxContrast;
   }
 
-  changeContrast(inputChange) {
-    const modContrast = -Math.sign(inputChange) * 4;
-    // stop if fully desaturated
-    let newContrast = Math.max(this.contrast + modContrast, this.minContrast);
-    // stop at 8x contrast
-    newContrast = Math.min(newContrast, this.maxContrast);
-
-    if (newContrast !== this.contrast) {
-      // need to retrigger downstream image adjustments
-      this.rawLoaded = false;
-      this.contrast = newContrast;
-      this.contrastRaw();
-    }
-  }
-
-  changeBrightness(inputChange) {
-    const modBrightness = -Math.sign(inputChange);
-    // limit how dim image can go
-    let newBrightness = Math.max(this.brightness + modBrightness, this.minBrightness);
-    // limit how bright image can go
-    newBrightness = Math.min(newBrightness, this.maxBrightness);
-
-    if (newBrightness !== this.brightness) {
-      this.rawLoaded = false;
-      this.brightness = newBrightness;
-      this.contrastRaw();
-    }
-  }
-
-  resetBrightnessContrast() {
-    this.brightness = 0;
-    this.contrast = 0;
-    this.rawLoaded = false;
-    this.contrastRaw();
-  }
-
-  toggleInvert() {
-    this.displayInvert = !this.displayInvert;
-    this.preCompRawAdjust();
-  }
-
   // modify image data in place to recolor
   _recolorScaled(data, i, j, jlen, r = 255, g = 255, b = 255) {
     // location in 1D array based on i and j
@@ -383,4 +342,100 @@ class ImageAdjuster {
       }
     }
   }
+}
+
+class ChangeContrast {
+  constructor(adjuster, change) {
+    this.adjuster = adjuster;
+    this.change = change;
+  }
+
+  do() { changeContrast(change); }
+
+  undo() { changeContrast(-change); }
+
+  redo() { changeContrast(change); }
+
+  changeContrast(change) {
+    const modContrast = -Math.sign(change) * 4;
+    // stop if fully desaturated
+    let newContrast = Math.max(adjuster.contrast + modContrast, adjuster.minContrast);
+    // stop at 8x contrast
+    newContrast = Math.min(newContrast, adjuster.maxContrast);
+
+    if (newContrast !== adjuster.contrast) {
+      // need to retrigger downstream image adjustments
+      adjuster.rawLoaded = false;
+      adjuster.contrast = newContrast;
+      adjuster.contrastRaw();
+    }
+  }
+}
+
+class ChangeBrightness {
+  constructor(adjuster, change) {
+    this.adjuster = adjuster;
+    this.change = change;
+  }
+
+  do() { changeBrightness(change); }
+
+  undo() { changeBrightness(-change); }
+
+  redo() { changeBrightness(change); }
+
+  changeBrightness(change) {
+    const modBrightness = -Math.sign(change);
+    // limit how dim image can go
+    let newBrightness = Math.max(adjuster.brightness + modBrightness, adjuster.minBrightness);
+    // limit how bright image can go
+    newBrightness = Math.min(newBrightness, adjuster.maxBrightness);
+
+    if (newBrightness !== adjuster.brightness) {
+      adjuster.rawLoaded = false;
+      adjuster.brightness = newBrightness;
+      adjuster.contrastRaw();
+    }
+  }
+}
+
+class ResetBrightnessContrast {
+  constructor(adjuster) {
+    this.adjuster = adjuster;
+    this.brightness = adjuster.brightness;
+    this.contrast = adjuster.contrast;
+  }
+
+  do() {
+    adjuster.brightness = 0;
+    adjuster.contrast = 0;
+    adjuster.rawLoaded = false;
+    adjuster.contrastRaw();
+  }
+
+  undo() {
+    adjuster.brightness = this.brightness;
+    adjuster.contrast = this.brightness;
+    adjuster.rawLoaded = false;
+    adjuster.contrastRaw();
+  }
+
+  redo() {
+    this.do();
+  }
+}
+
+class ToggleInvert {
+  constructor(adjuster) {
+    this.adjuster = adjuster;
+  }
+
+  do() {
+    this.displayInvert = !this.displayInvert;
+    this.preCompRawAdjust();
+  }
+
+  undo() { this.do(); }
+
+  redo() {this.do(); }
 }
