@@ -913,19 +913,14 @@ function handleScroll(evt) {
 function handleMousedown(evt) {
   state.isPressed = true;
   // TODO: refactor "mousedown + mousemove" into ondrag?
-  if (!state.isSpacedown) {
-    if (mode.kind !== Modes.prompt) {
-      // begin drawing
-      if (edit_mode) {
-        if (!brush.show) {
-          brush.threshX = state.imgX;
-          brush.threshY = state.imgY;
-        } else if (mode.kind !== Modes.prompt) {
-          // not if turning on conv brush
-          state.trace.push([state.imgY, state.imgX]);
-        }
-      }
-    }
+  if (state.isSpacedown) return; // panning
+  if (mode.kind === Modes.prompt) return; // turning on conv mode
+  if (!edit_mode) return; // only draw in edit mode
+  if (!brush.show) { // draw thresholding box
+    brush.threshX = state.imgX;
+    brush.threshY = state.imgY;
+  } else {
+    state.trace.push([state.imgY, state.imgX]);
   }
 }
 
