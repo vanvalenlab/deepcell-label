@@ -1037,11 +1037,13 @@ function action(action, info) {
 
 function undo() {
   actions.undo();
+  mode.clear();
   render_image_display();
 }
 
 function redo() {
   actions.redo();
+  mode.clear();
   render_image_display();
 }
 
