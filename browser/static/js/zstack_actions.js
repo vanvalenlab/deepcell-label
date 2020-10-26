@@ -13,6 +13,21 @@ class ToggleEdit {
     }
   }
 
+class ToggleHighlight {
+
+  do() {
+    current_highlight = !current_highlight;
+  }
+
+  undo() {
+    this.do()
+  }
+
+  redo() {
+    this.do()
+  }
+}
+
 class ChangeFrame {
 
   constructor(mode, frame) {

@@ -41,7 +41,8 @@ class Mode {
       // may want some things here that trigger on ESC but not clear()
     } else if (!rgb && key === 'h') {
       // toggle highlight
-      current_highlight = !current_highlight;
+      let toggleHighlight = new ToggleHighlight();
+      actions.addFencedAction(toggleHighlight);
       adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
     } else if (key === 'z') {
       // toggle rendering_raw
