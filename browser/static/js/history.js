@@ -88,7 +88,8 @@ class History{
         }
         while(true) {
             if (action === 'fencepost') {
-                this.redoStack.push('fencepost');
+                // Keep the last fencepost on the undostack
+                this.undoStack.push('fencepost');
                 break;
             }
             if (!this.canUndo) break;
