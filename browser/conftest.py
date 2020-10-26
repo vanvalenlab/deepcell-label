@@ -106,8 +106,8 @@ def zstack_project(app, mocker, request, db_session):
             data['annotated'] = request.param.copy()
             return data
         mocker.patch('models.Project.load', load)
-        project = Project('filename.npz', 'input_bucket', 'output_bucket', 'path',
-                          rgb='RGB' in request.node.name)
+        project = Project('filename.npz', 'input_bucket', 'output_bucket', 'path')
+        project.view.rgb = 'RGB' in request.node.name
         db_session.add(project)
         db_session.commit()
         return project
