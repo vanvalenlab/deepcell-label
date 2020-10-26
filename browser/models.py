@@ -760,7 +760,8 @@ class Action(db.Model):
     def finish(self):
         for frame in self.frames:
             frame.finish()
-        self.action.finish()
+        self.view = None
+        self.labels = None
 
 
 class FrameHistory(db.Model):
