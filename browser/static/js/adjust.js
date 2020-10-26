@@ -350,11 +350,11 @@ class ChangeContrast {
     this.change = change;
   }
 
-  do() { changeContrast(change); }
+  do() { this.changeContrast(this.change); }
 
-  undo() { changeContrast(-change); }
+  undo() { this.changeContrast(-this.change); }
 
-  redo() { changeContrast(change); }
+  redo() { this.changeContrast(this.change); }
 
   changeContrast(change) {
     const modContrast = -Math.sign(change) * 4;
@@ -378,11 +378,11 @@ class ChangeBrightness {
     this.change = change;
   }
 
-  do() { changeBrightness(change); }
+  do() { this.changeBrightness(this.change); }
 
-  undo() { changeBrightness(-change); }
+  undo() { this.changeBrightness(-this.change); }
 
-  redo() { changeBrightness(change); }
+  redo() { this.changeBrightness(this.change); }
 
   changeBrightness(change) {
     const modBrightness = -Math.sign(change);
