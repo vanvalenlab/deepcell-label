@@ -58,7 +58,7 @@ class ChangeFeature {
   constructor(mode, feature) {
     this.mode = mode;
     this.oldValue = mode.feature;
-    // feature mod feature_max (implemented with remainder operator %)
+    // feature mod feature_max
     this.newValue = ((feature % feature_max) + feature_max) % feature_max;
   }
 
@@ -89,7 +89,7 @@ class ChangeChannel {
     this.mode = mode;
     this.adjuster = adjuster;
     this.oldValue = mode.channel;
-    // channel mode channelMax (implemented with remainder operator %)
+    // channel mode channelMax
     this.newValue = ((channel % channelMax) + channelMax) % channelMax;
   }
 

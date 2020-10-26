@@ -73,7 +73,8 @@ class Mode {
       render_image_display();
     } else if (key === '0') {
       // reset brightness adjustments
-      adjuster.resetBrightnessContrast();
+      let resetBrightnessContrast = new ResetBrightnessContrast(adjuster);
+      actions.addAction(adjuster);
     } else if ((key === 'l' || key === 'L') && rgb && !edit_mode) {
       display_labels = !display_labels;
       render_image_display();
@@ -899,9 +900,11 @@ function handleScroll(evt) {
   if (evt.altKey) {
     changeZoom(Math.sign(evt.deltaY));
   } else if (canEdit && !evt.shiftKey) {
-    adjuster.changeContrast(evt.deltaY);
+    let changeContrast = new ChangeContrast(adjuster, evt.deltaY);
+    actions.addAction(changeContrast);
   } else if (canEdit && evt.shiftKey) {
-    adjuster.changeBrightness(evt.deltaY);
+    let changeBrightness = new ChangeBrightness(adjuster);
+    actions.addAction(changeBrightness, evt.deltaY);
   }
 }
 
