@@ -347,55 +347,51 @@ class ImageAdjuster {
 class ChangeContrast {
   constructor(adjuster, change) {
     this.adjuster = adjuster;
-    this.change = change;
-  }
+    this.oldValue = adjuster.contrast;
 
-  do() { this.changeContrast(this.change); }
-
-  undo() { this.changeContrast(-this.change); }
-
-  redo() { this.changeContrast(this.change); }
-
-  changeContrast(change) {
     const modContrast = -Math.sign(change) * 4;
     // stop if fully desaturated
     let newContrast = Math.max(adjuster.contrast + modContrast, adjuster.minContrast);
     // stop at 8x contrast
     newContrast = Math.min(newContrast, adjuster.maxContrast);
+    this.newValue = newContrast;
+  }
 
-    if (newContrast !== adjuster.contrast) {
-      // need to retrigger downstream image adjustments
-      adjuster.rawLoaded = false;
-      adjuster.contrast = newContrast;
-      adjuster.contrastRaw();
-    }
+  do() { this.setContrast(this.newValue); }
+
+  undo() { this.setContrast(this.oldValue); }
+
+  redo() { this.do(); }
+
+  setContrast(contrast) {
+    this.adjuster.rawLoaded = false;
+    this.adjuster.contrast = contrast;
+    this.adjuster.contrastRaw();
   }
 }
 
 class ChangeBrightness {
   constructor(adjuster, change) {
     this.adjuster = adjuster;
-    this.change = change;
-  }
-
-  do() { this.changeBrightness(this.change); }
-
-  undo() { this.changeBrightness(-this.change); }
-
-  redo() { this.changeBrightness(this.change); }
-
-  changeBrightness(change) {
     const modBrightness = -Math.sign(change);
     // limit how dim image can go
     let newBrightness = Math.max(adjuster.brightness + modBrightness, adjuster.minBrightness);
     // limit how bright image can go
     newBrightness = Math.min(newBrightness, adjuster.maxBrightness);
+    this.oldValue = adjuster.brightness;
+    this.newValue = newBrightness;
+  }
 
-    if (newBrightness !== adjuster.brightness) {
-      adjuster.rawLoaded = false;
-      adjuster.brightness = newBrightness;
-      adjuster.contrastRaw();
-    }
+  do() { this.setBrightness(this.newValue); }
+
+  undo() { this.setBrightness(this.oldValue); }
+
+  redo() { this.do(); }
+
+  setBrightness(brightness) {
+    this.adjuster.rawLoaded = false;
+    this.adjuster.brightness = brightness;
+    this.adjuster.contrastRaw();
   }
 }
 
