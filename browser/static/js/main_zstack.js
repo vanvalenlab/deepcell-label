@@ -5,33 +5,9 @@ class Mode {
     this.highlighted_cell_one = -1;
     this.highlighted_cell_two = -1;
     this.feature = 0;
-    this._channel = 0;
+    this.channel = 0;
     this.action = '';
     this.prompt = '';
-  }
-
-  get channel() {
-    return this._channel;
-  }
-
-  set channel(num) {
-    // don't try and change channel if no other channels exist
-    if (channelMax > 1) {
-      // save current display settings before changing
-      adjuster.brightnessMap.set(this._channel, adjuster.brightness);
-      adjuster.contrastMap.set(this._channel, adjuster.contrast);
-      adjuster.invertMap.set(this._channel, adjuster.displayInvert);
-      // set channel to num mod channelMax
-      this._channel = ((num % channelMax) + channelMax) % channelMax;
-      // get new channel image from server
-      this.info = { channel: this._channel };
-      action('change_channel', this.info);
-      this.clear();
-      // get brightness/contrast vals for new channel
-      adjuster.brightness = adjuster.brightnessMap.get(this._channel);
-      adjuster.contrast = adjuster.contrastMap.get(this._channel);
-      adjuster.displayInvert = adjuster.invertMap.get(this._channel);
-    }
   }
 
   clear() {
