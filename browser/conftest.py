@@ -8,7 +8,7 @@ import pytest
 from pytest_lazyfixture import lazy_fixture
 
 from application import create_app  # pylint: disable=C0413
-from models import Project
+from models import Project, Action
 
 # flask-sqlalchemy fixtures from http://alexmic.net/flask-sqlalchemy-pytest/
 
@@ -110,6 +110,15 @@ def zstack_project(app, mocker, request, db_session):
         project.view.rgb = 'RGB' in request.node.name
         db_session.add(project)
         db_session.commit()
+        # Initialize first action (normally handled by Project.create)
+        project.actions = [Action(project=project)]
+        action = project.actions[0]
+        action.labels_changed = True
+        action.x_changed = True
+        action.y_changed = True
+        project.action_id = 0
+        project.next_action_id = 1
+        db_session.commit()
         return project
 
 
@@ -137,6 +146,15 @@ def track_project(app, mocker, request, db_session):
         mocker.patch('models.Project.load', load)
         project = Project('filename.trk', 'input_bucket', 'output_bucket', 'path')
         db_session.add(project)
+        db_session.commit()
+        # Initialize first action (normally handled by Project.create)
+        project.actions = [Action(project=project)]
+        action = project.actions[0]
+        action.labels_changed = True
+        action.x_changed = True
+        action.y_changed = True
+        project.action_id = 0
+        project.next_action_id = 1
         db_session.commit()
         return project
 

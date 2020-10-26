@@ -237,7 +237,7 @@ class Project(db.Model):
         # pickled rows (View and Labels) don't reference a transient project
         new_project.actions = [Action(project=new_project)]
         action = new_project.actions[0]
-        action.labels_changed = True  # TODO: does this need to be true
+        action.labels_changed = True
         action.x_changed = True
         action.y_changed = True
         new_project.action_id = 0
