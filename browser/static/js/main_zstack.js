@@ -879,8 +879,10 @@ function handleScroll(evt) {
     let changeContrast = new ChangeContrast(adjuster, evt.deltaY);
     actions.addAction(changeContrast);
   } else if (canEdit && evt.shiftKey) {
-    let changeBrightness = new ChangeBrightness(adjuster);
-    actions.addAction(changeBrightness, evt.deltaY);
+    // shift + scroll causes horizontal scroll on mice wheels, but not trackpads
+    let delta = evt.deltaY === 0 ? evt.deltaX : evt.deltaY;
+    let changeBrightness = new ChangeBrightness(adjuster, delta);
+    actions.addAction(changeBrightness);
   }
 }
 
