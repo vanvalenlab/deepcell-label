@@ -17,6 +17,7 @@ class CanvasState {
     this.zoomLimit = 100;
 
     // attributes for mouse on the canvas.
+    this.onCanvas = false;
     this.isPressed = false;
     this.trace = [];
 

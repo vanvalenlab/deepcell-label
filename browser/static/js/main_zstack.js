@@ -1055,7 +1055,7 @@ function startCaliban(filename, settings) {
 
   // disable scrolling from scrolling around on page (it should just control brightness)
   document.addEventListener('wheel', (event) => {
-    event.preventDefault();
+    if(canvas.onCanvas) event.preventDefault();
   }, { passive: false });
 
   // disable space and up/down keys from moving around on page
@@ -1160,6 +1160,14 @@ function startCaliban(filename, settings) {
 
     // bind mouse movement
     canvasElement.addEventListener('mousemove', (e) => handleMousemove(e));
+
+    // add flag for when cursor in on the canvas
+    canvasElement.onmouseover = () => {
+      canvas.onCanvas = true;
+    }
+    canvasElement.onmouseout = () => {
+        canvas.onCanvas = false;
+    }
   
     // Load images and seg_array from payload
     canvas.segArray = payload.imgs.seg_arr;
