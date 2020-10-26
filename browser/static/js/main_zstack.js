@@ -53,7 +53,7 @@ class Mode {
       let resetBrightnessContrast = new ResetBrightnessContrast(adjuster);
       actions.addAction(resetBrightnessContrast);
     } else if ((key === 'l' || key === 'L') && rgb && !edit_mode) {
-      display_labels = !display_labels; 
+      display_labels = !display_labels;
       render_image_display();
     } else if (key === '-') {
       changeZoom(1);
@@ -108,10 +108,8 @@ class Mode {
       // cycle backward one channel
       let action = new ChangeChannel(this, this.channel - 1);
       actions.addFencedAction(action);
-    } else if (key === 'f' || key === 'F') {
-      // cycle forward one feature
-      let dFeature = 1 ? key === 'f' : -1;
-      let changeFeature = new ChangeFeature(this, this.feature + dFeature);
+    } else if (key === 'f') {
+      let changeFeature = new ChangeFeature(this, this.feature + 1);
       actions.addFencedAction(changeFeature);
     } else if (key === 'F') {
       // cycle backward one feature
