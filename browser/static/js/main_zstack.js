@@ -941,7 +941,7 @@ function updateMousePos(x, y) {
   const oldImgX = state.imgX;
   const oldImgY = state.imgY;
 
-  state.updateCursorPosition(x, y, padding);
+  state.updateCursorPosition(x, y);
 
   // if cursor has actually changed location in image
   if (oldImgX !== state.imgX || oldImgY !== state.imgY) {
