@@ -20,7 +20,7 @@ class History{
      */
 
     /**
-     * Undo the action in the action history
+     * Undo an action in the action history
      *
      * @function
      * @name Action#undo
@@ -80,15 +80,15 @@ class History{
      * Undoes the most recent group of actions, if any.
      */
     undo() {
-        let action = this.undoStack.pop();
         // Pop until we find an action
         // Ensures that undo does something
+        let action = this.undoStack.pop();
         while(this.canUndo && action === 'fencepost') {
             action = this.undoStack.pop();
         }
         while(true) {
             if (action === 'fencepost') {
-                // Keep the last fencepost on the undostack
+                // Return the fencepost to the undostack
                 this.undoStack.push('fencepost');
                 break;
             }
@@ -105,9 +105,9 @@ class History{
      * Will only redo if called afer undo with no actions added between the calls.
      */
     redo() {
-        let action = this.redoStack.pop();
         // Pop until we find an action
         // Ensures that redo does something
+        let action = this.redoStack.pop();
         while(this.canRedo && action === 'fencepost') {
             action = this.redoStack.pop();
         }
