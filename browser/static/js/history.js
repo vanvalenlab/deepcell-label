@@ -90,11 +90,11 @@ class History{
             action = this.undoStack.pop();
         }
         while(true) {
-            if (!this.canUndo) break;
             if (action === 'fencepost') {
                 this.redoStack.push('fencepost');
                 break;
             }
+            if (!this.canUndo) break;
             action.undo();
             this.redoStack.push(action);
             action = this.undoStack.pop();
@@ -117,11 +117,11 @@ class History{
             action = this.redoStack.pop();
         }
         while (true) {
-            if (!this.canRedo) break;
             if (action === 'fencepost') {
                 this.undoStack.push('fencepost');
                 break;
             }
+            if (!this.canRedo) break;
             action.redo();
             this.undoStack.push(action);
             action = this.redoStack.pop();
