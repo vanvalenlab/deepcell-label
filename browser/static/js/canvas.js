@@ -205,50 +205,47 @@ class Pan {
 class Zoom {
   constructor(canvas, dZoom) {
     this.canvas = canvas;
-    this.dZoom = dZoom;
     this.posX = canvas.canvasPosX;
     this.posY = canvas.canvasPosY;
+    this.oldValue = canvas.zoom;
+    this.newValue = Math.max(canvas.zoom - 10 * dZoom, canvas.zoomLimit);
+
   }
 
-  changeZoom(canvas, dZoom, posX, posY) {
-    const newZoom = Math.max(canvas.zoom - 10 * dZoom, canvas.zoomLimit);
-    const oldZoom = canvas.zoom;
-    const newHeight = canvas.height * 100 / newZoom;
-    const newWidth = canvas.width * 100 / newZoom;
+  changeZoom(zoom) {
+    const newHeight = this.canvas.height * 100 / zoom;
+    const newWidth = this.canvas.width * 100 / zoom;
 
     // store sWidth and sHeight to compare against for panning
-    const oldHeight = canvas.sHeight;
-    const oldWidth = canvas.sWidth;
-
-    if (oldZoom !== newZoom) {
-      canvas.zoom = newZoom;
-      canvas.sHeight = newHeight;
-      canvas.sWidth = newWidth;
-      const propX = posX / canvas.scaledWidth;
-      const propY = posY / canvas.scaledHeight;
-      // change in x position of scaled window
-      const dx = Math.min(Math.max(propX * (oldWidth - newWidth), // no edges
-          -canvas.sx), // move to right edge 
-        canvas.width - canvas.sWidth - canvas.sx) // move to left edge
-      // change in y position of scaled window
-      const dy = Math.min(Math.max(propY * (oldHeight - newHeight), // no edges
-          -canvas.sy), // move to top edge 
-        canvas.height - canvas.sHeight - canvas.sy) // move to bottom edge
-      this.canvas.sx = this.canvas.sx + dx;
-      this.canvas.sy = this.canvas.sy + dy;
-    }
+    const oldHeight = this.canvas.sHeight;
+    const oldWidth = this.canvas.sWidth;
+    this.canvas.zoom = zoom;
+    this.canvas.sHeight = newHeight;
+    this.canvas.sWidth = newWidth;
+    const propX = this.posX / this.canvas.scaledWidth;
+    const propY = this.posY / this.canvas.scaledHeight;
+    // change in x position of scaled window
+    const dx = Math.min(Math.max(propX * (oldWidth - newWidth), // no edges
+        -this.canvas.sx), // move to right edge 
+      this.canvas.width - this.canvas.sWidth - this.canvas.sx) // move to left edge
+    // change in y position of scaled window
+    const dy = Math.min(Math.max(propY * (oldHeight - newHeight), // no edges
+        -this.canvas.sy), // move to top edge 
+      this.canvas.height - this.canvas.sHeight - this.canvas.sy) // move to bottom edge
+    this.canvas.sx = this.canvas.sx + dx;
+    this.canvas.sy = this.canvas.sy + dy;
   }
 
   do() {
-    this.changeZoom(this.canvas, this.dZoom, this.posX, this.posY);
+    this.changeZoom(this.newValue);
   }
 
   redo() {
-    this.changeZoom(this.canvas, this.dZoom, this.posX, this.posY);
+    this.do();
   }
 
   undo() {
-    this.changeZoom(this.canvas, -this.dZoom, this.posX, this.posY);
+    this.changeZoom(this.oldValue);
   }
 }
 
