@@ -427,8 +427,8 @@ class ToggleInvert {
   }
 
   do() {
-    this.displayInvert = !this.displayInvert;
-    this.preCompRawAdjust();
+    this.adjuster.displayInvert = !this.adjuster.displayInvert;
+    this.adjuster.preCompRawAdjust();
   }
 
   undo() { this.do(); }

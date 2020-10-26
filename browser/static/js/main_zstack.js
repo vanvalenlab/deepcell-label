@@ -53,7 +53,7 @@ class Mode {
       let resetBrightnessContrast = new ResetBrightnessContrast(adjuster);
       actions.addAction(resetBrightnessContrast);
     } else if ((key === 'l' || key === 'L') && rgb && !edit_mode) {
-      display_labels = !display_labels;
+      display_labels = !display_labels; 
       render_image_display();
     } else if (key === '-') {
       changeZoom(1);
@@ -77,7 +77,8 @@ class Mode {
       render_image_display();
     } else if (!rgb && key === 'i') {
       // toggle light/dark inversion of raw img
-      adjuster.toggleInvert();
+      let toggleInvert = new ToggleInvert(adjuster);
+      actions.addAction(toggleInvert);
     } else if (!rgb && settings.pixel_only && (key === 'l' || key === 'L')) {
       display_labels = !display_labels;
       render_image_display();
