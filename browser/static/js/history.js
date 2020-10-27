@@ -34,11 +34,11 @@ class History{
    */
 
   get canUndo() {
-    return this.undoStack.length !== 0;
+    return !this.undoStack.every(v => v === 'fencepost');
   }
 
   get canRedo() {
-    return this.redoStack.length !== 0;
+    return !this.redoStack.every(v => v === 'fencepost');
   }
 
   /**
@@ -80,46 +80,48 @@ class History{
    * Undoes the most recent group of actions, if any.
    */
   undo() {
-    // Pop until we find an action
-    // Ensures that undo does something
+    // Pop until we find an action to ensure undo does something
     let action = this.undoStack.pop();
     while(this.canUndo && action === 'fencepost') {
       action = this.undoStack.pop();
     }
+    // Needed to separate action groups on redo stack
+    this.redoStack.push('fencepost');
+    // Undo actions until the end of the group or stack
     while(true) {
+      action.undo();
+      this.redoStack.push(action);
+      if (!this.canUndo) break;
+      action = this.undoStack.pop();
       if (action === 'fencepost') {
-        // Keep fenceposts on the top of undo to separate new actions from previous groups
+        // Keep fencepost on top of undo to separate new actions from last undo
         this.undoStack.push('fencepost');
         break;
       }
-      if (!this.canUndo) break;
-      action.undo();
-      this.redoStack.push(action);
-      action = this.undoStack.pop();
     }
     this.formatButtons();
   }
 
   /**
    * Redoes the most recent group of undone actions, if any.
-   * Will only redo if called afer undo with no actions added between the calls.
    */
   redo() {
-    // Pop until we find an action
-    // Ensures that redo does something
+    // Pop until we find an action to ensure redo does something
     let action = this.redoStack.pop();
     while(this.canRedo && action === 'fencepost') {
       action = this.redoStack.pop();
     }
+    // Redo actions until the end of the group or stack
     while (true) {
+      action.redo();
+      this.undoStack.push(action);
+      if (!this.canRedo) break;
+      action = this.redoStack.pop();
       if (action === 'fencepost') {
+        // Keep fencepost on top of undo stack
         this.undoStack.push('fencepost');
         break;
       }
-      if (!this.canRedo) break;
-      action.redo();
-      this.undoStack.push(action);
-      action = this.redoStack.pop();
     }
     this.formatButtons();
   }
