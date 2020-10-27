@@ -38,34 +38,34 @@ def edit(request):
 # Tests for EditView
 
 
-def test_action_change_channel(edit_view):
+def test_change_channel(edit_view):
     for channel in range(edit_view.num_channels):
-        edit.action_change_channel(channel)
+        edit_view.change_view('channel', channel)
         assert edit_view.view.channel == channel
     with pytest.raises(ValueError):
-        edit_view.action_change_channel(-1)
+        edit_view.change_view('channel', -1)
     with pytest.raises(ValueError):
-        edit_view.action_change_channel(edit.view.num_channels)
+        edit_view.change_view('channel', edit_view.num_channels)
 
 
-def test_action_change_feature(edit_view):
+def test_change_feature(edit_view):
     for feature in range(edit_view.num_features):
-        edit_view.action_change_feature(feature)
+        edit_view.change_view('feature', feature)
         assert edit_view.view.feature == feature
     with pytest.raises(ValueError):
-        edit_view.action_change_feature(-1)
+        edit_view.change_view('feature', -1)
     with pytest.raises(ValueError):
-        edit_view.action_change_feature(edit_view.view.num_features)
+        edit_view.change_view('feature', edit_view.num_features)
 
 
 def test_change_frame(edit_view):
-    for frame in range(edit_view.num_frame):
-        edit_view.action_change_frame(frame)
+    for frame in range(edit_view.num_frames):
+        edit_view.change_view('frame', frame)
         assert edit_view.view.frame == frame
     with pytest.raises(ValueError):
-        edit_view.action_change_frame(-1)
+        edit_view.change_view('frame', -1)
     with pytest.raises(ValueError):
-        edit_view.action_change_frame(edit_view.view.num_frames)
+        edit_view.change_view('frame', edit_view.num_frames)
 
 
 # Tests for Edit
@@ -75,8 +75,8 @@ def test_zstack_add_cell_info(zstack_edit):
     num_frames = zstack_edit.project.num_frames
     cell_ids = zstack_edit.labels.cell_ids
     cell_info = zstack_edit.labels.cell_info
-    assert not zstack_edit.y_changed
-    assert not zstack_edit.info_changed
+    assert not zstack_edit.action.y_changed
+    assert not zstack_edit.action.info_changed
     for feature in cell_ids:
         new_label = cell_ids[feature].max() + 1 if len(cell_ids[feature]) != 0 else 1
         assert new_label not in cell_ids[feature]
@@ -87,8 +87,8 @@ def test_zstack_add_cell_info(zstack_edit):
         assert cell_info[feature][new_label] == {'label': str(new_label),
                                                  'frames': [0],
                                                  'slices': ''}
-        assert zstack_edit.y_changed
-        assert zstack_edit.info_changed
+        assert zstack_edit.action.y_changed
+        assert zstack_edit.action.info_changed
         # Add new label to all frames (including first frame again)
         for frame in range(num_frames):
             assert new_label in cell_ids[feature]
@@ -96,16 +96,16 @@ def test_zstack_add_cell_info(zstack_edit):
             assert cell_info[feature][new_label] == {'label': str(new_label),
                                                      'frames': list(range(frame + 1)),
                                                      'slices': ''}
-            assert zstack_edit.y_changed
-            assert zstack_edit.info_changed
+            assert zstack_edit.action.y_changed
+            assert zstack_edit.action.info_changed
 
 
 def test_track_add_cell_info(track_edit):
     num_frames = track_edit.project.num_frames
     tracks = track_edit.labels.tracks
     new_label = max(tracks) + 1 if len(tracks) != 0 else 1
-    assert not track_edit.y_changed
-    assert not track_edit.info_changed
+    assert not track_edit.action.y_changed
+    assert not track_edit.action.info_changed
     assert new_label not in tracks
     # Add new label to first frame
     track_edit.add_cell_info(new_label, 0)
@@ -117,8 +117,8 @@ def test_track_add_cell_info(track_edit):
         'parent': None,
         'capped': False,
     }
-    assert track_edit.y_changed
-    assert track_edit.info_changed
+    assert track_edit.action.y_changed
+    assert track_edit.action.info_changed
     # Add new label to all frames (including first frame again)
     for frame in range(num_frames):
         track_edit.add_cell_info(new_label, frame)
@@ -130,16 +130,16 @@ def test_track_add_cell_info(track_edit):
             'parent': None,
             'capped': False,
         }
-        assert track_edit.y_changed
-        assert track_edit.info_changed
+        assert track_edit.action.y_changed
+        assert track_edit.action.info_changed
 
 
 def test_del_cell_info(edit):
     num_frames = edit.project.num_frames
     cell_ids = edit.labels.cell_ids
     cell_info = edit.labels.cell_info
-    assert not edit.y_changed
-    assert not edit.info_changed
+    assert not edit.action.y_changed
+    assert not edit.action.info_changed
     for feature in cell_ids:
         edit.action_change_feature(feature)
         for cell in cell_ids[feature]:
@@ -149,16 +149,16 @@ def test_del_cell_info(edit):
             for frame in range(num_frames - 1):
                 edit.del_cell_info(cell, frame)
                 assert frame not in cell_info[feature][cell]['frames']
-                assert edit.y_changed
-                assert edit.info_changed
+                assert edit.action.y_changed
+                assert edit.action.info_changed
             # Remove frm last frame
             assert cell in cell_ids[feature]
             assert cell in cell_info[feature]
             edit.del_cell_info(cell, num_frames - 1)
             assert cell not in cell_ids[feature]
             assert cell not in cell_info[feature]
-            assert edit.y_changed
-            assert edit.info_changed
+            assert edit.action.y_changed
+            assert edit.action.info_changed
         # All cells removed from feature
         np.testing.assert_array_equal(cell_ids[feature], np.array([]))
         assert edit.labels.cell_info[feature] == {}
@@ -205,8 +205,8 @@ def test_action_delete_mask(edit):
 def test_action_swap_single_frame(edit):
     num_frames = edit.project.num_frames
     cell_ids = deepcopy(edit.labels.cell_ids)
-    assert not edit.y_changed
-    assert not edit.info_changed
+    assert not edit.action.y_changed
+    assert not edit.action.info_changed
     for feature in cell_ids:
         edit.action_change_feature(feature)
         # All pairs of labels in that feature
@@ -218,8 +218,8 @@ def test_action_swap_single_frame(edit):
                 edit.action_swap_single_frame(cell1, cell2)
                 np.testing.assert_array_equal(cell1_ann, edit.frame[..., feature] == cell2)
                 np.testing.assert_array_equal(cell2_ann, edit.frame[..., feature] == cell1)
-                assert edit.y_changed
-                assert edit.info_changed
+                assert edit.action.y_changed
+                assert edit.action.info_changed
 
 # def test_action_handle_draw(edit):
 

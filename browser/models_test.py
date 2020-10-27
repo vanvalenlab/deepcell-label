@@ -20,7 +20,8 @@ def test_project_init(project):
     assert project.finished is None  # None until project is done
 
     # Check relationship columns have been made
-    assert project.state is not None
+    assert project.labels is not None
+    assert project.view is not None
     assert project.raw_frames is not None
     assert project.label_frames is not None
 
@@ -54,13 +55,13 @@ def test_get_label_array(project):
     """
     Test outlined label arrays to send to the front-end.
     """
-    state = project.state
+    view = project.view
     label_arr = project.get_label_arr()
-    assert len(label_arr) == state.height
+    assert len(label_arr) == project.height
     for row in label_arr:
-        assert len(row) == state.width
+        assert len(row) == project.width
     label_frame = np.array(label_arr)
-    expected_frame = project.label_frames[state.frame].frame[..., state.channel]
+    expected_frame = project.label_frames[view.frame].frame[..., view.channel]
     assert (label_frame[label_frame >= 0] == expected_frame[label_frame >= 0]).all()
     assert (label_frame[label_frame < 0] == -expected_frame[label_frame < 0]).all()
 
@@ -69,15 +70,15 @@ def test_get_label_png(project):
     """
     Test label frame PNGs to send to the front-end.
     """
-    state = project.state
+    view = project.view
     label_png = project.get_label_png()
     assert type(label_png) is io.BytesIO
-    expected_frame = project.label_frames[state.frame].frame[..., state.feature]
+    expected_frame = project.label_frames[view.frame].frame[..., view.feature]
     expected_frame = np.ma.masked_equal(expected_frame, 0)
     expected_png = pngify(expected_frame,
                           vmin=0,
-                          vmax=state.get_max_label(),
-                          cmap=state.colormap)
+                          vmax=project.get_max_label(),
+                          cmap=view.colormap)
     assert label_png.getvalue() == expected_png.getvalue()
 
 
@@ -85,26 +86,26 @@ def test_get_raw_png(project):
     """
     Test raw frame PNGs to send to the front-end.
     """
-    state = project.state
+    view = project.view
     raw_png = project.get_raw_png()
     assert type(raw_png) is io.BytesIO
-    if state.rgb:
-        expected_frame = project.rgb_frames[state.frame].frame
+    if view.rgb:
+        expected_frame = project.rgb_frames[view.frame].frame
         expected_png = pngify(expected_frame, vmin=None, vmax=None, cmap=None)
     else:
-        expected_frame = project.raw_frames[state.frame].frame[..., state.channel]
+        expected_frame = project.raw_frames[view.frame].frame[..., view.channel]
         expected_png = pngify(expected_frame, vmin=0, vmax=None, cmap='cubehelix')
     assert raw_png.getvalue() == expected_png.getvalue()
 
 
 def test_get_max_label(project):
-    state = project.state
-    max_label = state.get_max_label()
-    assert max_label in project.label_array[..., state.feature]
-    assert max_label + 1 not in project.label_array[..., state.feature]
-    assert max_label == project.label_array[..., state.feature].max()
+    view = project.view
+    max_label = project.get_max_label()
+    assert max_label in project.label_array[..., view.feature]
+    assert max_label + 1 not in project.label_array[..., view.feature]
+    assert max_label == project.label_array[..., view.feature].max()
     if max_label == 0:
-        assert (project.label_array[..., state.feature] == 0).all()
+        assert (project.label_array[..., view.feature] == 0).all()
 
 
 def test_finish_project(mocker, db_session):
@@ -127,8 +128,8 @@ def test_finish_project(mocker, db_session):
     found_project = models.Project.get(project.id)
     assert found_project.finished is not None
     # test finish state
-    assert found_project.state.cell_ids is None
-    assert found_project.state.cell_info is None
+    assert found_project.labels.cell_ids is None
+    assert found_project.labels.cell_info is None
     # test finish frames
     for raw, rgb, label in zip(found_project.raw_frames,
                                found_project.rgb_frames,
@@ -137,23 +138,6 @@ def test_finish_project(mocker, db_session):
         assert rgb.frame is None
         assert label.frame is None
         assert label.lastUpdate is not None
-
-
-def test_update_state(mocker, db_session):
-    """Test updating state."""
-    # create project
-    def load(self, *args):
-        return {'raw': np.zeros((1, 1, 1, 1)), 'annotated': np.zeros((1, 1, 1, 1))}
-    mocker.patch('models.Project.load', load)
-    project = models.Project.create(
-        filename='filename',
-        input_bucket='input_bucket',
-        output_bucket='output_bucket',
-        path='path')
-
-    project.state.update()
-    assert project.state.numUpdates > 0
-    assert project.state.firstUpdate is not None
 
 
 def test_update_label_frame(mocker, db_session):
@@ -227,34 +211,34 @@ def test_state_init(project):
     raw_frame = raw_frames[0].frame
     label_frames = project.label_frames
     label_frame = label_frames[0].frame
-    state = project.state
-    assert raw_frame.shape[-1] == state.num_channels
-    assert label_frame.shape[-1] == state.num_features
-    assert len(raw_frames) == state.num_frames
-    assert raw_frame.shape[0] == state.height
-    assert raw_frame.shape[1] == state.width
+    labels = project.labels
+    assert raw_frame.shape[-1] == project.num_channels
+    assert label_frame.shape[-1] == project.num_features
+    assert len(raw_frames) == project.num_frames
+    assert raw_frame.shape[0] == project.height
+    assert raw_frame.shape[1] == project.width
 
-    assert len(state.cell_ids) == state.num_features
-    assert len(state.cell_info) == state.num_features
-    for feature in range(state.num_features):
-        assert len(state.cell_ids[feature]) == len(state.cell_info[feature])
+    assert len(labels.cell_ids) == project.num_features
+    assert len(labels.cell_info) == project.num_features
+    for feature in range(project.num_features):
+        assert len(labels.cell_ids[feature]) == len(labels.cell_info[feature])
 
 
 def test_create_cell_info(project):
-    """Test creating the cell info dict in the state for a project."""
-    state = project.state
+    """Test creating the cell info dict in the Labels table for a project."""
+    labels = project.labels
     # Combine all frames into one numpy array with shape (frames, height, width, features)
     label_array = np.array([frame.frame for frame in project.label_frames])
-    for feature in range(state.num_features):
+    for feature in range(project.num_features):
         labels = label_array[..., feature]
         labels_uniq = np.unique(labels[labels != 0])
-        state.create_cell_info(feature, label_array)
-        assert 0 not in state.cell_ids[feature]
+        labels.create_cell_info(feature, label_array)
+        assert 0 not in project.cell_ids[feature]
         for label in labels_uniq:
-            assert label in state.cell_ids[feature]
-            assert str(label) == state.cell_info[feature][label]['label']
+            assert label in labels.cell_ids[feature]
+            assert str(label) == labels.cell_info[feature][label]['label']
             label_in_frame = np.isin(label_array, label).any(axis=(1, 2))  # Height and width axes
-            label_frames = state.cell_info[feature][label]['frames']
-            no_label_frames = [i for i in range(state.num_frames) if i not in label_frames]
+            label_frames = labels.cell_info[feature][label]['frames']
+            no_label_frames = [i for i in range(project.num_frames) if i not in label_frames]
             assert label_in_frame[label_frames].all()
             assert not label_in_frame[no_label_frames].any()
