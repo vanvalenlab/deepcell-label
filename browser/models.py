@@ -261,19 +261,29 @@ class Project(db.Model):
                 label_frame.update()
         elif self.action.y_changed:
             self.label_frames[self.view.frame].update()
+        db.session.commit()
+        current_app.logger.debug('Updated project %s in %ss.',
+                                 self.action_id, self.id, 
+                                 timeit.default_timer() - start)
+
+    def make_new_action(self):
+        """
+        Creates a new action for a Project and links it the previous action.
+        """
+        start = timeit.default_timer()
         # TODO: Identify and record the edited frames/view attributes/label metadata
-        action = self.actions[self.action_id]
         # Create a new row in the action history for the next action
         # TODO: record the action type (e.g. "handle_draw") to store in action history
+        action = self.action
         new_action = Action(project=self)
         action.next_action_id = new_action.action_id
         self.action_id = new_action.action_id
         self.next_action_id += 1
         db.session.add(new_action)
-        # Commit changes
+        current_app.logger.debug('Initialized action %s project %s in %ss.',
+                                 self.action_id, self.id, 
+                                 timeit.default_timer() - start)
         db.session.commit()
-        current_app.logger.debug('Updated action %s in project %s in %ss.',
-                    action.action_id, self.id, timeit.default_timer() - start)
 
     def undo(self):
         """
@@ -284,7 +294,6 @@ class Project(db.Model):
         """
         start = timeit.default_timer()
         if self.action.prev_action_id is None:
-            # TODO: error handling when there is no action to undo
             return
         prev_action = self.actions[self.action.prev_action_id]
         # Restore label frames
@@ -302,10 +311,11 @@ class Project(db.Model):
         db.session.expunge(self.view)
         self.view = prev_action.view
         db.session.add(self.view)
-        # Make the payload using _changed flags for the previous action
         self.action_id = prev_action.action_id
-        payload = self.make_payload()
         db.session.commit()
+        payload = self.make_payload(send_x=prev_action.x_changed,
+                            send_y=prev_action.y_changed,
+                            send_labels=prev_action.labels_changed)
         current_app.logger.debug('Undo action %s project %s in %ss.',
                      self.action_id, self.id, timeit.default_timer() - start)
         return payload
@@ -338,7 +348,9 @@ class Project(db.Model):
         self.view = next_action.view
         db.session.add(self.view)
         # Make the payload using the _changed flags for the current action
-        payload = self.make_payload()
+        payload = self.make_payload(send_x=self.action.x_changed,
+                                    send_y=self.action.y_changed,
+                                    send_labels=self.action.labels_changed)
         self.action_id = next_action.action_id
         db.session.commit()
         current_app.logger.debug('Redo action %s project %s in %ss.',
@@ -433,27 +445,40 @@ class Project(db.Model):
                          cmap='cubehelix')
         return raw_png
 
-    def make_payload(self):
+    def make_payload(self, send_x=False, send_y=False, send_labels=False):
         """
         Creates a payload to send to the front-end after completing an action.
+        
+        Args:
+            send_x (bool): when True, payload includes raw image PNG
+            send_y (bool): when True, payload includes labeled image data
+                           sends both a PNG and an array of where each label is
+            send_labels (bool): when True, payload includes the label "tracks",
+                                or the frames that each label appears in (e.g. [0-10, 15-20])
+        
+        Returns:
+            dict: payload with image data and label tracks
         """
-        tracks = False  # Default tracks payload
-        if self.action.labels_changed:
-            tracks = self.labels.readable_tracks
-
-        img_payload = False  # Default image payload
-        if self.action.x_changed or self.action.y_changed:
+        if send_x or send_y:
             img_payload = {}
             encode = lambda x: base64.encodebytes(x.read()).decode()
-            if self.action.x_changed:
+            if send_x:
                 raw_png = self.get_raw_png()
                 img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
-            if self.action.y_changed:
+            if send_y:
                 label_png = self.get_label_png()
                 img_payload['segmented'] = f'data:image/png;base64,{encode(label_png)}'
                 img_payload['seg_arr'] = self.get_label_arr()
+        else:
+            img_payload = False
 
-        return {'tracks': tracks, 'imgs': img_payload}
+        if send_labels:
+            tracks = self.labels.readable_tracks
+        else:
+            tracks = False
+
+        return {'imgs': img_payload, 'tracks': tracks}
+
 
 class View(db.Model):
     """
@@ -730,9 +755,13 @@ class Action(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
                            primary_key=True, nullable=False, autoincrement=False)
     action_id = db.Column(db.Integer, primary_key=True, nullable=False)
+    # Action to restore upon undo
     prev_action_id = db.Column(db.Integer)
+    # Action to restore upon redo
     next_action_id = db.Column(db.Integer)
+    # Name of the previous action (e.g. "handle_draw")
     prev_action = db.Column(db.String)
+    # 
     x_changed = db.Column(db.Boolean, default=False)
     y_changed = db.Column(db.Boolean, default=False)
     multi_changed = db.Column(db.Boolean, default=False)
@@ -742,6 +771,7 @@ class Action(db.Model):
                              primaryjoin="and_("
                              "Action.action_id == foreign(FrameHistory.action_id), "
                              "Action.project_id == FrameHistory.project_id)")
+    # Pickles the ORM row in the View table
     view = db.Column(db.PickleType)
     labels = db.Column(db.PickleType)
 

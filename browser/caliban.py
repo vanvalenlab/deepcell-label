@@ -45,10 +45,10 @@ class EditView(object):
         attr_name = 'change_{}'.format(view)
         try:
             change_fn = getattr(self, attr_name)
-            change_fn(value)
+            payload = change_fn(value)
         except AttributeError:
             raise ValueError('Invalid view attribute "{}"'.format(view))
-        return self.project.make_payload()
+        return payload
 
     def change_frame(self, frame):
         """
@@ -62,8 +62,7 @@ class EditView(object):
             raise ValueError('Frame {} is outside of range [0, {}].'.format(
                 frame, self.num_frames - 1))
         self.view.frame = frame
-        self.action.x_changed = True
-        self.action.y_changed = True
+        return self.project.make_payload(send_x=True, send_y=True)
 
     def change_channel(self, channel):
         """
@@ -77,7 +76,7 @@ class EditView(object):
             raise ValueError('Channel {} is outside of range [0, {}].'.format(
                 channel, self.num_channels - 1))
         self.view.channel = channel
-        self.action.x_changed = True
+        return self.project.make_payload(send_x=True)
 
     def change_feature(self, feature):
         """
@@ -91,7 +90,7 @@ class EditView(object):
             raise ValueError('Feature {} is outside of range [0, {}].'.format(
                 feature, self.num_features - 1))
         self.view.feature = feature
-        self.action.y_changed = True
+        return self.project.make_payload(send_y=True)
 
 class BaseEdit(object):
     """
@@ -172,7 +171,9 @@ class BaseEdit(object):
             action(**info)
         except AttributeError:
             raise ValueError('Invalid action "{}"'.format(action_type))
-        return self.project.make_payload()
+        return self.project.make_payload(send_x=self.action.x_changed,
+                                         send_y=self.action.y_changed,
+                                         send_labels=self.action.labels_changed)
 
     def add_cell_info(self, add_label, frame):
         raise NotImplementedError('add_cell_info is not implemented in BaseEdit')

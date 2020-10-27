@@ -94,8 +94,9 @@ def action(project_id, action_type):
         if not project:
             return jsonify({'error': 'project_id not found'}), 404
         edit = get_edit(project)
-        payload = edit.action(action_type, info)
+        payload = edit.dispatch_action(action_type, info)
         project.update()
+        project.make_new_action()
 
     except Exception as e:  # TODO: more error handling to identify problem
         traceback.print_exc()
@@ -241,8 +242,8 @@ def load(filename):
     # Initate Project entry in database
     project = Project.create(filename, input_bucket, output_bucket, full_path)
     project.view.rgb = rgb
-    # Make payload with raw image, labeled image, and seg_array
-    payload = project.make_payload()
+    # Make payload with raw image data, labeled image data, and label tracks
+    payload = project.make_payload(send_x=True, send_y=True, send_labels=True)
     # Add other attributes to initialize frontend variables
     payload['max_frames'] = project.num_frames
     payload['project_id'] = project.id
