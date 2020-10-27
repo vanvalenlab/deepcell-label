@@ -96,15 +96,14 @@ class EditView(object):
 class BaseEdit(object):
     """
     Base class for editing frames in Caliban.
-    Takes a project, performs an action, and updates the state.
-    Lives only during a single action.
+    Expected lifespan is a single action.
     """
 
     def __init__(self, project):
         self.project = project
         self.view = project.view
         self.labels = project.labels
-        self.curr_action = project.action
+        self.action = project.action
 
     @property
     def frame(self):
@@ -155,7 +154,7 @@ class BaseEdit(object):
         """
         return self.view.scale_factor
 
-    def action(self, action_type, info):
+    def dispatch_action(self, action_type, info):
         """
         Call an action method based on an action type.
         
@@ -184,7 +183,6 @@ class BaseEdit(object):
     def action_new_single_cell(self, label):
         """
         Create new label that replaces an existing label in one frame.
-        Updates state for these labels.
 
         Args:
             label (int): label to replace
@@ -202,7 +200,6 @@ class BaseEdit(object):
     def action_delete_mask(self, label):
         """
         Deletes label from one frame, replacing the label with 0.
-        Updates the state for this label.
 
         Args:
             label (int): label to delete
@@ -219,7 +216,7 @@ class BaseEdit(object):
     def action_swap_single_frame(self, label_1, label_2):
         """
         Swap labels of two objects in one frame.
-        Does not update state as the frames for the labels do not change.
+        Does not update cell info as the frames for the labels do not change.
 
         Args:
             label_1 (int): first label to swap
@@ -239,7 +236,7 @@ class BaseEdit(object):
         """
         Use a "brush" to draw in the brush value along trace locations of
         the annotated data.
-        Updates label state if a change is detected.
+        Updates cell info if a change is detected.
 
         Args:
             trace (list): list of (x, y) coordinates where the brush has painted
@@ -485,7 +482,7 @@ class ZStackEdit(BaseEdit):
         for label_frame in self.project.label_frames[self.frame_id:]:
             frame = label_frame.frame[..., self.feature]  # Select right feature
             frame[frame == label] = new_label
-            # Update state for this frame
+            # Update cell info for this frame
             if new_label in frame:
                 self.del_cell_info(del_label=label, frame=label_frame.frame_id)
                 self.add_cell_info(add_label=new_label, frame=label_frame.frame_id)
