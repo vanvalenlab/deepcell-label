@@ -233,7 +233,7 @@ def test_create_cell_info(project):
         feature_labels = label_array[..., feature]
         labels_uniq = np.unique(feature_labels[feature_labels != 0])
         labels.create_cell_info(feature, label_array)
-        assert 0 not in project.cell_ids[feature]
+        assert 0 not in labels.cell_ids[feature]
         for label in labels_uniq:
             assert label in labels.cell_ids[feature]
             assert str(label) == labels.cell_info[feature][label]['label']
