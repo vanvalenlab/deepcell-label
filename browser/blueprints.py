@@ -138,7 +138,7 @@ def change_display(project_id, display_attribute, value):
         return jsonify({'error': str(e)}), 500
 
     current_app.logger.debug('Changed to %s %s for project %s in %s s.',
-                             view, value, project_id,
+                             display_attribute, value, project_id,
                              timeit.default_timer() - start)
     return jsonify(payload)
 
