@@ -93,7 +93,7 @@ def test_upload_file(mocker, client):
     assert response.status_code == 302
 
 
-def test_get_frame(mocker, client):
+def test_change_display(mocker, client):
     # Mock out load from S3 bucket
     def load(self, *args):
         return {'raw': np.zeros((1, 1, 1, 1)),
@@ -102,7 +102,7 @@ def test_get_frame(mocker, client):
                 'lineages': {0: {}}}
     mocker.patch('blueprints.Project.load', load)
 
-    response = client.get('/frame/0/999999')
+    response = client.post('/changedisplay/0/frame/999999')
     assert response.status_code == 404
 
     for filename in ('filename.npz', 'filename.trk'):
@@ -114,12 +114,21 @@ def test_get_frame(mocker, client):
             output_bucket='output_bucket',
             path='path')
 
-        response = client.get('/frame/0/{}'.format(project.id))
-
+        response = client.post('/changedisplay/{}/frame/0'.format(project.id))
         # TODO: test correctness
-        assert 'raw' in response.json
-        assert 'segmented' in response.json
-        assert 'seg_arr' in response.json
+        assert 'raw' in response.json['imgs']
+        assert 'segmented' in response.json['imgs']
+        assert 'seg_arr' in response.json['imgs']
+
+        response = client.post('/changedisplay/{}/channel/0'.format(project.id))
+        assert 'raw' in response.json['imgs']
+        assert 'segmented' not in response.json['imgs']
+        assert 'seg_arr' not in response.json['imgs']
+
+        response = client.post('/changedisplay/{}/feature/0'.format(project.id))
+        assert 'raw' not in response.json['imgs']
+        assert 'segmented' in response.json['imgs']
+        assert 'seg_arr' in response.json['imgs']
 
     # TODO: test handle error
 
