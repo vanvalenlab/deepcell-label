@@ -21,8 +21,8 @@ def track_edit(track_project):
 
 
 @pytest.fixture
-def edit_view(project):
-    return caliban.EditView(project)
+def change_display(project):
+    return caliban.ChangeDisplay(project)
 
 
 @pytest.fixture(params=[
@@ -38,34 +38,34 @@ def edit(request):
 # Tests for EditView
 
 
-def test_change_channel(edit_view):
-    for channel in range(edit_view.num_channels):
-        edit_view.change_view('channel', channel)
-        assert edit_view.project.channel == channel
+def test_change_channel(change_display):
+    for channel in range(change_display.num_channels):
+        change_display.change('channel', channel)
+        assert change_display.project.channel == channel
     with pytest.raises(ValueError):
-        edit_view.change_view('channel', -1)
+        change_display.change('channel', -1)
     with pytest.raises(ValueError):
-        edit_view.change_view('channel', edit_view.num_channels)
+        change_display.change('channel', change_display.num_channels)
 
 
-def test_change_feature(edit_view):
-    for feature in range(edit_view.num_features):
-        edit_view.change_view('feature', feature)
-        assert edit_view.project.feature == feature
+def test_change_feature(change_display):
+    for feature in range(change_display.num_features):
+        change_display.change('feature', feature)
+        assert change_display.project.feature == feature
     with pytest.raises(ValueError):
-        edit_view.change_view('feature', -1)
+        change_display.change('feature', -1)
     with pytest.raises(ValueError):
-        edit_view.change_view('feature', edit_view.num_features)
+        change_display.change('feature', change_display.num_features)
 
 
-def test_change_frame(edit_view):
-    for frame in range(edit_view.num_frames):
-        edit_view.change_view('frame', frame)
-        assert edit_view.project.frame == frame
+def test_change_frame(change_display):
+    for frame in range(change_display.num_frames):
+        change_display.change('frame', frame)
+        assert change_display.project.frame == frame
     with pytest.raises(ValueError):
-        edit_view.change_view('frame', -1)
+        change_display.change('frame', -1)
     with pytest.raises(ValueError):
-        edit_view.change_view('frame', edit_view.num_frames)
+        change_display.change('frame', change_display.num_frames)
 
 
 # Tests for Edit

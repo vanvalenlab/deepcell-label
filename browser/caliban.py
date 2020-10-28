@@ -40,12 +40,12 @@ class ChangeDisplay(object):
         Returns:
             dict: payload to send to frontend application
         """
-        attr_name = 'change_{}'.format(view)
+        fn_name = 'change_{}'.format(display_attribute)
         try:
-            change_fn = getattr(self, attr_name)
+            change_fn = getattr(self, fn_name)
             payload = change_fn(value)
         except AttributeError:
-            raise ValueError('Invalid view attribute "{}"'.format(view))
+            raise ValueError('Invalid display attribute "{}"'.format(display_attribute))
         return payload
 
     def change_frame(self, frame):

@@ -21,7 +21,6 @@ def test_project_init(project):
 
     # Check relationship columns have been made
     assert project.labels is not None
-    assert project.view is not None
     assert project.raw_frames is not None
     assert project.label_frames is not None
 
@@ -55,13 +54,12 @@ def test_get_label_array(project):
     """
     Test outlined label arrays to send to the front-end.
     """
-    view = project.view
     label_arr = project.get_label_arr()
     assert len(label_arr) == project.height
     for row in label_arr:
         assert len(row) == project.width
     label_frame = np.array(label_arr)
-    expected_frame = project.label_frames[view.frame].frame[..., view.channel]
+    expected_frame = project.label_frames[project.frame].frame[..., project.channel]
     assert (label_frame[label_frame >= 0] == expected_frame[label_frame >= 0]).all()
     assert (label_frame[label_frame < 0] == -expected_frame[label_frame < 0]).all()
 
@@ -70,15 +68,14 @@ def test_get_label_png(project):
     """
     Test label frame PNGs to send to the front-end.
     """
-    view = project.view
     label_png = project.get_label_png()
     assert type(label_png) is io.BytesIO
-    expected_frame = project.label_frames[view.frame].frame[..., view.feature]
+    expected_frame = project.label_frames[project.frame].frame[..., project.feature]
     expected_frame = np.ma.masked_equal(expected_frame, 0)
     expected_png = pngify(expected_frame,
                           vmin=0,
                           vmax=project.get_max_label(),
-                          cmap=view.colormap)
+                          cmap=project.colormap)
     assert label_png.getvalue() == expected_png.getvalue()
 
 
@@ -86,26 +83,24 @@ def test_get_raw_png(project):
     """
     Test raw frame PNGs to send to the front-end.
     """
-    view = project.view
     raw_png = project.get_raw_png()
     assert type(raw_png) is io.BytesIO
-    if view.rgb:
-        expected_frame = project.rgb_frames[view.frame].frame
+    if project.rgb:
+        expected_frame = project.rgb_frames[project.frame].frame
         expected_png = pngify(expected_frame, vmin=None, vmax=None, cmap=None)
     else:
-        expected_frame = project.raw_frames[view.frame].frame[..., view.channel]
+        expected_frame = project.raw_frames[project.frame].frame[..., project.channel]
         expected_png = pngify(expected_frame, vmin=0, vmax=None, cmap='cubehelix')
     assert raw_png.getvalue() == expected_png.getvalue()
 
 
 def test_get_max_label(project):
-    view = project.view
     max_label = project.get_max_label()
-    assert max_label in project.label_array[..., view.feature]
-    assert max_label + 1 not in project.label_array[..., view.feature]
-    assert max_label == project.label_array[..., view.feature].max()
+    assert max_label in project.label_array[..., project.feature]
+    assert max_label + 1 not in project.label_array[..., project.feature]
+    assert max_label == project.label_array[..., project.feature].max()
     if max_label == 0:
-        assert (project.label_array[..., view.feature] == 0).all()
+        assert (project.label_array[..., project.feature] == 0).all()
 
 
 def test_finish_project(mocker, db_session):

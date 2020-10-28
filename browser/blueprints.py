@@ -112,7 +112,7 @@ def action(project_id, action_type):
 @bp.route('/changedisplay/<int:project_id>/<display_attribute>/<int:value>', methods=['POST'])
 def change_display(project_id, display_attribute, value):
     """
-    Change the displayed frame, feature, or channel 
+    Change the displayed frame, feature, or channel
     and send back the changed image data.
 
     Args:
