@@ -230,8 +230,8 @@ def test_create_cell_info(project):
     # Combine all frames into one numpy array with shape (frames, height, width, features)
     label_array = np.array([frame.frame for frame in project.label_frames])
     for feature in range(project.num_features):
-        labels = label_array[..., feature]
-        labels_uniq = np.unique(labels[labels != 0])
+        feature_labels = label_array[..., feature]
+        labels_uniq = np.unique(feature_labels[feature_labels != 0])
         labels.create_cell_info(feature, label_array)
         assert 0 not in project.cell_ids[feature]
         for label in labels_uniq:
