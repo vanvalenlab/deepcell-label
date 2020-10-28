@@ -133,7 +133,7 @@ class ChangeChannel {
 function setView(viewAttr, value) {
   $.ajax({
     type: 'POST',
-    url: `${document.location.origin}/changeview/${project_id}/${viewAttr}/${value}`,
+    url: `${document.location.origin}/changedisplay/${project_id}/${viewAttr}/${value}`,
     success: handlePayload,
     async: false
   });

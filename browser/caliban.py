@@ -29,7 +29,7 @@ class ChangeDisplay(object):
         self.num_channels = project.num_channels
         self.num_features = project.num_features
 
-    def change_display(self, display_attribute, value):
+    def change(self, display_attribute, value):
         """
         Call a change view based on the passed view attribute name.
 

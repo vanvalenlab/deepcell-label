@@ -22,7 +22,7 @@ from werkzeug.exceptions import HTTPException
 
 from helpers import is_trk_file, is_npz_file
 from models import Project
-from caliban import TrackEdit, ZStackEdit, BaseEdit, EditView
+from caliban import TrackEdit, ZStackEdit, BaseEdit, ChangeDisplay
 
 
 bp = Blueprint('caliban', __name__)  # pylint: disable=C0103
@@ -109,18 +109,19 @@ def action(project_id, action_type):
     return jsonify(payload)
 
 
-@bp.route('/changeview/<int:project_id>/<view>/<int:value>', methods=['POST'])
-def change_view(project_id, view, value):
+@bp.route('/changedisplay/<int:project_id>/<display_attribute>/<int:value>', methods=['POST'])
+def change_display(project_id, display_attribute, value):
     """
-    Change the displayed frame, feature, or channel.
+    Change the displayed frame, feature, or channel 
+    and send back the changed image data.
 
     Args:
         project_id (int): ID of project to change
-        view (str): choice between 'frame', 'feature', or 'channel'
+        display_attribute (str): choice between 'frame', 'feature', or 'channel'
         value (int): index of frame, feature, or channel to display
 
     Returns:
-        dict: contains the raw and labeled images, if changed
+        dict: contains the raw and/or labeled image data
     """
     start = timeit.default_timer()
 
@@ -128,8 +129,8 @@ def change_view(project_id, view, value):
         project = Project.get(project_id)
         if not project:
             return jsonify({'error': 'project_id not found'}), 404
-        edit_view = EditView(project)
-        payload = edit_view.change_view(view, value)
+        change = ChangeDisplay(project)
+        payload = change.change(display_attribute, value)
         project.update()
 
     except Exception as e:  # TODO: more error handling to identify problem
