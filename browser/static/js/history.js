@@ -91,7 +91,7 @@ class History{
     while(true) {
       action.undo();
       this.redoStack.push(action);
-      if (!this.canUndo) break;
+      if (this.undoStack.length === 0) break;
       action = this.undoStack.pop();
       if (action === 'fencepost') {
         // Keep fencepost on top of undo to separate new actions from last undo
@@ -115,7 +115,7 @@ class History{
     while (true) {
       action.redo();
       this.undoStack.push(action);
-      if (!this.canRedo) break;
+      if (this.redoStack.length === 0) break;
       action = this.redoStack.pop();
       if (action === 'fencepost') {
         // Keep fencepost on top of undo stack
