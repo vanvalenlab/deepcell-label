@@ -86,15 +86,18 @@ class Project(db.Model):
     num_frames = db.Column(db.Integer, nullable=False)
     num_channels = db.Column(db.Integer, nullable=False)
     num_features = db.Column(db.Integer, nullable=False)
+    rgb = db.Column(db.Boolean, default=False)
+    frame = db.Column(db.Integer, default=0)
+    channel = db.Column(db.Integer, default=0)
+    feature = db.Column(db.Integer, default=0)
+    scale_factor = db.Column(db.Float, default=1)
+    colormap = db.Column(db.PickleType)
 
     raw_frames = db.relationship('RawFrame', backref='project')
     rgb_frames = db.relationship('RGBFrame', backref='project')
     label_frames = db.relationship('LabelFrame', backref='project',
                                    # Delete frames detached by undo/redo
                                    cascade='save-update, merge, delete, delete-orphan')
-    view = db.relationship('View', backref='project', uselist=False,
-                           # Delete view row detached by undo/redo
-                           cascade='save-update, merge, delete, delete-orphan')
     labels = db.relationship('Labels', backref='project', uselist=False,
                              # Delete labels detached by undo/redo
                              cascade='save-update, merge, delete, delete-orphan')
@@ -131,9 +134,9 @@ class Project(db.Model):
         self.width = raw.shape[2]
         self.num_channels = raw.shape[-1]
         self.num_features = annotated.shape[-1]
-
-        # Create view row
-        self.view = View()
+        cmap = plt.get_cmap('viridis')
+        cmap.set_bad('black')
+        self.colormap = cmap
 
         # Create label metadata
         self.labels = Labels()
@@ -254,7 +257,7 @@ class Project(db.Model):
             for label_frame in self.label_frames:
                 label_frame.update()
         elif self.action.y_changed:
-            self.label_frames[self.view.frame].update()
+            self.label_frames[self.frame].update()
         db.session.commit()
         current_app.logger.debug('Updated project %s in %ss.',
                                  self.action_id, self.id,
@@ -265,7 +268,7 @@ class Project(db.Model):
         Creates a new action for a Project and links it the previous action.
         """
         start = timeit.default_timer()
-        # TODO: Identify and record the edited frames/view attributes/label metadata
+        # TODO: Identify and record the edited frames/label metadata
         # Create a new row in the action history for the next action
         # TODO: record the action type (e.g. "handle_draw") to store in action history
         action = self.action
@@ -300,11 +303,6 @@ class Project(db.Model):
         db.session.expunge(self.labels)
         self.labels = prev_action.labels
         db.session.add(self.labels)
-        # Restore view
-        # TODO: only store/restore changed attributes
-        db.session.expunge(self.view)
-        self.view = prev_action.view
-        db.session.add(self.view)
         self.action_id = prev_action.action_id
         db.session.commit()
         payload = self.make_payload(send_x=prev_action.x_changed,
@@ -336,11 +334,6 @@ class Project(db.Model):
         db.session.expunge(self.labels)
         self.labels = next_action.labels
         db.session.add(self.labels)
-        # Restore view
-        # TODO: only store/restore changed attributes
-        db.session.expunge(self.view)
-        self.view = next_action.view
-        db.session.add(self.view)
         # Make the payload using the _changed flags for the current action
         payload = self.make_payload(send_x=self.action.x_changed,
                                     send_y=self.action.y_changed,
@@ -358,10 +351,9 @@ class Project(db.Model):
         """
         start = timeit.default_timer()
         self.finished = db.func.current_timestamp()
+        self.colormap = None
         # Clear label metadata
         self.labels.finish()
-        # Clear view
-        self.view.finish()
         # Clear frames
         for label_frame in self.label_frames:
             label_frame.finish()
@@ -385,11 +377,11 @@ class Project(db.Model):
             int: highest label in the current feature
         """
         # check this first, np.max of empty array will crash
-        if len(self.labels.cell_ids[self.view.feature]) == 0:
+        if len(self.labels.cell_ids[self.feature]) == 0:
             max_label = 0
         # if any labels exist in feature, find the max label
         else:
-            max_label = int(np.max(self.labels.cell_ids[self.view.feature]))
+            max_label = int(np.max(self.labels.cell_ids[self.feature]))
         return max_label
 
     def get_label_arr(self):
@@ -398,8 +390,8 @@ class Project(db.Model):
             list: nested list of labels at each positions, with negative label outlines.
         """
         # Create label array
-        label_frame = self.label_frames[self.view.frame]
-        label_arr = label_frame.frame[..., self.view.feature]
+        label_frame = self.label_frames[self.frame]
+        label_arr = label_frame.frame[..., self.feature]
         return add_outlines(label_arr).tolist()
 
     def get_label_png(self):
@@ -408,12 +400,12 @@ class Project(db.Model):
             BytesIO: returns the current label frame as a .png
         """
         # Create label png
-        label_frame = self.label_frames[self.view.frame]
-        label_arr = label_frame.frame[..., self.view.feature]
+        label_frame = self.label_frames[self.frame]
+        label_arr = label_frame.frame[..., self.feature]
         label_png = pngify(imgarr=np.ma.masked_equal(label_arr, 0),
                            vmin=0,
                            vmax=self.get_max_label(),
-                           cmap=self.view.colormap)
+                           cmap=self.colormap)
         return label_png
 
     def get_raw_png(self):
@@ -422,8 +414,8 @@ class Project(db.Model):
             BytesIO: contains the current raw frame as a .png
         """
         # RGB png
-        if self.view.rgb:
-            raw_frame = self.rgb_frames[self.view.frame]
+        if self.rgb:
+            raw_frame = self.rgb_frames[self.frame]
             raw_arr = raw_frame.frame
             raw_png = pngify(imgarr=raw_arr,
                              vmin=None,
@@ -431,8 +423,8 @@ class Project(db.Model):
                              cmap=None)
             return raw_png
         # Raw png
-        raw_frame = self.raw_frames[self.view.frame]
-        raw_arr = raw_frame.frame[..., self.view.channel]
+        raw_frame = self.raw_frames[self.frame]
+        raw_arr = raw_frame.frame[..., self.channel]
         raw_png = pngify(imgarr=raw_arr,
                          vmin=0,
                          vmax=None,
@@ -472,31 +464,6 @@ class Project(db.Model):
             tracks = False
 
         return {'imgs': img_payload, 'tracks': tracks}
-
-
-class View(db.Model):
-    """
-    Table definition that stores dynamic project attributes,
-    such as the current frame, feature, and channel.
-    """
-    # pylint: disable=E1101
-    __tablename__ = 'views'
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
-                           primary_key=True, nullable=False)
-    rgb = db.Column(db.Boolean, default=False)
-    frame = db.Column(db.Integer, default=0)
-    channel = db.Column(db.Integer, default=0)
-    feature = db.Column(db.Integer, default=0)
-    scale_factor = db.Column(db.Float, default=1)
-    colormap = db.Column(db.PickleType)
-
-    def __init__(self):
-        cmap = plt.get_cmap('viridis')
-        cmap.set_bad('black')
-        self.colormap = cmap
-
-    def finish(self):
-        self.colormap = None
 
 
 class Labels(db.Model):
@@ -742,8 +709,8 @@ class LabelFrame(db.Model):
 
 class Action(db.Model):
     """
-    Records a sequence of actions and
-    records the label frames, view, and label metadata at the before each action.
+    Records a sequence of actions
+    and the label frames and label metadata before each action.
     """
     # pylint: disable=E1101
     __tablename__ = 'actions'
@@ -760,13 +727,11 @@ class Action(db.Model):
     y_changed = db.Column(db.Boolean, default=False)
     multi_changed = db.Column(db.Boolean, default=False)
     labels_changed = db.Column(db.Boolean, default=False)
-    view_changed = db.Column(db.Boolean, default=False)
     frames = db.relationship('FrameHistory', backref='action',
                              primaryjoin="and_("
                              "Action.action_id == foreign(FrameHistory.action_id), "
                              "Action.project_id == FrameHistory.project_id)")
-    # Pickles the ORM row in the View table
-    view = db.Column(db.PickleType)
+    # Pickles an ORM row from the Labels table
     labels = db.Column(db.PickleType)
 
     def __init__(self, project):
@@ -776,7 +741,6 @@ class Action(db.Model):
         self.project = project
         self.action_id = project.next_action_id
         self.prev_action_id = project.action_id
-        self.view = project.view
         self.labels = project.labels
         self.frames = [FrameHistory(project=project, frame=frame)
                        for frame in project.label_frames]
@@ -784,7 +748,6 @@ class Action(db.Model):
     def finish(self):
         for frame in self.frames:
             frame.finish()
-        self.view = None
         self.labels = None
 
 

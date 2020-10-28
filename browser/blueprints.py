@@ -176,39 +176,39 @@ def redo(project_id):
     return jsonify(payload)
 
 
-@bp.route('/frame/<int:frame>/<int:project_id>')
-def get_frame(frame, project_id):
-    """
-    Serve modes of frames as pngs. Send pngs and color mappings of
-    cells to .js file.
-    """
-    start = timeit.default_timer()
-    # Get project from database
-    project = Project.get(project_id)
-    if not project:
-        return jsonify({'error': 'project_id not found'}), 404
-    # Change the frame
-    project.view.frame = frame
-    project.action.x_changed = True
-    project.action.y_changed = True
-    project.update()
-    # Get pngs and array from project
-    raw_png = project.get_raw_png()
-    label_png = project.get_label_png()
-    label_arr = project.get_label_arr()
+# @bp.route('/frame/<int:frame>/<int:project_id>')
+# def get_frame(frame, project_id):
+#     """
+#     Serve modes of frames as pngs. Send pngs and color mappings of
+#     cells to .js file.
+#     """
+#     start = timeit.default_timer()
+#     # Get project from database
+#     project = Project.get(project_id)
+#     if not project:
+#         return jsonify({'error': 'project_id not found'}), 404
+#     # Change the frame
+#     project.frame = frame
+#     project.action.x_changed = True
+#     project.action.y_changed = True
+#     project.update()
+#     # Get pngs and array from project
+#     raw_png = project.get_raw_png()
+#     label_png = project.get_label_png()
+#     label_arr = project.get_label_arr()
 
-    # Create payload
-    encode = lambda x: base64.encodebytes(x.read()).decode()
-    payload = {
-        'raw': f'data:image/png;base64,{encode(raw_png)}',
-        'segmented': f'data:image/png;base64,{encode(label_png)}',
-        'seg_arr': label_arr
-    }
+#     # Create payload
+#     encode = lambda x: base64.encodebytes(x.read()).decode()
+#     payload = {
+#         'raw': f'data:image/png;base64,{encode(raw_png)}',
+#         'segmented': f'data:image/png;base64,{encode(label_png)}',
+#         'seg_arr': label_arr
+#     }
 
-    current_app.logger.debug('Got frame %s of project "%s" in %s s.',
-                             frame, project_id, timeit.default_timer() - start)
+#     current_app.logger.debug('Got frame %s of project "%s" in %s s.',
+#                              frame, project_id, timeit.default_timer() - start)
 
-    return jsonify(payload)
+#     return jsonify(payload)
 
 
 @bp.route('/load/<filename>', methods=['POST'])
@@ -243,7 +243,7 @@ def load(filename):
 
     # Initate Project entry in database
     project = Project.create(filename, input_bucket, output_bucket, full_path)
-    project.view.rgb = rgb
+    project.rgb = rgb
     # Make payload with raw image data, labeled image data, and label tracks
     payload = project.make_payload(send_x=True, send_y=True, send_labels=True)
     # Add other attributes to initialize frontend variables
@@ -252,7 +252,7 @@ def load(filename):
     payload['dimensions'] = (project.width, project.height)
     # Attributes specific to filetype
     if is_trk_file(filename):
-        payload['screen_scale'] = project.view.scale_factor
+        payload['screen_scale'] = project.scale_factor
     if is_npz_file(filename):
         payload['channel_max'] = project.num_channels
         payload['feature_max'] = project.num_features

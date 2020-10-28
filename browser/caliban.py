@@ -18,26 +18,23 @@ from skimage.exposure import rescale_intensity
 from skimage.measure import regionprops
 
 
-class EditView(object):
+class ChangeDisplay(object):
     """
-    Class to modify the dynamic view attributes of a Caliban Project,
-    like the frame, feature, or channel.
+    Class to change the frame, feature or channel displayed and edited by a Caliban Project.
     """
 
     def __init__(self, project):
         self.project = project
-        self.view = project.view
-        self.action = project.action
         self.num_frames = project.num_frames
         self.num_channels = project.num_channels
         self.num_features = project.num_features
 
-    def change_view(self, view, value):
+    def change_display(self, display_attribute, value):
         """
         Call a change view based on the passed view attribute name.
 
         Args:
-            view (str): name of view attribute to change
+            display_attribute (str): name of attribute to change (e.g. 'frame')
             value (int): value to set for view attribute
 
         Returns:
@@ -62,7 +59,7 @@ class EditView(object):
         if frame < 0 or frame > self.num_frames - 1:
             raise ValueError('Frame {} is outside of range [0, {}].'.format(
                 frame, self.num_frames - 1))
-        self.view.frame = frame
+        self.project.frame = frame
         return self.project.make_payload(send_x=True, send_y=True)
 
     def change_channel(self, channel):
@@ -76,7 +73,7 @@ class EditView(object):
         if channel < 0 or channel > self.num_channels - 1:
             raise ValueError('Channel {} is outside of range [0, {}].'.format(
                 channel, self.num_channels - 1))
-        self.view.channel = channel
+        self.project.channel = channel
         return self.project.make_payload(send_x=True)
 
     def change_feature(self, feature):
@@ -90,7 +87,7 @@ class EditView(object):
         if feature < 0 or feature > self.num_features - 1:
             raise ValueError('Feature {} is outside of range [0, {}].'.format(
                 feature, self.num_features - 1))
-        self.view.feature = feature
+        self.project.feature = feature
         return self.project.make_payload(send_y=True)
 
 
@@ -102,7 +99,6 @@ class BaseEdit(object):
 
     def __init__(self, project):
         self.project = project
-        self.view = project.view
         self.labels = project.labels
         self.action = project.action
 
@@ -122,14 +118,14 @@ class BaseEdit(object):
         """
         return self.project.raw_frames[self.frame_id].frame
 
-    # Access dynamic view columns
+    # Access dynamic display attributes
     @property
     def frame_id(self):
         """
         Returns:
             int: index of the current frame
         """
-        return self.view.frame
+        return self.project.frame
 
     @property
     def feature(self):
@@ -137,7 +133,7 @@ class BaseEdit(object):
         Returns:
             int: index of the current feature
         """
-        return self.view.feature
+        return self.project.feature
 
     @property
     def channel(self):
@@ -145,7 +141,7 @@ class BaseEdit(object):
         Returns:
             int: index of the current channel
         """
-        return self.view.channel
+        return self.project.channel
 
     @property
     def scale_factor(self):
@@ -153,7 +149,7 @@ class BaseEdit(object):
         Returns:
             float: current scale_factor
         """
-        return self.view.scale_factor
+        return self.project.scale_factor
 
     def dispatch_action(self, action_type, info):
         """
