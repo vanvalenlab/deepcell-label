@@ -45,8 +45,8 @@ class History{
    * Executes an action,
    * adds it to the current group of actions to be undone,
    * and clears the actions to be redone.
-   * 
-   * @param {Action} action 
+   *
+   * @param {Action} action
    */
   addAction(action) {
     action.do();
@@ -59,8 +59,8 @@ class History{
    * Executes an action,
    * fences it in to be undone alone,
    * and clears the actions to be redone.
-   * 
-   * @param {Action} action 
+   *
+   * @param {Action} action
    */
   addFencedAction(action) {
     this.addFence();

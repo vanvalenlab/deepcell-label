@@ -177,10 +177,10 @@ class Pan {
   constructor(canvas, dx, dy) {
     this.canvas = canvas;
     // change in x position of scaled window
-    this.dx = Math.min(Math.max(-dx, -canvas.sx), // move to right edge 
+    this.dx = Math.min(Math.max(-dx, -canvas.sx), // move to right edge
       canvas.width - canvas.sWidth - canvas.sx) // move to left edge
     // change in y position of scaled window
-    this.dy = Math.min(Math.max(-dy, -canvas.sy), // move to top edge 
+    this.dy = Math.min(Math.max(-dy, -canvas.sy), // move to top edge
       canvas.height - canvas.sHeight - canvas.sy) // move to bottom edge
   }
 
@@ -226,11 +226,11 @@ class Zoom {
     const propY = this.posY / this.canvas.scaledHeight;
     // change in x position of scaled window
     const dx = Math.min(Math.max(propX * (oldWidth - newWidth), // no edges
-        -this.canvas.sx), // move to right edge 
+        -this.canvas.sx), // move to right edge
       this.canvas.width - this.canvas.sWidth - this.canvas.sx) // move to left edge
     // change in y position of scaled window
     const dy = Math.min(Math.max(propY * (oldHeight - newHeight), // no edges
-        -this.canvas.sy), // move to top edge 
+        -this.canvas.sy), // move to top edge
       this.canvas.height - this.canvas.sHeight - this.canvas.sy) // move to bottom edge
     this.canvas.sx = this.canvas.sx + dx;
     this.canvas.sy = this.canvas.sy + dy;

@@ -3,11 +3,11 @@ class ToggleEdit {
     do() {
       edit_mode = !edit_mode;
     }
-  
+
     undo() {
       this.do()
     }
-  
+
     redo() {
       this.do()
     }
@@ -126,7 +126,7 @@ class ChangeChannel {
 /**
  * Sends a POST request to change the current frame, feature, or channel.
  * Handles the image data in the response.
- * 
+ *
  * @param {string} viewAttr which attribute to change (frame, feature, or channel)
  * @param {int} value value to set to attribute
  */

@@ -108,6 +108,7 @@ def action(project_id, action_type):
 
     return jsonify(payload)
 
+
 @bp.route('/changeview/<int:project_id>/<view>/<int:value>', methods=['POST'])
 def change_view(project_id, view, value):
     """
@@ -140,6 +141,7 @@ def change_view(project_id, view, value):
                              timeit.default_timer() - start)
     return jsonify(payload)
 
+
 @bp.route('/undo/<int:project_id>', methods=['POST'])
 def undo(project_id):
     start = timeit.default_timer()
@@ -151,7 +153,7 @@ def undo(project_id):
     except Exception as e:  # TODO: more error handling to identify problem
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
-    
+
     current_app.logger.debug('Undid action for project %s finished in %s s.',
                              project_id, timeit.default_timer() - start)
     return jsonify(payload)
@@ -168,7 +170,7 @@ def redo(project_id):
     except Exception as e:  # TODO: more error handling to identify problem
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
-    
+
     current_app.logger.debug('Redid action for project %s finished in %s s.',
                              project_id, timeit.default_timer() - start)
     return jsonify(payload)

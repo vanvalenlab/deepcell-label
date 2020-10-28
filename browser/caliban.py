@@ -17,6 +17,7 @@ from skimage.draw import circle
 from skimage.exposure import rescale_intensity
 from skimage.measure import regionprops
 
+
 class EditView(object):
     """
     Class to modify the dynamic view attributes of a Caliban Project,
@@ -34,7 +35,7 @@ class EditView(object):
     def change_view(self, view, value):
         """
         Call a change view based on the passed view attribute name.
-        
+
         Args:
             view (str): name of view attribute to change
             value (int): value to set for view attribute
@@ -91,6 +92,7 @@ class EditView(object):
                 feature, self.num_features - 1))
         self.view.feature = feature
         return self.project.make_payload(send_y=True)
+
 
 class BaseEdit(object):
     """
@@ -156,7 +158,7 @@ class BaseEdit(object):
     def dispatch_action(self, action_type, info):
         """
         Call an action method based on an action type.
-        
+
         Args:
             action_type (str): name of action method after "action_"
                                e.g. "handle_draw" to call "action_handle_draw"
@@ -627,8 +629,8 @@ class ZStackEdit(BaseEdit):
 
             # also remove from list of cell_ids
             ids = self.labels.cell_ids[self.feature]
-            self.labels.cell_ids[self.feature] = np.delete(ids,
-                                                          np.where(ids == np.int64(del_label)))
+            ids = np.delete(ids, np.where(ids == np.int64(del_label)))
+            self.labels.cell_ids[self.feature] = ids
 
         # if deleting cell, frames and info have necessarily changed
         self.action.y_changed = self.action.labels_changed = True
@@ -838,8 +840,8 @@ class TrackEdit(BaseEdit):
                 'parent': None,
                 'capped': False,
             }
-            self.labels.cell_ids[self.feature] = np.append(self.labels.cell_ids[self.feature],
-                                                          add_label)
+            ids = np.append(self.labels.cell_ids[self.feature], add_label)
+            self.labels.cell_ids[self.feature] = ids
 
         self.action.y_changed = self.action.labels_changed = True
 

@@ -959,8 +959,8 @@ function handleMousemove(evt) {
 // handles end of click&drag (different from click())
 function handleMouseup() {
   canvas.isPressed = false;
-  if (!canvas.isSpacedown 
-      && mode.kind !== Modes.prompt 
+  if (!canvas.isSpacedown
+      && mode.kind !== Modes.prompt
       && edit_mode) {
     if (!brush.show) {
       mode.handle_threshold();
@@ -1168,7 +1168,7 @@ function startCaliban(filename, settings) {
     canvasElement.onmouseout = () => {
         canvas.onCanvas = false;
     }
-  
+
     // Load images and seg_array from payload
     canvas.segArray = payload.imgs.seg_arr;
     adjuster.rawLoaded = false;

@@ -44,6 +44,7 @@ def compile_pickle_mysql(type_, compiler, **kw):
     """
     return 'LONGBLOB'
 
+
 class MutableNdarray(Mutable, np.ndarray):
     @classmethod
     def coerce(cls, key, value):
@@ -62,18 +63,11 @@ class MutableNdarray(Mutable, np.ndarray):
         "Detect array set events and emit change events."
         np.ndarray.__setitem__(self, key, value)
         self.changed()
-        
 
     def __delitem__(self, key):
         "Detect array del events and emit change events."
         np.ndarray.__delitem__(self, key)
         self.changed()
-
-
-    # def __getstate__(self):
-    #     d = self.__dict__.copy()
-    #     d.pop('_parents', None)
-    #     return d
 
 
 class Project(db.Model):
@@ -113,7 +107,7 @@ class Project(db.Model):
     def __init__(self, filename, input_bucket, output_bucket, path,
                  raw_key='raw', annotated_key=None):
         init_start = timeit.default_timer()
-        
+
         # Load data
         if annotated_key is None:
             annotated_key = get_ann_key(filename)
@@ -140,7 +134,7 @@ class Project(db.Model):
 
         # Create view row
         self.view = View()
-        
+
         # Create label metadata
         self.labels = Labels()
         for feature in range(self.num_features):
@@ -263,7 +257,7 @@ class Project(db.Model):
             self.label_frames[self.view.frame].update()
         db.session.commit()
         current_app.logger.debug('Updated project %s in %ss.',
-                                 self.action_id, self.id, 
+                                 self.action_id, self.id,
                                  timeit.default_timer() - start)
 
     def make_new_action(self):
@@ -281,7 +275,7 @@ class Project(db.Model):
         self.next_action_id += 1
         db.session.add(new_action)
         current_app.logger.debug('Initialized action %s project %s in %ss.',
-                                 self.action_id, self.id, 
+                                 self.action_id, self.id,
                                  timeit.default_timer() - start)
         db.session.commit()
 
@@ -314,10 +308,10 @@ class Project(db.Model):
         self.action_id = prev_action.action_id
         db.session.commit()
         payload = self.make_payload(send_x=prev_action.x_changed,
-                            send_y=prev_action.y_changed,
-                            send_labels=prev_action.labels_changed)
+                                    send_y=prev_action.y_changed,
+                                    send_labels=prev_action.labels_changed)
         current_app.logger.debug('Undo action %s project %s in %ss.',
-                     self.action_id, self.id, timeit.default_timer() - start)
+                                 self.action_id, self.id, timeit.default_timer() - start)
         return payload
 
     def redo(self):
@@ -332,7 +326,7 @@ class Project(db.Model):
             # TODO: error handling when there is no action to redo
             return
         next_action = self.actions[self.action.next_action_id]
-        # Restore label frames 
+        # Restore label frames
         # Assumes that we store every frame before every action
         # TODO: only store and restore edited frames
         for frame, next_frame in zip(self.label_frames, next_action.frames):
@@ -354,7 +348,7 @@ class Project(db.Model):
         self.action_id = next_action.action_id
         db.session.commit()
         current_app.logger.debug('Redo action %s project %s in %ss.',
-                     self.action_id, self.id, timeit.default_timer() - start)
+                                 self.action_id, self.id, timeit.default_timer() - start)
         return payload
 
     def finish(self):
@@ -381,7 +375,7 @@ class Project(db.Model):
         db.session.commit()
         logger.debug('Finished project with ID = "%s" in %ss.',
                      self.id, timeit.default_timer() - start)
-    
+
     def get_max_label(self):
         """
         Get the highest label in use in currently-viewed feature.
@@ -448,14 +442,14 @@ class Project(db.Model):
     def make_payload(self, send_x=False, send_y=False, send_labels=False):
         """
         Creates a payload to send to the front-end after completing an action.
-        
+
         Args:
             send_x (bool): when True, payload includes raw image PNG
             send_y (bool): when True, payload includes labeled image data
                            sends both a PNG and an array of where each label is
             send_labels (bool): when True, payload includes the label "tracks",
                                 or the frames that each label appears in (e.g. [0-10, 15-20])
-        
+
         Returns:
             dict: payload with image data and label tracks
         """
@@ -503,6 +497,7 @@ class View(db.Model):
 
     def finish(self):
         self.colormap = None
+
 
 class Labels(db.Model):
     """
@@ -761,7 +756,6 @@ class Action(db.Model):
     next_action_id = db.Column(db.Integer)
     # Name of the previous action (e.g. "handle_draw")
     prev_action = db.Column(db.String)
-    # 
     x_changed = db.Column(db.Boolean, default=False)
     y_changed = db.Column(db.Boolean, default=False)
     multi_changed = db.Column(db.Boolean, default=False)
@@ -796,7 +790,7 @@ class Action(db.Model):
 
 class FrameHistory(db.Model):
     """
-    Table to store label frames before an action edits them. 
+    Table to store label frames before an action edits them.
     """
     # pylint: disable=E1101
     __tablename__ = 'framehistories'
@@ -816,7 +810,7 @@ class FrameHistory(db.Model):
 
     def finish(self):
         self.frame = None
-    
+
 
 def consecutive(data, stepsize=1):
     return np.split(data, np.where(np.diff(data) != stepsize)[0] + 1)
