@@ -113,9 +113,6 @@ def zstack_project(app, mocker, request, db_session):
         # Initialize first action (normally handled by Project.create)
         project.actions = [Action(project=project)]
         action = project.actions[0]
-        action.labels_changed = True
-        action.x_changed = True
-        action.y_changed = True
         project.action_id = 0
         project.next_action_id = 1
         db_session.commit()
@@ -150,9 +147,6 @@ def track_project(app, mocker, request, db_session):
         # Initialize first action (normally handled by Project.create)
         project.actions = [Action(project=project)]
         action = project.actions[0]
-        action.labels_changed = True
-        action.x_changed = True
-        action.y_changed = True
         project.action_id = 0
         project.next_action_id = 1
         db_session.commit()
