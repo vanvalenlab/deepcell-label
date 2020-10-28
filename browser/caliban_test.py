@@ -32,8 +32,8 @@ def edit_view(project):
 def edit(request):
     return request.param
 
-# Tests can mock a series of actions on different frames
-# by manually setting edit.view.frame in the test
+# Tests can mock a series of actions on different frames/features/channels
+# by manually setting edit.view.frame/feature/channel within the test
 
 # Tests for EditView
 
@@ -80,7 +80,7 @@ def test_zstack_add_cell_info(zstack_edit):
     for feature in cell_ids:
         new_label = cell_ids[feature].max() + 1 if len(cell_ids[feature]) != 0 else 1
         assert new_label not in cell_ids[feature]
-        zstack_edit.action_change_feature(feature)
+        zstack_edit.view.feature = feature
         # Add new label to first frame
         zstack_edit.add_cell_info(new_label, 0)
         assert new_label in cell_ids[feature]
@@ -141,7 +141,7 @@ def test_del_cell_info(edit):
     assert not edit.action.y_changed
     assert not edit.action.labels_changed
     for feature in cell_ids:
-        edit.action_change_feature(feature)
+        edit.view.feature = feature
         for cell in cell_ids[feature]:
             assert cell in cell_ids[feature]
             assert cell in cell_info[feature]
@@ -168,7 +168,7 @@ def test_action_new_single_cell(edit):
     num_frames = edit.project.num_frames
     cell_ids = deepcopy(edit.labels.cell_ids)
     for feature in cell_ids:
-        edit.action_change_feature(feature)
+        edit.view.feature = feature
         for cell in cell_ids[feature]:
             # Replace cell in all frames but last
             for frame in range(num_frames - 1):
@@ -191,7 +191,7 @@ def test_action_delete_mask(edit):
     num_frames = edit.project.num_frames
     cell_ids = deepcopy(edit.labels.cell_ids)
     for feature in cell_ids:
-        edit.action_change_feature(feature)
+        edit.view.feature = feature
         for cell in cell_ids[feature]:
             for frame in range(num_frames - 1):
                 edit.view.frame = frame
@@ -208,7 +208,7 @@ def test_action_swap_single_frame(edit):
     assert not edit.action.y_changed
     assert not edit.action.labels_changed
     for feature in cell_ids:
-        edit.action_change_feature(feature)
+        edit.view.feature = feature
         # All pairs of labels in that feature
         for cell1, cell2 in itertools.product(cell_ids[feature], cell_ids[feature]):
             for frame in range(num_frames):
@@ -224,7 +224,7 @@ def test_action_swap_single_frame(edit):
 # def test_action_handle_draw(edit):
 
 #     for feature in cell_ids:
-#         edit.action_change_feature(feature)
+#         edit.view.feature = feature
 
 #     self, trace, target_value, brush_value, brush_size, erase, frame):
 #     """Use a "brush" to draw in the brush value along trace locations of
@@ -238,7 +238,7 @@ def test_action_swap_single_frame(edit):
 #     assert not edit._y_changed
 #     assert not edit.labels_changed
 #     for feature in cell_ids:
-#         edit.action_change_feature(feature)
+#         edit.view.feature = feature
 #         for cell in cell_ids[feature]:
 #             for frame in range(max_frames):
 #                 edit.action_trim_pixels(cell, frame, x_location, y_location)
@@ -270,7 +270,7 @@ def test_action_swap_single_frame(edit):
 
 def test_action_new_cell_stack(zstack_edit):
     for feature in range(zstack_edit.project.num_features):
-        zstack_edit.action_change_feature(feature)
+        zstack_edit.view.feature = feature
         label = zstack_edit.project.get_max_label()
         if label == 0:  # no labels in feature
             continue
@@ -298,7 +298,7 @@ def test_action_new_cell_stack(zstack_edit):
 
 def test_action_replace_single(zstack_edit):
     for feature in range(zstack_edit.project.num_features):
-        zstack_edit.action_change_feature(feature)
+        zstack_edit.view.feature = feature
         labels = zstack_edit.labels.cell_ids[feature]
         for cell1, cell2 in itertools.product(labels, labels):
             # Front end checks labels are different
@@ -323,7 +323,7 @@ def test_action_replace_single(zstack_edit):
 
 def test_action_replace(zstack_edit):
     for feature in range(zstack_edit.project.num_features):
-        zstack_edit.action_change_feature(feature)
+        zstack_edit.view.feature = feature
         labels = zstack_edit.labels.cell_ids[feature]
         for cell1, cell2 in itertools.product(labels, labels):
             old_ann = zstack_edit.project.label_array[..., feature].copy()
@@ -340,7 +340,7 @@ def test_action_replace(zstack_edit):
 
 def test_action_swap_all_frame(zstack_edit):
     for feature in range(zstack_edit.project.num_features):
-        zstack_edit.action_change_feature(feature)
+        zstack_edit.view.feature = feature
         labels = zstack_edit.labels.cell_ids[feature]
         for cell1, cell2 in itertools.product(labels, labels):
             old_ann = zstack_edit.project.label_array[..., feature].copy()
