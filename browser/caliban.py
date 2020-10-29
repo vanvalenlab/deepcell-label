@@ -492,7 +492,6 @@ class ZStackEdit(BaseEdit):
             if new_label in img:
                 self.del_cell_info(del_label=label, frame=label_frame.frame_id)
                 self.add_cell_info(add_label=new_label, frame=label_frame.frame_id)
-                self.action.multi_changed = True
             label_frame.frame[..., self.feature] = img
 
     def action_replace_single(self, label_1, label_2):
@@ -521,10 +520,9 @@ class ZStackEdit(BaseEdit):
             # if label being replaced is present, remove it from image and update cell info dict
             if np.any(np.isin(img, label_2)):
                 img = np.where(img == label_2, label_1, img)
-                label_frame.frame[..., self.feature] = img
                 self.add_cell_info(add_label=label_1, frame=self.frame_id)
                 self.del_cell_info(del_label=label_2, frame=self.frame_id)
-                self.action.multi_changed = True
+                label_frame.frame[..., self.feature] = img
 
     def action_swap_all_frame(self, label_1, label_2):
         """
@@ -545,7 +543,7 @@ class ZStackEdit(BaseEdit):
         self.labels.cell_info[self.feature][label_1]['frames'] = cell_info_2['frames']
         self.labels.cell_info[self.feature][label_2]['frames'] = cell_info_1['frames']
 
-        self.action.y_changed = self.action.labels_changed = self.action.multi_changed = True
+        self.action.y_changed = self.action.labels_changed = True
 
     def action_predict_single(self):
         """
@@ -580,7 +578,6 @@ class ZStackEdit(BaseEdit):
 
         # remake cell_info dict based on new annotations
         self.action.y_changed = True
-        self.action.multi_changed = True
         self.create_cell_info(feature=self.feature)
 
     def action_save_zstack(self):
@@ -697,7 +694,7 @@ class TrackEdit(BaseEdit):
 
         self.labels.cell_ids[0] = np.append(self.labels.cell_ids[0], new_label)
 
-        self.action.y_changed = self.action.labels_changed = self.action.multi_changed = True
+        self.action.y_changed = self.action.labels_changed = True
 
     def action_set_parent(self, label_1, label_2):
         """
@@ -754,7 +751,7 @@ class TrackEdit(BaseEdit):
             except ValueError:
                 pass
 
-        self.action.y_changed = self.action.labels_changed = self.action.multi_changed = True
+        self.action.y_changed = self.action.labels_changed = True
 
     def action_swap_tracks(self, label_1, label_2):
         """
@@ -783,7 +780,7 @@ class TrackEdit(BaseEdit):
         relabel(label_2, label_1)
         relabel(-1, label_2)
 
-        self.action.y_changed = self.action.labels_changed = self.action.multi_changed = True
+        self.action.y_changed = self.action.labels_changed = True
 
     def action_save_track(self):
         # clear any empty tracks before saving file

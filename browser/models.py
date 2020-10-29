@@ -230,17 +230,14 @@ class Project(db.Model):
         new_project = Project(filename, input_bucket, output_bucket, path)
         db.session.add(new_project)
         db.session.commit()
-        # Initialize the first action after the projec has persisted so
-        # pickled rows (View and Labels) don't reference a transient project
+        # Initialize the first action after the project has persisted so
+        # pickled Labels row doesn't reference a transient project
         new_project.actions = [Action(project=new_project)]
         action = new_project.actions[0]
-        action.labels_changed = True
-        action.x_changed = True
-        action.y_changed = True
         new_project.action_id = 0
         new_project.next_action_id = 1
         db.session.commit()
-        current_app.logger.debug('Created new project with ID = "%s" in %ss.',
+        current_app.logger.debug('Created new project %s in %s s.',
                                  new_project.id, timeit.default_timer() - start)
         return new_project
 
@@ -720,7 +717,6 @@ class Action(db.Model):
     prev_action = db.Column(db.String)
     x_changed = db.Column(db.Boolean, default=False)
     y_changed = db.Column(db.Boolean, default=False)
-    multi_changed = db.Column(db.Boolean, default=False)
     labels_changed = db.Column(db.Boolean, default=False)
     frames = db.relationship('FrameHistory', backref='action',
                              primaryjoin="and_("
