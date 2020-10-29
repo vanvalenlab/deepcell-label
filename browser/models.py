@@ -314,6 +314,8 @@ class State(db.Model):
             if len(trial['lineages']) != 1:
                 raise ValueError('Input file has multiple trials/lineages.')
             self.cell_info = {0: trial['lineages'][0]}
+            # Track files require a different scale factor
+            self.scale_factor = 2
 
     @property
     def tracks(self):
