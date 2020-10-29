@@ -463,12 +463,12 @@ class BaseEdit(object):
                                   left_edge:right_edge, self.feature]
         safe_overlay = np.where(predict_area == 0, ann_threshold, predict_area)
 
+        self.frame[top_edge:bottom_edge,
+                   left_edge:right_edge, self.feature] = safe_overlay
+
         # don't need to update cell_info unless an annotation has been added
         if np.any(np.isin(self.frame[..., self.feature], label)):
             self.add_cell_info(add_label=label, frame=self.frame_id)
-
-        self.frame[top_edge:bottom_edge,
-                   left_edge:right_edge, self.feature] = safe_overlay
 
 
 class ZStackEdit(BaseEdit):
