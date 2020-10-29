@@ -95,6 +95,16 @@ class BaseEdit(object):
     """
     Base class for editing frames in Caliban.
     Expected lifespan is a single action.
+
+    Actions have three phases:
+        1. select and edit the image currently on display
+        3. make changes to the label metadata
+        4. assign the image to the frame
+    
+    NOTE: Actions must directly assign changes to the frame attribute
+    for the MutableNdarray class to detect the change and for the database to persist the change.
+    Changes to a view of a MutableNdarray will not be detected by the original 
+    TODO: modify MutableNdarray class to share changed() signals from arrays view
     """
 
     def __init__(self, project):
@@ -186,15 +196,15 @@ class BaseEdit(object):
         Args:
             label (int): label to replace
         """
-        new_label = self.project.get_max_label() + 1
-
-        # replace frame labels
+        # Get and edit the displayed labels
         img = self.frame[..., self.feature]
+        new_label = self.project.get_max_label() + 1
         img[img == label] = new_label
-
-        # replace fields
+        # Update label metadata
         self.del_cell_info(del_label=label, frame=self.frame_id)
         self.add_cell_info(add_label=new_label, frame=self.frame_id)
+        # Assign the image to the frame
+        self.frame[..., self.feature] = img
 
     def action_delete_mask(self, label):
         """
@@ -204,13 +214,10 @@ class BaseEdit(object):
             label (int): label to delete
         """
         # TODO: update the action name?
-        ann_img = self.frame[..., self.feature]
-        ann_img = np.where(ann_img == label, 0, ann_img)
-
-        self.frame[..., self.feature] = ann_img
-
-        # update cell_info
+        img = self.frame[..., self.feature]
+        img = np.where(img == label, 0, img)
         self.del_cell_info(del_label=label, frame=self.frame_id)
+        self.frame[..., self.feature] = img
 
     def action_swap_single_frame(self, label_1, label_2):
         """
@@ -221,15 +228,13 @@ class BaseEdit(object):
             label_1 (int): first label to swap
             label_2 (int): second label to swap
         """
-        ann_img = self.frame[..., self.feature]
-        ann_img = np.where(ann_img == label_1, -1, ann_img)
-        ann_img = np.where(ann_img == label_2, label_1, ann_img)
-        ann_img = np.where(ann_img == -1, label_2, ann_img)
-
-        self.frame[..., self.feature] = ann_img
-
+        img = self.frame[..., self.feature]
+        img = np.where(img == label_1, -1, img)
+        img = np.where(img == label_2, label_1, img)
+        img = np.where(img == -1, label_2, img)
         # TODO: does info change?
         self.action.y_changed = self.action.labels_changed = True
+        self.frame[..., self.feature] = img
 
     def action_handle_draw(self, trace, target_value, brush_value, brush_size, erase):
         """
@@ -244,11 +249,11 @@ class BaseEdit(object):
             brush_size (int): radius of the brush
             erase (bool): sets target_value in trace area to 0 when True
         """
-        annotated = np.copy(self.frame[..., self.feature])
-        in_original = np.any(np.isin(annotated, brush_value))
+        img = np.copy(self.frame[..., self.feature])
+        in_original = np.any(np.isin(img, brush_value))
 
-        annotated_draw = np.where(annotated == target_value, brush_value, annotated)
-        annotated_erase = np.where(annotated == brush_value, target_value, annotated)
+        img_draw = np.where(img == target_value, brush_value, img)
+        img_erase = np.where(img == brush_value, target_value, img)
 
         for loc in trace:
             # each element of trace is an array with [y,x] coordinates of array
@@ -261,11 +266,11 @@ class BaseEdit(object):
 
             # do not overwrite or erase labels other than the one you're editing
             if not erase:
-                annotated[brush_area] = annotated_draw[brush_area]
+                img[brush_area] = img_draw[brush_area]
             else:
-                annotated[brush_area] = annotated_erase[brush_area]
+                img[brush_area] = img_erase[brush_area]
 
-        in_modified = np.any(np.isin(annotated, brush_value))
+        in_modified = np.any(np.isin(img, brush_value))
 
         # cell deletion
         if in_original and not in_modified:
@@ -276,11 +281,11 @@ class BaseEdit(object):
             self.add_cell_info(add_label=brush_value, frame=self.frame_id)
 
         # check for image change, in case pixels changed but no new or del cell
-        comparison = np.where(annotated != self.frame[..., self.feature])
+        comparison = np.where(img != self.frame[..., self.feature])
         self.action.y_changed = np.any(comparison)
         # if label metadata changed, labels_changed set to true with info helper functions
 
-        self.frame[..., self.feature] = annotated
+        self.frame[..., self.feature] = img
 
     def action_trim_pixels(self, label, x_location, y_location):
         """
@@ -302,6 +307,7 @@ class BaseEdit(object):
         img_trimmed = np.where(stray_pixels, 0, img_ann)
 
         self.action.y_changed = np.any(np.where(img_trimmed != img_ann))
+
         self.frame[..., self.feature] = img_trimmed
 
     def action_fill_hole(self, label, x_location, y_location):
@@ -318,10 +324,11 @@ class BaseEdit(object):
         # fill hole with label
         img_ann = self.frame[..., self.feature]
         filled_img_ann = flood_fill(img_ann, hole_fill_seed, label, connectivity=1)
-        self.frame[..., self.feature] = filled_img_ann
 
         # never changes info but always changes annotation
         self.action.y_changed = True
+
+        self.frame[..., self.feature] = filled_img_ann
 
     def action_flood_contiguous(self, label, x_location, y_location):
         """Flood fill a cell with a unique new label.
@@ -339,15 +346,15 @@ class BaseEdit(object):
                                     (int(y_location / self.scale_factor),
                                      int(x_location / self.scale_factor)),
                                     new_label)
-        self.frame[..., self.feature] = filled_img_ann
 
         in_modified = np.any(np.isin(filled_img_ann, old_label))
 
         # update cell info dicts since labels are changing
         self.add_cell_info(add_label=new_label, frame=self.frame_id)
-
         if in_original and not in_modified:
             self.del_cell_info(del_label=old_label, frame=self.frame_id)
+
+        self.frame[..., self.feature] = filled_img_ann
 
     def action_watershed(self, label, x1_location, y1_location, x2_location, y2_location):
         """Use watershed to segment different objects"""
@@ -411,11 +418,12 @@ class BaseEdit(object):
 
         # reintegrate subsection into original mask
         img_ann[minr:maxr, minc:maxc] = img_sub_ann
-        self.frame[..., self.feature] = img_ann
 
         # update cell_info dict only if new label was created with ws
         if np.any(np.isin(img_ann, new_label)):
             self.add_cell_info(add_label=new_label, frame=self.frame_id)
+
+        self.frame[..., self.feature] = img_ann
 
     def action_threshold(self, y1, x1, y2, x2, label):
         """
@@ -455,12 +463,12 @@ class BaseEdit(object):
                                   left_edge:right_edge, self.feature]
         safe_overlay = np.where(predict_area == 0, ann_threshold, predict_area)
 
-        self.frame[top_edge:bottom_edge,
-                   left_edge:right_edge, self.feature] = safe_overlay
-
         # don't need to update cell_info unless an annotation has been added
         if np.any(np.isin(self.frame[..., self.feature], label)):
             self.add_cell_info(add_label=label, frame=self.frame_id)
+
+        self.frame[top_edge:bottom_edge,
+                   left_edge:right_edge, self.feature] = safe_overlay
 
 
 class ZStackEdit(BaseEdit):
@@ -476,16 +484,16 @@ class ZStackEdit(BaseEdit):
             label (int): label to replace with a new label
         """
         new_label = self.project.get_max_label() + 1
-
         # Replace old label with new in every frame until end
         for label_frame in self.project.label_frames[self.frame_id:]:
-            frame = label_frame.frame[..., self.feature]  # Select right feature
-            frame[frame == label] = new_label
+            img = label_frame.frame[..., self.feature]
+            img[img == label] = new_label
             # Update cell info for this frame
-            if new_label in frame:
+            if new_label in img:
                 self.del_cell_info(del_label=label, frame=label_frame.frame_id)
                 self.add_cell_info(add_label=new_label, frame=label_frame.frame_id)
                 self.action.multi_changed = True
+            label_frame.frame[..., self.feature] = img
 
     def action_replace_single(self, label_1, label_2):
         """
@@ -493,13 +501,13 @@ class ZStackEdit(BaseEdit):
         to make sure labels are different and were selected within same frames
         before sending action
         """
-        annotated = self.frame[..., self.feature]
-        # change annotation
-        annotated = np.where(annotated == label_2, label_1, annotated)
-        self.frame[..., self.feature] = annotated
-        # update info
+        img = self.frame[..., self.feature]
+        img = np.where(img == label_2, label_1, img)
+
         self.add_cell_info(add_label=label_1, frame=self.frame_id)
         self.del_cell_info(del_label=label_2, frame=self.frame_id)
+
+        self.frame[..., self.feature] = img
 
     def action_replace(self, label_1, label_2):
         """
@@ -509,11 +517,11 @@ class ZStackEdit(BaseEdit):
         # TODO: check on backend that labels are different?
         # Check each frame for label_2
         for label_frame in self.project.label_frames:
-            annotated = label_frame.frame[..., self.feature]
+            img = label_frame.frame[..., self.feature]
             # if label being replaced is present, remove it from image and update cell info dict
-            if np.any(np.isin(annotated, label_2)):
-                annotated = np.where(annotated == label_2, label_1, annotated)
-                label_frame.frame[..., self.feature] = annotated
+            if np.any(np.isin(img, label_2)):
+                img = np.where(img == label_2, label_1, img)
+                label_frame.frame[..., self.feature] = img
                 self.add_cell_info(add_label=label_1, frame=self.frame_id)
                 self.del_cell_info(del_label=label_2, frame=self.frame_id)
                 self.action.multi_changed = True
@@ -525,12 +533,11 @@ class ZStackEdit(BaseEdit):
         """
 
         for label_frame in self.project.label_frames:
-            frame = label_frame.frame
-            ann_img = frame[..., self.feature]
-            ann_img = np.where(ann_img == label_1, -1, ann_img)
-            ann_img = np.where(ann_img == label_2, label_1, ann_img)
-            ann_img = np.where(ann_img == -1, label_2, ann_img)
-            frame[..., self.feature] = ann_img
+            img = label_frame.frame[..., self.feature]
+            img = np.where(img == label_1, -1, img)
+            img = np.where(img == label_2, label_1, img)
+            img = np.where(img == -1, label_2, img)
+            label_frame.frame[..., self.feature] = img
 
         # update cell_info
         cell_info_1 = self.labels.cell_info[self.feature][label_1].copy()
@@ -540,7 +547,6 @@ class ZStackEdit(BaseEdit):
 
         self.action.y_changed = self.action.labels_changed = self.action.multi_changed = True
 
-    # TODO: access previous frame
     def action_predict_single(self):
         """
         predicts zstack relationship for current frame based on previous frame
@@ -550,16 +556,16 @@ class ZStackEdit(BaseEdit):
             prev_frame = self.frame_id - 1
             img = self.project.label_frames[prev_frame].frame[..., self.feature]
             next_img = self.frame[..., self.feature]
-            updated_slice = predict_zstack_cell_ids(img, next_img)
+            updated_img = predict_zstack_cell_ids(img, next_img)
 
             # check if image changed
-            comparison = np.where(next_img != updated_slice)
+            comparison = np.where(next_img != updated_img)
             self.action.y_changed = np.any(comparison)
 
-            # if the image changed, update self.annotated and remake cell info
+            # if the image changed, update cell info and label frame
             if self.action.y_changed:
-                self.frame[..., self.feature] = updated_slice
                 self.create_cell_info(feature=self.feature)
+                self.frame[..., self.feature] = updated_img
 
     def action_predict_zstack(self):
         """
@@ -591,15 +597,14 @@ class ZStackEdit(BaseEdit):
 
     def add_cell_info(self, add_label, frame):
         """Add a cell to the npz"""
-        # if cell already exists elsewhere in npz:
         add_label = int(add_label)
-
+        # if cell already exists elsewhere in npz
         try:
             old_frames = self.labels.cell_info[self.feature][add_label]['frames']
-            updated_frames = np.append(old_frames, frame)
-            updated_frames = np.unique(updated_frames).tolist()
-            self.labels.cell_info[self.feature][add_label]['frames'] = updated_frames
-        # cell does not exist anywhere in npz:
+            new_frames = np.append(old_frames, frame)
+            new_frames = np.unique(new_frames).tolist()
+            self.labels.cell_info[self.feature][add_label]['frames'] = new_frames
+        # cell does not exist anywhere in npz
         except KeyError:
             self.labels.cell_info[self.feature][add_label] = {
                 'label': str(add_label),
@@ -616,8 +621,8 @@ class ZStackEdit(BaseEdit):
         """Remove a cell from the npz"""
         # remove cell from frame
         old_frames = self.labels.cell_info[self.feature][del_label]['frames']
-        updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame))).tolist()
-        self.labels.cell_info[self.feature][del_label]['frames'] = updated_frames
+        new_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame))).tolist()
+        self.labels.cell_info[self.feature][del_label]['frames'] = new_frames
 
         # if that was the last frame, delete the entry for that cell
         if self.labels.cell_info[self.feature][del_label]['frames'] == []:
@@ -659,10 +664,10 @@ class TrackEdit(BaseEdit):
             return
 
         # replace frame labels
-        # TODO: which frame is this meant to be?
         for label_frame in self.project.label_frames[self.frame_id:]:
-            frame = label_frame.frame
-            frame[frame == label] = new_label
+            img = label_frame.frame
+            img[img == label] = new_label
+            label_frame.frame = img
 
         # replace fields
         track_new = self.labels.tracks[new_label] = {}
@@ -718,16 +723,15 @@ class TrackEdit(BaseEdit):
 
             self.action.labels_changed = True
 
-    # TODO: handle multiple frames
     def action_replace(self, label_1, label_2):
         """
         Replacing label_2 with label_1 in all frames.
         """
         # replace arrays
         for label_frame in self.project.label_frames:
-            frame = label_frame.frame
-            frame = np.where(frame == label_2, label_1, frame)
-            label_frame.frame = frame
+            img = label_frame.frame
+            img = np.where(img == label_2, label_1, img)
+            label_frame.frame = img
 
         # TODO: is this the same as add/remove?
         # replace fields
@@ -758,8 +762,9 @@ class TrackEdit(BaseEdit):
         """
         def relabel(old_label, new_label):
             for label_frame in self.project.label_frames:
-                frame = label_frame.frame
-                frame[frame == old_label] = new_label
+                img = label_frame.frame
+                img[img == old_label] = new_label
+                label_frame.frame = img
 
             # replace fields
             track_new = self.labels.tracks[new_label] = self.labels.tracks[old_label]
@@ -871,14 +876,14 @@ class TrackEdit(BaseEdit):
 
 
 def predict_zstack_cell_ids(img, next_img, threshold=0.1):
-    '''
+    """
     Predict labels for next_img based on intersection over union (iou)
     with img. If cells don't meet threshold for iou, they don't count as
     matching enough to share label with "matching" cell in img. Cells
     that don't have a match in img (new cells) get a new label so that
     output relabeled_next does not skip label values (unless label values
     present in prior image need to be skipped to avoid conflating labels).
-    '''
+    """
 
     # relabel to remove skipped values, keeps subsequent predictions cleaner
     next_img = relabel_frame(next_img)
