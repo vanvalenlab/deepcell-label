@@ -51,7 +51,7 @@ class MutableNdarray(Mutable, np.ndarray):
         "Convert plain numpy arrays to MutableNdarray."
         if not isinstance(value, MutableNdarray):
             if isinstance(value, np.ndarray):
-                mutable_array = MutableNdarray(shape=value.shape, dtype=value.dtype, buffer=value)
+                mutable_array = value.view(MutableNdarray)
                 return mutable_array
 
             # this call will raise ValueError
@@ -253,13 +253,8 @@ class Project(db.Model):
         # Copy the PickleType columns to ensure that we persist the changes
         if self.action.labels_changed:
             self.labels.update()
-        if self.action.multi_changed:
-            for label_frame in self.label_frames:
-                label_frame.update()
-        elif self.action.y_changed:
-            self.label_frames[self.frame].update()
         db.session.commit()
-        current_app.logger.debug('Updated project %s in %ss.',
+        current_app.logger.debug('Updated action %s for project %s in %ss.',
                                  self.action_id, self.id,
                                  timeit.default_timer() - start)
 
