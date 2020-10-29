@@ -132,7 +132,7 @@ class ChangeChannel {
  */
 function setDisplay(displayAttr, value) {
   $.ajax({
-    type: 'GET',
+    type: 'POST',
     url: `${document.location.origin}/changedisplay/${project_id}/${displayAttr}/${value}`,
     success: handlePayload,
     async: false
