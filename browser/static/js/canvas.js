@@ -222,19 +222,19 @@ class Zoom {
     const oldWidth = canvas.sWidth;
     const propX = canvas.canvasPosX / canvas.scaledWidth;
     const propY = canvas.canvasPosY / canvas.scaledHeight;
-    let dx = propX * (newWidth - oldWidth);
-    let dy = propY * (newHeight - oldHeight);
+    this.dx = propX * (newWidth - oldWidth);
+    this.dy = propY * (newHeight - oldHeight);
 
     this.canvas = canvas;
     this.oldZoom = canvas.zoom;
     this.newZoom = zoom;
-    this.pan = new Pan(canvas, dx, dy);
   }
 
   do() {
     // Zoom then pan
     this.setZoom(this.newZoom);
-    actions.addAction(this.pan);
+    let pan = new Pan(this.canvas, this.dx, this.dy);
+    actions.addAction(pan);
   }
 
   redo() {

@@ -49,8 +49,8 @@ class History{
    * @param {Action} action
    */
   addAction(action) {
-    action.do();
     this.undoStack.push(action);
+    action.do();
     this.redoStack = [];
     this.formatButtons();
   }
