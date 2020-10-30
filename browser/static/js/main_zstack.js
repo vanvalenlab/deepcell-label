@@ -102,11 +102,11 @@ class Mode {
       adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
     } else if (key === 'c') {
       // cycle forward one channel
-      let action = new ChangeChannel(this, this.channel + 1);
+      let action = new ChangeChannel(this, adjuster, this.channel + 1);
       actions.addFencedAction(action);
     } else if (key === 'C') {
       // cycle backward one channel
-      let action = new ChangeChannel(this, this.channel - 1);
+      let action = new ChangeChannel(this, adjuster, this.channel - 1);
       actions.addFencedAction(action);
     } else if (key === 'f') {
       let changeFeature = new ChangeFeature(this, this.feature + 1);
@@ -170,11 +170,11 @@ class Mode {
       adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
     } else if (key === 'c') {
       // cycle forward one channel
-      let action = new ChangeChannel(this, this.channel + 1);
+      let action = new ChangeChannel(this, adjuster, this.channel + 1);
       actions.addFencedAction(action);
     } else if (key === 'C') {
       // cycle backward one channel
-      let action = new ChangeChannel(this, this.channel - 1);
+      let action = new ChangeChannel(this, adjuster, this.channel - 1);
       actions.addFencedAction(action);
     } else if (key === 'f') {
       // cycle forward one feature

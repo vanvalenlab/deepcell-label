@@ -91,8 +91,8 @@ class ChangeChannel {
     this.mode = mode;
     this.adjuster = adjuster;
     this.oldValue = mode.channel;
-    // channel mode channelMax
-    this.newValue = ((channel % channel_max) + channel_max) % channel_max;
+    // channel mod channelMax
+    this.newValue = ((channel % channelMax) + channelMax) % channelMax;
   }
 
   do() {
@@ -112,14 +112,16 @@ class ChangeChannel {
 
   adjust(oldValue, newValue) {
     // save current display settings before changing
-    adjuster.brightnessMap.set(oldValue, adjuster.brightness);
-    adjuster.contrastMap.set(oldValue, adjuster.contrast);
-    adjuster.invertMap.set(oldValue, adjuster.displayInvert);
-    this.mode.clear();
+    this.adjuster.brightnessMap.set(oldValue, this.adjuster.brightness);
+    this.adjuster.contrastMap.set(oldValue, this.adjuster.contrast);
+    this.adjuster.invertMap.set(oldValue, this.adjuster.displayInvert);
     // get brightness/contrast vals for new channel
-    adjuster.brightness = adjuster.brightnessMap.get(newValue);
-    adjuster.contrast = adjuster.contrastMap.get(newValue);
-    adjuster.displayInvert = adjuster.invertMap.get(newValue);
+    this.adjuster.brightness = this.adjuster.brightnessMap.get(newValue);
+    this.adjuster.contrast = this.adjuster.contrastMap.get(newValue);
+    this.adjuster.displayInvert = this.adjuster.invertMap.get(newValue);
+
+    this.mode.clear();
+    this.mode.channel = this.newValue;
   }
 }
 
