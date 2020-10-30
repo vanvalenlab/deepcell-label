@@ -82,11 +82,13 @@ class History{
   undo() {
     // Pop until we find an action to ensure undo does something
     let action = this.undoStack.pop();
+    // Needed to separate action groups on redo stack
+    if (action === 'fencepost') {
+      this.redoStack.push('fencepost');
+    }
     while(this.canUndo && action === 'fencepost') {
       action = this.undoStack.pop();
     }
-    // Needed to separate action groups on redo stack
-    this.redoStack.push('fencepost');
     // Undo actions until the end of the group or stack
     while(true) {
       action.undo();
