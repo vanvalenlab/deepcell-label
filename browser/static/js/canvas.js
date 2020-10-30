@@ -176,12 +176,20 @@ class Pan {
   // Implements command pattern for an undoable pan
   constructor(canvas, dx, dy) {
     this.canvas = canvas;
+
     // change in x position of scaled window
-    this.dx = Math.min(Math.max(-dx, -canvas.sx), // move to right edge
-      canvas.width - canvas.sWidth - canvas.sx) // move to left edge
+    // Don't move past right edge
+    dx = Math.max(-dx, -canvas.sx); 
+    // Don't move past left edge
+    dx = Math.min(dx, canvas.width - canvas.sWidth - canvas.sx) 
+    this.dx = dx;
+
     // change in y position of scaled window
-    this.dy = Math.min(Math.max(-dy, -canvas.sy), // move to top edge
-      canvas.height - canvas.sHeight - canvas.sy) // move to bottom edge
+    // Don't move past top edge
+    dy = Math.max(-dy, -canvas.sy);
+    // Don't move past bottom edge
+    dy = Math.min(dy, canvas.height - canvas.sHeight - canvas.sy)
+    this.dy = dy;  
   }
 
   pan(canvas, dx, dy) {
@@ -204,48 +212,45 @@ class Pan {
 
 class Zoom {
   constructor(canvas, dZoom) {
+    // Calculate how much canvas zooms
+    const zoom = Math.max(canvas.zoom - 10 * dZoom, canvas.zoomLimit);
+
+    // Calculate how canvas needs to pan after zooming
+    const newHeight = canvas.height * 100 / zoom;
+    const newWidth = canvas.width * 100 / zoom;
+    const oldHeight = canvas.sHeight;
+    const oldWidth = canvas.sWidth;
+    const propX = canvas.canvasPosX / canvas.scaledWidth;
+    const propY = canvas.canvasPosY / canvas.scaledHeight;
+    let dx = propX * (newWidth - oldWidth);
+    let dy = propY * (newHeight - oldHeight);
+
     this.canvas = canvas;
-    this.posX = canvas.canvasPosX;
-    this.posY = canvas.canvasPosY;
-    this.oldValue = canvas.zoom;
-    this.newValue = Math.max(canvas.zoom - 10 * dZoom, canvas.zoomLimit);
-
-  }
-
-  changeZoom(zoom) {
-    const newHeight = this.canvas.height * 100 / zoom;
-    const newWidth = this.canvas.width * 100 / zoom;
-
-    // store sWidth and sHeight to compare against for panning
-    const oldHeight = this.canvas.sHeight;
-    const oldWidth = this.canvas.sWidth;
-    this.canvas.zoom = zoom;
-    this.canvas.sHeight = newHeight;
-    this.canvas.sWidth = newWidth;
-    const propX = this.posX / this.canvas.scaledWidth;
-    const propY = this.posY / this.canvas.scaledHeight;
-    // change in x position of scaled window
-    const dx = Math.min(Math.max(propX * (oldWidth - newWidth), // no edges
-        -this.canvas.sx), // move to right edge
-      this.canvas.width - this.canvas.sWidth - this.canvas.sx) // move to left edge
-    // change in y position of scaled window
-    const dy = Math.min(Math.max(propY * (oldHeight - newHeight), // no edges
-        -this.canvas.sy), // move to top edge
-      this.canvas.height - this.canvas.sHeight - this.canvas.sy) // move to bottom edge
-    this.canvas.sx = this.canvas.sx + dx;
-    this.canvas.sy = this.canvas.sy + dy;
+    this.oldZoom = canvas.zoom;
+    this.newZoom = zoom;
+    this.pan = new Pan(canvas, dx, dy);
   }
 
   do() {
-    this.changeZoom(this.newValue);
+    // Zoom then pan
+    this.setZoom(this.newZoom);
+    actions.addAction(this.pan);
   }
 
   redo() {
-    this.do();
+    this.setZoom(this.newZoom);
   }
 
   undo() {
-    this.changeZoom(this.oldValue);
+    this.setZoom(this.oldZoom);
+  }
+
+  setZoom(zoom) {
+    const newHeight = this.canvas.height * 100 / zoom;
+    const newWidth = this.canvas.width * 100 / zoom;
+    this.canvas.zoom = zoom;
+    this.canvas.sHeight = newHeight;
+    this.canvas.sWidth = newWidth;
   }
 }
 
