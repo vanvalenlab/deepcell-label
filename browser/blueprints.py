@@ -94,7 +94,7 @@ def action(project_id, action_type):
             return jsonify({'error': 'project_id not found'}), 404
         edit = get_edit(project)
         payload = edit.dispatch_action(action_type, info)
-        project.make_new_action(action_type)
+        project.finish_action(action_type)
         project.update()
 
     except Exception as e:  # TODO: more error handling to identify problem
@@ -174,41 +174,6 @@ def redo(project_id):
     current_app.logger.debug('Redid action for project %s finished in %s s.',
                              project_id, timeit.default_timer() - start)
     return jsonify(payload)
-
-
-# @bp.route('/frame/<int:frame>/<int:project_id>')
-# def get_frame(frame, project_id):
-#     """
-#     Serve modes of frames as pngs. Send pngs and color mappings of
-#     cells to .js file.
-#     """
-#     start = timeit.default_timer()
-#     # Get project from database
-#     project = Project.get(project_id)
-#     if not project:
-#         return jsonify({'error': 'project_id not found'}), 404
-#     # Change the frame
-#     project.frame = frame
-#     project.action.x_changed = True
-#     project.action.y_changed = True
-#     project.update()
-#     # Get pngs and array from project
-#     raw_png = project.get_raw_png()
-#     label_png = project.get_label_png()
-#     label_arr = project.get_label_arr()
-
-#     # Create payload
-#     encode = lambda x: base64.encodebytes(x.read()).decode()
-#     payload = {
-#         'raw': f'data:image/png;base64,{encode(raw_png)}',
-#         'segmented': f'data:image/png;base64,{encode(label_png)}',
-#         'seg_arr': label_arr
-#     }
-
-#     current_app.logger.debug('Got frame %s of project "%s" in %s s.',
-#                              frame, project_id, timeit.default_timer() - start)
-
-#     return jsonify(payload)
 
 
 @bp.route('/load/<filename>', methods=['POST'])
