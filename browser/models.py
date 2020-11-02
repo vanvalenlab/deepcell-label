@@ -714,28 +714,31 @@ class Action(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
                            primary_key=True, nullable=False, autoincrement=False)
     action_id = db.Column(db.Integer, primary_key=True, nullable=False)
-    # Action to restore upon undo
-    prev_action_id = db.Column(db.Integer)
-    # Action to restore upon redo
-    next_action_id = db.Column(db.Integer)
-    # Name of the previous action (e.g. "handle_draw")
-    action = db.Column(db.String)
-    # Flags to track what changed (what needs to be sent in the payload)
+    actionTime = db.Column(db.TIMESTAMP, nullable=True)  # Set when finishing an action
+    action = db.Column(db.String)  # Name of the previous action (e.g. "handle_draw")
+    prev_action_id = db.Column(db.Integer)  # Action to restore upon undo
+    next_action_id = db.Column(db.Integer)  # Action to restore upon redo
+    # Flags to track what changed & needs to be included in payloads for undo/redo
     y_changed = db.Column(db.Boolean, default=False)
     labels_changed = db.Column(db.Boolean, default=False)
+    # Label frames before an action
+    # When undoing an action, we restore the frames to this stored state
     frames = db.relationship('FrameHistory', backref='action',
                              primaryjoin="and_("
                              "Action.action_id == foreign(FrameHistory.action_id), "
                              "Action.project_id == FrameHistory.project_id)",
-                             # Frame histories must exist within a action history
+                             # Frame histories only exist within a action history
                              cascade='save-update, merge, delete, delete-orphan')
+    # Label info before an action
     # Pickles an ORM row from the Labels table
     labels = db.Column(db.PickleType)
 
     def __init__(self, project):
         """
-        Called when completing an action and
-        creating a new, empty action row for the next action."""
+        Must be called after a Project is persisted,
+        i.e. we need to commit a Project before initializing the first action.
+        Otherwise, the data in the action references a transient Project.
+        """
         self.project = project
         self.action_id = project.next_action_id
         self.prev_action_id = project.action_id
