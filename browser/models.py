@@ -18,11 +18,8 @@ from flask import current_app
 from matplotlib import pyplot as plt
 import numpy as np
 from skimage.exposure import rescale_intensity
-from sqlalchemy import event
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.mutable import Mutable
-from sqlalchemy.orm import column_property
-from sqlalchemy.sql import select, func
 
 from helpers import is_npz_file, is_trk_file
 from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
