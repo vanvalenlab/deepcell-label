@@ -252,7 +252,7 @@ class Project(db.Model):
         current_app.logger.debug('Updated project %s in %ss.',
                                  self.id, timeit.default_timer() - start)
 
-    def make_new_action(self, action, session=None):
+    def finish_action(self, action, session=None):
         """
         Creates a new action for a Project and links it the previous action.
         Should be called before update() if the project data has been

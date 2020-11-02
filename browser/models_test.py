@@ -92,12 +92,12 @@ def test_create(mocker, db_session):
     assert project.next_action_id is not None
 
 
-def test_make_new_action(project, db_session):
+def test_finish_action(project, db_session):
     # Store action info before creating new action
     prev_action = project.action
     next_action_id = project.next_action_id
 
-    project.make_new_action(session=db_session)
+    project.finish_action(session=db_session)
 
     assert prev_action is not project.action
     assert prev_action.next_action_id == project.action_id
