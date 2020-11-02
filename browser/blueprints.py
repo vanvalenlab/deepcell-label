@@ -94,7 +94,7 @@ def action(project_id, action_type):
             return jsonify({'error': 'project_id not found'}), 404
         edit = get_edit(project)
         payload = edit.dispatch_action(action_type, info)
-        project.make_new_action()
+        project.make_new_action(action_type)
         project.update()
 
     except Exception as e:  # TODO: more error handling to identify problem

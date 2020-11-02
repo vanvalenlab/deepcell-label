@@ -105,7 +105,6 @@ def test_make_new_action(project, db_session):
     assert project.next_action_id != next_action_id
     assert project.action.next_action_id is None
 
-    assert not project.action.x_changed
     assert not project.action.y_changed
     assert not project.action.labels_changed
 

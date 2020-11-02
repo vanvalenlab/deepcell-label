@@ -252,14 +252,19 @@ class Project(db.Model):
         current_app.logger.debug('Updated project %s in %ss.',
                                  self.id, timeit.default_timer() - start)
 
-    def make_new_action(self, session=None):
+    def make_new_action(self, action, session=None):
         """
         Creates a new action for a Project and links it the previous action.
+        Should be called before update() if the project data has been
+        edited by an action.
+
+        Args:
+            action (str): name of the completed action (e.g. "handle_draw")
+            session (sqlalchemy.orm.session.Session): included to mock the session for testing
         """
         start = timeit.default_timer()
         session = session or db.session
-        # TODO: record the action type (e.g. "handle_draw") to store in action history
-
+        self.action.action = action
         # Only keep frames in the action history if edited
         self.action.frames = [frame for frame in self.action.frames
                               if self.label_frames[frame.frame_id] in db.session.dirty]
@@ -275,6 +280,7 @@ class Project(db.Model):
         self.next_action_id += 1
         session.add(new_action)
 
+        # Record timestamps of actions
         if not self.firstAction:
             self.firstAction = db.func.current_timestamp()
         self.lastAction = db.func.current_timestamp()
@@ -310,8 +316,7 @@ class Project(db.Model):
         db.session.commit()
 
         # Use the changed flags for the action we are undoing
-        payload = self.make_payload(x=prev_action.x_changed,
-                                    y=prev_action.y_changed,
+        payload = self.make_payload(y=prev_action.y_changed,
                                     labels=prev_action.labels_changed)
         current_app.logger.debug('Undo action %s project %s in %ss.',
                                  self.action_id, self.id, timeit.default_timer() - start)
@@ -341,8 +346,7 @@ class Project(db.Model):
             db.session.add(self.labels)
 
         # Make the payload using the _changed flags for the action we are redoing
-        payload = self.make_payload(x=self.action.x_changed,
-                                    y=self.action.y_changed,
+        payload = self.make_payload(y=self.action.y_changed,
                                     labels=self.action.labels_changed)
 
         self.action_id = next_action.action_id
@@ -715,8 +719,8 @@ class Action(db.Model):
     # Action to restore upon redo
     next_action_id = db.Column(db.Integer)
     # Name of the previous action (e.g. "handle_draw")
-    prev_action = db.Column(db.String)
-    x_changed = db.Column(db.Boolean, default=False)
+    action = db.Column(db.String)
+    # Flags to track what changed (what needs to be sent in the payload)
     y_changed = db.Column(db.Boolean, default=False)
     labels_changed = db.Column(db.Boolean, default=False)
     frames = db.relationship('FrameHistory', backref='action',

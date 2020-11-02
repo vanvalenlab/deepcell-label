@@ -161,26 +161,25 @@ class BaseEdit(object):
         """
         return self.project.scale_factor
 
-    def dispatch_action(self, action_type, info):
+    def dispatch_action(self, action, info):
         """
         Call an action method based on an action type.
 
         Args:
-            action_type (str): name of action method after "action_"
-                               e.g. "handle_draw" to call "action_handle_draw"
+            action (str): name of action method after "action_"
+                          e.g. "handle_draw" to call "action_handle_draw"
             info (dict): key value pairs with arguments for action
 
         Returns:
             dict: payload to send to frontend application
         """
-        attr_name = 'action_{}'.format(action_type)
+        attr_name = 'action_{}'.format(action)
         try:
-            action = getattr(self, attr_name)
-            action(**info)
+            action_fn = getattr(self, attr_name)
+            action_fn(**info)
         except AttributeError:
-            raise ValueError('Invalid action "{}"'.format(action_type))
-        return self.project.make_payload(x=self.action.x_changed,
-                                         y=self.action.y_changed,
+            raise ValueError('Invalid action "{}"'.format(action))
+        return self.project.make_payload(y=self.action.y_changed,
                                          labels=self.action.labels_changed)
 
     def add_cell_info(self, add_label, frame):
