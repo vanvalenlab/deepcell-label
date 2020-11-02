@@ -97,7 +97,7 @@ def test_finish_action(project, db_session):
     prev_action = project.action
     next_action_id = project.next_action_id
 
-    project.finish_action(session=db_session)
+    project.finish_action(action_name='test', session=db_session)
 
     assert prev_action is not project.action
     assert prev_action.next_action_id == project.action_id
@@ -220,26 +220,6 @@ def test_finish_project(mocker, db_session):
         assert raw.frame is None
         assert rgb.frame is None
         assert label.frame is None
-        assert label.lastUpdate is not None
-
-
-def test_update_label_frame(mocker, db_session):
-    """Test updating label frames."""
-    # create project
-    def load(self, *args):
-        return {'raw': np.zeros((1, 1, 1, 1)), 'annotated': np.zeros((1, 1, 1, 1))}
-    mocker.patch('models.Project.load', load)
-    project = models.Project.create(
-        filename='filename',
-        input_bucket='input_bucket',
-        output_bucket='output_bucket',
-        path='path')
-
-    # Update label frame
-    for label_frame in project.label_frames:
-        label_frame.update()
-        assert label_frame.numUpdates > 0
-        assert label_frame.firstUpdate is not None
 
 
 def test_raw_frame_init(project):
@@ -265,11 +245,6 @@ def test_label_frame_init(project):
     for frame in label_frames:
         assert len(frame.frame.shape) == 3  # Height, width, features
         assert frame.frame_id is not None
-        assert frame.updatedAt is not None
-        assert frame.numUpdates == 0
-        # Must be set by methods
-        assert frame.firstUpdate is None
-        assert frame.lastUpdate is None
 
 
 def test_frames_init(project):
