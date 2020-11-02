@@ -100,10 +100,10 @@ class BaseEdit(object):
         1. select and edit the image currently on display
         3. make changes to the label metadata
         4. assign the image to the frame
-    
+
     NOTE: Actions must directly assign changes to the frame attribute
     for the MutableNdarray class to detect the change and for the database to persist the change.
-    Changes to a view of a MutableNdarray will not be detected by the original 
+    Changes to a view of a MutableNdarray will not be detected by the original
     TODO: modify MutableNdarray class to share changed() signals from arrays view
     """
 
