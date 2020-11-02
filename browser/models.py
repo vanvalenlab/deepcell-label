@@ -391,6 +391,40 @@ class Project(db.Model):
             max_label = int(np.max(self.labels.cell_ids[self.feature]))
         return max_label
 
+    def make_payload(self, x=False, y=False, labels=False):
+        """
+        Creates a payload to send to the front-end after completing an action.
+
+        Args:
+            x (bool): when True, payload includes raw image PNG
+            y (bool): when True, payload includes labeled image data
+                           sends both a PNG and an array of where each label is
+            labels (bool): when True, payload includes the label "tracks",
+                                or the frames that each label appears in (e.g. [0-10, 15-20])
+
+        Returns:
+            dict: payload with image data and label tracks
+        """
+        if x or y:
+            img_payload = {}
+            encode = lambda x: base64.encodebytes(x.read()).decode()
+            if x:
+                raw_png = self._get_raw_png()
+                img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
+            if y:
+                label_png = self._get_label_png()
+                img_payload['segmented'] = f'data:image/png;base64,{encode(label_png)}'
+                img_payload['seg_arr'] = self._get_label_arr()
+        else:
+            img_payload = False
+
+        if labels:
+            tracks = self.labels.readable_tracks
+        else:
+            tracks = False
+
+        return {'imgs': img_payload, 'tracks': tracks}
+
     def _get_label_arr(self):
         """
         Returns:
@@ -437,40 +471,6 @@ class Project(db.Model):
                          vmax=None,
                          cmap='cubehelix')
         return raw_png
-
-    def make_payload(self, x=False, y=False, labels=False):
-        """
-        Creates a payload to send to the front-end after completing an action.
-
-        Args:
-            x (bool): when True, payload includes raw image PNG
-            y (bool): when True, payload includes labeled image data
-                           sends both a PNG and an array of where each label is
-            labels (bool): when True, payload includes the label "tracks",
-                                or the frames that each label appears in (e.g. [0-10, 15-20])
-
-        Returns:
-            dict: payload with image data and label tracks
-        """
-        if x or y:
-            img_payload = {}
-            encode = lambda x: base64.encodebytes(x.read()).decode()
-            if x:
-                raw_png = self._get_raw_png()
-                img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
-            if y:
-                label_png = self._get_label_png()
-                img_payload['segmented'] = f'data:image/png;base64,{encode(label_png)}'
-                img_payload['seg_arr'] = self._get_label_arr()
-        else:
-            img_payload = False
-
-        if labels:
-            tracks = self.labels.readable_tracks
-        else:
-            tracks = False
-
-        return {'imgs': img_payload, 'tracks': tracks}
 
 
 class Labels(db.Model):
