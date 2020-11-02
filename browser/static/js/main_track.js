@@ -891,7 +891,6 @@ function startCaliban(filename, settings) {
 
   load_file(filename);
   prepare_canvas();
-  // fetch_and_render_frame();
 
   brush = new Brush(scale=scale, height=dimensions[1], width=dimensions[0], pad = padding);
 }
