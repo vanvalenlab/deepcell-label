@@ -71,6 +71,7 @@ def test_get(mocker, db_session):
     found_project = models.Project.get(valid_id)
     assert found_project == project
 
+
 def test_create(mocker, db_session):
     """
     Test creating a row in the Project table.
@@ -90,6 +91,7 @@ def test_create(mocker, db_session):
     assert project.action_id is not None
     assert project.next_action_id is not None
 
+
 def test_make_new_action(project, db_session):
     # Store action info before creating new action
     prev_action = project.action
@@ -106,6 +108,7 @@ def test_make_new_action(project, db_session):
     assert not project.action.x_changed
     assert not project.action.y_changed
     assert not project.action.labels_changed
+
 
 def test_undo(project):
     """Test where we move in the action history when undoing."""
@@ -134,6 +137,7 @@ def test_redo(project):
     else:
         assert project.action_id == action.next_action_id
     assert project.next_action_id == next_action_id
+
 
 def test_get_label_array(project):
     """

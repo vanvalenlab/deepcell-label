@@ -339,11 +339,11 @@ class Project(db.Model):
         payload = self.make_payload(x=self.action.x_changed,
                                     y=self.action.y_changed,
                                     labels=self.action.labels_changed)
-        
+
         self.action_id = next_action.action_id
         db.session.commit()
         current_app.logger.debug('Redo action %s project %s in %ss.',
-                                 self.action.prev_action_id, self.id, 
+                                 self.action.prev_action_id, self.id,
                                  timeit.default_timer() - start)
         return payload
 

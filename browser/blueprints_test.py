@@ -218,6 +218,7 @@ def test_shortcut(client):
     assert response.status_code == 400
     assert 'error' in response.json
 
+
 def test_undo(client, mocker):
     # Mock out load from S3 bucket
     def load(self, *args):
