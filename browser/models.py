@@ -259,11 +259,18 @@ class Project(db.Model):
         """
         Creates a new action for a Project and links it the previous action.
         """
-        session = session or db.session
         start = timeit.default_timer()
-        # TODO: Identify and record the edited frames/label metadata
-        # Create a new row in the action history for the next action
+        session = session or db.session
         # TODO: record the action type (e.g. "handle_draw") to store in action history
+
+        # Only keep frames in the action history if edited
+        self.action.frames = [frame for frame in self.action.frames
+                              if self.label_frames[frame.frame_id] in db.session.dirty]
+        # Only keep labels in action history if edited
+        if self.labels not in db.session.dirty:
+            self.action.labels = None
+
+        # Create a new row in the action history for the next action
         action = self.action
         new_action = Action(project=self)
         action.next_action_id = new_action.action_id
@@ -273,7 +280,6 @@ class Project(db.Model):
         current_app.logger.debug('Initialized action %s project %s in %ss.',
                                  self.action_id, self.id,
                                  timeit.default_timer() - start)
-        session.commit()
 
     def undo(self):
         """
@@ -286,18 +292,22 @@ class Project(db.Model):
         if self.action.prev_action_id is None:
             return
         prev_action = self.actions[self.action.prev_action_id]
-        # Restore label frames
-        # Assumes that we store every frame before every action
-        # TODO: only store/restore edited frames
-        for frame, prev_frame in zip(self.label_frames, prev_action.frames):
-            frame.frame = prev_frame.frame
-        # Restore label metadata
-        # TODO: only store/restore if changed
-        db.session.expunge(self.labels)
-        self.labels = prev_action.labels
-        db.session.add(self.labels)
+
+        # Restore edited label frames
+        for prev_frame in prev_action.frames:
+            frame_id = prev_frame.frame_id
+            frame = prev_frame.frame
+            self.label_frames[frame_id].frame = frame
+        # Restore edited label info
+        if prev_action.labels is not None:
+            db.session.expunge(self.labels)
+            self.labels = prev_action.labels
+            db.session.add(self.labels)
+
         self.action_id = prev_action.action_id
         db.session.commit()
+
+        # Use the changed flags for the action we are undoing
         payload = self.make_payload(x=prev_action.x_changed,
                                     y=prev_action.y_changed,
                                     labels=prev_action.labels_changed)
@@ -314,27 +324,30 @@ class Project(db.Model):
         """
         start = timeit.default_timer()
         if self.action.next_action_id is None:
-            # TODO: error handling when there is no action to redo
             return
         next_action = self.actions[self.action.next_action_id]
-        # Restore label frames
-        # Assumes that we store every frame before every action
-        # TODO: only store and restore edited frames
-        for frame, next_frame in zip(self.label_frames, next_action.frames):
-            frame.frame = next_frame.frame
-        # Restore label metadata
-        # TODO: only store/restore if changed
-        db.session.expunge(self.labels)
-        self.labels = next_action.labels
-        db.session.add(self.labels)
-        # Make the payload using the _changed flags for the current action
+
+        # Restore edited label frames
+        for next_frame in next_action.frames:
+            frame_id = next_frame.frame_id
+            frame = next_frame.frame
+            self.label_frames[frame_id].frame = frame
+        # Restore edited label info
+        if next_action.labels is not None:
+            db.session.expunge(self.labels)
+            self.labels = next_action.labels
+            db.session.add(self.labels)
+
+        # Make the payload using the _changed flags for the action we are redoing
         payload = self.make_payload(x=self.action.x_changed,
                                     y=self.action.y_changed,
                                     labels=self.action.labels_changed)
+        
         self.action_id = next_action.action_id
         db.session.commit()
         current_app.logger.debug('Redo action %s project %s in %ss.',
-                                 self.action_id, self.id, timeit.default_timer() - start)
+                                 self.action.prev_action_id, self.id, 
+                                 timeit.default_timer() - start)
         return payload
 
     def finish(self):
@@ -722,7 +735,9 @@ class Action(db.Model):
     frames = db.relationship('FrameHistory', backref='action',
                              primaryjoin="and_("
                              "Action.action_id == foreign(FrameHistory.action_id), "
-                             "Action.project_id == FrameHistory.project_id)")
+                             "Action.project_id == FrameHistory.project_id)",
+                             # Frame histories must exist within a action history
+                             cascade='save-update, merge, delete, delete-orphan')
     # Pickles an ORM row from the Labels table
     labels = db.Column(db.PickleType)
 
