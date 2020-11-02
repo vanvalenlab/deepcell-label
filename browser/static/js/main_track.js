@@ -691,15 +691,15 @@ function render_image_display() {
 
 function fetch_and_render_frame() {
   $.ajax({
-    type: 'GET',
-    url: `${document.location.origin}/frame/${current_frame}/${project_id}`,
+    type: 'POST',
+    url: `${document.location.origin}/changedisplay/${project_id}/frame/${current_frame}`,
     success: function(payload) {
       // load new value of seg_array
       // array of arrays, contains annotation data for frame
-      seg_array = payload.seg_arr;
-      seg_image.src = payload.segmented;
+      seg_array = payload.imgs.seg_arr;
+      seg_image.src = payload.imgs.segmented;
       seg_image.onload = render_image_display;
-      raw_image.src = payload.raw;
+      raw_image.src = payload.imgs.raw;
       raw_image.onload = render_image_display;
 
       // actions must start and end on the same frame
@@ -715,7 +715,8 @@ function load_file(file) {
     url: `${document.location.origin}/load/${file}`,
     success: function (payload) {
       max_frames = payload.max_frames;
-      scale = payload.screen_scale;
+      //scale = payload.screen_scale;
+      scale = 2;
       dimensions = [scale * payload.dimensions[0], scale * payload.dimensions[1]];
       tracks = payload.tracks[0];
 
@@ -724,6 +725,12 @@ function load_file(file) {
       project_id = payload.project_id;
       $('#canvas').get(0).width = dimensions[0] + 2*padding;
       $('#canvas').get(0).height = dimensions[1] + 2*padding;
+      
+      seg_array = payload.imgs.seg_arr;
+      seg_image.src = payload.imgs.segmented;
+      seg_image.onload = render_image_display;
+      raw_image.src = payload.imgs.raw;
+      raw_image.onload = render_image_display;
     },
     async: false
   });
@@ -884,7 +891,7 @@ function startCaliban(filename, settings) {
 
   load_file(filename);
   prepare_canvas();
-  fetch_and_render_frame();
+  // fetch_and_render_frame();
 
   brush = new Brush(scale=scale, height=dimensions[1], width=dimensions[0], pad = padding);
 }
