@@ -60,7 +60,7 @@ class ChangeDisplay(object):
             raise ValueError('Frame {} is outside of range [0, {}].'.format(
                 frame, self.num_frames - 1))
         self.project.frame = frame
-        return self.project.make_payload(send_x=True, send_y=True)
+        return self.project.make_payload(x=True, y=True)
 
     def change_channel(self, channel):
         """
@@ -74,7 +74,7 @@ class ChangeDisplay(object):
             raise ValueError('Channel {} is outside of range [0, {}].'.format(
                 channel, self.num_channels - 1))
         self.project.channel = channel
-        return self.project.make_payload(send_x=True)
+        return self.project.make_payload(x=True)
 
     def change_feature(self, feature):
         """
@@ -88,7 +88,7 @@ class ChangeDisplay(object):
             raise ValueError('Feature {} is outside of range [0, {}].'.format(
                 feature, self.num_features - 1))
         self.project.feature = feature
-        return self.project.make_payload(send_y=True)
+        return self.project.make_payload(y=True)
 
 
 class BaseEdit(object):
@@ -179,9 +179,9 @@ class BaseEdit(object):
             action(**info)
         except AttributeError:
             raise ValueError('Invalid action "{}"'.format(action_type))
-        return self.project.make_payload(send_x=self.action.x_changed,
-                                         send_y=self.action.y_changed,
-                                         send_labels=self.action.labels_changed)
+        return self.project.make_payload(x=self.action.x_changed,
+                                         y=self.action.y_changed,
+                                         labels=self.action.labels_changed)
 
     def add_cell_info(self, add_label, frame):
         raise NotImplementedError('add_cell_info is not implemented in BaseEdit')

@@ -246,7 +246,7 @@ def load(filename):
     project = Project.create(filename, input_bucket, output_bucket, full_path)
     project.rgb = rgb
     # Make payload with raw image data, labeled image data, and label tracks
-    payload = project.make_payload(send_x=True, send_y=True, send_labels=True)
+    payload = project.make_payload(x=True, y=True, labels=True)
     # Add other attributes to initialize frontend variables
     payload['max_frames'] = project.num_frames
     payload['project_id'] = project.id

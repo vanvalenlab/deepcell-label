@@ -255,10 +255,11 @@ class Project(db.Model):
                                  self.action_id, self.id,
                                  timeit.default_timer() - start)
 
-    def make_new_action(self):
+    def make_new_action(self, session=None):
         """
         Creates a new action for a Project and links it the previous action.
         """
+        session = session or db.session
         start = timeit.default_timer()
         # TODO: Identify and record the edited frames/label metadata
         # Create a new row in the action history for the next action
@@ -268,11 +269,11 @@ class Project(db.Model):
         action.next_action_id = new_action.action_id
         self.action_id = new_action.action_id
         self.next_action_id += 1
-        db.session.add(new_action)
+        session.add(new_action)
         current_app.logger.debug('Initialized action %s project %s in %ss.',
                                  self.action_id, self.id,
                                  timeit.default_timer() - start)
-        db.session.commit()
+        session.commit()
 
     def undo(self):
         """
@@ -297,9 +298,9 @@ class Project(db.Model):
         db.session.add(self.labels)
         self.action_id = prev_action.action_id
         db.session.commit()
-        payload = self.make_payload(send_x=prev_action.x_changed,
-                                    send_y=prev_action.y_changed,
-                                    send_labels=prev_action.labels_changed)
+        payload = self.make_payload(x=prev_action.x_changed,
+                                    y=prev_action.y_changed,
+                                    labels=prev_action.labels_changed)
         current_app.logger.debug('Undo action %s project %s in %ss.',
                                  self.action_id, self.id, timeit.default_timer() - start)
         return payload
@@ -327,9 +328,9 @@ class Project(db.Model):
         self.labels = next_action.labels
         db.session.add(self.labels)
         # Make the payload using the _changed flags for the current action
-        payload = self.make_payload(send_x=self.action.x_changed,
-                                    send_y=self.action.y_changed,
-                                    send_labels=self.action.labels_changed)
+        payload = self.make_payload(x=self.action.x_changed,
+                                    y=self.action.y_changed,
+                                    labels=self.action.labels_changed)
         self.action_id = next_action.action_id
         db.session.commit()
         current_app.logger.debug('Redo action %s project %s in %ss.',
@@ -423,34 +424,34 @@ class Project(db.Model):
                          cmap='cubehelix')
         return raw_png
 
-    def make_payload(self, send_x=False, send_y=False, send_labels=False):
+    def make_payload(self, x=False, y=False, labels=False):
         """
         Creates a payload to send to the front-end after completing an action.
 
         Args:
-            send_x (bool): when True, payload includes raw image PNG
-            send_y (bool): when True, payload includes labeled image data
+            x (bool): when True, payload includes raw image PNG
+            y (bool): when True, payload includes labeled image data
                            sends both a PNG and an array of where each label is
-            send_labels (bool): when True, payload includes the label "tracks",
+            labels (bool): when True, payload includes the label "tracks",
                                 or the frames that each label appears in (e.g. [0-10, 15-20])
 
         Returns:
             dict: payload with image data and label tracks
         """
-        if send_x or send_y:
+        if x or y:
             img_payload = {}
             encode = lambda x: base64.encodebytes(x.read()).decode()
-            if send_x:
+            if x:
                 raw_png = self.get_raw_png()
                 img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
-            if send_y:
+            if y:
                 label_png = self.get_label_png()
                 img_payload['segmented'] = f'data:image/png;base64,{encode(label_png)}'
                 img_payload['seg_arr'] = self.get_label_arr()
         else:
             img_payload = False
 
-        if send_labels:
+        if labels:
             tracks = self.labels.readable_tracks
         else:
             tracks = False

@@ -18,10 +18,25 @@ def test_project_init(project):
     assert project.id is not None
     assert project.createdAt is not None
     assert project.finished is None  # None until project is done
+    assert project.filename is not None 
+    assert project.path is not None 
+    assert project.output_bucket is not None 
+    assert project.height is not None 
+    assert project.width is not None 
+    assert project.num_frames is not None 
+    assert project.num_channels is not None 
+    assert project.num_features is not None 
+    assert project.rgb is not None 
+    assert project.frame is not None 
+    assert project.channel is not None 
+    assert project.feature is not None 
+    assert project.scale_factor is not None 
+    assert project.colormap is not None 
 
     # Check relationship columns have been made
     assert project.labels is not None
     assert project.raw_frames is not None
+    assert project.rgb_frames is not None
     assert project.label_frames is not None
 
 
@@ -49,6 +64,69 @@ def test_get(mocker, db_session):
     found_project = models.Project.get(valid_id)
     assert found_project == project
 
+def test_create(mocker, db_session):
+    """
+    Test creating a row in the Project table.
+    """
+    # create project
+    def load(self, *args):
+        return {'raw': np.zeros((1, 1, 1, 1)), 'annotated': np.zeros((1, 1, 1, 1))}
+    mocker.patch('models.Project.load', load)
+    project = models.Project.create(
+        filename='filename',
+        input_bucket='input_bucket',
+        output_bucket='output_bucket',
+        path='path')
+
+    # Test that an action has been initialized
+    assert project.action is not None
+    assert project.action_id is not None
+    assert project.next_action_id is not None
+
+def test_make_new_action(project, db_session):
+    # Store action info before creating new action
+    prev_action = project.action
+    next_action_id = project.next_action_id
+
+    project.make_new_action(session=db_session)
+
+    assert prev_action is not project.action
+    assert prev_action.next_action_id == project.action_id
+    assert project.action_id == project.action.action_id
+    assert project.next_action_id != next_action_id
+    assert project.action.next_action_id is None
+
+    assert not project.action.x_changed
+    assert not project.action.y_changed
+    assert not project.action.labels_changed
+
+def test_undo(project):
+    """Test where we move in the action history when undoing."""
+    action = project.action
+    next_action_id = project.next_action_id
+
+    project.undo()
+
+    if action.prev_action_id is None:
+        assert project.action is action
+    else:
+        assert project.action_id == action.prev_action_id
+    assert project.next_action_id == next_action_id
+    
+
+def test_redo(project):
+    """Test where we move in the action history when redoing."""
+
+    action = project.action
+    next_action_id = project.next_action_id
+
+    project.redo()
+
+    if action.next_action_id is None:
+        assert project.action is action
+    else:
+        assert project.action_id == action.next_action_id
+    assert project.next_action_id == next_action_id
 
 def test_get_label_array(project):
     """
@@ -122,7 +200,7 @@ def test_finish_project(mocker, db_session):
     project.finish()
     found_project = models.Project.get(project.id)
     assert found_project.finished is not None
-    # test finish state
+    # test finish Labels
     assert found_project.labels.cell_ids is None
     assert found_project.labels.cell_info is None
     # test finish frames
@@ -200,8 +278,8 @@ def test_frames_init(project):
         assert raw_frame.project_id == rgb_frame.project_id
 
 
-def test_state_init(project):
-    """Test constructing the state for a project."""
+def test_labels_init(project):
+    """Test constructing the Labels row for a Project."""
     raw_frames = project.raw_frames
     raw_frame = raw_frames[0].frame
     label_frames = project.label_frames
