@@ -267,9 +267,6 @@ class Project(db.Model):
             raw_frame.finish()
         for rgb_frame in self.rgb_frames:
             rgb_frame.finish()
-        # Clear ActionHistory
-        for action in self.actions:
-            action.finish()
         self.finished = db.func.current_timestamp()
         db.session.commit()
         logger.debug('Finished project with ID = "%s" in %ss.',
@@ -739,11 +736,6 @@ class Action(db.Model):
         self.frames = [FrameHistory(project=project, frame=frame)
                        for frame in project.label_frames]
 
-    def finish(self):
-        for frame in self.frames:
-            frame.finish()
-        self.labels = None
-
 
 class FrameHistory(db.Model):
     """
@@ -764,9 +756,6 @@ class FrameHistory(db.Model):
         self.project = project
         self.frame = frame.frame
         self.frame_id = frame.frame_id
-
-    def finish(self):
-        self.frame = None
 
 
 def consecutive(data, stepsize=1):
