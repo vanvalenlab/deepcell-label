@@ -18,20 +18,27 @@ def test_project_init(project):
     assert project.id is not None
     assert project.createdAt is not None
     assert project.finished is None  # None until project is done
-    assert project.filename is not None 
-    assert project.path is not None 
-    assert project.output_bucket is not None 
-    assert project.height is not None 
-    assert project.width is not None 
-    assert project.num_frames is not None 
-    assert project.num_channels is not None 
-    assert project.num_features is not None 
-    assert project.rgb is not None 
-    assert project.frame is not None 
-    assert project.channel is not None 
-    assert project.feature is not None 
-    assert project.scale_factor is not None 
-    assert project.colormap is not None 
+    assert project.filename is not None
+    assert project.path is not None
+    assert project.output_bucket is not None
+    assert project.rgb is not None
+    assert project.frame is not None
+    assert project.channel is not None
+    assert project.feature is not None
+    assert project.scale_factor is not None
+    assert project.colormap is not None
+
+    # Check column correctness
+    raw_frames = project.raw_frames
+    raw_frame = raw_frames[0].frame
+    label_frames = project.label_frames
+    label_frame = label_frames[0].frame
+
+    assert raw_frame.shape[-1] == project.num_channels
+    assert label_frame.shape[-1] == project.num_features
+    assert len(raw_frames) == project.num_frames
+    assert raw_frame.shape[0] == project.height
+    assert raw_frame.shape[1] == project.width
 
     # Check relationship columns have been made
     assert project.labels is not None
@@ -112,7 +119,7 @@ def test_undo(project):
     else:
         assert project.action_id == action.prev_action_id
     assert project.next_action_id == next_action_id
-    
+
 
 def test_redo(project):
     """Test where we move in the action history when redoing."""
@@ -280,16 +287,7 @@ def test_frames_init(project):
 
 def test_labels_init(project):
     """Test constructing the Labels row for a Project."""
-    raw_frames = project.raw_frames
-    raw_frame = raw_frames[0].frame
-    label_frames = project.label_frames
-    label_frame = label_frames[0].frame
     labels = project.labels
-    assert raw_frame.shape[-1] == project.num_channels
-    assert label_frame.shape[-1] == project.num_features
-    assert len(raw_frames) == project.num_frames
-    assert raw_frame.shape[0] == project.height
-    assert raw_frame.shape[1] == project.width
 
     assert len(labels.cell_ids) == project.num_features
     assert len(labels.cell_info) == project.num_features
