@@ -250,6 +250,31 @@ class Project(db.Model):
         current_app.logger.debug('Updated project %s in %ss.',
                                  self.id, timeit.default_timer() - start)
 
+    def finish(self):
+        """
+        Complete a project and its associated objects.
+        Sets the PickleType columns to None.
+        """
+        start = timeit.default_timer()
+        self.finished = db.func.current_timestamp()
+        self.colormap = None
+        # Clear label metadata
+        self.labels.finish()
+        # Clear frames
+        for label_frame in self.label_frames:
+            label_frame.finish()
+        for raw_frame in self.raw_frames:
+            raw_frame.finish()
+        for rgb_frame in self.rgb_frames:
+            rgb_frame.finish()
+        # Clear ActionHistory
+        for action in self.actions:
+            action.finish()
+        self.finished = db.func.current_timestamp()
+        db.session.commit()
+        logger.debug('Finished project with ID = "%s" in %ss.',
+                     self.id, timeit.default_timer() - start)
+
     def finish_action(self, action_name, session=None):
         """
         Creates a new action for a Project and links it the previous action.
@@ -350,31 +375,6 @@ class Project(db.Model):
                                  timeit.default_timer() - start)
         return payload
 
-    def finish(self):
-        """
-        Complete a project and its associated objects.
-        Sets the PickleType columns to None.
-        """
-        start = timeit.default_timer()
-        self.finished = db.func.current_timestamp()
-        self.colormap = None
-        # Clear label metadata
-        self.labels.finish()
-        # Clear frames
-        for label_frame in self.label_frames:
-            label_frame.finish()
-        for raw_frame in self.raw_frames:
-            raw_frame.finish()
-        for rgb_frame in self.rgb_frames:
-            rgb_frame.finish()
-        # Clear ActionHistory
-        for action in self.actions:
-            action.finish()
-        self.finished = db.func.current_timestamp()
-        db.session.commit()
-        logger.debug('Finished project with ID = "%s" in %ss.',
-                     self.id, timeit.default_timer() - start)
-
     def get_max_label(self):
         """
         Get the highest label in use in currently-viewed feature.
@@ -391,7 +391,7 @@ class Project(db.Model):
             max_label = int(np.max(self.labels.cell_ids[self.feature]))
         return max_label
 
-    def get_label_arr(self):
+    def _get_label_arr(self):
         """
         Returns:
             list: nested list of labels at each positions, with negative label outlines.
@@ -401,7 +401,7 @@ class Project(db.Model):
         label_arr = label_frame.frame[..., self.feature]
         return add_outlines(label_arr).tolist()
 
-    def get_label_png(self):
+    def _get_label_png(self):
         """
         Returns:
             BytesIO: returns the current label frame as a .png
@@ -415,7 +415,7 @@ class Project(db.Model):
                            cmap=self.colormap)
         return label_png
 
-    def get_raw_png(self):
+    def _get_raw_png(self):
         """
         Returns:
             BytesIO: contains the current raw frame as a .png
@@ -456,12 +456,12 @@ class Project(db.Model):
             img_payload = {}
             encode = lambda x: base64.encodebytes(x.read()).decode()
             if x:
-                raw_png = self.get_raw_png()
+                raw_png = self._get_raw_png()
                 img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
             if y:
-                label_png = self.get_label_png()
+                label_png = self._get_label_png()
                 img_payload['segmented'] = f'data:image/png;base64,{encode(label_png)}'
-                img_payload['seg_arr'] = self.get_label_arr()
+                img_payload['seg_arr'] = self._get_label_arr()
         else:
             img_payload = False
 

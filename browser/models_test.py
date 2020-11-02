@@ -142,7 +142,7 @@ def test_get_label_array(project):
     """
     Test outlined label arrays to send to the front-end.
     """
-    label_arr = project.get_label_arr()
+    label_arr = project._get_label_arr()
     assert len(label_arr) == project.height
     for row in label_arr:
         assert len(row) == project.width
@@ -156,7 +156,7 @@ def test_get_label_png(project):
     """
     Test label frame PNGs to send to the front-end.
     """
-    label_png = project.get_label_png()
+    label_png = project._get_label_png()
     assert type(label_png) is io.BytesIO
     expected_frame = project.label_frames[project.frame].frame[..., project.feature]
     expected_frame = np.ma.masked_equal(expected_frame, 0)
@@ -171,7 +171,7 @@ def test_get_raw_png(project):
     """
     Test raw frame PNGs to send to the front-end.
     """
-    raw_png = project.get_raw_png()
+    raw_png = project._get_raw_png()
     assert type(raw_png) is io.BytesIO
     if project.rgb:
         expected_frame = project.rgb_frames[project.frame].frame
