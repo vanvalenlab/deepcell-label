@@ -74,6 +74,8 @@ class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     createdAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now())
     finished = db.Column(db.TIMESTAMP)
+    firstAction = db.Column(db.TIMESTAMP)
+    lastAction = db.Column(db.TIMESTAMP)
 
     filename = db.Column(db.Text, nullable=False)
     path = db.Column(db.Text, nullable=False)
@@ -230,7 +232,6 @@ class Project(db.Model):
         # Initialize the first action after the project has persisted so
         # pickled Labels row doesn't reference a transient project
         new_project.actions = [Action(project=new_project)]
-        action = new_project.actions[0]
         new_project.action_id = 0
         new_project.next_action_id = 1
         db.session.commit()
@@ -248,9 +249,8 @@ class Project(db.Model):
         if self.action.labels_changed:
             self.labels.update()
         db.session.commit()
-        current_app.logger.debug('Updated action %s for project %s in %ss.',
-                                 self.action_id, self.id,
-                                 timeit.default_timer() - start)
+        current_app.logger.debug('Updated project %s in %ss.',
+                                 self.id, timeit.default_timer() - start)
 
     def make_new_action(self, session=None):
         """
@@ -274,6 +274,11 @@ class Project(db.Model):
         self.action_id = new_action.action_id
         self.next_action_id += 1
         session.add(new_action)
+
+        if not self.firstAction:
+            self.firstAction = db.func.current_timestamp()
+        self.lastAction = db.func.current_timestamp()
+
         current_app.logger.debug('Initialized action %s project %s in %ss.',
                                  self.action_id, self.id,
                                  timeit.default_timer() - start)
@@ -367,6 +372,7 @@ class Project(db.Model):
         # Clear ActionHistory
         for action in self.actions:
             action.finish()
+        self.finished = db.func.current_timestamp()
         db.session.commit()
         logger.debug('Finished project with ID = "%s" in %ss.',
                      self.id, timeit.default_timer() - start)
@@ -683,30 +689,14 @@ class LabelFrame(db.Model):
                            primary_key=True, nullable=False)
     frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
     frame = db.Column(MutableNdarray.as_mutable(db.PickleType))
-    updatedAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now(),
-                          onupdate=db.func.current_timestamp())
-    numUpdates = db.Column(db.Integer, nullable=False, default=0)
-    firstUpdate = db.Column(db.TIMESTAMP)
-    lastUpdate = db.Column(db.TIMESTAMP)
 
     def __init__(self, frame_id, frame):
         # self.project = project
         self.frame_id = frame_id
         self.frame = frame
 
-    def update(self):
-        """
-        Update a frame's data by explicitly copying the PickleType
-        columns so the database knows to commit the changes.
-        """
-        if not self.firstUpdate:
-            self.firstUpdate = db.func.current_timestamp()
-        self.frame = self.frame.copy()
-        self.numUpdates += 1
-
     def finish(self):
         """Finish a frame by setting its frame to null."""
-        self.lastUpdate = self.updatedAt
         self.frame = None
 
 
