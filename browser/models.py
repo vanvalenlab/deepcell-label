@@ -74,8 +74,6 @@ class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     createdAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now())
     finished = db.Column(db.TIMESTAMP)
-    firstAction = db.Column(db.TIMESTAMP)
-    lastAction = db.Column(db.TIMESTAMP)
 
     filename = db.Column(db.Text, nullable=False)
     path = db.Column(db.Text, nullable=False)
@@ -252,19 +250,19 @@ class Project(db.Model):
         current_app.logger.debug('Updated project %s in %ss.',
                                  self.id, timeit.default_timer() - start)
 
-    def finish_action(self, action, session=None):
+    def finish_action(self, action_name, session=None):
         """
         Creates a new action for a Project and links it the previous action.
         Should be called before update() if the project data has been
         edited by an action.
 
         Args:
-            action (str): name of the completed action (e.g. "handle_draw")
+            action_name (str): name of the completed action (e.g. "handle_draw")
             session (sqlalchemy.orm.session.Session): included to mock the session for testing
         """
         start = timeit.default_timer()
         session = session or db.session
-        self.action.action = action
+
         # Only keep frames in the action history if edited
         self.action.frames = [frame for frame in self.action.frames
                               if self.label_frames[frame.frame_id] in db.session.dirty]
@@ -272,21 +270,17 @@ class Project(db.Model):
         if self.labels not in db.session.dirty:
             self.action.labels = None
 
-        # Create a new row in the action history for the next action
-        action = self.action
+        # Finish the current action and move on to a new one
         new_action = Action(project=self)
+        action = self.action
+        action.action = action_name
         action.next_action_id = new_action.action_id
+        action.actionTime = db.func.current_timestamp()
         self.action_id = new_action.action_id
         self.next_action_id += 1
         session.add(new_action)
-
-        # Record timestamps of actions
-        if not self.firstAction:
-            self.firstAction = db.func.current_timestamp()
-        self.lastAction = db.func.current_timestamp()
-
-        current_app.logger.debug('Initialized action %s project %s in %ss.',
-                                 self.action_id, self.id,
+        current_app.logger.debug('Finished action %s project %s in %ss.',
+                                 action.action_id, self.id,
                                  timeit.default_timer() - start)
 
     def undo(self):
@@ -714,22 +708,21 @@ class Action(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
                            primary_key=True, nullable=False, autoincrement=False)
     action_id = db.Column(db.Integer, primary_key=True, nullable=False)
-    actionTime = db.Column(db.TIMESTAMP, nullable=True)  # Set when finishing an action
+    actionTime = db.Column(db.TIMESTAMP)  # Set when finishing an action
     action = db.Column(db.String)  # Name of the previous action (e.g. "handle_draw")
     prev_action_id = db.Column(db.Integer)  # Action to restore upon undo
     next_action_id = db.Column(db.Integer)  # Action to restore upon redo
     # Flags to track what changed & needs to be included in payloads for undo/redo
     y_changed = db.Column(db.Boolean, default=False)
     labels_changed = db.Column(db.Boolean, default=False)
-    # Label frames before an action
-    # When undoing an action, we restore the frames to this stored state
+    # Records label frames before an action
     frames = db.relationship('FrameHistory', backref='action',
                              primaryjoin="and_("
                              "Action.action_id == foreign(FrameHistory.action_id), "
                              "Action.project_id == FrameHistory.project_id)",
                              # Frame histories only exist within a action history
                              cascade='save-update, merge, delete, delete-orphan')
-    # Label info before an action
+    # Records label info before an action
     # Pickles an ORM row from the Labels table
     labels = db.Column(db.PickleType)
 
