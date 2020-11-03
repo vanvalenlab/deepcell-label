@@ -113,7 +113,7 @@ class Project(db.Model):
         start = timeit.default_timer()
         trial = self.load(filename, input_bucket, path)
         logger.debug('Loaded file %s from S3 in %ss.',
-                                 filename, timeit.default_timer() - start)
+                     filename, timeit.default_timer() - start)
         raw = trial[raw_key]
         annotated = trial[annotated_key]
         # possible differences between single channel and rgb displays
@@ -155,7 +155,7 @@ class Project(db.Model):
                              for i, frame in enumerate(annotated)]
 
         logger.debug('Initialized project for %s in %ss.',
-                                 filename, timeit.default_timer() - init_start)
+                     filename, timeit.default_timer() - init_start)
 
     @property
     def action(self):
@@ -235,7 +235,7 @@ class Project(db.Model):
         new_project.next_action_id = 1
         db.session.commit()
         logger.debug('Created new project %s in %ss.',
-                                 new_project.id, timeit.default_timer() - start)
+                     new_project.id, timeit.default_timer() - start)
         return new_project
 
     def update(self):
@@ -249,7 +249,7 @@ class Project(db.Model):
             self.labels.update()
         db.session.commit()
         logger.debug('Updated project %s in %ss.',
-                                 self.id, timeit.default_timer() - start)
+                     self.id, timeit.default_timer() - start)
 
     def finish(self):
         """
@@ -303,8 +303,7 @@ class Project(db.Model):
         self.next_action_id += 1
         session.add(new_action)
         logger.debug('Finished action %s project %s in %ss.',
-                                 action.action_id, self.id,
-                                 timeit.default_timer() - start)
+                     action.action_id, self.id, timeit.default_timer() - start)
 
     def undo(self):
         """
@@ -336,7 +335,7 @@ class Project(db.Model):
         payload = self.make_payload(y=prev_action.y_changed,
                                     labels=prev_action.labels_changed)
         logger.debug('Undo action %s project %s in %ss.',
-                                 self.action_id, self.id, timeit.default_timer() - start)
+                     self.action_id, self.id, timeit.default_timer() - start)
         return payload
 
     def redo(self):
@@ -369,8 +368,7 @@ class Project(db.Model):
         self.action_id = next_action.action_id
         db.session.commit()
         logger.debug('Redo action %s project %s in %ss.',
-                                 self.action.prev_action_id, self.id,
-                                 timeit.default_timer() - start)
+                     self.action.prev_action_id, self.id, timeit.default_timer() - start)
         return payload
 
     def get_max_label(self):
