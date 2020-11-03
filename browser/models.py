@@ -14,7 +14,6 @@ import timeit
 
 import boto3
 from flask_sqlalchemy import SQLAlchemy
-from flask import current_app
 from matplotlib import pyplot as plt
 import numpy as np
 from skimage.exposure import rescale_intensity
