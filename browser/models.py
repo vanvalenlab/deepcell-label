@@ -143,6 +143,8 @@ class Project(db.Model):
             if len(trial['lineages']) != 1:
                 raise ValueError('Input file has multiple trials/lineages.')
             self.labels.cell_info = {0: trial['lineages'][0]}
+            # Track files require a different scale factor
+            self.scale_factor = 2
 
         # Create frames from raw, RGB, and labeled images
         self.raw_frames = [RawFrame(i, frame)

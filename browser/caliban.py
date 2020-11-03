@@ -642,9 +642,6 @@ class TrackEdit(BaseEdit):
     def __init__(self, project):
         super(TrackEdit, self).__init__(project)
 
-        # TODO: do we need this?
-        # self.scale_factor = 2
-
     def action_new_track(self, label):
         """
         Replaces label with a new label in all subsequent frames after self.frame_id
