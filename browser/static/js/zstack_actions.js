@@ -141,7 +141,6 @@ function setDisplay(displayAttr, value) {
   });
 }
 
-// TODO: adapt this class to only handle label editing actions
 class BackendAction {
 
   constructor(action, info) {
