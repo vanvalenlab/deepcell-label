@@ -113,7 +113,7 @@ class Project(db.Model):
             annotated_key = get_ann_key(filename)
         start = timeit.default_timer()
         trial = self.load(filename, input_bucket, path)
-        current_app.logger.debug('Loaded file %s from S3 in %s s.',
+        logger.debug('Loaded file %s from S3 in %ss.',
                                  filename, timeit.default_timer() - start)
         raw = trial[raw_key]
         annotated = trial[annotated_key]
@@ -153,7 +153,7 @@ class Project(db.Model):
         self.label_frames = [LabelFrame(i, frame)
                              for i, frame in enumerate(annotated)]
 
-        current_app.logger.debug('Initialized project for %s in %s s.',
+        logger.debug('Initialized project for %s in %ss.',
                                  filename, timeit.default_timer() - init_start)
 
     @property
@@ -233,7 +233,7 @@ class Project(db.Model):
         new_project.action_id = 0
         new_project.next_action_id = 1
         db.session.commit()
-        current_app.logger.debug('Created new project %s in %s s.',
+        logger.debug('Created new project %s in %ss.',
                                  new_project.id, timeit.default_timer() - start)
         return new_project
 
@@ -247,7 +247,7 @@ class Project(db.Model):
         if self.action.labels_changed:
             self.labels.update()
         db.session.commit()
-        current_app.logger.debug('Updated project %s in %ss.',
+        logger.debug('Updated project %s in %ss.',
                                  self.id, timeit.default_timer() - start)
 
     def finish(self):
@@ -269,7 +269,7 @@ class Project(db.Model):
             rgb_frame.finish()
         self.finished = db.func.current_timestamp()
         db.session.commit()
-        logger.debug('Finished project with ID = "%s" in %ss.',
+        logger.debug('Finished project %s in %ss.',
                      self.id, timeit.default_timer() - start)
 
     def finish_action(self, action_name, session=None):
@@ -301,7 +301,7 @@ class Project(db.Model):
         self.action_id = new_action.action_id
         self.next_action_id += 1
         session.add(new_action)
-        current_app.logger.debug('Finished action %s project %s in %ss.',
+        logger.debug('Finished action %s project %s in %ss.',
                                  action.action_id, self.id,
                                  timeit.default_timer() - start)
 
@@ -334,7 +334,7 @@ class Project(db.Model):
         # Use the changed flags for the action we are undoing
         payload = self.make_payload(y=prev_action.y_changed,
                                     labels=prev_action.labels_changed)
-        current_app.logger.debug('Undo action %s project %s in %ss.',
+        logger.debug('Undo action %s project %s in %ss.',
                                  self.action_id, self.id, timeit.default_timer() - start)
         return payload
 
@@ -367,7 +367,7 @@ class Project(db.Model):
 
         self.action_id = next_action.action_id
         db.session.commit()
-        current_app.logger.debug('Redo action %s project %s in %ss.',
+        logger.debug('Redo action %s project %s in %ss.',
                                  self.action.prev_action_id, self.id,
                                  timeit.default_timer() - start)
         return payload
