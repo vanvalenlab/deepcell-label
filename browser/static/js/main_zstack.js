@@ -1175,5 +1175,8 @@ function startCaliban(filename, settings) {
     adjuster.segLoaded = false;
     adjuster.segImage.src = payload.imgs.segmented;
     adjuster.rawImage.src = payload.imgs.raw;
+
+    document.getElementById('undo').hidden = false;
+    document.getElementById('redo').hidden = false;
   });
 }
