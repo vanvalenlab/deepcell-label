@@ -56,7 +56,7 @@ class MutableNdarray(Mutable, np.ndarray):
             return value
 
     def __setitem__(self, key, value):
-        "Detect array set events and emit change events."
+        """Detect array set events and emit change events."""
         np.ndarray.__setitem__(self, key, value)
         self.changed()
 
