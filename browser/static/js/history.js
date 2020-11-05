@@ -6,33 +6,6 @@ class History{
     this.redoStack = [];
   }
 
-  /**
-   * Interface for undoable actions to store in the action history.
-   *
-   * @interface Action
-   */
-
-  /**
-   * Do the action before storing in the action history
-   *
-   * @function
-   * @name Action#do
-   */
-
-  /**
-   * Undo an action in the action history
-   *
-   * @function
-   * @name Action#undo
-   */
-
-  /**
-   * Redo an undone action in the action history
-   *
-   * @function
-   * @name Action#redo
-   */
-
   get canUndo() {
     return !this.undoStack.every(v => v === 'fencepost');
   }
@@ -131,5 +104,43 @@ class History{
   formatButtons() {
     document.getElementById('undo').disabled = !this.canUndo;
     document.getElementById('redo').disabled = !this.canRedo;
+  }
+}
+
+/**
+ * Interface for undoable actions to store in the action history.
+ *
+ * @interface Action
+ */
+class Action {
+
+  /**
+   * Do the action before storing in the action history
+   *
+   * @function
+   * @name Action#do
+   */
+  do() {
+    console.warn('do() not implemented');
+  }
+
+  /**
+   * Undo an action in the action history
+   *
+   * @function
+   * @name Action#undo
+   */
+  undo() {
+    console.warn('do() not implemented');
+  }
+
+  /**
+   * Redo an undone action in the action history
+   *
+   * @function
+   * @name Action#redo
+   */
+  redo() {
+    console.warn('do() not implemented');
   }
 }

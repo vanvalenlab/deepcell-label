@@ -344,7 +344,7 @@ class ImageAdjuster {
   }
 }
 
-class ChangeContrast {
+class ChangeContrast extends Action {
   constructor(adjuster, change) {
     this.adjuster = adjuster;
     this.oldValue = adjuster.contrast;
@@ -370,7 +370,7 @@ class ChangeContrast {
   }
 }
 
-class ChangeBrightness {
+class ChangeBrightness extends Action {
   constructor(adjuster, change) {
     this.adjuster = adjuster;
     const modBrightness = -Math.sign(change);
@@ -395,7 +395,7 @@ class ChangeBrightness {
   }
 }
 
-class ResetBrightnessContrast {
+class ResetBrightnessContrast extends Action {
   constructor(adjuster) {
     this.adjuster = adjuster;
     this.brightness = adjuster.brightness;
@@ -421,7 +421,7 @@ class ResetBrightnessContrast {
   }
 }
 
-class ToggleInvert {
+class ToggleInvert extends Action {
   constructor(adjuster) {
     this.adjuster = adjuster;
   }

@@ -1,4 +1,4 @@
-class ToggleEdit {
+class ToggleEdit extends Action {
 
     do() {
       edit_mode = !edit_mode;
@@ -13,7 +13,7 @@ class ToggleEdit {
     }
   }
 
-class ToggleHighlight {
+class ToggleHighlight extends Action {
 
   do() {
     current_highlight = !current_highlight;
@@ -29,7 +29,7 @@ class ToggleHighlight {
 }
 
 /** Action to change the viewed frame. */
-class ChangeFrame {
+class ChangeFrame extends Action {
   constructor(mode, frame) {
     this.mode = mode;
     this.oldValue = current_frame;
@@ -58,7 +58,7 @@ class ChangeFrame {
 }
 
 /** Action to change the viewed feature. */
-class ChangeFeature {
+class ChangeFeature extends Action {
   constructor(mode, feature) {
     this.mode = mode;
     this.oldValue = mode.feature;
@@ -86,7 +86,7 @@ class ChangeFeature {
 }
 
 /** Action to change the viewed channel. */
-class ChangeChannel {
+class ChangeChannel extends Action {
   constructor(mode, adjuster, channel) {
     this.mode = mode;
     this.adjuster = adjuster;
@@ -141,7 +141,7 @@ function setDisplay(displayAttr, value) {
   });
 }
 
-class BackendAction {
+class BackendAction extends Action {
 
   constructor(action, info) {
     this.action = action;

@@ -172,7 +172,7 @@ class CanvasState {
   }
 }
 
-class Pan {
+class Pan extends Action {
   // Implements command pattern for an undoable pan
   constructor(canvas, dx, dy) {
     this.canvas = canvas;
@@ -210,7 +210,7 @@ class Pan {
   }
 }
 
-class Zoom {
+class Zoom extends Action {
   constructor(canvas, dZoom) {
     // Calculate how much canvas zooms
     const zoom = Math.max(canvas.zoom - 10 * dZoom, canvas.zoomLimit);
