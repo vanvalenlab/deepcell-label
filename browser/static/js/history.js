@@ -97,7 +97,7 @@ class History{
       action = this.undoStack.pop();
       if (action === 'fencepost') {
         // Keep fencepost on top of undo to separate new actions from last undo
-        this.undoStack.push('fencepost');
+        this.addFence()
         break;
       }
     }
