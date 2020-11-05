@@ -81,16 +81,17 @@ def create_app(**config_overrides):
     compress.init_app(app)
 
     # For flask monitoring dashboard
-    dashboard.config.init_from(envvar='DASHBOARD_CONFIG')
+    if config.DASHBOARD_CONFIG:
+        dashboard.config.init_from(config.DASHBOARD_CONFIG)
 
-    def group_action():
-        """Apply custom grouping for action endpoint"""
-        from flask import request
-        if request.endpoint == 'caliban.action':
-            return request.view_args['action_type']
+        def group_action():
+            """Apply custom grouping for action endpoint"""
+            from flask import request
+            if request.endpoint == 'caliban.action':
+                return request.view_args['action_type']
 
-    dashboard.config.group_by = group_action
-    dashboard.bind(app)
+        dashboard.config.group_by = group_action
+        dashboard.bind(app)
 
     return app
 
