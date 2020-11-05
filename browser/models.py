@@ -28,7 +28,7 @@ from imgutils import pngify, add_outlines
 logger = logging.getLogger('models.Project')  # pylint: disable=C0103
 # Accessing one-to-many relationships (like project.label_frames) issues a Query, causing a flush
 # autoflush=False prevents the flush, so we still access the db.session.dirty after the query
-db = SQLAlchemy(session_options={"autoflush": False})  # pylint: disable=C0103
+db = SQLAlchemy(session_options={'autoflush': False})  # pylint: disable=C0103
 
 
 @compiles(db.PickleType, 'mysql')
