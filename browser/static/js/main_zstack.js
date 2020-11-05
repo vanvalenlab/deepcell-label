@@ -1012,24 +1012,6 @@ function handlePayload(payload) {
   }
 }
 
-function backendUndo() {
-  $.ajax({
-    type: 'POST',
-    url: `${document.location.origin}/undo/${project_id}`,
-    success: handlePayload,
-    async: false
-  });
-}
-
-function backendRedo() {
-  $.ajax({
-    type: 'POST',
-    url: `${document.location.origin}/redo/${project_id}`,
-    success: handlePayload,
-    async: false
-  });
-}
-
 function action(action, info) {
   backendAction = new BackendAction(action, info);
   actions.addFencedAction(backendAction);

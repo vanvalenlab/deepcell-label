@@ -159,11 +159,21 @@ class BackendAction {
   }
 
   undo() {
-    backendUndo();
+    $.ajax({
+      type: 'POST',
+      url: `${document.location.origin}/undo/${project_id}`,
+      success: handlePayload,
+      async: false
+    });
   }
 
   redo() {
-    backendRedo();
+    $.ajax({
+      type: 'POST',
+      url: `${document.location.origin}/redo/${project_id}`,
+      success: handlePayload,
+      async: false
+    });
   }
 }
 
