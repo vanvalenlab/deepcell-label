@@ -61,7 +61,7 @@ class MutableNdarray(Mutable, np.ndarray):
         self.changed()
 
     def __delitem__(self, key):
-        "Detect array del events and emit change events."
+        """Detect array del events and emit change events."""
         np.ndarray.__delitem__(self, key)
         self.changed()
 
