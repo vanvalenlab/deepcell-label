@@ -470,29 +470,9 @@ class BaseEdit(object):
         if np.any(np.isin(self.frame[..., self.feature], label)):
             self.add_cell_info(add_label=label, frame=self.frame_id)
 
-    def make_payload(self):
-        """
-        Creates a payload to send to the front-end after completing an action.
-        """
-        tracks = False  # Default tracks payload
-        if self.info_changed:
-            tracks = self.state.readable_tracks
-
-        img_payload = False  # Default image payload
-        if self.x_changed or self.y_changed:
-            encode = lambda x: base64.encodebytes(x.read()).decode()
-            img_payload = {}
-            if self.x_changed:
-                raw_png = self.project.get_raw_png()
-                img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
-            if self.y_changed:
-                label_png = self.project.get_label_png()
-                img_payload['segmented'] = f'data:image/png;base64,{encode(label_png)}'
-                img_payload['seg_arr'] = self.project.get_label_arr()
-
 
 class ZStackEdit(BaseEdit):
-    
+
     def __init__(self, project):
         super(ZStackEdit, self).__init__(project)
 
