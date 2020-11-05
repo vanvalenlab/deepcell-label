@@ -346,6 +346,7 @@ class ImageAdjuster {
 
 class ChangeContrast extends Action {
   constructor(adjuster, change) {
+    super();
     this.adjuster = adjuster;
     this.oldValue = adjuster.contrast;
 
@@ -372,6 +373,7 @@ class ChangeContrast extends Action {
 
 class ChangeBrightness extends Action {
   constructor(adjuster, change) {
+    super();
     this.adjuster = adjuster;
     const modBrightness = -Math.sign(change);
     // limit how dim image can go
@@ -397,6 +399,7 @@ class ChangeBrightness extends Action {
 
 class ResetBrightnessContrast extends Action {
   constructor(adjuster) {
+    super();
     this.adjuster = adjuster;
     this.brightness = adjuster.brightness;
     this.contrast = adjuster.contrast;
@@ -423,6 +426,7 @@ class ResetBrightnessContrast extends Action {
 
 class ToggleInvert extends Action {
   constructor(adjuster) {
+    super();
     this.adjuster = adjuster;
   }
 

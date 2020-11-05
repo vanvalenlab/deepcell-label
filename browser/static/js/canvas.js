@@ -3,6 +3,7 @@
  */
 class CanvasState {
   constructor(width, height, scale, padding) {
+    super();
     this.width = width;
     this.height = height;
     this.scale = scale;
@@ -175,6 +176,7 @@ class CanvasState {
 class Pan extends Action {
   // Implements command pattern for an undoable pan
   constructor(canvas, dx, dy) {
+    super();
     this.canvas = canvas;
 
     // change in x position of scaled window
@@ -212,6 +214,7 @@ class Pan extends Action {
 
 class Zoom extends Action {
   constructor(canvas, dZoom) {
+    super();
     // Calculate how much canvas zooms
     const zoom = Math.max(canvas.zoom - 10 * dZoom, canvas.zoomLimit);
 

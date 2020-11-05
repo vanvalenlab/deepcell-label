@@ -31,6 +31,7 @@ class ToggleHighlight extends Action {
 /** Action to change the viewed frame. */
 class ChangeFrame extends Action {
   constructor(mode, frame) {
+    super();
     this.mode = mode;
     this.oldValue = current_frame;
     // frame mod max_frames
@@ -60,6 +61,7 @@ class ChangeFrame extends Action {
 /** Action to change the viewed feature. */
 class ChangeFeature extends Action {
   constructor(mode, feature) {
+    super();
     this.mode = mode;
     this.oldValue = mode.feature;
     // feature mod feature_max
@@ -88,6 +90,7 @@ class ChangeFeature extends Action {
 /** Action to change the viewed channel. */
 class ChangeChannel extends Action {
   constructor(mode, adjuster, channel) {
+    super();
     this.mode = mode;
     this.adjuster = adjuster;
     this.oldValue = mode.channel;
@@ -144,6 +147,7 @@ function setDisplay(displayAttr, value) {
 class BackendAction extends Action {
 
   constructor(action, info) {
+    super();
     this.action = action;
     this.info = info;
   }
