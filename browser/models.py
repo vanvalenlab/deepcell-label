@@ -244,9 +244,6 @@ class Project(db.Model):
         Records the effects of the action in the Actions table.
         """
         start = timeit.default_timer()
-        # Copy the PickleType columns to ensure that we persist the changes
-        if self.action.labels_changed:
-            self.labels.update()
         db.session.commit()
         logger.debug('Updated project %s in %ss.',
                      self.id, timeit.default_timer() - start)
@@ -289,9 +286,12 @@ class Project(db.Model):
         # Only keep frames in the action history if edited
         self.action.frames = [frame for frame in self.action.frames
                               if self.label_frames[frame.frame_id] in db.session.dirty]
+        
         # Only keep labels in action history if edited
-        if self.labels not in db.session.dirty:
+        if not self.action.labels_changed:
             self.action.labels = None
+        else:  # SQLAlchemy does not track mutations in dictionaries
+            self.labels.update()
 
         # Finish the current action and move on to a new one
         new_action = Action(project=self)
