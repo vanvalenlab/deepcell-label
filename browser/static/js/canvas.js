@@ -3,7 +3,6 @@
  */
 class CanvasState {
   constructor(width, height, scale, padding) {
-    super();
     this.width = width;
     this.height = height;
     this.scale = scale;
