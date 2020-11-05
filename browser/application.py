@@ -8,7 +8,7 @@ import logging
 from flask import Flask
 from flask.logging import default_handler
 from flask_cors import CORS
-
+import flask_monitoringdashboard as dashboard
 from flask_compress import Compress
 
 import config
@@ -79,6 +79,19 @@ def create_app(**config_overrides):
     app.register_blueprint(bp)
 
     compress.init_app(app)
+
+    # For flask monitoring dashboard
+    if config.DASHBOARD_CONFIG:
+        dashboard.config.init_from(config.DASHBOARD_CONFIG)
+
+        def group_action():
+            """Apply custom grouping for action endpoint"""
+            from flask import request
+            if request.endpoint == 'caliban.action':
+                return request.view_args['action_type']
+
+        dashboard.config.group_by = group_action
+        dashboard.bind(app)
 
     return app
 

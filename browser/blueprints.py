@@ -8,7 +8,6 @@ import distutils
 import distutils.util
 import json
 import os
-import pickle
 import re
 import timeit
 import traceback
@@ -22,21 +21,11 @@ from flask import current_app
 from werkzeug.exceptions import HTTPException
 
 from helpers import is_trk_file, is_npz_file
-from files import CalibanFile
 from models import Project
 from caliban import TrackEdit, ZStackEdit, BaseEdit
 
 
 bp = Blueprint('caliban', __name__)  # pylint: disable=C0103
-
-
-def load_project_state(project):
-    """Unpickle the project's state into a Caliban object"""
-    start = timeit.default_timer()
-    state = pickle.loads(project.state)
-    current_app.logger.debug('Unpickled project "%s" state in %s s.',
-                             project.id, timeit.default_timer() - start)
-    return state
 
 
 @bp.route('/health')
@@ -61,25 +50,22 @@ def handle_exception(error):
 
 @bp.route('/upload_file/<int:project_id>', methods=['GET', 'POST'])
 def upload_file(project_id):
-    '''Upload .trk/.npz data file to AWS S3 bucket.'''
+    """Upload .trk/.npz data file to AWS S3 bucket."""
     start = timeit.default_timer()
-    # Use id to grab appropriate TrackEdit/ZStackEdit object from database
-    project = Project.get_project_by_id(project_id)
-
+    project = Project.get(project_id)
     if not project:
         return jsonify({'error': 'project_id not found'}), 404
 
-    state = load_project_state(project)
-    filename = state.file.filename
-
     # Call function in caliban.py to save data file and send to S3 bucket
+    edit = get_edit(project)
+    filename = project.state.filename
     if is_trk_file(filename):
-        state.action_save_track()
+        edit.action_save_track()
     elif is_npz_file(filename):
-        state.action_save_zstack()
+        edit.action_save_zstack()
 
-    # add "finished" timestamp and null out state longblob
-    Project.finish_project(project)
+    # add "finished" timestamp and null out PickleType columns
+    project.finish()
 
     current_app.logger.debug('Uploaded file "%s" for project "%s" in %s s.',
                              filename, project_id,
@@ -90,89 +76,64 @@ def upload_file(project_id):
 
 @bp.route('/action/<int:project_id>/<action_type>/<int:frame>', methods=['POST'])
 def action(project_id, action_type, frame):
-    ''' Make an edit operation to the data file and update the object
-        in the database.
-    '''
+    """
+    Make an edit operation to the data file and update the object
+    in the database.
+    """
     start = timeit.default_timer()
     # obtain 'info' parameter data sent by .js script
     info = {k: json.loads(v) for k, v in request.values.to_dict().items()}
 
-    try:
-        # Use id to grab appropriate TrackEdit/ZStackEdit object from database
-        project = Project.get_project_by_id(project_id)
+    # TODO: remove frame from request values in front-end
+    # Frame is instead tracked by the frame column in the State column
+    if 'frame' in info:
+        del info['frame']
 
+    try:
+        project = Project.get(project_id)
         if not project:
             return jsonify({'error': 'project_id not found'}), 404
-
-        state = load_project_state(project)
-        # Perform edit operation on the data file
-        state.action(action_type, info)
-
-        x_changed = state._x_changed
-        y_changed = state._y_changed
-        info_changed = state.info_changed
-
-        state._x_changed = state._y_changed = state.info_changed = False
-
-        # Update object in local database
-        Project.update_project(project, state)
+        edit = get_edit(project)
+        edit.action(action_type, info)
+        payload = edit.make_payload()
+        edit.commit_changes()
 
     except Exception as e:  # TODO: more error handling to identify problem
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
-    tracks = state.file.readable_tracks if info_changed else False
-
-    if x_changed or y_changed:
-        encode = lambda x: base64.encodebytes(x.read()).decode()
-        img_payload = {}
-
-        if x_changed:
-            raw = state.get_frame(frame, raw=True)
-            img_payload['raw'] = f'data:image/png;base64,{encode(raw)}'
-        if y_changed:
-            img = state.get_frame(frame, raw=False)
-            img_payload['segmented'] = f'data:image/png;base64,{encode(img)}'
-            edit_arr = state.get_array(frame)
-            img_payload['seg_arr'] = edit_arr.tolist()
-
-    else:
-        img_payload = False
-
     current_app.logger.debug('Action "%s" for project "%s" finished in %s s.',
                              action_type, project_id,
                              timeit.default_timer() - start)
 
-    return jsonify({'tracks': tracks, 'imgs': img_payload})
+    return jsonify(payload)
 
 
 @bp.route('/frame/<int:frame>/<int:project_id>')
 def get_frame(frame, project_id):
-    ''' Serve modes of frames as pngs. Send pngs and color mappings of
-        cells to .js file.
-    '''
+    """
+    Serve modes of frames as pngs. Send pngs and color mappings of
+    cells to .js file.
+    """
     start = timeit.default_timer()
-    # Use id to grab appropriate TrackEdit/ZStackEdit object from database
-    project = Project.get_project_by_id(project_id)
-
+    # Get project from database
+    project = Project.get(project_id)
     if not project:
         return jsonify({'error': 'project_id not found'}), 404
+    # Change the frame
+    project.state.frame = frame
+    project.update()
+    # Get pngs and array from project
+    raw_png = project.get_raw_png()
+    label_png = project.get_label_png()
+    label_arr = project.get_label_arr()
 
-    state = load_project_state(project)
-
-    # Obtain raw, mask, and edit mode frames
-    img = state.get_frame(frame, raw=False)
-    raw = state.get_frame(frame, raw=True)
-
-    # Obtain color map of the cells
-    edit_arr = state.get_array(frame)
-
+    # Create payload
     encode = lambda x: base64.encodebytes(x.read()).decode()
-
     payload = {
-        'raw': f'data:image/png;base64,{encode(raw)}',
-        'segmented': f'data:image/png;base64,{encode(img)}',
-        'seg_arr': edit_arr.tolist()
+        'raw': f'data:image/png;base64,{encode(raw_png)}',
+        'segmented': f'data:image/png;base64,{encode(label_png)}',
+        'seg_arr': label_arr
     }
 
     current_app.logger.debug('Got frame %s of project "%s" in %s s.',
@@ -183,9 +144,10 @@ def get_frame(frame, project_id):
 
 @bp.route('/load/<filename>', methods=['POST'])
 def load(filename):
-    ''' Initate TrackEdit/ZStackEdit object and load object to database.
-        Send specific attributes of the object to the .js file.
-    '''
+    """
+    Initate TrackEdit/ZStackEdit object and load object to database.
+    Send specific attributes of the object to the .js file.
+    """
     start = timeit.default_timer()
     current_app.logger.info('Loading track at %s', filename)
 
@@ -210,21 +172,23 @@ def load(filename):
         }
         return jsonify(error), 400
 
-    # Initate Edit object and entry in database
-    caliban_file = CalibanFile(filename, input_bucket, full_path)
-    edit = get_edit(caliban_file, output_bucket, rgb)
-    project = Project.create_project(filename, edit, subfolders)
+    # Initate Project entry in database
+    project = Project.create(filename, input_bucket, output_bucket, full_path, rgb)
+    state_start = timeit.default_timer()
+    state = project.state
+    current_app.logger.debug('Got state for "%s" in %s s.',
+                             filename, timeit.default_timer() - state_start)
 
     if is_trk_file(filename):
         current_app.logger.debug('Loaded trk file "%s" in %s s.',
                                  filename, timeit.default_timer() - start)
         # Send attributes to .js file
         return jsonify({
-            'max_frames': caliban_file.max_frames,
-            'tracks': caliban_file.readable_tracks,
-            'dimensions': (caliban_file.width, caliban_file.height),
+            'max_frames': state.num_frames,
+            'tracks': state.readable_tracks,
+            'dimensions': (state.width, state.height),
             'project_id': project.id,
-            'screen_scale': edit.scale_factor
+            'screen_scale': state.scale_factor
         })
 
     if is_npz_file(filename):
@@ -232,26 +196,27 @@ def load(filename):
                                  filename, timeit.default_timer() - start)
         # Send attributes to .js file
         return jsonify({
-            'max_frames': caliban_file.max_frames,
-            'channel_max': caliban_file.channel_max,
-            'feature_max': caliban_file.feature_max,
-            'tracks': caliban_file.readable_tracks,
-            'dimensions': (caliban_file.width, caliban_file.height),
+            'max_frames': state.num_frames,
+            'channel_max': state.num_channels,
+            'feature_max': state.num_features,
+            'tracks': state.readable_tracks,
+            'dimensions': (state.width, state.height),
             'project_id': project.id
         })
 
 
 @bp.route('/', methods=['GET', 'POST'])
 def form():
-    '''Request HTML landing page to be rendered.'''
+    """Request HTML landing page to be rendered."""
     return render_template('index.html')
 
 
 @bp.route('/tool', methods=['GET', 'POST'])
 def tool():
-    ''' Request HTML caliban tool page to be rendered after user inputs
-        filename in the landing page.
-    '''
+    """
+    Request HTML caliban tool page to be rendered after user inputs
+    filename in the landing page.
+    """
     if 'filename' not in request.form:
         return redirect('/')
 
@@ -301,10 +266,11 @@ def tool():
 
 @bp.route('/<filename>', methods=['GET', 'POST'])
 def shortcut(filename):
-    ''' Request HTML caliban tool page to be rendered if user makes a URL
-        request to access a specific data file that has been preloaded to the
-        input S3 bucket (ex. http://127.0.0.1:5000/test.npz).
-    '''
+    """
+    Request HTML caliban tool page to be rendered if user makes a URL
+    request to access a specific data file that has been preloaded to the
+    input S3 bucket (ex. http://127.0.0.1:5000/test.npz).
+    """
     rgb = request.args.get('rgb', default='false', type=str)
     pixel_only = request.args.get('pixel_only', default='false', type=str)
     label_only = request.args.get('label_only', default='false', type=str)
@@ -339,11 +305,12 @@ def shortcut(filename):
         settings=settings)
 
 
-def get_edit(file_, output_bucket, rgb):
+def get_edit(project):
     """Factory for Edit objects"""
-    if is_npz_file(file_.filename):
-        return ZStackEdit(file_, output_bucket, rgb)
-    elif is_trk_file(file_.filename):
+    filename = project.state.filename
+    if is_npz_file(filename):
+        return ZStackEdit(project)
+    elif is_trk_file(filename):
         # don't use RGB mode with track files
-        return TrackEdit(file_, output_bucket)
-    return BaseEdit(file_, output_bucket)
+        return TrackEdit(project)
+    return BaseEdit(project)

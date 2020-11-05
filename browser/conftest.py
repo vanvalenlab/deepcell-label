@@ -8,7 +8,7 @@ import pytest
 from pytest_lazyfixture import lazy_fixture
 
 from application import create_app  # pylint: disable=C0413
-from files import CalibanFile
+from models import Project
 
 # flask-sqlalchemy fixtures from http://alexmic.net/flask-sqlalchemy-pytest/
 
@@ -76,68 +76,74 @@ check01 = np.array([[0, 1], [1, 0]], dtype=np.int16)
 check12 = np.array([[1, 2], [2, 1]], dtype=np.int16)
 TEST_FRAMES = [np.zeros(RES, dtype=np.int16),  # empty
                np.ones(RES, dtype=np.int16),  # all ones
-               np.full(RES, 2, dtype=np.int16),  # all twos
                np.identity(HEIGHT, dtype=np.int16),  # identity
                np.tril(np.ones(RES, dtype=np.int16)),  # lower triangular ones
-               np.triu(np.ones(RES, dtype=np.int16)),  # upper triangular ones
-               np.tril(np.full(RES, 2, dtype=np.int16)),  # lower triangular twos
-               np.triu(np.full(RES, 2, dtype=np.int16)),  # upper triangular twos
                tri_12,
-               tri_21,
                np.tile(check01, (HEIGHT // 2, WIDTH // 2)),
                np.tile(check12, (HEIGHT // 2, WIDTH // 2)),
+               np.zeros(RES, dtype=np.int16),  # RGB mode
                ]
 # Convert single frames to 4 dim (frames, height, width, features)
 TEST_LABELS = list(map(lambda frame: repeat_frame(repeat_feature(frame, FEATURES), FRAMES),
                        TEST_FRAMES))
 # Append single frame, 3 dim test (height, width, features)
+TEST_IDS = ['empty', 'full1', 'iden', 'tril', 'triu1l2',
+            'checkerboard01', 'checkerboard12', 'RGB']
+# Append single frame, 3 dim test (height, width, features)
 TEST_LABELS += [repeat_feature(np.zeros(RES, dtype=np.int16), FEATURES)]
-TEST_IDS = ['empty', 'full1', 'full2', 'iden', 'tril1',
-            'triu1', 'tril2', 'triu2', 'triu1l2', 'tril1u2',
-            'checkerboard01', 'checkerboard12', 'singleframe']
+TEST_IDS += ['singleframe']
 
 
 @pytest.fixture(params=TEST_LABELS, ids=TEST_IDS)
-def zstack_file(mocker, request):
-    def load(self):
-        if len(request.param.shape) == 4:
-            raw = np.zeros((FRAMES, HEIGHT, WIDTH, CHANNELS))
-        else:
-            raw = np.zeros((HEIGHT, WIDTH, CHANNELS))
-        data = {'raw': raw}
-        data['annotated'] = request.param.copy()
-        return data
-    mocker.patch('files.CalibanFile.load', load)
-    return CalibanFile('filename.npz', 'bucket', 'path')
+def zstack_project(app, mocker, request, db_session):
+    with app.app_context():
+        def load(self, *args):
+            if len(request.param.shape) == 4:
+                raw = np.zeros((FRAMES, HEIGHT, WIDTH, CHANNELS))
+            else:
+                raw = np.zeros((HEIGHT, WIDTH, CHANNELS))
+            data = {'raw': raw}
+            data['annotated'] = request.param.copy()
+            return data
+        mocker.patch('models.Project.load', load)
+        project = Project('filename.npz', 'input_bucket', 'output_bucket', 'path',
+                          rgb='RGB' in request.node.name)
+        db_session.add(project)
+        db_session.commit()
+        return project
 
 
 @pytest.fixture(params=TEST_LABELS, ids=TEST_IDS)
-def track_file(mocker, request):
-    def load(self):
-        # Match the size of the raw image with the labels
-        if len(request.param.shape) == 4:
-            raw = np.zeros((FRAMES, HEIGHT, WIDTH, CHANNELS))
-        else:
-            raw = np.zeros((HEIGHT, WIDTH, CHANNELS))
-        data = {'raw': raw}
-        # Tracked files should only have one feature
-        data['tracked'] = request.param[..., [0]].copy()
-        lineages = [{label: {'frame_div': None,
-                             'daughters': [],
-                             'frames': list(range(FRAMES)),  # All labels are in all frames
-                             'label': label,
-                             'capped': False,  # TODO: what does this mean?
-                             'parent': None}
-                    for label in np.unique(request.param) if label != 0}]
-        data['lineages'] = lineages
-        return data
-    mocker.patch('files.CalibanFile.load', load)
-    return CalibanFile('filename.trk', 'bucket', 'path')
+def track_project(app, mocker, request, db_session):
+    with app.app_context():
+        def load(self, *args):
+            # Match the size of the raw image with the labels
+            if len(request.param.shape) == 4:
+                raw = np.zeros((FRAMES, HEIGHT, WIDTH, CHANNELS))
+            else:
+                raw = np.zeros((HEIGHT, WIDTH, CHANNELS))
+            data = {'raw': raw}
+            # Tracked files should only have one feature
+            data['tracked'] = request.param[..., [0]].copy()
+            lineages = [{label: {'frame_div': None,
+                                 'daughters': [],
+                                 'frames': list(range(FRAMES)),  # All labels are in all frames
+                                 'label': label,
+                                 'capped': False,
+                                 'parent': None}
+                        for label in np.unique(request.param) if label != 0}]
+            data['lineages'] = lineages
+            return data
+        mocker.patch('models.Project.load', load)
+        project = Project('filename.trk', 'input_bucket', 'output_bucket', 'path')
+        db_session.add(project)
+        db_session.commit()
+        return project
 
 
 @pytest.fixture(params=[
-    lazy_fixture('zstack_file'),
-    lazy_fixture('track_file'),
+    lazy_fixture('zstack_project'),
+    lazy_fixture('track_project'),
 ])
-def file_(request):
+def project(request):
     return request.param

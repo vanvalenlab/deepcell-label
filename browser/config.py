@@ -21,6 +21,10 @@ SQLALCHEMY_TRACK_MODIFICATIONS = config('SQLALCHEMY_TRACK_MODIFICATIONS',
 SQLALCHEMY_DATABASE_URI = config('SQLALCHEMY_DATABASE_URI',
                                  default='sqlite:////tmp/caliban.db')
 
+# Flask monitoring dashboard
+# When empty, disables the dashboard
+DASHBOARD_CONFIG = config('DASHBOARD_CONFIG', default='')
+
 # Compression settings
 COMPRESS_MIMETYPES = ['text/html', 'text/css', 'text/xml',
                       'application/json', 'application/javascript']
