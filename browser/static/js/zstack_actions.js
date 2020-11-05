@@ -139,9 +139,8 @@ function setDisplay(displayAttr, value) {
   $.ajax({
     type: 'POST',
     url: `${document.location.origin}/changedisplay/${project_id}/${displayAttr}/${value}`,
-    success: handlePayload,
-    async: false
-  });
+    async: true
+  }).done(handlePayload);
 }
 
 class BackendAction extends Action {
