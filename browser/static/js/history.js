@@ -121,7 +121,7 @@ class History{
       action = this.redoStack.pop();
       if (action === 'fencepost') {
         // Keep fencepost on top of undo stack
-        this.undoStack.push('fencepost');
+        this.addFence()
         break;
       }
     }
