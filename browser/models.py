@@ -44,7 +44,7 @@ def compile_pickle_mysql(type_, compiler, **kw):
 class MutableNdarray(Mutable, np.ndarray):
     @classmethod
     def coerce(cls, key, value):
-        "Convert plain numpy arrays to MutableNdarray."
+        """Convert plain numpy arrays to MutableNdarray."""
         if not isinstance(value, MutableNdarray):
             if isinstance(value, np.ndarray):
                 mutable_array = value.view(MutableNdarray)
