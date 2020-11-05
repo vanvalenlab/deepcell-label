@@ -286,7 +286,7 @@ class Project(db.Model):
         # Only keep frames in the action history if edited
         self.action.frames = [frame for frame in self.action.frames
                               if self.label_frames[frame.frame_id] in db.session.dirty]
-        
+
         # Only keep labels in action history if edited
         if not self.action.labels_changed:
             self.action.labels = None
