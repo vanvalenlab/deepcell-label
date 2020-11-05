@@ -490,6 +490,9 @@ class BaseEdit(object):
                 img_payload['segmented'] = f'data:image/png;base64,{encode(label_png)}'
                 img_payload['seg_arr'] = self.project.get_label_arr()
 
+
+class ZStackEdit(BaseEdit):
+    
     def __init__(self, project):
         super(ZStackEdit, self).__init__(project)
 
