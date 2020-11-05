@@ -66,6 +66,16 @@ class MutableNdarray(Mutable, np.ndarray):
         self.changed()
 
 
+@compiles(db.PickleType, 'mysql')
+def compile_pickle_mysql(type_, compiler, **kw):
+    """
+    Replaces default BLOB with LONGBLOB for PickleType columns on MySQL backend.
+    BLOB (64 kB) truncates pickled objects, while LONGBLOB (4 GB) stores it in full.
+    TODO: change to MEDIUMBLOB (16 MB)?
+    """
+    return 'LONGBLOB'
+
+
 class Project(db.Model):
     """Project table definition."""
     # pylint: disable=E1101
