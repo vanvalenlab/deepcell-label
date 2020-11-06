@@ -165,7 +165,7 @@ class BackendAction extends Action {
       type: 'POST',
       url: `${document.location.origin}/undo/${project_id}`,
       async: true
-    });
+    }).done(handlePayload);
   }
 
   redo() {
