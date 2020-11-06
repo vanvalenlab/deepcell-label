@@ -157,7 +157,7 @@ class BackendAction extends Action {
       url: `${document.location.origin}/edit/${project_id}/${this.action}`,
       data: this.info,
       success: handlePayload,
-      async: false
+      async: true
     });
   }
 
@@ -166,7 +166,7 @@ class BackendAction extends Action {
       type: 'POST',
       url: `${document.location.origin}/undo/${project_id}`,
       success: handlePayload,
-      async: false
+      async: true
     });
   }
 
@@ -175,7 +175,7 @@ class BackendAction extends Action {
       type: 'POST',
       url: `${document.location.origin}/redo/${project_id}`,
       success: handlePayload,
-      async: false
+      async: true
     });
   }
 }
