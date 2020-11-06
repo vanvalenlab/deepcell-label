@@ -693,9 +693,8 @@ function upload_file(cb) {
   $.ajax({
     type: 'POST',
     url: `${document.location.origin}/upload_file/${project_id}`,
-    success: cb,
     async: true
-  });
+  }).done(cb);
 }
 
 function changeZoom(dzoom) {
@@ -842,9 +841,8 @@ function loadFile(file, rgb = false, cb) {
   $.ajax({
     type: 'POST',
     url: `${document.location.origin}/load/${file}?&rgb=${rgb}`,
-    success: cb,
     async: true
-  });
+  }).done(cb);
 }
 
 /**

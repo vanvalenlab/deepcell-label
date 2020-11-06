@@ -156,27 +156,24 @@ class BackendAction extends Action {
       type: 'POST',
       url: `${document.location.origin}/edit/${project_id}/${this.action}`,
       data: this.info,
-      success: handlePayload,
       async: true
-    });
+    }).done(handlePayload);
   }
 
   undo() {
     $.ajax({
       type: 'POST',
       url: `${document.location.origin}/undo/${project_id}`,
-      success: handlePayload,
       async: true
-    });
+    }).done(handlePayload);
   }
 
   redo() {
     $.ajax({
       type: 'POST',
       url: `${document.location.origin}/redo/${project_id}`,
-      success: handlePayload,
       async: true
-    });
+    }).done(handlePayload);
   }
 }
 

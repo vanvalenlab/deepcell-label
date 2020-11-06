@@ -464,9 +464,8 @@ function upload_file(cb) {
   $.ajax({
     type: 'POST',
     url: `${document.location.origin}/upload_file/${project_id}`,
-    success: cb,
     async: true
-  });
+  }).done(cb);
 }
 
 // image adjustment functions: take img as input and manipulate data attribute
