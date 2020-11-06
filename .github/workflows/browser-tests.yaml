@@ -42,7 +42,7 @@ jobs:
     - name: Run PyTest and Coveralls
       env:
         COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-        COVERALLS_FLAG_NAME: py${{ matrix.python-version }}-tf${{ matrix.tensorflow-version }}
+        COVERALLS_FLAG_NAME: ${{ matrix.python-version }}
         COVERALLS_PARALLEL: true
       run: |
         pytest browser --cov browser --pep8
