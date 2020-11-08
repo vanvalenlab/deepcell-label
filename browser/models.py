@@ -705,7 +705,7 @@ class Action(db.Model):
                            primary_key=True, nullable=False, autoincrement=False)
     action_id = db.Column(db.Integer, primary_key=True, nullable=False)
     actionTime = db.Column(db.TIMESTAMP)  # Set when finishing an action
-    action = db.Column(db.String)  # Name of the previous action (e.g. "handle_draw")
+    action = db.Column(db.String(64))  # Name of the previous action (e.g. "handle_draw")
     prev_action_id = db.Column(db.Integer)  # Action to restore upon undo
     next_action_id = db.Column(db.Integer)  # Action to restore upon redo
     # Flags to track what changed & needs to be included in payloads for undo/redo
