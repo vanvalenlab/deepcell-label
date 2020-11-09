@@ -229,23 +229,27 @@ class Project(db.Model):
         new_project = Project(filename, input_bucket, output_bucket, path)
         db.session.add(new_project)
         db.session.commit()
-        # Initialize the first action after committing the project so
-        # recorded Labels in action history does not reference a transient project
-        new_project.actions = [Action(project=new_project)]
-        new_project.action_id = 0
-        new_project.next_action_id = 1
-        db.session.commit()
+        # # Initialize the first action after committing the project so
+        # # recorded Labels in action history does not reference a transient project
+        # new_project.actions = [Action(project=new_project, prev_action_id=None, action_id=0)]
+        # new_project.action_id = 0
+        # new_project.next_action_id = 1
+        # db.session.commit()
         logger.debug('Created new project %s in %ss.',
                      new_project.id, timeit.default_timer() - start)
         return new_project
 
-    def update(self):
+    def update(self, session=None):
         """
         Commit the project changes from an action.
         Records the effects of the action in the Actions table.
+
+        Args:
+            session (sqlalchemy.orm.session.Session): included to mock the session for testing
         """
         start = timeit.default_timer()
-        db.session.commit()
+        session = session or db.session
+        session.commit()
         logger.debug('Updated project %s in %ss.',
                      self.id, timeit.default_timer() - start)
 
@@ -271,40 +275,55 @@ class Project(db.Model):
         logger.debug('Finished project %s in %ss.',
                      self.id, timeit.default_timer() - start)
 
-    def finish_action(self, action_name, session=None):
+    def create_action(self, action_name):
         """
-        Creates a new action for a Project and links it the previous action.
-        Should be called before update() if the project data has been
-        edited by an action.
+        Creates a new action, saving the current project state.
+        Links the previous action to the new action.
 
         Args:
-            action_name (str): name of the completed action (e.g. "handle_draw")
-            session (sqlalchemy.orm.session.Session): included to mock the session for testing
+            action_name (str): name of action to perform (e.g. 'handle_draw')
+
+        Returns:
+            Action: action to use in edit route
         """
         start = timeit.default_timer()
-        session = session or db.session
-
-        # Only keep frames in the action history if edited
-        self.action.frames = [frame for frame in self.action.frames
-                              if self.label_frames[frame.frame_id] in db.session.dirty]
-
-        # Only keep labels in action history if edited
-        if not self.action.labels_changed:
-            self.action.labels = None
-        else:  # SQLAlchemy does not track mutations in dictionaries
-            self.labels.update()
-
-        # Finish the current action and move on to a new one
-        new_action = Action(project=self)
-        action = self.action
-        action.action = action_name
-        action.next_action_id = new_action.action_id
-        action.actionTime = db.func.current_timestamp()
-        self.action_id = new_action.action_id
+        if self.action_id is not None:
+            self.action.next_action_id = self.next_action_id
+        new_action = Action(project=self,
+                            prev_action_id=self.action_id,
+                            action_id=self.next_action_id,
+                            action_name=action_name)
+        # Update action bookmarks in Project
+        self.action_id = self.next_action_id
         self.next_action_id += 1
-        session.add(new_action)
+        db.session.add(new_action)
+        logger.debug('Created action %s project %s in %ss.',
+                     self.action_id, self.id, timeit.default_timer() - start)
+        return new_action
+
+
+    def finish_action(self, action):
+        """
+        Completes the action, 
+        removing the unchanged parts of the saved project state.
+
+        Args:
+            action (Action): action to finish
+        """
+        start = timeit.default_timer()
+        # Only keep frames in the action history if edited
+        action.frames = [frame for frame in self.action.frames
+                                if self.label_frames[frame.frame_id] in db.session.dirty]
+        # Only keep labels in action history if edited
+        if not action.labels_changed:
+            action.labels = None
+        else:  # SQLAlchemy does not track mutations in dictionaries; need to copy to update
+            self.labels.update()
+        # Link finished action to next action
+        action.actionTime = db.func.current_timestamp()
         logger.debug('Finished action %s project %s in %ss.',
-                     action.action_id, self.id, timeit.default_timer() - start)
+                self.action_id, self.id, timeit.default_timer() - start)
+
 
     def undo(self):
         """
@@ -717,15 +736,16 @@ class Action(db.Model):
     # Pickles an ORM row from the Labels table
     labels = db.Column(db.PickleType)
 
-    def __init__(self, project):
+    def __init__(self, project, prev_action_id, action_id, action_name):
         """
         Must be called after a Project is persisted,
         i.e. we need to commit a Project before initializing the first action.
         Otherwise, the data in the action references a transient Project.
         """
         self.project = project
-        self.action_id = project.next_action_id
-        self.prev_action_id = project.action_id
+        self.prev_action_id = prev_action_id
+        self.action_id = action_id
+        self.action = action_name
         self.labels = project.labels
         self.frames = [FrameHistory(frame=frame)
                        for frame in project.label_frames]

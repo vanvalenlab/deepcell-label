@@ -74,7 +74,7 @@ def upload_file(project_id):
 
 
 @bp.route('/edit/<int:project_id>/<action_type>', methods=['POST'])
-def action(project_id, action_type):
+def edit(project_id, action_type):
     """
     Edit the labeling of the project and
     update the project in the database.
@@ -92,9 +92,14 @@ def action(project_id, action_type):
         project = Project.get(project_id)
         if not project:
             return jsonify({'error': 'project_id not found'}), 404
+        # Create an Action to save project state
+        action = project.create_action(action_type)
         edit = get_edit(project)
         payload = edit.dispatch_action(action_type, info)
-        project.finish_action(action_type)
+        # Complete the Action
+        action.y_changed = edit.y_changed
+        action.labels_changed = edit.labels_changed
+        project.finish_action(action)
         project.update()
 
     except Exception as e:  # TODO: more error handling to identify problem
