@@ -19,6 +19,7 @@ import numpy as np
 from skimage.exposure import rescale_intensity
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.mutable import Mutable
+from sqlalchemy.schema import PrimaryKeyConstraint, ForeignKeyConstraint
 
 from helpers import is_npz_file, is_trk_file
 from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
@@ -228,8 +229,8 @@ class Project(db.Model):
         new_project = Project(filename, input_bucket, output_bucket, path)
         db.session.add(new_project)
         db.session.commit()
-        # Initialize the first action after the project has persisted so
-        # pickled Labels row doesn't reference a transient project
+        # Initialize the first action after committing the project so
+        # recorded Labels in action history does not reference a transient project
         new_project.actions = [Action(project=new_project)]
         new_project.action_id = 0
         new_project.next_action_id = 1
@@ -563,7 +564,6 @@ class RawFrame(db.Model):
     frame = db.Column(db.PickleType)
 
     def __init__(self, frame_id, frame):
-        # self.project_id = project_id
         self.frame_id = frame_id
         self.frame = frame
 
@@ -586,7 +586,6 @@ class RGBFrame(db.Model):
     frame = db.Column(db.PickleType)
 
     def __init__(self, frame_id, frame):
-        # self.project_id = project_id
         self.frame_id = frame_id
         self.frame = self.reduce_to_RGB(frame)
 
@@ -685,7 +684,6 @@ class LabelFrame(db.Model):
     frame = db.Column(MutableNdarray.as_mutable(db.PickleType))
 
     def __init__(self, frame_id, frame):
-        # self.project = project
         self.frame_id = frame_id
         self.frame = frame
 
@@ -713,9 +711,6 @@ class Action(db.Model):
     labels_changed = db.Column(db.Boolean, default=False)
     # Records label frames before an action
     frames = db.relationship('FrameHistory', backref='action',
-                             primaryjoin="and_("
-                             "Action.action_id == foreign(FrameHistory.action_id), "
-                             "Action.project_id == FrameHistory.project_id)",
                              # Frame histories only exist within a action history
                              cascade='save-update, merge, delete, delete-orphan')
     # Records label info before an action
@@ -732,7 +727,7 @@ class Action(db.Model):
         self.action_id = project.next_action_id
         self.prev_action_id = project.action_id
         self.labels = project.labels
-        self.frames = [FrameHistory(project=project, frame=frame)
+        self.frames = [FrameHistory(frame=frame)
                        for frame in project.label_frames]
 
 
@@ -742,17 +737,20 @@ class FrameHistory(db.Model):
     """
     # pylint: disable=E1101
     __tablename__ = 'framehistories'
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
-                           primary_key=True, nullable=False)
-    action_id = db.Column(db.Integer, db.ForeignKey('actions.action_id'),
-                          primary_key=True, nullable=False)
-    frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
+    project_id = db.Column(db.Integer, nullable=False)
+    action_id = db.Column(db.Integer, nullable=False)
+    frame_id = db.Column(db.Integer, nullable=False)
     frame = db.Column(db.PickleType)
 
-    project = db.relationship('Project')
+    __table_args__ = (
+        PrimaryKeyConstraint('project_id', 'action_id', 'frame_id'),
+        ForeignKeyConstraint(
+            ['project_id', 'action_id'],
+            ['actions.project_id', 'actions.action_id']
+        )
+    )
 
-    def __init__(self, project, frame):
-        self.project = project
+    def __init__(self, frame):
         self.frame = frame.frame
         self.frame_id = frame.frame_id
 
