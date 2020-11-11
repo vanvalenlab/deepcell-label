@@ -158,7 +158,7 @@ class Project(db.Model):
                            for i, frame in enumerate(raw)]
         self.label_frames = [LabelFrame(i, frame)
                              for i, frame in enumerate(annotated)]
-        
+
         self.actions = [Action(project=self, prev_action_id=None, action_id=0)]
         self.action_id = 0
         self.num_actions = 1
@@ -284,7 +284,6 @@ class Project(db.Model):
                                      for frame in self.label_frames]
         self.action.before_labels = self.labels
 
-
     def finish_action(self, action_name):
         """
         Completes the action,
@@ -304,18 +303,18 @@ class Project(db.Model):
         # Record the labels if edited
         if not action.labels_changed:
             action.before_labels = None
-        else:  
+        else:
             action.after_labels = self.labels
             # SQLAlchemy does not track mutations in dictionaries; need to copy to update
             # TODO: use Mutable mixin instead
             self.labels.update()
-        
+
         # Create new Action for next edit route call
         new_action = Action(project=self,
                             prev_action_id=self.action_id,
                             action_id=self.num_actions,
                             prev_action_name=action_name)
-        
+
         # Bookeeping changes to Project and Action
         self.action_id = new_action.action_id
         self.num_actions += 1
