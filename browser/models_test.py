@@ -40,6 +40,11 @@ def test_project_init(project):
     assert raw_frame.shape[0] == project.height
     assert raw_frame.shape[1] == project.width
 
+    # Test that an action has been initialized
+    assert project.action is not None
+    assert project.action_id == 0
+    assert project.num_actions == 1
+
     # Check relationship columns have been made
     assert project.labels is not None
     assert project.raw_frames is not None
@@ -53,7 +58,7 @@ def test_get(mocker, db_session):
     Gets a project before it exists, creates a project, then gets it again.
     """
     # test that no projects exist
-    project = models.Project.get(1)
+    project = models.Project.get(1, session=db_session)
     assert project is None
 
     # create project
@@ -64,45 +69,26 @@ def test_get(mocker, db_session):
         filename='filename',
         input_bucket='input_bucket',
         output_bucket='output_bucket',
-        path='path')
+        path='path',
+        session=db_session)
 
     # test that the project can be found and is the same as the created one
     valid_id = project.id
-    found_project = models.Project.get(valid_id)
+    found_project = models.Project.get(valid_id, session=db_session)
     assert found_project == project
 
 
-def test_create(mocker, db_session):
-    """
-    Test creating a row in the Project table.
-    """
-    # create project
-    def load(self, *args):
-        return {'raw': np.zeros((1, 1, 1, 1)), 'annotated': np.zeros((1, 1, 1, 1))}
-    mocker.patch('models.Project.load', load)
-    project = models.Project.create(
-        filename='filename',
-        input_bucket='input_bucket',
-        output_bucket='output_bucket',
-        path='path')
-
-    # Test that an action has been initialized
-    assert project.action is not None
-    assert project.action_id is not None
-    assert project.next_action_id is not None
-
-
-def test_finish_action(project, db_session):
+def test_finish_action(project):
     # Store action info before creating new action
     prev_action = project.action
-    next_action_id = project.next_action_id
+    num_actions = project.num_actions
 
-    project.finish_action(action_name='test', session=db_session)
+    project.finish_action(action_name='test')
 
     assert prev_action is not project.action
     assert prev_action.next_action_id == project.action_id
     assert project.action_id == project.action.action_id
-    assert project.next_action_id != next_action_id
+    assert project.num_actions != num_actions
     assert project.action.next_action_id is None
 
     assert not project.action.y_changed
@@ -112,7 +98,7 @@ def test_finish_action(project, db_session):
 def test_undo(project):
     """Test where we move in the action history when undoing."""
     action = project.action
-    next_action_id = project.next_action_id
+    num_actions = project.num_actions
 
     project.undo()
 
@@ -120,14 +106,14 @@ def test_undo(project):
         assert project.action is action
     else:
         assert project.action_id == action.prev_action_id
-    assert project.next_action_id == next_action_id
+    assert project.num_actions == num_actions
 
 
 def test_redo(project):
     """Test where we move in the action history when redoing."""
 
     action = project.action
-    next_action_id = project.next_action_id
+    num_actions = project.num_actions
 
     project.redo()
 
@@ -135,7 +121,7 @@ def test_redo(project):
         assert project.action is action
     else:
         assert project.action_id == action.next_action_id
-    assert project.next_action_id == next_action_id
+    assert project.num_actions == num_actions
 
 
 def test_get_label_array(project):
@@ -204,11 +190,12 @@ def test_finish_project(mocker, db_session):
         filename='filename',
         input_bucket='input_bucket',
         output_bucket='output_bucket',
-        path='path')
+        path='path',
+        session=db_session)
 
     # test finish project
     project.finish()
-    found_project = models.Project.get(project.id)
+    found_project = models.Project.get(project.id, session=db_session)
     assert found_project.finished is not None
     # test finish Labels
     assert found_project.labels.cell_ids is None
