@@ -106,8 +106,7 @@ def zstack_project(app, mocker, request, db_session):
             data['annotated'] = request.param.copy()
             return data
         mocker.patch('models.Project.load', load)
-        project = Project('filename.npz', 'input_bucket', 'output_bucket', 'path',
-                          session=db_session)
+        project = Project('filename.npz', 'input_bucket', 'output_bucket', 'path')
         project.rgb = 'RGB' in request.node.name
         db_session.add(project)
         db_session.commit()
@@ -136,8 +135,7 @@ def track_project(app, mocker, request, db_session):
             data['lineages'] = lineages
             return data
         mocker.patch('models.Project.load', load)
-        project = Project('filename.trk', 'input_bucket', 'output_bucket', 'path',
-                          session=db_session)
+        project = Project('filename.trk', 'input_bucket', 'output_bucket', 'path')
         db_session.add(project)
         db_session.commit()
         return project

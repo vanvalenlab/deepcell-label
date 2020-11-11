@@ -57,8 +57,9 @@ def test_get(mocker, db_session):
     Test getting a project from the Projects table.
     Gets a project before it exists, creates a project, then gets it again.
     """
+    mocker.patch('models.db.session', db_session)
     # test that no projects exist
-    project = models.Project.get(1, session=db_session)
+    project = models.Project.get(1)
     assert project is None
 
     # create project
@@ -69,16 +70,16 @@ def test_get(mocker, db_session):
         filename='filename',
         input_bucket='input_bucket',
         output_bucket='output_bucket',
-        path='path',
-        session=db_session)
+        path='path')
 
     # test that the project can be found and is the same as the created one
     valid_id = project.id
-    found_project = models.Project.get(valid_id, session=db_session)
+    found_project = models.Project.get(valid_id)
     assert found_project == project
 
 
-def test_finish_action(project):
+def test_finish_action(mocker, project, db_session):
+    mocker.patch('models.db.session', db_session)
     # Store action info before creating new action
     prev_action = project.action
     num_actions = project.num_actions
@@ -186,16 +187,16 @@ def test_finish_project(mocker, db_session):
     def load(self, *args):
         return {'raw': np.zeros((1, 1, 1, 1)), 'annotated': np.zeros((1, 1, 1, 1))}
     mocker.patch('models.Project.load', load)
+    mocker.patch('models.db.session', db_session)
     project = models.Project.create(
         filename='filename',
         input_bucket='input_bucket',
         output_bucket='output_bucket',
-        path='path',
-        session=db_session)
+        path='path')
 
     # test finish project
     project.finish()
-    found_project = models.Project.get(project.id, session=db_session)
+    found_project = models.Project.get(project.id)
     assert found_project.finished is not None
     # test finish Labels
     assert found_project.labels.cell_ids is None

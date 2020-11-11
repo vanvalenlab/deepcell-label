@@ -106,11 +106,8 @@ class Project(db.Model):
     actions = db.relationship('Action', backref='project')
 
     def __init__(self, filename, input_bucket, output_bucket, path,
-                 raw_key='raw', annotated_key=None, session=None):
+                 raw_key='raw', annotated_key=None):
         init_start = timeit.default_timer()
-
-        # Included for mocking session
-        self.session = session or db.session
 
         # Load data
         if annotated_key is None:
@@ -202,7 +199,7 @@ class Project(db.Model):
         return _load(response['Body'].read())
 
     @staticmethod
-    def get(project_id, session=None):
+    def get(project_id):
         """
         Return the project with the given ID, if it exists.
 
@@ -213,14 +210,13 @@ class Project(db.Model):
             Project: row from the Project table
         """
         start = timeit.default_timer()
-        session = session or db.session
-        project = session.query(Project).filter_by(id=project_id).first()
+        project = db.session.query(Project).filter_by(id=project_id).first()
         logger.debug('Got project %s in %ss.',
                      project_id, timeit.default_timer() - start)
         return project
 
     @staticmethod
-    def create(filename, input_bucket, output_bucket, path, session=None):
+    def create(filename, input_bucket, output_bucket, path):
         """
         Create a new project.
         Wraps the Project constructor with logging and database commits.
@@ -230,16 +226,14 @@ class Project(db.Model):
             input_bucket (str): S3 bucket to download file
             output_bucket (str): S3 bucket to upload file
             path (str): full path to download & upload file in buckets; includes filename
-            session (sqlalchemy.orm.session.Session): database session; can be mocked for tests
 
         Returns:
             Project: new row in the Project table
         """
         start = timeit.default_timer()
-        session = session or db.session
-        new_project = Project(filename, input_bucket, output_bucket, path, session=session)
-        session.add(new_project)
-        session.commit()
+        new_project = Project(filename, input_bucket, output_bucket, path)
+        db.session.add(new_project)
+        db.session.commit()
         logger.debug('Created new project %s in %ss.',
                      new_project.id, timeit.default_timer() - start)
         return new_project
@@ -250,7 +244,7 @@ class Project(db.Model):
         Records the effects of the action in the Actions table.
         """
         start = timeit.default_timer()
-        self.session.commit()
+        db.session.commit()
         logger.debug('Updated project %s in %ss.',
                      self.id, timeit.default_timer() - start)
 
@@ -272,7 +266,7 @@ class Project(db.Model):
         for rgb_frame in self.rgb_frames:
             rgb_frame.finish()
         self.finished = db.func.current_timestamp()
-        self.session.commit()
+        db.session.commit()
         logger.debug('Finished project %s in %ss.',
                      self.id, timeit.default_timer() - start)
 
@@ -297,9 +291,9 @@ class Project(db.Model):
         action = self.action
         # Record the edited frames
         action.before_frames = [frame for frame in action.before_frames
-                                if self.label_frames[frame.frame_id] in self.session.dirty]
+                                if self.label_frames[frame.frame_id] in db.session.dirty]
         action.after_frames = [AfterFrame(frame) for frame in self.label_frames
-                               if frame in self.session.dirty]
+                               if frame in db.session.dirty]
         # Record the labels if edited
         if not action.labels_changed:
             action.before_labels = None
@@ -321,7 +315,7 @@ class Project(db.Model):
         action.actionTime = db.func.current_timestamp()
         action.next_action_id = new_action.action_id
 
-        self.session.add(new_action)
+        db.session.add(new_action)
         logger.debug('Finished action %s project %s in %ss.',
                      action.action_id, self.id, timeit.default_timer() - start)
 
@@ -346,9 +340,9 @@ class Project(db.Model):
             self.label_frames[frame_id].frame = frame
         # Restore edited label info
         if prev_action.before_labels is not None:
-            self.session.expunge(self.labels)
+            db.session.expunge(self.labels)
             self.labels = prev_action.before_labels
-            self.session.add(self.labels)
+            db.session.add(self.labels)
 
         # Update Project action bookmarks before making payload
         self.action_id = prev_action_id
@@ -356,7 +350,7 @@ class Project(db.Model):
         payload = self.make_payload(y=prev_action.y_changed,
                                     labels=prev_action.labels_changed)
 
-        self.session.commit()
+        db.session.commit()
         logger.debug('Undo action %s project %s in %ss.',
                      prev_action.action_id, self.id, timeit.default_timer() - start)
         return payload
@@ -380,9 +374,9 @@ class Project(db.Model):
             self.label_frames[frame_id].frame = frame
         # Restore edited label info
         if action.after_labels is not None:
-            self.session.expunge(self.labels)
+            db.session.expunge(self.labels)
             self.labels = action.after_labels
-            self.session.add(self.labels)
+            db.session.add(self.labels)
 
         # Make the payload using the _changed flags for the current action we are redoing
         payload = self.make_payload(y=self.action.y_changed,
@@ -390,7 +384,7 @@ class Project(db.Model):
         # Update Project action bookmarks after making payload
         self.action_id = self.action.next_action_id
 
-        self.session.commit()
+        db.session.commit()
         logger.debug('Redo action %s project %s in %ss.',
                      action.action_id, self.id, timeit.default_timer() - start)
         return payload
