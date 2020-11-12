@@ -156,16 +156,17 @@ class Project(db.Model):
         self.label_frames = [LabelFrame(i, frame)
                              for i, frame in enumerate(annotated)]
 
-        self.actions = [Action(project=self, prev_action_id=None, action_id=0)]
-        self.action_id = 0
-        self.num_actions = 1
-
         logger.debug('Initialized project for %s in %ss.',
                      filename, timeit.default_timer() - init_start)
 
     @property
     def action(self):
+        """The most recent action done to the project."""
         return self.actions[self.action_id]
+
+    @action.setter
+    def action(self, value):
+        self.action_id = value.action_id
 
     @property
     def label_array(self):
@@ -234,6 +235,8 @@ class Project(db.Model):
         new_project = Project(filename, input_bucket, output_bucket, path)
         db.session.add(new_project)
         db.session.commit()
+        new_project.create_memento('create_project', all_frames=True)
+        db.session.commit()
         logger.debug('Created new project %s in %ss.',
                      new_project.id, timeit.default_timer() - start)
         return new_project
@@ -270,123 +273,85 @@ class Project(db.Model):
         logger.debug('Finished project %s in %ss.',
                      self.id, timeit.default_timer() - start)
 
-    def record_project(self):
+    def create_memento(self, action_name, all_frames=False):
         """
-        Saves the project state in the current action.
+        Saves the project state.
         """
-        self.action.before_frames = [BeforeFrame(frame=frame)
-                                     for frame in self.label_frames]
-        self.action.before_labels = self.labels
-
-    def finish_action(self, action_name):
-        """
-        Completes the action,
-        removing the unchanged parts of the saved project state
-        and creating a new empty action.
-
-        Args:
-            action_name (Action): name of function called in Edit class to edit the project
-        """
-        start = timeit.default_timer()
-        action = self.action
-        # Record the edited frames
-        action.before_frames = [frame for frame in action.before_frames
-                                if self.label_frames[frame.frame_id] in db.session.dirty]
-        action.after_frames = [AfterFrame(frame) for frame in self.label_frames
-                               if frame in db.session.dirty]
-        # Record the labels if edited
-        if not action.labels_changed:
-            action.before_labels = None
-        else:
-            action.after_labels = self.labels
-            # SQLAlchemy does not track mutations in dictionaries; need to copy to update
-            # TODO: use Mutable mixin instead
-            self.labels.update()
-
-        # Create new Action for next edit route call
-        new_action = Action(project=self,
-                            prev_action_id=self.action_id,
-                            action_id=self.num_actions,
-                            prev_action_name=action_name)
-
-        # Bookeeping changes to Project and Action
-        self.action_id = new_action.action_id
+        # Create action and store project state inside
+        action = Action(self, self.action, self.num_actions, action_name=action_name)
+        action.frames = [FrameMemento(action=action, frame=frame) for frame in self.label_frames
+                         if frame in db.session.dirty or all_frames]
+        action.labels = self.labels
+        self.action.next_action = action
+        # Move the Project to the new action
+        self.action = action.action
         self.num_actions += 1
-        action.actionTime = db.func.current_timestamp()
-        action.next_action_id = new_action.action_id
 
-        db.session.add(new_action)
-        logger.debug('Finished action %s project %s in %ss.',
-                     action.action_id, self.id, timeit.default_timer() - start)
 
     def undo(self):
         """
-        Restores the project to before the previous action.
+        Restores the project to before the current action.
 
         Returns:
             dict: payload to send to frontend
         """
         start = timeit.default_timer()
-
-        prev_action_id = self.action.prev_action_id
-        if prev_action_id is None:
+        action = self.action
+        if self.action.prev_action is None:
             return
-        prev_action = self.actions[prev_action_id]
 
         # Restore edited label frames
-        for prev_frame in prev_action.before_frames:
+        for prev_frame in action.before_frames:
             frame_id = prev_frame.frame_id
             frame = prev_frame.frame
             self.label_frames[frame_id].frame = frame
         # Restore edited label info
-        if prev_action.before_labels is not None:
+        if action.before_labels is not None:
             db.session.expunge(self.labels)
-            self.labels = prev_action.before_labels
+            self.labels = action.before_labels
             db.session.add(self.labels)
 
-        # Update Project action bookmarks before making payload
-        self.action_id = prev_action_id
-        # Use the changed flags from the previous action
-        payload = self.make_payload(y=prev_action.y_changed,
-                                    labels=prev_action.labels_changed)
+        payload = self.make_payload(y=action.y_changed,
+                                    labels=action.labels_changed)
+        action.done = False
+        self.action = action.prev_action
 
         db.session.commit()
         logger.debug('Undo action %s project %s in %ss.',
-                     prev_action.action_id, self.id, timeit.default_timer() - start)
+                     action.action_id, self.id, timeit.default_timer() - start)
         return payload
 
     def redo(self):
         """
-        Restore the project to after the current action.
+        Restore the project to after the next action.
 
         Returns:
             dict: payload to send to frontend
         """
         start = timeit.default_timer()
-        if self.action.next_action_id is None:
+        if self.action.next_action is None:
             return
-        action = self.action
+        next_action = self.action.next_action
 
         # Restore edited label frames
-        for after_frame in action.after_frames:
+        for after_frame in next_action.after_frames:
             frame_id = after_frame.frame_id
             frame = after_frame.frame
             self.label_frames[frame_id].frame = frame
         # Restore edited label info
-        if action.after_labels is not None:
+        if next_action.after_labels is not None:
             db.session.expunge(self.labels)
-            self.labels = action.after_labels
+            self.labels = next_action.after_labels
             db.session.add(self.labels)
 
-        # Make the payload using the _changed flags for the current action we are redoing
-        payload = self.make_payload(y=self.action.y_changed,
-                                    labels=self.action.labels_changed)
-        # Update Project action bookmarks after making payload
-        self.action_id = self.action.next_action_id
+        payload = self.make_payload(y=next_action.y_changed,
+                                    labels=next_action.labels_changed)
+        self.action = self.action.next_action
+        next_action.done = True
 
         db.session.commit()
         logger.debug('Redo action %s project %s in %ss.',
-                     action.action_id, self.id, timeit.default_timer() - start)
+                     next_action.action_id, self.id, timeit.default_timer() - start)
         return payload
 
     def get_max_label(self):
@@ -711,49 +676,82 @@ class LabelFrame(db.Model):
 
 class Action(db.Model):
     """
-    Records a sequence of actions
-    and the label frames and label metadata before each action.
+    Memento class in the memento pattern.
+    Record a Projects internal state, like label frames and label metadata before each action.
     """
     # pylint: disable=E1101
     __tablename__ = 'actions'
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
                            primary_key=True, nullable=False, autoincrement=False)
     action_id = db.Column(db.Integer, primary_key=True, nullable=False)
-    actionTime = db.Column(db.TIMESTAMP)  # Set when finishing an action
-    prev_action_name = db.Column(db.String(64))  # Name of the previous action (e.g. "handle_draw")
-    prev_action_id = db.Column(db.Integer)  # Action to restore upon undo
-    next_action_id = db.Column(db.Integer)  # Action to restore upon redo
-    # Flags to track what changed & needs to be included in payloads for undo/redo
-    y_changed = db.Column(db.Boolean, default=False)
-    labels_changed = db.Column(db.Boolean, default=False)
-    # Records label frames before and after an action
-    before_frames = db.relationship('BeforeFrame', backref='action',
-                                    # Frame histories only exist within a action history
-                                    cascade='save-update, merge, delete, delete-orphan')
-    after_frames = db.relationship('AfterFrame', backref='action',
-                                   # Frame histories only exist within a action history
-                                   cascade='save-update, merge, delete, delete-orphan')
-    # Records label info before and after an action
+    action_time = db.Column(db.TIMESTAMP)   # Set when finishing an action
+    action_name = db.Column(db.String(64))  # Name of the action (e.g. "handle_draw")
+    # Action to jump to upon undo
+    prev_action_id = db.Column(db.Integer, db.ForeignKey('actions.action_id'))
+    prev_action = db.relationship('Actions', foreign_keys=prev_action_id, uselist=False)
+    # Action to jump to upon redo
+    next_action_id = db.Column(db.Integer, db.ForeignKey('actions.action_id')) 
+    next_action = db.relationship('Actions', foreign_keys=next_action_id, uselist=False)
+    # Whether the action is currently in the Projects lineage
+    done = db.Column(db.Boolean, default=True)
+    # Records the edited frames after completing an action
+    frames = db.relationship('FrameMemento', secondary='actionframe', backref='actions')
+    # Records label info after an action (whether or not its changed)
     # Pickles an ORM row from the Labels table
-    before_labels = db.Column(db.PickleType)
-    after_labels = db.Column(db.PickleType)
+    labels = db.Column(db.PickleType)
 
-    def __init__(self, project, prev_action_id, action_id, prev_action_name=''):
+    def __init__(self, project, prev_action, action_id, action_name=''):
         self.project = project
-        self.prev_action_id = prev_action_id
+        self.prev_action = prev_action
         self.action_id = action_id
-        self.prev_action_name = prev_action_name
+        self.action_name = action_name
+        
+    @property
+    def y_changed(self):
+        return len(self.frames) > 0
+
+    @property
+    def labels_changed(self):
+        return self.labels is not None
+
+    @property
+    def before_frames(self):
+        """
+        Returns a list of FrameMementos containing
+        the before version of frames edited by this action.
+        """
+        edited_frames = self.frames
+        before_frames = []
+        # Find the most recent version of each frame before this action
+        for frame in edited_frames:
+            # Actions in the frame's lineage before this action
+            valid_actions = filter(lambda action: action.done and action.action_id < self.action_id,
+                                   frame.actions)
+            # Should find at least the first action (loading the Project)
+            assert len(valid_actions) > 0
+            # Action containing the most recent version
+            before_action = max(frame.actions, key=lambda action: action.action_id)
+            before_frame = next(filter(lambda bf, f=frame: bf.frame_id == f.frame_id,
+                                       before_action.frames))
+            before_frames.append(before_frame)
+        return before_frames
+
+    @property
+    def after_frames(self):
+        """Returns a list of FramesMementos containing
+        the after version of frames edited by this action."""
+        return self.frames
 
 
-class BeforeFrame(db.Model):
+class FrameMemento(db.Model):
     """
-    Table to store label frames before an action edits them.
+    Table to store label frames in a Memento.
     """
     # pylint: disable=E1101
-    __tablename__ = 'beforeframes'
-    project_id = db.Column(db.Integer, nullable=False)
-    action_id = db.Column(db.Integer, nullable=False)
-    frame_id = db.Column(db.Integer, nullable=False)
+    __tablename__ = 'framemementos'
+    project_id = db.Column(db.Integer)
+    action_id = db.Column(db.Integer)
+    frame_id = db.Column(db.Integer)
     frame = db.Column(db.PickleType)
 
     __table_args__ = (
@@ -764,34 +762,30 @@ class BeforeFrame(db.Model):
         )
     )
 
-    def __init__(self, frame):
+    def __init__(self, action, frame):
+        self.actions.append(action)
         self.frame = frame.frame.copy()
         self.frame_id = frame.frame_id
 
 
-class AfterFrame(db.Model):
+class ActionFrame(db.Model):
     """
-    Table to store label frames before an action edits them.
+    Association table between actions and frames.
+    Each Action can hold many frames, and each frame can be held in many Actions.
     """
+
     # pylint: disable=E1101
-    __tablename__ = 'afterframes'
-    project_id = db.Column(db.Integer, nullable=False)
-    action_id = db.Column(db.Integer, nullable=False)
-    frame_id = db.Column(db.Integer, nullable=False)
-    frame = db.Column(db.PickleType)
+    __tablename__ = 'actionframe'
+    project_id = db.Column(db.Integer, primary_key=True)
+    action_id = db.Column(db.Integer, primary_key=True)
+    frame_id = db.Column(db.Integer, db.ForeignKey('framemementos.frame_id'), primary_key=True)
 
     __table_args__ = (
-        PrimaryKeyConstraint('project_id', 'action_id', 'frame_id'),
         ForeignKeyConstraint(
             ['project_id', 'action_id'],
             ['actions.project_id', 'actions.action_id']
-        )
+        ),
     )
-
-    def __init__(self, frame):
-        self.frame = frame.frame.copy()
-        self.frame_id = frame.frame_id
-
 
 def consecutive(data, stepsize=1):
     return np.split(data, np.where(np.diff(data) != stepsize)[0] + 1)

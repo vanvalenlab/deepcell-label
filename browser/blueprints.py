@@ -92,13 +92,9 @@ def edit(project_id, action_type):
         project = Project.get(project_id)
         if not project:
             return jsonify({'error': 'project_id not found'}), 404
-        project.record_project()
         edit = get_edit(project)
         payload = edit.dispatch_action(action_type, info)
-        # Complete the Action
-        project.action.y_changed = edit.y_changed
-        project.action.labels_changed = edit.labels_changed
-        project.finish_action(action_type)
+        project.create_memento(action_type)
         project.update()
 
     except Exception as e:  # TODO: more error handling to identify problem
