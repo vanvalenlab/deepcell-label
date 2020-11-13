@@ -40,11 +40,6 @@ def test_project_init(project):
     assert raw_frame.shape[0] == project.height
     assert raw_frame.shape[1] == project.width
 
-    # Test that an action has been initialized
-    assert project.action is not None
-    assert project.action_id == 0
-    assert project.num_actions == 1
-
     # Check relationship columns have been made
     assert project.labels is not None
     assert project.raw_frames is not None
@@ -78,22 +73,39 @@ def test_get(mocker, db_session):
     assert found_project == project
 
 
-def test_finish_action(mocker, project, db_session):
+def test_create(mocker, db_session):
+    """
+    Test creating a row in the Project table.
+    """
+    # create project
+    def load(self, *args):
+        return {'raw': np.zeros((1, 1, 1, 1)), 'annotated': np.zeros((1, 1, 1, 1))}
+    mocker.patch('models.db.session', db_session)
+    mocker.patch('models.Project.load', load)
+    project = models.Project.create(
+        filename='filename',
+        input_bucket='input_bucket',
+        output_bucket='output_bucket',
+        path='path')
+
+    # Test that an action has been initialized
+    assert project.action is not None
+    assert project.num_actions == 1
+
+
+def test_create_memento(mocker, project, db_session):
     mocker.patch('models.db.session', db_session)
     # Store action info before creating new action
     prev_action = project.action
     num_actions = project.num_actions
 
-    project.finish_action(action_name='test')
+    project.create_memento(action_name='test')
+    db_session.commit()
 
     assert prev_action is not project.action
-    assert prev_action.next_action_id == project.action_id
-    assert project.action_id == project.action.action_id
+    assert prev_action.next_action == project.action
     assert project.num_actions != num_actions
-    assert project.action.next_action_id is None
-
-    assert not project.action.y_changed
-    assert not project.action.labels_changed
+    assert project.action.next_action is None
 
 
 def test_undo(project):
@@ -279,3 +291,15 @@ def test_create_cell_info(project):
             no_label_frames = [i for i in range(project.num_frames) if i not in label_frames]
             assert label_in_frame[label_frames].all()
             assert not label_in_frame[no_label_frames].any()
+
+
+def test_undo_action_with_frame_not_in_previous_action():
+    """
+    TODO: write test
+    """
+
+
+def test_redo_action_with_frame_not_in_next_action():
+    """
+    TODO: write test
+    """
