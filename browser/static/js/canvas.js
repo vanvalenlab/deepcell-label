@@ -9,8 +9,8 @@ class CanvasState {
     this.padding = padding;
 
     // attributes for viewing the canvas.
-    this.sx = 0;
-    this.sy = 0;
+    this._sx = 0;
+    this._sy = 0;
     this.sWidth = width;
     this.sHeight = height;
     this.zoom = 100;
@@ -45,6 +45,30 @@ class CanvasState {
     this.leftBorder = new Path2D();
 
     this.isSpacedown = false;
+  }
+
+  get sx() {
+    return this._sx; 
+  }
+
+  set sx(newSx) {
+    // don't move past right edge
+    newSx = Math.min(newSx, canvas.width - canvas.sWidth);
+    // don't move past left edge
+    newSx = Math.max(newSx, 0);
+    this._sx = newSx;
+  }
+
+  get sy() {
+    return this._sy; 
+  }
+
+  set sy(newSy) {
+    // don't move past bottom edge
+    newSy = Math.min(newSy, canvas.height - canvas.sHeight);
+    // don't move past top edge
+    newSy = Math.max(0, newSy);
+    this._sy = newSy;
   }
 
   get segArray() {
@@ -177,37 +201,32 @@ class Pan extends Action {
   constructor(canvas, dx, dy) {
     super();
     this.canvas = canvas;
-
-    // change in x position of scaled window
-    // Don't move past right edge
-    dx = Math.max(-dx, -canvas.sx); 
-    // Don't move past left edge
-    dx = Math.min(dx, canvas.width - canvas.sWidth - canvas.sx) 
-    this.dx = dx;
-
-    // change in y position of scaled window
-    // Don't move past top edge
-    dy = Math.max(-dy, -canvas.sy);
-    // Don't move past bottom edge
-    dy = Math.min(dy, canvas.height - canvas.sHeight - canvas.sy)
-    this.dy = dy;  
-  }
-
-  pan(canvas, dx, dy) {
-    canvas.sx = canvas.sx + dx;
-    canvas.sy = canvas.sy + dy;
+    // previous canvas position
+    this.oldSx = canvas.sx;
+    this.oldSy = canvas.sy;
+    // change in canvas position
+    this.dx = -dx;
+    this.dy = -dy;
+    // new canvas position (undefined until do)
+    this.newSx;
+    this.newSy;
   }
 
   do() {
-    this.pan(this.canvas, this.dx, this.dy);
+    canvas.sx = canvas.sx + this.dx;
+    canvas.sy = canvas.sy + this.dy;
+    this.newSx = canvas.sx;
+    this.newSy = canvas.sy;
   }
 
   redo() {
-    this.pan(this.canvas, this.dx, this.dy);
+    canvas.sx = this.newSx;
+    canvas.sy = this.newSy;
   }
 
   undo() {
-    this.pan(this.canvas, -this.dx, -this.dy);
+    canvas.sx = this.oldSx;
+    canvas.sy = this.oldSy;
   }
 }
 
