@@ -53,6 +53,7 @@ class History{
    * Undoes the most recent group of actions, if any.
    */
   undo() {
+    if (!this.canUndo) return;
     // Pop until we find an action to ensure undo does something
     let action = this.undoStack.pop();
     // Needed to separate action groups on redo stack
@@ -81,6 +82,7 @@ class History{
    * Redoes the most recent group of undone actions, if any.
    */
   redo() {
+    if (!this.canRedo) return;
     // Pop until we find an action to ensure redo does something
     let action = this.redoStack.pop();
     while(this.canRedo && action === 'fencepost') {

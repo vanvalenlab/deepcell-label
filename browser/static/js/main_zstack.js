@@ -26,63 +26,67 @@ class Mode {
 
   // these keybinds apply regardless of
   // edit_mode, mode.action, or mode.kind
-  handle_universal_keybind(key) {
-    if (!rgb && (key === 'a' || key === 'ArrowLeft')) {
+  handle_universal_keybind(evt) {
+    if (evt.ctrlKey && evt.key === 'z') {
+      undo();
+    } else if (evt.ctrlKey && evt.key === 'Z') {
+      redo();
+    } else if (!rgb && (evt.key === 'a' || evt.key === 'ArrowLeft')) {
       // go backward one frame
       let changeFrame = new ChangeFrame(this, current_frame - 1);
       actions.addFencedAction(changeFrame);
-    } else if (!rgb && (key === 'd' || key === 'ArrowRight')) {
+    } else if (!rgb && (evt.key === 'd' || evt.key === 'ArrowRight')) {
       // go forward one frame
       let changeFrame = new ChangeFrame(this, current_frame + 1);
       actions.addFencedAction(changeFrame);
-    } else if (key === 'Escape') {
+    } else if (evt.key === 'Escape') {
       // deselect/cancel action/reset highlight
       mode.clear();
       // may want some things here that trigger on ESC but not clear()
-    } else if (!rgb && key === 'h') {
+    } else if (!rgb && evt.key === 'h') {
       // toggle highlight
       let toggleHighlight = new ToggleHighlight();
       actions.addFencedAction(toggleHighlight);
       adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
-    } else if (key === 'z') {
+    } else if (evt.key === 'z') {
       // toggle rendering_raw
       rendering_raw = !rendering_raw;
       render_image_display();
-    } else if (key === '0') {
+    } else if (evt.key === '0') {
       // reset brightness adjustments
       let resetBrightnessContrast = new ResetBrightnessContrast(adjuster);
       actions.addAction(resetBrightnessContrast);
-    } else if ((key === 'l' || key === 'L') && rgb && !edit_mode) {
+    } else if ((evt.key === 'l' || evt.key === 'L') && rgb && !edit_mode) {
       display_labels = !display_labels;
       render_image_display();
-    } else if (key === '-') {
+    } else if (evt.key === '-') {
       changeZoom(1);
-    } else if (key === '=') {
+    } else if (evt.key === '=') {
       changeZoom(-1);
     }
   }
 
   // keybinds that always apply in edit mode
   // (invert, change brush size)
-  handle_universal_edit_keybind(key) {
-    if (key === 'ArrowDown') {
+  handle_universal_edit_keybind(evt) {
+    if (evt.key === 'ArrowDown') {
       // decrease brush size, minimum size 1
       brush.size -= 1;
       // redraw the frame with the updated brush preview
       render_image_display();
-    } else if (key === 'ArrowUp') {
+    } else if (evt.key === 'ArrowUp') {
       // increase brush size, diameter shouldn't be larger than the image
       brush.size += 1;
       // redraw the frame with the updated brush preview
       render_image_display();
-    } else if (!rgb && key === 'i') {
+    } else if (!rgb && evt.key === 'i') {
       // toggle light/dark inversion of raw img
       let toggleInvert = new ToggleInvert(adjuster);
       actions.addAction(toggleInvert);
-    } else if (!rgb && settings.pixel_only && (key === 'l' || key === 'L')) {
+    } else if (!rgb && settings.pixel_only && (evt.key === 'l' || evt.key === 'L')) {
       display_labels = !display_labels;
       render_image_display();
-    } else if (key === 'n') {
+    } else if (evt.key === 'n') {
       // set edit value to something unused
       brush.value = maxLabelsMap.get(this.feature) + 1;
       if (this.kind === Modes.prompt && brush.conv) {
@@ -94,28 +98,28 @@ class Mode {
   }
 
   // keybinds that apply when in edit mode
-  handle_edit_keybind(key) {
-    if (key === 'e' && !settings.pixel_only) {
+  handle_edit_keybind(evt) {
+    if (evt.key === 'e' && !settings.pixel_only) {
       // toggle edit mode
       let toggleEdit = new ToggleEdit();
       actions.addFencedAction(toggleEdit);
       adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
-    } else if (key === 'c') {
+    } else if (evt.key === 'c') {
       // cycle forward one channel
       let action = new ChangeChannel(this, adjuster, this.channel + 1);
       actions.addFencedAction(action);
-    } else if (key === 'C') {
+    } else if (evt.key === 'C') {
       // cycle backward one channel
       let action = new ChangeChannel(this, adjuster, this.channel - 1);
       actions.addFencedAction(action);
-    } else if (key === 'f') {
+    } else if (evt.key === 'f') {
       let changeFeature = new ChangeFeature(this, this.feature + 1);
       actions.addFencedAction(changeFeature);
-    } else if (key === 'F') {
+    } else if (evt.key === 'F') {
       // cycle backward one feature
       let changeFeature = new ChangeFeature(this, this.feature - 1);
       actions.addFencedAction(changeFeature);
-    } else if (key === ']') {
+    } else if (evt.key === ']') {
       // increase edit_value up to max label + 1 (guaranteed unused)
       brush.value = Math.min(
         brush.value + 1,
@@ -125,31 +129,31 @@ class Mode {
         adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
       }
       render_info_display();
-    } else if (key === '[') {
+    } else if (evt.key === '[') {
       // decrease edit_value, minimum 1
       brush.value -= 1;
       if (current_highlight) {
         adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
       }
       render_info_display();
-    } else if (key === 'x') {
+    } else if (evt.key === 'x') {
       // turn eraser on and off
       brush.erase = !brush.erase;
       render_image_display();
-    } else if (key === 'p') {
+    } else if (evt.key === 'p') {
       // color picker
       this.kind = Modes.prompt;
       this.action = 'pick_color';
       this.prompt = 'Click on a label to change the brush value to that value.';
       render_info_display();
-    } else if (key === 'r') {
+    } else if (evt.key === 'r') {
       // conversion brush
       this.kind = Modes.prompt;
       this.action = 'pick_target';
       this.prompt = 'First, click on the label you want to overwrite.';
       brush.conv = true;
       render_image_display();
-    } else if (key === 't' && !rgb) {
+    } else if (evt.key === 't' && !rgb) {
       // prompt thresholding with bounding box
       this.kind = Modes.question;
       this.action = 'start_threshold';
@@ -161,35 +165,35 @@ class Mode {
   }
 
   // keybinds that apply in bulk mode, nothing selected
-  handle_mode_none_keybind(key) {
-    if (key === 'e' && !settings.label_only) {
+  handle_mode_none_keybind(evt) {
+    if (evt.key === 'e' && !settings.label_only) {
       // toggle edit mode
       let toggleEdit = new ToggleEdit(this);
       actions.addFencedAction(toggleEdit);
       helper_brush_draw();
       adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
-    } else if (key === 'c') {
+    } else if (evt.key === 'c') {
       // cycle forward one channel
       let action = new ChangeChannel(this, adjuster, this.channel + 1);
       actions.addFencedAction(action);
-    } else if (key === 'C') {
+    } else if (evt.key === 'C') {
       // cycle backward one channel
       let action = new ChangeChannel(this, adjuster, this.channel - 1);
       actions.addFencedAction(action);
-    } else if (key === 'f') {
+    } else if (evt.key === 'f') {
       // cycle forward one feature
       let action = new ChangeFeature(this, this.feature + 1);
       actions.addFencedAction(action);
-    } else if (key === 'F') {
+    } else if (evt.key === 'F') {
       let action = new ChangeFeature(this, this.feature - 1);
       actions.addFencedAction(action);
-    } else if (key === 'p' && !rgb) {
+    } else if (evt.key === 'p' && !rgb) {
       // iou cell identity prediction
       this.kind = Modes.question;
       this.action = 'predict';
       this.prompt = 'Predict cell ids for zstack? / S=PREDICT THIS FRAME / SPACE=PREDICT ALL FRAMES / ESC=CANCEL PREDICTION';
       render_info_display();
-    } else if (key === '[' && this.highlighted_cell_one !== -1) {
+    } else if (evt.key === '[' && this.highlighted_cell_one !== -1) {
       // cycle highlight to prev label
       this.highlighted_cell_one = this.decrement_value(
         this.highlighted_cell_one,
@@ -199,7 +203,7 @@ class Mode {
       if (current_highlight) {
         adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
       }
-    } else if (key === ']' && this.highlighted_cell_one !== -1) {
+    } else if (evt.key === ']' && this.highlighted_cell_one !== -1) {
       // cycle highlight to next label (skipping 0)
       let maxLabel = 1 + maxLabelsMap.get(this.feature);
       this.highlighted_cell_one = (this.highlighted_cell_one + 1) % (maxLabel) + 1;
@@ -210,8 +214,8 @@ class Mode {
   }
 
   // keybinds that apply in bulk mode, one selected
-  handle_mode_single_keybind(key) {
-    if (key === 'f' && !rgb) {
+  handle_mode_single_keybind(evt) {
+    if (evt.key === 'f' && !rgb) {
       // hole fill
       this.info = {
         label: this.info.label,
@@ -221,19 +225,19 @@ class Mode {
       this.action = 'fill_hole';
       this.prompt = `Select hole to fill in cell ${this.info.label}`;
       render_info_display();
-    } else if (!rgb && key === 'c') {
+    } else if (!rgb && evt.key === 'c') {
       // create new
       this.kind = Modes.question;
       this.action = 'create_new';
       this.prompt = 'CREATE NEW(S=SINGLE FRAME / SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)';
       render_info_display();
-    } else if (key === 'x') {
+    } else if (evt.key === 'x') {
       // delete label from frame
       this.kind = Modes.question;
       this.action = 'delete_mask';
       this.prompt = `delete label ${this.info.label} in frame ${this.info.frame}? ${answer}`;
       render_info_display();
-    } else if (key === '[') {
+    } else if (evt.key === '[') {
       // cycle highlight to prev label
       this.highlighted_cell_one = this.decrement_value(
         this.highlighted_cell_one,
@@ -247,7 +251,7 @@ class Mode {
       if (current_highlight) {
         adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
       }
-    } else if (key === ']') {
+    } else if (evt.key === ']') {
       // cycle highlight to next label
       let maxLabel = 1 + maxLabelsMap.get(this.feature);
       this.highlighted_cell_one = (this.highlighted_cell_one + 1) % maxLabel + 1;
@@ -262,21 +266,21 @@ class Mode {
   }
 
   // keybinds that apply in bulk mode, two selected
-  handle_mode_multiple_keybind(key) {
-    if (key === 'r') {
+  handle_mode_multiple_keybind(evt) {
+    if (evt.key === 'r') {
       // replace
       this.kind = Modes.question;
       this.action = 'replace';
       this.prompt = ('Replace ' + this.info.label_2 + ' with ' + this.info.label_1 +
         '? // SPACE = Replace in all frames / S = Replace in this frame only / ESC = Cancel replace');
       render_info_display();
-    } else if (!rgb && key === 's') {
+    } else if (!rgb && evt.key === 's') {
       // swap
       this.kind = Modes.question;
       this.action = 'swap_cells';
       this.prompt = 'SPACE = SWAP IN ALL FRAMES / S = SWAP IN THIS FRAME ONLY / ESC = CANCEL SWAP';
       render_info_display();
-    } else if (key === 'w' && !rgb) {
+    } else if (evt.key === 'w' && !rgb) {
       // watershed
       this.kind = Modes.question;
       this.action = 'watershed';
@@ -286,8 +290,8 @@ class Mode {
   }
 
   // keybinds that apply in bulk mode, answering question/prompt
-  handle_mode_question_keybind(key) {
-    if (key === ' ') {
+  handle_mode_question_keybind(evt) {
+    if (evt.key === ' ') {
       if (this.action === 'flood_contiguous') {
         action(this.action, this.info);
       } else if (this.action === 'trim_pixels') {
@@ -325,7 +329,7 @@ class Mode {
         }
       }
       this.clear();
-    } else if (key === 's') {
+    } else if (evt.key === 's') {
       if (this.action === 'create_new') {
         action('new_single_cell', this.info);
       } else if (this.action === 'predict') {
@@ -352,24 +356,24 @@ class Mode {
   }
 
   // handle all keypresses
-  handle_key(key) {
+  handle_key(evt) {
     // universal keybinds always apply
     // keys a, d, left arrow, right arrow, ESC, h
     // are reserved for universal keybinds
-    this.handle_universal_keybind(key);
+    this.handle_universal_keybind(evt);
     if (edit_mode) {
-      this.handle_universal_edit_keybind(key);
+      this.handle_universal_edit_keybind(evt);
     }
     if (edit_mode && this.kind === Modes.none) {
-      this.handle_edit_keybind(key);
+      this.handle_edit_keybind(evt);
     } else if (!edit_mode && this.kind === Modes.none) {
-      this.handle_mode_none_keybind(key);
+      this.handle_mode_none_keybind(evt);
     } else if (!edit_mode && this.kind === Modes.single) {
-      this.handle_mode_single_keybind(key);
+      this.handle_mode_single_keybind(evt);
     } else if (!edit_mode && this.kind === Modes.multiple) {
-      this.handle_mode_multiple_keybind(key);
+      this.handle_mode_multiple_keybind(evt);
     } else if (!edit_mode && this.kind === Modes.question) {
-      this.handle_mode_question_keybind(key);
+      this.handle_mode_question_keybind(evt);
     }
   }
 
@@ -1016,6 +1020,7 @@ function action(action, info) {
 }
 
 function undo() {
+  console.log('undoing');
   actions.undo();
   mode.clear();
   render_image_display();
@@ -1121,7 +1126,7 @@ function startCaliban(filename, settings) {
     });
 
     window.addEventListener('keydown', (evt) => {
-      mode.handle_key(evt.key);
+      mode.handle_key(evt);
     }, false);
 
     const canvasElement = document.getElementById('canvas');
