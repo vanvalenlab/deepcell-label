@@ -242,6 +242,8 @@ class Project(db.Model):
         Records the effects of the action in the Action table.
         """
         start = timeit.default_timer()
+        if self.action.labels_changed:
+            self.labels.update()
         db.session.commit()
         logger.debug('Updated project %s in %ss.',
                      self.id, timeit.default_timer() - start)

@@ -176,6 +176,7 @@ class BaseEdit(object):
         Returns:
             dict: payload to send to frontend application
         """
+        # import pdb; pdb.set_trace()
         attr_name = 'action_{}'.format(action)
         try:
             action_fn = getattr(self, attr_name)
