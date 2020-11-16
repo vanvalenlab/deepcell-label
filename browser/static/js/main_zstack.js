@@ -27,10 +27,10 @@ class Mode {
   // these keybinds apply regardless of
   // edit_mode, mode.action, or mode.kind
   handle_universal_keybind(evt) {
-    if (evt.ctrlKey && evt.key === 'z') {
-      undo();
-    } else if (evt.ctrlKey && evt.key === 'Z') {
+    if ((evt.ctrlKey || evt.metaKey) && evt.shiftKey && (evt.key === 'Z' || evt.key === 'z')) {
       redo();
+    } else if ((evt.ctrlKey || evt.metaKey) && evt.key === 'z') {
+      undo();
     } else if (!rgb && (evt.key === 'a' || evt.key === 'ArrowLeft')) {
       // go backward one frame
       let changeFrame = new ChangeFrame(this, current_frame - 1);
