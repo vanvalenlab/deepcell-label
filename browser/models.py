@@ -488,7 +488,7 @@ class Labels(db.Model):
 
         return cell_info
 
-    def create_cell_info(self, feature, labels):
+    def create_cell_info(self, feature, labels=None):
         """
         Make or remake the entire cell info dict.
 
@@ -497,6 +497,8 @@ class Labels(db.Model):
             labels (ndarray): the complete label array (all frames, all features)
         """
         feature = int(feature)
+        if labels is None:
+            labels = self.project.label_array
         annotated = labels[..., feature]
 
         self.cell_ids[feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))]
