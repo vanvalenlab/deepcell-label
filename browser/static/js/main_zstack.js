@@ -1020,7 +1020,6 @@ function action(action, info) {
 }
 
 function undo() {
-  console.log('undoing');
   actions.undo();
   mode.clear();
   render_image_display();
