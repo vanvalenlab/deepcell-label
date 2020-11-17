@@ -1031,6 +1031,17 @@ function redo() {
   render_image_display();
 }
 
+function displayUndoRedo() {
+  let canvasElement = document.getElementById('canvas');
+  let undoButton = document.getElementById('undo');
+  undoButton.hidden = false;
+  undoButton.style.width = canvasElement.width / 2 + 'px';
+  
+  let redoButton = document.getElementById('redo');
+  redoButton.hidden = false;
+  redoButton.style.width = canvasElement.width / 2 + 'px';
+}
+
 function startCaliban(filename, settings) {
   rgb = settings.rgb;
   current_highlight = settings.rgb;
@@ -1121,6 +1132,7 @@ function startCaliban(filename, settings) {
         mode.clear();
         setCanvasDimensions(payload.dimensions);
         brush.refreshView();
+        displayUndoRedo();
       }, 500, 'canvasResize');
     });
 
@@ -1160,7 +1172,6 @@ function startCaliban(filename, settings) {
     adjuster.segImage.src = payload.imgs.segmented;
     adjuster.rawImage.src = payload.imgs.raw;
 
-    document.getElementById('undo').hidden = false;
-    document.getElementById('redo').hidden = false;
+    displayUndoRedo();
   });
 }
