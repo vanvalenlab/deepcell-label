@@ -29,7 +29,7 @@ class Mode {
   handle_universal_keybind(evt) {
     if ((evt.ctrlKey || evt.metaKey) && evt.shiftKey && (evt.key === 'Z' || evt.key === 'z')) {
       redo();
-    } else if ((evt.ctrlKey || evt.metaKey) && evt.key === 'z') {
+    } else if ((evt.ctrlKey || evt.metaKey) && (evt.key === 'Z' || evt.key === 'z')) {
       undo();
     } else if (!rgb && (evt.key === 'a' || evt.key === 'ArrowLeft')) {
       // go backward one frame
