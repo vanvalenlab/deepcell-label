@@ -31,11 +31,11 @@ class Mode {
       redo();
     } else if ((evt.ctrlKey || evt.metaKey) && (evt.key === 'Z' || evt.key === 'z')) {
       undo();
-    } else if (!rgb && (evt.key === 'a' || evt.key === 'ArrowLeft')) {
+    } else if (evt.key === 'a' || evt.key === 'ArrowLeft') {
       // go backward one frame
       let changeFrame = new ChangeFrame(this, current_frame - 1);
       actions.addFencedAction(changeFrame);
-    } else if (!rgb && (evt.key === 'd' || evt.key === 'ArrowRight')) {
+    } else if (evt.key === 'd' || evt.key === 'ArrowRight') {
       // go forward one frame
       let changeFrame = new ChangeFrame(this, current_frame + 1);
       actions.addFencedAction(changeFrame);
