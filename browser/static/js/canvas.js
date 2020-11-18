@@ -274,4 +274,3 @@ class Zoom extends Action {
     this.canvas.sWidth = newWidth;
   }
 }
-

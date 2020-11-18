@@ -156,7 +156,7 @@ class BackendAction extends Action {
       type: 'POST',
       url: `${document.location.origin}/edit/${project_id}/${this.action}`,
       data: this.info,
-      async: true
+      async: false
     }).done(handlePayload);
   }
 
@@ -164,7 +164,7 @@ class BackendAction extends Action {
     $.ajax({
       type: 'POST',
       url: `${document.location.origin}/undo/${project_id}`,
-      async: true
+      async: false
     }).done(handlePayload);
   }
 
@@ -172,7 +172,7 @@ class BackendAction extends Action {
     $.ajax({
       type: 'POST',
       url: `${document.location.origin}/redo/${project_id}`,
-      async: true
+      async: false
     }).done(handlePayload);
   }
 }

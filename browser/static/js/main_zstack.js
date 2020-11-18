@@ -29,13 +29,13 @@ class Mode {
   handle_universal_keybind(evt) {
     if ((evt.ctrlKey || evt.metaKey) && evt.shiftKey && (evt.key === 'Z' || evt.key === 'z')) {
       redo();
-    } else if ((evt.ctrlKey || evt.metaKey) && evt.key === 'z') {
+    } else if ((evt.ctrlKey || evt.metaKey) && (evt.key === 'Z' || evt.key === 'z')) {
       undo();
-    } else if (!rgb && (evt.key === 'a' || evt.key === 'ArrowLeft')) {
+    } else if (max_frames > 1 && (evt.key === 'a' || evt.key === 'ArrowLeft')) {
       // go backward one frame
       let changeFrame = new ChangeFrame(this, current_frame - 1);
       actions.addFencedAction(changeFrame);
-    } else if (!rgb && (evt.key === 'd' || evt.key === 'ArrowRight')) {
+    } else if (max_frames > 1 && (evt.key === 'd' || evt.key === 'ArrowRight')) {
       // go forward one frame
       let changeFrame = new ChangeFrame(this, current_frame + 1);
       actions.addFencedAction(changeFrame);
@@ -55,7 +55,7 @@ class Mode {
     } else if (evt.key === '0') {
       // reset brightness adjustments
       let resetBrightnessContrast = new ResetBrightnessContrast(adjuster);
-      actions.addAction(resetBrightnessContrast);
+      actions.addFencedAction(resetBrightnessContrast);
     } else if ((evt.key === 'l' || evt.key === 'L') && rgb && !edit_mode) {
       display_labels = !display_labels;
       render_image_display();
@@ -104,18 +104,18 @@ class Mode {
       let toggleEdit = new ToggleEdit();
       actions.addFencedAction(toggleEdit);
       adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
-    } else if (evt.key === 'c') {
+    } else if (channelMax > 1 && evt.key === 'c') {
       // cycle forward one channel
       let action = new ChangeChannel(this, adjuster, this.channel + 1);
       actions.addFencedAction(action);
-    } else if (evt.key === 'C') {
+    } else if (channelMax > 1 && evt.key === 'C') {
       // cycle backward one channel
       let action = new ChangeChannel(this, adjuster, this.channel - 1);
       actions.addFencedAction(action);
-    } else if (evt.key === 'f') {
+    } else if (feature_max > 1 && evt.key === 'f') {
       let changeFeature = new ChangeFeature(this, this.feature + 1);
       actions.addFencedAction(changeFeature);
-    } else if (evt.key === 'F') {
+    } else if (feature_max > 1 && evt.key === 'F') {
       // cycle backward one feature
       let changeFeature = new ChangeFeature(this, this.feature - 1);
       actions.addFencedAction(changeFeature);
@@ -205,8 +205,8 @@ class Mode {
       }
     } else if (evt.key === ']' && this.highlighted_cell_one !== -1) {
       // cycle highlight to next label (skipping 0)
-      let maxLabel = 1 + maxLabelsMap.get(this.feature);
-      this.highlighted_cell_one = (this.highlighted_cell_one + 1) % (maxLabel) + 1;
+      let maxLabel = maxLabelsMap.get(this.feature);
+      this.highlighted_cell_one = (this.highlighted_cell_one % maxLabel) + 1;
       if (current_highlight) {
         adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
       }
@@ -253,8 +253,8 @@ class Mode {
       }
     } else if (evt.key === ']') {
       // cycle highlight to next label
-      let maxLabel = 1 + maxLabelsMap.get(this.feature);
-      this.highlighted_cell_one = (this.highlighted_cell_one + 1) % maxLabel + 1;
+      let maxLabel = maxLabelsMap.get(this.feature);
+      this.highlighted_cell_one = (this.highlighted_cell_one % maxLabel) + 1;
       // clear info but show new highlighted cell
       const tempHighlight = this.highlighted_cell_one;
       this.clear();
@@ -1050,7 +1050,7 @@ function startCaliban(filename, settings) {
 
   // disable scrolling from scrolling around on page (it should just control brightness)
   document.addEventListener('wheel', (event) => {
-    if(canvas.onCanvas) event.preventDefault();
+    if (canvas.onCanvas) event.preventDefault();
   }, { passive: false });
 
   // disable space and up/down keys from moving around on page
@@ -1162,7 +1162,7 @@ function startCaliban(filename, settings) {
       canvas.onCanvas = true;
     }
     canvasElement.onmouseout = () => {
-        canvas.onCanvas = false;
+      canvas.onCanvas = false;
     }
 
     // Load images and seg_array from payload

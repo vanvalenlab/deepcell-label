@@ -45,7 +45,6 @@ class ChangeFrame extends Action {
     render_info_display();
   }
 
-
   undo() {
     setDisplay('frame', this.oldValue);
     current_frame = this.oldValue;
@@ -176,4 +175,3 @@ class BackendAction extends Action {
     }).done(handlePayload);
   }
 }
-
