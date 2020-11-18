@@ -1022,12 +1022,14 @@ function action(action, info) {
 function undo() {
   actions.undo();
   mode.clear();
+  updateMousePos(canvas.rawX, canvas.rawY);
   render_image_display();
 }
 
 function redo() {
   actions.redo();
   mode.clear();
+  updateMousePos(canvas.rawX, canvas.rawY);
   render_image_display();
 }
 
