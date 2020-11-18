@@ -73,7 +73,7 @@
 {%- block extraJs -%}
 {%- if filetype == "zstack" -%}
   <script type="text/javascript" src="{{ url_for('static', filename='js/main_zstack.js') }}"></script>
-  <script type="text/javascript" src="{{ url_for('static', filename='js/zstack_actions.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('static', filename='js/actions.js') }}"></script>
 {%- elif filetype == "track" -%}
   <script type="text/javascript" src="{{ url_for('static', filename='js/main_track.js') }}"></script>
 {%- endif -%}
