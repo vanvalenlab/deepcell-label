@@ -10,6 +10,7 @@ from flask.logging import default_handler
 from flask_cors import CORS
 import flask_monitoringdashboard as dashboard
 from flask_compress import Compress
+from flask_dropzone import Dropzone
 
 import config
 from blueprints import bp
@@ -17,6 +18,7 @@ from models import db
 
 
 compress = Compress()  # pylint: disable=C0103
+dropzone = Dropzone()  # pylint: disable=C0103
 
 
 class ReverseProxied(object):
@@ -79,6 +81,7 @@ def create_app(**config_overrides):
     app.register_blueprint(bp)
 
     compress.init_app(app)
+    dropzone.init_app(app)
 
     # For flask monitoring dashboard
     if config.DASHBOARD_CONFIG:
