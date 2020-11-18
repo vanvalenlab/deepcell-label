@@ -253,8 +253,8 @@ class Mode {
       }
     } else if (evt.key === ']') {
       // cycle highlight to next label
-      let maxLabel = 1 + maxLabelsMap.get(this.feature);
-      this.highlighted_cell_one = (this.highlighted_cell_one + 1) % maxLabel + 1;
+      let maxLabel = maxLabelsMap.get(this.feature);
+      this.highlighted_cell_one = (this.highlighted_cell_one % maxLabel) + 1;
       // clear info but show new highlighted cell
       const tempHighlight = this.highlighted_cell_one;
       this.clear();
