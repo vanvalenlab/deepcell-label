@@ -419,9 +419,7 @@ class ResetBrightnessContrast extends Action {
     adjuster.contrastRaw();
   }
 
-  redo() {
-    this.do();
-  }
+  redo() { this.do(); }
 }
 
 class ToggleInvert extends Action {
@@ -437,5 +435,5 @@ class ToggleInvert extends Action {
 
   undo() { this.do(); }
 
-  redo() {this.do(); }
+  redo() { this.do(); }
 }
