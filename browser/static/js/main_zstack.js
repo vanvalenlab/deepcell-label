@@ -55,7 +55,7 @@ class Mode {
     } else if (evt.key === '0') {
       // reset brightness adjustments
       let resetBrightnessContrast = new ResetBrightnessContrast(adjuster);
-      actions.addAction(resetBrightnessContrast);
+      actions.addFencedAction(resetBrightnessContrast);
     } else if ((evt.key === 'l' || evt.key === 'L') && rgb && !edit_mode) {
       display_labels = !display_labels;
       render_image_display();
