@@ -714,8 +714,7 @@ function load_file(file) {
     url: `${document.location.origin}/load/${file}`,
     success: function (payload) {
       max_frames = payload.max_frames;
-      //scale = payload.screen_scale;
-      scale = 2;
+      scale = payload.screen_scale;
       dimensions = [scale * payload.dimensions[0], scale * payload.dimensions[1]];
       tracks = payload.tracks[0];
 
