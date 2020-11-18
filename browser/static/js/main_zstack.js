@@ -1050,7 +1050,7 @@ function startCaliban(filename, settings) {
 
   // disable scrolling from scrolling around on page (it should just control brightness)
   document.addEventListener('wheel', (event) => {
-    if(canvas.onCanvas) event.preventDefault();
+    if (canvas.onCanvas) event.preventDefault();
   }, { passive: false });
 
   // disable space and up/down keys from moving around on page
