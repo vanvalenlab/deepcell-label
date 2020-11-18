@@ -1162,7 +1162,7 @@ function startCaliban(filename, settings) {
       canvas.onCanvas = true;
     }
     canvasElement.onmouseout = () => {
-        canvas.onCanvas = false;
+      canvas.onCanvas = false;
     }
 
     // Load images and seg_array from payload
