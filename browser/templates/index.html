@@ -51,11 +51,19 @@
     </div>
 
   </form>
+  <div class="row">
+    <div class="col s12">
+      <form action="/file-upload"
+        class="dropzone"
+        id="my-awesome-dropzone"></form>
+    </div>
+  </div>
 
 </main>
 {% endblock %}
 
 {% block extraJs %}
+<script src="{{ url_for('static', filename='js/dropzone.js') }}"></script>
 <!-- this script is not affecting anything. -->
 <!-- <script>
   $(function(){
