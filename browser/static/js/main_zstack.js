@@ -205,8 +205,8 @@ class Mode {
       }
     } else if (evt.key === ']' && this.highlighted_cell_one !== -1) {
       // cycle highlight to next label (skipping 0)
-      let maxLabel = 1 + maxLabelsMap.get(this.feature);
-      this.highlighted_cell_one = (this.highlighted_cell_one + 1) % (maxLabel) + 1;
+      let maxLabel = maxLabelsMap.get(this.feature);
+      this.highlighted_cell_one = (this.highlighted_cell_one % maxLabel) + 1;
       if (current_highlight) {
         adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
       }
