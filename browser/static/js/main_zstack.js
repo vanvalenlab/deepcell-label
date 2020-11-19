@@ -31,11 +31,11 @@ class Mode {
       redo();
     } else if ((evt.ctrlKey || evt.metaKey) && (evt.key === 'Z' || evt.key === 'z')) {
       undo();
-    } else if (max_frames > 1 && (evt.key === 'a' || evt.key === 'ArrowLeft')) {
+    } else if (numFrames > 1 && (evt.key === 'a' || evt.key === 'ArrowLeft')) {
       // go backward one frame
       let changeFrame = new ChangeFrame(this, current_frame - 1);
       actions.addFencedAction(changeFrame);
-    } else if (max_frames > 1 && (evt.key === 'd' || evt.key === 'ArrowRight')) {
+    } else if (numFrames > 1 && (evt.key === 'd' || evt.key === 'ArrowRight')) {
       // go forward one frame
       let changeFrame = new ChangeFrame(this, current_frame + 1);
       actions.addFencedAction(changeFrame);
@@ -104,18 +104,18 @@ class Mode {
       let toggleEdit = new ToggleEdit();
       actions.addFencedAction(toggleEdit);
       adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
-    } else if (channelMax > 1 && evt.key === 'c') {
+    } else if (numChannels > 1 && evt.key === 'c') {
       // cycle forward one channel
       let action = new ChangeChannel(this, adjuster, this.channel + 1);
       actions.addFencedAction(action);
-    } else if (channelMax > 1 && evt.key === 'C') {
+    } else if (numChannels > 1 && evt.key === 'C') {
       // cycle backward one channel
       let action = new ChangeChannel(this, adjuster, this.channel - 1);
       actions.addFencedAction(action);
-    } else if (feature_max > 1 && evt.key === 'f') {
+    } else if (numFeatures > 1 && evt.key === 'f') {
       let changeFeature = new ChangeFeature(this, this.feature + 1);
       actions.addFencedAction(changeFeature);
-    } else if (feature_max > 1 && evt.key === 'F') {
+    } else if (numFeatures > 1 && evt.key === 'F') {
       // cycle backward one feature
       let changeFeature = new ChangeFeature(this, this.feature - 1);
       actions.addFencedAction(changeFeature);
@@ -603,9 +603,9 @@ var display_labels;
 
 var current_frame = 0;
 var current_highlight;
-var max_frames;
-var feature_max;
-var channelMax;
+var numFrames;
+var numFeatures;
+var numChannels;
 var tracks;
 var mode = new Mode(Modes.none, {});
 var edit_mode;
@@ -1067,9 +1067,9 @@ function startCaliban(filename, settings) {
   });
 
   loadFile(filename, settings.rgb, (payload) => {
-    max_frames = payload.max_frames;
-    feature_max = payload.feature_max;
-    channelMax = payload.channel_max;
+    numFrames = payload.numFrames;
+    numFeatures = payload.numFeatures;
+    numChannels = payload.numChannels;
     project_id = payload.project_id;
 
     const rawWidth = payload.dimensions[0];
@@ -1108,7 +1108,7 @@ function startCaliban(filename, settings) {
     brush = new Brush(rawHeight, rawWidth, padding);
 
     // define image onload cascade behavior, need rawHeight and rawWidth first
-    adjuster = new ImageAdjuster(rawWidth, rawHeight, rgb, channelMax);
+    adjuster = new ImageAdjuster(rawWidth, rawHeight, rgb, numChannels);
 
     adjuster.rawImage.onload = () => adjuster.contrastRaw();
     adjuster.segImage.onload = () => adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
