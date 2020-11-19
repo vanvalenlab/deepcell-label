@@ -844,7 +844,7 @@ function render_image_display() {
 function loadFile(file, rgb = false, cb) {
   $.ajax({
     type: 'POST',
-    url: `${document.location.origin}/load/${file}?&rgb=${rgb}`,
+    url: `${document.location.origin}/load?source=s3&path=${file}&rgb=${rgb}`,
     async: true
   }).done(cb);
 }

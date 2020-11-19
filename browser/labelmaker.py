@@ -38,7 +38,7 @@ class LabelInfoMaker():
         """
         Make the cell_ids dict.
         """
-        self.cell_ids = {}
+        self._cell_ids = {}
         for feature in range(self.num_features):
             self.compute_feature_ids(feature)
 
@@ -59,7 +59,7 @@ class LabelInfoMaker():
         """
         Make the cell_info dict.
         """
-        self.cell_info = {}
+        self._cell_info = {}
         for feature in range(self.num_features):
             self.compute_feature_info(feature)
 
@@ -75,12 +75,13 @@ class LabelInfoMaker():
         feature_cells = np.unique(feature_labels)[np.nonzero(np.unique(feature_labels))]
         # Compute the label metadata for the feature
         feature_info = {}
+        # import pdb; pdb.set_trace()
         for cell in feature_cells:
             cell = int(cell)
             feature_info[cell] = {}
             feature_info[cell]['label'] = str(cell)
             feature_info[cell]['frames'] = []
-            for frame in range(self.num_features):
+            for frame in range(self.num_frames):
                 if cell in feature_labels[frame, ...]:
                     feature_info[cell]['frames'].append(int(frame))
             feature_info[cell]['slices'] = ''

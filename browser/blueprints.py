@@ -22,6 +22,7 @@ from werkzeug.exceptions import HTTPException
 from helpers import is_trk_file, is_npz_file
 from models import Project
 from caliban import TrackEdit, ZStackEdit, BaseEdit, ChangeDisplay
+import loaders
 
 
 bp = Blueprint('caliban', __name__)  # pylint: disable=C0103
@@ -57,17 +58,17 @@ def upload_file(project_id):
 
     # Call function in caliban.py to save data file and send to S3 bucket
     edit = get_edit(project)
-    filename = project.filename
-    if is_trk_file(filename):
+    path = project.path
+    if is_trk_file(path):
         edit.action_save_track()
-    elif is_npz_file(filename):
+    elif is_npz_file(path):
         edit.action_save_zstack()
 
     # add "finished" timestamp and null out PickleType columns
     project.finish()
 
-    current_app.logger.debug('Uploaded file "%s" for project "%s" in %s s.',
-                             filename, project_id,
+    current_app.logger.debug('Uploaded %s from project %s in %s s.',
+                             path, project_id,
                              timeit.default_timer() - start)
 
     return redirect('/')
@@ -176,38 +177,31 @@ def redo(project_id):
     return jsonify(payload)
 
 
-@bp.route('/load/<filename>', methods=['POST'])
-def load(filename):
+@bp.route('/load', methods=['POST'])
+def load():
     """
     Initate TrackEdit/ZStackEdit object and load object to database.
     Send specific attributes of the object to the .js file.
     """
     start = timeit.default_timer()
-    current_app.logger.info('Loading track at %s', filename)
-
-    folders = re.split('__', filename)
-    filename = folders[len(folders) - 1]
-    subfolders = folders[2:len(folders) - 1]
-
-    subfolders = '/'.join(subfolders)
-    full_path = os.path.join(subfolders, filename)
-
-    input_bucket = folders[0]
-    output_bucket = folders[1]
+    loader = loaders.get_loader(request)
+    path = loader.path
+    
+    current_app.logger.info('Loading project from %s', path)
 
     # arg is 'false' which gets parsed to True if casting to bool
     rgb = request.args.get('rgb', default='false', type=str)
     rgb = bool(distutils.util.strtobool(rgb))
 
-    if not is_trk_file(filename) and not is_npz_file(filename):
+    if not is_trk_file(path) and not is_npz_file(path):
         error = {
             'error': 'invalid file extension: {}'.format(
-                os.path.splitext(filename)[-1])
+                os.path.splitext(path)[-1])
         }
         return jsonify(error), 400
 
     # Initate Project entry in database
-    project = Project.create(filename, input_bucket, output_bucket, full_path)
+    project = Project.create(loader)
     project.rgb = rgb
     # Make payload with raw image data, labeled image data, and label tracks
     payload = project.make_payload(x=True, y=True, labels=True)
@@ -216,14 +210,14 @@ def load(filename):
     payload['project_id'] = project.id
     payload['dimensions'] = (project.width, project.height)
     # Attributes specific to filetype
-    if is_trk_file(filename):
+    if is_trk_file(path):
         payload['screen_scale'] = project.scale_factor
-    if is_npz_file(filename):
+    if is_npz_file(path):
         payload['channel_max'] = project.num_channels
         payload['feature_max'] = project.num_features
 
     current_app.logger.debug('Loaded file %s in %s s.',
-                             filename, timeit.default_timer() - start)
+                             path, timeit.default_timer() - start)
     return jsonify(payload)
 
 
@@ -247,7 +241,7 @@ def tool():
     current_app.logger.info('%s is filename', filename)
 
     # TODO: better name template?
-    new_filename = 'caliban-input__caliban-output__test__{}'.format(filename)
+    new_filename = 'test__{}'.format(filename)
 
     # if no options passed (how this route will be for now),
     # still want to pass in default settings
@@ -329,10 +323,8 @@ def shortcut(filename):
 
 def get_edit(project):
     """Factory for Edit objects"""
-    filename = project.filename
-    if is_npz_file(filename):
+    if is_npz_file(project.path):
         return ZStackEdit(project)
-    elif is_trk_file(filename):
-        # don't use RGB mode with track files
+    elif is_trk_file(project.path):
         return TrackEdit(project)
     return BaseEdit(project)

@@ -1,12 +1,20 @@
+import io
+import json
 import pathlib
+import timeit
+import tempfile
+import tarfile
 
 import boto3
+import numpy as np
 
 from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_INPUT_BUCKET
+from helpers import is_npz_file, is_trk_file
+from labelmaker import LabelInfoMaker
 
-class CalibanLoader():
+class Loader():
     """
-    Interface for loading files into Caliban.
+    Interface for loading files into DeepCell Label.
     """
 
     def __init__(self):
@@ -16,14 +24,15 @@ class CalibanLoader():
         self._cell_info = None
         self._label_maker = None
 
-        self._load()
-
     @property
     def raw_array(self):
         """
         Returns:
             ndarray: raw image data
         """
+        if self._raw_array is None:
+            self._load()
+            assert self._raw_array is not None
         return self._raw_array
 
     @property
@@ -66,11 +75,11 @@ class CalibanLoader():
         if self._cell_info is None:
             self._cell_info = self.label_maker.cell_info
         return self._cell_info
-    
+
     @property
     def label_maker(self):
         if self._label_maker is None:
-            self._label_maker = LabelMaker(self.label_array)
+            self._label_maker = LabelInfoMaker(self.label_array)
         return self._label_maker
 
     def _load(self):
@@ -86,26 +95,23 @@ class CalibanLoader():
         Returns:
             function: loads a response body from S3
         """
-        if is_npz_file(filename):
-            load_fn = load_npz
-        elif is_trk_file(filename):
-            load_fn = load_trks
-        elif is_png_file(filename):
-            load_fn = load_png
-        elif is_tiff_file(filename):
-            load_fn = load_tiff
+        if is_npz_file(self.path):
+            load_fn = self._load_npz
+        elif is_trk_file(self.path):
+            load_fn = self._load_trk
+        elif is_png_file(self.path):
+            load_fn = self._load_png
+        elif is_tiff_file(self.path):
+            load_fn = self._load_tiff
         else:
-            raise ValueError('Cannot load file: {}'.format(filename))
+            raise ValueError('Cannot load file: {}'.format(self.path))
         return load_fn
 
-    def _load_npz(self, path):
+    def _load_npz(self, data):
         """
         Loads a NPZ file into the Loader.
-
-        Args:
-            path: full path to the file including .npz extension
         """
-        data = io.BytesIO(path)
+        # import pdb; pdb.set_trace()
         npz = np.load(data)
 
         # standard nomenclature for image (X) and labeled (y)
@@ -126,15 +132,12 @@ class CalibanLoader():
         self._raw_array = raw_stack
         self._label_array = labeled_stack
 
-    def _load_trk(self, path):
+    def _load_trk(self, data):
         """
         Load a .trk file into the Loader.
-
-        Args:
-            path (str): full path to the file including .trk/.trks
         """
         with tempfile.NamedTemporaryFile() as temp:
-            temp.write(path)
+            temp.write(data)
             with tarfile.open(temp.name, 'r') as trks:
 
                 # numpy can't read these from disk...
@@ -168,7 +171,7 @@ class CalibanLoader():
             # Track files have only one feature and one lineage
             if len(lineages) != 1:
                 raise ValueError('Input file has multiple trials/lineages.')
-            self._cell_info = {0: trial['lineages'][0]}
+            self._cell_info = {0: lineages[0]}
 
     def _load_png(self):
         """Loads a png file into a raw image array."""
@@ -180,16 +183,18 @@ class CalibanLoader():
         pass
 
 
-class S3Loader(CalibanLoader):
+class S3Loader(Loader):
     """
-    Implementation of CalibanLoader interface for S3 buckets.
+    Loader implmentation for S3 buckets.
     """
 
     def __init__(self, path, bucket=S3_INPUT_BUCKET):
-        super(ZStackEdit, self).__init__()
-        self.path = path  # full path to the file within the bucket, including the filename
-        self.bucket = bucket  # bucket to pull file from on S3
-        self.filename = str(pathlib.Path(path).name)
+        super(S3Loader, self).__init__()
+        # full path to file within bucket, including filename
+        self.path = pathlib.Path(path.replace('__', '/'))
+        # bucket to pull file from on S3
+        self.bucket = bucket
+        self.file = None
 
     def _get_s3_client(self):
         return boto3.client(
@@ -203,56 +208,64 @@ class S3Loader(CalibanLoader):
         Load a file from the S3 input bucket.
         """
         start = timeit.default_timer()
-        
+
         s3 = self._get_s3_client()
-        response = s3.get_object(Bucket=self.input_bucket, Key=self.path)
+        response = s3.get_object(Bucket=self.bucket, Key=str(self.path))
         
-        load_fn = get_load(self.filename)
-        load_fn(response['Body'].read())
-        
-        logger.debug('Loaded file %s from S3 in %s s.',
-                     self.filename, timeit.default_timer() - start)
+        file_stream = io.BytesIO(response['Body'].read())
+        load_fn = self._get_load()
+        load_fn(file_stream)
+
+        # logger.debug('Loaded file %s from S3 in %s s.',
+        #              self.path, timeit.default_timer() - start)
 
 
-class LocalFileSystemLoader():
+class LocalFileSystemLoader(Loader):
     """
     CalibanLoader implementation for local file systems.
     """
     def __init__(self, path):
+        super(LocalFileSystemLoader, self).__init__()
         # path to file including filename
-        self.path = pathlib.Path(path)
-        # filename for getting appropriate load/upload functions
-        self.filename = self.path.name
+        self.path = pathlib.Path(path.replace('__', '/'))
 
-    def _load():
-        load_fn = get_load(self.filename)
-        with open(self.path , 'rb') as f:
+    def _load(self):
+        load_fn = self.get_load(self.path)
+        with open(self.path, 'rb') as f:
             load_fn(f)
 
 
-class AttachmentLoader():
+class DroppedLoader(Loader):
     """
-    CalibanLoader implementation for dragging and dropping image files onto a Caliban webpage.
-    """
-
-    def __init__(self, filename):
-        self.filename = filename
-
-    def _load():
-
-
-def load_png(filename):
-    """
-    Loads a png file into a raw image array
-    and makes an empty label array to pair with it.
+    Loader implementation for dragging and dropping image files onto DeepCell Label.
     """
 
-    return raw_array, label_array
+    def __init__(self, f):
+        super(DroppedLoader, self).__init__()
+        self.file = f
+        self.path = f.filename
 
-def load_tiff(filename):
+    def _load(self):
+        load_fn = self._get_load()
+        load_fn(self.file)
+        
+def get_loader(request):
     """
-    Loads a tiff file into a raw image array
-    and makes an empty label array to pair with it.
-    """
-    return raw_array, label_array
+    Simple factory for Loaders.
 
+    Args:
+        request (flask.Request): request ot /load
+
+    Returns:
+        Loader
+    """
+    source = request.args.get('source')
+    if source == 'dropped':
+        loader = DroppedLoader(request.files.get('file'))
+    elif source == 's3':
+        loader = S3Loader(request.args.get('path'))
+    elif source == 'lfs':
+        loader = LocalFileSystemLoader(request.args.get('path'))
+    else:
+        raise ValueError('invalid source: choose from "dropped", "s3", and "lfs"')
+    return loader
