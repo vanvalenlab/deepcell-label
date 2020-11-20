@@ -6,10 +6,10 @@ import tempfile
 import tarfile
 
 import boto3
+import imageio
 import numpy as np
 
 from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_INPUT_BUCKET
-from helpers import is_npz_file, is_trk_file
 from labelmaker import LabelInfoMaker
 
 class Loader():
@@ -23,6 +23,13 @@ class Loader():
         self._cell_ids = None
         self._cell_info = None
         self._label_maker = None
+
+        self._path = None
+
+    @property
+    def path(self):
+        assert self._path is not None
+        return str(self._path)
 
     @property
     def raw_array(self):
@@ -48,7 +55,7 @@ class Loader():
             # think more carefully about handling the shape
             # may not be channels for PNG
             shape = (*self.raw_array.shape[:-1], 1)
-            self._label_array = np.zeroes(shape)
+            self._label_array = np.zeros(shape)
         return self._label_array
             
     @property
@@ -95,13 +102,13 @@ class Loader():
         Returns:
             function: loads a response body from S3
         """
-        if is_npz_file(self.path):
+        if self._path.suffix in {'.npz'}:
             load_fn = self._load_npz
-        elif is_trk_file(self.path):
+        elif self._path.suffix in {'.trk', '.trks'}:
             load_fn = self._load_trk
-        elif is_png_file(self.path):
+        elif self._path.suffix in {'.png'}:
             load_fn = self._load_png
-        elif is_tiff_file(self.path):
+        elif self._path.suffix in {'.tiff'}:
             load_fn = self._load_tiff
         else:
             raise ValueError('Cannot load file: {}'.format(self.path))
@@ -111,7 +118,6 @@ class Loader():
         """
         Loads a NPZ file into the Loader.
         """
-        # import pdb; pdb.set_trace()
         npz = np.load(data)
 
         # standard nomenclature for image (X) and labeled (y)
@@ -173,9 +179,16 @@ class Loader():
                 raise ValueError('Input file has multiple trials/lineages.')
             self._cell_info = {0: lineages[0]}
 
-    def _load_png(self):
+    def _load_png(self, data):
         """Loads a png file into a raw image array."""
-        pass
+        im = imageio.imread(data)
+        # Dimensions are height, width, channels
+        assert (len(im.shape) == 3)
+        if im.shape[-1] > 3:
+            im = im[..., :3]
+        # Add frame dimension
+        im = np.expand_dims(im, axis=0)
+        self._raw_array = im
 
 
     def _load_tiff(self):

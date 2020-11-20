@@ -75,7 +75,6 @@ class LabelInfoMaker():
         feature_cells = np.unique(feature_labels)[np.nonzero(np.unique(feature_labels))]
         # Compute the label metadata for the feature
         feature_info = {}
-        # import pdb; pdb.set_trace()
         for cell in feature_cells:
             cell = int(cell)
             feature_info[cell] = {}

@@ -17,9 +17,10 @@ from flask import render_template
 from flask import request
 from flask import redirect
 from flask import current_app
+from flask import url_for
 from werkzeug.exceptions import HTTPException
 
-from helpers import is_trk_file, is_npz_file
+from helpers import is_track_file, is_zstack_file, is_valid_file
 from models import Project
 from caliban import TrackEdit, ZStackEdit, BaseEdit, ChangeDisplay
 import loaders
@@ -59,9 +60,9 @@ def upload_file(project_id):
     # Call function in caliban.py to save data file and send to S3 bucket
     edit = get_edit(project)
     path = project.path
-    if is_trk_file(path):
+    if is_track_file(path):
         edit.action_save_track()
-    elif is_npz_file(path):
+    elif is_zstack_file(path):
         edit.action_save_zstack()
 
     # add "finished" timestamp and null out PickleType columns
@@ -193,7 +194,7 @@ def load():
     rgb = request.args.get('rgb', default='false', type=str)
     rgb = bool(distutils.util.strtobool(rgb))
 
-    if not is_trk_file(path) and not is_npz_file(path):
+    if not is_valid_file(path):
         error = {
             'error': 'invalid file extension: {}'.format(
                 os.path.splitext(path)[-1])
@@ -210,14 +211,14 @@ def load():
     payload['project_id'] = project.id
     payload['dimensions'] = (project.width, project.height)
     # Attributes specific to filetype
-    if is_trk_file(path):
+    if is_track_file(path):
         payload['screen_scale'] = project.scale_factor
-    if is_npz_file(path):
+    if is_zstack_file(path):
         payload['numChannels'] = project.num_channels
         payload['numFeatures'] = project.num_features
 
-    current_app.logger.debug('Loaded file %s in %s s.',
-                             path, timeit.default_timer() - start)
+    current_app.logger.debug('Loaded project %s from %s in %s s.',
+                             project.id, path, timeit.default_timer() - start)
     return jsonify(payload)
 
 
@@ -256,11 +257,11 @@ def tool():
         'label_only': bool(distutils.util.strtobool(label_only))
     }
 
-    if is_trk_file(new_filename):
+    if is_track_file(new_filename):
         filetype = 'track'
         title = 'Tracking Tool'
 
-    elif is_npz_file(new_filename):
+    elif is_zstack_file(new_filename):
         filetype = 'zstack'
         title = 'Z-Stack Tool'
 
@@ -297,11 +298,11 @@ def shortcut(filename):
         'label_only': bool(distutils.util.strtobool(label_only))
     }
 
-    if is_trk_file(filename):
+    if is_track_file(filename):
         filetype = 'track'
         title = 'Tracking Tool'
 
-    elif is_npz_file(filename):
+    elif is_zstack_file(filename):
         filetype = 'zstack'
         title = 'Z-Stack Tool'
 
@@ -320,11 +321,106 @@ def shortcut(filename):
         filename=filename,
         settings=settings)
 
+@bp.route('/getproject/<int:project_id>')
+def get_project(project_id):
+    """
+    Retrieve data from a project already in the Project table.
+    """
+    start = timeit.default_timer()
+    project = Project.get(project_id)
+    if not project:
+        return jsonify({'error': 'project_id not found'}), 404
+    # Make payload with raw image data, labeled image data, and label tracks
+    payload = project.make_payload(x=True, y=True, labels=True)
+    # Add other attributes to initialize frontend variables
+    payload['numFrames'] = project.num_frames
+    payload['project_id'] = project.id
+    payload['dimensions'] = (project.width, project.height)
+    # Attributes specific to filetype
+    if is_track_file(project.path):
+        payload['screen_scale'] = project.scale_factor
+    if is_zstack_file(project.path):
+        payload['numChannels'] = project.num_channels
+        payload['numFeatures'] = project.num_features
+    
+
+    current_app.logger.debug('Loaded project %s in %s s.',
+                             project.id, timeit.default_timer() - start)
+    return jsonify(payload)
+
+@bp.route('/createproject', methods=['POST'])
+def create_project():
+    """
+    Create a new Project.
+    """
+    start = timeit.default_timer()
+    loader = loaders.get_loader(request)
+    current_app.logger.info('Loading project from %s', loader.path)
+
+    if not is_valid_file(loader.path):
+        error = {
+            'error': 'invalid file extension: {}'.format(
+                os.path.splitext(loader.path)[-1])
+        }
+        return jsonify(error), 400
+
+    # Initate Project entry in database
+    project = Project.create(loader)
+    # arg is 'false' which gets parsed to True if casting to bool
+    rgb = request.args.get('rgb', default='false', type=str)
+    rgb = bool(distutils.util.strtobool(rgb))
+    project.rgb = rgb
+
+    return {'projectId': project.id}
+
+
+@bp.route('/project/<int:project_id>')
+def project(project_id):
+    """
+    Display a project in the Project database.
+    """
+    rgb = request.args.get('rgb', default='false', type=str)
+    pixel_only = request.args.get('pixel_only', default='false', type=str)
+    label_only = request.args.get('label_only', default='false', type=str)
+
+    settings = {
+        'rgb': bool(distutils.util.strtobool(rgb)),
+        'pixel_only': bool(distutils.util.strtobool(pixel_only)),
+        'label_only': bool(distutils.util.strtobool(label_only))
+    }
+
+    project = Project.get(project_id)
+    if not project:
+        return jsonify({'error': 'project_id not found'}), 404
+
+    if is_track_file(project.path):
+        filetype = 'track'
+        title = 'Tracking Tool'
+
+    elif is_zstack_file(project.path):
+        filetype = 'zstack'
+        title = 'Z-Stack Tool'
+    else:
+        # TODO: render an error template instead of JSON.
+        error = {
+            'error': 'invalid file extension: {}'.format(
+                os.path.splitext(project.path)[-1])
+        }
+        return jsonify(error), 400
+
+    return render_template(
+        'tool.html',
+        project_id=project_id,
+        filename="",
+        filetype=filetype,
+        title=title,
+        settings=settings)
+
 
 def get_edit(project):
     """Factory for Edit objects"""
-    if is_npz_file(project.path):
+    if is_zstack_file(project.path):
         return ZStackEdit(project)
-    elif is_trk_file(project.path):
+    elif is_track_file(project.path):
         return TrackEdit(project)
     return BaseEdit(project)

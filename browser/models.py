@@ -22,7 +22,6 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy.schema import PrimaryKeyConstraint, ForeignKeyConstraint
 
-from helpers import is_npz_file, is_trk_file
 from imgutils import pngify, add_outlines
 
 
@@ -436,7 +435,6 @@ class Labels(db.Model):
         [0,1,2,3,...].
         """
         cell_info = copy.deepcopy(self.cell_info)
-        # import pdb; pdb.set_trace()
         for _, feature in cell_info.items():
             for _, label in feature.items():
                 slices = list(map(list, consecutive(label['frames'])))
@@ -746,106 +744,3 @@ class FrameMemento(db.Model):
 
 def consecutive(data, stepsize=1):
     return np.split(data, np.where(np.diff(data) != stepsize)[0] + 1)
-
-
-def get_ann_key(filename):
-    """
-    Returns:
-        str: expected key for the label array depending on the filename
-    """
-    if is_trk_file(filename):
-        return 'tracked'
-    return 'annotated'  # default key
-
-
-def get_load(filename):
-    """
-    Returns:
-        function: loads a response body from S3
-    """
-    if is_npz_file(filename):
-        _load = load_npz
-    elif is_trk_file(filename):
-        _load = load_trks
-    else:
-        raise ValueError('Cannot load file: {}'.format(filename))
-    return _load
-
-
-def load_npz(filename):
-    """
-    Loads a NPZ file.
-
-    Args:
-        filename: full path to the file including .npz extension
-
-    Returns:
-        dict: contains raw and annotated images as numpy arrays
-    """
-    data = io.BytesIO(filename)
-    npz = np.load(data)
-
-    # standard nomenclature for image (X) and annotation (y)
-    if 'y' in npz.files:
-        raw_stack = npz['X']
-        annotation_stack = npz['y']
-
-    # some files may have alternate names 'raw' and 'annotated'
-    elif 'raw' in npz.files:
-        raw_stack = npz['raw']
-        annotation_stack = npz['annotated']
-
-    # if files are named something different, give it a try anyway
-    else:
-        raw_stack = npz[npz.files[0]]
-        annotation_stack = npz[npz.files[1]]
-
-    return {'raw': raw_stack, 'annotated': annotation_stack}
-
-
-# copied from:
-# vanvalenlab/deepcell-tf/blob/master/deepcell/utils/tracking_utils.py3
-
-def load_trks(trkfile):
-    """
-    Load a trk/trks file.
-
-    Args:
-        trks_file (str): full path to the file including .trk/.trks
-
-    Returns:
-        dict: contains raw, tracked, and lineage data
-    """
-    with tempfile.NamedTemporaryFile() as temp:
-        temp.write(trkfile)
-        with tarfile.open(temp.name, 'r') as trks:
-
-            # numpy can't read these from disk...
-            array_file = io.BytesIO()
-            array_file.write(trks.extractfile('raw.npy').read())
-            array_file.seek(0)
-            raw = np.load(array_file)
-            array_file.close()
-
-            array_file = io.BytesIO()
-            array_file.write(trks.extractfile('tracked.npy').read())
-            array_file.seek(0)
-            tracked = np.load(array_file)
-            array_file.close()
-
-            try:
-                trk_data = trks.getmember('lineages.json')
-            except KeyError:
-                try:
-                    trk_data = trks.getmember('lineage.json')
-                except KeyError:
-                    raise ValueError('Invalid .trk file, no lineage data found.')
-
-            lineages = json.loads(trks.extractfile(trk_data).read().decode())
-            lineages = lineages if isinstance(lineages, list) else [lineages]
-
-            # JSON only allows strings as keys, so convert them back to ints
-            for i, tracks in enumerate(lineages):
-                lineages[i] = {int(k): v for k, v in tracks.items()}
-
-        return {'lineages': lineages, 'raw': raw, 'tracked': tracked}

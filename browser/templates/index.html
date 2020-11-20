@@ -53,7 +53,8 @@
   </form>
   <div class="row">
     <div class="col s12">
-      {{ dropzone.create(action='/load?source=dropped') }}
+      <form action="{{url_for('caliban.create_project', source='dropped')}}" method="POST" class="dropzone" id="myDropzone" enctype="multipart/form-data"></form>
+      <!-- {{ dropzone.create(action='/load?source=dropped') }} -->
     </div>
   </div>
 
@@ -62,6 +63,17 @@
 
 {% block extraJs %}
 <script src="{{ url_for('static', filename='js/dropzone.js') }}"></script>
+<script>
+Dropzone.autoDiscover = false;
+
+$(function() {
+  var myDropzone = new Dropzone("#myDropzone");
+  myDropzone.on("success", function(file, payload) {
+    // Called when file finishes uploading
+    window.location = `project/${payload.projectId}`;
+  });
+})
+</script>
 <!-- this script is not affecting anything. -->
 <!-- <script>
   $(function(){

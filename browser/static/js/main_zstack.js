@@ -849,6 +849,14 @@ function loadFile(file, rgb = false, cb) {
   }).done(cb);
 }
 
+function getProject(projectId, cb) {
+  $.ajax({
+    type: 'GET',
+    url: `${document.location.origin}/getproject/${projectId}`,
+    async: true
+  }).done(cb);
+}
+
 /**
  * Calculate available space and how much to scale x and y to fill it
  * @param {*} rawDims the raw dimensions of the input image.
@@ -1044,7 +1052,118 @@ function displayUndoRedo() {
   redoButton.style.width = canvasElement.width / 2 + 'px';
 }
 
-function startCaliban(filename, settings) {
+function handleFirstPayload(payload) {
+  numFrames = payload.numFrames;
+  numFeatures = payload.numFeatures;
+  numChannels = payload.numChannels;
+  project_id = payload.project_id;
+
+  const rawWidth = payload.dimensions[0];
+  const rawHeight = payload.dimensions[1];
+
+  canvas = new CanvasState(rawWidth, rawHeight, 1, padding);
+  actions = new History();
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === ' ') {
+      canvas.isSpacedown = true;
+    }
+  }, false);
+  window.addEventListener('keyup', (e) => {
+    if (e.key === ' ') {
+      canvas.isSpacedown = false;
+    }
+  }, false);
+
+  tracks = payload.tracks; // tracks payload is dict
+
+  // for each feature, get list of cell labels that are in that feature
+  // (each is a key in that dict), cast to numbers, then get the maximum
+  // value from each array and store it in a map
+  for (let i = 0; i < Object.keys(tracks).length; i++) {
+    const key = Object.keys(tracks)[i]; // the keys are strings
+    if (Object.keys(tracks[key]).length > 0) {
+      // use i as key in this map because it is an int, mode.feature is also int
+      maxLabelsMap.set(i, Math.max(...Object.keys(tracks[key]).map(Number)));
+    } else {
+      // if no labels in feature, explicitly set max label to 0
+      maxLabelsMap.set(i, 0);
+    }
+  }
+
+  brush = new Brush(rawHeight, rawWidth, padding);
+
+  // define image onload cascade behavior, need rawHeight and rawWidth first
+  adjuster = new ImageAdjuster(rawWidth, rawHeight, rgb, numChannels);
+
+  adjuster.rawImage.onload = () => adjuster.contrastRaw();
+  adjuster.segImage.onload = () => adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
+  if (rgb) {
+    adjuster.contrastedRaw.onload = () => adjuster.rawAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
+    adjuster.preCompSeg.onload = () => adjuster.segAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
+  } else {
+    adjuster.contrastedRaw.onload = () => adjuster.preCompRawAdjust();
+    adjuster.preCompRaw.onload = () => adjuster.rawAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
+    adjuster.preCompSeg.onload = () => adjuster.segAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
+    adjuster.compositedImg.onload = () => adjuster.postCompAdjust(canvas.segArray, edit_mode, brush, current_highlight);
+  }
+
+  adjuster.postCompImg.onload = render_image_display;
+
+  document.addEventListener('mouseup', (e) => handleMouseup(e));
+
+  setCanvasDimensions(payload.dimensions);
+
+  // resize the canvas every time the window is resized
+  window.addEventListener('resize', function() {
+    waitForFinalEvent(() => {
+      mode.clear();
+      setCanvasDimensions(payload.dimensions);
+      brush.refreshView();
+      displayUndoRedo();
+    }, 500, 'canvasResize');
+  });
+
+  window.addEventListener('keydown', (evt) => {
+    mode.handle_key(evt);
+  }, false);
+
+  const canvasElement = document.getElementById('canvas');
+  // bind click on canvas
+  canvasElement.addEventListener('click', (evt) => {
+    if (!canvas.isSpacedown && (!edit_mode || mode.kind === Modes.prompt)) {
+      mode.click(evt);
+    }
+  });
+
+  // bind scroll wheel, change contrast of raw when scrolled
+  canvasElement.addEventListener('wheel', (e) => handleScroll(e));
+
+  // mousedown for click&drag/handle_draw DIFFERENT FROM CLICK
+  canvasElement.addEventListener('mousedown', (e) => handleMousedown(e));
+
+  // bind mouse movement
+  canvasElement.addEventListener('mousemove', (e) => handleMousemove(e));
+
+  // add flag for when cursor in on the canvas
+  canvasElement.onmouseover = () => {
+    canvas.onCanvas = true;
+  }
+  canvasElement.onmouseout = () => {
+    canvas.onCanvas = false;
+  }
+
+  // Load images and seg_array from payload
+  canvas.segArray = payload.imgs.seg_arr;
+  adjuster.rawLoaded = false;
+  adjuster.segLoaded = false;
+  adjuster.segImage.src = payload.imgs.segmented;
+  adjuster.rawImage.src = payload.imgs.raw;
+
+  displayUndoRedo();
+}
+
+function startCaliban(filename, projectId, settings) {
   rgb = settings.rgb;
   current_highlight = settings.rgb;
   display_labels = !settings.rgb;
@@ -1065,115 +1184,10 @@ function startCaliban(filename, settings) {
       event.preventDefault();
     }
   });
-
-  loadFile(filename, settings.rgb, (payload) => {
-    numFrames = payload.numFrames;
-    numFeatures = payload.numFeatures;
-    numChannels = payload.numChannels;
-    project_id = payload.project_id;
-
-    const rawWidth = payload.dimensions[0];
-    const rawHeight = payload.dimensions[1];
-
-    canvas = new CanvasState(rawWidth, rawHeight, 1, padding);
-    actions = new History();
-
-    window.addEventListener('keydown', (e) => {
-      if (e.key === ' ') {
-        canvas.isSpacedown = true;
-      }
-    }, false);
-    window.addEventListener('keyup', (e) => {
-      if (e.key === ' ') {
-        canvas.isSpacedown = false;
-      }
-    }, false);
-
-    tracks = payload.tracks; // tracks payload is dict
-
-    // for each feature, get list of cell labels that are in that feature
-    // (each is a key in that dict), cast to numbers, then get the maximum
-    // value from each array and store it in a map
-    for (let i = 0; i < Object.keys(tracks).length; i++) {
-      const key = Object.keys(tracks)[i]; // the keys are strings
-      if (Object.keys(tracks[key]).length > 0) {
-        // use i as key in this map because it is an int, mode.feature is also int
-        maxLabelsMap.set(i, Math.max(...Object.keys(tracks[key]).map(Number)));
-      } else {
-        // if no labels in feature, explicitly set max label to 0
-        maxLabelsMap.set(i, 0);
-      }
-    }
-
-    brush = new Brush(rawHeight, rawWidth, padding);
-
-    // define image onload cascade behavior, need rawHeight and rawWidth first
-    adjuster = new ImageAdjuster(rawWidth, rawHeight, rgb, numChannels);
-
-    adjuster.rawImage.onload = () => adjuster.contrastRaw();
-    adjuster.segImage.onload = () => adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
-    if (rgb) {
-      adjuster.contrastedRaw.onload = () => adjuster.rawAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
-      adjuster.preCompSeg.onload = () => adjuster.segAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
-    } else {
-      adjuster.contrastedRaw.onload = () => adjuster.preCompRawAdjust();
-      adjuster.preCompRaw.onload = () => adjuster.rawAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
-      adjuster.preCompSeg.onload = () => adjuster.segAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
-      adjuster.compositedImg.onload = () => adjuster.postCompAdjust(canvas.segArray, edit_mode, brush, current_highlight);
-    }
-
-    adjuster.postCompImg.onload = render_image_display;
-
-    document.addEventListener('mouseup', (e) => handleMouseup(e));
-
-    setCanvasDimensions(payload.dimensions);
-
-    // resize the canvas every time the window is resized
-    window.addEventListener('resize', function() {
-      waitForFinalEvent(() => {
-        mode.clear();
-        setCanvasDimensions(payload.dimensions);
-        brush.refreshView();
-        displayUndoRedo();
-      }, 500, 'canvasResize');
-    });
-
-    window.addEventListener('keydown', (evt) => {
-      mode.handle_key(evt);
-    }, false);
-
-    const canvasElement = document.getElementById('canvas');
-    // bind click on canvas
-    canvasElement.addEventListener('click', (evt) => {
-      if (!canvas.isSpacedown && (!edit_mode || mode.kind === Modes.prompt)) {
-        mode.click(evt);
-      }
-    });
-
-    // bind scroll wheel, change contrast of raw when scrolled
-    canvasElement.addEventListener('wheel', (e) => handleScroll(e));
-
-    // mousedown for click&drag/handle_draw DIFFERENT FROM CLICK
-    canvasElement.addEventListener('mousedown', (e) => handleMousedown(e));
-
-    // bind mouse movement
-    canvasElement.addEventListener('mousemove', (e) => handleMousemove(e));
-
-    // add flag for when cursor in on the canvas
-    canvasElement.onmouseover = () => {
-      canvas.onCanvas = true;
-    }
-    canvasElement.onmouseout = () => {
-      canvas.onCanvas = false;
-    }
-
-    // Load images and seg_array from payload
-    canvas.segArray = payload.imgs.seg_arr;
-    adjuster.rawLoaded = false;
-    adjuster.segLoaded = false;
-    adjuster.segImage.src = payload.imgs.segmented;
-    adjuster.rawImage.src = payload.imgs.raw;
-
-    displayUndoRedo();
-  });
+  
+  if (filename.length > 0) {
+    loadFile(filename, rgb, handleFirstPayload);
+  } else {
+  getProject(projectId, handleFirstPayload); 
+  }
 }

@@ -6,12 +6,20 @@ ALLOWED_EXTENSIONS = set([
     '.png', '.jpg', '.jpeg', '.gif',
 ])
 
+ALLOWED_IMAGE_EXTENSIONS = set([
+    '.npz', '.trk', '.trks', '.png',
+])
+
 
 def allowed_file(name):
     return os.path.splitext(str(name).lower())[-1] in ALLOWED_EXTENSIONS
 
 
-def is_trk_file(name):
+def is_valid_file(name):
+    return is_zstack_file(name) or is_track_file(name)
+
+
+def is_track_file(name):
     '''Determines if a given file is a trk or trks file.
 
     Args:
@@ -23,7 +31,7 @@ def is_trk_file(name):
     return os.path.splitext(str(name).lower())[-1] in {'.trk', '.trks'}
 
 
-def is_npz_file(name):
+def is_zstack_file(name):
     '''Determines if a given file is a npz file.
 
     Args:
@@ -32,4 +40,4 @@ def is_npz_file(name):
     Returns:
         bool: True if the file is npz, otherwise False.
     '''
-    return os.path.splitext(str(name).lower())[-1] in {'.npz'}
+    return os.path.splitext(str(name).lower())[-1] in {'.npz', '.png'}
