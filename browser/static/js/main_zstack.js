@@ -212,7 +212,7 @@ class Mode {
 
   // keybinds that apply in bulk mode, one selected
   handle_mode_single_keybind(evt) {
-    if (evt.key === 'f' && !rgb) {
+    if (evt.key === 'f') {
       // hole fill
       this.info = {
         label: this.info.label,
