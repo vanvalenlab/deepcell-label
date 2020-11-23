@@ -406,17 +406,17 @@ class ResetBrightnessContrast extends Action {
   }
 
   do() {
-    adjuster.brightness = 0;
-    adjuster.contrast = 0;
-    adjuster.rawLoaded = false;
-    adjuster.contrastRaw();
+    this.adjuster.brightness = 0;
+    this.adjuster.contrast = 0;
+    this.adjuster.rawLoaded = false;
+    this.adjuster.contrastRaw();
   }
 
   undo() {
-    adjuster.brightness = this.brightness;
-    adjuster.contrast = this.brightness;
-    adjuster.rawLoaded = false;
-    adjuster.contrastRaw();
+    this.adjuster.brightness = this.brightness;
+    this.adjuster.contrast = this.contrast;
+    this.adjuster.rawLoaded = false;
+    this.adjuster.contrastRaw();
   }
 
   redo() { this.do(); }
