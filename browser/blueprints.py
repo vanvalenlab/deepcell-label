@@ -203,18 +203,7 @@ def load():
     project = Project.create(loader)
     project.rgb = rgb
     project.update()
-    # Make payload with raw image data, labeled image data, and label tracks
-    payload = project.make_payload(x=True, y=True, labels=True)
-    # Add other attributes to initialize frontend variables
-    payload['numFrames'] = project.num_frames
-    payload['project_id'] = project.token
-    payload['dimensions'] = (project.width, project.height)
-    # Attributes specific to filetype
-    if is_track_file(path):
-        payload['screen_scale'] = project.scale_factor
-    if is_zstack_file(path):
-        payload['numChannels'] = project.num_channels
-        payload['numFeatures'] = project.num_features
+    payload = project.make_first_payload()
 
     current_app.logger.debug('Loaded project %s from %s in %s s.',
                              project.token, path, timeit.default_timer() - start)
@@ -329,20 +318,7 @@ def get_project(token):
     project = Project.get(token)
     if not project:
         return jsonify({'error': f'project {token} not found'}), 404
-    # Make payload with raw image data, labeled image data, and label tracks
-    payload = project.make_payload(x=True, y=True, labels=True)
-    # Add other attributes to initialize frontend variables
-    payload['numFrames'] = project.num_frames
-    payload['project_id'] = project.token
-    payload['dimensions'] = (project.width, project.height)
-    # Attributes specific to filetype
-    if is_track_file(project.path):
-        payload['screen_scale'] = project.scale_factor
-    if is_zstack_file(project.path):
-        payload['numChannels'] = project.num_channels
-        payload['numFeatures'] = project.num_features
-    
-
+    payload = project.make_first_payload()
     current_app.logger.debug('Loaded project %s in %s s.',
                              project.token, timeit.default_timer() - start)
     return jsonify(payload)

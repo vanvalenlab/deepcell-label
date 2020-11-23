@@ -24,7 +24,7 @@ from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy.schema import PrimaryKeyConstraint, ForeignKeyConstraint
 
 from imgutils import pngify, add_outlines
-from helpers import is_track_file
+from helpers import is_zstack_file, is_track_file
 
 
 logger = logging.getLogger('models.Project')  # pylint: disable=C0103
@@ -331,6 +331,44 @@ class Project(db.Model):
         else:
             max_label = int(np.max(self.labels.cell_ids[self.feature]))
         return max_label
+
+    def make_first_payload(self):
+        """
+        Creates the first payload to be sent to the front-end,
+        containing extra metadata about the Project.
+
+        Returns:
+            dict: payload with image data, label tracks, and project attributes
+        """
+        payload = {}
+
+        img_payload = {}
+        encode = lambda x: base64.encodebytes(x.read()).decode()
+        raw_png = self._get_raw_png()
+        img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
+        label_png = self._get_label_png()
+        img_payload['segmented'] = f'data:image/png;base64,{encode(label_png)}'
+        img_payload['seg_arr'] = self._get_label_arr()
+        payload['imgs'] = img_payload
+
+        payload['tracks'] = self.labels.readable_tracks
+
+        # Other Project attributes to initialize frontend variables
+        payload['numFrames'] = self.num_frames
+        payload['project_id'] = self.token
+        payload['dimensions'] = (self.width, self.height)
+        # Attributes specific to filetype
+        if is_track_file(self.path):
+            payload['screen_scale'] = self.scale_factor
+        if is_zstack_file(self.path):
+            payload['numChannels'] = self.num_channels
+            payload['numFeatures'] = self.num_features
+
+        # The first frame edited by each action
+        payload['actionFrames'] = [action.frames[0].frame_id for action in self.actions]
+
+        return payload
+
 
     def make_payload(self, x=False, y=False, labels=False):
         """
