@@ -255,7 +255,7 @@ class DroppedLoader(Loader):
     def __init__(self, f):
         super(DroppedLoader, self).__init__()
         self._data = f
-        self._path = f.filename
+        self._path = pathlib.Path(f.filename)
 
     def _load(self):
         load_fn = self._get_load()
