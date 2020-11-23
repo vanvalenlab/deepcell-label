@@ -30,10 +30,10 @@ class ToggleHighlight extends Action {
 
 /** Action to change the viewed frame. */
 class ChangeFrame extends Action {
-  constructor(mode, frame) {
+  constructor(mode, frame, prevFrame = current_frame) {
     super();
     this.mode = mode;
-    this.oldValue = current_frame;
+    this.oldValue = prevFrame;
     this.newValue = frame.mod(numFrames);
   }
 

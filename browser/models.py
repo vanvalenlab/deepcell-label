@@ -364,8 +364,10 @@ class Project(db.Model):
             payload['numChannels'] = self.num_channels
             payload['numFeatures'] = self.num_features
 
-        # The first frame edited by each action
-        payload['actionFrames'] = [action.frames[0].frame_id for action in self.actions]
+        # First frame edited by each action
+        # Excludes the first action, which loads the project
+        payload['actionFrames'] = [action.frames[0].frame_id for action in self.actions[1:] if action.done]
+        # import pdb; pdb.set_trace()
 
         return payload
 

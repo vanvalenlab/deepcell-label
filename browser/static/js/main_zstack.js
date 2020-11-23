@@ -1047,6 +1047,7 @@ function handleFirstPayload(payload) {
 
   canvas = new CanvasState(rawWidth, rawHeight, 1, padding);
   actions = new History();
+  actions.initializeActions(payload.actionFrames);
 
   window.addEventListener('keydown', (e) => {
     if (e.key === ' ') {
