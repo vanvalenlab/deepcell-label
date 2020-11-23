@@ -109,7 +109,7 @@ class History{
    * @param {*} initFrame frame displayed at the bottom of the undoStack
    * @param {*} finalFrame frame displayed at the top of the undoStack
    */
-  initializeAction(actionFrames, initFrame = 0, finalFrame = current_frame) {
+  initializeHistory(actionFrames, initFrame = 0, finalFrame = current_frame) {
       // Initialize undoStack to with actions recorded on backend
       let prevFrame = initFrame;
       for (let frame of actionFrames) {
