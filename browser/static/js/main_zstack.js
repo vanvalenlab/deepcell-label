@@ -172,19 +172,19 @@ class Mode {
       actions.addFencedAction(toggleEdit);
       helper_brush_draw();
       adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
-    } else if (evt.key === 'c') {
+    } else if (channelMax > 1 && evt.key === 'c') {
       // cycle forward one channel
       let action = new ChangeChannel(this, adjuster, this.channel + 1);
       actions.addFencedAction(action);
-    } else if (evt.key === 'C') {
+    } else if (channelMax > 1 && evt.key === 'C') {
       // cycle backward one channel
       let action = new ChangeChannel(this, adjuster, this.channel - 1);
       actions.addFencedAction(action);
-    } else if (evt.key === 'f') {
+    } else if (feature_max > 1 && evt.key === 'f') {
       // cycle forward one feature
       let action = new ChangeFeature(this, this.feature + 1);
       actions.addFencedAction(action);
-    } else if (evt.key === 'F') {
+    } else if (feature_max > 1 && evt.key === 'F') {
       let action = new ChangeFeature(this, this.feature - 1);
       actions.addFencedAction(action);
     } else if (evt.key === 'p' && !rgb) {
