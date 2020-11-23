@@ -213,7 +213,7 @@ def load(filename):
     # Make payload with raw image data, labeled image data, and label tracks
     payload = project.make_payload(x=True, y=True, labels=True)
     # Add other attributes to initialize frontend variables
-    payload['max_frames'] = project.num_frames
+    payload['numFrames'] = project.num_frames
     payload['project_id'] = project.id
     payload['dimensions'] = (project.width, project.height)
     # Attributes specific to filetype
@@ -221,7 +221,7 @@ def load(filename):
         payload['screen_scale'] = project.scale_factor
     if is_npz_file(filename):
         payload['channel_max'] = project.num_channels
-        payload['feature_max'] = project.num_features
+        payload['numFeatures'] = project.num_features
 
     current_app.logger.debug('Loaded file %s in %s s.',
                              filename, timeit.default_timer() - start)

@@ -1,7 +1,7 @@
 // helper functions
 
 class ImageAdjuster {
-  constructor(width, height, rgb, channelMax) {
+  constructor(width, height, rgb, numChannels) {
     // canvas element used for image processing
     this.canvas = document.createElement('canvas');
     this.canvas.id = 'adjustCanvas';
@@ -39,7 +39,7 @@ class ImageAdjuster {
     this.brightnessMap = new Map();
     this.invertMap = new Map();
 
-    for (let i = 0; i < channelMax; i++) {
+    for (let i = 0; i < numChannels; i++) {
       this.brightnessMap.set(i, 0);
       this.contrastMap.set(i, 0);
       this.invertMap.set(i, true);

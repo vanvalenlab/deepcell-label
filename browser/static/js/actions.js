@@ -34,7 +34,7 @@ class ChangeFrame extends Action {
     super();
     this.mode = mode;
     this.oldValue = current_frame;
-    this.newValue = frame.mod(max_frames);
+    this.newValue = frame.mod(numFrames);
   }
 
   do() {
@@ -63,7 +63,7 @@ class ChangeFeature extends Action {
     super();
     this.mode = mode;
     this.oldValue = mode.feature;
-    this.newValue = feature.mod(feature_max);
+    this.newValue = feature.mod(numFeatures);
   }
 
   do() {
@@ -92,7 +92,7 @@ class ChangeChannel extends Action {
     this.mode = mode;
     this.adjuster = adjuster;
     this.oldValue = mode.channel;
-    this.newValue = channel.mod(channelMax);
+    this.newValue = channel.mod(numChannels);
   }
 
   do() {

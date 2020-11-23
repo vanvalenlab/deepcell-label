@@ -29,13 +29,13 @@ class Mode {
       // go backward one frame
       current_frame -= 1;
       if (current_frame < 0) {
-        current_frame = max_frames - 1;
+        current_frame = numFrames - 1;
       }
       fetch_and_render_frame();
     } else if (key === 'd' || key === 'ArrowRight') {
       // go forward one frame
       current_frame += 1;
-      if (current_frame >= max_frames) {
+      if (current_frame >= numFrames) {
         current_frame = 0;
       }
       fetch_and_render_frame();
@@ -441,7 +441,7 @@ let brightness = 0;
 var current_frame = 0;
 var current_label = 0;
 var current_highlight = false;
-var max_frames = undefined;
+var numFrames = undefined;
 var dimensions = undefined;
 var tracks = undefined;
 var maxTrack;
@@ -713,7 +713,7 @@ function load_file(file) {
     type: 'POST',
     url: `${document.location.origin}/load/${file}`,
     success: function (payload) {
-      max_frames = payload.max_frames;
+      numFrames = payload.numFrames;
       scale = payload.screen_scale;
       dimensions = [scale * payload.dimensions[0], scale * payload.dimensions[1]];
       tracks = payload.tracks[0];
