@@ -222,7 +222,7 @@ class Mode {
       this.action = 'fill_hole';
       this.prompt = `Select hole to fill in cell ${this.info.label}`;
       render_info_display();
-    } else if (!rgb && evt.key === 'c') {
+    } else if (evt.key === 'c') {
       // create new
       this.kind = Modes.question;
       this.action = 'create_new';
