@@ -586,7 +586,7 @@ var rendering_raw = false;
 var display_labels;
 
 var current_frame = 0;
-var current_highlight;
+var current_highlight = true;
 var numFrames;
 var numFeatures;
 var numChannels;
@@ -1030,7 +1030,6 @@ function displayUndoRedo() {
 
 function startCaliban(filename, settings) {
   rgb = settings.rgb;
-  current_highlight = settings.rgb;
   display_labels = !settings.rgb;
   edit_mode = (settings.pixel_only && !settings.label_only);
 
