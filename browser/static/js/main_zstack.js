@@ -187,7 +187,7 @@ class Mode {
     } else if (numFeatures > 1 && evt.key === 'F') {
       let action = new ChangeFeature(this, this.feature - 1);
       actions.addFencedAction(action);
-    } else if (evt.key === 'p' && !rgb) {
+    } else if (numFrames > 1 && evt.key === 'p') {
       // iou cell identity prediction
       this.kind = Modes.question;
       this.action = 'predict';
