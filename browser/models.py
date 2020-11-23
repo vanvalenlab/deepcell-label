@@ -11,6 +11,7 @@ import logging
 import tarfile
 import tempfile
 import timeit
+from secrets import token_urlsafe
 
 from flask import current_app
 from flask_sqlalchemy import SQLAlchemy
@@ -23,6 +24,7 @@ from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy.schema import PrimaryKeyConstraint, ForeignKeyConstraint
 
 from imgutils import pngify, add_outlines
+from helpers import is_track_file
 
 
 logger = logging.getLogger('models.Project')  # pylint: disable=C0103
@@ -71,6 +73,7 @@ class Project(db.Model):
     # pylint: disable=E1101
     __tablename__ = 'projects'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    token = db.Column(db.String(12), unique=True, nullable=False, index=True)
     createdAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now())
     finished = db.Column(db.TIMESTAMP)
 
@@ -125,7 +128,7 @@ class Project(db.Model):
         cmap.set_bad('black')
         self.colormap = cmap
 
-        if is_trk_file(self.path):
+        if is_track_file(self.path):
             # Track files require a different scale factor
             self.scale_factor = 2
 
@@ -156,20 +159,20 @@ class Project(db.Model):
         return np.array([frame.frame for frame in self.raw_frames])
 
     @staticmethod
-    def get(project_id):
+    def get(token):
         """
         Return the project with the given ID, if it exists.
 
         Args:
-            project_id (int): primary key of project to get
+            token (int): unique 12 character base64 string to identify project
 
         Returns:
             Project: row from the Project table
         """
         start = timeit.default_timer()
-        project = db.session.query(Project).filter_by(id=project_id).first()
-        logger.debug('Got project %s in %ss.',
-                     project_id, timeit.default_timer() - start)
+        project = db.session.query(Project).filter_by(token=token).first()
+        logger.debug('Got project %s (id %s) in %ss.',
+                     token, project.id, timeit.default_timer() - start)
         return project
 
     @staticmethod
@@ -178,19 +181,25 @@ class Project(db.Model):
         Create a new project in the Project table.
 
         Args:
-            loader (CalibanLoader): loads or generates raw_array, label_array, cell_ids, and cell_info
+            loader (CalibanLoader): loads or creates raw_array, label_array, cell_ids, & cell_info
 
         Returns:
             Project: new row in the Project table
         """
         start = timeit.default_timer()
         new_project = Project(loader)
+        # Assign a unique 12 character base64 token to the project
+        while True:
+            token = token_urlsafe(9)  # 9 bytes is 12 base64 characters
+            if not db.session.query(Project).filter_by(token=token).first():
+                new_project.token = token
+                break
         db.session.add(new_project)
         db.session.commit()
         new_project.create_memento('create_project', all_frames=True)
         db.session.commit()
-        logger.debug('Created new project %s in %ss.',
-                     new_project.id, timeit.default_timer() - start)
+        logger.debug('Created new project %s (id %s) in %ss.',
+                     new_project.token, new_project.id, timeit.default_timer() - start)
         return new_project
 
     def update(self):

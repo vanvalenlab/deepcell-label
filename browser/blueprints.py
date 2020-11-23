@@ -7,7 +7,6 @@ import distutils
 import distutils.util
 import json
 import os
-import re
 import timeit
 import traceback
 
@@ -17,7 +16,6 @@ from flask import render_template
 from flask import request
 from flask import redirect
 from flask import current_app
-from flask import url_for
 from werkzeug.exceptions import HTTPException
 
 from helpers import is_track_file, is_zstack_file, is_valid_file
@@ -49,13 +47,13 @@ def handle_exception(error):
     return jsonify({'message': str(error)}), 500
 
 
-@bp.route('/upload_file/<int:project_id>', methods=['GET', 'POST'])
-def upload_file(project_id):
+@bp.route('/upload_file/<token>', methods=['GET', 'POST'])
+def upload_file(token):
     """Upload .trk/.npz data file to AWS S3 bucket."""
     start = timeit.default_timer()
-    project = Project.get(project_id)
+    project = Project.get(token)
     if not project:
-        return jsonify({'error': 'project_id not found'}), 404
+        return jsonify({'error': f'project {token} not found'}), 404
 
     # Call function in caliban.py to save data file and send to S3 bucket
     edit = get_edit(project)
@@ -69,14 +67,14 @@ def upload_file(project_id):
     project.finish()
 
     current_app.logger.debug('Uploaded %s from project %s in %s s.',
-                             path, project_id,
+                             path, token,
                              timeit.default_timer() - start)
 
     return redirect('/')
 
 
-@bp.route('/edit/<int:project_id>/<action_type>', methods=['POST'])
-def edit(project_id, action_type):
+@bp.route('/edit/<token>/<action_type>', methods=['POST'])
+def edit(token, action_type):
     """
     Edit the labeling of the project and
     update the project in the database.
@@ -91,9 +89,9 @@ def edit(project_id, action_type):
         del info['frame']
 
     try:
-        project = Project.get(project_id)
+        project = Project.get(token)
         if not project:
-            return jsonify({'error': 'project_id not found'}), 404
+            return jsonify({'error': f'project {token} not found'}), 404
         edit = get_edit(project)
         payload = edit.dispatch_action(action_type, info)
         project.create_memento(action_type)
@@ -104,20 +102,20 @@ def edit(project_id, action_type):
         return jsonify({'error': str(e)}), 500
 
     current_app.logger.debug('Finished action %s for project %s in %s s.',
-                             action_type, project_id,
+                             action_type, token,
                              timeit.default_timer() - start)
 
     return jsonify(payload)
 
 
-@bp.route('/changedisplay/<int:project_id>/<display_attribute>/<int:value>', methods=['POST'])
-def change_display(project_id, display_attribute, value):
+@bp.route('/changedisplay/<token>/<display_attribute>/<int:value>', methods=['POST'])
+def change_display(token, display_attribute, value):
     """
     Change the displayed frame, feature, or channel
     and send back the changed image data.
 
     Args:
-        project_id (int): ID of project to change
+        token (str): base64 ID of project
         display_attribute (str): choice between 'frame', 'feature', or 'channel'
         value (int): index of frame, feature, or channel to display
 
@@ -127,9 +125,9 @@ def change_display(project_id, display_attribute, value):
     start = timeit.default_timer()
 
     try:
-        project = Project.get(project_id)
+        project = Project.get(token)
         if not project:
-            return jsonify({'error': 'project_id not found'}), 404
+            return jsonify({'error': f'project {token} not found'}), 404
         change = ChangeDisplay(project)
         payload = change.change(display_attribute, value)
         project.update()
@@ -139,42 +137,42 @@ def change_display(project_id, display_attribute, value):
         return jsonify({'error': str(e)}), 500
 
     current_app.logger.debug('Changed to %s %s for project %s in %s s.',
-                             display_attribute, value, project_id,
+                             display_attribute, value, token,
                              timeit.default_timer() - start)
     return jsonify(payload)
 
 
-@bp.route('/undo/<int:project_id>', methods=['POST'])
-def undo(project_id):
+@bp.route('/undo/<token>', methods=['POST'])
+def undo(token):
     start = timeit.default_timer()
     try:
-        project = Project.get(project_id)
+        project = Project.get(token)
         if not project:
-            return jsonify({'error': 'project_id not found'}), 404
+            return jsonify({'error': f'project {token} not found'}), 404
         payload = project.undo()
     except Exception as e:  # TODO: more error handling to identify problem
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
     current_app.logger.debug('Undid action for project %s finished in %s s.',
-                             project_id, timeit.default_timer() - start)
+                             project, timeit.default_timer() - start)
     return jsonify(payload)
 
 
-@bp.route('/redo/<int:project_id>', methods=['POST'])
-def redo(project_id):
+@bp.route('/redo/<token>', methods=['POST'])
+def redo(token):
     start = timeit.default_timer()
     try:
-        project = Project.get(project_id)
+        project = Project.get(token)
         if not project:
-            return jsonify({'error': 'project_id not found'}), 404
+            return jsonify({'error': f'project {token} not found'}), 404
         payload = project.redo()
     except Exception as e:  # TODO: more error handling to identify problem
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
     current_app.logger.debug('Redid action for project %s finished in %s s.',
-                             project_id, timeit.default_timer() - start)
+                             token, timeit.default_timer() - start)
     return jsonify(payload)
 
 
@@ -209,7 +207,7 @@ def load():
     payload = project.make_payload(x=True, y=True, labels=True)
     # Add other attributes to initialize frontend variables
     payload['numFrames'] = project.num_frames
-    payload['project_id'] = project.id
+    payload['project_id'] = project.token
     payload['dimensions'] = (project.width, project.height)
     # Attributes specific to filetype
     if is_track_file(path):
@@ -322,20 +320,20 @@ def shortcut(filename):
         filename=filename,
         settings=settings)
 
-@bp.route('/getproject/<int:project_id>')
-def get_project(project_id):
+@bp.route('/getproject/<token>')
+def get_project(token):
     """
     Retrieve data from a project already in the Project table.
     """
     start = timeit.default_timer()
-    project = Project.get(project_id)
+    project = Project.get(token)
     if not project:
-        return jsonify({'error': 'project_id not found'}), 404
+        return jsonify({'error': f'project {token} not found'}), 404
     # Make payload with raw image data, labeled image data, and label tracks
     payload = project.make_payload(x=True, y=True, labels=True)
     # Add other attributes to initialize frontend variables
     payload['numFrames'] = project.num_frames
-    payload['project_id'] = project.id
+    payload['project_id'] = project.token
     payload['dimensions'] = (project.width, project.height)
     # Attributes specific to filetype
     if is_track_file(project.path):
@@ -375,8 +373,8 @@ def create_project():
     return {'projectId': project.id}
 
 
-@bp.route('/project/<int:project_id>')
-def project(project_id):
+@bp.route('/project/<token>')
+def project(token):
     """
     Display a project in the Project database.
     """
@@ -390,9 +388,9 @@ def project(project_id):
         'label_only': bool(distutils.util.strtobool(label_only))
     }
 
-    project = Project.get(project_id)
+    project = Project.get(token)
     if not project:
-        return jsonify({'error': 'project_id not found'}), 404
+        return jsonify({'error': f'project {token} not found'}), 404
 
     if is_track_file(project.path):
         filetype = 'track'
@@ -411,7 +409,7 @@ def project(project_id):
 
     return render_template(
         'tool.html',
-        project_id=project_id,
+        token=token,
         filename="",
         filetype=filetype,
         title=title,
