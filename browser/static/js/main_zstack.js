@@ -194,19 +194,16 @@ class Mode {
       this.prompt = 'Predict cell ids for zstack? / S=PREDICT THIS FRAME / SPACE=PREDICT ALL FRAMES / ESC=CANCEL PREDICTION';
       render_info_display();
     } else if (evt.key === '[' && this.highlighted_cell_one !== -1) {
-      // cycle highlight to prev label
-      this.highlighted_cell_one = this.decrement_value(
-        this.highlighted_cell_one,
-        1,
-        maxLabelsMap.get(this.feature)
-      );
+      // cycle highlight to prev label, skipping 0
+      let numLabels = maxLabelsMap.get(this.feature);
+      this.highlighted_cell_one = (this.highlighted_cell_one + numLabels - 2).mod(numLabels) + 1;
       if (current_highlight) {
         adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
       }
     } else if (evt.key === ']' && this.highlighted_cell_one !== -1) {
       // cycle highlight to next label (skipping 0)
       let maxLabel = maxLabelsMap.get(this.feature);
-      this.highlighted_cell_one = (this.highlighted_cell_one % maxLabel) + 1;
+      this.highlighted_cell_one = this.highlighted_cell_one.mod(maxLabel) + 1;
       if (current_highlight) {
         adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
       }
@@ -238,12 +235,9 @@ class Mode {
       this.prompt = `delete label ${this.info.label} in frame ${this.info.frame}? ${answer}`;
       render_info_display();
     } else if (evt.key === '[') {
-      // cycle highlight to prev label
-      this.highlighted_cell_one = this.decrement_value(
-        this.highlighted_cell_one,
-        1,
-        maxLabelsMap.get(this.feature)
-      );
+      // cycle highlight to prev label, skipping 0
+      let numLabels = maxLabelsMap.get(this.feature);
+      this.highlighted_cell_one = (this.highlighted_cell_one + numLabels - 2).mod(numLabels) + 1;
       // clear info but show new highlighted cell
       const tempHighlight = this.highlighted_cell_one;
       this.clear();
@@ -254,7 +248,7 @@ class Mode {
     } else if (evt.key === ']') {
       // cycle highlight to next label
       let maxLabel = maxLabelsMap.get(this.feature);
-      this.highlighted_cell_one = (this.highlighted_cell_one % maxLabel) + 1;
+      this.highlighted_cell_one = this.highlighted_cell_one.mod(maxLabel) + 1;
       // clear info but show new highlighted cell
       const tempHighlight = this.highlighted_cell_one;
       this.clear();
@@ -413,16 +407,6 @@ class Mode {
     }
     this.clear();
     render_image_display();
-  }
-
-  // helper function to decrement value but cycle around if needed
-  decrement_value(currentValue, minValue, maxValue) {
-    if (currentValue > minValue) {
-      currentValue -= 1;
-    } else {
-      currentValue = maxValue;
-    }
-    return currentValue;
   }
 
   // TODO: canvas.click(evt, mode) ?
