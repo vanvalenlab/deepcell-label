@@ -217,7 +217,7 @@ def load():
         payload['numFeatures'] = project.num_features
 
     current_app.logger.debug('Loaded project %s from %s in %s s.',
-                             project.id, path, timeit.default_timer() - start)
+                             project.token, path, timeit.default_timer() - start)
     return jsonify(payload)
 
 
@@ -344,7 +344,7 @@ def get_project(token):
     
 
     current_app.logger.debug('Loaded project %s in %s s.',
-                             project.id, timeit.default_timer() - start)
+                             project.token, timeit.default_timer() - start)
     return jsonify(payload)
 
 @bp.route('/createproject', methods=['POST'])
@@ -370,7 +370,7 @@ def create_project():
     rgb = bool(distutils.util.strtobool(rgb))
     project.rgb = rgb
 
-    return {'projectId': project.id}
+    return {'projectId': project.token}
 
 
 @bp.route('/project/<token>')
