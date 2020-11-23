@@ -220,7 +220,7 @@ def load(filename):
     if is_trk_file(filename):
         payload['screen_scale'] = project.scale_factor
     if is_npz_file(filename):
-        payload['channel_max'] = project.num_channels
+        payload['numChannels'] = project.num_channels
         payload['numFeatures'] = project.num_features
 
     current_app.logger.debug('Loaded file %s in %s s.',

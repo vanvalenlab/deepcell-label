@@ -1052,7 +1052,7 @@ function startCaliban(filename, settings) {
   loadFile(filename, settings.rgb, (payload) => {
     numFrames = payload.numFrames;
     numFeatures = payload.numFeatures;
-    numChannels = payload.channel_max;
+    numChannels = payload.numChannels;
     project_id = payload.project_id;
 
     const rawWidth = payload.dimensions[0];
