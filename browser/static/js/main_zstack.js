@@ -1153,7 +1153,7 @@ function startCaliban(filename, projectId, settings) {
   rgb = settings.rgb;
   current_highlight = settings.rgb;
   display_labels = !settings.rgb;
-  edit_mode = (settings.pixel_only && !settings.label_only);
+  edit_mode = !settings.label_only;
 
   // disable scrolling from scrolling around on page (it should just control brightness)
   document.addEventListener('wheel', (event) => {
