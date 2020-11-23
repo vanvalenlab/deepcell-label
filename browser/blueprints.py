@@ -204,6 +204,7 @@ def load():
     # Initate Project entry in database
     project = Project.create(loader)
     project.rgb = rgb
+    project.update()
     # Make payload with raw image data, labeled image data, and label tracks
     payload = project.make_payload(x=True, y=True, labels=True)
     # Add other attributes to initialize frontend variables

@@ -172,41 +172,38 @@ class Mode {
       actions.addFencedAction(toggleEdit);
       helper_brush_draw();
       adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
-    } else if (evt.key === 'c') {
+    } else if (numChannels > 1 && evt.key === 'c') {
       // cycle forward one channel
       let action = new ChangeChannel(this, adjuster, this.channel + 1);
       actions.addFencedAction(action);
-    } else if (evt.key === 'C') {
+    } else if (numChannels > 1 && evt.key === 'C') {
       // cycle backward one channel
       let action = new ChangeChannel(this, adjuster, this.channel - 1);
       actions.addFencedAction(action);
-    } else if (evt.key === 'f') {
+    } else if (numFeatures > 1 && evt.key === 'f') {
       // cycle forward one feature
       let action = new ChangeFeature(this, this.feature + 1);
       actions.addFencedAction(action);
-    } else if (evt.key === 'F') {
+    } else if (numFeatures > 1 && evt.key === 'F') {
       let action = new ChangeFeature(this, this.feature - 1);
       actions.addFencedAction(action);
-    } else if (evt.key === 'p' && !rgb) {
+    } else if (numFrames > 1 && evt.key === 'p') {
       // iou cell identity prediction
       this.kind = Modes.question;
       this.action = 'predict';
       this.prompt = 'Predict cell ids for zstack? / S=PREDICT THIS FRAME / SPACE=PREDICT ALL FRAMES / ESC=CANCEL PREDICTION';
       render_info_display();
     } else if (evt.key === '[' && this.highlighted_cell_one !== -1) {
-      // cycle highlight to prev label
-      this.highlighted_cell_one = this.decrement_value(
-        this.highlighted_cell_one,
-        1,
-        maxLabelsMap.get(this.feature)
-      );
+      // cycle highlight to prev label, skipping 0
+      let numLabels = maxLabelsMap.get(this.feature);
+      this.highlighted_cell_one = (this.highlighted_cell_one + numLabels - 2).mod(numLabels) + 1;
       if (current_highlight) {
         adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
       }
     } else if (evt.key === ']' && this.highlighted_cell_one !== -1) {
       // cycle highlight to next label (skipping 0)
       let maxLabel = maxLabelsMap.get(this.feature);
-      this.highlighted_cell_one = (this.highlighted_cell_one % maxLabel) + 1;
+      this.highlighted_cell_one = this.highlighted_cell_one.mod(maxLabel) + 1;
       if (current_highlight) {
         adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
       }
@@ -215,7 +212,7 @@ class Mode {
 
   // keybinds that apply in bulk mode, one selected
   handle_mode_single_keybind(evt) {
-    if (evt.key === 'f' && !rgb) {
+    if (evt.key === 'f') {
       // hole fill
       this.info = {
         label: this.info.label,
@@ -225,7 +222,7 @@ class Mode {
       this.action = 'fill_hole';
       this.prompt = `Select hole to fill in cell ${this.info.label}`;
       render_info_display();
-    } else if (!rgb && evt.key === 'c') {
+    } else if (evt.key === 'c') {
       // create new
       this.kind = Modes.question;
       this.action = 'create_new';
@@ -238,12 +235,9 @@ class Mode {
       this.prompt = `delete label ${this.info.label} in frame ${this.info.frame}? ${answer}`;
       render_info_display();
     } else if (evt.key === '[') {
-      // cycle highlight to prev label
-      this.highlighted_cell_one = this.decrement_value(
-        this.highlighted_cell_one,
-        1,
-        maxLabelsMap.get(this.feature)
-      );
+      // cycle highlight to prev label, skipping 0
+      let numLabels = maxLabelsMap.get(this.feature);
+      this.highlighted_cell_one = (this.highlighted_cell_one + numLabels - 2).mod(numLabels) + 1;
       // clear info but show new highlighted cell
       const tempHighlight = this.highlighted_cell_one;
       this.clear();
@@ -254,7 +248,7 @@ class Mode {
     } else if (evt.key === ']') {
       // cycle highlight to next label
       let maxLabel = maxLabelsMap.get(this.feature);
-      this.highlighted_cell_one = (this.highlighted_cell_one % maxLabel) + 1;
+      this.highlighted_cell_one = this.highlighted_cell_one.mod(maxLabel) + 1;
       // clear info but show new highlighted cell
       const tempHighlight = this.highlighted_cell_one;
       this.clear();
@@ -274,7 +268,7 @@ class Mode {
       this.prompt = ('Replace ' + this.info.label_2 + ' with ' + this.info.label_1 +
         '? // SPACE = Replace in all frames / S = Replace in this frame only / ESC = Cancel replace');
       render_info_display();
-    } else if (!rgb && evt.key === 's') {
+    } else if (evt.key === 's') {
       // swap
       this.kind = Modes.question;
       this.action = 'swap_cells';
@@ -413,16 +407,6 @@ class Mode {
     }
     this.clear();
     render_image_display();
-  }
-
-  // helper function to decrement value but cycle around if needed
-  decrement_value(currentValue, minValue, maxValue) {
-    if (currentValue > minValue) {
-      currentValue -= 1;
-    } else {
-      currentValue = maxValue;
-    }
-    return currentValue;
   }
 
   // TODO: canvas.click(evt, mode) ?
@@ -602,7 +586,7 @@ var rendering_raw = false;
 var display_labels;
 
 var current_frame = 0;
-var current_highlight;
+var current_highlight = true;
 var numFrames;
 var numFeatures;
 var numChannels;

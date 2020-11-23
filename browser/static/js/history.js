@@ -65,8 +65,8 @@ class History{
     }
     // Undo actions until the end of the group or stack
     while(true) {
-      action.undo();
       this.redoStack.push(action);
+      action.undo();
       if (this.undoStack.length === 0) break;
       action = this.undoStack.pop();
       if (action === 'fencepost') {
@@ -90,8 +90,8 @@ class History{
     }
     // Redo actions until the end of the group or stack
     while (true) {
-      action.redo();
       this.undoStack.push(action);
+      action.redo();
       if (this.redoStack.length === 0) break;
       action = this.redoStack.pop();
       if (action === 'fencepost') {
