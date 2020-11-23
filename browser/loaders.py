@@ -242,7 +242,7 @@ class LocalFileSystemLoader(Loader):
         self._path = pathlib.Path(path.replace('__', '/'))
 
     def _load(self):
-        load_fn = self.get_load(self.path)
+        load_fn = self._get_load(self.path)
         with open(self.path, 'rb') as data:
             load_fn(data)
 
@@ -266,7 +266,7 @@ def get_loader(request):
     Simple factory for Loaders.
 
     Args:
-        request (flask.Request): request ot /load
+        request (flask.Request): request to /load
 
     Returns:
         Loader

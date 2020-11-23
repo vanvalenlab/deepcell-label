@@ -261,7 +261,7 @@ def tool():
         return jsonify(error), 400
 
     return render_template(
-        'tool.html',
+        'loading.html',
         filetype=filetype,
         title=title,
         filename=new_filename,
@@ -302,7 +302,7 @@ def shortcut(filename):
         return jsonify(error), 400
 
     return render_template(
-        'tool.html',
+        'loading.html',
         filetype=filetype,
         title=title,
         filename=filename,
@@ -317,6 +317,11 @@ def get_project(token):
     project = Project.get(token)
     if not project:
         return jsonify({'error': f'project {token} not found'}), 404
+    # arg is 'false' which gets parsed to True if casting to bool
+    rgb = request.args.get('rgb', default='false', type=str)
+    rgb = bool(distutils.util.strtobool(rgb))
+    project.rgb = rgb
+    project.update()
     payload = project.make_first_payload()
     current_app.logger.debug('Loaded project %s in %s s.',
                              project.token, timeit.default_timer() - start)
@@ -344,6 +349,7 @@ def create_project():
     rgb = request.args.get('rgb', default='false', type=str)
     rgb = bool(distutils.util.strtobool(rgb))
     project.rgb = rgb
+    project.update()
 
     return {'projectId': project.token}
 
@@ -381,11 +387,9 @@ def project(token):
                 os.path.splitext(project.path)[-1])
         }
         return jsonify(error), 400
-
     return render_template(
         'tool.html',
         token=token,
-        filename="",
         filetype=filetype,
         title=title,
         settings=settings)

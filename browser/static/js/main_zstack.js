@@ -824,23 +824,6 @@ function render_image_display() {
   render_info_display();
 }
 
-
-function loadFile(file, rgb = false, cb) {
-  $.ajax({
-    type: 'POST',
-    url: `${document.location.origin}/load?source=s3&path=${file}&rgb=${rgb}`,
-    async: true
-  }).done(cb);
-}
-
-function getProject(projectId, cb) {
-  $.ajax({
-    type: 'GET',
-    url: `${document.location.origin}/getproject/${projectId}`,
-    async: true
-  }).done(cb);
-}
-
 /**
  * Calculate available space and how much to scale x and y to fill it
  * @param {*} rawDims the raw dimensions of the input image.
@@ -1036,6 +1019,23 @@ function displayUndoRedo() {
   redoButton.style.width = canvasElement.width / 2 + 'px';
 }
 
+function loadFile(file, settings) {
+  let rgb = settings?.rgb;
+  $.ajax({
+    type: 'POST',
+    url: `${document.location.origin}/createproject?source=s3&path=${file}&rgb=${rgb}`,
+    async: true
+  }).done((payload) => {window.location = `/project/${payload.projectId}`;} );
+}
+
+function getProject(projectId, rgb, cb) {
+  $.ajax({
+    type: 'GET',
+    url: `${document.location.origin}/getproject/${projectId}?rgb=${rgb}`,
+    async: true
+  }).done(cb);
+}
+
 function handleFirstPayload(payload) {
   current_frame = payload.frame;
   numFrames = payload.numFrames;
@@ -1149,7 +1149,7 @@ function handleFirstPayload(payload) {
   displayUndoRedo();
 }
 
-function startCaliban(filename, projectId, settings) {
+function startCaliban(projectId, settings) {
   rgb = settings.rgb;
   current_highlight = settings.rgb;
   display_labels = !settings.rgb;
@@ -1170,10 +1170,6 @@ function startCaliban(filename, projectId, settings) {
       event.preventDefault();
     }
   });
-  
-  if (filename.length > 0) {
-    loadFile(filename, rgb, handleFirstPayload);
-  } else {
-  getProject(projectId, handleFirstPayload); 
-  }
+
+  getProject(projectId, rgb, handleFirstPayload); 
 }
