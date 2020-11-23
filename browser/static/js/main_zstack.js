@@ -268,7 +268,7 @@ class Mode {
       this.prompt = ('Replace ' + this.info.label_2 + ' with ' + this.info.label_1 +
         '? // SPACE = Replace in all frames / S = Replace in this frame only / ESC = Cancel replace');
       render_info_display();
-    } else if (!rgb && evt.key === 's') {
+    } else if (evt.key === 's') {
       // swap
       this.kind = Modes.question;
       this.action = 'swap_cells';
