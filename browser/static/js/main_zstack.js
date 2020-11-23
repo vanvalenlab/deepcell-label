@@ -1037,6 +1037,7 @@ function displayUndoRedo() {
 }
 
 function handleFirstPayload(payload) {
+  current_frame = payload.frame;
   numFrames = payload.numFrames;
   numFeatures = payload.numFeatures;
   numChannels = payload.numChannels;

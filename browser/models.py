@@ -354,6 +354,7 @@ class Project(db.Model):
         payload['tracks'] = self.labels.readable_tracks
 
         # Other Project attributes to initialize frontend variables
+        payload['frame'] = self.frame
         payload['numFrames'] = self.num_frames
         payload['project_id'] = self.token
         payload['dimensions'] = (self.width, self.height)
