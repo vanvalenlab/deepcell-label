@@ -155,7 +155,7 @@ def undo(token):
         return jsonify({'error': str(e)}), 500
 
     current_app.logger.debug('Undid action for project %s finished in %s s.',
-                             project, timeit.default_timer() - start)
+                             token, timeit.default_timer() - start)
     return jsonify(payload)
 
 
@@ -185,7 +185,6 @@ def load():
     start = timeit.default_timer()
     loader = loaders.get_loader(request)
     path = loader.path
-    
     current_app.logger.info('Loading project from %s', path)
 
     # arg is 'false' which gets parsed to True if casting to bool
