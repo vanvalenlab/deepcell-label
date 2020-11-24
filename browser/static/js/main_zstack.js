@@ -1151,7 +1151,6 @@ function handleFirstPayload(payload) {
 
 function startCaliban(projectId, settings) {
   rgb = settings.rgb;
-  current_highlight = settings.rgb;
   display_labels = !settings.rgb;
   edit_mode = !settings.label_only;
 
