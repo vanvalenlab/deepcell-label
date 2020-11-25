@@ -1,4 +1,4 @@
-"""Test for Caliban Models"""
+"""Test for DeepCell Label Models"""
 
 import io
 

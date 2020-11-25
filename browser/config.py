@@ -21,7 +21,7 @@ SQLALCHEMY_TRACK_MODIFICATIONS = config('SQLALCHEMY_TRACK_MODIFICATIONS',
                                         cast=bool, default=False)
 
 SQLALCHEMY_DATABASE_URI = config('SQLALCHEMY_DATABASE_URI',
-                                 default='sqlite:////tmp/caliban.db')
+                                 default='sqlite:////tmp/deepcell_label.db')
 
 # Flask monitoring dashboard
 # When empty, disables the dashboard

@@ -5,7 +5,7 @@
 
   <div class="section center-align">
     <h5>
-      Click on a file that you would like use to see how Caliban works!
+      Click on a file that you would like use to see how DeepCell Label works!
     </h5>
     <p>
       The .trk files allow you to annotate RAW264 cells across time-lapse frames while preserving relationship information.
@@ -18,7 +18,7 @@
     </p>
   </div>
 
-  <form method="POST" action="{{ url_for('caliban.tool') }}" class="section">
+  <form method="POST" action="{{ url_for('label.tool') }}" class="section">
 
     <div class="container row">
 
@@ -53,7 +53,7 @@
   </form>
   <div class="row">
     <div class="col s12">
-      <form action="{{url_for('caliban.create_project', source='dropped')}}" method="POST" class="dropzone" id="myDropzone" enctype="multipart/form-data"></form>
+      <form action="{{url_for('label.create_project', source='dropped')}}" method="POST" class="dropzone" id="myDropzone" enctype="multipart/form-data"></form>
       <!-- {{ dropzone.create(action='/load?source=dropped') }} -->
     </div>
   </div>

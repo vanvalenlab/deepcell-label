@@ -7,20 +7,20 @@
     </div>
     <div class="collapsible-body">
       <p dir="ltr">
-        Caliban is a tool designed for the correction of biological image annotations.
+        DeepCell Label is a tool designed for the correction of biological image annotations.
         Annotations can be corrected with whole-label modifications or pixel-level editing.
-        Caliban displays images as well as useful information about the images to guide corrections.
+        DeepCell Label displays images as well as useful information about the images to guide corrections.
       </p>
 
       <p dir="ltr">
-        The right pane of Caliban displays an image of cells.
+        The right pane of DeepCell Label displays an image of cells.
         By default, this shows the cell segmentation masks for that image, but can be toggled to display the raw image.
         Each cell value is displayed with a different color.
         In pixel-editing mode, the raw image is overlaid with its annotations.
       </p>
 
       <p dir="ltr">
-        The left pane of Caliban displays information.
+        The left pane of DeepCell Label displays information.
         The frame number you are viewing will always be displayed in the top left corner.
         When you mouse over a cell in the right pane, information about that cell will be displayed in the bottom left corner.
         Cell selections and confirmations will also be displayed in the bottom left corner.
@@ -83,8 +83,6 @@
       <p dir="ltr"><strong>s&nbsp;</strong>| <em><u>swap</u></em>: click on one cell mask (cell F) then another (cell G). Hit “s” to swap the cell values (does not swap parent/daughter information). This affects all frames of the movie.</p>
 
       <p dir="ltr"><strong>w</strong> | <em><u>watershed</u></em>: this function is to separate one cell mask (cell H) into two (cell H and cell I). Click on one pixel in a cell mask (cell H), then another pixel in the same cell mask. These points should correspond to the centers of the cells you are trying to separate. You can select these positions while you are looking at the raw channel. The first click should be on the cell that you want to remain cell H.</p>
-
-      <p dir="ltr">Caliban currently doesn’t support an option to reverse an operation, so if a watershed operation produces a bad split, you may need to correct it in pixel-editing mode.&nbsp;</p>
 
       <h5><em>Pixel-editing mode</em></h5>
 

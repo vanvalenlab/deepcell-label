@@ -95,7 +95,7 @@ def create_app(**config_overrides):
         def group_action():
             """Apply custom grouping for action endpoint"""
             from flask import request
-            if request.endpoint == 'caliban.action':
+            if request.endpoint == 'label.action':
                 return request.view_args['action_type']
 
         dashboard.config.group_by = group_action

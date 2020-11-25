@@ -85,7 +85,7 @@
   <script type="text/javascript" src="{{ url_for('static', filename='js/main_track.js') }}"></script>
 {%- endif -%}
 
-<!-- START CALIBAN FUNCTION CALL -->
+<!-- START DeepCell Label FUNCTION CALL -->
 <script>
   var settings = {{settings | tojson}};
   function download() {
@@ -102,7 +102,7 @@
       document.getElementById("output").classList.remove("hide");
     });
   }
-  startCaliban("{{token}}", settings);
+  startDeepCellLabel("{{token}}", settings);
 </script>
-<!-- END CALIBAN FUNCTION CALL -->
+<!-- END DeepCell Label FUNCTION CALL -->
 {%- endblock -%}

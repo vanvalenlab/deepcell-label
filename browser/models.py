@@ -184,7 +184,7 @@ class Project(db.Model):
         Create a new project in the Project table.
 
         Args:
-            loader (CalibanLoader): loads or creates raw_array, label_array, cell_ids, & cell_info
+            loader (Loader): loads or creates raw_array, label_array, cell_ids, & cell_info
 
         Returns:
             Project: new row in the Project table

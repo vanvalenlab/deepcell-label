@@ -376,7 +376,7 @@ class Mode {
       action('handle_draw', {
         trace: JSON.stringify(canvas.trace), // stringify array so it doesn't get messed up
         target_value: brush.target, // value that we're overwriting
-        brush_value: brush.value, // we don't update caliban with edit_value, etc each time they change
+        brush_value: brush.value, // we don't update with edit_value, etc each time they change
         brush_size: brush.size, // so we need to pass them in as args
         erase: (brush.erase && !brush.conv),
         frame: current_frame
@@ -946,7 +946,7 @@ function handleMouseup() {
     if (!brush.show) {
       mode.handle_threshold();
     } else if (canvas.inRange()) {
-      // send click&drag coordinates to caliban.py to update annotations
+      // send click&drag coordinates to label.py to update annotations
       mode.handle_draw();
     }
     brush.refreshView();
@@ -1153,7 +1153,7 @@ function handleFirstPayload(payload) {
   displayUndoRedo();
 }
 
-function startCaliban(projectId, settings) {
+function startDeepCellLabel(projectId, settings) {
   rgb = settings.rgb;
   display_labels = !settings.rgb;
   edit_mode = !settings.label_only;

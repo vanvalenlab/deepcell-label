@@ -21,12 +21,13 @@ from flask import send_file
 from werkzeug.exceptions import HTTPException
 
 from helpers import is_track_file, is_zstack_file, is_valid_file
-from caliban import TrackEdit, ZStackEdit, BaseEdit, ChangeDisplay
+from label import TrackEdit, ZStackEdit, BaseEdit, ChangeDisplay
+from models import Project
 import loaders
 import exporters
 
 
-bp = Blueprint('caliban', __name__)  # pylint: disable=C0103
+bp = Blueprint('label', __name__)  # pylint: disable=C0103
 
 
 @bp.route('/health')
@@ -165,7 +166,7 @@ def form():
 @bp.route('/tool', methods=['GET', 'POST'])
 def tool():
     """
-    Request HTML caliban tool page to be rendered after user inputs
+    Request HTML DeepCell Label tool page to be rendered after user inputs
     filename in the landing page.
     """
     if 'filename' not in request.form:
@@ -218,7 +219,7 @@ def tool():
 @bp.route('/<filename>', methods=['GET', 'POST'])
 def shortcut(filename):
     """
-    Request HTML caliban tool page to be rendered if user makes a URL
+    Request HTML DeepCell Label tool page to be rendered if user makes a URL
     request to access a specific data file that has been preloaded to the
     input S3 bucket (ex. http://127.0.0.1:5000/test.npz).
     """
@@ -346,7 +347,7 @@ def project(token):
 @bp.route('/downloadproject/<token>', methods=['GET'])
 def download_project(token):
     """
-    Download a .trk/.npz file from a Caliban project.
+    Download a .trk/.npz file from a DeepCell Label project.
     """
     project = Project.get(token)
     if not project:

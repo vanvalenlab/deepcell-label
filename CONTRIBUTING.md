@@ -15,7 +15,7 @@ Before sending your pull requests, make sure you have followed this list.
 
 ### Contributing code
 
-If you have improvements to Caliban, please send us your pull requests! If you are new to the process, Github has a
+If you have improvements to DeepCell Label, please send us your pull requests! If you are new to the process, Github has a
 [how-to](https://help.github.com/articles/using-pull-requests/).
 
 If you want to contribute, start working through the codebase. Navigate to the
@@ -40,8 +40,8 @@ DeepCell coding style.
     changes to lower the maintenance cost.
 *   Bug fixes also generally require unit tests, because the presence of bugs
     usually indicates insufficient test coverage.
-*   When you contribute a new feature to Caliban, the maintenance burden is
-    (by default) transferred to the Caliban team. This means that the benefit
+*   When you contribute a new feature to DeepCell Label, the maintenance burden is
+    (by default) transferred to the DeepCell Label team. This means that the benefit
     of the contribution must be compared against the cost of maintaining the
     feature.
 *   As every PR requires CI/CD testing, we discourage

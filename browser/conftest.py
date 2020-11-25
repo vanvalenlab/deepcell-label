@@ -1,4 +1,4 @@
-"""Tests for the Caliban Flask App."""
+"""Tests for the DeepCell Label Flask App."""
 
 import os
 

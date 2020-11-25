@@ -92,7 +92,7 @@ class Loader():
     def _load(self):
         """
         Loads image data into the Loader.
-        To be implemented by implementations of CalibanLoader interface.
+        To be implemented by implementations of Loader interface.
         """
         raise NotImplementedError
 
@@ -235,7 +235,7 @@ class S3Loader(Loader):
 
 class LocalFileSystemLoader(Loader):
     """
-    CalibanLoader implementation for local file systems.
+    Loader implementation for local file systems.
     """
     def __init__(self, path):
         super(LocalFileSystemLoader, self).__init__()
