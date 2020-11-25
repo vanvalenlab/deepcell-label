@@ -266,7 +266,7 @@ def get_project(token):
     start = timeit.default_timer()
     project = Project.get(token)
     if not project:
-        return jsonify({'error': f'project {token} not found'}), 404
+        return abort(404, description=f'project {token} not found')
     # arg is 'false' which gets parsed to True if casting to bool
     rgb = request.args.get('rgb', default='false', type=str)
     rgb = bool(distutils.util.strtobool(rgb))
