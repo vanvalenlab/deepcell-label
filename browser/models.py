@@ -5,11 +5,8 @@ from __future__ import print_function
 
 import base64
 import copy
-import io
-import json
+import enum
 import logging
-import tarfile
-import tempfile
 import timeit
 from secrets import token_urlsafe
 
@@ -67,6 +64,10 @@ class MutableNdarray(Mutable, np.ndarray):
         np.ndarray.__delitem__(self, key)
         self.changed()
 
+class SourceEnum(enum.Enum):
+    s3 = 's3'
+    dropped = 'dropped'
+    lfs = 'lfs'
 
 class Project(db.Model):
     """Project table definition."""
@@ -78,6 +79,7 @@ class Project(db.Model):
     finished = db.Column(db.TIMESTAMP)
 
     path = db.Column(db.Text, nullable=False)
+    source = db.Column(db.Enum(SourceEnum), nullable=False)
     height = db.Column(db.Integer, nullable=False)
     width = db.Column(db.Integer, nullable=False)
     num_frames = db.Column(db.Integer, nullable=False)
@@ -119,6 +121,7 @@ class Project(db.Model):
 
         # Record static project attributes
         self.path = str(loader.path)
+        self.source = loader.source
         self.num_frames = raw.shape[0]
         self.height = raw.shape[1]
         self.width = raw.shape[2]
@@ -171,8 +174,8 @@ class Project(db.Model):
         """
         start = timeit.default_timer()
         project = db.session.query(Project).filter_by(token=token).first()
-        logger.debug('Got project %s (id %s) in %ss.',
-                     token, project.id, timeit.default_timer() - start)
+        logger.debug('Got project %s in %ss.',
+                     token, timeit.default_timer() - start)
         return project
 
     @staticmethod

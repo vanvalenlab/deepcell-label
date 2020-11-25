@@ -207,6 +207,7 @@ class S3Loader(Loader):
         self._path = pathlib.Path(path.replace('__', '/'))
         # bucket to pull file from on S3
         self.bucket = bucket
+        self.source = 's3'
 
     def _get_s3_client(self):
         return boto3.client(
@@ -240,9 +241,10 @@ class LocalFileSystemLoader(Loader):
         super(LocalFileSystemLoader, self).__init__()
         # path to file including filename
         self._path = pathlib.Path(path.replace('__', '/'))
+        self.source = 'lfs'
 
     def _load(self):
-        load_fn = self._get_load(self.path)
+        load_fn = self._get_load()
         with open(self.path, 'rb') as data:
             load_fn(data)
 
@@ -256,6 +258,7 @@ class DroppedLoader(Loader):
         super(DroppedLoader, self).__init__()
         self._data = f
         self._path = pathlib.Path(f.filename)
+        self.source = 'dropped'
 
     def _load(self):
         load_fn = self._get_load()

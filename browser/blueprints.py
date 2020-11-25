@@ -10,18 +10,20 @@ import os
 import timeit
 import traceback
 
+from flask import abort
 from flask import Blueprint
 from flask import jsonify
 from flask import render_template
 from flask import request
 from flask import redirect
 from flask import current_app
+from flask import send_file
 from werkzeug.exceptions import HTTPException
 
 from helpers import is_track_file, is_zstack_file, is_valid_file
-from models import Project
 from caliban import TrackEdit, ZStackEdit, BaseEdit, ChangeDisplay
 import loaders
+import exporters
 
 
 bp = Blueprint('caliban', __name__)  # pylint: disable=C0103
@@ -32,6 +34,10 @@ def health():
     """Returns success if the application is ready."""
     return jsonify({'message': 'success'}), 200
 
+
+@bp.errorhandler(404)
+def handle_404(error):
+    return render_template('404.html'), 404
 
 @bp.errorhandler(Exception)
 def handle_exception(error):
@@ -45,32 +51,6 @@ def handle_exception(error):
 
     # now you're handling non-HTTP exceptions only
     return jsonify({'message': str(error)}), 500
-
-
-@bp.route('/upload_file/<token>', methods=['GET', 'POST'])
-def upload_file(token):
-    """Upload .trk/.npz data file to AWS S3 bucket."""
-    start = timeit.default_timer()
-    project = Project.get(token)
-    if not project:
-        return jsonify({'error': f'project {token} not found'}), 404
-
-    # Call function in caliban.py to save data file and send to S3 bucket
-    edit = get_edit(project)
-    path = project.path
-    if is_track_file(path):
-        edit.action_save_track()
-    elif is_zstack_file(path):
-        edit.action_save_zstack()
-
-    # add "finished" timestamp and null out PickleType columns
-    project.finish()
-
-    current_app.logger.debug('Uploaded %s from project %s in %s s.',
-                             path, token,
-                             timeit.default_timer() - start)
-
-    return redirect('/')
 
 
 @bp.route('/edit/<token>/<action_type>', methods=['POST'])
@@ -91,7 +71,7 @@ def edit(token, action_type):
     try:
         project = Project.get(token)
         if not project:
-            return jsonify({'error': f'project {token} not found'}), 404
+            return abort(404, description=f'project {token} not found')
         edit = get_edit(project)
         payload = edit.dispatch_action(action_type, info)
         project.create_memento(action_type)
@@ -127,7 +107,7 @@ def change_display(token, display_attribute, value):
     try:
         project = Project.get(token)
         if not project:
-            return jsonify({'error': f'project {token} not found'}), 404
+            return abort(404, description=f'project {token} not found')
         change = ChangeDisplay(project)
         payload = change.change(display_attribute, value)
         project.update()
@@ -148,7 +128,7 @@ def undo(token):
     try:
         project = Project.get(token)
         if not project:
-            return jsonify({'error': f'project {token} not found'}), 404
+            return abort(404, description=f'project {token} not found')
         payload = project.undo()
     except Exception as e:  # TODO: more error handling to identify problem
         traceback.print_exc()
@@ -165,7 +145,7 @@ def redo(token):
     try:
         project = Project.get(token)
         if not project:
-            return jsonify({'error': f'project {token} not found'}), 404
+            return abort(404, description=f'project {token} not found')
         payload = project.redo()
     except Exception as e:  # TODO: more error handling to identify problem
         traceback.print_exc()
@@ -173,39 +153,6 @@ def redo(token):
 
     current_app.logger.debug('Redid action for project %s finished in %s s.',
                              token, timeit.default_timer() - start)
-    return jsonify(payload)
-
-
-@bp.route('/load', methods=['POST'])
-def load():
-    """
-    Initate TrackEdit/ZStackEdit object and load object to database.
-    Send specific attributes of the object to the .js file.
-    """
-    start = timeit.default_timer()
-    loader = loaders.get_loader(request)
-    path = loader.path
-    current_app.logger.info('Loading project from %s', path)
-
-    # arg is 'false' which gets parsed to True if casting to bool
-    rgb = request.args.get('rgb', default='false', type=str)
-    rgb = bool(distutils.util.strtobool(rgb))
-
-    if not is_valid_file(path):
-        error = {
-            'error': 'invalid file extension: {}'.format(
-                os.path.splitext(path)[-1])
-        }
-        return jsonify(error), 400
-
-    # Initate Project entry in database
-    project = Project.create(loader)
-    project.rgb = rgb
-    project.update()
-    payload = project.make_first_payload()
-
-    current_app.logger.debug('Loaded project %s from %s in %s s.',
-                             project.token, path, timeit.default_timer() - start)
     return jsonify(payload)
 
 
@@ -371,7 +318,7 @@ def project(token):
 
     project = Project.get(token)
     if not project:
-        return jsonify({'error': f'project {token} not found'}), 404
+        return abort(404, description=f'project {token} not found')
 
     if is_track_file(project.path):
         filetype = 'track'
@@ -392,7 +339,44 @@ def project(token):
         token=token,
         filetype=filetype,
         title=title,
-        settings=settings)
+        settings=settings,
+        source=str(project.source))
+
+
+@bp.route('/downloadproject/<token>', methods=['GET'])
+def download_project(token):
+    """
+    Download a .trk/.npz file from a Caliban project.
+    """
+    project = Project.get(token)
+    if not project:
+        return abort(404, description=f'project {token} not found')
+
+    # Save data file and send to S3 bucket
+    exporter = exporters.BrowserExporter(project)
+    filestream = exporter.export()
+
+    return send_file(filestream, as_attachment=True, attachment_filename=exporter.path)
+
+
+@bp.route('/upload_file/<token>', methods=['GET', 'POST'])
+def upload_project_to_s3(token):
+    """Upload .trk/.npz data file to AWS S3 bucket."""
+    start = timeit.default_timer()
+    project = Project.get(token)
+    if not project:
+        return abort(404, description=f'project {token} not found')
+
+    # Save data file and send to S3 bucket
+    exporter = exporters.S3Exporter(project)
+    exporter.export()
+    # add "finished" timestamp and null out PickleType columns
+    project.finish()
+
+    current_app.logger.debug('Uploaded %s to S3 bucket from project %s in %s s.',
+                             project.path, token,
+                             timeit.default_timer() - start)
+    return redirect('/')
 
 
 def get_edit(project):

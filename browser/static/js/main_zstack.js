@@ -685,6 +685,10 @@ function upload_file(cb) {
   }).done(cb);
 }
 
+function download_file(cb) {
+  window.location = `/downloadproject/${project_id}`;
+}
+
 function changeZoom(dzoom) {
   zoom = new Zoom(canvas, dzoom);
   updateMousePos(canvas.rawX, canvas.rawY);
@@ -1019,8 +1023,8 @@ function displayUndoRedo() {
   redoButton.style.width = canvasElement.width / 2 + 'px';
 }
 
-function loadFile(file, settings) {
-  let rgb = settings?.rgb;
+function loadS3File(file, settings) {
+  let rgb = settings?.rgb; // what is the default? null, undefined, false?
   $.ajax({
     type: 'POST',
     url: `${document.location.origin}/createproject?source=s3&path=${file}&rgb=${rgb}`,
