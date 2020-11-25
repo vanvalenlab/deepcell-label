@@ -9,12 +9,41 @@ from pytest_lazyfixture import lazy_fixture
 
 from application import create_app  # pylint: disable=C0413
 from models import Project, Action
+from loaders import Loader
+from helpers import is_track_file
+
 
 # flask-sqlalchemy fixtures from http://alexmic.net/flask-sqlalchemy-pytest/
 
 
 TESTDB_PATH = '/tmp/test_project.db'
 TEST_DATABASE_URI = 'sqlite:///{}'.format(TESTDB_PATH)
+
+class DummyLoader(Loader):
+    
+    def __init__(self, raw=np.zeros((1,1,1,1)), label=None, path='test.npz', source='s3'):
+        super().__init__()
+        if label is not None:
+            self._label_array = label
+            self._raw_array = np.zeros(self._label_array.shape)
+        else:
+            self._raw_array = raw
+        
+        self._path = path
+        self.source = source
+
+        if is_track_file(self._path) and label is not None:
+            self._label_array = label[..., [0]]  # .trk files have only one feature
+            self._raw_array = np.zeros(self._label_array.shape)
+
+            self._cell_info = {0: 
+                {label: {'frame_div': None,
+                          'daughters': [],
+                          'frames': list(range(FRAMES)),  # All labels are in all frames
+                          'label': label,
+                          'capped': False,
+                          'parent': None}
+                 for label in np.unique(self._label_array) if label != 0}}
 
 
 @pytest.fixture
@@ -97,17 +126,9 @@ TEST_IDS += ['singleframe']
 @pytest.fixture(params=TEST_LABELS, ids=TEST_IDS)
 def zstack_project(app, mocker, request, db_session):
     with app.app_context():
-        def load(self, *args):
-            if len(request.param.shape) == 4:
-                raw = np.zeros((FRAMES, HEIGHT, WIDTH, CHANNELS))
-            else:
-                raw = np.zeros((HEIGHT, WIDTH, CHANNELS))
-            data = {'raw': raw}
-            data['annotated'] = request.param.copy()
-            return data
-        mocker.patch('models.Project.load', load)
         mocker.patch('models.db.session', db_session)
-        project = Project.create('filename.npz', 'input_bucket', 'output_bucket', 'path')
+        loader = DummyLoader(label=request.param.copy())
+        project = Project.create(loader)
         project.rgb = 'RGB' in request.node.name
         db_session.commit()
         return project
@@ -116,27 +137,9 @@ def zstack_project(app, mocker, request, db_session):
 @pytest.fixture(params=TEST_LABELS, ids=TEST_IDS)
 def track_project(app, mocker, request, db_session):
     with app.app_context():
-        def load(self, *args):
-            # Match the size of the raw image with the labels
-            if len(request.param.shape) == 4:
-                raw = np.zeros((FRAMES, HEIGHT, WIDTH, CHANNELS))
-            else:
-                raw = np.zeros((HEIGHT, WIDTH, CHANNELS))
-            data = {'raw': raw}
-            # Tracked files should only have one feature
-            data['tracked'] = request.param[..., [0]].copy()
-            lineages = [{label: {'frame_div': None,
-                                 'daughters': [],
-                                 'frames': list(range(FRAMES)),  # All labels are in all frames
-                                 'label': label,
-                                 'capped': False,
-                                 'parent': None}
-                        for label in np.unique(request.param) if label != 0}]
-            data['lineages'] = lineages
-            return data
-        mocker.patch('models.Project.load', load)
         mocker.patch('models.db.session', db_session)
-        project = Project.create('filename.trk', 'input_bucket', 'output_bucket', 'path')
+        loader = DummyLoader(label=request.param.copy(), path='test.trk')
+        project = Project.create(loader)
         return project
 
 

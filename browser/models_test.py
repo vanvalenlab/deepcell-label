@@ -7,6 +7,7 @@ import pytest
 
 import models
 from imgutils import pngify
+from conftest import DummyLoader
 
 
 def test_project_init(project):
@@ -16,11 +17,11 @@ def test_project_init(project):
     """
     # Check columns are made (except finished)
     assert project.id is not None
+    assert project.token is not None
     assert project.createdAt is not None
     assert project.finished is None  # None until project is done
-    assert project.filename is not None
     assert project.path is not None
-    assert project.output_bucket is not None
+    assert project.source is not None
     assert project.rgb is not None
     assert project.frame is not None
     assert project.channel is not None
@@ -57,18 +58,10 @@ def test_get(mocker, db_session):
     project = models.Project.get(1)
     assert project is None
 
-    # create project
-    def load(self, *args):
-        return {'raw': np.zeros((1, 1, 1, 1)), 'annotated': np.zeros((1, 1, 1, 1))}
-    mocker.patch('models.Project.load', load)
-    project = models.Project.create(
-        filename='filename',
-        input_bucket='input_bucket',
-        output_bucket='output_bucket',
-        path='path')
+    project = models.Project.create(DummyLoader())
 
     # test that the project can be found and is the same as the created one
-    valid_id = project.id
+    valid_id = project.token
     found_project = models.Project.get(valid_id)
     assert found_project == project
 
@@ -77,16 +70,8 @@ def test_create(mocker, db_session):
     """
     Test creating a row in the Project table.
     """
-    # create project
-    def load(self, *args):
-        return {'raw': np.zeros((1, 1, 1, 1)), 'annotated': np.zeros((1, 1, 1, 1))}
     mocker.patch('models.db.session', db_session)
-    mocker.patch('models.Project.load', load)
-    project = models.Project.create(
-        filename='filename',
-        input_bucket='input_bucket',
-        output_bucket='output_bucket',
-        path='path')
+    project = models.Project.create(DummyLoader())
 
     # Test that an action has been initialized
     assert project.action is not None
@@ -196,19 +181,12 @@ def test_finish_project(mocker, db_session):
     Checks that the project's relationship are also finished.
     """
     # create project
-    def load(self, *args):
-        return {'raw': np.zeros((1, 1, 1, 1)), 'annotated': np.zeros((1, 1, 1, 1))}
-    mocker.patch('models.Project.load', load)
     mocker.patch('models.db.session', db_session)
-    project = models.Project.create(
-        filename='filename',
-        input_bucket='input_bucket',
-        output_bucket='output_bucket',
-        path='path')
+    project = models.Project.create(DummyLoader())
 
     # test finish project
     project.finish()
-    found_project = models.Project.get(project.id)
+    found_project = models.Project.get(project.token)
     assert found_project.finished is not None
     # test finish Labels
     assert found_project.labels.cell_ids is None
