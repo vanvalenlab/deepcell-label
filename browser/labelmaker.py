@@ -2,6 +2,7 @@
 
 import numpy as np
 
+
 class LabelInfoMaker():
     """
     Given a labeled image array with shape (frames, height, width, features),
@@ -33,7 +34,6 @@ class LabelInfoMaker():
             self.compute_info()
         return self._cell_info
 
-
     def compute_ids(self):
         """
         Make the cell_ids dict.
@@ -62,7 +62,6 @@ class LabelInfoMaker():
         self._cell_info = {}
         for feature in range(self.num_features):
             self.compute_feature_info(feature)
-
 
     def compute_feature_info(self, feature):
         """

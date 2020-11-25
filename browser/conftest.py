@@ -19,16 +19,16 @@ from helpers import is_track_file
 TESTDB_PATH = '/tmp/test_project.db'
 TEST_DATABASE_URI = 'sqlite:///{}'.format(TESTDB_PATH)
 
+
 class DummyLoader(Loader):
-    
-    def __init__(self, raw=np.zeros((1,1,1,1)), label=None, path='test.npz', source='s3'):
+    def __init__(self, raw=np.zeros((1, 1, 1, 1)), label=None, path='test.npz', source='s3'):
         super().__init__()
         if label is not None:
             self._label_array = label
             self._raw_array = np.zeros(self._label_array.shape)
         else:
             self._raw_array = raw
-        
+
         self._path = path
         self.source = source
 
@@ -36,14 +36,15 @@ class DummyLoader(Loader):
             self._label_array = label[..., [0]]  # .trk files have only one feature
             self._raw_array = np.zeros(self._label_array.shape)
 
-            self._cell_info = {0: 
-                {label: {'frame_div': None,
-                          'daughters': [],
-                          'frames': list(range(FRAMES)),  # All labels are in all frames
-                          'label': label,
-                          'capped': False,
-                          'parent': None}
-                 for label in np.unique(self._label_array) if label != 0}}
+            self._cell_info = {0:
+                               {label: {'frame_div': None,
+                                        'daughters': [],
+                                        # NOTE: assumes all labels are in all frames
+                                        'frames': list(range(FRAMES)),
+                                        'label': label,
+                                        'capped': False,
+                                        'parent': None}
+                                for label in np.unique(self._label_array) if label != 0}}
 
 
 @pytest.fixture

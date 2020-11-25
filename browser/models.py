@@ -64,10 +64,12 @@ class MutableNdarray(Mutable, np.ndarray):
         np.ndarray.__delitem__(self, key)
         self.changed()
 
+
 class SourceEnum(enum.Enum):
     s3 = 's3'
     dropped = 'dropped'
     lfs = 'lfs'
+
 
 class Project(db.Model):
     """Project table definition."""
@@ -113,7 +115,7 @@ class Project(db.Model):
         init_start = timeit.default_timer()
         raw = loader.raw_array
         label = loader.label_array
-        
+
         # possible differences between single channel and rgb displays
         if raw.ndim == 3:
             raw = np.expand_dims(raw, axis=0)
@@ -370,10 +372,10 @@ class Project(db.Model):
 
         # First frame edited by each action
         # Excludes the first action, which loads the project
-        payload['actionFrames'] = [action.frames[0].frame_id for action in self.actions[1:] if action.done]
+        payload['actionFrames'] = [action.frames[0].frame_id
+                                   for action in self.actions[1:] if action.done]
 
         return payload
-
 
     def make_payload(self, x=False, y=False, labels=False):
         """

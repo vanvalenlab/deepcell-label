@@ -40,6 +40,7 @@ def health():
 def handle_404(error):
     return render_template('404.html'), 404
 
+
 @bp.errorhandler(Exception)
 def handle_exception(error):
     """Handle all uncaught exceptions"""
@@ -256,6 +257,7 @@ def shortcut(filename):
         filename=filename,
         settings=settings)
 
+
 @bp.route('/getproject/<token>')
 def get_project(token):
     """
@@ -274,6 +276,7 @@ def get_project(token):
     current_app.logger.debug('Loaded project %s in %s s.',
                              project.token, timeit.default_timer() - start)
     return jsonify(payload)
+
 
 @bp.route('/createproject', methods=['POST'])
 def create_project():

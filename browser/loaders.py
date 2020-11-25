@@ -12,6 +12,7 @@ import numpy as np
 from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_INPUT_BUCKET
 from labelmaker import LabelInfoMaker
 
+
 class Loader():
     """
     Interface for loading files into DeepCell Label.
@@ -57,7 +58,7 @@ class Loader():
             shape = (*self.raw_array.shape[:-1], 1)
             self._label_array = np.zeros(shape)
         return self._label_array
-            
+
     @property
     def cell_ids(self):
         """
@@ -134,7 +135,7 @@ class Loader():
         else:
             raw_stack = npz[npz.files[0]]
             labeled_stack = npz[npz.files[1]]
-        
+
         self._raw_array = raw_stack
         self._label_array = labeled_stack
 
@@ -173,7 +174,7 @@ class Loader():
                 # JSON only allows strings as keys, so convert them back to ints
                 for i, tracks in enumerate(lineages):
                     lineages[i] = {int(k): v for k, v in tracks.items()}
-            
+
             # Track files have only one feature and one lineage
             if len(lineages) != 1:
                 raise ValueError('Input file has multiple trials/lineages.')
@@ -189,7 +190,6 @@ class Loader():
         # Add frame dimension
         im = np.expand_dims(im, axis=0)
         self._raw_array = im
-
 
     def _load_tiff(self):
         """Loads a tiff file into a raw image array."""
@@ -224,7 +224,7 @@ class S3Loader(Loader):
 
         s3 = self._get_s3_client()
         response = s3.get_object(Bucket=self.bucket, Key=str(self.path))
-        
+
         data = io.BytesIO(response['Body'].read())
         load_fn = self._get_load()
         load_fn(data)
@@ -263,7 +263,8 @@ class DroppedLoader(Loader):
     def _load(self):
         load_fn = self._get_load()
         load_fn(self._data)
-        
+
+
 def get_loader(request):
     """
     Simple factory for Loaders.
