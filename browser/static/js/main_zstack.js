@@ -144,7 +144,7 @@ class Mode {
       // color picker
       this.kind = Modes.prompt;
       this.action = 'pick_color';
-      this.prompt = 'Click on a label to change the brush value to that value.';
+      this.prompt = 'Click on a label to change the brush label to that label.';
       render_info_display();
     } else if (evt.key === 'r') {
       // conversion brush
@@ -722,14 +722,14 @@ function render_edit_info() {
 
   const rowVisibility = (edit_mode) ? 'visible' : 'hidden';
   document.getElementById('edit_brush_row').style.visibility = rowVisibility;
-  document.getElementById('edit_label_row').style.visibility = rowVisibility;
+  document.getElementById('brush_label_row').style.visibility = rowVisibility;
   document.getElementById('edit_erase_row').style.visibility = rowVisibility;
 
   if (edit_mode) {
     document.getElementById('edit_brush').innerHTML = brush.size;
 
     const editLabelText = (brush.value > 0) ? brush.value : '-';
-    document.getElementById('edit_label').innerHTML = editLabelText;
+    document.getElementById('brush_label').innerHTML = editLabelText;
 
     const editEraseText = (brush.erase && !brush.conv) ? 'ON' : 'OFF';
     document.getElementById('edit_erase').innerHTML = editEraseText;

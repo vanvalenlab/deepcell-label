@@ -564,11 +564,11 @@ function render_edit_info() {
   if (edit_mode) {
     $('#edit_mode').html('pixels');
     $('#edit_brush_row').css('visibility', 'visible');
-    $('#edit_label_row').css('visibility', 'visible');
+    $('#brush_label_row').css('visibility', 'visible');
     $('#edit_erase_row').css('visibility', 'visible');
 
     $('#edit_brush').html(brush.size);
-    $('#edit_label').html(brush.value);
+    $('#brush_label').html(brush.value);
 
     if (brush.erase) {
       $('#edit_erase').html("ON");
@@ -579,7 +579,7 @@ function render_edit_info() {
   } else {
     $('#edit_mode').html('whole labels');
     $('#edit_brush_row').css('visibility', 'hidden');
-    $('#edit_label_row').css('visibility', 'hidden');
+    $('#brush_label_row').css('visibility', 'hidden');
     $('#edit_erase_row').css('visibility', 'hidden');
   }
 }
