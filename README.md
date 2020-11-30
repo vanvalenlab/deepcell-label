@@ -1,12 +1,12 @@
 # DeepCell Label: Data Curation Tools for DeepCell.
-[![Actions Status](https://github.com/vanvalenlab/caliban/workflows/browser/badge.svg)](https://github.com/vanvalenlab/caliban/actions)
+[![Actions Status](https://github.com/vanvalenlab/deepcell-label/workflows/browser/badge.svg)](https://github.com/vanvalenlab/deepcell-label/actions)
 
 DeepCell Label is a segmentation and tracking tool used for human-in-the-loop data curation. It displays lineage data along with raw and annotated images. The output files prepare this information as training data for DeepCell.
 
 ## Instructions for Running DeepCell Label Locally on Desktop
 ```bash
-git clone https://github.com/vanvalenlab/caliban.git
-cd caliban
+git clone https://github.com/vanvalenlab/deepcell-label.git
+cd deepcell-label
 cd desktop
 python3 caliban.py [input file location]
 ```
@@ -132,9 +132,9 @@ To install one, you can go to http://realvnc.com to download a free VNC viewer.
 ### Build a Docker Container
 
 ```bash
-git clone https://github.com/vanvalenlab/caliban.git
-cd caliban
-docker build -t caliban .
+git clone https://github.com/vanvalenlab/deepcell-label.git
+cd deepcell-label
+docker build -t deepcell-label .
 ```
 ### Run the New Docker Image
 
@@ -143,7 +143,7 @@ docker run \
 -p 5900:5900 \
 -v $PWD/desktop:/usr/src/app/desktop  \
 --privileged \
-caliban:latest
+deepcell-label:latest
 ```
 This will launch a new Docker container and run Xvfb, Fluxbox, and a VNC server. To access the container’s display, point a VNC client to 127.0.0.1.
 

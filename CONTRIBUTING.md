@@ -19,17 +19,17 @@ If you have improvements to DeepCell Label, please send us your pull requests! I
 [how-to](https://help.github.com/articles/using-pull-requests/).
 
 If you want to contribute, start working through the codebase. Navigate to the
-[Github "issues" tab](https://github.com/vanvalenlab/caliban/issues) and start
+[Github "issues" tab](https://github.com/vanvalenlab/deepcell-label/issues) and start
 looking through interesting issues. If you are not sure of where to start, look for one of the smaller/easier issues here i.e.
-[issues with the "good first issue" label](https://github.com/vanvalenlab/caliban/labels/good%20first%20issue)
+[issues with the "good first issue" label](https://github.com/vanvalenlab/deepcell-label/labels/good%20first%20issue)
 and then take a look at the
-[issues with the "contributions welcome" label](https://github.com/vanvalenlab/caliban/labels/stat%3Acontributions%20welcome).
+[issues with the "contributions welcome" label](https://github.com/vanvalenlab/deepcell-label/labels/stat%3Acontributions%20welcome).
 These are issues that we believe are well suited for outside contributions. If you decide to start on an issue, leave a comment so that other people know that you're working on it. If you want to help out, but not alone, use the issue comment thread to coordinate.
 
 ### Contribution guidelines and standards
 
 Before sending your pull request for
-[review](https://github.com/vanvalenlab/caliban/pulls),
+[review](https://github.com/vanvalenlab/deepcell-label/pulls),
 make sure your changes are consistent with the guidelines and follow the
 DeepCell coding style.
 

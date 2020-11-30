@@ -11,7 +11,7 @@ services:
     environment:
       AWS_ACCESS_KEY_ID: ''
       AWS_SECRET_ACCESS_KEY: ''
-      SQLALCHEMY_DATABASE_URI: mysql://root:password@db:3306/caliban
+      SQLALCHEMY_DATABASE_URI: mysql://root:password@db:3306/deepcell-label
   db:
     image: mysql:8.0
     command: mysqld --default-authentication-plugin=mysql_native_password
@@ -20,6 +20,6 @@ services:
     environment:
       MYSQL_PASSWORD: password
       MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: caliban
+      MYSQL_DATABASE: deepcell-label
     volumes:
       - ./db:/docker-entrypoint-initdb.d/:rw

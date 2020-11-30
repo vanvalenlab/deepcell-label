@@ -21,7 +21,7 @@ python3 application.py
 ## To use docker-compose for local development
 Add your AWS credentials to ```docker-compose.yaml```.
 
-From the ```caliban/browser``` folder, run:
+From the ```deepcell-label/browser``` folder, run:
 ```bash
 sudo docker-compose up --build -d
 ```
