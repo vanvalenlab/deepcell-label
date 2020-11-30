@@ -88,7 +88,7 @@ Annotation mode focuses on using an adjustable brush to modify annotations on a 
 
 **To pan in image:** Hold down the spacebar while clicking and dragging image to pan. Alternatively, the keys *home, page up, page down, and end* can be used to jump across the screen. Holding the shift key while using these pan buttons will result in a smaller jump; holding the control key will snap to the edge of the image.
 
-*h* - switch between highlighted mode and non-highlighted mode (highlight exists in label- and pixel-editing modes but is displayed differently; label-editing highlighting recolors solid label with red, pixel-editing highlighting adds white or red outline around label in image). Once highlight mode is on, use *[ (left bracket) / ] (right bracket)* to decrement/increment selected cell label number.
+*h* - switch between highlighted mode and non-highlighted mode (highlight exists in whole-label mode and paint mode but is displayed differently; label-editing highlighting recolors solid label with red, paint mode highlighting adds white or red outline around label in image). Once highlight mode is on, use *[ (left bracket) / ] (right bracket)* to decrement/increment selected cell label number.
 
 *shift+h* - switch between showing and hiding annotation masks in the pixel editor
 
@@ -106,7 +106,7 @@ Annotation mode focuses on using an adjustable brush to modify annotations on a 
 
 *shift + &darr; / &uarr;* - cycle between colormaps for viewing raw images (does not apply to pixel editor)
 
-*e* - toggle annotation mode between pixel-editing and whole-label-editing (when nothing else selected)
+*e* - toggle annotation mode between paint mode and whole-label mode (when nothing else selected)
 
 *scroll wheel* - change image or annotation maximum brightness
 
