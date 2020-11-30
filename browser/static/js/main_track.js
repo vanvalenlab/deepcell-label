@@ -562,7 +562,7 @@ function render_highlight_info() {
 
 function render_edit_info() {
   if (edit_mode) {
-    $('#edit_mode').html('pixels');
+    $('#edit_mode').html('paint mode');
     $('#edit_brush_row').css('visibility', 'visible');
     $('#brush_label_row').css('visibility', 'visible');
     $('#edit_erase_row').css('visibility', 'visible');
@@ -577,7 +577,7 @@ function render_edit_info() {
     }
 
   } else {
-    $('#edit_mode').html('whole labels');
+    $('#edit_mode').html('whole-label mode');
     $('#edit_brush_row').css('visibility', 'hidden');
     $('#brush_label_row').css('visibility', 'hidden');
     $('#edit_erase_row').css('visibility', 'hidden');

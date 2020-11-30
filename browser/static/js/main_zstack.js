@@ -717,7 +717,7 @@ function render_highlight_info() {
 }
 
 function render_edit_info() {
-  const editModeText = (edit_mode) ? 'pixels' : 'whole labels';
+  const editModeText = (edit_mode) ? 'paint mode' : 'whole-label mode';
   document.getElementById('edit_mode').innerHTML = editModeText;
 
   const rowVisibility = (edit_mode) ? 'visible' : 'hidden';
