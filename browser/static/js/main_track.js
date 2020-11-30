@@ -708,30 +708,40 @@ function fetch_and_render_frame() {
   });
 }
 
-function load_file(file) {
+
+function loadS3File(file) {
   $.ajax({
     type: 'POST',
-    url: `${document.location.origin}/load/${file}`,
-    success: function (payload) {
-      numFrames = payload.numFrames;
-      scale = payload.screen_scale;
-      dimensions = [scale * payload.dimensions[0], scale * payload.dimensions[1]];
-      tracks = payload.tracks[0];
+    url: `${document.location.origin}/createproject?source=s3&path=${file}`,
+    async: true
+  }).done((payload) => {window.location = `/project/${payload.projectId}`} );
+}
 
-      maxTrack = Math.max(... Object.keys(tracks).map(Number));
-
-      project_id = payload.project_id;
-      $('#canvas').get(0).width = dimensions[0] + 2*padding;
-      $('#canvas').get(0).height = dimensions[1] + 2*padding;
-      
-      seg_array = payload.imgs.seg_arr;
-      seg_image.src = payload.imgs.segmented;
-      seg_image.onload = render_image_display;
-      raw_image.src = payload.imgs.raw;
-      raw_image.onload = render_image_display;
-    },
+function getProject(projectId) {
+  $.ajax({
+    type: 'GET',
+    url: `${document.location.origin}/getproject/${projectId}`,
     async: false
-  });
+  }).done(handlePayload);
+}
+
+function handlePayload(payload) {
+  numFrames = payload.numFrames;
+  scale = payload.screen_scale;
+  dimensions = [scale * payload.dimensions[0], scale * payload.dimensions[1]];
+  tracks = payload.tracks[0];
+
+  maxTrack = Math.max(... Object.keys(tracks).map(Number));
+
+  project_id = payload.project_id;
+  $('#canvas').get(0).width = dimensions[0] + 2*padding;
+  $('#canvas').get(0).height = dimensions[1] + 2*padding;
+  
+  seg_array = payload.imgs.seg_arr;
+  seg_image.src = payload.imgs.segmented;
+  seg_image.onload = render_image_display;
+  raw_image.src = payload.imgs.raw;
+  raw_image.onload = render_image_display;
 }
 
 // adjust current_contrast upon mouse scroll
@@ -838,7 +848,7 @@ function prepare_canvas() {
 function action(action, info, frame = current_frame) {
   $.ajax({
     type:'POST',
-    url:`${document.location.origin}/action/${project_id}/${action}/${frame}`,
+    url:`${document.location.origin}/edit/${project_id}/${action}`,
     data: info,
     success: function (payload) {
       if (payload.error) {
@@ -871,7 +881,7 @@ function action(action, info, frame = current_frame) {
   });
 }
 
-function startDeepCellLabel(filename, settings) {
+function startDeepCellLabel(projectId, settings) {
   // disable scrolling from scrolling around on page (it should just control brightness)
   document.addEventListener('wheel', function(event) {
     event.preventDefault();
@@ -887,7 +897,7 @@ function startDeepCellLabel(filename, settings) {
     }
   });
 
-  load_file(filename);
+  getProject(projectId);
   prepare_canvas();
 
   brush = new Brush(scale=scale, height=dimensions[1], width=dimensions[0], pad = padding);

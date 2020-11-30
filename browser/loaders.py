@@ -144,7 +144,7 @@ class Loader():
         Load a .trk file into the Loader.
         """
         with tempfile.NamedTemporaryFile() as temp:
-            temp.write(data)
+            temp.write(data.read())
             with tarfile.open(temp.name, 'r') as trks:
 
                 # numpy can't read these from disk...
