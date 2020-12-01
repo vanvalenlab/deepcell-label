@@ -113,7 +113,7 @@ class Brush {
     }
   }
 
-  // can change brush's normal value or conversion brush value
+  // can change brush label or conversion brush label
   set value(val) {
     // never set conversion brush to modify background
     // logic for val != target is elsewhere to prevent
