@@ -7,10 +7,17 @@
     <h5>
       Drag and drop a file to label it in DeepCell Label!
     </h5>
+
+    <div class="row">
+      <div class="col s12">
+        <form action="{{url_for('label.create_project', source='dropped')}}" method="POST" class="dropzone" id="myDropzone" enctype="multipart/form-data"></form>
+      </div>
+    </div>
+
     <!-- <p>
       The .trk files allow you to annotate RAW264 cells across time-lapse frames while preserving relationship information.
     </p> -->
-    <p>Or use one of our example files to learn how DeepCell Label works:</p>
+    <p>Or select one of our example files and press submit:</p>
     <ul style="list-style-type:circle">
       <li>test.npz is an example of organoid annotation across z-stack frames</li>
       <li>test2.npz is a 3D example of nuclei in tissue</li>
@@ -51,11 +58,6 @@
     </div>
 
   </form>
-  <div class="row">
-    <div class="col s12">
-      <form action="{{url_for('label.create_project', source='dropped')}}" method="POST" class="dropzone" id="myDropzone" enctype="multipart/form-data"></form>
-    </div>
-  </div>
 
 </main>
 {% endblock %}
@@ -66,7 +68,9 @@
 Dropzone.autoDiscover = false;
 
 $(function() {
-  var myDropzone = new Dropzone("#myDropzone");
+  var myDropzone = new Dropzone("#myDropzone", {
+        timeout: 1000 * 60 * 5, // 5 minutes
+  });
   myDropzone.on("success", function(file, payload) {
     // Called when file finishes uploading
     window.location = `project/${payload.projectId}`;
