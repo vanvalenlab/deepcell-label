@@ -4,9 +4,9 @@
 
 <main class="container">
   <div class="row">
-    <div class="col s12">
+    <div class="col s12 center-align">
       <p>Loading file from S3 bucket:</p>
-      <blockquote>{{ filename }}</blockquote>
+      <p>{{ filename }}</p>
       {% include "partials/loading-bar.html" %}
     </div>
 </main>
@@ -23,6 +23,7 @@
 <!-- START DeepCell Label FUNCTION CALL -->
 <script>
   var settings = {{settings | tojson}};
+  document.getElementById("loading-bar").classList.add("active");
   loadS3File("{{filename}}", settings);
 
 </script>
