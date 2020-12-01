@@ -25,9 +25,9 @@
       <div class="col s12">
         <p class="center-align">
           <select name="filename" class="browser-default center-align">
-            <option value="RAW264_S0_Batch02.trk">RAW264_S0_Batch02.trk </option>
+            <!-- <option value="RAW264_S0_Batch02.trk">RAW264_S0_Batch02.trk </option>
             <option value="RAW264_S0_Batch05.trk">RAW264_S0_Batch05.trk</option>
-            <option value="RAW264_S0_Batch06.trk">RAW264_S0_Batch06.trk</option>
+            <option value="RAW264_S0_Batch06.trk">RAW264_S0_Batch06.trk</option> -->
             <!-- zstack test npzs -->
             <option value="test.npz">test.npz</option>
             <option value="mouse_s1_uncorrected_fullsize_all_channels_x_05_y_03_save_version_0.npz">test2.npz</option>
@@ -54,7 +54,6 @@
   <div class="row">
     <div class="col s12">
       <form action="{{url_for('label.create_project', source='dropped')}}" method="POST" class="dropzone" id="myDropzone" enctype="multipart/form-data"></form>
-      <!-- {{ dropzone.create(action='/load?source=dropped') }} -->
     </div>
   </div>
 
