@@ -116,11 +116,6 @@ class Project(db.Model):
         raw = loader.raw_array
         label = loader.label_array
 
-        # possible differences between single channel and rgb displays
-        if raw.ndim == 3:
-            raw = np.expand_dims(raw, axis=0)
-            label = np.expand_dims(label, axis=0)
-
         # Record static project attributes
         self.path = str(loader.path)
         self.source = loader.source

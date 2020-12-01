@@ -41,6 +41,12 @@ class Loader():
         if self._raw_array is None:
             self._load()
             assert self._raw_array is not None
+        # possible differences between single channel and rgb displays
+        # adds frame dimension
+        if self._raw_array.ndim == 3:
+            # Reshape label array before raw array in case label array is empty
+            self._label_array = np.expand_dims(self.label_array, axis=0)
+            self._raw_array = np.expand_dims(self._raw_array, axis=0)
         return self._raw_array
 
     @property
