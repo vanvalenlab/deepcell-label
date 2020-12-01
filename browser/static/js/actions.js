@@ -38,18 +38,22 @@ class ChangeFrame extends Action {
   }
 
   do() {
-    setDisplay('frame', this.newValue);
-    current_frame = this.newValue;
-    if (this.mode.action !== '') { this.mode.clear() };
-    render_info_display();
+    let promise = setDisplay('frame', this.newValue);
+    promise.done( () => {
+      current_frame = this.newValue;
+      if (this.mode.action !== '') { this.mode.clear() };
+      render_info_display();
+    });
   }
 
 
   undo() {
-    setDisplay('frame', this.oldValue);
-    current_frame = this.oldValue;
-    if (this.mode.action !== '') { this.mode.clear() };
-    render_info_display();
+    let promise = setDisplay('frame', this.oldValue);
+    promise.done( () => {
+      current_frame = this.oldValue;
+      if (this.mode.action !== '') { this.mode.clear() };
+      render_info_display();
+    });
   }
 
   redo() {
@@ -67,17 +71,21 @@ class ChangeFeature extends Action {
   }
 
   do() {
-    setDisplay('feature', this.newValue);
-    this.mode.feature = this.newValue;
-    this.mode.clear();
-    render_info_display();
+    let promise = setDisplay('feature', this.newValue);
+    promise.done( () => {
+      this.mode.feature = this.newValue;
+      this.mode.clear();
+      render_info_display();
+    });
   }
 
   undo() {
-    setDisplay('feature', this.oldValue);
-    this.mode.feature = this.oldValue;
-    this.mode.clear();
-    render_info_display();
+    let promise = setDisplay('feature', this.oldValue);
+    promise.done( () => {
+      this.mode.feature = this.oldValue;
+      this.mode.clear();
+      render_info_display();
+    });
   }
 
   redo() {
@@ -96,14 +104,18 @@ class ChangeChannel extends Action {
   }
 
   do() {
-    setDisplay('channel', this.newValue);
-    this.adjust(this.oldValue, this.newValue);
+    let promise = setDisplay('channel', this.newValue);
+    promise.done( () => { 
+      this.adjust(this.oldValue, this.newValue); 
+    });
     // render_info_display();
   }
 
   undo() {
-    setDisplay('channel', this.oldValue);
-    this.adjust(this.newValue, this.oldValue);
+    let promise = setDisplay('channel', this.oldValue);
+    promise.done( () => { 
+      this.adjust(this.newValue, this.oldValue);
+    });
   }
 
   redo() {
@@ -133,11 +145,12 @@ class ChangeChannel extends Action {
  * @param {int} value value to set to attribute
  */
 function setDisplay(displayAttr, value) {
-  $.ajax({
+  let promise = $.ajax({
     type: 'POST',
     url: `${document.location.origin}/changedisplay/${project_id}/${displayAttr}/${value}`,
     async: true
-  }).done(handlePayload);
+  })
+  return promise.done(handlePayload);
 }
 
 class BackendAction extends Action {
