@@ -1,18 +1,18 @@
-# Caliban: Data Curation Tools for DeepCell.
-[![Actions Status](https://github.com/vanvalenlab/caliban/workflows/browser/badge.svg)](https://github.com/vanvalenlab/caliban/actions)
+# DeepCell Label: Data Curation Tools for DeepCell.
+[![Actions Status](https://github.com/vanvalenlab/deepcell-label/workflows/browser/badge.svg)](https://github.com/vanvalenlab/deepcell-label/actions)
 
-Caliban is a segmentation and tracking tool used for human-in-the-loop data curation. It displays lineage data along with raw and annotated images. The output files prepare this information as training data for DeepCell.
+DeepCell Label is a segmentation and tracking tool used for human-in-the-loop data curation. It displays lineage data along with raw and annotated images. The output files prepare this information as training data for DeepCell.
 
-## Instructions for Running Caliban Locally on Desktop
+## Instructions for Running DeepCell Label Locally on Desktop
 ```bash
-git clone https://github.com/vanvalenlab/caliban.git
-cd caliban
+git clone https://github.com/vanvalenlab/deepcell-label.git
+cd deepcell-label
 cd desktop
 python3 caliban.py [input file location]
 ```
 
 **Accepted file types:**
-Caliban can open .trk files or .npz files. .npz files must contain two zipped files corresponding to raw images and annotated images. If the files are not named 'raw' and 'annotated' or 'X' and 'y', the first file in the .npz will be opened as the raw images. Raw and annotated images must both be in 4D arrays in the shape (frames, y, x, channels or features).
+DeepCell Label can open .trk files or .npz files. .npz files must contain two zipped files corresponding to raw images and annotated images. If the files are not named 'raw' and 'annotated' or 'X' and 'y', the first file in the .npz will be opened as the raw images. Raw and annotated images must both be in 4D arrays in the shape (frames, y, x, channels or features).
 
 ## Tools Guide
 Files can be edited using keyboard operations.
@@ -26,7 +26,7 @@ Files can be edited using keyboard operations.
 
 ### Edit Operations:
 
-Caliban's default setting allows operations to be carried out quickly and easily on existing segmentations. The actions that can modify cell labels and/or lineage information are:
+DeepCell Label's default setting allows operations to be carried out quickly and easily on existing segmentations. The actions that can modify cell labels and/or lineage information are:
 
 *click* - click on a cell label to select it. Up to two labels can be selected at one time.
 
@@ -117,12 +117,12 @@ Annotation mode focuses on using an adjustable brush to modify annotations on a 
 
 Once done, use the following key to save the changed file.
 The tool will also save the original file in the same folder.
-In npz mode, a new npz file will be saved with a version number. An npz can be saved as a trk file (select "t" in response to save prompt). This will bundle together the current channel and feature of the npz along with a generated lineage file, which will contain label and frame information and empty parent/daughter entries for each cell. The new trk file can then be edited in Caliban's trk mode to add relationship information.
+In npz mode, a new npz file will be saved with a version number. An npz can be saved as a trk file (select "t" in response to save prompt). This will bundle together the current channel and feature of the npz along with a generated lineage file, which will contain label and frame information and empty parent/daughter entries for each cell. The new trk file can then be edited in DeepCell Label's trk mode to add relationship information.
 
 *s* - save
 
 
-## Instructions for Running Caliban in a Docker Container
+## Instructions for Running DeepCell Label in a Docker Container
 
 In addition to having Docker, you will also need to have a VNC viewer to view the application inside the container.
 
@@ -147,12 +147,12 @@ caliban:latest
 ```
 This will launch a new Docker container and run Xvfb, Fluxbox, and a VNC server. To access the container’s display, point a VNC client to 127.0.0.1.
 
-Inside the VNC client, one can access Caliban through the terminal emulator. Start the terminal by right-clicking the desktop and selecting
+Inside the VNC client, one can access DeepCell Label through the terminal emulator. Start the terminal by right-clicking the desktop and selecting
 
 ```bash
 Applications > Terminal Emulators > XTerm
 ```
-Next, enter the following into the terminal and Caliban will start:
+Next, enter the following into the terminal and DeepCell Label will start:
 
 ```bash
 cd desktop
