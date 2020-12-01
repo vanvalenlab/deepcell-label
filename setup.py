@@ -20,7 +20,7 @@ except Exception:
     install_reqs = []
 
 setup(
-    name='caliban',
+    name='deepcell-label',
     version='0.1',
     packages=find_packages(),
     install_requires=install_reqs,
@@ -32,5 +32,5 @@ setup(
     license='LICENSE',
     author='Van Valen Lab',
     author_email='vanvalen@caltech.edu',
-    description='caliban tester',
+    description='deepcell-label tester',
 )

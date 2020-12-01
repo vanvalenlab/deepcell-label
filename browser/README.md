@@ -1,10 +1,10 @@
-# Browser-Based Application of Caliban for Data Curation
+# Browser-Based Application of DeepCell Label for Data Curation
 
-This is an version of Caliban that runs on a browser. The browser-based Caliban application can be run locally or deployed to AWS Elastic Beanstalk.
+This is an version of DeepCell Label that runs on a browser. The browser-based DeepCell Label application can be run locally or deployed to AWS Elastic Beanstalk.
 
 Many key and mouse operations are the same between desktop and browser versions, but these versions are not guaranteed to share the same features. See the "Controls" section for an up-to-date list of features.
 
-# Caliban for Developers
+# DeepCell Label for Developers
 
 ## Install Dependencies
 Using a virtual environment to install dependencies is recommended.
@@ -21,7 +21,7 @@ python3 application.py
 ## To use docker-compose for local development
 Add your AWS credentials to ```docker-compose.yaml```.
 
-From the ```caliban/browser``` folder, run:
+From the ```deepcell-label/browser``` folder, run:
 ```bash
 sudo docker-compose up --build -d
 ```
@@ -49,13 +49,13 @@ sudo docker system prune --volumes
 
 Flask is used as an HTTP server that serves the frames as pngs and metadata as JSON. The .js files in the `browser/template` folder are what makes the requests to the Flask server.
 
-​Python Flask was used as a web application framework for constructing Caliban. The Flask framework helps serves as the router that maps the specific URL with the associated function that is intended to perform some task. Specifically, the application.route decorator binds the URL rule to the function below it. Thus, if user performs actions that cause a change in the underlying data, the side-serving .js file will request to visits a specific URL, and the output of the function below the decorator will be rendered in the browser.
+​Python Flask was used as a web application framework for constructing DeepCell Label. The Flask framework helps serves as the router that maps the specific URL with the associated function that is intended to perform some task. Specifically, the application.route decorator binds the URL rule to the function below it. Thus, if user performs actions that cause a change in the underlying data, the side-serving .js file will request to visits a specific URL, and the output of the function below the decorator will be rendered in the browser.
 
 Functions depend on Python libraries -- including NumPy, Matplotlib, and scikit-image – to change the data within files. After the desired change has been made to the lineage information or mask annotation, the Flask app routing will update the interface to reflect the alterations with support from side-serving JavaScript scripts.
 
-The final Flask application has been deployed to an AWS Elastic Beanstalk environment as a RESTful web service. A stable demo of the browser application can be accessed at caliban.deepcell.org. To deploy this application to AWS EB, an AWS RDS MySQL database must be set up and configured to handle data storage for application use. (Add database credentials to the .env configuration file.) Once a database is appropriately configured, the application can easily be launched by using the AWS EB command line tool or web interface. The .ebextensions folder will configure the web service to use the appropriate Flask application (eb_application.py, which uses a MySQL database instead of SQLite).
+The final Flask application has been deployed to an AWS Elastic Beanstalk environment as a RESTful web service. A stable demo of the browser application can be accessed at label.deepcell.org. To deploy this application to AWS EB, an AWS RDS MySQL database must be set up and configured to handle data storage for application use. (Add database credentials to the .env configuration file.) Once a database is appropriately configured, the application can easily be launched by using the AWS EB command line tool or web interface. The .ebextensions folder will configure the web service to use the appropriate Flask application (eb_application.py, which uses a MySQL database instead of SQLite).
 
-Caliban can also be run locally using a SQLite database (this is the default behavior). When we start using Caliban, Caliban creates a TrackEdit (for .trk files) or ZStackEdit (for .npz files) object, gives it a unique ID, and stores it locally in caliban.db. Whenever we change an Edit object, Caliban updates the object in the database. After we submit the file and our changes to the S3 bucket, Caliban deletes the Edit object from the database, leaving behind the unique ID and session metadata. Running application.py creates the database if it does not already exist.
+DeepCell Label can also be run locally using a SQLite database (this is the default behavior). When we start using DeepCell Label, DeepCell Label creates a TrackEdit (for .trk files) or ZStackEdit (for .npz files) object, gives it a unique ID, and stores it locally in caliban.db. Whenever we change an Edit object, DeepCell Label updates the object in the database. After we submit the file and our changes to the S3 bucket, DeepCell Label deletes the Edit object from the database, leaving behind the unique ID and session metadata. Running application.py creates the database if it does not already exist.
 
 ## Controls
 
@@ -70,7 +70,7 @@ Caliban can also be run locally using a SQLite database (this is the default beh
 
 ### Edit Operations:
 
-Caliban's default setting allows operations to be carried out quickly and easily on existing segmentations. The actions that can modify cell labels and/or lineage information are:
+DeepCell Label's default setting allows operations to be carried out quickly and easily on existing segmentations. The actions that can modify cell labels and/or lineage information are:
 
 *click* - click on a cell label to select it. Up to two cells can be selected at one time.
 
