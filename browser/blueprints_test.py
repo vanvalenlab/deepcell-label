@@ -156,8 +156,10 @@ def test_redo(client, mocker):
     response = client.post('/redo/{}'.format(project.token))
     assert response.status_code == 200
 
+
 def test_create_project(client, mocker):
     pass
+
 
 def test_get_project(client, mocker):
     pass
@@ -166,6 +168,7 @@ def test_get_project(client, mocker):
     # Project that does exist
 
     # Project that has been finished
+
 
 def test_project(client, mocker):
     pass
