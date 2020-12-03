@@ -270,14 +270,34 @@ def test_create_cell_info(project):
             assert label_in_frame[label_frames].all()
             assert not label_in_frame[no_label_frames].any()
 
+def test_undo_first_action():
+
 
 def test_undo_action_with_frame_not_in_previous_action():
     """
-    TODO: write test
+    Tests undoing when a frame was last changed before the previous action.
     """
+    # Create project with two frames
+
+    # Action on first frame
+
+    # Action on both frames
+
+    # Undo second action
+
+
 
 
 def test_redo_action_with_frame_not_in_next_action():
     """
-    TODO: write test
+    Tests redoing when a frame is next changed after the next action.
     """
+    # Create project with two frames
+    project = models.Project.create(DummyLoader(raw=np.zeros(2, 1, 1, 1)))
+    # Action on first frame
+
+    # Action on both frames
+
+    # Undo both actions
+
+    # Redo first action

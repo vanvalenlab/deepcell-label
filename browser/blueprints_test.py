@@ -132,7 +132,7 @@ def test_shortcut(client):
 def test_undo(client, mocker):
     # Project not found
     response = client.post('/undo/0')
-    # TODO: detect abort(404) with this test; currently results in 500 error+
+    # TODO: detect abort(404) with this test; currently results in 500 error
     # assert response.status_code == 404
 
     # Create a project
@@ -155,3 +155,17 @@ def test_redo(client, mocker):
     # Redo with no action to redo silently does nothing
     response = client.post('/redo/{}'.format(project.token))
     assert response.status_code == 200
+
+def test_create_project(client, mocker):
+    pass
+
+def test_get_project(client, mocker):
+    pass
+    # Project that doesn't exist
+
+    # Project that does exist
+
+    # Project that has been finished
+
+def test_project(client, mocker):
+    pass
