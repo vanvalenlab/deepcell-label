@@ -294,8 +294,6 @@ def test_undo_action_with_frame_not_in_previous_action():
     # Undo second action
 
 
-
-
 def test_redo_action_with_frame_not_in_next_action():
     """
     Tests redoing when a frame is next changed after the next action.
