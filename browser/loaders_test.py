@@ -12,8 +12,8 @@ def test_load_combined_npz():
 
 
 def test_load_trk():
-     """Creates a dummy TRK file and loads it."""
-     pass
+    """Creates a dummy TRK file and loads it."""
+    pass
 
 
 def test_load_trk_no_lineage():
