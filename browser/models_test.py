@@ -271,6 +271,12 @@ def test_create_cell_info(project):
             assert not label_in_frame[no_label_frames].any()
 
 def test_undo_first_action():
+    """Tests undoing a project back to its initial state."""
+    pass
+
+def test_redo_last_action():
+    """Tests redoing a project back to its final state."""
+    pass
 
 
 def test_undo_action_with_frame_not_in_previous_action():
