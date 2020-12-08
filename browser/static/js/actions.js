@@ -38,18 +38,16 @@ class ChangeFrame extends Action {
   }
 
   do() {
-    setDisplay('frame', this.newValue);
     current_frame = this.newValue;
     if (this.mode.action !== '') { this.mode.clear() };
-    render_info_display();
+    setDisplay('frame', this.newValue);
   }
 
 
   undo() {
-    setDisplay('frame', this.oldValue);
     current_frame = this.oldValue;
     if (this.mode.action !== '') { this.mode.clear() };
-    render_info_display();
+    setDisplay('frame', this.oldValue);
   }
 
   redo() {
@@ -67,17 +65,15 @@ class ChangeFeature extends Action {
   }
 
   do() {
-    setDisplay('feature', this.newValue);
     this.mode.feature = this.newValue;
     this.mode.clear();
-    render_info_display();
+    setDisplay('feature', this.newValue);
   }
 
   undo() {
-    setDisplay('feature', this.oldValue);
     this.mode.feature = this.oldValue;
     this.mode.clear();
-    render_info_display();
+    setDisplay('feature', this.oldValue);
   }
 
   redo() {
@@ -96,14 +92,13 @@ class ChangeChannel extends Action {
   }
 
   do() {
-    setDisplay('channel', this.newValue);
     this.adjust(this.oldValue, this.newValue);
-    // render_info_display();
+    setDisplay('channel', this.newValue);
   }
 
   undo() {
-    setDisplay('channel', this.oldValue);
     this.adjust(this.newValue, this.oldValue);
+    setDisplay('channel', this.oldValue);
   }
 
   redo() {
