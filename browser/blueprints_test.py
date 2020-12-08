@@ -23,36 +23,13 @@ class Bunch(object):
         self.__dict__.update(kwds)
 
 
-def test_health(client, mocker):
+def test_health(client):
     response = client.get('/health')
     assert response.status_code == 200
     assert response.json.get('message') == 'success'
 
 
-def test_create(client):
-    pass
-
-
-def test_upload_file(mocker, client):
-    # Mock out upload to S3 bucket
-    mocker.patch('exporters.S3Exporter.export', lambda *a: None)
-
-    response = client.get('/upload_file/1')
-    assert response.status_code == 404
-
-    # Create a project.
-    project = models.Project.create(DummyLoader(path='test.npz'))
-
-    response = client.get('/upload_file/{}'.format(project.token))
-    assert response.status_code == 302
-
-    project = models.Project.create(DummyLoader(path='test.trk'))
-
-    response = client.get('/upload_file/{}'.format(project.token))
-    assert response.status_code == 302
-
-
-def test_change_display(mocker, client):
+def test_change_display(client):
 
     response = client.post('/changedisplay/0/frame/999999')
     # TODO: detect abort(404) with this test; currently results in 500 error
@@ -136,7 +113,7 @@ def test_shortcut(client):
     assert 'error' in response.json
 
 
-def test_undo(client, db_session):
+def test_undo(client):
     # Project not found
     response = client.post('/undo/0')
     # TODO: detect abort(404) with this test; currently results in 500 error
@@ -150,7 +127,7 @@ def test_undo(client, db_session):
     assert response.status_code == 200
 
 
-def test_redo(client, db_session):
+def test_redo(client):
     # Project not found
     response = client.post('/undo/0')
     # TODO: detect abort(404) with this test; currently results in 500 error
@@ -164,47 +141,62 @@ def test_redo(client, db_session):
     assert response.status_code == 200
 
 
-def test_create_project(client, mocker, db_session):
+def test_create_project(client, mocker):
     mocker.patch('loaders.get_loader', lambda *args: DummyLoader())
     response = client.post(f'/createproject')
     assert response.status_code == 200
 
 
-def test_get_project(client, db_session):
+def test_get_project(client):
     project = models.Project.create(DummyLoader())
     response = client.get(f'/getproject/{project.token}')
     assert response.status_code == 200
 
 
-def test_project(client, db_session):
+def test_project(client):
     project = models.Project.create(DummyLoader())
     response = client.get(f'/project/{project.token}')
     assert response.status_code == 200
 
 
-def test_project_missing(client, mocker):
+def test_project_missing(client):
     response = client.get('/project/abc')
     assert response.status_code == 404
 
 
-def test_project_finished(client, db_session):
+def test_project_finished(client):
     project = models.Project.create(DummyLoader())
     project.finish()
     response = client.get(f'/project/{project.token}')
     assert response.status_code == 410
 
 
-def test_download_project(client, mocker, db_session):
+def test_download_project(client, mocker):
     project = models.Project.create(DummyLoader())
-    mocked_export = mocker.patch('blueprints.exporters.BrowserExporter.export')
+    mocked_export = mocker.patch('blueprints.exporters.BrowserExporter.export',
+                                 return_value=io.BytesIO())
     response = client.get(f'/downloadproject/{project.token}')
     assert response.status_code == 200
     mocked_export.assert_called()
 
 
-def test_upload_to_s3(client, mocker, db_session):
-    project = models.Project.create(DummyLoader())
+def test_upload_to_s3_npz(client, mocker):
+    project = models.Project.create(DummyLoader(path='test.npz'))
     mocked_export = mocker.patch('blueprints.exporters.S3Exporter.export')
     response = client.get(f'/upload_file/{project.token}')
     assert response.status_code == 302
     mocked_export.assert_called()
+
+
+def test_upload_to_s3_trk(client, mocker):
+    project = models.Project.create(DummyLoader(path='test.trk'))
+    mocked_export = mocker.patch('blueprints.exporters.S3Exporter.export')
+    response = client.get(f'/upload_file/{project.token}')
+    assert response.status_code == 302
+    mocked_export.assert_called()
+
+
+def test_upload_to_s3_missing(client, mocker):
+    mocker.patch('blueprints.exporters.S3Exporter.export')
+    response = client.get('/upload_file/1')
+    assert response.status_code == 404
