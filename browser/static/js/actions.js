@@ -116,7 +116,7 @@ class ChangeChannel extends Action {
     this.adjuster.displayInvert = this.adjuster.invertMap.get(newValue);
 
     this.mode.clear();
-    this.mode.channel = this.newValue;
+    this.mode.channel = newValue;
   }
 }
 
