@@ -20,14 +20,17 @@ TESTDB_PATH = '/tmp/test_project.db'
 TEST_DATABASE_URI = 'sqlite:///{}'.format(TESTDB_PATH)
 
 
+# TODO: Could this become a fixture?
 class DummyLoader(Loader):
-    def __init__(self, raw=np.zeros((1, 1, 1, 1)), label=None, path='test.npz', source='s3'):
+    def __init__(self, raw=None, label=None, path='test.npz', source='s3'):
         super().__init__()
+        if raw is None:
+            raw = np.zeros((1, 1, 1, 1))
         if label is not None:
+            if raw.shape != label.shape:
+                raw = np.zeros(label.shape)
             self._label_array = label
-            self._raw_array = np.zeros(self._label_array.shape)
-        else:
-            self._raw_array = raw
+        self._raw_array = raw
 
         self._path = path
         self.source = source
@@ -47,7 +50,7 @@ class DummyLoader(Loader):
                                 for label in np.unique(self._label_array) if label != 0}}
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def app():
     """Session-wide test `Flask` application."""
 
@@ -62,7 +65,7 @@ def app():
     os.unlink(TESTDB_PATH)
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def _db(app):
     """
     Provide the transactional fixtures with access to the database via a Flask-SQLAlchemy
@@ -125,9 +128,9 @@ TEST_IDS += ['singleframe']
 
 
 @pytest.fixture(params=TEST_LABELS, ids=TEST_IDS)
-def zstack_project(app, mocker, request, db_session):
+def zstack_project(app, request, db_session):
     with app.app_context():
-        mocker.patch('models.db.session', db_session)
+        db_session.autoflush = False
         loader = DummyLoader(label=request.param.copy())
         project = Project.create(loader)
         project.rgb = 'RGB' in request.node.name
@@ -136,9 +139,9 @@ def zstack_project(app, mocker, request, db_session):
 
 
 @pytest.fixture(params=TEST_LABELS, ids=TEST_IDS)
-def track_project(app, mocker, request, db_session):
+def track_project(app, request, db_session):
     with app.app_context():
-        mocker.patch('models.db.session', db_session)
+        db_session.autoflush = False
         loader = DummyLoader(label=request.param.copy(), path='test.trk')
         project = Project.create(loader)
         return project

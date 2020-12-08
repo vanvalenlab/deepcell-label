@@ -1017,7 +1017,7 @@ function displayUndoRedo() {
   let undoButton = document.getElementById('undo');
   undoButton.hidden = false;
   undoButton.style.width = canvasElement.width / 2 + 'px';
-  
+
   let redoButton = document.getElementById('redo');
   redoButton.hidden = false;
   redoButton.style.width = canvasElement.width / 2 + 'px';
@@ -1174,5 +1174,5 @@ function startDeepCellLabel(projectId, settings) {
     }
   });
 
-  getProject(projectId, rgb, handleFirstPayload); 
+  getProject(projectId, rgb, handleFirstPayload);
 }

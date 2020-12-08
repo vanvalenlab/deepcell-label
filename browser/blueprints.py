@@ -324,7 +324,7 @@ def project(token):
     if not project:
         return abort(404, description=f'project {token} not found')
     if project.finished is not None:
-        return abort(404, description=f'project {token} already submitted')
+        return abort(410, description=f'project {token} already submitted')
 
     if is_track_file(project.path):
         filetype = 'track'

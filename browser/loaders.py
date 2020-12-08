@@ -8,6 +8,7 @@ import tarfile
 import boto3
 import imageio
 import numpy as np
+from PIL import Image
 
 from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_INPUT_BUCKET
 from labelmaker import LabelInfoMaker
@@ -41,11 +42,8 @@ class Loader():
         if self._raw_array is None:
             self._load()
             assert self._raw_array is not None
-        # possible differences between single channel and rgb displays
-        # adds frame dimension
+        # Add frame dimension
         if self._raw_array.ndim == 3:
-            # Reshape label array before raw array in case label array is empty
-            self._label_array = np.expand_dims(self.label_array, axis=0)
             self._raw_array = np.expand_dims(self._raw_array, axis=0)
         return self._raw_array
 
@@ -63,6 +61,9 @@ class Loader():
             # may not be channels for PNG
             shape = (*self.raw_array.shape[:-1], 1)
             self._label_array = np.zeros(shape)
+        # Add frame dimension
+        if self._label_array.ndim == 3:
+            self._label_array = np.expand_dims(self._label_array, axis=0)
         return self._label_array
 
     @property
@@ -128,22 +129,22 @@ class Loader():
         npz = np.load(data)
 
         # standard nomenclature for image (X) and labeled (y)
-        if 'y' in npz.files:
-            raw_stack = npz['X']
-            labeled_stack = npz['y']
+        if 'X' in npz.files:
+            self._raw_array = npz['X']
+            if 'y' in npz.files:
+                self._label_array = npz['y']
 
         # some files may have alternate names 'raw' and 'annotated'
         elif 'raw' in npz.files:
-            raw_stack = npz['raw']
-            labeled_stack = npz['annotated']
+            self._raw_array = npz['raw']
+            if 'annotated' in npz.files:
+                self._label_array = npz['annotated']
 
         # if files are named something different, give it a try anyway
         else:
-            raw_stack = npz[npz.files[0]]
-            labeled_stack = npz[npz.files[1]]
-
-        self._raw_array = raw_stack
-        self._label_array = labeled_stack
+            self._raw_array = npz[npz.files[0]]
+            if len(npz.files > 1):
+                self._label_array = npz[npz.files[1]]
 
     def _load_trk(self, data):
         """
@@ -188,7 +189,8 @@ class Loader():
 
     def _load_png(self, data):
         """Loads a png file into a raw image array."""
-        im = imageio.imread(data)
+        im = Image.open(data)
+        im = np.array(im)
         # Dimensions are height, width, channels
         assert (len(im.shape) == 3)
         if im.shape[-1] > 3:
@@ -197,9 +199,12 @@ class Loader():
         im = np.expand_dims(im, axis=0)
         self._raw_array = im
 
-    def _load_tiff(self):
+    def _load_tiff(self, data):
         """Loads a tiff file into a raw image array."""
-        pass
+        im = Image.open(data)
+        im = np.array(im)
+        # TODO: dimension checking
+        self._raw_array = im
 
 
 class S3Loader(Loader):

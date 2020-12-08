@@ -736,7 +736,7 @@ function handlePayload(payload) {
   project_id = payload.project_id;
   $('#canvas').get(0).width = dimensions[0] + 2*padding;
   $('#canvas').get(0).height = dimensions[1] + 2*padding;
-  
+
   seg_array = payload.imgs.seg_arr;
   seg_image.src = payload.imgs.segmented;
   seg_image.onload = render_image_display;

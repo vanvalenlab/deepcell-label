@@ -11,6 +11,13 @@ import models
 from conftest import DummyLoader
 
 
+# Automatically enable transactions for all tests, without importing any extra fixtures.
+@pytest.fixture(autouse=True)
+def enable_transactional_tests(db_session):
+    db_session.autoflush = False
+    pass
+
+
 class Bunch(object):
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
@@ -129,7 +136,7 @@ def test_shortcut(client):
     assert 'error' in response.json
 
 
-def test_undo(client, mocker):
+def test_undo(client, db_session):
     # Project not found
     response = client.post('/undo/0')
     # TODO: detect abort(404) with this test; currently results in 500 error
@@ -143,7 +150,7 @@ def test_undo(client, mocker):
     assert response.status_code == 200
 
 
-def test_redo(client, mocker):
+def test_redo(client, db_session):
     # Project not found
     response = client.post('/undo/0')
     # TODO: detect abort(404) with this test; currently results in 500 error
@@ -157,18 +164,47 @@ def test_redo(client, mocker):
     assert response.status_code == 200
 
 
-def test_create_project(client, mocker):
-    pass
+def test_create_project(client, mocker, db_session):
+    mocker.patch('loaders.get_loader', lambda *args: DummyLoader())
+    response = client.post(f'/createproject')
+    assert response.status_code == 200
 
 
-def test_get_project(client, mocker):
-    pass
-    # Project that doesn't exist
-
-    # Project that does exist
-
-    # Project that has been finished
+def test_get_project(client, db_session):
+    project = models.Project.create(DummyLoader())
+    response = client.get(f'/getproject/{project.token}')
+    assert response.status_code == 200
 
 
-def test_project(client, mocker):
-    pass
+def test_project(client, db_session):
+    project = models.Project.create(DummyLoader())
+    response = client.get(f'/project/{project.token}')
+    assert response.status_code == 200
+
+
+def test_project_missing(client, mocker):
+    response = client.get('/project/abc')
+    assert response.status_code == 404
+
+
+def test_project_finished(client, db_session):
+    project = models.Project.create(DummyLoader())
+    project.finish()
+    response = client.get(f'/project/{project.token}')
+    assert response.status_code == 410
+
+
+def test_download_project(client, mocker, db_session):
+    project = models.Project.create(DummyLoader())
+    mocked_export = mocker.patch('blueprints.exporters.BrowserExporter.export')
+    response = client.get(f'/downloadproject/{project.token}')
+    assert response.status_code == 200
+    mocked_export.assert_called()
+
+
+def test_upload_to_s3(client, mocker, db_session):
+    project = models.Project.create(DummyLoader())
+    mocked_export = mocker.patch('blueprints.exporters.S3Exporter.export')
+    response = client.get(f'/upload_file/{project.token}')
+    assert response.status_code == 302
+    mocked_export.assert_called()

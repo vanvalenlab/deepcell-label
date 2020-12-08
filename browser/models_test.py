@@ -10,26 +10,73 @@ from imgutils import pngify
 from conftest import DummyLoader
 
 
-def test_project_init(project):
+# Automatically enable transactions for all tests, without importing any extra fixtures.
+@pytest.fixture(autouse=True)
+def enable_transactional_tests(db_session):
+    db_session.autoflush = False
+    pass
+
+
+def test_project_init():
     """
     Test constructor for Project table.
-    Checks for relationships to state and frames.
     """
-    # Check columns are made (except finished)
+    project = models.Project(DummyLoader())
+
+    # Check columns filled in by constructor
+    project.path is not None
+    project.source is not None
+    project.num_frames is not None
+    project.height is not None
+    project.width is not None
+    project.num_channels is not None
+    project.num_features is not None
+    project.colormap is not None
+
+
+def test_get_missing_project():
+    """
+    Gets a project before it exists, creates a project, then gets it again.
+    """
+    # test that no projects exist
+    project = models.Project.get(1)
+    assert project is None
+
+
+def test_get_project():
+    """
+    Test getting a project from the Projects table.
+    creates a project, then gets it again.
+    """
+    project = models.Project.create(DummyLoader())
+
+    valid_id = project.token
+    found_project = models.Project.get(valid_id)
+    assert found_project == project
+
+
+def test_create():
+    """
+    Test creating a row in the Project table.
+    """
+    project = models.Project.create(DummyLoader())
+
+    # Check columns populated by ORM
     assert project.id is not None
-    assert project.token is not None
     assert project.createdAt is not None
     assert project.finished is None  # None until project is done
-    assert project.path is not None
-    assert project.source is not None
     assert project.rgb is not None
     assert project.frame is not None
     assert project.channel is not None
     assert project.feature is not None
     assert project.scale_factor is not None
-    assert project.colormap is not None
 
-    # Check column correctness
+    # Check relationships
+    assert project.labels is not None
+    assert project.raw_frames is not None
+    assert project.rgb_frames is not None
+    assert project.label_frames is not None
+
     raw_frames = project.raw_frames
     raw_frame = raw_frames[0].frame
     label_frames = project.label_frames
@@ -41,45 +88,16 @@ def test_project_init(project):
     assert raw_frame.shape[0] == project.height
     assert raw_frame.shape[1] == project.width
 
-    # Check relationship columns have been made
-    assert project.labels is not None
-    assert project.raw_frames is not None
-    assert project.rgb_frames is not None
-    assert project.label_frames is not None
-
-
-def test_get(mocker, db_session):
-    """
-    Test getting a project from the Projects table.
-    Gets a project before it exists, creates a project, then gets it again.
-    """
-    mocker.patch('models.db.session', db_session)
-    # test that no projects exist
-    project = models.Project.get(1)
-    assert project is None
-
-    project = models.Project.create(DummyLoader())
-
-    # test that the project can be found and is the same as the created one
-    valid_id = project.token
-    found_project = models.Project.get(valid_id)
-    assert found_project == project
-
-
-def test_create(mocker, db_session):
-    """
-    Test creating a row in the Project table.
-    """
-    mocker.patch('models.db.session', db_session)
-    project = models.Project.create(DummyLoader())
+    # Check we've assigned a token
+    assert project.token is not None
 
     # Test that an action has been initialized
     assert project.action is not None
     assert project.num_actions == 1
 
 
-def test_create_memento(mocker, project, db_session):
-    mocker.patch('models.db.session', db_session)
+def test_create_memento_no_changes(db_session):
+    project = models.Project.create(DummyLoader())
     # Store action info before creating new action
     prev_action = project.action
     num_actions = project.num_actions
@@ -92,141 +110,309 @@ def test_create_memento(mocker, project, db_session):
     assert project.num_actions != num_actions
     assert project.action.next_action is None
 
+    assert len(project.action.before_frames) == 0
+    assert len(project.action.after_frames) == 0
+    assert project.action.before_labels is not None
+    assert project.action.after_labels is not None
 
-def test_undo(project):
-    """Test where we move in the action history when undoing."""
+
+def test_create_memento_frame_changed(db_session):
+    project = models.Project.create(DummyLoader())
+
+    # Store action before mocked action
+    prev_action = project.action
+    num_actions = project.num_actions
+
+    # Mock action
+    changed_frame = project.label_frames[0]
+    new_frame = changed_frame.frame + 1
+    project.label_frames[0].frame = new_frame
+    project.create_memento()
+    project.update()
+
+    assert prev_action is not project.action
+    assert prev_action.next_action == project.action
+    assert project.num_actions != num_actions
+    assert project.action.next_action is None
+
+    assert len(project.action.after_frames) == 1
+    assert project.action.after_frames[0].frame is changed_frame
+    assert len(project.action.before_frames) == 1
+    assert project.action.before_frames[0].frame is changed_frame
+
+
+def test_undo_no_previous_action():
+    """Test undoing at the start of the action history."""
+    project = models.Project.create(DummyLoader())
     action = project.action
     num_actions = project.num_actions
 
     project.undo()
 
-    if action.prev_action_id is None:
-        assert project.action is action
-    else:
-        assert project.action_id == action.prev_action_id
+    assert project.action is action
     assert project.num_actions == num_actions
 
 
-def test_redo(project):
-    """Test where we move in the action history when redoing."""
-
+def test_redo_no_next_action():
+    """Test redoing at the end of the action history."""
+    project = models.Project.create(DummyLoader())
     action = project.action
     num_actions = project.num_actions
 
     project.redo()
 
-    if action.next_action_id is None:
-        assert project.action is action
-    else:
-        assert project.action_id == action.next_action_id
+    assert project.action is action
     assert project.num_actions == num_actions
 
 
-def test_get_label_array(project):
+def test_undo_first_action():
+    """Tests undoing a project back to its initial state."""
+    project = models.Project.create(DummyLoader())
+    # Save current action before mocking action
+    init_action = project.action
+    # Mock an action and undo
+    for frame in project.label_frames:
+        frame.frame[:] = -1
+    project.create_memento()
+    project.update()
+    # Save current action before undoing
+    action = project.action
+    num_actions = project.num_actions
+    project.undo()
+
+    assert project.action is init_action
+    assert project.action is not action
+    assert project.num_actions == num_actions
+    assert -1 not in project.label_array
+
+
+def test_redo_last_action():
+    """Tests redoing a project back to its final state."""
+    project = models.Project.create(DummyLoader())
+    # Mock an action, undo, and redo
+    for frame in project.label_frames:
+        frame.frame[:] = -1
+    project.create_memento()
+    project.update()
+    # Save action before undoing
+    action = project.action
+    project.undo()
+    # Save action before redoing
+    prev_action = project.action
+    num_actions = project.num_actions
+    project.redo()
+
+    assert project.action is action
+    assert project.action is not prev_action
+    assert project.num_actions == num_actions
+    assert -1 in project.label_array
+
+
+def test_undo_frame_not_changed_in_previous_action():
+    """
+    Tests undoing when a frame may not be stored in the previous action.
+    """
+    # Create project with two frames
+    project = models.Project.create(DummyLoader(raw=np.zeros((2, 1, 1, 1))))
+
+    # Mock action on first frame
+    project.label_frames[0].frame[:] = 1
+    project.create_memento()
+    project.update()
+    # Mock action on both frames
+    for frame in project.label_frames:
+        frame.frame[:] = 2
+    project.create_memento()
+    project.update()
+    # Undo second action
+    project.undo()
+
+    assert 2 not in project.label_array
+    assert 1 in project.label_frames[0].frame
+    assert 0 in project.label_frames[1].frame
+
+
+def test_redo_frame_not_changed_in_next_action():
+    """
+    Tests redoing when a frame may not be stored in the next action.
+    """
+    # Create project with two frames
+    project = models.Project.create(DummyLoader(raw=np.zeros((2, 1, 1, 1))))
+
+    # Mock action on both frame
+    for frame in project.label_frames:
+        frame.frame[:] = 1
+    project.create_memento()
+    project.update()
+    # Mock action on first frame
+    project.label_frames[0].frame[:] = 2
+    project.create_memento()
+    project.update()
+    # Undo both action
+    project.undo()
+    project.undo()
+    # Redo first action
+    project.redo()
+
+    assert 0 not in project.label_array
+    assert 2 not in project.label_array
+    assert 1 in project.label_frames[0].frame
+    assert 1 in project.label_frames[1].frame
+
+
+def test_get_label_array():
     """
     Test outlined label arrays to send to the front-end.
     """
-    label_arr = project._get_label_arr()
-    assert len(label_arr) == project.height
-    for row in label_arr:
-        assert len(row) == project.width
-    label_frame = np.array(label_arr)
+    project = models.Project.create(DummyLoader())
+
     expected_frame = project.label_frames[project.frame].frame[..., project.channel]
-    assert (label_frame[label_frame >= 0] == expected_frame[label_frame >= 0]).all()
-    assert (label_frame[label_frame < 0] == -expected_frame[label_frame < 0]).all()
+
+    label_arr = project._get_label_arr()
+    label_frame = np.array(label_arr)
+
+    assert label_frame.shape == (project.height, project.width)
+    np.testing.assert_array_equal(label_frame[label_frame >= 0],
+                                  expected_frame[label_frame >= 0])
+    np.testing.assert_array_equal(label_frame[label_frame < 0],
+                                  -expected_frame[label_frame < 0])
 
 
-def test_get_label_png(project):
+def test_get_label_png():
     """
     Test label frame PNGs to send to the front-end.
     """
-    label_png = project._get_label_png()
-    assert type(label_png) is io.BytesIO
+    project = models.Project.create(DummyLoader())
+
     expected_frame = project.label_frames[project.frame].frame[..., project.feature]
     expected_frame = np.ma.masked_equal(expected_frame, 0)
     expected_png = pngify(expected_frame,
                           vmin=0,
                           vmax=project.get_max_label(),
                           cmap=project.colormap)
+
+    label_png = project._get_label_png()
+
+    assert type(label_png) is io.BytesIO
     assert label_png.getvalue() == expected_png.getvalue()
 
 
-def test_get_raw_png(project):
+def test_get_raw_png_greyscale():
     """
     Test raw frame PNGs to send to the front-end.
     """
+    project = models.Project.create(DummyLoader())
+    project.rgb = False
+    project.update()
+    expected_frame = project.raw_frames[project.frame].frame[..., project.channel]
+    expected_png = pngify(expected_frame, vmin=0, vmax=None, cmap='cubehelix')
+
     raw_png = project._get_raw_png()
     assert type(raw_png) is io.BytesIO
-    if project.rgb:
-        expected_frame = project.rgb_frames[project.frame].frame
-        expected_png = pngify(expected_frame, vmin=None, vmax=None, cmap=None)
-    else:
-        expected_frame = project.raw_frames[project.frame].frame[..., project.channel]
-        expected_png = pngify(expected_frame, vmin=0, vmax=None, cmap='cubehelix')
     assert raw_png.getvalue() == expected_png.getvalue()
 
 
-def test_get_max_label(project):
+def test_get_raw_png_rgb():
+    project = models.Project.create(DummyLoader())
+    project.rgb = True
+    project.update()
+
+    expected_frame = project.rgb_frames[project.frame].frame
+    expected_png = pngify(expected_frame, vmin=None, vmax=None, cmap=None)
+
+    raw_png = project._get_raw_png()
+    assert type(raw_png) is io.BytesIO
+    assert raw_png.getvalue() == expected_png.getvalue()
+
+
+def test_get_max_label_all_zeroes():
+    labels = np.zeros((1, 1, 1, 1))
+    project = models.Project.create(DummyLoader(label=labels))
     max_label = project.get_max_label()
-    assert max_label in project.label_array[..., project.feature]
-    assert max_label + 1 not in project.label_array[..., project.feature]
-    assert max_label == project.label_array[..., project.feature].max()
-    if max_label == 0:
-        assert (project.label_array[..., project.feature] == 0).all()
+    assert max_label == 0
 
 
-def test_finish_project(mocker, db_session):
+def test_get_max_label_all_ones():
+    labels = np.ones((1, 1, 1, 1))
+    project = models.Project.create(DummyLoader(label=labels))
+    max_label = project.get_max_label()
+    assert max_label == 1
+
+
+def test_get_max_label_two_features():
+    labels = np.array([[[[1, 2]]]])
+    project = models.Project.create(DummyLoader(label=labels))
+    project.feature = 0
+    project.update()
+    max_label = project.get_max_label()
+    assert max_label == 1
+    project.feature = 1
+    project.update()
+    max_label = project.get_max_label()
+    assert max_label == 2
+
+
+def test_get_max_label_two_frames():
+    labels = np.array([[[[1]]], [[[2]]]])
+    project = models.Project.create(DummyLoader(label=labels))
+    max_label = project.get_max_label()
+    assert max_label == 2
+
+
+def test_finish_project():
     """
     Test finishing a project.
     Checks that the project's relationship are also finished.
     """
     # create project
-    mocker.patch('models.db.session', db_session)
     project = models.Project.create(DummyLoader())
 
-    # test finish project
     project.finish()
-    found_project = models.Project.get(project.token)
-    assert found_project.finished is not None
-    # test finish Labels
-    assert found_project.labels.cell_ids is None
-    assert found_project.labels.cell_info is None
-    # test finish frames
-    for raw, rgb, label in zip(found_project.raw_frames,
-                               found_project.rgb_frames,
-                               found_project.label_frames):
+    assert project.finished is not None
+    assert project.labels.cell_ids is None
+    assert project.labels.cell_info is None
+    for raw, rgb, label in zip(project.raw_frames,
+                               project.rgb_frames,
+                               project.label_frames):
         assert raw.frame is None
         assert rgb.frame is None
         assert label.frame is None
 
 
-def test_raw_frame_init(project):
+def test_raw_frame_init():
     """Test constructing the raw frames for a project."""
+    project = models.Project.create(DummyLoader())
     raw_frames = project.raw_frames
     for frame in raw_frames:
         assert len(frame.frame.shape) == 3  # Height, width, channels
         assert frame.frame_id is not None
 
 
-def test_rgb_frame_init(project):
+def test_rgb_frame_init():
     """Test constructing the RGB frames for a project."""
+    project = models.Project.create(DummyLoader())
+
     rgb_frames = project.rgb_frames
     for frame in rgb_frames:
-        assert len(frame.frame.shape) == 3  # Height, width, features
+        assert frame.frame.ndim == 3  # Height, width, features
         assert frame.frame_id is not None
         assert frame.frame.shape[2] == 3  # RGB channels
 
 
-def test_label_frame_init(project):
+def test_label_frame_init():
     """Test constructing the label frames for a project."""
+    project = models.Project.create(DummyLoader())
+
     label_frames = project.label_frames
     for frame in label_frames:
-        assert len(frame.frame.shape) == 3  # Height, width, features
+        assert frame.frame.ndim == 3  # Height, width, features
         assert frame.frame_id is not None
 
 
-def test_frames_init(project):
+def test_frames_init():
     """Test that raw, RGB, and label frames within a project are all compatible."""
+    project = models.Project.create(DummyLoader())
+
     raw_frames = project.raw_frames
     label_frames = project.label_frames
     rgb_frames = project.rgb_frames
@@ -241,69 +427,12 @@ def test_frames_init(project):
         assert raw_frame.project_id == rgb_frame.project_id
 
 
-def test_labels_init(project):
+def test_labels_init():
     """Test constructing the Labels row for a Project."""
+    project = models.Project.create(DummyLoader())
     labels = project.labels
 
     assert len(labels.cell_ids) == project.num_features
     assert len(labels.cell_info) == project.num_features
     for feature in range(project.num_features):
         assert len(labels.cell_ids[feature]) == len(labels.cell_info[feature])
-
-
-def test_create_cell_info(project):
-    """Test creating the cell info dict in the Labels table for a project."""
-    labels = project.labels
-    # Combine all frames into one numpy array with shape (frames, height, width, features)
-    label_array = np.array([frame.frame for frame in project.label_frames])
-    for feature in range(project.num_features):
-        feature_labels = label_array[..., feature]
-        labels_uniq = np.unique(feature_labels[feature_labels != 0])
-        labels.create_cell_info(feature, label_array)
-        assert 0 not in labels.cell_ids[feature]
-        for label in labels_uniq:
-            assert label in labels.cell_ids[feature]
-            assert str(label) == labels.cell_info[feature][label]['label']
-            label_in_frame = np.isin(label_array, label).any(axis=(1, 2))  # Height and width axes
-            label_frames = labels.cell_info[feature][label]['frames']
-            no_label_frames = [i for i in range(project.num_frames) if i not in label_frames]
-            assert label_in_frame[label_frames].all()
-            assert not label_in_frame[no_label_frames].any()
-
-
-def test_undo_first_action():
-    """Tests undoing a project back to its initial state."""
-    pass
-
-
-def test_redo_last_action():
-    """Tests redoing a project back to its final state."""
-    pass
-
-
-def test_undo_action_with_frame_not_in_previous_action():
-    """
-    Tests undoing when a frame was last changed before the previous action.
-    """
-    # Create project with two frames
-
-    # Action on first frame
-
-    # Action on both frames
-
-    # Undo second action
-
-
-def test_redo_action_with_frame_not_in_next_action():
-    """
-    Tests redoing when a frame is next changed after the next action.
-    """
-    # Create project with two frames
-
-    # Action on first frame
-
-    # Action on both frames
-
-    # Undo both actions
-
-    # Redo first action

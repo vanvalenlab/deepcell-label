@@ -25,7 +25,7 @@ from helpers import is_zstack_file, is_track_file
 
 
 logger = logging.getLogger('models.Project')  # pylint: disable=C0103
-# Accessing one-to-many relationships (like project.label_frames) issues a Query, causing a flush
+# Accessing relationships (like project.label_frames) issues a Query, causing a flush
 # autoflush=False prevents the flush, so we still access the db.session.dirty after the query
 db = SQLAlchemy(session_options={'autoflush': False})  # pylint: disable=C0103
 
@@ -236,15 +236,15 @@ class Project(db.Model):
         logger.debug('Finished project %s in %ss.',
                      self.id, timeit.default_timer() - start)
 
-    def create_memento(self, action_name, all_frames=False, session=None):
+    def create_memento(self, action_name='', all_frames=False, session=None):
         """
         Saves the project state.
         """
         session = session or db.session
         # Create action and store project state inside
-        action = Action(self, self.action, self.num_actions, action_name=action_name)
+        action = Action(self, action_name=action_name)
         for frame in self.label_frames:
-            if frame in db.session.dirty or all_frames:
+            if frame in session.dirty or all_frames:
                 session.add(FrameMemento(action=action, frame=frame))
         action.labels = self.labels
         if self.action is not None:
@@ -710,10 +710,10 @@ class Action(db.Model):
 
     frames = association_proxy('action_frames', 'frame')
 
-    def __init__(self, project, prev_action, action_id, action_name=''):
+    def __init__(self, project, action_name=''):
         self.project = project
-        self.prev_action = prev_action
-        self.action_id = action_id
+        self.prev_action = project.action
+        self.action_id = project.num_actions
         self.action_name = action_name
 
     @property
@@ -752,6 +752,8 @@ class Action(db.Model):
 
     @property
     def before_labels(self):
+        if self.prev_action is None:
+            return None
         return self.prev_action.labels
 
     @property
