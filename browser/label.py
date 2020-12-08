@@ -18,6 +18,8 @@ from skimage.draw import circle
 from skimage.exposure import rescale_intensity
 from skimage.measure import regionprops
 
+from labelmaker import LabelInfoMaker
+
 
 class ChangeDisplay(object):
     """
@@ -564,7 +566,7 @@ class ZStackEdit(BaseEdit):
 
             # if the image changed, update cell info and label frame
             if self.y_changed:
-                self.create_cell_info(feature=self.feature)
+                self.remake_cell_info()
                 self.frame[..., self.feature] = updated_img
 
     def action_predict_zstack(self):
@@ -580,7 +582,7 @@ class ZStackEdit(BaseEdit):
 
         # remake cell_info dict based on new annotations
         self.y_changed = True
-        self.create_cell_info(feature=self.feature)
+        self.remake_cell_info()
 
     def action_save_zstack(self):
         # save file to BytesIO object
@@ -635,9 +637,11 @@ class ZStackEdit(BaseEdit):
         # if deleting cell, frames and info have necessarily changed
         self.y_changed = self.labels_changed = True
 
-    def create_cell_info(self, feature):
-        """Make or remake the entire cell info dict"""
-        self.labels.create_cell_info(feature)
+    def remake_cell_info(self):
+        """Remake the entire cell_info and cell_ids dicts"""
+        label_maker = LabelInfoMaker(self.project.label_array)
+        self.labels.cell_info = label_maker.cell_info
+        self.labels.cell_ids = label_maker.cell_ids
         self.labels_changed = True
 
 

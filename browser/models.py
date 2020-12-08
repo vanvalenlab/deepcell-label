@@ -494,35 +494,6 @@ class Labels(db.Model):
 
         return cell_info
 
-    def create_cell_info(self, feature, labels=None):
-        """
-        Make or remake the entire cell info dict.
-
-        Args:
-            feature (int): which feature to create the cell info dict
-            labels (ndarray): the complete label array (all frames, all features)
-        """
-        feature = int(feature)
-        if labels is None:
-            labels = self.project.label_array
-        annotated = labels[..., feature]
-
-        self.cell_ids[feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))]
-
-        self.cell_info[feature] = {}
-
-        for cell in self.cell_ids[feature]:
-            cell = int(cell)
-
-            self.cell_info[feature][cell] = {}
-            self.cell_info[feature][cell]['label'] = str(cell)
-            self.cell_info[feature][cell]['frames'] = []
-
-            for frame in range(annotated.shape[0]):
-                if cell in annotated[frame, ...]:
-                    self.cell_info[feature][cell]['frames'].append(int(frame))
-            self.cell_info[feature][cell]['slices'] = ''
-
     def update(self):
         """
         Update the label metatdata by explicitly copying the PickleType
