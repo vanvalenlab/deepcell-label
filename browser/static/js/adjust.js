@@ -1,7 +1,7 @@
 // helper functions
 
 class ImageAdjuster {
-  constructor(width, height, rgb, channelMax) {
+  constructor(width, height, rgb, numChannels) {
     // canvas element used for image processing
     this.canvas = document.createElement('canvas');
     this.canvas.id = 'adjustCanvas';
@@ -39,7 +39,7 @@ class ImageAdjuster {
     this.brightnessMap = new Map();
     this.invertMap = new Map();
 
-    for (let i = 0; i < channelMax; i++) {
+    for (let i = 0; i < numChannels; i++) {
       this.brightnessMap.set(i, 0);
       this.contrastMap.set(i, 0);
       this.invertMap.set(i, true);
@@ -83,47 +83,6 @@ class ImageAdjuster {
 
   get maxContrast() {
     return this._maxContrast;
-  }
-
-  changeContrast(inputChange) {
-    const modContrast = -Math.sign(inputChange) * 4;
-    // stop if fully desaturated
-    let newContrast = Math.max(this.contrast + modContrast, this.minContrast);
-    // stop at 8x contrast
-    newContrast = Math.min(newContrast, this.maxContrast);
-
-    if (newContrast !== this.contrast) {
-      // need to retrigger downstream image adjustments
-      this.rawLoaded = false;
-      this.contrast = newContrast;
-      this.contrastRaw();
-    }
-  }
-
-  changeBrightness(inputChange) {
-    const modBrightness = -Math.sign(inputChange);
-    // limit how dim image can go
-    let newBrightness = Math.max(this.brightness + modBrightness, this.minBrightness);
-    // limit how bright image can go
-    newBrightness = Math.min(newBrightness, this.maxBrightness);
-
-    if (newBrightness !== this.brightness) {
-      this.rawLoaded = false;
-      this.brightness = newBrightness;
-      this.contrastRaw();
-    }
-  }
-
-  resetBrightnessContrast() {
-    this.brightness = 0;
-    this.contrast = 0;
-    this.rawLoaded = false;
-    this.contrastRaw();
-  }
-
-  toggleInvert() {
-    this.displayInvert = !this.displayInvert;
-    this.preCompRawAdjust();
   }
 
   // modify image data in place to recolor
@@ -383,4 +342,98 @@ class ImageAdjuster {
       }
     }
   }
+}
+
+class ChangeContrast extends Action {
+  constructor(adjuster, change) {
+    super();
+    this.adjuster = adjuster;
+    this.oldValue = adjuster.contrast;
+
+    const modContrast = -Math.sign(change) * 4;
+    // stop if fully desaturated
+    let newContrast = Math.max(adjuster.contrast + modContrast, adjuster.minContrast);
+    // stop at 8x contrast
+    newContrast = Math.min(newContrast, adjuster.maxContrast);
+    this.newValue = newContrast;
+  }
+
+  do() { this.setContrast(this.newValue); }
+
+  undo() { this.setContrast(this.oldValue); }
+
+  redo() { this.do(); }
+
+  setContrast(contrast) {
+    this.adjuster.rawLoaded = false;
+    this.adjuster.contrast = contrast;
+    this.adjuster.contrastRaw();
+  }
+}
+
+class ChangeBrightness extends Action {
+  constructor(adjuster, change) {
+    super();
+    this.adjuster = adjuster;
+    const modBrightness = -Math.sign(change);
+    // limit how dim image can go
+    let newBrightness = Math.max(adjuster.brightness + modBrightness, adjuster.minBrightness);
+    // limit how bright image can go
+    newBrightness = Math.min(newBrightness, adjuster.maxBrightness);
+    this.oldValue = adjuster.brightness;
+    this.newValue = newBrightness;
+  }
+
+  do() { this.setBrightness(this.newValue); }
+
+  undo() { this.setBrightness(this.oldValue); }
+
+  redo() { this.do(); }
+
+  setBrightness(brightness) {
+    this.adjuster.rawLoaded = false;
+    this.adjuster.brightness = brightness;
+    this.adjuster.contrastRaw();
+  }
+}
+
+class ResetBrightnessContrast extends Action {
+  constructor(adjuster) {
+    super();
+    this.adjuster = adjuster;
+    this.brightness = adjuster.brightness;
+    this.contrast = adjuster.contrast;
+  }
+
+  do() {
+    this.adjuster.brightness = 0;
+    this.adjuster.contrast = 0;
+    this.adjuster.rawLoaded = false;
+    this.adjuster.contrastRaw();
+  }
+
+  undo() {
+    this.adjuster.brightness = this.brightness;
+    this.adjuster.contrast = this.contrast;
+    this.adjuster.rawLoaded = false;
+    this.adjuster.contrastRaw();
+  }
+
+  redo() { this.do(); }
+}
+
+class ToggleInvert extends Action {
+  constructor(adjuster) {
+    super();
+    this.adjuster = adjuster;
+  }
+
+  do() {
+    this.adjuster.displayInvert = !this.adjuster.displayInvert;
+    this.adjuster.preCompRawAdjust();
+  }
+
+  undo() { this.do(); }
+
+  redo() { this.do(); }
 }

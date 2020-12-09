@@ -5,16 +5,19 @@ class CanvasState {
   constructor(width, height, scale, padding) {
     this.width = width;
     this.height = height;
+    this.scale = scale;
+    this.padding = padding;
 
     // attributes for viewing the canvas.
-    this.sx = 0;
-    this.sy = 0;
+    this._sx = 0;
+    this._sy = 0;
     this.sWidth = width;
     this.sHeight = height;
     this.zoom = 100;
     this.zoomLimit = 100;
 
     // attributes for mouse on the canvas.
+    this.onCanvas = false;
     this.isPressed = false;
     this.trace = [];
 
@@ -36,14 +39,36 @@ class CanvasState {
     // store as part of object to be able to get current label
     this._segArray = null;
 
-    this.scale = scale;
-
     this.topBorder = new Path2D();
     this.bottomBorder = new Path2D();
     this.rightBorder = new Path2D();
     this.leftBorder = new Path2D();
 
     this.isSpacedown = false;
+  }
+
+  get sx() {
+    return this._sx; 
+  }
+
+  set sx(newSx) {
+    // don't move past right edge
+    newSx = Math.min(newSx, canvas.width - canvas.sWidth);
+    // don't move past left edge
+    newSx = Math.max(newSx, 0);
+    this._sx = newSx;
+  }
+
+  get sy() {
+    return this._sy; 
+  }
+
+  set sy(newSy) {
+    // don't move past bottom edge
+    newSy = Math.min(newSy, canvas.height - canvas.sHeight);
+    // don't move past top edge
+    newSy = Math.max(0, newSy);
+    this._sy = newSy;
   }
 
   get segArray() {
@@ -80,14 +105,14 @@ class CanvasState {
     );
   }
 
-  updateCursorPosition(x, y, padding) {
+  updateCursorPosition(x, y) {
     // store raw mouse position, in case of pan without mouse movement
     this.rawX = x;
     this.rawY = y;
 
     // convert to viewing pane position, to check whether to access label underneath
-    this.canvasPosX = x - padding;
-    this.canvasPosY = y - padding;
+    this.canvasPosX = x - this.padding;
+    this.canvasPosY = y - this.padding;
 
     // convert to image indices, to use for actions and getting label
     if (this.inRange()) {
@@ -99,37 +124,37 @@ class CanvasState {
     }
   }
 
-  setBorders(padding) {
+  setBorders() {
     const scaledWidth = this.scaledWidth;
     const scaledHeight = this.scaledHeight;
 
     // create paths for recoloring borders
     this.topBorder = new Path2D();
     this.topBorder.moveTo(0, 0);
-    this.topBorder.lineTo(padding, padding);
-    this.topBorder.lineTo(scaledWidth + padding, padding);
-    this.topBorder.lineTo(scaledWidth + 2 * padding, 0);
+    this.topBorder.lineTo(this.padding, this.padding);
+    this.topBorder.lineTo(scaledWidth + this.padding, this.padding);
+    this.topBorder.lineTo(scaledWidth + 2 * this.padding, 0);
     this.topBorder.closePath();
 
     this.bottomBorder = new Path2D();
-    this.bottomBorder.moveTo(0, scaledHeight + 2 * padding);
-    this.bottomBorder.lineTo(padding, scaledHeight + padding);
-    this.bottomBorder.lineTo(scaledWidth + padding, scaledHeight + padding);
-    this.bottomBorder.lineTo(scaledWidth + 2 * padding, scaledHeight + 2 * padding);
+    this.bottomBorder.moveTo(0, scaledHeight + 2 * this.padding);
+    this.bottomBorder.lineTo(this.padding, scaledHeight + this.padding);
+    this.bottomBorder.lineTo(scaledWidth + this.padding, scaledHeight + this.padding);
+    this.bottomBorder.lineTo(scaledWidth + 2 * this.padding, scaledHeight + 2 * this.padding);
     this.bottomBorder.closePath();
 
     this.leftBorder = new Path2D();
     this.leftBorder.moveTo(0, 0);
-    this.leftBorder.lineTo(0, scaledHeight + 2 * padding);
-    this.leftBorder.lineTo(padding, scaledHeight + padding);
-    this.leftBorder.lineTo(padding, padding);
+    this.leftBorder.lineTo(0, scaledHeight + 2 * this.padding);
+    this.leftBorder.lineTo(this.padding, scaledHeight + this.padding);
+    this.leftBorder.lineTo(this.padding, this.padding);
     this.leftBorder.closePath();
 
     this.rightBorder = new Path2D();
-    this.rightBorder.moveTo(scaledWidth + 2 * padding, 0);
-    this.rightBorder.lineTo(scaledWidth + padding, padding);
-    this.rightBorder.lineTo(scaledWidth + padding, scaledHeight + padding);
-    this.rightBorder.lineTo(scaledWidth + 2 * padding, scaledHeight + 2 * padding);
+    this.rightBorder.moveTo(scaledWidth + 2 * this.padding, 0);
+    this.rightBorder.lineTo(scaledWidth + this.padding, this.padding);
+    this.rightBorder.lineTo(scaledWidth + this.padding, scaledHeight + this.padding);
+    this.rightBorder.lineTo(scaledWidth + 2 * this.padding, scaledHeight + 2 * this.padding);
     this.rightBorder.closePath();
   }
 
@@ -154,58 +179,13 @@ class CanvasState {
     ctx.restore();
   }
 
-  pan(dx, dy) {
-    let tempPanX = this.sx - dx;
-    let tempPanY = this.sy - dy;
-
-    // stop panning if at the edge of image (x)
-    if (tempPanX >= 0 && tempPanX + this.sWidth < this.width) {
-      this.sx = tempPanX;
-    } else {
-      tempPanX = Math.max(0, tempPanX);
-      this.sx = Math.min(this.width - this.sWidth, tempPanX);
-    }
-
-    // stop panning if at the edge of image (y)
-    if (tempPanY >= 0 && tempPanY + this.sHeight < this.height) {
-      this.sy = tempPanY;
-    } else {
-      tempPanY = Math.max(0, tempPanY);
-      this.sy = Math.min(this.height - this.sHeight, tempPanY);
-    }
-  }
-
-  changeZoom(dZoom, canvasPosX, canvasPosY) {
-    const newZoom = this.zoom - 10 * dZoom;
-    const oldZoom = this.zoom;
-    const newHeight = this.height * 100 / newZoom;
-    const newWidth = this.width * 100 / newZoom;
-
-    // store sWidth and sHeight to compare against for panning
-    const oldHeight = this.sHeight;
-    const oldWidth = this.sWidth;
-
-    if (newZoom >= this.zoomLimit) {
-      this.zoom = newZoom;
-      this.sHeight = newHeight;
-      this.sWidth = newWidth;
-    }
-    if (oldZoom !== newZoom) {
-      const propX = canvasPosX / this.scaledWidth;
-      const propY = canvasPosY / this.scaledHeight;
-      const dx = propX * (newWidth - oldWidth);
-      const dy = propY * (newHeight - oldHeight);
-      this.pan(dx, dy);
-    }
-  }
-
-  drawImage(ctx, image, padding = 0) {
-    ctx.clearRect(padding, padding, this.width, this.height);
+  drawImage(ctx, image) {
+    ctx.clearRect(this.padding, this.padding, this.width, this.height);
     ctx.drawImage(
       image,
       this.sx, this.sy,
       this.sWidth, this.sHeight,
-      padding, padding,
+      this.padding, this.padding,
       this.scaledWidth,
       this.scaledHeight
     );
@@ -213,5 +193,84 @@ class CanvasState {
 
   isCursorPressed() {
     return this.isPressed;
+  }
+}
+
+class Pan extends Action {
+  // Implements command pattern for an undoable pan
+  constructor(canvas, dx, dy) {
+    super();
+    this.canvas = canvas;
+    // previous canvas position
+    this.oldSx = canvas.sx;
+    this.oldSy = canvas.sy;
+    // change in canvas position
+    this.dx = -dx;
+    this.dy = -dy;
+    // new canvas position (undefined until do)
+    this.newSx;
+    this.newSy;
+  }
+
+  do() {
+    canvas.sx = canvas.sx + this.dx;
+    canvas.sy = canvas.sy + this.dy;
+    this.newSx = canvas.sx;
+    this.newSy = canvas.sy;
+  }
+
+  redo() {
+    canvas.sx = this.newSx;
+    canvas.sy = this.newSy;
+  }
+
+  undo() {
+    canvas.sx = this.oldSx;
+    canvas.sy = this.oldSy;
+  }
+}
+
+class Zoom extends Action {
+  constructor(canvas, dZoom) {
+    super();
+    // Calculate how much canvas zooms
+    const zoom = Math.max(canvas.zoom - 10 * dZoom, canvas.zoomLimit);
+
+    // Calculate how canvas needs to pan after zooming
+    const newHeight = canvas.height * 100 / zoom;
+    const newWidth = canvas.width * 100 / zoom;
+    const oldHeight = canvas.sHeight;
+    const oldWidth = canvas.sWidth;
+    const propX = canvas.canvasPosX / canvas.scaledWidth;
+    const propY = canvas.canvasPosY / canvas.scaledHeight;
+    this.dx = propX * (newWidth - oldWidth);
+    this.dy = propY * (newHeight - oldHeight);
+
+    this.canvas = canvas;
+    this.oldZoom = canvas.zoom;
+    this.newZoom = zoom;
+  }
+
+  do() {
+    // Zoom then pan
+    this.setZoom(this.newZoom);
+    let pan = new Pan(this.canvas, this.dx, this.dy);
+    actions.addAction(pan);
+  }
+
+  redo() {
+    this.setZoom(this.newZoom);
+  }
+
+  undo() {
+    this.setZoom(this.oldZoom);
+  }
+
+  setZoom(zoom) {
+    const newHeight = this.canvas.height * 100 / zoom;
+    const newWidth = this.canvas.width * 100 / zoom;
+    this.canvas.zoom = zoom;
+    this.canvas.sHeight = newHeight;
+    this.canvas.sWidth = newWidth;
   }
 }

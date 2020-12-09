@@ -5,39 +5,9 @@ class Mode {
     this.highlighted_cell_one = -1;
     this.highlighted_cell_two = -1;
     this.feature = 0;
-    this._channel = 0;
+    this.channel = 0;
     this.action = '';
     this.prompt = '';
-  }
-
-  get channel() {
-    return this._channel;
-  }
-
-  set channel(num) {
-    // don't try and change channel if no other channels exist
-    if (channelMax > 1) {
-      // save current display settings before changing
-      adjuster.brightnessMap.set(this._channel, adjuster.brightness);
-      adjuster.contrastMap.set(this._channel, adjuster.contrast);
-      adjuster.invertMap.set(this._channel, adjuster.displayInvert);
-      // change channel, wrap around if needed
-      if (num === channelMax) {
-        this._channel = 0;
-      } else if (num < 0) {
-        this._channel = channelMax - 1;
-      } else {
-        this._channel = num;
-      }
-      // get new channel image from server
-      this.info = { channel: this._channel };
-      action('change_channel', this.info);
-      this.clear();
-      // get brightness/contrast vals for new channel
-      adjuster.brightness = adjuster.brightnessMap.get(this._channel);
-      adjuster.contrast = adjuster.contrastMap.get(this._channel);
-      adjuster.displayInvert = adjuster.invertMap.get(this._channel);
-    }
   }
 
   clear() {
@@ -51,144 +21,139 @@ class Mode {
 
     this.action = '';
     this.prompt = '';
-    adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
+    adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
   }
 
   // these keybinds apply regardless of
   // edit_mode, mode.action, or mode.kind
-  handle_universal_keybind(key) {
-    if (!rgb && (key === 'a' || key === 'ArrowLeft')) {
+  handle_universal_keybind(evt) {
+    if ((evt.ctrlKey || evt.metaKey) && evt.shiftKey && (evt.key === 'Z' || evt.key === 'z')) {
+      redo();
+    } else if ((evt.ctrlKey || evt.metaKey) && (evt.key === 'Z' || evt.key === 'z')) {
+      undo();
+    } else if (numFrames > 1 && (evt.key === 'a' || evt.key === 'ArrowLeft')) {
       // go backward one frame
-      current_frame -= 1;
-      if (current_frame < 0) {
-        current_frame = max_frames - 1;
-      }
-      fetch_and_render_frame();
-    } else if (!rgb && (key === 'd' || key === 'ArrowRight')) {
+      let changeFrame = new ChangeFrame(this, current_frame - 1);
+      actions.addFencedAction(changeFrame);
+    } else if (numFrames > 1 && (evt.key === 'd' || evt.key === 'ArrowRight')) {
       // go forward one frame
-      current_frame += 1;
-      if (current_frame >= max_frames) {
-        current_frame = 0;
-      }
-      fetch_and_render_frame();
-    } else if (key === 'Escape') {
+      let changeFrame = new ChangeFrame(this, current_frame + 1);
+      actions.addFencedAction(changeFrame);
+    } else if (evt.key === 'Escape') {
       // deselect/cancel action/reset highlight
       mode.clear();
       // may want some things here that trigger on ESC but not clear()
-    } else if (!rgb && key === 'h') {
+    } else if (!rgb && evt.key === 'h') {
       // toggle highlight
-      current_highlight = !current_highlight;
-      adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
-    } else if (key === 'z') {
+      let toggleHighlight = new ToggleHighlight();
+      actions.addFencedAction(toggleHighlight);
+      adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
+    } else if (evt.key === 'z') {
       // toggle rendering_raw
       rendering_raw = !rendering_raw;
       render_image_display();
-    } else if (key === '0') {
+    } else if (evt.key === '0') {
       // reset brightness adjustments
-      adjuster.resetBrightnessContrast();
-    } else if ((key === 'l' || key === 'L') && rgb && !edit_mode) {
+      let resetBrightnessContrast = new ResetBrightnessContrast(adjuster);
+      actions.addFencedAction(resetBrightnessContrast);
+    } else if ((evt.key === 'l' || evt.key === 'L') && rgb && !edit_mode) {
       display_labels = !display_labels;
       render_image_display();
-    } else if (key === '-') {
+    } else if (evt.key === '-') {
       changeZoom(1);
-    } else if (key === '=') {
+    } else if (evt.key === '=') {
       changeZoom(-1);
     }
   }
 
   // keybinds that always apply in edit mode
   // (invert, change brush size)
-  handle_universal_edit_keybind(key) {
-    if (key === 'ArrowDown') {
+  handle_universal_edit_keybind(evt) {
+    if (evt.key === 'ArrowDown') {
       // decrease brush size, minimum size 1
       brush.size -= 1;
       // redraw the frame with the updated brush preview
       render_image_display();
-    } else if (key === 'ArrowUp') {
+    } else if (evt.key === 'ArrowUp') {
       // increase brush size, diameter shouldn't be larger than the image
       brush.size += 1;
       // redraw the frame with the updated brush preview
       render_image_display();
-    } else if (!rgb && key === 'i') {
+    } else if (!rgb && evt.key === 'i') {
       // toggle light/dark inversion of raw img
-      adjuster.toggleInvert();
-    } else if (!rgb && settings.pixel_only && (key === 'l' || key === 'L')) {
+      let toggleInvert = new ToggleInvert(adjuster);
+      actions.addAction(toggleInvert);
+    } else if (!rgb && settings.pixel_only && (evt.key === 'l' || evt.key === 'L')) {
       display_labels = !display_labels;
       render_image_display();
-    } else if (key === 'n') {
+    } else if (evt.key === 'n') {
       // set edit value to something unused
       brush.value = maxLabelsMap.get(this.feature) + 1;
       if (this.kind === Modes.prompt && brush.conv) {
         this.prompt = `Now drawing over label ${brush.target} with label ${brush.value}. Use ESC to leave this mode.`;
         this.kind = Modes.drawing;
       }
-      adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
+      adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
     }
   }
 
   // keybinds that apply when in edit mode
-  handle_edit_keybind(key) {
-    if (key === 'e' && !settings.pixel_only) {
+  handle_edit_keybind(evt) {
+    if (evt.key === 'e' && !settings.pixel_only) {
       // toggle edit mode
-      edit_mode = !edit_mode;
-      adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
-    } else if (key === 'c') {
-      // cycle forward one channel, if applicable
-      this.channel += 1;
-    } else if (key === 'C') {
-      // cycle backward one channel, if applicable
-      this.channel -= 1;
-    } else if (key === 'f') {
-      // cycle forward one feature, if applicable
-      if (feature_max > 1) {
-        this.feature = this.increment_value(this.feature, 0, feature_max - 1);
-        this.info = { feature: this.feature };
-        action('change_feature', this.info);
-        this.clear();
-      }
-    } else if (key === 'F') {
-      // cycle backward one feature, if applicable
-      if (feature_max > 1) {
-        this.feature = this.decrement_value(this.feature, 0, feature_max - 1);
-        this.info = { feature: this.feature };
-        action('change_feature', this.info);
-        this.clear();
-      }
-    } else if (key === ']') {
+      let toggleEdit = new ToggleEdit();
+      actions.addFencedAction(toggleEdit);
+      adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
+    } else if (numChannels > 1 && evt.key === 'c') {
+      // cycle forward one channel
+      let action = new ChangeChannel(this, adjuster, this.channel + 1);
+      actions.addFencedAction(action);
+    } else if (numChannels > 1 && evt.key === 'C') {
+      // cycle backward one channel
+      let action = new ChangeChannel(this, adjuster, this.channel - 1);
+      actions.addFencedAction(action);
+    } else if (numFeatures > 1 && evt.key === 'f') {
+      let changeFeature = new ChangeFeature(this, this.feature + 1);
+      actions.addFencedAction(changeFeature);
+    } else if (numFeatures > 1 && evt.key === 'F') {
+      // cycle backward one feature
+      let changeFeature = new ChangeFeature(this, this.feature - 1);
+      actions.addFencedAction(changeFeature);
+    } else if (evt.key === ']') {
       // increase edit_value up to max label + 1 (guaranteed unused)
       brush.value = Math.min(
         brush.value + 1,
         maxLabelsMap.get(this.feature) + 1
       );
       if (current_highlight) {
-        adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
       }
       render_info_display();
-    } else if (key === '[') {
+    } else if (evt.key === '[') {
       // decrease edit_value, minimum 1
       brush.value -= 1;
       if (current_highlight) {
-        adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
       }
       render_info_display();
-    } else if (key === 'x') {
+    } else if (evt.key === 'x') {
       // turn eraser on and off
       brush.erase = !brush.erase;
       render_image_display();
-    } else if (key === 'p') {
+    } else if (evt.key === 'p') {
       // color picker
       this.kind = Modes.prompt;
       this.action = 'pick_color';
       this.prompt = 'Click on a label to change the brush value to that value.';
       render_info_display();
-    } else if (key === 'r') {
+    } else if (evt.key === 'r') {
       // conversion brush
       this.kind = Modes.prompt;
       this.action = 'pick_target';
       this.prompt = 'First, click on the label you want to overwrite.';
       brush.conv = true;
       render_image_display();
-    } else if (key === 't' && !rgb) {
+    } else if (evt.key === 't' && !rgb) {
       // prompt thresholding with bounding box
       this.kind = Modes.question;
       this.action = 'start_threshold';
@@ -200,66 +165,54 @@ class Mode {
   }
 
   // keybinds that apply in bulk mode, nothing selected
-  handle_mode_none_keybind(key) {
-    if (key === 'e' && !settings.label_only) {
+  handle_mode_none_keybind(evt) {
+    if (evt.key === 'e' && !settings.label_only) {
       // toggle edit mode
-      edit_mode = !edit_mode;
+      let toggleEdit = new ToggleEdit(this);
+      actions.addFencedAction(toggleEdit);
       helper_brush_draw();
-      adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
-    } else if (key === 'c') {
-      // cycle forward one channel, if applicable
-      this.channel += 1;
-    } else if (key === 'C') {
-      // cycle backward one channel, if applicable
-      this.channel -= 1;
-    } else if (key === 'f') {
-      // cycle forward one feature, if applicable
-      if (feature_max > 1) {
-        this.feature = this.increment_value(this.feature, 0, feature_max - 1);
-        this.info = { feature: this.feature };
-        action('change_feature', this.info);
-        this.clear();
-      }
-    } else if (key === 'F') {
-      // cycle backward one feature, if applicable
-      if (feature_max > 1) {
-        this.feature = this.decrement_value(this.feature, 0, feature_max - 1);
-        this.info = { feature: this.feature };
-        action('change_feature', this.info);
-        this.clear();
-      }
-    } else if (key === 'p' && !rgb) {
+      adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
+    } else if (numChannels > 1 && evt.key === 'c') {
+      // cycle forward one channel
+      let action = new ChangeChannel(this, adjuster, this.channel + 1);
+      actions.addFencedAction(action);
+    } else if (numChannels > 1 && evt.key === 'C') {
+      // cycle backward one channel
+      let action = new ChangeChannel(this, adjuster, this.channel - 1);
+      actions.addFencedAction(action);
+    } else if (numFeatures > 1 && evt.key === 'f') {
+      // cycle forward one feature
+      let action = new ChangeFeature(this, this.feature + 1);
+      actions.addFencedAction(action);
+    } else if (numFeatures > 1 && evt.key === 'F') {
+      let action = new ChangeFeature(this, this.feature - 1);
+      actions.addFencedAction(action);
+    } else if (numFrames > 1 && evt.key === 'p') {
       // iou cell identity prediction
       this.kind = Modes.question;
       this.action = 'predict';
       this.prompt = 'Predict cell ids for zstack? / S=PREDICT THIS FRAME / SPACE=PREDICT ALL FRAMES / ESC=CANCEL PREDICTION';
       render_info_display();
-    } else if (key === '[' && this.highlighted_cell_one !== -1) {
-      // cycle highlight to prev label
-      this.highlighted_cell_one = this.decrement_value(
-        this.highlighted_cell_one,
-        1,
-        maxLabelsMap.get(this.feature)
-      );
+    } else if (evt.key === '[' && this.highlighted_cell_one !== -1) {
+      // cycle highlight to prev label, skipping 0
+      let numLabels = maxLabelsMap.get(this.feature);
+      this.highlighted_cell_one = (this.highlighted_cell_one + numLabels - 2).mod(numLabels) + 1;
       if (current_highlight) {
-        adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
       }
-    } else if (key === ']' && this.highlighted_cell_one !== -1) {
-      // cycle highlight to next label
-      this.highlighted_cell_one = this.increment_value(
-        this.highlighted_cell_one,
-        1,
-        maxLabelsMap.get(this.feature)
-      );
+    } else if (evt.key === ']' && this.highlighted_cell_one !== -1) {
+      // cycle highlight to next label (skipping 0)
+      let maxLabel = maxLabelsMap.get(this.feature);
+      this.highlighted_cell_one = this.highlighted_cell_one.mod(maxLabel) + 1;
       if (current_highlight) {
-        adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
       }
     }
   }
 
   // keybinds that apply in bulk mode, one selected
-  handle_mode_single_keybind(key) {
-    if (key === 'f' && !rgb) {
+  handle_mode_single_keybind(evt) {
+    if (evt.key === 'f') {
       // hole fill
       this.info = {
         label: this.info.label,
@@ -269,65 +222,59 @@ class Mode {
       this.action = 'fill_hole';
       this.prompt = `Select hole to fill in cell ${this.info.label}`;
       render_info_display();
-    } else if (!rgb && key === 'c') {
+    } else if (evt.key === 'c') {
       // create new
       this.kind = Modes.question;
       this.action = 'create_new';
       this.prompt = 'CREATE NEW(S=SINGLE FRAME / SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)';
       render_info_display();
-    } else if (key === 'x') {
+    } else if (evt.key === 'x') {
       // delete label from frame
       this.kind = Modes.question;
       this.action = 'delete_mask';
       this.prompt = `delete label ${this.info.label} in frame ${this.info.frame}? ${answer}`;
       render_info_display();
-    } else if (key === '[') {
-      // cycle highlight to prev label
-      this.highlighted_cell_one = this.decrement_value(
-        this.highlighted_cell_one,
-        1,
-        maxLabelsMap.get(this.feature)
-      );
+    } else if (evt.key === '[') {
+      // cycle highlight to prev label, skipping 0
+      let numLabels = maxLabelsMap.get(this.feature);
+      this.highlighted_cell_one = (this.highlighted_cell_one + numLabels - 2).mod(numLabels) + 1;
       // clear info but show new highlighted cell
       const tempHighlight = this.highlighted_cell_one;
       this.clear();
       this.highlighted_cell_one = tempHighlight;
       if (current_highlight) {
-        adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
       }
-    } else if (key === ']') {
+    } else if (evt.key === ']') {
       // cycle highlight to next label
-      this.highlighted_cell_one = this.increment_value(
-        this.highlighted_cell_one,
-        1,
-        maxLabelsMap.get(this.feature)
-      );
+      let maxLabel = maxLabelsMap.get(this.feature);
+      this.highlighted_cell_one = this.highlighted_cell_one.mod(maxLabel) + 1;
       // clear info but show new highlighted cell
       const tempHighlight = this.highlighted_cell_one;
       this.clear();
       this.highlighted_cell_one = tempHighlight;
       if (current_highlight) {
-        adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
       }
     }
   }
 
   // keybinds that apply in bulk mode, two selected
-  handle_mode_multiple_keybind(key) {
-    if (key === 'r') {
+  handle_mode_multiple_keybind(evt) {
+    if (evt.key === 'r') {
       // replace
       this.kind = Modes.question;
       this.action = 'replace';
       this.prompt = ('Replace ' + this.info.label_2 + ' with ' + this.info.label_1 +
         '? // SPACE = Replace in all frames / S = Replace in this frame only / ESC = Cancel replace');
       render_info_display();
-    } else if (!rgb && key === 's') {
+    } else if (evt.key === 's') {
       // swap
       this.kind = Modes.question;
       this.action = 'swap_cells';
       this.prompt = 'SPACE = SWAP IN ALL FRAMES / S = SWAP IN THIS FRAME ONLY / ESC = CANCEL SWAP';
       render_info_display();
-    } else if (key === 'w' && !rgb) {
+    } else if (evt.key === 'w' && !rgb) {
       // watershed
       this.kind = Modes.question;
       this.action = 'watershed';
@@ -337,8 +284,8 @@ class Mode {
   }
 
   // keybinds that apply in bulk mode, answering question/prompt
-  handle_mode_question_keybind(key) {
-    if (key === ' ') {
+  handle_mode_question_keybind(evt) {
+    if (evt.key === ' ') {
       if (this.action === 'flood_contiguous') {
         action(this.action, this.info);
       } else if (this.action === 'trim_pixels') {
@@ -376,7 +323,7 @@ class Mode {
         }
       }
       this.clear();
-    } else if (key === 's') {
+    } else if (evt.key === 's') {
       if (this.action === 'create_new') {
         action('new_single_cell', this.info);
       } else if (this.action === 'predict') {
@@ -403,37 +350,39 @@ class Mode {
   }
 
   // handle all keypresses
-  handle_key(key) {
+  handle_key(evt) {
     // universal keybinds always apply
     // keys a, d, left arrow, right arrow, ESC, h
     // are reserved for universal keybinds
-    this.handle_universal_keybind(key);
+    this.handle_universal_keybind(evt);
     if (edit_mode) {
-      this.handle_universal_edit_keybind(key);
+      this.handle_universal_edit_keybind(evt);
     }
     if (edit_mode && this.kind === Modes.none) {
-      this.handle_edit_keybind(key);
+      this.handle_edit_keybind(evt);
     } else if (!edit_mode && this.kind === Modes.none) {
-      this.handle_mode_none_keybind(key);
+      this.handle_mode_none_keybind(evt);
     } else if (!edit_mode && this.kind === Modes.single) {
-      this.handle_mode_single_keybind(key);
+      this.handle_mode_single_keybind(evt);
     } else if (!edit_mode && this.kind === Modes.multiple) {
-      this.handle_mode_multiple_keybind(key);
+      this.handle_mode_multiple_keybind(evt);
     } else if (!edit_mode && this.kind === Modes.question) {
-      this.handle_mode_question_keybind(key);
+      this.handle_mode_question_keybind(evt);
     }
   }
 
   handle_draw() {
-    action('handle_draw', {
-      trace: JSON.stringify(state.trace), // stringify array so it doesn't get messed up
-      target_value: brush.target, // value that we're overwriting
-      brush_value: brush.value, // we don't update caliban with edit_value, etc each time they change
-      brush_size: brush.size, // so we need to pass them in as args
-      erase: (brush.erase && !brush.conv),
-      frame: current_frame
-    });
-    state.clearTrace();
+    if (canvas.trace.length !== 0) {
+      action('handle_draw', {
+        trace: JSON.stringify(canvas.trace), // stringify array so it doesn't get messed up
+        target_value: brush.target, // value that we're overwriting
+        brush_value: brush.value, // we don't update caliban with edit_value, etc each time they change
+        brush_size: brush.size, // so we need to pass them in as args
+        erase: (brush.erase && !brush.conv),
+        frame: current_frame
+      });
+    }
+    canvas.clearTrace();
     if (this.kind !== Modes.drawing) {
       this.clear();
     }
@@ -442,8 +391,8 @@ class Mode {
   handle_threshold() {
     const thresholdStartY = brush.threshY;
     const thresholdStartX = brush.threshX;
-    const thresholdEndX = state.imgX;
-    const thresholdEndY = state.imgY;
+    const thresholdEndX = canvas.imgX;
+    const thresholdEndY = canvas.imgY;
 
     if (thresholdStartY !== thresholdEndY &&
         thresholdStartX !== thresholdEndX) {
@@ -460,88 +409,68 @@ class Mode {
     render_image_display();
   }
 
-  // helper function to increment value but cycle around if needed
-  increment_value(currentValue, minValue, maxValue) {
-    if (currentValue < maxValue) {
-      currentValue += 1;
-    } else {
-      currentValue = minValue;
-    }
-    return currentValue;
-  }
-
-  // helper function to decrement value but cycle around if needed
-  decrement_value(currentValue, minValue, maxValue) {
-    if (currentValue > minValue) {
-      currentValue -= 1;
-    } else {
-      currentValue = maxValue;
-    }
-    return currentValue;
-  }
-
-  // TODO: state.click(evt, mode) ?
+  // TODO: canvas.click(evt, mode) ?
   handle_mode_none_click(evt) {
     if (evt.altKey) {
       // alt+click
       this.kind = Modes.question;
       this.action = 'flood_contiguous';
       this.info = {
-        label: state.label,
+        label: canvas.label,
         frame: current_frame,
-        x_location: state.imgX,
-        y_location: state.imgY
+        x_location: canvas.imgX,
+        y_location: canvas.imgY
       };
       this.prompt = 'SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL';
-      this.highlighted_cell_one = state.label;
+      this.highlighted_cell_one = canvas.label;
     } else if (evt.shiftKey) {
       // shift+click
       this.kind = Modes.question;
       this.action = 'trim_pixels';
       this.info = {
-        label: state.label,
+        label: canvas.label,
         frame: current_frame,
-        x_location: state.imgX,
-        y_location: state.imgY
+        x_location: canvas.imgX,
+        y_location: canvas.imgY
       };
       this.prompt = 'SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL';
-      this.highlighted_cell_one = state.label;
+      this.highlighted_cell_one = canvas.label;
     } else {
       // normal click
       this.kind = Modes.single;
       this.info = {
-        label: state.label,
+        label: canvas.label,
         frame: current_frame
       };
-      this.highlighted_cell_one = state.label;
+      this.highlighted_cell_one = canvas.label;
       this.highlighted_cell_two = -1;
-      state.storedClickX = state.imgX;
-      state.storedClickY = state.imgY;
+      canvas.storedClickX = canvas.imgX;
+      canvas.storedClickY = canvas.imgY;
     }
   }
 
   handle_mode_prompt_click(evt) {
-    if (this.action === 'fill_hole' && state.label === 0) {
+    if (this.action === 'fill_hole' && canvas.label === 0) {
       this.info = {
         label: this.info.label,
         frame: current_frame,
-        x_location: state.imgX,
-        y_location: state.imgY
+        x_location: canvas.imgX,
+        y_location: canvas.imgY
       };
       action(this.action, this.info);
       this.clear();
-    } else if (this.action === 'pick_color' && state.label !== 0 &&
-               state.label !== brush.target) {
-      brush.value = state.label;
+    } else if (this.action === 'pick_color' && canvas.label !== 0 &&
+               canvas.label !== brush.target) {
+      brush.value = canvas.label;
       if (brush.target !== 0) {
         this.prompt = `Now drawing over label ${brush.target} with label ${brush.value}. Use ESC to leave this mode.`;
         this.kind = Modes.drawing;
-        adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
       } else {
         this.clear();
       }
-    } else if (this.action === 'pick_target' && state.label !== 0) {
-      brush.target = state.label;
+    } else if (this.action === 'pick_target' && canvas.label !== 0) {
+      brush.target = canvas.label;
       this.action = 'pick_color';
       this.prompt = 'Click on the label you want to draw with, or press "n" to draw with an unused label.';
       render_info_display();
@@ -554,32 +483,32 @@ class Mode {
     this.kind = Modes.multiple;
 
     this.highlighted_cell_one = this.info.label;
-    this.highlighted_cell_two = state.label;
+    this.highlighted_cell_two = canvas.label;
 
     this.info = {
       label_1: this.info.label,
-      label_2: state.label,
+      label_2: canvas.label,
       frame_1: this.info.frame,
       frame_2: current_frame,
-      x1_location: state.storedClickX,
-      y1_location: state.storedClickY,
-      x2_location: state.imgX,
-      y2_location: state.imgY
+      x1_location: canvas.storedClickX,
+      y1_location: canvas.storedClickY,
+      x2_location: canvas.imgX,
+      y2_location: canvas.imgY
     };
   }
 
   handle_mode_multiple_click(evt) {
     this.highlighted_cell_one = this.info.label_1;
-    this.highlighted_cell_two = state.label;
+    this.highlighted_cell_two = canvas.label;
     this.info = {
       label_1: this.info.label_1,
-      label_2: state.label,
+      label_2: canvas.label,
       frame_1: this.info.frame_1,
       frame_2: current_frame,
-      x1_location: state.storedClickX,
-      y1_location: state.storedClickY,
-      x2_location: state.imgX,
-      y2_location: state.imgY
+      x1_location: canvas.storedClickX,
+      y1_location: canvas.storedClickY,
+      x2_location: canvas.imgX,
+      y2_location: canvas.imgY
     };
   }
 
@@ -590,14 +519,14 @@ class Mode {
     if (this.kind === Modes.prompt) {
       // hole fill or color picking options
       this.handle_mode_prompt_click(evt);
-    } else if (state.label === 0) {
+    } else if (canvas.label === 0) {
       // same as ESC
       this.clear();
     } else if (this.kind === Modes.none) {
       // if nothing selected: shift-, alt-, or normal click
       this.handle_mode_none_click(evt);
       if (current_highlight) {
-        adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
       } else {
         render_info_display();
       }
@@ -605,7 +534,7 @@ class Mode {
       // one label already selected
       this.handle_mode_single_click(evt);
       if (current_highlight) {
-        adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
       } else {
         render_info_display();
       }
@@ -613,7 +542,7 @@ class Mode {
       // two labels already selected, reselect second label
       this.handle_mode_multiple_click(evt);
       if (current_highlight) {
-        adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, this);
+        adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
       } else {
         render_info_display();
       }
@@ -657,10 +586,10 @@ var rendering_raw = false;
 var display_labels;
 
 var current_frame = 0;
-var current_highlight;
-var max_frames;
-var feature_max;
-var channelMax;
+var current_highlight = true;
+var numFrames;
+var numFeatures;
+var numChannels;
 var tracks;
 var mode = new Mode(Modes.none, {});
 var edit_mode;
@@ -672,7 +601,8 @@ var tracks;
 var brush;
 var adjuster;
 var cursor;
-var state;
+var canvas;
+var actions;
 
 /**
  * Delays an event callback to prevent calling the callback too frequently.
@@ -751,14 +681,14 @@ function upload_file(cb) {
   $.ajax({
     type: 'POST',
     url: `${document.location.origin}/upload_file/${project_id}`,
-    success: cb,
     async: true
-  });
+  }).done(cb);
 }
 
 function changeZoom(dzoom) {
-  state.changeZoom(dzoom, state.canvasPosX, state.canvasPosY);
-  updateMousePos(state.rawX, state.rawY);
+  zoom = new Zoom(canvas, dzoom);
+  updateMousePos(canvas.rawX, canvas.rawY);
+  actions.addAction(zoom);
   render_image_display();
 }
 
@@ -803,9 +733,9 @@ function render_edit_info() {
 }
 
 function render_cell_info() {
-  if (state.label !== 0) {
-    document.getElementById('label').innerHTML = state.label;
-    const track = tracks[mode.feature][state.label.toString()];
+  if (canvas.label !== 0) {
+    document.getElementById('label').innerHTML = canvas.label;
+    const track = tracks[mode.feature][canvas.label.toString()];
     document.getElementById('slices').textContent = track.slices.toString();
   } else {
     document.getElementById('label').innerHTML = '';
@@ -819,12 +749,12 @@ function render_info_display() {
   document.getElementById('frame').innerHTML = current_frame;
   document.getElementById('feature').innerHTML = mode.feature;
   document.getElementById('channel').innerHTML = mode.channel;
-  document.getElementById('zoom').innerHTML = `${state.zoom}%`;
+  document.getElementById('zoom').innerHTML = `${canvas.zoom}%`;
 
-  const displayedX = `${Math.floor(state.sx)}-${Math.ceil(state.sx + state.sWidth)}`;
+  const displayedX = `${Math.floor(canvas.sx)}-${Math.ceil(canvas.sx + canvas.sWidth)}`;
   document.getElementById('displayedX').innerHTML = displayedX;
 
-  const displayedY = `${Math.floor(state.sy)}-${Math.ceil(state.sy + state.sHeight)}`
+  const displayedY = `${Math.floor(canvas.sy)}-${Math.ceil(canvas.sy + canvas.sHeight)}`
   document.getElementById('displayedY').innerHTML = displayedY;
 
   render_highlight_info();
@@ -841,31 +771,31 @@ function render_edit_image(ctx) {
   if (rgb && rendering_raw) {
     render_raw_image(ctx);
   } else if (!rgb && !display_labels) {
-    this.state.drawImage(ctx, adjuster.preCompRaw, padding);
+    this.canvas.drawImage(ctx, adjuster.preCompRaw, padding);
   } else {
-    this.state.drawImage(ctx, adjuster.postCompImg, padding);
+    this.canvas.drawImage(ctx, adjuster.postCompImg, padding);
   }
   ctx.save();
   const region = new Path2D();
-  region.rect(padding, padding, state.scaledWidth, state.scaledHeight);
+  region.rect(padding, padding, canvas.scaledWidth, canvas.scaledHeight);
   ctx.clip(region);
   ctx.imageSmoothingEnabled = true;
 
   // draw brushview on top of cells/annotations
-  brush.draw(ctx, state);
+  brush.draw(ctx, canvas);
 
   ctx.restore();
 }
 
 function render_raw_image(ctx) {
-  this.state.drawImage(ctx, adjuster.contrastedRaw, padding);
+  this.canvas.drawImage(ctx, adjuster.contrastedRaw, padding);
 }
 
 function render_annotation_image(ctx) {
   if (rgb && !display_labels) {
-    this.state.drawImage(ctx, adjuster.postCompImg, padding);
+    this.canvas.drawImage(ctx, adjuster.postCompImg, padding);
   } else {
-    this.state.drawImage(ctx, adjuster.preCompSeg, padding);
+    this.canvas.drawImage(ctx, adjuster.preCompSeg, padding);
   }
 }
 
@@ -876,8 +806,8 @@ function render_image_display() {
   ctx.save();
   ctx.clearRect(
     0, 0,
-    2 * padding + state.scaledWidth,
-    2 * padding + state.scaledHeight
+    2 * padding + canvas.scaledWidth,
+    2 * padding + canvas.scaledHeight
   );
 
   if (edit_mode) {
@@ -890,38 +820,17 @@ function render_image_display() {
     // draw annotations
     render_annotation_image(ctx);
   }
-  state.drawBorders(ctx);
+  canvas.drawBorders(ctx);
   render_info_display();
 }
 
-function fetch_and_render_frame() {
-  $.ajax({
-    type: 'GET',
-    url: `${document.location.origin}/frame/${current_frame}/${project_id}`,
-    success: function(payload) {
-      adjuster.rawLoaded = false;
-      adjuster.segLoaded = false;
-
-      // load new value of seg_array
-      // array of arrays, contains annotation data for frame
-      state.segArray = payload.seg_arr;
-      adjuster.segImage.src = payload.segmented;
-      adjuster.rawImage.src = payload.raw;
-
-      // actions must start and end on the same frame
-      if (mode.action !== '') { mode.clear() };
-    },
-    async: false
-  });
-}
 
 function loadFile(file, rgb = false, cb) {
   $.ajax({
     type: 'POST',
     url: `${document.location.origin}/load/${file}?&rgb=${rgb}`,
-    success: cb,
     async: true
-  });
+  }).done(cb);
 }
 
 /**
@@ -938,13 +847,13 @@ function setCanvasDimensions(rawDims) {
   // pick scale that accomodates both dimensions; can be less than 1
   const scale = Math.min(scaleX, scaleY);
 
-  state.zoom = 100;
-  state.scale = scale;
-  state.setBorders(padding);
+  canvas.zoom = 100;
+  canvas.scale = scale;
+  canvas.setBorders(padding);
 
   // set canvases size according to scale
-  document.getElementById('canvas').width = state.scaledWidth + 2 * padding;
-  document.getElementById('canvas').height = state.scaledHeight + 2 * padding;
+  document.getElementById('canvas').width = canvas.scaledWidth + 2 * padding;
+  document.getElementById('canvas').height = canvas.scaledHeight + 2 * padding;
 }
 
 // adjust contrast, brightness, or zoom upon mouse scroll
@@ -953,38 +862,37 @@ function handleScroll(evt) {
   if (evt.altKey) {
     changeZoom(Math.sign(evt.deltaY));
   } else if (canEdit && !evt.shiftKey) {
-    adjuster.changeContrast(evt.deltaY);
+    let changeContrast = new ChangeContrast(adjuster, evt.deltaY);
+    actions.addAction(changeContrast);
   } else if (canEdit && evt.shiftKey) {
-    adjuster.changeBrightness(evt.deltaY);
+    // shift + scroll causes horizontal scroll on mice wheels, but not trackpads
+    let delta = evt.deltaY === 0 ? evt.deltaX : evt.deltaY;
+    let changeBrightness = new ChangeBrightness(adjuster, delta);
+    actions.addAction(changeBrightness);
   }
 }
 
 // handle pressing mouse button (treats this as the beginning
 // of click&drag, since clicks are handled by Mode.click)
 function handleMousedown(evt) {
-  state.isPressed = true;
+  canvas.isPressed = true;
   // TODO: refactor "mousedown + mousemove" into ondrag?
-  if (!state.isSpacedown) {
-    if (mode.kind !== Modes.prompt) {
-      // begin drawing
-      if (edit_mode) {
-        if (!brush.show) {
-          brush.threshX = state.imgX;
-          brush.threshY = state.imgY;
-        } else if (mode.kind !== Modes.prompt) {
-          // not if turning on conv brush
-          state.trace.push([state.imgY, state.imgX]);
-        }
-      }
-    }
+  if (canvas.isSpacedown) return; // panning
+  if (mode.kind === Modes.prompt) return; // turning on conv mode
+  if (!edit_mode) return; // only draw in edit mode
+  if (!brush.show) { // draw thresholding box
+    brush.threshX = canvas.imgX;
+    brush.threshY = canvas.imgY;
+  } else {
+    canvas.trace.push([canvas.imgY, canvas.imgX]);
   }
 }
 
 function helper_brush_draw() {
-  if (state.isCursorPressed() && !state.isSpacedown) {
+  if (canvas.isCursorPressed() && !canvas.isSpacedown) {
     // update mouse_trace, but not if turning on conv brush
     if (mode.kind !== Modes.prompt) {
-      state.trace.push([state.imgY, state.imgX]);
+      canvas.trace.push([canvas.imgY, canvas.imgX]);
     }
   } else {
     brush.clearView();
@@ -994,15 +902,15 @@ function helper_brush_draw() {
 
 // input will typically be evt.offsetX, evt.offsetY (mouse events)
 function updateMousePos(x, y) {
-  const oldImgX = state.imgX;
-  const oldImgY = state.imgY;
+  const oldImgX = canvas.imgX;
+  const oldImgY = canvas.imgY;
 
-  state.updateCursorPosition(x, y, padding);
+  canvas.updateCursorPosition(x, y);
 
   // if cursor has actually changed location in image
-  if (oldImgX !== state.imgX || oldImgY !== state.imgY) {
-    brush.x = state.imgX;
-    brush.y = state.imgY;
+  if (oldImgX !== canvas.imgX || oldImgY !== canvas.imgY) {
+    brush.x = canvas.imgX;
+    brush.y = canvas.imgY;
     // update brush preview
     if (edit_mode) {
       // brush's canvas is keeping track of the brush
@@ -1018,15 +926,15 @@ function updateMousePos(x, y) {
 
 // handles mouse movement, whether or not mouse button is held down
 function handleMousemove(evt) {
-  if (state.isCursorPressed() && state.isSpacedown) {
+  if (canvas.isCursorPressed() && canvas.isSpacedown) {
     // get the old values to see if rendering is reqiured.
-    const oldX = state.sx;
-    const oldY = state.sy;
+    const oldX = canvas.sx;
+    const oldY = canvas.sy;
 
-    const zoom = 100 / (state.zoom * state.scale)
-    state.pan(evt.movementX * zoom, evt.movementY * zoom);
-
-    if (state.sx !== oldX || state.sy !== oldY) {
+    const zoom = 100 / (canvas.zoom * canvas.scale)
+    pan = new Pan(canvas, evt.movementX * zoom, evt.movementY * zoom);
+    actions.addAction(pan);
+    if (canvas.sx !== oldX || canvas.sy !== oldY) {
       render_image_display();
     }
   }
@@ -1036,79 +944,98 @@ function handleMousemove(evt) {
 
 // handles end of click&drag (different from click())
 function handleMouseup() {
-  state.isPressed = false;
-  if (!state.isSpacedown) {
-    if (mode.kind !== Modes.prompt) {
-      if (edit_mode) {
-        if (!brush.show) {
-          mode.handle_threshold();
-        } else {
-          // send click&drag coordinates to caliban.py to update annotations
-          mode.handle_draw();
-        }
-        brush.refreshView();
-      }
+  canvas.isPressed = false;
+  if (!canvas.isSpacedown
+      && mode.kind !== Modes.prompt
+      && edit_mode) {
+    if (!brush.show) {
+      mode.handle_threshold();
+    } else if (canvas.inRange()) {
+      // send click&drag coordinates to caliban.py to update annotations
+      mode.handle_draw();
     }
+    brush.refreshView();
   }
 }
 
-function action(action, info, frame = current_frame) {
-  $.ajax({
-    type: 'POST',
-    url: `${document.location.origin}/action/${project_id}/${action}/${frame}`,
-    data: info,
-    success: function (payload) {
-      if (payload.error) {
-        alert(payload.error);
-      }
-      if (payload.imgs) {
-        // load new value of seg_array
-        // array of arrays, contains annotation data for frame
-        if (Object.prototype.hasOwnProperty.call(payload.imgs, 'seg_arr')) {
-          state.segArray = payload.imgs.seg_arr;
-        }
+function handlePayload(payload) {
+  if (payload.error) {
+    alert(payload.error);
+  }
+  if (payload.imgs) {
+    // load new value of seg_array
+    // array of arrays, contains annotation data for frame
+    if (Object.prototype.hasOwnProperty.call(payload.imgs, 'seg_arr')) {
+      canvas.segArray = payload.imgs.seg_arr;
+    }
 
-        if (Object.prototype.hasOwnProperty.call(payload.imgs, 'segmented')) {
-          adjuster.segLoaded = false;
-          adjuster.segImage.src = payload.imgs.segmented;
-        }
+    if (Object.prototype.hasOwnProperty.call(payload.imgs, 'segmented')) {
+      adjuster.segLoaded = false;
+      adjuster.segImage.src = payload.imgs.segmented;
+    }
 
-        if (Object.prototype.hasOwnProperty.call(payload.imgs, 'raw')) {
-          adjuster.rawLoaded = false;
-          adjuster.rawImage.src = payload.imgs.raw;
-        }
+    if (Object.prototype.hasOwnProperty.call(payload.imgs, 'raw')) {
+      adjuster.rawLoaded = false;
+      adjuster.rawImage.src = payload.imgs.raw;
+    }
+  }
+  if (payload.tracks) {
+    tracks = payload.tracks;
+    // update maxLabelsMap when we get new track info
+    for (let i = 0; i < Object.keys(tracks).length; i++) {
+      const key = Object.keys(tracks)[i]; // the keys are strings
+      if (Object.keys(tracks[key]).length > 0) {
+        // use i as key in this map because it is an int, mode.feature is also int
+        maxLabelsMap.set(i, Math.max(...Object.keys(tracks[key]).map(Number)));
+      } else {
+        // if no labels in feature, explicitly set max label to 0
+        maxLabelsMap.set(i, 0);
       }
-      if (payload.tracks) {
-        tracks = payload.tracks;
-        // update maxLabelsMap when we get new track info
-        for (let i = 0; i < Object.keys(tracks).length; i++) {
-          const key = Object.keys(tracks)[i]; // the keys are strings
-          if (Object.keys(tracks[key]).length > 0) {
-            // use i as key in this map because it is an int, mode.feature is also int
-            maxLabelsMap.set(i, Math.max(...Object.keys(tracks[key]).map(Number)));
-          } else {
-            // if no labels in feature, explicitly set max label to 0
-            maxLabelsMap.set(i, 0);
-          }
-        }
-      }
-      if (payload.tracks || payload.imgs) {
-        render_image_display();
-      }
-    },
-    async: false
-  });
+    }
+  }
+  if (payload.tracks || payload.imgs) {
+    render_image_display();
+  }
+}
+
+function action(action, info) {
+  backendAction = new BackendAction(action, info);
+  actions.addFencedAction(backendAction);
+}
+
+function undo() {
+  actions.undo();
+  mode.clear();
+  updateMousePos(canvas.rawX, canvas.rawY);
+  render_image_display();
+}
+
+function redo() {
+  actions.redo();
+  mode.clear();
+  updateMousePos(canvas.rawX, canvas.rawY);
+  render_image_display();
+}
+
+function displayUndoRedo() {
+  let canvasElement = document.getElementById('canvas');
+  let undoButton = document.getElementById('undo');
+  undoButton.hidden = false;
+  undoButton.style.width = canvasElement.width / 2 + 'px';
+  
+  let redoButton = document.getElementById('redo');
+  redoButton.hidden = false;
+  redoButton.style.width = canvasElement.width / 2 + 'px';
 }
 
 function startCaliban(filename, settings) {
   rgb = settings.rgb;
-  current_highlight = settings.rgb;
   display_labels = !settings.rgb;
   edit_mode = (settings.pixel_only && !settings.label_only);
 
   // disable scrolling from scrolling around on page (it should just control brightness)
   document.addEventListener('wheel', (event) => {
-    event.preventDefault();
+    if (canvas.onCanvas) event.preventDefault();
   }, { passive: false });
 
   // disable space and up/down keys from moving around on page
@@ -1123,24 +1050,25 @@ function startCaliban(filename, settings) {
   });
 
   loadFile(filename, settings.rgb, (payload) => {
-    max_frames = payload.max_frames;
-    feature_max = payload.feature_max;
-    channelMax = payload.channel_max;
+    numFrames = payload.numFrames;
+    numFeatures = payload.numFeatures;
+    numChannels = payload.numChannels;
     project_id = payload.project_id;
 
     const rawWidth = payload.dimensions[0];
     const rawHeight = payload.dimensions[1];
 
-    state = new CanvasState(rawWidth, rawHeight, 1, padding);
+    canvas = new CanvasState(rawWidth, rawHeight, 1, padding);
+    actions = new History();
 
     window.addEventListener('keydown', (e) => {
       if (e.key === ' ') {
-        state.isSpacedown = true;
+        canvas.isSpacedown = true;
       }
     }, false);
     window.addEventListener('keyup', (e) => {
       if (e.key === ' ') {
-        state.isSpacedown = false;
+        canvas.isSpacedown = false;
       }
     }, false);
 
@@ -1163,18 +1091,18 @@ function startCaliban(filename, settings) {
     brush = new Brush(rawHeight, rawWidth, padding);
 
     // define image onload cascade behavior, need rawHeight and rawWidth first
-    adjuster = new ImageAdjuster(rawWidth, rawHeight, rgb, channelMax);
+    adjuster = new ImageAdjuster(rawWidth, rawHeight, rgb, numChannels);
 
     adjuster.rawImage.onload = () => adjuster.contrastRaw();
-    adjuster.segImage.onload = () => adjuster.preCompAdjust(state.segArray, current_highlight, edit_mode, brush, mode);
+    adjuster.segImage.onload = () => adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
     if (rgb) {
-      adjuster.contrastedRaw.onload = () => adjuster.rawAdjust(state.segArray, current_highlight, edit_mode, brush, mode);
-      adjuster.preCompSeg.onload = () => adjuster.segAdjust(state.segArray, current_highlight, edit_mode, brush, mode);
+      adjuster.contrastedRaw.onload = () => adjuster.rawAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
+      adjuster.preCompSeg.onload = () => adjuster.segAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
     } else {
       adjuster.contrastedRaw.onload = () => adjuster.preCompRawAdjust();
-      adjuster.preCompRaw.onload = () => adjuster.rawAdjust(state.segArray, current_highlight, edit_mode, brush, mode);
-      adjuster.preCompSeg.onload = () => adjuster.segAdjust(state.segArray, current_highlight, edit_mode, brush, mode);
-      adjuster.compositedImg.onload = () => adjuster.postCompAdjust(state.segArray, edit_mode, brush, current_highlight);
+      adjuster.preCompRaw.onload = () => adjuster.rawAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
+      adjuster.preCompSeg.onload = () => adjuster.segAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
+      adjuster.compositedImg.onload = () => adjuster.postCompAdjust(canvas.segArray, edit_mode, brush, current_highlight);
     }
 
     adjuster.postCompImg.onload = render_image_display;
@@ -1189,17 +1117,18 @@ function startCaliban(filename, settings) {
         mode.clear();
         setCanvasDimensions(payload.dimensions);
         brush.refreshView();
+        displayUndoRedo();
       }, 500, 'canvasResize');
     });
 
     window.addEventListener('keydown', (evt) => {
-      mode.handle_key(evt.key);
+      mode.handle_key(evt);
     }, false);
 
     const canvasElement = document.getElementById('canvas');
     // bind click on canvas
     canvasElement.addEventListener('click', (evt) => {
-      if (!state.isSpacedown && (!edit_mode || mode.kind === Modes.prompt)) {
+      if (!canvas.isSpacedown && (!edit_mode || mode.kind === Modes.prompt)) {
         mode.click(evt);
       }
     });
@@ -1213,6 +1142,21 @@ function startCaliban(filename, settings) {
     // bind mouse movement
     canvasElement.addEventListener('mousemove', (e) => handleMousemove(e));
 
-    fetch_and_render_frame();
+    // add flag for when cursor in on the canvas
+    canvasElement.onmouseover = () => {
+      canvas.onCanvas = true;
+    }
+    canvasElement.onmouseout = () => {
+      canvas.onCanvas = false;
+    }
+
+    // Load images and seg_array from payload
+    canvas.segArray = payload.imgs.seg_arr;
+    adjuster.rawLoaded = false;
+    adjuster.segLoaded = false;
+    adjuster.segImage.src = payload.imgs.segmented;
+    adjuster.rawImage.src = payload.imgs.raw;
+
+    displayUndoRedo();
   });
 }

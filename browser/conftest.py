@@ -8,7 +8,7 @@ import pytest
 from pytest_lazyfixture import lazy_fixture
 
 from application import create_app  # pylint: disable=C0413
-from models import Project
+from models import Project, Action
 
 # flask-sqlalchemy fixtures from http://alexmic.net/flask-sqlalchemy-pytest/
 
@@ -106,9 +106,9 @@ def zstack_project(app, mocker, request, db_session):
             data['annotated'] = request.param.copy()
             return data
         mocker.patch('models.Project.load', load)
-        project = Project('filename.npz', 'input_bucket', 'output_bucket', 'path',
-                          rgb='RGB' in request.node.name)
-        db_session.add(project)
+        mocker.patch('models.db.session', db_session)
+        project = Project.create('filename.npz', 'input_bucket', 'output_bucket', 'path')
+        project.rgb = 'RGB' in request.node.name
         db_session.commit()
         return project
 
@@ -135,9 +135,8 @@ def track_project(app, mocker, request, db_session):
             data['lineages'] = lineages
             return data
         mocker.patch('models.Project.load', load)
-        project = Project('filename.trk', 'input_bucket', 'output_bucket', 'path')
-        db_session.add(project)
-        db_session.commit()
+        mocker.patch('models.db.session', db_session)
+        project = Project.create('filename.trk', 'input_bucket', 'output_bucket', 'path')
         return project
 
 

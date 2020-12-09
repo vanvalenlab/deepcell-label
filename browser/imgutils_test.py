@@ -44,7 +44,7 @@ def test_pngify(tmpdir):
 
 def test_add_outlines(project):
     for label_frame in project.label_frames:
-        frame = label_frame.frame[..., project.state.channel]
+        frame = label_frame.frame[..., project.channel]
         outlined = imgutils.add_outlines(frame)
         assert (outlined[outlined >= 0] == frame[outlined >= 0]).all()
         assert (outlined[outlined < 0] == -frame[outlined < 0]).all()

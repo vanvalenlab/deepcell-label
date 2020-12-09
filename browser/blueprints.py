@@ -3,7 +3,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import base64
 import distutils
 import distutils.util
 import json
@@ -22,7 +21,7 @@ from werkzeug.exceptions import HTTPException
 
 from helpers import is_trk_file, is_npz_file
 from models import Project
-from caliban import TrackEdit, ZStackEdit, BaseEdit
+from caliban import TrackEdit, ZStackEdit, BaseEdit, ChangeDisplay
 
 
 bp = Blueprint('caliban', __name__)  # pylint: disable=C0103
@@ -42,7 +41,7 @@ def handle_exception(error):
         return error
 
     current_app.logger.error('Encountered %s: %s',
-                             error.__class__.__name__, error)
+                             error.__class__.__name__, error, exc_info=1)
 
     # now you're handling non-HTTP exceptions only
     return jsonify({'message': str(error)}), 500
@@ -58,7 +57,7 @@ def upload_file(project_id):
 
     # Call function in caliban.py to save data file and send to S3 bucket
     edit = get_edit(project)
-    filename = project.state.filename
+    filename = project.filename
     if is_trk_file(filename):
         edit.action_save_track()
     elif is_npz_file(filename):
@@ -74,11 +73,11 @@ def upload_file(project_id):
     return redirect('/')
 
 
-@bp.route('/action/<int:project_id>/<action_type>/<int:frame>', methods=['POST'])
-def action(project_id, action_type, frame):
+@bp.route('/edit/<int:project_id>/<action_type>', methods=['POST'])
+def edit(project_id, action_type):
     """
-    Make an edit operation to the data file and update the object
-    in the database.
+    Edit the labeling of the project and
+    update the project in the database.
     """
     start = timeit.default_timer()
     # obtain 'info' parameter data sent by .js script
@@ -94,51 +93,86 @@ def action(project_id, action_type, frame):
         if not project:
             return jsonify({'error': 'project_id not found'}), 404
         edit = get_edit(project)
-        edit.action(action_type, info)
-        payload = edit.make_payload()
-        edit.commit_changes()
+        payload = edit.dispatch_action(action_type, info)
+        project.create_memento(action_type)
+        project.update()
 
     except Exception as e:  # TODO: more error handling to identify problem
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
-    current_app.logger.debug('Action "%s" for project "%s" finished in %s s.',
+    current_app.logger.debug('Finished action %s for project %s in %s s.',
                              action_type, project_id,
                              timeit.default_timer() - start)
 
     return jsonify(payload)
 
 
-@bp.route('/frame/<int:frame>/<int:project_id>')
-def get_frame(frame, project_id):
+@bp.route('/changedisplay/<int:project_id>/<display_attribute>/<int:value>', methods=['POST'])
+def change_display(project_id, display_attribute, value):
     """
-    Serve modes of frames as pngs. Send pngs and color mappings of
-    cells to .js file.
+    Change the displayed frame, feature, or channel
+    and send back the changed image data.
+
+    Args:
+        project_id (int): ID of project to change
+        display_attribute (str): choice between 'frame', 'feature', or 'channel'
+        value (int): index of frame, feature, or channel to display
+
+    Returns:
+        dict: contains the raw and/or labeled image data
     """
     start = timeit.default_timer()
-    # Get project from database
-    project = Project.get(project_id)
-    if not project:
-        return jsonify({'error': 'project_id not found'}), 404
-    # Change the frame
-    project.state.frame = frame
-    project.update()
-    # Get pngs and array from project
-    raw_png = project.get_raw_png()
-    label_png = project.get_label_png()
-    label_arr = project.get_label_arr()
 
-    # Create payload
-    encode = lambda x: base64.encodebytes(x.read()).decode()
-    payload = {
-        'raw': f'data:image/png;base64,{encode(raw_png)}',
-        'segmented': f'data:image/png;base64,{encode(label_png)}',
-        'seg_arr': label_arr
-    }
+    try:
+        project = Project.get(project_id)
+        if not project:
+            return jsonify({'error': 'project_id not found'}), 404
+        change = ChangeDisplay(project)
+        payload = change.change(display_attribute, value)
+        project.update()
 
-    current_app.logger.debug('Got frame %s of project "%s" in %s s.',
-                             frame, project_id, timeit.default_timer() - start)
+    except Exception as e:  # TODO: more error handling to identify problem
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
+    current_app.logger.debug('Changed to %s %s for project %s in %s s.',
+                             display_attribute, value, project_id,
+                             timeit.default_timer() - start)
+    return jsonify(payload)
+
+
+@bp.route('/undo/<int:project_id>', methods=['POST'])
+def undo(project_id):
+    start = timeit.default_timer()
+    try:
+        project = Project.get(project_id)
+        if not project:
+            return jsonify({'error': 'project_id not found'}), 404
+        payload = project.undo()
+    except Exception as e:  # TODO: more error handling to identify problem
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+    current_app.logger.debug('Undid action for project %s finished in %s s.',
+                             project_id, timeit.default_timer() - start)
+    return jsonify(payload)
+
+
+@bp.route('/redo/<int:project_id>', methods=['POST'])
+def redo(project_id):
+    start = timeit.default_timer()
+    try:
+        project = Project.get(project_id)
+        if not project:
+            return jsonify({'error': 'project_id not found'}), 404
+        payload = project.redo()
+    except Exception as e:  # TODO: more error handling to identify problem
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+    current_app.logger.debug('Redid action for project %s finished in %s s.',
+                             project_id, timeit.default_timer() - start)
     return jsonify(payload)
 
 
@@ -173,36 +207,25 @@ def load(filename):
         return jsonify(error), 400
 
     # Initate Project entry in database
-    project = Project.create(filename, input_bucket, output_bucket, full_path, rgb)
-    state_start = timeit.default_timer()
-    state = project.state
-    current_app.logger.debug('Got state for "%s" in %s s.',
-                             filename, timeit.default_timer() - state_start)
-
+    project = Project.create(filename, input_bucket, output_bucket, full_path)
+    project.rgb = rgb
+    project.update()
+    # Make payload with raw image data, labeled image data, and label tracks
+    payload = project.make_payload(x=True, y=True, labels=True)
+    # Add other attributes to initialize frontend variables
+    payload['numFrames'] = project.num_frames
+    payload['project_id'] = project.id
+    payload['dimensions'] = (project.width, project.height)
+    # Attributes specific to filetype
     if is_trk_file(filename):
-        current_app.logger.debug('Loaded trk file "%s" in %s s.',
-                                 filename, timeit.default_timer() - start)
-        # Send attributes to .js file
-        return jsonify({
-            'max_frames': state.num_frames,
-            'tracks': state.readable_tracks,
-            'dimensions': (state.width, state.height),
-            'project_id': project.id,
-            'screen_scale': state.scale_factor
-        })
-
+        payload['screen_scale'] = project.scale_factor
     if is_npz_file(filename):
-        current_app.logger.debug('Loaded npz file "%s" in %s s.',
-                                 filename, timeit.default_timer() - start)
-        # Send attributes to .js file
-        return jsonify({
-            'max_frames': state.num_frames,
-            'channel_max': state.num_channels,
-            'feature_max': state.num_features,
-            'tracks': state.readable_tracks,
-            'dimensions': (state.width, state.height),
-            'project_id': project.id
-        })
+        payload['numChannels'] = project.num_channels
+        payload['numFeatures'] = project.num_features
+
+    current_app.logger.debug('Loaded file %s in %s s.',
+                             filename, timeit.default_timer() - start)
+    return jsonify(payload)
 
 
 @bp.route('/', methods=['GET', 'POST'])
@@ -307,7 +330,7 @@ def shortcut(filename):
 
 def get_edit(project):
     """Factory for Edit objects"""
-    filename = project.state.filename
+    filename = project.filename
     if is_npz_file(filename):
         return ZStackEdit(project)
     elif is_trk_file(filename):
