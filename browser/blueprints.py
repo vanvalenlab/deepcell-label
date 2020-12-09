@@ -48,11 +48,13 @@ class InvalidExtension(Exception):
         rv['message'] = self.message
         return rv
 
+
 @bp.errorhandler(InvalidExtension)
 def handle_invalid_usage(error):
     response = jsonify(error.to_dict())
     response.status_code = error.status_code
     return response
+
 
 @bp.errorhandler(Exception)
 def handle_exception(error):
@@ -291,12 +293,12 @@ def get_edit(project):
 def make_settings(filename):
     """Returns a dictionary of settings to send to the front-end."""
     folders = re.split('__', filename)
-    
+
     input_bucket = folders[0] if len(folders) > 1 else S3_INPUT_BUCKET
     output_bucket = folders[1] if len(folders) > 2 else S3_OUTPUT_BUCKET
     start_of_path = min(len(folders) - 1, 2)
     path = '__'.join(folders[start_of_path:])
-    
+
     rgb = request.args.get('rgb', default='false', type=str)
     pixel_only = request.args.get('pixel_only', default='false', type=str)
     label_only = request.args.get('label_only', default='false', type=str)
