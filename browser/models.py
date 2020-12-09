@@ -72,8 +72,6 @@ class MutableNdarray(Mutable, np.ndarray):
 
 class SourceEnum(enum.Enum):
     s3 = 's3'
-    dropped = 'dropped'
-    lfs = 'lfs'
 
 
 class Project(db.Model):
