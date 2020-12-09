@@ -459,11 +459,13 @@ var answer = "(SPACE=YES / ESC=NO)";
 var project_id = undefined;
 var brush;
 let mouse_trace = [];
+let inputBucket;
+let outputBucket;
 
 function upload_file(cb) {
   $.ajax({
     type: 'POST',
-    url: `${document.location.origin}/upload_file/${project_id}`,
+    url: `${document.location.origin}/upload_file/${outputBucket}/${project_id}`,
     async: true
   }).done(cb);
 }
@@ -711,7 +713,7 @@ function fetch_and_render_frame() {
 function load_file(file) {
   $.ajax({
     type: 'POST',
-    url: `${document.location.origin}/load/${file}`,
+    url: `${document.location.origin}/load/${inputBucket}/${file}`,
     success: function (payload) {
       numFrames = payload.numFrames;
       scale = payload.screen_scale;
@@ -872,6 +874,9 @@ function action(action, info, frame = current_frame) {
 }
 
 function startCaliban(filename, settings) {
+  inputBucket = settings.input_bucket;
+  outputBucket = settings.output_bucket;
+  
   // disable scrolling from scrolling around on page (it should just control brightness)
   document.addEventListener('wheel', function(event) {
     event.preventDefault();
