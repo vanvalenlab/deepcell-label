@@ -239,24 +239,10 @@ def tool():
         return redirect('/')
 
     filename = request.form['filename']
-
     current_app.logger.info('%s is filename', filename)
+    new_filename = 'test__{}'.format(filename)
 
-    # TODO: better name template?
-    new_filename = 'caliban-input__caliban-output__test__{}'.format(filename)
-
-    # if no options passed (how this route will be for now),
-    # still want to pass in default settings
-    rgb = request.args.get('rgb', default='false', type=str)
-    pixel_only = request.args.get('pixel_only', default='false', type=str)
-    label_only = request.args.get('label_only', default='false', type=str)
-
-    # Using distutils to cast string arguments to bools
-    settings = {
-        'rgb': bool(distutils.util.strtobool(rgb)),
-        'pixel_only': bool(distutils.util.strtobool(pixel_only)),
-        'label_only': bool(distutils.util.strtobool(label_only))
-    }
+    settings = make_settings()
 
     if is_trk_file(new_filename):
         filetype = 'track'
@@ -289,15 +275,7 @@ def shortcut(filename):
     request to access a specific data file that has been preloaded to the
     input S3 bucket (ex. http://127.0.0.1:5000/test.npz).
     """
-    rgb = request.args.get('rgb', default='false', type=str)
-    pixel_only = request.args.get('pixel_only', default='false', type=str)
-    label_only = request.args.get('label_only', default='false', type=str)
-
-    settings = {
-        'rgb': bool(distutils.util.strtobool(rgb)),
-        'pixel_only': bool(distutils.util.strtobool(pixel_only)),
-        'label_only': bool(distutils.util.strtobool(label_only))
-    }
+    settings = make_settings()
 
     if is_trk_file(filename):
         filetype = 'track'
@@ -332,3 +310,21 @@ def get_edit(project):
         # don't use RGB mode with track files
         return TrackEdit(project)
     return BaseEdit(project)
+
+def make_settings():
+    """Returns a dictionary of settings to send to the front-end."""
+    rgb = request.args.get('rgb', default='false', type=str)
+    pixel_only = request.args.get('pixel_only', default='false', type=str)
+    label_only = request.args.get('label_only', default='false', type=str)
+    input_bucket = request.args.get('input_bucket', default=S3_INPUT_BUCKET, type=str)
+    output_bucket = request.args.get('output_bucket', default=S3_OUTPUT_BUCKET, type=str)
+
+    settings = {
+        'rgb': bool(distutils.util.strtobool(rgb)),
+        'pixel_only': bool(distutils.util.strtobool(pixel_only)),
+        'label_only': bool(distutils.util.strtobool(label_only)),
+        'input_bucket': input_bucket,
+        'output_bucket': output_bucket,
+    }
+
+    return settings
