@@ -126,7 +126,7 @@ class Project(db.Model):
         start = timeit.default_timer()
         trial = self.load(path, bucket)
         logger.debug('Loaded file %s from S3 in %ss.',
-                     filename, timeit.default_timer() - start)
+                     path, timeit.default_timer() - start)
         raw = trial[raw_key]
         annotated = trial[annotated_key]
         # possible differences between single channel and rgb displays
@@ -151,7 +151,7 @@ class Project(db.Model):
         for feature in range(self.num_features):
             self.labels.create_cell_info(feature, annotated)
         # Overwrite cell_info with lineages to include cell relationships for .trk files
-        if is_trk_file(self.filename):
+        if is_trk_file(self.path):
             if len(trial['lineages']) != 1:
                 raise ValueError('Input file has multiple trials/lineages.')
             self.labels.cell_info = {0: trial['lineages'][0]}
@@ -223,10 +223,8 @@ class Project(db.Model):
         Wraps the Project constructor with logging and database commits.
 
         Args:
-            filename (str): filename including .npz or .trk extension
-            input_bucket (str): S3 bucket to download file
-            output_bucket (str): S3 bucket to upload file
             path (str): full path to download & upload file in buckets; includes filename
+            bucket (str): S3 bucket to download file
 
         Returns:
             Project: new row in the Project table
