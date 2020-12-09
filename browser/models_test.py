@@ -18,9 +18,8 @@ def test_project_init(project):
     assert project.id is not None
     assert project.createdAt is not None
     assert project.finished is None  # None until project is done
-    assert project.filename is not None
     assert project.path is not None
-    assert project.output_bucket is not None
+    assert project.source is not None
     assert project.rgb is not None
     assert project.frame is not None
     assert project.channel is not None
@@ -62,10 +61,8 @@ def test_get(mocker, db_session):
         return {'raw': np.zeros((1, 1, 1, 1)), 'annotated': np.zeros((1, 1, 1, 1))}
     mocker.patch('models.Project.load', load)
     project = models.Project.create(
-        filename='filename',
-        input_bucket='input_bucket',
-        output_bucket='output_bucket',
-        path='path')
+        path='filename',
+        bucket='input_bucket')
 
     # test that the project can be found and is the same as the created one
     valid_id = project.id
@@ -83,10 +80,8 @@ def test_create(mocker, db_session):
     mocker.patch('models.db.session', db_session)
     mocker.patch('models.Project.load', load)
     project = models.Project.create(
-        filename='filename',
-        input_bucket='input_bucket',
-        output_bucket='output_bucket',
-        path='path')
+        path='filename',
+        bucket='input_bucket')
 
     # Test that an action has been initialized
     assert project.action is not None
@@ -201,10 +196,8 @@ def test_finish_project(mocker, db_session):
     mocker.patch('models.Project.load', load)
     mocker.patch('models.db.session', db_session)
     project = models.Project.create(
-        filename='filename',
-        input_bucket='input_bucket',
-        output_bucket='output_bucket',
-        path='path')
+        path='filename',
+        bucket='input_bucket')
 
     # test finish project
     project.finish()

@@ -107,7 +107,7 @@ def zstack_project(app, mocker, request, db_session):
             return data
         mocker.patch('models.Project.load', load)
         mocker.patch('models.db.session', db_session)
-        project = Project.create('filename.npz', 'input_bucket', 'output_bucket', 'path')
+        project = Project.create('filename.npz', 'input_bucket')
         project.rgb = 'RGB' in request.node.name
         db_session.commit()
         return project
@@ -136,7 +136,7 @@ def track_project(app, mocker, request, db_session):
             return data
         mocker.patch('models.Project.load', load)
         mocker.patch('models.db.session', db_session)
-        project = Project.create('filename.trk', 'input_bucket', 'output_bucket', 'path')
+        project = Project.create('filename.trk', 'input_bucket')
         return project
 
 

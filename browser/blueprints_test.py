@@ -71,25 +71,20 @@ def test_upload_file(mocker, client):
     filename_trk = 'filename.trk'
     input_bucket = 'input_bucket'
     output_bucket = 'output_bucket'
-    path = 'path'
 
     # Create a project.
     project = models.Project.create(
-        filename=filename_npz,
-        input_bucket=input_bucket,
-        output_bucket=output_bucket,
-        path=path)
+        bucket=input_bucket,
+        path=filename_npz)
 
-    response = client.get('/upload_file/{}'.format(project.id))
+    response = client.get(f'/upload_file/{output_bucket}/{project.id}')
     assert response.status_code == 302
 
     project = models.Project.create(
-        filename=filename_trk,
-        input_bucket=input_bucket,
-        output_bucket=output_bucket,
-        path=path)
+        bucket=input_bucket,
+        path=filename_trk)
 
-    response = client.get('/upload_file/{}'.format(project.id))
+    response = client.get(f'/upload_file/{output_bucket}/{project.id}')
     assert response.status_code == 302
 
 
@@ -109,10 +104,8 @@ def test_change_display(mocker, client):
 
         # Create a project.
         project = models.Project.create(
-            filename=filename,
-            input_bucket='input_bucket',
-            output_bucket='output_bucket',
-            path='path')
+            bucket='input_bucket',
+            path=filename)
 
         response = client.post('/changedisplay/{}/frame/0'.format(project.id))
         # TODO: test correctness
@@ -140,11 +133,7 @@ def test_action(client):
 def test_load(client, mocker):
     # TODO: parsing the filename is a bit awkward.
     in_bucket = 'inputBucket'
-    out_bucket = 'inputBucket'
-    filename = 'testfile'
-    caliban_file = '{}__{}__{}__{}__{}'.format(
-        in_bucket, out_bucket, 'subfolder1', 'subfolder2', filename
-    )
+    path = 'subfolder1__subfolder2__testfile'
 
     # Mock load from S3 bucket
     def load(self, *args):
@@ -155,17 +144,17 @@ def test_load(client, mocker):
     mocker.patch('blueprints.Project.load', load)
 
     # TODO: correctness tests
-    response = client.post('/load/{}.npz'.format(caliban_file))
+    response = client.post(f'/load/{in_bucket}/{path}.npz')
     assert response.status_code == 200
 
     # rgb mode only for npzs.
-    response = client.post('/load/{}.npz?rgb=true'.format(caliban_file))
+    response = client.post(f'/load/{in_bucket}/{path}.npz?rgb=true')
     assert response.status_code == 200
 
-    response = client.post('/load/{}.trk'.format(caliban_file))
+    response = client.post(f'/load/{in_bucket}/{path}.trk')
     assert response.status_code == 200
 
-    response = client.post('/load/{}.badext'.format(caliban_file))
+    response = client.post(f'/load/{in_bucket}/{path}.badext')
     assert response.status_code == 400
 
 
@@ -234,10 +223,8 @@ def test_undo(client, mocker):
 
     # Create a project
     project = models.Project.create(
-        filename='filename.npz',
-        input_bucket='input_bucket',
-        output_bucket='output_bucket',
-        path='path')
+        path='filename.npz',
+        bucket='input_bucket')
 
     # Undo with no action to undo silently does nothing
     response = client.post('/undo/{}'.format(project.id))
@@ -259,10 +246,8 @@ def test_redo(client, mocker):
 
     # Create a project
     project = models.Project.create(
-        filename='filename.npz',
-        input_bucket='input_bucket',
-        output_bucket='output_bucket',
-        path='path')
+        path='filename.npz',
+        bucket='input_bucket')
 
     # Redo with no action to redo silently does nothing
     response = client.post('/redo/{}'.format(project.id))
