@@ -33,6 +33,27 @@ def health():
     return jsonify({'message': 'success'}), 200
 
 
+class InvalidExtension(Exception):
+    status_code = 400
+
+    def __init__(self, message, status_code=None, payload=None):
+        Exception.__init__(self)
+        self.message = message
+        if status_code is not None:
+            self.status_code = status_code
+        self.payload = payload
+
+    def to_dict(self):
+        rv = dict(self.payload or ())
+        rv['message'] = self.message
+        return rv
+
+@bp.errorhandler(InvalidExtension)
+def handle_invalid_usage(error):
+    response = jsonify(error.to_dict())
+    response.status_code = error.status_code
+    return response
+
 @bp.errorhandler(Exception)
 def handle_exception(error):
     """Handle all uncaught exceptions"""
@@ -193,11 +214,8 @@ def load(bucket, filename):
     bucket = request.args.get('input-bucket', default=S3_INPUT_BUCKET, type=str)
 
     if not is_trk_file(path) and not is_npz_file(path):
-        error = {
-            'error': 'invalid file extension: {}'.format(
-                os.path.splitext(path)[-1])
-        }
-        return jsonify(error), 400
+        ext = os.path.splitext(path)[-1]
+        raise InvalidExtension(f'invalid file extension: {ext}')
 
     # Initate Project entry in database
     project = Project.create(path, bucket)
@@ -238,31 +256,11 @@ def tool():
 
     filename = request.form['filename']
     current_app.logger.info('%s is filename', filename)
-    new_filename = 'test__{}'.format(filename)
+    new_filename = 'caliban-input__caliban-output__test__{}'.format(filename)
 
-    settings = make_settings()
-
-    if is_trk_file(new_filename):
-        filetype = 'track'
-        title = 'Tracking Tool'
-
-    elif is_npz_file(new_filename):
-        filetype = 'zstack'
-        title = 'Z-Stack Tool'
-
-    else:
-        # TODO: render an error template instead of JSON.
-        error = {
-            'error': 'invalid file extension: {}'.format(
-                os.path.splitext(filename)[-1])
-        }
-        return jsonify(error), 400
-
+    settings = make_settings(new_filename)
     return render_template(
         'tool.html',
-        filetype=filetype,
-        title=title,
-        filename=new_filename,
         settings=settings)
 
 
@@ -273,29 +271,9 @@ def shortcut(filename):
     request to access a specific data file that has been preloaded to the
     input S3 bucket (ex. http://127.0.0.1:5000/test.npz).
     """
-    settings = make_settings()
-
-    if is_trk_file(filename):
-        filetype = 'track'
-        title = 'Tracking Tool'
-
-    elif is_npz_file(filename):
-        filetype = 'zstack'
-        title = 'Z-Stack Tool'
-
-    else:
-        # TODO: render an error template instead of JSON.
-        error = {
-            'error': 'invalid file extension: {}'.format(
-                os.path.splitext(filename)[-1])
-        }
-        return jsonify(error), 400
-
+    settings = make_settings(filename)
     return render_template(
         'tool.html',
-        filetype=filetype,
-        title=title,
-        filename=filename,
         settings=settings)
 
 
@@ -309,15 +287,37 @@ def get_edit(project):
         return TrackEdit(project)
     return BaseEdit(project)
 
-def make_settings():
+
+def make_settings(filename):
     """Returns a dictionary of settings to send to the front-end."""
+    folders = re.split('__', filename)
+    
+    input_bucket = folders[0] if len(folders) > 1 else S3_INPUT_BUCKET
+    output_bucket = folders[1] if len(folders) > 2 else S3_OUTPUT_BUCKET
+    start_of_path = min(len(folders) - 1, 2)
+    path = '__'.join(folders[start_of_path:])
+    
     rgb = request.args.get('rgb', default='false', type=str)
     pixel_only = request.args.get('pixel_only', default='false', type=str)
     label_only = request.args.get('label_only', default='false', type=str)
-    input_bucket = request.args.get('input_bucket', default=S3_INPUT_BUCKET, type=str)
-    output_bucket = request.args.get('output_bucket', default=S3_OUTPUT_BUCKET, type=str)
+    # TODO: uncomment to use URL parameters instead of rigid bucket formatting within filename
+    # input_bucket = request.args.get('input_bucket', default=S3_INPUT_BUCKET, type=str)
+    # output_bucket = request.args.get('output_bucket', default=S3_OUTPUT_BUCKET, type=str)
+
+    if is_trk_file(filename):
+        filetype = 'track'
+        title = 'Tracking Tool'
+    elif is_npz_file(filename):
+        filetype = 'zstack'
+        title = 'Z-Stack Tool'
+    else:
+        ext = os.path.splitext(filename)[-1]
+        raise InvalidExtension(f'invalid file extension: {ext}')
 
     settings = {
+        'filetype': filetype,
+        'title': title,
+        'filename': path,
         'rgb': bool(distutils.util.strtobool(rgb)),
         'pixel_only': bool(distutils.util.strtobool(pixel_only)),
         'label_only': bool(distutils.util.strtobool(label_only)),

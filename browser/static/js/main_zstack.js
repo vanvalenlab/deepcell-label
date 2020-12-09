@@ -1030,7 +1030,7 @@ function displayUndoRedo() {
   redoButton.style.width = canvasElement.width / 2 + 'px';
 }
 
-function startCaliban(filename, settings) {
+function startCaliban(settings) {
   inputBucket = settings.input_bucket;
   outputBucket = settings.output_bucket;
   rgb = settings.rgb;
@@ -1053,7 +1053,7 @@ function startCaliban(filename, settings) {
     }
   });
 
-  loadFile(filename, settings.rgb, (payload) => {
+  loadFile(settings.filename, settings.rgb, (payload) => {
     numFrames = payload.numFrames;
     numFeatures = payload.numFeatures;
     numChannels = payload.numChannels;
