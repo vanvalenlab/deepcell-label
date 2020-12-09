@@ -840,7 +840,7 @@ function prepare_canvas() {
 function action(action, info, frame = current_frame) {
   $.ajax({
     type:'POST',
-    url:`${document.location.origin}/action/${project_id}/${action}/${frame}`,
+    url:`${document.location.origin}/edit/${project_id}/${action}/${frame}`,
     data: info,
     success: function (payload) {
       if (payload.error) {
