@@ -228,6 +228,12 @@ class Project(db.Model):
         """
         start = timeit.default_timer()
         new_project = Project(filename, input_bucket, output_bucket, path)
+        # Assign a unique 12 character base64 token to the project
+        while True:
+            token = token_urlsafe(9)  # 9 bytes is 12 base64 characters
+            if not db.session.query(Project).filter_by(token=token).first():
+                new_project.token = token
+                break
         db.session.add(new_project)
         db.session.commit()
         new_project.create_memento('create_project', all_frames=True)
