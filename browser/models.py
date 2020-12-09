@@ -74,12 +74,12 @@ class Project(db.Model):
     # pylint: disable=E1101
     __tablename__ = 'projects'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    token = db.Column(db.String(12), unique=True, nullable=False, index=True)
     createdAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now())
     finished = db.Column(db.TIMESTAMP)
 
-    filename = db.Column(db.Text, nullable=False)
     path = db.Column(db.Text, nullable=False)
-    output_bucket = db.Column(db.Text, nullable=False)
+    source = db.Column(db.Enum(SourceEnum), nullable=False)
     height = db.Column(db.Integer, nullable=False)
     width = db.Column(db.Integer, nullable=False)
     num_frames = db.Column(db.Integer, nullable=False)
