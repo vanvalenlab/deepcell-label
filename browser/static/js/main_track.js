@@ -873,7 +873,7 @@ function action(action, info, frame = current_frame) {
   });
 }
 
-function startCaliban(filename, settings) {
+function startCaliban(settings) {
   inputBucket = settings.input_bucket;
   outputBucket = settings.output_bucket;
   
@@ -892,7 +892,7 @@ function startCaliban(filename, settings) {
     }
   });
 
-  load_file(filename);
+  load_file(settings.filename);
   prepare_canvas();
 
   brush = new Brush(scale=scale, height=dimensions[1], width=dimensions[0], pad = padding);
