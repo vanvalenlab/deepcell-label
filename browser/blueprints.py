@@ -22,7 +22,7 @@ from werkzeug.exceptions import HTTPException
 from helpers import is_trk_file, is_npz_file
 from models import Project
 from caliban import TrackEdit, ZStackEdit, BaseEdit, ChangeDisplay
-
+from config import S3_INPUT_BUCKET, S3_OUTPUT_BUCKET
 
 bp = Blueprint('caliban', __name__)  # pylint: disable=C0103
 
@@ -55,13 +55,15 @@ def upload_file(project_id):
     if not project:
         return jsonify({'error': 'project_id not found'}), 404
 
+    bucket = request.args.get('output-bucket', default=S3_OUTPUT_BUCKET, type=str)
+
     # Call function in caliban.py to save data file and send to S3 bucket
     edit = get_edit(project)
     filename = project.filename
     if is_trk_file(filename):
-        edit.action_save_track()
+        edit.action_save_track(bucket)
     elif is_npz_file(filename):
-        edit.action_save_zstack()
+        edit.action_save_zstack(bucket)
 
     # add "finished" timestamp and null out PickleType columns
     project.finish()
@@ -185,29 +187,22 @@ def load(filename):
     start = timeit.default_timer()
     current_app.logger.info('Loading track at %s', filename)
 
-    folders = re.split('__', filename)
-    filename = folders[len(folders) - 1]
-    subfolders = folders[2:len(folders) - 1]
-
-    subfolders = '/'.join(subfolders)
-    full_path = os.path.join(subfolders, filename)
-
-    input_bucket = folders[0]
-    output_bucket = folders[1]
+    path = re.sub('__', '/', filename)
 
     # arg is 'false' which gets parsed to True if casting to bool
     rgb = request.args.get('rgb', default='false', type=str)
     rgb = bool(distutils.util.strtobool(rgb))
+    bucket = request.args.get('input-bucket', default=S3_INPUT_BUCKET, type=str)
 
-    if not is_trk_file(filename) and not is_npz_file(filename):
+    if not is_trk_file(path) and not is_npz_file(path):
         error = {
             'error': 'invalid file extension: {}'.format(
-                os.path.splitext(filename)[-1])
+                os.path.splitext(path)[-1])
         }
         return jsonify(error), 400
 
     # Initate Project entry in database
-    project = Project.create(filename, input_bucket, output_bucket, full_path)
+    project = Project.create(path, bucket)
     project.rgb = rgb
     project.update()
     # Make payload with raw image data, labeled image data, and label tracks
