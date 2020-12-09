@@ -59,7 +59,7 @@ def upload_file(project_id):
 
     # Call function in caliban.py to save data file and send to S3 bucket
     edit = get_edit(project)
-    filename = project.filename
+    filename = project.path
     if is_trk_file(filename):
         edit.action_save_track(bucket)
     elif is_npz_file(filename):
@@ -303,7 +303,7 @@ def shortcut(filename):
 
 def get_edit(project):
     """Factory for Edit objects"""
-    filename = project.filename
+    filename = project.path
     if is_npz_file(filename):
         return ZStackEdit(project)
     elif is_trk_file(filename):
