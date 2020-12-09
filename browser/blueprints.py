@@ -213,7 +213,6 @@ def load(bucket, filename):
     # arg is 'false' which gets parsed to True if casting to bool
     rgb = request.args.get('rgb', default='false', type=str)
     rgb = bool(distutils.util.strtobool(rgb))
-    bucket = request.args.get('input-bucket', default=S3_INPUT_BUCKET, type=str)
 
     if not is_trk_file(path) and not is_npz_file(path):
         ext = os.path.splitext(path)[-1]
