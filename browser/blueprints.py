@@ -47,15 +47,13 @@ def handle_exception(error):
     return jsonify({'message': str(error)}), 500
 
 
-@bp.route('/upload_file/<int:project_id>', methods=['GET', 'POST'])
-def upload_file(project_id):
+@bp.route('/upload_file/<bucket>/<int:project_id>', methods=['GET', 'POST'])
+def upload_file(bucket, project_id):
     """Upload .trk/.npz data file to AWS S3 bucket."""
     start = timeit.default_timer()
     project = Project.get(project_id)
     if not project:
         return jsonify({'error': 'project_id not found'}), 404
-
-    bucket = request.args.get('output-bucket', default=S3_OUTPUT_BUCKET, type=str)
 
     # Call function in caliban.py to save data file and send to S3 bucket
     edit = get_edit(project)
@@ -178,8 +176,8 @@ def redo(project_id):
     return jsonify(payload)
 
 
-@bp.route('/load/<filename>', methods=['POST'])
-def load(filename):
+@bp.route('/load/<bucket>/<filename>', methods=['POST'])
+def load(bucket, filename):
     """
     Initate TrackEdit/ZStackEdit object and load object to database.
     Send specific attributes of the object to the .js file.

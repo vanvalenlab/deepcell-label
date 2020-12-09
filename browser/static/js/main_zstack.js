@@ -682,7 +682,7 @@ const _calculateMaxHeight = () => {
 function upload_file(cb) {
   $.ajax({
     type: 'POST',
-    url: `${document.location.origin}/upload_file/${project_id}?output-bucket=${outputBucket}`,
+    url: `${document.location.origin}/upload_file/${outputBucket}/${project_id}`,
     async: true
   }).done(cb);
 }
@@ -830,7 +830,7 @@ function render_image_display() {
 function loadFile(file, rgb = false, cb) {
   $.ajax({
     type: 'POST',
-    url: `${document.location.origin}/load/${file}?input-bucket=${inputBucket}&rgb=${rgb}`,
+    url: `${document.location.origin}/load/${inputBucket}/${file}?rgb=${rgb}`,
     async: true
   }).done(cb);
 }
