@@ -25,6 +25,11 @@ def change_display(project):
     return label.ChangeDisplay(project)
 
 
+@pytest.fixture
+def change_display(project):
+    return caliban.ChangeDisplay(project)
+
+
 @pytest.fixture(params=[
     pytest.lazy_fixture('zstack_edit'),
     pytest.lazy_fixture('track_edit')

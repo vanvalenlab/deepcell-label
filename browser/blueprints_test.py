@@ -87,7 +87,7 @@ def test_tool(client):
                            content_type='multipart/form-data',
                            data={'filename': filename})
     assert response.status_code == 400
-    assert 'error' in response.json
+    assert 'message' in response.json
 
 
 def test_shortcut(client):

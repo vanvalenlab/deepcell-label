@@ -459,11 +459,13 @@ var answer = "(SPACE=YES / ESC=NO)";
 var project_id = undefined;
 var brush;
 let mouse_trace = [];
+let inputBucket;
+let outputBucket;
 
 function upload_file(cb) {
   $.ajax({
     type: 'POST',
-    url: `${document.location.origin}/upload_file/${project_id}`,
+    url: `${document.location.origin}/upload_file/${outputBucket}/${project_id}`,
     async: true
   }).done(cb);
 }
@@ -881,7 +883,10 @@ function action(action, info, frame = current_frame) {
   });
 }
 
-function startDeepCellLabel(projectId, settings) {
+function startCaliban(settings) {
+  inputBucket = settings.input_bucket;
+  outputBucket = settings.output_bucket;
+  
   // disable scrolling from scrolling around on page (it should just control brightness)
   document.addEventListener('wheel', function(event) {
     event.preventDefault();
@@ -897,7 +902,7 @@ function startDeepCellLabel(projectId, settings) {
     }
   });
 
-  getProject(projectId);
+  getProject(settings.projectId);
   prepare_canvas();
 
   brush = new Brush(scale=scale, height=dimensions[1], width=dimensions[0], pad = padding);

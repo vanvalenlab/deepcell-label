@@ -30,10 +30,10 @@ class ToggleHighlight extends Action {
 
 /** Action to change the viewed frame. */
 class ChangeFrame extends Action {
-  constructor(mode, frame, prevFrame = current_frame) {
+  constructor(mode, frame) {
     super();
     this.mode = mode;
-    this.oldValue = prevFrame;
+    this.oldValue = current_frame;
     this.newValue = frame.mod(numFrames);
   }
 
@@ -133,7 +133,7 @@ class ChangeChannel extends Action {
     this.adjuster.displayInvert = this.adjuster.invertMap.get(newValue);
 
     this.mode.clear();
-    this.mode.channel = this.newValue;
+    this.mode.channel = newValue;
   }
 }
 

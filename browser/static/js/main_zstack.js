@@ -581,6 +581,8 @@ const padding = 5;
 const maxLabelsMap = new Map();
 
 let rgb;
+let inputBucket;
+let outputBucket;
 
 var rendering_raw = false;
 var display_labels;
@@ -680,7 +682,7 @@ const _calculateMaxHeight = () => {
 function upload_file(cb) {
   $.ajax({
     type: 'POST',
-    url: `${document.location.origin}/upload_file/${project_id}`,
+    url: `${document.location.origin}/upload_file/${outputBucket}/${project_id}`,
     async: true
   }).done(cb);
 }
@@ -1153,7 +1155,9 @@ function handleFirstPayload(payload) {
   displayUndoRedo();
 }
 
-function startDeepCellLabel(projectId, settings) {
+function startDeepCellLabel(settings) {
+  inputBucket = settings.input_bucket;
+  outputBucket = settings.output_bucket;
   rgb = settings.rgb;
   display_labels = !settings.rgb;
   edit_mode = !settings.label_only;
@@ -1174,5 +1178,5 @@ function startDeepCellLabel(projectId, settings) {
     }
   });
 
-  getProject(projectId, rgb, handleFirstPayload);
+  getProject(settings.projectId, rgb, handleFirstPayload);
 }
