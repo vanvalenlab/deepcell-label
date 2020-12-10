@@ -145,7 +145,7 @@ class Loader():
             self._label_array = npz['y']
         elif 'annotated' in npz.files:
                 self._label_array = npz['annotated']
-        elif len(npz.files > 1):
+        elif len(npz.files) > 1:
                 self._label_array = npz[npz.files[1]]
 
     def _load_trk(self, data):
