@@ -22,7 +22,7 @@ from werkzeug.exceptions import HTTPException
 from helpers import is_trk_file, is_npz_file
 from models import Project
 from caliban import TrackEdit, ZStackEdit, BaseEdit, ChangeDisplay
-
+from config import S3_INPUT_BUCKET, S3_OUTPUT_BUCKET
 
 bp = Blueprint('caliban', __name__)  # pylint: disable=C0103
 
@@ -31,6 +31,29 @@ bp = Blueprint('caliban', __name__)  # pylint: disable=C0103
 def health():
     """Returns success if the application is ready."""
     return jsonify({'message': 'success'}), 200
+
+
+class InvalidExtension(Exception):
+    status_code = 400
+
+    def __init__(self, message, status_code=None, payload=None):
+        Exception.__init__(self)
+        self.message = message
+        if status_code is not None:
+            self.status_code = status_code
+        self.payload = payload
+
+    def to_dict(self):
+        rv = dict(self.payload or ())
+        rv['message'] = self.message
+        return rv
+
+
+@bp.errorhandler(InvalidExtension)
+def handle_invalid_usage(error):
+    response = jsonify(error.to_dict())
+    response.status_code = error.status_code
+    return response
 
 
 @bp.errorhandler(Exception)
@@ -47,8 +70,8 @@ def handle_exception(error):
     return jsonify({'message': str(error)}), 500
 
 
-@bp.route('/upload_file/<int:project_id>', methods=['GET', 'POST'])
-def upload_file(project_id):
+@bp.route('/upload_file/<bucket>/<int:project_id>', methods=['GET', 'POST'])
+def upload_file(bucket, project_id):
     """Upload .trk/.npz data file to AWS S3 bucket."""
     start = timeit.default_timer()
     project = Project.get(project_id)
@@ -57,11 +80,11 @@ def upload_file(project_id):
 
     # Call function in caliban.py to save data file and send to S3 bucket
     edit = get_edit(project)
-    filename = project.filename
+    filename = project.path
     if is_trk_file(filename):
-        edit.action_save_track()
+        edit.action_save_track(bucket)
     elif is_npz_file(filename):
-        edit.action_save_zstack()
+        edit.action_save_zstack(bucket)
 
     # add "finished" timestamp and null out PickleType columns
     project.finish()
@@ -176,8 +199,8 @@ def redo(project_id):
     return jsonify(payload)
 
 
-@bp.route('/load/<filename>', methods=['POST'])
-def load(filename):
+@bp.route('/load/<bucket>/<filename>', methods=['POST'])
+def load(bucket, filename):
     """
     Initate TrackEdit/ZStackEdit object and load object to database.
     Send specific attributes of the object to the .js file.
@@ -185,29 +208,18 @@ def load(filename):
     start = timeit.default_timer()
     current_app.logger.info('Loading track at %s', filename)
 
-    folders = re.split('__', filename)
-    filename = folders[len(folders) - 1]
-    subfolders = folders[2:len(folders) - 1]
-
-    subfolders = '/'.join(subfolders)
-    full_path = os.path.join(subfolders, filename)
-
-    input_bucket = folders[0]
-    output_bucket = folders[1]
+    path = re.sub('__', '/', filename)
 
     # arg is 'false' which gets parsed to True if casting to bool
     rgb = request.args.get('rgb', default='false', type=str)
     rgb = bool(distutils.util.strtobool(rgb))
 
-    if not is_trk_file(filename) and not is_npz_file(filename):
-        error = {
-            'error': 'invalid file extension: {}'.format(
-                os.path.splitext(filename)[-1])
-        }
-        return jsonify(error), 400
+    if not is_trk_file(path) and not is_npz_file(path):
+        ext = os.path.splitext(path)[-1]
+        raise InvalidExtension(f'invalid file extension: {ext}')
 
     # Initate Project entry in database
-    project = Project.create(filename, input_bucket, output_bucket, full_path)
+    project = Project.create(path, bucket)
     project.rgb = rgb
     project.update()
     # Make payload with raw image data, labeled image data, and label tracks
@@ -244,46 +256,12 @@ def tool():
         return redirect('/')
 
     filename = request.form['filename']
-
     current_app.logger.info('%s is filename', filename)
-
-    # TODO: better name template?
     new_filename = 'caliban-input__caliban-output__test__{}'.format(filename)
 
-    # if no options passed (how this route will be for now),
-    # still want to pass in default settings
-    rgb = request.args.get('rgb', default='false', type=str)
-    pixel_only = request.args.get('pixel_only', default='false', type=str)
-    label_only = request.args.get('label_only', default='false', type=str)
-
-    # Using distutils to cast string arguments to bools
-    settings = {
-        'rgb': bool(distutils.util.strtobool(rgb)),
-        'pixel_only': bool(distutils.util.strtobool(pixel_only)),
-        'label_only': bool(distutils.util.strtobool(label_only))
-    }
-
-    if is_trk_file(new_filename):
-        filetype = 'track'
-        title = 'Tracking Tool'
-
-    elif is_npz_file(new_filename):
-        filetype = 'zstack'
-        title = 'Z-Stack Tool'
-
-    else:
-        # TODO: render an error template instead of JSON.
-        error = {
-            'error': 'invalid file extension: {}'.format(
-                os.path.splitext(filename)[-1])
-        }
-        return jsonify(error), 400
-
+    settings = make_settings(new_filename)
     return render_template(
         'tool.html',
-        filetype=filetype,
-        title=title,
-        filename=new_filename,
         settings=settings)
 
 
@@ -294,46 +272,59 @@ def shortcut(filename):
     request to access a specific data file that has been preloaded to the
     input S3 bucket (ex. http://127.0.0.1:5000/test.npz).
     """
-    rgb = request.args.get('rgb', default='false', type=str)
-    pixel_only = request.args.get('pixel_only', default='false', type=str)
-    label_only = request.args.get('label_only', default='false', type=str)
-
-    settings = {
-        'rgb': bool(distutils.util.strtobool(rgb)),
-        'pixel_only': bool(distutils.util.strtobool(pixel_only)),
-        'label_only': bool(distutils.util.strtobool(label_only))
-    }
-
-    if is_trk_file(filename):
-        filetype = 'track'
-        title = 'Tracking Tool'
-
-    elif is_npz_file(filename):
-        filetype = 'zstack'
-        title = 'Z-Stack Tool'
-
-    else:
-        # TODO: render an error template instead of JSON.
-        error = {
-            'error': 'invalid file extension: {}'.format(
-                os.path.splitext(filename)[-1])
-        }
-        return jsonify(error), 400
-
+    settings = make_settings(filename)
     return render_template(
         'tool.html',
-        filetype=filetype,
-        title=title,
-        filename=filename,
         settings=settings)
 
 
 def get_edit(project):
     """Factory for Edit objects"""
-    filename = project.filename
+    filename = project.path
     if is_npz_file(filename):
         return ZStackEdit(project)
     elif is_trk_file(filename):
         # don't use RGB mode with track files
         return TrackEdit(project)
     return BaseEdit(project)
+
+
+def make_settings(filename):
+    """Returns a dictionary of settings to send to the front-end."""
+    folders = re.split('__', filename)
+
+    # TODO: better parsing when buckets are not present
+    input_bucket = folders[0] if len(folders) > 1 else S3_INPUT_BUCKET
+    output_bucket = folders[1] if len(folders) > 2 else S3_OUTPUT_BUCKET
+    start_of_path = min(len(folders) - 1, 2)
+    path = '__'.join(folders[start_of_path:])
+
+    rgb = request.args.get('rgb', default='false', type=str)
+    pixel_only = request.args.get('pixel_only', default='false', type=str)
+    label_only = request.args.get('label_only', default='false', type=str)
+    # TODO: uncomment to use URL parameters instead of rigid bucket formatting within filename
+    # input_bucket = request.args.get('input_bucket', default=S3_INPUT_BUCKET, type=str)
+    # output_bucket = request.args.get('output_bucket', default=S3_OUTPUT_BUCKET, type=str)
+
+    if is_trk_file(filename):
+        filetype = 'track'
+        title = 'Tracking Tool'
+    elif is_npz_file(filename):
+        filetype = 'zstack'
+        title = 'Z-Stack Tool'
+    else:
+        ext = os.path.splitext(filename)[-1]
+        raise InvalidExtension(f'invalid file extension: {ext}')
+
+    settings = {
+        'filetype': filetype,
+        'title': title,
+        'filename': path,
+        'rgb': bool(distutils.util.strtobool(rgb)),
+        'pixel_only': bool(distutils.util.strtobool(pixel_only)),
+        'label_only': bool(distutils.util.strtobool(label_only)),
+        'input_bucket': input_bucket,
+        'output_bucket': output_bucket,
+    }
+
+    return settings

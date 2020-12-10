@@ -459,11 +459,13 @@ var answer = "(SPACE=YES / ESC=NO)";
 var project_id = undefined;
 var brush;
 let mouse_trace = [];
+let inputBucket;
+let outputBucket;
 
 function upload_file(cb) {
   $.ajax({
     type: 'POST',
-    url: `${document.location.origin}/upload_file/${project_id}`,
+    url: `${document.location.origin}/upload_file/${outputBucket}/${project_id}`,
     async: true
   }).done(cb);
 }
@@ -711,7 +713,7 @@ function fetch_and_render_frame() {
 function load_file(file) {
   $.ajax({
     type: 'POST',
-    url: `${document.location.origin}/load/${file}`,
+    url: `${document.location.origin}/load/${inputBucket}/${file}`,
     success: function (payload) {
       numFrames = payload.numFrames;
       scale = payload.screen_scale;
@@ -838,7 +840,7 @@ function prepare_canvas() {
 function action(action, info, frame = current_frame) {
   $.ajax({
     type:'POST',
-    url:`${document.location.origin}/action/${project_id}/${action}/${frame}`,
+    url:`${document.location.origin}/edit/${project_id}/${action}/${frame}`,
     data: info,
     success: function (payload) {
       if (payload.error) {
@@ -871,7 +873,10 @@ function action(action, info, frame = current_frame) {
   });
 }
 
-function startCaliban(filename, settings) {
+function startCaliban(settings) {
+  inputBucket = settings.input_bucket;
+  outputBucket = settings.output_bucket;
+  
   // disable scrolling from scrolling around on page (it should just control brightness)
   document.addEventListener('wheel', function(event) {
     event.preventDefault();
@@ -887,7 +892,7 @@ function startCaliban(filename, settings) {
     }
   });
 
-  load_file(filename);
+  load_file(settings.filename);
   prepare_canvas();
 
   brush = new Brush(scale=scale, height=dimensions[1], width=dimensions[0], pad = padding);

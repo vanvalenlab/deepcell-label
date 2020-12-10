@@ -583,7 +583,7 @@ class ZStackEdit(BaseEdit):
         self.y_changed = True
         self.create_cell_info(feature=self.feature)
 
-    def action_save_zstack(self):
+    def action_save_zstack(self, bucket):
         # save file to BytesIO object
         store_npz = io.BytesIO()
 
@@ -593,7 +593,7 @@ class ZStackEdit(BaseEdit):
 
         # store npz file object in bucket/path
         s3 = self.project._get_s3_client()
-        s3.upload_fileobj(store_npz, self.project.output_bucket, self.project.path)
+        s3.upload_fileobj(store_npz, bucket, self.project.path)
 
     def add_cell_info(self, add_label, frame):
         """Add a cell to the npz"""
@@ -783,7 +783,7 @@ class TrackEdit(BaseEdit):
 
         self.y_changed = self.labels_changed = True
 
-    def action_save_track(self):
+    def action_save_track(self, bucket):
         # clear any empty tracks before saving file
         empty_tracks = []
         for key in self.labels.tracks:
@@ -814,7 +814,7 @@ class TrackEdit(BaseEdit):
             # go to beginning of file object
             trk_file_obj.seek(0)
             s3 = self.project._get_s3_client()
-            s3.upload_fileobj(trk_file_obj, self.project.output_bucket, self.project.path)
+            s3.upload_fileobj(trk_file_obj, bucket, self.project.path)
 
         except Exception as e:
             print('Something Happened: ', e, file=sys.stderr)

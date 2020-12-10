@@ -581,6 +581,8 @@ const padding = 5;
 const maxLabelsMap = new Map();
 
 let rgb;
+let inputBucket;
+let outputBucket;
 
 var rendering_raw = false;
 var display_labels;
@@ -680,7 +682,7 @@ const _calculateMaxHeight = () => {
 function upload_file(cb) {
   $.ajax({
     type: 'POST',
-    url: `${document.location.origin}/upload_file/${project_id}`,
+    url: `${document.location.origin}/upload_file/${outputBucket}/${project_id}`,
     async: true
   }).done(cb);
 }
@@ -828,7 +830,7 @@ function render_image_display() {
 function loadFile(file, rgb = false, cb) {
   $.ajax({
     type: 'POST',
-    url: `${document.location.origin}/load/${file}?&rgb=${rgb}`,
+    url: `${document.location.origin}/load/${inputBucket}/${file}?rgb=${rgb}`,
     async: true
   }).done(cb);
 }
@@ -1028,7 +1030,9 @@ function displayUndoRedo() {
   redoButton.style.width = canvasElement.width / 2 + 'px';
 }
 
-function startCaliban(filename, settings) {
+function startCaliban(settings) {
+  inputBucket = settings.input_bucket;
+  outputBucket = settings.output_bucket;
   rgb = settings.rgb;
   display_labels = !settings.rgb;
   edit_mode = (settings.pixel_only && !settings.label_only);
@@ -1049,7 +1053,7 @@ function startCaliban(filename, settings) {
     }
   });
 
-  loadFile(filename, settings.rgb, (payload) => {
+  loadFile(settings.filename, settings.rgb, (payload) => {
     numFrames = payload.numFrames;
     numFeatures = payload.numFeatures;
     numChannels = payload.numChannels;

@@ -5,12 +5,14 @@ from __future__ import print_function
 
 import base64
 import copy
+import enum
 import io
 import json
 import logging
 import tarfile
 import tempfile
 import timeit
+from secrets import token_urlsafe
 
 import boto3
 from flask import current_app
@@ -69,17 +71,21 @@ class MutableNdarray(Mutable, np.ndarray):
         self.changed()
 
 
+class SourceEnum(enum.Enum):
+    s3 = 's3'
+
+
 class Project(db.Model):
     """Project table definition."""
     # pylint: disable=E1101
     __tablename__ = 'projects'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    token = db.Column(db.String(12), unique=True, nullable=False, index=True)
     createdAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now())
     finished = db.Column(db.TIMESTAMP)
 
-    filename = db.Column(db.Text, nullable=False)
     path = db.Column(db.Text, nullable=False)
-    output_bucket = db.Column(db.Text, nullable=False)
+    source = db.Column(db.Enum(SourceEnum), nullable=False)
     height = db.Column(db.Integer, nullable=False)
     width = db.Column(db.Integer, nullable=False)
     num_frames = db.Column(db.Integer, nullable=False)
@@ -109,17 +115,18 @@ class Project(db.Model):
     actions = db.relationship('Action', backref='project', foreign_keys='[Action.project_id]')
     num_actions = db.Column(db.Integer, default=0)
 
-    def __init__(self, filename, input_bucket, output_bucket, path,
+    def __init__(self, path, bucket,
                  raw_key='raw', annotated_key=None):
+
         init_start = timeit.default_timer()
 
         # Load data
         if annotated_key is None:
-            annotated_key = get_ann_key(filename)
+            annotated_key = get_ann_key(path)
         start = timeit.default_timer()
-        trial = self.load(filename, input_bucket, path)
+        trial = self.load(path, bucket)
         logger.debug('Loaded file %s from S3 in %ss.',
-                     filename, timeit.default_timer() - start)
+                     path, timeit.default_timer() - start)
         raw = trial[raw_key]
         annotated = trial[annotated_key]
         # possible differences between single channel and rgb displays
@@ -128,9 +135,8 @@ class Project(db.Model):
             annotated = np.expand_dims(annotated, axis=0)
 
         # Record static project attributes
-        self.filename = filename
         self.path = path
-        self.output_bucket = output_bucket
+        self.source = SourceEnum.s3
         self.num_frames = raw.shape[0]
         self.height = raw.shape[1]
         self.width = raw.shape[2]
@@ -145,7 +151,7 @@ class Project(db.Model):
         for feature in range(self.num_features):
             self.labels.create_cell_info(feature, annotated)
         # Overwrite cell_info with lineages to include cell relationships for .trk files
-        if is_trk_file(self.filename):
+        if is_trk_file(self.path):
             if len(trial['lineages']) != 1:
                 raise ValueError('Input file has multiple trials/lineages.')
             self.labels.cell_info = {0: trial['lineages'][0]}
@@ -161,7 +167,7 @@ class Project(db.Model):
                              for i, frame in enumerate(annotated)]
 
         logger.debug('Initialized project for %s in %ss.',
-                     filename, timeit.default_timer() - init_start)
+                     path, timeit.default_timer() - init_start)
 
     @property
     def label_array(self):
@@ -180,16 +186,15 @@ class Project(db.Model):
             aws_secret_access_key=AWS_SECRET_ACCESS_KEY
         )
 
-    def load(self, filename, bucket, path):
+    def load(self, path, bucket):
         """
         Load a file from the S3 input bucket.
 
         Args:
-            filename (str): filename; used to check if loading .npz or .trk file
-            bucket (str): bucket to pull from on S3
             path (str): full path to the file within the bucket, including the filename
+            bucket (str): bucket to pull from on S3
         """
-        _load = get_load(filename)
+        _load = get_load(path)
         s3 = self._get_s3_client()
         response = s3.get_object(Bucket=bucket, Key=path)
         return _load(response['Body'].read())
@@ -212,22 +217,26 @@ class Project(db.Model):
         return project
 
     @staticmethod
-    def create(filename, input_bucket, output_bucket, path):
+    def create(path, bucket):
         """
         Create a new project.
         Wraps the Project constructor with logging and database commits.
 
         Args:
-            filename (str): filename including .npz or .trk extension
-            input_bucket (str): S3 bucket to download file
-            output_bucket (str): S3 bucket to upload file
             path (str): full path to download & upload file in buckets; includes filename
+            bucket (str): S3 bucket to download file
 
         Returns:
             Project: new row in the Project table
         """
         start = timeit.default_timer()
-        new_project = Project(filename, input_bucket, output_bucket, path)
+        new_project = Project(path, bucket)
+        # Assign a unique 12 character base64 token to the project
+        while True:
+            token = token_urlsafe(9)  # 9 bytes is 12 base64 characters
+            if not db.session.query(Project).filter_by(token=token).first():
+                new_project.token = token
+                break
         db.session.add(new_project)
         db.session.commit()
         new_project.create_memento('create_project', all_frames=True)
