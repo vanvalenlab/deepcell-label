@@ -4,6 +4,7 @@ import pathlib
 import timeit
 import tempfile
 import tarfile
+import tifffile
 
 import boto3
 import imageio
@@ -120,7 +121,7 @@ class Loader():
         elif self._path.suffix in {'.tiff', '.tif'}:
             load_fn = self._load_tiff
         else:
-            raise ValueError('Cannot load file: {}'.format(self.path))
+            raise InvalidExtension('Cannot load file: {}'.format(self.path))
         return load_fn
 
     def _load_npz(self, data):
@@ -201,7 +202,7 @@ class Loader():
 
     def _load_tiff(self, data, channels_first=True):
         """Loads a tiff file into a raw image array."""
-        img = io.imread(data)
+        img = tifffile.imread(data)
         # DeepCell Label expects channels to be the last dimension
         if channels_first:
             img = np.moveaxis(img, 0, -1)
@@ -300,3 +301,18 @@ def get_loader(request):
     else:
         raise ValueError('invalid source: choose from "dropped", "s3", and "lfs"')
     return loader
+
+class InvalidExtension(Exception):
+    status_code = 400
+
+    def __init__(self, message, status_code=None, payload=None):
+        Exception.__init__(self)
+        self.message = message
+        if status_code is not None:
+            self.status_code = status_code
+        self.payload = payload
+
+    def to_dict(self):
+        rv = dict(self.payload or ())
+        rv['message'] = self.message
+        return rv

@@ -42,24 +42,8 @@ def handle_404(error):
     return render_template('404.html'), 404
 
 
-class InvalidExtension(Exception):
-    status_code = 400
-
-    def __init__(self, message, status_code=None, payload=None):
-        Exception.__init__(self)
-        self.message = message
-        if status_code is not None:
-            self.status_code = status_code
-        self.payload = payload
-
-    def to_dict(self):
-        rv = dict(self.payload or ())
-        rv['message'] = self.message
-        return rv
-
-
-@bp.errorhandler(InvalidExtension)
-def handle_invalid_usage(error):
+@bp.errorhandler(loaders.InvalidExtension)
+def handle_invalid_extension(error):
     response = jsonify(error.to_dict())
     response.status_code = error.status_code
     return response
@@ -277,20 +261,6 @@ def project(token):
     settings['token'] = project.token
     settings['source'] = str(project.source)
 
-    if is_track_file(project.path):
-        filetype = 'track'
-        title = 'Tracking Tool'
-
-    elif is_zstack_file(project.path):
-        filetype = 'zstack'
-        title = 'Z-Stack Tool'
-    else:
-        # TODO: render an error template instead of JSON.
-        error = {
-            'error': 'invalid file extension: {}'.format(
-                os.path.splitext(project.path)[-1])
-        }
-        return jsonify(error), 400
     return render_template(
         'tool.html',
         settings=settings)
@@ -366,7 +336,7 @@ def make_settings(filename):
         title = 'Z-Stack Tool'
     else:
         ext = os.path.splitext(filename)[-1]
-        raise InvalidExtension(f'invalid file extension: {ext}')
+        raise loaders.InvalidExtension(f'invalid file extension: {ext}')
 
     settings = {
         'filetype': filetype,

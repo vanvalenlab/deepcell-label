@@ -8,6 +8,7 @@ ALLOWED_EXTENSIONS = set([
 
 ALLOWED_IMAGE_EXTENSIONS = set([
     '.npz', '.trk', '.trks', '.png',
+    '.tif', '.tiff',
 ])
 
 
@@ -40,4 +41,4 @@ def is_zstack_file(name):
     Returns:
         bool: True if the file is npz, otherwise False.
     '''
-    return os.path.splitext(str(name).lower())[-1] in {'.npz', '.png'}
+    return os.path.splitext(str(name).lower())[-1] in {'.npz', '.png', '.tif', '.tiff'}
