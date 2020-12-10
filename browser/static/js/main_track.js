@@ -711,10 +711,11 @@ function fetch_and_render_frame() {
 }
 
 
-function loadS3File(file) {
+function loadS3File(settings) {
+  filename = settings.filename;
   $.ajax({
     type: 'POST',
-    url: `${document.location.origin}/createproject?source=s3&path=${file}`,
+    url: `${document.location.origin}/createproject?source=s3&path=${filename}`,
     async: true
   }).done((payload) => {window.location = `/project/${payload.projectId}`} );
 }
@@ -883,7 +884,7 @@ function action(action, info, frame = current_frame) {
   });
 }
 
-function startCaliban(settings) {
+function startDeepCellLabel(settings) {
   inputBucket = settings.input_bucket;
   outputBucket = settings.output_bucket;
   
@@ -902,7 +903,7 @@ function startCaliban(settings) {
     }
   });
 
-  getProject(settings.projectId);
+  getProject(settings.token);
   prepare_canvas();
 
   brush = new Brush(scale=scale, height=dimensions[1], width=dimensions[0], pad = padding);

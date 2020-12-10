@@ -7,6 +7,7 @@ import distutils
 import distutils.util
 import json
 import os
+import re
 import timeit
 import traceback
 
@@ -25,7 +26,6 @@ from label import TrackEdit, ZStackEdit, BaseEdit, ChangeDisplay
 from models import Project
 import loaders
 import exporters
-from caliban import TrackEdit, ZStackEdit, BaseEdit, ChangeDisplay
 from config import S3_INPUT_BUCKET, S3_OUTPUT_BUCKET
 
 bp = Blueprint('label', __name__)  # pylint: disable=C0103
@@ -199,7 +199,7 @@ def tool():
 
     filename = request.form['filename']
     current_app.logger.info('%s is filename', filename)
-    new_filename = 'caliban-input__caliban-output__test__{}'.format(filename)
+    new_filename = 'test__{}'.format(filename)
 
     settings = make_settings(new_filename)
     return render_template(
@@ -288,6 +288,10 @@ def project(token):
     if project.finished is not None:
         return abort(410, description=f'project {token} already submitted')
 
+    settings = make_settings(project.path)
+    settings['token'] = project.token
+    settings['source'] = str(project.source)
+
     if is_track_file(project.path):
         filetype = 'track'
         title = 'Tracking Tool'
@@ -304,11 +308,7 @@ def project(token):
         return jsonify(error), 400
     return render_template(
         'tool.html',
-        token=token,
-        filetype=filetype,
-        title=title,
-        settings=settings,
-        source=str(project.source))
+        settings=settings)
 
 
 @bp.route('/downloadproject/<token>', methods=['GET'])
@@ -373,10 +373,10 @@ def make_settings(filename):
     # input_bucket = request.args.get('input_bucket', default=S3_INPUT_BUCKET, type=str)
     # output_bucket = request.args.get('output_bucket', default=S3_OUTPUT_BUCKET, type=str)
 
-    if is_trk_file(filename):
+    if is_track_file(filename):
         filetype = 'track'
         title = 'Tracking Tool'
-    elif is_npz_file(filename):
+    elif is_zstack_file(filename):
         filetype = 'zstack'
         title = 'Z-Stack Tool'
     else:

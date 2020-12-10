@@ -1025,8 +1025,9 @@ function displayUndoRedo() {
   redoButton.style.width = canvasElement.width / 2 + 'px';
 }
 
-function loadS3File(file, settings) {
-  let rgb = settings?.rgb; // what is the default? null, undefined, false?
+function loadS3File(settings) {
+  file = settings.filename;
+  rgb = settings.rgb;
   $.ajax({
     type: 'POST',
     url: `${document.location.origin}/createproject?source=s3&path=${file}&rgb=${rgb}`,
@@ -1178,5 +1179,5 @@ function startDeepCellLabel(settings) {
     }
   });
 
-  getProject(settings.projectId, rgb, handleFirstPayload);
+  getProject(settings.token, rgb, handleFirstPayload);
 }

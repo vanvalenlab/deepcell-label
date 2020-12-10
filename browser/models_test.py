@@ -36,10 +36,8 @@ def test_project_init():
 
 def test_get_missing_project():
     """
-    Gets a project before it exists, creates a project, then gets it again.
+    Gets a project before it exists.
     """
-    mocker.patch('models.db.session', db_session)
-    # test that no projects exist
     project = models.Project.get(1)
     assert project is None
 

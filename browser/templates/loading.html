@@ -13,10 +13,10 @@
 {%- endblock -%}
 
 {%- block extraJs -%}
-{%- if filetype == "zstack" -%}
+{%- if settings['filetype'] == "zstack" -%}
   <script type="text/javascript" src="{{ url_for('static', filename='js/main_zstack.js') }}"></script>
   <script type="text/javascript" src="{{ url_for('static', filename='js/actions.js') }}"></script>
-{%- elif filetype == "track" -%}
+{%- elif settings['filetype'] == "track" -%}
   <script type="text/javascript" src="{{ url_for('static', filename='js/main_track.js') }}"></script>
 {%- endif -%}
 
@@ -24,7 +24,7 @@
 <script>
   var settings = {{settings | tojson}};
   document.getElementById("loading-bar").classList.add("active");
-  loadS3File("{{filename}}", settings);
+  loadS3File(settings);
 
 </script>
 <!-- END DeepCell Label FUNCTION CALL -->

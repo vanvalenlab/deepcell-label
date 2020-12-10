@@ -15,7 +15,7 @@
       <h4>{{ settings['title'] | title }}</h4>
       <p>Filename will be given after submit button is pressed.</p>
 
-      {%- if source == 'SourceEnum.s3' -%}
+      {%- if settings['source'] == 'SourceEnum.s3' -%}
       <div class="row">
         <div class="col s6">
           <button id="submit" class="btn waves-effect waves-light indigo" onClick="upload()">
@@ -101,7 +101,7 @@
       document.getElementById("output").classList.remove("hide");
     });
   }
-  startCaliban(settings);
+  startDeepCellLabel(settings);
 </script>
 <!-- END DeepCell Label FUNCTION CALL -->
 {%- endblock -%}

@@ -110,7 +110,7 @@ def test_shortcut(client):
 
     response = client.get('/test-file.badext')
     assert response.status_code == 400
-    assert 'error' in response.json
+    assert 'message' in response.json
 
 
 def test_undo(client):
