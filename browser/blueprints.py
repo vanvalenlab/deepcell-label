@@ -293,6 +293,7 @@ def make_settings(filename):
     """Returns a dictionary of settings to send to the front-end."""
     folders = re.split('__', filename)
 
+    # TODO: better parsing when buckets are not present
     input_bucket = folders[0] if len(folders) > 1 else S3_INPUT_BUCKET
     output_bucket = folders[1] if len(folders) > 2 else S3_OUTPUT_BUCKET
     start_of_path = min(len(folders) - 1, 2)
