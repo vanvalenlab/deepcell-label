@@ -10,7 +10,6 @@ import boto3
 import imageio
 import numpy as np
 from PIL import Image
-from skimage import io
 
 from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_INPUT_BUCKET
 from labelmaker import LabelInfoMaker
@@ -191,7 +190,8 @@ class Loader():
 
     def _load_png(self, data):
         """Loads a png file into a raw image array."""
-        img = io.imread(data)
+        img = Image.open(data)
+        img = np.array(img)
         # Dimensions are height, width, channels
         assert (len(img.shape) == 3)
         if img.shape[-1] > 3:
