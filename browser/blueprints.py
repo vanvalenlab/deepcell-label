@@ -21,7 +21,7 @@ from flask import current_app
 from flask import send_file
 from werkzeug.exceptions import HTTPException
 
-from helpers import is_track_file, is_zstack_file, is_valid_file
+from helpers import is_track_file, is_zstack_file
 from label import TrackEdit, ZStackEdit, BaseEdit, ChangeDisplay
 from models import Project
 import loaders
@@ -247,23 +247,8 @@ def create_project():
     """
     start = timeit.default_timer()
     loader = loaders.get_loader(request)
-    current_app.logger.info('Loading project from %s', loader.path)
-
-    if not is_valid_file(loader.path):
-        error = {
-            'error': 'invalid file extension: {}'.format(
-                os.path.splitext(loader.path)[-1])
-        }
-        return jsonify(error), 400
-
-    # Initate Project entry in database
+    current_app.logger.info('Creating project from %s', loader.path)
     project = Project.create(loader)
-    # arg is 'false' which gets parsed to True if casting to bool
-    rgb = request.args.get('rgb', default='false', type=str)
-    rgb = bool(distutils.util.strtobool(rgb))
-    project.rgb = rgb
-    project.update()
-
     return {'projectId': project.token}
 
 

@@ -9,6 +9,7 @@ import boto3
 import imageio
 import numpy as np
 from PIL import Image
+from skimage import io
 
 from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_INPUT_BUCKET
 from labelmaker import LabelInfoMaker
@@ -116,7 +117,7 @@ class Loader():
             load_fn = self._load_trk
         elif self._path.suffix in {'.png'}:
             load_fn = self._load_png
-        elif self._path.suffix in {'.tiff'}:
+        elif self._path.suffix in {'.tiff', '.tif'}:
             load_fn = self._load_tiff
         else:
             raise ValueError('Cannot load file: {}'.format(self.path))
@@ -128,22 +129,22 @@ class Loader():
         """
         npz = np.load(data)
 
-        # standard nomenclature for image (X) and labeled (y)
+        # standard names for image (X) and labeled (y)
         if 'X' in npz.files:
             self._raw_array = npz['X']
-            if 'y' in npz.files:
-                self._label_array = npz['y']
-
-        # some files may have alternate names 'raw' and 'annotated'
+        # alternate names 'raw' and 'annotated'
         elif 'raw' in npz.files:
             self._raw_array = npz['raw']
-            if 'annotated' in npz.files:
-                self._label_array = npz['annotated']
-
-        # if files are named something different, give it a try anyway
+        # if filenames are different, try to load them anyways
         else:
             self._raw_array = npz[npz.files[0]]
-            if len(npz.files > 1):
+        
+        # Look for label filenames independently of raw names
+        if 'y' in npz.files:
+            self._label_array = npz['y']
+        elif 'annotated' in npz.files:
+                self._label_array = npz['annotated']
+        elif len(npz.files > 1):
                 self._label_array = npz[npz.files[1]]
 
     def _load_trk(self, data):
@@ -189,22 +190,25 @@ class Loader():
 
     def _load_png(self, data):
         """Loads a png file into a raw image array."""
-        im = Image.open(data)
-        im = np.array(im)
+        img = io.imread(data)
         # Dimensions are height, width, channels
-        assert (len(im.shape) == 3)
-        if im.shape[-1] > 3:
-            im = im[..., :3]
+        assert (len(img.shape) == 3)
+        if img.shape[-1] > 3:
+            img = img[..., :3]
         # Add frame dimension
-        im = np.expand_dims(im, axis=0)
-        self._raw_array = im
+        img = np.expand_dims(img, axis=0)
+        self._raw_array = img
 
-    def _load_tiff(self, data):
+    def _load_tiff(self, data, channels_first=True):
         """Loads a tiff file into a raw image array."""
-        im = Image.open(data)
-        im = np.array(im)
-        # TODO: dimension checking
-        self._raw_array = im
+        img = io.imread(data)
+        # DeepCell Label expects channels to be the last dimension
+        if channels_first:
+            img = np.moveaxis(img, 0, -1)
+        # Add frame dimension if missing
+        if img.ndim == 3:
+            img = np.expand_dims(img, axis=0)
+        self._raw_array = img
 
 
 class S3Loader(Loader):

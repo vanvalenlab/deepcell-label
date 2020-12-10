@@ -1027,10 +1027,9 @@ function displayUndoRedo() {
 
 function loadS3File(settings) {
   file = settings.filename;
-  rgb = settings.rgb;
   $.ajax({
     type: 'POST',
-    url: `${document.location.origin}/createproject?source=s3&path=${file}&rgb=${rgb}`,
+    url: `${document.location.origin}/createproject?source=s3&path=${file}`,
     async: true
   }).done((payload) => {window.location = `/project/${payload.projectId}`;} );
 }
