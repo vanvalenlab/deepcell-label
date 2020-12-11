@@ -200,6 +200,7 @@ class Loader():
         img = np.expand_dims(img, axis=0)
         self._raw_array = img
 
+    # TODO: expose channel_first option to front-end
     def _load_tiff(self, data, channels_first=False):
         """Loads a tiff file into a raw image array."""
         img = tifffile.imread(data)
