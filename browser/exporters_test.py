@@ -40,7 +40,7 @@ class TestExporter():
 class TestS3Exporter():
 
     def test_export(self, mocker, app, db_session):
-         with app.app_context():
+        with app.app_context():
             mocked = mocker.patch('boto3.s3.inject.upload_fileobj')
             db_session.autoflush = False
             project = models.Project.create(DummyLoader())
