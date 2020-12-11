@@ -26,15 +26,6 @@ def trk_exporter(app, db_session):
         return exporter
 
 
-@pytest.fixture
-def s3_exporter(app, db_session):
-    with app.app_context():
-        db_session.autoflush = False
-        project = models.Project.create(DummyLoader())
-        exporter = exporters.S3Exporter(project)
-        return exporter
-
-
 class TestExporter():
 
     def test_export_npz(self, npz_exporter):
@@ -48,7 +39,11 @@ class TestExporter():
 
 class TestS3Exporter():
 
-    def test_export(self, mocker, s3_exporter):
-        mocked = mocker.patch('boto3.s3.inject.upload_fileobj')
-        s3_exporter.export('test')
-        mocked.assert_called()
+    def test_export(self, mocker, app, db_session):
+         with app.app_context():
+            mocked = mocker.patch('boto3.s3.inject.upload_fileobj')
+            db_session.autoflush = False
+            project = models.Project.create(DummyLoader())
+            exporter = exporters.S3Exporter(project)
+            exporter.export('test')
+            mocked.assert_called()
