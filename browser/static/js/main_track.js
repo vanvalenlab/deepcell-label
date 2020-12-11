@@ -459,7 +459,6 @@ var answer = "(SPACE=YES / ESC=NO)";
 var project_id = undefined;
 var brush;
 let mouse_trace = [];
-let inputBucket;
 let outputBucket;
 
 function upload_file(cb) {
@@ -711,15 +710,6 @@ function fetch_and_render_frame() {
 }
 
 
-function loadS3File(settings) {
-  filename = settings.filename;
-  $.ajax({
-    type: 'POST',
-    url: `${document.location.origin}/createproject?source=s3&path=${filename}`,
-    async: true
-  }).done((payload) => {window.location = `/project/${payload.projectId}`} );
-}
-
 function getProject(projectId) {
   $.ajax({
     type: 'GET',
@@ -885,7 +875,6 @@ function action(action, info, frame = current_frame) {
 }
 
 function startDeepCellLabel(settings) {
-  inputBucket = settings.input_bucket;
   outputBucket = settings.output_bucket;
   
   // disable scrolling from scrolling around on page (it should just control brightness)

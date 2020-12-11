@@ -183,12 +183,13 @@ def tool():
 
     filename = request.form['filename']
     current_app.logger.info('%s is filename', filename)
-    new_filename = 'test__{}'.format(filename)
+    path = 'test__{}'.format(filename)
 
-    settings = make_settings(new_filename)
     return render_template(
         'loading.html',
-        settings=settings)
+        input_bucket='caliban-input',
+        output_bucket='caliban-output',
+        path=path)
 
 
 @bp.route('/<filename>', methods=['GET', 'POST'])
@@ -198,10 +199,23 @@ def shortcut(filename):
     request to access a specific data file that has been preloaded to the
     input S3 bucket (ex. http://127.0.0.1:5000/test.npz).
     """
-    settings = make_settings(filename)
+
+    folders = re.split('__', filename)
+    # TODO: better parsing when buckets are not present
+    input_bucket = folders[0] if len(folders) > 1 else S3_INPUT_BUCKET
+    output_bucket = folders[1] if len(folders) > 2 else S3_OUTPUT_BUCKET
+    start_of_path = min(len(folders) - 1, 2)
+    path = '__'.join(folders[start_of_path:])
+
+    # TODO: uncomment to use URL parameters instead of rigid bucket formatting within filename
+    # input_bucket = request.args.get('input_bucket', default=S3_INPUT_BUCKET, type=str)
+    # output_bucket = request.args.get('output_bucket', default=S3_OUTPUT_BUCKET, type=str)
+
     return render_template(
         'loading.html',
-        settings=settings)
+        input_bucket=input_bucket,
+        output_bucket=output_bucket,
+        path=path)
 
 
 @bp.route('/getproject/<token>')
@@ -282,8 +296,8 @@ def download_project(token):
     return send_file(filestream, as_attachment=True, attachment_filename=exporter.path)
 
 
-@bp.route('/upload_file/<token>', methods=['GET', 'POST'])
-def upload_project_to_s3(token):
+@bp.route('/upload_file/<bucket>/<token>', methods=['GET', 'POST'])
+def upload_project_to_s3(bucket, token):
     """Upload .trk/.npz data file to AWS S3 bucket."""
     start = timeit.default_timer()
     project = Project.get(token)
@@ -292,12 +306,12 @@ def upload_project_to_s3(token):
 
     # Save data file and send to S3 bucket
     exporter = exporters.S3Exporter(project)
-    exporter.export()
+    exporter.export(bucket)
     # add "finished" timestamp and null out PickleType columns
     project.finish()
 
-    current_app.logger.debug('Uploaded %s to S3 bucket from project %s in %s s.',
-                             project.path, token,
+    current_app.logger.debug('Uploaded %s to S3 bucket %s from project %s in %s s.',
+                             project.path, bucket, token,
                              timeit.default_timer() - start)
     return redirect('/')
 
@@ -313,39 +327,27 @@ def get_edit(project):
 
 def make_settings(filename):
     """Returns a dictionary of settings to send to the front-end."""
-    folders = re.split('__', filename)
-
-    # TODO: better parsing when buckets are not present
-    input_bucket = folders[0] if len(folders) > 1 else S3_INPUT_BUCKET
-    output_bucket = folders[1] if len(folders) > 2 else S3_OUTPUT_BUCKET
-    start_of_path = min(len(folders) - 1, 2)
-    path = '__'.join(folders[start_of_path:])
+    if is_track_file(filename):
+        filetype = 'track'
+        title = 'Tracking Tool'
+    else:
+        filetype = 'zstack'
+        title = 'Z-Stack Tool'
 
     rgb = request.args.get('rgb', default='false', type=str)
     pixel_only = request.args.get('pixel_only', default='false', type=str)
     label_only = request.args.get('label_only', default='false', type=str)
-    # TODO: uncomment to use URL parameters instead of rigid bucket formatting within filename
-    # input_bucket = request.args.get('input_bucket', default=S3_INPUT_BUCKET, type=str)
-    # output_bucket = request.args.get('output_bucket', default=S3_OUTPUT_BUCKET, type=str)
-
-    if is_track_file(filename):
-        filetype = 'track'
-        title = 'Tracking Tool'
-    elif is_zstack_file(filename):
-        filetype = 'zstack'
-        title = 'Z-Stack Tool'
-    else:
-        ext = os.path.splitext(filename)[-1]
-        raise loaders.InvalidExtension(f'invalid file extension: {ext}')
+    rgb = bool(distutils.util.strtobool(rgb))
+    pixel_only = bool(distutils.util.strtobool(pixel_only))
+    label_only = bool(distutils.util.strtobool(label_only))
+    output_bucket = request.args.get('output_bucket', default=S3_OUTPUT_BUCKET, type=str)
 
     settings = {
         'filetype': filetype,
         'title': title,
-        'filename': path,
-        'rgb': bool(distutils.util.strtobool(rgb)),
-        'pixel_only': bool(distutils.util.strtobool(pixel_only)),
-        'label_only': bool(distutils.util.strtobool(label_only)),
-        'input_bucket': input_bucket,
+        'rgb': rgb,
+        'pixel_only': pixel_only,
+        'label_only':label_only,
         'output_bucket': output_bucket,
     }
 

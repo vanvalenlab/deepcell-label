@@ -217,7 +217,7 @@ class S3Loader(Loader):
     Loader implmentation for S3 buckets.
     """
 
-    def __init__(self, path, bucket=S3_INPUT_BUCKET):
+    def __init__(self, path, bucket):
         super(S3Loader, self).__init__()
         # full path to file within bucket, including filename
         self._path = pathlib.Path(path.replace('__', '/'))
@@ -295,12 +295,13 @@ def get_loader(request):
     if source == 'dropped':
         loader = DroppedLoader(request.files.get('file'))
     elif source == 's3':
-        loader = S3Loader(request.args.get('path'))
+        loader = S3Loader(request.args.get('path'), request.args.get('bucket'))
     elif source == 'lfs':
         loader = LocalFileSystemLoader(request.args.get('path'))
     else:
         raise ValueError('invalid source: choose from "dropped", "s3", and "lfs"')
     return loader
+
 
 class InvalidExtension(Exception):
     status_code = 400

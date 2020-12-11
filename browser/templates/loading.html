@@ -13,18 +13,20 @@
 {%- endblock -%}
 
 {%- block extraJs -%}
-{%- if settings['filetype'] == "zstack" -%}
-  <script type="text/javascript" src="{{ url_for('static', filename='js/main_zstack.js') }}"></script>
-  <script type="text/javascript" src="{{ url_for('static', filename='js/actions.js') }}"></script>
-{%- elif settings['filetype'] == "track" -%}
-  <script type="text/javascript" src="{{ url_for('static', filename='js/main_track.js') }}"></script>
-{%- endif -%}
 
 <!-- START DeepCell Label FUNCTION CALL -->
 <script>
   var settings = {{settings | tojson}};
   document.getElementById("loading-bar").classList.add("active");
-  loadS3File(settings);
+  let input_bucket = {{ input_bucket }};
+  let output_bucket = {{ output_bucket }};
+  let path = {{ path }};
+  $.ajax({
+    type: 'POST',
+    url: `${document.location.origin}/createproject` +
+    `?source=s3&bucket=${input_bucket}&path=${path}`,
+    async: true
+  }).done((payload) => {window.location = `/project/${payload.projectId}?bucket=${output_bucket}`;} );
 
 </script>
 <!-- END DeepCell Label FUNCTION CALL -->

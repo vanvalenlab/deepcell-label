@@ -581,7 +581,6 @@ const padding = 5;
 const maxLabelsMap = new Map();
 
 let rgb;
-let inputBucket;
 let outputBucket;
 
 var rendering_raw = false;
@@ -1025,15 +1024,6 @@ function displayUndoRedo() {
   redoButton.style.width = canvasElement.width / 2 + 'px';
 }
 
-function loadS3File(settings) {
-  file = settings.filename;
-  $.ajax({
-    type: 'POST',
-    url: `${document.location.origin}/createproject?source=s3&path=${file}`,
-    async: true
-  }).done((payload) => {window.location = `/project/${payload.projectId}`;} );
-}
-
 function getProject(projectId, rgb, cb) {
   $.ajax({
     type: 'GET',
@@ -1156,7 +1146,6 @@ function handleFirstPayload(payload) {
 }
 
 function startDeepCellLabel(settings) {
-  inputBucket = settings.input_bucket;
   outputBucket = settings.output_bucket;
   rgb = settings.rgb;
   display_labels = !settings.rgb;

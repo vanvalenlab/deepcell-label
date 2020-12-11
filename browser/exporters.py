@@ -114,7 +114,7 @@ class S3Exporter(Exporter):
     def __init__(self, project):
         super().__init__(project)
 
-    def export(self, bucket=S3_OUTPUT_BUCKET):
+    def export(self, bucket):
         _export = self.get_export()
         filestream = _export()
         # store npz file object in bucket/path
