@@ -292,7 +292,7 @@ def test_get_label_png():
 
     label_png = project._get_label_png()
 
-    assert type(label_png) is io.BytesIO
+    assert isinstance(label_png, io.BytesIO)
     assert label_png.getvalue() == expected_png.getvalue()
 
 
@@ -307,7 +307,7 @@ def test_get_raw_png_greyscale():
     expected_png = pngify(expected_frame, vmin=0, vmax=None, cmap='cubehelix')
 
     raw_png = project._get_raw_png()
-    assert type(raw_png) is io.BytesIO
+    assert isinstance(raw_png, io.BytesIO)
     assert raw_png.getvalue() == expected_png.getvalue()
 
 
@@ -320,7 +320,7 @@ def test_get_raw_png_rgb():
     expected_png = pngify(expected_frame, vmin=None, vmax=None, cmap=None)
 
     raw_png = project._get_raw_png()
-    assert type(raw_png) is io.BytesIO
+    assert isinstance(raw_png, io.BytesIO)
     assert raw_png.getvalue() == expected_png.getvalue()
 
 
