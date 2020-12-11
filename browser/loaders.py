@@ -138,7 +138,7 @@ class Loader():
         # if filenames are different, try to load them anyways
         else:
             self._raw_array = npz[npz.files[0]]
-        
+
         # Look for label filenames independently of raw names
         if 'y' in npz.files:
             self._label_array = npz['y']

@@ -347,7 +347,7 @@ def make_settings(filename):
         'title': title,
         'rgb': rgb,
         'pixel_only': pixel_only,
-        'label_only':label_only,
+        'label_only': label_only,
         'output_bucket': output_bucket,
     }
 

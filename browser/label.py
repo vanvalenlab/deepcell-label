@@ -835,7 +835,7 @@ class TrackEdit(BaseEdit):
         # cell does not exist anywhere in trk:
         except KeyError:
             self.labels.tracks[add_label] = {
-                'label': int(add_label),
+                'label': str(add_label),
                 'frames': [frame],
                 'daughters': [],
                 'frame_div': None,

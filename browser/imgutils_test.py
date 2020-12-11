@@ -5,10 +5,11 @@ import os
 from skimage.io import imread
 import numpy as np
 import matplotlib.pyplot as plt
-
 import pytest
 
 import imgutils
+import models
+from conftest import DummyLoader
 
 
 def test_pngify(tmpdir):
@@ -42,9 +43,18 @@ def test_pngify(tmpdir):
     np.testing.assert_equal(imgarr.shape, loaded_image.shape[:-1])
 
 
-def test_add_outlines(project):
-    for label_frame in project.label_frames:
-        frame = label_frame.frame[..., project.channel]
-        outlined = imgutils.add_outlines(frame)
-        assert (outlined[outlined >= 0] == frame[outlined >= 0]).all()
-        assert (outlined[outlined < 0] == -frame[outlined < 0]).all()
+def test_add_outlines(db_session):
+    db_session.autoflush = False
+    labels = np.identity(10)
+    # Add frame and channel dimensions
+    labels = np.expand_dims(labels, (0, -1))
+    assert labels.shape == (1, 10, 10, 1)
+    project = models.Project.create(DummyLoader(labels=labels))
+
+    frame = 0
+    feature = 0
+
+    label_array = project.label_frames[frame].frame[..., feature]
+    outlined = imgutils.add_outlines(label_array)
+    assert (outlined[outlined >= 0] == label_array[outlined >= 0]).all()
+    assert (outlined[outlined < 0] == -label_array[outlined < 0]).all()

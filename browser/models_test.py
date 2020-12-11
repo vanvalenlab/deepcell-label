@@ -326,21 +326,21 @@ def test_get_raw_png_rgb():
 
 def test_get_max_label_all_zeroes():
     labels = np.zeros((1, 1, 1, 1))
-    project = models.Project.create(DummyLoader(label=labels))
+    project = models.Project.create(DummyLoader(labels=labels))
     max_label = project.get_max_label()
     assert max_label == 0
 
 
 def test_get_max_label_all_ones():
     labels = np.ones((1, 1, 1, 1))
-    project = models.Project.create(DummyLoader(label=labels))
+    project = models.Project.create(DummyLoader(labels=labels))
     max_label = project.get_max_label()
     assert max_label == 1
 
 
 def test_get_max_label_two_features():
     labels = np.array([[[[1, 2]]]])
-    project = models.Project.create(DummyLoader(label=labels))
+    project = models.Project.create(DummyLoader(labels=labels))
     project.feature = 0
     project.update()
     max_label = project.get_max_label()
@@ -353,7 +353,7 @@ def test_get_max_label_two_features():
 
 def test_get_max_label_two_frames():
     labels = np.array([[[[1]]], [[[2]]]])
-    project = models.Project.create(DummyLoader(label=labels))
+    project = models.Project.create(DummyLoader(labels=labels))
     max_label = project.get_max_label()
     assert max_label == 2
 
