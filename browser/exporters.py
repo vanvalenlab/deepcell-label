@@ -1,3 +1,4 @@
+"""Classes to export a DeepCell Label project as a .npz or .trk file."""
 import boto3
 import io
 import pathlib

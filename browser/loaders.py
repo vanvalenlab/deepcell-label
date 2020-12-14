@@ -1,3 +1,9 @@
+"""
+Classes to load external data into a DeepCell Label Project.
+Provides access to raw_array, label_array, cell_ids, and cell_info
+while creating a Project.
+"""
+
 import io
 import json
 import pathlib
