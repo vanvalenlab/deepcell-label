@@ -76,12 +76,11 @@ class LabelInfoMaker():
         feature_info = {}
         for cell in feature_cells:
             cell = int(cell)
-            feature_info[cell] = {}
-            feature_info[cell]['label'] = str(cell)
-            feature_info[cell]['frames'] = []
+            feature_info[cell] = {'label': str(cell),
+                                  'frames': [],
+                                  'slices': ''}
             for frame in range(self.num_frames):
                 if cell in feature_labels[frame, ...]:
                     feature_info[cell]['frames'].append(int(frame))
-            feature_info[cell]['slices'] = ''
         self.cell_ids[feature] = feature_cells
         self.cell_info[feature] = feature_info
