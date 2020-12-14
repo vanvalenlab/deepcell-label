@@ -181,7 +181,7 @@ def test_project_finished(client):
 
 def test_download_project(client, mocker):
     project = models.Project.create(DummyLoader())
-    mocked_export = mocker.patch('blueprints.exporters.BrowserExporter.export',
+    mocked_export = mocker.patch('blueprints.exporters.Exporter.export',
                                  return_value=io.BytesIO())
     response = client.get(f'/downloadproject/{project.token}')
     assert response.status_code == 200
