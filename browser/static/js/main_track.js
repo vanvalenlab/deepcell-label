@@ -461,7 +461,7 @@ var brush;
 let mouse_trace = [];
 let outputBucket;
 
-function upload(cb) {
+function upload_file(cb) {
   $.ajax({
     type: 'POST',
     url: `${document.location.origin}/upload/${outputBucket}/${project_id}`,
