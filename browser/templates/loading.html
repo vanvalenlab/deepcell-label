@@ -16,9 +16,9 @@
 <!-- START DeepCell Label FUNCTION CALL -->
 <script>
   document.getElementById("loading-bar").classList.add("active");
-  let input_bucket = {{ input_bucket }};
-  let output_bucket = {{ output_bucket }};
-  let path = {{ path }};
+  let input_bucket = "{{ input_bucket }}";
+  let output_bucket = '{{ output_bucket }}";
+  let path = "{{ path }}";
   $.ajax({
     type: 'POST',
     url: `${document.location.origin}/createproject?source=s3&bucket=${input_bucket}&path=${path}`,
