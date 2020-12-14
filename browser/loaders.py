@@ -4,12 +4,12 @@ import pathlib
 import timeit
 import tempfile
 import tarfile
-import tifffile
 
 import boto3
 import imageio
 import numpy as np
 from PIL import Image
+from skimage.external import tifffile
 
 from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_INPUT_BUCKET
 from labelmaker import LabelInfoMaker
