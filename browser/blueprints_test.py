@@ -191,7 +191,7 @@ def test_download_project(client, mocker):
 def test_upload_to_s3_npz(client, mocker):
     project = models.Project.create(DummyLoader(path='test.npz'))
     mocked_export = mocker.patch('blueprints.exporters.S3Exporter.export')
-    response = client.get(f'/upload_file/caliban-output/{project.token}')
+    response = client.get(f'/upload/caliban-output/{project.token}')
     assert response.status_code == 302
     mocked_export.assert_called()
 
@@ -199,12 +199,12 @@ def test_upload_to_s3_npz(client, mocker):
 def test_upload_to_s3_trk(client, mocker):
     project = models.Project.create(DummyLoader(path='test.trk'))
     mocked_export = mocker.patch('blueprints.exporters.S3Exporter.export')
-    response = client.get(f'/upload_file/caliban-output/{project.token}')
+    response = client.get(f'/upload/caliban-output/{project.token}')
     assert response.status_code == 302
     mocked_export.assert_called()
 
 
 def test_upload_to_s3_missing(client, mocker):
     mocker.patch('blueprints.exporters.S3Exporter.export')
-    response = client.get('/upload_file/1')
+    response = client.get('/upload/caliban-output/1')
     assert response.status_code == 404

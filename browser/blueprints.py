@@ -295,7 +295,7 @@ def download_project(token):
     return send_file(filestream, as_attachment=True, attachment_filename=exporter.path)
 
 
-@bp.route('/upload_file/<bucket>/<token>', methods=['GET', 'POST'])
+@bp.route('/upload/<bucket>/<token>', methods=['GET', 'POST'])
 def upload_project_to_s3(bucket, token):
     """Upload .trk/.npz data file to AWS S3 bucket."""
     start = timeit.default_timer()
