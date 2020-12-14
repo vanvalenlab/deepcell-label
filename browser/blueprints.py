@@ -289,8 +289,7 @@ def download_project(token):
     if not project:
         return abort(404, description=f'project {token} not found')
 
-    # Save data file and send to S3 bucket
-    exporter = exporters.BrowserExporter(project)
+    exporter = exporters.Exporter(project)
     filestream = exporter.export()
 
     return send_file(filestream, as_attachment=True, attachment_filename=exporter.path)

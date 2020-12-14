@@ -111,12 +111,8 @@ class S3Exporter(Exporter):
     Implementation of Exporter interface to upload files to S3 buckets.
     """
 
-    def __init__(self, project):
-        super().__init__(project)
-
     def export(self, bucket):
-        _export = self.get_export()
-        filestream = _export()
+        filestream = super().export()
         # store npz file object in bucket/path
         s3 = self._get_s3_client()
         s3.upload_fileobj(filestream, bucket, self.path)
@@ -128,21 +124,3 @@ class S3Exporter(Exporter):
             aws_access_key_id=AWS_ACCESS_KEY_ID,
             aws_secret_access_key=AWS_SECRET_ACCESS_KEY
         )
-
-
-class LocalFileSystemExporter(Exporter):
-    """
-    Implementation of Exporter interface to download Project files to the local file system.
-    """
-    pass
-
-
-class BrowserExporter(Exporter):
-    """
-    Implementation of Exporter interface to download Project files through the browser.
-    """
-
-    def export(self):
-        _export = self.get_export()
-        filestream = _export()
-        return filestream
