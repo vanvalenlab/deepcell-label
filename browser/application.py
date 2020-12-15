@@ -82,11 +82,6 @@ def create_app(**config_overrides):
 
     compress.init_app(app)
     dropzone.init_app(app)
-    app.config.update(
-        # Flask-Dropzone config:
-        DROPZONE_MAX_FILE_SIZE=128,  # 128 MB max filesize
-        DROPZONE_TIMEOUT=60 * 1000  # 1 minute upload timeout
-    )
 
     # For flask monitoring dashboard
     if config.DASHBOARD_CONFIG:
@@ -100,7 +95,7 @@ def create_app(**config_overrides):
 
         dashboard.config.group_by = group_action
         dashboard.bind(app)
-
+    import pdb; pdb.set_trace()
     return app
 
 

@@ -1,23 +1,13 @@
 import os
 
+ALLOWED_TRACK_EXTENSIONS = set(['.trk', '.trks'])
 
-ALLOWED_EXTENSIONS = set([
-    '.txt', '.md', '.markdown', '.pdf',
-    '.png', '.jpg', '.jpeg', '.gif',
-])
+ALLOWED_ZSTACK_EXTENSIONS = set(['.npz', '.png', '.tif', '.tiff'])
 
-ALLOWED_IMAGE_EXTENSIONS = set([
-    '.npz', '.trk', '.trks', '.png',
-    '.tif', '.tiff',
-])
-
+ALLOWED_EXTENSIONS = ALLOWED_TRACK_EXTENSIONS | ALLOWED_ZSTACK_EXTENSIONS
 
 def allowed_file(name):
     return os.path.splitext(str(name).lower())[-1] in ALLOWED_EXTENSIONS
-
-
-def is_valid_file(name):
-    return is_zstack_file(name) or is_track_file(name)
 
 
 def is_track_file(name):
@@ -29,7 +19,7 @@ def is_track_file(name):
     Returns:
         bool: True if the file is trk or trks, otherwise False.
     '''
-    return os.path.splitext(str(name).lower())[-1] in {'.trk', '.trks'}
+    return os.path.splitext(str(name).lower())[-1] in ALLOWED_TRACK_EXTENSIONS
 
 
 def is_zstack_file(name):
@@ -41,4 +31,4 @@ def is_zstack_file(name):
     Returns:
         bool: True if the file is npz, otherwise False.
     '''
-    return os.path.splitext(str(name).lower())[-1] in {'.npz', '.png', '.tif', '.tiff'}
+    return os.path.splitext(str(name).lower())[-1] in ALLOWED_ZSTACK_EXTENSIONS
