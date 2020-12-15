@@ -236,7 +236,7 @@ class Project(db.Model):
         logger.debug('Finished project %s in %ss.',
                      self.id, timeit.default_timer() - start)
 
-    def create_memento(self, action_name='', all_frames=False, session=None):
+    def create_memento(self, action_name, all_frames=False, session=None):
         """
         Saves the project state.
         """
