@@ -10,6 +10,7 @@ from pytest_lazyfixture import lazy_fixture
 from application import create_app  # pylint: disable=C0413
 from models import Project, Action
 from loaders import Loader
+from labelmaker import LabelInfoMaker
 from helpers import is_track_file
 
 
@@ -22,32 +23,23 @@ TEST_DATABASE_URI = 'sqlite:///{}'.format(TESTDB_PATH)
 
 # TODO: Could this become a fixture?
 class DummyLoader(Loader):
-    def __init__(self, raw=None, labels=None, path='test.npz', source='s3'):
+    def __init__(self, raw=None, labels=None, path='test', source='s3', tracking=False):
         super().__init__()
         if raw is None:
             raw = np.zeros((1, 1, 1, 1))
-        if labels is not None:
-            if raw.shape != labels.shape:
-                raw = np.zeros(labels.shape)
-            self._label_array = labels
-        self._raw_array = raw
 
+        if labels is None:
+            labels = np.zeros(raw.shape)
+        elif labels.shape != raw.shape:
+            raw = np.zeros(labels.shape)
+
+        self._raw_array = raw
+        self._label_array = labels
         self._path = path
         self.source = source
 
-        if is_track_file(self._path) and labels is not None:
-            self._label_array = labels[..., [0]]  # .trk files have only one feature
-            self._raw_array = np.zeros(self._label_array.shape)
-
-            self._cell_info = {0:
-                               {label: {'frame_div': None,
-                                        'daughters': [],
-                                        # NOTE: assumes all labels are in all frames
-                                        'frames': list(range(self._label_array.shape[0])),
-                                        'label': label,
-                                        'capped': False,
-                                        'parent': None}
-                                for label in np.unique(self._label_array) if label != 0}}
+        if tracking:
+            self._label_maker = LabelInfoMaker(labels, tracking=True)
 
 
 @pytest.fixture(scope='session')
