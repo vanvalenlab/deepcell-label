@@ -15,12 +15,16 @@ class LabelInfoMaker():
                each label dict has keys 'label', 'frames', and 'slices'
     """
 
-    def __init__(self, labels):
+    def __init__(self, labels, tracking=False):
         self.labels = labels
         self.num_features = labels.shape[-1]
         self.num_frames = labels.shape[0]
         self._cell_ids = None
         self._cell_info = None
+        self._tracking = tracking
+
+        if self._tracking and self.num_features != 1:
+            raise ValueError('Labels for tracking projects must have one feature.')
 
     @property
     def cell_ids(self):
@@ -31,7 +35,10 @@ class LabelInfoMaker():
     @property
     def cell_info(self):
         if self._cell_info is None:
-            self.compute_info()
+            if self._tracking:
+                self.compute_tracks()
+            else:
+                self.compute_info()
         return self._cell_info
 
     def compute_ids(self):
@@ -84,3 +91,28 @@ class LabelInfoMaker():
                     feature_info[cell]['frames'].append(int(frame))
         self.cell_ids[feature] = feature_cells
         self.cell_info[feature] = feature_info
+
+    def compute_tracks(self):
+        """
+        Create an tracks dictionary from a labels array.
+        Includes no relationships, only placeholders to build a lineage,
+        like frame_div, daughters, capped, parent.
+        """
+        assert self.num_features == 1
+
+        cells = np.unique(self.labels)[np.nonzero(np.unique(self.labels))]
+        tracks = {}
+        for cell in cells:
+            cell = int(cell)
+            tracks[cell] = {'label': str(cell),
+                            'frames': [],
+                            'slices': '',
+                            'frame_div': None,
+                            'daughters': [],
+                            'capped': False,
+                            'parent': None}
+            for frame in range(self.labels.shape[0]):
+                if cell in self.labels[frame, ...]:
+                    tracks[cell]['frames'].append(int(frame))
+        self.cell_ids = {0: cells}
+        self.cell_info = {0: tracks}
