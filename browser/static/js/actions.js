@@ -38,7 +38,7 @@ class ChangeFrame extends Action {
   }
 
   do() {
-    let promise = setDisplay('frame', this.newValue);
+    const promise = setDisplay('frame', this.newValue);
     promise.done( () => {
       current_frame = this.newValue;
       if (this.mode.action !== '') { this.mode.clear() };
@@ -48,7 +48,7 @@ class ChangeFrame extends Action {
 
 
   undo() {
-    let promise = setDisplay('frame', this.oldValue);
+    const promise = setDisplay('frame', this.oldValue);
     promise.done( () => {
       current_frame = this.oldValue;
       if (this.mode.action !== '') { this.mode.clear() };
@@ -71,7 +71,7 @@ class ChangeFeature extends Action {
   }
 
   do() {
-    let promise = setDisplay('feature', this.newValue);
+    const promise = setDisplay('feature', this.newValue);
     promise.done( () => {
       this.mode.feature = this.newValue;
       this.mode.clear();
@@ -80,7 +80,7 @@ class ChangeFeature extends Action {
   }
 
   undo() {
-    let promise = setDisplay('feature', this.oldValue);
+    const promise = setDisplay('feature', this.oldValue);
     promise.done( () => {
       this.mode.feature = this.oldValue;
       this.mode.clear();
@@ -104,7 +104,7 @@ class ChangeChannel extends Action {
   }
 
   do() {
-    let promise = setDisplay('channel', this.newValue);
+    const promise = setDisplay('channel', this.newValue);
     promise.done( () => {
       this.adjust(this.oldValue, this.newValue);
     });
@@ -112,7 +112,7 @@ class ChangeChannel extends Action {
   }
 
   undo() {
-    let promise = setDisplay('channel', this.oldValue);
+    const promise = setDisplay('channel', this.oldValue);
     promise.done( () => {
       this.adjust(this.newValue, this.oldValue);
     });
@@ -145,7 +145,7 @@ class ChangeChannel extends Action {
  * @param {int} value value to set to attribute
  */
 function setDisplay(displayAttr, value) {
-  let promise = $.ajax({
+  const promise = $.ajax({
     type: 'POST',
     url: `${document.location.origin}/changedisplay/${project_id}/${displayAttr}/${value}`,
     async: true
