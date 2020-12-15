@@ -1,6 +1,7 @@
 """Tests for labelmaker.py"""
 
 import numpy as np
+import pytest
 
 from labelmaker import LabelInfoMaker
 
@@ -58,3 +59,33 @@ class TestLabelInfoMaker():
 
         assert self.compare_cell_ids(labeler.cell_ids, expected_ids)
         assert labeler.cell_info == expected_info
+
+    def test_tracking_empty(self):
+        labels = np.zeros((1, 1, 1, 1))
+        expected_ids = {0: np.array([])}
+        expected_info = {0: {}}
+        labeler = LabelInfoMaker(labels, tracking=True)
+
+        assert self.compare_cell_ids(labeler.cell_ids, expected_ids)
+        assert labeler.cell_info == expected_info
+
+    def test_tracking_one_cell(self):
+        labels = np.ones((1, 1, 1, 1))
+        expected_ids = {0: np.array([1])}
+        expected_info = {0: {1: {
+            'label': '1',
+            'frames': [0],
+            'frame_div': None,
+            'daughters': [],
+            'capped': False,
+            'parent': None
+        }}}
+        labeler = LabelInfoMaker(labels, tracking=True)
+
+        assert self.compare_cell_ids(labeler.cell_ids, expected_ids)
+        assert labeler.cell_info == expected_info
+
+    def test_tracking_two_features(self):
+        labels = np.ones((1, 1, 1, 2))
+        with pytest.raises(ValueError):
+            labeler = LabelInfoMaker(labels, tracking=True)

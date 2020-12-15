@@ -31,6 +31,8 @@ class Exporter():
             path = path.with_suffix('.npz')
         elif is_track_file(path):
             path = path.with_suffix('.trk')
+        else:
+            path = path.with_suffix('.npz')
         return str(path)
 
     def export(self):

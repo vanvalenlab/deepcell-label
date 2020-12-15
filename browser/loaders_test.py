@@ -52,7 +52,7 @@ def test_load_trk():
     expected_tracks = {1: {'frame_div': None,
                            'daughters': [],
                            'frames': [0],
-                           'label': 1,
+                           'label': '1',
                            'capped': False,
                            'parent': None}}
 
@@ -112,7 +112,7 @@ def test_load_trk_multiple_lineages():
     expected_tracks = 2 * [{1: {'frame_div': None,
                                 'daughters': [],
                                 'frames': [0],
-                                'label': 1,
+                                'label': '1',
                                 'capped': False,
                                 'parent': None}}]
 

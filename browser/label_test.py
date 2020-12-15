@@ -334,6 +334,26 @@ class TestTrackEdit():
         cell = 1
         frame = 1
         feature = 0
+        prev_track = tracks[cell].copy()
+        with app.app_context():
+            edit.project.frame = frame
+            edit.action_new_track(cell)
+            assert cell in edit.frame[..., feature]
+            assert prev_track == tracks[cell]
+
+    def test_action_new_track(self, app):
+        """A new track on the first frame a label appears does nothing."""
+        # two 1x1 frames with one feature; cell starts on second frame
+        labels = np.array([[[[1]]],
+                           [[[1]]]])
+        assert labels.shape == (2, 1, 1, 1)
+        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
+        edit = label.TrackEdit(project)
+        tracks = edit.labels.tracks
+
+        cell = 1
+        frame = 1
+        feature = 0
         expected_new_cell = 2
         prev_track = tracks[cell].copy()
         with app.app_context():

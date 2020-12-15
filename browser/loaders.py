@@ -31,6 +31,7 @@ class Loader():
         self._label_array = None
         self._label_maker = None
         self._path = None
+        self._tracking = False
 
     @property
     def path(self):
@@ -94,7 +95,7 @@ class Loader():
     @property
     def label_maker(self):
         if self._label_maker is None:
-            self._label_maker = LabelInfoMaker(self.label_array)
+            self._label_maker = LabelInfoMaker(self.label_array, self._tracking)
         return self._label_maker
 
     def _load(self):
@@ -150,6 +151,7 @@ class Loader():
         """
         Load a .trk file into the Loader.
         """
+        self._tracking = True
         with tempfile.NamedTemporaryFile() as temp:
             temp.write(data.read())
             with tarfile.open(temp.name, 'r') as trks:
