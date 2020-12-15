@@ -29,10 +29,7 @@ class Loader():
     def __init__(self):
         self._raw_array = None
         self._label_array = None
-        self._cell_ids = None
-        self._cell_info = None
         self._label_maker = None
-
         self._path = None
 
     @property
@@ -80,9 +77,7 @@ class Loader():
             dict: contains a dict for each feature, which contains a 1D ndarray
                   with the labels present in that feature
         """
-        if self._cell_ids is None:
-            self._cell_ids = self.label_maker.cell_ids
-        return self._cell_ids
+        return self.label_maker.cell_ids
 
     @property
     def cell_info(self):
@@ -94,9 +89,7 @@ class Loader():
                   'frames': a list of frames the label is present in
                   'slices': empty string, to be filled in with the readable frames (e.g. [0-20])
         """
-        if self._cell_info is None:
-            self._cell_info = self.label_maker.cell_info
-        return self._cell_info
+        return self.label_maker.cell_info
 
     @property
     def label_maker(self):
