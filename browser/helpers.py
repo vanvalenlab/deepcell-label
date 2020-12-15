@@ -1,10 +1,10 @@
 import os
 
+
 ALLOWED_TRACK_EXTENSIONS = set(['.trk', '.trks'])
-
 ALLOWED_ZSTACK_EXTENSIONS = set(['.npz', '.png', '.tif', '.tiff'])
-
 ALLOWED_EXTENSIONS = ALLOWED_TRACK_EXTENSIONS | ALLOWED_ZSTACK_EXTENSIONS
+
 
 def allowed_file(name):
     return os.path.splitext(str(name).lower())[-1] in ALLOWED_EXTENSIONS

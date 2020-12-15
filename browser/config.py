@@ -28,8 +28,8 @@ SQLALCHEMY_DATABASE_URI = config('SQLALCHEMY_DATABASE_URI',
 DASHBOARD_CONFIG = config('DASHBOARD_CONFIG', default='')
 
 # Flask-Dropzone
-DROPZONE_MAX_FILE_SIZE = config('DROPZONE_MAX_FILE_SIZE', default=128),  # measured in MB
-DROPZONE_TIMEOUT = config('DROPZONE_TIMEOUT', default=60*1000) # measured in ms
+DROPZONE_MAX_FILE_SIZE = config('DROPZONE_MAX_FILE_SIZE', default=128)  # measured in MB
+DROPZONE_TIMEOUT = config('DROPZONE_TIMEOUT', default=60 * 1000)  # measured in ms
 
 # Compression settings
 COMPRESS_MIMETYPES = ['text/html', 'text/css', 'text/xml',
