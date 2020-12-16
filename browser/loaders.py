@@ -30,13 +30,14 @@ class Loader():
         self._raw_array = None
         self._label_array = None
         self._label_maker = None
-        self._path = None
+        self.path = ''
         self._tracking = False
 
     @property
-    def path(self):
-        assert self._path is not None
-        return str(self._path)
+    def tracking(self):
+        if pathlib.Path(self.path).suffix in {'.trk', '.trks'}:
+            self._tracking = True
+        return self._tracking
 
     @property
     def raw_array(self):
@@ -95,7 +96,7 @@ class Loader():
     @property
     def label_maker(self):
         if self._label_maker is None:
-            self._label_maker = LabelInfoMaker(self.label_array, self._tracking)
+            self._label_maker = LabelInfoMaker(self.label_array, self.tracking)
         return self._label_maker
 
     def _load(self):
@@ -222,7 +223,7 @@ class S3Loader(Loader):
     def __init__(self, path, bucket):
         super(S3Loader, self).__init__()
         # full path to file within bucket, including filename
-        self._path = pathlib.Path(path.replace('__', '/'))
+        self._path = path.replace('__', '/')
         # bucket to pull file from on S3
         self.bucket = bucket
         self.source = 's3'
@@ -258,7 +259,7 @@ class LocalFileSystemLoader(Loader):
     def __init__(self, path):
         super(LocalFileSystemLoader, self).__init__()
         # path to file including filename
-        self._path = pathlib.Path(path.replace('__', '/'))
+        self._path = path.replace('__', '/')
         self.source = 'lfs'
 
     def _load(self):
@@ -275,7 +276,7 @@ class DroppedLoader(Loader):
     def __init__(self, f):
         super(DroppedLoader, self).__init__()
         self._data = f
-        self._path = pathlib.Path(f.filename)
+        self._path = f.filename
         self.source = 'dropped'
 
     def _load(self):

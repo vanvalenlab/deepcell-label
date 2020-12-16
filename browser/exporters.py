@@ -9,7 +9,6 @@ import json
 import numpy as np
 
 from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_OUTPUT_BUCKET
-from helpers import is_track_file, is_zstack_file
 
 
 class Exporter():
@@ -27,9 +26,7 @@ class Exporter():
         adds the Project's token to create a unique filename.
         """
         path = pathlib.Path(self.project.path)
-        if is_zstack_file(path):
-            path = path.with_suffix('.npz')
-        elif is_track_file(path):
+        if self.project.is_track:
             path = path.with_suffix('.trk')
         else:
             path = path.with_suffix('.npz')
@@ -49,12 +46,12 @@ class Exporter():
         Returns:
             function: exports a DeepCell Label project into a BytesIO buffer
         """
-        if is_zstack_file(self.path):
+        if self.project.is_zstack:
             _export = self.export_npz
-        elif is_track_file(self.path):
+        elif self.project.is_track:
             _export = self.export_trk
         else:
-            raise ValueError('Cannot export file: {}'.format(self.path))
+            raise ValueError('Cannot export file: {}'.format(self.project.path))
         return _export
 
     def export_npz(self):

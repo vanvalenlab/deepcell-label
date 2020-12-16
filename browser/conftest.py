@@ -11,7 +11,6 @@ from application import create_app  # pylint: disable=C0413
 from models import Project, Action
 from loaders import Loader
 from labelmaker import LabelInfoMaker
-from helpers import is_track_file
 
 
 # flask-sqlalchemy fixtures from http://alexmic.net/flask-sqlalchemy-pytest/
@@ -35,11 +34,8 @@ class DummyLoader(Loader):
 
         self._raw_array = raw
         self._label_array = labels
-        self._path = path
+        self.path = path
         self.source = source
-
-        if is_track_file(path):
-            self._tracking = True
 
 
 @pytest.fixture(scope='session')

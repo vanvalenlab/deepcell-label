@@ -21,7 +21,6 @@ from flask import current_app
 from flask import send_file
 from werkzeug.exceptions import HTTPException
 
-from helpers import is_track_file, is_zstack_file
 from label import TrackEdit, ZStackEdit, BaseEdit, ChangeDisplay
 from models import Project
 import loaders
@@ -271,9 +270,7 @@ def project(token):
     if project.finished is not None:
         return abort(410, description=f'project {token} already submitted')
 
-    settings = make_settings(project.path)
-    settings['token'] = project.token
-    settings['source'] = str(project.source)
+    settings = make_settings(project)
 
     return render_template(
         'tool.html',
@@ -317,16 +314,15 @@ def upload_project_to_s3(bucket, token):
 
 def get_edit(project):
     """Factory for Edit objects"""
-    if is_zstack_file(project.path):
-        return ZStackEdit(project)
-    elif is_track_file(project.path):
+    if project.is_track:
         return TrackEdit(project)
-    return BaseEdit(project)
+    else:
+        return ZStackEdit(project)
 
 
-def make_settings(filename):
+def make_settings(project):
     """Returns a dictionary of settings to send to the front-end."""
-    if is_track_file(filename):
+    if project.is_track:
         filetype = 'track'
         title = 'Tracking Tool'
     else:
@@ -348,6 +344,8 @@ def make_settings(filename):
         'pixel_only': pixel_only,
         'label_only': label_only,
         'output_bucket': output_bucket,
+        'token': project.token,
+        'source': str(project.source)
     }
 
     return settings

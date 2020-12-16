@@ -7,6 +7,7 @@ import base64
 import copy
 import enum
 import logging
+import os
 import timeit
 from secrets import token_urlsafe
 
@@ -21,7 +22,6 @@ from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy.schema import PrimaryKeyConstraint, ForeignKeyConstraint
 
 from imgutils import pngify, add_outlines
-from helpers import is_zstack_file, is_track_file
 
 
 logger = logging.getLogger('models.Project')  # pylint: disable=C0103
@@ -128,7 +128,7 @@ class Project(db.Model):
         cmap.set_bad('black')
         self.colormap = cmap
 
-        if is_track_file(self.path):
+        if self.is_track:
             # Track files require a different scale factor
             self.scale_factor = 2
 
@@ -157,6 +157,14 @@ class Project(db.Model):
     def raw_array(self):
         """Compiles all raw frames into a single numpy array."""
         return np.array([frame.frame for frame in self.raw_frames])
+
+    @property
+    def is_zstack(self):
+        return os.path.splitext(self.path.lower())[-1] in {'.npz', '.png', '.tif', '.tiff'}
+
+    @property
+    def is_track(self):
+        return os.path.splitext(self.path.lower())[-1] in {'.trk', '.trks'}
 
     @staticmethod
     def get(token):
@@ -359,9 +367,9 @@ class Project(db.Model):
         payload['project_id'] = self.token
         payload['dimensions'] = (self.width, self.height)
         # Attributes specific to filetype
-        if is_track_file(self.path):
+        if self.is_track:
             payload['screen_scale'] = self.scale_factor
-        if is_zstack_file(self.path):
+        if self.is_zstack:
             payload['numChannels'] = self.num_channels
             payload['numFeatures'] = self.num_features
 

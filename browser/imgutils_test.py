@@ -1,4 +1,4 @@
-"""Tests for helpers.py"""
+"""Tests for imgutils.py"""
 
 import os
 
