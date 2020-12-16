@@ -1027,7 +1027,7 @@ function displayUndoRedo() {
 function getProject(projectId, rgb, cb) {
   $.ajax({
     type: 'GET',
-    url: `${document.location.origin}/getproject/${projectId}?rgb=${rgb}`,
+    url: `${document.location.origin}/api/project/${projectId}?rgb=${rgb}`,
     async: true
   }).done(cb);
 }

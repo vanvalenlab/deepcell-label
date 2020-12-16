@@ -217,7 +217,7 @@ def shortcut(filename):
         path=path)
 
 
-@bp.route('/getproject/<token>')
+@bp.route('/api/project/<token>', methods=['GET'])
 def get_project(token):
     """
     Retrieve data from a project already in the Project table.
@@ -237,15 +237,16 @@ def get_project(token):
     return jsonify(payload)
 
 
-@bp.route('/createproject', methods=['POST'])
+@bp.route('/api/project', methods=['POST'])
 def create_project():
     """
     Create a new Project.
     """
     start = timeit.default_timer()
     loader = loaders.get_loader(request)
-    current_app.logger.info('Creating project from %s', loader.path)
     project = Project.create(loader)
+    current_app.logger.info('Created project from %s in %s s.',
+                            loader.path, timeit.default_timer() - start)
     return {'projectId': project.token}
 
 

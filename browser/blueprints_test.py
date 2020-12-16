@@ -145,19 +145,19 @@ def test_redo(client):
 
 def test_create_project(client, mocker):
     mocker.patch('blueprints.loaders.get_loader', lambda *args: DummyLoader())
-    response = client.post(f'/createproject')
+    response = client.post(f'/api/project')
     assert response.status_code == 200
 
 
 def test_create_project_npz_s3(client, mocker):
     mocker.patch('blueprints.loaders.get_loader', lambda *args: DummyLoader())
-    response = client.post(f'/createproject')
+    response = client.post(f'/api/project')
     assert response.status_code == 200
 
 
 def test_get_project(client):
     project = models.Project.create(DummyLoader())
-    response = client.get(f'/getproject/{project.token}')
+    response = client.get(f'/api/project/{project.token}')
     assert response.status_code == 200
 
 

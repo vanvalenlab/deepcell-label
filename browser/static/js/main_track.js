@@ -711,7 +711,7 @@ function fetch_and_render_frame() {
 function getProject(projectId) {
   $.ajax({
     type: 'GET',
-    url: `${document.location.origin}/getproject/${projectId}`,
+    url: `${document.location.origin}/api/project/${projectId}`,
     async: false
   }).done(handlePayload);
 }

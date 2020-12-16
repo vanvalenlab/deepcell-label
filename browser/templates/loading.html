@@ -21,7 +21,7 @@
   let path = "{{ path }}";
   $.ajax({
     type: 'POST',
-    url: `${document.location.origin}/createproject?source=s3&bucket=${input_bucket}&path=${path}`,
+    url: `${document.location.origin}/api/project?source=s3&bucket=${input_bucket}&path=${path}`,
     async: true
   }).done((payload) => {window.location = `/project/${payload.projectId}?bucket=${output_bucket}`;} );
 </script>
