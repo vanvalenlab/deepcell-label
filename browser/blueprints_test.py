@@ -32,8 +32,7 @@ def test_health(client):
 def test_change_display(client):
 
     response = client.post('/changedisplay/0/frame/999999')
-    # TODO: detect abort(404) with this test; currently results in 500 error
-    # assert response.status_code == 404
+    assert response.status_code == 404
 
     for filename in ('test.npz', 'test.trk'):
 
@@ -82,13 +81,11 @@ def test_tool(client):
     assert response.status_code == 200
     assert b'<body>' in response.data
 
-    # TODO: test for bad extensions when creating projects
-    # filename = 'test-file.badext'
-    # response = client.post('/tool',
-    #                        content_type='multipart/form-data',
-    #                        data={'filename': filename})
-    # assert response.status_code == 400
-    # assert 'message' in response.json
+    filename = 'test-file.badext'
+    response = client.post('/tool',
+                           content_type='multipart/form-data',
+                           data={'filename': filename})
+    assert response.status_code == 200
 
 
 def test_shortcut(client):
@@ -109,17 +106,14 @@ def test_shortcut(client):
     assert response.status_code == 200
     assert b'<body>' in response.data
 
-    # TODO: test for bad extensions when creating projects
-    # response = client.get('/test-file.badext')
-    # assert response.status_code == 400
-    # assert 'message' in response.json
+    response = client.get('/test-file.badext')
+    assert response.status_code == 200
 
 
 def test_undo(client):
     # Project not found
     response = client.post('/undo/0')
-    # TODO: detect abort(404) with this test; currently results in 500 error
-    # assert response.status_code == 404
+    assert response.status_code == 404
 
     # Create a project
     project = models.Project.create(DummyLoader())
@@ -132,8 +126,7 @@ def test_undo(client):
 def test_redo(client):
     # Project not found
     response = client.post('/undo/0')
-    # TODO: detect abort(404) with this test; currently results in 500 error
-    # assert response.status_code == 404
+    assert response.status_code == 404
 
     # Create a project
     project = models.Project.create(DummyLoader())
@@ -149,10 +142,33 @@ def test_create_project(client, mocker):
     assert response.status_code == 200
 
 
-def test_create_project_npz_s3(client, mocker):
-    mocker.patch('blueprints.loaders.get_loader', lambda *args: DummyLoader())
-    response = client.post(f'/api/project')
+def test_create_project_npz(client, mocker):
+    mocker.patch('blueprints.Project.create')
+    response = client.post(f'/api/project?path=test.npz&source=s3')
     assert response.status_code == 200
+
+
+def test_create_project_trk(client, mocker):
+    mocker.patch('blueprints.Project.create')
+    response = client.post(f'/api/project?path=test.trk&source=s3')
+    assert response.status_code == 200
+
+
+def test_create_project_png(client, mocker):
+    mocker.patch('blueprints.Project.create')
+    response = client.post(f'/api/project?path=test.png&source=s3')
+    assert response.status_code == 200
+
+
+def test_create_project_tiff(client, mocker):
+    mocker.patch('blueprints.Project.create')
+    response = client.post(f'/api/project?path=test.tiff&source=s3')
+    assert response.status_code == 200
+
+
+def test_create_project_bad_extension(client, mocker):
+    response = client.post(f'/api/project?path=test.badext&source=s3')
+    assert response.status_code == 415
 
 
 def test_get_project(client):

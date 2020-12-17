@@ -112,16 +112,17 @@ class Loader():
         Returns:
             function: loads a response body from S3
         """
-        if self._path.suffix in {'.npz'}:
+        path = pathlib.Path(self.path)
+        if path.suffix in {'.npz'}:
             load_fn = self._load_npz
-        elif self._path.suffix in {'.trk', '.trks'}:
+        elif path.suffix in {'.trk', '.trks'}:
             load_fn = self._load_trk
-        elif self._path.suffix in {'.png'}:
+        elif path.suffix in {'.png'}:
             load_fn = self._load_png
-        elif self._path.suffix in {'.tiff', '.tif'}:
+        elif path.suffix in {'.tiff', '.tif'}:
             load_fn = self._load_tiff
         else:
-            raise InvalidExtension('Cannot load file: {}'.format(self.path))
+            raise InvalidExtension('Cannot load file: {}'.format(path))
         return load_fn
 
     def _load_npz(self, data):
@@ -223,7 +224,7 @@ class S3Loader(Loader):
     def __init__(self, path, bucket):
         super(S3Loader, self).__init__()
         # full path to file within bucket, including filename
-        self._path = path.replace('__', '/')
+        self.path = path.replace('__', '/')
         # bucket to pull file from on S3
         self.bucket = bucket
         self.source = 's3'
@@ -240,12 +241,12 @@ class S3Loader(Loader):
         Load a file from the S3 input bucket.
         """
         start = timeit.default_timer()
+        load_fn = self._get_load()
 
         s3 = self._get_s3_client()
         response = s3.get_object(Bucket=self.bucket, Key=str(self.path))
 
         data = io.BytesIO(response['Body'].read())
-        load_fn = self._get_load()
         load_fn(data)
 
         # logger.debug('Loaded file %s from S3 in %s s.',
@@ -259,7 +260,7 @@ class LocalFileSystemLoader(Loader):
     def __init__(self, path):
         super(LocalFileSystemLoader, self).__init__()
         # path to file including filename
-        self._path = path.replace('__', '/')
+        self.path = path.replace('__', '/')
         self.source = 'lfs'
 
     def _load(self):
@@ -276,7 +277,7 @@ class DroppedLoader(Loader):
     def __init__(self, f):
         super(DroppedLoader, self).__init__()
         self._data = f
-        self._path = f.filename
+        self.path = f.filename
         self.source = 'dropped'
 
     def _load(self):

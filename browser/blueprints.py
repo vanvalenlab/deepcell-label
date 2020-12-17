@@ -58,6 +58,7 @@ def handle_exception(error):
     current_app.logger.error('Encountered %s: %s',
                              error.__class__.__name__, error, exc_info=1)
 
+    traceback.print_exc()
     # now you're handling non-HTTP exceptions only
     return jsonify({'message': str(error)}), 500
 
@@ -77,18 +78,13 @@ def edit(token, action_type):
     if 'frame' in info:
         del info['frame']
 
-    try:
-        project = Project.get(token)
-        if not project:
-            return abort(404, description=f'project {token} not found')
-        edit = get_edit(project)
-        payload = edit.dispatch_action(action_type, info)
-        project.create_memento(action_type)
-        project.update()
-
-    except Exception as e:  # TODO: more error handling to identify problem
-        traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+    project = Project.get(token)
+    if not project:
+        return abort(404, description=f'project {token} not found')
+    edit = get_edit(project)
+    payload = edit.dispatch_action(action_type, info)
+    project.create_memento(action_type)
+    project.update()
 
     current_app.logger.debug('Finished action %s for project %s in %s s.',
                              action_type, token,
@@ -113,17 +109,12 @@ def change_display(token, display_attribute, value):
     """
     start = timeit.default_timer()
 
-    try:
-        project = Project.get(token)
-        if not project:
-            return abort(404, description=f'project {token} not found')
-        change = ChangeDisplay(project)
-        payload = change.change(display_attribute, value)
-        project.update()
-
-    except Exception as e:  # TODO: more error handling to identify problem
-        traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+    project = Project.get(token)
+    if not project:
+        return abort(404, description=f'project {token} not found')
+    change = ChangeDisplay(project)
+    payload = change.change(display_attribute, value)
+    project.update()
 
     current_app.logger.debug('Changed to %s %s for project %s in %s s.',
                              display_attribute, value, token,
@@ -134,14 +125,11 @@ def change_display(token, display_attribute, value):
 @bp.route('/undo/<token>', methods=['POST'])
 def undo(token):
     start = timeit.default_timer()
-    try:
-        project = Project.get(token)
-        if not project:
-            return abort(404, description=f'project {token} not found')
-        payload = project.undo()
-    except Exception as e:  # TODO: more error handling to identify problem
-        traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+
+    project = Project.get(token)
+    if not project:
+        return abort(404, description=f'project {token} not found')
+    payload = project.undo()
 
     current_app.logger.debug('Undid action for project %s finished in %s s.',
                              token, timeit.default_timer() - start)
@@ -151,14 +139,11 @@ def undo(token):
 @bp.route('/redo/<token>', methods=['POST'])
 def redo(token):
     start = timeit.default_timer()
-    try:
-        project = Project.get(token)
-        if not project:
-            return abort(404, description=f'project {token} not found')
-        payload = project.redo()
-    except Exception as e:  # TODO: more error handling to identify problem
-        traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+
+    project = Project.get(token)
+    if not project:
+        return abort(404, description=f'project {token} not found')
+    payload = project.redo()
 
     current_app.logger.debug('Redid action for project %s finished in %s s.',
                              token, timeit.default_timer() - start)
