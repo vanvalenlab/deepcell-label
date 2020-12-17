@@ -142,30 +142,6 @@ def test_create_project(client, mocker):
     assert response.status_code == 200
 
 
-def test_create_project_npz(client, mocker):
-    mocker.patch('blueprints.Project.create')
-    response = client.post(f'/api/project?path=test.npz&source=s3')
-    assert response.status_code == 200
-
-
-def test_create_project_trk(client, mocker):
-    mocker.patch('blueprints.Project.create')
-    response = client.post(f'/api/project?path=test.trk&source=s3')
-    assert response.status_code == 200
-
-
-def test_create_project_png(client, mocker):
-    mocker.patch('blueprints.Project.create')
-    response = client.post(f'/api/project?path=test.png&source=s3')
-    assert response.status_code == 200
-
-
-def test_create_project_tiff(client, mocker):
-    mocker.patch('blueprints.Project.create')
-    response = client.post(f'/api/project?path=test.tiff&source=s3')
-    assert response.status_code == 200
-
-
 def test_create_project_bad_extension(client, mocker):
     response = client.post(f'/api/project?path=test.badext&source=s3')
     assert response.status_code == 415
