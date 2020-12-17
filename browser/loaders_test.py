@@ -20,7 +20,9 @@ def test_load_raw_npz():
     npz.seek(0)
 
     loader = loaders.Loader()
-    loader._load_npz(npz)
+    loader.path = 'test.npz'
+    loader._data = npz
+    loader._load()
 
     np.testing.assert_array_equal(loader.raw_array, expected)
     np.testing.assert_array_equal(loader.label_array, expected)
@@ -37,7 +39,9 @@ def test_load_combined_npz():
     npz.seek(0)
 
     loader = loaders.Loader()
-    loader._load_npz(npz)
+    loader.path = 'test.npz'
+    loader._data = npz
+    loader._load()
 
     np.testing.assert_array_equal(loader.raw_array, expected_raw)
     np.testing.assert_array_equal(loader.label_array, expected_label)
@@ -75,7 +79,9 @@ def test_load_trk():
     trk.seek(0)
 
     loader = loaders.Loader()
-    loader._load_trk(trk)
+    loader.path = 'test.trk'
+    loader._data = trk
+    loader._load()
 
     np.testing.assert_array_equal(loader.raw_array, expected_raw)
     np.testing.assert_array_equal(loader.label_array, expected_label)
@@ -102,8 +108,10 @@ def test_load_trk_no_lineage():
     trk.seek(0)
 
     loader = loaders.Loader()
+    loader.path = 'test.trk'
+    loader._data = trk
     with pytest.raises(ValueError):
-        loader._load_trk(trk)
+        loader._load()
 
 
 def test_load_trk_multiple_lineages():
@@ -135,8 +143,10 @@ def test_load_trk_multiple_lineages():
     trk.seek(0)
 
     loader = loaders.Loader()
+    loader.path = 'test.trk'
+    loader._data = trk
     with pytest.raises(ValueError):
-        loader._load_trk(trk)
+        loader._load()
 
 
 def test_load_png():
@@ -149,7 +159,9 @@ def test_load_png():
     expected_label = np.zeros((1, 1, 1, 1))
 
     loader = loaders.Loader()
-    loader._load_png(out)
+    loader.path = 'test.png'
+    loader._data = out
+    loader._load()
 
     np.testing.assert_array_equal(loader.raw_array, expected_raw)
     np.testing.assert_array_equal(loader.label_array, expected_label)
@@ -167,7 +179,9 @@ def test_load_png_no_channels():
     expected_label = np.zeros((1, 1, 1, 1))
 
     loader = loaders.Loader()
-    loader._load_png(out)
+    loader.path = 'test.png'
+    loader._data = out
+    loader._load()
 
     np.testing.assert_array_equal(loader.raw_array, expected_raw)
     np.testing.assert_array_equal(loader.label_array, expected_label)
@@ -185,7 +199,9 @@ def test_load_png_four_channels():
     expected_label = np.zeros((1, 1, 1, 1))
 
     loader = loaders.Loader()
-    loader._load_png(out)
+    loader.path = 'test.png'
+    loader._data = out
+    loader._load()
 
     np.testing.assert_array_equal(loader.raw_array, expected_raw)
     np.testing.assert_array_equal(loader.label_array, expected_label)
@@ -203,7 +219,9 @@ def test_load_tiff():
     expected_label = np.zeros((1, 1, 1, 1))
 
     loader = loaders.Loader()
-    loader._load_tiff(out)
+    loader.path = 'test.tiff'
+    loader._data = out
+    loader._load()
 
     np.testing.assert_array_equal(loader.raw_array, expected_raw)
     np.testing.assert_array_equal(loader.label_array, expected_label)
@@ -222,7 +240,9 @@ def test_load_tiff_no_channels():
     expected_label = np.zeros((1, 1, 1, 1))
 
     loader = loaders.Loader()
-    loader._load_tiff(out)
+    loader.path = 'test.tiff'
+    loader._data = out
+    loader._load()
 
     np.testing.assert_array_equal(loader.raw_array, expected_raw)
     np.testing.assert_array_equal(loader.label_array, expected_label)
@@ -240,9 +260,21 @@ def test_load_tiff_four_channels():
     expected_label = np.zeros((1, 1, 1, 1))
 
     loader = loaders.Loader()
-    loader._load_tiff(out)
+    loader.path = 'test.tiff'
+    loader._data = out
+    loader._load()
 
     np.testing.assert_array_equal(loader.raw_array, expected_raw)
     np.testing.assert_array_equal(loader.label_array, expected_label)
     assert loader.cell_ids is not None
     assert loader.cell_info is not None
+
+
+def test_load_badext():
+    """Creates a dummy TIFF file with more than 3 channels and loads it."""
+
+    loader = loaders.Loader()
+    loader.path = 'test.badext'
+    loader._data = io.BytesIO()
+    with pytest.raises(loaders.InvalidExtension):
+        loader._load()

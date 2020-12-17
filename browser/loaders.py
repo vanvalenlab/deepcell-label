@@ -27,17 +27,23 @@ class Loader():
     """
 
     def __init__(self):
+        # numpy array with raw image data with shape (frames, height, width, channels)
         self._raw_array = None
+        # numpy array with labeled image data with shape (frame, height, width, features)
         self._label_array = None
+        # LabelInfoMaker object used to compute label metadata
         self._label_maker = None
+
+        # filestream containing file data to Load
+        self._data = None
+        # where the data came from as a string
+        self.source = None
+        # path to file as a string
         self.path = ''
-        self._tracking = False
 
     @property
     def tracking(self):
-        if pathlib.Path(self.path).suffix in {'.trk', '.trks'}:
-            self._tracking = True
-        return self._tracking
+        return pathlib.Path(self.path).suffix in {'.trk', '.trks'}
 
     @property
     def raw_array(self):
@@ -101,36 +107,26 @@ class Loader():
 
     def _load(self):
         """
-        Loads image data into the Loader.
-        To be implemented by implementations of Loader interface.
+        Loads image data into the Loader based on the file extension.
         """
-        raise NotImplementedError
-
-    def _get_load(self):
-        """
-        Simple factory to get the a load function based on the file extension.
-
-        Returns:
-            function: loads a response body from S3
-        """
+        assert self._data is not None
         path = pathlib.Path(self.path)
         if path.suffix in {'.npz'}:
-            load_fn = self._load_npz
+            self._load_npz()
         elif path.suffix in {'.trk', '.trks'}:
-            load_fn = self._load_trk
+            self._load_trk()
         elif path.suffix in {'.png'}:
-            load_fn = self._load_png
+            self._load_png()
         elif path.suffix in {'.tiff', '.tif'}:
-            load_fn = self._load_tiff
+            self._load_tiff()
         else:
             raise InvalidExtension('Cannot load file: {}'.format(path))
-        return load_fn
 
-    def _load_npz(self, data):
+    def _load_npz(self):
         """
         Loads a NPZ file into the Loader.
         """
-        npz = np.load(data)
+        npz = np.load(self._data)
 
         # standard names for image (X) and labeled (y)
         if 'X' in npz.files:
@@ -150,13 +146,13 @@ class Loader():
         elif len(npz.files) > 1:
                 self._label_array = npz[npz.files[1]]
 
-    def _load_trk(self, data):
+    def _load_trk(self):
         """
         Load a .trk file into the Loader.
         """
         self._tracking = True
         with tempfile.NamedTemporaryFile() as temp:
-            temp.write(data.read())
+            temp.write(self._data.read())
             with tarfile.open(temp.name, 'r') as trks:
 
                 # numpy can't read these from disk...
@@ -192,9 +188,9 @@ class Loader():
                 raise ValueError('Input file has multiple trials/lineages.')
             self._cell_info = {0: lineages[0]}
 
-    def _load_png(self, data):
+    def _load_png(self):
         """Loads a png file into a raw image array."""
-        img = Image.open(data)
+        img = Image.open(self._data)
         img = np.array(img)
         # Add channel dimension (if missing)
         if img.ndim == 2:
@@ -207,9 +203,9 @@ class Loader():
         self._raw_array = img
 
     # TODO: expose channel_first option to front-end
-    def _load_tiff(self, data, channels_first=False):
+    def _load_tiff(self, channels_first=False):
         """Loads a tiff file into a raw image array."""
-        img = tifffile.imread(data)
+        img = tifffile.imread(self._data)
         # Add channel dimension to 2d image
         if img.ndim == 2:
             img = np.expand_dims(img, axis=-1)
@@ -229,11 +225,15 @@ class S3Loader(Loader):
 
     def __init__(self, path, bucket):
         super(S3Loader, self).__init__()
-        # full path to file within bucket, including filename
         self.path = path.replace('__', '/')
-        # bucket to pull file from on S3
-        self.bucket = bucket
         self.source = 's3'
+
+        start = timeit.default_timer()
+        s3 = self._get_s3_client()
+        response = s3.get_object(Bucket=bucket, Key=self.path)
+        self._data = io.BytesIO(response['Body'].read())
+        time = timeit.default_timer() - start
+        # logger.debug(f'Downloaded file {self.path} from S3 bucket {bucket} in {time} s.')
 
     def _get_s3_client(self):
         return boto3.client(
@@ -241,22 +241,6 @@ class S3Loader(Loader):
             aws_access_key_id=AWS_ACCESS_KEY_ID,
             aws_secret_access_key=AWS_SECRET_ACCESS_KEY
         )
-
-    def _load(self):
-        """
-        Load a file from the S3 input bucket.
-        """
-        start = timeit.default_timer()
-        load_fn = self._get_load()
-
-        s3 = self._get_s3_client()
-        response = s3.get_object(Bucket=self.bucket, Key=str(self.path))
-
-        data = io.BytesIO(response['Body'].read())
-        load_fn(data)
-
-        # logger.debug('Loaded file %s from S3 in %s s.',
-        #              self.path, timeit.default_timer() - start)
 
 
 class LocalFileSystemLoader(Loader):
@@ -268,11 +252,9 @@ class LocalFileSystemLoader(Loader):
         # path to file including filename
         self.path = path.replace('__', '/')
         self.source = 'lfs'
-
-    def _load(self):
-        load_fn = self._get_load()
         with open(self.path, 'rb') as data:
-            load_fn(data)
+            self._data = data
+            self._load()
 
 
 class DroppedLoader(Loader):
@@ -280,15 +262,12 @@ class DroppedLoader(Loader):
     Loader implementation for dragging and dropping image files onto DeepCell Label.
     """
 
-    def __init__(self, f):
+    def __init__(self, data):
         super(DroppedLoader, self).__init__()
-        self._data = f
-        self.path = f.filename
+        self._data = data
+        self.path = data.filename
         self.source = 'dropped'
-
-    def _load(self):
-        load_fn = self._get_load()
-        load_fn(self._data)
+        self._load()
 
 
 def get_loader(request):

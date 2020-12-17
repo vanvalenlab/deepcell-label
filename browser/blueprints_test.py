@@ -142,11 +142,6 @@ def test_create_project(client, mocker):
     assert response.status_code == 200
 
 
-def test_create_project_bad_extension(client, mocker):
-    response = client.post(f'/api/project?path=test.badext&source=s3')
-    assert response.status_code == 415
-
-
 def test_get_project(client):
     project = models.Project.create(DummyLoader())
     response = client.get(f'/api/project/{project.token}')
