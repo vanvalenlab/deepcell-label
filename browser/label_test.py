@@ -3,7 +3,6 @@
 from copy import deepcopy
 import itertools
 
-
 import pytest
 import numpy as np
 
