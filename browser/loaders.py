@@ -195,8 +195,10 @@ class Loader():
         """Loads a png file into a raw image array."""
         img = Image.open(data)
         img = np.array(img)
-        # Dimensions are height, width, channels
-        assert (len(img.shape) == 3)
+        # Add channel dimension (if missing)
+        if img.ndim == 2:
+            img = np.expand_dims(img, axis=-1)
+        # Keep only RGB channels
         if img.shape[-1] > 3:
             img = img[..., :3]
         # Add frame dimension
@@ -207,6 +209,9 @@ class Loader():
     def _load_tiff(self, data, channels_first=False):
         """Loads a tiff file into a raw image array."""
         img = tifffile.imread(data)
+        # Add channel dimension to 2d image
+        if img.ndim == 2:
+            img = np.expand_dims(img, axis=-1)
         # DeepCell Label expects channels to be the last dimension
         if channels_first:
             img = np.moveaxis(img, 0, -1)
