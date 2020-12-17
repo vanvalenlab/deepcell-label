@@ -108,7 +108,8 @@ class Loader():
 
     def _get_load(self):
         """
-        Simple factory to get the right
+        Simple factory to get the a load function based on the file extension.
+
         Returns:
             function: loads a response body from S3
         """
