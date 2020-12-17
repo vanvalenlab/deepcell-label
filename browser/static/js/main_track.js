@@ -834,7 +834,7 @@ function prepare_canvas() {
   }, false);
 }
 
-function action(action, info, frame = current_frame) {
+function action(action, info) {
   $.ajax({
     type:'POST',
     url:`${document.location.origin}/edit/${project_id}/${action}`,
