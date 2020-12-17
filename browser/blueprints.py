@@ -232,7 +232,7 @@ def create_project():
     project = Project.create(loader)
     current_app.logger.info('Created project from %s in %s s.',
                             loader.path, timeit.default_timer() - start)
-    return {'projectId': project.token}
+    return jsonify({'projectId': project.token})
 
 
 @bp.route('/project/<token>')
