@@ -157,6 +157,24 @@ def test_load_png():
     assert loader.cell_info is not None
 
 
+def test_load_png_no_channels():
+    """Creates a dummy PNG file and loads it."""
+    out = io.BytesIO()
+    image = Image.new('L', (1, 1))
+    image.save(out, format='png')
+    out.seek(0)
+    expected_raw = np.zeros((1, 1, 1, 1))
+    expected_label = np.zeros((1, 1, 1, 1))
+
+    loader = loaders.Loader()
+    loader._load_png(out)
+
+    np.testing.assert_array_equal(loader.raw_array, expected_raw)
+    np.testing.assert_array_equal(loader.label_array, expected_label)
+    assert loader.cell_ids is not None
+    assert loader.cell_info is not None
+
+
 def test_load_tiff():
     """Creates a dummy TIFF file and loads it."""
     out = io.BytesIO()
@@ -164,6 +182,25 @@ def test_load_tiff():
     image.save(out, format='tiff')
     out.seek(0)
     expected_raw = np.zeros((1, 1, 1, 3))
+    expected_label = np.zeros((1, 1, 1, 1))
+
+    loader = loaders.Loader()
+    loader._load_tiff(out)
+
+    np.testing.assert_array_equal(loader.raw_array, expected_raw)
+    np.testing.assert_array_equal(loader.label_array, expected_label)
+    assert loader.cell_ids is not None
+    assert loader.cell_info is not None
+
+
+def test_load_tiff_no_channels():
+    """Creates a dummy TIFF file and loads it."""
+    out = io.BytesIO()
+    # 'L' for luminance mode in greyscale; no channel dimension
+    image = Image.new('L', (1, 1))
+    image.save(out, format='tiff')
+    out.seek(0)
+    expected_raw = np.zeros((1, 1, 1, 1))
     expected_label = np.zeros((1, 1, 1, 1))
 
     loader = loaders.Loader()
