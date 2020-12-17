@@ -63,7 +63,7 @@ def handle_exception(error):
     return jsonify({'message': str(error)}), 500
 
 
-@bp.route('/edit/<token>/<action_type>', methods=['POST'])
+@bp.route('/api/edit/<token>/<action_type>', methods=['POST'])
 def edit(token, action_type):
     """
     Edit the labeling of the project and
@@ -93,7 +93,7 @@ def edit(token, action_type):
     return jsonify(payload)
 
 
-@bp.route('/changedisplay/<token>/<display_attribute>/<int:value>', methods=['POST'])
+@bp.route('/api/changedisplay/<token>/<display_attribute>/<int:value>', methods=['POST'])
 def change_display(token, display_attribute, value):
     """
     Change the displayed frame, feature, or channel
@@ -122,7 +122,7 @@ def change_display(token, display_attribute, value):
     return jsonify(payload)
 
 
-@bp.route('/undo/<token>', methods=['POST'])
+@bp.route('/api/undo/<token>', methods=['POST'])
 def undo(token):
     start = timeit.default_timer()
 
@@ -278,7 +278,7 @@ def download_project(token):
     return send_file(filestream, as_attachment=True, attachment_filename=exporter.path)
 
 
-@bp.route('/upload/<bucket>/<token>', methods=['GET', 'POST'])
+@bp.route('/api/upload/<bucket>/<token>', methods=['GET', 'POST'])
 def upload_project_to_s3(bucket, token):
     """Upload .trk/.npz data file to AWS S3 bucket."""
     start = timeit.default_timer()

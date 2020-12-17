@@ -147,7 +147,7 @@ class ChangeChannel extends Action {
 function setDisplay(displayAttr, value) {
   const promise = $.ajax({
     type: 'POST',
-    url: `${document.location.origin}/changedisplay/${project_id}/${displayAttr}/${value}`,
+    url: `${document.location.origin}/api/changedisplay/${project_id}/${displayAttr}/${value}`,
     async: true
   })
   return promise.done(handlePayload);
@@ -164,7 +164,7 @@ class BackendAction extends Action {
   do() {
     $.ajax({
       type: 'POST',
-      url: `${document.location.origin}/edit/${project_id}/${this.action}`,
+      url: `${document.location.origin}/api/edit/${project_id}/${this.action}`,
       data: this.info,
       async: false
     }).done(handlePayload);
@@ -173,7 +173,7 @@ class BackendAction extends Action {
   undo() {
     $.ajax({
       type: 'POST',
-      url: `${document.location.origin}/undo/${project_id}`,
+      url: `${document.location.origin}/api/undo/${project_id}`,
       async: false
     }).done(handlePayload);
   }
@@ -181,7 +181,7 @@ class BackendAction extends Action {
   redo() {
     $.ajax({
       type: 'POST',
-      url: `${document.location.origin}/redo/${project_id}`,
+      url: `${document.location.origin}/api/redo/${project_id}`,
       async: false
     }).done(handlePayload);
   }

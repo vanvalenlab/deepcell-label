@@ -464,7 +464,7 @@ let outputBucket;
 function upload_file(cb) {
   $.ajax({
     type: 'POST',
-    url: `${document.location.origin}/upload/${outputBucket}/${project_id}`,
+    url: `${document.location.origin}/api/upload/${outputBucket}/${project_id}`,
     async: true
   }).done(cb);
 }
@@ -690,7 +690,7 @@ function render_image_display() {
 function fetch_and_render_frame() {
   $.ajax({
     type: 'POST',
-    url: `${document.location.origin}/changedisplay/${project_id}/frame/${current_frame}`,
+    url: `${document.location.origin}/api/changedisplay/${project_id}/frame/${current_frame}`,
     success: function(payload) {
       // load new value of seg_array
       // array of arrays, contains annotation data for frame
@@ -837,7 +837,7 @@ function prepare_canvas() {
 function action(action, info) {
   $.ajax({
     type:'POST',
-    url:`${document.location.origin}/edit/${project_id}/${action}`,
+    url:`${document.location.origin}/api/edit/${project_id}/${action}`,
     data: info,
     success: function (payload) {
       if (payload.error) {

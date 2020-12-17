@@ -681,7 +681,7 @@ const _calculateMaxHeight = () => {
 function upload_file(cb) {
   $.ajax({
     type: 'POST',
-    url: `${document.location.origin}/upload/${outputBucket}/${project_id}`,
+    url: `${document.location.origin}/api/upload/${outputBucket}/${project_id}`,
     async: true
   }).done(cb);
 }
