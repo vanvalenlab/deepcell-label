@@ -249,6 +249,7 @@ def test_load_tiff_no_channels():
     assert loader.cell_ids is not None
     assert loader.cell_info is not None
 
+
 def test_load_tiff_four_channels():
     """Creates a dummy TIFF file with more than 3 channels and loads it."""
     out = io.BytesIO()
