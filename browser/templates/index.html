@@ -18,11 +18,6 @@
       The .trk files allow you to annotate RAW264 cells across time-lapse frames while preserving relationship information.
     </p> -->
     <p>Or select one of our example files and press submit:</p>
-    <ul style="list-style-type:circle">
-      <li>test.npz is an example of organoid annotation across z-stack frames</li>
-      <li>test2.npz is a 3D example of nuclei in tissue</li>
-      <li>test3.npz is an example of untracked and uncorrected HeLa cytoplasm across time</li>
-    </ul>
   </div>
 
   <form method="POST" action="{{ url_for('label.tool') }}" class="section">
@@ -36,13 +31,13 @@
             <option value="RAW264_S0_Batch05.trk">RAW264_S0_Batch05.trk</option>
             <option value="RAW264_S0_Batch06.trk">RAW264_S0_Batch06.trk</option> -->
             <!-- zstack test npzs -->
-            <option value="test.npz">test.npz</option>
-            <option value="mouse_s1_uncorrected_fullsize_all_channels_x_05_y_03_save_version_0.npz">test2.npz</option>
+            <option value="test.npz">3D organoid annotation</option>
+            <option value="mouse_s1_uncorrected_fullsize_all_channels_x_05_y_03_save_version_0.npz">3D nuclei in tissue</option>
             <!-- uncorrected cytoplasm movie test npz -->
-            <option value="HeLa_movie_s0_uncorrected_fullsize_all_channels_x_00_y_01_frames_5-9.npz">test3.npz</option>
+            <option value="HeLa_movie_s0_uncorrected_fullsize_all_channels_x_00_y_01_frames_5-9.npz">HeLa cytoplasm timelapse with errors</option>
             <!-- big file tests -->
-            <option value="fov_4b55271de34c40fcba5ec13fac73f57b_crop_0_crop_0_slice_0_fake_cyto.npz">512-single-channel.npz</option>
-            <option value="fov_4b55271de34c40fcba5ec13fac73f57b_crop_0_crop_0_slice_0.npz">512-RGB.npz</option>
+            <option value="fov_4b55271de34c40fcba5ec13fac73f57b_crop_0_crop_0_slice_0_fake_cyto.npz">large field of view</option>
+            <option value="fov_4b55271de34c40fcba5ec13fac73f57b_crop_0_crop_0_slice_0.npz">multi-channel large field of view</option>
           </select>
         </p>
       </div>
