@@ -713,13 +713,13 @@ function render_highlight_info() {
       }
     }
   }
-  document.getElementById('highlight').innerHTML = highlightText;
-  document.getElementById('currently_highlighted').innerHTML = currentlyHighlighted;
+  document.getElementById('highlight').textContent = highlightText;
+  document.getElementById('currently_highlighted').textContent = currentlyHighlighted;
 }
 
 function render_edit_info() {
   const editModeText = (edit_mode) ? 'paint mode' : 'whole-label mode';
-  document.getElementById('edit_mode').innerHTML = editModeText;
+  document.getElementById('edit_mode').textContent = editModeText;
 
   const rowVisibility = (edit_mode) ? 'visible' : 'hidden';
   document.getElementById('edit_brush_row').style.visibility = rowVisibility;
@@ -727,23 +727,23 @@ function render_edit_info() {
   document.getElementById('edit_erase_row').style.visibility = rowVisibility;
 
   if (edit_mode) {
-    document.getElementById('edit_brush').innerHTML = brush.size;
+    document.getElementById('edit_brush').textContent = brush.size;
 
     const editLabelText = (brush.value > 0) ? brush.value : '-';
-    document.getElementById('brush_label').innerHTML = editLabelText;
+    document.getElementById('brush_label').textContent = editLabelText;
 
     const editEraseText = (brush.erase && !brush.conv) ? 'ON' : 'OFF';
-    document.getElementById('edit_erase').innerHTML = editEraseText;
+    document.getElementById('edit_erase').textContent = editEraseText;
   }
 }
 
 function render_cell_info() {
   if (canvas.label !== 0) {
-    document.getElementById('label').innerHTML = canvas.label;
+    document.getElementById('label').textContent = canvas.label;
     const track = tracks[mode.feature][canvas.label.toString()];
     document.getElementById('slices').textContent = track.slices.toString();
   } else {
-    document.getElementById('label').innerHTML = '';
+    document.getElementById('label').textContent = '';
     document.getElementById('slices').textContent = '';
   }
 }
@@ -751,16 +751,16 @@ function render_cell_info() {
 // updates html display of side info panel
 function render_info_display() {
   // always show current frame, feature, channel
-  document.getElementById('frame').innerHTML = current_frame;
-  document.getElementById('feature').innerHTML = mode.feature;
-  document.getElementById('channel').innerHTML = mode.channel;
-  document.getElementById('zoom').innerHTML = `${canvas.zoom}%`;
+  document.getElementById('frame').textContent = current_frame;
+  document.getElementById('feature').textContent = mode.feature;
+  document.getElementById('channel').textContent = mode.channel;
+  document.getElementById('zoom').textContent = `${canvas.zoom}%`;
 
   const displayedX = `${Math.floor(canvas.sx)}-${Math.ceil(canvas.sx + canvas.sWidth)}`;
-  document.getElementById('displayedX').innerHTML = displayedX;
+  document.getElementById('displayedX').textContent = displayedX;
 
   const displayedY = `${Math.floor(canvas.sy)}-${Math.ceil(canvas.sy + canvas.sHeight)}`
-  document.getElementById('displayedY').innerHTML = displayedY;
+  document.getElementById('displayedY').textContent = displayedY;
 
   render_highlight_info();
 
@@ -769,7 +769,7 @@ function render_info_display() {
   render_cell_info();
 
   // always show 'state'
-  document.getElementById('mode').innerHTML = mode.render();
+  document.getElementById('mode').textContent = mode.render();
 }
 
 function render_edit_image(ctx) {
