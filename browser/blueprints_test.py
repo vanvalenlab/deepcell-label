@@ -31,7 +31,7 @@ def test_health(client):
 
 def test_change_display(client):
 
-    response = client.post('/changedisplay/0/frame/999999')
+    response = client.post('/api/changedisplay/0/frame/999999')
     assert response.status_code == 404
 
     for filename in ('test.npz', 'test.trk'):
@@ -39,18 +39,18 @@ def test_change_display(client):
         # Create a project.
         project = models.Project.create(DummyLoader(path=filename))
 
-        response = client.post('/changedisplay/{}/frame/0'.format(project.token))
+        response = client.post('/api/changedisplay/{}/frame/0'.format(project.token))
         # TODO: test correctness
         assert 'raw' in response.json['imgs']
         assert 'segmented' in response.json['imgs']
         assert 'seg_arr' in response.json['imgs']
 
-        response = client.post('/changedisplay/{}/channel/0'.format(project.token))
+        response = client.post('/api/changedisplay/{}/channel/0'.format(project.token))
         assert 'raw' in response.json['imgs']
         assert 'segmented' not in response.json['imgs']
         assert 'seg_arr' not in response.json['imgs']
 
-        response = client.post('/changedisplay/{}/feature/0'.format(project.token))
+        response = client.post('/api/changedisplay/{}/feature/0'.format(project.token))
         assert 'raw' not in response.json['imgs']
         assert 'segmented' in response.json['imgs']
         assert 'seg_arr' in response.json['imgs']
@@ -112,27 +112,27 @@ def test_shortcut(client):
 
 def test_undo(client):
     # Project not found
-    response = client.post('/undo/0')
+    response = client.post('/api/undo/0')
     assert response.status_code == 404
 
     # Create a project
     project = models.Project.create(DummyLoader())
 
     # Undo with no action to undo silently does nothing
-    response = client.post('/undo/{}'.format(project.token))
+    response = client.post('/api/undo/{}'.format(project.token))
     assert response.status_code == 200
 
 
 def test_redo(client):
     # Project not found
-    response = client.post('/undo/0')
+    response = client.post('/api/redo/0')
     assert response.status_code == 404
 
     # Create a project
     project = models.Project.create(DummyLoader())
 
     # Redo with no action to redo silently does nothing
-    response = client.post('/redo/{}'.format(project.token))
+    response = client.post(f'/api/redo/{project.token}')
     assert response.status_code == 200
 
 
@@ -178,7 +178,7 @@ def test_download_project(client, mocker):
 def test_upload_to_s3_npz(client, mocker):
     project = models.Project.create(DummyLoader(path='test.npz'))
     mocked_export = mocker.patch('blueprints.exporters.S3Exporter.export')
-    response = client.get(f'/upload/caliban-output/{project.token}')
+    response = client.get(f'/api/upload/caliban-output/{project.token}')
     assert response.status_code == 302
     mocked_export.assert_called()
 
@@ -186,12 +186,12 @@ def test_upload_to_s3_npz(client, mocker):
 def test_upload_to_s3_trk(client, mocker):
     project = models.Project.create(DummyLoader(path='test.trk'))
     mocked_export = mocker.patch('blueprints.exporters.S3Exporter.export')
-    response = client.get(f'/upload/caliban-output/{project.token}')
+    response = client.get(f'/api/upload/caliban-output/{project.token}')
     assert response.status_code == 302
     mocked_export.assert_called()
 
 
 def test_upload_to_s3_missing(client, mocker):
     mocker.patch('blueprints.exporters.S3Exporter.export')
-    response = client.get('/upload/caliban-output/1')
+    response = client.get('/api/upload/caliban-output/1')
     assert response.status_code == 404
