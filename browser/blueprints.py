@@ -136,7 +136,7 @@ def undo(token):
     return jsonify(payload)
 
 
-@bp.route('/redo/<token>', methods=['POST'])
+@bp.route('/api/redo/<token>', methods=['POST'])
 def redo(token):
     start = timeit.default_timer()
 
