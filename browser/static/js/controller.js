@@ -122,10 +122,11 @@ class Controller {
 
     // pick scale that accomodates both dimensions; can be less than 1
     const scale = Math.min(scaleX, scaleY);
+    const padding = this.model.canvas.padding;
 
     this.model.canvas.zoom = 100;
     this.model.canvas.scale = scale;
-    this.model.canvas.setBorders(padding);
+    this.model.canvas.setBorders();
 
     // TODO: move to view?
     // set canvases size according to scale
