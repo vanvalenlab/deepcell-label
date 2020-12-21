@@ -5,7 +5,7 @@ class View {
 
     adjuster.rawImage.onload = () => adjuster.contrastRaw();
     adjuster.segImage.onload = () => adjuster.preCompAdjust();
-    if (rgb) {
+    if (model.rgb) {
       adjuster.contrastedRaw.onload = () => adjuster.rawAdjust();
       adjuster.preCompSeg.onload = () => adjuster.segAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
     } else {
