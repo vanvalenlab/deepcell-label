@@ -491,6 +491,47 @@ class Model {
     this.notifyInfoChange();
   }
 
+  startFlood() {
+    // alt+click
+    this.kind = Modes.question;
+    this.action = 'flood_contiguous';
+    this.info = {
+      label: this.canvas.label,
+      frame: this.frame,
+      x_location: this.canvas.imgX,
+      y_location: this.canvas.imgY
+    };
+    this.prompt = 'SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL';
+    this.highlighted_cell_one = this.canvas.label;
+  }
+
+  startTrim() {
+    // shift+click
+    this.kind = Modes.question;
+    this.action = 'trim_pixels';
+    this.info = {
+      label: this.canvas.label,
+      frame: this.frame,
+      x_location: this.canvas.imgX,
+      y_location: this.canvas.imgY
+    };
+    this.prompt = 'SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL';
+    this.highlighted_cell_one = this.canvas.label;
+  }
+
+  selectLabel() {
+    // normal click
+    this.kind = Modes.single;
+    this.info = {
+      label: this.canvas.label,
+      frame: this.frame
+    };
+    this.highlighted_cell_one = this.canvas.label;
+    this.highlighted_cell_two = -1;
+    canvas.storedClickX = this.canvas.imgX;
+    canvas.storedClickY = this.canvas.imgY;
+  }
+
   confirmActionSingleFrame() {
     if (this.action === 'create_new') {
       action('new_single_cell', this.info);
@@ -554,6 +595,129 @@ class Model {
       }
     }
     this.clear();
+  }
+
+  finishFill() {
+    this.info = {
+      label: this.info.label,
+      frame: this.frame,
+      x_location: canvas.imgX,
+      y_location: canvas.imgY
+    };
+    action(this.action, this.info);
+    this.clear();
+  }
+
+  pickConversionLabel() {
+    this.brush.value = this.canvas.label;
+    if (this.brush.target !== 0) {
+      this.prompt = `Now drawing over label ${this.brush.target} with label ${this.brush.value}.` +
+        `Use ESC to leave this mode.`;
+      this.kind = Modes.drawing;
+      adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
+    } else {
+      this.clear();
+    }
+  }
+
+  pickConversionTarget() {
+    this.brush.target = this.canvas.label;
+    this.action = 'pick_color';
+    this.prompt = 'Click on the label you want to draw with, or press "n" to draw with an unused label.';
+    render_info_display();
+  }
+
+  selectSecondLabel() {
+    this.kind = Modes.multiple;
+
+    this.highlighted_cell_one = this.info.label;
+    this.highlighted_cell_two = canvas.label;
+
+    this.info = {
+      label_1: this.info.label,
+      label_2: this.canvas.label,
+      frame_1: this.info.frame,
+      frame_2: this.frame,
+      x1_location: this.canvas.storedClickX,
+      y1_location: this.canvas.storedClickY,
+      x2_location: this.canvas.imgX,
+      y2_location: this.canvas.imgY
+    };
+  }
+
+  reselectSecondLabel() {
+    this.highlighted_cell_one = this.info.label_1;
+    this.highlighted_cell_two = this.canvas.label;
+    this.info = {
+      label_1: this.info.label_1,
+      label_2: this.canvas.label,
+      frame_1: this.info.frame_1,
+      frame_2: this.frame,
+      x1_location: this.canvas.storedClickX,
+      y1_location: this.canvas.storedClickY,
+      x2_location: this.canvas.imgX,
+      y2_location: this.canvas.imgY
+    };
+  }
+
+  draw() {
+    if (this.canvas.trace.length !== 0) {
+      action('handle_draw', {
+        trace: JSON.stringify(this.canvas.trace), // stringify array so it doesn't get messed up
+        target_value: this.brush.target, // value that we're overwriting
+        brush_value: this.brush.value, // we don't update with edit_value, etc each time they change
+        brush_size: this.brush.size, // so we need to pass them in as args
+        erase: (this.brush.erase && !this.brush.conv),
+        frame: this.frame
+      });
+    }
+    this.canvas.clearTrace();
+    if (this.kind !== Modes.drawing) {
+      this.clear();
+    }
+  }
+
+  threshold() {
+    const thresholdStartY = this.brush.threshY;
+    const thresholdStartX = this.brush.threshX;
+    const thresholdEndX = this.canvas.imgX;
+    const thresholdEndY = this.canvas.imgY;
+
+    if (thresholdStartY !== thresholdEndY &&
+        thresholdStartX !== thresholdEndX) {
+      action('threshold', {
+        y1: thresholdStartY,
+        x1: thresholdStartX,
+        y2: thresholdEndY,
+        x2: thresholdEndX,
+        frame: this.frame,
+        label: this.maxLabelsMap.get(this.feature) + 1
+      });
+    }
+    this.clear();
+    this.notifyImageChange();
+  }
+
+  pan(deltaX, deltaY) {
+    // get the old values to see if rendering is reqiured.
+    const oldX = this.canvas.sx;
+    const oldY = this.canvas.sy;
+
+    const zoom = 100 / (this.canvas.zoom * this.canvas.scale)
+    const pan = new Pan(this.canvas, deltaX * zoom, deltaY * zoom);
+    actions.addAction(pan);
+    if (canvas.sx !== oldX || canvas.sy !== oldY) {
+      this.notifyImageChange();
+    }
+  }
+
+  updateThresholdBox() {
+    this.brush.threshX = this.canvas.imgX;
+    this.brush.threshY = this.canvas.imgY;
+  }
+
+  updateDrawTrace() {
+    this.canvas.trace.push([this.canvas.imgY, this.canvas.imgX]);
   }
 
 

@@ -186,12 +186,13 @@ class Controller {
 
   // adjust contrast, brightness, or zoom upon mouse scroll
   handleScroll(evt) {
-    const canEdit = (rendering_raw || edit_mode || (rgb && !display_labels));
+    const rawVisible = (this.model.rendering_raw || this.model.edit_mode ||
+      (this.model.rgb && !this.model.display_labels));
     if (evt.altKey) {
       this.model.changeZoom(Math.sign(evt.deltaY));
-    } else if (canEdit && !evt.shiftKey) {
+    } else if (rawVisible && !evt.shiftKey) {
       this.model.changeContrast(evt.deltaY);
-    } else if (canEdit && evt.shiftKey) {
+    } else if (rawVisible && evt.shiftKey) {
       // shift + scroll causes horizontal scroll on mice wheels, but not trackpads
       const change = evt.deltaY === 0 ? evt.deltaX : evt.deltaY;
       this.model.changeBrightness(change);
@@ -204,47 +205,37 @@ class Controller {
     this.model.canvas.isPressed = true;
     // TODO: refactor "mousedown + mousemove" into ondrag?
     if (this.model.canvas.isSpacedown) return; // panning
-    if (mode.kind === Modes.prompt) return; // turning on conv mode
-    if (!edit_mode) return; // only draw in edit mode
-    if (!brush.show) { // draw thresholding box
-      brush.threshX = canvas.imgX;
-      brush.threshY = canvas.imgY;
+    if (this.model.kind === Modes.prompt) return; // turning on conv mode
+    if (!this.model.edit_mode) return; // only draw in edit mode
+    if (!this.model.brush.show) { // draw thresholding box
+      this.model.updateThresholdBox();
     } else {
-      canvas.trace.push([canvas.imgY, canvas.imgX]);
+      this.model.updateDrawTrace();
     }
   }
 
   // handles mouse movement, whether or not mouse button is held down
   handleMousemove(evt) {
-    if (canvas.isCursorPressed() && canvas.isSpacedown) {
-      // get the old values to see if rendering is reqiured.
-      const oldX = canvas.sx;
-      const oldY = canvas.sy;
-
-      const zoom = 100 / (canvas.zoom * canvas.scale)
-      pan = new Pan(canvas, evt.movementX * zoom, evt.movementY * zoom);
-      actions.addAction(pan);
-      if (canvas.sx !== oldX || canvas.sy !== oldY) {
-        render_image_display();
-      }
+    if (this.model.canvas.isCursorPressed() && this.model.canvas.isSpacedown) {
+      this.model.pan(evt.movementX, evt.movementY);
     }
-    updateMousePos(evt.offsetX, evt.offsetY);
-    render_info_display();
+    this.model.updateMousePos(evt.offsetX, evt.offsetY);
+    this.view.render_info_display();
   }
 
   // handles end of click&drag (different from click())
   handleMouseup() {
-    canvas.isPressed = false;
-    if (!canvas.isSpacedown
-        && mode.kind !== Modes.prompt
-        && edit_mode) {
-      if (!brush.show) {
-        mode.handle_threshold();
-      } else if (canvas.inRange()) {
+    this.model.canvas.isPressed = false;
+    if (!this.model.canvas.isSpacedown
+        && this.model.kind !== Modes.prompt
+        && this.model.edit_mode) {
+      if (!this.model.brush.show) {
+        this.model.threshold();
+      } else if (this.model.canvas.inRange()) {
         // send click&drag coordinates to label.py to update annotations
-        mode.handle_draw();
+        this.model.draw();
       }
-      brush.refreshView();
+      this.model.brush.refreshView();
     }
   }
 
@@ -254,24 +245,25 @@ class Controller {
   // or at least move out of Mode class--should act on mode object and others
   // but not sure this makes sense as a Mode method
   click(evt) {
-    if (this.kind === Modes.prompt) {
+    if (this.model.kind === Modes.prompt) {
       // hole fill or color picking options
       this.handle_mode_prompt_click(evt);
-    } else if (canvas.label === 0) {
+    } else if (this.model.canvas.label === 0) {
       // same as ESC
-      this.clear();
-    } else if (this.kind === Modes.none) {
+      this.model.clear();
+    // TODO: why are we updating adjusted/info after each handler?
+    } else if (this.model.kind === Modes.none) {
       // if nothing selected: shift-, alt-, or normal click
       this.handle_mode_none_click(evt);
-      if (current_highlight) {
-        adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
+      if (this.model.highlight) {
+        this.view.adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
       } else {
-        render_info_display();
+        this.view.render_info_display();
       }
     } else if (this.kind === Modes.single) {
       // one label already selected
       this.handle_mode_single_click(evt);
-      if (current_highlight) {
+      if (this.model.highlight) {
         adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
       } else {
         render_info_display();
@@ -279,7 +271,7 @@ class Controller {
     } else if (this.kind  === Modes.multiple) {
       // two labels already selected, reselect second label
       this.handle_mode_multiple_click(evt);
-      if (current_highlight) {
+      if (this.model.highlight) {
         adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
       } else {
         render_info_display();
@@ -291,147 +283,39 @@ class Controller {
   // TODO: canvas.click(evt, mode) ?
   handle_mode_none_click(evt) {
     if (evt.altKey) {
-      // alt+click
-      this.kind = Modes.question;
-      this.action = 'flood_contiguous';
-      this.info = {
-        label: canvas.label,
-        frame: current_frame,
-        x_location: canvas.imgX,
-        y_location: canvas.imgY
-      };
-      this.prompt = 'SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL';
-      this.highlighted_cell_one = canvas.label;
+      this.model.startFlood();
     } else if (evt.shiftKey) {
-      // shift+click
-      this.kind = Modes.question;
-      this.action = 'trim_pixels';
-      this.info = {
-        label: canvas.label,
-        frame: current_frame,
-        x_location: canvas.imgX,
-        y_location: canvas.imgY
-      };
-      this.prompt = 'SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL';
-      this.highlighted_cell_one = canvas.label;
+      this.model.startTrim();
     } else {
-      // normal click
-      this.kind = Modes.single;
-      this.info = {
-        label: canvas.label,
-        frame: current_frame
-      };
-      this.highlighted_cell_one = canvas.label;
-      this.highlighted_cell_two = -1;
-      canvas.storedClickX = canvas.imgX;
-      canvas.storedClickY = canvas.imgY;
+      this.model.selectLabel();
     }
   }
 
   handle_mode_prompt_click(evt) {
     if (this.action === 'fill_hole' && canvas.label === 0) {
-      this.info = {
-        label: this.info.label,
-        frame: current_frame,
-        x_location: canvas.imgX,
-        y_location: canvas.imgY
-      };
-      action(this.action, this.info);
-      this.clear();
+      this.model.finishFill();
     } else if (this.action === 'pick_color' && canvas.label !== 0 &&
                canvas.label !== brush.target) {
-      brush.value = canvas.label;
-      if (brush.target !== 0) {
-        this.prompt = `Now drawing over label ${brush.target} with label ${brush.value}. Use ESC to leave this mode.`;
-        this.kind = Modes.drawing;
-        adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
-      } else {
-        this.clear();
-      }
+      this.model.pickConversionLabel();
     } else if (this.action === 'pick_target' && canvas.label !== 0) {
-      brush.target = canvas.label;
-      this.action = 'pick_color';
-      this.prompt = 'Click on the label you want to draw with, or press "n" to draw with an unused label.';
-      render_info_display();
+      this.model.pickConversionTarget();
     }
   }
 
   // TODO: storedClick1 and storedClick2? not a huge fan of the
   // current way click locations get stored in mode object
   handle_mode_single_click(evt) {
-    this.kind = Modes.multiple;
-
-    this.highlighted_cell_one = this.info.label;
-    this.highlighted_cell_two = canvas.label;
-
-    this.info = {
-      label_1: this.info.label,
-      label_2: canvas.label,
-      frame_1: this.info.frame,
-      frame_2: current_frame,
-      x1_location: canvas.storedClickX,
-      y1_location: canvas.storedClickY,
-      x2_location: canvas.imgX,
-      y2_location: canvas.imgY
-    };
+    this.model.selectSecondLabel();
   }
 
   handle_mode_multiple_click(evt) {
-    this.highlighted_cell_one = this.info.label_1;
-    this.highlighted_cell_two = canvas.label;
-    this.info = {
-      label_1: this.info.label_1,
-      label_2: canvas.label,
-      frame_1: this.info.frame_1,
-      frame_2: current_frame,
-      x1_location: canvas.storedClickX,
-      y1_location: canvas.storedClickY,
-      x2_location: canvas.imgX,
-      y2_location: canvas.imgY
-    };
+    this.model.reselectSecondLabel();
   }
 
 
 
 
 // start action handling
-  handle_draw() {
-    if (canvas.trace.length !== 0) {
-      action('handle_draw', {
-        trace: JSON.stringify(canvas.trace), // stringify array so it doesn't get messed up
-        target_value: brush.target, // value that we're overwriting
-        brush_value: brush.value, // we don't update with edit_value, etc each time they change
-        brush_size: brush.size, // so we need to pass them in as args
-        erase: (brush.erase && !brush.conv),
-        frame: current_frame
-      });
-    }
-    canvas.clearTrace();
-    if (this.kind !== Modes.drawing) {
-      this.clear();
-    }
-  }
-
-  handle_threshold() {
-    const thresholdStartY = brush.threshY;
-    const thresholdStartX = brush.threshX;
-    const thresholdEndX = canvas.imgX;
-    const thresholdEndY = canvas.imgY;
-
-    if (thresholdStartY !== thresholdEndY &&
-        thresholdStartX !== thresholdEndX) {
-      action('threshold', {
-        y1: thresholdStartY,
-        x1: thresholdStartX,
-        y2: thresholdEndY,
-        x2: thresholdEndX,
-        frame: current_frame,
-        label: maxLabelsMap.get(this.feature) + 1
-      });
-    }
-    this.clear();
-    render_image_display();
-  }
 
 
 
