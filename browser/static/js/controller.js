@@ -64,7 +64,7 @@ class Controller {
       }
     }, false);
 
-    document.addEventListener('mouseup', (e) => handleMouseup(e));
+    document.addEventListener('mouseup', (e) => this.handleMouseup(e));
 
     // resize the canvas every time the window is resized
     window.addEventListener('resize', function() {
@@ -77,7 +77,7 @@ class Controller {
     });
 
     window.addEventListener('keydown', (evt) => {
-      mode.handle_key(evt);
+      this.handle_key(evt);
     }, false);
   }
 
@@ -91,13 +91,13 @@ class Controller {
     });
   
     // bind scroll wheel, change contrast of raw when scrolled
-    canvasElement.addEventListener('wheel', (e) => handleScroll(e));
+    canvasElement.addEventListener('wheel', (e) => this.handleScroll(e));
   
     // mousedown for click&drag/handle_draw DIFFERENT FROM CLICK
-    canvasElement.addEventListener('mousedown', (e) => handleMousedown(e));
+    canvasElement.addEventListener('mousedown', (e) => this.handleMousedown(e));
   
     // bind mouse movement
-    canvasElement.addEventListener('mousemove', (e) => handleMousemove(e));
+    canvasElement.addEventListener('mousemove', (e) => this.handleMousemove(e));
   
     // add flag for when cursor in on the canvas
     canvasElement.onmouseover = () => {
@@ -114,8 +114,8 @@ class Controller {
    * @param {*} rawDims the raw dimensions of the input image.
    */
   setCanvasDimensions(rawDims) {
-    const maxWidth = _calculateMaxWidth();
-    const maxHeight = _calculateMaxHeight();
+    const maxWidth = this._calculateMaxWidth();
+    const maxHeight = this._calculateMaxHeight();
 
     const scaleX = maxWidth / rawDims[0];
     const scaleY = maxHeight / rawDims[1];
