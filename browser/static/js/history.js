@@ -109,9 +109,9 @@ class History{
    * @param {*} initFrame frame displayed at the bottom of the undoStack
    * @param {*} finalFrame frame displayed at the top of the undoStack
    */
-  initializeHistory(actionFrames, initFrame = 0, finalFrame = current_frame) {
+  initializeHistory(actionFrames, firstFrame = 0) {
       // Initialize undoStack to with actions recorded on backend
-      let prevFrame = initFrame;
+      let prevFrame = firstFrame;
       for (let frame of actionFrames) {
         // Display unedited frame before loading edited frame
         if (frame != prevFrame) {
@@ -121,12 +121,6 @@ class History{
           prevFrame = frame;
         }
         let action = new BackendAction();
-        this.undoStack.push(action);
-        this.addFence();
-      }
-      // Change to final project frame
-      if (prevFrame != current_frame) {
-        let action = new ChangeFrame(mode, current_frame, prevFrame);
         this.undoStack.push(action);
         this.addFence();
       }
