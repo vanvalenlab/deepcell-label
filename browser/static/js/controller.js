@@ -16,7 +16,7 @@ class Controller {
       this.addCanvasBindings();
       // this.addBrowsingBindings(project);
     
-      this.setCanvasDimensions(payload.dimensions);
+      this.setCanvasDimensions(project.dimensions);
     
       // // Load images and seg_array from payload
       // loadSegArray();
@@ -131,6 +131,63 @@ class Controller {
     // set canvases size according to scale
     document.getElementById('canvas').width = this.canvas.scaledWidth + 2 * padding;
     document.getElementById('canvas').height = this.canvas.scaledHeight + 2 * padding;
+  }
+
+    /**
+   * Calculate the maximum width of the canvas display area.
+   * The canvas only shares width with the table display on its left.
+   */
+  _calculateMaxWidth() {
+    const mainSection = window.getComputedStyle(
+      document.getElementsByTagName('main')[0]
+    );
+    const tableColumn = window.getComputedStyle(
+      document.getElementById('table-col')
+    );
+    const canvasColumn = window.getComputedStyle(
+      document.getElementById('canvas-col')
+    );
+    const maxWidth = Math.floor(
+      document.getElementsByTagName('main')[0].clientWidth -
+      parseInt(mainSection.marginTop) -
+      parseInt(mainSection.marginBottom) -
+      document.getElementById('table-col').clientWidth -
+      parseFloat(tableColumn.paddingLeft) -
+      parseFloat(tableColumn.paddingRight) -
+      parseFloat(tableColumn.marginLeft) -
+      parseFloat(tableColumn.marginRight) -
+      parseFloat(canvasColumn.paddingLeft) -
+      parseFloat(canvasColumn.paddingRight) -
+      parseFloat(canvasColumn.marginLeft) -
+      parseFloat(canvasColumn.marginRight)
+    );
+    return maxWidth;
+  }
+
+  /**
+   * Calculate the maximum height for the canvas display area,
+   * leaving space for navbar, instructions pane, and footer.
+   */
+  _calculateMaxHeight() {
+    const mainSection = window.getComputedStyle(
+      document.getElementsByTagName('main')[0]
+    );
+    // leave space for navbar, instructions pane, and footer
+    const maxHeight = Math.floor(
+      (
+        (
+          window.innerHeight ||
+          document.documentElement.clientHeight ||
+          document.body.clientHeight
+        ) -
+        parseInt(mainSection.marginTop) -
+        parseInt(mainSection.marginBottom) -
+        document.getElementsByClassName('page-footer')[0].clientHeight -
+        document.getElementsByClassName('collapsible')[0].clientHeight -
+        document.getElementsByClassName('navbar-fixed')[0].clientHeight
+      )
+    );
+    return maxHeight;
   }
 
   // MOUSETRAP BINDINGS BELOW
