@@ -133,14 +133,14 @@ class Model {
     if (payload.raw) {
       adjuster.rawLoaded = false;
       // adjuster.rawImage.src = payload.imgs.raw;
-      adjuster.rawImage.src = `/rawpng/${project_id}/${current_frame}`;
-      console.log(current_frame);
+      adjuster.rawImage.src = `/rawpng/${project_id}/${this.frame}`;
+      console.log(this.frame);
     }
   
     if (payload.labels) {
       adjuster.segLoaded = false;
       // adjuster.segImage.src = payload.imgs.segmented;
-      adjuster.segImage.src = `/labelpng/${project_id}/${current_frame}`
+      adjuster.segImage.src = `/labelpng/${project_id}/${this.frame}`
       loadSegArray();
     }
   
@@ -442,7 +442,7 @@ class Model {
     // hole fill
     this.info = {
       label: this.info.label,
-      frame: current_frame
+      frame: this.frame
     };
     this.kind = Modes.prompt;
     this.action = 'fill_hole';
@@ -536,7 +536,7 @@ class Model {
     if (this.action === 'create_new') {
       action('new_single_cell', this.info);
     } else if (this.action === 'predict') {
-      action('predict_single', { frame: current_frame });
+      action('predict_single', { frame: this.frame });
     } else if (this.action === 'replace') {
       if (this.info.label_1 !== this.info.label_2) {
         action('replace_single', {
