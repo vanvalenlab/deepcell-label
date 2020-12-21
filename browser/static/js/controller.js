@@ -130,8 +130,8 @@ class Controller {
 
     // TODO: move to view?
     // set canvases size according to scale
-    document.getElementById('canvas').width = this.canvas.scaledWidth + 2 * padding;
-    document.getElementById('canvas').height = this.canvas.scaledHeight + 2 * padding;
+    document.getElementById('canvas').width = this.model.canvas.scaledWidth + 2 * padding;
+    document.getElementById('canvas').height = this.model.canvas.scaledHeight + 2 * padding;
   }
 
     /**
