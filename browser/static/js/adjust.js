@@ -1,7 +1,11 @@
 // helper functions
 
 class ImageAdjuster {
-  constructor(width, height, rgb, numChannels) {
+  constructor(model) { //width, height, rgb, numChannels) {
+    
+    // TODO: make the adjuster an observer of the model & allow the model to decide when to share info
+    this.model = model;
+    
     // canvas element used for image processing
     this.canvas = document.createElement('canvas');
     this.canvas.id = 'adjustCanvas';
@@ -10,18 +14,18 @@ class ImageAdjuster {
     this.canvas.style.display = 'none';
 
     // same dimensions as true image size
-    this.canvas.height = height;
-    this.canvas.width = width;
+    this.canvas.height = model.height;
+    this.canvas.width = model.width;
     document.body.appendChild(this.canvas);
 
     this.ctx = this.canvas.getContext('2d');
     this.ctx.imageSmoothingEnabled = false;
 
     // these will never change once initialized
-    this.height = height;
-    this.width = width;
+    this.height = model.height;
+    this.width = model.width;
 
-    this.rgb = rgb;
+    this.rgb = model.rgb;
 
     // this can be between 0.0 and 1.0, inclusive (1 is fully opaque)
     // want to make user-adjustable in future
@@ -39,7 +43,7 @@ class ImageAdjuster {
     this.brightnessMap = new Map();
     this.invertMap = new Map();
 
-    for (let i = 0; i < numChannels; i++) {
+    for (let i = 0; i < model.numChannels; i++) {
       this.brightnessMap.set(i, 0);
       this.contrastMap.set(i, 0);
       this.invertMap.set(i, true);
@@ -188,23 +192,25 @@ class ImageAdjuster {
     this.contrastedRaw.src = this.canvas.toDataURL();
   }
 
-  preCompAdjust(segArray, currentHighlight, editMode, brush, mode) {
+  preCompAdjust() {
+    const segArray = this.model.segArray;
+    
     this.segLoaded = false;
 
     // draw segImage so we can extract image data
     this.ctx.clearRect(0, 0, this.width, this.height);
     this.ctx.drawImage(this.segImage, 0, 0, this.width, this.height);
 
-    if (currentHighlight) {
+    if (this.model.highlight) {
       const segData = this.ctx.getImageData(0, 0, this.width, this.height);
       let h1, h2;
 
-      if (editMode) {
-        h1 = brush.value;
+      if (this.model.editMode) {
+        h1 = this.model.brush.value;
         h2 = -1;
       } else {
-        h1 = mode.highlighted_cell_one;
-        h2 = mode.highlighted_cell_two;
+        h1 = this.model.highlighted_cell_one;
+        h2 = this.model.highlighted_cell_two;
       }
 
       // highlight
@@ -245,7 +251,10 @@ class ImageAdjuster {
   }
 
   // apply white (and sometimes red) opaque outlines around cells, if needed
-  postCompAdjust(segArray, editMode, brush, currentHighlight) {
+  postCompAdjust() {
+    const segArray = this.model.segArray;
+    const brush = this.model.brush;
+    const editMode = this.model.edit_mode;
     // draw compositedImg so we can extract image data
     this.ctx.clearRect(0, 0, this.width, this.height);
     this.ctx.drawImage(this.compositedImg, 0, 0, this.width, this.height);
@@ -266,7 +275,7 @@ class ImageAdjuster {
     }
     // add an outline around the currently highlighted cell, if there is one
     // but only if the brush isn't set to conversion brush mode
-    if (editMode && currentHighlight && !brush.conv) {
+    if (editMode && this.model.highlight && !brush.conv) {
       singleOutline = true;
       o1 = brush.value;
     }
@@ -281,7 +290,10 @@ class ImageAdjuster {
   }
 
   // apply outlines, transparent highlighting for RGB
-  postCompAdjustRGB(segArray, currentHighlight, editMode, brush, mode) {
+  postCompAdjustRGB() {
+    const segArray = this.model.segArray;
+    const brush = this.model.brush;
+    const editMode = this.model.edit_mode;
     // draw contrastedRaw so we can extract image data
     this.ctx.clearRect(0, 0, this.width, this.height);
     this.ctx.drawImage(this.contrastedRaw, 0, 0, this.width, this.height);
@@ -302,13 +314,13 @@ class ImageAdjuster {
     const outlineAll = true;
 
     // translucent highlight
-    if (currentHighlight) {
+    if (this.model.highlight) {
       translucent = true;
       if (editMode) {
         t1 = brush.value;
       } else {
-        t1 = mode.highlighted_cell_one;
-        t2 = mode.highlighted_cell_two;
+        t1 = this.model.highlighted_cell_one;
+        t2 = this.model.highlighted_cell_two;
       }
     }
 

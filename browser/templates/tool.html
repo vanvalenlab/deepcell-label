@@ -80,6 +80,9 @@
 {%- if settings['filetype'] == "zstack" -%}
   <script type="text/javascript" src="{{ url_for('static', filename='js/main_zstack.js') }}"></script>
   <script type="text/javascript" src="{{ url_for('static', filename='js/actions.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('static', filename='js/model.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('static', filename='js/view.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('static', filename='js/controller.js') }}"></script>
 {%- elif settings['filetype'] == "track" -%}
   <script type="text/javascript" src="{{ url_for('static', filename='js/main_track.js') }}"></script>
 {%- endif -%}
@@ -87,15 +90,21 @@
 <!-- START DeepCell Label FUNCTION CALL -->
 <script>
   var settings = {{settings | tojson}};
+  const outputBucket = settings.output_bucket;
+  const projectID = settings.token;
   function download() {
-    let token = "{{settings['token']}}";
-    window.location = `/downloadproject/${token}`;
+    window.location = `/downloadproject/${projectID}`;
   }
   function upload() {
     // disable button and show loading bar
     document.getElementById("submit").classList.add("disabled");
     document.getElementById("loading-bar").classList.add("active");
-    upload_file(function(payload) {
+    const promise = $.ajax({
+      type: 'POST',
+      url: `${document.location.origin}/upload_file/${outputBucket}/${projectID}`,
+      async: true
+    });
+    promise.done((payload) => {
       // disable loading bar and remove show output filename
       document.getElementById("loading-bar").classList.remove("active");
       document.getElementById("output").classList.remove("hide");

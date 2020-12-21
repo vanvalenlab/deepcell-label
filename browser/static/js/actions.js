@@ -30,30 +30,24 @@ class ToggleHighlight extends Action {
 
 /** Action to change the viewed frame. */
 class ChangeFrame extends Action {
-  constructor(mode, frame) {
+  constructor(model, frame) {
     super();
-    this.mode = mode;
-    this.oldValue = current_frame;
+    this.model = model;
+    this.oldValue = model.frame;
     this.newValue = frame.mod(numFrames);
   }
 
   do() {
-    const promise = setDisplay('frame', this.newValue);
-    promise.done( () => {
-      current_frame = this.newValue;
-      if (this.mode.action !== '') { this.mode.clear() };
-      render_info_display();
-    });
+    this.model.frame = this.newValue;
+    if (this.model.action !== '') { this.model.clear() };
+    setDisplay('frame', this.newValue);
   }
 
 
   undo() {
-    const promise = setDisplay('frame', this.oldValue);
-    promise.done( () => {
-      current_frame = this.oldValue;
-      if (this.mode.action !== '') { this.mode.clear() };
-      render_info_display();
-    });
+    this.model.frame = this.oldValue;
+    if (this.model.action !== '') { this.model.clear() };
+    setDisplay('frame', this.oldValue);
   }
 
   redo() {
@@ -63,29 +57,23 @@ class ChangeFrame extends Action {
 
 /** Action to change the viewed feature. */
 class ChangeFeature extends Action {
-  constructor(mode, feature) {
+  constructor(model, feature) {
     super();
-    this.mode = mode;
-    this.oldValue = mode.feature;
+    this.model = model;
+    this.oldValue = model.feature;
     this.newValue = feature.mod(numFeatures);
   }
 
   do() {
-    const promise = setDisplay('feature', this.newValue);
-    promise.done( () => {
-      this.mode.feature = this.newValue;
-      this.mode.clear();
-      render_info_display();
-    });
+    this.model.feature = this.newValue;
+    this.model.clear();
+    setDisplay('feature', this.newValue);
   }
 
   undo() {
-    const promise = setDisplay('feature', this.oldValue);
-    promise.done( () => {
-      this.mode.feature = this.oldValue;
-      this.mode.clear();
-      render_info_display();
-    });
+    this.model.feature = this.oldValue;
+    this.model.clear();
+    setDisplay('feature', this.oldValue);
   }
 
   redo() {
@@ -95,11 +83,11 @@ class ChangeFeature extends Action {
 
 /** Action to change the viewed channel. */
 class ChangeChannel extends Action {
-  constructor(mode, adjuster, channel) {
+  constructor(model, adjuster, channel) {
     super();
-    this.mode = mode;
+    this.model = model;
     this.adjuster = adjuster;
-    this.oldValue = mode.channel;
+    this.oldValue = model.channel;
     this.newValue = channel.mod(numChannels);
   }
 
@@ -132,8 +120,8 @@ class ChangeChannel extends Action {
     this.adjuster.contrast = this.adjuster.contrastMap.get(newValue);
     this.adjuster.displayInvert = this.adjuster.invertMap.get(newValue);
 
-    this.mode.clear();
-    this.mode.channel = newValue;
+    this.model.clear();
+    this.model.channel = newValue;
   }
 }
 
@@ -155,35 +143,39 @@ function setDisplay(displayAttr, value) {
 
 class BackendAction extends Action {
 
-  constructor(action, info) {
+  constructor(model, action, info) {
     super();
+    this.model = model;
     this.action = action;
     this.info = info;
   }
 
   do() {
-    $.ajax({
+    const promise = $.ajax({
       type: 'POST',
       url: `${document.location.origin}/api/edit/${project_id}/${this.action}`,
       data: this.info,
       async: false
-    }).done(handlePayload);
+    });
+    promise.done(this.model.handlePayload);
   }
 
   undo() {
-    $.ajax({
+    const promise = $.ajax({
       type: 'POST',
       url: `${document.location.origin}/api/undo/${project_id}`,
       async: false
-    }).done(handlePayload);
+    })
+    promise.done(this.model.handlePayload);
   }
 
   redo() {
-    $.ajax({
+    const promise = $.ajax({
       type: 'POST',
       url: `${document.location.origin}/api/redo/${project_id}`,
       async: false
-    }).done(handlePayload);
+    })
+    promise.done(this.model.handlePayload);
   }
 }
 
