@@ -12,8 +12,9 @@ class Controller {
       this.model = new Model(project);
       this.view = this.model.view;
       this.overrideScroll();
-      this.addInitialKeybinds();
-      this.addBrowsingBindings(project);
+      this.addWindowBindings();
+      this.addCanvasBindings();
+      // this.addBrowsingBindings(project);
     
       this.setCanvasDimensions(payload.dimensions);
     
