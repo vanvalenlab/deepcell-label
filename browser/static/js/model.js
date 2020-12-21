@@ -32,7 +32,7 @@ class Model {
     this.numFrames = project.num_frames;
     this.numFeatures = project.num_features;
     this.numChannels = project.num_channels;
-    this.projectID = project.token;
+    this.projectID = project.project_id;
 
     this.tracks = project.tracks;
     this.maxLabelsMap = new Map();
@@ -47,6 +47,8 @@ class Model {
     const scale = 1;
     this.canvas = new CanvasState(rawWidth, rawHeight, scale, padding);
     this.brush = new Brush(rawHeight, rawWidth, padding);
+    this.width = rawWidth;
+    this.height = rawHeight;
 
     this.highlight = true;
     this.rgb = false;
@@ -70,6 +72,17 @@ class Model {
     // only observer right now is the view
     // TODO: use Observable interface instead and allow any Observer to register
     this.view = new View(this);
+    let adjuster = this.view.adjuster;
+
+    // Load images and seg_array from payload
+    this.loadSegArray();
+
+    adjuster.rawLoaded = false;
+    adjuster.segLoaded = false;
+    // adjuster.segImage.src = payload.imgs.segmented;
+    // adjuster.rawImage.src = payload.imgs.raw;
+    adjuster.segImage.src = project.imgs.segmented; 
+    adjuster.rawImage.src = project.imgs.raw;
   }
 
   // TODO: use Observable interface instead of hard-coding a single Observer
@@ -165,14 +178,13 @@ class Model {
 
   loadSegArray() {
     let numpyLoader = new npyjs();
-    let segArray = [];
     numpyLoader.load(`/seg_array/${this.projectID}/${this.frame}`, 
       (array) => {
       // need to convert 1d data to 2d array
       const reshape = (arr, width) => 
         arr.reduce((rows, key, index) => (index % width == 0 ? rows.push([key]) 
           : rows[rows.length-1].push(key)) && rows, []);
-      canvas.segArray = reshape(array.data, array.shape[1]);
+      this.canvas.segArray = reshape(array.data, array.shape[1]);
     });
   }
 

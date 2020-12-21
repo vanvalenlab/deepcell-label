@@ -18,16 +18,6 @@ class Controller {
     
       this.setCanvasDimensions(project.dimensions);
     
-      // // Load images and seg_array from payload
-      // loadSegArray();
-    
-      // adjuster.rawLoaded = false;
-      // adjuster.segLoaded = false;
-      // // adjuster.segImage.src = payload.imgs.segmented;
-      // // adjuster.rawImage.src = payload.imgs.raw;
-      // adjuster.segImage.src = payload.imgs.segmented; 
-      // adjuster.rawImage.src = payload.imgs.raw;
-    
       this.view.displayUndoRedo();
 
     });
