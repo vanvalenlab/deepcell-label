@@ -17,7 +17,6 @@
     <!-- <p>
       The .trk files allow you to annotate RAW264 cells across time-lapse frames while preserving relationship information.
     </p> -->
-    <p>Or select one of our example files and press submit:</p>
   </div>
 
   <form method="POST" action="{{ url_for('label.tool') }}" class="section">
@@ -26,7 +25,8 @@
 
       <div class="col s12">
         <p class="center-align">
-          <select name="filename" class="browser-default center-align">
+          <select name="filename" class="browser-default center-align" id="exampleFiles">
+            <option disabled selected value style="display:none"> Or select one of our example files and press submit: </option>
             <!-- <option value="RAW264_S0_Batch02.trk">RAW264_S0_Batch02.trk </option>
             <option value="RAW264_S0_Batch05.trk">RAW264_S0_Batch05.trk</option>
             <option value="RAW264_S0_Batch06.trk">RAW264_S0_Batch06.trk</option> -->
@@ -44,7 +44,8 @@
 
       <div class="col s12">
         <p class="center-align">
-          <button class="btn waves-effect waves-light indigo" type="submit" name="action">Submit
+          <button disabled class="btn waves-effect waves-light indigo" type="submit" name="action" id="submitExample">
+            Submit
             <i class="material-icons right">send</i>
           </button>
         </p>
@@ -71,6 +72,13 @@ $(function() {
     window.location = `project/${payload.projectId}`;
   });
 })
+</script>
+<script>
+// Enable submit button after selecting example file
+const submitButton = document.getElementById('submitExample');
+const exampleFiles = document.getElementById('exampleFiles');
+exampleFiles.onchange = () => submitButton.disabled = false;
+  
 </script>
 <!-- this script is not affecting anything. -->
 <!-- <script>
