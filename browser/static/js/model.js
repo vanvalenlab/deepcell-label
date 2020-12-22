@@ -73,16 +73,11 @@ class Model {
     // TODO: use Observable interface instead and allow any Observer to register
     this.view = new View(this);
     let adjuster = this.view.adjuster;
-
-    // Load images and seg_array from payload
-    this.loadSegArray();
-
     adjuster.rawLoaded = false;
     adjuster.segLoaded = false;
-    // adjuster.segImage.src = payload.imgs.segmented;
-    // adjuster.rawImage.src = payload.imgs.raw;
-    adjuster.segImage.src = project.imgs.segmented; 
-    adjuster.rawImage.src = project.imgs.raw;
+    adjuster.arrayLoaded = false;
+
+    this.getImages();
   }
 
   // TODO: use Observable interface instead of hard-coding a single Observer
@@ -108,21 +103,29 @@ class Model {
     }
   }
 
-  // getImages() {
-  //   const raw = $.ajax({
-  //     type: 'GET',
-  //     url: `${document.location.origin}/rawimage/${this.projectID}/${this.frame}/${this.channel}`,
-  //     async: true});
-  //   const segImage = $.ajax({
-  //     type: 'GET',
-  //     url: `${document.location.origin}/labelimage/${this.projectID}/${this.frame}/${this.feature}`,
-  //     async: true});
-  //   const segArray = $.ajax({
-  //     type: 'GET',
-  //     url: `${document.location.origin}/labelarray/${this.projectID}/${this.frame}/${this.feature}`,
-  //     async: true});
-  //   // promise that checks when all data receives and passes it to the controller (? adjuster?)
-  // }
+  getImages() {
+    const rawURL = `${document.location.origin}/rawimage/${this.projectID}/${this.frame}`;
+    const labelURL = `${document.location.origin}/labelimage/${this.projectID}/${this.frame}`;
+    const arrayURL = `${document.location.origin}/labelarray/${this.projectID}/${this.frame}`;
+    const rawImage = $.ajax({type: 'GET', url: rawURL, async: true});
+    const segImage = $.ajax({type: 'GET', url: labelURL, async: true});
+    const segArray = fetch(arrayURL).then(d => d.arrayBuffer())
+      .then(d => new npyjs().parse(d));
+
+    Promise.all([rawImage, segImage, segArray]).then(results =>
+    {
+      this.rawImage = results[0];
+      this.segImage = results[1];
+      // need to convert 1d data to 2d array
+      const reshape = (arr, width) =>
+        arr.reduce((rows, key, index) => (index % width == 0 ? rows.push([key])
+          : rows[rows.length-1].push(key)) && rows, []);
+      const array = results[2];
+      this.segArray = reshape(array.data, array.shape[1]);
+      this.notifyImageChange();
+    })
+    // promise that checks when all data receives and passes it to the controller (? adjuster?)
+  }
 
 
   // TODO: move to view?
@@ -143,18 +146,12 @@ class Model {
       alert(payload.error);
     }
   
-    if (payload.raw) {
+    if (payload.raw || payload.labels) {
       adjuster.rawLoaded = false;
-      // adjuster.rawImage.src = payload.imgs.raw;
-      adjuster.rawImage.src = `/rawpng/${project_id}/${this.frame}`;
-      console.log(this.frame);
-    }
-  
-    if (payload.labels) {
       adjuster.segLoaded = false;
-      // adjuster.segImage.src = payload.imgs.segmented;
-      adjuster.segImage.src = `/labelpng/${project_id}/${this.frame}`
-      loadSegArray();
+      adjuster.arrayLoaded = false;
+      console.log(this.frame);
+      this.getImages();
     }
   
     if (payload.tracks) {
@@ -177,15 +174,7 @@ class Model {
   }
 
   loadSegArray() {
-    let numpyLoader = new npyjs();
-    numpyLoader.load(`/seg_array/${this.projectID}/${this.frame}`, 
-      (array) => {
-      // need to convert 1d data to 2d array
-      const reshape = (arr, width) => 
-        arr.reduce((rows, key, index) => (index % width == 0 ? rows.push([key]) 
-          : rows[rows.length-1].push(key)) && rows, []);
-      this.canvas.segArray = reshape(array.data, array.shape[1]);
-    });
+    1;
   }
 
   clear() {

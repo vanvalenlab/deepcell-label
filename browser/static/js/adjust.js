@@ -69,6 +69,11 @@ class ImageAdjuster {
 
     this.rawLoaded = false;
     this.segLoaded = false;
+    this.arrayLoaded = false;
+  }
+
+  get allLoaded() {
+    return this.rawLoaded && this.segLoaded && this.arrayLoaded;
   }
 
   // getters for brightness/contrast allowed ranges
