@@ -227,8 +227,8 @@ class Loader():
             self.axes = self.axes + 'C'
         # Move channels to be the last dimension
         elif channel_axis != len(self.axes) - 1:
-            img = np.moveaxis(img, channel_axis, -1)            
-            
+            img = np.moveaxis(img, channel_axis, -1)
+
         self._raw_array = img
 
 
