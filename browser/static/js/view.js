@@ -151,13 +151,13 @@ class View {
   
     if (model.edit_mode) {
       // edit mode (annotations overlaid on raw + brush preview)
-      render_edit_image(ctx);
+      this.render_edit_image(ctx);
     } else if (model.rendering_raw) {
       // draw raw image
-      render_raw_image(ctx);
+      this.render_raw_image(ctx);
     } else {
       // draw annotations
-      render_annotation_image(ctx);
+      this.render_annotation_image(ctx);
     }
     canvas.drawBorders(ctx);
   }
