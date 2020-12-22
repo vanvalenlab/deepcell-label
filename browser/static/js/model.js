@@ -92,7 +92,7 @@ class Model {
 
   // TODO: use Observable interface instead of hard-coding a single Observer
   notifyImageChange() {
-    this.view.render_image_display();
+    this.view.adjuster.render_image_display();
   }
 
   notifyImageFormattingChange() {
@@ -213,14 +213,14 @@ class Model {
   undo() {
     this.actions.undo();
     this.clear();
-    updateMousePos(this.canvas.rawX, this.canvas.rawY);
+    this.updateMousePos(this.canvas.rawX, this.canvas.rawY);
     this.notifyImageChange();
   }
   
   redo() {
     this.actions.redo();
     this.clear();
-    updateMousePos(canvas.rawX, canvas.rawY);
+    this.updateMousePos(this.canvas.rawX, this.canvas.rawY);
     this.notifyImageChange();
   }
 
@@ -252,7 +252,7 @@ class Model {
 
   changeZoom(dzoom) {
     const action = new Zoom(this.canvas, dzoom);
-    updateMousePos(this.canvas.rawX, this.canvas.rawY);
+    this.updateMousePos(this.canvas.rawX, this.canvas.rawY);
     this.actions.addAction(zoom);
     this.notifyImageChange();
   }
