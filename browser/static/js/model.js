@@ -58,7 +58,7 @@ class Model {
 
     this.rawImage = new Image();
     this.segImage = new Image();
-    this.segArray = null;
+    this._segArray = null;
 
     this.actionID = project.action_id;
     this.actions = new History();
@@ -79,6 +79,15 @@ class Model {
     adjuster.arrayLoaded = false;
 
     this.getImages();
+  }
+
+  get segArray() {
+    return this._segArray;
+  }
+
+  set segArray(newSegArray) {
+    this._segArray = newSegArray;
+    this.canvas.segArray = newSegArray;
   }
 
   // TODO: use Observable interface instead of hard-coding a single Observer
