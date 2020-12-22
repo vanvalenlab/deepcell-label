@@ -478,7 +478,7 @@ class BaseEdit(object):
     def action_active_contour(self, label):
         label_img = np.copy(self.frame[..., self.feature])
 
-        # get centroid of selected cell
+        # get centroid of selected label
         props = regionprops(np.where(label_img == label, label, 0))[0]
 
         # make bounding box size to encompass some background
@@ -490,37 +490,47 @@ class BaseEdit(object):
         x1 = max(0, props['bbox'][1] - box_width // 2)
         x2 = min(self.project.width, props['bbox'][3] + box_width // 2)
 
-        # get rid of original label
+        # relevant region of label image to work on
         label_img = label_img[y1:y2, x1:x2]
-        level_set = np.where(label_img == label, 1, 0)
-        label_img = np.where(label_img == label, 0, label_img)
 
-        # threshold region of bounding box, assign label
+        # use existing label as initial level set for contour calculations
+        level_set = np.where(label_img == label, 1, 0)
+
+        # normalize input 2D frame data values to range [0.0, 1.0]
         adjusted_raw_frame = Normalize()(self.raw_frame[..., self.channel])
         predict_area = adjusted_raw_frame[y1:y2, x1:x2]
         # import pdb; pdb.set_trace()
+
+        # returns 1 where label is predicted to be based on contouring, 0 background
         contoured = morphological_chan_vese(predict_area, 100, init_level_set=level_set)
 
-        # apply new_label to areas of threshold that are True (foreground),
-        # 0 for False (background)
-        ann_threshold = np.where(contoured, label, 0)
-        # smooths out "feathered" edges
-        ann_threshold = dilation(ann_threshold, disk(3))
+        # contoured area should get original label value
+        contoured_label = np.where(contoured, label, 0)
+        # contours tend to fit very tightly, a small expansion here works well
+        contoured_label = dilation(contoured_label, disk(3))
 
-        safe_overlay = np.where(label_img == 0, ann_threshold, label_img)
-        # make sure there's some annotation here even if threshold has failed
+        # don't want to leave the original (un-contoured) label in the image
+        label_img = np.where(label_img == label, 0, label_img)
+
+        # never overwrite other labels with new contoured label
+        safe_overlay = np.where(label_img == 0, contoured_label, label_img)
+
+        # label must be present in safe_overlay for this to be a valid contour result
+        # very few pixels of contoured label indicate contour prediction not worth keeping
         pixel_count = np.count_nonzero(safe_overlay == label)
         if pixel_count < 20:
             safe_overlay = np.copy(self.frame[y1:y2, x1:x2, self.feature])
 
-        # put it back in the full image so can use centroid coords
+        # put it back in the full image so can use centroid coords for post-contour cleanup
         full_frame = np.copy(self.frame[..., self.feature])
         full_frame[y1:y2, x1:x2] = safe_overlay
 
-        # if the centroid didn't get labeled, don't try to do label trimming!
+        # avoid automated label cleanup if the centroid (flood seed point) is of background
+        # TODO: perhaps this should be "if (seed point value) != label" instead
         if full_frame[int(props['centroid'][0]), int(props['centroid'][1])] == 0:
             img_trimmed = full_frame
         else:
+            # morphology and logic used by pixel-trimming action, with object centroid as seed
             contig_cell = flood(image=full_frame,
                                 seed_point=(int(props['centroid'][0]), int(props['centroid'][1])))
 
