@@ -19,7 +19,7 @@ def test_load_raw_npz():
     np.savez(npz, X=expected)
     npz.seek(0)
 
-    loader = loaders.Loader()
+    loader = loaders.Loader('ZYXC')
     loader.path = 'test.npz'
     loader._data = npz
     loader._load()
@@ -38,7 +38,7 @@ def test_load_combined_npz():
     np.savez(npz, X=expected_raw, y=expected_label)
     npz.seek(0)
 
-    loader = loaders.Loader()
+    loader = loaders.Loader('ZYXC')
     loader.path = 'test.npz'
     loader._data = npz
     loader._load()
@@ -78,7 +78,7 @@ def test_load_trk():
             trks.add(tracked_file.name, 'tracked.npy')
     trk.seek(0)
 
-    loader = loaders.Loader()
+    loader = loaders.Loader('ZYXC')
     loader.path = 'test.trk'
     loader._data = trk
     loader._load()
@@ -107,7 +107,7 @@ def test_load_trk_no_lineage():
                 trks.add(tracked_file.name, 'tracked.npy')
     trk.seek(0)
 
-    loader = loaders.Loader()
+    loader = loaders.Loader('ZYXC')
     loader.path = 'test.trk'
     loader._data = trk
     with pytest.raises(ValueError):
@@ -142,7 +142,7 @@ def test_load_trk_multiple_lineages():
             trks.add(tracked_file.name, 'tracked.npy')
     trk.seek(0)
 
-    loader = loaders.Loader()
+    loader = loaders.Loader('ZYXC')
     loader.path = 'test.trk'
     loader._data = trk
     with pytest.raises(ValueError):
@@ -158,7 +158,7 @@ def test_load_png():
     expected_raw = np.zeros((1, 1, 1, 3))
     expected_label = np.zeros((1, 1, 1, 1))
 
-    loader = loaders.Loader()
+    loader = loaders.Loader('YXC')
     loader.path = 'test.png'
     loader._data = out
     loader._load()
@@ -178,7 +178,7 @@ def test_load_png_no_channels():
     expected_raw = np.zeros((1, 1, 1, 1))
     expected_label = np.zeros((1, 1, 1, 1))
 
-    loader = loaders.Loader()
+    loader = loaders.Loader('YX')
     loader.path = 'test.png'
     loader._data = out
     loader._load()
@@ -198,7 +198,7 @@ def test_load_png_four_channels():
     expected_raw = np.zeros((1, 1, 1, 3))
     expected_label = np.zeros((1, 1, 1, 1))
 
-    loader = loaders.Loader()
+    loader = loaders.Loader('YXC')
     loader.path = 'test.png'
     loader._data = out
     loader._load()
@@ -218,7 +218,7 @@ def test_load_tiff():
     expected_raw = np.zeros((1, 1, 1, 3))
     expected_label = np.zeros((1, 1, 1, 1))
 
-    loader = loaders.Loader()
+    loader = loaders.Loader('YXC')
     loader.path = 'test.tiff'
     loader._data = out
     loader._load()
@@ -239,7 +239,7 @@ def test_load_tiff_no_channels():
     expected_raw = np.zeros((1, 1, 1, 1))
     expected_label = np.zeros((1, 1, 1, 1))
 
-    loader = loaders.Loader()
+    loader = loaders.Loader('YX')
     loader.path = 'test.tiff'
     loader._data = out
     loader._load()
@@ -260,7 +260,7 @@ def test_load_tiff_four_channels():
     expected_raw = np.zeros((1, 1, 1, 4))
     expected_label = np.zeros((1, 1, 1, 1))
 
-    loader = loaders.Loader()
+    loader = loaders.Loader(axes='YXC')
     loader.path = 'test.tiff'
     loader._data = out
     loader._load()

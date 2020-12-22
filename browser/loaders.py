@@ -26,7 +26,7 @@ class Loader():
     Interface for loading files into DeepCell Label.
     """
 
-    def __init__(self):
+    def __init__(self, axes='ZYXC'):
         # numpy array with raw image data with shape (frames, height, width, channels)
         self._raw_array = None
         # numpy array with labeled image data with shape (frame, height, width, features)
@@ -40,6 +40,8 @@ class Loader():
         self.source = None
         # path to file as a string
         self.path = ''
+
+        self.axes = axes
 
     @property
     def tracking(self):
@@ -202,19 +204,31 @@ class Loader():
         img = np.expand_dims(img, axis=0)
         self._raw_array = img
 
-    # TODO: expose channel_first option to front-end
-    def _load_tiff(self, channels_first=False):
-        """Loads a tiff file into a raw image array."""
-        img = tifffile.imread(self._data)
-        # Add channel dimension to 2d image
-        if img.ndim == 2:
-            img = np.expand_dims(img, axis=-1)
-        # DeepCell Label expects channels to be the last dimension
-        if channels_first:
-            img = np.moveaxis(img, 0, -1)
-        # Add frame dimension if missing
-        if img.ndim == 3:
+    # TODO: expose channel_first & no_channels flags to front-end
+    def _load_tiff(self):
+        """
+        Loads a tiff file into a raw image array.
+        """
+        tiff = tifffile.TiffFile(self._data)
+        img = tiff.asarray()
+        # TODO: check these axes are accurate
+        self.axes = tiff.series[0].axes
+        if img.ndim != len(self.axes):
+            raise ValueError(f'image dimensions {img.shape} do not match axes {self.axes}')
+        # Adjust Z dimension (TODO: may also be T, but Z & T not supported together)
+        zstack_axis = self.axes.find('Z')
+        if zstack_axis == -1:
             img = np.expand_dims(img, axis=0)
+            self.axes = 'Z' + self.axes
+        # Adjust channel dimension
+        channel_axis = self.axes.find('C')
+        if channel_axis == -1:
+            img = np.expand_dims(img, axis=-1)
+            self.axes = self.axes + 'C'
+        # Move channels to be the last dimension
+        elif channel_axis != len(self.axes) - 1:
+            img = np.moveaxis(img, channel_axis, -1)            
+            
         self._raw_array = img
 
 
