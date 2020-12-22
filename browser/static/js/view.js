@@ -109,11 +109,11 @@ class View {
     const displayedY = `${Math.floor(canvas.sy)}-${Math.ceil(canvas.sy + canvas.sHeight)}`
     document.getElementById('displayedY').innerHTML = displayedY;
   
-    render_highlight_info();
+    this.render_highlight_info();
   
-    render_edit_info();
+    this.render_edit_info();
   
-    render_cell_info();
+    this.render_cell_info();
   
     // always show 'state'
     document.getElementById('mode').innerHTML = this.renderMode();
