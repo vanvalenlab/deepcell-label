@@ -217,7 +217,7 @@ class Mode {
       this.info = {label: this.info.label};
       this.action = 'active_contour';
       this.kind = Modes.question;
-      this.prompt = `Press SPACE to active contour on label ${this.info.label}`;
+      this.prompt = `Press SPACE to autofit label ${this.info.label}`;
       render_info_display();
     } else if (evt.key === 'q') {
       // erode
