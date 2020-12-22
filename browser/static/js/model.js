@@ -86,6 +86,10 @@ class Model {
     this.view.render_image_display();
   }
 
+  notifyImageFormattingChange() {
+    this.view.preCompAdjust();
+  }
+
   notifyInfoChange() {
     this.view.render_info_display();
   }
@@ -189,7 +193,7 @@ class Model {
 
     this.action = '';
     this.prompt = '';
-    adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
+    this.notifyImageFormattingChange();
   }
 
   action(action, info) {
@@ -219,7 +223,7 @@ class Model {
   toggleHighlight() {
     const action = new ToggleHighlight();
     this.actions.addFencedAction(action);
-    adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
+    this.notifyImageFormattingChange();
   }
 
   toggleRaw() {
@@ -279,7 +283,7 @@ class Model {
     const toggleEdit = new ToggleEdit(this);
     this.actions.addFencedAction(toggleEdit);
     this.helper_brush_draw();
-    adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
+    this.notifyImageFormattingChange();
   }
 
   decrementFrame() {
@@ -320,7 +324,7 @@ class Model {
         `Use ESC to leave this mode.`;
       this.kind = Modes.drawing;
     }
-    adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
+    this.notifyImageFormattingChange();
   }
 
   incrementBrushLabel() {
@@ -330,7 +334,7 @@ class Model {
       this.maxLabelsMap.get(this.feature) + 1
     );
     if (highlight) {
-      adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
+      this.notifyImageFormattingChange();
     }
     this.notifyInfoChange();
   }
@@ -339,7 +343,7 @@ class Model {
     // decrease edit_value, minimum 1
     this.brush.value -= 1;
     if (this.current_highlight) {
-      adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
+      this.notifyImageFormattingChange();
     }
     this.notifyInfoChange();
   }
@@ -355,7 +359,7 @@ class Model {
     let numLabels = maxLabelsMap.get(this.feature);
     this.highlighted_cell_one = (this.highlighted_cell_one + numLabels - 2).mod(numLabels) + 1;
     if (current_highlight) {
-      adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
+      this.notifyImageFormattingChange();
     }
   }
 
@@ -364,7 +368,7 @@ class Model {
     let maxLabel = maxLabelsMap.get(this.feature);
     this.highlighted_cell_one = this.highlighted_cell_one.mod(maxLabel) + 1;
     if (current_highlight) {
-      adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
+      athis.notifyImageFormattingChange();
     }
   }
 
@@ -377,7 +381,7 @@ class Model {
     this.clear();
     this.highlighted_cell_one = tempHighlight;
     if (current_highlight) {
-      adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
+      this.notifyImageFormattingChange();
     }
   }
 
@@ -390,7 +394,7 @@ class Model {
     this.clear();
     this.highlighted_cell_one = tempHighlight;
     if (current_highlight) {
-      adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
+      this.notifyImageFormattingChange();
     }
   }
   
@@ -616,7 +620,7 @@ class Model {
       this.prompt = `Now drawing over label ${this.brush.target} with label ${this.brush.value}.` +
         `Use ESC to leave this mode.`;
       this.kind = Modes.drawing;
-      adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
+      this.notifyImageFormattingChange();
     } else {
       this.clear();
     }
