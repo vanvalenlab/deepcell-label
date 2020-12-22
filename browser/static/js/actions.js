@@ -1,7 +1,11 @@
 class ToggleEdit extends Action {
+  constructor(model) {
+    super();
+    this.model = model;
+  }
 
     do() {
-      edit_mode = !edit_mode;
+      this.model.edit_mode = !this.model.edit_mode;
     }
 
     undo() {
@@ -14,9 +18,13 @@ class ToggleEdit extends Action {
   }
 
 class ToggleHighlight extends Action {
+  constructor(model) {
+    super();
+    this.model = model;
+  }
 
   do() {
-    current_highlight = !current_highlight;
+    this.model.highlight = !this.model.highlights;
   }
 
   undo() {
