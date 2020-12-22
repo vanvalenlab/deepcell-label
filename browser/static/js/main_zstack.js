@@ -212,7 +212,25 @@ class Mode {
 
   // keybinds that apply in bulk mode, one selected
   handle_mode_single_keybind(evt) {
-    if (evt.key === 'f') {
+    if (evt.key === 'm') {
+      // active contour
+      this.info = {label: this.info.label};
+      this.action = 'active_contour';
+      this.kind = Modes.question;
+      this.prompt = `Press SPACE to active contour on label ${this.info.label}`;
+    } else if (evt.key === 'q') {
+      // erode
+      this.info = {label: this.info.label};
+      this.action = 'erode';
+      this.kind = Modes.question;
+      this.prompt = `Press SPACE to erode label ${this.info.label}`;
+    } else if (evt.key === 'Q') {
+      // dilate
+      this.info = {label: this.info.label};
+      this.action = 'dilate';
+      this.kind = Modes.question;
+      this.prompt = `Press SPACE to dilate label ${this.info.label}`;
+    } else if (evt.key === 'f') {
       // hole fill
       this.info = {
         label: this.info.label,
@@ -286,7 +304,13 @@ class Mode {
   // keybinds that apply in bulk mode, answering question/prompt
   handle_mode_question_keybind(evt) {
     if (evt.key === ' ') {
-      if (this.action === 'flood_contiguous') {
+      if (this.action === 'active_contour') {
+        action(this.action, this.info);
+      } else if (this.action === 'erode') {
+        action(this.action, this.info);
+      } else if (this.action === 'dilate') {
+        action(this.action, this.info);
+      } else if (this.action === 'flood_contiguous') {
         action(this.action, this.info);
       } else if (this.action === 'trim_pixels') {
         action(this.action, this.info);
