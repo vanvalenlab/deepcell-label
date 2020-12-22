@@ -168,14 +168,14 @@ class View {
     const canvas = model.canvas;
     if (model.rgb && model.rendering_raw) {
       render_raw_image(ctx);
-    } else if (!rgb && !display_labels) {
-      canvas.drawImage(ctx, adjuster.preCompRaw, padding);
+    } else if (!model.rgb && !model.display_labels) {
+      canvas.drawImage(ctx, this.adjuster.preCompRaw, model.padding);
     } else {
-      canvas.drawImage(ctx, adjuster.postCompImg, padding);
+      canvas.drawImage(ctx, this.adjuster.postCompImg, model.padding);
     }
     ctx.save();
     const region = new Path2D();
-    region.rect(padding, padding, canvas.scaledWidth, canvas.scaledHeight);
+    region.rect(model.padding, model.padding, canvas.scaledWidth, canvas.scaledHeight);
     ctx.clip(region);
     ctx.imageSmoothingEnabled = true;
   
@@ -186,7 +186,7 @@ class View {
   }
 
   render_raw_image(ctx) {
-    this.model.canvas.drawImage(ctx, this.adjuster.contrastedRaw, padding);
+    this.model.canvas.drawImage(ctx, this.adjuster.contrastedRaw, model.padding);
   }
   
   render_annotation_image(ctx) {
