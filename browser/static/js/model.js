@@ -96,7 +96,7 @@ class Model {
   }
 
   notifyImageFormattingChange() {
-    this.view.preCompAdjust();
+    this.view.adjuster.preCompAdjust();
   }
 
   notifyInfoChange() {
@@ -351,7 +351,7 @@ class Model {
   decrementBrushLabel() {
     // decrease edit_value, minimum 1
     this.brush.value -= 1;
-    if (this.current_highlight) {
+    if (this.highlight) {
       this.notifyImageFormattingChange();
     }
     this.notifyInfoChange();
@@ -367,7 +367,7 @@ class Model {
     // cycle highlight to prev label, skipping 0
     let numLabels = maxLabelsMap.get(this.feature);
     this.highlighted_cell_one = (this.highlighted_cell_one + numLabels - 2).mod(numLabels) + 1;
-    if (current_highlight) {
+    if (this.highlight) {
       this.notifyImageFormattingChange();
     }
   }
@@ -376,8 +376,8 @@ class Model {
     // cycle highlight to next label (skipping 0)
     let maxLabel = maxLabelsMap.get(this.feature);
     this.highlighted_cell_one = this.highlighted_cell_one.mod(maxLabel) + 1;
-    if (current_highlight) {
-      athis.notifyImageFormattingChange();
+    if (this.highlight) {
+      this.notifyImageFormattingChange();
     }
   }
 
@@ -389,7 +389,7 @@ class Model {
     const tempHighlight = this.highlighted_cell_one;
     this.clear();
     this.highlighted_cell_one = tempHighlight;
-    if (current_highlight) {
+    if (this.highlight) {
       this.notifyImageFormattingChange();
     }
   }
@@ -402,7 +402,7 @@ class Model {
     const tempHighlight = this.highlighted_cell_one;
     this.clear();
     this.highlighted_cell_one = tempHighlight;
-    if (current_highlight) {
+    if (this.highlight) {
       this.notifyImageFormattingChange();
     }
   }
