@@ -218,18 +218,21 @@ class Mode {
       this.action = 'active_contour';
       this.kind = Modes.question;
       this.prompt = `Press SPACE to active contour on label ${this.info.label}`;
+      render_info_display();
     } else if (evt.key === 'q') {
       // erode
       this.info = {label: this.info.label};
       this.action = 'erode';
       this.kind = Modes.question;
       this.prompt = `Press SPACE to shrink label ${this.info.label}`;
+      render_info_display();
     } else if (evt.key === 'Q') {
       // dilate
       this.info = {label: this.info.label};
       this.action = 'dilate';
       this.kind = Modes.question;
       this.prompt = `Press SPACE to expand label ${this.info.label}`;
+      render_info_display();
     } else if (evt.key === 'f') {
       // hole fill
       this.info = {
