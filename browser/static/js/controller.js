@@ -629,13 +629,13 @@ class Controller {
   handle_edit_keybind(evt) {
     if (evt.key === 'e' && !settings.pixel_only) {
       this.model.toggleEdit();
-    } else if (numChannels > 1 && evt.key === 'c') {
+    } else if (this.model.numChannels > 1 && evt.key === 'c') {
       this.model.incrementChannel();
-    } else if (numChannels > 1 && evt.key === 'C') {
+    } else if (this.model.numChannels > 1 && evt.key === 'C') {
       this.model.decrementChannel();
-    } else if (numFeatures > 1 && evt.key === 'f') {
+    } else if (this.model.numFeatures > 1 && evt.key === 'f') {
       this.model.incrementFeature();
-    } else if (numFeatures > 1 && evt.key === 'F') {
+    } else if (this.model.numFeatures > 1 && evt.key === 'F') {
       this.model.incrementFeature();
     } else if (evt.key === ']') {
       this.model.incrementBrushLabel();
@@ -666,9 +666,9 @@ class Controller {
       this.model.decrementFeature();
     } else if (this.model.numFrames > 1 && evt.key === 'p') {
       this.model.startPredict();
-    } else if (evt.key === '[' && this.highlighted_cell_one !== -1) {
+    } else if (evt.key === '[' && this.model.highlighted_cell_one !== -1) {
       this.model.decrementHighlightedLabel();
-    } else if (evt.key === ']' && this.highlighted_cell_one !== -1) {
+    } else if (evt.key === ']' && this.model.highlighted_cell_one !== -1) {
       this.model.incrementHighlightedLabel();
     }
   }
