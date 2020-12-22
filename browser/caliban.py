@@ -500,7 +500,7 @@ class BaseEdit(object):
         predict_area = adjusted_raw_frame[y1:y2, x1:x2, self.channel]
         # import pdb; pdb.set_trace()
         contoured = morphological_chan_vese(predict_area, 100, init_level_set=level_set)
-        
+
         # apply new_label to areas of threshold that are True (foreground),
         # 0 for False (background)
         ann_threshold = np.where(contoured, label, 0)
@@ -526,8 +526,8 @@ class BaseEdit(object):
 
             # any pixels in img_ann that have value 'label' and are NOT connected to hole_fill_seed
             # get changed to 0, all other pixels retain their original value
-            img_trimmed = np.where(np.logical_and(np.invert(contig_cell), 
-                                                  full_frame == label), 
+            img_trimmed = np.where(np.logical_and(np.invert(contig_cell),
+                                                  full_frame == label),
                                    0, full_frame)
 
         # update image; cell_info should never change as a result of this
@@ -541,12 +541,12 @@ class BaseEdit(object):
         img_ann = self.frame[..., self.feature]
 
         # if label is adjacent to another label, don't let that interfere
-        img_erode = np.where(img_ann==label, label, 0)
+        img_erode = np.where(img_ann == label, label, 0)
         # erode the label
         img_erode = erosion(img_erode, square(3))
 
         # put the label back in
-        img_ann = np.where(img_ann==label, img_erode, img_ann)
+        img_ann = np.where(img_ann == label, img_erode, img_ann)
 
         in_modified = np.any(np.isin(img_ann, label))
         if not in_modified:
@@ -562,10 +562,10 @@ class BaseEdit(object):
         """
         img_ann = self.frame[..., self.feature]
 
-        img_dilate = np.where(img_ann==label, label, 0)
+        img_dilate = np.where(img_ann == label, label, 0)
         img_dilate = dilation(img_dilate, square(3))
 
-        img_ann = np.where(np.logical_and(img_dilate==label, img_ann==0), img_dilate, img_ann)
+        img_ann = np.where(np.logical_and(img_dilate == label, img_ann == 0), img_dilate, img_ann)
 
         self.frame[..., self.feature] = img_ann
         self.y_changed = True
