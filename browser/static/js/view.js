@@ -145,8 +145,8 @@ class View {
     ctx.save();
     ctx.clearRect(
       0, 0,
-      2 * padding + canvas.scaledWidth,
-      2 * padding + canvas.scaledHeight
+      2 * model.padding + canvas.scaledWidth,
+      2 * model.padding + canvas.scaledHeight
     );
   
     if (model.edit_mode) {

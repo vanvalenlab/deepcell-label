@@ -49,6 +49,7 @@ class Model {
     this.brush = new Brush(rawHeight, rawWidth, padding);
     this.width = rawWidth;
     this.height = rawHeight;
+    this.padding = padding;
 
     this.highlight = true;
     this.rgb = false;
