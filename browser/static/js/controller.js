@@ -593,14 +593,14 @@ class Controller {
       // deselect/cancel action/reset highlight
       this.model.clear();
       // may want some things here that trigger on ESC but not clear()
-    } else if (!rgb && evt.key === 'h') {
+    } else if (!this.model.rgb && evt.key === 'h') {
       // toggle highlight
       this.model.toggleHighlight();
     } else if (evt.key === 'z') {
       this.model.toggleRaw();
     } else if (evt.key === '0') {
       this.model.resetBrightnessContrast();
-    } else if ((evt.key === 'l' || evt.key === 'L') && rgb && !edit_mode) {
+    } else if ((evt.key === 'l' || evt.key === 'L') && this.model.rgb && !this.model.edit_mode) {
       this.model.toggleLabels();
     } else if (evt.key === '-') {
       this.model.changeZoom(1);
@@ -616,9 +616,9 @@ class Controller {
       this.model.decrementBrushSize();
     } else if (evt.key === 'ArrowUp') {
       this.model.incrementBrushSize();
-    } else if (!rgb && evt.key === 'i') {
+    } else if (!this.model.rgb && evt.key === 'i') {
       this.model.toggleInvert();
-    } else if (!rgb && settings.pixel_only && (evt.key === 'l' || evt.key === 'L')) {
+    } else if (!this.model.rgb && settings.pixel_only && (evt.key === 'l' || evt.key === 'L')) {
       this.model.toggleLabels();
     } else if (evt.key === 'n') {
       this.model.setUnusedBrushLabel();
@@ -647,7 +647,7 @@ class Controller {
       this.model.startColorPicker();
     } else if (evt.key === 'r') {
       this.model.startConversionBrush();
-    } else if (evt.key === 't' && !rgb) {
+    } else if (evt.key === 't' && !this.model.rgb) {
       this.model.startThreshold();
     }
   }
@@ -656,15 +656,15 @@ class Controller {
   handle_mode_none_keybind(evt) {
     if (evt.key === 'e' && !settings.label_only) {
       this.model.toggleEdit();
-    } else if (numChannels > 1 && evt.key === 'c') {
+    } else if (this.model.numChannels > 1 && evt.key === 'c') {
       this.model.incrementChannel();
-    } else if (numChannels > 1 && evt.key === 'C') {
+    } else if (this.model.numChannels > 1 && evt.key === 'C') {
       this.model.decrementChannel();
-    } else if (numFeatures > 1 && evt.key === 'f') {
+    } else if (this.model.numFeatures > 1 && evt.key === 'f') {
       this.model.incrementFeature();
-    } else if (numFeatures > 1 && evt.key === 'F') {
+    } else if (this.model.numFeatures > 1 && evt.key === 'F') {
       this.model.decrementFeature();
-    } else if (numFrames > 1 && evt.key === 'p') {
+    } else if (this.model.numFrames > 1 && evt.key === 'p') {
       this.model.startPredict();
     } else if (evt.key === '[' && this.highlighted_cell_one !== -1) {
       this.model.decrementHighlightedLabel();
@@ -694,7 +694,7 @@ class Controller {
       this.model.startReplace();
     } else if (evt.key === 's') {
       this.model.startSwap();
-    } else if (evt.key === 'w' && !rgb) {
+    } else if (evt.key === 'w' && !this.model.rgb) {
       this.model.startWatershed();
     }
   }
