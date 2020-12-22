@@ -85,7 +85,7 @@ class View {
     const canvas = model.canvas;
     if (canvas.label !== 0) {
       document.getElementById('label').innerHTML = canvas.label;
-      const track = model.tracks[mode.feature][canvas.label.toString()];
+      const track = model.tracks[model.feature][canvas.label.toString()];
       document.getElementById('slices').textContent = track.slices.toString();
     } else {
       document.getElementById('label').innerHTML = '';
