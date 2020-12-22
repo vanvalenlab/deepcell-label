@@ -184,8 +184,8 @@ class Model {
     this.highlighted_cell_one = -1;
     this.highlighted_cell_two = -1;
 
-    brush.conv = false;
-    brush.clearThresh();
+    this.brush.conv = false;
+    this.brush.clearThresh();
 
     this.action = '';
     this.prompt = '';
@@ -194,7 +194,7 @@ class Model {
 
   action(action, info) {
     const backendAction = new BackendAction(this, action, info);
-    actions.addFencedAction(backendAction);
+    this.actions.addFencedAction(backendAction);
   }
   
   undo() {
@@ -213,34 +213,34 @@ class Model {
 
   changeFrame(newFrame) {
     const action = new ChangeFrame(this, newFrame);
-    actions.addFencedAction(action);
+    this.actions.addFencedAction(action);
   }
   
   toggleHighlight() {
     const action = new ToggleHighlight();
-    actions.addFencedAction(action);
+    this.actions.addFencedAction(action);
     adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
   }
 
   toggleRaw() {
-    rendering_raw = !rendering_raw;
+    this.rendering_raw = !this.rendering_raw;
     this.notifyImageChange();
   }
 
   toggleLabels() {
-    display_labels = !display_labels;
+    this.display_labels = !this.display_labels;
     this.notifyImageChange();
   }
 
   resetBrightnessContrast() {
     const action = new ResetBrightnessContrast(adjuster);
-    actions.addFencedAction(action);
+    this.actions.addFencedAction(action);
   }
 
   changeZoom(dzoom) {
-    const action = new Zoom(canvas, dzoom);
-    updateMousePos(canvas.rawX, canvas.rawY);
-    actions.addAction(zoom);
+    const action = new Zoom(this.canvas, dzoom);
+    updateMousePos(this.canvas.rawX, this.canvas.rawY);
+    this.actions.addAction(zoom);
     this.notifyImageChange();
   }
 
@@ -277,31 +277,31 @@ class Model {
 
   toggleEdit() {
     const toggleEdit = new ToggleEdit(this);
-    actions.addFencedAction(toggleEdit);
+    this.actions.addFencedAction(toggleEdit);
     helper_brush_draw();
     adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
   }
 
   decrementFrame() {
     let changeFrame = new ChangeFrame(this, this.frame - 1);
-    actions.addFencedAction(changeFrame);
+    this.actions.addFencedAction(changeFrame);
   }
 
   incrementFrame() {
     let changeFrame = new ChangeFrame(this, this.frame + 1);
-    actions.addFencedAction(changeFrame);
+    this.actions.addFencedAction(changeFrame);
   }
 
   decrementBrushSize() {
     // decrease brush size, minimum size 1
-    brush.size -= 1;
+    this.brush.size -= 1;
     // redraw the frame with the updated brush preview
     this.notifyImageChange();
   }
 
   incrementBrushSize() {
     // increase brush size, diameter shouldn't be larger than the image
-    brush.size += 1;
+    this.brush.size += 1;
     // redraw the frame with the updated brush preview
     this.notifyImageChange();
   }
@@ -309,14 +309,14 @@ class Model {
   toggleInvert() {
     // toggle light/dark inversion of raw img
     let toggleInvert = new ToggleInvert(adjuster);
-    actions.addAction(toggleInvert);
+    this.actions.addAction(toggleInvert);
   }
 
   setUnusedBrushLabel() {
     // set edit value to something unused
-    brush.value = maxLabelsMap.get(this.feature) + 1;
+    this.brush.value = this.maxLabelsMap.get(this.feature) + 1;
     if (this.kind === Modes.prompt && brush.conv) {
-      this.prompt = `Now drawing over label ${brush.target} with label ${brush.value}. ` +
+      this.prompt = `Now drawing over label ${this.brush.target} with label ${this.brush.value}. ` +
         `Use ESC to leave this mode.`;
       this.kind = Modes.drawing;
     }
@@ -325,11 +325,11 @@ class Model {
 
   incrementBrushLabel() {
     // increase edit_value up to max label + 1 (guaranteed unused)
-    brush.value = Math.min(
-      brush.value + 1,
-      maxLabelsMap.get(this.feature) + 1
+    this.brush.value = Math.min(
+      this.brush.value + 1,
+      this.maxLabelsMap.get(this.feature) + 1
     );
-    if (current_highlight) {
+    if (highlight) {
       adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
     }
     this.notifyInfoChange();
@@ -337,8 +337,8 @@ class Model {
 
   decrementBrushLabel() {
     // decrease edit_value, minimum 1
-    brush.value -= 1;
-    if (current_highlight) {
+    this.brush.value -= 1;
+    if (this.current_highlight) {
       adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
     }
     this.notifyInfoChange();
@@ -346,7 +346,7 @@ class Model {
 
   toggleEraser() {
     // turn eraser on and off
-    brush.erase = !brush.erase;
+    this.brush.erase = !this.brush.erase;
     this.notifyImageChange();
   }
 
@@ -383,7 +383,7 @@ class Model {
 
   incrementSelectedLabel() {
     // cycle highlight to next label
-    let maxLabel = maxLabelsMap.get(this.feature);
+    let maxLabel = this.maxLabelsMap.get(this.feature);
     this.highlighted_cell_one = this.highlighted_cell_one.mod(maxLabel) + 1;
     // clear info but show new highlighted cell
     const tempHighlight = this.highlighted_cell_one;
@@ -396,12 +396,12 @@ class Model {
   
   changeContrast(change) {
     const action = new ChangeContrast(adjuster, change);
-    actions.addAction(action);
+    this.actions.addAction(action);
   }
 
   changeBrightness(change) {
     const action = new ChangeBrightness(adjuster, change);
-    actions.addAction(action);
+    this.actions.addAction(action);
   }
 
   // actions
@@ -418,7 +418,7 @@ class Model {
     this.kind = Modes.prompt;
     this.action = 'pick_target';
     this.prompt = 'First, click on the label you want to overwrite.';
-    brush.conv = true;
+    this.brush.conv = true;
     this.notifyImageChange();
   }
 
@@ -427,8 +427,8 @@ class Model {
     this.kind = Modes.question;
     this.action = 'start_threshold';
     this.prompt = 'Click and drag to create a bounding box around the area you want to threshold.';
-    brush.show = false;
-    brush.clearView();
+    this.brush.show = false;
+    this.brush.clearView();
     this.notifyImageChange();
   }
 
@@ -530,8 +530,8 @@ class Model {
     };
     this.highlighted_cell_one = this.canvas.label;
     this.highlighted_cell_two = -1;
-    canvas.storedClickX = this.canvas.imgX;
-    canvas.storedClickY = this.canvas.imgY;
+    this.canvas.storedClickX = this.canvas.imgX;
+    this.canvas.storedClickY = this.canvas.imgY;
   }
 
   confirmActionSingleFrame() {
@@ -707,8 +707,8 @@ class Model {
 
     const zoom = 100 / (this.canvas.zoom * this.canvas.scale)
     const pan = new Pan(this.canvas, deltaX * zoom, deltaY * zoom);
-    actions.addAction(pan);
-    if (canvas.sx !== oldX || canvas.sy !== oldY) {
+    this.actions.addAction(pan);
+    if (this.canvas.sx !== oldX || this.canvas.sy !== oldY) {
       this.notifyImageChange();
     }
   }
