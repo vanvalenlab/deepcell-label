@@ -211,8 +211,6 @@ class Loader():
         """
         tiff = tifffile.TiffFile(self._data)
         img = tiff.asarray()
-        # TODO: check these axes are accurate
-        self.axes = tiff.series[0].axes
         if img.ndim != len(self.axes):
             raise ValueError(f'image dimensions {img.shape} do not match axes {self.axes}')
         # Adjust Z dimension (TODO: may also be T, but Z & T not supported together)
