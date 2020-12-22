@@ -266,7 +266,7 @@ class Model {
       if (this.edit_mode) {
         // brush's canvas is keeping track of the brush
         if (this.brush.show) {
-          helper_brush_draw();
+          this.helper_brush_draw();
         } else {
           this.brush.boxView();
         }
@@ -278,7 +278,7 @@ class Model {
   toggleEdit() {
     const toggleEdit = new ToggleEdit(this);
     this.actions.addFencedAction(toggleEdit);
-    helper_brush_draw();
+    this.helper_brush_draw();
     adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
   }
 
