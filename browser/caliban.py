@@ -496,8 +496,8 @@ class BaseEdit(object):
         label_img = np.where(label_img == label, 0, label_img)
 
         # threshold region of bounding box, assign label
-        adjusted_raw_frame = Normalize()(self.raw_frame)
-        predict_area = adjusted_raw_frame[y1:y2, x1:x2, self.channel]
+        adjusted_raw_frame = Normalize()(self.raw_frame[..., self.channel])
+        predict_area = adjusted_raw_frame[y1:y2, x1:x2]
         # import pdb; pdb.set_trace()
         contoured = morphological_chan_vese(predict_area, 100, init_level_set=level_set)
 
