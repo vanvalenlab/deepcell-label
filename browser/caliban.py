@@ -511,7 +511,7 @@ class BaseEdit(object):
         # make sure there's some annotation here even if threshold has failed
         pixel_count = np.count_nonzero(safe_overlay == label)
         if pixel_count < 20:
-            ann_threshold = np.copy(self.frame[y1:y2, x1:x2, self.feature])
+            safe_overlay = np.copy(self.frame[y1:y2, x1:x2, self.feature])
 
         # put it back in the full image so can use centroid coords
         full_frame = np.copy(self.frame[..., self.feature])
