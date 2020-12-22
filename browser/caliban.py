@@ -509,7 +509,7 @@ class BaseEdit(object):
 
         safe_overlay = np.where(label_img == 0, ann_threshold, label_img)
         # make sure there's some annotation here even if threshold has failed
-        pixel_count = np.count_nonzero(ann_threshold == label)
+        pixel_count = np.count_nonzero(safe_overlay == label)
         if pixel_count < 20:
             ann_threshold = np.copy(self.frame[y1:y2, x1:x2, self.feature])
 
