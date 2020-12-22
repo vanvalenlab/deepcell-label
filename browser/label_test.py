@@ -159,30 +159,98 @@ class TestBaseEdit():
         """
         Tests that other labels not affected by active contouring a label
         """
-        pass
+        labels = np.ones((1, 10, 10, 1))
+        labels[:,5:,:,:] = 2
+        project = models.Project.create(DummyLoader(labels=labels))
+        edit = label.ZStackEdit(project)
 
-    def test_action_active_contour_label_too_small(self, app):
-        """
-        When the raw area is larger tha
-        """
-        pass
+        cell = 1
+        other_cell = 2
+
+        with app.app_context():
+            edit.action_active_contour(cell)
+            np.testing.assert_array_equal(labels[project.frame] == other_cell,
+                                          edit.frame == other_cell)
+        
+    # TODO: active contouring has no effect in this test; find out what correct behavior is
+    # def test_action_active_contour_label_too_small(self, app):
+    #     """
+    #     Tests that a label that is smaller than the raw object is made larger by active contouring.
+    
+    #     """
+    #     raw = np.zeros((1, 10, 10, 1))
+    #     labels = np.zeros((1, 10, 10, 1))
+    #     labels[0,4:6,4:6,0] = 1
+    #     raw[0,2:8,2:8,0] = 1
+    #     project = models.Project.create(DummyLoader(raw=raw, labels=labels))
+    #     edit = label.ZStackEdit(project)
+
+    #     cell = 1
+
+    #     with app.app_context():
+    #         edit.action_active_contour(cell)
+    #         assert int((edit.frame == 1).sum()) > (labels[project.frame] == 1).sum()
 
     def test_action_active_contour_label_too_large(self, app):
         """Tests that a label that is larger than the raw objects is made
         smaller by active contouring."""
-        pass
+        raw = np.zeros((1, 10, 10, 1))
+        labels = np.ones((1, 10, 10, 1))
+        raw[0,3:6,3:6,0] = 1
+        project = models.Project.create(DummyLoader(raw=raw, labels=labels))
+        edit = label.ZStackEdit(project)
+
+        cell = 1
+
+        with app.app_context():
+            edit.action_active_contour(cell)
+            assert int((edit.frame == 1).sum()) < (labels[project.frame] == 1).sum()
 
     def test_action_erode_delete_label(self, app):
         """Tests that a label is correctly removed when eroding deletes all of its pixels."""
-        pass
+        labels = np.zeros((1, 3, 3, 1))
+        labels[0,1,1,0] = 1
+        project = models.Project.create(DummyLoader(labels=labels))
+        edit = label.ZStackEdit(project)
+
+        cell = 1
+
+        with app.app_context():
+            edit.action_erode(cell)
+            assert cell not in edit.frame
+            assert cell not in project.labels.cell_ids[project.feature]
+            assert cell not in project.labels.cell_info[project.feature]
+
 
     def test_action_erode_other_labels_unchanged(self, app):
         """Tests that other labels not affected by eroding a label."""
-        pass
+        labels = np.array([[[[1], [1]], [[2], [2]]]])
+        assert labels.shape == (1, 2, 2, 1)
+        project = models.Project.create(DummyLoader(labels=labels))
+        edit = label.ZStackEdit(project)
 
-    def test_action_dilate_two_labels_present(self, app):
+        cell = 1
+        other_cell = 2
+
+        with app.app_context():
+            edit.action_erode(cell)
+            np.testing.assert_array_equal(labels[project.frame] == other_cell,
+                                          edit.frame == other_cell)
+
+    def test_action_dilate_other_labels_unchanged(self, app):
         """Tests that other labels not affected by dilating a label."""
-        pass
+        labels = np.array([[[[1], [1]], [[2], [2]]]])
+        assert labels.shape == (1, 2, 2, 1)
+        project = models.Project.create(DummyLoader(labels=labels))
+        edit = label.ZStackEdit(project)
+
+        cell = 1
+        other_cell = 2
+
+        with app.app_context():
+            edit.action_dilate(cell)
+            np.testing.assert_array_equal(labels[project.frame] == other_cell,
+                                          edit.frame == other_cell)
 
 
 
