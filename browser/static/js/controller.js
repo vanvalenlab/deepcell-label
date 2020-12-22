@@ -585,9 +585,9 @@ class Controller {
       this.model.redo();
     } else if ((evt.ctrlKey || evt.metaKey) && (evt.key === 'Z' || evt.key === 'z')) {
       this.model.undo();
-    } else if (numFrames > 1 && (evt.key === 'a' || evt.key === 'ArrowLeft')) {
+    } else if (this.model.numFrames > 1 && (evt.key === 'a' || evt.key === 'ArrowLeft')) {
       this.model.decrementFrame();
-    } else if (numFrames > 1 && (evt.key === 'd' || evt.key === 'ArrowRight')) {
+    } else if (this.model.numFrames > 1 && (evt.key === 'd' || evt.key === 'ArrowRight')) {
       this.model.incrementFrame();
     } else if (evt.key === 'Escape') {
       // deselect/cancel action/reset highlight
