@@ -7,12 +7,12 @@ class View {
     adjuster.segImage.onload = () => adjuster.preCompAdjust();
     if (model.rgb) {
       adjuster.contrastedRaw.onload = () => adjuster.rawAdjust();
-      adjuster.preCompSeg.onload = () => adjuster.segAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
+      adjuster.preCompSeg.onload = () => adjuster.segAdjust();
     } else {
       adjuster.contrastedRaw.onload = () => adjuster.preCompRawAdjust();
-      adjuster.preCompRaw.onload = () => adjuster.rawAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
-      adjuster.preCompSeg.onload = () => adjuster.segAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
-      adjuster.compositedImg.onload = () => adjuster.postCompAdjust(canvas.segArray, edit_mode, brush, current_highlight);
+      adjuster.preCompRaw.onload = () => adjuster.rawAdjust();
+      adjuster.preCompSeg.onload = () => adjuster.segAdjust();
+      adjuster.compositedImg.onload = () => adjuster.postCompAdjust();
     }
 
     adjuster.postCompImg.onload = this.render_image_display;

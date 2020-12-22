@@ -338,22 +338,22 @@ class ImageAdjuster {
     this.postCompImg.src = this.canvas.toDataURL();
   }
 
-  segAdjust(segArray, currentHighlight, editMode, brush, mode) {
+  segAdjust() {
     this.segLoaded = true;
     if (this.rawLoaded && this.segLoaded) {
       if (this.rgb) {
-        this.postCompAdjustRGB(segArray, currentHighlight, editMode, brush, mode);
+        this.postCompAdjustRGB();
       } else {
         this.compositeImages();
       }
     }
   }
 
-  rawAdjust(segArray, currentHighlight, editMode, brush, mode) {
+  rawAdjust() {
     this.rawLoaded = true;
     if (this.rawLoaded && this.segLoaded) {
       if (this.rgb) {
-        this.postCompAdjustRGB(segArray, currentHighlight, editMode, brush, mode);
+        this.postCompAdjustRGB();
       } else {
         this.compositeImages();
       }
