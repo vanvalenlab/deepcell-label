@@ -92,7 +92,7 @@ class Model {
 
   // TODO: use Observable interface instead of hard-coding a single Observer
   notifyImageChange() {
-    this.view.adjuster.render_image_display();
+    this.view.render_image_display();
   }
 
   notifyImageFormattingChange() {
