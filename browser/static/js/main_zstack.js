@@ -223,13 +223,13 @@ class Mode {
       this.info = {label: this.info.label};
       this.action = 'erode';
       this.kind = Modes.question;
-      this.prompt = `Press SPACE to erode label ${this.info.label}`;
+      this.prompt = `Press SPACE to shrink label ${this.info.label}`;
     } else if (evt.key === 'Q') {
       // dilate
       this.info = {label: this.info.label};
       this.action = 'dilate';
       this.kind = Modes.question;
-      this.prompt = `Press SPACE to dilate label ${this.info.label}`;
+      this.prompt = `Press SPACE to expand label ${this.info.label}`;
     } else if (evt.key === 'f') {
       // hole fill
       this.info = {
