@@ -630,7 +630,7 @@ class Model {
     this.brush.target = this.canvas.label;
     this.action = 'pick_color';
     this.prompt = 'Click on the label you want to draw with, or press "n" to draw with an unused label.';
-    render_info_display();
+    this.notifyInfoChange();
   }
 
   selectSecondLabel() {
