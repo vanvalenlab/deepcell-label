@@ -525,9 +525,8 @@ class BaseEdit(object):
         full_frame = np.copy(self.frame[..., self.feature])
         full_frame[y1:y2, x1:x2] = safe_overlay
 
-        # avoid automated label cleanup if the centroid (flood seed point) is of background
-        # TODO: perhaps this should be "if (seed point value) != label" instead
-        if full_frame[int(props['centroid'][0]), int(props['centroid'][1])] == 0:
+        # avoid automated label cleanup if the centroid (flood seed point) is not the right label
+        if full_frame[int(props['centroid'][0]), int(props['centroid'][1])] != label:
             img_trimmed = full_frame
         else:
             # morphology and logic used by pixel-trimming action, with object centroid as seed
