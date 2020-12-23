@@ -509,10 +509,9 @@ class BaseEdit(object):
         contoured_label = dilation(contoured_label, disk(3))
 
         # don't want to leave the original (un-contoured) label in the image
-        label_img = np.where(label_img == label, 0, label_img)
-
         # never overwrite other labels with new contoured label
-        safe_overlay = np.where(label_img == 0, contoured_label, label_img)
+        cond = np.logical_or(label_img == label, label_img == 0)
+        safe_overlay = np.where(cond, contoured_label, label_img)
 
         # label must be present in safe_overlay for this to be a valid contour result
         # very few pixels of contoured label indicate contour prediction not worth keeping
