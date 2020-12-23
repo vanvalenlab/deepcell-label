@@ -475,7 +475,7 @@ class BaseEdit(object):
         if np.any(np.isin(self.frame[..., self.feature], label)):
             self.add_cell_info(add_label=label, frame=self.frame_id)
 
-    def action_active_contour(self, label):
+    def action_active_contour(self, label, min_pixels=20):
         label_img = np.copy(self.frame[..., self.feature])
 
         # get centroid of selected label
@@ -516,7 +516,7 @@ class BaseEdit(object):
         # label must be present in safe_overlay for this to be a valid contour result
         # very few pixels of contoured label indicate contour prediction not worth keeping
         pixel_count = np.count_nonzero(safe_overlay == label)
-        if pixel_count < 20:
+        if pixel_count < min_pixels:
             safe_overlay = np.copy(self.frame[y1:y2, x1:x2, self.feature])
 
         # put it back in the full image so can use centroid coords for post-contour cleanup
