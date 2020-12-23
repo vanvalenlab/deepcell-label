@@ -504,7 +504,7 @@ class BaseEdit(object):
         contoured = morphological_chan_vese(predict_area, 100, init_level_set=level_set)
 
         # contoured area should get original label value
-        contoured_label = np.where(contoured, label, 0)
+        contoured_label = contoured_label * label
         # contours tend to fit very tightly, a small expansion here works well
         contoured_label = dilation(contoured_label, disk(3))
 
