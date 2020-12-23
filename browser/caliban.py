@@ -475,7 +475,7 @@ class BaseEdit(object):
         if np.any(np.isin(self.frame[..., self.feature], label)):
             self.add_cell_info(add_label=label, frame=self.frame_id)
 
-    def action_active_contour(self, label, min_pixels=20):
+    def action_active_contour(self, label, min_pixels=20, iterations=100):
         label_img = np.copy(self.frame[..., self.feature])
 
         # get centroid of selected label
@@ -501,7 +501,7 @@ class BaseEdit(object):
         predict_area = adjusted_raw_frame[y1:y2, x1:x2]
 
         # returns 1 where label is predicted to be based on contouring, 0 background
-        contoured = morphological_chan_vese(predict_area, 100, init_level_set=level_set)
+        contoured = morphological_chan_vese(predict_area, iterations, init_level_set=level_set)
 
         # contoured area should get original label value
         contoured_label = contoured_label * label
