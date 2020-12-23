@@ -499,7 +499,6 @@ class BaseEdit(object):
         # normalize input 2D frame data values to range [0.0, 1.0]
         adjusted_raw_frame = Normalize()(self.raw_frame[..., self.channel])
         predict_area = adjusted_raw_frame[y1:y2, x1:x2]
-        # import pdb; pdb.set_trace()
 
         # returns 1 where label is predicted to be based on contouring, 0 background
         contoured = morphological_chan_vese(predict_area, 100, init_level_set=level_set)
