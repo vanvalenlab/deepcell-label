@@ -11,12 +11,14 @@ import tarfile
 import tempfile
 
 import numpy as np
+from matplotlib.colors import Normalize
 from skimage import filters
 from skimage.morphology import flood_fill, flood
-from skimage.morphology import watershed, dilation, disk
+from skimage.morphology import watershed, dilation, disk, square, closing, erosion
 from skimage.draw import circle
 from skimage.exposure import rescale_intensity
 from skimage.measure import regionprops
+from skimage.segmentation import morphological_chan_vese
 
 
 class ChangeDisplay(object):
@@ -472,6 +474,108 @@ class BaseEdit(object):
         # don't need to update cell_info unless an annotation has been added
         if np.any(np.isin(self.frame[..., self.feature], label)):
             self.add_cell_info(add_label=label, frame=self.frame_id)
+
+    def action_active_contour(self, label, min_pixels=20, iterations=100):
+        label_img = np.copy(self.frame[..., self.feature])
+
+        # get centroid of selected label
+        props = regionprops(np.where(label_img == label, label, 0))[0]
+
+        # make bounding box size to encompass some background
+        box_height = props['bbox'][2] - props['bbox'][0]
+        y1 = max(0, props['bbox'][0] - box_height // 2)
+        y2 = min(self.project.height, props['bbox'][2] + box_height // 2)
+
+        box_width = props['bbox'][3] - props['bbox'][1]
+        x1 = max(0, props['bbox'][1] - box_width // 2)
+        x2 = min(self.project.width, props['bbox'][3] + box_width // 2)
+
+        # relevant region of label image to work on
+        label_img = label_img[y1:y2, x1:x2]
+
+        # use existing label as initial level set for contour calculations
+        level_set = np.where(label_img == label, 1, 0)
+
+        # normalize input 2D frame data values to range [0.0, 1.0]
+        adjusted_raw_frame = Normalize()(self.raw_frame[..., self.channel])
+        predict_area = adjusted_raw_frame[y1:y2, x1:x2]
+
+        # returns 1 where label is predicted to be based on contouring, 0 background
+        contoured = morphological_chan_vese(predict_area, iterations, init_level_set=level_set)
+
+        # contoured area should get original label value
+        contoured_label = contoured * label
+        # contours tend to fit very tightly, a small expansion here works well
+        contoured_label = dilation(contoured_label, disk(3))
+
+        # don't want to leave the original (un-contoured) label in the image
+        # never overwrite other labels with new contoured label
+        cond = np.logical_or(label_img == label, label_img == 0)
+        safe_overlay = np.where(cond, contoured_label, label_img)
+
+        # label must be present in safe_overlay for this to be a valid contour result
+        # very few pixels of contoured label indicate contour prediction not worth keeping
+        pixel_count = np.count_nonzero(safe_overlay == label)
+        if pixel_count < min_pixels:
+            safe_overlay = np.copy(self.frame[y1:y2, x1:x2, self.feature])
+
+        # put it back in the full image so can use centroid coords for post-contour cleanup
+        full_frame = np.copy(self.frame[..., self.feature])
+        full_frame[y1:y2, x1:x2] = safe_overlay
+
+        # avoid automated label cleanup if the centroid (flood seed point) is not the right label
+        if full_frame[int(props['centroid'][0]), int(props['centroid'][1])] != label:
+            img_trimmed = full_frame
+        else:
+            # morphology and logic used by pixel-trimming action, with object centroid as seed
+            contig_cell = flood(image=full_frame,
+                                seed_point=(int(props['centroid'][0]), int(props['centroid'][1])))
+
+            # any pixels in img_ann that have value 'label' and are NOT connected to hole_fill_seed
+            # get changed to 0, all other pixels retain their original value
+            img_trimmed = np.where(np.logical_and(np.invert(contig_cell),
+                                                  full_frame == label),
+                                   0, full_frame)
+
+        # update image; cell_info should never change as a result of this
+        self.frame[y1:y2, x1:x2, self.feature] = img_trimmed[y1:y2, x1:x2]
+        self.y_changed = True
+
+    def action_erode(self, label):
+        """
+        Use morphological erosion to incrementally shrink the selected label.
+        """
+        img_ann = self.frame[..., self.feature]
+
+        # if label is adjacent to another label, don't let that interfere
+        img_erode = np.where(img_ann == label, label, 0)
+        # erode the label
+        img_erode = erosion(img_erode, square(3))
+
+        # put the label back in
+        img_ann = np.where(img_ann == label, img_erode, img_ann)
+
+        in_modified = np.any(np.isin(img_ann, label))
+        if not in_modified:
+            self.del_cell_info(del_label=label, frame=self.frame_id)
+
+        self.frame[..., self.feature] = img_ann
+        self.y_changed = True
+
+    def action_dilate(self, label):
+        """
+        Use morphological dilation to incrementally increase the selected label.
+        Does not overwrite bordering labels.
+        """
+        img_ann = self.frame[..., self.feature]
+
+        img_dilate = np.where(img_ann == label, label, 0)
+        img_dilate = dilation(img_dilate, square(3))
+
+        img_ann = np.where(np.logical_and(img_dilate == label, img_ann == 0), img_dilate, img_ann)
+
+        self.frame[..., self.feature] = img_ann
+        self.y_changed = True
 
 
 class ZStackEdit(BaseEdit):
