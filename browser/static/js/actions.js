@@ -140,12 +140,13 @@ class BackendAction extends Action {
     this.model = model;
     this.action = action;
     this.info = info;
+    this.projectID = model.projectID;
   }
 
   do() {
     const promise = $.ajax({
       type: 'POST',
-      url: `${document.location.origin}/api/edit/${project_id}/${this.action}`,
+      url: `${document.location.origin}/api/edit/${this.projectID}/${this.action}`,
       data: this.info,
       async: false
     });
@@ -155,7 +156,7 @@ class BackendAction extends Action {
   undo() {
     const promise = $.ajax({
       type: 'POST',
-      url: `${document.location.origin}/api/undo/${project_id}`,
+      url: `${document.location.origin}/api/undo/${this.projectID}`,
       async: false
     })
     promise.done(this.model.handlePayload);
@@ -164,7 +165,7 @@ class BackendAction extends Action {
   redo() {
     const promise = $.ajax({
       type: 'POST',
-      url: `${document.location.origin}/api/redo/${project_id}`,
+      url: `${document.location.origin}/api/redo/${this.projectID}`,
       async: false
     })
     promise.done(this.model.handlePayload);
