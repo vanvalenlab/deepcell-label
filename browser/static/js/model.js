@@ -643,8 +643,8 @@ class Model {
     this.info = {
       label: this.info.label,
       frame: this.frame,
-      x_location: canvas.imgX,
-      y_location: canvas.imgY
+      x_location: this.canvas.imgX,
+      y_location: this.canvas.imgY
     };
     this.doAction(this.action, this.info);
     this.clear();
@@ -673,7 +673,7 @@ class Model {
     this.kind = Modes.multiple;
 
     this.highlighted_cell_one = this.info.label;
-    this.highlighted_cell_two = canvas.label;
+    this.highlighted_cell_two = this.canvas.label;
 
     this.info = {
       label_1: this.info.label,
