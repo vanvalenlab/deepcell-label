@@ -761,22 +761,4 @@ class Model {
   updateDrawTrace() {
     this.canvas.trace.push([this.canvas.imgY, this.canvas.imgX]);
   }
-
-
-
-
-
-
 }
-
-
-// var tracks;
-// var mode = new Mode(Modes.none, {});
-// var edit_mode;
-// var project_id;
-
-// var tracks;
-
-// var adjuster;
-// var canvas; 
-// var actions;
