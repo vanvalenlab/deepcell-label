@@ -319,8 +319,6 @@ class Model {
   toggleEdit() {
     const toggleEdit = new ToggleEdit(this);
     this.actions.addFencedAction(toggleEdit);
-    this.helper_brush_draw();
-    this.notifyImageFormattingChange();
   }
 
   decrementFrame() {
@@ -349,7 +347,7 @@ class Model {
 
   toggleInvert() {
     // toggle light/dark inversion of raw img
-    let toggleInvert = new ToggleInvert(adjuster);
+    let toggleInvert = new ToggleInvert(this.view.adjuster);
     this.actions.addAction(toggleInvert);
   }
 

@@ -4,18 +4,20 @@ class ToggleEdit extends Action {
     this.model = model;
   }
 
-    do() {
-      this.model.edit_mode = !this.model.edit_mode;
-    }
-
-    undo() {
-      this.do()
-    }
-
-    redo() {
-      this.do()
-    }
+  do() {
+    this.model.edit_mode = !this.model.edit_mode;
+    this.model.helper_brush_draw();
+    this.model.notifyImageFormattingChange();
   }
+
+  undo() {
+    this.do()
+  }
+
+  redo() {
+    this.do()
+  }
+}
 
 class ToggleHighlight extends Action {
   constructor(model) {
