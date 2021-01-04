@@ -3,7 +3,7 @@ class Controller {
   constructor(projectID) {
     const getProject = $.ajax({
       type: 'GET',
-      url: `${document.location.origin}/getproject/${projectID}`,
+      url: `${document.location.origin}/api/project/${projectID}`,
       async: true
     });
     
