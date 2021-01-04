@@ -406,7 +406,7 @@ class Model {
       this.notifyImageFormattingChange();
     }
   }
-  
+
   changeContrast(change) {
     const action = new ChangeContrast(adjuster, change);
     this.actions.addAction(action);
