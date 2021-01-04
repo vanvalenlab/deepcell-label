@@ -279,9 +279,9 @@ class Model {
   }
 
   changeZoom(dzoom) {
-    const action = new Zoom(this.canvas, dzoom);
+    const action = new Zoom(this, dzoom);
     this.updateMousePos(this.canvas.rawX, this.canvas.rawY);
-    this.actions.addAction(zoom);
+    this.actions.addAction(action);
     this.notifyImageChange();
   }
 
@@ -747,7 +747,7 @@ class Model {
     const oldY = this.canvas.sy;
 
     const zoom = 100 / (this.canvas.zoom * this.canvas.scale)
-    const pan = new Pan(this.canvas, deltaX * zoom, deltaY * zoom);
+    const pan = new Pan(this, deltaX * zoom, deltaY * zoom);
     this.actions.addAction(pan);
     if (this.canvas.sx !== oldX || this.canvas.sy !== oldY) {
       this.notifyImageChange();

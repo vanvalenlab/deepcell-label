@@ -53,7 +53,7 @@ class CanvasState {
 
   set sx(newSx) {
     // don't move past right edge
-    newSx = Math.min(newSx, canvas.width - canvas.sWidth);
+    newSx = Math.min(newSx, this.width - this.sWidth);
     // don't move past left edge
     newSx = Math.max(newSx, 0);
     this._sx = newSx;
@@ -65,7 +65,7 @@ class CanvasState {
 
   set sy(newSy) {
     // don't move past bottom edge
-    newSy = Math.min(newSy, canvas.height - canvas.sHeight);
+    newSy = Math.min(newSy, this.height - this.sHeight);
     // don't move past top edge
     newSy = Math.max(0, newSy);
     this._sy = newSy;
@@ -198,12 +198,12 @@ class CanvasState {
 
 class Pan extends Action {
   // Implements command pattern for an undoable pan
-  constructor(canvas, dx, dy) {
+  constructor(model, dx, dy) {
     super();
-    this.canvas = canvas;
+    this.canvas = model.canvas;
     // previous canvas position
-    this.oldSx = canvas.sx;
-    this.oldSy = canvas.sy;
+    this.oldSx = this.canvas.sx;
+    this.oldSy = this.canvas.sy;
     // change in canvas position
     this.dx = -dx;
     this.dy = -dy;
@@ -213,26 +213,27 @@ class Pan extends Action {
   }
 
   do() {
-    canvas.sx = canvas.sx + this.dx;
-    canvas.sy = canvas.sy + this.dy;
-    this.newSx = canvas.sx;
-    this.newSy = canvas.sy;
+    this.canvas.sx = this.canvas.sx + this.dx;
+    this.canvas.sy = this.canvas.sy + this.dy;
+    this.newSx = this.canvas.sx;
+    this.newSy = this.canvas.sy;
   }
 
   redo() {
-    canvas.sx = this.newSx;
-    canvas.sy = this.newSy;
+    this.canvas.sx = this.newSx;
+    this.canvas.sy = this.newSy;
   }
 
   undo() {
-    canvas.sx = this.oldSx;
-    canvas.sy = this.oldSy;
+    this.canvas.sx = this.oldSx;
+    this.canvas.sy = this.oldSy;
   }
 }
 
 class Zoom extends Action {
-  constructor(canvas, dZoom) {
+  constructor(model, dZoom) {
     super();
+    let canvas = model.canvas;
     // Calculate how much canvas zooms
     const zoom = Math.max(canvas.zoom - 10 * dZoom, canvas.zoomLimit);
 
@@ -246,6 +247,7 @@ class Zoom extends Action {
     this.dx = propX * (newWidth - oldWidth);
     this.dy = propY * (newHeight - oldHeight);
 
+    this.model = model;
     this.canvas = canvas;
     this.oldZoom = canvas.zoom;
     this.newZoom = zoom;
@@ -254,8 +256,8 @@ class Zoom extends Action {
   do() {
     // Zoom then pan
     this.setZoom(this.newZoom);
-    let pan = new Pan(this.canvas, this.dx, this.dy);
-    actions.addAction(pan);
+    let pan = new Pan(this.model, this.dx, this.dy);
+    this.model.actions.addAction(pan);
   }
 
   redo() {
