@@ -212,7 +212,10 @@ class Loader():
         tiff = tifffile.TiffFile(self._data)
         img = tiff.asarray()
         if img.ndim != len(self.axes):
-            raise ValueError(f'image dimensions {img.shape} do not match axes {self.axes}')
+            # Truncate the axes to match the image shape
+            self.axes = self.axes[:img.ndim]
+            # TODO: log this message to record that the image was reshaped
+            # raise ValueError(f'image dimensions {img.shape} do not match axes {self.axes}')
         # Adjust Z dimension (TODO: may also be T, but Z & T not supported together)
         zstack_axis = self.axes.find('Z')
         if zstack_axis == -1:
