@@ -177,6 +177,22 @@ class Model {
     this.brush.addToView();
   }
 
+  /**
+   * Sends a POST request to change the current frame, feature, or channel.
+   * Handles the image data in the response.
+   *
+   * @param {string} displayAttr which attribute to change (e.g. frame, feature, or channel)
+   * @param {int} value value to set to attribute
+   */
+  setDisplay(displayAttr, value) {
+    const promise = $.ajax({
+      type: 'POST',
+      url: `${document.location.origin}/api/changedisplay/${this.projectID}/${displayAttr}/${value}`,
+      async: true
+    })
+    return promise.done(this.handlePayload);
+  }
+
   handlePayload(payload) {
     if (payload.error) {
       alert(payload.error);

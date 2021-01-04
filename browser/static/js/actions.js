@@ -48,16 +48,14 @@ class ChangeFrame extends Action {
   do() {
     this.model.frame = this.newValue;
     if (this.model.action !== '') { this.model.clear() };
-    const promise = setDisplay('frame', this.newValue);
-    promise.done(this.model.handlePayload);
+    this.model.setDisplay('frame', this.newValue);
   }
 
 
   undo() {
     this.model.frame = this.oldValue;
     if (this.model.action !== '') { this.model.clear() };
-    const promise = setDisplay('frame', this.oldValue);
-    promise.done(this.model.handlePayload);
+    this.model.setDisplay('frame', this.oldValue);
   }
 
   redo() {
@@ -77,15 +75,13 @@ class ChangeFeature extends Action {
   do() {
     this.model.feature = this.newValue;
     this.model.clear();
-    const promise = setDisplay('feature', this.newValue);
-    promise.done(this.model.handlePayload);
+    this.model.setDisplay('feature', this.newValue);
   }
 
   undo() {
     this.model.feature = this.oldValue;
     this.model.clear();
-    const promise = setDisplay('feature', this.oldValue);
-    promise.done(this.model.handlePayload);
+    this.model.setDisplay('feature', this.oldValue);
   }
 
   redo() {
@@ -104,8 +100,8 @@ class ChangeChannel extends Action {
   }
 
   do() {
-    const promise = setDisplay('channel', this.newValue);
-    promise.done(this.model.handlePayload).done( () => {
+    const promise = this.model.setDisplay('channel', this.newValue);
+    promise.done( () => {
       this.adjust(this.oldValue, this.newValue);
     });
     // render_info_display();
@@ -135,22 +131,6 @@ class ChangeChannel extends Action {
     this.model.clear();
     this.model.channel = newValue;
   }
-}
-
-/**
- * Sends a POST request to change the current frame, feature, or channel.
- * Handles the image data in the response.
- *
- * @param {string} displayAttr which attribute to change (e.g. frame, feature, or channel)
- * @param {int} value value to set to attribute
- */
-function setDisplay(displayAttr, value) {
-  const promise = $.ajax({
-    type: 'POST',
-    url: `${document.location.origin}/api/changedisplay/${project_id}/${displayAttr}/${value}`,
-    async: true
-  })
-  return promise;
 }
 
 class BackendAction extends Action {
