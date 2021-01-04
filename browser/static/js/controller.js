@@ -81,8 +81,9 @@ class Controller {
     const canvasElement = document.getElementById('canvas');
     // bind click on canvas
     canvasElement.addEventListener('click', (evt) => {
-      if (!canvas.isSpacedown && (!edit_mode || mode.kind === Modes.prompt)) {
-        mode.click(evt);
+      if (!this.model.canvas.isSpacedown && 
+          (!this.model.edit_mode || this.model.kind === Modes.prompt)) {
+        this.click(evt);
       }
     });
   
@@ -319,23 +320,23 @@ class Controller {
       // if nothing selected: shift-, alt-, or normal click
       this.handle_mode_none_click(evt);
       if (this.model.highlight) {
-        this.view.adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
+        this.view.adjuster.preCompAdjust();
       } else {
         this.view.render_info_display();
       }
-    } else if (this.kind === Modes.single) {
+    } else if (this.model.kind === Modes.single) {
       // one label already selected
       this.handle_mode_single_click(evt);
       if (this.model.highlight) {
-        adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
+        this.view.adjuster.preCompAdjust();
       } else {
         render_info_display();
       }
-    } else if (this.kind  === Modes.multiple) {
+    } else if (this.model.kind  === Modes.multiple) {
       // two labels already selected, reselect second label
       this.handle_mode_multiple_click(evt);
       if (this.model.highlight) {
-        adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, this);
+        this.view.adjuster.preCompAdjust();
       } else {
         render_info_display();
       }
