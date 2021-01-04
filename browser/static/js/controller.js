@@ -6,7 +6,7 @@ class Controller {
       url: `${document.location.origin}/api/project/${projectID}`,
       async: true
     });
-    
+
     getProject.done((project) => {
       // ??? make a new model? attribute of the controller? register controller with model?
       this.model = new Model(project);
@@ -15,14 +15,15 @@ class Controller {
       this.addWindowBindings();
       this.addCanvasBindings();
       // this.addBrowsingBindings(project);
-    
+
       this.setCanvasDimensions(project.dimensions);
 
       // Load images and seg_array from payload
       this.model.segArray = project.imgs.seg_arr;
       this.model.segImage = project.imgs.segmented;
       this.model.rawImage = project.imgs.raw;
-    
+
+      this.addUndoBindings();
       this.view.displayUndoRedo();
 
     });
@@ -102,6 +103,14 @@ class Controller {
       canvas.onCanvas = false;
     }
 
+  }
+
+  addUndoBindings() {
+    const undoButton = document.getElementById('undo');
+    const redoButton = document.getElementById('redo');
+
+    undoButton.onclick = () => this.model.undo();
+    redoButton.onclick = () => this.model.redo();
   }
 
   /**
