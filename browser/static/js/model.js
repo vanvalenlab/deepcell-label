@@ -13,7 +13,7 @@ var answer = '(SPACE=YES / ESC=NO)';
 
 class Model {
   constructor(project) {
-    this.frame = 0;
+    this.frame = project.frame;
     this.feature = 0;
     this.channel = 0;
 
@@ -216,6 +216,7 @@ class Model {
 
     if (payload.tracks || payload.imgs) {
       this.notifyImageChange();
+      this.notifyInfoChange();
     }
   }
 
