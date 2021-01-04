@@ -60,7 +60,7 @@ def handle_exception(error):
 
     traceback.print_exc()
     # now you're handling non-HTTP exceptions only
-    return jsonify({'message': str(error)}), 500
+    return jsonify({'error': str(error)}), 500
 
 
 @bp.route('/api/edit/<token>/<action_type>', methods=['POST'])

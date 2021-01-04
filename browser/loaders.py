@@ -122,7 +122,7 @@ class Loader():
         elif path.suffix in {'.tiff', '.tif'}:
             self._load_tiff()
         else:
-            raise InvalidExtension('Cannot load file: {}'.format(path))
+            raise InvalidExtension('invalid file extension: {}'.format(path.suffix))
 
     def _load_npz(self):
         """
@@ -316,5 +316,5 @@ class InvalidExtension(Exception):
 
     def to_dict(self):
         rv = dict(self.payload or ())
-        rv['message'] = self.message
+        rv['error'] = self.message
         return rv
