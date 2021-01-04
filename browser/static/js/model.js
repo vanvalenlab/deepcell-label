@@ -29,9 +29,9 @@ class Model {
     this.highlighted_cell_one = -1;
     this.highlighted_cell_two = -1;
 
-    this.numFrames = project.num_frames;
-    this.numFeatures = project.num_features;
-    this.numChannels = project.num_channels;
+    this.numFrames = project.numFrames;
+    this.numFeatures = project.numFeatures;
+    this.numChannels = project.numChannels;
     this.projectID = project.project_id;
 
     this.tracks = project.tracks;
