@@ -63,7 +63,7 @@ class Model {
 
     this.actionID = project.action_id;
     this.actions = new History();
-    this.actions.initializeHistory(project.actionFrames);
+    // this.actions.initializeHistory(project.actionFrames);
 
     // TODO: get rid of edit mode/whole label mode distinction
     this.edit_mode = true;
