@@ -190,7 +190,7 @@ class Model {
       url: `${document.location.origin}/api/changedisplay/${this.projectID}/${displayAttr}/${value}`,
       async: true
     })
-    return promise.done(this.handlePayload);
+    return promise.done((payload) => this.handlePayload(payload));
   }
 
   handlePayload(payload) {
