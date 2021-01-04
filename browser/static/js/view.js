@@ -186,14 +186,14 @@ class View {
   }
 
   render_raw_image(ctx) {
-    this.model.canvas.drawImage(ctx, this.adjuster.contrastedRaw, model.padding);
+    this.model.canvas.drawImage(ctx, this.adjuster.contrastedRaw, this.model.padding);
   }
   
   render_annotation_image(ctx) {
-    if (rgb && !display_labels) {
-      this.model.canvas.drawImage(ctx, this.adjuster.postCompImg, padding);
+    if (this.model.rgb && !this.model.display_labels) {
+      this.model.canvas.drawImage(ctx, this.adjuster.postCompImg, this.model.padding);
     } else {
-      this.model.canvas.drawImage(ctx, this.adjuster.preCompSeg, padding);
+      this.model.canvas.drawImage(ctx, this.adjuster.preCompSeg, this.model.padding);
     }
   }
 }
