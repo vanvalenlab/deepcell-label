@@ -56,8 +56,9 @@ class Model {
     
     this.labelOpacity = 0.3;
 
-    this.rawImage = new Image();
-    this.segImage = new Image();
+    this._rawImage = new Image();
+    this._segImage = new Image();
+    // array of arrays, contains annotation data for frame
     this._segArray = null;
 
     this.actionID = project.action_id;
@@ -77,8 +78,9 @@ class Model {
     adjuster.rawLoaded = false;
     adjuster.segLoaded = false;
     adjuster.arrayLoaded = false;
+    this.adjuster = adjuster;
 
-    this.getImages();
+    // this.getImages();
   }
 
   get segArray() {
@@ -88,6 +90,26 @@ class Model {
   set segArray(newSegArray) {
     this._segArray = newSegArray;
     this.canvas.segArray = newSegArray;
+  }
+
+  get segImage() {
+    return this._segImage;
+  }
+
+  set segImage(newSegImage) {
+    this._segImage = newSegImage;
+    this.adjuster.segLoaded = false;
+    this.adjuster.segImage.src = newSegImage;
+  }
+
+  get rawImage() {
+    return this._rawImage;
+  }
+
+  set rawImage(newRawImage) {
+    this._rawImage = newRawImage;
+    this.adjuster.rawLoaded = false;
+    this.adjuster.rawImage.src = newRawImage;
   }
 
   // TODO: use Observable interface instead of hard-coding a single Observer
@@ -159,36 +181,26 @@ class Model {
     if (payload.error) {
       alert(payload.error);
     }
-  
-    if (payload.raw || payload.labels) {
-      adjuster.rawLoaded = false;
-      adjuster.segLoaded = false;
-      adjuster.arrayLoaded = false;
-      console.log(this.frame);
-      this.getImages();
+
+    if (payload.imgs) {
+      if (Object.prototype.hasOwnProperty.call(payload.imgs, 'seg_arr')) {
+        this.segArray = payload.imgs.seg_arr;
+      }
+      if (Object.prototype.hasOwnProperty.call(payload.imgs, 'segmented')) {
+        this.segImage = payload.imgs.segmented;
+      }
+      if (Object.prototype.hasOwnProperty.call(payload.imgs, 'raw')) {
+        this.rawImage = payload.imgs.raw;
+      }
     }
   
     if (payload.tracks) {
-      tracks = payload.tracks;
-      // update maxLabelsMap when we get new track info
-      for (let i = 0; i < Object.keys(tracks).length; i++) {
-        const key = Object.keys(tracks)[i]; // the keys are strings
-        if (Object.keys(tracks[key]).length > 0) {
-          // use i as key in this map because it is an int, mode.feature is also int
-          maxLabelsMap.set(i, Math.max(...Object.keys(tracks[key]).map(Number)));
-        } else {
-          // if no labels in feature, explicitly set max label to 0
-          maxLabelsMap.set(i, 0);
-        }
-      }
+      this.processMaxLabels(payload.tracks);
     }
+
     if (payload.tracks || payload.imgs) {
       this.notifyImageChange();
     }
-  }
-
-  loadSegArray() {
-    1;
   }
 
   clear() {

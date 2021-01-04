@@ -15,7 +15,7 @@ class View {
       adjuster.compositedImg.onload = () => adjuster.postCompAdjust();
     }
 
-    adjuster.postCompImg.onload = this.render_image_display;
+    adjuster.postCompImg.onload = this.render_image_display.bind(this);
 
     this.adjuster = adjuster;
     // TODO: should the view own the model? or instead have the model notify the view with the info it needs?

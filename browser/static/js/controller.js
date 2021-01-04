@@ -17,6 +17,11 @@ class Controller {
       // this.addBrowsingBindings(project);
     
       this.setCanvasDimensions(project.dimensions);
+
+      // Load images and seg_array from payload
+      this.model.segArray = project.imgs.seg_arr;
+      this.model.segImage = project.imgs.segmented;
+      this.model.rawImage = project.imgs.raw;
     
       this.view.displayUndoRedo();
 
