@@ -217,7 +217,7 @@ class Model {
     this.notifyImageFormattingChange();
   }
 
-  action(action, info) {
+  doAction(action, info) {
     const backendAction = new BackendAction(this, action, info);
     this.actions.addFencedAction(backendAction);
   }
@@ -561,12 +561,12 @@ class Model {
 
   confirmActionSingleFrame() {
     if (this.action === 'create_new') {
-      action('new_single_cell', this.info);
+      this.doAction('new_single_cell', this.info);
     } else if (this.action === 'predict') {
-      action('predict_single', { frame: this.frame });
+      this.doAction('predict_single', { frame: this.frame });
     } else if (this.action === 'replace') {
       if (this.info.label_1 !== this.info.label_2) {
-        action('replace_single', {
+        this.doAction('replace_single', {
           label_1: this.info.label_1,
           label_2: this.info.label_2
         });
@@ -574,7 +574,7 @@ class Model {
     } else if (this.action === 'swap_cells') {
       if (this.info.label_1 !== this.info.label_2 &&
           this.info.frame_1 === this.info.frame_2) {
-        action('swap_single_frame', {
+        this.doAction('swap_single_frame', {
           label_1: this.info.label_1,
           label_2: this.info.label_2,
           frame: this.info.frame_1
@@ -586,25 +586,25 @@ class Model {
 
   confirmAction() {
     if (this.action === 'flood_contiguous') {
-      action(this.action, this.info);
+      this.doAction(this.action, this.info);
     } else if (this.action === 'trim_pixels') {
-      action(this.action, this.info);
+      this.doAction(this.action, this.info);
     } else if (this.action === 'create_new') {
-      action('new_cell_stack', this.info);
+      this.doAction('new_cell_stack', this.info);
     } else if (this.action === 'delete_mask') {
-      action(this.action, this.info);
+      this.doAction(this.action, this.info);
     } else if (this.action === 'predict') {
-      action('predict_zstack', this.info);
+      this.doAction('predict_zstack', this.info);
     } else if (this.action === 'replace') {
       if (this.info.label_1 !== this.info.label_2) {
-        action(this.action, {
+        this.doAction(this.action, {
           label_1: this.info.label_1,
           label_2: this.info.label_2
         });
       }
     } else if (this.action === 'swap_cells') {
       if (this.info.label_1 !== this.info.label_2) {
-        action('swap_all_frame', {
+        this.doAction('swap_all_frame', {
           label_1: this.info.label_1,
           label_2: this.info.label_2
         });
@@ -618,7 +618,7 @@ class Model {
         delete this.info.frame_2;
         delete this.info.label_1;
         delete this.info.label_2;
-        action(this.action, this.info);
+        this.doAction(this.action, this.info);
       }
     }
     this.clear();
@@ -631,7 +631,7 @@ class Model {
       x_location: canvas.imgX,
       y_location: canvas.imgY
     };
-    action(this.action, this.info);
+    this.doAction(this.action, this.info);
     this.clear();
   }
 
@@ -689,7 +689,7 @@ class Model {
 
   draw() {
     if (this.canvas.trace.length !== 0) {
-      action('handle_draw', {
+      this.doAction('handle_draw', {
         trace: JSON.stringify(this.canvas.trace), // stringify array so it doesn't get messed up
         target_value: this.brush.target, // value that we're overwriting
         brush_value: this.brush.value, // we don't update with edit_value, etc each time they change
@@ -712,7 +712,7 @@ class Model {
 
     if (thresholdStartY !== thresholdEndY &&
         thresholdStartX !== thresholdEndX) {
-      action('threshold', {
+      this.doAction('threshold', {
         y1: thresholdStartY,
         x1: thresholdStartX,
         y2: thresholdEndY,
