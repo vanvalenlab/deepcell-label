@@ -44,7 +44,7 @@ class ChangeFrame extends Action {
     super();
     this.model = model;
     this.oldValue = model.frame;
-    this.newValue = frame.mod(numFrames);
+    this.newValue = frame.mod(model.numFrames);
   }
 
   do() {
@@ -71,7 +71,7 @@ class ChangeFeature extends Action {
     super();
     this.model = model;
     this.oldValue = model.feature;
-    this.newValue = feature.mod(numFeatures);
+    this.newValue = feature.mod(model.numFeatures);
   }
 
   do() {
@@ -98,7 +98,7 @@ class ChangeChannel extends Action {
     this.model = model;
     this.adjuster = adjuster;
     this.oldValue = model.channel;
-    this.newValue = channel.mod(numChannels);
+    this.newValue = channel.mod(model.numChannels);
   }
 
   do() {
