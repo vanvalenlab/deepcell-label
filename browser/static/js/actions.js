@@ -109,7 +109,7 @@ class ChangeChannel extends Action {
 
   undo() {
     const promise = setDisplay('channel', this.oldValue);
-    promise.done(this.model.handlePayload).done( () => {
+    promise.done( () => {
       this.adjust(this.newValue, this.oldValue);
     });
   }
@@ -150,7 +150,7 @@ class BackendAction extends Action {
       data: this.info,
       async: false
     });
-    promise.done(this.model.handlePayload);
+    promise.done(this.model.handlePayload.bind(this.model));
   }
 
   undo() {
@@ -159,7 +159,7 @@ class BackendAction extends Action {
       url: `${document.location.origin}/api/undo/${this.projectID}`,
       async: false
     })
-    promise.done(this.model.handlePayload);
+    promise.done(this.model.handlePayload.bind(this.model));
   }
 
   redo() {
@@ -168,7 +168,7 @@ class BackendAction extends Action {
       url: `${document.location.origin}/api/redo/${this.projectID}`,
       async: false
     })
-    promise.done(this.model.handlePayload);
+    promise.done(this.model.handlePayload.bind(this.model));
   }
 }
 
