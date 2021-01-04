@@ -48,14 +48,16 @@ class ChangeFrame extends Action {
   do() {
     this.model.frame = this.newValue;
     if (this.model.action !== '') { this.model.clear() };
-    setDisplay('frame', this.newValue);
+    const promise = setDisplay('frame', this.newValue);
+    promise.done(this.model.handlePayload);
   }
 
 
   undo() {
     this.model.frame = this.oldValue;
     if (this.model.action !== '') { this.model.clear() };
-    setDisplay('frame', this.oldValue);
+    const promise = setDisplay('frame', this.oldValue);
+    promise.done(this.model.handlePayload);
   }
 
   redo() {
@@ -75,13 +77,15 @@ class ChangeFeature extends Action {
   do() {
     this.model.feature = this.newValue;
     this.model.clear();
-    setDisplay('feature', this.newValue);
+    const promise = setDisplay('feature', this.newValue);
+    promise.done(this.model.handlePayload);
   }
 
   undo() {
     this.model.feature = this.oldValue;
     this.model.clear();
-    setDisplay('feature', this.oldValue);
+    const promise = setDisplay('feature', this.oldValue);
+    promise.done(this.model.handlePayload);
   }
 
   redo() {
@@ -101,7 +105,7 @@ class ChangeChannel extends Action {
 
   do() {
     const promise = setDisplay('channel', this.newValue);
-    promise.done( () => {
+    promise.done(this.model.handlePayload).done( () => {
       this.adjust(this.oldValue, this.newValue);
     });
     // render_info_display();
@@ -109,7 +113,7 @@ class ChangeChannel extends Action {
 
   undo() {
     const promise = setDisplay('channel', this.oldValue);
-    promise.done( () => {
+    promise.done(this.model.handlePayload).done( () => {
       this.adjust(this.newValue, this.oldValue);
     });
   }
@@ -146,7 +150,7 @@ function setDisplay(displayAttr, value) {
     url: `${document.location.origin}/api/changedisplay/${project_id}/${displayAttr}/${value}`,
     async: true
   })
-  return promise.done(handlePayload);
+  return promise;
 }
 
 class BackendAction extends Action {
