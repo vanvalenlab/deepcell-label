@@ -325,6 +325,26 @@ class Model {
     this.actions.addFencedAction(changeFrame);
   }
 
+  decrementChannel() {
+    let action = new ChangeChannel(this, this.channel - 1);
+    this.actions.addFencedAction(action);
+  }
+
+  incrementChannel() {
+    let action = new ChangeChannel(this, this.channel + 1);
+    this.actions.addFencedAction(action);
+  }
+
+  decrementFeature() {
+    let action = new ChangeFeature(this, this.feature - 1);
+    this.actions.addFencedAction(action);
+  }
+
+  incrementFeature() {
+    let action = new ChangeFeature(this, this.feature + 1);
+    this.actions.addFencedAction(action);
+  }
+
   decrementBrushSize() {
     // decrease brush size, minimum size 1
     this.brush.size -= 1;
