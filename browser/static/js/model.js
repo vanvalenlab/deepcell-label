@@ -36,7 +36,7 @@ class Model {
 
     this.tracks = project.tracks;
     this.maxLabelsMap = new Map();
-    this.processMaxLabels(project.tracks);
+    this.processMaxLabels();
 
     this.label = -1;
     this.secondLabel = -1;
@@ -141,7 +141,8 @@ class Model {
   }
 
   // update maxLabelsMap with track info
-  processMaxLabels(tracks) {
+  processMaxLabels() {
+    const tracks = this.tracks;
     for (let i = 0; i < Object.keys(tracks).length; i++) {
       const key = Object.keys(tracks)[i]; // the keys are strings
       if (Object.keys(tracks[key]).length > 0) {
@@ -226,7 +227,8 @@ class Model {
     }
   
     if (payload.tracks) {
-      this.processMaxLabels(payload.tracks);
+      this.tracks = payload.tracks;
+      this.processMaxLabels();
     }
 
     if (payload.tracks || payload.imgs) {
