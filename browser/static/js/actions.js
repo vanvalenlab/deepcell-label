@@ -93,10 +93,10 @@ class ChangeFeature extends Action {
 
 /** Action to change the viewed channel. */
 class ChangeChannel extends Action {
-  constructor(model, adjuster, channel) {
+  constructor(model, channel) {
     super();
     this.model = model;
-    this.adjuster = adjuster;
+    this.adjuster = model.adjuster;
     this.oldValue = model.channel;
     this.newValue = channel.mod(model.numChannels);
   }
