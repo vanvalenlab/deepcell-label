@@ -71,16 +71,31 @@ class Model {
     this.rendering_raw = false;
     this.display_labels = true; // (default?)
 
-    // only observer right now is the view
-    // TODO: use Observable interface instead and allow any Observer to register
-    this.view = new View(this);
-    let adjuster = this.view.adjuster;
+    // possible pressure point: onload cascade
+    // TODO: can the cascade trigger without the model knowing? 
+    // if yes, then the adjuster (?) might always need model access
+    let adjuster = new ImageAdjuster(model);
+    adjuster.rawImage.onload = () => adjuster.contrastRaw();
+    adjuster.segImage.onload = () => adjuster.preCompAdjust();
+    if (model.rgb) {
+      adjuster.contrastedRaw.onload = () => adjuster.rawAdjust();
+      adjuster.preCompSeg.onload = () => adjuster.segAdjust();
+    } else {
+      adjuster.contrastedRaw.onload = () => adjuster.preCompRawAdjust();
+      adjuster.preCompRaw.onload = () => adjuster.rawAdjust();
+      adjuster.preCompSeg.onload = () => adjuster.segAdjust();
+      adjuster.compositedImg.onload = () => adjuster.postCompAdjust();
+    }
+    adjuster.postCompImg.onload = () => this.notifyImageChange();
     adjuster.rawLoaded = false;
     adjuster.segLoaded = false;
-    adjuster.arrayLoaded = false;
     this.adjuster = adjuster;
 
     // this.getImages();
+
+    // only observer right now is the view
+    // TODO: use Observable interface instead and allow any Observer to register
+    this.view = new View(this);
   }
 
   get segArray() {
@@ -118,7 +133,7 @@ class Model {
   }
 
   notifyImageFormattingChange() {
-    this.view.adjuster.preCompAdjust();
+    this.adjuster.preCompAdjust();
   }
 
   notifyInfoChange() {

@@ -284,7 +284,7 @@ class Controller {
       this.model.pan(evt.movementX, evt.movementY);
     }
     this.model.updateMousePos(evt.offsetX, evt.offsetY);
-    this.view.render_info_display();
+    this.model.notifyInfoChange();
   }
 
   // handles end of click&drag (different from click())
@@ -320,25 +320,25 @@ class Controller {
       // if nothing selected: shift-, alt-, or normal click
       this.handle_mode_none_click(evt);
       if (this.model.highlight) {
-        this.view.adjuster.preCompAdjust();
+        this.model.notifyImageFormattingChange();
       } else {
-        this.view.render_info_display();
+        this.model.notifyInfoChange();
       }
     } else if (this.model.kind === Modes.single) {
       // one label already selected
       this.handle_mode_single_click(evt);
       if (this.model.highlight) {
-        this.view.adjuster.preCompAdjust();
+        this.model.notifyImageFormattingChange();
       } else {
-        render_info_display();
+        this.model.notifyInfoChange();
       }
     } else if (this.model.kind  === Modes.multiple) {
       // two labels already selected, reselect second label
       this.handle_mode_multiple_click(evt);
       if (this.model.highlight) {
-        this.view.adjuster.preCompAdjust();
+        this.model.notifyImageFormattingChange();
       } else {
-        render_info_display();
+        this.model.notifyInfoChange();
       }
     }
   }

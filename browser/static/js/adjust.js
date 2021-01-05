@@ -1,9 +1,7 @@
 // helper functions
 
 class ImageAdjuster {
-  constructor(model) { //width, height, rgb, numChannels) {
-    
-    // TODO: make the adjuster an observer of the model & allow the model to decide when to share info
+  constructor(model) {
     this.model = model;
     
     // canvas element used for image processing

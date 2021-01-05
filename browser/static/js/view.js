@@ -1,26 +1,6 @@
 class View {
   constructor(model) {
-
-    let adjuster = new ImageAdjuster(model);
-
-    adjuster.rawImage.onload = () => adjuster.contrastRaw();
-    adjuster.segImage.onload = () => adjuster.preCompAdjust();
-    if (model.rgb) {
-      adjuster.contrastedRaw.onload = () => adjuster.rawAdjust();
-      adjuster.preCompSeg.onload = () => adjuster.segAdjust();
-    } else {
-      adjuster.contrastedRaw.onload = () => adjuster.preCompRawAdjust();
-      adjuster.preCompRaw.onload = () => adjuster.rawAdjust();
-      adjuster.preCompSeg.onload = () => adjuster.segAdjust();
-      adjuster.compositedImg.onload = () => adjuster.postCompAdjust();
-    }
-
-    adjuster.postCompImg.onload = this.render_image_display.bind(this);
-
-    this.adjuster = adjuster;
     // TODO: should the view own the model? or instead have the model notify the view with the info it needs?
-    // possible pressure point: onload cascade
-    // TODO: can the cascade trigger without the model knowing? if yes, then the view might always need model access
     this.model = model;
     
   }
@@ -169,9 +149,9 @@ class View {
     if (model.rgb && model.rendering_raw) {
       render_raw_image(ctx);
     } else if (!model.rgb && !model.display_labels) {
-      canvas.drawImage(ctx, this.adjuster.preCompRaw, model.padding);
+      canvas.drawImage(ctx, this.model.adjuster.preCompRaw, model.padding);
     } else {
-      canvas.drawImage(ctx, this.adjuster.postCompImg, model.padding);
+      canvas.drawImage(ctx, this.model.adjuster.postCompImg, model.padding);
     }
     ctx.save();
     const region = new Path2D();
@@ -186,14 +166,14 @@ class View {
   }
 
   render_raw_image(ctx) {
-    this.model.canvas.drawImage(ctx, this.adjuster.contrastedRaw, this.model.padding);
+    this.model.canvas.drawImage(ctx, this.model.adjuster.contrastedRaw, this.model.padding);
   }
   
   render_annotation_image(ctx) {
     if (this.model.rgb && !this.model.display_labels) {
-      this.model.canvas.drawImage(ctx, this.adjuster.postCompImg, this.model.padding);
+      this.model.canvas.drawImage(ctx, this.model.adjuster.postCompImg, this.model.padding);
     } else {
-      this.model.canvas.drawImage(ctx, this.adjuster.preCompSeg, this.model.padding);
+      this.model.canvas.drawImage(ctx, this.model.adjuster.preCompSeg, this.model.padding);
     }
   }
 }
