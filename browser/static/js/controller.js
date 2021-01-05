@@ -16,7 +16,7 @@ class Controller {
       this.addCanvasBindings();
       // this.addBrowsingBindings(project);
 
-      this.setCanvasDimensions(project.dimensions);
+      this.setCanvasDimensions();
 
       // Load images and seg_array from payload
       this.model.segArray = project.imgs.seg_arr;
@@ -66,7 +66,7 @@ class Controller {
     window.addEventListener('resize', () => {
       waitForFinalEvent(() => {
         this.model.clear();
-        this.model.setCanvasDimensions(payload.dimensions);
+        this.setCanvasDimensions();
         this.model.brush.refreshView();
         displayUndoRedo();
       }, 500, 'canvasResize');
@@ -116,14 +116,13 @@ class Controller {
 
   /**
    * Calculate available space and how much to scale x and y to fill it
-   * @param {*} rawDims the raw dimensions of the input image.
    */
-  setCanvasDimensions(rawDims) {
+  setCanvasDimensions() {
     const maxWidth = this._calculateMaxWidth();
     const maxHeight = this._calculateMaxHeight();
 
-    const scaleX = maxWidth / rawDims[0];
-    const scaleY = maxHeight / rawDims[1];
+    const scaleX = maxWidth / this.model.width;
+    const scaleY = maxHeight / this.model.height;
 
     // pick scale that accomodates both dimensions; can be less than 1
     const scale = Math.min(scaleX, scaleY);
