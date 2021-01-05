@@ -1,10 +1,12 @@
 class View {
   constructor(model) {
-    // TODO: should the view own the model? or instead have the model notify the view with the info it needs?
+    // TODO: use observer interface & have View subscribe to model
     this.model = model;
-    
   }
 
+  /**
+   * Formats the undo/redo buttons.
+   */
   displayUndoRedo() {
     let canvasElement = document.getElementById('canvas');
     let undoButton = document.getElementById('undo');
@@ -16,6 +18,34 @@ class View {
     redoButton.style.width = canvasElement.width / 2 + 'px';
   }
 
+  /**
+   * Updates the infopane with the latest project info.
+   */
+  render_info_display() {
+    const model = this.model;
+    const canvas = this.model.canvas;
+    // always show current frame, feature, channel
+    document.getElementById('frame').innerHTML = model.frame;
+    document.getElementById('feature').innerHTML = model.feature;
+    document.getElementById('channel').innerHTML = model.channel;
+    document.getElementById('zoom').innerHTML = `${canvas.zoom}%`;
+  
+    const displayedX = `${Math.floor(canvas.sx)}-${Math.ceil(canvas.sx + canvas.sWidth)}`;
+    document.getElementById('displayedX').innerHTML = displayedX;
+  
+    const displayedY = `${Math.floor(canvas.sy)}-${Math.ceil(canvas.sy + canvas.sHeight)}`
+    document.getElementById('displayedY').innerHTML = displayedY;
+  
+    this.render_highlight_info();
+    this.render_edit_info();
+    this.render_cell_info();
+    // always show 'state'
+    document.getElementById('mode').innerHTML = this.renderMode();
+  }
+
+  /**
+   * Renders the highlight rows of the the infopane.
+   */
   render_highlight_info() {
     const model = this.model;
     const brush = this.model.brush;
@@ -38,6 +68,9 @@ class View {
     document.getElementById('currently_highlighted').innerHTML = highlightedLabels;
   }
   
+  /**
+   * Renders the edit mode specific rows of the infopane.
+   */
   render_edit_info() {
     const model = this.model;
     const brush = model.brush;
@@ -60,6 +93,9 @@ class View {
     }
   }
   
+  /**
+   * Renders the rows about the label being hovered over.
+   */
   render_cell_info() {
     const model = this.model;
     const canvas = model.canvas;
@@ -72,34 +108,10 @@ class View {
       document.getElementById('slices').textContent = '';
     }
   }
-  
-  // updates html display of side info panel
-  render_info_display() {
-    const model = this.model;
-    const canvas = model.canvas;
-    // always show current frame, feature, channel
-    document.getElementById('frame').innerHTML = model.frame;
-    document.getElementById('feature').innerHTML = model.feature;
-    document.getElementById('channel').innerHTML = model.channel;
-    document.getElementById('zoom').innerHTML = `${canvas.zoom}%`;
-  
-    const displayedX = `${Math.floor(canvas.sx)}-${Math.ceil(canvas.sx + canvas.sWidth)}`;
-    document.getElementById('displayedX').innerHTML = displayedX;
-  
-    const displayedY = `${Math.floor(canvas.sy)}-${Math.ceil(canvas.sy + canvas.sHeight)}`
-    document.getElementById('displayedY').innerHTML = displayedY;
-  
-    this.render_highlight_info();
-  
-    this.render_edit_info();
-  
-    this.render_cell_info();
-  
-    // always show 'state'
-    document.getElementById('mode').innerHTML = this.renderMode();
-  }
 
-  // shows up in info display as text for "state:"
+  /**
+   * Renders text for "state:" in infopane.
+   */
   renderMode() {
     const mode = this.model.kind;
     if (mode === Modes.none) {
@@ -116,6 +128,9 @@ class View {
     }
   }
 
+  /**
+   * Renders the image on the canvas.
+   */
   render_image_display() {
     const model = this.model;
     const canvas = model.canvas;
@@ -142,6 +157,10 @@ class View {
     canvas.drawBorders(ctx);
   }
 
+  /**
+   * Renders labels overlaid with the raw image and the brush preview.
+   * @param {*} ctx canvas context to render on
+   */
   render_edit_image(ctx) {
     const model = this.model;
     const brush = model.brush;
@@ -165,10 +184,18 @@ class View {
     ctx.restore();
   }
 
+  /**
+   * Renders raw image.
+   * @param {*} ctx canvas context to render on
+   */
   render_raw_image(ctx) {
     this.model.canvas.drawImage(ctx, this.model.adjuster.contrastedRaw, this.model.padding);
   }
   
+  /**
+   * Renders labeled image.
+   * @param {*} ctx canvas context to render on
+   */
   render_annotation_image(ctx) {
     if (this.model.rgb && !this.model.display_labels) {
       this.model.canvas.drawImage(ctx, this.model.adjuster.postCompImg, this.model.padding);
