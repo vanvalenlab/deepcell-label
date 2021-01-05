@@ -316,12 +316,12 @@ class Controller {
    * @param {MouseEvent} evt 
    */
   handle_mode_prompt_click(evt) {
-    if (this.model.action === 'fill_hole' && canvas.label === 0) {
+    if (this.model.action === 'fill_hole' && this.model.canvas.label === 0) {
       this.model.finishFill();
-    } else if (this.model.action === 'pick_color' && canvas.label !== 0 &&
-               canvas.label !== brush.target) {
+    } else if (this.model.action === 'pick_color' && this.model.canvas.label !== 0 &&
+               this.model.canvas.label !== this.model.brush.target) {
       this.model.pickConversionLabel();
-    } else if (this.model.action === 'pick_target' && canvas.label !== 0) {
+    } else if (this.model.action === 'pick_target' && this.model.canvas.label !== 0) {
       this.model.pickConversionTarget();
     }
   }
