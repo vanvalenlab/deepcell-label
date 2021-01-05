@@ -13,67 +13,53 @@ var answer = '(SPACE=YES / ESC=NO)';
 
 class Model {
   constructor(project) {
+    // Dynamic project attributes
     this.frame = project.frame;
     this.feature = project.feature;
     this.channel = project.channel;
-
-    // TODO: remove Modes
-    this.kind = Modes.none;
-    // TODO: remove info?
+    this.kind = Modes.none;  // TODO: remove Modes
     // arguments passed to edit functions on backend
-    this.info = {};
-    // TODO: move prompt logic to view
-    this.prompt = '';
+    this.info = {};  // TODO: remove info?
+    this.prompt = '';  // TODO: move prompt logic to view?
     this.action = '';
-    // TODO: merge highlighted cells and selected cells
+    // TODO: merge highlighting, selecting, and brush values
     this.highlighted_cell_one = -1;
     this.highlighted_cell_two = -1;
-
-    this.numFrames = project.numFrames;
-    this.numFeatures = project.numFeatures;
-    this.numChannels = project.numChannels;
-    this.projectID = project.project_id;
-
-    this.tracks = project.tracks;
-    this.maxLabelsMap = new Map();
-    this.processMaxLabels();
-
-    this.label = -1;
-    this.secondLabel = -1;
-    
-    const padding = 5;
-    const rawWidth = project.dimensions[0];
-    const rawHeight = project.dimensions[1];
-    const scale = 1;
-    this.canvas = new CanvasState(rawWidth, rawHeight, scale, padding);
-    this.brush = new Brush(rawHeight, rawWidth, padding);
-    this.width = rawWidth;
-    this.height = rawHeight;
-    this.padding = padding;
-
+    // Booleans
     this.highlight = true;
     this.rgb = false;
-    
-    this.labelOpacity = 0.3;
-
-    this._rawImage = new Image();
-    this._segImage = new Image();
-    // array of arrays, contains annotation data for frame
-    this._segArray = null;
-
-    this.actionID = project.action_id;
-    this.actions = new History();
-    // this.actions.initializeHistory(project.actionFrames);
-
     // TODO: get rid of edit mode/whole label mode distinction
     this.edit_mode = true;
     // TODO: replace with sliding opacity
     this.rendering_raw = false;
-    this.display_labels = true; // (default?)
+    this.display_labels = true; // is true the right default value?
 
-    // possible pressure point: onload cascade
-    // TODO: can the cascade trigger without the model knowing? 
-    // if yes, then the adjuster (?) might always need model access
+    // Static project attributes
+    this.numFrames = project.numFrames;
+    this.numFeatures = project.numFeatures;
+    this.numChannels = project.numChannels;
+    this.projectID = project.project_id;
+    this.width = project.dimensions[0];
+    this.height = project.dimensions[1];
+    this.padding = 5;
+    this.scale = 1;
+
+    // Project data (images and label metadata)
+    this._rawImage = new Image();
+    this._segImage = new Image();
+    // array of arrays, contains annotation data for frame
+    this._segArray = null;
+    this.tracks = project.tracks;
+    this.maxLabelsMap = new Map();
+    this.processMaxLabels();
+
+    // TODO: move to controller
+    this.actionID = project.action_id;
+    this.actions = new History();
+    // TODO: fix initializeHistory to work with new Actions
+    // this.actions.initializeHistory(project.actionFrames);
+
+    // Model objects
     let adjuster = new ImageAdjuster(this);
     adjuster.rawImage.onload = () => adjuster.contrastRaw();
     adjuster.segImage.onload = () => adjuster.preCompAdjust();
@@ -90,11 +76,11 @@ class Model {
     adjuster.rawLoaded = false;
     adjuster.segLoaded = false;
     this.adjuster = adjuster;
+    this.canvas = new CanvasState(this.width, this.height, this.scale, this.padding);
+    this.brush = new Brush(this.height, this.width, this.padding);
 
-    // this.getImages();
-
-    // only observer right now is the view
     // TODO: use Observable interface instead and allow any Observer to register
+    // only observer right now is the view
     this.view = new View(this);
   }
 
@@ -127,7 +113,7 @@ class Model {
     this.adjuster.rawImage.src = newRawImage;
   }
 
-  // TODO: use Observable interface instead of hard-coding a single Observer
+  // TODO: use Observable interface instead of hard-coding the view as the only Observer
   notifyImageChange() {
     this.view.render_image_display();
   }
@@ -140,13 +126,15 @@ class Model {
     this.view.render_info_display();
   }
 
-  // update maxLabelsMap with track info
+  /**
+   * Updates maxLabelsMap to match the current tracks.
+   */
   processMaxLabels() {
     const tracks = this.tracks;
     for (let i = 0; i < Object.keys(tracks).length; i++) {
       const key = Object.keys(tracks)[i]; // the keys are strings
       if (Object.keys(tracks[key]).length > 0) {
-        // use i as key in this map because it is an int, mode.feature is also int
+        // use i as key in this map because it is an int, feature is also int
         this.maxLabelsMap.set(i, Math.max(...Object.keys(tracks[key]).map(Number)));
       } else {
         // if no labels in feature, explicitly set max label to 0
@@ -212,6 +200,7 @@ class Model {
     }
   }
 
+  // deselect/cancel action/reset highlight
   clear() {
     this.kind = Modes.none;
     this.info = {};
