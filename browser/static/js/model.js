@@ -274,7 +274,7 @@ class Model {
   }
   
   toggleHighlight() {
-    const action = new ToggleHighlight();
+    const action = new ToggleHighlight(this);
     this.actions.addFencedAction(action);
     this.notifyImageFormattingChange();
   }

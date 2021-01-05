@@ -26,7 +26,7 @@ class ToggleHighlight extends Action {
   }
 
   do() {
-    this.model.highlight = !this.model.highlights;
+    this.model.highlight = !this.model.highlight;
   }
 
   undo() {
