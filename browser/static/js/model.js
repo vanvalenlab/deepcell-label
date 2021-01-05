@@ -74,10 +74,10 @@ class Model {
     // possible pressure point: onload cascade
     // TODO: can the cascade trigger without the model knowing? 
     // if yes, then the adjuster (?) might always need model access
-    let adjuster = new ImageAdjuster(model);
+    let adjuster = new ImageAdjuster(this);
     adjuster.rawImage.onload = () => adjuster.contrastRaw();
     adjuster.segImage.onload = () => adjuster.preCompAdjust();
-    if (model.rgb) {
+    if (this.rgb) {
       adjuster.contrastedRaw.onload = () => adjuster.rawAdjust();
       adjuster.preCompSeg.onload = () => adjuster.segAdjust();
     } else {
