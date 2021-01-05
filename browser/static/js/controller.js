@@ -63,7 +63,7 @@ class Controller {
     document.addEventListener('mouseup', (e) => this.handleMouseup(e));
 
     // resize the canvas every time the window is resized
-    window.addEventListener('resize', function() {
+    window.addEventListener('resize', () => {
       waitForFinalEvent(() => {
         this.model.clear();
         this.model.setCanvasDimensions(payload.dimensions);
