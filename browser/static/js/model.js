@@ -249,6 +249,7 @@ class Model {
     this.action = '';
     this.prompt = '';
     this.notifyImageFormattingChange();
+    this.notifyInfoChange();
   }
 
   doAction(action, info) {
