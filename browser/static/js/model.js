@@ -290,7 +290,7 @@ class Model {
   }
 
   resetBrightnessContrast() {
-    const action = new ResetBrightnessContrast(adjuster);
+    const action = new ResetBrightnessContrast(this);
     this.actions.addFencedAction(action);
   }
 
