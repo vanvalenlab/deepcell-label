@@ -318,27 +318,12 @@ class Controller {
     } else if (this.model.kind === Modes.none) {
       // if nothing selected: shift-, alt-, or normal click
       this.handle_mode_none_click(evt);
-      if (this.model.highlight) {
-        this.model.notifyImageFormattingChange();
-      } else {
-        this.model.notifyInfoChange();
-      }
     } else if (this.model.kind === Modes.single) {
       // one label already selected
       this.handle_mode_single_click(evt);
-      if (this.model.highlight) {
-        this.model.notifyImageFormattingChange();
-      } else {
-        this.model.notifyInfoChange();
-      }
     } else if (this.model.kind  === Modes.multiple) {
       // two labels already selected, reselect second label
       this.handle_mode_multiple_click(evt);
-      if (this.model.highlight) {
-        this.model.notifyImageFormattingChange();
-      } else {
-        this.model.notifyInfoChange();
-      }
     }
   }
 

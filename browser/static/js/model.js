@@ -562,6 +562,8 @@ class Model {
     };
     this.prompt = 'SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL';
     this.highlighted_cell_one = this.canvas.label;
+    this.notifyImageFormattingChange();
+    this.notifyInfoChange();
   }
 
   startTrim() {
@@ -576,6 +578,8 @@ class Model {
     };
     this.prompt = 'SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL';
     this.highlighted_cell_one = this.canvas.label;
+    this.notifyImageFormattingChange();
+    this.notifyInfoChange();
   }
 
   selectLabel() {
@@ -589,6 +593,8 @@ class Model {
     this.highlighted_cell_two = -1;
     this.canvas.storedClickX = this.canvas.imgX;
     this.canvas.storedClickY = this.canvas.imgY;
+    this.notifyImageFormattingChange();
+    this.notifyInfoChange();
   }
 
   confirmActionSingleFrame() {
@@ -702,6 +708,8 @@ class Model {
       x2_location: this.canvas.imgX,
       y2_location: this.canvas.imgY
     };
+    this.notifyImageFormattingChange();
+    this.notifyInfoChange();
   }
 
   reselectSecondLabel() {
@@ -717,6 +725,8 @@ class Model {
       x2_location: this.canvas.imgX,
       y2_location: this.canvas.imgY
     };
+    this.notifyImageFormattingChange();
+    this.notifyInfoChange();
   }
 
   draw() {
