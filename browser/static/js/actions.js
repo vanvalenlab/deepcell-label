@@ -110,7 +110,7 @@ class ChangeChannel extends Action {
   }
 
   undo() {
-    const promise = setDisplay('channel', this.oldValue);
+    const promise = this.model.setDisplay('channel', this.oldValue);
     promise.done( () => {
       this.adjust(this.newValue, this.oldValue);
     });

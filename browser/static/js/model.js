@@ -14,8 +14,8 @@ var answer = '(SPACE=YES / ESC=NO)';
 class Model {
   constructor(project) {
     this.frame = project.frame;
-    this.feature = 0;
-    this.channel = 0;
+    this.feature = project.feature;
+    this.channel = project.channel;
 
     // TODO: remove Modes
     this.kind = Modes.none;

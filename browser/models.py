@@ -370,7 +370,9 @@ class Project(db.Model):
         if self.is_track:
             payload['screen_scale'] = self.scale_factor
         if self.is_zstack:
+            payload['channel'] = self.channel
             payload['numChannels'] = self.num_channels
+            payload['feature'] = self.feature
             payload['numFeatures'] = self.num_features
 
         # First frame edited by each action
