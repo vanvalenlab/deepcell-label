@@ -155,31 +155,6 @@ class Model {
     }
   }
 
-  getImages() {
-    const rawURL = `${document.location.origin}/rawimage/${this.projectID}/${this.frame}`;
-    const labelURL = `${document.location.origin}/labelimage/${this.projectID}/${this.frame}`;
-    const arrayURL = `${document.location.origin}/labelarray/${this.projectID}/${this.frame}`;
-    const rawImage = $.ajax({type: 'GET', url: rawURL, async: true});
-    const segImage = $.ajax({type: 'GET', url: labelURL, async: true});
-    const segArray = fetch(arrayURL).then(d => d.arrayBuffer())
-      .then(d => new npyjs().parse(d));
-
-    Promise.all([rawImage, segImage, segArray]).then(results =>
-    {
-      this.rawImage = results[0];
-      this.segImage = results[1];
-      // need to convert 1d data to 2d array
-      const reshape = (arr, width) =>
-        arr.reduce((rows, key, index) => (index % width == 0 ? rows.push([key])
-          : rows[rows.length-1].push(key)) && rows, []);
-      const array = results[2];
-      this.segArray = reshape(array.data, array.shape[1]);
-      this.notifyImageChange();
-    })
-    // promise that checks when all data receives and passes it to the controller (? adjuster?)
-  }
-
-
   // TODO: move to view?
   helper_brush_draw() {
     if (this.canvas.isCursorPressed() && !this.canvas.isSpacedown) {
