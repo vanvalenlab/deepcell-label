@@ -203,7 +203,7 @@ class ImageAdjuster {
       const segData = this.ctx.getImageData(0, 0, this.width, this.height);
       let h1, h2;
 
-      if (this.model.editMode) {
+      if (this.model.edit_mode) {
         h1 = this.model.brush.value;
         h2 = -1;
       } else {
