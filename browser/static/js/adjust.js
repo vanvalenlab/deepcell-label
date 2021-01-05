@@ -355,9 +355,9 @@ class ImageAdjuster {
 }
 
 class ChangeContrast extends Action {
-  constructor(adjuster, change) {
+  constructor(model, change) {
     super();
-    this.adjuster = adjuster;
+    let adjuster = model.adjuster;
     this.oldValue = adjuster.contrast;
 
     const modContrast = -Math.sign(change) * 4;
@@ -366,6 +366,7 @@ class ChangeContrast extends Action {
     // stop at 8x contrast
     newContrast = Math.min(newContrast, adjuster.maxContrast);
     this.newValue = newContrast;
+    this.adjuster = adjuster;
   }
 
   do() { this.setContrast(this.newValue); }
@@ -382,9 +383,9 @@ class ChangeContrast extends Action {
 }
 
 class ChangeBrightness extends Action {
-  constructor(adjuster, change) {
+  constructor(model, change) {
     super();
-    this.adjuster = adjuster;
+    let adjuster = model.adjuster;
     const modBrightness = -Math.sign(change);
     // limit how dim image can go
     let newBrightness = Math.max(adjuster.brightness + modBrightness, adjuster.minBrightness);
@@ -392,6 +393,7 @@ class ChangeBrightness extends Action {
     newBrightness = Math.min(newBrightness, adjuster.maxBrightness);
     this.oldValue = adjuster.brightness;
     this.newValue = newBrightness;
+    this.adjuster = adjuster;
   }
 
   do() { this.setBrightness(this.newValue); }
@@ -408,11 +410,11 @@ class ChangeBrightness extends Action {
 }
 
 class ResetBrightnessContrast extends Action {
-  constructor(adjuster) {
+  constructor(model) {
     super();
-    this.adjuster = adjuster;
-    this.brightness = adjuster.brightness;
-    this.contrast = adjuster.contrast;
+    this.adjuster = model.adjuster;
+    this.brightness = model.adjuster.brightness;
+    this.contrast = model.adjuster.contrast;
   }
 
   do() {
@@ -433,9 +435,9 @@ class ResetBrightnessContrast extends Action {
 }
 
 class ToggleInvert extends Action {
-  constructor(adjuster) {
+  constructor(model) {
     super();
-    this.adjuster = adjuster;
+    this.adjuster = model.adjuster;
   }
 
   do() {

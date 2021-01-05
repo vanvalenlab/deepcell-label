@@ -363,7 +363,7 @@ class Model {
 
   toggleInvert() {
     // toggle light/dark inversion of raw img
-    let toggleInvert = new ToggleInvert(this.view.adjuster);
+    let toggleInvert = new ToggleInvert(this);
     this.actions.addAction(toggleInvert);
   }
 
@@ -450,12 +450,12 @@ class Model {
   }
 
   changeContrast(change) {
-    const action = new ChangeContrast(adjuster, change);
+    const action = new ChangeContrast(this, change);
     this.actions.addAction(action);
   }
 
   changeBrightness(change) {
-    const action = new ChangeBrightness(adjuster, change);
+    const action = new ChangeBrightness(this, change);
     this.actions.addAction(action);
   }
 
