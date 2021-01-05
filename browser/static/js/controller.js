@@ -1,20 +1,23 @@
 class Controller {
-
+  /**
+   * Retrives a Project, and sets up bindings to control Label.
+   * @param {string} projectID 12 character base64 ID for Project in DeepCell Label database
+   */
   constructor(projectID) {
+    // Get Project from database
     const getProject = $.ajax({
       type: 'GET',
       url: `${document.location.origin}/api/project/${projectID}`,
       async: true
     });
 
+    // Create model and view for Project and setup bindings
     getProject.done((project) => {
-      // ??? make a new model? attribute of the controller? register controller with model?
       this.model = new Model(project);
       this.view = this.model.view;
       this.overrideScroll();
       this.addWindowBindings();
       this.addCanvasBindings();
-      // this.addBrowsingBindings(project);
 
       this.setCanvasDimensions();
 
@@ -29,8 +32,10 @@ class Controller {
     });
   }
 
+  /**
+   * Disable scrolling with the wheel (on the canvas) or with arrows (everywhere)
+   */
   overrideScroll() {
-    // disable scrolling from scrolling around on page (it should just control brightness)
     document.addEventListener('wheel', (event) => {
       if (this.model.canvas.onCanvas) event.preventDefault();
     }, { passive: false });
@@ -47,6 +52,9 @@ class Controller {
     });
   }
 
+  /**
+   * Adds bindings to the window
+   */
   addWindowBindings() {
     window.addEventListener('keydown', (e) => {
       if (e.key === ' ') {
@@ -60,6 +68,7 @@ class Controller {
       }
     }, false);
 
+    // TODO: why is this bound to the document instead of the window
     document.addEventListener('mouseup', (e) => this.handleMouseup(e));
 
     // resize the canvas every time the window is resized
@@ -77,6 +86,9 @@ class Controller {
     }, false);
   }
 
+  /**
+   * Adds bindings to the interactive canvas
+   */
   addCanvasBindings() {
     const canvasElement = document.getElementById('canvas');
     // bind click on canvas
@@ -138,7 +150,7 @@ class Controller {
     document.getElementById('canvas').height = this.model.canvas.scaledHeight + 2 * padding;
   }
 
-    /**
+  /**
    * Calculate the maximum width of the canvas display area.
    * The canvas only shares width with the table display on its left.
    */
@@ -195,7 +207,10 @@ class Controller {
     return maxHeight;
   }
 
-  // adjust contrast, brightness, or zoom upon mouse scroll
+  /**
+   * Handle mouse scroll to adjust contrast, brightness, or zoom
+   * @param {WheelEvent} evt
+   */
   handleScroll(evt) {
     const rawVisible = (this.model.rendering_raw || this.model.edit_mode ||
       (this.model.rgb && !this.model.display_labels));
@@ -210,8 +225,10 @@ class Controller {
     }
   }
 
-  // handle pressing mouse button (treats this as the beginning
-  // of click&drag, since clicks are handled by Mode.click)
+  /**
+   * Handle beginning of click & drag. Simple clicks are handles by click.
+   * @param {MouseEvent} evt mouse button press
+   */
   handleMousedown(evt) {
     this.model.canvas.isPressed = true;
     // TODO: refactor "mousedown + mousemove" into ondrag?
@@ -225,7 +242,10 @@ class Controller {
     }
   }
 
-  // handles mouse movement, whether or not mouse button is held down
+  /**
+   * Handles mouse movement
+   * @param {MouseEvent} evt 
+   */
   handleMousemove(evt) {
     if (this.model.canvas.isCursorPressed() && this.model.canvas.isSpacedown) {
       this.model.pan(evt.movementX, evt.movementY);
@@ -234,7 +254,9 @@ class Controller {
     this.model.notifyInfoChange();
   }
 
-  // handles end of click&drag (different from click())
+  /**
+   * Handles end of click & drag.
+   */
   handleMouseup() {
     this.model.canvas.isPressed = false;
     if (!this.model.canvas.isSpacedown
@@ -250,11 +272,10 @@ class Controller {
     }
   }
 
-// start click handling
-
-  // TODO: lots of objects being used here, would be great to disentangle
-  // or at least move out of Mode class--should act on mode object and others
-  // but not sure this makes sense as a Mode method
+  /**
+   * Handles mouse clicks.
+   * @param {MouseEvent} evt 
+   */
   click(evt) {
     if (this.model.kind === Modes.prompt) {
       // hole fill or color picking options
@@ -262,7 +283,6 @@ class Controller {
     } else if (this.model.canvas.label === 0) {
       // same as ESC
       this.model.clear();
-    // TODO: why are we updating adjusted/info after each handler?
     } else if (this.model.kind === Modes.none) {
       // if nothing selected: shift-, alt-, or normal click
       this.handle_mode_none_click(evt);
@@ -277,6 +297,10 @@ class Controller {
 
 
   // TODO: canvas.click(evt, mode) ?
+  /**
+   * Handles click when no labels are selected.
+   * @param {MouseEvent} evt 
+   */
   handle_mode_none_click(evt) {
     if (evt.altKey) {
       this.model.startFlood();
@@ -287,6 +311,10 @@ class Controller {
     }
   }
 
+  /**
+   * Handles clicks when awaiting a response to a prompt.
+   * @param {MouseEvent} evt 
+   */
   handle_mode_prompt_click(evt) {
     if (this.action === 'fill_hole' && canvas.label === 0) {
       this.model.finishFill();
@@ -300,16 +328,51 @@ class Controller {
 
   // TODO: storedClick1 and storedClick2? not a huge fan of the
   // current way click locations get stored in mode object
+  /**
+   * Handles mouse clicks when one label is selected.
+   * @param {MouseEvent} evt 
+   */
   handle_mode_single_click(evt) {
     this.model.selectSecondLabel();
   }
 
+  /**
+   * Handles mouse clicks when two labels are selected.
+   * @param {MouseEvent} evt 
+   */
   handle_mode_multiple_click(evt) {
     this.model.reselectSecondLabel();
   }
 
-  // these keybinds apply regardless of
-  // edit_mode, mode.action, or mode.kind
+  /**
+   * Handle all keybinds
+   * @param {KeyboardEvent} evt
+   */
+  handle_key(evt) {
+    // universal keybinds always apply
+    // keys a, d, left arrow, right arrow, ESC, h
+    // are reserved for universal keybinds
+    this.handle_universal_keybind(evt);
+    if (this.model.edit_mode) {
+      this.handle_universal_edit_keybind(evt);
+    }
+    if (this.model.edit_mode && this.model.kind === Modes.none) {
+      this.handle_edit_keybind(evt);
+    } else if (!this.model.edit_mode && this.model.kind === Modes.none) {
+      this.handle_mode_none_keybind(evt);
+    } else if (!this.model.edit_mode && this.model.kind === Modes.single) {
+      this.handle_mode_single_keybind(evt);
+    } else if (!this.model.edit_mode && this.model.kind === Modes.multiple) {
+      this.handle_mode_multiple_keybind(evt);
+    } else if (!this.model.edit_mode && this.model.kind === Modes.question) {
+      this.handle_mode_question_keybind(evt);
+    }
+  }
+
+  /**
+   * Handle keybinds that always apply regardless of edit_mode, model.action, or model.kind
+   * @param {KeyboardEvent} evt 
+   */
   handle_universal_keybind(evt) {
     if ((evt.ctrlKey || evt.metaKey) && evt.shiftKey && (evt.key === 'Z' || evt.key === 'z')) {
       this.model.redo();
@@ -320,11 +383,9 @@ class Controller {
     } else if (this.model.numFrames > 1 && (evt.key === 'd' || evt.key === 'ArrowRight')) {
       this.model.incrementFrame();
     } else if (evt.key === 'Escape') {
-      // deselect/cancel action/reset highlight
       this.model.clear();
       // may want some things here that trigger on ESC but not clear()
     } else if (!this.model.rgb && evt.key === 'h') {
-      // toggle highlight
       this.model.toggleHighlight();
     } else if (evt.key === 'z') {
       this.model.toggleRaw();
@@ -339,8 +400,10 @@ class Controller {
     }
   }
 
-  // keybinds that always apply in edit mode
-  // (invert, change brush size)
+  /**
+   * Handle keybinds that always apply in edit mode.
+   * @param {KeyboardEvent} evt 
+   */
   handle_universal_edit_keybind(evt) {
     if (evt.key === 'ArrowDown') {
       this.model.decrementBrushSize();
@@ -355,7 +418,10 @@ class Controller {
     }
   }
 
-  // keybinds that apply when in edit mode
+  /**
+   * Handle keybinds that apply when in edit mode.
+   * @param {KeyboardEvent} evt 
+   */
   handle_edit_keybind(evt) {
     if (evt.key === 'e' && !settings.pixel_only) {
       this.model.toggleEdit();
@@ -382,7 +448,10 @@ class Controller {
     }
   }
 
-  // keybinds that apply in bulk mode, nothing selected
+  /**
+   * Handle keybinds that apply in bulk mode with nothing selected.
+   * @param {KeyboardEvent} evt 
+   */
   handle_mode_none_keybind(evt) {
     if (evt.key === 'e' && !settings.label_only) {
       this.model.toggleEdit();
@@ -403,7 +472,10 @@ class Controller {
     }
   }
 
-  // keybinds that apply in bulk mode, one selected
+  /**
+   * Handle keybinds that apply in bulk mode with one selected
+   * @param {KeyboardEvent} evt 
+   */
   handle_mode_single_keybind(evt) {
     if (evt.key === 'f') {
       this.model.startFill();
@@ -418,7 +490,10 @@ class Controller {
     }
   }
 
-  // keybinds that apply in bulk mode, two selected
+  /**
+   * Handle keybinds that apply in bulk mode with two selected
+   * @param {KeyboardEvent} evt 
+   */
   handle_mode_multiple_keybind(evt) {
     if (evt.key === 'r') {
       this.model.startReplace();
@@ -429,34 +504,15 @@ class Controller {
     }
   }
 
-  // keybinds that apply in bulk mode, answering question/prompt
+  /**
+   * Handle keybinds that apply in bulk mode when answering question/prompt
+   * @param {KeyboardEvent} evt 
+   */
   handle_mode_question_keybind(evt) {
     if (evt.key === ' ') {
       this.model.confirmAction();
     } else if (evt.key === 's') {
       this.model.confirmActionSingleFrame();
-    }
-  }
-
-  // handle all keypresses
-  handle_key(evt) {
-    // universal keybinds always apply
-    // keys a, d, left arrow, right arrow, ESC, h
-    // are reserved for universal keybinds
-    this.handle_universal_keybind(evt);
-    if (this.model.edit_mode) {
-      this.handle_universal_edit_keybind(evt);
-    }
-    if (this.model.edit_mode && this.model.kind === Modes.none) {
-      this.handle_edit_keybind(evt);
-    } else if (!this.model.edit_mode && this.model.kind === Modes.none) {
-      this.handle_mode_none_keybind(evt);
-    } else if (!this.model.edit_mode && this.model.kind === Modes.single) {
-      this.handle_mode_single_keybind(evt);
-    } else if (!this.model.edit_mode && this.model.kind === Modes.multiple) {
-      this.handle_mode_multiple_keybind(evt);
-    } else if (!this.model.edit_mode && this.model.kind === Modes.question) {
-      this.handle_mode_question_keybind(evt);
     }
   }
 }
