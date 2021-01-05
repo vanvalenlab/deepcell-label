@@ -68,7 +68,7 @@ class Controller {
         this.model.clear();
         this.setCanvasDimensions();
         this.model.brush.refreshView();
-        displayUndoRedo();
+        this.view.displayUndoRedo();
       }, 500, 'canvasResize');
     });
 
