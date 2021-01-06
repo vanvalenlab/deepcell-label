@@ -2,17 +2,17 @@
  * Handles zooming and panning of the canvas.
  */
 class CanvasState {
-  constructor(width, height, scale, padding) {
-    this.width = width;
-    this.height = height;
-    this.scale = scale;
-    this.padding = padding;
+  constructor(model) {
+    this.width = model.width;
+    this.height = model.height;
+    this.scale = model.scale;
+    this.padding = model.padding;
 
     // attributes for viewing the canvas.
     this._sx = 0;
     this._sy = 0;
-    this.sWidth = width;
-    this.sHeight = height;
+    this.sWidth = model.width;
+    this.sHeight = model.height;
     this.zoom = 100;
     this.zoomLimit = 100;
 
@@ -26,8 +26,8 @@ class CanvasState {
     this.rawX = 0;
     this.rawY = 0;
     // adjusted for padding
-    this.canvasPosX = -1 * padding;
-    this.canvasPosY = -1 * padding;
+    this.canvasPosX = -1 * model.padding;
+    this.canvasPosY = -1 * model.padding;
     // coordinates in original image (used for actions, labels, etc)
     this.imgX = null;
     this.imgY = null;

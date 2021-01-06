@@ -55,7 +55,7 @@ class Model {
 
     // Model objects
     this.adjuster = new ImageAdjuster(this);
-    this.canvas = new CanvasState(this.width, this.height, this.scale, this.padding);
+    this.canvas = new CanvasState(this);
     this.brush = new Brush(this);
 
     // TODO: use Observable interface instead and allow any Observer to register
