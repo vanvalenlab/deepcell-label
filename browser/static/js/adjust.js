@@ -67,6 +67,20 @@ class ImageAdjuster {
 
     this.rawLoaded = false;
     this.segLoaded = false;
+
+    // image processing cascade, finishing with a notification that images are ready
+    this.rawImage.onload = () => this.contrastRaw();
+    this.segImage.onload = () => this.preCompAdjust();
+    if (this.rgb) {
+      this.contrastedRaw.onload = () => this.rawAdjust();
+      this.preCompSeg.onload = () => this.segAdjust();
+    } else {
+      this.contrastedRaw.onload = () => this.preCompRawAdjust();
+      this.preCompRaw.onload = () => this.rawAdjust();
+      this.preCompSeg.onload = () => this.segAdjust();
+      this.compositedImg.onload = () => this.postCompAdjust();
+    }
+    this.postCompImg.onload = () => this.model.notifyImageChange();
   }
 
   // getters for brightness/contrast allowed ranges

@@ -54,22 +54,7 @@ class Model {
     this.processMaxLabels();
 
     // Model objects
-    let adjuster = new ImageAdjuster(this);
-    adjuster.rawImage.onload = () => adjuster.contrastRaw();
-    adjuster.segImage.onload = () => adjuster.preCompAdjust();
-    if (this.rgb) {
-      adjuster.contrastedRaw.onload = () => adjuster.rawAdjust();
-      adjuster.preCompSeg.onload = () => adjuster.segAdjust();
-    } else {
-      adjuster.contrastedRaw.onload = () => adjuster.preCompRawAdjust();
-      adjuster.preCompRaw.onload = () => adjuster.rawAdjust();
-      adjuster.preCompSeg.onload = () => adjuster.segAdjust();
-      adjuster.compositedImg.onload = () => adjuster.postCompAdjust();
-    }
-    adjuster.postCompImg.onload = () => this.notifyImageChange();
-    adjuster.rawLoaded = false;
-    adjuster.segLoaded = false;
-    this.adjuster = adjuster;
+    this.adjuster = new ImageAdjuster(this);
     this.canvas = new CanvasState(this.width, this.height, this.scale, this.padding);
     this.brush = new Brush(this);
 
