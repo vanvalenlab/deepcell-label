@@ -14,25 +14,25 @@ var answer = '(SPACE=YES / ESC=NO)';
 class Model {
   constructor(project) {
     // Dynamic project attributes
-    this.frame = project.frame;
-    this.feature = project.feature;
-    this.channel = project.channel;
+    this._frame = project.frame;
+    this._feature = project.feature;
+    this._channel = project.channel;
     this.kind = Modes.none;  // TODO: remove Modes
     // arguments passed to edit functions on backend
     this.info = {};  // TODO: remove info?
-    this.prompt = '';  // TODO: move prompt logic to view?
-    this.action = '';
+    this._prompt = '';  // TODO: move prompt logic to view?
+    this._action = '';
     // TODO: merge highlighting, selecting, and brush values
-    this.highlighted_cell_one = -1;
-    this.highlighted_cell_two = -1;
+    this._highlighted_cell_one = -1;
+    this._highlighted_cell_two = -1;
     // Booleans
-    this.highlight = true;
+    this._highlight = true;
     this.rgb = false;
     // TODO: get rid of edit mode/whole label mode distinction
-    this.edit_mode = true;
+    this._edit_mode = true;
     // TODO: replace with sliding opacity
-    this.rendering_raw = false;
-    this.display_labels = true; // is true the right default value?
+    this._rendering_raw = false;
+    this._display_labels = true; // is true the right default value?
 
     // Static project attributes
     this.numFrames = project.numFrames;
@@ -49,7 +49,7 @@ class Model {
     this._segImage = new Image();
     // array of arrays, contains annotation data for frame
     this._segArray = null;
-    this.tracks = project.tracks;
+    this._tracks = project.tracks;
     this.maxLabelsMap = new Map();
     this.processMaxLabels();
 
@@ -71,7 +71,7 @@ class Model {
     adjuster.segLoaded = false;
     this.adjuster = adjuster;
     this.canvas = new CanvasState(this.width, this.height, this.scale, this.padding);
-    this.brush = new Brush(this.height, this.width, this.padding);
+    this.brush = new Brush(this);
 
     // TODO: use Observable interface instead and allow any Observer to register
     // only observer right now is the view
@@ -105,6 +105,119 @@ class Model {
     this._rawImage = newRawImage;
     this.adjuster.rawLoaded = false;
     this.adjuster.rawImage.src = newRawImage;
+  }
+
+  // Model attributes in infopane
+  get frame() {
+    return this._frame;
+  }
+
+  set frame(value) {
+    this._frame = value;
+    this.notifyInfoChange();
+  }
+
+  get feature() {
+    return this._feature;
+  }
+
+  set feature(value) {
+    this._feature = value;
+    this.notifyInfoChange();
+  }
+
+  get channel() {
+    return this._channel;
+  }
+
+  set channel(value) {
+    this._channel = value;
+    this.notifyInfoChange();
+  }
+
+  get prompt() {
+    return this._prompt;
+  }
+
+  set prompt(value) {
+    this._prompt = value;
+    this.notifyInfoChange();
+  }
+
+  get action() {
+    return this._action;
+  }
+
+  set action(value) {
+    this._action = value;
+    this.notifyInfoChange();
+  }
+
+  get highlighted_cell_one() {
+    return this._highlighted_cell_one;
+  }
+
+  set highlighted_cell_one(value) {
+    this._highlighted_cell_one = value;
+    this.notifyInfoChange();
+    if (this.highlight) this.notifyImageFormattingChange();
+  }
+
+  get highlighted_cell_two() {
+    return this._highlighted_cell_two;
+  }
+
+  set highlighted_cell_two(value) {
+    this._highlighted_cell_two = value;
+    this.notifyInfoChange();
+    this.notifyImageFormattingChange();
+  }
+
+  get highlight() {
+    return this._highlight;
+  }
+
+  set highlight(value) {
+    this._highlight = value;
+    this.notifyImageFormattingChange();
+  }
+
+  get edit_mode() {
+    return this._edit_mode;
+  }
+
+  set edit_mode(value) {
+    this._edit_mode = value;
+    this.helper_brush_draw();
+    this.notifyImageFormattingChange();
+  }
+
+  get rendering_raw() {
+    return this._rendering_raw;
+  }
+
+  set rendering_raw(value) {
+    this._rendering_raw = value;
+    this.notifyImageChange();
+  }
+
+  get display_labels() {
+    return this._display_labels;
+  }
+
+  set display_labels(value) {
+    this._display_labels = value;
+    this.notifyImageChange();
+  }
+
+  get tracks() {
+    return this._tracks;
+  }
+
+  set tracks(value) {
+    this._tracks = value;
+    this.processMaxLabels();
+    this.notifyInfoChange();
   }
 
   // TODO: use Observable interface instead of hard-coding the view as the only Observer
@@ -185,12 +298,6 @@ class Model {
   
     if (payload.tracks) {
       this.tracks = payload.tracks;
-      this.processMaxLabels();
-    }
-
-    if (payload.tracks || payload.imgs) {
-      this.notifyImageChange();
-      this.notifyInfoChange();
     }
   }
 
@@ -206,18 +313,6 @@ class Model {
 
     this.action = '';
     this.prompt = '';
-    this.notifyImageFormattingChange();
-    this.notifyInfoChange();
-  }
-
-  toggleRaw() {
-    this.rendering_raw = !this.rendering_raw;
-    this.notifyImageChange();
-  }
-
-  toggleLabels() {
-    this.display_labels = !this.display_labels;
-    this.notifyImageChange();
   }
 
   updateMousePos(x, y) {
@@ -243,100 +338,32 @@ class Model {
     }
   }
 
-  decrementBrushSize() {
-    // decrease brush size, minimum size 1
-    this.brush.size -= 1;
-    // redraw the frame with the updated brush preview
-    this.notifyImageChange();
-  }
-
-  incrementBrushSize() {
-    // increase brush size, diameter shouldn't be larger than the image
-    this.brush.size += 1;
-    // redraw the frame with the updated brush preview
-    this.notifyImageChange();
-  }
-
   setUnusedBrushLabel() {
     // set edit value to something unused
     this.brush.value = this.maxLabelsMap.get(this.feature) + 1;
-    if (this.kind === Modes.prompt && brush.conv) {
+    if (this.kind === Modes.prompt && this.brush.conv) {
       this.prompt = `Now drawing over label ${this.brush.target} with label ${this.brush.value}. ` +
         `Use ESC to leave this mode.`;
       this.kind = Modes.drawing;
-    }
-    this.notifyImageFormattingChange();
-  }
-
-  incrementBrushLabel() {
-    // increase edit_value up to max label + 1 (guaranteed unused)
-    this.brush.value = Math.min(
-      this.brush.value + 1,
-      this.maxLabelsMap.get(this.feature) + 1
-    );
-    if (highlight) {
-      this.notifyImageFormattingChange();
-    }
-    this.notifyInfoChange();
-  }
-
-  decrementBrushLabel() {
-    // decrease edit_value, minimum 1
-    this.brush.value -= 1;
-    if (this.highlight) {
-      this.notifyImageFormattingChange();
-    }
-    this.notifyInfoChange();
-  }
-
-  toggleEraser() {
-    // turn eraser on and off
-    this.brush.erase = !this.brush.erase;
-    this.notifyImageChange();
-  }
-
-  decrementHighlightedLabel() {
-    // cycle highlight to prev label, skipping 0
-    let numLabels = maxLabelsMap.get(this.feature);
-    this.highlighted_cell_one = (this.highlighted_cell_one + numLabels - 2).mod(numLabels) + 1;
-    if (this.highlight) {
-      this.notifyImageFormattingChange();
-    }
-  }
-
-  incrementHighlightedLabel() {
-    // cycle highlight to next label (skipping 0)
-    let maxLabel = maxLabelsMap.get(this.feature);
-    this.highlighted_cell_one = this.highlighted_cell_one.mod(maxLabel) + 1;
-    if (this.highlight) {
-      this.notifyImageFormattingChange();
     }
   }
 
   decrementSelectedLabel() {
     // cycle highlight to prev label, skipping 0
-    let numLabels = maxLabelsMap.get(this.feature);
-    this.highlighted_cell_one = (this.highlighted_cell_one + numLabels - 2).mod(numLabels) + 1;
+    const maxLabel = this.maxLabelsMap.get(this.feature);
+    const tempHighlight = (this.highlighted_cell_one + maxLabel - 2).mod(maxLabel) + 1;
     // clear info but show new highlighted cell
-    const tempHighlight = this.highlighted_cell_one;
     this.clear();
     this.highlighted_cell_one = tempHighlight;
-    if (this.highlight) {
-      this.notifyImageFormattingChange();
-    }
   }
 
   incrementSelectedLabel() {
     // cycle highlight to next label
     let maxLabel = this.maxLabelsMap.get(this.feature);
-    this.highlighted_cell_one = this.highlighted_cell_one.mod(maxLabel) + 1;
+    const tempHighlight = this.highlighted_cell_one.mod(maxLabel) + 1;
     // clear info but show new highlighted cell
-    const tempHighlight = this.highlighted_cell_one;
     this.clear();
     this.highlighted_cell_one = tempHighlight;
-    if (this.highlight) {
-      this.notifyImageFormattingChange();
-    }
   }
 
   // actions
@@ -345,7 +372,6 @@ class Model {
     this.kind = Modes.prompt;
     this.action = 'pick_color';
     this.prompt = 'Click on a label to change the brush label to that label.';
-    this.notifyInfoChange();
   }
 
   startConversionBrush() {
@@ -354,7 +380,6 @@ class Model {
     this.action = 'pick_target';
     this.prompt = 'First, click on the label you want to overwrite.';
     this.brush.conv = true;
-    this.notifyImageChange();
   }
 
   startThreshold() {
@@ -364,7 +389,6 @@ class Model {
     this.prompt = 'Click and drag to create a bounding box around the area you want to threshold.';
     this.brush.show = false;
     this.brush.clearView();
-    this.notifyImageChange();
   }
 
   startPredict() {
@@ -372,7 +396,6 @@ class Model {
     this.kind = Modes.question;
     this.action = 'predict';
     this.prompt = 'Predict cell ids for zstack? / S=PREDICT THIS FRAME / SPACE=PREDICT ALL FRAMES / ESC=CANCEL PREDICTION';
-    this.notifyInfoChange();
   }
 
   startFill() {
@@ -384,7 +407,6 @@ class Model {
     this.kind = Modes.prompt;
     this.action = 'fill_hole';
     this.prompt = `Select hole to fill in cell ${this.info.label}`;
-    this.notifyInfoChange();
   }
 
   startCreate() {
@@ -392,7 +414,6 @@ class Model {
     this.kind = Modes.question;
     this.action = 'create_new';
     this.prompt = 'CREATE NEW(S=SINGLE FRAME / SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)';
-    this.notifyInfoChange();
   }
 
   startDelete() {
@@ -400,7 +421,6 @@ class Model {
     this.kind = Modes.question;
     this.action = 'delete_mask';
     this.prompt = `delete label ${this.info.label} in frame ${this.info.frame}? ${answer}`;
-    this.notifyInfoChange();
   }
 
   startReplace() {
@@ -409,7 +429,6 @@ class Model {
     this.action = 'replace';
     this.prompt = ('Replace ' + this.info.label_2 + ' with ' + this.info.label_1 +
       '? // SPACE = Replace in all frames / S = Replace in this frame only / ESC = Cancel replace');
-    this.notifyInfoChange();
   }
 
   startSwap() {
@@ -417,7 +436,6 @@ class Model {
     this.kind = Modes.question;
     this.action = 'swap_cells';
     this.prompt = 'SPACE = SWAP IN ALL FRAMES / S = SWAP IN THIS FRAME ONLY / ESC = CANCEL SWAP';
-    this.notifyInfoChange();
   }
 
   startWatershed() {
@@ -425,7 +443,6 @@ class Model {
     this.kind = Modes.question;
     this.action = 'watershed';
     this.prompt = `Perform watershed to split ${this.info.label_1}? ${answer}`;
-    this.notifyInfoChange();
   }
 
   startFlood() {
@@ -440,8 +457,6 @@ class Model {
     };
     this.prompt = 'SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL';
     this.highlighted_cell_one = this.canvas.label;
-    this.notifyImageFormattingChange();
-    this.notifyInfoChange();
   }
 
   startTrim() {
@@ -456,8 +471,6 @@ class Model {
     };
     this.prompt = 'SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL';
     this.highlighted_cell_one = this.canvas.label;
-    this.notifyImageFormattingChange();
-    this.notifyInfoChange();
   }
 
   selectLabel() {
@@ -471,8 +484,6 @@ class Model {
     this.highlighted_cell_two = -1;
     this.canvas.storedClickX = this.canvas.imgX;
     this.canvas.storedClickY = this.canvas.imgY;
-    this.notifyImageFormattingChange();
-    this.notifyInfoChange();
   }
 
 
@@ -483,7 +494,6 @@ class Model {
       this.prompt = `Now drawing over label ${this.brush.target} with label ${this.brush.value}.` +
         `Use ESC to leave this mode.`;
       this.kind = Modes.drawing;
-      this.notifyImageFormattingChange();
     } else {
       this.clear();
     }
@@ -493,7 +503,6 @@ class Model {
     this.brush.target = this.canvas.label;
     this.action = 'pick_color';
     this.prompt = 'Click on the label you want to draw with, or press "n" to draw with an unused label.';
-    this.notifyInfoChange();
   }
 
   selectSecondLabel() {
@@ -512,8 +521,6 @@ class Model {
       x2_location: this.canvas.imgX,
       y2_location: this.canvas.imgY
     };
-    this.notifyImageFormattingChange();
-    this.notifyInfoChange();
   }
 
   reselectSecondLabel() {
@@ -529,8 +536,6 @@ class Model {
       x2_location: this.canvas.imgX,
       y2_location: this.canvas.imgY
     };
-    this.notifyImageFormattingChange();
-    this.notifyInfoChange();
   }
 
   updateThresholdBox() {

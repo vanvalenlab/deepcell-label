@@ -6,8 +6,6 @@ class ToggleEdit extends Action {
 
   do() {
     this.model.edit_mode = !this.model.edit_mode;
-    this.model.helper_brush_draw();
-    this.model.notifyImageFormattingChange();
   }
 
   undo() {

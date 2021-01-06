@@ -457,13 +457,12 @@ class Controller {
       // may want some things here that trigger on ESC but not clear()
     } else if (!this.model.rgb && evt.key === 'h') {
       this.history.addFencedAction(new ToggleHighlight(this.model));
-      this.model.notifyImageFormattingChange();
     } else if (evt.key === 'z') {
-      this.model.toggleRaw();
+      this.model.rendering_raw = !this.model.rendering_raw;
     } else if (evt.key === '0') {
       this.history.addFencedAction(new ResetBrightnessContrast(this.model));
     } else if ((evt.key === 'l' || evt.key === 'L') && this.model.rgb && !this.model.edit_mode) {
-      this.model.toggleLabels();
+      this.model.display_labels = !this.model.display_labels;
     } else if (evt.key === '-') {
       this.history.addAction(new Zoom(this, this.model, 1));
       this.model.notifyImageChange();
@@ -479,13 +478,13 @@ class Controller {
    */
   handle_universal_edit_keybind(evt) {
     if (evt.key === 'ArrowDown') {
-      this.model.decrementBrushSize();
+      this.model.brush.size -= 1;
     } else if (evt.key === 'ArrowUp') {
-      this.model.incrementBrushSize();
+      this.model.brush.size += 1;
     } else if (!this.model.rgb && evt.key === 'i') {
       this.history.addAction(new ToggleInvert(this.model));
     } else if (!this.model.rgb && settings.pixel_only && (evt.key === 'l' || evt.key === 'L')) {
-      this.model.toggleLabels();
+      this.model.display_labels = !this.model.display_labels;
     } else if (evt.key === 'n') {
       this.model.setUnusedBrushLabel();
     }
@@ -507,11 +506,11 @@ class Controller {
     } else if (this.model.numFeatures > 1 && evt.key === 'F') {
       this.history.addFencedAction(new ChangeFeature(this.model, this.model.feature - 1));
     } else if (evt.key === ']') {
-      this.model.incrementBrushLabel();
+      this.model.brush.value += 1;
     } else if (evt.key === '[') {
-      this.model.decrementBrushLabel();
+      this.model.brush.value -= 1;
     } else if (evt.key === 'x') {
-      this.model.toggleEraser();
+      this.model.brush.erase = !this.model.brush.erase;
     } else if (evt.key === 'p') {
       this.model.startColorPicker();
     } else if (evt.key === 'r') {
@@ -539,9 +538,13 @@ class Controller {
     } else if (this.model.numFrames > 1 && evt.key === 'p') {
       this.model.startPredict();
     } else if (evt.key === '[' && this.model.highlighted_cell_one !== -1) {
-      this.model.decrementHighlightedLabel();
+      // cycle highlight to prev label, skipping 0
+      const maxLabel = this.model.maxLabelsMap.get(this.feature);
+      this.model.highlighted_cell_one = (this.model.highlighted_cell_one + maxLabel - 2).mod(maxLabel) + 1;
     } else if (evt.key === ']' && this.model.highlighted_cell_one !== -1) {
-      this.model.incrementHighlightedLabel();
+      // cycle highlight to next label (skipping 0)
+      const maxLabel = this.model.maxLabelsMap.get(this.feature);
+      this.model.highlighted_cell_one = this.model.highlighted_cell_one.mod(maxLabel) + 1;
     }
   }
 

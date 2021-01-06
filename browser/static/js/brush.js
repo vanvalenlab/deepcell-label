@@ -1,5 +1,6 @@
 class Brush {
-  constructor(height, width, pad) {
+  constructor(model) {
+    this.model = model;
     // center of brush (scaled)
     this.x = 0;
     this.y = 0;
@@ -21,11 +22,11 @@ class Brush {
     this._conv = false;
 
     // threshold/box attributes
-    this.show = true; // showing brush shape
+    this._show = true; // showing brush shape
     // -2*pad will always be out of range for annotators
     // anchored corner of bounding box
-    this._threshX = -2 * pad;
-    this._threshY = -2 * pad;
+    this._threshX = -2 * model.padding;
+    this._threshY = -2 * model.padding;
     this._showBox = false;
 
     // how to draw brush/box shadow
@@ -35,17 +36,17 @@ class Brush {
     this._opacity = 0.3;
 
     // attributes needed to match visible canvas
-    this._height = height;
-    this._width = width;
-    this._padding = pad;
+    this._height = model.height;
+    this._width = model.width;
+    this._padding = model.padding;
 
     // create hidden canvas to store brush preview
     this.canvas = document.createElement('canvas');
     this.canvas.id = 'brushCanvas';
     // this canvas should never be seen
     this.canvas.style.display = 'none';
-    this.canvas.height = height;
-    this.canvas.width = width;
+    this.canvas.height = model.height;
+    this.canvas.width = model.width;
     document.body.appendChild(this.canvas);
     this.ctx = document.getElementById('brushCanvas').getContext('2d');
     // set fillStyle here, it will never change
@@ -66,6 +67,7 @@ class Brush {
       // update brush preview with new size
       this.refreshView();
     }
+    this.model.notifyImageChange();
   }
 
   get erase() {
@@ -83,6 +85,7 @@ class Brush {
       } else {
         this._outlineColor = 'white';
       }
+      this.model.notifyImageChange();
     }
   }
 
@@ -120,10 +123,16 @@ class Brush {
     // value picking from finishing early
     if (this._conv && val !== 0) {
       this._convValue = val;
-    // regular brush never has value less than 1
     } else if (!this._conv) {
-      this._regValue = Math.max(val, 1);
+      // regular brush never has value less than 1
+      // and never has value more than first unused label
+      val = Math.max(val, 1); 
+      val = Math.min(val, this.model.maxLabelsMap.get(this.model.feature) + 1);
+      this._regValue = val;
     }
+    if (this.model.highlight) this.model.notifyImageChange();
+    this.model.notifyInfoChange();
+    this.model.notifyImageFormattingChange();
   }
 
   // whether or not conversion brush is on
@@ -144,6 +153,16 @@ class Brush {
     } else {
       this._outlineColor = 'white';
     }
+    this.model.notifyImageChange();
+  }
+
+  get show() {
+    return this._show;
+  }
+
+  set show(bool) {
+    this._show = bool;
+    this.model.notifyImageChange();
   }
 
   get threshX() {
