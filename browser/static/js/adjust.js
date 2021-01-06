@@ -46,9 +46,9 @@ class ImageAdjuster {
       this.contrastMap.set(i, 0);
       this.invertMap.set(i, true);
     }
-    this.brightness = this.brightnessMap.get(0);
-    this.contrast = this.contrastMap.get(0);
-    this.displayInvert = this.invertMap.get(0);
+    this._brightness = 0;
+    this._contrast = 0;
+    this._displayInvert = true;
 
     // raw and adjusted image storage
     // cascasding image updates if raw or seg is reloaded
@@ -81,6 +81,35 @@ class ImageAdjuster {
       this.compositedImg.onload = () => this.postCompAdjust();
     }
     this.postCompImg.onload = () => this.model.notifyImageChange();
+  }
+
+  get brightness() {
+    return this._brightness;
+  }
+
+  set brightness(value) {
+    this._brightness = value;
+    this.rawLoaded = false;
+    this.contrastRaw();
+  }
+
+  get contrast() {
+    return this._contrast;
+  }
+
+  set contrast(value) {
+    this._contrast = value;
+    this.rawLoaded = false;
+    this.contrastRaw();
+  }
+
+  get displayInvert() {
+    return this._displayInvert;
+  }
+
+  set displayInvert(value) {
+    this._displayInvert = value;
+    this.preCompRawAdjust();
   }
 
   get segArray() {

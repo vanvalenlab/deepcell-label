@@ -275,17 +275,11 @@ class ChangeContrast extends Action {
     this.adjuster = adjuster;
   }
 
-  do() { this.setContrast(this.newValue); }
+  do() { this.adjuster.contrast = this.newValue; }
 
-  undo() { this.setContrast(this.oldValue); }
+  undo() { this.adjuster.contrast = this.oldValue; }
 
   redo() { this.do(); }
-
-  setContrast(contrast) {
-    this.adjuster.rawLoaded = false;
-    this.adjuster.contrast = contrast;
-    this.adjuster.contrastRaw();
-  }
 }
 
 class ChangeBrightness extends Action {
@@ -302,17 +296,11 @@ class ChangeBrightness extends Action {
     this.adjuster = adjuster;
   }
 
-  do() { this.setBrightness(this.newValue); }
+  do() { this.adjuster.brightness = this.newValue; }
 
-  undo() { this.setBrightness(this.oldValue); }
+  undo() { this.adjuster.brightness = this.oldValue; }
 
   redo() { this.do(); }
-
-  setBrightness(brightness) {
-    this.adjuster.rawLoaded = false;
-    this.adjuster.brightness = brightness;
-    this.adjuster.contrastRaw();
-  }
 }
 
 class ResetBrightnessContrast extends Action {
@@ -326,15 +314,11 @@ class ResetBrightnessContrast extends Action {
   do() {
     this.adjuster.brightness = 0;
     this.adjuster.contrast = 0;
-    this.adjuster.rawLoaded = false;
-    this.adjuster.contrastRaw();
   }
 
   undo() {
     this.adjuster.brightness = this.brightness;
     this.adjuster.contrast = this.contrast;
-    this.adjuster.rawLoaded = false;
-    this.adjuster.contrastRaw();
   }
 
   redo() { this.do(); }
@@ -348,7 +332,6 @@ class ToggleInvert extends Action {
 
   do() {
     this.adjuster.displayInvert = !this.adjuster.displayInvert;
-    this.adjuster.preCompRawAdjust();
   }
 
   undo() { this.do(); }
