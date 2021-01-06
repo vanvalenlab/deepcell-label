@@ -69,7 +69,7 @@ class Model {
 
   set segArray(newSegArray) {
     this._segArray = newSegArray;
-    this.canvas.segArray = newSegArray;
+    this.canvas.updateLabel();
   }
 
   get segImage() {

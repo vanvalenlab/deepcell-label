@@ -3,6 +3,8 @@
  */
 class CanvasState {
   constructor(model) {
+    this.model = model;
+
     this.width = model.width;
     this.height = model.height;
     this.scale = model.scale;
@@ -36,8 +38,6 @@ class CanvasState {
     this.storedClickY = null;
 
     this.label = 0;
-    // store as part of object to be able to get current label
-    this._segArray = null;
 
     this.topBorder = new Path2D();
     this.bottomBorder = new Path2D();
@@ -72,16 +72,7 @@ class CanvasState {
   }
 
   get segArray() {
-    return this._segArray;
-  }
-
-  set segArray(newSegArray) {
-    this._segArray = newSegArray;
-    if (this.inRange()) {
-      this.label = Math.abs(this._segArray[this.imgY][this.imgX]);
-    } else {
-      this.label = 0;
-    }
+    return this.model.segArray;
   }
 
   get scaledWidth() {
@@ -118,7 +109,13 @@ class CanvasState {
     if (this.inRange()) {
       this.imgX = Math.floor((this.canvasPosX * 100 / (this.scale * this.zoom) + this.sx));
       this.imgY = Math.floor((this.canvasPosY * 100 / (this.scale * this.zoom) + this.sy));
-      this.label = Math.abs(this._segArray[this.imgY][this.imgX]);
+    }
+    this.updateLabel();
+  }
+
+  updateLabel() {
+    if (this.inRange()) {
+      this.label = Math.abs(this.segArray[this.imgY][this.imgX]);
     } else {
       this.label = 0;
     }
