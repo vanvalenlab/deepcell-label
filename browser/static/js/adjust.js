@@ -83,6 +83,10 @@ class ImageAdjuster {
     this.postCompImg.onload = () => this.model.notifyImageChange();
   }
 
+  get segArray() {
+    return this.model.segArray;
+  }
+
   // getters for brightness/contrast allowed ranges
   // no setters; these should remain fixed
   get minBrightness() {
@@ -143,14 +147,14 @@ class ImageAdjuster {
     }
   }
 
-  preCompositeLabelMod(img, segArray, h1, h2) {
+  preCompositeLabelMod(img, h1, h2) {
     let r, g, b;
     const ann = img.data;
     // use label array to figure out which pixels to recolor
-    for (let j = 0; j < segArray.length; j += 1) { // y
-      for (let i = 0; i < segArray[j].length; i += 1) { // x
-        const jlen = segArray[j].length;
-        const currentVal = Math.abs(segArray[j][i]);
+    for (let j = 0; j < this.segArray.length; j += 1) { // y
+      for (let i = 0; i < this.segArray[j].length; i += 1) { // x
+        const jlen = this.segArray[j].length;
+        const currentVal = Math.abs(this.segArray[j][i]);
         if (currentVal === h1 || currentVal === h2) {
           this._recolorScaled(ann, i, j, jlen, r = 255, g = -255, b = -255);
         }
@@ -158,7 +162,7 @@ class ImageAdjuster {
     }
   }
 
-  postCompositeLabelMod(img, segArray,
+  postCompositeLabelMod(img,
     redOutline = false, r1 = -1,
     singleOutline = false, o1 = -1,
     outlineAll = false,
@@ -166,10 +170,10 @@ class ImageAdjuster {
     let r, g, b;
     const ann = img.data;
     // use label array to figure out which pixels to recolor
-    for (let j = 0; j < segArray.length; j += 1) { // y
-      for (let i = 0; i < segArray[j].length; i += 1) { // x
-        const jlen = segArray[j].length;
-        const currentVal = segArray[j][i];
+    for (let j = 0; j < this.segArray.length; j += 1) { // y
+      for (let i = 0; i < this.segArray[j].length; i += 1) { // x
+        const jlen = this.segArray[j].length;
+        const currentVal = this.segArray[j][i];
         // outline red
         if (redOutline && currentVal === -r1) {
           this._recolorScaled(ann, i, j, jlen, r = 255, g = -255, b = -255);
@@ -205,8 +209,6 @@ class ImageAdjuster {
   }
 
   preCompAdjust() {
-    const segArray = this.model.segArray;
-    
     this.segLoaded = false;
 
     // draw segImage so we can extract image data
@@ -226,7 +228,7 @@ class ImageAdjuster {
       }
 
       // highlight
-      this.preCompositeLabelMod(segData, segArray, h1, h2);
+      this.preCompositeLabelMod(segData, h1, h2);
       this.ctx.putImageData(segData, 0, 0);
     }
 
@@ -264,7 +266,6 @@ class ImageAdjuster {
 
   // apply white (and sometimes red) opaque outlines around cells, if needed
   postCompAdjust() {
-    const segArray = this.model.segArray;
     const brush = this.model.brush;
     const editMode = this.model.edit_mode;
     // draw compositedImg so we can extract image data
@@ -293,7 +294,7 @@ class ImageAdjuster {
     }
 
     this.postCompositeLabelMod(
-      imgData, segArray, redOutline, r1, singleOutline, o1,
+      imgData, redOutline, r1, singleOutline, o1,
       outlineAll, translucent, t1, t2);
 
     this.ctx.putImageData(imgData, 0, 0);
@@ -303,7 +304,6 @@ class ImageAdjuster {
 
   // apply outlines, transparent highlighting for RGB
   postCompAdjustRGB() {
-    const segArray = this.model.segArray;
     const brush = this.model.brush;
     const editMode = this.model.edit_mode;
     // draw contrastedRaw so we can extract image data
@@ -337,7 +337,7 @@ class ImageAdjuster {
     }
 
     this.postCompositeLabelMod(
-      imgData, segArray, redOutline, r1, singleOutline, o1,
+      imgData, redOutline, r1, singleOutline, o1,
       outlineAll, translucent, t1, t2);
 
     this.ctx.putImageData(imgData, 0, 0);
