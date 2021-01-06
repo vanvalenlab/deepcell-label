@@ -128,10 +128,10 @@ class Controller {
   
     // add flag for when cursor in on the canvas
     canvasElement.onmouseover = () => {
-      canvas.onCanvas = true;
+      this.model.canvas.onCanvas = true;
     }
     canvasElement.onmouseout = () => {
-      canvas.onCanvas = false;
+      this.model.canvas.onCanvas = false;
     }
 
   }
