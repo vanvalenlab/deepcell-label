@@ -53,12 +53,6 @@ class Model {
     this.maxLabelsMap = new Map();
     this.processMaxLabels();
 
-    // TODO: move to controller
-    this.actionID = project.action_id;
-    this.actions = new History();
-    // TODO: fix initializeHistory to work with new Actions
-    // this.actions.initializeHistory(project.actionFrames);
-
     // Model objects
     let adjuster = new ImageAdjuster(this);
     adjuster.rawImage.onload = () => adjuster.contrastRaw();
@@ -216,36 +210,6 @@ class Model {
     this.notifyInfoChange();
   }
 
-  doAction(action, info) {
-    const backendAction = new BackendAction(this, action, info);
-    this.actions.addFencedAction(backendAction);
-  }
-  
-  undo() {
-    this.actions.undo();
-    this.clear();
-    this.updateMousePos(this.canvas.rawX, this.canvas.rawY);
-    this.notifyImageChange();
-  }
-  
-  redo() {
-    this.actions.redo();
-    this.clear();
-    this.updateMousePos(this.canvas.rawX, this.canvas.rawY);
-    this.notifyImageChange();
-  }
-
-  changeFrame(newFrame) {
-    const action = new ChangeFrame(this, newFrame);
-    this.actions.addFencedAction(action);
-  }
-  
-  toggleHighlight() {
-    const action = new ToggleHighlight(this);
-    this.actions.addFencedAction(action);
-    this.notifyImageFormattingChange();
-  }
-
   toggleRaw() {
     this.rendering_raw = !this.rendering_raw;
     this.notifyImageChange();
@@ -254,26 +218,6 @@ class Model {
   toggleLabels() {
     this.display_labels = !this.display_labels;
     this.notifyImageChange();
-  }
-
-  resetBrightnessContrast() {
-    const action = new ResetBrightnessContrast(this);
-    this.actions.addFencedAction(action);
-  }
-
-  changeZoom(dzoom) {
-    const action = new Zoom(this, dzoom);
-    this.updateMousePos(this.canvas.rawX, this.canvas.rawY);
-    this.actions.addAction(action);
-    this.notifyImageChange();
-  }
-
-  zoomIn() {
-    this.changeZoom(1);
-  }
-
-  zoomOut() {
-    this.changeZoom(-1);
   }
 
   updateMousePos(x, y) {
@@ -299,41 +243,6 @@ class Model {
     }
   }
 
-  toggleEdit() {
-    const toggleEdit = new ToggleEdit(this);
-    this.actions.addFencedAction(toggleEdit);
-  }
-
-  decrementFrame() {
-    let changeFrame = new ChangeFrame(this, this.frame - 1);
-    this.actions.addFencedAction(changeFrame);
-  }
-
-  incrementFrame() {
-    let changeFrame = new ChangeFrame(this, this.frame + 1);
-    this.actions.addFencedAction(changeFrame);
-  }
-
-  decrementChannel() {
-    let action = new ChangeChannel(this, this.channel - 1);
-    this.actions.addFencedAction(action);
-  }
-
-  incrementChannel() {
-    let action = new ChangeChannel(this, this.channel + 1);
-    this.actions.addFencedAction(action);
-  }
-
-  decrementFeature() {
-    let action = new ChangeFeature(this, this.feature - 1);
-    this.actions.addFencedAction(action);
-  }
-
-  incrementFeature() {
-    let action = new ChangeFeature(this, this.feature + 1);
-    this.actions.addFencedAction(action);
-  }
-
   decrementBrushSize() {
     // decrease brush size, minimum size 1
     this.brush.size -= 1;
@@ -346,12 +255,6 @@ class Model {
     this.brush.size += 1;
     // redraw the frame with the updated brush preview
     this.notifyImageChange();
-  }
-
-  toggleInvert() {
-    // toggle light/dark inversion of raw img
-    let toggleInvert = new ToggleInvert(this);
-    this.actions.addAction(toggleInvert);
   }
 
   setUnusedBrushLabel() {
@@ -434,16 +337,6 @@ class Model {
     if (this.highlight) {
       this.notifyImageFormattingChange();
     }
-  }
-
-  changeContrast(change) {
-    const action = new ChangeContrast(this, change);
-    this.actions.addAction(action);
-  }
-
-  changeBrightness(change) {
-    const action = new ChangeBrightness(this, change);
-    this.actions.addAction(action);
   }
 
   // actions
@@ -582,81 +475,7 @@ class Model {
     this.notifyInfoChange();
   }
 
-  confirmActionSingleFrame() {
-    if (this.action === 'create_new') {
-      this.doAction('new_single_cell', this.info);
-    } else if (this.action === 'predict') {
-      this.doAction('predict_single', { frame: this.frame });
-    } else if (this.action === 'replace') {
-      if (this.info.label_1 !== this.info.label_2) {
-        this.doAction('replace_single', {
-          label_1: this.info.label_1,
-          label_2: this.info.label_2
-        });
-      }
-    } else if (this.action === 'swap_cells') {
-      if (this.info.label_1 !== this.info.label_2 &&
-          this.info.frame_1 === this.info.frame_2) {
-        this.doAction('swap_single_frame', {
-          label_1: this.info.label_1,
-          label_2: this.info.label_2,
-          frame: this.info.frame_1
-        });
-      }
-    }
-    this.clear();
-  }
 
-  confirmAction() {
-    if (this.action === 'flood_contiguous') {
-      this.doAction(this.action, this.info);
-    } else if (this.action === 'trim_pixels') {
-      this.doAction(this.action, this.info);
-    } else if (this.action === 'create_new') {
-      this.doAction('new_cell_stack', this.info);
-    } else if (this.action === 'delete_mask') {
-      this.doAction(this.action, this.info);
-    } else if (this.action === 'predict') {
-      this.doAction('predict_zstack', this.info);
-    } else if (this.action === 'replace') {
-      if (this.info.label_1 !== this.info.label_2) {
-        this.doAction(this.action, {
-          label_1: this.info.label_1,
-          label_2: this.info.label_2
-        });
-      }
-    } else if (this.action === 'swap_cells') {
-      if (this.info.label_1 !== this.info.label_2) {
-        this.doAction('swap_all_frame', {
-          label_1: this.info.label_1,
-          label_2: this.info.label_2
-        });
-      }
-    } else if (this.action === 'watershed') {
-      if (this.info.label_1 === this.info.label_2 &&
-          this.info.frame_1 === this.info.frame_2) {
-        this.info.frame = this.info.frame_1;
-        this.info.label = this.info.label_1;
-        delete this.info.frame_1;
-        delete this.info.frame_2;
-        delete this.info.label_1;
-        delete this.info.label_2;
-        this.doAction(this.action, this.info);
-      }
-    }
-    this.clear();
-  }
-
-  finishFill() {
-    this.info = {
-      label: this.info.label,
-      frame: this.frame,
-      x_location: this.canvas.imgX,
-      y_location: this.canvas.imgY
-    };
-    this.doAction(this.action, this.info);
-    this.clear();
-  }
 
   pickConversionLabel() {
     this.brush.value = this.canvas.label;
@@ -712,57 +531,6 @@ class Model {
     };
     this.notifyImageFormattingChange();
     this.notifyInfoChange();
-  }
-
-  draw() {
-    if (this.canvas.trace.length !== 0) {
-      this.doAction('handle_draw', {
-        trace: JSON.stringify(this.canvas.trace), // stringify array so it doesn't get messed up
-        target_value: this.brush.target, // value that we're overwriting
-        brush_value: this.brush.value, // we don't update with edit_value, etc each time they change
-        brush_size: this.brush.size, // so we need to pass them in as args
-        erase: (this.brush.erase && !this.brush.conv),
-        frame: this.frame
-      });
-    }
-    this.canvas.clearTrace();
-    if (this.kind !== Modes.drawing) {
-      this.clear();
-    }
-  }
-
-  threshold() {
-    const thresholdStartY = this.brush.threshY;
-    const thresholdStartX = this.brush.threshX;
-    const thresholdEndX = this.canvas.imgX;
-    const thresholdEndY = this.canvas.imgY;
-
-    if (thresholdStartY !== thresholdEndY &&
-        thresholdStartX !== thresholdEndX) {
-      this.doAction('threshold', {
-        y1: thresholdStartY,
-        x1: thresholdStartX,
-        y2: thresholdEndY,
-        x2: thresholdEndX,
-        frame: this.frame,
-        label: this.maxLabelsMap.get(this.feature) + 1
-      });
-    }
-    this.clear();
-    this.notifyImageChange();
-  }
-
-  pan(deltaX, deltaY) {
-    // get the old values to see if rendering is reqiured.
-    const oldX = this.canvas.sx;
-    const oldY = this.canvas.sy;
-
-    const zoom = 100 / (this.canvas.zoom * this.canvas.scale)
-    const pan = new Pan(this, deltaX * zoom, deltaY * zoom);
-    this.actions.addAction(pan);
-    if (this.canvas.sx !== oldX || this.canvas.sy !== oldY) {
-      this.notifyImageChange();
-    }
   }
 
   updateThresholdBox() {

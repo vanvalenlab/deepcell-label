@@ -15,6 +15,10 @@ class Controller {
     getProject.done((project) => {
       this.model = new Model(project);
       this.view = this.model.view;
+      this.history = new History();
+      // TODO: fix initializeHistory to work with new Actions
+      // this.history.initializeHistory(project.actionFrames);
+
       this.overrideScroll();
       this.addWindowBindings();
       this.addCanvasBindings();
@@ -30,6 +34,20 @@ class Controller {
       this.view.displayUndoRedo();
 
     });
+  }
+  
+  undo() {
+    this.history.undo();
+    this.model.clear();
+    this.model.updateMousePos(this.model.canvas.rawX, this.model.canvas.rawY);
+    this.model.notifyImageChange();
+  }
+  
+  redo() {
+    this.history.redo();
+    this.model.clear();
+    this.model.updateMousePos(this.model.canvas.rawX, this.model.canvas.rawY);
+    this.model.notifyImageChange();
   }
 
   /**
@@ -122,8 +140,8 @@ class Controller {
     const undoButton = document.getElementById('undo');
     const redoButton = document.getElementById('redo');
 
-    undoButton.onclick = () => this.model.undo();
-    redoButton.onclick = () => this.model.redo();
+    undoButton.onclick = () => this.undo();
+    redoButton.onclick = () => this.redo();
   }
 
   /**
@@ -215,13 +233,14 @@ class Controller {
     const rawVisible = (this.model.rendering_raw || this.model.edit_mode ||
       (this.model.rgb && !this.model.display_labels));
     if (evt.altKey) {
-      this.model.changeZoom(Math.sign(evt.deltaY));
+      this.history.addAction(new Zoom(this, this.model, Math.sign(evt.deltaY)));
+      this.model.notifyImageChange();
     } else if (rawVisible && !evt.shiftKey) {
-      this.model.changeContrast(evt.deltaY);
+      this.history.addAction(new ChangeContrast(this.model, evt.deltaY));
     } else if (rawVisible && evt.shiftKey) {
       // shift + scroll causes horizontal scroll on mice wheels, but not trackpads
       const change = evt.deltaY === 0 ? evt.deltaX : evt.deltaY;
-      this.model.changeBrightness(change);
+      this.history.addAction(new ChangeBrightness(this.model, change));
     }
   }
 
@@ -248,7 +267,15 @@ class Controller {
    */
   handleMousemove(evt) {
     if (this.model.canvas.isCursorPressed() && this.model.canvas.isSpacedown) {
-      this.model.pan(evt.movementX, evt.movementY);
+      // // get the old values to see if rendering is reqiured.
+      // const oldX = this.canvas.sx;
+      // const oldY = this.canvas.sy;
+      const zoom = 100 / (this.canvas.zoom * this.canvas.scale)
+      this.history.addAction(new Pan(this, evt.movementX * zoom, evt.movementY * zoom));
+      this.model.notifyImageChange();
+      // if (this.canvas.sx !== oldX || this.canvas.sy !== oldY) {
+      //   this.model.notifyImageChange();
+      // }
     }
     this.model.updateMousePos(evt.offsetX, evt.offsetY);
     this.model.notifyInfoChange();
@@ -259,17 +286,53 @@ class Controller {
    */
   handleMouseup() {
     this.model.canvas.isPressed = false;
-    if (!this.model.canvas.isSpacedown
-        && this.model.kind !== Modes.prompt
-        && this.model.edit_mode) {
-      if (!this.model.brush.show) {
-        this.model.threshold();
-      } else if (this.model.canvas.inRange()) {
-        // send click&drag coordinates to label.py to update annotations
-        this.model.draw();
+    
+    if (this.model.canvas.isSpacedown) return; // panning
+    if (this.model.kind === Modes.prompt) return;
+    if (!this.model.edit_mode) return;
+    
+    // threshold
+    if (!this.model.brush.show) {
+      const thresholdStartY = this.model.brush.threshY;
+      const thresholdStartX = this.model.brush.threshX;
+      const thresholdEndX = this.model.canvas.imgX;
+      const thresholdEndY = this.model.canvas.imgY;
+  
+      if (thresholdStartY !== thresholdEndY &&
+          thresholdStartX !== thresholdEndX) {
+        this.model.action = 'threshold';
+        this.model.info = {
+          y1: thresholdStartY,
+          x1: thresholdStartX,
+          y2: thresholdEndY,
+          x2: thresholdEndX,
+          frame: this.model.frame,
+          label: this.model.maxLabelsMap.get(this.model.feature) + 1
+        };
+        this.history.addFencedAction(new BackendAction(this.model));
       }
-      this.model.brush.refreshView();
+      this.model.clear();
+      this.model.notifyImageChange();
+    // paint
+    } else if (this.model.canvas.inRange()) {
+      if (this.model.canvas.trace.length !== 0) {
+        this.model.action = 'handle_draw';
+        this.model.info = {
+          trace: JSON.stringify(this.model.canvas.trace), // stringify array so it doesn't get messed up
+          target_value: this.model.brush.target, // value that we're overwriting
+          brush_value: this.model.brush.value, // we don't update with edit_value, etc each time they change
+          brush_size: this.model.brush.size, // so we need to pass them in as args
+          erase: (this.model.brush.erase && !this.model.brush.conv),
+          frame: this.model.frame
+        };
+        this.history.addFencedAction(new BackendAction(this.model));
+      }
+      this.model.canvas.clearTrace();
+      if (this.model.kind !== Modes.drawing) {
+        this.model.clear();
+      }
     }
+    this.model.brush.refreshView();
   }
 
   /**
@@ -317,7 +380,14 @@ class Controller {
    */
   handle_mode_prompt_click(evt) {
     if (this.model.action === 'fill_hole' && this.model.canvas.label === 0) {
-      this.model.finishFill();
+      this.model.info = {
+        label: this.model.info.label,
+        frame: this.model.frame,
+        x_location: this.model.canvas.imgX,
+        y_location: this.model.canvas.imgY
+      };
+      this.history.addFencedAction(new BackendAction(this.model));
+      this.model.clear();
     } else if (this.model.action === 'pick_color' && this.model.canvas.label !== 0 &&
                this.model.canvas.label !== this.model.brush.target) {
       this.model.pickConversionLabel();
@@ -375,28 +445,31 @@ class Controller {
    */
   handle_universal_keybind(evt) {
     if ((evt.ctrlKey || evt.metaKey) && evt.shiftKey && (evt.key === 'Z' || evt.key === 'z')) {
-      this.model.redo();
+      this.redo();
     } else if ((evt.ctrlKey || evt.metaKey) && (evt.key === 'Z' || evt.key === 'z')) {
-      this.model.undo();
+      this.undo();
     } else if (this.model.numFrames > 1 && (evt.key === 'a' || evt.key === 'ArrowLeft')) {
-      this.model.decrementFrame();
+      this.history.addFencedAction(new ChangeFrame(this.model, this.model.frame - 1));
     } else if (this.model.numFrames > 1 && (evt.key === 'd' || evt.key === 'ArrowRight')) {
-      this.model.incrementFrame();
+      this.history.addFencedAction(new ChangeFrame(this.model, this.model.frame + 1));
     } else if (evt.key === 'Escape') {
       this.model.clear();
       // may want some things here that trigger on ESC but not clear()
     } else if (!this.model.rgb && evt.key === 'h') {
-      this.model.toggleHighlight();
+      this.history.addFencedAction(new ToggleHighlight(this.model));
+      this.model.notifyImageFormattingChange();
     } else if (evt.key === 'z') {
       this.model.toggleRaw();
     } else if (evt.key === '0') {
-      this.model.resetBrightnessContrast();
+      this.history.addFencedAction(new ResetBrightnessContrast(this.model));
     } else if ((evt.key === 'l' || evt.key === 'L') && this.model.rgb && !this.model.edit_mode) {
       this.model.toggleLabels();
     } else if (evt.key === '-') {
-      this.model.changeZoom(1);
+      this.history.addAction(new Zoom(this, this.model, 1));
+      this.model.notifyImageChange();
     } else if (evt.key === '=') {
-      this.model.changeZoom(-1);
+      this.history.addAction(new Zoom(this, this.model, -1));
+      this.model.notifyImageChange();
     }
   }
 
@@ -410,7 +483,7 @@ class Controller {
     } else if (evt.key === 'ArrowUp') {
       this.model.incrementBrushSize();
     } else if (!this.model.rgb && evt.key === 'i') {
-      this.model.toggleInvert();
+      this.history.addAction(new ToggleInvert(this.model));
     } else if (!this.model.rgb && settings.pixel_only && (evt.key === 'l' || evt.key === 'L')) {
       this.model.toggleLabels();
     } else if (evt.key === 'n') {
@@ -424,15 +497,15 @@ class Controller {
    */
   handle_edit_keybind(evt) {
     if (evt.key === 'e' && !settings.pixel_only) {
-      this.model.toggleEdit();
+      this.history.addFencedAction(new ToggleEdit(this.model));
     } else if (this.model.numChannels > 1 && evt.key === 'c') {
-      this.model.incrementChannel();
+      this.history.addFencedAction(new ChangeChannel(this.model, this.model.channel + 1));
     } else if (this.model.numChannels > 1 && evt.key === 'C') {
-      this.model.decrementChannel();
+      this.history.addFencedAction(new ChangeChannel(this.model, this.model.channel - 1));
     } else if (this.model.numFeatures > 1 && evt.key === 'f') {
-      this.model.incrementFeature();
+      this.history.addFencedAction(new ChangeFeature(this.model, this.model.feature + 1));
     } else if (this.model.numFeatures > 1 && evt.key === 'F') {
-      this.model.incrementFeature();
+      this.history.addFencedAction(new ChangeFeature(this.model, this.model.feature - 1));
     } else if (evt.key === ']') {
       this.model.incrementBrushLabel();
     } else if (evt.key === '[') {
@@ -454,15 +527,15 @@ class Controller {
    */
   handle_mode_none_keybind(evt) {
     if (evt.key === 'e' && !settings.label_only) {
-      this.model.toggleEdit();
+      this.history.addFencedAction(new ToggleEdit(this.model));
     } else if (this.model.numChannels > 1 && evt.key === 'c') {
-      this.model.incrementChannel();
+      this.history.addFencedAction(new ChangeChannel(this.model, this.model.channel + 1));
     } else if (this.model.numChannels > 1 && evt.key === 'C') {
-      this.model.decrementChannel();
+      this.history.addFencedAction(new ChangeChannel(this.model, this.model.channel - 1));
     } else if (this.model.numFeatures > 1 && evt.key === 'f') {
-      this.model.incrementFeature();
+      this.history.addFencedAction(new ChangeFeature(this.model, this.model.feature + 1));
     } else if (this.model.numFeatures > 1 && evt.key === 'F') {
-      this.model.decrementFeature();
+      this.history.addFencedAction(new ChangeFeature(this.model, this.model.feature - 1));
     } else if (this.model.numFrames > 1 && evt.key === 'p') {
       this.model.startPredict();
     } else if (evt.key === '[' && this.model.highlighted_cell_one !== -1) {
@@ -510,10 +583,107 @@ class Controller {
    */
   handle_mode_question_keybind(evt) {
     if (evt.key === ' ') {
-      this.model.confirmAction();
+      this.confirmAction();
+      this.model.clear();
     } else if (evt.key === 's') {
-      this.model.confirmActionSingleFrame();
+      this.confirmActionSingleFrame();
+      this.model.clear();
     }
+  }
+
+  /**
+   * Validates action name and arguments,
+   * then sends action to the Label backend.
+   */
+  confirmAction() {
+    const action = this.model.action;
+    const info = this.model.info;
+    if (action === 'flood_contiguous') {
+    } else if (action === 'trim_pixels') {
+    } else if (action === 'create_new') {
+      this.model.action = 'new_cell_stack';
+    } else if (action === 'delete_mask') {
+    } else if (action === 'predict') {
+      this.model.action = 'predict_zstack';
+    } else if (action === 'replace') {
+      if (info.label_1 === info.label_2) {
+        alert('Cannot replace a label with itself.')
+        return;
+      }
+      this.model.info = {label_1: info.label_1,
+                         label_2: info.label_2};
+    } else if (action === 'swap_cells') {
+      if (info.label_1 === info.label_2) {
+        alert('Cannot swap a label with itself.')
+        return;
+      }
+      this.model.action = 'swap_all_frame';
+      this.model.info = {label_1: info.label_1,
+                         label_2: info.label_2};
+    } else if (action === 'watershed') {
+      if (info.label_1 !== info.label_2) {
+        alert('Must select same label twice to split with watershed.')
+        return;
+      }
+      if (info.frame_1 !== info.frame_2) {
+        alert('Must select seeds on same frame to split with watershed.')
+        return;
+      }
+      let info = this.model.info;
+      info.frame = info.frame_1;
+      info.label = info.label_1;
+      delete info.frame_1;
+      delete info.frame_2;
+      delete info.label_1;
+      delete info.label_2;
+      this.model.info = info;
+    // Do nothing when action not listed above
+    } else {
+      alert(`Unrecognized action ${this.model.action}`);
+      return;
+    }
+    this.history.addFencedAction(new BackendAction(this.model));
+  }
+
+  /**
+   * Validates single-frame action name and arguments,
+   * then sends action to the Label backend.
+   */
+  confirmActionSingleFrame() {
+    const action = this.model.action;
+    const info = this.model.info;
+    if (action === 'create_new') {
+      this.model.action = 'new_single_cell';
+    } else if (action === 'predict') {
+      this.model.action = 'predict_single';
+      this.model.info = {frame: this.model.frame};
+    } else if (action === 'replace') {
+      if (info.label_1 === info.label_2) {
+        alert('Cannot replace a label with itself.');
+        return;
+      }
+      this.model.action = 'replace_single';
+      this.model.info = {label_1: info.label_1,
+                         label_2: info.label_2};
+    } else if (action === 'swap_cells') {
+      if (info.label_1 === info.label_2) {
+        alert('Cannot swap a label with itself.');
+        return;
+      }
+      if (info.frame_1 !== info.frame_2) {
+        alert('Must swap cells on the same frame.');
+        return;
+      }
+      this.model.action = 'swap_single_frame';
+      this.model.info = {label_1: info.label_1,
+                         label_2: info.label_2,
+                         frame: info.frame_1};
+    } else {
+      // Do nothing if action not listed above
+      alert(`Unrecognized single-frame action ${this.model.action}`);
+      return;
+    }
+    this.history.addFencedAction(new BackendAction(this.model));
   }
 }
 

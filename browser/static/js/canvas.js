@@ -231,7 +231,7 @@ class Pan extends Action {
 }
 
 class Zoom extends Action {
-  constructor(model, dZoom) {
+  constructor(controller, model, dZoom) {
     super();
     let canvas = model.canvas;
     // Calculate how much canvas zooms
@@ -249,6 +249,7 @@ class Zoom extends Action {
 
     this.model = model;
     this.canvas = canvas;
+    this.controller = controller;
     this.oldZoom = canvas.zoom;
     this.newZoom = zoom;
   }
@@ -257,7 +258,9 @@ class Zoom extends Action {
     // Zoom then pan
     this.setZoom(this.newZoom);
     let pan = new Pan(this.model, this.dx, this.dy);
-    this.model.actions.addAction(pan);
+    this.controller.history.addAction(pan);
+    // TODO: check if this is in the right place(s)
+    this.model.updateMousePos(this.canvas.rawX, this.canvas.rawY);
   }
 
   redo() {

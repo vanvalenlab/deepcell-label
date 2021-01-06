@@ -137,11 +137,11 @@ class ChangeChannel extends Action {
 
 class BackendAction extends Action {
 
-  constructor(model, action, info) {
+  constructor(model) {
     super();
     this.model = model;
-    this.action = action;
-    this.info = info;
+    this.action = model.action;
+    this.info = model.info;
     this.projectID = model.projectID;
   }
 
