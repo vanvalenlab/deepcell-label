@@ -539,11 +539,11 @@ class Controller {
       this.model.startPredict();
     } else if (evt.key === '[' && this.model.highlighted_cell_one !== -1) {
       // cycle highlight to prev label, skipping 0
-      const maxLabel = this.model.maxLabelsMap.get(this.feature);
+      const maxLabel = this.model.maxLabelsMap.get(this.model.feature);
       this.model.highlighted_cell_one = (this.model.highlighted_cell_one + maxLabel - 2).mod(maxLabel) + 1;
     } else if (evt.key === ']' && this.model.highlighted_cell_one !== -1) {
       // cycle highlight to next label (skipping 0)
-      const maxLabel = this.model.maxLabelsMap.get(this.feature);
+      const maxLabel = this.model.maxLabelsMap.get(this.model.feature);
       this.model.highlighted_cell_one = this.model.highlighted_cell_one.mod(maxLabel) + 1;
     }
   }
