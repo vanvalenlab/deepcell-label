@@ -18,11 +18,6 @@ class CanvasState {
     this.zoom = 100;
     this.zoomLimit = 100;
 
-    // attributes for mouse on the canvas.
-    this.onCanvas = false;
-    this.isPressed = false;
-    this.trace = [];
-
     // mouse coords
     // mouse position on canvas, no adjustment for padding
     this.rawX = 0;
@@ -43,8 +38,6 @@ class CanvasState {
     this.bottomBorder = new Path2D();
     this.rightBorder = new Path2D();
     this.leftBorder = new Path2D();
-
-    this.isSpacedown = false;
   }
 
   get sx() {
@@ -81,11 +74,6 @@ class CanvasState {
 
   get scaledHeight() {
     return this.scale * this.height;
-  }
-
-  // clear the current trace
-  clearTrace() {
-    this.trace = [];
   }
 
   // check if the mouse position in canvas matches to a displayed part of image
@@ -186,9 +174,5 @@ class CanvasState {
       this.scaledWidth,
       this.scaledHeight
     );
-  }
-
-  isCursorPressed() {
-    return this.isPressed;
   }
 }

@@ -201,6 +201,28 @@ class Brush {
     }
   }
 
+  updatePosition(x, y, isPainting) {
+    this.x = x;
+    this.y = y;
+    this.updateCanvas(isPainting);
+  }
+
+  updateCanvas(isPainting = false) {
+    // Only update when in edit mode
+    if (!this.model.edit_mode) return;
+    // thresholding
+    if (!this.show) {
+      this.boxView(); 
+    } else {
+      // leave behind previous drawing to build up path while painting
+      if (!isPainting) {
+        this.model.brush.clearView();
+      }
+      this.model.brush.addToView();
+    }
+    this.model.notifyImageChange();
+  }
+
   // reset thresholding box anchor corner
   clearThresh() {
     this.threshX = -2 * this._padding;
@@ -215,7 +237,9 @@ class Brush {
     this.ctx.clearRect(0, 0, this._width, this._height);
   }
 
-  // adds brush shadow to ctx
+  /**
+   * Adds a brush shadow to ctx.
+   */
   addToView() {
     this.ctx.beginPath();
     this.ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2, true);

@@ -4,6 +4,14 @@ class Controller {
    * @param {string} projectID 12 character base64 ID for Project in DeepCell Label database
    */
   constructor(projectID) {
+
+    // Control booleans
+    this.onCanvas;
+    this.isSpacedown;
+    this.isPressed;
+    // Tracks mouse coordinates for painting
+    this.trace = [];
+
     // Get Project from database
     const getProject = $.ajax({
       type: 'GET',
@@ -35,6 +43,14 @@ class Controller {
 
     });
   }
+
+  get isPainting() {
+    return this.isPressed && !this.isSpacedown && (this.model.kind !== Modes.prompt);
+  }
+
+  get isPanning() {
+    return this.isPressed && this.isSpacedown;
+  }
   
   undo() {
     this.history.undo();
@@ -55,7 +71,7 @@ class Controller {
    */
   overrideScroll() {
     document.addEventListener('wheel', (event) => {
-      if (this.model.canvas.onCanvas) event.preventDefault();
+      if (this.onCanvas) event.preventDefault();
     }, { passive: false });
 
     // disable space and up/down keys from moving around on page
@@ -76,13 +92,13 @@ class Controller {
   addWindowBindings() {
     window.addEventListener('keydown', (e) => {
       if (e.key === ' ') {
-        this.model.canvas.isSpacedown = true;
+        this.isSpacedown = true;
       }
     }, false);
 
     window.addEventListener('keyup', (e) => {
       if (e.key === ' ') {
-        this.model.canvas.isSpacedown = false;
+        this.isSpacedown = false;
       }
     }, false);
 
@@ -111,7 +127,7 @@ class Controller {
     const canvasElement = document.getElementById('canvas');
     // bind click on canvas
     canvasElement.addEventListener('click', (evt) => {
-      if (!this.model.canvas.isSpacedown && 
+      if (!this.isSpacedown && 
           (!this.model.edit_mode || this.model.kind === Modes.prompt)) {
         this.click(evt);
       }
@@ -128,10 +144,10 @@ class Controller {
   
     // add flag for when cursor in on the canvas
     canvasElement.onmouseover = () => {
-      this.model.canvas.onCanvas = true;
+      this.onCanvas = true;
     }
     canvasElement.onmouseout = () => {
-      this.model.canvas.onCanvas = false;
+      this.onCanvas = false;
     }
 
   }
@@ -249,15 +265,15 @@ class Controller {
    * @param {MouseEvent} evt mouse button press
    */
   handleMousedown(evt) {
-    this.model.canvas.isPressed = true;
+    this.isPressed = true;
     // TODO: refactor "mousedown + mousemove" into ondrag?
-    if (this.model.canvas.isSpacedown) return; // panning
+    if (this.isSpacedown) return; // panning
     if (this.model.kind === Modes.prompt) return; // turning on conv mode
     if (!this.model.edit_mode) return; // only draw in edit mode
     if (!this.model.brush.show) { // draw thresholding box
       this.model.updateThresholdBox();
     } else {
-      this.model.updateDrawTrace();
+      this.trace.push([this.model.canvas.imgY, this.model.canvas.imgX]);
     }
   }
 
@@ -266,18 +282,15 @@ class Controller {
    * @param {MouseEvent} evt 
    */
   handleMousemove(evt) {
-    if (this.model.canvas.isCursorPressed() && this.model.canvas.isSpacedown) {
-      // // get the old values to see if rendering is reqiured.
-      // const oldX = this.canvas.sx;
-      // const oldY = this.canvas.sy;
-      const zoom = 100 / (this.canvas.zoom * this.canvas.scale)
+    if (this.isPanning) {
+      const zoom = 100 / (this.model.canvas.zoom * this.model.canvas.scale)
       this.history.addAction(new Pan(this, evt.movementX * zoom, evt.movementY * zoom));
       this.model.notifyImageChange();
-      // if (this.canvas.sx !== oldX || this.canvas.sy !== oldY) {
-      //   this.model.notifyImageChange();
-      // }
     }
-    this.model.updateMousePos(evt.offsetX, evt.offsetY);
+    if (this.isPainting) {
+        this.trace.push([this.model.canvas.imgY, this.model.canvas.imgX]);
+    }
+    this.model.updateMousePos(evt.offsetX, evt.offsetY, this.isPainting);
     this.model.notifyInfoChange();
   }
 
@@ -285,9 +298,9 @@ class Controller {
    * Handles end of click & drag.
    */
   handleMouseup() {
-    this.model.canvas.isPressed = false;
+    this.isPressed = false;
     
-    if (this.model.canvas.isSpacedown) return; // panning
+    if (this.isSpacedown) return; // panning
     if (this.model.kind === Modes.prompt) return;
     if (!this.model.edit_mode) return;
     
@@ -315,10 +328,10 @@ class Controller {
       this.model.notifyImageChange();
     // paint
     } else if (this.model.canvas.inRange()) {
-      if (this.model.canvas.trace.length !== 0) {
+      if (this.trace.length !== 0) {
         this.model.action = 'handle_draw';
         this.model.info = {
-          trace: JSON.stringify(this.model.canvas.trace), // stringify array so it doesn't get messed up
+          trace: JSON.stringify(this.trace), // stringify array so it doesn't get messed up
           target_value: this.model.brush.target, // value that we're overwriting
           brush_value: this.model.brush.value, // we don't update with edit_value, etc each time they change
           brush_size: this.model.brush.size, // so we need to pass them in as args
@@ -327,7 +340,7 @@ class Controller {
         };
         this.history.addFencedAction(new BackendAction(this.model));
       }
-      this.model.canvas.clearTrace();
+      this.trace = [];
       if (this.model.kind !== Modes.drawing) {
         this.model.clear();
       }

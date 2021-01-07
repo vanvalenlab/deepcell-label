@@ -173,7 +173,7 @@ class Model {
 
   set edit_mode(value) {
     this._edit_mode = value;
-    this.helper_brush_draw();
+    this.brush.updateCanvas();
     this.notifyImageFormattingChange();
   }
 
@@ -235,19 +235,6 @@ class Model {
     }
   }
 
-  // TODO: move to view?
-  helper_brush_draw() {
-    if (this.canvas.isCursorPressed() && !this.canvas.isSpacedown) {
-      // update mouse_trace, but not if turning on conv brush
-      if (this.kind !== Modes.prompt) {
-        this.canvas.trace.push([this.canvas.imgY, this.canvas.imgX]);
-      }
-    } else {
-      this.brush.clearView();
-    }
-    this.brush.addToView();
-  }
-
   /**
    * Sends a POST request to change the current frame, feature, or channel.
    * Handles the image data in the response.
@@ -300,27 +287,9 @@ class Model {
     this.prompt = '';
   }
 
-  updateMousePos(x, y) {
-    const oldImgX = this.canvas.imgX;
-    const oldImgY = this.canvas.imgY;
-  
+  updateMousePos(x, y, isPainting = false) {
     this.canvas.updateCursorPosition(x, y);
-  
-    // if cursor has actually changed location in image
-    if (oldImgX !== this.canvas.imgX || oldImgY !== this.canvas.imgY) {
-      this.brush.x = this.canvas.imgX;
-      this.brush.y = this.canvas.imgY;
-      // update brush preview
-      if (this.edit_mode) {
-        // brush's canvas is keeping track of the brush
-        if (this.brush.show) {
-          this.helper_brush_draw();
-        } else {
-          this.brush.boxView();
-        }
-        this.notifyImageChange();
-      }
-    }
+    this.brush.updatePosition(this.canvas.imgX, this.canvas.imgY, isPainting);
   }
 
   setUnusedBrushLabel() {
@@ -528,7 +497,5 @@ class Model {
     this.brush.threshY = this.canvas.imgY;
   }
 
-  updateDrawTrace() {
-    this.canvas.trace.push([this.canvas.imgY, this.canvas.imgX]);
-  }
+
 }
