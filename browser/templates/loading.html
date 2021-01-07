@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{%- block content -%}
+
+<main class="container">
+  <div class="row">
+    <div class="col s12 center-align">
+      <p>Loading file from S3 bucket:</p>
+      <p>{{ path }}</p>
+      {% include "partials/loading-bar.html" %}
+    </div>
+</main>
+{%- endblock -%}
+
+{%- block extraJs -%}
+<!-- START DeepCell Label FUNCTION CALL -->
+<script>
+  document.getElementById("loading-bar").classList.add("active");
+  const input_bucket = "{{ input_bucket }}";
+  const output_bucket = "{{ output_bucket }}";
+  const path = "{{ path }}";
+  $.ajax({
+    type: 'POST',
+    url: `${document.location.origin}/api/project?source=s3&bucket=${input_bucket}&path=${path}`,
+    async: true
+  }).done((payload) => {window.location = `/project/${payload.projectId}?bucket=${output_bucket}`;} );
+</script>
+<!-- END DeepCell Label FUNCTION CALL -->
+
+{%- endblock -%}

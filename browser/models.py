@@ -6,15 +6,11 @@ from __future__ import print_function
 import base64
 import copy
 import enum
-import io
-import json
 import logging
-import tarfile
-import tempfile
+import os
 import timeit
 from secrets import token_urlsafe
 
-import boto3
 from flask import current_app
 from flask_sqlalchemy import SQLAlchemy
 from matplotlib import pyplot as plt
@@ -25,13 +21,11 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy.schema import PrimaryKeyConstraint, ForeignKeyConstraint
 
-from helpers import is_npz_file, is_trk_file
-from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 from imgutils import pngify, add_outlines
 
 
 logger = logging.getLogger('models.Project')  # pylint: disable=C0103
-# Accessing one-to-many relationships (like project.label_frames) issues a Query, causing a flush
+# Accessing relationships (like project.label_frames) issues a Query, causing a flush
 # autoflush=False prevents the flush, so we still access the db.session.dirty after the query
 db = SQLAlchemy(session_options={'autoflush': False})  # pylint: disable=C0103
 
@@ -73,6 +67,8 @@ class MutableNdarray(Mutable, np.ndarray):
 
 class SourceEnum(enum.Enum):
     s3 = 's3'
+    dropped = 'dropped'
+    lfs = 'lfs'
 
 
 class Project(db.Model):
@@ -115,46 +111,24 @@ class Project(db.Model):
     actions = db.relationship('Action', backref='project', foreign_keys='[Action.project_id]')
     num_actions = db.Column(db.Integer, default=0)
 
-    def __init__(self, path, bucket,
-                 raw_key='raw', annotated_key=None):
-
+    def __init__(self, loader):
         init_start = timeit.default_timer()
-
-        # Load data
-        if annotated_key is None:
-            annotated_key = get_ann_key(path)
-        start = timeit.default_timer()
-        trial = self.load(path, bucket)
-        logger.debug('Loaded file %s from S3 in %ss.',
-                     path, timeit.default_timer() - start)
-        raw = trial[raw_key]
-        annotated = trial[annotated_key]
-        # possible differences between single channel and rgb displays
-        if raw.ndim == 3:
-            raw = np.expand_dims(raw, axis=0)
-            annotated = np.expand_dims(annotated, axis=0)
+        raw = loader.raw_array
+        label = loader.label_array
 
         # Record static project attributes
-        self.path = path
-        self.source = SourceEnum.s3
+        self.path = str(loader.path)
+        self.source = loader.source
         self.num_frames = raw.shape[0]
         self.height = raw.shape[1]
         self.width = raw.shape[2]
         self.num_channels = raw.shape[-1]
-        self.num_features = annotated.shape[-1]
+        self.num_features = label.shape[-1]
         cmap = plt.get_cmap('viridis')
         cmap.set_bad('black')
         self.colormap = cmap
 
-        # Create label metadata
-        self.labels = Labels()
-        for feature in range(self.num_features):
-            self.labels.create_cell_info(feature, annotated)
-        # Overwrite cell_info with lineages to include cell relationships for .trk files
-        if is_trk_file(self.path):
-            if len(trial['lineages']) != 1:
-                raise ValueError('Input file has multiple trials/lineages.')
-            self.labels.cell_info = {0: trial['lineages'][0]}
+        if self.is_track:
             # Track files require a different scale factor
             self.scale_factor = 2
 
@@ -164,10 +138,15 @@ class Project(db.Model):
         self.rgb_frames = [RGBFrame(i, frame)
                            for i, frame in enumerate(raw)]
         self.label_frames = [LabelFrame(i, frame)
-                             for i, frame in enumerate(annotated)]
+                             for i, frame in enumerate(label)]
 
-        logger.debug('Initialized project for %s in %ss.',
-                     path, timeit.default_timer() - init_start)
+        # Create label metadata
+        self.labels = Labels()
+        self.labels.cell_ids = loader.cell_ids
+        self.labels.cell_info = loader.cell_info
+
+        logger.debug('Initialized project from %s in %ss.',
+                     self.path, timeit.default_timer() - init_start)
 
     @property
     def label_array(self):
@@ -179,58 +158,44 @@ class Project(db.Model):
         """Compiles all raw frames into a single numpy array."""
         return np.array([frame.frame for frame in self.raw_frames])
 
-    def _get_s3_client(self):
-        return boto3.client(
-            's3',
-            aws_access_key_id=AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=AWS_SECRET_ACCESS_KEY
-        )
+    @property
+    def is_zstack(self):
+        return os.path.splitext(self.path.lower())[-1] in {'.npz', '.png', '.tif', '.tiff'}
 
-    def load(self, path, bucket):
-        """
-        Load a file from the S3 input bucket.
-
-        Args:
-            path (str): full path to the file within the bucket, including the filename
-            bucket (str): bucket to pull from on S3
-        """
-        _load = get_load(path)
-        s3 = self._get_s3_client()
-        response = s3.get_object(Bucket=bucket, Key=path)
-        return _load(response['Body'].read())
+    @property
+    def is_track(self):
+        return os.path.splitext(self.path.lower())[-1] in {'.trk', '.trks'}
 
     @staticmethod
-    def get(project_id):
+    def get(token):
         """
         Return the project with the given ID, if it exists.
 
         Args:
-            project_id (int): primary key of project to get
+            token (int): unique 12 character base64 string to identify project
 
         Returns:
             Project: row from the Project table
         """
         start = timeit.default_timer()
-        project = db.session.query(Project).filter_by(id=project_id).first()
+        project = db.session.query(Project).filter_by(token=token).first()
         logger.debug('Got project %s in %ss.',
-                     project_id, timeit.default_timer() - start)
+                     token, timeit.default_timer() - start)
         return project
 
     @staticmethod
-    def create(path, bucket):
+    def create(loader):
         """
-        Create a new project.
-        Wraps the Project constructor with logging and database commits.
+        Create a new project in the Project table.
 
         Args:
-            path (str): full path to download & upload file in buckets; includes filename
-            bucket (str): S3 bucket to download file
+            loader (Loader): loads or creates raw_array, label_array, cell_ids, & cell_info
 
         Returns:
             Project: new row in the Project table
         """
         start = timeit.default_timer()
-        new_project = Project(path, bucket)
+        new_project = Project(loader)
         # Assign a unique 12 character base64 token to the project
         while True:
             token = token_urlsafe(9)  # 9 bytes is 12 base64 characters
@@ -241,8 +206,8 @@ class Project(db.Model):
         db.session.commit()
         new_project.create_memento('create_project', all_frames=True)
         db.session.commit()
-        logger.debug('Created new project %s in %ss.',
-                     new_project.id, timeit.default_timer() - start)
+        logger.debug('Created new project %s (id %s) in %ss.',
+                     new_project.token, new_project.id, timeit.default_timer() - start)
         return new_project
 
     def update(self):
@@ -285,9 +250,9 @@ class Project(db.Model):
         """
         session = session or db.session
         # Create action and store project state inside
-        action = Action(self, self.action, self.num_actions, action_name=action_name)
+        action = Action(self, action_name=action_name)
         for frame in self.label_frames:
-            if frame in db.session.dirty or all_frames:
+            if frame in session.dirty or all_frames:
                 session.add(FrameMemento(action=action, frame=frame))
         action.labels = self.labels
         if self.action is not None:
@@ -375,6 +340,46 @@ class Project(db.Model):
             max_label = int(np.max(self.labels.cell_ids[self.feature]))
         return max_label
 
+    def make_first_payload(self):
+        """
+        Creates the first payload to be sent to the front-end,
+        containing extra metadata about the Project.
+
+        Returns:
+            dict: payload with image data, label tracks, and project attributes
+        """
+        payload = {}
+
+        img_payload = {}
+        encode = lambda x: base64.encodebytes(x.read()).decode()
+        raw_png = self._get_raw_png()
+        img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
+        label_png = self._get_label_png()
+        img_payload['segmented'] = f'data:image/png;base64,{encode(label_png)}'
+        img_payload['seg_arr'] = self._get_label_arr()
+        payload['imgs'] = img_payload
+
+        payload['tracks'] = self.labels.readable_tracks
+
+        # Other Project attributes to initialize frontend variables
+        payload['frame'] = self.frame
+        payload['numFrames'] = self.num_frames
+        payload['project_id'] = self.token
+        payload['dimensions'] = (self.width, self.height)
+        # Attributes specific to filetype
+        if self.is_track:
+            payload['screen_scale'] = self.scale_factor
+        if self.is_zstack:
+            payload['numChannels'] = self.num_channels
+            payload['numFeatures'] = self.num_features
+
+        # First frame edited by each action
+        # Excludes the first action, which loads the project
+        payload['actionFrames'] = [action.frames[0].frame_id
+                                   for action in self.actions[1:] if action.done]
+
+        return payload
+
     def make_payload(self, x=False, y=False, labels=False):
         """
         Creates a payload to send to the front-end after completing an action.
@@ -384,7 +389,7 @@ class Project(db.Model):
             y (bool): when True, payload includes labeled image data
                            sends both a PNG and an array of where each label is
             labels (bool): when True, payload includes the label "tracks",
-                                or the frames that each label appears in (e.g. [0-10, 15-20])
+                           or the frames that each label appears in (e.g. [0-10, 15-20])
 
         Returns:
             dict: payload with image data and label tracks
@@ -496,35 +501,6 @@ class Labels(db.Model):
                 label['slices'] = str(slices)
 
         return cell_info
-
-    def create_cell_info(self, feature, labels=None):
-        """
-        Make or remake the entire cell info dict.
-
-        Args:
-            feature (int): which feature to create the cell info dict
-            labels (ndarray): the complete label array (all frames, all features)
-        """
-        feature = int(feature)
-        if labels is None:
-            labels = self.project.label_array
-        annotated = labels[..., feature]
-
-        self.cell_ids[feature] = np.unique(annotated)[np.nonzero(np.unique(annotated))]
-
-        self.cell_info[feature] = {}
-
-        for cell in self.cell_ids[feature]:
-            cell = int(cell)
-
-            self.cell_info[feature][cell] = {}
-            self.cell_info[feature][cell]['label'] = str(cell)
-            self.cell_info[feature][cell]['frames'] = []
-
-            for frame in range(annotated.shape[0]):
-                if cell in annotated[frame, ...]:
-                    self.cell_info[feature][cell]['frames'].append(int(frame))
-            self.cell_info[feature][cell]['slices'] = ''
 
     def update(self):
         """
@@ -713,10 +689,10 @@ class Action(db.Model):
 
     frames = association_proxy('action_frames', 'frame')
 
-    def __init__(self, project, prev_action, action_id, action_name=''):
+    def __init__(self, project, action_name=''):
         self.project = project
-        self.prev_action = prev_action
-        self.action_id = action_id
+        self.prev_action = project.action
+        self.action_id = project.num_actions
         self.action_name = action_name
 
     @property
@@ -755,6 +731,8 @@ class Action(db.Model):
 
     @property
     def before_labels(self):
+        if self.prev_action is None:
+            return None
         return self.prev_action.labels
 
     @property
@@ -796,106 +774,3 @@ class FrameMemento(db.Model):
 
 def consecutive(data, stepsize=1):
     return np.split(data, np.where(np.diff(data) != stepsize)[0] + 1)
-
-
-def get_ann_key(filename):
-    """
-    Returns:
-        str: expected key for the label array depending on the filename
-    """
-    if is_trk_file(filename):
-        return 'tracked'
-    return 'annotated'  # default key
-
-
-def get_load(filename):
-    """
-    Returns:
-        function: loads a response body from S3
-    """
-    if is_npz_file(filename):
-        _load = load_npz
-    elif is_trk_file(filename):
-        _load = load_trks
-    else:
-        raise ValueError('Cannot load file: {}'.format(filename))
-    return _load
-
-
-def load_npz(filename):
-    """
-    Loads a NPZ file.
-
-    Args:
-        filename: full path to the file including .npz extension
-
-    Returns:
-        dict: contains raw and annotated images as numpy arrays
-    """
-    data = io.BytesIO(filename)
-    npz = np.load(data)
-
-    # standard nomenclature for image (X) and annotation (y)
-    if 'y' in npz.files:
-        raw_stack = npz['X']
-        annotation_stack = npz['y']
-
-    # some files may have alternate names 'raw' and 'annotated'
-    elif 'raw' in npz.files:
-        raw_stack = npz['raw']
-        annotation_stack = npz['annotated']
-
-    # if files are named something different, give it a try anyway
-    else:
-        raw_stack = npz[npz.files[0]]
-        annotation_stack = npz[npz.files[1]]
-
-    return {'raw': raw_stack, 'annotated': annotation_stack}
-
-
-# copied from:
-# vanvalenlab/deepcell-tf/blob/master/deepcell/utils/tracking_utils.py3
-
-def load_trks(trkfile):
-    """
-    Load a trk/trks file.
-
-    Args:
-        trks_file (str): full path to the file including .trk/.trks
-
-    Returns:
-        dict: contains raw, tracked, and lineage data
-    """
-    with tempfile.NamedTemporaryFile() as temp:
-        temp.write(trkfile)
-        with tarfile.open(temp.name, 'r') as trks:
-
-            # numpy can't read these from disk...
-            array_file = io.BytesIO()
-            array_file.write(trks.extractfile('raw.npy').read())
-            array_file.seek(0)
-            raw = np.load(array_file)
-            array_file.close()
-
-            array_file = io.BytesIO()
-            array_file.write(trks.extractfile('tracked.npy').read())
-            array_file.seek(0)
-            tracked = np.load(array_file)
-            array_file.close()
-
-            try:
-                trk_data = trks.getmember('lineages.json')
-            except KeyError:
-                try:
-                    trk_data = trks.getmember('lineage.json')
-                except KeyError:
-                    raise ValueError('Invalid .trk file, no lineage data found.')
-
-            lineages = json.loads(trks.extractfile(trk_data).read().decode())
-            lineages = lineages if isinstance(lineages, list) else [lineages]
-
-            # JSON only allows strings as keys, so convert them back to ints
-            for i, tracks in enumerate(lineages):
-                lineages[i] = {int(k): v for k, v in tracks.items()}
-
-        return {'lineages': lineages, 'raw': raw, 'tracked': tracked}

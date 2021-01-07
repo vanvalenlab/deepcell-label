@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, shrink-to-fit=no" />
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" />
 
-    <title>Caliban</title>
+    <title>DeepCell Label</title>
 
     <!--Import Google Icon Font-->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/materialize.min.css') }}" />
     <!--Import normalize.css-->
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/normalize.css') }}" />
+    <!--Import dropzone CSS-->
+    <link href=https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.7.2/min/dropzone.min.css rel="stylesheet" type="text/css" />
     <!--Import custom CSS-->
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}" />
   </head>
@@ -23,10 +25,10 @@
       <div class="navbar-fixed">
         <nav class="z-depth-0">
           <div class="nav-wrapper indigo">
-            <a href="#" class="brand-logo">Caliban</a>
+            <a href="{{ url_for('label.form') }}" class="brand-logo">DeepCell Label</a>
             <ul id="nav-mobile" class="right hide-on-small-and-down">
               <li><a href="http://deepcell.org" target="_blank">DeepCell</a></li>
-              <li><a href="https://github.com/vanvalenlab/caliban" target="_blank">GitHub</a></li>
+              <li><a href="https://github.com/vanvalenlab/deepcell-label" target="_blank" rel="noopener noreferrer">GitHub</a></li>
             </ul>
           </div>
         </nav>

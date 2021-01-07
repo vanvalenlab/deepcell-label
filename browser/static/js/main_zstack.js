@@ -144,7 +144,7 @@ class Mode {
       // color picker
       this.kind = Modes.prompt;
       this.action = 'pick_color';
-      this.prompt = 'Click on a label to change the brush value to that value.';
+      this.prompt = 'Click on a label to change the brush label to that label.';
       render_info_display();
     } else if (evt.key === 'r') {
       // conversion brush
@@ -403,7 +403,7 @@ class Mode {
       action('handle_draw', {
         trace: JSON.stringify(canvas.trace), // stringify array so it doesn't get messed up
         target_value: brush.target, // value that we're overwriting
-        brush_value: brush.value, // we don't update caliban with edit_value, etc each time they change
+        brush_value: brush.value, // we don't update with edit_value, etc each time they change
         brush_size: brush.size, // so we need to pass them in as args
         erase: (brush.erase && !brush.conv),
         frame: current_frame
@@ -608,7 +608,6 @@ const padding = 5;
 const maxLabelsMap = new Map();
 
 let rgb;
-let inputBucket;
 let outputBucket;
 
 var rendering_raw = false;
@@ -709,9 +708,13 @@ const _calculateMaxHeight = () => {
 function upload_file(cb) {
   $.ajax({
     type: 'POST',
-    url: `${document.location.origin}/upload_file/${outputBucket}/${project_id}`,
+    url: `${document.location.origin}/api/upload/${outputBucket}/${project_id}`,
     async: true
   }).done(cb);
+}
+
+function download_file(cb) {
+  window.location = `/downloadproject/${project_id}`;
 }
 
 function changeZoom(dzoom) {
@@ -737,37 +740,37 @@ function render_highlight_info() {
       }
     }
   }
-  document.getElementById('highlight').innerHTML = highlightText;
-  document.getElementById('currently_highlighted').innerHTML = currentlyHighlighted;
+  document.getElementById('highlight').textContent = highlightText;
+  document.getElementById('currently_highlighted').textContent = currentlyHighlighted;
 }
 
 function render_edit_info() {
-  const editModeText = (edit_mode) ? 'pixels' : 'whole labels';
-  document.getElementById('edit_mode').innerHTML = editModeText;
+  const editModeText = (edit_mode) ? 'paint mode' : 'whole-label mode';
+  document.getElementById('edit_mode').textContent = editModeText;
 
   const rowVisibility = (edit_mode) ? 'visible' : 'hidden';
   document.getElementById('edit_brush_row').style.visibility = rowVisibility;
-  document.getElementById('edit_label_row').style.visibility = rowVisibility;
+  document.getElementById('brush_label_row').style.visibility = rowVisibility;
   document.getElementById('edit_erase_row').style.visibility = rowVisibility;
 
   if (edit_mode) {
-    document.getElementById('edit_brush').innerHTML = brush.size;
+    document.getElementById('edit_brush').textContent = brush.size;
 
     const editLabelText = (brush.value > 0) ? brush.value : '-';
-    document.getElementById('edit_label').innerHTML = editLabelText;
+    document.getElementById('brush_label').textContent = editLabelText;
 
     const editEraseText = (brush.erase && !brush.conv) ? 'ON' : 'OFF';
-    document.getElementById('edit_erase').innerHTML = editEraseText;
+    document.getElementById('edit_erase').textContent = editEraseText;
   }
 }
 
 function render_cell_info() {
   if (canvas.label !== 0) {
-    document.getElementById('label').innerHTML = canvas.label;
+    document.getElementById('label').textContent = canvas.label;
     const track = tracks[mode.feature][canvas.label.toString()];
     document.getElementById('slices').textContent = track.slices.toString();
   } else {
-    document.getElementById('label').innerHTML = '';
+    document.getElementById('label').textContent = '';
     document.getElementById('slices').textContent = '';
   }
 }
@@ -775,16 +778,16 @@ function render_cell_info() {
 // updates html display of side info panel
 function render_info_display() {
   // always show current frame, feature, channel
-  document.getElementById('frame').innerHTML = current_frame;
-  document.getElementById('feature').innerHTML = mode.feature;
-  document.getElementById('channel').innerHTML = mode.channel;
-  document.getElementById('zoom').innerHTML = `${canvas.zoom}%`;
+  document.getElementById('frame').textContent = current_frame;
+  document.getElementById('feature').textContent = mode.feature;
+  document.getElementById('channel').textContent = mode.channel;
+  document.getElementById('zoom').textContent = `${canvas.zoom}%`;
 
   const displayedX = `${Math.floor(canvas.sx)}-${Math.ceil(canvas.sx + canvas.sWidth)}`;
-  document.getElementById('displayedX').innerHTML = displayedX;
+  document.getElementById('displayedX').textContent = displayedX;
 
   const displayedY = `${Math.floor(canvas.sy)}-${Math.ceil(canvas.sy + canvas.sHeight)}`
-  document.getElementById('displayedY').innerHTML = displayedY;
+  document.getElementById('displayedY').textContent = displayedY;
 
   render_highlight_info();
 
@@ -793,7 +796,7 @@ function render_info_display() {
   render_cell_info();
 
   // always show 'state'
-  document.getElementById('mode').innerHTML = mode.render();
+  document.getElementById('mode').textContent = mode.render();
 }
 
 function render_edit_image(ctx) {
@@ -851,15 +854,6 @@ function render_image_display() {
   }
   canvas.drawBorders(ctx);
   render_info_display();
-}
-
-
-function loadFile(file, rgb = false, cb) {
-  $.ajax({
-    type: 'POST',
-    url: `${document.location.origin}/load/${inputBucket}/${file}?rgb=${rgb}`,
-    async: true
-  }).done(cb);
 }
 
 /**
@@ -980,7 +974,7 @@ function handleMouseup() {
     if (!brush.show) {
       mode.handle_threshold();
     } else if (canvas.inRange()) {
-      // send click&drag coordinates to caliban.py to update annotations
+      // send click&drag coordinates to label.py to update annotations
       mode.handle_draw();
     }
     brush.refreshView();
@@ -1051,18 +1045,138 @@ function displayUndoRedo() {
   let undoButton = document.getElementById('undo');
   undoButton.hidden = false;
   undoButton.style.width = canvasElement.width / 2 + 'px';
-  
+
   let redoButton = document.getElementById('redo');
   redoButton.hidden = false;
   redoButton.style.width = canvasElement.width / 2 + 'px';
 }
 
-function startCaliban(settings) {
-  inputBucket = settings.input_bucket;
+function getProject(projectId, rgb, cb) {
+  $.ajax({
+    type: 'GET',
+    url: `${document.location.origin}/api/project/${projectId}?rgb=${rgb}`,
+    async: true
+  }).done(cb);
+}
+
+function handleFirstPayload(payload) {
+  current_frame = payload.frame;
+  numFrames = payload.numFrames;
+  numFeatures = payload.numFeatures;
+  numChannels = payload.numChannels;
+  project_id = payload.project_id;
+
+  const rawWidth = payload.dimensions[0];
+  const rawHeight = payload.dimensions[1];
+
+  canvas = new CanvasState(rawWidth, rawHeight, 1, padding);
+  actions = new History();
+  actions.initializeHistory(payload.actionFrames);
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === ' ') {
+      canvas.isSpacedown = true;
+    }
+  }, false);
+  window.addEventListener('keyup', (e) => {
+    if (e.key === ' ') {
+      canvas.isSpacedown = false;
+    }
+  }, false);
+
+  tracks = payload.tracks; // tracks payload is dict
+
+  // for each feature, get list of cell labels that are in that feature
+  // (each is a key in that dict), cast to numbers, then get the maximum
+  // value from each array and store it in a map
+  for (let i = 0; i < Object.keys(tracks).length; i++) {
+    const key = Object.keys(tracks)[i]; // the keys are strings
+    if (Object.keys(tracks[key]).length > 0) {
+      // use i as key in this map because it is an int, mode.feature is also int
+      maxLabelsMap.set(i, Math.max(...Object.keys(tracks[key]).map(Number)));
+    } else {
+      // if no labels in feature, explicitly set max label to 0
+      maxLabelsMap.set(i, 0);
+    }
+  }
+
+  brush = new Brush(rawHeight, rawWidth, padding);
+
+  // define image onload cascade behavior, need rawHeight and rawWidth first
+  adjuster = new ImageAdjuster(rawWidth, rawHeight, rgb, numChannels);
+
+  adjuster.rawImage.onload = () => adjuster.contrastRaw();
+  adjuster.segImage.onload = () => adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
+  if (rgb) {
+    adjuster.contrastedRaw.onload = () => adjuster.rawAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
+    adjuster.preCompSeg.onload = () => adjuster.segAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
+  } else {
+    adjuster.contrastedRaw.onload = () => adjuster.preCompRawAdjust();
+    adjuster.preCompRaw.onload = () => adjuster.rawAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
+    adjuster.preCompSeg.onload = () => adjuster.segAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
+    adjuster.compositedImg.onload = () => adjuster.postCompAdjust(canvas.segArray, edit_mode, brush, current_highlight);
+  }
+
+  adjuster.postCompImg.onload = render_image_display;
+
+  document.addEventListener('mouseup', (e) => handleMouseup(e));
+
+  setCanvasDimensions(payload.dimensions);
+
+  // resize the canvas every time the window is resized
+  window.addEventListener('resize', function() {
+    waitForFinalEvent(() => {
+      mode.clear();
+      setCanvasDimensions(payload.dimensions);
+      brush.refreshView();
+      displayUndoRedo();
+    }, 500, 'canvasResize');
+  });
+
+  window.addEventListener('keydown', (evt) => {
+    mode.handle_key(evt);
+  }, false);
+
+  const canvasElement = document.getElementById('canvas');
+  // bind click on canvas
+  canvasElement.addEventListener('click', (evt) => {
+    if (!canvas.isSpacedown && (!edit_mode || mode.kind === Modes.prompt)) {
+      mode.click(evt);
+    }
+  });
+
+  // bind scroll wheel, change contrast of raw when scrolled
+  canvasElement.addEventListener('wheel', (e) => handleScroll(e));
+
+  // mousedown for click&drag/handle_draw DIFFERENT FROM CLICK
+  canvasElement.addEventListener('mousedown', (e) => handleMousedown(e));
+
+  // bind mouse movement
+  canvasElement.addEventListener('mousemove', (e) => handleMousemove(e));
+
+  // add flag for when cursor in on the canvas
+  canvasElement.onmouseover = () => {
+    canvas.onCanvas = true;
+  }
+  canvasElement.onmouseout = () => {
+    canvas.onCanvas = false;
+  }
+
+  // Load images and seg_array from payload
+  canvas.segArray = payload.imgs.seg_arr;
+  adjuster.rawLoaded = false;
+  adjuster.segLoaded = false;
+  adjuster.segImage.src = payload.imgs.segmented;
+  adjuster.rawImage.src = payload.imgs.raw;
+
+  displayUndoRedo();
+}
+
+function startDeepCellLabel(settings) {
   outputBucket = settings.output_bucket;
   rgb = settings.rgb;
   display_labels = !settings.rgb;
-  edit_mode = (settings.pixel_only && !settings.label_only);
+  edit_mode = !settings.label_only;
 
   // disable scrolling from scrolling around on page (it should just control brightness)
   document.addEventListener('wheel', (event) => {
@@ -1080,114 +1194,5 @@ function startCaliban(settings) {
     }
   });
 
-  loadFile(settings.filename, settings.rgb, (payload) => {
-    numFrames = payload.numFrames;
-    numFeatures = payload.numFeatures;
-    numChannels = payload.numChannels;
-    project_id = payload.project_id;
-
-    const rawWidth = payload.dimensions[0];
-    const rawHeight = payload.dimensions[1];
-
-    canvas = new CanvasState(rawWidth, rawHeight, 1, padding);
-    actions = new History();
-
-    window.addEventListener('keydown', (e) => {
-      if (e.key === ' ') {
-        canvas.isSpacedown = true;
-      }
-    }, false);
-    window.addEventListener('keyup', (e) => {
-      if (e.key === ' ') {
-        canvas.isSpacedown = false;
-      }
-    }, false);
-
-    tracks = payload.tracks; // tracks payload is dict
-
-    // for each feature, get list of cell labels that are in that feature
-    // (each is a key in that dict), cast to numbers, then get the maximum
-    // value from each array and store it in a map
-    for (let i = 0; i < Object.keys(tracks).length; i++) {
-      const key = Object.keys(tracks)[i]; // the keys are strings
-      if (Object.keys(tracks[key]).length > 0) {
-        // use i as key in this map because it is an int, mode.feature is also int
-        maxLabelsMap.set(i, Math.max(...Object.keys(tracks[key]).map(Number)));
-      } else {
-        // if no labels in feature, explicitly set max label to 0
-        maxLabelsMap.set(i, 0);
-      }
-    }
-
-    brush = new Brush(rawHeight, rawWidth, padding);
-
-    // define image onload cascade behavior, need rawHeight and rawWidth first
-    adjuster = new ImageAdjuster(rawWidth, rawHeight, rgb, numChannels);
-
-    adjuster.rawImage.onload = () => adjuster.contrastRaw();
-    adjuster.segImage.onload = () => adjuster.preCompAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
-    if (rgb) {
-      adjuster.contrastedRaw.onload = () => adjuster.rawAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
-      adjuster.preCompSeg.onload = () => adjuster.segAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
-    } else {
-      adjuster.contrastedRaw.onload = () => adjuster.preCompRawAdjust();
-      adjuster.preCompRaw.onload = () => adjuster.rawAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
-      adjuster.preCompSeg.onload = () => adjuster.segAdjust(canvas.segArray, current_highlight, edit_mode, brush, mode);
-      adjuster.compositedImg.onload = () => adjuster.postCompAdjust(canvas.segArray, edit_mode, brush, current_highlight);
-    }
-
-    adjuster.postCompImg.onload = render_image_display;
-
-    document.addEventListener('mouseup', (e) => handleMouseup(e));
-
-    setCanvasDimensions(payload.dimensions);
-
-    // resize the canvas every time the window is resized
-    window.addEventListener('resize', function() {
-      waitForFinalEvent(() => {
-        mode.clear();
-        setCanvasDimensions(payload.dimensions);
-        brush.refreshView();
-        displayUndoRedo();
-      }, 500, 'canvasResize');
-    });
-
-    window.addEventListener('keydown', (evt) => {
-      mode.handle_key(evt);
-    }, false);
-
-    const canvasElement = document.getElementById('canvas');
-    // bind click on canvas
-    canvasElement.addEventListener('click', (evt) => {
-      if (!canvas.isSpacedown && (!edit_mode || mode.kind === Modes.prompt)) {
-        mode.click(evt);
-      }
-    });
-
-    // bind scroll wheel, change contrast of raw when scrolled
-    canvasElement.addEventListener('wheel', (e) => handleScroll(e));
-
-    // mousedown for click&drag/handle_draw DIFFERENT FROM CLICK
-    canvasElement.addEventListener('mousedown', (e) => handleMousedown(e));
-
-    // bind mouse movement
-    canvasElement.addEventListener('mousemove', (e) => handleMousemove(e));
-
-    // add flag for when cursor in on the canvas
-    canvasElement.onmouseover = () => {
-      canvas.onCanvas = true;
-    }
-    canvasElement.onmouseout = () => {
-      canvas.onCanvas = false;
-    }
-
-    // Load images and seg_array from payload
-    canvas.segArray = payload.imgs.seg_arr;
-    adjuster.rawLoaded = false;
-    adjuster.segLoaded = false;
-    adjuster.segImage.src = payload.imgs.segmented;
-    adjuster.rawImage.src = payload.imgs.raw;
-
-    displayUndoRedo();
-  });
+  getProject(settings.token, rgb, handleFirstPayload);
 }

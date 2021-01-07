@@ -293,7 +293,7 @@ class Mode {
     action("handle_draw", {
       "trace": JSON.stringify(mouse_trace), // stringify array so it doesn't get messed up
       "target_value": brush.target, // value that we're overwriting
-      "brush_value": brush.value, // we don't update caliban with edit_value, etc each time they change
+      "brush_value": brush.value, // we don't update with edit_value, etc each time they change
       "brush_size": brush.size, // so we need to pass them in as args
       "erase": (brush.erase && !brush.conv),
       "frame": current_frame
@@ -459,13 +459,12 @@ var answer = "(SPACE=YES / ESC=NO)";
 var project_id = undefined;
 var brush;
 let mouse_trace = [];
-let inputBucket;
 let outputBucket;
 
 function upload_file(cb) {
   $.ajax({
     type: 'POST',
-    url: `${document.location.origin}/upload_file/${outputBucket}/${project_id}`,
+    url: `${document.location.origin}/api/upload/${outputBucket}/${project_id}`,
     async: true
   }).done(cb);
 }
@@ -545,72 +544,70 @@ function label_under_mouse() {
 }
 
 function render_highlight_info() {
+  const highlightText = (current_highlight) ? 'ON' : 'OFF';
+  let currentlyHighlighted = 'none';
   if (current_highlight) {
-    $('#highlight').html("ON");
-    if (mode.highlighted_cell_one !== -1) {
-      if (mode.highlighted_cell_two !== -1) {
-        $('#currently_highlighted').html(mode.highlighted_cell_one + " , " + mode.highlighted_cell_two);
-      } else {
-        $('#currently_highlighted').html(mode.highlighted_cell_one);
-      }
+    if (edit_mode) {
+      currentlyHighlighted = (brush.value > 0) ? brush.value : '-';
     } else {
-      $('#currently_highlighted').html("none");
+      if (mode.highlighted_cell_one !== -1) {
+        if (mode.highlighted_cell_two !== -1) {
+          currentlyHighlighted = `${mode.highlighted_cell_one}, ${mode.highlighted_cell_two}`;
+        } else {
+          currentlyHighlighted = mode.highlighted_cell_one;
+        }
+      }
     }
-  } else {
-    $('#highlight').html("OFF");
-    $('#currently_highlighted').html("none");
   }
+  document.getElementById('highlight').textContent = highlightText;
+  document.getElementById('currently_highlighted').textContent = currentlyHighlighted;
 }
 
 function render_edit_info() {
+  const editModeText = (edit_mode) ? 'paint mode' : 'whole-label mode';
+  document.getElementById('edit_mode').textContent = editModeText;
+
+  const rowVisibility = (edit_mode) ? 'visible' : 'hidden';
+  document.getElementById('edit_brush_row').style.visibility = rowVisibility;
+  document.getElementById('brush_label_row').style.visibility = rowVisibility;
+  document.getElementById('edit_erase_row').style.visibility = rowVisibility;
+
   if (edit_mode) {
-    $('#edit_mode').html('pixels');
-    $('#edit_brush_row').css('visibility', 'visible');
-    $('#edit_label_row').css('visibility', 'visible');
-    $('#edit_erase_row').css('visibility', 'visible');
+    document.getElementById('edit_brush').textContent = brush.size;
 
-    $('#edit_brush').html(brush.size);
-    $('#edit_label').html(brush.value);
+    const editLabelText = (brush.value > 0) ? brush.value : '-';
+    document.getElementById('brush_label').textContent = editLabelText;
 
-    if (brush.erase) {
-      $('#edit_erase').html("ON");
-    } else {
-      $('#edit_erase').html("OFF");
-    }
-
-  } else {
-    $('#edit_mode').html('whole labels');
-    $('#edit_brush_row').css('visibility', 'hidden');
-    $('#edit_label_row').css('visibility', 'hidden');
-    $('#edit_erase_row').css('visibility', 'hidden');
+    const editEraseText = (brush.erase && !brush.conv) ? 'ON' : 'OFF';
+    document.getElementById('edit_erase').textContent = editEraseText;
   }
 }
 
 function render_cell_info() {
   current_label = label_under_mouse();
   if (current_label !== 0) {
-    $('#label').html(current_label);
-    let track = tracks[current_label.toString()];
-    $('#parent').text(track.parent || "None");
-    $('#daughters').text("[" + track.daughters.toString() + "]");
-    $('#frame_div').text(track.frame_div || "None");
-    let capped = track.capped.toString();
-    $('#capped').text(capped[0].toUpperCase() + capped.substring(1));
-    $('#frames').text(track.slices.toString());
+    document.getElementById('label').textContent = current_label;
+    const track = tracks[current_label.toString()];
+    document.getElementById('parent').textContent = track.parent || 'None';
+    document.getElementById('daughters').textContent = "[" + track.daughters.toString() + "]";
+    document.getElementById('frame_div').textContent = track.frame_div || 'None';
+    const capped = track.capped.toString();
+    document.getElementById('capped').textContent = capped[0].toUpperCase() + capped.substring(1);
+    document.getElementById('frames').textContent = track.slices.toString();
   } else {
-    $('#label').html("");
-    $('#capped').text("");
-    $('#parent').text("");
-    $('#daughters').text("");
-    $('#frame_div').text("");
-    $('#frames').text("");
+    document.getElementById('label').textContent = '';
+    document.getElementById('capped').textContent = '';
+    document.getElementById('parent').textContent = '';
+    document.getElementById('daughters').textContent = '';
+    document.getElementById('frame_div').textContent = '';
+    document.getElementById('frames').textContent = '';
   }
 }
 
 // updates html display of side info panel
 function render_info_display() {
   // always show current frame
-  $('#frame').html(current_frame);
+  document.getElementById('frame').textContent = current_frame;
 
   render_highlight_info();
 
@@ -619,7 +616,7 @@ function render_info_display() {
   render_cell_info();
 
   // always show 'state'
-  $('#mode').html(mode.render());
+  document.getElementById('mode').textContent = mode.render();
 }
 
 function render_edit_image(ctx) {
@@ -674,7 +671,7 @@ function render_annotation_image(ctx) {
 }
 
 function render_image_display() {
-  let ctx = $('#canvas').get(0).getContext("2d");
+  const ctx = document.getElementById('canvas').getContext('2d');
   ctx.imageSmoothingEnabled = false;
 
   if (edit_mode) {
@@ -693,7 +690,7 @@ function render_image_display() {
 function fetch_and_render_frame() {
   $.ajax({
     type: 'POST',
-    url: `${document.location.origin}/changedisplay/${project_id}/frame/${current_frame}`,
+    url: `${document.location.origin}/api/changedisplay/${project_id}/frame/${current_frame}`,
     success: function(payload) {
       // load new value of seg_array
       // array of arrays, contains annotation data for frame
@@ -710,45 +707,47 @@ function fetch_and_render_frame() {
   });
 }
 
-function load_file(file) {
+
+function getProject(projectId) {
   $.ajax({
-    type: 'POST',
-    url: `${document.location.origin}/load/${inputBucket}/${file}`,
-    success: function (payload) {
-      numFrames = payload.numFrames;
-      scale = payload.screen_scale;
-      dimensions = [scale * payload.dimensions[0], scale * payload.dimensions[1]];
-      tracks = payload.tracks[0];
-
-      maxTrack = Math.max(... Object.keys(tracks).map(Number));
-
-      project_id = payload.project_id;
-      $('#canvas').get(0).width = dimensions[0] + 2*padding;
-      $('#canvas').get(0).height = dimensions[1] + 2*padding;
-      
-      seg_array = payload.imgs.seg_arr;
-      seg_image.src = payload.imgs.segmented;
-      seg_image.onload = render_image_display;
-      raw_image.src = payload.imgs.raw;
-      raw_image.onload = render_image_display;
-    },
+    type: 'GET',
+    url: `${document.location.origin}/api/project/${projectId}`,
     async: false
-  });
+  }).done(handlePayload);
+}
+
+function handlePayload(payload) {
+  numFrames = payload.numFrames;
+  scale = payload.screen_scale;
+  dimensions = [scale * payload.dimensions[0], scale * payload.dimensions[1]];
+  tracks = payload.tracks[0];
+
+  maxTrack = Math.max(... Object.keys(tracks).map(Number));
+
+  project_id = payload.project_id;
+  document.getElementById('canvas').width = dimensions[0] + 2*padding;
+  document.getElementById('canvas').height = dimensions[1] + 2*padding;
+
+  seg_array = payload.imgs.seg_arr;
+  seg_image.src = payload.imgs.segmented;
+  seg_image.onload = render_image_display;
+  raw_image.src = payload.imgs.raw;
+  raw_image.onload = render_image_display;
 }
 
 // adjust current_contrast upon mouse scroll
 function handle_scroll(evt) {
   // adjust contrast whenever we can see raw
-  if ((rendering_raw || edit_mode) && !evt.originalEvent.shiftKey) {
+  if ((rendering_raw || edit_mode) && !evt.shiftKey) {
     // don't use magnitude of scroll
-    let mod_contrast = -Math.sign(evt.originalEvent.deltaY) * 4;
+    let mod_contrast = -Math.sign(evt.deltaY) * 4;
     // stop if fully desaturated
     current_contrast = Math.max(current_contrast + mod_contrast, -100);
     // stop at 5x contrast
     current_contrast = Math.min(current_contrast + mod_contrast, 400);
     render_image_display();
-  } else if ((rendering_raw || edit_mode) && evt.originalEvent.shiftKey) {
-    let mod = -Math.sign(evt.originalEvent.deltaY);
+  } else if ((rendering_raw || edit_mode) && evt.shiftKey) {
+    let mod = -Math.sign(evt.deltaY);
     brightness = Math.min(brightness + mod, 255);
     brightness = Math.max(brightness + mod, -512);
     render_image_display();
@@ -798,7 +797,7 @@ function handle_mousemove(evt) {
 function handle_mouseup(evt) {
   mousedown = false;
   if (edit_mode) {
-    //send click&drag coordinates to caliban.py to update annotations
+    //send click&drag coordinates to label.py to update annotations
     mode.handle_draw();
     // reset brush preview
     brush.refreshView();
@@ -806,41 +805,39 @@ function handle_mouseup(evt) {
 }
 
 function prepare_canvas() {
+  
+  const canvasElement = document.getElementById('canvas');
+  
   // bind click
-  $('#canvas').click(function(evt) {
+  canvasElement.click(function(evt) {
     if (!edit_mode) {
       mode.click(evt);
     }
     render_info_display();
   });
-  // bind scroll wheel
-  $('#canvas').on('wheel', function(evt) {
-    // adjusts contrast of raw when scrolled
-    handle_scroll(evt);
-  });
+  
+  // bind scroll wheel, change contrast of raw when scrolled
+  canvasElement.addEventListener('wheel', (e) => handle_scroll(e));
+  
   // mousedown for click&drag/handle_draw DIFFERENT FROM CLICK
-  $('#canvas').mousedown(function(evt) {
-    handle_mousedown(evt);
-  });
+  canvasElement.addEventListener('mousedown', (e) => handle_mousedown(e));
+  
   // bind mouse movement
-  $('#canvas').mousemove(function(evt) {
-    // handle brush preview
-    handle_mousemove(evt);
-  });
+  canvasElement.addEventListener('mousemove', (e) => handle_mousemove(e));
+
   // bind mouse button release (end of click&drag)
-  $('#canvas').mouseup(function(evt) {
-    handle_mouseup(evt);
-  });
+  canvasElement.addEventListener('mouseup', (e) => handle_mouseup(e));
+  
   // bind keypress
   window.addEventListener('keydown', function(evt) {
     mode.handle_key(evt.key);
   }, false);
 }
 
-function action(action, info, frame = current_frame) {
+function action(action, info) {
   $.ajax({
     type:'POST',
-    url:`${document.location.origin}/edit/${project_id}/${action}/${frame}`,
+    url:`${document.location.origin}/api/edit/${project_id}/${action}`,
     data: info,
     success: function (payload) {
       if (payload.error) {
@@ -873,8 +870,7 @@ function action(action, info, frame = current_frame) {
   });
 }
 
-function startCaliban(settings) {
-  inputBucket = settings.input_bucket;
+function startDeepCellLabel(settings) {
   outputBucket = settings.output_bucket;
   
   // disable scrolling from scrolling around on page (it should just control brightness)
@@ -892,7 +888,7 @@ function startCaliban(settings) {
     }
   });
 
-  load_file(settings.filename);
+  getProject(settings.token);
   prepare_canvas();
 
   brush = new Brush(scale=scale, height=dimensions[1], width=dimensions[0], pad = padding);

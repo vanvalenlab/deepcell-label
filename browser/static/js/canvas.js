@@ -48,7 +48,7 @@ class CanvasState {
   }
 
   get sx() {
-    return this._sx; 
+    return this._sx;
   }
 
   set sx(newSx) {
@@ -60,7 +60,7 @@ class CanvasState {
   }
 
   get sy() {
-    return this._sy; 
+    return this._sy;
   }
 
   set sy(newSy) {

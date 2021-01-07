@@ -73,9 +73,9 @@ Annotation mode focuses on using an adjustable brush to modify annotations on a 
 
 *n* - change brush label to an unusued label, so that a new label can be created with a unique id. Can be used with conversion brush to overwrite existing label with unused label (follow conversion brush prompt).
 
-*p* - color picker (click on a label to change the brush value to it)
+*p* - color picker (click on a label to change the brush label to it)
 
-*r* - turn on "conversion brush" setting, which changes brush behavior so that one label value is overwritten with another label value. No other labels are affected, and conversion brush will not draw on background. After turning on conversion brush, click on cell labels as prompted to set brush values.
+*r* - turn on "conversion brush" setting, which changes brush behavior so that one label value is overwritten with another label value. No other labels are affected, and conversion brush will not draw on background. After turning on conversion brush, click on cell labels as prompted to set brush labels.
 
 *t* - threshold to predict annotations based on brightness. After turning this on, click and drag to draw a bounding box around the cell you wish to threshold. Make sure to include some background in the bounding box for accurate threshold predictions. Whatever was thresholded as foreground within the bounding box will be added to the annotation as a new cell with unique label.
 
@@ -88,7 +88,7 @@ Annotation mode focuses on using an adjustable brush to modify annotations on a 
 
 **To pan in image:** Hold down the spacebar while clicking and dragging image to pan. Alternatively, the keys *home, page up, page down, and end* can be used to jump across the screen. Holding the shift key while using these pan buttons will result in a smaller jump; holding the control key will snap to the edge of the image.
 
-*h* - switch between highlighted mode and non-highlighted mode (highlight exists in label- and pixel-editing modes but is displayed differently; label-editing highlighting recolors solid label with red, pixel-editing highlighting adds white or red outline around label in image). Once highlight mode is on, use *[ (left bracket) / ] (right bracket)* to decrement/increment selected cell label number.
+*h* - switch between highlighted mode and non-highlighted mode (highlight exists in whole-label mode and paint mode but is displayed differently; label-editing highlighting recolors solid label with red, paint mode highlighting adds white or red outline around label in image). Once highlight mode is on, use *[ (left bracket) / ] (right bracket)* to decrement/increment selected cell label number.
 
 *shift+h* - switch between showing and hiding annotation masks in the pixel editor
 
@@ -106,7 +106,7 @@ Annotation mode focuses on using an adjustable brush to modify annotations on a 
 
 *shift + &darr; / &uarr;* - cycle between colormaps for viewing raw images (does not apply to pixel editor)
 
-*e* - toggle annotation mode between pixel-editing and whole-label-editing (when nothing else selected)
+*e* - toggle annotation mode between paint mode and whole-label mode (when nothing else selected)
 
 *scroll wheel* - change image or annotation maximum brightness
 
@@ -132,9 +132,9 @@ To install one, you can go to http://realvnc.com to download a free VNC viewer.
 ### Build a Docker Container
 
 ```bash
-git clone https://github.com/vanvalenlab/caliban.git
-cd caliban
-docker build -t caliban .
+git clone https://github.com/vanvalenlab/deepcell-label.git
+cd deepcell-label
+docker build -t deepcell-label .
 ```
 ### Run the New Docker Image
 
@@ -143,7 +143,7 @@ docker run \
 -p 5900:5900 \
 -v $PWD/desktop:/usr/src/app/desktop  \
 --privileged \
-caliban:latest
+deepcell-label:latest
 ```
 This will launch a new Docker container and run Xvfb, Fluxbox, and a VNC server. To access the container’s display, point a VNC client to 127.0.0.1.
 

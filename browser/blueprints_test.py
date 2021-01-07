@@ -1,4 +1,4 @@
-"""Test for Caliban Blueprints"""
+"""Test for DeepCell Label Blueprints"""
 
 import io
 
@@ -8,6 +8,14 @@ import numpy as np
 # from flask_sqlalchemy import SQLAlchemy
 
 import models
+from conftest import DummyLoader
+
+
+# Automatically enable transactions for all tests, without importing any extra fixtures.
+@pytest.fixture(autouse=True)
+def enable_transactional_tests(db_session):
+    db_session.autoflush = False
+    pass
 
 
 class Bunch(object):
@@ -15,110 +23,34 @@ class Bunch(object):
         self.__dict__.update(kwds)
 
 
-class DummyFile():
-
-    def __init__(self, filename, *_, **__):
-        self.filename = filename
-
-    def __getattr__(self, *_, **__):
-        return self
-
-    def __call__(self, *_, **__):
-        return self
-
-
-class DummyState(io.BytesIO):
-
-    def __init__(self, *_, **__):
-        super().__init__()
-
-    def __getattr__(self, *_, **__):
-        return self
-
-    def __call__(self, *_, **__):
-        return self
-
-    def get_frame(self, frame, raw=False):
-        return io.BytesIO()
-
-
-def test_health(client, mocker):
+def test_health(client):
     response = client.get('/health')
     assert response.status_code == 200
     assert response.json.get('message') == 'success'
 
 
-def test_create(client):
-    pass
+def test_change_display(client):
 
-
-def test_upload_file(mocker, client):
-    # Mock out load from S3 bucket
-    def load(self, *args):
-        return {'raw': np.zeros((1, 1, 1, 1)),
-                'annotated': np.zeros((1, 1, 1, 1)),
-                'tracked': np.zeros((1, 1, 1, 1)),
-                'lineages': {0: {}}}
-    mocker.patch('blueprints.Project.load', load)
-    # Mock out upload to S3 bucket
-    mocker.patch('blueprints.TrackEdit.action_save_track', lambda *a: None)
-    mocker.patch('blueprints.ZStackEdit.action_save_zstack', lambda *a: None)
-
-    response = client.get('/upload_file/1')
+    response = client.post('/api/changedisplay/0/frame/999999')
     assert response.status_code == 404
 
-    filename_npz = 'filename.npz'
-    filename_trk = 'filename.trk'
-    input_bucket = 'input_bucket'
-    output_bucket = 'output_bucket'
-
-    # Create a project.
-    project = models.Project.create(
-        bucket=input_bucket,
-        path=filename_npz)
-
-    response = client.get(f'/upload_file/{output_bucket}/{project.id}')
-    assert response.status_code == 302
-
-    project = models.Project.create(
-        bucket=input_bucket,
-        path=filename_trk)
-
-    response = client.get(f'/upload_file/{output_bucket}/{project.id}')
-    assert response.status_code == 302
-
-
-def test_change_display(mocker, client):
-    # Mock out load from S3 bucket
-    def load(self, *args):
-        return {'raw': np.zeros((1, 1, 1, 1)),
-                'annotated': np.zeros((1, 1, 1, 1)),
-                'tracked': np.zeros((1, 1, 1, 1)),
-                'lineages': {0: {}}}
-    mocker.patch('blueprints.Project.load', load)
-
-    response = client.post('/changedisplay/0/frame/999999')
-    assert response.status_code == 404
-
-    for filename in ('filename.npz', 'filename.trk'):
+    for filename in ('test.npz', 'test.trk'):
 
         # Create a project.
-        project = models.Project.create(
-            bucket='input_bucket',
-            path=filename)
+        project = models.Project.create(DummyLoader(path=filename))
 
-        response = client.post('/changedisplay/{}/frame/0'.format(project.id))
+        response = client.post('/api/changedisplay/{}/frame/0'.format(project.token))
         # TODO: test correctness
         assert 'raw' in response.json['imgs']
         assert 'segmented' in response.json['imgs']
         assert 'seg_arr' in response.json['imgs']
 
-        response = client.post('/changedisplay/{}/channel/0'.format(project.id))
+        response = client.post('/api/changedisplay/{}/channel/0'.format(project.token))
         assert 'raw' in response.json['imgs']
         assert 'segmented' not in response.json['imgs']
         assert 'seg_arr' not in response.json['imgs']
 
-        response = client.post('/changedisplay/{}/feature/0'.format(project.id))
+        response = client.post('/api/changedisplay/{}/feature/0'.format(project.token))
         assert 'raw' not in response.json['imgs']
         assert 'segmented' in response.json['imgs']
         assert 'seg_arr' in response.json['imgs']
@@ -126,36 +58,8 @@ def test_change_display(mocker, client):
     # TODO: test handle error
 
 
-def test_action(client):
+def test_edit(client):
     pass
-
-
-def test_load(client, mocker):
-    # TODO: parsing the filename is a bit awkward.
-    in_bucket = 'inputBucket'
-    path = 'subfolder1__subfolder2__testfile'
-
-    # Mock load from S3 bucket
-    def load(self, *args):
-        return {'raw': np.zeros((1, 1, 1, 1)),
-                'annotated': np.zeros((1, 1, 1, 1)),
-                'tracked': np.zeros((1, 1, 1, 1)),
-                'lineages': {0: {}}}
-    mocker.patch('blueprints.Project.load', load)
-
-    # TODO: correctness tests
-    response = client.post(f'/load/{in_bucket}/{path}.npz')
-    assert response.status_code == 200
-
-    # rgb mode only for npzs.
-    response = client.post(f'/load/{in_bucket}/{path}.npz?rgb=true')
-    assert response.status_code == 200
-
-    response = client.post(f'/load/{in_bucket}/{path}.trk')
-    assert response.status_code == 200
-
-    response = client.post(f'/load/{in_bucket}/{path}.badext')
-    assert response.status_code == 400
 
 
 def test_tool(client):
@@ -181,8 +85,7 @@ def test_tool(client):
     response = client.post('/tool',
                            content_type='multipart/form-data',
                            data={'filename': filename})
-    assert response.status_code == 400
-    assert 'message' in response.json
+    assert response.status_code == 200
 
 
 def test_shortcut(client):
@@ -204,51 +107,91 @@ def test_shortcut(client):
     assert b'<body>' in response.data
 
     response = client.get('/test-file.badext')
-    assert response.status_code == 400
-    assert 'message' in response.json
+    assert response.status_code == 200
 
 
-def test_undo(client, mocker):
-    # Mock out load from S3 bucket
-    def load(self, *args):
-        return {'raw': np.zeros((1, 1, 1, 1)),
-                'annotated': np.zeros((1, 1, 1, 1)),
-                'tracked': np.zeros((1, 1, 1, 1)),
-                'lineages': {0: {}}}
-    mocker.patch('blueprints.Project.load', load)
-
+def test_undo(client):
     # Project not found
-    response = client.post('/undo/0')
+    response = client.post('/api/undo/0')
     assert response.status_code == 404
 
     # Create a project
-    project = models.Project.create(
-        path='filename.npz',
-        bucket='input_bucket')
+    project = models.Project.create(DummyLoader())
 
     # Undo with no action to undo silently does nothing
-    response = client.post('/undo/{}'.format(project.id))
+    response = client.post('/api/undo/{}'.format(project.token))
     assert response.status_code == 200
 
 
-def test_redo(client, mocker):
-    # Mock out load from S3 bucket
-    def load(self, *args):
-        return {'raw': np.zeros((1, 1, 1, 1)),
-                'annotated': np.zeros((1, 1, 1, 1)),
-                'tracked': np.zeros((1, 1, 1, 1)),
-                'lineages': {0: {}}}
-    mocker.patch('blueprints.Project.load', load)
-
+def test_redo(client):
     # Project not found
-    response = client.post('/undo/0')
+    response = client.post('/api/redo/0')
     assert response.status_code == 404
 
     # Create a project
-    project = models.Project.create(
-        path='filename.npz',
-        bucket='input_bucket')
+    project = models.Project.create(DummyLoader())
 
     # Redo with no action to redo silently does nothing
-    response = client.post('/redo/{}'.format(project.id))
+    response = client.post(f'/api/redo/{project.token}')
     assert response.status_code == 200
+
+
+def test_create_project(client, mocker):
+    mocker.patch('blueprints.loaders.get_loader', lambda *args: DummyLoader())
+    response = client.post(f'/api/project')
+    assert response.status_code == 200
+
+
+def test_get_project(client):
+    project = models.Project.create(DummyLoader())
+    response = client.get(f'/api/project/{project.token}')
+    assert response.status_code == 200
+
+
+def test_project(client):
+    project = models.Project.create(DummyLoader())
+    response = client.get(f'/project/{project.token}')
+    assert response.status_code == 200
+
+
+def test_project_missing(client):
+    response = client.get('/project/abc')
+    assert response.status_code == 404
+
+
+def test_project_finished(client):
+    project = models.Project.create(DummyLoader())
+    project.finish()
+    response = client.get(f'/project/{project.token}')
+    assert response.status_code == 410
+
+
+def test_download_project(client, mocker):
+    project = models.Project.create(DummyLoader())
+    mocked_export = mocker.patch('blueprints.exporters.Exporter.export',
+                                 return_value=io.BytesIO())
+    response = client.get(f'/downloadproject/{project.token}')
+    assert response.status_code == 200
+    mocked_export.assert_called()
+
+
+def test_upload_to_s3_npz(client, mocker):
+    project = models.Project.create(DummyLoader(path='test.npz'))
+    mocked_export = mocker.patch('blueprints.exporters.S3Exporter.export')
+    response = client.get(f'/api/upload/caliban-output/{project.token}')
+    assert response.status_code == 302
+    mocked_export.assert_called()
+
+
+def test_upload_to_s3_trk(client, mocker):
+    project = models.Project.create(DummyLoader(path='test.trk'))
+    mocked_export = mocker.patch('blueprints.exporters.S3Exporter.export')
+    response = client.get(f'/api/upload/caliban-output/{project.token}')
+    assert response.status_code == 302
+    mocked_export.assert_called()
+
+
+def test_upload_to_s3_missing(client, mocker):
+    mocker.patch('blueprints.exporters.S3Exporter.export')
+    response = client.get('/api/upload/caliban-output/1')
+    assert response.status_code == 404

@@ -1,4 +1,4 @@
-"""Classes to view and edit CalibanFiles"""
+"""Classes to view and edit DeepCell Label Projects"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -20,10 +20,12 @@ from skimage.exposure import rescale_intensity
 from skimage.measure import regionprops
 from skimage.segmentation import morphological_chan_vese
 
+from labelmaker import LabelInfoMaker
+
 
 class ChangeDisplay(object):
     """
-    Class to change the frame, feature or channel displayed and edited by a Caliban Project.
+    Class to change the frame, feature or channel displayed and edited by a DeepCell Label Project.
     """
 
     def __init__(self, project):
@@ -96,7 +98,7 @@ class ChangeDisplay(object):
 
 class BaseEdit(object):
     """
-    Base class for editing frames in Caliban.
+    Base class for editing frames in DeepCell Label.
     Expected lifespan is a single action.
 
     Actions have three phases:
@@ -178,7 +180,6 @@ class BaseEdit(object):
         Returns:
             dict: payload to send to frontend application
         """
-        # import pdb; pdb.set_trace()
         attr_name = 'action_{}'.format(action)
         try:
             action_fn = getattr(self, attr_name)
@@ -669,7 +670,7 @@ class ZStackEdit(BaseEdit):
 
             # if the image changed, update cell info and label frame
             if self.y_changed:
-                self.create_cell_info(feature=self.feature)
+                self.remake_cell_info()
                 self.frame[..., self.feature] = updated_img
 
     def action_predict_zstack(self):
@@ -685,7 +686,7 @@ class ZStackEdit(BaseEdit):
 
         # remake cell_info dict based on new annotations
         self.y_changed = True
-        self.create_cell_info(feature=self.feature)
+        self.remake_cell_info()
 
     def action_save_zstack(self, bucket):
         # save file to BytesIO object
@@ -740,9 +741,11 @@ class ZStackEdit(BaseEdit):
         # if deleting cell, frames and info have necessarily changed
         self.y_changed = self.labels_changed = True
 
-    def create_cell_info(self, feature):
-        """Make or remake the entire cell info dict"""
-        self.labels.create_cell_info(feature)
+    def remake_cell_info(self):
+        """Remake the entire cell_info and cell_ids dicts"""
+        label_maker = LabelInfoMaker(self.project.label_array)
+        self.labels.cell_info = label_maker.cell_info
+        self.labels.cell_ids = label_maker.cell_ids
         self.labels_changed = True
 
 
@@ -936,7 +939,7 @@ class TrackEdit(BaseEdit):
         # cell does not exist anywhere in trk:
         except KeyError:
             self.labels.tracks[add_label] = {
-                'label': int(add_label),
+                'label': str(add_label),
                 'frames': [frame],
                 'daughters': [],
                 'frame_div': None,
