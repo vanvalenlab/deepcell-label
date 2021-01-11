@@ -21,6 +21,12 @@ class Brush {
     // status of conversion brush mode
     this._conv = false;
 
+    // attributes needed to match visible canvas
+    this._height = model.height;
+    this._width = model.width;
+    this._padding = model.padding;
+
+
     // threshold/box attributes
     this._show = true; // showing brush shape
     // -2*pad will always be out of range for annotators
@@ -28,29 +34,7 @@ class Brush {
     this._threshX = -2 * model.padding;
     this._threshY = -2 * model.padding;
     this._showBox = false;
-
-    // how to draw brush/box shadow
-    this._outlineColor = 'white';
-    // opacity only applies to interior
-    this._fillColor = 'white';
-    this._opacity = 0.3;
-
-    // attributes needed to match visible canvas
-    this._height = model.height;
-    this._width = model.width;
-    this._padding = model.padding;
-
-    // create hidden canvas to store brush preview
-    this.canvas = document.createElement('canvas');
-    this.canvas.id = 'brushCanvas';
-    // this canvas should never be seen
-    this.canvas.style.display = 'none';
-    this.canvas.height = model.height;
-    this.canvas.width = model.width;
-    document.body.appendChild(this.canvas);
-    this.ctx = document.getElementById('brushCanvas').getContext('2d');
-    // set fillStyle here, it will never change
-    this.ctx.fillStyle = this._fillColor;
+    this.thresholding = false;
   }
 
   get size() {
@@ -64,8 +48,8 @@ class Brush {
         newSize < this._width / 2 && newSize !== this._size) {
       // size is size in pixels, used to modify source array
       this._size = newSize;
-      // update brush preview with new size
-      this.refreshView();
+      // // update brush preview with new size
+      // this.refreshView();
     }
     this.model.notifyImageChange();
   }
@@ -78,13 +62,6 @@ class Brush {
     // eraser is either true or false
     if (typeof bool === 'boolean') {
       this._erase = bool;
-      // red outline is visual indicator for eraser being on
-      if (this._erase) {
-        this._outlineColor = 'red';
-      // white outline if eraser is off (drawing normally)
-      } else {
-        this._outlineColor = 'white';
-      }
       this.model.notifyImageChange();
     }
   }
@@ -147,12 +124,6 @@ class Brush {
       this._convValue = -1;
       this._convTarget = -1;
     }
-    // if conv brush is on, temporarily disable eraser, even if erase is true
-    if (this._erase && !this._conv) {
-      this._outlineColor = 'red';
-    } else {
-      this._outlineColor = 'white';
-    }
     this.model.notifyImageChange();
   }
 
@@ -170,17 +141,9 @@ class Brush {
   }
 
   set threshX(x) {
-    // clearing anchor corner
-    if (x === -2 * this._padding) {
-      this._threshX = x;
-      this._showBox = false;
-      this.clearView();
-    // setting anchor corner
-    } else {
-      this._threshX = x;
-      this._showBox = true;
-      this.boxView();
-    }
+    this._threshX = x;
+    this.thresholding = x !== -2 * this._padding;
+    this.model.notifyImageChange();
   }
 
   get threshY() {
@@ -188,38 +151,14 @@ class Brush {
   }
 
   set threshY(y) {
-    // clearing anchor corner
-    if (y === -2 * this._padding) {
-      this._threshY = y;
-      this._showBox = false;
-      this.clearView();
-    // setting anchor corner
-    } else {
-      this._threshY = y;
-      this._showBox = true;
-      this.boxView();
-    }
+    this._threshY= y;
+    this.thresholding = y !== -2 * this._padding;
+    this.model.notifyImageChange();
   }
 
-  updatePosition(x, y, isPainting) {
+  updatePosition(x, y) {
     this.x = x;
     this.y = y;
-    this.updateCanvas(isPainting);
-  }
-
-  updateCanvas(isPainting = false) {
-    // Only update when in edit mode
-    if (!this.model.edit_mode) return;
-    // thresholding
-    if (!this.show) {
-      this.boxView(); 
-    } else {
-      // leave behind previous drawing to build up path while painting
-      if (!isPainting) {
-        this.model.brush.clearView();
-      }
-      this.model.brush.addToView();
-    }
     this.model.notifyImageChange();
   }
 
@@ -227,86 +166,5 @@ class Brush {
   clearThresh() {
     this.threshX = -2 * this._padding;
     this.threshY = -2 * this._padding;
-    // restore normal brush view
-    this.show = true;
-    this.addToView();
-  }
-
-  // clear ctx
-  clearView() {
-    this.ctx.clearRect(0, 0, this._width, this._height);
-  }
-
-  /**
-   * Adds a brush shadow to ctx.
-   */
-  addToView() {
-    this.ctx.beginPath();
-    this.ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2, true);
-    this.ctx.closePath();
-    // no opacity needed; just shows where brush has been
-    this.ctx.fill();
-  }
-
-  // clear previous view and update with current view
-  refreshView() {
-    this.clearView();
-    this.addToView();
-  }
-
-  // display bounding box for thresholding
-  boxView() {
-    // clear previous box shape
-    this.clearView();
-    // only if actively drawing box (anchor corner set)
-    if (this._showBox) {
-      // interior of box; will be added to visible canvas with opacity
-      this.ctx.fillRect(
-        this.threshX, this.threshY,
-        this.x - this.threshX,
-        this.y - this.threshY);
-    }
-  }
-
-  // draw brush preview onto destination ctx
-  draw(ctxDst, viewer) {
-    // get attributes from viewer object
-    const sx = viewer.sx;
-    const sy = viewer.sy;
-    const swidth = viewer.sWidth;
-    const sheight = viewer.sHeight;
-    const mag = viewer.scale * viewer.zoom / 100;
-
-    // draw translucent brush trace
-    ctxDst.save();
-    ctxDst.globalAlpha = this._opacity;
-    ctxDst.globalCompositeOperation = 'source-over';
-    const ctxDstHeight = ctxDst.canvas.height;
-    const ctxDstWidth = ctxDst.canvas.width;
-    ctxDst.drawImage(
-      this.canvas, sx, sy, swidth, sheight,
-      this._padding, this._padding,
-      ctxDstWidth - 2 * this._padding,
-      ctxDstHeight - 2 * this._padding);
-    ctxDst.restore();
-
-    // add solid outline around current brush location
-    if (this.show) {
-      ctxDst.beginPath();
-      const cX = (this.x - sx) * mag + this._padding;
-      const cY = (this.y - sy) * mag + this._padding;
-      ctxDst.arc(cX, cY, mag * this.size, 0, Math.PI * 2, true);
-      ctxDst.strokeStyle = this._outlineColor; // either red or white
-      ctxDst.closePath();
-      ctxDst.stroke();
-    } else if (this._showBox) {
-      // draw box around threshold area
-      ctxDst.strokeStyle = 'white';
-      const boxStartX = (this.threshX - sx) * mag + this._padding;
-      const boxStartY = (this.threshY - sy) * mag + this._padding;
-      const boxWidth = (this.x - this.threshX) * mag;
-      const boxHeight = (this.y - this.threshY) * mag;
-      ctxDst.strokeRect(boxStartX, boxStartY, boxWidth, boxHeight);
-    }
   }
 }

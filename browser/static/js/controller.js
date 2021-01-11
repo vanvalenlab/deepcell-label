@@ -5,6 +5,8 @@ class Controller {
    */
   constructor(projectID) {
 
+    // TODO: convert these to meaningful states (like painting, panning, thresholding)
+    // and move to model
     // Control booleans
     this.onCanvas;
     this.isSpacedown;
@@ -31,7 +33,7 @@ class Controller {
       this.addWindowBindings();
       this.addCanvasBindings();
 
-      this.setCanvasDimensions();
+      this.view.setCanvasDimensions();
 
       // Load images and seg_array from payload
       this.model.segArray = project.imgs.seg_arr;
@@ -55,14 +57,14 @@ class Controller {
   undo() {
     this.history.undo();
     this.model.clear();
-    this.model.updateMousePos(this.model.canvas.rawX, this.model.canvas.rawY);
+    this.model.updateMousePos(this.model.cursor.rawX, this.model.cursor.rawY);
     this.model.notifyImageChange();
   }
   
   redo() {
     this.history.redo();
     this.model.clear();
-    this.model.updateMousePos(this.model.canvas.rawX, this.model.canvas.rawY);
+    this.model.updateMousePos(this.model.cursor.rawX, this.model.cursor.rawY);
     this.model.notifyImageChange();
   }
 
@@ -109,8 +111,8 @@ class Controller {
     window.addEventListener('resize', () => {
       waitForFinalEvent(() => {
         this.model.clear();
-        this.setCanvasDimensions();
-        this.model.brush.refreshView();
+        this.view.setCanvasDimensions();
+        this.view.canvasView.brushView.refresh();
         this.view.displayUndoRedo();
       }, 500, 'canvasResize');
     });
@@ -161,87 +163,6 @@ class Controller {
   }
 
   /**
-   * Calculate available space and how much to scale x and y to fill it
-   */
-  setCanvasDimensions() {
-    const maxWidth = this._calculateMaxWidth();
-    const maxHeight = this._calculateMaxHeight();
-
-    const scaleX = maxWidth / this.model.width;
-    const scaleY = maxHeight / this.model.height;
-
-    // pick scale that accomodates both dimensions; can be less than 1
-    const scale = Math.min(scaleX, scaleY);
-    const padding = this.model.canvas.padding;
-
-    this.model.canvas.zoom = 100;
-    this.model.canvas.scale = scale;
-    this.model.canvas.setBorders();
-
-    // TODO: move to view?
-    // set canvases size according to scale
-    document.getElementById('canvas').width = this.model.canvas.scaledWidth + 2 * padding;
-    document.getElementById('canvas').height = this.model.canvas.scaledHeight + 2 * padding;
-  }
-
-  /**
-   * Calculate the maximum width of the canvas display area.
-   * The canvas only shares width with the table display on its left.
-   */
-  _calculateMaxWidth() {
-    const mainSection = window.getComputedStyle(
-      document.getElementsByTagName('main')[0]
-    );
-    const tableColumn = window.getComputedStyle(
-      document.getElementById('table-col')
-    );
-    const canvasColumn = window.getComputedStyle(
-      document.getElementById('canvas-col')
-    );
-    const maxWidth = Math.floor(
-      document.getElementsByTagName('main')[0].clientWidth -
-      parseInt(mainSection.marginTop) -
-      parseInt(mainSection.marginBottom) -
-      document.getElementById('table-col').clientWidth -
-      parseFloat(tableColumn.paddingLeft) -
-      parseFloat(tableColumn.paddingRight) -
-      parseFloat(tableColumn.marginLeft) -
-      parseFloat(tableColumn.marginRight) -
-      parseFloat(canvasColumn.paddingLeft) -
-      parseFloat(canvasColumn.paddingRight) -
-      parseFloat(canvasColumn.marginLeft) -
-      parseFloat(canvasColumn.marginRight)
-    );
-    return maxWidth;
-  }
-
-  /**
-   * Calculate the maximum height for the canvas display area,
-   * leaving space for navbar, instructions pane, and footer.
-   */
-  _calculateMaxHeight() {
-    const mainSection = window.getComputedStyle(
-      document.getElementsByTagName('main')[0]
-    );
-    // leave space for navbar, instructions pane, and footer
-    const maxHeight = Math.floor(
-      (
-        (
-          window.innerHeight ||
-          document.documentElement.clientHeight ||
-          document.body.clientHeight
-        ) -
-        parseInt(mainSection.marginTop) -
-        parseInt(mainSection.marginBottom) -
-        document.getElementsByClassName('page-footer')[0].clientHeight -
-        document.getElementsByClassName('collapsible')[0].clientHeight -
-        document.getElementsByClassName('navbar-fixed')[0].clientHeight
-      )
-    );
-    return maxHeight;
-  }
-
-  /**
    * Handle mouse scroll to adjust contrast, brightness, or zoom
    * @param {WheelEvent} evt
    */
@@ -270,10 +191,10 @@ class Controller {
     if (this.isSpacedown) return; // panning
     if (this.model.kind === Modes.prompt) return; // turning on conv mode
     if (!this.model.edit_mode) return; // only draw in edit mode
-    if (!this.model.brush.show) { // draw thresholding box
+    if (this.model.brush.thresholding) { // draw thresholding box
       this.model.updateThresholdBox();
     } else {
-      this.trace.push([this.model.canvas.imgY, this.model.canvas.imgX]);
+      this.trace.push([this.model.cursor.imgY, this.model.cursor.imgX]);
     }
   }
 
@@ -288,7 +209,7 @@ class Controller {
       this.model.notifyImageChange();
     }
     if (this.isPainting) {
-        this.trace.push([this.model.canvas.imgY, this.model.canvas.imgX]);
+        this.trace.push([this.model.cursor.imgY, this.model.cursor.imgX]);
     }
     this.model.updateMousePos(evt.offsetX, evt.offsetY, this.isPainting);
     this.model.notifyInfoChange();
@@ -305,11 +226,11 @@ class Controller {
     if (!this.model.edit_mode) return;
     
     // threshold
-    if (!this.model.brush.show) {
+    if (this.model.brush.thresholding) {
       const thresholdStartY = this.model.brush.threshY;
       const thresholdStartX = this.model.brush.threshX;
-      const thresholdEndX = this.model.canvas.imgX;
-      const thresholdEndY = this.model.canvas.imgY;
+      const thresholdEndX = this.model.cursor.imgX;
+      const thresholdEndY = this.model.cursor.imgY;
   
       if (thresholdStartY !== thresholdEndY &&
           thresholdStartX !== thresholdEndX) {
@@ -327,7 +248,7 @@ class Controller {
       this.model.clear();
       this.model.notifyImageChange();
     // paint
-    } else if (this.model.canvas.inRange()) {
+    } else if (this.model.cursor.inRange()) {
       if (this.trace.length !== 0) {
         this.model.action = 'handle_draw';
         this.model.info = {
@@ -345,7 +266,7 @@ class Controller {
         this.model.clear();
       }
     }
-    this.model.brush.refreshView();
+    this.view.canvasView.brushView.refresh();
   }
 
   /**
@@ -356,7 +277,7 @@ class Controller {
     if (this.model.kind === Modes.prompt) {
       // hole fill or color picking options
       this.handle_mode_prompt_click(evt);
-    } else if (this.model.canvas.label === 0) {
+    } else if (this.model.cursor.label === 0) {
       // same as ESC
       this.model.clear();
     } else if (this.model.kind === Modes.none) {
@@ -392,7 +313,7 @@ class Controller {
    * @param {MouseEvent} evt 
    */
   handle_mode_prompt_click(evt) {
-    if (this.model.action === 'fill_hole' && this.model.canvas.label === 0) {
+    if (this.model.action === 'fill_hole' && this.model.cursor.label === 0) {
       this.model.info = {
         label: this.model.info.label,
         frame: this.model.frame,
@@ -401,10 +322,10 @@ class Controller {
       };
       this.history.addFencedAction(new BackendAction(this.model));
       this.model.clear();
-    } else if (this.model.action === 'pick_color' && this.model.canvas.label !== 0 &&
-               this.model.canvas.label !== this.model.brush.target) {
+    } else if (this.model.action === 'pick_color' && this.model.cursor.label !== 0 &&
+               this.model.cursor.label !== this.model.brush.target) {
       this.model.pickConversionLabel();
-    } else if (this.model.action === 'pick_target' && this.model.canvas.label !== 0) {
+    } else if (this.model.action === 'pick_target' && this.model.cursor.label !== 0) {
       this.model.pickConversionTarget();
     }
   }
