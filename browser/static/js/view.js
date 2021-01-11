@@ -1,3 +1,4 @@
+/** Displays and updates UI elements. */
 class View {
   constructor(model) {
     // TODO: use observer interface & have View subscribe to model
@@ -103,6 +104,9 @@ class View {
   }
 }
 
+/**
+ * Renders the infopane.
+ */
 class InfopaneView {
   constructor(model) {
     this.model = model;
@@ -218,6 +222,7 @@ class InfopaneView {
   }
 }
 
+/** Renders images onto the interactive canas. */
 class CanvasView {
   constructor(model) {
     this.model = model;
@@ -420,6 +425,7 @@ class CanvasView {
   }
 }
 
+/** Renders the brush onto the interactive canvas. */
 class BrushView {
   constructor(model) {
     this.model = model;
