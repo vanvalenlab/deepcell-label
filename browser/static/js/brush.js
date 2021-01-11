@@ -54,7 +54,7 @@ class Brush {
   }
 
   get erase() {
-    return this._erase;
+    return this._erase && !this.conv;
   }
 
   set erase(bool) {

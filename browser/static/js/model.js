@@ -517,7 +517,7 @@ class Model {
       target_value: this.brush.target, // value that we're overwriting
       brush_value: this.brush.value, // we don't update with edit_value, etc each time they change
       brush_size: this.brush.size, // so we need to pass them in as args
-      erase: (this.brush.erase && !this.brush.conv),
+      erase: this.brush.erase,
       frame: this.frame
     };
     this.canvas.clearTrace();

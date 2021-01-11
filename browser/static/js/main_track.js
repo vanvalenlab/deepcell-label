@@ -295,7 +295,7 @@ class Mode {
       "target_value": brush.target, // value that we're overwriting
       "brush_value": brush.value, // we don't update with edit_value, etc each time they change
       "brush_size": brush.size, // so we need to pass them in as args
-      "erase": (brush.erase && !brush.conv),
+      "erase": brush.erase,
       "frame": current_frame
     });
     mouse_trace = [];
@@ -578,7 +578,7 @@ function render_edit_info() {
     const editLabelText = (brush.value > 0) ? brush.value : '-';
     document.getElementById('brush_label').textContent = editLabelText;
 
-    const editEraseText = (brush.erase && !brush.conv) ? 'ON' : 'OFF';
+    const editEraseText = brush.erase ? 'ON' : 'OFF';
     document.getElementById('edit_erase').textContent = editEraseText;
   }
 }

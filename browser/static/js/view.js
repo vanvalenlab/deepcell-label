@@ -182,7 +182,7 @@ class InfopaneView {
       const editLabelText = (this.brush.value > 0) ? this.brush.value : '-';
       document.getElementById('brush_label').innerHTML = editLabelText;
   
-      const editEraseText = (this.brush.erase && !this.brush.conv) ? 'ON' : 'OFF';
+      const editEraseText = this.brush.erase ? 'ON' : 'OFF';
       document.getElementById('edit_erase').innerHTML = editEraseText;
     }
   }
