@@ -299,7 +299,7 @@ class Model {
     this.prompt = '';
   }
 
-  updateMousePos(x, y, isPainting = false) {
+  updateMousePos(x, y) {
     this.canvas.updateCursorPosition(x, y);
     this.brush.updatePosition(this.canvas.imgX, this.canvas.imgY);
   }

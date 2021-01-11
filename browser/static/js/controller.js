@@ -5,9 +5,6 @@ class Controller {
    */
   constructor(projectID) {
 
-    // Tracks mouse coordinates for painting
-    this.trace = [];
-
     // Get Project from database
     const getProject = $.ajax({
       type: 'GET',
@@ -183,7 +180,7 @@ class Controller {
     if (this.model.brush.thresholding) { // draw thresholding box
       this.model.updateThresholdBox();
     } else {
-      this.trace.push([this.model.canvas.imgY, this.model.canvas.imgX]);
+      this.model.canvas.addToTrace();
     }
   }
 
@@ -198,9 +195,9 @@ class Controller {
       this.model.notifyImageChange();
     }
     if (this.isPainting) {
-        this.trace.push([this.model.canvas.imgY, this.model.canvas.imgX]);
+        this.model.canvas.addToTrace();
     }
-    this.model.updateMousePos(evt.offsetX, evt.offsetY, this.isPainting);
+    this.model.updateMousePos(evt.offsetX, evt.offsetY);
     this.model.notifyInfoChange();
   }
 
@@ -238,10 +235,10 @@ class Controller {
       this.model.notifyImageChange();
     // paint
     } else if (this.model.canvas.inRange()) {
-      if (this.trace.length !== 0) {
+      if (this.model.canvastrace.length !== 0) {
         this.model.action = 'handle_draw';
         this.model.info = {
-          trace: JSON.stringify(this.trace), // stringify array so it doesn't get messed up
+          trace: this.model.canvas.trace,
           target_value: this.model.brush.target, // value that we're overwriting
           brush_value: this.model.brush.value, // we don't update with edit_value, etc each time they change
           brush_size: this.model.brush.size, // so we need to pass them in as args
@@ -250,7 +247,7 @@ class Controller {
         };
         this.history.addFencedAction(new BackendAction(this.model));
       }
-      this.trace = [];
+      this.model.canvas.clearTrace();
       if (this.model.kind !== Modes.drawing) {
         this.model.clear();
       }

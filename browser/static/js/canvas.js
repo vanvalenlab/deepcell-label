@@ -34,6 +34,8 @@ class CanvasPosition {
     this.storedClickY = null;
     // label under the cursor
     this.label = 0;
+    // Records cursor history for painting
+    this._trace = [];
   }
 
   get sx() {
@@ -68,12 +70,16 @@ class CanvasPosition {
     return this.scale * this.height;
   }
 
-  // check if the mouse position in canvas matches to a displayed part of image
-  inRange() {
-    return (
-      this.canvasPosX >= 0 && this.canvasPosX < this.scaledWidth &&
-      this.canvasPosY >= 0 && this.canvasPosY < this.scaledHeight
-    );
+  get trace() {
+    return JSON.stringify(this._trace);
+  }
+
+  clearTrace() {
+    this._trace = [];
+  }
+
+  addToTrace() {
+    this._trace.push([this.imgY, this.imgX]);
   }
 
   updateCursorPosition(x, y) {
@@ -99,5 +105,13 @@ class CanvasPosition {
     } else {
       this.label = 0;
     }
+  }
+
+  // check if the mouse position in canvas matches to a displayed part of image
+  inRange() {
+    return (
+      this.canvasPosX >= 0 && this.canvasPosX < this.scaledWidth &&
+      this.canvasPosY >= 0 && this.canvasPosY < this.scaledHeight
+    );
   }
 }
