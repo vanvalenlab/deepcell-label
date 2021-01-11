@@ -189,12 +189,12 @@ class Controller {
    * @param {MouseEvent} evt 
    */
   handleMousemove(evt) {
-    if (this.isPanning) {
+    if (this.model.isPanning) {
       const zoom = 100 / (this.model.canvas.zoom * this.model.canvas.scale)
       this.history.addAction(new Pan(this, evt.movementX * zoom, evt.movementY * zoom));
       this.model.notifyImageChange();
     }
-    if (this.isPainting) {
+    if (this.model.isPainting) {
         this.model.canvas.addToTrace();
     }
     this.model.updateMousePos(evt.offsetX, evt.offsetY);

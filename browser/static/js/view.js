@@ -461,9 +461,8 @@ class BrushView {
 
   /**
    * Called after brush moves to show it's new position
-   * @param {boolean} isPainting 
    */
-  update(isPainting = false) {
+  update() {
     // Only update brush when in edit mode
     if (!this.model.edit_mode) return;
     // thresholding
@@ -471,7 +470,7 @@ class BrushView {
       this.drawBox();
     } else {
       // leave behind previous drawing to build up path while painting
-      if (!isPainting) {
+      if (!this.model.isPainting) {
         this.clear();
       }
       this.addShadow();
