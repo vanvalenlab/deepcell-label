@@ -61,7 +61,6 @@ class Model {
     // Model objects
     this.adjuster = new ImageAdjuster(this);
     this.canvas = new CanvasPosition(this);
-    this.cursor = new Cursor(this);
     this.brush = new Brush(this);
 
     // TODO: use Observable interface instead and allow any Observer to register
@@ -75,7 +74,7 @@ class Model {
 
   set segArray(newSegArray) {
     this._segArray = newSegArray;
-    this.cursor.updateLabel();
+    this.canvas.updateLabel();
   }
 
   get segImage() {
@@ -301,8 +300,8 @@ class Model {
   }
 
   updateMousePos(x, y, isPainting = false) {
-    this.cursor.updateCursorPosition(x, y);
-    this.brush.updatePosition(this.cursor.imgX, this.cursor.imgY);
+    this.canvas.updateCursorPosition(x, y);
+    this.brush.updatePosition(this.canvas.imgX, this.canvas.imgY);
   }
 
   setUnusedBrushLabel() {
@@ -416,13 +415,13 @@ class Model {
     this.kind = Modes.question;
     this.action = 'flood_contiguous';
     this.info = {
-      label: this.cursor.label,
+      label: this.canvas.label,
       frame: this.frame,
-      x_location: this.cursor.imgX,
-      y_location: this.cursor.imgY
+      x_location: this.canvas.imgX,
+      y_location: this.canvas.imgY
     };
     this.prompt = 'SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL';
-    this.highlighted_cell_one = this.cursor.label;
+    this.highlighted_cell_one = this.canvas.label;
   }
 
   startTrim() {
@@ -430,32 +429,32 @@ class Model {
     this.kind = Modes.question;
     this.action = 'trim_pixels';
     this.info = {
-      label: this.cursor.label,
+      label: this.canvas.label,
       frame: this.frame,
-      x_location: this.cursor.imgX,
-      y_location: this.cursor.imgY
+      x_location: this.canvas.imgX,
+      y_location: this.canvas.imgY
     };
     this.prompt = 'SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL';
-    this.highlighted_cell_one = this.cursor.label;
+    this.highlighted_cell_one = this.canvas.label;
   }
 
   selectLabel() {
     // normal click
     this.kind = Modes.single;
     this.info = {
-      label: this.cursor.label,
+      label: this.canvas.label,
       frame: this.frame
     };
-    this.highlighted_cell_one = this.cursor.label;
+    this.highlighted_cell_one = this.canvas.label;
     this.highlighted_cell_two = -1;
-    this.cursor.storedClickX = this.cursor.imgX;
-    this.cursor.storedClickY = this.cursor.imgY;
+    this.canvas.storedClickX = this.canvas.imgX;
+    this.canvas.storedClickY = this.canvas.imgY;
   }
 
 
 
   pickConversionLabel() {
-    this.brush.value = this.cursor.label;
+    this.brush.value = this.canvas.label;
     if (this.brush.target !== 0) {
       this.prompt = `Now drawing over label ${this.brush.target} with label ${this.brush.value}.` +
         `Use ESC to leave this mode.`;
@@ -466,7 +465,7 @@ class Model {
   }
 
   pickConversionTarget() {
-    this.brush.target = this.cursor.label;
+    this.brush.target = this.canvas.label;
     this.action = 'pick_color';
     this.prompt = 'Click on the label you want to draw with, or press "n" to draw with an unused label.';
   }
@@ -475,37 +474,37 @@ class Model {
     this.kind = Modes.multiple;
 
     this.highlighted_cell_one = this.info.label;
-    this.highlighted_cell_two = this.cursor.label;
+    this.highlighted_cell_two = this.canvas.label;
 
     this.info = {
       label_1: this.info.label,
-      label_2: this.cursor.label,
+      label_2: this.canvas.label,
       frame_1: this.info.frame,
       frame_2: this.frame,
-      x1_location: this.cursor.storedClickX,
-      y1_location: this.cursor.storedClickY,
-      x2_location: this.cursor.imgX,
-      y2_location: this.cursor.imgY
+      x1_location: this.canvas.storedClickX,
+      y1_location: this.canvas.storedClickY,
+      x2_location: this.canvas.imgX,
+      y2_location: this.canvas.imgY
     };
   }
 
   reselectSecondLabel() {
     this.highlighted_cell_one = this.info.label_1;
-    this.highlighted_cell_two = this.cursor.label;
+    this.highlighted_cell_two = this.canvas.label;
     this.info = {
       label_1: this.info.label_1,
-      label_2: this.cursor.label,
+      label_2: this.canvas.label,
       frame_1: this.info.frame_1,
       frame_2: this.frame,
-      x1_location: this.cursor.storedClickX,
-      y1_location: this.cursor.storedClickY,
-      x2_location: this.cursor.imgX,
-      y2_location: this.cursor.imgY
+      x1_location: this.canvas.storedClickX,
+      y1_location: this.canvas.storedClickY,
+      x2_location: this.canvas.imgX,
+      y2_location: this.canvas.imgY
     };
   }
 
   updateThresholdBox() {
-    this.brush.threshX = this.cursor.imgX;
-    this.brush.threshY = this.cursor.imgY;
+    this.brush.threshX = this.canvas.imgX;
+    this.brush.threshY = this.canvas.imgY;
   }
 }

@@ -112,7 +112,6 @@ class InfopaneView {
     this.model = model;
     this.canvas = model.canvas;
     this.brush = model.brush;
-    this.cursor = model.cursor;
   }
 
   /**
@@ -192,9 +191,9 @@ class InfopaneView {
    * Renders the rows about the label being hovered over.
    */
   renderLabelRows() {
-    if (this.cursor.label !== 0) {
-      document.getElementById('label').innerHTML = this.cursor.label;
-      const track = this.model.tracks[this.model.feature][this.cursor.label.toString()];
+    if (this.canvas.label !== 0) {
+      document.getElementById('label').innerHTML = this.canvas.label;
+      const track = this.model.tracks[this.model.feature][this.canvas.label.toString()];
       document.getElementById('slices').textContent = track.slices.toString();
     } else {
       document.getElementById('label').innerHTML = '';

@@ -212,7 +212,6 @@ class Zoom extends Action {
   constructor(controller, model, dZoom) {
     super();
     let canvas = model.canvas;
-    let cursor = model.cursor;
     // Calculate how much canvas zooms
     const zoom = Math.max(canvas.zoom - 10 * dZoom, canvas.zoomLimit);
 
@@ -221,14 +220,13 @@ class Zoom extends Action {
     const newWidth = canvas.width * 100 / zoom;
     const oldHeight = canvas.sHeight;
     const oldWidth = canvas.sWidth;
-    const propX = cursor.canvasPosX / canvas.scaledWidth;
-    const propY = cursor.canvasPosY / canvas.scaledHeight;
+    const propX = canvas.canvasPosX / canvas.scaledWidth;
+    const propY = canvas.canvasPosY / canvas.scaledHeight;
     this.dx = propX * (newWidth - oldWidth);
     this.dy = propY * (newHeight - oldHeight);
 
     this.model = model;
     this.canvas = canvas;
-    this.cursor = cursor;
     this.controller = controller;
     this.oldZoom = canvas.zoom;
     this.newZoom = zoom;
@@ -240,7 +238,7 @@ class Zoom extends Action {
     let pan = new Pan(this.model, this.dx, this.dy);
     this.controller.history.addAction(pan);
     // TODO: check if this is in the right place(s)
-    this.model.updateMousePos(this.cursor.rawX, this.cursor.rawY);
+    this.model.updateMousePos(this.canvas.rawX, this.canvas.rawY);
   }
 
   redo() {

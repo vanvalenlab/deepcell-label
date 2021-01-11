@@ -43,14 +43,14 @@ class Controller {
   undo() {
     this.history.undo();
     this.model.clear();
-    this.model.updateMousePos(this.model.cursor.rawX, this.model.cursor.rawY);
+    this.model.updateMousePos(this.model.canvas.rawX, this.model.canvas.rawY);
     this.model.notifyImageChange();
   }
   
   redo() {
     this.history.redo();
     this.model.clear();
-    this.model.updateMousePos(this.model.cursor.rawX, this.model.cursor.rawY);
+    this.model.updateMousePos(this.model.canvas.rawX, this.model.canvas.rawY);
     this.model.notifyImageChange();
   }
 
@@ -183,7 +183,7 @@ class Controller {
     if (this.model.brush.thresholding) { // draw thresholding box
       this.model.updateThresholdBox();
     } else {
-      this.trace.push([this.model.cursor.imgY, this.model.cursor.imgX]);
+      this.trace.push([this.model.canvas.imgY, this.model.canvas.imgX]);
     }
   }
 
@@ -198,7 +198,7 @@ class Controller {
       this.model.notifyImageChange();
     }
     if (this.isPainting) {
-        this.trace.push([this.model.cursor.imgY, this.model.cursor.imgX]);
+        this.trace.push([this.model.canvas.imgY, this.model.canvas.imgX]);
     }
     this.model.updateMousePos(evt.offsetX, evt.offsetY, this.isPainting);
     this.model.notifyInfoChange();
@@ -218,8 +218,8 @@ class Controller {
     if (this.model.brush.thresholding) {
       const thresholdStartY = this.model.brush.threshY;
       const thresholdStartX = this.model.brush.threshX;
-      const thresholdEndX = this.model.cursor.imgX;
-      const thresholdEndY = this.model.cursor.imgY;
+      const thresholdEndX = this.model.canvas.imgX;
+      const thresholdEndY = this.model.canvas.imgY;
   
       if (thresholdStartY !== thresholdEndY &&
           thresholdStartX !== thresholdEndX) {
@@ -237,7 +237,7 @@ class Controller {
       this.model.clear();
       this.model.notifyImageChange();
     // paint
-    } else if (this.model.cursor.inRange()) {
+    } else if (this.model.canvas.inRange()) {
       if (this.trace.length !== 0) {
         this.model.action = 'handle_draw';
         this.model.info = {
@@ -266,7 +266,7 @@ class Controller {
     if (this.model.kind === Modes.prompt) {
       // hole fill or color picking options
       this.handle_mode_prompt_click(evt);
-    } else if (this.model.cursor.label === 0) {
+    } else if (this.model.canvas.label === 0) {
       // same as ESC
       this.model.clear();
     } else if (this.model.kind === Modes.none) {
@@ -302,7 +302,7 @@ class Controller {
    * @param {MouseEvent} evt 
    */
   handle_mode_prompt_click(evt) {
-    if (this.model.action === 'fill_hole' && this.model.cursor.label === 0) {
+    if (this.model.action === 'fill_hole' && this.model.canvas.label === 0) {
       this.model.info = {
         label: this.model.info.label,
         frame: this.model.frame,
@@ -311,10 +311,10 @@ class Controller {
       };
       this.history.addFencedAction(new BackendAction(this.model));
       this.model.clear();
-    } else if (this.model.action === 'pick_color' && this.model.cursor.label !== 0 &&
-               this.model.cursor.label !== this.model.brush.target) {
+    } else if (this.model.action === 'pick_color' && this.model.canvas.label !== 0 &&
+               this.model.canvas.label !== this.model.brush.target) {
       this.model.pickConversionLabel();
-    } else if (this.model.action === 'pick_target' && this.model.cursor.label !== 0) {
+    } else if (this.model.action === 'pick_target' && this.model.canvas.label !== 0) {
       this.model.pickConversionTarget();
     }
   }
