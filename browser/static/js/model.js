@@ -53,6 +53,11 @@ class Model {
     this.maxLabelsMap = new Map();
     this.processMaxLabels();
 
+    // Control booleans
+    this.onCanvas;
+    this.isSpacedown;
+    this.isPressed;
+
     // Model objects
     this.adjuster = new ImageAdjuster(this);
     this.canvas = new CanvasPosition(this);
@@ -203,6 +208,14 @@ class Model {
     this._tracks = value;
     this.processMaxLabels();
     this.notifyInfoChange();
+  }
+
+  get isPainting() {
+    return this.isPressed && !this.isSpacedown && (this.kind !== Modes.prompt);
+  }
+
+  get isPanning() {
+    return this.isPressed && this.isSpacedown;
   }
 
   // TODO: use Observable interface instead of hard-coding the view as the only Observer

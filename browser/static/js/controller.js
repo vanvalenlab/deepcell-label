@@ -5,12 +5,6 @@ class Controller {
    */
   constructor(projectID) {
 
-    // TODO: convert these to meaningful states (like painting, panning, thresholding)
-    // and move to model
-    // Control booleans
-    this.onCanvas;
-    this.isSpacedown;
-    this.isPressed;
     // Tracks mouse coordinates for painting
     this.trace = [];
 
@@ -45,14 +39,6 @@ class Controller {
 
     });
   }
-
-  get isPainting() {
-    return this.isPressed && !this.isSpacedown && (this.model.kind !== Modes.prompt);
-  }
-
-  get isPanning() {
-    return this.isPressed && this.isSpacedown;
-  }
   
   undo() {
     this.history.undo();
@@ -73,7 +59,7 @@ class Controller {
    */
   overrideScroll() {
     document.addEventListener('wheel', (event) => {
-      if (this.onCanvas) event.preventDefault();
+      if (this.model.onCanvas) event.preventDefault();
     }, { passive: false });
 
     // disable space and up/down keys from moving around on page
@@ -94,13 +80,13 @@ class Controller {
   addWindowBindings() {
     window.addEventListener('keydown', (e) => {
       if (e.key === ' ') {
-        this.isSpacedown = true;
+        this.model.isSpacedown = true;
       }
     }, false);
 
     window.addEventListener('keyup', (e) => {
       if (e.key === ' ') {
-        this.isSpacedown = false;
+        this.model.isSpacedown = false;
       }
     }, false);
 
@@ -129,7 +115,10 @@ class Controller {
     const canvasElement = document.getElementById('canvas');
     // bind click on canvas
     canvasElement.addEventListener('click', (evt) => {
-      if (!this.isSpacedown && 
+      // TODO: what does this conditional capture? 
+      // seems like !this.model.isSpacedown means not panning
+      // !edit_mode or prompt mode means that click only works in edit mode when prompting?
+      if (!this.model.isSpacedown && 
           (!this.model.edit_mode || this.model.kind === Modes.prompt)) {
         this.click(evt);
       }
@@ -146,10 +135,10 @@ class Controller {
   
     // add flag for when cursor in on the canvas
     canvasElement.onmouseover = () => {
-      this.onCanvas = true;
+      this.model.onCanvas = true;
     }
     canvasElement.onmouseout = () => {
-      this.onCanvas = false;
+      this.model.onCanvas = false;
     }
 
   }
@@ -186,9 +175,9 @@ class Controller {
    * @param {MouseEvent} evt mouse button press
    */
   handleMousedown(evt) {
-    this.isPressed = true;
+    this.model.isPressed = true;
     // TODO: refactor "mousedown + mousemove" into ondrag?
-    if (this.isSpacedown) return; // panning
+    if (this.model.isSpacedown) return; // panning
     if (this.model.kind === Modes.prompt) return; // turning on conv mode
     if (!this.model.edit_mode) return; // only draw in edit mode
     if (this.model.brush.thresholding) { // draw thresholding box
@@ -219,9 +208,9 @@ class Controller {
    * Handles end of click & drag.
    */
   handleMouseup() {
-    this.isPressed = false;
+    this.model.isPressed = false;
     
-    if (this.isSpacedown) return; // panning
+    if (this.model.isSpacedown) return; // panning
     if (this.model.kind === Modes.prompt) return;
     if (!this.model.edit_mode) return;
     
