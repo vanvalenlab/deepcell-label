@@ -260,7 +260,7 @@ class Controller {
     } else if (evt.shiftKey) {
       this.model.startTrim();
     } else {
-      this.model.selectLabel();
+      this.history.addAction(new SelectLabel(this.model));
     }
   }
 

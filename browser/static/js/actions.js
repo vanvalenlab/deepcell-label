@@ -308,3 +308,28 @@ class ToggleInvert extends Action {
 
   redo() { this.do(); }
 }
+
+class SelectLabel extends Action {
+  constructor(model) {
+    super();
+    this.model = model;
+    this.canvas = model.canvas;
+  }
+
+  do() {
+    this.model.kind = Modes.single;
+    this.model.info = {
+      label: this.canvas.label,
+      frame: this.model.frame
+    };
+    this.model.highlighted_cell_one = this.canvas.label;
+    this.model.highlighted_cell_two = -1;
+    this.canvas.storedClickX = this.canvas.imgX;
+    this.canvas.storedClickY = this.canvas.imgY;
+  }
+
+  undo() { this.model.clear(); }
+
+  redo() { this.model.clear(); }
+}
+

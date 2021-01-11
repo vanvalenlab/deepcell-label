@@ -442,21 +442,6 @@ class Model {
     this.highlighted_cell_one = this.canvas.label;
   }
 
-  selectLabel() {
-    // normal click
-    this.kind = Modes.single;
-    this.info = {
-      label: this.canvas.label,
-      frame: this.frame
-    };
-    this.highlighted_cell_one = this.canvas.label;
-    this.highlighted_cell_two = -1;
-    this.canvas.storedClickX = this.canvas.imgX;
-    this.canvas.storedClickY = this.canvas.imgY;
-  }
-
-
-
   pickConversionLabel() {
     this.brush.value = this.canvas.label;
     if (this.brush.target !== 0) {
