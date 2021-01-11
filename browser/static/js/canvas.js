@@ -48,6 +48,7 @@ class CanvasPosition {
     // don't move past left edge
     newSx = Math.max(newSx, 0);
     this._sx = newSx;
+    this.model.notifyImageChange();
   }
 
   get sy() {
@@ -60,6 +61,7 @@ class CanvasPosition {
     // don't move past top edge
     newSy = Math.max(0, newSy);
     this._sy = newSy;
+    this.model.notifyImageChange();
   }
 
   get scaledWidth() {
@@ -144,5 +146,7 @@ class CanvasPosition {
     this.sWidth = newWidth;
     this.sx += dx;
     this.sy += dy;
+    this.model.notifyInfoChange();
+    this.model.notifyImageChange();
   }
 }

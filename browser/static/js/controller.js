@@ -157,7 +157,6 @@ class Controller {
       (this.model.rgb && !this.model.display_labels));
     if (evt.altKey) {
       this.history.addAction(new Zoom(this.model, Math.sign(evt.deltaY)));
-      this.model.notifyImageChange();
     } else if (rawVisible && !evt.shiftKey) {
       this.history.addAction(new ChangeContrast(this.model, evt.deltaY));
     } else if (rawVisible && evt.shiftKey) {
@@ -192,7 +191,6 @@ class Controller {
     if (this.model.isPanning) {
       const zoom = 100 / (this.model.canvas.zoom * this.model.canvas.scale)
       this.history.addAction(new Pan(this.model, evt.movementX * zoom, evt.movementY * zoom));
-      this.model.notifyImageChange();
     }
     if (this.model.isPainting) {
         this.model.canvas.addToTrace();
@@ -385,10 +383,8 @@ class Controller {
       this.model.display_labels = !this.model.display_labels;
     } else if (evt.key === '-') {
       this.history.addAction(new Zoom(this.model, 1));
-      this.model.notifyImageChange();
     } else if (evt.key === '=') {
       this.history.addAction(new Zoom(this.model, -1));
-      this.model.notifyImageChange();
     }
   }
 
