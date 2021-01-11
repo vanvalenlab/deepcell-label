@@ -388,8 +388,7 @@ class CanvasView {
     ctx.clip(region);
     ctx.imageSmoothingEnabled = true;
   
-    // draw brushview on top of cells/annotations
-    this.brushView.update();
+    // Draw brush on top of image
     this.brushView.draw(ctx);
   
     ctx.restore();
@@ -428,7 +427,6 @@ class CanvasView {
 class BrushView {
   constructor(model) {
     this.model = model;
-    this.canvas = model.canvas;
     this.brush = model.brush;
 
     // opacity only applies to interior
@@ -459,41 +457,7 @@ class BrushView {
     return this.model.padding;
   }
 
-  /**
-   * Called after brush moves to show it's new position
-   */
-  update() {
-    // Only update brush when in edit mode
-    if (!this.model.edit_mode) return;
-    // thresholding
-    if (this.brush.thresholding) {
-      this.drawBox();
-    } else {
-      // leave behind previous drawing to build up path while painting
-      if (!this.model.isPainting) {
-        this.clear();
-      }
-      this.addShadow();
-    }
-  }
 
-  /**
-   * Removes everything on the brush canvas.
-   */
-  clear() {
-    this.ctx.clearRect(0, 0, this.model.width, this.model.height);
-  }
-
-  /**
-   * Adds a brush shadow to brush canvas.
-   */
-  addShadow() {
-    this.ctx.beginPath();
-    this.ctx.arc(this.brush.x, this.brush.y, this.brush.size, 0, Math.PI * 2, true);
-    this.ctx.closePath();
-    // no opacity needed; just shows where brush has been
-    this.ctx.fill();
-  }
 
   // clear previous view and update with current view
   refresh() {
@@ -506,15 +470,21 @@ class BrushView {
    * @param {*} ctxDst 
    */
   draw(ctxDst) {
-    const canvas = this.model.canvas;
     // get attributes from viewer object
-    const sx = canvas.sx;
-    const sy = canvas.sy;
-    const swidth = canvas.sWidth;
-    const sheight = canvas.sHeight;
-    const mag = canvas.scale * canvas.zoom / 100;
+    const sx = this.model.canvas.sx;
+    const sy = this.model.canvas.sy;
+    const swidth = this.model.canvas.sWidth;
+    const sheight = this.model.canvas.sHeight;
+    const mag = this.model.canvas.scale * this.model.canvas.zoom / 100;
 
-    // draw translucent brush trace
+    // Update the translucent brush canvas
+    if (this.brush.thresholding) {
+      this.drawThreshold();
+    } else {
+      this.drawPaintbrush();
+    }
+
+    // Draw the translucent brush trace onto the main canvas
     ctxDst.save();
     ctxDst.globalAlpha = this._opacity;
     ctxDst.globalCompositeOperation = 'source-over';
@@ -527,35 +497,61 @@ class BrushView {
       ctxDstHeight - 2 * this.padding);
     ctxDst.restore();
 
-    
-    if (this.brush.thresholding) {
-      // draw box around threshold area
+    // Draw solid outlines
+    if (this.brush.showBox) {
+      // solid box around threshold area
       ctxDst.strokeStyle = 'white';
       const boxStartX = (this.brush.threshX - sx) * mag + this.padding;
       const boxStartY = (this.brush.threshY - sy) * mag + this.padding;
       const boxWidth = (this.brush.x - this.brush.threshX) * mag;
       const boxHeight = (this.brush.y - this.brush.threshY) * mag;
       ctxDst.strokeRect(boxStartX, boxStartY, boxWidth, boxHeight);
-    } else {
-      // add solid outline around current brush location
+    } else if (this.brush.showCircle) {
+      // solid circle around current brush location
       ctxDst.beginPath();
       const cX = (this.brush.x - sx) * mag + this.padding;
       const cY = (this.brush.y - sy) * mag + this.padding;
       ctxDst.arc(cX, cY, mag * this.brush.size, 0, Math.PI * 2, true);
-      ctxDst.strokeStyle = this._outlineColor; // either red or white
+      ctxDst.strokeStyle = this._outlineColor;
       ctxDst.closePath();
       ctxDst.stroke();
     }
   }
 
-  // display bounding box for thresholding
-  drawBox() {
+    /**
+   * Draws the current thresholding box onto brush canvas.
+   */
+  drawThreshold() {
     // clear previous box shape
     this.clear();
     // interior of box; will be added to visible canvas with opacity
-    this.ctx.fillRect(
-      this.brush.threshX, this.brush.threshY,
-      this.brush.x - this.brush.threshX,
-      this.brush.y - this.brush.threshY);
+    if (this.brush.showBox) {
+      this.ctx.fillRect(
+        this.brush.threshX, this.brush.threshY,
+        this.brush.x - this.brush.threshX,
+        this.brush.y - this.brush.threshY);
+    }
+  }
+
+  /**
+   * Draws the current brush trace on the brush canvas.
+   */
+  drawPaintbrush() {
+    // When painting, leave behind previous shadows to show brush's trace
+    if (!this.model.isPainting) {
+      this.clear();
+    }
+    this.ctx.beginPath();
+    this.ctx.arc(this.brush.x, this.brush.y, this.brush.size, 0, Math.PI * 2, true);
+    this.ctx.closePath();
+    // no opacity needed; just shows where brush has been
+    this.ctx.fill();
+  }
+
+  /**
+   * Removes everything on the brush canvas.
+   */
+  clear() {
+    this.ctx.clearRect(0, 0, this.model.width, this.model.height);
   }
 }

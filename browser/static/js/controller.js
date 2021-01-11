@@ -95,7 +95,7 @@ class Controller {
       waitForFinalEvent(() => {
         this.model.clear();
         this.view.setCanvasDimensions();
-        this.view.canvasView.brushView.refresh();
+        // this.view.canvasView.brushView.refresh();
         this.view.displayUndoRedo();
       }, 500, 'canvasResize');
     });
@@ -196,7 +196,6 @@ class Controller {
         this.model.canvas.addToTrace();
     }
     this.model.updateMousePos(evt.offsetX, evt.offsetY);
-    this.model.notifyInfoChange();
   }
 
   /**
@@ -211,46 +210,19 @@ class Controller {
     
     // threshold
     if (this.model.brush.thresholding) {
-      const thresholdStartY = this.model.brush.threshY;
-      const thresholdStartX = this.model.brush.threshX;
-      const thresholdEndX = this.model.canvas.imgX;
-      const thresholdEndY = this.model.canvas.imgY;
-  
-      if (thresholdStartY !== thresholdEndY &&
-          thresholdStartX !== thresholdEndX) {
-        this.model.action = 'threshold';
-        this.model.info = {
-          y1: thresholdStartY,
-          x1: thresholdStartX,
-          y2: thresholdEndY,
-          x2: thresholdEndX,
-          frame: this.model.frame,
-          label: this.model.maxLabelsMap.get(this.model.feature) + 1
-        };
-        this.history.addFencedAction(new BackendAction(this.model));
-      }
+      this.model.finishThreshold();
+      this.history.addFencedAction(new BackendAction(this.model));
       this.model.clear();
       this.model.notifyImageChange();
     // paint
     } else if (this.model.canvas.inRange()) {
-      if (this.model.canvas.trace.length !== 0) {
-        this.model.action = 'handle_draw';
-        this.model.info = {
-          trace: this.model.canvas.trace,
-          target_value: this.model.brush.target, // value that we're overwriting
-          brush_value: this.model.brush.value, // we don't update with edit_value, etc each time they change
-          brush_size: this.model.brush.size, // so we need to pass them in as args
-          erase: (this.model.brush.erase && !this.model.brush.conv),
-          frame: this.model.frame
-        };
-        this.history.addFencedAction(new BackendAction(this.model));
-      }
-      this.model.canvas.clearTrace();
+      this.model.finishDraw();
+      this.history.addFencedAction(new BackendAction(this.model));
       if (this.model.kind !== Modes.drawing) {
         this.model.clear();
       }
     }
-    this.view.canvasView.brushView.refresh();
+    // this.view.canvasView.brushView.refresh();
   }
 
   /**

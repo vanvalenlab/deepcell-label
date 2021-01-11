@@ -210,7 +210,10 @@ class Model {
   }
 
   get isPainting() {
-    return this.isPressed && !this.isSpacedown && (this.kind !== Modes.prompt);
+    return (this.isPressed 
+      && !this.isSpacedown
+      && (this.kind !== Modes.prompt)
+      && !this.brush.thresholding);
   }
 
   get isPanning() {
@@ -353,7 +356,8 @@ class Model {
     this.kind = Modes.question;
     this.action = 'start_threshold';
     this.prompt = 'Click and drag to create a bounding box around the area you want to threshold.';
-    this.brush.clearView();
+    this.brush.thresholding = true;
+    // this.brush.clearView();
   }
 
   startPredict() {
@@ -506,5 +510,31 @@ class Model {
   updateThresholdBox() {
     this.brush.threshX = this.canvas.imgX;
     this.brush.threshY = this.canvas.imgY;
+  }
+
+  finishThreshold() {
+    this.action = 'threshold';
+    this.info = {
+      y1: this.brush.threshY,
+      x1: this.brush.threshX,
+      y2: this.canvas.imgY,
+      x2: this.canvas.imgX,
+      frame: this.frame,
+      label: this.maxLabelsMap.get(this.feature) + 1
+    };
+    this.brush.thresholding = false;
+  }
+
+  finishDraw() {
+    this.action = 'handle_draw';
+    this.info = {
+      trace: this.canvas.trace,
+      target_value: this.brush.target, // value that we're overwriting
+      brush_value: this.brush.value, // we don't update with edit_value, etc each time they change
+      brush_size: this.brush.size, // so we need to pass them in as args
+      erase: (this.brush.erase && !this.brush.conv),
+      frame: this.frame
+    };
+    this.canvas.clearTrace();
   }
 }

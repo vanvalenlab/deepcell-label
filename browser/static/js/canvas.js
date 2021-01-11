@@ -103,6 +103,7 @@ class CanvasPosition {
       this.imgY = Math.floor((this.canvasPosY * 100 / (this.scale * this.zoom) + this.sy));
     }
     this.updateLabel();
+    this.model.notifyInfoChange();
   }
 
   updateLabel() {

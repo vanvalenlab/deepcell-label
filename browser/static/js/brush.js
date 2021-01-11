@@ -28,13 +28,12 @@ class Brush {
 
 
     // threshold/box attributes
-    this._show = true; // showing brush shape
     // -2*pad will always be out of range for annotators
     // anchored corner of bounding box
     this._threshX = -2 * model.padding;
     this._threshY = -2 * model.padding;
     this._showBox = false;
-    this.thresholding = false;
+    this._thresholding = false;
   }
 
   get size() {
@@ -127,22 +126,13 @@ class Brush {
     this.model.notifyImageChange();
   }
 
-  get show() {
-    return this._show;
-  }
-
-  set show(bool) {
-    this._show = bool;
-    this.model.notifyImageChange();
-  }
-
   get threshX() {
     return this._threshX;
   }
 
   set threshX(x) {
     this._threshX = x;
-    this.thresholding = x !== -2 * this._padding;
+    this._showBox = x !== -2 * this._padding;
     this.model.notifyImageChange();
   }
 
@@ -152,8 +142,25 @@ class Brush {
 
   set threshY(y) {
     this._threshY= y;
-    this.thresholding = y !== -2 * this._padding;
+    this._showBox = y !== -2 * this._padding;
     this.model.notifyImageChange();
+  }
+
+  get thresholding() {
+    return this._thresholding;
+  }
+
+  set thresholding(bool) {
+    this._thresholding = bool;
+    this.model.notifyImageChange();
+  }
+
+  get showCircle() {
+    return !this.thresholding;
+  }
+
+  get showBox() {
+    return this.threshX !== -2 * this._padding && this.threshY !== -2 * this._padding;
   }
 
   updatePosition(x, y) {
