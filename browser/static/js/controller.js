@@ -235,7 +235,7 @@ class Controller {
       this.model.notifyImageChange();
     // paint
     } else if (this.model.canvas.inRange()) {
-      if (this.model.canvastrace.length !== 0) {
+      if (this.model.canvas.trace.length !== 0) {
         this.model.action = 'handle_draw';
         this.model.info = {
           trace: this.model.canvas.trace,
