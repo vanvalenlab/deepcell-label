@@ -238,8 +238,8 @@ class Zoom extends Action {
 class ChangeContrast extends Action {
   constructor(model, change) {
     super();
-    this.adjuster = adjuster;
-    this.oldContrast = adjuster.contrast;
+    this.adjuster = model.adjuster;
+    this.oldContrast = model.adjuster.contrast;
     this.change = -Math.sign(change) * 4;
     this.newContrast;
   }
@@ -257,8 +257,8 @@ class ChangeContrast extends Action {
 class ChangeBrightness extends Action {
   constructor(model, change) {
     super();
-    this.adjuster = adjuster;
-    this.oldBrightness = adjuster.brightness;
+    this.adjuster = model.adjuster;
+    this.oldBrightness = model.adjuster.brightness;
     this.change = -Math.sign(change);
     this.newBrightness;
   }
