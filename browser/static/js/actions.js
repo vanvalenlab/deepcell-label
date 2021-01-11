@@ -209,52 +209,27 @@ class Pan extends Action {
 }
 
 class Zoom extends Action {
-  constructor(controller, model, dZoom) {
+  constructor(model, dZoom) {
     super();
-    let canvas = model.canvas;
-    // Calculate how much canvas zooms
-    const zoom = Math.max(canvas.zoom - 10 * dZoom, canvas.zoomLimit);
-
-    // Calculate how canvas needs to pan after zooming
-    const newHeight = canvas.height * 100 / zoom;
-    const newWidth = canvas.width * 100 / zoom;
-    const oldHeight = canvas.sHeight;
-    const oldWidth = canvas.sWidth;
-    const propX = canvas.canvasPosX / canvas.scaledWidth;
-    const propY = canvas.canvasPosY / canvas.scaledHeight;
-    this.dx = propX * (newWidth - oldWidth);
-    this.dy = propY * (newHeight - oldHeight);
-
-    this.model = model;
-    this.canvas = canvas;
-    this.controller = controller;
-    this.oldZoom = canvas.zoom;
-    this.newZoom = zoom;
+    this.canvas = model.canvas;
+    // point we zoom in around
+    // need to store so undoing/redoing zooms around the same location
+    this.x = model.canvas.canvasPosX;
+    this.y = model.canvas.canvasPosY;
+    this.oldZoom = model.canvas.zoom;
+    this.newZoom = model.canvas.zoom - 10 * dZoom;
   }
 
   do() {
-    // Zoom then pan
-    this.setZoom(this.newZoom);
-    let pan = new Pan(this.model, this.dx, this.dy);
-    this.controller.history.addAction(pan);
-    // TODO: check if this is in the right place(s)
-    this.model.updateMousePos(this.canvas.rawX, this.canvas.rawY);
-  }
-
-  redo() {
-    this.setZoom(this.newZoom);
+    this.canvas.setZoom(this.newZoom, this.x, this.y);
   }
 
   undo() {
-    this.setZoom(this.oldZoom);
+    this.canvas.setZoom(this.oldZoom, this.x, this.y);
   }
 
-  setZoom(zoom) {
-    const newHeight = this.canvas.height * 100 / zoom;
-    const newWidth = this.canvas.width * 100 / zoom;
-    this.canvas.zoom = zoom;
-    this.canvas.sHeight = newHeight;
-    this.canvas.sWidth = newWidth;
+  redo() {
+    this.do();
   }
 }
 

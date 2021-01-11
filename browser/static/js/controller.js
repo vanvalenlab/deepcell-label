@@ -156,7 +156,7 @@ class Controller {
     const rawVisible = (this.model.rendering_raw || this.model.edit_mode ||
       (this.model.rgb && !this.model.display_labels));
     if (evt.altKey) {
-      this.history.addAction(new Zoom(this, this.model, Math.sign(evt.deltaY)));
+      this.history.addAction(new Zoom(this.model, Math.sign(evt.deltaY)));
       this.model.notifyImageChange();
     } else if (rawVisible && !evt.shiftKey) {
       this.history.addAction(new ChangeContrast(this.model, evt.deltaY));
@@ -384,10 +384,10 @@ class Controller {
     } else if ((evt.key === 'l' || evt.key === 'L') && this.model.rgb && !this.model.edit_mode) {
       this.model.display_labels = !this.model.display_labels;
     } else if (evt.key === '-') {
-      this.history.addAction(new Zoom(this, this.model, 1));
+      this.history.addAction(new Zoom(this.model, 1));
       this.model.notifyImageChange();
     } else if (evt.key === '=') {
-      this.history.addAction(new Zoom(this, this.model, -1));
+      this.history.addAction(new Zoom(this.model, -1));
       this.model.notifyImageChange();
     }
   }

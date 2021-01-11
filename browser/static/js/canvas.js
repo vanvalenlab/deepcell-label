@@ -16,7 +16,7 @@ class CanvasPosition {
     this._sy = 0;
     this.sWidth = model.width;
     this.sHeight = model.height;
-    this.zoom = 100;
+    this._zoom = 100;
     this.zoomLimit = 100;
 
     // cursor position
@@ -114,8 +114,35 @@ class CanvasPosition {
   // check if the mouse position in canvas matches to a displayed part of image
   inRange() {
     return (
+      this.model.onCanvas &&
       this.canvasPosX >= 0 && this.canvasPosX < this.scaledWidth &&
       this.canvasPosY >= 0 && this.canvasPosY < this.scaledHeight
     );
+  }
+
+  /**
+   * Zooms in to  around a point (x, y).
+   * @param {int} zoom level to set zoom to
+   * @param {int} x x coordinate of point to zoom around
+   * @param {int} y y coordinate of point to zoom around
+   */
+  setZoom(zoom, x = this.canvasPosX, y = this.canvasPosY) {
+    // Calculate how much canvas zooms
+    const newZoom = Math.max(zoom, this.zoomLimit);
+    // Calculate how canvas needs to pan after zooming
+    const newHeight = this.height * 100 / newZoom;
+    const newWidth = this.width * 100 / newZoom;
+    const oldHeight = this.sHeight;
+    const oldWidth = this.sWidth;
+    const propX = x / this.scaledWidth;
+    const propY = y / this.scaledHeight;
+    const dx = propX * (oldWidth - newWidth);
+    const dy = propY * (oldHeight - newHeight);
+
+    this.zoom = newZoom;
+    this.sHeight = newHeight;
+    this.sWidth = newWidth;
+    this.sx += dx;
+    this.sy += dy;
   }
 }
