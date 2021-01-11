@@ -191,7 +191,7 @@ class Controller {
   handleMousemove(evt) {
     if (this.model.isPanning) {
       const zoom = 100 / (this.model.canvas.zoom * this.model.canvas.scale)
-      this.history.addAction(new Pan(this, evt.movementX * zoom, evt.movementY * zoom));
+      this.history.addAction(new Pan(this.model, evt.movementX * zoom, evt.movementY * zoom));
       this.model.notifyImageChange();
     }
     if (this.model.isPainting) {
