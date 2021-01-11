@@ -70,6 +70,10 @@ class CanvasPosition {
     return this.scale * this.height;
   }
 
+  get segArray() {
+    return this.model.segArray;
+  }
+
   get trace() {
     return JSON.stringify(this._trace);
   }
