@@ -88,7 +88,11 @@ class ImageAdjuster {
   }
 
   set brightness(value) {
-    this._brightness = value;
+    // limit how dim image can go
+    let newBrightness = Math.max(value, adjuster.minBrightness);
+    // limit how bright image can go
+    newBrightness = Math.min(newBrightness, adjuster.maxBrightness);
+    this._brightness = newBrightness;
     this.rawLoaded = false;
     this.contrastRaw();
   }
@@ -98,7 +102,11 @@ class ImageAdjuster {
   }
 
   set contrast(value) {
-    this._contrast = value;
+    // stop if fully desaturated
+    let newContrast = Math.max(value, adjuster.minContrast);
+    // stop at 8x contrast
+    newContrast = Math.min(newContrast, adjuster.maxContrast);
+    this._contrast = newContrast;
     this.rawLoaded = false;
     this.contrastRaw();
   }

@@ -263,44 +263,39 @@ class Zoom extends Action {
 class ChangeContrast extends Action {
   constructor(model, change) {
     super();
-    let adjuster = model.adjuster;
-    this.oldValue = adjuster.contrast;
-
-    const modContrast = -Math.sign(change) * 4;
-    // stop if fully desaturated
-    let newContrast = Math.max(adjuster.contrast + modContrast, adjuster.minContrast);
-    // stop at 8x contrast
-    newContrast = Math.min(newContrast, adjuster.maxContrast);
-    this.newValue = newContrast;
     this.adjuster = adjuster;
+    this.oldContrast = adjuster.contrast;
+    this.change = -Math.sign(change) * 4;
+    this.newContrast;
   }
 
-  do() { this.adjuster.contrast = this.newValue; }
+  do() {
+    this.adjuster.contrast += this.change;
+    this.newContrast = this.adjuster.contrast;
+  }
 
-  undo() { this.adjuster.contrast = this.oldValue; }
+  undo() { this.adjuster.contrast = this.oldContrast; }
 
-  redo() { this.do(); }
+  redo() { this.adjuster.contrast = this.newContrast; }
 }
 
 class ChangeBrightness extends Action {
   constructor(model, change) {
     super();
-    let adjuster = model.adjuster;
-    const modBrightness = -Math.sign(change);
-    // limit how dim image can go
-    let newBrightness = Math.max(adjuster.brightness + modBrightness, adjuster.minBrightness);
-    // limit how bright image can go
-    newBrightness = Math.min(newBrightness, adjuster.maxBrightness);
-    this.oldValue = adjuster.brightness;
-    this.newValue = newBrightness;
     this.adjuster = adjuster;
+    this.oldBrightness = adjuster.brightness;
+    this.change = -Math.sign(change);
+    this.newBrightness;
   }
 
-  do() { this.adjuster.brightness = this.newValue; }
+  do() { 
+    this.adjuster.brightness += this.change;
+    this.newBrightness = this.adjuster.brightness;
+  }
 
-  undo() { this.adjuster.brightness = this.oldValue; }
+  undo() { this.adjuster.brightness = this.oldBrightness; }
 
-  redo() { this.do(); }
+  redo() { this.adjuster.brightness = this.newBrightness; }
 }
 
 class ResetBrightnessContrast extends Action {
