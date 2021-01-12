@@ -94,7 +94,6 @@ class ChangeChannel extends Action {
   constructor(model, channel) {
     super();
     this.model = model;
-    this.adjuster = model.adjuster;
     this.oldValue = model.channel;
     this.newValue = channel.mod(model.numChannels);
   }
@@ -102,34 +101,19 @@ class ChangeChannel extends Action {
   do() {
     const promise = this.model.setDisplay('channel', this.newValue);
     promise.done( () => {
-      this.adjust(this.oldValue, this.newValue);
+      this.model.channel = this.newValue;
     });
-    // render_info_display();
   }
 
   undo() {
     const promise = this.model.setDisplay('channel', this.oldValue);
     promise.done( () => {
-      this.adjust(this.newValue, this.oldValue);
+      this.model.channel = this.oldValue;
     });
   }
 
   redo() {
     this.do();
-  }
-
-  adjust(oldValue, newValue) {
-    // save current display settings before changing
-    this.adjuster.brightnessMap.set(oldValue, this.adjuster.brightness);
-    this.adjuster.contrastMap.set(oldValue, this.adjuster.contrast);
-    this.adjuster.invertMap.set(oldValue, this.adjuster.displayInvert);
-    // get brightness/contrast vals for new channel
-    this.adjuster.brightness = this.adjuster.brightnessMap.get(newValue);
-    this.adjuster.contrast = this.adjuster.contrastMap.get(newValue);
-    this.adjuster.displayInvert = this.adjuster.invertMap.get(newValue);
-
-    this.model.clear();
-    this.model.channel = newValue;
   }
 }
 

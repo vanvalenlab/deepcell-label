@@ -121,6 +121,16 @@ class Model {
   }
 
   set channel(value) {
+    // save current display settings before changing
+    this.adjuster.brightnessMap.set(this._channel, this.adjuster.brightness);
+    this.adjuster.contrastMap.set(this._channel, this.adjuster.contrast);
+    this.adjuster.invertMap.set(this._channel, this.adjuster.displayInvert);
+    // get brightness/contrast vals for new channel
+    this.adjuster.brightness = this.adjuster.brightnessMap.get(value);
+    this.adjuster.contrast = this.adjuster.contrastMap.get(value);
+    this.adjuster.displayInvert = this.adjuster.invertMap.get(value);
+
+    this.clear();
     this._channel = value;
     this.notifyInfoChange();
   }
