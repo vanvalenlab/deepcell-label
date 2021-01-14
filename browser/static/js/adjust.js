@@ -254,15 +254,11 @@ class ImageAdjuster {
 
     if (this.model.highlight) {
       const segData = this.ctx.getImageData(0, 0, this.width, this.height);
-      let h1, h2;
 
-      if (this.model.edit_mode) {
-        h1 = this.model.brush.value;
-        h2 = -1;
-      } else {
-        h1 = this.model.selected.label;
-        h2 = this.model.selected.secondLabel;
-      }
+      let label = this.model.selected.label;
+      let secondLabel = this.model.selected.secondLabel == 0;
+      let h1 = label === 0 ? -1 : label;
+      let h2 = secondLabel === 0 ? -1 : secondLabel;
 
       // highlight
       this.preCompositeLabelMod(segData, h1, h2);
