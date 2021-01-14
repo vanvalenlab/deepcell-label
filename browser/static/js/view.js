@@ -6,6 +6,7 @@ class View {
 
     this.infopaneView = new InfopaneView(model);
     this.canvasView = new CanvasView(model);
+    this.promptView = new PromptView(model);
   }
 
   /**
@@ -162,6 +163,9 @@ class InfopaneView {
     }
     document.getElementById('highlight').innerHTML = highlightText;
     document.getElementById('currently_highlighted').innerHTML = highlightedLabels;
+
+    let selectedLabels = `${this.model.selected.label}, ${this.model.selected.secondLabel}`;
+    document.getElementById('selected').innerHTML = selectedLabels;
   }
   
   /**
@@ -210,13 +214,13 @@ class InfopaneView {
       return '';
     }
     if (mode === Modes.single) {
-      return `SELECTED ${this.model.info.label}`;
+      return `SELECTED ${this.model.selected.label}`;
     }
     if (mode === Modes.multiple) {
-      return `SELECTED ${this.model.info.label_1}, ${this.model.info.label_2}`;
+      return `SELECTED ${this.model.selected.label}, ${this.model.selected.secondLabel}`;
     }
     if (mode === Modes.question || mode === Modes.prompt || mode === Modes.drawing) {
-      return this.model.prompt;
+      return this.model.pendingAction.prompt;
     }
   }
 }
@@ -554,4 +558,44 @@ class BrushView {
   clear() {
     this.ctx.clearRect(0, 0, this.model.width, this.model.height);
   }
+}
+
+class PromptView {
+  constructor(model) {
+    this.model = model;
+    this.action = model.pendingAction;
+    this.actionName = model.pendingAction.action;
+  }
+
+//   this._actionPrompts = Object.freeze({
+//     '' : '',
+//     'pick_color': 'Click on a label to change the brush label to that label.',
+//     'pick_target': 'First, click on the label you want to overwrite.',
+//     'start_threshold': 'Click and drag to create a bounding box around the area you want to threshold.',
+//     'predict': 'Predict cell ids for zstack? / S=PREDICT THIS FRAME / SPACE=PREDICT ALL FRAMES / ESC=CANCEL PREDICTION',
+//     'fill_hole': `Select hole to fill in cell ${this.model.selected.label}`,
+//     'create_new': 'CREATE NEW(S=SINGLE FRAME / SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)',
+//     'delete_mask': `delete label ${this.model.selected.label} in frame ${this.model.selected.frame}? (SPACE=YES / ESC=NO)`,
+//     'replace': `Replace ${this.model.selected.secondLabel} with ${this.model.selected.label}?` +
+//       '// SPACE = Replace in all frames / S = Replace in this frame only / ESC = Cancel replace',
+//     'swap_cells': 'SPACE = SWAP IN ALL FRAMES / S = SWAP IN THIS FRAME ONLY / ESC = CANCEL SWAP',
+//     'watershed': `Perform watershed to split ${this.model.selected.label}? (SPACE=YES / ESC=NO)`,
+//     'flood_contiguous': 'SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL',
+//     'trim_pixels': 'SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL',
+//   });
+// }
+
+  render() {
+    const prompt = document.getElementById('promptText');
+    const confirm2Buttons = document.getElementById('confirm2Buttons');
+    const confirm3Buttons = document.getElementById('confirm3buttons');
+
+    prompt.style.display = this.action.showPrompt ? 'inline' : 'none';
+    confirm2Buttons.style.display = this.action.showConfirm ? 'inline' : 'none';
+    confirm3Buttons.style.display = this.action.showConfirmAllSingle ? 'inline' : 'none';
+
+    prompt.innerHTML = this.action.prompt;
+  }
+
+
 }

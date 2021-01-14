@@ -36,14 +36,14 @@ class Controller {
 
     });
   }
-  
+
   undo() {
     this.history.undo();
     this.model.clear();
     this.model.updateMousePos(this.model.canvas.rawX, this.model.canvas.rawY);
     this.model.notifyImageChange();
   }
-  
+
   redo() {
     this.history.redo();
     this.model.clear();
@@ -112,21 +112,21 @@ class Controller {
     const canvasElement = document.getElementById('canvas');
     // bind click on canvas
     canvasElement.addEventListener('click', (evt) => {
-      // TODO: what does this conditional capture? 
+      // TODO: what does this conditional capture?
       // seems like !this.model.isSpacedown means not panning
       // !edit_mode or prompt mode means that click only works in edit mode when prompting?
-      if (!this.model.isSpacedown && 
+      if (!this.model.isSpacedown &&
           (!this.model.edit_mode || this.model.kind === Modes.prompt)) {
         this.click(evt);
       }
     });
-  
+
     // bind scroll wheel, change contrast of raw when scrolled
     canvasElement.addEventListener('wheel', (e) => this.handleScroll(e));
-  
+
     // mousedown for click&drag/handle_draw DIFFERENT FROM CLICK
     canvasElement.addEventListener('mousedown', (e) => this.handleMousedown(e));
-  
+
     // bind mouse movement
     canvasElement.addEventListener('mousemove', (e) => this.handleMousemove(e));
   
@@ -210,14 +210,10 @@ class Controller {
     
     // threshold
     if (this.model.brush.thresholding) {
-      this.model.finishThreshold();
-      this.history.addFencedAction(new BackendAction(this.model));
-      this.model.clear();
-      this.model.notifyImageChange();
+      this.history.addFencedAction(new BackendAction(this.model, 'threshold'));
     // paint
     } else if (this.model.canvas.inRange()) {
-      this.model.finishDraw();
-      this.history.addFencedAction(new BackendAction(this.model));
+      this.history.addFencedAction(new BackendAction(this.model, 'handle_draw'));
       if (this.model.kind !== Modes.drawing) {
         this.model.clear();
       }
@@ -255,12 +251,11 @@ class Controller {
    * @param {MouseEvent} evt 
    */
   handle_mode_none_click(evt) {
+    this.history.addAction(new SelectLabel(this.model));
     if (evt.altKey) {
-      this.model.startFlood();
+      this.history.addAction(new StartQuestion(this.model, 'flood_contiguous'));
     } else if (evt.shiftKey) {
-      this.model.startTrim();
-    } else {
-      this.history.addAction(new SelectLabel(this.model));
+      this.history.addAction(new StartQuestion(this.model, 'trim_pixels'));
     }
   }
 
@@ -269,31 +264,29 @@ class Controller {
    * @param {MouseEvent} evt 
    */
   handle_mode_prompt_click(evt) {
-    if (this.model.action === 'fill_hole' && this.model.canvas.label === 0) {
-      this.model.info = {
-        label: this.model.info.label,
-        frame: this.model.frame,
-        x_location: this.model.canvas.imgX,
-        y_location: this.model.canvas.imgY
-      };
-      this.history.addFencedAction(new BackendAction(this.model));
+    if (this.model.pendingAction.action === 'fill_hole' && this.model.canvas.label === 0) {
+      this.history.addFencedAction(this.model.pendingAction);
       this.model.clear();
     } else if (this.model.action === 'pick_color' && this.model.canvas.label !== 0 &&
                this.model.canvas.label !== this.model.brush.target) {
-      this.model.pickConversionLabel();
+      this.model.selected.pickLabel();
+      this.model.kind = Modes.none;
+      this.model.pendingAction = new NoAction();
+      // this.model.pickConversionLabel();
     } else if (this.model.action === 'pick_target' && this.model.canvas.label !== 0) {
-      this.model.pickConversionTarget();
+      this.model.selected.pickSecondLabel();
+      this.model.kind = Modes.none;
+      this.model.pendingAction = new NoAction();
+      // this.model.pickConversionTarget();
     }
   }
 
-  // TODO: storedClick1 and storedClick2? not a huge fan of the
-  // current way click locations get stored in mode object
   /**
    * Handles mouse clicks when one label is selected.
    * @param {MouseEvent} evt 
    */
   handle_mode_single_click(evt) {
-    this.model.selectSecondLabel();
+    this.history.addAction(new SelectLabel(this.model));
   }
 
   /**
@@ -301,7 +294,7 @@ class Controller {
    * @param {MouseEvent} evt 
    */
   handle_mode_multiple_click(evt) {
-    this.model.reselectSecondLabel();
+    this.history.addAction(new SelectLabel(this.model));
   }
 
   /**
@@ -331,13 +324,15 @@ class Controller {
 
   /**
    * Handle keybinds that always apply regardless of edit_mode, model.action, or model.kind
-   * @param {KeyboardEvent} evt 
+   * @param {KeyboardEvent} evt
    */
   handle_universal_keybind(evt) {
     if ((evt.ctrlKey || evt.metaKey) && evt.shiftKey && (evt.key === 'Z' || evt.key === 'z')) {
       this.redo();
     } else if ((evt.ctrlKey || evt.metaKey) && (evt.key === 'Z' || evt.key === 'z')) {
       this.undo();
+    } else if (evt.key === 'e' && !settings.label_only) {
+      this.history.addFencedAction(new ToggleEdit(this.model));
     } else if (this.model.numFrames > 1 && (evt.key === 'a' || evt.key === 'ArrowLeft')) {
       this.history.addFencedAction(new ChangeFrame(this.model, this.model.frame - 1));
     } else if (this.model.numFrames > 1 && (evt.key === 'd' || evt.key === 'ArrowRight')) {
@@ -362,7 +357,7 @@ class Controller {
 
   /**
    * Handle keybinds that always apply in edit mode.
-   * @param {KeyboardEvent} evt 
+   * @param {KeyboardEvent} evt
    */
   handle_universal_edit_keybind(evt) {
     if (evt.key === 'ArrowDown') {
@@ -380,7 +375,7 @@ class Controller {
 
   /**
    * Handle keybinds that apply when in edit mode.
-   * @param {KeyboardEvent} evt 
+   * @param {KeyboardEvent} evt
    */
   handle_edit_keybind(evt) {
     if (evt.key === 'e' && !settings.pixel_only) {
@@ -400,22 +395,20 @@ class Controller {
     } else if (evt.key === 'x') {
       this.model.brush.erase = !this.model.brush.erase;
     } else if (evt.key === 'p') {
-      this.model.startColorPicker();
+      this.history.addAction(new StartPrompt(this.model, 'pick_color'));
     } else if (evt.key === 'r') {
-      this.model.startConversionBrush();
+      this.history.addAction(new StartPrompt(this.model, 'pick_target'));
     } else if (evt.key === 't' && !this.model.rgb) {
-      this.model.startThreshold();
+      this.history.addAction(new StartQuestion(this.model, 'start_threshold'));
     }
   }
 
   /**
    * Handle keybinds that apply in bulk mode with nothing selected.
-   * @param {KeyboardEvent} evt 
+   * @param {KeyboardEvent} evt
    */
   handle_mode_none_keybind(evt) {
-    if (evt.key === 'e' && !settings.label_only) {
-      this.history.addFencedAction(new ToggleEdit(this.model));
-    } else if (this.model.numChannels > 1 && evt.key === 'c') {
+    if (this.model.numChannels > 1 && evt.key === 'c') {
       this.history.addFencedAction(new ChangeChannel(this.model, this.model.channel + 1));
     } else if (this.model.numChannels > 1 && evt.key === 'C') {
       this.history.addFencedAction(new ChangeChannel(this.model, this.model.channel - 1));
@@ -424,7 +417,7 @@ class Controller {
     } else if (this.model.numFeatures > 1 && evt.key === 'F') {
       this.history.addFencedAction(new ChangeFeature(this.model, this.model.feature - 1));
     } else if (this.model.numFrames > 1 && evt.key === 'p') {
-      this.model.startPredict();
+      this.history.addAction(new StartQuestion(this.model, 'predict'));
     } else if (evt.key === '[' && this.model.highlighted_cell_one !== -1) {
       // cycle highlight to prev label, skipping 0
       const maxLabel = this.model.maxLabelsMap.get(this.model.feature);
@@ -438,15 +431,15 @@ class Controller {
 
   /**
    * Handle keybinds that apply in bulk mode with one selected
-   * @param {KeyboardEvent} evt 
+   * @param {KeyboardEvent} evt
    */
   handle_mode_single_keybind(evt) {
     if (evt.key === 'f') {
-      this.model.startFill();
+      this.history.addAction(new StartPrompt(this.model, 'fill_hole'));
     } else if (evt.key === 'c') {
-      this.model.startCreate();
+      this.history.addAction(new StartQuestion(this.model, 'create_new'));
     } else if (evt.key === 'x') {
-      this.model.startDelete();
+      this.history.addAction(new StartQuestion(this.model, 'delete_mask'));
     } else if (evt.key === '[') {
       this.model.decrementSelectedLabel();
     } else if (evt.key === ']') {
@@ -456,21 +449,21 @@ class Controller {
 
   /**
    * Handle keybinds that apply in bulk mode with two selected
-   * @param {KeyboardEvent} evt 
+   * @param {KeyboardEvent} evt
    */
   handle_mode_multiple_keybind(evt) {
     if (evt.key === 'r') {
-      this.model.startReplace();
+      this.history.addAction(new StartQuestion(this.model, 'replace'));
     } else if (evt.key === 's') {
-      this.model.startSwap();
+      this.history.addAction(new StartQuestion(this.model, 'swap_cells'));
     } else if (evt.key === 'w' && !this.model.rgb) {
-      this.model.startWatershed();
+      this.history.addAction(new StartQuestion(this.model, 'watershed'));
     }
   }
 
   /**
    * Handle keybinds that apply in bulk mode when answering question/prompt
-   * @param {KeyboardEvent} evt 
+   * @param {KeyboardEvent} evt
    */
   handle_mode_question_keybind(evt) {
     if (evt.key === ' ') {
@@ -487,53 +480,15 @@ class Controller {
    * then sends action to the Label backend.
    */
   confirmAction() {
-    const action = this.model.action;
-    const info = this.model.info;
-    if (action === 'flood_contiguous') {
-    } else if (action === 'trim_pixels') {
-    } else if (action === 'create_new') {
-      this.model.action = 'new_cell_stack';
-    } else if (action === 'delete_mask') {
-    } else if (action === 'predict') {
-      this.model.action = 'predict_zstack';
-    } else if (action === 'replace') {
-      if (info.label_1 === info.label_2) {
-        alert('Cannot replace a label with itself.')
-        return;
-      }
-      this.model.info = {label_1: info.label_1,
-                         label_2: info.label_2};
+    const action = this.model.pendingAction;
+    if (action.action === 'create_new') {
+      action.action = 'new_cell_stack';
+    } else if (action.action === 'predict') {
+      action.action = 'predict_zstack';
     } else if (action === 'swap_cells') {
-      if (info.label_1 === info.label_2) {
-        alert('Cannot swap a label with itself.')
-        return;
-      }
-      this.model.action = 'swap_all_frame';
-      this.model.info = {label_1: info.label_1,
-                         label_2: info.label_2};
-    } else if (action === 'watershed') {
-      if (info.label_1 !== info.label_2) {
-        alert('Must select same label twice to split with watershed.')
-        return;
-      }
-      if (info.frame_1 !== info.frame_2) {
-        alert('Must select seeds on same frame to split with watershed.')
-        return;
-      }
-      let info = this.model.info;
-      info.frame = info.frame_1;
-      info.label = info.label_1;
-      delete info.frame_1;
-      delete info.frame_2;
-      delete info.label_1;
-      delete info.label_2;
-      this.model.info = info;
-    // Do nothing when action not listed above
-    } else {
-      alert(`Unrecognized action ${this.model.action}`);
-      return;
+      action.action = 'swap_all_frame';
     }
-    this.history.addFencedAction(new BackendAction(this.model));
+    this.history.addFencedAction(action);
   }
 
   /**
@@ -541,40 +496,17 @@ class Controller {
    * then sends action to the Label backend.
    */
   confirmActionSingleFrame() {
-    const action = this.model.action;
-    const info = this.model.info;
-    if (action === 'create_new') {
-      this.model.action = 'new_single_cell';
-    } else if (action === 'predict') {
-      this.model.action = 'predict_single';
-      this.model.info = {frame: this.model.frame};
-    } else if (action === 'replace') {
-      if (info.label_1 === info.label_2) {
-        alert('Cannot replace a label with itself.');
-        return;
-      }
-      this.model.action = 'replace_single';
-      this.model.info = {label_1: info.label_1,
-                         label_2: info.label_2};
-    } else if (action === 'swap_cells') {
-      if (info.label_1 === info.label_2) {
-        alert('Cannot swap a label with itself.');
-        return;
-      }
-      if (info.frame_1 !== info.frame_2) {
-        alert('Must swap cells on the same frame.');
-        return;
-      }
-      this.model.action = 'swap_single_frame';
-      this.model.info = {label_1: info.label_1,
-                         label_2: info.label_2,
-                         frame: info.frame_1};
-    } else {
-      // Do nothing if action not listed above
-      alert(`Unrecognized single-frame action ${this.model.action}`);
-      return;
+    const action = this.model.pendingAction;
+    if (action.action === 'create_new') {
+      action.action = 'new_single_cell';
+    } else if (action.action === 'predict') {
+      action.action = 'predict_single';
+    } else if (action.action === 'replace') {
+      action.action = 'replace_single';
+    } else if (action.action === 'swap_cells') {
+      action.action = 'swap_single_frame';
     }
-    this.history.addFencedAction(new BackendAction(this.model));
+    this.history.addFencedAction(action);
   }
 }
 

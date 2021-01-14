@@ -9,8 +9,6 @@ const Modes = Object.freeze({
   drawing: 7
 });
 
-var answer = '(SPACE=YES / ESC=NO)';
-
 class Model {
   constructor(project) {
     // Dynamic project attributes
@@ -23,8 +21,8 @@ class Model {
     this._prompt = '';  // TODO: move prompt logic to view?
     this._action = '';
     // TODO: merge highlighting, selecting, and brush values
-    this._highlighted_cell_one = -1;
-    this._highlighted_cell_two = -1;
+    // see SelectedLabels class in select.js
+
     // Booleans
     this._highlight = true;
     this.rgb = false;
@@ -62,6 +60,8 @@ class Model {
     this.adjuster = new ImageAdjuster(this);
     this.canvas = new CanvasPosition(this);
     this.brush = new Brush(this);
+    this.selected = new SelectedLabels(this);
+    this._pendingAction = new NoAction(); // records label editing action that has been initiated but not sent to backend
 
     // TODO: use Observable interface instead and allow any Observer to register
     // only observer right now is the view
@@ -95,6 +95,15 @@ class Model {
     this._rawImage = newRawImage;
     this.adjuster.rawLoaded = false;
     this.adjuster.rawImage.src = newRawImage;
+  }
+
+  get pendingAction() {
+    return this._pendingAction;
+  }
+
+  set pendingAction(action) {
+    this._pendingAction = action;
+    this.notifyInfoChange();
   }
 
   // Model attributes in infopane
@@ -135,42 +144,12 @@ class Model {
     this.notifyInfoChange();
   }
 
-  get prompt() {
-    return this._prompt;
-  }
-
-  set prompt(value) {
-    this._prompt = value;
-    this.notifyInfoChange();
-  }
-
-  get action() {
-    return this._action;
-  }
-
-  set action(value) {
-    this._action = value;
-    this.notifyInfoChange();
-  }
-
   get highlighted_cell_one() {
-    return this._highlighted_cell_one;
-  }
-
-  set highlighted_cell_one(value) {
-    this._highlighted_cell_one = value;
-    this.notifyInfoChange();
-    if (this.highlight) this.notifyImageFormattingChange();
+    return this.selected.label;
   }
 
   get highlighted_cell_two() {
-    return this._highlighted_cell_two;
-  }
-
-  set highlighted_cell_two(value) {
-    this._highlighted_cell_two = value;
-    this.notifyInfoChange();
-    this.notifyImageFormattingChange();
+    return this.selected.secondLabel;
   }
 
   get highlight() {
@@ -220,10 +199,13 @@ class Model {
   }
 
   get isPainting() {
-    return (this.isPressed 
+    return (
+      this.edit_mode
+      && this.isPressed
       && !this.isSpacedown
       && (this.kind !== Modes.prompt)
-      && !this.brush.thresholding);
+      && !this.brush.thresholding
+    );
   }
 
   get isPanning() {
@@ -301,31 +283,18 @@ class Model {
   // deselect/cancel action/reset highlight
   clear() {
     this.kind = Modes.none;
-    this.info = {};
-    this.highlighted_cell_one = -1;
-    this.highlighted_cell_two = -1;
+    this.selected.clear();
 
     this.brush.conv = false;
     this.brush.clearThresh();
 
-    this.action = '';
-    this.prompt = '';
+    this.pendingAction = new NoAction();
   }
 
   updateMousePos(x, y) {
     this.canvas.updateCursorPosition(x, y);
-    this.brush.updatePosition(this.canvas.imgX, this.canvas.imgY);
   }
 
-  setUnusedBrushLabel() {
-    // set edit value to something unused
-    this.brush.value = this.maxLabelsMap.get(this.feature) + 1;
-    if (this.kind === Modes.prompt && this.brush.conv) {
-      this.prompt = `Now drawing over label ${this.brush.target} with label ${this.brush.value}. ` +
-        `Use ESC to leave this mode.`;
-      this.kind = Modes.drawing;
-    }
-  }
 
   decrementSelectedLabel() {
     // cycle highlight to prev label, skipping 0
@@ -345,191 +314,25 @@ class Model {
     this.highlighted_cell_one = tempHighlight;
   }
 
-  // actions
-  startColorPicker() {
-    // color picker
-    this.kind = Modes.prompt;
-    this.action = 'pick_color';
-    this.prompt = 'Click on a label to change the brush label to that label.';
-  }
-
-  startConversionBrush() {
-    // conversion brush
-    this.kind = Modes.prompt;
-    this.action = 'pick_target';
-    this.prompt = 'First, click on the label you want to overwrite.';
-    this.brush.conv = true;
-  }
-
-  startThreshold() {
-    // prompt thresholding with bounding box
-    this.kind = Modes.question;
-    this.action = 'start_threshold';
-    this.prompt = 'Click and drag to create a bounding box around the area you want to threshold.';
-    this.brush.thresholding = true;
-    // this.brush.clearView();
-  }
-
-  startPredict() {
-    // iou cell identity prediction
-    this.kind = Modes.question;
-    this.action = 'predict';
-    this.prompt = 'Predict cell ids for zstack? / S=PREDICT THIS FRAME / SPACE=PREDICT ALL FRAMES / ESC=CANCEL PREDICTION';
-  }
-
-  startFill() {
-    // hole fill
-    this.info = {
-      label: this.info.label,
-      frame: this.frame
-    };
-    this.kind = Modes.prompt;
-    this.action = 'fill_hole';
-    this.prompt = `Select hole to fill in cell ${this.info.label}`;
-  }
-
-  startCreate() {
-    // create new
-    this.kind = Modes.question;
-    this.action = 'create_new';
-    this.prompt = 'CREATE NEW(S=SINGLE FRAME / SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)';
-  }
-
-  startDelete() {
-    // delete label from frame
-    this.kind = Modes.question;
-    this.action = 'delete_mask';
-    this.prompt = `delete label ${this.info.label} in frame ${this.info.frame}? ${answer}`;
-  }
-
-  startReplace() {
-    // replace
-    this.kind = Modes.question;
-    this.action = 'replace';
-    this.prompt = ('Replace ' + this.info.label_2 + ' with ' + this.info.label_1 +
-      '? // SPACE = Replace in all frames / S = Replace in this frame only / ESC = Cancel replace');
-  }
-
-  startSwap() {
-    // swap
-    this.kind = Modes.question;
-    this.action = 'swap_cells';
-    this.prompt = 'SPACE = SWAP IN ALL FRAMES / S = SWAP IN THIS FRAME ONLY / ESC = CANCEL SWAP';
-  }
-
-  startWatershed() {
-    // watershed
-    this.kind = Modes.question;
-    this.action = 'watershed';
-    this.prompt = `Perform watershed to split ${this.info.label_1}? ${answer}`;
-  }
-
-  startFlood() {
-    // alt+click
-    this.kind = Modes.question;
-    this.action = 'flood_contiguous';
-    this.info = {
-      label: this.canvas.label,
-      frame: this.frame,
-      x_location: this.canvas.imgX,
-      y_location: this.canvas.imgY
-    };
-    this.prompt = 'SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL';
-    this.highlighted_cell_one = this.canvas.label;
-  }
-
-  startTrim() {
-    // shift+click
-    this.kind = Modes.question;
-    this.action = 'trim_pixels';
-    this.info = {
-      label: this.canvas.label,
-      frame: this.frame,
-      x_location: this.canvas.imgX,
-      y_location: this.canvas.imgY
-    };
-    this.prompt = 'SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL';
-    this.highlighted_cell_one = this.canvas.label;
-  }
-
-  pickConversionLabel() {
-    this.brush.value = this.canvas.label;
-    if (this.brush.target !== 0) {
-      this.prompt = `Now drawing over label ${this.brush.target} with label ${this.brush.value}.` +
-        `Use ESC to leave this mode.`;
-      this.kind = Modes.drawing;
-    } else {
-      this.clear();
-    }
-  }
-
-  pickConversionTarget() {
-    this.brush.target = this.canvas.label;
-    this.action = 'pick_color';
-    this.prompt = 'Click on the label you want to draw with, or press "n" to draw with an unused label.';
-  }
-
-  selectSecondLabel() {
-    this.kind = Modes.multiple;
-
-    this.highlighted_cell_one = this.info.label;
-    this.highlighted_cell_two = this.canvas.label;
-
-    this.info = {
-      label_1: this.info.label,
-      label_2: this.canvas.label,
-      frame_1: this.info.frame,
-      frame_2: this.frame,
-      x1_location: this.canvas.storedClickX,
-      y1_location: this.canvas.storedClickY,
-      x2_location: this.canvas.imgX,
-      y2_location: this.canvas.imgY
-    };
-  }
-
-  reselectSecondLabel() {
-    this.highlighted_cell_one = this.info.label_1;
-    this.highlighted_cell_two = this.canvas.label;
-    this.info = {
-      label_1: this.info.label_1,
-      label_2: this.canvas.label,
-      frame_1: this.info.frame_1,
-      frame_2: this.frame,
-      x1_location: this.canvas.storedClickX,
-      y1_location: this.canvas.storedClickY,
-      x2_location: this.canvas.imgX,
-      y2_location: this.canvas.imgY
-    };
-  }
-
   updateThresholdBox() {
     this.brush.threshX = this.canvas.imgX;
     this.brush.threshY = this.canvas.imgY;
   }
 
-  finishThreshold() {
-    this.action = 'threshold';
-    this.info = {
-      y1: this.brush.threshY,
-      x1: this.brush.threshX,
-      y2: this.canvas.imgY,
-      x2: this.canvas.imgX,
-      frame: this.frame,
-      label: this.maxLabelsMap.get(this.feature) + 1
-    };
-    this.brush.thresholding = false;
-  }
-
-  finishDraw() {
-    this.action = 'handle_draw';
-    this.info = {
-      trace: this.canvas.trace,
-      target_value: this.brush.target, // value that we're overwriting
-      brush_value: this.brush.value, // we don't update with edit_value, etc each time they change
-      brush_size: this.brush.size, // so we need to pass them in as args
-      erase: this.brush.erase,
-      frame: this.frame
-    };
-    this.canvas.clearTrace();
-  }
+  // pickConversionLabel() {
+  //   this.brush.value = this.canvas.label;
+  //   if (this.brush.target !== 0) {
+  //     this.prompt = `Now drawing over label ${this.brush.target} with label ${this.brush.value}.` +
+  //       `Use ESC to leave this mode.`;
+  //     this.kind = Modes.drawing;
+  //   } else {
+  //     this.clear();
+  //   }
+  // }
+  
+  // pickConversionTarget() {
+  //   this.brush.target = this.canvas.label;
+  //   this.action = 'pick_color';
+  //   this.prompt = 'Click on the label you want to draw with, or press "n" to draw with an unused label.';
+  // }
 }

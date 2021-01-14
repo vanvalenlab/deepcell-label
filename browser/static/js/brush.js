@@ -1,22 +1,19 @@
 class Brush {
   constructor(model) {
     this.model = model;
-    // center of brush (scaled)
-    this.x = 0;
-    this.y = 0;
     // size of brush in pixels
     this._size = 5;
 
     // status of eraser
     this._erase = false;
 
-    // normal brush attributes
-    this._regTarget = 0;
-    this._regValue = 1;
+    // // normal brush attributes
+    // this._regTarget = 0;
+    // this._regValue = 1;
 
-    // conversion brush attributes
-    this._convTarget = -1;
-    this._convValue = -1;
+    // // conversion brush attributes
+    // this._convTarget = -1;
+    // this._convValue = -1;
 
     // status of conversion brush mode
     this._conv = false;
@@ -34,6 +31,14 @@ class Brush {
     this._threshY = -2 * model.padding;
     this._showBox = false;
     this._thresholding = false;
+  }
+
+  get x() {
+    return this.model.canvas.imgX;
+  }
+
+  get y() {
+    return this.model.canvas.imgY;
   }
 
   get size() {
@@ -67,6 +72,7 @@ class Brush {
 
   // target = value of array that backend will overwrite
   get target() {
+    return this.model.selected.secondLabel;
     if (this._conv) {
       return this._convTarget;
     } else {
@@ -75,16 +81,17 @@ class Brush {
     }
   }
 
-  // only conversion brush target can change
-  set target(val) {
-    // never set conversion brush to modify background
-    if (this._conv && val !== 0) {
-      this._convTarget = val;
-    }
-  }
+  // // only conversion brush target can change
+  // set target(val) {
+  //   // never set conversion brush to modify background
+  //   if (this._conv && val !== 0) {
+  //     this._convTarget = val;
+  //   }
+  // }
 
   // value = label that gets added to annotation array in backend
   get value() {
+    return this.model.selected.label;
     if (this._conv) {
       return this._convValue;
     } else {
@@ -92,24 +99,24 @@ class Brush {
     }
   }
 
-  // can change brush label or conversion brush label
-  set value(val) {
-    // never set conversion brush to modify background
-    // logic for val != target is elsewhere to prevent
-    // value picking from finishing early
-    if (this._conv && val !== 0) {
-      this._convValue = val;
-    } else if (!this._conv) {
-      // regular brush never has value less than 1
-      // and never has value more than first unused label
-      val = Math.max(val, 1); 
-      val = Math.min(val, this.model.maxLabelsMap.get(this.model.feature) + 1);
-      this._regValue = val;
-    }
-    if (this.model.highlight) this.model.notifyImageChange();
-    this.model.notifyInfoChange();
-    this.model.notifyImageFormattingChange();
-  }
+  // // can change brush label or conversion brush label
+  // set value(val) {
+  //   // never set conversion brush to modify background
+  //   // logic for val != target is elsewhere to prevent
+  //   // value picking from finishing early
+  //   if (this._conv && val !== 0) {
+  //     this._convValue = val;
+  //   } else if (!this._conv) {
+  //     // regular brush never has value less than 1
+  //     // and never has value more than first unused label
+  //     val = Math.max(val, 1); 
+  //     val = Math.min(val, this.model.maxLabelsMap.get(this.model.feature) + 1);
+  //     this._regValue = val;
+  //   }
+  //   if (this.model.highlight) this.model.notifyImageChange();
+  //   this.model.notifyInfoChange();
+  //   this.model.notifyImageFormattingChange();
+  // }
 
   // whether or not conversion brush is on
   get conv() {
@@ -161,12 +168,6 @@ class Brush {
 
   get showBox() {
     return this.threshX !== -2 * this._padding && this.threshY !== -2 * this._padding;
-  }
-
-  updatePosition(x, y) {
-    this.x = x;
-    this.y = y;
-    this.model.notifyImageChange();
   }
 
   // reset thresholding box anchor corner

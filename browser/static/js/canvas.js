@@ -29,9 +29,6 @@ class CanvasPosition {
     // coordinates in original image (used for actions, labels, etc)
     this.imgX = null;
     this.imgY = null;
-    // what imgX and imgY were upon most recent click
-    this.storedClickX = null;
-    this.storedClickY = null;
     // label under the cursor
     this.label = 0;
     // Records cursor history for painting
@@ -104,6 +101,7 @@ class CanvasPosition {
     }
     this.updateLabel();
     this.model.notifyInfoChange();
+    this.model.notifyImageChange();
   }
 
   updateLabel() {
