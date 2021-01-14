@@ -2,12 +2,12 @@ class SelectedLabels {
   constructor(model) {
     this.model = model;
 
-    this._label;
+    this._label = 1;
     this._frame;
     this._x;
     this._y;
 
-    this._secondLabel;
+    this._secondLabel = 0;
     this._secondFrame;
     this._secondX;
     this._secondY;

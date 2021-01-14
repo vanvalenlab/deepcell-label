@@ -6,7 +6,6 @@ class View {
 
     this.infopaneView = new InfopaneView(model);
     this.canvasView = new CanvasView(model);
-    this.promptView = new PromptView(model);
   }
 
   /**

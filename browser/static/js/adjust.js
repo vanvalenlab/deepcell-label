@@ -260,8 +260,8 @@ class ImageAdjuster {
         h1 = this.model.brush.value;
         h2 = -1;
       } else {
-        h1 = this.model.highlighted_cell_one;
-        h2 = this.model.highlighted_cell_two;
+        h1 = this.model.selected.label;
+        h2 = this.model.selected.secondLabel;
       }
 
       // highlight

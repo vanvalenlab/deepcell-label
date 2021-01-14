@@ -378,9 +378,7 @@ class Controller {
    * @param {KeyboardEvent} evt
    */
   handle_edit_keybind(evt) {
-    if (evt.key === 'e' && !settings.pixel_only) {
-      this.history.addFencedAction(new ToggleEdit(this.model));
-    } else if (this.model.numChannels > 1 && evt.key === 'c') {
+    if (this.model.numChannels > 1 && evt.key === 'c') {
       this.history.addFencedAction(new ChangeChannel(this.model, this.model.channel + 1));
     } else if (this.model.numChannels > 1 && evt.key === 'C') {
       this.history.addFencedAction(new ChangeChannel(this.model, this.model.channel - 1));
