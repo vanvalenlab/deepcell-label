@@ -257,6 +257,7 @@ class ImageAdjuster {
 
       let label = this.model.selected.label;
       let secondLabel = this.model.selected.secondLabel == 0;
+      // Don't highlight background pixels by changing to -1
       let h1 = label === 0 ? -1 : label;
       let h2 = secondLabel === 0 ? -1 : secondLabel;
 

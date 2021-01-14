@@ -483,7 +483,7 @@ class Controller {
       action.action = 'new_cell_stack';
     } else if (action.action === 'predict') {
       action.action = 'predict_zstack';
-    } else if (action === 'swap_cells') {
+    } else if (action.action === 'swap_cells') {
       action.action = 'swap_all_frame';
     }
     this.history.addFencedAction(action);
