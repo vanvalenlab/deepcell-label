@@ -127,8 +127,9 @@ class BackendAction extends Action {
     this.action = action;
     this.projectID = model.projectID;
     this.handler = model.handlePayload.bind(model);
-
     this.error;
+
+    this.selected = model.selected;
 
     this._doInitialSideEffects();
   }
@@ -148,7 +149,7 @@ class BackendAction extends Action {
     } else if (this.action === 'predict') {
       prompt = 'Predict cell ids for zstack? / S=PREDICT THIS FRAME / SPACE=PREDICT ALL FRAMES / ESC=CANCEL PREDICTION';
     } else if (this.action === 'fill_hole') {
-      prompt `Select hole to fill in cell ${this.selected.label}`;
+      prompt = `Select hole to fill in cell ${this.selected.label}`;
     } else if (this.action === 'create_new') {
       prompt = 'CREATE NEW(S=SINGLE FRAME / SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)';
     } else if (this.action === 'delete_mask') {
@@ -173,10 +174,10 @@ class BackendAction extends Action {
       // following were set at start action (starting prompt/question)
     if (this.action === 'flood_contiguous') {
       info = {
-        label: model.canvas.label,
+        label: model.selected.label,
         frame: model.frame,
-        x_location: model.canvas.imgX,
-        y_location: model.canvas.imgY
+        x_location: model.selected.x,
+        y_location: model.selected.y
       };
     } else if (this.action === 'trim_pixels') {
       info = {
