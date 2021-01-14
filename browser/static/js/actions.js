@@ -181,10 +181,10 @@ class BackendAction extends Action {
       };
     } else if (this.action === 'trim_pixels') {
       info = {
-        label: model.canvas.label,
+        label: model.selected.label,
         frame: model.frame,
-        x_location: model.canvas.imgX,
-        y_location: model.canvas.imgY
+        x_location: model.selected.x,
+        y_location: model.selected.y
       };
     } else if (this.action === 'fill_hole') {
       info = {
