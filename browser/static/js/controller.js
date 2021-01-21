@@ -228,6 +228,8 @@ class Controller {
       this.service.send('keydown.w');
     } else if (evt.key === ' ') {
       this.service.send('keydown.space')
+    } else if (evt.key === 'b') {
+      this.service.send('keydown.b')
     }
   }
 
