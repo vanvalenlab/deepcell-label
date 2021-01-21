@@ -13,9 +13,6 @@ class SelectedLabels {
     this._secondY;
   }
 
-  // TODO: select new label with -1
-  // TODO: select background with 0
-
   get label() {
     return this._label;
   }
@@ -69,6 +66,7 @@ class SelectedLabels {
   clear() {
     this._label = this.model.maxLabelsMap.get(this.model.feature) + 1;
     this._secondLabel = 0;
+    // TODO: clear selection positions?
     this.model.notifyInfoChange();
     this.model.notifyImageFormattingChange();
   }

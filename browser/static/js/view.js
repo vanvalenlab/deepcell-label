@@ -137,8 +137,10 @@ class InfopaneView {
     this.renderHighlightRows();
     this.renderEditRows();
     this.renderLabelRows();
-    // always show 'state'
-    document.getElementById('mode').innerHTML = this.renderMode();
+    // always show 'state' and selected labels
+    document.getElementById('mode').innerHTML = 'hi';// controller.service.state.value;
+    document.getElementById('foreground').innerHTML = this.model.selected.label;
+    document.getElementById('background').innerHTML = this.model.selected.secondLabel;
   }
 
   /**
@@ -204,24 +206,25 @@ class InfopaneView {
     }
   }
 
-  /**
-   * Renders text for "state:" in infopane.
-   */
-  renderMode() {
-    const mode = this.model.kind;
-    if (mode === Modes.none) {
-      return '';
-    }
-    if (mode === Modes.single) {
-      return `SELECTED ${this.model.selected.label}`;
-    }
-    if (mode === Modes.multiple) {
-      return `SELECTED ${this.model.selected.label}, ${this.model.selected.secondLabel}`;
-    }
-    if (mode === Modes.question || mode === Modes.prompt || mode === Modes.drawing) {
-      return this.model.pendingAction.prompt;
-    }
-  }
+  // /**
+  //  * Renders text for "state:" in infopane.
+  //  */
+  // renderMode() {
+  //   return controller.service.state.value;
+  //   // const mode = this.model.kind;
+  //   // if (mode === Modes.none) {
+  //   //   return '';
+  //   // }
+  //   // if (mode === Modes.single) {
+  //   //   return `SELECTED ${this.model.selected.label}`;
+  //   // }
+  //   // if (mode === Modes.multiple) {
+  //   //   return `SELECTED ${this.model.selected.label}, ${this.model.selected.secondLabel}`;
+  //   // }
+  //   // if (mode === Modes.question || mode === Modes.prompt || mode === Modes.drawing) {
+  //   //   return this.model.pendingAction.prompt;
+  //   // }
+  // }
 }
 
 /** Renders images onto the interactive canas. */
@@ -481,10 +484,12 @@ class BrushView {
     const mag = this.model.canvas.scale * this.model.canvas.zoom / 100;
 
     // Update the translucent brush canvas
-    if (this.brush.thresholding) {
+    if (controller.service.state.matches('label.edit.threshold')) {
       this.drawThreshold();
-    } else {
+    } else if (controller.service.state.matches('label.edit.paint')) {
       this.drawPaintbrush();
+    } else {
+      this.clear();
     }
 
     // Draw the translucent brush trace onto the main canvas
@@ -501,15 +506,17 @@ class BrushView {
     ctxDst.restore();
 
     // Draw solid outlines
-    if (this.brush.showBox) {
+    if (controller.service.state.matches('label.edit.threshold.dragging')) {
+      const threshX = controller.service.state.context.threshX;
+      const threshY = controller.service.state.context.threshY;
       // solid box around threshold area
       ctxDst.strokeStyle = 'white';
-      const boxStartX = (this.brush.threshX - sx) * mag + this.padding;
-      const boxStartY = (this.brush.threshY - sy) * mag + this.padding;
-      const boxWidth = (this.brush.x - this.brush.threshX) * mag;
-      const boxHeight = (this.brush.y - this.brush.threshY) * mag;
+      const boxStartX = (threshX - sx) * mag + this.padding;
+      const boxStartY = (threshY - sy) * mag + this.padding;
+      const boxWidth = (this.brush.x - threshX) * mag;
+      const boxHeight = (this.brush.y - threshY) * mag;
       ctxDst.strokeRect(boxStartX, boxStartY, boxWidth, boxHeight);
-    } else if (this.brush.showCircle) {
+    } else if (controller.service.state.matches('label.edit.paint')) {
       // solid circle around current brush location
       ctxDst.beginPath();
       const cX = (this.brush.x - sx) * mag + this.padding;
@@ -527,12 +534,14 @@ class BrushView {
   drawThreshold() {
     // clear previous box shape
     this.clear();
+    const threshX = controller.service.state.context.threshX;
+    const threshY = controller.service.state.context.threshY;
     // interior of box; will be added to visible canvas with opacity
-    if (this.brush.showBox) {
+    if (controller.service.state.matches('label.edit.threshold.dragging')) {
       this.ctx.fillRect(
-        this.brush.threshX, this.brush.threshY,
-        this.brush.x - this.brush.threshX,
-        this.brush.y - this.brush.threshY);
+        threshX, threshY,
+        this.brush.x - threshX,
+        this.brush.y - threshY);
     }
   }
 
@@ -541,7 +550,7 @@ class BrushView {
    */
   drawPaintbrush() {
     // When painting, leave behind previous shadows to show brush's trace
-    if (!this.model.isPainting) {
+    if (!controller.service.state.matches('label.edit.paint.dragging')) {
       this.clear();
     }
     this.ctx.beginPath();

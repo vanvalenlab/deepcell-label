@@ -528,32 +528,30 @@ class IncrementSelectedLabel extends Action {
   }
 }
 
-class SetUnusedBrushLabel extends Action {
+
+class ResetLabels extends Action {
   constructor(model) {
     this.model = model;
-    this.brush = model.brush;
 
-    this.oldValue = brush.value;
-    this.newValue = model.maxLabelsMap.get(this.model.feature) + 1;
+    this.oldForeground = model.selected.label;
+    this.oldBackground = model.selected.secondLabel;
+    this.newForeground = model.maxLabelsMap.get(model.feature) + 1;
+    this.newBackground = 0;
 
   }
 
   do() {
-    this.brush.value = this.newValue;
-    if (this.model.kind === Modes.prompt && this.brush.conv) {
-      this.prompt = `Now drawing over label ${this.brush.target} with label ${this.brush.value}. ` +
-        `Use ESC to leave this mode.`;
-      this.model.kind = Modes.drawing;
-    }
+    this.model.selected.label = this.newForeground;
+    this.model.selected.secondLabel = this.newBackground;
   }
 
-  // TODO: set brush values?
   undo() {
-    this.model.clear();
+    this.model.selected.label = this.oldForeground;
+    this.model.selected.secondLabel = this.oldBackground;
   }
 
   redo() {
-    this.model.clear();
+    this.do();
   }
 }
 

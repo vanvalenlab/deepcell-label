@@ -61,7 +61,6 @@ class Model {
     this.canvas = new CanvasPosition(this);
     this.brush = new Brush(this);
     this.selected = new SelectedLabels(this);
-    this._pendingAction = new NoAction(); // records label editing action that has been initiated but not sent to backend
 
     // TODO: use Observable interface instead and allow any Observer to register
     // only observer right now is the view
@@ -198,19 +197,19 @@ class Model {
     this.notifyInfoChange();
   }
 
-  get isPainting() {
-    return (
-      this.edit_mode
-      && this.isPressed
-      && !this.isSpacedown
-      && (this.kind !== Modes.prompt)
-      && !this.brush.thresholding
-    );
-  }
+  // get isPainting() {
+  //   return (
+  //     this.edit_mode
+  //     && this.isPressed
+  //     && !this.isSpacedown
+  //     && (this.kind !== Modes.prompt)
+  //     && !this.brush.thresholding
+  //   );
+  // }
 
-  get isPanning() {
-    return this.isPressed && this.isSpacedown;
-  }
+  // get isPanning() {
+  //   return this.isPressed && this.isSpacedown;
+  // }
 
   // TODO: use Observable interface instead of hard-coding the view as the only Observer
   notifyImageChange() {
@@ -282,13 +281,7 @@ class Model {
 
   // deselect/cancel action/reset highlight
   clear() {
-    this.kind = Modes.none;
     this.selected.clear();
-
-    this.brush.conv = false;
-    this.brush.clearThresh();
-
-    this.pendingAction = new NoAction();
   }
 
   updateMousePos(x, y) {
@@ -296,43 +289,22 @@ class Model {
   }
 
 
-  decrementSelectedLabel() {
-    // cycle highlight to prev label, skipping 0
-    const maxLabel = this.maxLabelsMap.get(this.feature);
-    const tempHighlight = (this.highlighted_cell_one + maxLabel - 2).mod(maxLabel) + 1;
-    // clear info but show new highlighted cell
-    this.clear();
-    this.highlighted_cell_one = tempHighlight;
-  }
-
-  incrementSelectedLabel() {
-    // cycle highlight to next label
-    let maxLabel = this.maxLabelsMap.get(this.feature);
-    const tempHighlight = this.highlighted_cell_one.mod(maxLabel) + 1;
-    // clear info but show new highlighted cell
-    this.clear();
-    this.highlighted_cell_one = tempHighlight;
-  }
-
-  updateThresholdBox() {
-    this.brush.threshX = this.canvas.imgX;
-    this.brush.threshY = this.canvas.imgY;
-  }
-
-  // pickConversionLabel() {
-  //   this.brush.value = this.canvas.label;
-  //   if (this.brush.target !== 0) {
-  //     this.prompt = `Now drawing over label ${this.brush.target} with label ${this.brush.value}.` +
-  //       `Use ESC to leave this mode.`;
-  //     this.kind = Modes.drawing;
-  //   } else {
-  //     this.clear();
-  //   }
+  // decrementSelectedLabel() {
+  //   // cycle highlight to prev label, skipping 0
+  //   const maxLabel = this.maxLabelsMap.get(this.feature);
+  //   const tempHighlight = (this.highlighted_cell_one + maxLabel - 2).mod(maxLabel) + 1;
+  //   // clear info but show new highlighted cell
+  //   this.clear();
+  //   this.highlighted_cell_one = tempHighlight;
   // }
-  
-  // pickConversionTarget() {
-  //   this.brush.target = this.canvas.label;
-  //   this.action = 'pick_color';
-  //   this.prompt = 'Click on the label you want to draw with, or press "n" to draw with an unused label.';
+
+  // incrementSelectedLabel() {
+  //   // cycle highlight to next label
+  //   let maxLabel = this.maxLabelsMap.get(this.feature);
+  //   const tempHighlight = this.highlighted_cell_one.mod(maxLabel) + 1;
+  //   // clear info but show new highlighted cell
+  //   this.clear();
+  //   this.highlighted_cell_one = tempHighlight;
   // }
+
 }

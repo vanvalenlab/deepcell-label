@@ -31,8 +31,6 @@ class CanvasPosition {
     this.imgY = null;
     // label under the cursor
     this.label = 0;
-    // Records cursor history for painting
-    this._trace = [];
   }
 
   get sx() {
@@ -73,18 +71,6 @@ class CanvasPosition {
     return this.model.segArray;
   }
 
-  get trace() {
-    return JSON.stringify(this._trace);
-  }
-
-  clearTrace() {
-    this._trace = [];
-  }
-
-  addToTrace() {
-    this._trace.push([this.imgY, this.imgX]);
-  }
-
   updateCursorPosition(x, y) {
     // store raw mouse position, in case of pan without mouse movement
     this.rawX = x;
@@ -115,7 +101,7 @@ class CanvasPosition {
   // check if the mouse position in canvas matches to a displayed part of image
   inRange() {
     return (
-      this.model.onCanvas &&
+      // this.model.onCanvas &&
       this.canvasPosX >= 0 && this.canvasPosX < this.scaledWidth &&
       this.canvasPosY >= 0 && this.canvasPosY < this.scaledHeight
     );
