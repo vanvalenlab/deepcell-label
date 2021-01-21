@@ -389,37 +389,21 @@ const editState = {
 
 
 const adjusterState = {
-  initial: 'unloaded',
-  states: {
-    unloaded: {
-      on: {
-        NEWIMAGES: 'loading'
-      }
+  on: {
+    SCROLLCONTRAST: {
+      actions: (context, event) => controller.history.addAction(new ChangeContrast(model, event.change))
     },
-    loading: {
-      on: {
-        RENDER: 'loaded'
-      }
+    SCROLLBRIGHTNESS: {
+      actions: (context, event) => controller.history.addAction(new ChangeBrightness(model, event.change))
     },
-    loaded: {
-      on: {
-        NEWIMAGES: 'loading',
-        SCROLLCONTRAST: {
-          actions: (context, event) => controller.history.addAction(new ChangeContrast(model, event.change))
-        },
-        SCROLLBRIGHTNESS: {
-          actions: (context, event) => controller.history.addAction(new ChangeBrightness(model, event.change))
-        },
-        'keydown.h': {
-          actions: () => controller.history.addAction(new ToggleHighlight(model)),
-        },
-        'keydown.0': {
-          actions: () => controller.history.addAction(new ResetBrightnessContrast(model)),
-        },
-        'keydown.i': {
-          actions: () => controller.history.addAction(new ToggleInvert(model)),
-        },
-      }
+    'keydown.h': {
+      actions: () => controller.history.addAction(new ToggleHighlight(model)),
+    },
+    'keydown.0': {
+      actions: () => controller.history.addAction(new ResetBrightnessContrast(model)),
+    },
+    'keydown.i': {
+      actions: () => controller.history.addAction(new ToggleInvert(model)),
     }
   }
 };
