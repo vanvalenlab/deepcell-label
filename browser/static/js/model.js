@@ -41,8 +41,6 @@ class Model {
 
     // Control booleans
     this.onCanvas;
-    this.isSpacedown;
-    this.isPressed;
 
     // Model objects
     this.adjuster = new ImageAdjuster(this);
