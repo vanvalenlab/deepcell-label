@@ -131,7 +131,11 @@ class Controller {
     const canvasElement = document.getElementById('canvas');
     // bind click on canvas
     canvasElement.addEventListener('click', (evt) => {
-      this.service.send(evt);
+      if (evt.shiftKey) {
+        this.service.send('shiftclick');
+      } else {
+        this.service.send(evt);
+      }
     });
 
     // bind scroll wheel, change contrast of raw when scrolled
