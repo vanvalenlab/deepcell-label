@@ -93,18 +93,6 @@ class Controller {
    * Adds bindings to the window
    */
   addWindowBindings() {
-    window.addEventListener('keydown', (e) => {
-      if (e.key === ' ') {
-        this.model.isSpacedown = true;
-      }
-    }, false);
-
-    window.addEventListener('keyup', (e) => {
-      if (e.key === ' ') {
-        this.model.isSpacedown = false;
-      }
-    }, false);
-
     // TODO: why is this bound to the document instead of the window
     document.addEventListener('mouseup', (e) => this.service.send(e));
 
@@ -182,7 +170,6 @@ class Controller {
    * @param {KeyboardEvent} evt
    */
   handle_keydown(evt) {
-
     if ((evt.ctrlKey || evt.metaKey) && evt.shiftKey && (evt.key === 'Z' || evt.key === 'z')) {
       this.service.send('REDO');
     } else if ((evt.ctrlKey || evt.metaKey) && (evt.key === 'Z' || evt.key === 'z')) {
