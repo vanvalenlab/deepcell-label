@@ -144,11 +144,11 @@ const selectState = {
   on: {
     // select foreground label
     'click': {
-      actions: () => { controller.history.addAction(new SelectLabel(model)); }
+      actions: () => { controller.history.addAction(new SelectForeground(model)); }
     },
     // select background label
     'shiftclick': {
-      actions: () => { controller.history.addAction(new SelectLabel(model)); }
+      actions: () => { controller.history.addAction(new SelectBackground(model)); }
     },
   }
 };
