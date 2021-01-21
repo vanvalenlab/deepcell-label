@@ -205,26 +205,6 @@ class InfopaneView {
       document.getElementById('slices').textContent = '';
     }
   }
-
-  // /**
-  //  * Renders text for "state:" in infopane.
-  //  */
-  // renderMode() {
-  //   return controller.service.state.value;
-  //   // const mode = this.model.kind;
-  //   // if (mode === Modes.none) {
-  //   //   return '';
-  //   // }
-  //   // if (mode === Modes.single) {
-  //   //   return `SELECTED ${this.model.selected.label}`;
-  //   // }
-  //   // if (mode === Modes.multiple) {
-  //   //   return `SELECTED ${this.model.selected.label}, ${this.model.selected.secondLabel}`;
-  //   // }
-  //   // if (mode === Modes.question || mode === Modes.prompt || mode === Modes.drawing) {
-  //   //   return this.model.pendingAction.prompt;
-  //   // }
-  // }
 }
 
 /** Renders images onto the interactive canas. */

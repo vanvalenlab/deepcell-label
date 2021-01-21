@@ -477,56 +477,72 @@ class ToggleInvert extends Action {
   redo() { this.do(); }
 }
 
-class SelectLabel extends Action {
+class SelectForeground extends Action {
   constructor(model) {
     super();
     this.model = model;
-    this.canvas = model.canvas;
-    this.info = this.model.info;
     this.selected = this.model.selected;
+
+    this.oldValue = this.model.selected.label;
+    this.newValue;
   }
 
   do() {
-    if (this.model.kind === Modes.none) {
       this.selected.pickLabel();
-      this.model.kind = Modes.single;
-    } else if (this.model.kind === Modes.single) {
-      this.selected.pickSecondLabel();
-      this.model.kind = Modes.multiple;
-    } else if (this.model.kind === Modes.multiple) {
-      this.selected.pickSecondLabel();
-    }
+      this.newValue = this.selected.label;
   }
 
-  undo() { this.model.clear(); }
+  // TODO: revert to old label instead of clearing?
+  undo() { this.selected.clear(); }
 
-  redo() { this.model.clear(); }
+  redo() { this.selected.clear(); }
 }
 
-class IncrementSelectedLabel extends Action {
+class SelectBackground extends Action {
   constructor(model) {
     super();
     this.model = model;
-    this.selected = model.selected;
-    this.oldLabel = this.selected.label;
-    // cycle highlight to next label
-    let maxLabel = this.model.maxLabelsMap.get(this.model.feature);
-    this.newLabel = this.selected.label.mod(maxLabel) + 1;
+    this.selected = this.model.selected;
+
+    this.oldValue = this.model.selected.secondLabel;
+    this.newValue;
   }
 
   do() {
-    this.model.clear();
-    this.selected.label = this.newLabel;
+      this.selected.pickSecondLabel();
+      this.newValue = this.selected.secondLabel;
   }
 
-  undo() {
-    this.model.clear();
-  }
+  // TODO: revert to old label instead of clearing?
+  undo() { this.selected.clear(); }
 
-  redo() {
-    this.model.clear();
-  }
+  redo() { this.selected.clear(); }
 }
+
+// class IncrementSelectedLabel extends Action {
+//   constructor(model) {
+//     super();
+//     this.model = model;
+//     this.selected = model.selected;
+//     this.oldLabel = this.selected.label;
+//     // cycle highlight to next label
+//     let maxLabel = this.model.maxLabelsMap.get(this.model.feature);
+//     this.newLabel = this.selected.label.mod(maxLabel) + 1;
+//   }
+
+//   do() {
+//     this.model.clear();
+//     this.selected.label = this.newLabel;
+//   }
+
+//   undo() {
+//     this.model.clear();
+//   }
+
+//   redo() {
+//     this.model.clear();
+//   }
+// }
 
 
 class ResetLabels extends Action {
@@ -552,53 +568,5 @@ class ResetLabels extends Action {
 
   redo() {
     this.do();
-  }
-}
-
-// pick_color,
-class StartPrompt extends Action {
-  constructor(model, action) {
-    super();
-    this.model = model;
-    this.action = action;
-  }
-
-  do() {
-    this.model.kind = Modes.prompt;
-    this.model.pendingAction = new BackendAction(this.model, this.action);
-  }
-
-  undo() { this.model.clear(); }
-
-  redo() { this.model.clear(); }
-}
-
-class StartQuestion extends Action {
-  constructor(model, action) {
-    super();
-    this.model = model;
-    this.action = action;
-  }
-
-  do() {
-    this.model.kind = Modes.question;
-    this.model.pendingAction = new BackendAction(this.model, this.action);
-  }
-
-  undo() { this.model.clear(); }
-
-  redo() { this.model.clear(); }
-}
-
-/**
- * Dummy class to use model.pendingAction when no action is pending.
- * Will hide the prompt area.
- */
-class NoAction {
-  constructor() {
-    this.showPrompt = false;
-    this.showConfirm = false;
-    this.showConfirmAll = false;
-    this.prompt = '';
   }
 }

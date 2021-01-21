@@ -1,21 +1,9 @@
-// TODO: remove Modes
-const Modes = Object.freeze({
-  none: 1,
-  single: 2,
-  multiple: 3,
-  question: 4,
-  info: 5,
-  prompt: 6,
-  drawing: 7
-});
-
 class Model {
   constructor(project) {
     // Dynamic project attributes
     this._frame = project.frame;
     this._feature = project.feature;
     this._channel = project.channel;
-    this.kind = Modes.none;  // TODO: remove Modes
     // arguments passed to edit functions on backend
     this.info = {};  // TODO: remove info?
     this._prompt = '';  // TODO: move prompt logic to view?
@@ -196,20 +184,6 @@ class Model {
     this.processMaxLabels();
     this.notifyInfoChange();
   }
-
-  // get isPainting() {
-  //   return (
-  //     this.edit_mode
-  //     && this.isPressed
-  //     && !this.isSpacedown
-  //     && (this.kind !== Modes.prompt)
-  //     && !this.brush.thresholding
-  //   );
-  // }
-
-  // get isPanning() {
-  //   return this.isPressed && this.isSpacedown;
-  // }
 
   // TODO: use Observable interface instead of hard-coding the view as the only Observer
   notifyImageChange() {
