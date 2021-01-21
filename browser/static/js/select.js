@@ -17,6 +17,12 @@ class SelectedLabels {
     return this._label;
   }
 
+  set label(value) {
+    this._label = value;
+    this.model.notifyInfoChange();
+    this.model.notifyImageFormattingChange();
+  }
+
   get frame() {
     return this._frame;
   }
@@ -31,6 +37,12 @@ class SelectedLabels {
 
   get secondLabel() {
     return this._secondLabel;
+  }
+
+  set secondLabel(value) {
+    this._secondLabel = value;
+    this.model.notifyInfoChange();
+    this.model.notifyImageFormattingChange();
   }
 
   get secondFrame() {

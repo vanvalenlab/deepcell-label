@@ -519,6 +519,29 @@ class SelectBackground extends Action {
   redo() { this.selected.clear(); }
 }
 
+class SwapForegroundBackground extends Action {
+  constructor(model) {
+    super();
+    this.model = model;
+    this.selected = this.model.selected;
+
+    this.foreground = this.model.selected.label;
+    this.background = this.model.selected.secondLabel;
+  }
+
+  do() {
+    this.model.selected.label = this.background;
+    this.model.selected.secondLabel = this.foreground;
+  }
+
+  undo() {
+    this.model.selected.label = this.foreground;
+    this.model.selected.secondLabel = this.background;
+  }
+
+  redo() { this.do(); }
+}
+
 // class IncrementSelectedLabel extends Action {
 //   constructor(model) {
 //     super();

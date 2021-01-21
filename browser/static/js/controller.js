@@ -1,3 +1,6 @@
+// const { interpret } = XState;
+console.log(XState);
+
 var model;
 var view;
 var canvas;
@@ -10,7 +13,7 @@ class Controller {
   constructor(projectID) {
 
     // Interpret the machine, and add a listener for whenever a transition occurs.
-    const service = interpret(deepcellLabelMachine).onTransition(state => {
+    const service = interpret(deepcellLabelMachine, { devTools: true }).onTransition(state => {
       // console.log(state.value);
     });
     // Start the service
@@ -234,6 +237,8 @@ class Controller {
       this.service.send('keydown.space')
     } else if (evt.key === 'b') {
       this.service.send('keydown.b')
+    } else if (evt.key === 'k') {
+      this.service.send('keydown.k')
     }
   }
 

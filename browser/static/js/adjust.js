@@ -310,22 +310,36 @@ class ImageAdjuster {
     const imgData = this.ctx.getImageData(0, 0, this.width, this.height);
 
     let redOutline, r1, singleOutline, o1, outlineAll, translucent, t1, t2;
-    // red outline for conversion brush target
-    if (editMode && brush.conv && brush.target !== -1) {
+
+    let foreground = this.model.selected.label;
+    let background = this.model.selected.secondLabel;
+
+    if (foreground !== 0) {
+      singleOutline = true;
+      o1 = foreground;
+    }
+
+    if (background !== 0) {
       redOutline = true;
-      r1 = brush.target;
+      r1 = background;
     }
-    // white outline for conversion brush drawing value
-    if (editMode && brush.conv && brush.value !== -1) {
-      singleOutline = true;
-      o1 = brush.value;
-    }
-    // add an outline around the currently highlighted cell, if there is one
-    // but only if the brush isn't set to conversion brush mode
-    if (editMode && this.model.highlight && !brush.conv) {
-      singleOutline = true;
-      o1 = brush.value;
-    }
+
+    // // red outline for conversion brush target
+    // if (editMode && brush.conv && brush.target !== -1) {
+    //   redOutline = true;
+    //   r1 = brush.target;
+    // }
+    // // white outline for conversion brush drawing value
+    // if (editMode && brush.conv && brush.value !== -1) {
+    //   singleOutline = true;
+    //   o1 = brush.value;
+    // }
+    // // add an outline around the currently highlighted cell, if there is one
+    // // but only if the brush isn't set to conversion brush mode
+    // if (editMode && this.model.highlight && !brush.conv) {
+    //   singleOutline = true;
+    //   o1 = brush.value;
+    // }
 
     this.postCompositeLabelMod(
       imgData, redOutline, r1, singleOutline, o1,

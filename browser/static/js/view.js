@@ -436,7 +436,7 @@ class BrushView {
     // if conv brush is on, disable eraser, even when erase is true
     // red outline is visual indicator for eraser being on
     // white outline if eraser is off (drawing normally)
-    return this.brush._erase && !this.brush._conv ? 'red' : 'white';
+    return this.brush.value === 0 ? 'red' : 'white';
   }
 
   get padding() {

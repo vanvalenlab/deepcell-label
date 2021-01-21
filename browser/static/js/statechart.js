@@ -138,7 +138,7 @@ const paintState = {
       }
     }
   }
-}
+};
 
 const selectState = {
   on: {
@@ -255,7 +255,7 @@ const erodeDilateState = {
       ]
     }
   }
-}
+};
 
 const autofitState = {
   on: {
@@ -271,7 +271,7 @@ const autofitState = {
       ]
     }
   }
-}
+};
 
 const editState = {
   initial: 'paint',
@@ -363,13 +363,17 @@ const editState = {
     'keydown.right': {
       actions: send({type: 'SETFRAME', dimension: 'frame', value: 0}), // model.frame + 1}),
     },
+    // flip foreground backgroiund
+    'keydown.x': {
+      actions: () => controller.history.addAction(new SwapForegroundBackground(model))
+    },
     UNDO: { actions: () => controller.history.undo() },
     REDO: { actions: () => controller.history.redo() },
     // internal transitions
     'keydown.b': '.paint',
     'keydown.t': '.threshold',
     'keydown.f': '.flood',
-    'keydown.x': '.trim',
+    'keydown.k': '.trim',
     'keydown.q': '.erodeDilate',
     'keydown.m': '.autofit',
     'keydown.p': '.select',
@@ -378,7 +382,7 @@ const editState = {
     EDIT: 'loadEdit',
     SETFRAME: 'loadFrame'
   }
-}
+};
 
 
 const adjusterState = {
@@ -415,7 +419,7 @@ const adjusterState = {
       }
     }
   }
-}
+};
 
 const canvasState = {
   on: {
@@ -466,6 +470,9 @@ const deepcellLabelMachine = Machine({
     trace: [],
     threshX: -10, // -2 * model.padding,
     threshY: -10, // -2 * model.padding,
+    frame: 0,
+    channel: 0,
+    feature: 0,
   },
   states: {
     label: labelState,
