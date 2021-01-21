@@ -570,6 +570,7 @@ class SwapForegroundBackground extends Action {
 
 class ResetLabels extends Action {
   constructor(model) {
+    super();
     this.model = model;
 
     this.oldForeground = model.selected.label;

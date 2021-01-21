@@ -367,6 +367,9 @@ const editState = {
     'keydown.x': {
       actions: () => controller.history.addAction(new SwapForegroundBackground(model))
     },
+    'keydown.n': {
+      actions: () => controller.history.addAction(new ResetLabels(model))
+    },
     UNDO: { actions: () => controller.history.undo() },
     REDO: { actions: () => controller.history.redo() },
     // internal transitions
