@@ -155,9 +155,6 @@ class InfopaneView {
    * Renders the edit mode specific rows of the infopane.
    */
   renderEditRows() {
-    const editModeText = (this.model.edit_mode) ? 'paint mode' : 'whole-label mode';
-    document.getElementById('edit_mode').innerHTML = editModeText;
-  
     const rowVisibility = (this.model.edit_mode) ? 'visible' : 'hidden';
     document.getElementById('edit_brush_row').style.visibility = rowVisibility;
   
