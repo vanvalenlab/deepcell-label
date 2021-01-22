@@ -4,12 +4,6 @@ class Model {
     this._frame = project.frame;
     this._feature = project.feature;
     this._channel = project.channel;
-    // arguments passed to edit functions on backend
-    this.info = {};  // TODO: remove info?
-    this._prompt = '';  // TODO: move prompt logic to view?
-    this._action = '';
-    // TODO: merge highlighting, selecting, and brush values
-    // see SelectedLabels class in select.js
 
     // Booleans
     this._highlight = true;
@@ -80,15 +74,6 @@ class Model {
     this._rawImage = newRawImage;
     this.adjuster.rawLoaded = false;
     this.adjuster.rawImage.src = newRawImage;
-  }
-
-  get pendingAction() {
-    return this._pendingAction;
-  }
-
-  set pendingAction(action) {
-    this._pendingAction = action;
-    this.notifyInfoChange();
   }
 
   // Model attributes in infopane
