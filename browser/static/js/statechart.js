@@ -303,16 +303,16 @@ const editState = {
       args: {}
     },
     'keydown.s' : {
-      cond: () => true, // two different labels selected
-      actions: send({
+      // cond: () => true, // two different labels selected
+      actions: send(() => ({
         type: 'EDIT', 
         action: 'swap_single_frame', 
         args: {        
-          label_1: 1, // model.selected.label,
-          label_2: 2, // model.selected.secondLabel
-          frame: 0 // model.frame,
+          label_1: model.selected.label,
+          label_2: model.selected.secondLabel,
+          frame: model.frame,
         }
-      }),
+      })),
     },
     'keydown.S': {
       cond: () => true, // two different labels selected

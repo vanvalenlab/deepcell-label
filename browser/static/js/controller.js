@@ -221,15 +221,17 @@ class Controller {
     } else if (evt.key === 'w') {
       this.service.send('keydown.w');
     } else if (evt.key === ' ') {
-      this.service.send('keydown.space')
+      this.service.send('keydown.space');
     } else if (evt.key === 'b') {
-      this.service.send('keydown.b')
+      this.service.send('keydown.b');
     } else if (evt.key === 'k') {
-      this.service.send('keydown.k')
+      this.service.send('keydown.k');
     } else if (evt.key === 'q') {
-      this.service.send('keydown.q')
+      this.service.send('keydown.q');
     } else if (evt.key === 'm') {
-      this.service.send('keydown.m')
+      this.service.send('keydown.m');
+    } else if (evt.key === 's') {
+      this.service.send('keydown.s');
     }
   }
 
