@@ -241,17 +241,18 @@ const trimState = {
   }
 };
 
+// TODO: left click (or smthing else) to dilate
 const erodeDilateState = {
   on: {
     'click': {
       actions: [
-        send({
+        send(() => ({
           type: 'EDIT',
           action: 'erode',
           args: {
-            label: 1, // model.canvas.label
+            label: model.canvas.label,
           }
-        })
+        }))
       ]
     }
   }
@@ -261,13 +262,13 @@ const autofitState = {
   on: {
     'click': {
       actions: [
-        send({ // send action to backend
+        send(() => ({
           type: 'EDIT',
           action: 'active_contour',
           args: {
-            label: 1, // model.canvas.label
+            label: model.canvas.label,
           }
-        })
+        }))
       ]
     }
   }
