@@ -347,53 +347,6 @@ class BaseEdit(object):
         self.frame[..., self.feature] = flooded
         self.y_changed = True
 
-    
-    def action_fill_hole(self, label, x_location, y_location):
-        '''
-        fill a "hole" in a cell annotation with the cell label. Doesn't check
-        if annotation at (y,x) is zero (hole to fill) because that logic is handled in
-        javascript. Just takes the click location, scales it to match the actual annotation
-        size, then fills the hole with label (using skimage flood_fill). connectivity = 1
-        prevents hole fill from spilling out into background in some cases
-        '''
-        # rescale click location -> corresponding location in annotation array
-        hole_fill_seed = (int(y_location // self.scale_factor),
-                          int(x_location // self.scale_factor))
-        # fill hole with label
-        img_ann = self.frame[..., self.feature]
-        filled_img_ann = flood_fill(img_ann, hole_fill_seed, label, connectivity=1)
-
-        # never changes info but always changes annotation
-        self.y_changed = True
-
-        self.frame[..., self.feature] = filled_img_ann
-
-    def action_flood_contiguous(self, label, x_location, y_location):
-        """Flood fill a cell with a unique new label.
-
-        Alternative to watershed for fixing duplicate labels of
-        non-touching objects.
-        """
-        img_ann = self.frame[..., self.feature]
-        old_label = label
-        new_label = self.project.get_max_label() + 1
-
-        in_original = np.any(np.isin(img_ann, old_label))
-
-        filled_img_ann = flood_fill(img_ann,
-                                    (int(y_location / self.scale_factor),
-                                     int(x_location / self.scale_factor)),
-                                    new_label)
-
-        in_modified = np.any(np.isin(filled_img_ann, old_label))
-
-        # update cell info dicts since labels are changing
-        self.add_cell_info(add_label=new_label, frame=self.frame_id)
-        if in_original and not in_modified:
-            self.del_cell_info(del_label=old_label, frame=self.frame_id)
-
-        self.frame[..., self.feature] = filled_img_ann
-
     def action_watershed(self, label, x1_location, y1_location, x2_location, y2_location):
         """Use watershed to segment different objects"""
         # Pull the label that is being split and find a new valid label

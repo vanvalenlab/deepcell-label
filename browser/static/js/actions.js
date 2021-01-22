@@ -142,10 +142,10 @@ class BackendAction extends Action {
     //   prompt = 'Click and drag to create a bounding box around the area you want to threshold.';
     // } else if (this.action === 'start_threshold') {
     //   prompt = 'Click and drag to create a bounding box around the area you want to threshold.';
-    } else if (this.action === 'predict') {
-      prompt = 'Predict cell ids for zstack? / S=PREDICT THIS FRAME / SPACE=PREDICT ALL FRAMES / ESC=CANCEL PREDICTION';
-    } else if (this.action === 'fill_hole') {
-      prompt = `Select hole to fill in cell ${this.selected.label}`;
+    // } else if (this.action === 'predict') {
+    //   prompt = 'Predict cell ids for zstack? / S=PREDICT THIS FRAME / SPACE=PREDICT ALL FRAMES / ESC=CANCEL PREDICTION';
+    // } else if (this.action === 'fill_hole') {
+    //   prompt = `Select hole to fill in cell ${this.selected.label}`;
     } else if (this.action === 'create_new') {
       prompt = 'CREATE NEW(S=SINGLE FRAME / SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)';
     } else if (this.action === 'delete_mask') {
@@ -157,8 +157,8 @@ class BackendAction extends Action {
     //   prompt = 'SPACE = SWAP IN ALL FRAMES / S = SWAP IN THIS FRAME ONLY / ESC = CANCEL SWAP';
     } else if (this.action === 'watershed') {
       prompt = `Perform watershed to split ${this.selected.label}? (SPACE=YES / ESC=NO)`;
-    } else if (this.action === 'flood_contiguous') {
-      prompt = 'SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL';
+    // } else if (this.action === 'flood_contiguous') {
+    //   prompt = 'SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL';
     // } else if (this.action === 'trim_pixels') {
     //   prompt = 'SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL';
     } return prompt;
@@ -167,78 +167,7 @@ class BackendAction extends Action {
   get _info() {
     let info = {};
     const model = this.model;
-      // following were set at start action (starting prompt/question)
-    if (this.action === 'flood_contiguous') {
-      info = {
-        label: model.selected.label,
-        frame: model.frame,
-        x_location: model.selected.x,
-        y_location: model.selected.y
-      };
-    } else if (this.action === 'trim_pixels') {
-      info = {
-        label: model.selected.label,
-        frame: model.frame,
-        x_location: model.selected.x,
-        y_location: model.selected.y
-      };
-    } else if (this.action === 'fill_hole') {
-      info = {
-        label: model.selected.label,
-        frame: model.frame
-      };
-    // following were set just before launching actions
-    // } else if (this.action === 'threshold') {
-    //   info = {
-    //     y1: model.brush.threshY,
-    //     x1: model.brush.threshX,
-    //     y2: model.canvas.imgY,
-    //     x2: model.canvas.imgX,
-    //     frame: model.frame,
-    //     label: model.maxLabelsMap.get(model.feature) + 1
-    //   };
-    // } else if (this.action === 'handle_draw') {
-    //   info = {
-    //     trace: model.canvas.trace,
-    //     target_value: model.brush.target, // value that we're overwriting
-    //     brush_value: model.brush.value, // we don't update with edit_value, etc each time they change
-    //     brush_size: model.brush.size, // so we need to pass them in as args
-    //     erase: model.brush.erase,
-    //     frame: model.frame
-    //   };
-    } else if (this.action === 'fill_hole') {
-      info = {
-        label: model.selected.label,
-        frame: model.frame,
-        x_location: model.canvas.imgX,
-        y_location: model.canvas.imgY
-       };
-    // } else if (this.action === 'swap_single_frame') {
-    //   info = {
-    //     label_1: model.selected.label,
-    //     label_2: model.selected.secondLabel,
-    //     frame: model.frame
-    //   };
-    // } else if (this.action === 'replace_single') {
-    //   info = {
-    //     label_1: model.selected.label,
-    //     label_2: model.selected.secondLabel
-    //   };
-    } else if (this.action === 'predict_single') {
-      info = {
-        frame: model.frame
-      };
-    // } else if (this.action === 'replace') {
-    //   info = {
-    //     label_1: model.selected.label,
-    //     label_2: model.selected.secondLabel
-    //   };
-    // } else if (this.action === 'swap_all_frame') {
-    //   info = {
-    //     label_1: model.selected.label,
-    //     label_2: model.selected.secondLabel
-    //   };
-    } else if (this.action === 'watershed') {
+    if (this.action === 'watershed') {
       info = {
         frame: model.selected.frame,
         label: model.selected.label,
