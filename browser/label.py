@@ -594,10 +594,17 @@ class ZStackEdit(BaseEdit):
         before sending action
         """
         img = self.frame[..., self.feature]
+        label_2_present = np.any(np.isin(label_2, img))
+        
         img = np.where(img == label_2, label_1, img)
 
-        self.add_cell_info(add_label=label_1, frame=self.frame_id)
-        self.del_cell_info(del_label=label_2, frame=self.frame_id)
+        # Img only changes when label_2 is in the frame
+        if label_2_present:
+            if label_1 != 0:
+                self.add_cell_info(add_label=label_1, frame=self.frame_id)
+            if label_2 != 0:
+                self.del_cell_info(del_label=label_2, frame=self.frame_id)
+            self.y_changed = True
 
         self.frame[..., self.feature] = img
 
