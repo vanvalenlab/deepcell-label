@@ -70,9 +70,10 @@ const loadFrameState = {
     id: 'backend',
     // src: () => Promise.resolve(),
     src: (context, event) => {
+      controller.history.addAction(new ChangeFrame(model, event.value));
       return $.ajax({
         type: 'POST',
-        url: `${document.location.origin}/api/changedisplay/${model.projectID}/${event.dimension}/${event.value}`,
+        url: `${document.location.origin}/api/changedisplay/${model.projectID}/${event.dimension}/${model.frame}`,
         async: true
       })
     },
@@ -358,17 +359,19 @@ const editState = {
     },
     // previous frame 
     'keydown.a': {
-      actions: send({type: 'SETFRAME', dimension: 'frame', value: 0}), // model.frame - 1}),
+      actions: [
+        send(() => ({type: 'SETFRAME', dimension: 'frame', value: model.frame - 1})),
+      ],
     },
     'keydown.left': {
-      actions: send({type: 'SETFRAME', dimension: 'frame', value: 0}), // model.frame - 1}),
+      actions: send(() => ({type: 'SETFRAME', dimension: 'frame', value: model.frame - 1})),
     },
     // next frame
     'keydown.d': {
       actions: send(() => ({type: 'SETFRAME', dimension: 'frame', value: model.frame + 1})),
     },
     'keydown.right': {
-      actions: send({type: 'SETFRAME', dimension: 'frame', value: 0}), // model.frame + 1}),
+      actions: send(() => ({type: 'SETFRAME', dimension: 'frame', value: model.frame + 1})),
     },
     // flip foreground backgroiund
     'keydown.x': {
