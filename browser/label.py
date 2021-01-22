@@ -337,7 +337,7 @@ class BaseEdit(object):
         # Update cell info dicts
         label_in_original = np.any(np.isin(label, img))
         label_in_flooded = np.any(np.isin(label, flooded))
-        old_label_in_flooded = not np.any(np.isin(old_label, flooded))
+        old_label_in_flooded = np.any(np.isin(old_label, flooded))
 
         if label != 0 and not label_in_original and label_in_flooded:
             self.add_cell_info(add_label=label, frame=self.frame_id)
