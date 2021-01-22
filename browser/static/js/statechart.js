@@ -226,16 +226,16 @@ const trimState = {
   on: {
     'click': {
       actions: [
-        send({
+        send(() => ({
           type: 'EDIT',
           action: 'trim_pixels',
           args: {
-            label: 1, // model.canvas.label,
-            frame: 0, // model.frame,
-            x_location: 0, // model.canvas.imgX,
-            y_location: 0, // model.canvas.imgY
+            label: model.canvas.label,
+            frame: model.frame,
+            x_location: model.canvas.imgX,
+            y_location: model.canvas.imgY
           }
-        })
+        }))
       ]
     }
   }
