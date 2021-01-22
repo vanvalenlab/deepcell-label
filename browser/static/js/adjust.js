@@ -324,23 +324,6 @@ class ImageAdjuster {
       r1 = background;
     }
 
-    // // red outline for conversion brush target
-    // if (editMode && brush.conv && brush.target !== -1) {
-    //   redOutline = true;
-    //   r1 = brush.target;
-    // }
-    // // white outline for conversion brush drawing value
-    // if (editMode && brush.conv && brush.value !== -1) {
-    //   singleOutline = true;
-    //   o1 = brush.value;
-    // }
-    // // add an outline around the currently highlighted cell, if there is one
-    // // but only if the brush isn't set to conversion brush mode
-    // if (editMode && this.model.highlight && !brush.conv) {
-    //   singleOutline = true;
-    //   o1 = brush.value;
-    // }
-
     this.postCompositeLabelMod(
       imgData, redOutline, r1, singleOutline, o1,
       outlineAll, translucent, t1, t2);
@@ -363,10 +346,11 @@ class ImageAdjuster {
 
     let redOutline, r1, singleOutline, o1, translucent, t1, t2;
 
-    // red outline for conversion brush target
-    if (editMode && brush.conv && brush.target !== -1) {
+    // red outline for brush target
+    let background = this.model.selected.secondLabel;
+    if (background !== 0) {
       redOutline = true;
-      r1 = brush.target;
+      r1 = background;
     }
 
     // singleOutline never on for RGB
@@ -376,11 +360,13 @@ class ImageAdjuster {
     // translucent highlight
     if (this.model.highlight) {
       translucent = true;
-      if (editMode) {
-        t1 = brush.value;
-      } else {
-        t1 = this.model.selected.label;
-        t2 = this.model.selected.secondLabel;
+      let foreground = this.model.selected.label;
+      let background = this.model.selected.secondLabel;
+      if (foreground !== 0) {
+        t1 = foreground;
+      }
+      if (background !== 0) {
+        t2 = background;
       }
     }
 

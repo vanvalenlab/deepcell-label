@@ -34,14 +34,4 @@ class Brush {
     }
     this.model.notifyImageChange();
   }
-
-  // target = value of array that backend will overwrite
-  get target() {
-    return this.model.selected.secondLabel;
-  }
-
-  // value = label that gets added to annotation array in backend
-  get value() {
-    return this.model.selected.label;
-  }
 }
