@@ -255,6 +255,17 @@ const erodeDilateState = {
         }))
       ]
     },
+    'shiftclick': {
+      actions: [
+        send(() => ({
+          type: 'EDIT',
+          action: 'dilate',
+          args: {
+            label: model.canvas.label,
+          }
+        }))
+      ]
+    }
   }
 };
 
