@@ -326,7 +326,7 @@ const editState = {
         action: 'swap_all_frame', 
         args: {        
           label_1: model.selected.label,
-          label_2: model.selected.secondLabel
+          label_2: model.selected.secondLabel,
         }
       })),
     }, // swap on all frames
@@ -338,7 +338,7 @@ const editState = {
         action: 'replace_single', 
         args: {        
           label_1: model.selected.label,
-          label_2: model.selected.secondLabel
+          label_2: model.selected.secondLabel,
           // frame: model.frame ???
         }
       })),
@@ -346,14 +346,14 @@ const editState = {
     // replace on all frames
     'keydown.R': {
       cond: () => true, // two different labels selected
-      actions: send({
+      actions: send(() => ({
         type: 'EDIT', 
         action: 'replace_all', 
         args: {        
-          label_1: 1, // model.selected.label,
-          label_2: 2, // model.selected.secondLabel
+          label_1: model.selected.label,
+          label_2: model.selected.secondLabel,
         }
-      }),
+      })),
     },
     // previous frame 
     'keydown.a': {
