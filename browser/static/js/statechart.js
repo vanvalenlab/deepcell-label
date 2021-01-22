@@ -292,20 +292,21 @@ const editState = {
     hist: { type: 'history' },
   },
   on: {
-    // actions
     'keydown.o': {
-      actions: send({
-        type: 'EDIT', 
+      actions: send(() => ({
+        type: 'EDIT',
         action: 'predict_single', 
-        args: {        
-          frame: 0 // model.frame,
+        args: {
+          frame: model.frame,
         }
-      }),
+      })),
     },
     'keydown.O': {
-      type: 'EDIT', 
-      action: 'predict', 
-      args: {}
+      actions: send({
+        type: 'EDIT',
+        action: 'predict_zstack',
+        args: {}
+      }),
     },
     'keydown.s' : {
       // cond: () => true, // two different labels selected
