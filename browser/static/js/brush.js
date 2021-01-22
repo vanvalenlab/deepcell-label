@@ -44,13 +44,4 @@ class Brush {
   get value() {
     return this.model.selected.label;
   }
-
-  get thresholding() {
-    return this._thresholding;
-  }
-
-  set thresholding(bool) {
-    this._thresholding = bool;
-    this.model.notifyImageChange();
-  }
 }
