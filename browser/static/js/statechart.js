@@ -243,28 +243,30 @@ const trimState = {
 
 const erodeDilateState = {
   on: {
-    'click': {
-      actions: [
-        send(() => ({
-          type: 'EDIT',
-          action: 'erode',
-          args: {
-            label: model.canvas.label,
-          }
-        }))
-      ]
+    'mousedown': {
+      actions: choose([
+        {
+          cond: (context, event) => event.button === 0,
+          actions: send(() => ({
+            type: 'EDIT',
+            action: 'erode',
+            args: {
+              label: model.canvas.label,
+            }
+          })),
+        },
+        {
+          cond: (context, event) => event.button === 2,
+          actions: send(() => ({
+            type: 'EDIT',
+            action: 'dilate',
+            args: {
+              label: model.canvas.label,
+            }
+          }))
+        },
+      ])
     },
-    'shiftclick': {
-      actions: [
-        send(() => ({
-          type: 'EDIT',
-          action: 'dilate',
-          args: {
-            label: model.canvas.label,
-          }
-        }))
-      ]
-    }
   }
 };
 
