@@ -68,19 +68,19 @@ const loadEditState = {
 const loadFrameState = {
   invoke: {
     id: 'backend',
-    src: () => Promise.resolve(),
-    // src: (context, event) => {
-    //   $.ajax({
-    //     type: 'POST',
-    //     url: `${document.location.origin}/api/changedisplay/${model.projectID}/${event.displayAttr}/${event.value}`,
-    //     async: true
-    //   })
-    // },
+    // src: () => Promise.resolve(),
+    src: (context, event) => {
+      return $.ajax({
+        type: 'POST',
+        url: `${document.location.origin}/api/changedisplay/${model.projectID}/${event.dimension}/${event.value}`,
+        async: true
+      })
+    },
     onDone: {
       target: 'edit.hist',
       actions: [
         (_, event) => console.log(event),
-        // (_, event) => handlePayload(event),
+        (_, event) => model.handlePayload(event.data),
         // () => controller.history.addFence(),
       ]
     },
@@ -254,7 +254,7 @@ const erodeDilateState = {
           }
         }))
       ]
-    }
+    },
   }
 };
 
@@ -359,7 +359,7 @@ const editState = {
     },
     // next frame
     'keydown.d': {
-      actions: send({type: 'SETFRAME', dimension: 'frame', value: 0}), // model.frame + 1}),
+      actions: send(() => ({type: 'SETFRAME', dimension: 'frame', value: model.frame + 1})),
     },
     'keydown.right': {
       actions: send({type: 'SETFRAME', dimension: 'frame', value: 0}), // model.frame + 1}),
