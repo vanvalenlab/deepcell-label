@@ -11,6 +11,7 @@
 // replace/swap after current frame
 
 const { Machine, actions, interpret, assign, send } = XState;
+const { choose } = actions;
 
 const panState = {
   initial: 'idle',
@@ -102,6 +103,7 @@ const paintState = {
     idle: {
       on: {
         'mousedown': {
+          cond: (context, event) => event.button === 0 && !event.shiftKey,
           target: 'dragging',
           actions: [
             assign({trace: () => [[canvas.imgY, canvas.imgX]]}),
@@ -142,12 +144,18 @@ const paintState = {
 
 const selectState = {
   on: {
-    'click': {
-      actions: () => { controller.history.addAction(new SelectForeground(model)); }
-    },
-    'shiftclick': {
-      actions: () => { controller.history.addAction(new SelectBackground(model)); }
-    },
+    'mousedown': {
+      actions: choose([
+        {
+          cond: (context, event) => event.shiftKey && event.button === 0,
+          actions: () => controller.history.addAction(new SelectForeground(model)),
+        },
+        {
+          cond: (context, event) => event.shiftKey && event.button === 2,
+          actions: () => controller.history.addAction(new SelectBackground(model)),
+        }
+      ])
+    }
   }
 };
 
@@ -285,7 +293,6 @@ const editState = {
     trim: trimState,
     erodeDilate: erodeDilateState,
     autofit: autofitState,
-    select: selectState,
     hist: { type: 'history' },
   },
   on: {
@@ -380,7 +387,6 @@ const editState = {
     'keydown.k': '.trim',
     'keydown.q': '.erodeDilate',
     'keydown.m': '.autofit',
-    'keydown.p': '.select',
     // external transitions
     'keydown.space': 'pan',
     EDIT: 'loadEdit',
@@ -466,6 +472,7 @@ const deepcellLabelMachine = Machine({
     label: labelState,
     adjuster: adjusterState,
     canvas: canvasState,
+    select: selectState,
     brush: brushState,
   }
 });
