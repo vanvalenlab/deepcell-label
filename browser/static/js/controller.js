@@ -232,6 +232,16 @@ class Controller {
       this.service.send('keydown.m');
     } else if (evt.key === 's') {
       this.service.send('keydown.s');
+    } else if (evt.key === 'S') {
+      this.service.send('keydown.S')
+    } else if (evt.key === 'r') {
+      this.service.send('keydown.r')
+    } else if (evt.key === 'R') {
+      this.service.send('keydown.R')
+    } else if (evt.key === 'o') {
+      this.service.send('keydown.o')
+    } else if (evt.key === 'O') {
+      this.service.send('keydown.O')
     }
   }
 
