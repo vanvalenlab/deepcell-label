@@ -114,14 +114,6 @@ class Model {
     this.notifyInfoChange();
   }
 
-  get highlighted_cell_one() {
-    return this.selected.label;
-  }
-
-  get highlighted_cell_two() {
-    return this.selected.secondLabel;
-  }
-
   get highlight() {
     return this._highlight;
   }

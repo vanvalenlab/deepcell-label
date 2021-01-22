@@ -379,8 +379,8 @@ class ImageAdjuster {
       if (editMode) {
         t1 = brush.value;
       } else {
-        t1 = this.model.highlighted_cell_one;
-        t2 = this.model.highlighted_cell_two;
+        t1 = this.model.selected.label;
+        t2 = this.model.selected.secondLabel;
       }
     }
 

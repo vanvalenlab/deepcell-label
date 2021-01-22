@@ -71,7 +71,7 @@ main {
 }
 /* END log table CSS */
 
-#edit_brush_row, #brush_label_row, #edit_erase_row {
+#edit_brush_row {
   visibility: hidden;
 }
 

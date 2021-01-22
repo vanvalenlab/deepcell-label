@@ -148,25 +148,7 @@ class InfopaneView {
    */
   renderHighlightRows() {
     const highlightText = (this.model.highlight) ? 'ON' : 'OFF';
-    let highlightedLabels = 'none';
-    if (this.model.highlight) {
-      if (this.model.edit_mode) {
-        highlightedLabels = (this.brush.value > 0) ? this.brush.value : '-';
-      } else {
-        if (this.model.highlighted_cell_one !== -1) {
-          if (this.model.highlighted_cell_two !== -1) {
-            highlightedLabels = `${this.model.highlighted_cell_one}, ${this.model.highlighted_cell_two}`;
-          } else {
-            highlightedLabels = this.model.highlighted_cell_one;
-          }
-        }
-      }
-    }
     document.getElementById('highlight').innerHTML = highlightText;
-    document.getElementById('currently_highlighted').innerHTML = highlightedLabels;
-
-    let selectedLabels = `${this.model.selected.label}, ${this.model.selected.secondLabel}`;
-    document.getElementById('selected').innerHTML = selectedLabels;
   }
   
   /**
@@ -178,17 +160,9 @@ class InfopaneView {
   
     const rowVisibility = (this.model.edit_mode) ? 'visible' : 'hidden';
     document.getElementById('edit_brush_row').style.visibility = rowVisibility;
-    document.getElementById('brush_label_row').style.visibility = rowVisibility;
-    document.getElementById('edit_erase_row').style.visibility = rowVisibility;
   
     if (this.model.edit_mode) {
       document.getElementById('edit_brush').innerHTML = this.brush.size;
-  
-      const editLabelText = (this.brush.value > 0) ? this.brush.value : '-';
-      document.getElementById('brush_label').innerHTML = editLabelText;
-  
-      const editEraseText = this.brush.erase ? 'ON' : 'OFF';
-      document.getElementById('edit_erase').innerHTML = editEraseText;
     }
   }
   
