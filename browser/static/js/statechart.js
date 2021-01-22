@@ -203,17 +203,15 @@ const floodState = {
   on: {
     'click': {
       actions: [
-        send({
+        send(() => ({
           type: 'EDIT',
           action: 'flood',
           args: {
-            label: 1, // model.selected.label,
-            background: 0, // model.canvas.label, 
-            frame: 0, // model.frame,
-            x_location: 0, // model.canvas.imgX,
-            y_location: 0, // model.canvas.imgY
+            label: model.selected.label,
+            x_location: model.canvas.imgX,
+            y_location: model.canvas.imgY,
           }
-        })
+        }))
       ]
     }
   }
@@ -323,7 +321,7 @@ const editState = {
     },
     'keydown.S': {
       cond: () => true, // two different labels selected
-      actions: send({
+      actions: send(() => {
         type: 'EDIT', 
         action: 'swap_all_frame', 
         args: {        

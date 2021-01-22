@@ -316,6 +316,38 @@ class BaseEdit(object):
 
         self.frame[..., self.feature] = img_trimmed
 
+    def action_flood(self, label, x_location, y_location):
+        """
+        Floods the region at (x, y) with the label.
+
+        Args:
+
+        """
+        img = self.frame[..., self.feature]
+        # Rescale click location to corresponding location in label array
+        hole_fill_seed = (int(y_location // self.scale_factor),
+                          int(x_location // self.scale_factor))
+        # Check current label
+        old_label = img[hole_fill_seed]
+
+        # Flood region with label
+        connectivity = 1 if old_label == 0 else 2 # helps prevents hole fill from spilling into background
+        flooded = flood_fill(img, hole_fill_seed, label, connectivity=connectivity)
+
+        # Update cell info dicts
+        label_in_original = np.any(np.isin(label, img))
+        label_in_flooded = np.any(np.isin(label, flooded))
+        old_label_in_flooded = not np.any(np.isin(old_label, flooded))
+
+        if label != 0 and not label_in_original and label_in_flooded:
+            self.add_cell_info(add_label=label, frame=self.frame_id)
+        if old_label != 0 and not old_label_in_flooded:
+            self.del_cell_info(del_label=old_label, frame=self.frame_id)
+
+        self.frame[..., self.feature] = flooded
+        self.y_changed = True
+
+    
     def action_fill_hole(self, label, x_location, y_location):
         '''
         fill a "hole" in a cell annotation with the cell label. Doesn't check
