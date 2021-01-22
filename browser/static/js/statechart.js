@@ -348,7 +348,7 @@ const editState = {
       cond: () => true, // two different labels selected
       actions: send(() => ({
         type: 'EDIT', 
-        action: 'replace_all', 
+        action: 'replace', 
         args: {        
           label_1: model.selected.label,
           label_2: model.selected.secondLabel,
