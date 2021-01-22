@@ -10,14 +10,6 @@ class Brush {
     this._padding = model.padding;
   }
 
-  get x() {
-    return this.model.canvas.imgX;
-  }
-
-  get y() {
-    return this.model.canvas.imgY;
-  }
-
   get size() {
     return this._size;
   }

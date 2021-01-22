@@ -457,6 +457,9 @@ class BrushView {
       ctxDstHeight - 2 * this.padding);
     ctxDst.restore();
 
+    const x = this.model.canvas.imgX;
+    const y = this.model.canvas.imgY;
+
     // Draw solid outlines
     if (controller.service.state.matches('label.edit.threshold.dragging')) {
       const threshX = controller.service.state.context.threshX;
@@ -465,14 +468,14 @@ class BrushView {
       ctxDst.strokeStyle = 'white';
       const boxStartX = (threshX - sx) * mag + this.padding;
       const boxStartY = (threshY - sy) * mag + this.padding;
-      const boxWidth = (this.brush.x - threshX) * mag;
-      const boxHeight = (this.brush.y - threshY) * mag;
+      const boxWidth = (x - threshX) * mag;
+      const boxHeight = (y - threshY) * mag;
       ctxDst.strokeRect(boxStartX, boxStartY, boxWidth, boxHeight);
     } else if (controller.service.state.matches('label.edit.paint')) {
       // solid circle around current brush location
       ctxDst.beginPath();
-      const cX = (this.brush.x - sx) * mag + this.padding;
-      const cY = (this.brush.y - sy) * mag + this.padding;
+      const cX = (x - sx) * mag + this.padding;
+      const cY = (y - sy) * mag + this.padding;
       ctxDst.arc(cX, cY, mag * this.brush.size, 0, Math.PI * 2, true);
       ctxDst.strokeStyle = this._outlineColor;
       ctxDst.closePath();
@@ -488,12 +491,14 @@ class BrushView {
     this.clear();
     const threshX = controller.service.state.context.threshX;
     const threshY = controller.service.state.context.threshY;
+    const x = this.model.canvas.imgX;
+    const y = this.model.canvas.imgY;
     // interior of box; will be added to visible canvas with opacity
     if (controller.service.state.matches('label.edit.threshold.dragging')) {
       this.ctx.fillRect(
         threshX, threshY,
-        this.brush.x - threshX,
-        this.brush.y - threshY);
+        x - threshX,
+        y - threshY);
     }
   }
 
@@ -501,12 +506,14 @@ class BrushView {
    * Draws the current brush trace on the brush canvas.
    */
   drawPaintbrush() {
+    const x = this.model.canvas.imgX;
+    const y = this.model.canvas.imgY;
     // When painting, leave behind previous shadows to show brush's trace
     if (!controller.service.state.matches('label.edit.paint.dragging')) {
       this.clear();
     }
     this.ctx.beginPath();
-    this.ctx.arc(this.brush.x, this.brush.y, this.brush.size, 0, Math.PI * 2, true);
+    this.ctx.arc(x, y, this.brush.size, 0, Math.PI * 2, true);
     this.ctx.closePath();
     // no opacity needed; just shows where brush has been
     this.ctx.fill();
