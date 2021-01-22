@@ -177,10 +177,6 @@ const thresholdState = {
     },
     dragging: {
       on: {
-        'mousemove': {
-          target: 'dragging',
-          // action to update threshold box? or can that be handled by a threshold CSS class for the brush?
-        },
         'mouseup': {
           actions: [
             send((context, event) => ({
@@ -241,7 +237,6 @@ const trimState = {
   }
 };
 
-// TODO: left click (or smthing else) to dilate
 const erodeDilateState = {
   on: {
     'click': {
