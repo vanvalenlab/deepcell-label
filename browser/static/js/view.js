@@ -138,7 +138,8 @@ class InfopaneView {
     this.renderEditRows();
     this.renderLabelRows();
     // always show 'state' and selected labels
-    document.getElementById('mode').innerHTML = 'hi';// controller.service.state.value;
+    const states = controller.service.state.toStrings();
+    document.getElementById('mode').innerHTML = states[states.length - 1];
     document.getElementById('foreground').innerHTML = this.model.selected.label;
     document.getElementById('background').innerHTML = this.model.selected.secondLabel;
   }
