@@ -328,15 +328,15 @@ const editState = {
     // replace on one frame
     'keydown.r': {
       cond: () => true, // two different labels selected
-      actions: send({
+      actions: send(() => ({
         type: 'EDIT', 
         action: 'replace_single', 
         args: {        
-          label_1: 1, // model.selected.label,
-          label_2: 2, // model.selected.secondLabel
+          label_1: model.selected.label,
+          label_2: model.selected.secondLabel
           // frame: model.frame ???
         }
-      }),
+      })),
     },
     // replace on all frames
     'keydown.R': {
