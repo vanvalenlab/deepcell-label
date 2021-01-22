@@ -68,7 +68,6 @@ const loadEditState = {
 const loadFrameState = {
   invoke: {
     id: 'backend',
-    // src: () => Promise.resolve(),
     src: (context, event) => {
       controller.history.addAction(new ChangeFrame(model, event.value));
       return $.ajax({
@@ -143,11 +142,9 @@ const paintState = {
 
 const selectState = {
   on: {
-    // select foreground label
     'click': {
       actions: () => { controller.history.addAction(new SelectForeground(model)); }
     },
-    // select background label
     'shiftclick': {
       actions: () => { controller.history.addAction(new SelectBackground(model)); }
     },
@@ -330,8 +327,7 @@ const editState = {
           label_2: model.selected.secondLabel,
         }
       })),
-    }, // swap on all frames
-    // replace on one frame
+    },
     'keydown.r': {
       cond: () => true, // two different labels selected
       actions: send(() => ({
@@ -344,7 +340,6 @@ const editState = {
         }
       })),
     },
-    // replace on all frames
     'keydown.R': {
       cond: () => true, // two different labels selected
       actions: send(() => ({
@@ -356,7 +351,6 @@ const editState = {
         }
       })),
     },
-    // previous frame 
     'keydown.a': {
       actions: [
         send(() => ({type: 'SETFRAME', dimension: 'frame', value: model.frame - 1})),
@@ -365,14 +359,12 @@ const editState = {
     'keydown.left': {
       actions: send(() => ({type: 'SETFRAME', dimension: 'frame', value: model.frame - 1})),
     },
-    // next frame
     'keydown.d': {
       actions: send(() => ({type: 'SETFRAME', dimension: 'frame', value: model.frame + 1})),
     },
     'keydown.right': {
       actions: send(() => ({type: 'SETFRAME', dimension: 'frame', value: model.frame + 1})),
     },
-    // flip foreground backgroiund
     'keydown.x': {
       actions: () => controller.history.addAction(new SwapForegroundBackground(model))
     },
