@@ -288,7 +288,7 @@ const editState = {
   },
   on: {
     // actions
-    'keydown.p': {
+    'keydown.o': {
       actions: send({
         type: 'EDIT', 
         action: 'predict_single', 
@@ -297,7 +297,7 @@ const editState = {
         }
       }),
     },
-    'keydown.P': {
+    'keydown.O': {
       type: 'EDIT', 
       action: 'predict', 
       args: {}
