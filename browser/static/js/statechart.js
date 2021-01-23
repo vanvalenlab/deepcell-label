@@ -13,6 +13,186 @@
 const { Machine, actions, interpret, assign, send } = XState;
 const { choose } = actions;
 
+// guards
+const leftMouse = (context, event) => event.button === 0;
+const rightMouse = (context, event) => event.button === 2;
+const shiftLeftMouse = (context, event) => event.button === 0 && event.shiftKey;
+const shiftRightMouse = (context, event) => event.button === 2 && event.shiftKey;
+const twoLabels = (context, event) => true;
+
+// actions
+const pan = (context, event) => {
+  const zoom = 100 / (model.canvas.zoom * model.canvas.scale);
+  controller.history.addAction(new Pan(model, event.movementX * zoom, event.movementY * zoom));
+};
+
+const editLabels = (context, event) => {
+  return $.ajax({
+    type: 'POST',
+    url: `${document.location.origin}/api/edit/${model.projectID}/${event.action}`,
+    data: event.args,
+    async: true
+    })
+};
+
+const addToTrace = assign({trace: context => [...context.trace, [canvas.imgY, canvas.imgX]]});
+
+const resetTrace = assign({trace: []});
+
+const draw = send((context, event) => ({
+  type: 'EDIT',
+  action: 'handle_draw',
+  args: {
+    trace: JSON.stringify(context.trace),
+    brush_value: model.selected.label,
+    target_value: model.selected.secondLabel,
+    brush_size: model.brush.size,
+    frame: model.frame,
+    erase: false,
+  }
+}));
+
+const selectLabel = choose([
+  {
+    cond: (context, event) => event.shiftKey && event.button === 0,
+    actions: () => controller.history.addAction(new SelectForeground(model)),
+  },
+  {
+    cond: (context, event) => event.shiftKey && event.button === 2,
+    actions: () => controller.history.addAction(new SelectBackground(model)),
+  }
+]);
+
+const swapLabels = () => controller.history.addAction(new SwapForegroundBackground(model));
+
+const setThreshold = assign({
+  threshX: () => model.canvas.imgX,
+  threshY: () => model.canvas.imgY,
+});
+
+const threshold = send((context, event) => ({
+  type: 'EDIT',
+  action: 'threshold',
+  args: {
+    y1: context.threshY,
+    x1: context.threshX,
+    y2: model.canvas.imgY,
+    x2: model.canvas.imgX,
+    frame: model.frame,
+    label: model.selected.label,
+  }
+}));
+
+const flood = send(() => ({
+  type: 'EDIT',
+  action: 'flood',
+  args: {
+    label: model.selected.label,
+    x_location: model.canvas.imgX,
+    y_location: model.canvas.imgY,
+  }
+}));
+
+const trim = send(() => ({
+  type: 'EDIT',
+  action: 'trim_pixels',
+  args: {
+    label: model.canvas.label,
+    frame: model.frame,
+    x_location: model.canvas.imgX,
+    y_location: model.canvas.imgY
+  }
+}));
+
+const erode = send(() => ({
+  type: 'EDIT',
+  action: 'erode',
+  args: {
+    label: model.canvas.label,
+  }
+}));
+
+const dilate = send(() => ({
+  type: 'EDIT',
+  action: 'dilate',
+  args: {
+    label: model.canvas.label,
+  }
+}));
+
+const autofit = send(() => ({
+  type: 'EDIT',
+  action: 'active_contour',
+  args: {
+    label: model.canvas.label,
+  }
+}));
+
+const predictFrame = send(() => ({
+  type: 'EDIT',
+  action: 'predict_single', 
+  args: {
+    frame: model.frame,
+  }
+}));
+
+const predictAll = send({
+  type: 'EDIT',
+  action: 'predict_zstack',
+  args: {}
+});
+
+const swapFrame = send(() => ({
+  type: 'EDIT', 
+  action: 'swap_single_frame', 
+  args: {        
+    label_1: model.selected.label,
+    label_2: model.selected.secondLabel,
+    frame: model.frame,
+  }
+})); 
+
+const swapAll = send(() => ({
+  type: 'EDIT', 
+  action: 'swap_all_frame', 
+  args: {        
+    label_1: model.selected.label,
+    label_2: model.selected.secondLabel,
+  }
+}));
+
+const replaceFrame = send(() => ({
+  type: 'EDIT', 
+  action: 'replace_single', 
+  args: {        
+    label_1: model.selected.label,
+    label_2: model.selected.secondLabel,
+    // frame: model.frame ???
+  }
+}));
+
+const replaceAll = send(() => ({
+  type: 'EDIT', 
+  action: 'replace', 
+  args: {        
+    label_1: model.selected.label,
+    label_2: model.selected.secondLabel,
+  }
+}));
+
+const changeContrast = (context, event) => controller.history.addAction(new ChangeContrast(model, event.change));
+const changeBrightness = (context, event) => controller.history.addAction(new ChangeBrightness(model, event.change));
+const toggleHighlight = () => controller.history.addAction(new ToggleHighlight(model));
+const resetBrightnessContrast = () => controller.history.addAction(new ResetBrightnessContrast(model));
+const toggleInvert = () => controller.history.addAction(new ToggleInvert(model));
+
+const zoomIn = () => controller.history.addAction(new Zoom(model, -1));
+const zoomOut = () => controller.history.addAction(new Zoom(model, 1));
+const updateMousePos  = (context, event) => model.updateMousePos(event.offsetX, event.offsetY);
+
+const setBrushSize = (context, event) => model.brush.size = event.size;
+
+
 const panState = {
   initial: 'idle',
   states: {
@@ -23,10 +203,7 @@ const panState = {
       on: {
         'mouseup': 'idle',
         'mousemove': {
-          actions: (_, event) => {
-            const zoom = 100 / (model.canvas.zoom * model.canvas.scale);
-            controller.history.addAction(new Pan(model, event.movementX * zoom, event.movementY * zoom));
-          }
+          actions: 'pan',
         },
       },
     },
@@ -105,37 +282,17 @@ const paintState = {
         'mousedown': {
           cond: (context, event) => event.button === 0 && !event.shiftKey,
           target: 'dragging',
-          actions: [
-            assign({trace: () => [[canvas.imgY, canvas.imgX]]}),
-          ]
+          actions: 'addToTrace',
         }
       }
     },
     dragging: {
       on: {
         'mousemove': {
-          actions: [
-            assign({
-              trace: context => [...context.trace, [canvas.imgY, canvas.imgX]]
-            }),
-          ]
+          actions: 'addToTrace',
         },
         'mouseup': {
-          actions: [
-            send((context, event) => ({
-                type: 'EDIT',
-                action: 'handle_draw',
-                args: {
-                  trace: JSON.stringify(context.trace),
-                  brush_value: model.selected.label,
-                  target_value: model.selected.secondLabel,
-                  brush_size: model.brush.size,
-                  frame: model.frame,
-                  erase: false,
-                }
-              })
-            )
-          ]
+          actions: 'draw',
         }
       }
     }
@@ -145,17 +302,11 @@ const paintState = {
 const selectState = {
   on: {
     'mousedown': {
-      actions: choose([
-        {
-          cond: (context, event) => event.shiftKey && event.button === 0,
-          actions: () => controller.history.addAction(new SelectForeground(model)),
-        },
-        {
-          cond: (context, event) => event.shiftKey && event.button === 2,
-          actions: () => controller.history.addAction(new SelectBackground(model)),
-        }
-      ])
-    }
+      actions: 'selectLabel'
+    },
+    'keydown.x': {
+      actions: 'swapLabels',
+    },
   }
 };
 
@@ -172,32 +323,14 @@ const thresholdState = {
       on: {
         'mousedown': {
           target: 'dragging',
-          actions: [
-            assign({
-              threshX: () => model.canvas.imgX,
-              threshY: () => model.canvas.imgY,
-            })
-          ]
+          actions: 'setThreshold',
         }
       }
     },
     dragging: {
       on: {
         'mouseup': {
-          actions: [
-            send((context, event) => ({
-              type: 'EDIT',
-              action: 'threshold',
-              args: {
-                y1: context.threshY,
-                x1: context.threshX,
-                y2: model.canvas.imgY,
-                x2: model.canvas.imgX,
-                frame: model.frame,
-                label: model.selected.label,
-              }
-            }))
-          ]
+          actions: 'threshold',
         }
       }
     }
@@ -207,17 +340,7 @@ const thresholdState = {
 const floodState = {
   on: {
     'click': {
-      actions: [
-        send(() => ({
-          type: 'EDIT',
-          action: 'flood',
-          args: {
-            label: model.selected.label,
-            x_location: model.canvas.imgX,
-            y_location: model.canvas.imgY,
-          }
-        }))
-      ]
+      actions: 'flood'
     }
   }
 };
@@ -225,18 +348,7 @@ const floodState = {
 const trimState = {
   on: {
     'click': {
-      actions: [
-        send(() => ({
-          type: 'EDIT',
-          action: 'trim_pixels',
-          args: {
-            label: model.canvas.label,
-            frame: model.frame,
-            x_location: model.canvas.imgX,
-            y_location: model.canvas.imgY
-          }
-        }))
-      ]
+      actions: 'trim',
     }
   }
 };
@@ -247,23 +359,11 @@ const erodeDilateState = {
       actions: choose([
         {
           cond: (context, event) => event.button === 0,
-          actions: send(() => ({
-            type: 'EDIT',
-            action: 'erode',
-            args: {
-              label: model.canvas.label,
-            }
-          })),
+          actions: 'erode',
         },
         {
           cond: (context, event) => event.button === 2,
-          actions: send(() => ({
-            type: 'EDIT',
-            action: 'dilate',
-            args: {
-              label: model.canvas.label,
-            }
-          }))
+          actions: 'erode',
         },
       ])
     },
@@ -273,15 +373,7 @@ const erodeDilateState = {
 const autofitState = {
   on: {
     'click': {
-      actions: [
-        send(() => ({
-          type: 'EDIT',
-          action: 'active_contour',
-          args: {
-            label: model.canvas.label,
-          }
-        }))
-      ]
+      actions: 'autofit',
     }
   }
 };
@@ -299,66 +391,26 @@ const editState = {
   },
   on: {
     'keydown.o': {
-      actions: send(() => ({
-        type: 'EDIT',
-        action: 'predict_single', 
-        args: {
-          frame: model.frame,
-        }
-      })),
+      actions: 'predictFrame',
     },
     'keydown.O': {
-      actions: send({
-        type: 'EDIT',
-        action: 'predict_zstack',
-        args: {}
-      }),
+      actions: 'predictAll',
     },
     'keydown.s' : {
       // cond: () => true, // two different labels selected
-      actions: send(() => ({
-        type: 'EDIT', 
-        action: 'swap_single_frame', 
-        args: {        
-          label_1: model.selected.label,
-          label_2: model.selected.secondLabel,
-          frame: model.frame,
-        }
-      })),
+      actions: 'swapFrame',
     },
     'keydown.S': {
       cond: () => true, // two different labels selected
-      actions: send(() => ({
-        type: 'EDIT', 
-        action: 'swap_all_frame', 
-        args: {        
-          label_1: model.selected.label,
-          label_2: model.selected.secondLabel,
-        }
-      })),
+      actions: 'swapAll',
     },
     'keydown.r': {
       cond: () => true, // two different labels selected
-      actions: send(() => ({
-        type: 'EDIT', 
-        action: 'replace_single', 
-        args: {        
-          label_1: model.selected.label,
-          label_2: model.selected.secondLabel,
-          // frame: model.frame ???
-        }
-      })),
+      actions: 'replaceFrame',
     },
     'keydown.R': {
       cond: () => true, // two different labels selected
-      actions: send(() => ({
-        type: 'EDIT', 
-        action: 'replace', 
-        args: {        
-          label_1: model.selected.label,
-          label_2: model.selected.secondLabel,
-        }
-      })),
+      actions: 'replaceAll',
     },
     'keydown.a': {
       actions: [
@@ -373,9 +425,6 @@ const editState = {
     },
     'keydown.right': {
       actions: send(() => ({type: 'SETFRAME', dimension: 'frame', value: model.frame + 1})),
-    },
-    'keydown.x': {
-      actions: () => controller.history.addAction(new SwapForegroundBackground(model))
     },
     'keydown.n': {
       actions: () => controller.history.addAction(new ResetLabels(model))
@@ -400,19 +449,19 @@ const editState = {
 const adjusterState = {
   on: {
     SCROLLCONTRAST: {
-      actions: (context, event) => controller.history.addAction(new ChangeContrast(model, event.change))
+      actions: 'changeContrast',
     },
     SCROLLBRIGHTNESS: {
-      actions: (context, event) => controller.history.addAction(new ChangeBrightness(model, event.change))
+      actions: 'changeBrightness',
     },
     'keydown.h': {
-      actions: () => controller.history.addAction(new ToggleHighlight(model)),
+      actions: 'toggleHighlight',
     },
     'keydown.0': {
-      actions: () => controller.history.addAction(new ResetBrightnessContrast(model)),
+      actions: 'resetBrightnessContrast',
     },
     'keydown.i': {
-      actions: () => controller.history.addAction(new ToggleInvert(model)),
+      actions: 'toggleInvert',
     }
   }
 };
@@ -420,19 +469,13 @@ const adjusterState = {
 const canvasState = {
   on: {
     ZOOMIN: {
-      actions: [
-        () => controller.history.addAction(new Zoom(model, -1)),
-      ]
+      actions: 'zoomIn',
     },
     ZOOMOUT: {
-      actions: [
-        () => controller.history.addAction(new Zoom(model, 1)),
-      ]
+      actions: 'zoomOut',
     },
     'mousemove': {
-      actions: [
-        (context, event) => model.updateMousePos(event.offsetX, event.offsetY),
-      ]
+      actions: 'updateMousePos',
     }
   }
 };
@@ -440,11 +483,7 @@ const canvasState = {
 const brushState = {
   on: {
     SETSIZE: {
-      actions: [
-        (_, event) => {
-          model.brush.size = event.size;
-        }
-      ],
+      actions: 'setBrushSize',
     }
   }
 };
@@ -459,22 +498,63 @@ const labelState = {
   },
 };
 
-const deepcellLabelMachine = Machine({
-  id: 'deepcellLabel',
-  type: 'parallel',
-  context: {
-    trace: [],
-    threshX: -10, // -2 * model.padding,
-    threshY: -10, // -2 * model.padding,
-    frame: 0,
-    channel: 0,
-    feature: 0,
+const deepcellLabelMachine = Machine(
+  {
+    id: 'deepcellLabel',
+    type: 'parallel',
+    context: {
+      trace: [],
+      threshX: -10, // -2 * model.padding,
+      threshY: -10, // -2 * model.padding,
+      frame: 0,
+      channel: 0,
+      feature: 0,
+    },
+    states: {
+      label: labelState,
+      adjuster: adjusterState,
+      canvas: canvasState,
+      select: selectState,
+      brush: brushState,
+    }
   },
-  states: {
-    label: labelState,
-    adjuster: adjusterState,
-    canvas: canvasState,
-    select: selectState,
-    brush: brushState,
+  {
+    actions: {
+      pan: pan,
+      editLabels: editLabels,
+      addToTrace: addToTrace,
+      resetTrace: resetTrace,
+      draw: draw,
+      selectLabel: selectLabel,
+      swapLabels: swapLabels,
+      setThreshold: setThreshold,
+      threshold: threshold,
+      flood: flood,
+      erode: erode,
+      dilate: dilate,
+      autofit: autofit,
+      predictFrame: predictFrame,
+      predictAll: predictAll,
+      swapFrame: swapFrame,
+      swapAll: swapAll,
+      replaceFrame: replaceFrame,
+      replaceAll: replaceAll,
+      changeContrast: changeContrast,
+      changeBrightness: changeBrightness,
+      toggleHighlight: toggleHighlight,
+      resetBrightnessContrast: resetBrightnessContrast,
+      toggleInvert: toggleInvert,
+      zoomIn: zoomIn,
+      zoomOut: zoomOut,
+      updateMousePos: updateMousePos,
+      setBrushSize: setBrushSize,
+    },
+    guards: {
+      leftMouse: leftMouse,
+      rightMouse: rightMouse,
+      shiftLeftMouse: shiftLeftMouse,
+      shiftRightMouse: shiftRightMouse,
+      twoLabels: twoLabels,
+    },
   }
-});
+);
