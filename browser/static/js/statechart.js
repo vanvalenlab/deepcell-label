@@ -154,15 +154,6 @@ const swapFrame = send(() => ({
     label_2: model.selected.secondLabel,
     frame: model.frame,
   }
-})); 
-
-const swapAll = send(() => ({
-  type: 'EDIT', 
-  action: 'swap_all_frame', 
-  args: {        
-    label_1: model.selected.label,
-    label_2: model.selected.secondLabel,
-  }
 }));
 
 const replaceFrame = send(() => ({
@@ -402,10 +393,6 @@ const editState = {
       // cond: () => true, // two different labels selected
       actions: 'swapFrame',
     },
-    'keydown.S': {
-      cond: () => true, // two different labels selected
-      actions: 'swapAll',
-    },
     'keydown.r': {
       cond: () => true, // two different labels selected
       actions: 'replaceFrame',
@@ -446,7 +433,6 @@ const editState = {
     SETFRAME: 'loadFrame'
   }
 };
-
 
 const adjusterState = {
   on: {
@@ -570,7 +556,6 @@ const deepcellLabelMachine = Machine(
       predictFrame: predictFrame,
       predictAll: predictAll,
       swapFrame: swapFrame,
-      swapAll: swapAll,
       replaceFrame: replaceFrame,
       replaceAll: replaceAll,
       changeContrast: changeContrast,

@@ -625,27 +625,6 @@ class ZStackEdit(BaseEdit):
                 self.del_cell_info(del_label=label_2, frame=self.frame_id)
                 label_frame.frame[..., self.feature] = img
 
-    def action_swap_all_frame(self, label_1, label_2):
-        """
-        Replaces all label_1 pixels with label_2 across all frames
-        in the current feature and vice versa.
-        """
-
-        for label_frame in self.project.label_frames:
-            img = label_frame.frame[..., self.feature]
-            img = np.where(img == label_1, -1, img)
-            img = np.where(img == label_2, label_1, img)
-            img = np.where(img == -1, label_2, img)
-            label_frame.frame[..., self.feature] = img
-
-        # update cell_info
-        cell_info_1 = self.labels.cell_info[self.feature][label_1].copy()
-        cell_info_2 = self.labels.cell_info[self.feature][label_2].copy()
-        self.labels.cell_info[self.feature][label_1]['frames'] = cell_info_2['frames']
-        self.labels.cell_info[self.feature][label_2]['frames'] = cell_info_1['frames']
-
-        self.y_changed = self.labels_changed = True
-
     def action_predict_single(self):
         """
         predicts zstack relationship for current frame based on previous frame
@@ -820,7 +799,6 @@ class TrackEdit(BaseEdit):
 
             self.labels_changed = True
 
-    # TODO: handle multiple frames
     def action_replace(self, label_1, label_2):
         """
         Replacing label_2 with label_1 in all frames.
