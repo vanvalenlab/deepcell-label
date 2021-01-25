@@ -139,7 +139,7 @@ class InfopaneView {
     this.renderLabelRows();
     // always show 'state' and selected labels
     const states = controller.service.state.toStrings();
-    document.getElementById('mode').innerHTML = states[states.length - 1];
+    document.getElementById('mode').innerHTML = states[states.length - 2];
     document.getElementById('foreground').innerHTML = this.model.selected.label;
     document.getElementById('background').innerHTML = this.model.selected.secondLabel;
   }
@@ -320,10 +320,10 @@ class CanvasView {
       2 * this.model.padding + this.scaledHeight
     );
   
-    if (this.model.edit_mode) {
+    if (controller.service.state.matches('display.overlay')) {
       // edit mode (annotations overlaid on raw + brush preview)
       this.renderOverlay(ctx);
-    } else if (this.model.rendering_raw) {
+    } else if (controller.service.state.matches('display.raw')) {
       // draw raw image
       this.renderRaw(ctx);
     } else {

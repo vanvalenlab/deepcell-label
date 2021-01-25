@@ -21,6 +21,10 @@ const shiftRightMouse = (context, event) => event.button === 2 && event.shiftKey
 const twoLabels = (context, event) => true;
 
 // actions
+const updateCanvas = (context, event) => {
+  model.notifyImageChange();
+};
+
 const pan = (context, event) => {
   const zoom = 100 / (model.canvas.zoom * model.canvas.scale);
   controller.history.addAction(new Pan(model, event.movementX * zoom, event.movementY * zoom));
@@ -488,6 +492,36 @@ const brushState = {
   }
 };
 
+const displayState = {
+  initial: 'overlay',
+  states: {
+    overlay: {
+      on: {
+        'keydown.z': {
+          target: 'labels',
+          actions: 'updateCanvas',
+        }
+      }
+    },
+    labels: {
+      on: {
+        'keydown.z': {
+          target: 'raw',
+          actions: 'updateCanvas',
+        }
+      }
+    },
+    raw: {
+      on: {
+        'keydown.z': {
+          target: 'overlay',
+          actions: 'updateCanvas',
+        }
+      }
+    },
+  }
+}
+
 const labelState = {
   initial: 'edit',
   states: {
@@ -512,6 +546,7 @@ const deepcellLabelMachine = Machine(
     },
     states: {
       label: labelState,
+      display: displayState,
       adjuster: adjusterState,
       canvas: canvasState,
       select: selectState,
@@ -520,6 +555,7 @@ const deepcellLabelMachine = Machine(
   },
   {
     actions: {
+      updateCanvas: updateCanvas,
       pan: pan,
       editLabels: editLabels,
       addToTrace: addToTrace,

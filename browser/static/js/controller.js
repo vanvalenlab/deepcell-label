@@ -172,6 +172,8 @@ class Controller {
       this.service.send('REDO');
     } else if ((evt.ctrlKey || evt.metaKey) && (evt.key === 'Z' || evt.key === 'z')) {
       this.service.send('UNDO');
+    } else if (evt.key === 'z') {
+      this.service.send('keydown.z');
     } else if (evt.key === 'a') {
       this.service.send('keydown.a');
     } else if (evt.key === 'ArrowLeft') {
