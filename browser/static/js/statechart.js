@@ -365,7 +365,7 @@ const erodeDilateState = {
         },
         {
           cond: (context, event) => event.button === 2,
-          actions: 'erode',
+          actions: 'dilate',
         },
       ])
     },
