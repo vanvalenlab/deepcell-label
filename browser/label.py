@@ -255,6 +255,7 @@ class BaseEdit(object):
             brush_size (int): radius of the brush
             erase (bool): sets target_value in trace area to 0 when True
         """
+        # import pdb; pdb.set_trace()
         img = np.copy(self.frame[..., self.feature])
         in_original = np.any(np.isin(img, brush_value))
 

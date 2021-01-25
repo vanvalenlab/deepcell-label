@@ -277,9 +277,7 @@ const loadFrameState = {
 
 const paintState = {
   initial: 'idle',
-  entry: {
-    actions: assign({trace: []}),
-  },
+  entry: 'resetTrace',
   states: {
     idle: {
       on: {
