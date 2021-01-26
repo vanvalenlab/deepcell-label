@@ -46,12 +46,20 @@ class ChangeFrame extends Action {
   }
 
   do() {
-    this.model.frame = this.newValue;
+    controller.service.send({
+      type: 'SETFRAME',
+      dimension: 'frame',
+      value: this.newValue
+    });
   }
 
 
   undo() {
-    this.model.frame = this.oldValue;
+    controller.service.send({
+      type: 'SETFRAME',
+      dimension: 'frame',
+      value: this.oldValue
+    });
   }
 
   redo() {

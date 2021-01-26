@@ -254,12 +254,12 @@ const loadEditState = {
 
 const loadFrameState = {
   invoke: {
-    id: 'backend',
+    id: 'loadFrame',
     src: (context, event) => {
-      controller.history.addAction(new ChangeFrame(model, event.value));
+      model[event.dimension] = event.value;
       return $.ajax({
         type: 'POST',
-        url: `${document.location.origin}/api/changedisplay/${model.projectID}/${event.dimension}/${model.frame}`,
+        url: `${document.location.origin}/api/changedisplay/${model.projectID}/${event.dimension}/${event.value}`,
         async: true
       })
     },
@@ -490,18 +490,16 @@ const editState = {
       actions: 'replaceAll',
     },
     'keydown.a': {
-      actions: [
-        send(() => ({type: 'SETFRAME', dimension: 'frame', value: model.frame - 1})),
-      ],
+      actions: () => controller.history.addFencedAction(new ChangeFrame(model, model.frame - 1)),
     },
     'keydown.left': {
-      actions: send(() => ({type: 'SETFRAME', dimension: 'frame', value: model.frame - 1})),
+      actions: () => controller.history.addFencedAction(new ChangeFrame(model, model.frame - 1)),
     },
     'keydown.d': {
-      actions: send(() => ({type: 'SETFRAME', dimension: 'frame', value: model.frame + 1})),
+      actions: () => controller.history.addFencedAction(new ChangeFrame(model, model.frame + 1)),
     },
     'keydown.right': {
-      actions: send(() => ({type: 'SETFRAME', dimension: 'frame', value: model.frame + 1})),
+      actions: () => controller.history.addFencedAction(new ChangeFrame(model, model.frame + 1)),
     },
     'keydown.n': {
       actions: () => controller.history.addAction(new ResetLabels(model))

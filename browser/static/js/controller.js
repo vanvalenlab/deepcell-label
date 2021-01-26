@@ -57,14 +57,12 @@ class Controller {
 
   undo() {
     this.history.undo();
-    this.model.clear();
     this.model.updateMousePos(this.model.canvas.rawX, this.model.canvas.rawY);
     this.model.notifyImageChange();
   }
 
   redo() {
     this.history.redo();
-    this.model.clear();
     this.model.updateMousePos(this.model.canvas.rawX, this.model.canvas.rawY);
     this.model.notifyImageChange();
   }
@@ -99,7 +97,6 @@ class Controller {
     // resize the canvas every time the window is resized
     window.addEventListener('resize', () => {
       waitForFinalEvent(() => {
-        this.model.clear();
         this.view.setCanvasDimensions();
         // this.view.canvasView.brushView.refresh();
         this.view.displayUndoRedo();
