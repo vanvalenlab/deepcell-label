@@ -69,17 +69,18 @@ const selectLabel = choose([
 
 const swapLabels = () => controller.history.addAction(new SwapForegroundBackground(model));
 
-const setThreshold = assign({
-  threshX: () => model.canvas.imgX,
-  threshY: () => model.canvas.imgY,
+const storeClick = assign({
+  storedLabel: () => model.canvas.label,
+  storedX: () => model.canvas.imgX,
+  storedY: () => model.canvas.imgY,
 });
 
 const threshold = send((context, event) => ({
   type: 'EDIT',
   action: 'threshold',
   args: {
-    y1: context.threshY,
-    x1: context.threshX,
+    y1: context.storedX,
+    x1: context.storedY,
     y2: model.canvas.imgY,
     x2: model.canvas.imgX,
     frame: model.frame,
@@ -305,18 +306,12 @@ const selectState = {
 
 const thresholdState = {
   initial: 'idle',
-  entry: {
-    actions: assign({
-      threshX: -10, // -2 * model.padding,
-      threshY: -10, // -2 * model.padding,
-    })
-  },
   states: {
     idle: {
       on: {
         'mousedown': {
           target: 'dragging',
-          actions: 'setThreshold',
+          actions: 'storeClick',
         }
       }
     },
@@ -371,6 +366,52 @@ const autofitState = {
   }
 };
 
+const watershedState = {
+  entry: 'storeClick',
+  initial: 'idle',
+  states: {
+    idle: {
+      on: {
+        'click': {
+          cond: () => canvas.label !== 0,
+          target: 'clicked',
+          actions: 'storeClick',
+        },
+      },
+    },
+    clicked: {
+      on: {
+        'click': {
+          cond: (context) => canvas.label === context.storedLabel,
+          actions: send((context) => ({
+            type: 'EDIT',
+            action: 'watershed',
+            args: {
+              frame: model.frame,
+              label: context.storedLabel,
+              x1_location: context.storedX,
+              y1_location: context.storedY,
+              x2_location: model.canvas.imgX,
+              y2_location: model.canvas.imgY,
+            },
+          })),
+        },
+      },
+    },
+  },
+};
+
+if (this.action === 'watershed') {
+  info = {
+    frame: model.selected.frame,
+    label: model.selected.label,
+    x1_location: model.selected.x,
+    y1_location: model.selected.y,
+    x2_location: model.selected.secondX,
+    y2_location: model.selected.secondY
+  };
+}
+
 const editState = {
   initial: 'paint',
   states: {
@@ -380,6 +421,7 @@ const editState = {
     trim: trimState,
     erodeDilate: erodeDilateState,
     autofit: autofitState,
+    watershed: watershedState,
     hist: { type: 'history' },
   },
   on: {
@@ -427,6 +469,7 @@ const editState = {
     'keydown.k': '.trim',
     'keydown.q': '.erodeDilate',
     'keydown.m': '.autofit',
+    'keydown.w': '.watershed',
     // external transitions
     'keydown.space': 'pan',
     EDIT: 'loadEdit',
@@ -522,8 +565,9 @@ const deepcellLabelMachine = Machine(
     type: 'parallel',
     context: {
       trace: [],
-      threshX: -10, // -2 * model.padding,
-      threshY: -10, // -2 * model.padding,
+      storedLabel: 0,
+      storedX: 0,
+      storedY: 0,
       frame: 0,
       channel: 0,
       feature: 0,
@@ -547,7 +591,7 @@ const deepcellLabelMachine = Machine(
       draw: draw,
       selectLabel: selectLabel,
       swapLabels: swapLabels,
-      setThreshold: setThreshold,
+      storeClick: storeClick,
       threshold: threshold,
       flood: flood,
       erode: erode,
