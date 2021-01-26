@@ -1,4 +1,4 @@
-class History{
+class History {
   constructor() {
     /** @property {Array<Actions|string>} undoStack actions grouped by fenceposts */
     this.undoStack = [];
@@ -49,6 +49,7 @@ class History{
   addFence() {
     this.undoStack.push('fencepost')
   }
+
   /**
    * Undoes the most recent group of actions, if any.
    */
@@ -60,11 +61,11 @@ class History{
     if (action === 'fencepost') {
       this.redoStack.push('fencepost');
     }
-    while(this.canUndo && action === 'fencepost') {
+    while (this.canUndo && action === 'fencepost') {
       action = this.undoStack.pop();
     }
     // Undo actions until the end of the group or stack
-    while(true) {
+    while (true) {
       this.redoStack.push(action);
       action.undo();
       if (this.undoStack.length === 0) break;
@@ -85,7 +86,7 @@ class History{
     if (!this.canRedo) return;
     // Pop until we find an action to ensure redo does something
     let action = this.redoStack.pop();
-    while(this.canRedo && action === 'fencepost') {
+    while (this.canRedo && action === 'fencepost') {
       action = this.redoStack.pop();
     }
     // Redo actions until the end of the group or stack
@@ -110,21 +111,21 @@ class History{
    * @param {*} finalFrame frame displayed at the top of the undoStack
    */
   initializeHistory(actionFrames, firstFrame = 0) {
-      // Initialize undoStack to with actions recorded on backend
-      let prevFrame = firstFrame;
-      for (let frame of actionFrames) {
-        // Display unedited frame before loading edited frame
-        if (frame != prevFrame) {
-          let action = new ChangeFrame(mode, frame, prevFrame);
-          this.undoStack.push(action);
-          this.addFence();
-          prevFrame = frame;
-        }
-        let action = new BackendAction();
+    // Initialize undoStack to with actions recorded on backend
+    let prevFrame = firstFrame;
+    for (const frame of actionFrames) {
+      // Display unedited frame before loading edited frame
+      if (frame !== prevFrame) {
+        const action = new ChangeFrame(mode, frame, prevFrame);
         this.undoStack.push(action);
         this.addFence();
+        prevFrame = frame;
       }
-      this.formatButtons();
+      const action = new BackendAction();
+      this.undoStack.push(action);
+      this.addFence();
+    }
+    this.formatButtons();
   }
 
   formatButtons() {
