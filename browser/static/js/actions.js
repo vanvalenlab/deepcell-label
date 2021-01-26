@@ -1,22 +1,3 @@
-class ToggleEdit extends Action {
-  constructor(model) {
-    super();
-    this.model = model;
-  }
-
-  do() {
-    this.model.edit_mode = !this.model.edit_mode;
-  }
-
-  undo() {
-    this.do()
-  }
-
-  redo() {
-    this.do()
-  }
-}
-
 class ToggleHighlight extends Action {
   constructor(model) {
     super();
@@ -76,15 +57,19 @@ class ChangeFeature extends Action {
   }
 
   do() {
-    this.model.feature = this.newValue;
-    this.model.clear();
-    this.model.setDisplay('feature', this.newValue);
+    controller.service.send({
+      type: 'SETFRAME',
+      dimension: 'feature',
+      value: this.newValue
+    });
   }
 
   undo() {
-    this.model.feature = this.oldValue;
-    this.model.clear();
-    this.model.setDisplay('feature', this.oldValue);
+    controller.service.send({
+      type: 'SETFRAME',
+      dimension: 'feature',
+      value: this.oldValue
+    });
   }
 
   redo() {
@@ -102,16 +87,18 @@ class ChangeChannel extends Action {
   }
 
   do() {
-    const promise = this.model.setDisplay('channel', this.newValue);
-    promise.done(() => {
-      this.model.channel = this.newValue;
+    controller.service.send({
+      type: 'SETFRAME',
+      dimension: 'channel',
+      value: this.newValue
     });
   }
 
   undo() {
-    const promise = this.model.setDisplay('channel', this.oldValue);
-    promise.done(() => {
-      this.model.channel = this.oldValue;
+    controller.service.send({
+      type: 'SETFRAME',
+      dimension: 'channel',
+      value: this.oldValue
     });
   }
 

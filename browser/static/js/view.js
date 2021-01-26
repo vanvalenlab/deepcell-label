@@ -134,8 +134,9 @@ class InfopaneView {
     const displayedY = `${minY}-${maxY}`;
     document.getElementById('displayedY').innerHTML = displayedY;
 
-    this.renderHighlightRows();
-    this.renderEditRows();
+    const highlightText = (this.model.highlight) ? 'ON' : 'OFF';
+    document.getElementById('highlight').innerHTML = highlightText;
+    document.getElementById('edit_brush').innerHTML = this.brush.size;
     this.renderLabelRows();
     // always show 'state' and selected labels
     const states = controller.service.state.toStrings();
@@ -144,26 +145,6 @@ class InfopaneView {
     const background = this.model.selected.secondLabel;
     document.getElementById('foreground').innerHTML = foreground === 0 ? 'background' : foreground;
     document.getElementById('background').innerHTML = background === 0 ? 'background' : background;
-  }
-
-  /**
-   * Renders the highlight rows of the the infopane.
-   */
-  renderHighlightRows() {
-    const highlightText = (this.model.highlight) ? 'ON' : 'OFF';
-    document.getElementById('highlight').innerHTML = highlightText;
-  }
-
-  /**
-   * Renders the edit mode specific rows of the infopane.
-   */
-  renderEditRows() {
-    const rowVisibility = (this.model.edit_mode) ? 'visible' : 'hidden';
-    document.getElementById('edit_brush_row').style.visibility = rowVisibility;
-
-    if (this.model.edit_mode) {
-      document.getElementById('edit_brush').innerHTML = this.brush.size;
-    }
   }
 
   /**
@@ -196,7 +177,7 @@ class CanvasView {
   }
 
   get overlay() {
-    if (this.model.rgb && this.model.rendering_raw) {
+    if (this.model.rgb) { // && this.model.rendering_raw) { TODO: use displayState in statechart
       return this.model.adjuster.contrastedRaw;
     } else if (!this.model.rgb && !this.model.display_labels) {
       return this.model.adjuster.preCompRaw;

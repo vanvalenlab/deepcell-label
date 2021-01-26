@@ -8,10 +8,6 @@ class Model {
     // Booleans
     this._highlight = true;
     this.rgb = false;
-    // TODO: get rid of edit mode/whole label mode distinction
-    this._edit_mode = true;
-    // TODO: replace with sliding opacity
-    this._rendering_raw = false;
     this._display_labels = true; // is true the right default value?
 
     // Static project attributes
@@ -123,24 +119,6 @@ class Model {
     this.notifyImageFormattingChange();
   }
 
-  get edit_mode() {
-    return this._edit_mode;
-  }
-
-  set edit_mode(value) {
-    this._edit_mode = value;
-    this.notifyImageFormattingChange();
-  }
-
-  get rendering_raw() {
-    return this._rendering_raw;
-  }
-
-  set rendering_raw(value) {
-    this._rendering_raw = value;
-    this.notifyImageChange();
-  }
-
   get display_labels() {
     return this._display_labels;
   }
@@ -190,22 +168,6 @@ class Model {
     }
   }
 
-  /**
-   * Sends a POST request to change the current frame, feature, or channel.
-   * Handles the image data in the response.
-   *
-   * @param {string} displayAttr which attribute to change (e.g. frame, feature, or channel)
-   * @param {int} value value to set to attribute
-   */
-  setDisplay(displayAttr, value) {
-    const promise = $.ajax({
-      type: 'POST',
-      url: `${document.location.origin}/api/changedisplay/${this.projectID}/${displayAttr}/${value}`,
-      async: true
-    })
-    return promise.done((payload) => this.handlePayload(payload));
-  }
-
   handlePayload(payload) {
     if (payload.error) {
       alert(payload.error);
@@ -236,22 +198,4 @@ class Model {
   updateMousePos(x, y) {
     this.canvas.updateCursorPosition(x, y);
   }
-
-  // decrementSelectedLabel() {
-  //   // cycle highlight to prev label, skipping 0
-  //   const maxLabel = this.maxLabelsMap.get(this.feature);
-  //   const tempHighlight = (this.highlighted_cell_one + maxLabel - 2).mod(maxLabel) + 1;
-  //   // clear info but show new highlighted cell
-  //   this.clear();
-  //   this.highlighted_cell_one = tempHighlight;
-  // }
-
-  // incrementSelectedLabel() {
-  //   // cycle highlight to next label
-  //   let maxLabel = this.maxLabelsMap.get(this.feature);
-  //   const tempHighlight = this.highlighted_cell_one.mod(maxLabel) + 1;
-  //   // clear info but show new highlighted cell
-  //   this.clear();
-  //   this.highlighted_cell_one = tempHighlight;
-  // }
 }
