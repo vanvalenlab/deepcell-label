@@ -387,30 +387,53 @@ class SwapForegroundBackground extends Action {
   redo() { this.do(); }
 }
 
-// class IncrementSelectedLabel extends Action {
-//   constructor(model) {
-//     super();
-//     this.model = model;
-//     this.selected = model.selected;
-//     this.oldLabel = this.selected.label;
-//     // cycle highlight to next label
-//     let maxLabel = this.model.maxLabelsMap.get(this.model.feature);
-//     this.newLabel = this.selected.label.mod(maxLabel) + 1;
-//   }
+class SetForeground extends Action {
+  constructor(model, label) {
+    super();
+    this.model = model;
+    this.selected = model.selected;
+    this.oldLabel = this.selected.label;
+    // cycle highlight to next label
+    const maxLabel = this.model.maxLabelsMap.get(this.model.feature);
+    this.newLabel = (label).mod(maxLabel);
+  }
 
-//   do() {
-//     this.model.clear();
-//     this.selected.label = this.newLabel;
-//   }
+  do() {
+    this.selected.label = this.newLabel;
+  }
 
-//   undo() {
-//     this.model.clear();
-//   }
+  undo() {
+    this.selected.label = this.oldLabel;
+  }
 
-//   redo() {
-//     this.model.clear();
-//   }
-// }
+  redo() {
+    this.do();
+  }
+}
+
+class SetBackground extends Action {
+  constructor(model, label) {
+    super();
+    this.model = model;
+    this.selected = model.selected;
+    this.oldLabel = this.selected.secondLabel;
+    // cycle highlight to next label
+    const maxLabel = this.model.maxLabelsMap.get(this.model.feature);
+    this.newLabel = (label).mod(maxLabel);
+  }
+
+  do() {
+    this.selected.secondLabel = this.newLabel;
+  }
+
+  undo() {
+    this.selected.secondLabel = this.oldLabel;
+  }
+
+  redo() {
+    this.do();
+  }
+}
 
 class ResetLabels extends Action {
   constructor(model) {

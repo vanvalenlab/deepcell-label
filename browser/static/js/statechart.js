@@ -502,6 +502,18 @@ const editState = {
     'keydown.n': {
       actions: () => controller.history.addAction(new ResetLabels(model))
     },
+    'keydown.[': {
+      actions: () => controller.history.addAction(new SetForeground(model, model.selected.label - 1))
+    },
+    'keydown.]': {
+      actions: () => controller.history.addAction(new SetForeground(model, model.selected.label + 1))
+    },
+    'keydown.{': {
+      actions: () => controller.history.addAction(new SetBackground(model, model.selected.secondLabel - 1))
+    },
+    'keydown.}': {
+      actions: () => controller.history.addAction(new SetBackground(model, model.selected.secondLabel + 1))
+    },
     UNDO: { actions: () => controller.history.undo() },
     REDO: { actions: () => controller.history.redo() },
     // internal transitions

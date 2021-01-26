@@ -205,6 +205,10 @@ class Controller {
       this.service.send('keydown.]');
     } else if (evt.key === '[') {
       this.service.send('keydown.[');
+    } else if (evt.key === '}') {
+      this.service.send('keydown.}');
+    } else if (evt.key === '{') {
+      this.service.send('keydown.{');
     } else if (evt.key === 'x') {
       this.service.send('keydown.x');
     } else if (evt.key === 'p') {
