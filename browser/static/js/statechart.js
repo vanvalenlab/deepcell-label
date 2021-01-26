@@ -43,18 +43,18 @@ const addToTrace = assign({trace: context => [...context.trace, [canvas.imgY, ca
 
 const resetTrace = assign({trace: []});
 
-const draw = send((context, event) => ({
-  type: 'EDIT',
-  action: 'handle_draw',
-  args: {
+const draw = (context) => {
+  const args = {
     trace: JSON.stringify(context.trace),
     brush_value: model.selected.label,
     target_value: model.selected.secondLabel,
     brush_size: model.brush.size,
     frame: model.frame,
     erase: false,
-  }
-}));
+  };
+  const action = new BackendAction(model, 'handle_draw', args);
+  controller.history.addFencedAction(action);
+};
 
 const selectLabel = choose([
   {
@@ -75,106 +75,119 @@ const storeClick = assign({
   storedY: () => model.canvas.imgY,
 });
 
-const threshold = send((context, event) => ({
-  type: 'EDIT',
-  action: 'threshold',
-  args: {
+const threshold = (context, event) => {
+  const args = {
     y1: context.storedX,
     x1: context.storedY,
     y2: model.canvas.imgY,
     x2: model.canvas.imgX,
     frame: model.frame,
     label: model.selected.label,
-  }
-}));
+  };
+  const action = new BackendAction(model, 'threshold', args);
+  controller.history.addFencedAction(action);
+};
 
-const flood = send(() => ({
-  type: 'EDIT',
-  action: 'flood',
-  args: {
+const flood = () => {
+  const args = {
     label: model.selected.label,
     x_location: model.canvas.imgX,
     y_location: model.canvas.imgY,
-  }
-}));
+  };
+  const action = new BackendAction(model, 'flood', args);
+  controller.history.addFencedAction(action);
+};
 
-const trim = send(() => ({
-  type: 'EDIT',
-  action: 'trim_pixels',
-  args: {
+const trim = () => {
+  const args = {
     label: model.canvas.label,
     frame: model.frame,
     x_location: model.canvas.imgX,
     y_location: model.canvas.imgY
-  }
-}));
+  };
+  const action = new BackendAction(model, 'trim_pixels', args);
+  controller.history.addFencedAction(action);
+};
 
-const erode = send(() => ({
-  type: 'EDIT',
-  action: 'erode',
-  args: {
+const erode = () => {
+  const args = {
     label: model.canvas.label,
-  }
-}));
+  };
+  const action = new BackendAction(model, 'erode', args);
+  controller.history.addFencedAction(action);
+};
 
-const dilate = send(() => ({
-  type: 'EDIT',
-  action: 'dilate',
-  args: {
+const dilate = () => {
+  const args = {
     label: model.canvas.label,
-  }
-}));
+  };
+  const action = new BackendAction(model, 'dilate', args);
+  controller.history.addFencedAction(action);
+};
 
-const autofit = send(() => ({
-  type: 'EDIT',
-  action: 'active_contour',
-  args: {
+const autofit = () => {
+  const args = {
     label: model.canvas.label,
-  }
-}));
+  };
+  const action = new BackendAction(model, 'active_contour', args);
+  controller.history.addFencedAction(action);
+};
 
-const predictFrame = send(() => ({
-  type: 'EDIT',
-  action: 'predict_single', 
-  args: {
+const predictFrame = () => {
+  const args = {
     frame: model.frame,
-  }
-}));
+  };
+  const action = new BackendAction(model, 'predict_single', args);
+  controller.history.addFencedAction(action);
+};
 
-const predictAll = send({
-  type: 'EDIT',
-  action: 'predict_zstack',
-  args: {}
-});
+const predictAll = () => {
+  const args = {};
+  const action = new BackendAction(model, 'predict_zstack', args);
+  controller.history.addFencedAction(action);
+};
 
-const swapFrame = send(() => ({
-  type: 'EDIT', 
-  action: 'swap_single_frame', 
-  args: {        
+const swapFrame = () => {
+  const args = {
     label_1: model.selected.label,
     label_2: model.selected.secondLabel,
     frame: model.frame,
-  }
-}));
+  };
+  const action = new BackendAction(model, 'swap_single_frame', args);
+  controller.history.addFencedAction(action);
+};
 
-const replaceFrame = send(() => ({
-  type: 'EDIT', 
-  action: 'replace_single', 
-  args: {        
+const replaceFrame = () => {
+  const args = {
     label_1: model.selected.label,
     label_2: model.selected.secondLabel,
     // frame: model.frame ???
-  }
-}));
+  };
+  const action = new BackendAction(model, 'replace_single', args);
+  controller.history.addFencedAction(action);
+};
 
-const replaceAll = send(() => ({
-  type: 'EDIT', 
-  action: 'replace', 
-  args: {        
+const replaceAll = () => {
+  const args = {
     label_1: model.selected.label,
     label_2: model.selected.secondLabel,
-  }
-}));
+  };
+  const action = new BackendAction(model, 'replace', args);
+  controller.history.addFencedAction(action);
+};
+
+const watershed = (context) => {
+  const args = {
+    frame: model.frame,
+    label: context.storedLabel,
+    x1_location: context.storedX,
+    y1_location: context.storedY,
+    x2_location: model.canvas.imgX,
+    y2_location: model.canvas.imgY,
+  };
+  const action = new BackendAction(model, 'watershed', args);
+  controller.history.addFencedAction(action);
+};
 
 const changeContrast = (context, event) => controller.history.addAction(new ChangeContrast(model, event.change));
 const changeBrightness = (context, event) => controller.history.addAction(new ChangeBrightness(model, event.change));
@@ -266,6 +279,61 @@ const loadFrameState = {
     }
   }
 };
+
+const undoState = {
+  invoke: {
+    id: 'undo',
+    src: (context, event) => {
+      return $.ajax({
+        type: 'POST',
+        url: `${document.location.origin}/api/undo/${model.projectID}`,
+        async: true
+      })
+    },
+    onDone: {
+      target: 'edit.hist',
+      actions: [
+        // () => controller.history.undo(),
+        (_, event) => console.log(event),
+        (_, event) => model.handlePayload(event.data),
+      ]
+    },
+    onError: {
+      target: 'edit.hist',
+      actions: [
+        (_, event) => console.log(event.data),
+      ]
+    }
+  }
+};
+
+const redoState = {
+  invoke: {
+    id: 'redo',
+    src: (context, event) => {
+      return $.ajax({
+        type: 'POST',
+        url: `${document.location.origin}/api/redo/${model.projectID}`,
+        async: true
+      })
+    },
+    onDone: {
+      target: 'edit.hist',
+      actions: [
+        // () => controller.history.redo(),
+        (_, event) => console.log(event),
+        (_, event) => model.handlePayload(event.data),
+      ]
+    },
+    onError: {
+      target: 'edit.hist',
+      actions: [
+        (_, event) => console.log(event.data),
+      ]
+    }
+  }
+};
+
 
 const paintState = {
   initial: 'idle',
@@ -383,34 +451,12 @@ const watershedState = {
       on: {
         'click': {
           cond: (context) => canvas.label === context.storedLabel,
-          actions: send((context) => ({
-            type: 'EDIT',
-            action: 'watershed',
-            args: {
-              frame: model.frame,
-              label: context.storedLabel,
-              x1_location: context.storedX,
-              y1_location: context.storedY,
-              x2_location: model.canvas.imgX,
-              y2_location: model.canvas.imgY,
-            },
-          })),
+          actions: 'watershed',
         },
       },
     },
   },
 };
-
-if (this.action === 'watershed') {
-  info = {
-    frame: model.selected.frame,
-    label: model.selected.label,
-    x1_location: model.selected.x,
-    y1_location: model.selected.y,
-    x2_location: model.selected.secondX,
-    y2_location: model.selected.secondY
-  };
-}
 
 const editState = {
   initial: 'paint',
@@ -473,7 +519,9 @@ const editState = {
     // external transitions
     'keydown.space': 'pan',
     EDIT: 'loadEdit',
-    SETFRAME: 'loadFrame'
+    SETFRAME: 'loadFrame',
+    UNDO: 'undo',
+    REDO: 'redo',
   }
 };
 
@@ -556,6 +604,8 @@ const labelState = {
     pan: panState,
     loadEdit: loadEditState,
     loadFrame: loadFrameState,
+    undo: undoState,
+    redo: redoState,
   },
 };
 
@@ -602,6 +652,7 @@ const deepcellLabelMachine = Machine(
       swapFrame: swapFrame,
       replaceFrame: replaceFrame,
       replaceAll: replaceAll,
+      watershed: watershed,
       changeContrast: changeContrast,
       changeBrightness: changeBrightness,
       toggleHighlight: toggleHighlight,

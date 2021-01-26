@@ -115,105 +115,36 @@ class ChangeChannel extends Action {
 
 class BackendAction extends Action {
 
-  constructor(model, action) {
+  constructor(model, action, args) {
     super();
-    model.action = action;
+    // model.action = action;
 
     this.model = model;
     this.action = action;
-    this.projectID = model.projectID;
-    this.handler = model.handlePayload.bind(model);
-    this.error;
+    this.args = args;
+    // this.projectID = model.projectID;
+    // this.handler = model.handlePayload.bind(model);
+    // this.error;
 
-    this.selected = model.selected;
+    // this.selected = model.selected;
 
-    this._doInitialSideEffects();
-  }
-
-  get prompt() {
-    let prompt;
-    if (this.action === '') {
-      prompt = '';
-    // } else if (this.action === 'pick_color') {
-    //   prompt = 'Click on a label to change the brush label to that label.';
-    // } else if (this.action === 'pick_target') {
-    //   prompt = 'First, click on the label you want to overwrite.';
-    // } else if (this.action === 'start_threshold') {
-    //   prompt = 'Click and drag to create a bounding box around the area you want to threshold.';
-    // } else if (this.action === 'start_threshold') {
-    //   prompt = 'Click and drag to create a bounding box around the area you want to threshold.';
-    // } else if (this.action === 'predict') {
-    //   prompt = 'Predict cell ids for zstack? / S=PREDICT THIS FRAME / SPACE=PREDICT ALL FRAMES / ESC=CANCEL PREDICTION';
-    // } else if (this.action === 'fill_hole') {
-    //   prompt = `Select hole to fill in cell ${this.selected.label}`;
-    } else if (this.action === 'create_new') {
-      prompt = 'CREATE NEW(S=SINGLE FRAME / SPACE=ALL SUBSEQUENT FRAMES / ESC=NO)';
-    } else if (this.action === 'delete_mask') {
-      `delete label ${this.selected.label} in frame ${this.selected.frame}? (SPACE=YES / ESC=NO)`;
-    // } else if (this.action === 'replace') {
-    //   prompt = `Replace ${this.selected.secondLabel} with ${this.selected.label}?` +
-    //   '// SPACE = Replace in all frames / S = Replace in this frame only / ESC = Cancel replace';
-    // } else if (this.action === 'swap_cells') {
-    //   prompt = 'SPACE = SWAP IN ALL FRAMES / S = SWAP IN THIS FRAME ONLY / ESC = CANCEL SWAP';
-    } else if (this.action === 'watershed') {
-      prompt = `Perform watershed to split ${this.selected.label}? (SPACE=YES / ESC=NO)`;
-    // } else if (this.action === 'flood_contiguous') {
-    //   prompt = 'SPACE = FLOOD SELECTED CELL WITH NEW LABEL / ESC = CANCEL';
-    // } else if (this.action === 'trim_pixels') {
-    //   prompt = 'SPACE = TRIM DISCONTIGUOUS PIXELS FROM CELL / ESC = CANCEL';
-    } return prompt;
-  }
-
-  get _info() {
-    let info = {};
-    const model = this.model;
-    if (this.action === 'watershed') {
-      info = {
-        frame: model.selected.frame,
-        label: model.selected.label,
-        x1_location: model.selected.x,
-        y1_location: model.selected.y,
-        x2_location: model.selected.secondX,
-        y2_location: model.selected.secondY
-      };
-    }
-    return info;
+    // this._doInitialSideEffects();
   }
 
   do() {
-    this.model.pendingAction = new NoAction();
-    this.error = this._checkInfo();
-    if (this.error !== '') { return; }
-
-    const promise = $.ajax({
-      type: 'POST',
-      url: `${document.location.origin}/api/edit/${this.projectID}/${this.action}`,
-      data: this._info,
-      async: false
+    controller.service.send({
+      type: 'EDIT',
+      action: this.action,
+      args: this.args,
     });
-    promise.done(() => this._doFinalSideEffects()).done(this.handler);
   }
 
   undo() {
-    if (this.error !== '') { return; }
-
-    const promise = $.ajax({
-      type: 'POST',
-      url: `${document.location.origin}/api/undo/${this.projectID}`,
-      async: false
-    })
-    promise.done(this.handler);
+    controller.service.send('UNDO');
   }
 
   redo() {
-    if (this.error !== '') { return; }
-
-    const promise = $.ajax({
-      type: 'POST',
-      url: `${document.location.origin}/api/redo/${this.projectID}`,
-      async: false
-    })
-    promise.done(this.handler);
+    controller.service.send('REDO');
   }
 
   _checkInfo() {
@@ -245,23 +176,6 @@ class BackendAction extends Action {
       }
     }
     return '';
-  }
-
-  _doInitialSideEffects() {
-    if (this.action === 'start_threshold') {
-      this.model.brush.thresholding = true;
-    } else if (this.action === 'pick_target') {
-      this.model.brush.conv = true;
-    }
-  }
-
-  _doFinalSideEffects() {
-    if (this.action === 'threshold') {
-      this.model.brush.thresholding = false;
-      this.model.clear();
-    } else if (this.action === 'handle_draw') {
-      this.model.canvas.clearTrace();
-    }
   }
 }
 
