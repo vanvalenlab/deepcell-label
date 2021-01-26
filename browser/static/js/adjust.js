@@ -300,8 +300,6 @@ class ImageAdjuster {
 
   // apply white (and sometimes red) opaque outlines around cells, if needed
   postCompAdjust() {
-    const brush = this.model.brush;
-    const editMode = this.model.edit_mode;
     // draw compositedImg so we can extract image data
     this.ctx.clearRect(0, 0, this.width, this.height);
     this.ctx.drawImage(this.compositedImg, 0, 0, this.width, this.height);
@@ -335,8 +333,6 @@ class ImageAdjuster {
 
   // apply outlines, transparent highlighting for RGB
   postCompAdjustRGB() {
-    const brush = this.model.brush;
-    const editMode = this.model.edit_mode;
     // draw contrastedRaw so we can extract image data
     this.ctx.clearRect(0, 0, this.width, this.height);
     this.ctx.drawImage(this.contrastedRaw, 0, 0, this.width, this.height);
