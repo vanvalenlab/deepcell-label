@@ -499,6 +499,18 @@ const editState = {
     'keydown.right': {
       actions: () => controller.history.addFencedAction(new ChangeFrame(model, model.frame + 1))
     },
+    'keydown.c': {
+      actions: () => controller.history.addFencedAction(new ChangeChannel(model, model.channel + 1))
+    },
+    'keydown.C': {
+      actions: () => controller.history.addFencedAction(new ChangeChannel(model, model.channel - 1))
+    },
+    'keydown.f': {
+      actions: () => controller.history.addFencedAction(new ChangeFeature(model, model.feature + 1))
+    },
+    'keydown.F': {
+      actions: () => controller.history.addFencedAction(new ChangeFeature(model, model.feature - 1))
+    },
     'keydown.n': {
       actions: () => controller.history.addAction(new ResetLabels(model))
     },
@@ -519,7 +531,7 @@ const editState = {
     // internal transitions
     'keydown.b': '.paint',
     'keydown.t': '.threshold',
-    'keydown.f': '.flood',
+    'keydown.g': '.flood',
     'keydown.k': '.trim',
     'keydown.q': '.erodeDilate',
     'keydown.m': '.autofit',

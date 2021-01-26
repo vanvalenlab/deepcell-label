@@ -102,11 +102,11 @@ class Controller {
     });
 
     window.addEventListener('keydown', (evt) => {
-      this.handle_keydown(evt);
+      this.handleKeydown(evt);
     }, false);
 
     window.addEventListener('keyup', (evt) => {
-      this.handle_keyup(evt);
+      this.handleKeyup(evt);
     }, false);
   }
 
@@ -115,20 +115,11 @@ class Controller {
    */
   addCanvasBindings() {
     const canvasElement = document.getElementById('canvas');
-    // bind click on canvas
-    canvasElement.addEventListener('click', (evt) => {
-      this.service.send(evt);
-    });
-
-    // bind scroll wheel, change contrast of raw when scrolled
-    canvasElement.addEventListener('wheel', (e) => this.handleScroll(e));
-
-    // mousedown for click&drag/handle_draw DIFFERENT FROM CLICK
+    canvasElement.addEventListener('click', (e) => this.service.send(e)});
     canvasElement.addEventListener('mousedown', (e) => this.service.send(e));
-
-    // bind mouse movement
     canvasElement.addEventListener('mousemove', (e) => this.service.send(e));
-
+    
+    canvasElement.addEventListener('wheel', (e) => this.handleScroll(e));
     canvasElement.addEventListener('contextmenu', (e) => e.preventDefault());
   }
 
@@ -145,8 +136,6 @@ class Controller {
    * @param {WheelEvent} evt
    */
   handleScroll(evt) {
-    // const rawVisible = (this.model.rendering_raw || this.model.edit_mode ||
-    //   (this.model.rgb && !this.model.display_labels));
     if (evt.altKey) {
       this.history.addAction(new Zoom(this.model, Math.sign(evt.deltaY)));
     } else if (evt.shiftKey) {
@@ -162,7 +151,7 @@ class Controller {
    * Handle all keybinds
    * @param {KeyboardEvent} evt
    */
-  handle_keydown(evt) {
+  handleKeydown(evt) {
     if ((evt.ctrlKey || evt.metaKey) && evt.shiftKey && (evt.key === 'Z' || evt.key === 'z')) {
       this.service.send('REDO');
     } else if ((evt.ctrlKey || evt.metaKey) && (evt.key === 'Z' || evt.key === 'z')) {
@@ -241,10 +230,12 @@ class Controller {
       this.service.send('keydown.o')
     } else if (evt.key === 'O') {
       this.service.send('keydown.O')
+    } else if (evt.key === 'g') {
+      this.service.send('keydown.g')
     }
   }
 
-  handle_keyup(evt) {
+  handleKeyup(evt) {
     if (evt.key === ' ') {
       this.service.send('keyup.space')
     }
