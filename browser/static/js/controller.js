@@ -115,7 +115,7 @@ class Controller {
    */
   addCanvasBindings() {
     const canvasElement = document.getElementById('canvas');
-    canvasElement.addEventListener('click', (e) => this.service.send(e)});
+    canvasElement.addEventListener('click', (e) => this.service.send(e));
     canvasElement.addEventListener('mousedown', (e) => this.service.send(e));
     canvasElement.addEventListener('mousemove', (e) => this.service.send(e));
     
