@@ -53,7 +53,6 @@ class ChangeFrame extends Action {
     });
   }
 
-
   undo() {
     controller.service.send({
       type: 'SETFRAME',
@@ -104,14 +103,14 @@ class ChangeChannel extends Action {
 
   do() {
     const promise = this.model.setDisplay('channel', this.newValue);
-    promise.done( () => {
+    promise.done(() => {
       this.model.channel = this.newValue;
     });
   }
 
   undo() {
     const promise = this.model.setDisplay('channel', this.oldValue);
-    promise.done( () => {
+    promise.done(() => {
       this.model.channel = this.oldValue;
     });
   }
@@ -122,7 +121,6 @@ class ChangeChannel extends Action {
 }
 
 class BackendAction extends Action {
-
   constructor(model, action, args) {
     super();
     // model.action = action;
@@ -143,7 +141,7 @@ class BackendAction extends Action {
     controller.service.send({
       type: 'EDIT',
       action: this.action,
-      args: this.args,
+      args: this.args
     });
   }
 
@@ -335,8 +333,8 @@ class SelectForeground extends Action {
   }
 
   do() {
-      this.selected.pickLabel();
-      this.newValue = this.selected.label;
+    this.selected.pickLabel();
+    this.newValue = this.selected.label;
   }
 
   // TODO: revert to old label instead of clearing?
@@ -356,8 +354,8 @@ class SelectBackground extends Action {
   }
 
   do() {
-      this.selected.pickSecondLabel();
-      this.newValue = this.selected.secondLabel;
+    this.selected.pickSecondLabel();
+    this.newValue = this.selected.secondLabel;
   }
 
   // TODO: revert to old label instead of clearing?
@@ -414,7 +412,6 @@ class SwapForegroundBackground extends Action {
 //   }
 // }
 
-
 class ResetLabels extends Action {
   constructor(model) {
     super();
@@ -424,7 +421,6 @@ class ResetLabels extends Action {
     this.oldBackground = model.selected.secondLabel;
     this.newForeground = model.maxLabelsMap.get(model.feature) + 1;
     this.newBackground = 0;
-
   }
 
   do() {

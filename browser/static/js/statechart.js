@@ -2,7 +2,7 @@
  * Defines the statechart for Label in XState.
  */
 
-// TODO: 
+// TODO:
 // undo/redo with backend promises
 // ChangeFrame/Feature/Channel
 
@@ -36,12 +36,12 @@ const editLabels = (context, event) => {
     url: `${document.location.origin}/api/edit/${model.projectID}/${event.action}`,
     data: event.args,
     async: true
-    })
+  })
 };
 
-const addToTrace = assign({trace: context => [...context.trace, [canvas.imgY, canvas.imgX]]});
+const addToTrace = assign({ trace: context => [...context.trace, [canvas.imgY, canvas.imgX]] });
 
-const resetTrace = assign({trace: []});
+const resetTrace = assign({ trace: [] });
 
 const draw = (context) => {
   const args = {
@@ -50,7 +50,7 @@ const draw = (context) => {
     target_value: model.selected.secondLabel,
     brush_size: model.brush.size,
     frame: model.frame,
-    erase: false,
+    erase: false
   };
   const action = new BackendAction(model, 'handle_draw', args);
   controller.history.addFencedAction(action);
@@ -59,11 +59,11 @@ const draw = (context) => {
 const selectLabel = choose([
   {
     cond: (context, event) => event.shiftKey && event.button === 0,
-    actions: () => controller.history.addAction(new SelectForeground(model)),
+    actions: () => controller.history.addAction(new SelectForeground(model))
   },
   {
     cond: (context, event) => event.shiftKey && event.button === 2,
-    actions: () => controller.history.addAction(new SelectBackground(model)),
+    actions: () => controller.history.addAction(new SelectBackground(model))
   }
 ]);
 
@@ -72,7 +72,7 @@ const swapLabels = () => controller.history.addAction(new SwapForegroundBackgrou
 const storeClick = assign({
   storedLabel: () => model.canvas.label,
   storedX: () => model.canvas.imgX,
-  storedY: () => model.canvas.imgY,
+  storedY: () => model.canvas.imgY
 });
 
 const threshold = (context, event) => {
@@ -82,7 +82,7 @@ const threshold = (context, event) => {
     y2: model.canvas.imgY,
     x2: model.canvas.imgX,
     frame: model.frame,
-    label: model.selected.label,
+    label: model.selected.label
   };
   const action = new BackendAction(model, 'threshold', args);
   controller.history.addFencedAction(action);
@@ -92,7 +92,7 @@ const flood = () => {
   const args = {
     label: model.selected.label,
     x_location: model.canvas.imgX,
-    y_location: model.canvas.imgY,
+    y_location: model.canvas.imgY
   };
   const action = new BackendAction(model, 'flood', args);
   controller.history.addFencedAction(action);
@@ -111,7 +111,7 @@ const trim = () => {
 
 const erode = () => {
   const args = {
-    label: model.canvas.label,
+    label: model.canvas.label
   };
   const action = new BackendAction(model, 'erode', args);
   controller.history.addFencedAction(action);
@@ -119,7 +119,7 @@ const erode = () => {
 
 const dilate = () => {
   const args = {
-    label: model.canvas.label,
+    label: model.canvas.label
   };
   const action = new BackendAction(model, 'dilate', args);
   controller.history.addFencedAction(action);
@@ -127,7 +127,7 @@ const dilate = () => {
 
 const autofit = () => {
   const args = {
-    label: model.canvas.label,
+    label: model.canvas.label
   };
   const action = new BackendAction(model, 'active_contour', args);
   controller.history.addFencedAction(action);
@@ -135,7 +135,7 @@ const autofit = () => {
 
 const predictFrame = () => {
   const args = {
-    frame: model.frame,
+    frame: model.frame
   };
   const action = new BackendAction(model, 'predict_single', args);
   controller.history.addFencedAction(action);
@@ -151,7 +151,7 @@ const swapFrame = () => {
   const args = {
     label_1: model.selected.label,
     label_2: model.selected.secondLabel,
-    frame: model.frame,
+    frame: model.frame
   };
   const action = new BackendAction(model, 'swap_single_frame', args);
   controller.history.addFencedAction(action);
@@ -160,7 +160,7 @@ const swapFrame = () => {
 const replaceFrame = () => {
   const args = {
     label_1: model.selected.label,
-    label_2: model.selected.secondLabel,
+    label_2: model.selected.secondLabel
     // frame: model.frame ???
   };
   const action = new BackendAction(model, 'replace_single', args);
@@ -170,7 +170,7 @@ const replaceFrame = () => {
 const replaceAll = () => {
   const args = {
     label_1: model.selected.label,
-    label_2: model.selected.secondLabel,
+    label_2: model.selected.secondLabel
   };
   const action = new BackendAction(model, 'replace', args);
   controller.history.addFencedAction(action);
@@ -183,7 +183,7 @@ const watershed = (context) => {
     x1_location: context.storedX,
     y1_location: context.storedY,
     x2_location: model.canvas.imgX,
-    y2_location: model.canvas.imgY,
+    y2_location: model.canvas.imgY
   };
   const action = new BackendAction(model, 'watershed', args);
   controller.history.addFencedAction(action);
@@ -197,30 +197,29 @@ const toggleInvert = () => controller.history.addAction(new ToggleInvert(model))
 
 const zoomIn = () => controller.history.addAction(new Zoom(model, -1));
 const zoomOut = () => controller.history.addAction(new Zoom(model, 1));
-const updateMousePos  = (context, event) => model.updateMousePos(event.offsetX, event.offsetY);
+const updateMousePos = (context, event) => model.updateMousePos(event.offsetX, event.offsetY);
 
 const setBrushSize = (context, event) => model.brush.size = event.size;
-
 
 const panState = {
   initial: 'idle',
   states: {
     idle: {
-      on: {'mousedown': 'panning'},
+      on: { mousedown: 'panning' }
     },
     panning: {
       on: {
-        'mouseup': 'idle',
-        'mousemove': {
-          actions: 'pan',
-        },
-      },
-    },
+        mouseup: 'idle',
+        mousemove: {
+          actions: 'pan'
+        }
+      }
+    }
   },
   on: {
     'keyup.space': {
-      target: 'edit.hist',
-    },
+      target: 'edit.hist'
+    }
   }
 };
 
@@ -233,20 +232,20 @@ const loadEditState = {
         url: `${document.location.origin}/api/edit/${model.projectID}/${event.action}`,
         data: event.args,
         async: true
-        })
+      })
     },
     onDone: {
       target: 'edit.hist',
       actions: [
         (_, event) => console.log(event),
-        (_, event) => model.handlePayload(event.data),
+        (_, event) => model.handlePayload(event.data)
         // () => controller.history.addFence(),
       ]
     },
     onError: {
       target: 'edit.hist',
       actions: [
-        (_, event) => console.log(event.data),
+        (_, event) => console.log(event.data)
       ]
     }
   }
@@ -267,14 +266,14 @@ const loadFrameState = {
       target: 'edit.hist',
       actions: [
         (_, event) => console.log(event),
-        (_, event) => model.handlePayload(event.data),
+        (_, event) => model.handlePayload(event.data)
         // () => controller.history.addFence(),
       ]
     },
     onError: {
       target: 'edit.hist',
       actions: [
-        (_, event) => console.log(event.data),
+        (_, event) => console.log(event.data)
       ]
     }
   }
@@ -295,13 +294,13 @@ const undoState = {
       actions: [
         // () => controller.history.undo(),
         (_, event) => console.log(event),
-        (_, event) => model.handlePayload(event.data),
+        (_, event) => model.handlePayload(event.data)
       ]
     },
     onError: {
       target: 'edit.hist',
       actions: [
-        (_, event) => console.log(event.data),
+        (_, event) => console.log(event.data)
       ]
     }
   }
@@ -322,18 +321,17 @@ const redoState = {
       actions: [
         // () => controller.history.redo(),
         (_, event) => console.log(event),
-        (_, event) => model.handlePayload(event.data),
+        (_, event) => model.handlePayload(event.data)
       ]
     },
     onError: {
       target: 'edit.hist',
       actions: [
-        (_, event) => console.log(event.data),
+        (_, event) => console.log(event.data)
       ]
     }
   }
 };
-
 
 const paintState = {
   initial: 'idle',
@@ -341,20 +339,20 @@ const paintState = {
   states: {
     idle: {
       on: {
-        'mousedown': {
+        mousedown: {
           cond: (context, event) => event.button === 0 && !event.shiftKey,
           target: 'dragging',
-          actions: 'addToTrace',
+          actions: 'addToTrace'
         }
       }
     },
     dragging: {
       on: {
-        'mousemove': {
-          actions: 'addToTrace',
+        mousemove: {
+          actions: 'addToTrace'
         },
-        'mouseup': {
-          actions: 'draw',
+        mouseup: {
+          actions: 'draw'
         }
       }
     }
@@ -363,12 +361,12 @@ const paintState = {
 
 const selectState = {
   on: {
-    'mousedown': {
+    mousedown: {
       actions: 'selectLabel'
     },
     'keydown.x': {
-      actions: 'swapLabels',
-    },
+      actions: 'swapLabels'
+    }
   }
 };
 
@@ -377,16 +375,16 @@ const thresholdState = {
   states: {
     idle: {
       on: {
-        'mousedown': {
+        mousedown: {
           target: 'dragging',
-          actions: 'storeClick',
+          actions: 'storeClick'
         }
       }
     },
     dragging: {
       on: {
-        'mouseup': {
-          actions: 'threshold',
+        mouseup: {
+          actions: 'threshold'
         }
       }
     }
@@ -395,7 +393,7 @@ const thresholdState = {
 
 const floodState = {
   on: {
-    'click': {
+    click: {
       actions: 'flood'
     }
   }
@@ -403,33 +401,33 @@ const floodState = {
 
 const trimState = {
   on: {
-    'click': {
-      actions: 'trim',
+    click: {
+      actions: 'trim'
     }
   }
 };
 
 const erodeDilateState = {
   on: {
-    'mousedown': {
+    mousedown: {
       actions: choose([
         {
           cond: (context, event) => event.button === 0,
-          actions: 'erode',
+          actions: 'erode'
         },
         {
           cond: (context, event) => event.button === 2,
-          actions: 'dilate',
-        },
+          actions: 'dilate'
+        }
       ])
-    },
+    }
   }
 };
 
 const autofitState = {
   on: {
-    'click': {
-      actions: 'autofit',
+    click: {
+      actions: 'autofit'
     }
   }
 };
@@ -440,22 +438,22 @@ const watershedState = {
   states: {
     idle: {
       on: {
-        'click': {
+        click: {
           cond: () => canvas.label !== 0,
           target: 'clicked',
-          actions: 'storeClick',
-        },
-      },
+          actions: 'storeClick'
+        }
+      }
     },
     clicked: {
       on: {
-        'click': {
+        click: {
           cond: (context) => canvas.label === context.storedLabel,
-          actions: 'watershed',
-        },
-      },
-    },
-  },
+          actions: 'watershed'
+        }
+      }
+    }
+  }
 };
 
 const editState = {
@@ -468,38 +466,38 @@ const editState = {
     erodeDilate: erodeDilateState,
     autofit: autofitState,
     watershed: watershedState,
-    hist: { type: 'history' },
+    hist: { type: 'history' }
   },
   on: {
     'keydown.o': {
-      actions: 'predictFrame',
+      actions: 'predictFrame'
     },
     'keydown.O': {
-      actions: 'predictAll',
+      actions: 'predictAll'
     },
-    'keydown.s' : {
+    'keydown.s': {
       // cond: () => true, // two different labels selected
-      actions: 'swapFrame',
+      actions: 'swapFrame'
     },
     'keydown.r': {
       cond: () => true, // two different labels selected
-      actions: 'replaceFrame',
+      actions: 'replaceFrame'
     },
     'keydown.R': {
       cond: () => true, // two different labels selected
-      actions: 'replaceAll',
+      actions: 'replaceAll'
     },
     'keydown.a': {
-      actions: () => controller.history.addFencedAction(new ChangeFrame(model, model.frame - 1)),
+      actions: () => controller.history.addFencedAction(new ChangeFrame(model, model.frame - 1))
     },
     'keydown.left': {
-      actions: () => controller.history.addFencedAction(new ChangeFrame(model, model.frame - 1)),
+      actions: () => controller.history.addFencedAction(new ChangeFrame(model, model.frame - 1))
     },
     'keydown.d': {
-      actions: () => controller.history.addFencedAction(new ChangeFrame(model, model.frame + 1)),
+      actions: () => controller.history.addFencedAction(new ChangeFrame(model, model.frame + 1))
     },
     'keydown.right': {
-      actions: () => controller.history.addFencedAction(new ChangeFrame(model, model.frame + 1)),
+      actions: () => controller.history.addFencedAction(new ChangeFrame(model, model.frame + 1))
     },
     'keydown.n': {
       actions: () => controller.history.addAction(new ResetLabels(model))
@@ -519,26 +517,26 @@ const editState = {
     EDIT: 'loadEdit',
     SETFRAME: 'loadFrame',
     UNDO: 'undo',
-    REDO: 'redo',
+    REDO: 'redo'
   }
 };
 
 const adjusterState = {
   on: {
     SCROLLCONTRAST: {
-      actions: 'changeContrast',
+      actions: 'changeContrast'
     },
     SCROLLBRIGHTNESS: {
-      actions: 'changeBrightness',
+      actions: 'changeBrightness'
     },
     'keydown.h': {
-      actions: 'toggleHighlight',
+      actions: 'toggleHighlight'
     },
     'keydown.0': {
-      actions: 'resetBrightnessContrast',
+      actions: 'resetBrightnessContrast'
     },
     'keydown.i': {
-      actions: 'toggleInvert',
+      actions: 'toggleInvert'
     }
   }
 };
@@ -546,13 +544,13 @@ const adjusterState = {
 const canvasState = {
   on: {
     ZOOMIN: {
-      actions: 'zoomIn',
+      actions: 'zoomIn'
     },
     ZOOMOUT: {
-      actions: 'zoomOut',
+      actions: 'zoomOut'
     },
-    'mousemove': {
-      actions: 'updateMousePos',
+    mousemove: {
+      actions: 'updateMousePos'
     }
   }
 };
@@ -560,7 +558,7 @@ const canvasState = {
 const brushState = {
   on: {
     SETSIZE: {
-      actions: 'setBrushSize',
+      actions: 'setBrushSize'
     }
   }
 };
@@ -572,7 +570,7 @@ const displayState = {
       on: {
         'keydown.z': {
           target: 'labels',
-          actions: 'updateCanvas',
+          actions: 'updateCanvas'
         }
       }
     },
@@ -580,7 +578,7 @@ const displayState = {
       on: {
         'keydown.z': {
           target: 'raw',
-          actions: 'updateCanvas',
+          actions: 'updateCanvas'
         }
       }
     },
@@ -588,10 +586,10 @@ const displayState = {
       on: {
         'keydown.z': {
           target: 'overlay',
-          actions: 'updateCanvas',
+          actions: 'updateCanvas'
         }
       }
-    },
+    }
   }
 }
 
@@ -603,8 +601,8 @@ const labelState = {
     loadEdit: loadEditState,
     loadFrame: loadFrameState,
     undo: undoState,
-    redo: redoState,
-  },
+    redo: redoState
+  }
 };
 
 const deepcellLabelMachine = Machine(
@@ -618,7 +616,7 @@ const deepcellLabelMachine = Machine(
       storedY: 0,
       frame: 0,
       channel: 0,
-      feature: 0,
+      feature: 0
     },
     states: {
       label: labelState,
@@ -626,7 +624,7 @@ const deepcellLabelMachine = Machine(
       adjuster: adjusterState,
       canvas: canvasState,
       select: selectState,
-      brush: brushState,
+      brush: brushState
     }
   },
   {
@@ -659,14 +657,14 @@ const deepcellLabelMachine = Machine(
       zoomIn: zoomIn,
       zoomOut: zoomOut,
       updateMousePos: updateMousePos,
-      setBrushSize: setBrushSize,
+      setBrushSize: setBrushSize
     },
     guards: {
       leftMouse: leftMouse,
       rightMouse: rightMouse,
       shiftLeftMouse: shiftLeftMouse,
       shiftRightMouse: shiftRightMouse,
-      twoLabels: twoLabels,
-    },
+      twoLabels: twoLabels
+    }
   }
 );

@@ -11,7 +11,6 @@ class Controller {
    * @param {string} projectID 12 character base64 ID for Project in DeepCell Label database
    */
   constructor(projectID) {
-
     // Interpret the machine, and add a listener for whenever a transition occurs.
     const service = interpret(deepcellLabelMachine, { devTools: true }).onTransition(state => {
       // console.log(state.value);
@@ -51,7 +50,6 @@ class Controller {
 
       this.addUndoBindings();
       this.view.displayUndoRedo();
-
     });
   }
 
@@ -119,7 +117,7 @@ class Controller {
     const canvasElement = document.getElementById('canvas');
     // bind click on canvas
     canvasElement.addEventListener('click', (evt) => {
-        this.service.send(evt);
+      this.service.send(evt);
     });
 
     // bind scroll wheel, change contrast of raw when scrolled
@@ -154,9 +152,9 @@ class Controller {
     } else if (evt.shiftKey) {
       // shift + scroll causes horizontal scroll on mice wheels, but not trackpads
       const change = evt.deltaY === 0 ? evt.deltaX : evt.deltaY;
-      this.service.send({type: 'SCROLLBRIGHTNESS', change: change})
+      this.service.send({ type: 'SCROLLBRIGHTNESS', change: change })
     } else {
-      this.service.send({type: 'SCROLLCONTRAST', change: evt.deltaY})
+      this.service.send({ type: 'SCROLLCONTRAST', change: evt.deltaY })
     }
   }
 
@@ -174,7 +172,7 @@ class Controller {
     } else if (evt.key === 'a') {
       this.service.send('keydown.a');
     } else if (evt.key === 'ArrowLeft') {
-      this.service.send('keydown.left'); 
+      this.service.send('keydown.left');
     } else if (evt.key === 'd') {
       this.service.send('keydown.d');
     } else if (evt.key === 'ArrowRight') {
@@ -188,9 +186,9 @@ class Controller {
     } else if (evt.key === 'h') {
       this.service.send('keydown.h');
     } if (evt.key === 'ArrowDown') {
-      this.service.send({type: 'SETSIZE', size: this.model.brush.size - 1});
+      this.service.send({ type: 'SETSIZE', size: this.model.brush.size - 1 });
     } else if (evt.key === 'ArrowUp') {
-      this.service.send({type: 'SETSIZE', size: this.model.brush.size + 1});
+      this.service.send({ type: 'SETSIZE', size: this.model.brush.size + 1 });
     } else if (evt.key === 'i') {
       this.service.send('keydown.i');
     } else if (evt.key === 'n') {

@@ -12,12 +12,12 @@ class View {
    * Formats the undo/redo buttons.
    */
   displayUndoRedo() {
-    let canvasElement = document.getElementById('canvas');
-    let undoButton = document.getElementById('undo');
+    const canvasElement = document.getElementById('canvas');
+    const undoButton = document.getElementById('undo');
     undoButton.hidden = false;
     undoButton.style.width = canvasElement.width / 2 + 'px';
-  
-    let redoButton = document.getElementById('redo');
+
+    const redoButton = document.getElementById('redo');
     redoButton.hidden = false;
     redoButton.style.width = canvasElement.width / 2 + 'px';
   }
@@ -123,25 +123,25 @@ class InfopaneView {
     document.getElementById('feature').innerHTML = this.model.feature;
     document.getElementById('channel').innerHTML = this.model.channel;
     document.getElementById('zoom').innerHTML = `${this.canvas.zoom}%`;
-    
+
     const minX = Math.floor(this.canvas.sx);
     const maxX = Math.ceil(this.canvas.sx + this.canvas.sWidth);
     const displayedX = `${minX}-${maxX}`;
     document.getElementById('displayedX').innerHTML = displayedX;
-    
+
     const minY = Math.floor(this.canvas.sy);
     const maxY = Math.ceil(this.canvas.sy + this.canvas.sHeight);
     const displayedY = `${minY}-${maxY}`;
     document.getElementById('displayedY').innerHTML = displayedY;
-  
+
     this.renderHighlightRows();
     this.renderEditRows();
     this.renderLabelRows();
     // always show 'state' and selected labels
     const states = controller.service.state.toStrings();
     document.getElementById('mode').innerHTML = states[states.length - 2];
-    let foreground = this.model.selected.label;
-    let background = this.model.selected.secondLabel;
+    const foreground = this.model.selected.label;
+    const background = this.model.selected.secondLabel;
     document.getElementById('foreground').innerHTML = foreground === 0 ? 'background' : foreground;
     document.getElementById('background').innerHTML = background === 0 ? 'background' : background;
   }
@@ -153,19 +153,19 @@ class InfopaneView {
     const highlightText = (this.model.highlight) ? 'ON' : 'OFF';
     document.getElementById('highlight').innerHTML = highlightText;
   }
-  
+
   /**
    * Renders the edit mode specific rows of the infopane.
    */
   renderEditRows() {
     const rowVisibility = (this.model.edit_mode) ? 'visible' : 'hidden';
     document.getElementById('edit_brush_row').style.visibility = rowVisibility;
-  
+
     if (this.model.edit_mode) {
       document.getElementById('edit_brush').innerHTML = this.brush.size;
     }
   }
-  
+
   /**
    * Renders the rows about the label being hovered over.
    */
@@ -228,7 +228,7 @@ class CanvasView {
   get sWidth() {
     return this.canvas.sWidth;
   }
- 
+
   get sHeight() {
     return this.canvas.sHeight;
   }
@@ -321,7 +321,7 @@ class CanvasView {
       2 * this.model.padding + this.scaledWidth,
       2 * this.model.padding + this.scaledHeight
     );
-  
+
     if (controller.service.state.matches('display.overlay')) {
       // edit mode (annotations overlaid on raw + brush preview)
       this.renderOverlay(ctx);
@@ -347,10 +347,10 @@ class CanvasView {
       this.scaledWidth, this.scaledHeight);
     ctx.clip(region);
     ctx.imageSmoothingEnabled = true;
-  
+
     // Draw brush on top of image
     this.brushView.draw(ctx);
-  
+
     ctx.restore();
   }
 
@@ -361,7 +361,7 @@ class CanvasView {
   renderRaw(ctx) {
     this.drawImage(ctx, this.raw);
   }
-  
+
   /**
    * Renders labeled image.
    * @param {*} ctx canvas context to render on
@@ -417,8 +417,6 @@ class BrushView {
     return this.model.padding;
   }
 
-
-
   // clear previous view and update with current view
   refresh() {
     this.clear();
@@ -427,7 +425,7 @@ class BrushView {
 
   /**
    * Draws the brush canvas onto another ctx.
-   * @param {*} ctxDst 
+   * @param {*} ctxDst
    */
   draw(ctxDst) {
     // get attributes from viewer object
@@ -485,7 +483,7 @@ class BrushView {
     }
   }
 
-    /**
+  /**
    * Draws the current thresholding box onto brush canvas.
    */
   drawThreshold() {

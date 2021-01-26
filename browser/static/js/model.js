@@ -222,7 +222,7 @@ class Model {
         this.rawImage = payload.imgs.raw;
       }
     }
-  
+
     if (payload.tracks) {
       this.tracks = payload.tracks;
     }
@@ -236,7 +236,6 @@ class Model {
   updateMousePos(x, y) {
     this.canvas.updateCursorPosition(x, y);
   }
-
 
   // decrementSelectedLabel() {
   //   // cycle highlight to prev label, skipping 0
@@ -255,5 +254,4 @@ class Model {
   //   this.clear();
   //   this.highlighted_cell_one = tempHighlight;
   // }
-
 }

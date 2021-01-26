@@ -3,7 +3,7 @@
 class ImageAdjuster {
   constructor(model) {
     this.model = model;
-    
+
     // canvas element used for image processing
     this.canvas = document.createElement('canvas');
     this.canvas.id = 'adjustCanvas';
@@ -255,11 +255,11 @@ class ImageAdjuster {
     if (this.model.highlight) {
       const segData = this.ctx.getImageData(0, 0, this.width, this.height);
 
-      let label = this.model.selected.label;
-      let secondLabel = this.model.selected.secondLabel == 0;
+      const label = this.model.selected.label;
+      const secondLabel = this.model.selected.secondLabel === 0;
       // Don't highlight background pixels by changing to -1
-      let h1 = label === 0 ? -1 : label;
-      let h2 = secondLabel === 0 ? -1 : secondLabel;
+      const h1 = label === 0 ? -1 : label;
+      const h2 = secondLabel === 0 ? -1 : secondLabel;
 
       // highlight
       this.preCompositeLabelMod(segData, h1, h2);
@@ -311,8 +311,8 @@ class ImageAdjuster {
 
     let redOutline, r1, singleOutline, o1, outlineAll, translucent, t1, t2;
 
-    let foreground = this.model.selected.label;
-    let background = this.model.selected.secondLabel;
+    const foreground = this.model.selected.label;
+    const background = this.model.selected.secondLabel;
 
     if (foreground !== 0) {
       singleOutline = true;
@@ -347,7 +347,7 @@ class ImageAdjuster {
     let redOutline, r1, singleOutline, o1, translucent, t1, t2;
 
     // red outline for brush target
-    let background = this.model.selected.secondLabel;
+    const background = this.model.selected.secondLabel;
     if (background !== 0) {
       redOutline = true;
       r1 = background;
@@ -360,8 +360,8 @@ class ImageAdjuster {
     // translucent highlight
     if (this.model.highlight) {
       translucent = true;
-      let foreground = this.model.selected.label;
-      let background = this.model.selected.secondLabel;
+      const foreground = this.model.selected.label;
+      const background = this.model.selected.secondLabel;
       if (foreground !== 0) {
         t1 = foreground;
       }
