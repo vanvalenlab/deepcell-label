@@ -118,7 +118,7 @@ class Controller {
     canvasElement.addEventListener('click', (e) => this.service.send(e));
     canvasElement.addEventListener('mousedown', (e) => this.service.send(e));
     canvasElement.addEventListener('mousemove', (e) => this.service.send(e));
-    
+
     canvasElement.addEventListener('wheel', (e) => this.handleScroll(e));
     canvasElement.addEventListener('contextmenu', (e) => e.preventDefault());
   }

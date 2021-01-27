@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 /**
  * Defines the statechart for Label in XState.
  */
@@ -480,11 +481,11 @@ const editState = {
       actions: 'swapFrame'
     },
     'keydown.r': {
-      cond: () => true, // two different labels selected
+      // cond: () => true, // two different labels selected
       actions: 'replaceFrame'
     },
     'keydown.R': {
-      cond: () => true, // two different labels selected
+      // cond: () => true, // two different labels selected
       actions: 'replaceAll'
     },
     'keydown.a': {
