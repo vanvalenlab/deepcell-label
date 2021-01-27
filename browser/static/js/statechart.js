@@ -78,8 +78,8 @@ const storeClick = assign({
 
 const threshold = (context, event) => {
   const args = {
-    y1: context.storedX,
-    x1: context.storedY,
+    y1: context.storedY,
+    x1: context.storedX,
     y2: model.canvas.imgY,
     x2: model.canvas.imgX,
     frame: model.frame,
