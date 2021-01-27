@@ -443,14 +443,14 @@ class BrushView {
 
     // Draw solid outlines
     if (controller.service.state.matches('label.edit.threshold.dragging')) {
-      const threshX = controller.service.state.context.threshX;
-      const threshY = controller.service.state.context.threshY;
+      const storedX = controller.service.state.context.storedX;
+      const storedY = controller.service.state.context.storedY;
       // solid box around threshold area
       ctxDst.strokeStyle = 'white';
-      const boxStartX = (threshX - sx) * mag + this.padding;
-      const boxStartY = (threshY - sy) * mag + this.padding;
-      const boxWidth = (x - threshX) * mag;
-      const boxHeight = (y - threshY) * mag;
+      const boxStartX = (storedX - sx) * mag + this.padding;
+      const boxStartY = (storedY - sy) * mag + this.padding;
+      const boxWidth = (x - storedX) * mag;
+      const boxHeight = (y - storedY) * mag;
       ctxDst.strokeRect(boxStartX, boxStartY, boxWidth, boxHeight);
     } else if (controller.service.state.matches('label.edit.paint')) {
       // solid circle around current brush location
@@ -470,16 +470,16 @@ class BrushView {
   drawThreshold() {
     // clear previous box shape
     this.clear();
-    const threshX = controller.service.state.context.threshX;
-    const threshY = controller.service.state.context.threshY;
+    const storedX = controller.service.state.context.storedX;
+    const storedY = controller.service.state.context.storedY;
     const x = this.model.canvas.imgX;
     const y = this.model.canvas.imgY;
     // interior of box; will be added to visible canvas with opacity
     if (controller.service.state.matches('label.edit.threshold.dragging')) {
       this.ctx.fillRect(
-        threshX, threshY,
-        x - threshX,
-        y - threshY);
+        storedX, storedY,
+        x - storedX,
+        y - storedY);
     }
   }
 
