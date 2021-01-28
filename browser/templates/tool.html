@@ -15,10 +15,9 @@
       <h4>{{ settings['title'] | title }}</h4>
       <p>Filename will be given after submit button is pressed.</p>
 
-      {%- if settings['source'] == 'SourceEnum.s3' -%}
       <div class="row">
         <div class="col s6">
-          <button id="submit" class="btn waves-effect waves-light indigo" onClick="upload()">
+          <button id="submit" class="btn waves-effect waves-light indigo">
             Submit<i class="material-icons right">send</i>
           </button>
         </div>
@@ -26,15 +25,13 @@
           {% include "partials/loading-bar.html" %}
         </div>
       </div>
-      {%- else -%}
-      <div class = "row">
-        <div class = "col s6">
-          <button id="download" class="btn waves-effect waves-light indigo" onClick="download()">
+      <div class="row">
+        <div class="col s6">
+          <button id="download" class="btn waves-effect waves-light indigo">
             Download<i class="material-icons right">file_download</i>
           </button>
         </div>
       </div>
-      {%- endif -%}
 
       <!-- <div class="row hide" id="output">
         <div class="col s12">
@@ -78,40 +75,45 @@
 {%- endblock -%}
 
 {%- block extraJs -%}
-{%- if settings['filetype'] == "zstack" -%}
-  <script type="text/javascript" src="{{ url_for('static', filename='js/main_zstack.js') }}"></script>
-  <script type="text/javascript" src="{{ url_for('static', filename='js/actions.js') }}"></script>
-  <script type="text/javascript" src="{{ url_for('static', filename='js/model.js') }}"></script>
-  <script type="text/javascript" src="{{ url_for('static', filename='js/view.js') }}"></script>
-  <script type="text/javascript" src="{{ url_for('static', filename='js/controller.js') }}"></script>
-{%- elif settings['filetype'] == "track" -%}
-  <script type="text/javascript" src="{{ url_for('static', filename='js/main_track.js') }}"></script>
-{%- endif -%}
+  <script src="{{ url_for('static', filename='js/tool.js') }}"></script>
+  <script>
+    console.log(tool.startDeepCellLabel);
+    var settings = {{ settings | tojson}};
 
-<!-- START DeepCell Label FUNCTION CALL -->
-<script>
-  var settings = {{settings | tojson}};
-  const outputBucket = settings.output_bucket;
-  const projectID = settings.token;
-  function download() {
-    window.location = `/downloadproject/${projectID}`;
-  }
-  function upload() {
-    // disable button and show loading bar
-    document.getElementById("submit").classList.add("disabled");
-    document.getElementById("loading-bar").classList.add("active");
-    const promise = $.ajax({
-      type: 'POST',
-      url: `${document.location.origin}/upload_file/${outputBucket}/${projectID}`,
-      async: true
-    });
-    promise.done((payload) => {
-      // disable loading bar and remove show output filename
-      document.getElementById("loading-bar").classList.remove("active");
-      document.getElementById("output").classList.remove("hide");
-    });
-  }
-  startDeepCellLabel(settings);
-</script>
-<!-- END DeepCell Label FUNCTION CALL -->
+    Number.prototype.mod = function (n) {
+        return ((this % n) + n) % n;
+      };
+
+    const outputBucket = settings.output_bucket;
+    const projectID = settings.token;
+    function download() {
+      window.location = `/downloadproject/${projectID}`;
+    }
+    function upload() {
+      // disable button and show loading bar
+      document.getElementById('submit').classList.add('disabled');
+      document.getElementById('loading-bar').classList.add('active');
+      const promise = $.ajax({
+        type: 'POST',
+        url: `${document.location.origin}/upload_file/${outputBucket}/${projectID}`,
+        async: true
+      });
+      promise.done((payload) => {
+        // disable loading bar and remove show output filename
+        document.getElementById('loading-bar').classList.remove('active');
+        document.getElementById('output').classList.remove('hide');
+      });
+    }
+
+    const downloadButton = document.getElementById('download');
+    const submitButton = document.getElementById('submit');
+    downloadButton.onclick = download;
+    submitButton.onclick = upload;
+
+    const sourceS3 = settings.source == 'SourceEnum.s3';
+    downloadButton.hidden = sourceS3;
+    submitButton.hidden = !sourceS3;
+
+    tool.startDeepCellLabel(settings);
+  </script>
 {%- endblock -%}

@@ -13,8 +13,8 @@ import {
 } from './actions.js';
 
 const { choose } = actions;
-const model = window.model;
-const canvas = window.canvas;
+const getModel = () => window.model;
+const getCanvas = () => window.model.canvas;
 
 // TODO:
 // undo/redo with backend promises
@@ -33,183 +33,183 @@ const twoLabels = (context, event) => true;
 
 // actions
 const updateCanvas = (context, event) => {
-  model.notifyImageChange();
+  getModel().notifyImageChange();
 };
 
 const pan = (context, event) => {
-  const zoom = 100 / (canvas.zoom * canvas.scale);
-  window.controller.history.addAction(new Pan(model, event.movementX * zoom, event.movementY * zoom));
+  const zoom = 100 / (getCanvas().zoom * getCanvas().scale);
+  window.controller.history.addAction(new Pan(getModel(), event.movementX * zoom, event.movementY * zoom));
 };
 
 const editLabels = (context, event) => {
   return $.ajax({
     type: 'POST',
-    url: `${document.location.origin}/api/edit/${model.projectID}/${event.action}`,
+    url: `${document.location.origin}/api/edit/${getModel().projectID}/${event.action}`,
     data: event.args,
     async: true
   })
 };
 
-const addToTrace = assign({ trace: context => [...context.trace, [canvas.imgY, canvas.imgX]] });
+const addToTrace = assign({ trace: context => [...context.trace, [getCanvas().imgY, getCanvas().imgX]] });
 
 const resetTrace = assign({ trace: [] });
 
 const draw = (context) => {
   const args = {
     trace: JSON.stringify(context.trace),
-    brush_value: model.selected.label,
-    target_value: model.selected.secondLabel,
-    brush_size: model.brush.size,
-    frame: model.frame,
+    brush_value: getModel().selected.label,
+    target_value: getModel().selected.secondLabel,
+    brush_size: getModel().brush.size,
+    frame: getModel().frame,
     erase: false
   };
-  const action = new BackendAction(model, 'handle_draw', args);
+  const action = new BackendAction(getModel(), 'handle_draw', args);
   window.controller.history.addFencedAction(action);
 };
 
 const selectLabel = choose([
   {
     cond: (context, event) => event.shiftKey && event.button === 0,
-    actions: () => window.controller.history.addAction(new SelectForeground(model))
+    actions: () => window.controller.history.addAction(new SelectForeground(getModel()))
   },
   {
     cond: (context, event) => event.shiftKey && event.button === 2,
-    actions: () => window.controller.history.addAction(new SelectBackground(model))
+    actions: () => window.controller.history.addAction(new SelectBackground(getModel()))
   }
 ]);
 
-const swapLabels = () => window.controller.history.addAction(new SwapForegroundBackground(model));
+const swapLabels = () => window.controller.history.addAction(new SwapForegroundBackground(getModel()));
 
 const storeClick = assign({
-  storedLabel: () => model.canvas.label,
-  storedX: () => model.canvas.imgX,
-  storedY: () => model.canvas.imgY
+  storedLabel: () => getCanvas().label,
+  storedX: () => getCanvas().imgX,
+  storedY: () => getCanvas().imgY
 });
 
 const threshold = (context, event) => {
   const args = {
     y1: context.storedY,
     x1: context.storedX,
-    y2: model.canvas.imgY,
-    x2: model.canvas.imgX,
-    frame: model.frame,
-    label: model.selected.label
+    y2: getCanvas().imgY,
+    x2: getCanvas().imgX,
+    frame: getModel().frame,
+    label: getModel().selected.label
   };
-  const action = new BackendAction(model, 'threshold', args);
+  const action = new BackendAction(getModel(), 'threshold', args);
   window.controller.history.addFencedAction(action);
 };
 
 const flood = () => {
   const args = {
-    label: model.selected.label,
-    x_location: model.canvas.imgX,
-    y_location: model.canvas.imgY
+    label: getModel().selected.label,
+    x_location: getCanvas().imgX,
+    y_location: getCanvas().imgY
   };
-  const action = new BackendAction(model, 'flood', args);
+  const action = new BackendAction(getModel(), 'flood', args);
   window.controller.history.addFencedAction(action);
 };
 
 const trim = () => {
   const args = {
-    label: model.canvas.label,
-    frame: model.frame,
-    x_location: model.canvas.imgX,
-    y_location: model.canvas.imgY
+    label: getCanvas().label,
+    frame: getModel().frame,
+    x_location: getCanvas().imgX,
+    y_location: getCanvas().imgY
   };
-  const action = new BackendAction(model, 'trim_pixels', args);
+  const action = new BackendAction(getModel(), 'trim_pixels', args);
   window.controller.history.addFencedAction(action);
 };
 
 const erode = () => {
   const args = {
-    label: model.canvas.label
+    label: getCanvas().label
   };
-  const action = new BackendAction(model, 'erode', args);
+  const action = new BackendAction(getModel(), 'erode', args);
   window.controller.history.addFencedAction(action);
 };
 
 const dilate = () => {
   const args = {
-    label: model.canvas.label
+    label: getCanvas().label
   };
-  const action = new BackendAction(model, 'dilate', args);
+  const action = new BackendAction(getModel(), 'dilate', args);
   window.controller.history.addFencedAction(action);
 };
 
 const autofit = () => {
   const args = {
-    label: model.canvas.label
+    label: getCanvas().label
   };
-  const action = new BackendAction(model, 'active_contour', args);
+  const action = new BackendAction(getModel(), 'active_contour', args);
   window.controller.history.addFencedAction(action);
 };
 
 const predictFrame = () => {
   const args = {
-    frame: model.frame
+    frame: getModel().frame
   };
-  const action = new BackendAction(model, 'predict_single', args);
+  const action = new BackendAction(getModel(), 'predict_single', args);
   window.controller.history.addFencedAction(action);
 };
 
 const predictAll = () => {
   const args = {};
-  const action = new BackendAction(model, 'predict_zstack', args);
+  const action = new BackendAction(getModel(), 'predict_zstack', args);
   window.controller.history.addFencedAction(action);
 };
 
 const swapFrame = () => {
   const args = {
-    label_1: model.selected.label,
-    label_2: model.selected.secondLabel,
-    frame: model.frame
+    label_1: getModel().selected.label,
+    label_2: getModel().selected.secondLabel,
+    frame: getModel().frame
   };
-  const action = new BackendAction(model, 'swap_single_frame', args);
+  const action = new BackendAction(getModel(), 'swap_single_frame', args);
   window.controller.history.addFencedAction(action);
 };
 
 const replaceFrame = () => {
   const args = {
-    label_1: model.selected.label,
-    label_2: model.selected.secondLabel
-    // frame: model.frame ???
+    label_1: getModel().selected.label,
+    label_2: getModel().selected.secondLabel
+    // frame: getModel().frame ???
   };
-  const action = new BackendAction(model, 'replace_single', args);
+  const action = new BackendAction(getModel(), 'replace_single', args);
   window.controller.history.addFencedAction(action);
 };
 
 const replaceAll = () => {
   const args = {
-    label_1: model.selected.label,
-    label_2: model.selected.secondLabel
+    label_1: getModel().selected.label,
+    label_2: getModel().selected.secondLabel
   };
-  const action = new BackendAction(model, 'replace', args);
+  const action = new BackendAction(getModel(), 'replace', args);
   window.controller.history.addFencedAction(action);
 };
 
 const watershed = (context) => {
   const args = {
-    frame: model.frame,
+    frame: getModel().frame,
     label: context.storedLabel,
     x1_location: context.storedX,
     y1_location: context.storedY,
-    x2_location: model.canvas.imgX,
-    y2_location: model.canvas.imgY
+    x2_location: getCanvas().imgX,
+    y2_location: getCanvas().imgY
   };
-  const action = new BackendAction(model, 'watershed', args);
+  const action = new BackendAction(getModel(), 'watershed', args);
   window.controller.history.addFencedAction(action);
 };
 
-const changeContrast = (context, event) => window.controller.history.addAction(new ChangeContrast(model, event.change));
-const changeBrightness = (context, event) => window.controller.history.addAction(new ChangeBrightness(model, event.change));
-const toggleHighlight = () => window.controller.history.addAction(new ToggleHighlight(model));
-const resetBrightnessContrast = () => window.controller.history.addAction(new ResetBrightnessContrast(model));
-const toggleInvert = () => window.controller.history.addAction(new ToggleInvert(model));
+const changeContrast = (context, event) => window.controller.history.addAction(new ChangeContrast(getModel(), event.change));
+const changeBrightness = (context, event) => window.controller.history.addAction(new ChangeBrightness(getModel(), event.change));
+const toggleHighlight = () => window.controller.history.addAction(new ToggleHighlight(getModel()));
+const resetBrightnessContrast = () => window.controller.history.addAction(new ResetBrightnessContrast(getModel()));
+const toggleInvert = () => window.controller.history.addAction(new ToggleInvert(getModel()));
 
-const zoom = (context, event) => window.controller.history.addAction(new Zoom(model, event.change));
-const updateMousePos = (context, event) => model.updateMousePos(event.offsetX, event.offsetY);
+const zoom = (context, event) => window.controller.history.addAction(new Zoom(getModel(), event.change));
+const updateMousePos = (context, event) => getModel().updateMousePos(event.offsetX, event.offsetY);
 
-const setBrushSize = (context, event) => { model.brush.size = event.size };
+const setBrushSize = (context, event) => { getModel().brush.size = event.size };
 
 const panState = {
   initial: 'idle',
@@ -239,7 +239,7 @@ const loadEditState = {
     src: (context, event) => {
       return $.ajax({
         type: 'POST',
-        url: `${document.location.origin}/api/edit/${model.projectID}/${event.action}`,
+        url: `${document.location.origin}/api/edit/${getModel().projectID}/${event.action}`,
         data: event.args,
         async: true
       })
@@ -248,7 +248,7 @@ const loadEditState = {
       target: 'edit.hist',
       actions: [
         (_, event) => console.log(event),
-        (_, event) => model.handlePayload(event.data)
+        (_, event) => getModel().handlePayload(event.data)
         // () => window.controller.history.addFence(),
       ]
     },
@@ -265,10 +265,10 @@ const loadFrameState = {
   invoke: {
     id: 'loadFrame',
     src: (context, event) => {
-      model[event.dimension] = event.value;
+      getModel()[event.dimension] = event.value;
       return $.ajax({
         type: 'POST',
-        url: `${document.location.origin}/api/changedisplay/${model.projectID}/${event.dimension}/${event.value}`,
+        url: `${document.location.origin}/api/changedisplay/${getModel().projectID}/${event.dimension}/${event.value}`,
         async: true
       })
     },
@@ -276,7 +276,7 @@ const loadFrameState = {
       target: 'edit.hist',
       actions: [
         (_, event) => console.log(event),
-        (_, event) => model.handlePayload(event.data)
+        (_, event) => getModel().handlePayload(event.data)
         // () => window.controller.history.addFence(),
       ]
     },
@@ -295,7 +295,7 @@ const undoState = {
     src: (context, event) => {
       return $.ajax({
         type: 'POST',
-        url: `${document.location.origin}/api/undo/${model.projectID}`,
+        url: `${document.location.origin}/api/undo/${getModel().projectID}`,
         async: true
       })
     },
@@ -304,7 +304,7 @@ const undoState = {
       actions: [
         // () => window.controller.history.undo(),
         (_, event) => console.log(event),
-        (_, event) => model.handlePayload(event.data)
+        (_, event) => getModel().handlePayload(event.data)
       ]
     },
     onError: {
@@ -322,7 +322,7 @@ const redoState = {
     src: (context, event) => {
       return $.ajax({
         type: 'POST',
-        url: `${document.location.origin}/api/redo/${model.projectID}`,
+        url: `${document.location.origin}/api/redo/${getModel().projectID}`,
         async: true
       })
     },
@@ -331,7 +331,7 @@ const redoState = {
       actions: [
         // () => window.controller.history.redo(),
         (_, event) => console.log(event),
-        (_, event) => model.handlePayload(event.data)
+        (_, event) => getModel().handlePayload(event.data)
       ]
     },
     onError: {
@@ -449,7 +449,7 @@ const watershedState = {
     idle: {
       on: {
         click: {
-          cond: () => canvas.label !== 0,
+          cond: () => getCanvas().label !== 0,
           target: 'clicked',
           actions: 'storeClick'
         }
@@ -458,7 +458,7 @@ const watershedState = {
     clicked: {
       on: {
         click: {
-          cond: (context) => canvas.label === context.storedLabel,
+          cond: (context) => getCanvas().label === context.storedLabel,
           actions: 'watershed'
         }
       }
@@ -498,43 +498,43 @@ const editState = {
       actions: 'replaceAll'
     },
     'keydown.a': {
-      actions: () => window.controller.history.addFencedAction(new ChangeFrame(model, model.frame - 1))
+      actions: () => window.controller.history.addFencedAction(new ChangeFrame(getModel(), getModel().frame - 1))
     },
     'keydown.left': {
-      actions: () => window.controller.history.addFencedAction(new ChangeFrame(model, model.frame - 1))
+      actions: () => window.controller.history.addFencedAction(new ChangeFrame(getModel(), getModel().frame - 1))
     },
     'keydown.d': {
-      actions: () => window.controller.history.addFencedAction(new ChangeFrame(model, model.frame + 1))
+      actions: () => window.controller.history.addFencedAction(new ChangeFrame(getModel(), getModel().frame + 1))
     },
     'keydown.right': {
-      actions: () => window.controller.history.addFencedAction(new ChangeFrame(model, model.frame + 1))
+      actions: () => window.controller.history.addFencedAction(new ChangeFrame(getModel(), getModel().frame + 1))
     },
     'keydown.c': {
-      actions: () => window.controller.history.addFencedAction(new ChangeChannel(model, model.channel + 1))
+      actions: () => window.controller.history.addFencedAction(new ChangeChannel(getModel(), getModel().channel + 1))
     },
     'keydown.C': {
-      actions: () => window.controller.history.addFencedAction(new ChangeChannel(model, model.channel - 1))
+      actions: () => window.controller.history.addFencedAction(new ChangeChannel(getModel(), getModel().channel - 1))
     },
     'keydown.f': {
-      actions: () => window.controller.history.addFencedAction(new ChangeFeature(model, model.feature + 1))
+      actions: () => window.controller.history.addFencedAction(new ChangeFeature(getModel(), getModel().feature + 1))
     },
     'keydown.F': {
-      actions: () => window.controller.history.addFencedAction(new ChangeFeature(model, model.feature - 1))
+      actions: () => window.controller.history.addFencedAction(new ChangeFeature(getModel(), getModel().feature - 1))
     },
     'keydown.n': {
-      actions: () => window.controller.history.addAction(new ResetLabels(model))
+      actions: () => window.controller.history.addAction(new ResetLabels(getModel()))
     },
     'keydown.[': {
-      actions: () => window.controller.history.addAction(new SetForeground(model, model.selected.label - 1))
+      actions: () => window.controller.history.addAction(new SetForeground(getModel(), getModel().selected.label - 1))
     },
     'keydown.]': {
-      actions: () => window.controller.history.addAction(new SetForeground(model, model.selected.label + 1))
+      actions: () => window.controller.history.addAction(new SetForeground(getModel(), getModel().selected.label + 1))
     },
     'keydown.{': {
-      actions: () => window.controller.history.addAction(new SetBackground(model, model.selected.secondLabel - 1))
+      actions: () => window.controller.history.addAction(new SetBackground(getModel(), getModel().selected.secondLabel - 1))
     },
     'keydown.}': {
-      actions: () => window.controller.history.addAction(new SetBackground(model, model.selected.secondLabel + 1))
+      actions: () => window.controller.history.addAction(new SetBackground(getModel(), getModel().selected.secondLabel + 1))
     },
     UNDO: { actions: () => window.controller.history.undo() },
     REDO: { actions: () => window.controller.history.redo() },

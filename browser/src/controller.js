@@ -1,5 +1,6 @@
 import { interpret } from 'xstate';
-import { $ } from 'jquery';
+import { inspect } from '@xstate/inspect';
+import $ from 'jquery';
 
 import { deepcellLabelMachine } from './statechart.js';
 import { Model } from './model.js';
@@ -14,6 +15,10 @@ export class Controller {
     // Interpret the machine, and add a listener for whenever a transition occurs.
     const service = interpret(deepcellLabelMachine, { devTools: true }).onTransition(state => {
       // console.log(state.value);
+    });
+    inspect({
+      iframe: () => document.querySelector('iframe[data-xstate]'),
+      url: 'https://statecharts.io/inspect'
     });
     // Start the service
     service.start();
@@ -32,7 +37,6 @@ export class Controller {
       this.view = this.model.view;
 
       window.model = this.model;
-      window.canvas = this.model.canvas;
       window.view = this.view;
 
       this.history = new History();
@@ -134,7 +138,7 @@ export class Controller {
    */
   handleScroll(evt) {
     if (evt.altKey) {
-      this.service.send({ type: 'ZOOM', change: Math.sign(evt.deltaY)})
+      this.service.send({ type: 'ZOOM', change: Math.sign(evt.deltaY) })
     } else if (evt.shiftKey) {
       // shift + scroll causes horizontal scroll on mice wheels, but not trackpads
       const change = evt.deltaY === 0 ? evt.deltaX : evt.deltaY;

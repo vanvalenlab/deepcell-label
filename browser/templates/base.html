@@ -47,40 +47,6 @@
     </footer>
 
     <!--JavaScript at end of body for optimized loading-->
-    <!-- Load JQuery -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-    <!-- Load XState -->
-    <script src="https://unpkg.com/xstate@4/dist/xstate.js"></script>
-    <!-- Load Materialize JS -->
-    <script type="text/javascript" src="{{ url_for('static', filename='js/materialize.min.js') }}"></script>
-    <!-- Initialize Materialize elements -->
-    <script>
-      M.AutoInit();
-      document.addEventListener('DOMContentLoaded', function() {
-        // Initialize forms
-        var elems = document.querySelectorAll('select');
-        var instances = M.FormSelect.init(elems, {});
-        // Initialize collapsibles
-        var elems = document.querySelectorAll('.collapsible');
-        var instances = M.Collapsible.init(elems, {
-          accordion: true,
-          inDuration: 400,
-          outDuration: 400,
-        });
-      });
-    </script>
-    <!-- Load Custom JavaScript -->
-    <script src="{{ url_for('static', filename='js/statechart.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/history.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/adjust.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/brush.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/canvas.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/select.js') }}"></script>
-    <script>
-      Number.prototype.mod = function(n) {
-        return ((this%n)+n)%n;
-      };
-    </script>
     {% block extraJs %}
     {% endblock %}
 
