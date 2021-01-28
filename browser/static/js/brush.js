@@ -1,4 +1,4 @@
-class Brush {
+export class Brush {
   constructor(model) {
     this.model = model;
     // size of brush in pixels

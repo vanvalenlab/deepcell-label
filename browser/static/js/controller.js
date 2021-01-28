@@ -1,11 +1,11 @@
-// const { interpret } = XState;
-console.log(XState);
+import { interpret } from 'xstate';
+import { $ } from 'jquery';
 
-var model;
-var view;
-var canvas;
+import { deepcellLabelMachine } from './statechart.js';
+import { Model } from './model.js';
+import { History } from './history.js';
 
-class Controller {
+export class Controller {
   /**
    * Retrives a Project, and sets up bindings to control Label.
    * @param {string} projectID 12 character base64 ID for Project in DeepCell Label database
@@ -29,10 +29,12 @@ class Controller {
     // Create model and view for Project and setup bindings
     getProject.done((project) => {
       this.model = new Model(project);
-      model = this.model;
-      canvas = this.model.canvas;
       this.view = this.model.view;
-      view = this.view;
+
+      window.model = this.model;
+      window.canvas = this.model.canvas;
+      window.view = this.view;
+
       this.history = new History();
       // TODO: fix initializeHistory to work with new Actions
       // this.history.initializeHistory(project.actionFrames);
@@ -42,11 +44,6 @@ class Controller {
       this.addCanvasBindings();
 
       this.view.setCanvasDimensions();
-
-      // Load images and seg_array from payload
-      this.model.segArray = project.imgs.seg_arr;
-      this.model.segImage = project.imgs.segmented;
-      this.model.rawImage = project.imgs.raw;
 
       this.addUndoBindings();
       this.view.displayUndoRedo();
@@ -137,7 +134,7 @@ class Controller {
    */
   handleScroll(evt) {
     if (evt.altKey) {
-      this.history.addAction(new Zoom(this.model, Math.sign(evt.deltaY)));
+      this.service.send({ type: 'ZOOM', change: Math.sign(evt.deltaY)})
     } else if (evt.shiftKey) {
       // shift + scroll causes horizontal scroll on mice wheels, but not trackpads
       const change = evt.deltaY === 0 ? evt.deltaX : evt.deltaY;
@@ -167,9 +164,9 @@ class Controller {
     } else if (evt.key === 'ArrowRight') {
       this.service.send('keydown.right');
     } else if (evt.key === '-') {
-      this.service.send('ZOOMOUT');
+      this.service.send({ type: 'ZOOM', change: 1 });
     } else if (evt.key === '=') {
-      this.service.send('ZOOMIN');
+      this.service.send({ type: 'ZOOM', change: -1 });
     } else if (evt.key === '0') {
       this.service.send('keydown.0');
     } else if (evt.key === 'h') {

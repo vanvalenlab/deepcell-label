@@ -1,7 +1,20 @@
-/* eslint-disable no-undef */
 /**
  * Defines the statechart for Label in XState.
  */
+
+import { Machine, actions, assign } from 'xstate';
+import $ from 'jquery';
+
+import {
+  ToggleHighlight, ChangeFrame, ChangeFeature, ChangeChannel, BackendAction, Pan, Zoom,
+  ChangeContrast, ChangeBrightness, ResetBrightnessContrast,
+  ToggleInvert, SelectForeground, SelectBackground, SwapForegroundBackground,
+  SetForeground, SetBackground, ResetLabels
+} from './actions.js';
+
+const { choose } = actions;
+const model = window.model;
+const canvas = window.canvas;
 
 // TODO:
 // undo/redo with backend promises
@@ -10,9 +23,6 @@
 // KEYBINDS
 // watershed
 // replace/swap after current frame
-
-const { Machine, actions, interpret, assign, send } = XState;
-const { choose } = actions;
 
 // guards
 const leftMouse = (context, event) => event.button === 0;
@@ -27,8 +37,8 @@ const updateCanvas = (context, event) => {
 };
 
 const pan = (context, event) => {
-  const zoom = 100 / (model.canvas.zoom * model.canvas.scale);
-  controller.history.addAction(new Pan(model, event.movementX * zoom, event.movementY * zoom));
+  const zoom = 100 / (canvas.zoom * canvas.scale);
+  window.controller.history.addAction(new Pan(model, event.movementX * zoom, event.movementY * zoom));
 };
 
 const editLabels = (context, event) => {
@@ -54,21 +64,21 @@ const draw = (context) => {
     erase: false
   };
   const action = new BackendAction(model, 'handle_draw', args);
-  controller.history.addFencedAction(action);
+  window.controller.history.addFencedAction(action);
 };
 
 const selectLabel = choose([
   {
     cond: (context, event) => event.shiftKey && event.button === 0,
-    actions: () => controller.history.addAction(new SelectForeground(model))
+    actions: () => window.controller.history.addAction(new SelectForeground(model))
   },
   {
     cond: (context, event) => event.shiftKey && event.button === 2,
-    actions: () => controller.history.addAction(new SelectBackground(model))
+    actions: () => window.controller.history.addAction(new SelectBackground(model))
   }
 ]);
 
-const swapLabels = () => controller.history.addAction(new SwapForegroundBackground(model));
+const swapLabels = () => window.controller.history.addAction(new SwapForegroundBackground(model));
 
 const storeClick = assign({
   storedLabel: () => model.canvas.label,
@@ -86,7 +96,7 @@ const threshold = (context, event) => {
     label: model.selected.label
   };
   const action = new BackendAction(model, 'threshold', args);
-  controller.history.addFencedAction(action);
+  window.controller.history.addFencedAction(action);
 };
 
 const flood = () => {
@@ -96,7 +106,7 @@ const flood = () => {
     y_location: model.canvas.imgY
   };
   const action = new BackendAction(model, 'flood', args);
-  controller.history.addFencedAction(action);
+  window.controller.history.addFencedAction(action);
 };
 
 const trim = () => {
@@ -107,7 +117,7 @@ const trim = () => {
     y_location: model.canvas.imgY
   };
   const action = new BackendAction(model, 'trim_pixels', args);
-  controller.history.addFencedAction(action);
+  window.controller.history.addFencedAction(action);
 };
 
 const erode = () => {
@@ -115,7 +125,7 @@ const erode = () => {
     label: model.canvas.label
   };
   const action = new BackendAction(model, 'erode', args);
-  controller.history.addFencedAction(action);
+  window.controller.history.addFencedAction(action);
 };
 
 const dilate = () => {
@@ -123,7 +133,7 @@ const dilate = () => {
     label: model.canvas.label
   };
   const action = new BackendAction(model, 'dilate', args);
-  controller.history.addFencedAction(action);
+  window.controller.history.addFencedAction(action);
 };
 
 const autofit = () => {
@@ -131,7 +141,7 @@ const autofit = () => {
     label: model.canvas.label
   };
   const action = new BackendAction(model, 'active_contour', args);
-  controller.history.addFencedAction(action);
+  window.controller.history.addFencedAction(action);
 };
 
 const predictFrame = () => {
@@ -139,13 +149,13 @@ const predictFrame = () => {
     frame: model.frame
   };
   const action = new BackendAction(model, 'predict_single', args);
-  controller.history.addFencedAction(action);
+  window.controller.history.addFencedAction(action);
 };
 
 const predictAll = () => {
   const args = {};
   const action = new BackendAction(model, 'predict_zstack', args);
-  controller.history.addFencedAction(action);
+  window.controller.history.addFencedAction(action);
 };
 
 const swapFrame = () => {
@@ -155,7 +165,7 @@ const swapFrame = () => {
     frame: model.frame
   };
   const action = new BackendAction(model, 'swap_single_frame', args);
-  controller.history.addFencedAction(action);
+  window.controller.history.addFencedAction(action);
 };
 
 const replaceFrame = () => {
@@ -165,7 +175,7 @@ const replaceFrame = () => {
     // frame: model.frame ???
   };
   const action = new BackendAction(model, 'replace_single', args);
-  controller.history.addFencedAction(action);
+  window.controller.history.addFencedAction(action);
 };
 
 const replaceAll = () => {
@@ -174,7 +184,7 @@ const replaceAll = () => {
     label_2: model.selected.secondLabel
   };
   const action = new BackendAction(model, 'replace', args);
-  controller.history.addFencedAction(action);
+  window.controller.history.addFencedAction(action);
 };
 
 const watershed = (context) => {
@@ -187,20 +197,19 @@ const watershed = (context) => {
     y2_location: model.canvas.imgY
   };
   const action = new BackendAction(model, 'watershed', args);
-  controller.history.addFencedAction(action);
+  window.controller.history.addFencedAction(action);
 };
 
-const changeContrast = (context, event) => controller.history.addAction(new ChangeContrast(model, event.change));
-const changeBrightness = (context, event) => controller.history.addAction(new ChangeBrightness(model, event.change));
-const toggleHighlight = () => controller.history.addAction(new ToggleHighlight(model));
-const resetBrightnessContrast = () => controller.history.addAction(new ResetBrightnessContrast(model));
-const toggleInvert = () => controller.history.addAction(new ToggleInvert(model));
+const changeContrast = (context, event) => window.controller.history.addAction(new ChangeContrast(model, event.change));
+const changeBrightness = (context, event) => window.controller.history.addAction(new ChangeBrightness(model, event.change));
+const toggleHighlight = () => window.controller.history.addAction(new ToggleHighlight(model));
+const resetBrightnessContrast = () => window.controller.history.addAction(new ResetBrightnessContrast(model));
+const toggleInvert = () => window.controller.history.addAction(new ToggleInvert(model));
 
-const zoomIn = () => controller.history.addAction(new Zoom(model, -1));
-const zoomOut = () => controller.history.addAction(new Zoom(model, 1));
+const zoom = (context, event) => window.controller.history.addAction(new Zoom(model, event.change));
 const updateMousePos = (context, event) => model.updateMousePos(event.offsetX, event.offsetY);
 
-const setBrushSize = (context, event) => model.brush.size = event.size;
+const setBrushSize = (context, event) => { model.brush.size = event.size };
 
 const panState = {
   initial: 'idle',
@@ -240,7 +249,7 @@ const loadEditState = {
       actions: [
         (_, event) => console.log(event),
         (_, event) => model.handlePayload(event.data)
-        // () => controller.history.addFence(),
+        // () => window.controller.history.addFence(),
       ]
     },
     onError: {
@@ -268,7 +277,7 @@ const loadFrameState = {
       actions: [
         (_, event) => console.log(event),
         (_, event) => model.handlePayload(event.data)
-        // () => controller.history.addFence(),
+        // () => window.controller.history.addFence(),
       ]
     },
     onError: {
@@ -293,7 +302,7 @@ const undoState = {
     onDone: {
       target: 'edit.hist',
       actions: [
-        // () => controller.history.undo(),
+        // () => window.controller.history.undo(),
         (_, event) => console.log(event),
         (_, event) => model.handlePayload(event.data)
       ]
@@ -320,7 +329,7 @@ const redoState = {
     onDone: {
       target: 'edit.hist',
       actions: [
-        // () => controller.history.redo(),
+        // () => window.controller.history.redo(),
         (_, event) => console.log(event),
         (_, event) => model.handlePayload(event.data)
       ]
@@ -489,46 +498,46 @@ const editState = {
       actions: 'replaceAll'
     },
     'keydown.a': {
-      actions: () => controller.history.addFencedAction(new ChangeFrame(model, model.frame - 1))
+      actions: () => window.controller.history.addFencedAction(new ChangeFrame(model, model.frame - 1))
     },
     'keydown.left': {
-      actions: () => controller.history.addFencedAction(new ChangeFrame(model, model.frame - 1))
+      actions: () => window.controller.history.addFencedAction(new ChangeFrame(model, model.frame - 1))
     },
     'keydown.d': {
-      actions: () => controller.history.addFencedAction(new ChangeFrame(model, model.frame + 1))
+      actions: () => window.controller.history.addFencedAction(new ChangeFrame(model, model.frame + 1))
     },
     'keydown.right': {
-      actions: () => controller.history.addFencedAction(new ChangeFrame(model, model.frame + 1))
+      actions: () => window.controller.history.addFencedAction(new ChangeFrame(model, model.frame + 1))
     },
     'keydown.c': {
-      actions: () => controller.history.addFencedAction(new ChangeChannel(model, model.channel + 1))
+      actions: () => window.controller.history.addFencedAction(new ChangeChannel(model, model.channel + 1))
     },
     'keydown.C': {
-      actions: () => controller.history.addFencedAction(new ChangeChannel(model, model.channel - 1))
+      actions: () => window.controller.history.addFencedAction(new ChangeChannel(model, model.channel - 1))
     },
     'keydown.f': {
-      actions: () => controller.history.addFencedAction(new ChangeFeature(model, model.feature + 1))
+      actions: () => window.controller.history.addFencedAction(new ChangeFeature(model, model.feature + 1))
     },
     'keydown.F': {
-      actions: () => controller.history.addFencedAction(new ChangeFeature(model, model.feature - 1))
+      actions: () => window.controller.history.addFencedAction(new ChangeFeature(model, model.feature - 1))
     },
     'keydown.n': {
-      actions: () => controller.history.addAction(new ResetLabels(model))
+      actions: () => window.controller.history.addAction(new ResetLabels(model))
     },
     'keydown.[': {
-      actions: () => controller.history.addAction(new SetForeground(model, model.selected.label - 1))
+      actions: () => window.controller.history.addAction(new SetForeground(model, model.selected.label - 1))
     },
     'keydown.]': {
-      actions: () => controller.history.addAction(new SetForeground(model, model.selected.label + 1))
+      actions: () => window.controller.history.addAction(new SetForeground(model, model.selected.label + 1))
     },
     'keydown.{': {
-      actions: () => controller.history.addAction(new SetBackground(model, model.selected.secondLabel - 1))
+      actions: () => window.controller.history.addAction(new SetBackground(model, model.selected.secondLabel - 1))
     },
     'keydown.}': {
-      actions: () => controller.history.addAction(new SetBackground(model, model.selected.secondLabel + 1))
+      actions: () => window.controller.history.addAction(new SetBackground(model, model.selected.secondLabel + 1))
     },
-    UNDO: { actions: () => controller.history.undo() },
-    REDO: { actions: () => controller.history.redo() },
+    UNDO: { actions: () => window.controller.history.undo() },
+    REDO: { actions: () => window.controller.history.redo() },
     // internal transitions
     'keydown.b': '.paint',
     'keydown.t': '.threshold',
@@ -568,11 +577,8 @@ const adjusterState = {
 
 const canvasState = {
   on: {
-    ZOOMIN: {
-      actions: 'zoomIn'
-    },
-    ZOOMOUT: {
-      actions: 'zoomOut'
+    ZOOM: {
+      actions: 'zoom'
     },
     mousemove: {
       actions: 'updateMousePos'
@@ -630,7 +636,7 @@ const labelState = {
   }
 };
 
-const deepcellLabelMachine = Machine(
+export const deepcellLabelMachine = Machine(
   {
     id: 'deepcellLabel',
     type: 'parallel',
@@ -668,6 +674,7 @@ const deepcellLabelMachine = Machine(
       erode: erode,
       dilate: dilate,
       autofit: autofit,
+      trim: trim,
       predictFrame: predictFrame,
       predictAll: predictAll,
       swapFrame: swapFrame,
@@ -679,8 +686,7 @@ const deepcellLabelMachine = Machine(
       toggleHighlight: toggleHighlight,
       resetBrightnessContrast: resetBrightnessContrast,
       toggleInvert: toggleInvert,
-      zoomIn: zoomIn,
-      zoomOut: zoomOut,
+      zoom: zoom,
       updateMousePos: updateMousePos,
       setBrushSize: setBrushSize
     },

@@ -1,5 +1,5 @@
 /** Displays and updates UI elements. */
-class View {
+export class View {
   constructor(model) {
     // TODO: use observer interface & have View subscribe to model
     this.model = model;
@@ -139,7 +139,7 @@ class InfopaneView {
     document.getElementById('edit_brush').innerHTML = this.brush.size;
     this.renderLabelRows();
     // always show 'state' and selected labels
-    const states = controller.service.state.toStrings();
+    const states = window.controller.service.state.toStrings();
     document.getElementById('mode').innerHTML = states[states.length - 2];
     const foreground = this.model.selected.label;
     const background = this.model.selected.secondLabel;
@@ -303,10 +303,10 @@ class CanvasView {
       2 * this.model.padding + this.scaledHeight
     );
 
-    if (controller.service.state.matches('display.overlay')) {
+    if (window.controller.service.state.matches('display.overlay')) {
       // edit mode (annotations overlaid on raw + brush preview)
       this.renderOverlay(ctx);
-    } else if (controller.service.state.matches('display.raw')) {
+    } else if (window.controller.service.state.matches('display.raw')) {
       // draw raw image
       this.renderRaw(ctx);
     } else {
@@ -417,9 +417,9 @@ class BrushView {
     const mag = this.model.canvas.scale * this.model.canvas.zoom / 100;
 
     // Update the translucent brush canvas
-    if (controller.service.state.matches('label.edit.threshold')) {
+    if (window.controller.service.state.matches('label.edit.threshold')) {
       this.drawThreshold();
-    } else if (controller.service.state.matches('label.edit.paint')) {
+    } else if (window.controller.service.state.matches('label.edit.paint')) {
       this.drawPaintbrush();
     } else {
       this.clear();
@@ -442,9 +442,9 @@ class BrushView {
     const y = this.model.canvas.imgY;
 
     // Draw solid outlines
-    if (controller.service.state.matches('label.edit.threshold.dragging')) {
-      const storedX = controller.service.state.context.storedX;
-      const storedY = controller.service.state.context.storedY;
+    if (window.controller.service.state.matches('label.edit.threshold.dragging')) {
+      const storedX = window.controller.service.state.context.storedX;
+      const storedY = window.controller.service.state.context.storedY;
       // solid box around threshold area
       ctxDst.strokeStyle = 'white';
       const boxStartX = (storedX - sx) * mag + this.padding;
@@ -452,7 +452,7 @@ class BrushView {
       const boxWidth = (x - storedX) * mag;
       const boxHeight = (y - storedY) * mag;
       ctxDst.strokeRect(boxStartX, boxStartY, boxWidth, boxHeight);
-    } else if (controller.service.state.matches('label.edit.paint')) {
+    } else if (window.controller.service.state.matches('label.edit.paint')) {
       // solid circle around current brush location
       ctxDst.beginPath();
       const cX = (x - sx) * mag + this.padding;
@@ -470,12 +470,12 @@ class BrushView {
   drawThreshold() {
     // clear previous box shape
     this.clear();
-    const storedX = controller.service.state.context.storedX;
-    const storedY = controller.service.state.context.storedY;
+    const storedX = window.controller.service.state.context.storedX;
+    const storedY = window.controller.service.state.context.storedY;
     const x = this.model.canvas.imgX;
     const y = this.model.canvas.imgY;
     // interior of box; will be added to visible canvas with opacity
-    if (controller.service.state.matches('label.edit.threshold.dragging')) {
+    if (window.controller.service.state.matches('label.edit.threshold.dragging')) {
       this.ctx.fillRect(
         storedX, storedY,
         x - storedX,
@@ -490,7 +490,7 @@ class BrushView {
     const x = this.model.canvas.imgX;
     const y = this.model.canvas.imgY;
     // When painting, leave behind previous shadows to show brush's trace
-    if (!controller.service.state.matches('label.edit.paint.dragging')) {
+    if (!window.controller.service.state.matches('label.edit.paint.dragging')) {
       this.clear();
     }
     this.ctx.beginPath();

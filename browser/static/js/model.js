@@ -1,4 +1,10 @@
-class Model {
+import { View } from './view.js';
+import { ImageAdjuster } from './adjust.js';
+import { CanvasPosition } from './canvas.js';
+import { Brush } from './brush.js';
+import { SelectedLabels } from './select.js';
+
+export class Model {
   constructor(project) {
     // Dynamic project attributes
     this._frame = project.frame;
@@ -41,6 +47,11 @@ class Model {
     // TODO: use Observable interface instead and allow any Observer to register
     // only observer right now is the view
     this.view = new View(this);
+
+    // Load images and seg_array from payload
+    this.segArray = project.imgs.seg_arr;
+    this.segImage = project.imgs.segmented;
+    this.rawImage = project.imgs.raw;
   }
 
   get segArray() {

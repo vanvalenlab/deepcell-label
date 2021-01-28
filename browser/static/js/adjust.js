@@ -1,6 +1,6 @@
 // helper functions
 
-class ImageAdjuster {
+export class ImageAdjuster {
   constructor(model) {
     this.model = model;
 

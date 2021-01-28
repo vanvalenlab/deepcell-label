@@ -1,4 +1,4 @@
-class History {
+export class History {
   constructor() {
     /** @property {Array<Actions|string>} undoStack actions grouped by fenceposts */
     this.undoStack = [];
@@ -104,29 +104,29 @@ class History {
     this.formatButtons();
   }
 
-  /**
-   * Initializes the action history using the history stored on the backend
-   * @param {*} actionFrames frame of each action performed on the project
-   * @param {*} initFrame frame displayed at the bottom of the undoStack
-   * @param {*} finalFrame frame displayed at the top of the undoStack
-   */
-  initializeHistory(actionFrames, firstFrame = 0) {
-    // Initialize undoStack to with actions recorded on backend
-    let prevFrame = firstFrame;
-    for (const frame of actionFrames) {
-      // Display unedited frame before loading edited frame
-      if (frame !== prevFrame) {
-        const action = new ChangeFrame(mode, frame, prevFrame);
-        this.undoStack.push(action);
-        this.addFence();
-        prevFrame = frame;
-      }
-      const action = new BackendAction();
-      this.undoStack.push(action);
-      this.addFence();
-    }
-    this.formatButtons();
-  }
+  // /**
+  //  * Initializes the action history using the history stored on the backend
+  //  * @param {*} actionFrames frame of each action performed on the project
+  //  * @param {*} initFrame frame displayed at the bottom of the undoStack
+  //  * @param {*} finalFrame frame displayed at the top of the undoStack
+  //  */
+  // initializeHistory(actionFrames, firstFrame = 0) {
+  //   // Initialize undoStack to with actions recorded on backend
+  //   let prevFrame = firstFrame;
+  //   for (const frame of actionFrames) {
+  //     // Display unedited frame before loading edited frame
+  //     if (frame !== prevFrame) {
+  //       const action = new ChangeFrame(mode, frame, prevFrame);
+  //       this.undoStack.push(action);
+  //       this.addFence();
+  //       prevFrame = frame;
+  //     }
+  //     const action = new BackendAction();
+  //     this.undoStack.push(action);
+  //     this.addFence();
+  //   }
+  //   this.formatButtons();
+  // }
 
   formatButtons() {
     document.getElementById('undo').disabled = !this.canUndo;
@@ -139,7 +139,7 @@ class History {
  *
  * @interface Action
  */
-class Action {
+export class Action {
 
   /**
    * Do the action before storing in the action history

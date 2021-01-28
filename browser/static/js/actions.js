@@ -1,4 +1,6 @@
-class ToggleHighlight extends Action {
+import { Action } from './history.js';
+
+export class ToggleHighlight extends Action {
   constructor(model) {
     super();
     this.model = model;
@@ -18,7 +20,7 @@ class ToggleHighlight extends Action {
 }
 
 /** Action to change the viewed frame. */
-class ChangeFrame extends Action {
+export class ChangeFrame extends Action {
   constructor(model, frame) {
     super();
     this.model = model;
@@ -27,7 +29,7 @@ class ChangeFrame extends Action {
   }
 
   do() {
-    controller.service.send({
+    window.controller.service.send({
       type: 'SETFRAME',
       dimension: 'frame',
       value: this.newValue
@@ -35,7 +37,7 @@ class ChangeFrame extends Action {
   }
 
   undo() {
-    controller.service.send({
+    window.controller.service.send({
       type: 'SETFRAME',
       dimension: 'frame',
       value: this.oldValue
@@ -48,7 +50,7 @@ class ChangeFrame extends Action {
 }
 
 /** Action to change the viewed feature. */
-class ChangeFeature extends Action {
+export class ChangeFeature extends Action {
   constructor(model, feature) {
     super();
     this.model = model;
@@ -57,7 +59,7 @@ class ChangeFeature extends Action {
   }
 
   do() {
-    controller.service.send({
+    window.controller.service.send({
       type: 'SETFRAME',
       dimension: 'feature',
       value: this.newValue
@@ -65,7 +67,7 @@ class ChangeFeature extends Action {
   }
 
   undo() {
-    controller.service.send({
+    window.controller.service.send({
       type: 'SETFRAME',
       dimension: 'feature',
       value: this.oldValue
@@ -78,7 +80,7 @@ class ChangeFeature extends Action {
 }
 
 /** Action to change the viewed channel. */
-class ChangeChannel extends Action {
+export class ChangeChannel extends Action {
   constructor(model, channel) {
     super();
     this.model = model;
@@ -87,7 +89,7 @@ class ChangeChannel extends Action {
   }
 
   do() {
-    controller.service.send({
+    window.controller.service.send({
       type: 'SETFRAME',
       dimension: 'channel',
       value: this.newValue
@@ -95,7 +97,7 @@ class ChangeChannel extends Action {
   }
 
   undo() {
-    controller.service.send({
+    window.controller.service.send({
       type: 'SETFRAME',
       dimension: 'channel',
       value: this.oldValue
@@ -107,7 +109,7 @@ class ChangeChannel extends Action {
   }
 }
 
-class BackendAction extends Action {
+export class BackendAction extends Action {
   constructor(model, action, args) {
     super();
     // model.action = action;
@@ -125,7 +127,7 @@ class BackendAction extends Action {
   }
 
   do() {
-    controller.service.send({
+    window.controller.service.send({
       type: 'EDIT',
       action: this.action,
       args: this.args
@@ -133,11 +135,11 @@ class BackendAction extends Action {
   }
 
   undo() {
-    controller.service.send('UNDO');
+    window.controller.service.send('UNDO');
   }
 
   redo() {
-    controller.service.send('REDO');
+    window.controller.service.send('REDO');
   }
 
   _checkInfo() {
@@ -174,7 +176,7 @@ class BackendAction extends Action {
 
 // actions on CanvasPosition
 
-class Pan extends Action {
+export class Pan extends Action {
   // Implements command pattern for an undoable pan
   constructor(model, dx, dy) {
     super();
@@ -208,7 +210,7 @@ class Pan extends Action {
   }
 }
 
-class Zoom extends Action {
+export class Zoom extends Action {
   constructor(model, dZoom) {
     super();
     this.canvas = model.canvas;
@@ -235,7 +237,7 @@ class Zoom extends Action {
 
 // actions on ImageAdjuster
 
-class ChangeContrast extends Action {
+export class ChangeContrast extends Action {
   constructor(model, change) {
     super();
     this.adjuster = model.adjuster;
@@ -254,7 +256,7 @@ class ChangeContrast extends Action {
   redo() { this.adjuster.contrast = this.newContrast; }
 }
 
-class ChangeBrightness extends Action {
+export class ChangeBrightness extends Action {
   constructor(model, change) {
     super();
     this.adjuster = model.adjuster;
@@ -273,7 +275,7 @@ class ChangeBrightness extends Action {
   redo() { this.adjuster.brightness = this.newBrightness; }
 }
 
-class ResetBrightnessContrast extends Action {
+export class ResetBrightnessContrast extends Action {
   constructor(model) {
     super();
     this.adjuster = model.adjuster;
@@ -294,7 +296,7 @@ class ResetBrightnessContrast extends Action {
   redo() { this.do(); }
 }
 
-class ToggleInvert extends Action {
+export class ToggleInvert extends Action {
   constructor(model) {
     super();
     this.adjuster = model.adjuster;
@@ -309,7 +311,7 @@ class ToggleInvert extends Action {
   redo() { this.do(); }
 }
 
-class SelectForeground extends Action {
+export class SelectForeground extends Action {
   constructor(model) {
     super();
     this.model = model;
@@ -330,7 +332,7 @@ class SelectForeground extends Action {
   redo() { this.selected.clear(); }
 }
 
-class SelectBackground extends Action {
+export class SelectBackground extends Action {
   constructor(model) {
     super();
     this.model = model;
@@ -351,7 +353,7 @@ class SelectBackground extends Action {
   redo() { this.selected.clear(); }
 }
 
-class SwapForegroundBackground extends Action {
+export class SwapForegroundBackground extends Action {
   constructor(model) {
     super();
     this.model = model;
@@ -374,7 +376,7 @@ class SwapForegroundBackground extends Action {
   redo() { this.do(); }
 }
 
-class SetForeground extends Action {
+export class SetForeground extends Action {
   constructor(model, label) {
     super();
     this.model = model;
@@ -398,7 +400,7 @@ class SetForeground extends Action {
   }
 }
 
-class SetBackground extends Action {
+export class SetBackground extends Action {
   constructor(model, label) {
     super();
     this.model = model;
@@ -422,7 +424,7 @@ class SetBackground extends Action {
   }
 }
 
-class ResetLabels extends Action {
+export class ResetLabels extends Action {
   constructor(model) {
     super();
     this.model = model;

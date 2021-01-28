@@ -2,7 +2,7 @@
  * Handles zooming and panning of the canvas
  * and the position of the cursor on the canvas.
  */
-class CanvasPosition {
+export class CanvasPosition {
   constructor(model) {
     this.model = model;
 

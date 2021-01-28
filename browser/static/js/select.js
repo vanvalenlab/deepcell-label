@@ -1,4 +1,4 @@
-class SelectedLabels {
+export class SelectedLabels {
   constructor(model) {
     this.model = model;
 
