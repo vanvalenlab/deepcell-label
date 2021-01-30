@@ -50,7 +50,8 @@ class ChangeDisplay(object):
             change_fn = getattr(self, fn_name)
             payload = change_fn(value)
         except AttributeError:
-            raise ValueError('Invalid display attribute "{}"'.format(display_attribute))
+            raise ValueError(
+                'Invalid display attribute "{}"'.format(display_attribute))
         return payload
 
     def change_frame(self, frame):
@@ -190,10 +191,12 @@ class BaseEdit(object):
                                          labels=self.labels_changed)
 
     def add_cell_info(self, add_label, frame):
-        raise NotImplementedError('add_cell_info is not implemented in BaseEdit')
+        raise NotImplementedError(
+            'add_cell_info is not implemented in BaseEdit')
 
     def del_cell_info(self, del_label, frame):
-        raise NotImplementedError('del_cell_info is not implemented in BaseEdit')
+        raise NotImplementedError(
+            'del_cell_info is not implemented in BaseEdit')
 
     def action_new_single_cell(self, label):
         """
@@ -332,8 +335,10 @@ class BaseEdit(object):
         old_label = img[hole_fill_seed]
 
         # Flood region with label
-        connectivity = 1 if old_label == 0 else 2 # helps prevents hole fill from spilling into background
-        flooded = flood_fill(img, hole_fill_seed, label, connectivity=connectivity)
+        # helps prevents hole fill from spilling into background
+        connectivity = 1 if old_label == 0 else 2
+        flooded = flood_fill(img, hole_fill_seed, label,
+                             connectivity=connectivity)
 
         # Update cell info dicts
         label_in_original = np.any(np.isin(label, img))
@@ -400,7 +405,8 @@ class BaseEdit(object):
         if old_pixels < 5:
             # create dilation image to prevent "dimmer" label from being eroded
             # by the "brighter" label
-            dilated_ws = dilation(np.where(ws == current_label, ws, 0), disk(3))
+            dilated_ws = dilation(
+                np.where(ws == current_label, ws, 0), disk(3))
             ws = np.where(dilated_ws == current_label, dilated_ws, ws)
 
         # only update img_sub_ann where ws has changed label
@@ -488,7 +494,8 @@ class BaseEdit(object):
         predict_area = adjusted_raw_frame[y1:y2, x1:x2]
 
         # returns 1 where label is predicted to be based on contouring, 0 background
-        contoured = morphological_chan_vese(predict_area, iterations, init_level_set=level_set)
+        contoured = morphological_chan_vese(
+            predict_area, iterations, init_level_set=level_set)
 
         # contoured area should get original label value
         contoured_label = contoured * label
@@ -559,7 +566,8 @@ class BaseEdit(object):
         img_dilate = np.where(img_ann == label, label, 0)
         img_dilate = dilation(img_dilate, square(3))
 
-        img_ann = np.where(np.logical_and(img_dilate == label, img_ann == 0), img_dilate, img_ann)
+        img_ann = np.where(np.logical_and(
+            img_dilate == label, img_ann == 0), img_dilate, img_ann)
 
         self.frame[..., self.feature] = img_ann
         self.y_changed = True
@@ -585,7 +593,8 @@ class ZStackEdit(BaseEdit):
             # Update cell info for this frame
             if new_label in img:
                 self.del_cell_info(del_label=label, frame=label_frame.frame_id)
-                self.add_cell_info(add_label=new_label, frame=label_frame.frame_id)
+                self.add_cell_info(add_label=new_label,
+                                   frame=label_frame.frame_id)
             label_frame.frame[..., self.feature] = img
 
     def action_replace_single(self, label_1, label_2):
@@ -596,7 +605,7 @@ class ZStackEdit(BaseEdit):
         """
         img = self.frame[..., self.feature]
         label_2_present = np.any(np.isin(label_2, img))
-        
+
         img = np.where(img == label_2, label_1, img)
 
         # Img only changes when label_2 is in the frame
@@ -652,9 +661,11 @@ class ZStackEdit(BaseEdit):
         """
         for frame_id in range(self.project.num_frames - 1):
             img = self.project.label_frames[frame_id].frame[..., self.feature]
-            next_img = self.project.label_frames[frame_id + 1].frame[..., self.feature]
+            next_img = self.project.label_frames[frame_id +
+                                                 1].frame[..., self.feature]
             predicted_next = predict_zstack_cell_ids(img, next_img)
-            self.project.label_frames[frame_id + 1].frame[..., self.feature] = predicted_next
+            self.project.label_frames[frame_id +
+                                      1].frame[..., self.feature] = predicted_next
 
         # remake cell_info dict based on new annotations
         self.y_changed = True
@@ -665,7 +676,8 @@ class ZStackEdit(BaseEdit):
         store_npz = io.BytesIO()
 
         # X and y are array names by convention
-        np.savez(store_npz, X=self.project.raw_array, y=self.project.label_array)
+        np.savez(store_npz, X=self.project.raw_array,
+                 y=self.project.label_array)
         store_npz.seek(0)
 
         # store npz file object in bucket/path
@@ -698,7 +710,8 @@ class ZStackEdit(BaseEdit):
         """Remove a cell from the npz"""
         # remove cell from frame
         old_frames = self.labels.cell_info[self.feature][del_label]['frames']
-        new_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame))).tolist()
+        new_frames = np.delete(old_frames, np.where(
+            old_frames == np.int64(frame))).tolist()
         self.labels.cell_info[self.feature][del_label]['frames'] = new_frames
 
         # if that was the last frame, delete the entry for that cell
@@ -795,7 +808,8 @@ class TrackEdit(BaseEdit):
             if track_1['frame_div'] is None:
                 track_1['frame_div'] = first_frame_daughter
             else:
-                track_1['frame_div'] = min(track_1['frame_div'], first_frame_daughter)
+                track_1['frame_div'] = min(
+                    track_1['frame_div'], first_frame_daughter)
 
             self.labels_changed = True
 
@@ -926,7 +940,8 @@ class TrackEdit(BaseEdit):
         """Remove a cell from the trk"""
         # remove cell from frame
         old_frames = self.labels.tracks[del_label]['frames']
-        updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame))).tolist()
+        updated_frames = np.delete(old_frames, np.where(
+            old_frames == np.int64(frame))).tolist()
         self.labels.tracks[del_label]['frames'] = updated_frames
 
         # if that was the last frame, delete the entry for that cell
@@ -1037,16 +1052,19 @@ def predict_zstack_cell_ids(img, next_img, threshold=0.1):
                         # if it's a bad match, we still need to add next_cell back
                         # into relabeled next later
                         elif iou[matched_cell][best_matched_next] <= threshold:
-                            unmatched_cells = np.append(unmatched_cells, best_matched_next)
+                            unmatched_cells = np.append(
+                                unmatched_cells, best_matched_next)
 
                         # in either case, we want to be done with the "matched_cell" from img
-                        used_cells_src = np.append(used_cells_src, matched_cell)
+                        used_cells_src = np.append(
+                            used_cells_src, matched_cell)
 
             # matched_cell != 0 is still true
             elif count_matches == 1:
                 # add the matched cell to the relabeled image
                 if iou[matched_cell][next_cell] > threshold:
-                    relabeled_next = np.where(next_img == next_cell, matched_cell, relabeled_next)
+                    relabeled_next = np.where(
+                        next_img == next_cell, matched_cell, relabeled_next)
                 else:
                     unmatched_cells = np.append(unmatched_cells, next_cell)
 
@@ -1065,7 +1083,8 @@ def predict_zstack_cell_ids(img, next_img, threshold=0.1):
     # figure out which labels we should use to label remaining, unmatched cells
 
     # these are the values that have already been used in relabeled_next
-    relabeled_values = np.unique(relabeled_next)[np.nonzero(np.unique(relabeled_next))]
+    relabeled_values = np.unique(relabeled_next)[
+        np.nonzero(np.unique(relabeled_next))]
 
     # to account for any new cells that appear, create labels by adding to the max number of cells
     # assumes that these are new cells and that all prev labels have been assigned
@@ -1099,6 +1118,7 @@ def relabel_frame(img, start_val=1):
 
     relabeled_img = np.zeros(img.shape, dtype=np.uint16)
     for i, cell in enumerate(cell_list):
-        relabeled_img = np.where(img == cell, relabeled_cell_list[i], relabeled_img)
+        relabeled_img = np.where(
+            img == cell, relabeled_cell_list[i], relabeled_img)
 
     return relabeled_img
