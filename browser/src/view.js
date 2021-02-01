@@ -417,9 +417,9 @@ class BrushView {
     const mag = this.model.canvas.scale * this.model.canvas.zoom / 100;
 
     // Update the translucent brush canvas
-    if (window.controller.service.state.matches('label.edit.threshold')) {
+    if (window.controller.service.state.matches('label.interactive.edit.tool.threshold')) {
       this.drawThreshold();
-    } else if (window.controller.service.state.matches('label.edit.paint')) {
+    } else if (window.controller.service.state.matches('label.interactive.edit.tool.paint')) {
       this.drawPaintbrush();
     } else {
       this.clear();
@@ -442,7 +442,7 @@ class BrushView {
     const y = this.model.canvas.imgY;
 
     // Draw solid outlines
-    if (window.controller.service.state.matches('label.edit.threshold.dragging')) {
+    if (window.controller.service.state.matches('label.interactive.edit.tool.threshold.dragging')) {
       const storedX = window.controller.service.state.context.storedX;
       const storedY = window.controller.service.state.context.storedY;
       // solid box around threshold area
@@ -452,7 +452,7 @@ class BrushView {
       const boxWidth = (x - storedX) * mag;
       const boxHeight = (y - storedY) * mag;
       ctxDst.strokeRect(boxStartX, boxStartY, boxWidth, boxHeight);
-    } else if (window.controller.service.state.matches('label.edit.paint')) {
+    } else if (window.controller.service.state.matches('label.interactive.edit.tool.paint')) {
       // solid circle around current brush location
       ctxDst.beginPath();
       const cX = (x - sx) * mag + this.padding;
@@ -475,7 +475,7 @@ class BrushView {
     const x = this.model.canvas.imgX;
     const y = this.model.canvas.imgY;
     // interior of box; will be added to visible canvas with opacity
-    if (window.controller.service.state.matches('label.edit.threshold.dragging')) {
+    if (window.controller.service.state.matches('label.interactive.edit.tool.threshold.dragging')) {
       this.ctx.fillRect(
         storedX, storedY,
         x - storedX,
@@ -490,7 +490,7 @@ class BrushView {
     const x = this.model.canvas.imgX;
     const y = this.model.canvas.imgY;
     // When painting, leave behind previous shadows to show brush's trace
-    if (!window.controller.service.state.matches('label.edit.paint.dragging')) {
+    if (!window.controller.service.state.matches('label.interactive.edit.tool.paint.dragging')) {
       this.clear();
     }
     this.ctx.beginPath();

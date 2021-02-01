@@ -228,7 +228,7 @@ const panState = {
   },
   on: {
     'keyup.space': {
-      target: 'edit.hist'
+      target: 'interactive.edit.tool.hist'
     }
   }
 };
@@ -245,7 +245,7 @@ const loadEditState = {
       })
     },
     onDone: {
-      target: 'edit.hist',
+      target: 'interactive.edit.tool.hist',
       actions: [
         (_, event) => console.log(event),
         (_, event) => getModel().handlePayload(event.data)
@@ -253,7 +253,7 @@ const loadEditState = {
       ]
     },
     onError: {
-      target: 'edit.hist',
+      target: 'interactive.edit.tool.hist',
       actions: [
         (_, event) => console.log(event.data)
       ]
@@ -273,7 +273,7 @@ const loadFrameState = {
       })
     },
     onDone: {
-      target: 'edit.hist',
+      target: 'interactive.edit.tool.hist',
       actions: [
         (_, event) => console.log(event),
         (_, event) => getModel().handlePayload(event.data)
@@ -281,7 +281,7 @@ const loadFrameState = {
       ]
     },
     onError: {
-      target: 'edit.hist',
+      target: 'interactive.edit.tool.hist',
       actions: [
         (_, event) => console.log(event.data)
       ]
@@ -300,7 +300,7 @@ const undoState = {
       })
     },
     onDone: {
-      target: 'edit.hist',
+      target: 'interactive.edit.tool.hist',
       actions: [
         // () => window.controller.history.undo(),
         (_, event) => console.log(event),
@@ -308,7 +308,7 @@ const undoState = {
       ]
     },
     onError: {
-      target: 'edit.hist',
+      target: 'interactive.edit.tool.hist',
       actions: [
         (_, event) => console.log(event.data)
       ]
@@ -327,7 +327,7 @@ const redoState = {
       })
     },
     onDone: {
-      target: 'edit.hist',
+      target: 'interactive.edit.tool.hist',
       actions: [
         // () => window.controller.history.redo(),
         (_, event) => console.log(event),
@@ -335,7 +335,7 @@ const redoState = {
       ]
     },
     onError: {
-      target: 'edit.hist',
+      target: 'interactive.edit.tool.hist',
       actions: [
         (_, event) => console.log(event.data)
       ]
@@ -376,7 +376,22 @@ const selectState = {
     },
     'keydown.x': {
       actions: 'swapLabels'
-    }
+    },
+    'keydown.n': {
+      actions: () => window.controller.history.addAction(new ResetLabels(getModel()))
+    },
+    'keydown.[': {
+      actions: () => window.controller.history.addAction(new SetForeground(getModel(), getModel().selected.label - 1))
+    },
+    'keydown.]': {
+      actions: () => window.controller.history.addAction(new SetForeground(getModel(), getModel().selected.label + 1))
+    },
+    'keydown.{': {
+      actions: () => window.controller.history.addAction(new SetBackground(getModel(), getModel().selected.secondLabel - 1))
+    },
+    'keydown.}': {
+      actions: () => window.controller.history.addAction(new SetBackground(getModel(), getModel().selected.secondLabel + 1))
+    },
   }
 };
 
@@ -466,92 +481,176 @@ const watershedState = {
   }
 };
 
-const editState = {
+/**
+ * Navigates between slices of the image stack.
+ */
+const navigateState = {
+  on: {
+    'keydown.a': {
+      actions: () => window.controller.history.addFencedAction(
+        new ChangeFrame(getModel(), getModel().frame - 1))
+    },
+    'keydown.left': {
+      actions: () => window.controller.history.addFencedAction(
+        new ChangeFrame(getModel(), getModel().frame - 1))
+    },
+    'keydown.d': {
+      actions: () => window.controller.history.addFencedAction(
+        new ChangeFrame(getModel(), getModel().frame + 1))
+    },
+    'keydown.right': {
+      actions: () => window.controller.history.addFencedAction(
+        new ChangeFrame(getModel(), getModel().frame + 1))
+    },
+    'keydown.c': {
+      actions: () => window.controller.history.addFencedAction(
+        new ChangeChannel(getModel(), getModel().channel + 1))
+    },
+    'keydown.C': {
+      actions: () => window.controller.history.addFencedAction(
+        new ChangeChannel(getModel(), getModel().channel - 1))
+    },
+    'keydown.f': {
+      actions: () => window.controller.history.addFencedAction(
+        new ChangeFeature(getModel(), getModel().feature + 1))
+    },
+    'keydown.F': {
+      actions: () => window.controller.history.addFencedAction(
+        new ChangeFeature(getModel(), getModel().feature - 1))
+    }
+  }
+};
+
+/**
+ * Handles tools to edit the labeling.
+ */
+const toolState = {
   initial: 'paint',
   states: {
-    paint: paintState,
-    threshold: thresholdState,
     flood: floodState,
     trim: trimState,
     erodeDilate: erodeDilateState,
     autofit: autofitState,
+    paint: paintState,
+    threshold: thresholdState,
     watershed: watershedState,
+    // divide: divideState,
+    // flag: flagState,
     hist: { type: 'history' }
   },
   on: {
-    'keydown.o': {
-      actions: 'predictFrame'
-    },
-    'keydown.O': {
-      actions: 'predictAll'
-    },
-    'keydown.s': {
-      // cond: () => true, // two different labels selected
-      actions: 'swapFrame'
-    },
-    'keydown.r': {
-      // cond: () => true, // two different labels selected
-      actions: 'replaceFrame'
-    },
-    'keydown.R': {
-      // cond: () => true, // two different labels selected
-      actions: 'replaceAll'
-    },
-    'keydown.a': {
-      actions: () => window.controller.history.addFencedAction(new ChangeFrame(getModel(), getModel().frame - 1))
-    },
-    'keydown.left': {
-      actions: () => window.controller.history.addFencedAction(new ChangeFrame(getModel(), getModel().frame - 1))
-    },
-    'keydown.d': {
-      actions: () => window.controller.history.addFencedAction(new ChangeFrame(getModel(), getModel().frame + 1))
-    },
-    'keydown.right': {
-      actions: () => window.controller.history.addFencedAction(new ChangeFrame(getModel(), getModel().frame + 1))
-    },
-    'keydown.c': {
-      actions: () => window.controller.history.addFencedAction(new ChangeChannel(getModel(), getModel().channel + 1))
-    },
-    'keydown.C': {
-      actions: () => window.controller.history.addFencedAction(new ChangeChannel(getModel(), getModel().channel - 1))
-    },
-    'keydown.f': {
-      actions: () => window.controller.history.addFencedAction(new ChangeFeature(getModel(), getModel().feature + 1))
-    },
-    'keydown.F': {
-      actions: () => window.controller.history.addFencedAction(new ChangeFeature(getModel(), getModel().feature - 1))
-    },
-    'keydown.n': {
-      actions: () => window.controller.history.addAction(new ResetLabels(getModel()))
-    },
-    'keydown.[': {
-      actions: () => window.controller.history.addAction(new SetForeground(getModel(), getModel().selected.label - 1))
-    },
-    'keydown.]': {
-      actions: () => window.controller.history.addAction(new SetForeground(getModel(), getModel().selected.label + 1))
-    },
-    'keydown.{': {
-      actions: () => window.controller.history.addAction(new SetBackground(getModel(), getModel().selected.secondLabel - 1))
-    },
-    'keydown.}': {
-      actions: () => window.controller.history.addAction(new SetBackground(getModel(), getModel().selected.secondLabel + 1))
-    },
-    UNDO: { actions: () => window.controller.history.undo() },
-    REDO: { actions: () => window.controller.history.redo() },
-    // internal transitions
     'keydown.b': '.paint',
-    'keydown.t': '.threshold',
     'keydown.g': '.flood',
     'keydown.k': '.trim',
     'keydown.q': '.erodeDilate',
-    'keydown.m': '.autofit',
-    'keydown.w': '.watershed',
-    // external transitions
+    // // tools only available in tracking mode
+    // 'keydown.p': {
+    //   target: '.parent',
+    //   in: 'track'
+    // },
+    // 'keydown.?': {
+    //   target: '.flag',
+    //   in: 'track'
+    // }
+    // tools not available in RGB mode
+    'keydown.t': {
+      target: '.threshold',
+      // in: oneChannel
+    },
+    'keydown.m': {
+      target: '.autofit',
+      // in: oneChannel
+    },
+    'keydown.w': {
+      target: '.watershed',
+      // in: oneChannel
+    },
+    // single use actions that should be confirmed
+    'keydown.o': 'confirm.confirmPredictFrame',
+    'keydown.O': 'confirm.confirmPredictAll',
+    'keydown.s': 'confirm.confirmSwapFrame',
+    'keydown.r': 'confirm.confirmReplaceFrame',
+    'keydown.R': 'confirm.confirmReplaceAll'
+  }
+};
+
+/**
+ * Handles confirming labeling edits.
+ * Displays a prompt to the user (like "Replace label 1 with label 2 in all frames?")
+ * and asks to confirm with the "Enter" key.
+ */
+const confirmState = {
+  // can we enforce that we transition to a specific substate
+  // ie we should always be confirming a specific action
+  // or should we instead specify the action & prompt in the event and p
+  states: {
+    confirmSwapFrame: {
+      on: {
+        'keydown.Enter': {
+          actions: 'swapFrame'
+        }
+      }
+    },
+    confirmReplaceFrame: {
+      on: {
+        'keydown.Enter': {
+          actions: 'replaceFrame'
+        }
+      }
+    },
+    confirmReplaceAll: {
+      on: {
+        'keydown.Enter': {
+          actions: 'replaceAll'
+        }
+      }
+    },
+    confirmPredictFrame: {
+      on: {
+        'keydown.Enter': {
+          actions: 'predictFrame'
+        }
+      }
+    },
+    confirmPredictAll: {
+      on: {
+        'keydown.Enter': {
+          actions: 'predictAll'
+        }
+      }
+    },
+  }
+};
+
+/**
+ * Handles eveything that can edit the labeling.
+ */
+const editState = {
+  initial: 'tool',
+  states: {
+    tool: toolState,
+    confirm: confirmState,
+  }
+};
+
+const interactiveState = {
+  type: 'parallel',
+  states: {
+    navigate: navigateState,
+    edit: editState
+  },
+  on: {
     'keydown.space': 'pan',
     EDIT: 'loadEdit',
     SETFRAME: 'loadFrame',
-    UNDO: 'undo',
-    REDO: 'redo'
+    UNDO: {
+      target: 'undo',
+      actions: () => window.controller.history.undo()
+    },
+    REDO: {
+      target: 'redo',
+      actions: () => window.controller.history.redo()
+    },
   }
 };
 
@@ -625,14 +724,14 @@ const displayState = {
 }
 
 const labelState = {
-  initial: 'edit',
+  initial: 'interactive',
   states: {
-    edit: editState,
-    pan: panState,
     loadEdit: loadEditState,
     loadFrame: loadFrameState,
     undo: undoState,
-    redo: redoState
+    redo: redoState,
+    pan: panState,
+    interactive: interactiveState,
   }
 };
 
@@ -650,12 +749,12 @@ export const deepcellLabelMachine = Machine(
       feature: 0
     },
     states: {
-      label: labelState,
-      display: displayState,
       adjuster: adjusterState,
       canvas: canvasState,
       select: selectState,
-      brush: brushState
+      brush: brushState,
+      display: displayState,
+      label: labelState,
     }
   },
   {
