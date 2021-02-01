@@ -13,11 +13,9 @@ export class Controller {
    */
   constructor(projectID) {
     // Interpret the machine, and add a listener for whenever a transition occurs.
-    const service = interpret(deepcellLabelMachine, { devTools: true }).onTransition(state => {
-      // console.log(state.value);
-    });
+    const service = interpret(deepcellLabelMachine, { devTools: true });
     inspect({
-      iframe: () => document.querySelector('iframe[data-xstate]'),
+      iframe: false, // () => document.querySelector('iframe[data-xstate]'),
       url: 'https://statecharts.io/inspect'
     });
     // Start the service
@@ -233,6 +231,8 @@ export class Controller {
       this.service.send('keydown.O')
     } else if (evt.key === 'g') {
       this.service.send('keydown.g')
+    } else if (evt.key === 'Enter') {
+      this.service.send('keydown.Enter')
     }
   }
 
