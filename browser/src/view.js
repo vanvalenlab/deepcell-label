@@ -176,8 +176,18 @@ class CanvasView {
     this.leftBorder = new Path2D();
   }
 
+  get image() {
+    if (window.controller.service.state.matches('display.overlay')) {
+      return this.overlay;
+    } else if (window.controller.service.state.matches('display.raw')) {
+      return this.raw;
+    } else {
+      return this.labeled;
+    }
+  }
+
   get overlay() {
-    if (this.model.rgb) { // && this.model.rendering_raw) { TODO: use displayState in statechart
+    if (this.model.rgb) {
       return this.model.adjuster.contrastedRaw;
     } else if (!this.model.rgb && !this.model.display_labels) {
       return this.model.adjuster.preCompRaw;
@@ -303,21 +313,15 @@ class CanvasView {
       2 * this.model.padding + this.scaledHeight
     );
 
-    if (window.controller.service.state.matches('display.overlay')) {
-      this.drawImage(ctx, this.overlay);
-    } else if (window.controller.service.state.matches('display.raw')) {
-      this.drawImage(ctx, this.raw);
-    } else {
-      this.drawImage(ctx, this.labeled);
-    }
+    this.drawImage(ctx);
     this.drawBrush(ctx);
     this.drawBorders(ctx);
   }
 
-  drawImage(ctx, image) {
+  drawImage(ctx) {
     ctx.clearRect(this.padding, this.padding, this.width, this.height);
     ctx.drawImage(
-      image,
+      this.image,
       this.sx, this.sy,
       this.sWidth, this.sHeight,
       this.padding, this.padding,
