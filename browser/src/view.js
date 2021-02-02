@@ -313,18 +313,7 @@ class CanvasView {
       // draw annotations
       this.renderLabeled(ctx);
     }
-
-    ctx.save();
-    const region = new Path2D();
-    region.rect(this.model.padding, this.model.padding,
-      this.scaledWidth, this.scaledHeight);
-    ctx.clip(region);
-    ctx.imageSmoothingEnabled = true;
-
-    // Draw brush on top of image
-    this.brushView.draw(ctx);
-
-    ctx.restore();
+    this.drawBrush(ctx);
     this.drawBorders(ctx);
   }
 
@@ -362,6 +351,20 @@ class CanvasView {
       this.scaledWidth,
       this.scaledHeight
     );
+  }
+
+  drawBrush(ctx) {
+    ctx.save();
+    const region = new Path2D();
+    region.rect(this.model.padding, this.model.padding,
+      this.scaledWidth, this.scaledHeight);
+    ctx.clip(region);
+    ctx.imageSmoothingEnabled = true;
+
+    // Draw brush on top of image
+    this.brushView.draw(ctx);
+
+    ctx.restore();
   }
 }
 
