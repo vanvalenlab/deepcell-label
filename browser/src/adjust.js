@@ -1,4 +1,4 @@
-// helper functions
+import mergeImages from 'merge-images';
 
 export class ImageAdjuster {
   constructor(model) {
@@ -287,15 +287,10 @@ export class ImageAdjuster {
 
   // composite annotations on top of adjusted raw image
   compositeImages() {
-    this.ctx.drawImage(this.preCompRaw, 0, 0, this.width, this.height);
-
-    // add labels on top
-    this.ctx.save();
-    this.ctx.globalAlpha = this.labelTransparency;
-    this.ctx.drawImage(this.preCompSeg, 0, 0, this.width, this.height);
-    this.ctx.restore();
-
-    this.compositedImg.src = this.canvas.toDataURL();
+    mergeImages([
+      { src: this.preCompRaw.src },
+      { src: this.preCompSeg.src, opacity: this.labelTransparency },
+    ]).then(b64 => { this.compositedImg.src = b64 });
   }
 
   // apply white (and sometimes red) opaque outlines around cells, if needed
