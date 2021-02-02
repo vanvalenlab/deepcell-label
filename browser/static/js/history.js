@@ -115,7 +115,8 @@ class History{
       for (let frame of actionFrames) {
         // Display unedited frame before loading edited frame
         if (frame != prevFrame) {
-          let action = new ChangeFrame(mode, frame, prevFrame);
+          let action = new ChangeFrame(mode, frame);
+          action.oldValue = prevFrame;
           this.undoStack.push(action);
           this.addFence();
           prevFrame = frame;
@@ -126,7 +127,8 @@ class History{
       }
       // Change to final project frame
       if (prevFrame != current_frame) {
-        let action = new ChangeFrame(mode, current_frame, prevFrame);
+        let action = new ChangeFrame(mode, current_frame);
+        action.oldValue = prevFrame;
         this.undoStack.push(action);
         this.addFence();
       }
