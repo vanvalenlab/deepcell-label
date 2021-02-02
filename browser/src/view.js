@@ -313,15 +313,7 @@ class CanvasView {
       // draw annotations
       this.renderLabeled(ctx);
     }
-    this.drawBorders(ctx);
-  }
 
-  /**
-   * Renders labels overlaid with the raw image and the brush preview.
-   * @param {*} ctx canvas context to render on
-   */
-  renderOverlay(ctx) {
-    this.drawImage(ctx, this.overlay);
     ctx.save();
     const region = new Path2D();
     region.rect(this.model.padding, this.model.padding,
@@ -333,6 +325,15 @@ class CanvasView {
     this.brushView.draw(ctx);
 
     ctx.restore();
+    this.drawBorders(ctx);
+  }
+
+  /**
+   * Renders labels overlaid with the raw image and the brush preview.
+   * @param {*} ctx canvas context to render on
+   */
+  renderOverlay(ctx) {
+    this.drawImage(ctx, this.overlay);
   }
 
   /**
