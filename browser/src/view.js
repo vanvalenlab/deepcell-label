@@ -278,27 +278,6 @@ class CanvasView {
     this.rightBorder.closePath();
   }
 
-  drawBorders(ctx) {
-    ctx.save();
-    // left border
-    ctx.fillStyle = (Math.floor(this.sx) === 0) ? 'white' : 'black';
-    ctx.fill(this.leftBorder);
-
-    // right border
-    ctx.fillStyle = (Math.ceil(this.sx + this.sWidth) === this.width) ? 'white' : 'black';
-    ctx.fill(this.rightBorder);
-
-    // top border
-    ctx.fillStyle = (Math.floor(this.sy) === 0) ? 'white' : 'black';
-    ctx.fill(this.topBorder);
-
-    // bottom border
-    ctx.fillStyle = (Math.ceil(this.sy + this.sHeight) === this.height) ? 'white' : 'black';
-    ctx.fill(this.bottomBorder);
-
-    ctx.restore();
-  }
-
   /**
    * Renders the image on the canvas.
    */
@@ -340,6 +319,27 @@ class CanvasView {
 
     // Draw brush on top of image
     this.brushView.draw(ctx);
+
+    ctx.restore();
+  }
+
+  drawBorders(ctx) {
+    ctx.save();
+    // left border
+    ctx.fillStyle = (Math.floor(this.sx) === 0) ? 'white' : 'black';
+    ctx.fill(this.leftBorder);
+
+    // right border
+    ctx.fillStyle = (Math.ceil(this.sx + this.sWidth) === this.width) ? 'white' : 'black';
+    ctx.fill(this.rightBorder);
+
+    // top border
+    ctx.fillStyle = (Math.floor(this.sy) === 0) ? 'white' : 'black';
+    ctx.fill(this.topBorder);
+
+    // bottom border
+    ctx.fillStyle = (Math.ceil(this.sy + this.sHeight) === this.height) ? 'white' : 'black';
+    ctx.fill(this.bottomBorder);
 
     ctx.restore();
   }
