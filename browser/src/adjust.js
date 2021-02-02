@@ -1,3 +1,4 @@
+import Jimp from 'jimp/es';
 import mergeImages from 'merge-images';
 
 export class ImageAdjuster {

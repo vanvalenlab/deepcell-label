@@ -1,4 +1,6 @@
+var webpack = require('webpack');
 const path = require('path');
+const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
 
 module.exports = {
   entry: {
@@ -15,5 +17,17 @@ module.exports = {
   module: {
     rules: []
   },
-  mode: 'development'
+  mode: 'development',
+  resolve: {
+    fallback: {
+      path: require.resolve('path-browserify'),
+      fs: false
+    }
+  },
+  plugins: [
+    new NodePolyfillPlugin(),
+    new webpack.DefinePlugin({
+      'process.browser': 'true'
+    })
+  ]
 }
