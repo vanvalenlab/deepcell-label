@@ -40,7 +40,6 @@ export class View {
     this.model.canvas.scale = scale;
     this.canvasView.setBorders();
 
-    // TODO: move to view?
     // set canvases size according to scale
     document.getElementById('canvas').width = this.model.canvas.scaledWidth + 2 * padding;
     document.getElementById('canvas').height = this.model.canvas.scaledHeight + 2 * padding;
@@ -118,7 +117,6 @@ class InfopaneView {
    * Updates the infopane with the latest project info.
    */
   render() {
-    // always show current frame, feature, channel
     document.getElementById('frame').innerHTML = this.model.frame;
     document.getElementById('feature').innerHTML = this.model.feature;
     document.getElementById('channel').innerHTML = this.model.channel;
@@ -369,9 +367,6 @@ class BrushView {
   }
 
   get _outlineColor() {
-    // if conv brush is on, disable eraser, even when erase is true
-    // red outline is visual indicator for eraser being on
-    // white outline if eraser is off (drawing normally)
     return this.brush.value === 0 ? 'red' : 'white';
   }
 
