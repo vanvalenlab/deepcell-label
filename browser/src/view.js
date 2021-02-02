@@ -304,41 +304,14 @@ class CanvasView {
     );
 
     if (window.controller.service.state.matches('display.overlay')) {
-      // edit mode (annotations overlaid on raw + brush preview)
-      this.renderOverlay(ctx);
+      this.drawImage(ctx, this.overlay);
     } else if (window.controller.service.state.matches('display.raw')) {
-      // draw raw image
-      this.renderRaw(ctx);
+      this.drawImage(ctx, this.raw);
     } else {
-      // draw annotations
-      this.renderLabeled(ctx);
+      this.drawImage(ctx, this.labeled);
     }
     this.drawBrush(ctx);
     this.drawBorders(ctx);
-  }
-
-  /**
-   * Renders labels overlaid with the raw image and the brush preview.
-   * @param {*} ctx canvas context to render on
-   */
-  renderOverlay(ctx) {
-    this.drawImage(ctx, this.overlay);
-  }
-
-  /**
-   * Renders raw image.
-   * @param {*} ctx canvas context to render on
-   */
-  renderRaw(ctx) {
-    this.drawImage(ctx, this.raw);
-  }
-
-  /**
-   * Renders labeled image.
-   * @param {*} ctx canvas context to render on
-   */
-  renderLabeled(ctx) {
-    this.drawImage(ctx, this.labeled);
   }
 
   drawImage(ctx, image) {
