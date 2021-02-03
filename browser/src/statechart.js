@@ -1,9 +1,11 @@
+/* eslint-disable comma-dangle */
 /**
  * Defines the statechart for Label in XState.
  */
 
-import { Machine, actions, assign } from 'xstate';
+import { Machine, actions, assign, forwardTo } from 'xstate';
 import $ from 'jquery';
+import backendMachine from './backendMachine';
 
 import {
   ToggleHighlight, ChangeFrame, ChangeFeature, ChangeChannel, BackendAction, Pan, Zoom,
@@ -229,25 +231,6 @@ const panState = {
   on: {
     'keyup.space': {
       target: 'interactive.edit.tool.hist'
-    }
-  }
-};
-
-const loadState = {
-  invoke: {
-    src: (_, event) => event.ajax,
-    onDone: {
-      target: 'interactive.edit.tool.hist',
-      actions: [
-        (_, event) => console.log(event),
-        (_, event) => getModel().handlePayload(event.data)
-      ]
-    },
-    onError: {
-      target: 'interactive.edit.tool.hist',
-      actions: [
-        (_, event) => console.log(event.data)
-      ]
     }
   }
 };
@@ -539,6 +522,27 @@ const editState = {
   states: {
     tool: toolState,
     confirm: confirmState,
+    loading: {
+      on: { LOADED: 'tool.hist' }
+    }
+  },
+  on: {
+    EDIT: {
+      target: '.loading',
+      actions: forwardTo('backend')
+    },
+    UNDO: {
+      target: '.loading',
+      actions: forwardTo('backend')
+    },
+    REDO: {
+      target: '.loading',
+      actions: forwardTo('backend')
+    },
+    SETFRAME: {
+      target: '.loading',
+      actions: forwardTo('backend')
+    },
   }
 };
 
@@ -550,7 +554,6 @@ const interactiveState = {
   },
   on: {
     'keydown.space': 'pan',
-    LOAD: 'load',
   }
 };
 
@@ -627,7 +630,6 @@ const labelState = {
   initial: 'interactive',
   states: {
     pan: panState,
-    load: loadState,
     interactive: interactiveState,
   }
 };
@@ -645,6 +647,7 @@ export const deepcellLabelMachine = Machine(
       channel: 0,
       feature: 0,
     },
+    invoke: backendMachine,
     states: {
       adjuster: adjusterState,
       canvas: canvasState,
