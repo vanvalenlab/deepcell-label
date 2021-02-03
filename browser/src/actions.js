@@ -1,4 +1,5 @@
 import { Action } from './history.js';
+import $ from 'jquery';
 
 export class ToggleHighlight extends Action {
   constructor(model) {
@@ -30,17 +31,23 @@ export class ChangeFrame extends Action {
 
   do() {
     window.controller.service.send({
-      type: 'SETFRAME',
-      dimension: 'frame',
-      value: this.newValue
+      type: 'LOAD',
+      ajax: $.ajax({
+        type: 'POST',
+        url: `${document.location.origin}/api/changedisplay/${this.model.projectID}/frame/${this.newValue}`,
+        async: true
+      }).then((data) => { this.model.frame = this.newValue; return data })
     });
   }
 
   undo() {
     window.controller.service.send({
-      type: 'SETFRAME',
-      dimension: 'frame',
-      value: this.oldValue
+      type: 'LOAD',
+      ajax: $.ajax({
+        type: 'POST',
+        url: `${document.location.origin}/api/changedisplay/${this.model.projectID}/frame/${this.oldValue}`,
+        async: true
+      }).then((data) => { this.model.frame = this.newValue; return data })
     });
   }
 
@@ -60,17 +67,23 @@ export class ChangeFeature extends Action {
 
   do() {
     window.controller.service.send({
-      type: 'SETFRAME',
-      dimension: 'feature',
-      value: this.newValue
+      type: 'LOAD',
+      ajax: $.ajax({
+        type: 'POST',
+        url: `${document.location.origin}/api/changedisplay/${this.model.projectID}/feature/${this.newValue}`,
+        async: true
+      })
     });
   }
 
   undo() {
     window.controller.service.send({
-      type: 'SETFRAME',
-      dimension: 'feature',
-      value: this.oldValue
+      type: 'LOAD',
+      ajax: $.ajax({
+        type: 'POST',
+        url: `${document.location.origin}/api/changedisplay/${this.model.projectID}/feature/${this.oldValue}`,
+        async: true
+      })
     });
   }
 
@@ -90,17 +103,23 @@ export class ChangeChannel extends Action {
 
   do() {
     window.controller.service.send({
-      type: 'SETFRAME',
-      dimension: 'channel',
-      value: this.newValue
+      type: 'LOAD',
+      ajax: (_, event) => $.ajax({
+        type: 'POST',
+        url: `${document.location.origin}/api/changedisplay/${this.model.projectID}/channel/${this.newValue}`,
+        async: true
+      })
     });
   }
 
   undo() {
     window.controller.service.send({
-      type: 'SETFRAME',
-      dimension: 'channel',
-      value: this.oldValue
+      type: 'LOAD',
+      ajax: (_, event) => $.ajax({
+        type: 'POST',
+        url: `${document.location.origin}/api/changedisplay/${this.model.projectID}/channel/${this.oldValue}`,
+        async: true
+      })
     });
   }
 
@@ -128,18 +147,36 @@ export class BackendAction extends Action {
 
   do() {
     window.controller.service.send({
-      type: 'EDIT',
-      action: this.action,
-      args: this.args
+      type: 'LOAD',
+      ajax: $.ajax({
+        type: 'POST',
+        url: `${document.location.origin}/api/edit/${this.model.projectID}/${this.action}`,
+        data: this.args,
+        async: true
+      })
     });
   }
 
   undo() {
-    window.controller.service.send('UNDO');
+    window.controller.service.send({
+      type: 'LOAD',
+      ajax: $.ajax({
+        type: 'POST',
+        url: `${document.location.origin}/api/undo/${this.model.projectID}`,
+        async: true
+      })
+    });
   }
 
   redo() {
-    window.controller.service.send('REDO');
+    window.controller.service.send({
+      type: 'LOAD',
+      ajax: $.ajax({
+        type: 'POST',
+        url: `${document.location.origin}/api/redo/${this.model.projectID}`,
+        async: true
+      })
+    });
   }
 
   _checkInfo() {

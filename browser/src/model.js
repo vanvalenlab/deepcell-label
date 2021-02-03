@@ -180,10 +180,6 @@ export class Model {
   }
 
   handlePayload(payload) {
-    if (payload.error) {
-      alert(payload.error);
-    }
-
     if (payload.imgs) {
       if (Object.prototype.hasOwnProperty.call(payload.imgs, 'seg_arr')) {
         this.segArray = payload.imgs.seg_arr;

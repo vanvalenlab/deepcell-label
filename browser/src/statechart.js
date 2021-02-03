@@ -233,103 +233,12 @@ const panState = {
   }
 };
 
-const loadEditState = {
+const loadState = {
   invoke: {
-    id: 'backend',
-    src: (context, event) => {
-      return $.ajax({
-        type: 'POST',
-        url: `${document.location.origin}/api/edit/${getModel().projectID}/${event.action}`,
-        data: event.args,
-        async: true
-      })
-    },
+    src: (_, event) => event.ajax,
     onDone: {
       target: 'interactive.edit.tool.hist',
       actions: [
-        (_, event) => console.log(event),
-        (_, event) => getModel().handlePayload(event.data)
-        // () => window.controller.history.addFence(),
-      ]
-    },
-    onError: {
-      target: 'interactive.edit.tool.hist',
-      actions: [
-        (_, event) => console.log(event.data)
-      ]
-    }
-  }
-};
-
-const loadFrameState = {
-  invoke: {
-    id: 'loadFrame',
-    src: (context, event) => {
-      getModel()[event.dimension] = event.value;
-      return $.ajax({
-        type: 'POST',
-        url: `${document.location.origin}/api/changedisplay/${getModel().projectID}/${event.dimension}/${event.value}`,
-        async: true
-      })
-    },
-    onDone: {
-      target: 'interactive.edit.tool.hist',
-      actions: [
-        (_, event) => console.log(event),
-        (_, event) => getModel().handlePayload(event.data)
-        // () => window.controller.history.addFence(),
-      ]
-    },
-    onError: {
-      target: 'interactive.edit.tool.hist',
-      actions: [
-        (_, event) => console.log(event.data)
-      ]
-    }
-  }
-};
-
-const undoState = {
-  invoke: {
-    id: 'undo',
-    src: (context, event) => {
-      return $.ajax({
-        type: 'POST',
-        url: `${document.location.origin}/api/undo/${getModel().projectID}`,
-        async: true
-      })
-    },
-    onDone: {
-      target: 'interactive.edit.tool.hist',
-      actions: [
-        // () => window.controller.history.undo(),
-        (_, event) => console.log(event),
-        (_, event) => getModel().handlePayload(event.data)
-      ]
-    },
-    onError: {
-      target: 'interactive.edit.tool.hist',
-      actions: [
-        (_, event) => console.log(event.data)
-      ]
-    }
-  }
-};
-
-const redoState = {
-  invoke: {
-    id: 'redo',
-    src: (context, event) => {
-      return $.ajax({
-        type: 'POST',
-        url: `${document.location.origin}/api/redo/${getModel().projectID}`,
-        async: true
-      })
-    },
-    onDone: {
-      target: 'interactive.edit.tool.hist',
-      actions: [
-        // () => window.controller.history.redo(),
         (_, event) => console.log(event),
         (_, event) => getModel().handlePayload(event.data)
       ]
@@ -641,16 +550,7 @@ const interactiveState = {
   },
   on: {
     'keydown.space': 'pan',
-    EDIT: 'loadEdit',
-    SETFRAME: 'loadFrame',
-    UNDO: {
-      target: 'undo',
-      actions: () => window.controller.history.undo()
-    },
-    REDO: {
-      target: 'redo',
-      actions: () => window.controller.history.redo()
-    },
+    LOAD: 'load',
   }
 };
 
@@ -726,11 +626,8 @@ const displayState = {
 const labelState = {
   initial: 'interactive',
   states: {
-    loadEdit: loadEditState,
-    loadFrame: loadFrameState,
-    undo: undoState,
-    redo: redoState,
     pan: panState,
+    load: loadState,
     interactive: interactiveState,
   }
 };
@@ -746,7 +643,7 @@ export const deepcellLabelMachine = Machine(
       storedY: 0,
       frame: 0,
       channel: 0,
-      feature: 0
+      feature: 0,
     },
     states: {
       adjuster: adjusterState,
