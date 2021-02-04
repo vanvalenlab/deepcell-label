@@ -611,6 +611,34 @@ const confirmState = {
   }
 };
 
+const rgbState = {
+  initial: 'oneChannel',
+  states: {
+    oneChannel: {
+      on: {
+        TOGGLERGB: 'rgb',
+      }
+    },
+    rgb: {
+      on: {
+        TOGGLERGB: 'oneChannel',
+      }
+    },
+  }
+};
+
+const toolState = {
+  initial: 'zstack',
+  states: {
+    zstack: {
+      on: {
+        TRACK: 'track',
+      }
+    },
+    track: {},
+  }
+};
+
 export const deepcellLabelMachine = Machine(
   {
     id: 'deepcellLabel',
@@ -626,6 +654,8 @@ export const deepcellLabelMachine = Machine(
     },
     invoke: backendMachine,
     states: {
+      rgbState: rgbState,
+      toolState: toolState,
       adjuster: adjusterState,
       canvas: canvasState,
       select: selectState,
