@@ -117,32 +117,32 @@ class InfopaneView {
    * Updates the infopane with the latest project info.
    */
   render() {
-    document.getElementById('frame').innerHTML = this.model.frame;
-    document.getElementById('feature').innerHTML = this.model.feature;
-    document.getElementById('channel').innerHTML = this.model.channel;
-    document.getElementById('zoom').innerHTML = `${this.canvas.zoom}%`;
+    document.getElementById('frame').textContent = this.model.frame;
+    document.getElementById('feature').textContent = this.model.feature;
+    document.getElementById('channel').textContent = this.model.channel;
+    document.getElementById('zoom').textContent = `${this.canvas.zoom}%`;
 
     const minX = Math.floor(this.canvas.sx);
     const maxX = Math.ceil(this.canvas.sx + this.canvas.sWidth);
     const displayedX = `${minX}-${maxX}`;
-    document.getElementById('displayedX').innerHTML = displayedX;
+    document.getElementById('displayedX').textContent = displayedX;
 
     const minY = Math.floor(this.canvas.sy);
     const maxY = Math.ceil(this.canvas.sy + this.canvas.sHeight);
     const displayedY = `${minY}-${maxY}`;
-    document.getElementById('displayedY').innerHTML = displayedY;
+    document.getElementById('displayedY').textContent = displayedY;
 
     const highlightText = (this.model.highlight) ? 'ON' : 'OFF';
-    document.getElementById('highlight').innerHTML = highlightText;
-    document.getElementById('edit_brush').innerHTML = this.brush.size;
+    document.getElementById('highlight').textContent = highlightText;
+    document.getElementById('edit_brush').textContent = this.brush.size;
     this.renderLabelRows();
     // always show 'state' and selected labels
     const states = window.controller.service.state.toStrings();
-    document.getElementById('mode').innerHTML = states[states.length - 2];
+    document.getElementById('mode').textContent = states[states.length - 2];
     const foreground = this.model.selected.label;
     const background = this.model.selected.secondLabel;
-    document.getElementById('foreground').innerHTML = foreground === 0 ? 'background' : foreground;
-    document.getElementById('background').innerHTML = background === 0 ? 'background' : background;
+    document.getElementById('foreground').textContent = foreground === 0 ? 'background' : foreground;
+    document.getElementById('background').textContent = background === 0 ? 'background' : background;
   }
 
   /**
@@ -150,11 +150,11 @@ class InfopaneView {
    */
   renderLabelRows() {
     if (this.canvas.label !== 0) {
-      document.getElementById('label').innerHTML = this.canvas.label;
+      document.getElementById('label').textContent = this.canvas.label;
       const track = this.model.tracks[this.model.feature][this.canvas.label.toString()];
       document.getElementById('slices').textContent = track.slices.toString();
     } else {
-      document.getElementById('label').innerHTML = '';
+      document.getElementById('label').textContent = '';
       document.getElementById('slices').textContent = '';
     }
   }
