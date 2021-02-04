@@ -122,6 +122,29 @@ def change_display(token, display_attribute, value):
     return jsonify(payload)
 
 
+@bp.route('/api/rgb/<token>/<rgbValue>', methods=['POST'])
+def rgb(token, rgbValue):
+    """
+
+    Returns:
+        json with raw image data
+    """
+    start = timeit.default_timer()
+
+    project = Project.get(token)
+    if not project:
+        return abort(404, description=f'project {token} not found')
+
+    rgb = bool(distutils.util.strtobool(rgbValue))
+    project.rgb = rgb
+    project.update()
+    payload = project.make_payload(x=True)
+    current_app.logger.debug('Set RGB to %s for project %s in %s s.',
+                             rgb, token,
+                             timeit.default_timer() - start)
+    return jsonify(payload)
+
+
 @bp.route('/api/undo/<token>', methods=['POST'])
 def undo(token):
     start = timeit.default_timer()
@@ -321,7 +344,8 @@ def make_settings(project):
     rgb = bool(distutils.util.strtobool(rgb))
     pixel_only = bool(distutils.util.strtobool(pixel_only))
     label_only = bool(distutils.util.strtobool(label_only))
-    output_bucket = request.args.get('output_bucket', default=S3_OUTPUT_BUCKET, type=str)
+    output_bucket = request.args.get(
+        'output_bucket', default=S3_OUTPUT_BUCKET, type=str)
 
     settings = {
         'filetype': filetype,

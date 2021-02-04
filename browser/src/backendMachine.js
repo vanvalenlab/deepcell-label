@@ -19,6 +19,7 @@ const backendMachine = Machine({
         UNDO: 'undo',
         REDO: 'redo',
         SETFRAME: 'setFrame',
+        TOGGLERGB: 'toggleRGB',
       },
     },
     edit: {
@@ -82,6 +83,27 @@ const backendMachine = Machine({
             url: `${document.location.origin}/api/changedisplay/${getModel().projectID}/${event.dimension}/${event.value}`,
           });
           promise.then(() => { getModel()[event.dimension] = event.value });
+          return promise;
+        },
+        onDone: {
+          target: 'loaded',
+          actions: assign({ data: (_, event) => event.data }),
+        },
+        onError: {
+          target: 'error',
+          actions: assign({ error: (_, event) => event.error }),
+        }
+      },
+    },
+    toggleRGB: {
+      invoke: {
+        id: 'toggleRGB',
+        src: (context, event) => {
+          const promise = $.ajax({
+            type: 'POST',
+            url: `${document.location.origin}/api/rgb/${getModel().projectID}/${!getModel().rgb}`,
+          });
+          promise.then(() => { getModel().rgb = !getModel().rgb });
           return promise;
         },
         onDone: {

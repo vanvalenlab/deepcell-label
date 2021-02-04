@@ -3,7 +3,7 @@
  * Defines the statechart for Label in XState.
  */
 
-import { Machine, actions, assign, forwardTo } from 'xstate';
+import { Machine, actions, assign, forwardTo, send } from 'xstate';
 import $ from 'jquery';
 import backendMachine from './backendMachine';
 
@@ -199,10 +199,8 @@ const changeBrightness = (context, event) => window.controller.history.addAction
 const toggleHighlight = () => window.controller.history.addAction(new ToggleHighlight(getModel()));
 const resetBrightnessContrast = () => window.controller.history.addAction(new ResetBrightnessContrast(getModel()));
 const toggleInvert = () => window.controller.history.addAction(new ToggleInvert(getModel()));
-
 const zoom = (context, event) => window.controller.history.addAction(new Zoom(getModel(), event.change));
 const updateMousePos = (context, event) => getModel().updateMousePos(event.offsetX, event.offsetY);
-
 const setBrushSize = (context, event) => { getModel().brush.size = event.size };
 
 const paintState = {
@@ -616,12 +614,18 @@ const rgbState = {
   states: {
     oneChannel: {
       on: {
-        TOGGLERGB: 'rgb',
+        TOGGLERGB: {
+          target: 'rgb',
+          actions: send('TOGGLERGB', { to: 'backend' })
+        },
       }
     },
     rgb: {
       on: {
-        TOGGLERGB: 'oneChannel',
+        TOGGLERGB: {
+          target: 'oneChannel',
+          actions: send('TOGGLERGB', { to: 'backend' })
+        },
       }
     },
   }
