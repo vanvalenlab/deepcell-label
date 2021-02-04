@@ -376,15 +376,15 @@ const toolbarState = {
     // tools not available in RGB mode
     'keydown.t': {
       target: '.threshold',
-      // in: oneChannel
+      in: '#deepcellLabel.rgb.oneChannel'
     },
     'keydown.m': {
       target: '.autofit',
-      // in: oneChannel
+      in: '#deepcellLabel.rgb.oneChannel'
     },
     'keydown.w': {
       target: '.watershed',
-      // in: oneChannel
+      in: '#deepcellLabel.rgb.oneChannel'
     },
   }
 };
@@ -658,8 +658,8 @@ export const deepcellLabelMachine = Machine(
     },
     invoke: backendMachine,
     states: {
-      rgbState: rgbState,
-      toolState: toolState,
+      rgb: rgbState,
+      tool: toolState,
       adjuster: adjusterState,
       canvas: canvasState,
       select: selectState,
