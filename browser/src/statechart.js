@@ -18,14 +18,6 @@ const { choose } = actions;
 const getModel = () => window.model;
 const getCanvas = () => window.model.canvas;
 
-// TODO:
-// undo/redo with backend promises
-// ChangeFrame/Feature/Channel
-
-// KEYBINDS
-// watershed
-// replace/swap after current frame
-
 // guards
 const leftMouse = (context, event) => event.button === 0;
 const rightMouse = (context, event) => event.button === 2;
@@ -212,28 +204,6 @@ const zoom = (context, event) => window.controller.history.addAction(new Zoom(ge
 const updateMousePos = (context, event) => getModel().updateMousePos(event.offsetX, event.offsetY);
 
 const setBrushSize = (context, event) => { getModel().brush.size = event.size };
-
-// const panState = {
-//   initial: 'idle',
-//   states: {
-//     idle: {
-//       on: { mousedown: 'panning' }
-//     },
-//     panning: {
-//       on: {
-//         mouseup: 'idle',
-//         mousemove: {
-//           actions: 'pan'
-//         }
-//       }
-//     }
-//   },
-//   on: {
-//     'keyup.space': {
-//       target: 'interactive.edit.tool.hist'
-//     }
-//   }
-// };
 
 const paintState = {
   initial: 'idle',
@@ -445,16 +415,6 @@ const mouseState = {
   }
 };
 
-// const interactiveState = {
-//   type: 'parallel',
-//   states: {
-//     edit: editState
-//   },
-//   on: {
-//     'keydown.space': 'pan',
-//   }
-// };
-
 const adjusterState = {
   on: {
     SCROLLCONTRAST: {
@@ -650,13 +610,6 @@ const confirmState = {
     LOADED: '.idle',
   }
 };
-
-// /**
-//  * Handles confirming labeling edits.
-//  * Displays a prompt to the user (like "Replace label 1 with label 2 in all frames?")
-//  * and asks to confirm with the "Enter" key.
-//  */
-
 
 export const deepcellLabelMachine = Machine(
   {
