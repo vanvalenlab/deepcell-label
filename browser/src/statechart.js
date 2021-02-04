@@ -537,23 +537,12 @@ const canvasState = {
       on: { 'keydown.space': 'pan' }
     },
     pan: {
-      initial: 'idle',
-      states: {
-        idle: {
-          on: {
-            mousedown: 'dragging',
-          }
-        },
-        dragging: {
-          on: {
-            mousup: 'idle',
-            mousemove: {
-              actions: 'pan'
-            }
-          }
-        },
-      },
-      on: { 'keyup.space': 'idle' }
+      on: {
+        'keyup.space': 'idle',
+        mousemove: {
+          actions: 'pan'
+        }
+      }
     }
   },
   on: {
