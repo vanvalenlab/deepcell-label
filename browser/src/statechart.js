@@ -376,7 +376,7 @@ const watershedState = {
 /**
  * Handles tools to edit the labeling.
  */
-const toolState = {
+const toolbarState = {
   initial: 'paint',
   states: {
     flood: floodState,
@@ -391,6 +391,7 @@ const toolState = {
     hist: { type: 'history' }
   },
   on: {
+    LOADING: 'loading',
     'keydown.b': '.paint',
     'keydown.g': '.flood',
     'keydown.k': '.trim',
@@ -417,77 +418,21 @@ const toolState = {
       target: '.watershed',
       // in: oneChannel
     },
-    // single use actions that should be confirmed
-    'keydown.o': 'confirm.confirmPredictFrame',
-    'keydown.O': 'confirm.confirmPredictAll',
-    'keydown.s': 'confirm.confirmSwapFrame',
-    'keydown.r': 'confirm.confirmReplaceFrame',
-    'keydown.R': 'confirm.confirmReplaceAll'
-  }
-};
-
-/**
- * Handles confirming labeling edits.
- * Displays a prompt to the user (like "Replace label 1 with label 2 in all frames?")
- * and asks to confirm with the "Enter" key.
- */
-const confirmState = {
-  // can we enforce that we transition to a specific substate
-  // ie we should always be confirming a specific action
-  // or should we instead specify the action & prompt in the event and p
-  states: {
-    confirmSwapFrame: {
-      on: {
-        'keydown.Enter': {
-          actions: 'swapFrame'
-        }
-      }
-    },
-    confirmReplaceFrame: {
-      on: {
-        'keydown.Enter': {
-          actions: 'replaceFrame'
-        }
-      }
-    },
-    confirmReplaceAll: {
-      on: {
-        'keydown.Enter': {
-          actions: 'replaceAll'
-        }
-      }
-    },
-    confirmPredictFrame: {
-      on: {
-        'keydown.Enter': {
-          actions: 'predictFrame'
-        }
-      }
-    },
-    confirmPredictAll: {
-      on: {
-        'keydown.Enter': {
-          actions: 'predictAll'
-        }
-      }
-    },
   }
 };
 
 /**
  * Handles eveything that can edit the labeling.
  */
-const editState = {
-  initial: 'tool',
+const mouseState = {
+  initial: 'toolbar',
   states: {
-    tool: toolState,
-    confirm: confirmState,
+    toolbar: toolbarState,
     loading: {
-      on: { LOADED: 'tool.hist' }
+      on: { LOADED: 'toolbar.hist' }
     }
   },
   on: {
-    LOADING: '.loading',
     EDIT: {
       actions: forwardTo('backend')
     },
@@ -646,6 +591,73 @@ const frameState = {
   }
 };
 
+const confirmState = {
+  initial: 'idle',
+  states: {
+    idle: {
+      on: {
+        'keydown.o': 'predictFrame',
+        'keydown.O': 'predictAll',
+        'keydown.s': 'swapFrame',
+        'keydown.r': 'replaceFrame',
+        'keydown.R': 'replaceAll',
+      },
+    },
+    predictFrame: {
+      on: {
+        'keydown.Enter': {
+          actions: 'predictFrame',
+        },
+        'keydown.Escape': 'idle',
+      }
+    },
+    predictAll: {
+      on: {
+        'keydown.Enter': {
+          actions: 'predictAll',
+        },
+        'keydown.Escape': 'idle',
+      }
+    },
+    swapFrame: {
+      on: {
+        'keydown.Enter': {
+          actions: 'swapFrame',
+        },
+        'keydown.Escape': 'idle',
+      }
+    },
+    replaceFrame: {
+      on: {
+        'keydown.Enter': {
+          actions: 'replaceFrame',
+        },
+        'keydown.Escape': 'idle',
+      }
+    },
+    replaceAll: {
+      on: {
+        'keydown.Enter': {
+          actions: 'replaceAll',
+        },
+        'keydown.Escape': 'idle',
+      }
+    },
+    loading: {},
+  },
+  on: {
+    LOADING: '.loading',
+    LOADED: '.idle',
+  }
+};
+
+// /**
+//  * Handles confirming labeling edits.
+//  * Displays a prompt to the user (like "Replace label 1 with label 2 in all frames?")
+//  * and asks to confirm with the "Enter" key.
+//  */
+
+
 export const deepcellLabelMachine = Machine(
   {
     id: 'deepcellLabel',
@@ -666,8 +678,9 @@ export const deepcellLabelMachine = Machine(
       select: selectState,
       brush: brushState,
       display: displayState,
-      edit: editState,
+      mouse: mouseState,
       frame: frameState,
+      confirm: confirmState,
     }
   },
   {

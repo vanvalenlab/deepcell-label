@@ -143,6 +143,8 @@ class InfopaneView {
     const background = this.model.selected.secondLabel;
     document.getElementById('foreground').textContent = foreground === 0 ? 'background' : foreground;
     document.getElementById('background').textContent = background === 0 ? 'background' : background;
+
+    this.renderPrompt();
   }
 
   /**
@@ -156,6 +158,32 @@ class InfopaneView {
     } else {
       document.getElementById('label').textContent = '';
       document.getElementById('slices').textContent = '';
+    }
+  }
+
+  renderPrompt() {
+    const state = window.controller.service.state;
+    const label = this.model.selected.label;
+    const secondLabel = this.model.selected.secondLabel;
+    const frame = this.model.frame;
+    let prompt;
+    if (state.matches('confirm.predictFrame')) {
+      prompt = `Predict labels on frame ${frame}?`;
+    } else if (state.matches('confirm.predictAll')) {
+      prompt = 'Predict labels on ALL frames?';
+    } else if (state.matches('confirm.replaceFrame')) {
+      prompt = `Replace label ${secondLabel} with label ${label} on frame ${frame}?`
+    } else if (state.matches('confirm.replaceAll')) {
+      prompt = `Replace label ${secondLabel} with label ${label} on ALL frames?`
+    } else if (state.matches('confirm.swapFrame')) {
+      prompt = `Swap label ${label} with label ${secondLabel} on frame ${frame}?`
+    }
+
+    if (prompt) {
+      prompt = prompt + '\nPress ENTER to confirm or ESC to cancel.'
+      document.getElementById('prompt').textContent = prompt;
+    } else {
+      document.getElementById('prompt').textContent = '';
     }
   }
 }
@@ -393,9 +421,9 @@ class BrushView {
     const mag = this.model.canvas.scale * this.model.canvas.zoom / 100;
 
     // Update the translucent brush canvas
-    if (window.controller.service.state.matches('edit.tool.threshold')) {
+    if (window.controller.service.state.matches('mouse.toolbar.threshold')) {
       this.drawThreshold();
-    } else if (window.controller.service.state.matches('edit.tool.paint')) {
+    } else if (window.controller.service.state.matches('mouse.toolbar.paint')) {
       this.drawPaintbrush();
     } else {
       this.clear();
@@ -418,7 +446,7 @@ class BrushView {
     const y = this.model.canvas.imgY;
 
     // Draw solid outlines
-    if (window.controller.service.state.matches('edit.tool.threshold.dragging')) {
+    if (window.controller.service.state.matches('mouse.toolbar.threshold.dragging')) {
       const storedX = window.controller.service.state.context.storedX;
       const storedY = window.controller.service.state.context.storedY;
       // solid box around threshold area
@@ -428,7 +456,7 @@ class BrushView {
       const boxWidth = (x - storedX) * mag;
       const boxHeight = (y - storedY) * mag;
       ctxDst.strokeRect(boxStartX, boxStartY, boxWidth, boxHeight);
-    } else if (window.controller.service.state.matches('edit.tool.paint')) {
+    } else if (window.controller.service.state.matches('mouse.toolbar.paint')) {
       // solid circle around current brush location
       ctxDst.beginPath();
       const cX = (x - sx) * mag + this.padding;
@@ -451,7 +479,7 @@ class BrushView {
     const x = this.model.canvas.imgX;
     const y = this.model.canvas.imgY;
     // interior of box; will be added to visible canvas with opacity
-    if (window.controller.service.state.matches('edit.tool.threshold.dragging')) {
+    if (window.controller.service.state.matches('mouse.toolbar.threshold.dragging')) {
       this.ctx.fillRect(
         storedX, storedY,
         x - storedX,
@@ -466,7 +494,7 @@ class BrushView {
     const x = this.model.canvas.imgX;
     const y = this.model.canvas.imgY;
     // When painting, leave behind previous shadows to show brush's trace
-    if (!window.controller.service.state.matches('edit.tool.paint.dragging')) {
+    if (!window.controller.service.state.matches('mouse.toolbar.paint.dragging')) {
       this.clear();
     }
     this.ctx.beginPath();

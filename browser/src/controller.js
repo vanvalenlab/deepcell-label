@@ -233,6 +233,8 @@ export class Controller {
       this.service.send('keydown.g')
     } else if (evt.key === 'Enter') {
       this.service.send('keydown.Enter')
+    } else if (evt.key === 'Escape') {
+      this.service.send('keydown.Escape')
     }
   }
 
