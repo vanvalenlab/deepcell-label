@@ -13,6 +13,7 @@ const backendMachine = Machine({
   },
   states: {
     idle: {
+      exit: sendParent('LOADING'),
       on: {
         EDIT: 'edit',
         UNDO: 'undo',

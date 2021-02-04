@@ -213,27 +213,27 @@ const updateMousePos = (context, event) => getModel().updateMousePos(event.offse
 
 const setBrushSize = (context, event) => { getModel().brush.size = event.size };
 
-const panState = {
-  initial: 'idle',
-  states: {
-    idle: {
-      on: { mousedown: 'panning' }
-    },
-    panning: {
-      on: {
-        mouseup: 'idle',
-        mousemove: {
-          actions: 'pan'
-        }
-      }
-    }
-  },
-  on: {
-    'keyup.space': {
-      target: 'interactive.edit.tool.hist'
-    }
-  }
-};
+// const panState = {
+//   initial: 'idle',
+//   states: {
+//     idle: {
+//       on: { mousedown: 'panning' }
+//     },
+//     panning: {
+//       on: {
+//         mouseup: 'idle',
+//         mousemove: {
+//           actions: 'pan'
+//         }
+//       }
+//     }
+//   },
+//   on: {
+//     'keyup.space': {
+//       target: 'interactive.edit.tool.hist'
+//     }
+//   }
+// };
 
 const paintState = {
   initial: 'idle',
@@ -374,46 +374,6 @@ const watershedState = {
 };
 
 /**
- * Navigates between slices of the image stack.
- */
-const navigateState = {
-  on: {
-    'keydown.a': {
-      actions: () => window.controller.history.addFencedAction(
-        new ChangeFrame(getModel(), getModel().frame - 1))
-    },
-    'keydown.left': {
-      actions: () => window.controller.history.addFencedAction(
-        new ChangeFrame(getModel(), getModel().frame - 1))
-    },
-    'keydown.d': {
-      actions: () => window.controller.history.addFencedAction(
-        new ChangeFrame(getModel(), getModel().frame + 1))
-    },
-    'keydown.right': {
-      actions: () => window.controller.history.addFencedAction(
-        new ChangeFrame(getModel(), getModel().frame + 1))
-    },
-    'keydown.c': {
-      actions: () => window.controller.history.addFencedAction(
-        new ChangeChannel(getModel(), getModel().channel + 1))
-    },
-    'keydown.C': {
-      actions: () => window.controller.history.addFencedAction(
-        new ChangeChannel(getModel(), getModel().channel - 1))
-    },
-    'keydown.f': {
-      actions: () => window.controller.history.addFencedAction(
-        new ChangeFeature(getModel(), getModel().feature + 1))
-    },
-    'keydown.F': {
-      actions: () => window.controller.history.addFencedAction(
-        new ChangeFeature(getModel(), getModel().feature - 1))
-    }
-  }
-};
-
-/**
  * Handles tools to edit the labeling.
  */
 const toolState = {
@@ -527,35 +487,28 @@ const editState = {
     }
   },
   on: {
+    LOADING: '.loading',
     EDIT: {
-      target: '.loading',
       actions: forwardTo('backend')
     },
     UNDO: {
-      target: '.loading',
       actions: forwardTo('backend')
     },
     REDO: {
-      target: '.loading',
-      actions: forwardTo('backend')
-    },
-    SETFRAME: {
-      target: '.loading',
       actions: forwardTo('backend')
     },
   }
 };
 
-const interactiveState = {
-  type: 'parallel',
-  states: {
-    navigate: navigateState,
-    edit: editState
-  },
-  on: {
-    'keydown.space': 'pan',
-  }
-};
+// const interactiveState = {
+//   type: 'parallel',
+//   states: {
+//     edit: editState
+//   },
+//   on: {
+//     'keydown.space': 'pan',
+//   }
+// };
 
 const adjusterState = {
   on: {
@@ -578,6 +531,31 @@ const adjusterState = {
 };
 
 const canvasState = {
+  initial: 'idle',
+  states: {
+    idle: {
+      on: { 'keydown.space': 'pan' }
+    },
+    pan: {
+      initial: 'idle',
+      states: {
+        idle: {
+          on: {
+            mousedown: 'dragging',
+          }
+        },
+        dragging: {
+          on: {
+            mousup: 'idle',
+            mousemove: {
+              actions: 'pan'
+            }
+          }
+        },
+      },
+      on: { 'keyup.space': 'idle' }
+    }
+  },
   on: {
     ZOOM: {
       actions: 'zoom'
@@ -626,11 +604,56 @@ const displayState = {
   }
 }
 
-const labelState = {
-  initial: 'interactive',
+const frameState = {
+  initial: 'idle',
   states: {
-    pan: panState,
-    interactive: interactiveState,
+    idle: {
+      on: {
+        'keydown.a': {
+          actions: () => window.controller.history.addFencedAction(
+            new ChangeFrame(getModel(), getModel().frame - 1))
+        },
+        'keydown.left': {
+          actions: () => window.controller.history.addFencedAction(
+            new ChangeFrame(getModel(), getModel().frame - 1))
+        },
+        'keydown.d': {
+          actions: () => window.controller.history.addFencedAction(
+            new ChangeFrame(getModel(), getModel().frame + 1))
+        },
+        'keydown.right': {
+          actions: () => window.controller.history.addFencedAction(
+            new ChangeFrame(getModel(), getModel().frame + 1))
+        },
+        'keydown.c': {
+          actions: () => window.controller.history.addFencedAction(
+            new ChangeChannel(getModel(), getModel().channel + 1))
+        },
+        'keydown.C': {
+          actions: () => window.controller.history.addFencedAction(
+            new ChangeChannel(getModel(), getModel().channel - 1))
+        },
+        'keydown.f': {
+          actions: () => window.controller.history.addFencedAction(
+            new ChangeFeature(getModel(), getModel().feature + 1))
+        },
+        'keydown.F': {
+          actions: () => window.controller.history.addFencedAction(
+            new ChangeFeature(getModel(), getModel().feature - 1))
+        },
+        LOADING: 'loading',
+      }
+    },
+    loading: {
+      on: {
+        LOADED: 'idle'
+      }
+    }
+  },
+  on: {
+    SETFRAME: {
+      actions: forwardTo('backend')
+    },
   }
 };
 
@@ -654,7 +677,8 @@ export const deepcellLabelMachine = Machine(
       select: selectState,
       brush: brushState,
       display: displayState,
-      label: labelState,
+      edit: editState,
+      frame: frameState,
     }
   },
   {
