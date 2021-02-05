@@ -6,6 +6,7 @@
 import { Machine, actions, assign, forwardTo, send } from 'xstate';
 import $ from 'jquery';
 import backendMachine from './backendMachine';
+import adjustMachine from './adjusterMachine';
 
 import {
   ToggleHighlight, ChangeFrame, ChangeFeature, ChangeChannel, BackendAction, Pan, Zoom,
@@ -656,7 +657,10 @@ export const deepcellLabelMachine = Machine(
       channel: 0,
       feature: 0,
     },
-    invoke: backendMachine,
+    invoke: [
+      backendMachine,
+      adjustMachine,
+    ],
     states: {
       rgb: rgbState,
       tool: toolState,

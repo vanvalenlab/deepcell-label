@@ -138,7 +138,7 @@ class InfopaneView {
     this.renderLabelRows();
     // always show 'state' and selected labels
     const states = window.controller.service.state.toStrings();
-    document.getElementById('mode').textContent = states[states.length - 2];
+    document.getElementById('mode').textContent = states[states.length - 3];
     const foreground = this.model.selected.label;
     const background = this.model.selected.secondLabel;
     document.getElementById('foreground').textContent = foreground === 0 ? 'background' : foreground;
