@@ -173,6 +173,45 @@ def redo(token):
     return jsonify(payload)
 
 
+@bp.route('/api/rawpng/<token>/<int:channel>/<int:frame>', methods=['GET'])
+def raw_png(token, channel, frame):
+    """
+    Serves a raw or labeled frame as a PNG.
+    """
+    project = Project.get(token)
+    if not project:
+        return jsonify({'error': f'project {token} not found'}), 404
+    png = project.get_raw_png(channel, frame)
+    return send_file(png, mimetype='image/png')
+
+    # tempFileObj = NamedTemporaryFile(mode='w+b',suffix='png')
+    # copyfileobj(png, tempFileObj)
+    # tempFileObj.seek(0,0)
+
+    # response = make_response(tempFileObj)
+    # response.headers.set('Content-Type', 'image/png')
+    # return response
+
+
+@bp.route('/api/labelpng/<token>/<int:feature>/<int:frame>', methods=['GET'])
+def label_png(token, feature, frame):
+    project = Project.get(token)
+    if not project:
+        return jsonify({'error': f'project {token} not found'}), 404
+    png = project.get_raw_png(feature, frame)
+    return send_file(png, mimetype='image/png', cache_timeout=0)
+
+
+@bp.route('/api/labelarray/<token>/<int:feature>/<int:frame>', methods=['GET'])
+def label_array(token, feature, frame):
+    project = Project.get(token)
+    if not project:
+        return jsonify({'error': f'project {token} not found'}), 404
+    label_array = project.get_label_arr(feature, frame)
+    filename = f'label_array{token}_feature{feature}_frame{frame}.npy'
+    return send_file(label_array, attachment_filename=filename, cache_timeout=0)
+
+
 @bp.route('/', methods=['GET', 'POST'])
 def form():
     """Request HTML landing page to be rendered."""

@@ -13,7 +13,11 @@ export class Controller {
    */
   constructor(projectID) {
     // Interpret the machine, and add a listener for whenever a transition occurs.
-    const service = interpret(deepcellLabelMachine, { devTools: true });
+    const context = {
+      ...deepcellLabelMachine.initialState.context,
+      id: projectID,
+    }
+    const service = interpret(deepcellLabelMachine.withContext(context), { devTools: true });
     inspect({
       iframe: false, // () => document.querySelector('iframe[data-xstate]'),
       url: 'https://statecharts.io/inspect'

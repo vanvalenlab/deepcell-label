@@ -6,6 +6,7 @@ from __future__ import print_function
 import base64
 import copy
 import enum
+import io
 import logging
 import os
 import timeit
@@ -108,7 +109,8 @@ class Project(db.Model):
     action = db.relationship('Action', uselist=False, post_update=True,
                              primaryjoin="and_(Project.id==Action.project_id, "
                                          "foreign(Project.action_id)==Action.action_id)")
-    actions = db.relationship('Action', backref='project', foreign_keys='[Action.project_id]')
+    actions = db.relationship(
+        'Action', backref='project', foreign_keys='[Action.project_id]')
     num_actions = db.Column(db.Integer, default=0)
 
     def __init__(self, loader):
@@ -351,7 +353,7 @@ class Project(db.Model):
         payload = {}
 
         img_payload = {}
-        encode = lambda x: base64.encodebytes(x.read()).decode()
+        def encode(x): return base64.encodebytes(x.read()).decode()
         raw_png = self._get_raw_png()
         img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
         label_png = self._get_label_png()
@@ -398,7 +400,7 @@ class Project(db.Model):
         """
         if x or y:
             img_payload = {}
-            encode = lambda x: base64.encodebytes(x.read()).decode()
+            def encode(x): return base64.encodebytes(x.read()).decode()
             if x:
                 raw_png = self._get_raw_png()
                 img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
@@ -457,6 +459,56 @@ class Project(db.Model):
         # Raw png
         raw_frame = self.raw_frames[self.frame]
         raw_arr = raw_frame.frame[..., self.channel]
+        raw_png = pngify(imgarr=raw_arr,
+                         vmin=0,
+                         vmax=None,
+                         cmap='cubehelix')
+        return raw_png
+
+    def get_label_arr(self, feature, frame):
+        """
+        Returns:
+            BytesIO: contains numpy array of labels
+        """
+        # Create label array
+        label_frame = self.label_frames[frame]
+        label_arr = label_frame.frame[..., feature]
+        out = io.BytesIO()
+        np.save(out, add_outlines(label_arr))
+        out.seek(0)
+        return out
+
+    def get_label_png(self, feature, frame):
+        """
+        Returns:
+            BytesIO: returns the current label frame as a .png
+        """
+        # Create label png
+        label_frame = self.label_frames[frame]
+        label_arr = label_frame.frame[..., feature]
+        label_png = pngify(imgarr=np.ma.masked_equal(label_arr, 0),
+                           vmin=0,
+                           vmax=self.get_max_label(),
+                           cmap=self.colormap)
+        return label_png
+
+    def get_raw_png(self, channel, frame):
+        """
+        Returns:
+            BytesIO: contains the current raw frame as a .png
+        """
+        # RGB png
+        if self.rgb:
+            raw_frame = self.rgb_frames[frame]
+            raw_arr = raw_frame.frame
+            raw_png = pngify(imgarr=raw_arr,
+                             vmin=None,
+                             vmax=None,
+                             cmap=None)
+            return raw_png
+        # Raw png
+        raw_frame = self.raw_frames[frame]
+        raw_arr = raw_frame.frame[..., channel]
         raw_png = pngify(imgarr=raw_arr,
                          vmin=0,
                          vmax=None,
@@ -672,7 +724,8 @@ class Action(db.Model):
                            primary_key=True, nullable=False, autoincrement=False)
     action_id = db.Column(db.Integer, primary_key=True, nullable=False)
     action_time = db.Column(db.TIMESTAMP)   # Set when finishing an action
-    action_name = db.Column(db.String(64))  # Name of the action (e.g. "handle_draw")
+    # Name of the action (e.g. "handle_draw")
+    action_name = db.Column(db.String(64))
     # Action to jump to upon undo
     prev_action_id = db.Column(db.Integer, db.ForeignKey('actions.action_id'))
     prev_action = db.relationship('Action', uselist=False, post_update=True,
@@ -719,7 +772,8 @@ class Action(db.Model):
             valid_actions = filter(lambda action: action.done and action.action_id < self.action_id,
                                    frame.actions)
             # Action containing the most recent version
-            before_action = max(valid_actions, key=lambda action: action.action_id)
+            before_action = max(
+                valid_actions, key=lambda action: action.action_id)
             before_frame = next(filter(lambda bf, f=frame: bf.frame_id == f.frame_id,
                                        before_action.action_frames))
             before_frames.append(before_frame)

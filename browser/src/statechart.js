@@ -3,8 +3,9 @@
  * Defines the statechart for Label in XState.
  */
 
-import { Machine, actions, assign, forwardTo, send } from 'xstate';
+import { Machine, actions, assign, forwardTo, send, spawn, sendParent } from 'xstate';
 import $ from 'jquery';
+import npyjs from './npy';
 import backendMachine from './backendMachine';
 import adjustMachine from './adjusterMachine';
 
@@ -543,11 +544,11 @@ const frameState = {
       }
     }
   },
-  on: {
-    SETFRAME: {
-      actions: forwardTo('backend')
-    },
-  }
+  // on: {
+  //   SETFRAME: {
+  //     actions: forwardTo('backend')
+  //   },
+  // }
 };
 
 const confirmState = {
@@ -644,11 +645,178 @@ const toolState = {
   }
 };
 
+const invokeFetchRawFrame = (context) => {
+  const { id, channel, frame } = context;
+
+  return $.ajax({
+    type: 'GET',
+    url: `${document.location.origin}/api/rawpng/${id}/${channel}/${frame}`,
+  });
+};
+
+const invokeFetchLabelFrame = (context) => {
+  const { id, feature, frame } = context;
+
+  return $.ajax({
+    type: 'GET',
+    url: `${document.location.origin}/api/labelpng/${id}/${feature}/${frame}`,
+  });
+};
+
+const invokeFetchLabelArray = (context) => {
+  const { id, feature, frame } = context;
+  const numpyLoader = new npyjs();
+  return numpyLoader.load(`${document.location.origin}/api/labelarray/${id}/${feature}/${frame}`);
+  //   (array) => {
+  //   // need to convert 1d data to 2d array
+  //   const reshape = (arr, width) => 
+  //     arr.reduce((rows, key, index) => (index % width == 0 ? rows.push([key]) 
+  //       : rows[rows.length-1].push(key)) && rows, []);
+  //   canvas.segArray = reshape(array.data, array.shape[1]);
+  // });
+};
+
+const createRawFrameMachine = (id, channel, frame) => {
+  return Machine({
+    id: 'rawFrame',
+    initial: 'loading',
+    context: {
+      id,
+      channel,
+      frame,
+      image: null,
+      lastUpdated: null
+    },
+    states: {
+      loading: {
+        actions: sendParent('LOADING'),
+        invoke: {
+          id: 'fetchRawFrame',
+          src: invokeFetchRawFrame,
+          onDone: {
+            target: 'loaded',
+            actions: assign({
+              rawImage: (_, event) => event.data,
+              lastUpdated: () => Date.now()
+            })
+          },
+          onError: 'failure'
+        }
+      },
+      loaded: {
+        entry: sendParent('RAWLOADED'),
+        on: {
+          REFRESH: 'loading'
+        }
+      },
+      failure: {
+        on: {
+          RETRY: 'loading'
+        }
+      }
+    }
+  });
+};
+
+const createLabelFrameMachine = (id, feature, frame) => {
+  return Machine({
+    id: 'labelFrame',
+    initial: 'loading',
+    context: {
+      id,
+      feature,
+      frame,
+      image: null,
+      array: null,
+      lastUpdated: null
+    },
+    states: {
+      loading: {
+        actions: sendParent('LOADING'),
+        invoke: {
+          id: 'fetchLabelFrame',
+          src: invokeFetchLabelFrame,
+          onDone: {
+            target: 'loadingArray',
+            actions: assign({
+              image: (_, event) => event.data,
+              lastUpdated: () => Date.now()
+            })
+          },
+          onError: 'failure'
+        }
+      },
+      loadingArray: {
+        invoke: {
+          id: 'fetchLabelArray',
+          src: invokeFetchLabelArray,
+          onDone: {
+            target: 'loaded',
+            actions: [
+              (_, event) => console.log(event),
+              assign({
+                array: (_, event) => event.res,
+                lastUpdated: () => Date.now()
+              })
+            ]
+          },
+          onError: 'failure'
+        }
+      },
+      loaded: {
+        entry: sendParent('LABELLOADED'),
+        on: {
+          REFRESH: 'loading'
+        }
+      },
+      failure: {
+        on: {
+          RETRY: 'loading'
+        }
+      }
+    }
+  });
+};
+
+const setRawFrame = assign((context, event) => {
+  // Use the existing raw frame actor if one already exists
+  const name = `${context.channel}_${event.frame}`;
+  let rawFrame = context.rawFrames[name];
+  if (rawFrame) {
+    return {
+      ...context,
+      rawFrame
+    };
+  }
+
+  // Otherwise, spawn a new raw frame actor and
+  // save it in the rawFrame object
+  rawFrame = spawn(createRawFrameMachine(context.id, context.channel, event.frame));
+  return {
+    rawFrames: {
+      ...context.rawFrames,
+      [name]: rawFrame
+    },
+    rawFrame,
+    frame: event.frame
+  };
+});
+
+// NO CACHING (yet) for label frames
+const setLabelFrame = assign((context, event) => {
+  const labelFrame = spawn(createLabelFrameMachine(context.id, context.feature, event.frame));
+  return {
+    labelFrame,
+    frame: event.frame
+  };
+});
+
 export const deepcellLabelMachine = Machine(
   {
     id: 'deepcellLabel',
     type: 'parallel',
     context: {
+      id: null,
       trace: [],
       storedLabel: 0,
       storedX: 0,
@@ -656,6 +824,9 @@ export const deepcellLabelMachine = Machine(
       frame: 0,
       channel: 0,
       feature: 0,
+      rawFrames: {},
+      rawFrame: null,
+      labelFrame: null,
     },
     invoke: [
       backendMachine,
@@ -672,10 +843,15 @@ export const deepcellLabelMachine = Machine(
       mouse: mouseState,
       frame: frameState,
       confirm: confirmState,
+    },
+    on: {
+      SETFRAME: { actions: ['setRawFrame', 'setLabelFrame'] }
     }
   },
   {
     actions: {
+      setRawFrame: setRawFrame,
+      setLabelFrame: setLabelFrame,
       updateCanvas: updateCanvas,
       pan: pan,
       editLabels: editLabels,

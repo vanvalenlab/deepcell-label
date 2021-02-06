@@ -33,16 +33,14 @@ export class ChangeFrame extends Action {
   do() {
     window.controller.service.send({
       type: 'SETFRAME',
-      dimension: 'frame',
-      value: this.newValue,
+      frame: this.newValue,
     });
   }
 
   undo() {
     window.controller.service.send({
       type: 'SETFRAME',
-      dimension: 'frame',
-      value: this.oldValue,
+      frame: this.oldValue,
     });
   }
 
