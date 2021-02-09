@@ -24,8 +24,6 @@ export class ImageAdjuster {
     this.height = model.height;
     this.width = model.width;
 
-    this.rgb = model.rgb;
-
     // this can be between 0.0 and 1.0, inclusive (1 is fully opaque)
     // want to make user-adjustable in future
     this.labelTransparency = 0.3;
@@ -82,6 +80,10 @@ export class ImageAdjuster {
       this.compositedImg.onload = () => this.postCompAdjust();
     }
     this.postCompImg.onload = () => this.model.notifyImageChange();
+  }
+
+  get rgb() {
+    return this.model.rgb;
   }
 
   get brightness() {

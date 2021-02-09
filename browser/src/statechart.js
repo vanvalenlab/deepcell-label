@@ -544,11 +544,11 @@ const frameState = {
       }
     }
   },
-  // on: {
-  //   SETFRAME: {
-  //     actions: forwardTo('backend')
-  //   },
-  // }
+  on: {
+    SETFRAME: {
+      actions: forwardTo('backend')
+    },
+  }
 };
 
 const confirmState = {
@@ -844,9 +844,9 @@ export const deepcellLabelMachine = Machine(
       frame: frameState,
       confirm: confirmState,
     },
-    on: {
-      SETFRAME: { actions: ['setRawFrame', 'setLabelFrame'] }
-    }
+    // on: {
+    //   SETFRAME: { actions: ['setRawFrame', 'setLabelFrame'] }
+    // }
   },
   {
     actions: {
