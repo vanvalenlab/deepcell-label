@@ -6,272 +6,307 @@
       Instructions (Click to expand/collapse)
     </div>
     <div class="collapsible-body">
-      <p dir="ltr">
-        DeepCell Label is a tool for correcting labels on biological images. 
-        We control DeepCell Label through keybinds and using the mouse on the canvas. 
-        We see labels and images in the canvas on the right and a table about the canvas contents on the left.
-      </p>
+        <div class="row">
+          <div class="col s12">
+            <ul class="tabs">
+              <li class="tab col s2"><a class="active" href="#tab1">Overview</a></li>
+              <li class="tab col s2"><a href="#tab2">Info Table</a></li>
+              <li class="tab col s2"><a href="#tab3">Canvas</a></li>
+              <li class="tab col s2"><a href="#tab4">Tools</a></li>
+              <li class="tab col s2"><a href="#tab5">Actions</a></li>
+              <li class="tab col s2"><a href="#tab6">Select Labels</a></li>
+            </ul>
+          </div>
+          <div id="tab1" class="col s12">
+            <p dir="ltr">
+              DeepCell Label is a tool for correcting labels on biological images.
+              We control DeepCell Label through keybinds and using the mouse on the canvas.
+              We see labels and images in the canvas on the right and a table about the canvas contents on the left.
+            </p>
+          </div>
+          <div id="tab2" class="col s12">
+            <h4>The Infotable</h4>
+            <p dir="ltr">
+              The first three rows in the table tell us the which slice in an image stack we are currently viewing
+              <br>
+              <strong>frame</strong> tells which slice of an image stack we are viewing
+              <br>
+              Frames move through space (like a 3D vertical image stack) or through time (like a timelapse)
+              <br>
+              <strong>channel</strong> tells us which raw image channel we are viewing
+              <br>
+              Channels may be different imaging modalities, like phase or fluorescence, or different markers, like nuclear or
+              cytoplasm
+              <br>
+              <strong>feature</strong> tells us which labeled features we are viewing
+              <br>
+              Features may be [FILL IN]
+            </p>
 
-      <h4>The Infotable</h4>
-      <p dir="ltr">
-        The first three rows in the table tell us the which slice in an image stack we are currently viewing.
-        <br>
-        <strong>frame</strong> tells which slice of an image stack we are viewing. 
-        Frames move through space (like a 3D vertical image stack) or through time (like a timelapse)
-        <br>
-        <strong>channel</strong> tells us which raw image channel we are viewing.
-        Channels may be different imaging modalities, like phase or fluorescence, or different markers, like nuclear or cytoplasm.
-      </p>
+            <p dir="ltr">
+              The next three rows tell us where the canvas is within the current frame.
+              <br>
+              <strong>zoom</strong> tells us how much the frame is zoomed in
+              <br>
+              <strong>viewing (x)</strong> the visible horizontal range
+              <br>
+              <strong>viewing (y)</strong> the visible vertical range
+            </p>
+            
+            <p dir="ltr">
+              <strong>highlight</strong> tells us whether the label we're painting with is highlighted in red
+              <br>
+              <strong>brush size</strong> tells us the radius of the brush in pixels
+            </p>
+            
+            <p dir="ltr">
+              The next two rows tell us about the label the mouse is hovering over
+              <br>
+              <strong>label</strong> is label number under the mouse
+              <br>
+              <strong>slices</strong> is a list of the frames that the label is present in
+            </p>
+            
+            <p dir="ltr">
+              The next two rows tell us which labels we can edit with the brush tool
+              <br>
+              <strong>painting with label</strong> is the label the we brush will add to the canvas
+              <br>
+              <strong>painting over label</strong> is the label the brush will overwrite
+            </p>
+            
+            <p dir="ltr">
+              The last two rows are about label editing actions
+              <br>
+              <strong>tool</strong> tells us what action will happen when we click on the canvas
+              See the Tools section.
+              <br>
+              <strong>confirm action</strong> is a prompt displayed before some actions
+              <br>
+              We can confirm the action with the Enter key, or cancel it with the Escape key.
+              See the Actions section for more details.
+            </p>
 
-      <p dir="ltr">
-        The next three rows tell us where the canvas is within the current frame.
-        <br>
-        <strong>zoom</strong> tells us how much the frame is zoomed in
-        <br>
-        <strong>viewing (x)</strong> the visible horizontal range
-        <br>
-        <strong>viewing (y)</strong> the visible vertical range
-      </p>
-
-       <p dir="ltr">
-        <strong>highlight</strong> tells us whether the label we're painting with is highlighted in red
-        <br>
-        <strong>brush size</strong> tells us the radius of the brush in pixels
-      </p>
-
-      <p dir="ltr">
-        The next two rows tell us about the label the mouse is hovering over
-        <br>
-        <strong>label</strong> is label number under the mouse
-        <br>
-        <strong>slices</strong> is a list of the frames that the label is present in
-      </p>
-
-      <p dir="ltr">
-        The next two rows tell us which labels we can edit with the brush tool
-        <br>
-        <strong>painting with label</strong> is the label the we brush will add to the canvas
-        <br>
-        <strong>painting over label</strong> is the label the brush will overwrite
-      </p>
-
-      <p dir="ltr">
-        The last two rows are about label editing actions
-        <br>
-        <strong>tool</strong> tells us what action will happen when we click on the canvas
-        See the Tools section. 
-        <br>
-        <strong>confirm action</strong> is a prompt displayed before some actions
-        We can confirm the action with the Enter key, or cancel it with the Escape key.
-        See the Actions section for more details.
-      </p>
-
-      <h4>The Canvas</h4>
-
-      <p dir="ltr">
-        The right-side canvas shows an images and labels.
-        Each label has a different color overlaid on the raw image.
-      </p>
-
-      <h3>Navigating the Canvas</h3>
-
-      <p dir="ltr">
-        To view the label, <strong>hover the mouse</strong> over the label.
-      </p>
-
-      <p dir="ltr">
-        To zoom in, press the <strong>"+" key</strong> or <strong>hold Alt and scroll up</strong>
-        <br>
-        To zoom out, press the <strong>"-" key</strong> or <strong>hold Alt and scroll down</strong>
-      </p>
-
-      <p dir="ltr">
-        To pan around, <strong>hold Space and move the mouse</strong> on the canvas.
-      </p>
-
-      <p dir="ltr">
-        To view the next frame, press <strong>D key</strong> or press <strong>right arrow key</strong>.
-        To view the previous frame, press <strong>A key</strong> or press <strong>left arrow key</strong>.
-      </p>
-
-      <p dir="ltr">
-        To view the next channel, press <strong>C key</strong>
-        To view the previous channel, press <strong>Shift + C key</strong>.
-      </p>
-
-      <p dir="ltr">
-        To view the next feature, press <strong>F key</strong>
-        To view the previous feature, press <strong>Shift + F key</strong>.
-      </p>
-
-      <h3>Adjusting the Canvas</h3>
-
-      <p dir="ltr">
-        DeepCell Label can adjust how to dispaly labels and images.
-        With these changes, we can make out finer details while labeling.
-      </p>
-
-      <p dir="ltr">
-        To change the raw image brightness, <strong>scroll</strong> with the mouse on the canvas.
-        To adjust the raw image contrast, <strong>hold Shift and scroll</strong> with the mouse on the canvas.
-        To reset the brightness and contrast, press <strong>0 key</strong>.
-      </p>
-
-      <p dir="ltr">
-        To toggle between viewing the label overlay, the labels only, and the raw image only, press <strong>Z key</strong>.
-      </p>
-
-      <p dir="ltr">
-        To toggle highlighting the brush label in red, press <strong>H key</strong>.
-      </p>
-
-      <h4>Tools</h4>
-
-      <p dir="ltr">
-        The tool controls which action happens when we click on the canvas.
-      </p>
-      <h5>Brush</h5>
-      
-      <p dir="ltr">
-        The brush tool lets us paint labels onto the canvas by clicking and dragging.
-        The brush will overwrite the label we're painting over with the label we're painting with,
-        leaving other labels unchanged.
-      </p>
-
-      <p dir="ltr">
-        We can increase the brush size by pressing <strong>up arrow key</strong>
-        and decrease the brush size pressing <strong>down arrow key</strong>.
-      </p>
-
-      <p dir="ltr">
-        Switch to the brush by pressing <strong>B key</strong>.
-      </p>
-
-      <h5>Threshold</h5>
-      
-      <p dir="ltr">
-        The threshold tool lets us draw a bounding box on the raw image by clicking and dragging.
-        Once we draw the box, the brighter areas of the bounding box will be filled with the label we're painting with.
-      </p>
-      
-      <p dir="ltr">
-        Switch to the threshold tool by pressing <strong>T key</strong>.
-      </p>
-
-      <h5>Grow and Shrink</h5>
-
-      <p dir="ltr">
-        The grow and shrink tool expands or contracts a label's boundary by one pixel.
-        <br>
-        To grow a label, <strong>click</strong> on it.
-        <br>
-        To shrink a label, <strong>hold Shift + click</strong> on it.
-        
-      </p>
-
-      <h5>Flood</h5>
-      
-      <p dir="ltr">
-        The flood tool fills a region with the label we're painting with.
-        <br>
-        To flood a region, <strong>click</strong> on it.
-      
-      </p>
-
-      <p dir="ltr">
-        Switch to the flood tool by pressing <strong>G key</strong>.
-      </p>
-
-      <h5>Trim</h5>
-      
-      <p dir="ltr">
-        The trim tool removes disconnected regions of a label.
-        <br>
-        To trim a region, <strong>click</strong> on it. Pixels connected to
-        that location will remain, and disconnected pixels will disappear.
-      
-      </p>
-      
-      <p dir="ltr">
-        Switch to the trim tool by pressing <strong>K key</strong>.
-      </p>
-
-      <h5>Autofit</h5>
-      
-      <p dir="ltr">
-        The autofit tool adjusts the boundary of a label to hug the nearest edges in the raw image.
-        This tool can fix the boundaries of an existing label, but cannot create a label from scratch.
-        <br>
-        To autofit a region, <strong>click</strong> on it.
-      
-      </p>
-      
-      <p dir="ltr">
-        Switch to the autofit tool by pressing <strong>M key</strong>.
-      </p>
-
-
-      <h5>Watershed</h5>
-      
-      <p dir="ltr">
-        The watershed tool splits one label into two, allowing us to separate adjacent cells that have been given the same label.
-        <br>
-        <strong>Click</strong>Click once on a label, then <strong>click</strong>click elsewhere in the same label.
-        These clicks should be the centers of the cells you are
-        trying to separate. The first click will remain the same label, and the second
-        click will become a new label.
-      </p>
-      
-      <p dir="ltr">
-        Switch to the watershed tool by pressing <strong>W key</strong>.
-      </p>
-
-      
-
-      <h4>Actions</h4>
-
-      <p dir="ltr">
-        Some actions are done with a keybind instead of clicking on the canvas.
-        These actions will need to be confirmed first by pressing <strong>Enter</strong>.
-        Press <strong>Escape</strong> to cancel an action instead.
-      </p>
-
-      <p dir="ltr">
-        To swap the label we're painting over and the label we're painting with, press <strong>S key</strong>.
-        This action only swaps the labels on the current frame.
-      </p>
-
-      <p dir="ltr">
-        To replace the label we're painting over with the label we're painting with, press <strong>R key</strong>.
-        To replace the label on all frames, press <strong>Shift + R</strong>.
-      </p>
-
-      <p dir="ltr">
-        To predict the labels based on the previous frame, press <strong>O key</strong>.
-        To predict the labels on all frames, press <strong>Shift + O</strong>.
-      </p>
-
-      <h4>Selecting Labels</h4>
-
-      <p dir="ltr">
-        As detailed above, some tools (like the brush and thresholding) and some actions (like swap and replace) will
-        use the label we're painting with and painting over.
-        Select different labels to control which labels the tools or actions will edit.
-      </p>
-
-      <p dir="ltr">
-        To select a label to paint with, hold <strong>Shift</strong> and <strong>Click</strong> on the label.
-        <br>
-        To select a label to paint over, hold <strong>Shift</strong> and <strong>Right Click</strong> on the label.
-        <br>
-        To swap the labels to paint with and over, press <strong>X key</strong>.
-        <br>
-        To select a new label to paint with, press <strong>N key</strong>. This also selects the background to paint over.
-        <br>
-        To cycle between labels to paint with, press <strong>[ key</strong> (to cycle backwards) or <strong>] key</strong> (to cycle forwards).
-        <br>
-        To cycle between labels to paint over, press <strong>Shift + [</strong> (to cycle backwards) or <strong>Shift + ]</strong> (to cycle forwards).
-      </p>
+          </div>
+          <div id="tab3" class="col s12">
+            <h4>The Canvas</h4>
+            
+            <p dir="ltr">
+              The right-side canvas shows an images and labels.
+              Each label has a different color overlaid on the raw image.
+            </p>
+            
+            <h5>Navigating the Canvas</h5>
+            
+            <p dir="ltr">
+              To view the label, <strong>hover the mouse</strong> over the label.
+            </p>
+            
+            <p dir="ltr">
+              To zoom in, press the <strong>"+" key</strong> or <strong>hold Alt and scroll up</strong>
+              <br>
+              To zoom out, press the <strong>"-" key</strong> or <strong>hold Alt and scroll down</strong>
+            </p>
+            
+            <p dir="ltr">
+              To pan around, <strong>hold Space and move the mouse</strong> on the canvas.
+            </p>
+            
+            <p dir="ltr">
+              To view the next frame, press <strong>D key</strong> or press <strong>right arrow key</strong>.
+              <br>
+              To view the previous frame, press <strong>A key</strong> or press <strong>left arrow key</strong>.
+            </p>
+            
+            <p dir="ltr">
+              To view the next channel, press <strong>C key</strong>
+              <br>
+              To view the previous channel, press <strong>Shift + C key</strong>.
+            </p>
+            
+            <p dir="ltr">
+              To view the next feature, press <strong>F key</strong>
+              <br>
+              To view the previous feature, press <strong>Shift + F key</strong>.
+            </p>
+            
+            <h5>Adjusting the Canvas</h5>
+            
+            <p dir="ltr">
+              DeepCell Label can adjust how to dispaly labels and images.
+              With these changes, we can make out finer details while labeling.
+            </p>
+            
+            <p dir="ltr">
+              To change the raw image brightness, <strong>scroll</strong> with the mouse on the canvas.
+              <br>
+              To adjust the raw image contrast, <strong>hold Shift and scroll</strong> with the mouse on the canvas.
+              <br>
+              To reset the brightness and contrast, press <strong>0 key</strong>.
+            </p>
+            
+            <p dir="ltr">
+              To toggle between viewing the label overlay, the labels only, and the raw image only, press <strong>Z key</strong>.
+            </p>
+            
+            <p dir="ltr">
+              To toggle highlighting the brush label in red, press <strong>H key</strong>.
+            </p>
+          </div>
+          <div id="tab4" class="col s12">
+            <h4>Tools</h4>
+            
+            <p dir="ltr">
+              The tool controls which action happens when we click on the canvas.
+            </p>
+            <h5>Brush</h5>
+            
+            <p dir="ltr">
+              The brush tool lets us paint labels onto the canvas by clicking and dragging.
+              The brush will overwrite the label we're painting over with the label we're painting with,
+              leaving other labels unchanged.
+            </p>
+            
+            <p dir="ltr">
+              We can increase the brush size by pressing <strong>up arrow key</strong>
+              and decrease the brush size pressing <strong>down arrow key</strong>.
+            </p>
+            
+            <p dir="ltr">
+              Switch to the brush by pressing <strong>B key</strong>.
+            </p>
+            
+            <h5>Threshold</h5>
+            
+            <p dir="ltr">
+              The threshold tool lets us draw a bounding box on the raw image by clicking and dragging.
+              Once we draw the box, the brighter areas of the bounding box will be filled with the label we're painting with.
+            </p>
+            
+            <p dir="ltr">
+              Switch to the threshold tool by pressing <strong>T key</strong>.
+            </p>
+            
+            <h5>Grow and Shrink</h5>
+            
+            <p dir="ltr">
+              The grow and shrink tool expands or contracts a label's boundary by one pixel.
+              <br>
+              To grow a label, <strong>click</strong> on it.
+              <br>
+              To shrink a label, <strong>hold Shift + click</strong> on it.
+            
+            </p>
+            
+            <h5>Flood</h5>
+            
+            <p dir="ltr">
+              The flood tool fills a region with the label we're painting with.
+              <br>
+              To flood a region, <strong>click</strong> on it.
+            
+            </p>
+            
+            <p dir="ltr">
+              Switch to the flood tool by pressing <strong>G key</strong>.
+            </p>
+            
+            <h5>Trim</h5>
+            
+            <p dir="ltr">
+              The trim tool removes disconnected regions of a label.
+              <br>
+              To trim a region, <strong>click</strong> on it. Pixels connected to
+              that location will remain, and disconnected pixels will disappear.
+            
+            </p>
+            
+            <p dir="ltr">
+              Switch to the trim tool by pressing <strong>K key</strong>.
+            </p>
+            
+            <h5>Autofit</h5>
+            
+            <p dir="ltr">
+              The autofit tool adjusts the boundary of a label to hug the nearest edges in the raw image.
+              This tool can fix the boundaries of an existing label, but cannot create a label from scratch.
+              <br>
+              To autofit a region, <strong>click</strong> on it.
+            
+            </p>
+            
+            <p dir="ltr">
+              Switch to the autofit tool by pressing <strong>M key</strong>.
+            </p>
+            
+            
+            <h5>Watershed</h5>
+            
+            <p dir="ltr">
+              The watershed tool splits one label into two, allowing us to separate adjacent cells that have been given the same
+              label.
+              <br>
+              <strong>Click</strong>Click once on a label, then <strong>click</strong>click elsewhere in the same label.
+              <br>
+              These clicks should be the centers of the cells you are trying to separate. 
+              <br>
+              The first click will remain the same label, and the second click will become a new label.
+            </p>
+            
+            <p dir="ltr">
+              Switch to the watershed tool by pressing <strong>W key</strong>.
+            </p>
+          </div>
+          <div id="tab5" class="col s12">
+            <h4>Actions</h4>
+            
+            <p dir="ltr">
+              Some actions are done with a keybind instead of clicking on the canvas.
+              <br>
+              These actions will need to be confirmed first by pressing <strong>Enter</strong>.
+              Press <strong>Escape</strong> to cancel an action instead.
+            </p>
+            
+            <p dir="ltr">
+              To swap the label we're painting over and the label we're painting with, press <strong>S key</strong>.
+              This action only swaps the labels on the current frame.
+            </p>
+            
+            <p dir="ltr">
+              To replace the label we're painting over with the label we're painting with, press <strong>R key</strong>.
+              To replace the label on all frames, press <strong>Shift + R</strong>.
+            </p>
+            
+            <p dir="ltr">
+              To predict the labels based on the previous frame, press <strong>O key</strong>.
+              To predict the labels on all frames, press <strong>Shift + O</strong>.
+            </p>
+          </div>
+          <div id="tab6" class="col s12">
+            <h4>Select Labels</h4>
+            
+            <p dir="ltr">
+              Some tools and actions edit the labels we're painting with and painting over.
+              Select different labels to control which labels these tools and actions edit.
+            </p>
+            
+            <p dir="ltr">
+              To select a label to paint with, hold <strong>Shift</strong> and <strong>Click</strong> on the label.
+              <br>
+              To select a label to paint over, hold <strong>Shift</strong> and <strong>Right Click</strong> on the label.
+              <br>
+              To swap the labels to paint with and over, press <strong>X key</strong>.
+              <br>
+              To select a new label to paint with, press <strong>N key</strong>. This also selects the background to paint over.
+              <br>
+              To cycle between labels to paint with, press <strong>[ key</strong> (to cycle backwards) or <strong>] key</strong> (to
+              cycle forwards).
+              <br>
+              To cycle between labels to paint over, press <strong>Shift + [</strong> (to cycle backwards) or <strong>Shift +
+                ]</strong> (to cycle forwards).
+            </p>
+          </div>
+        </div>
     </div>
   </li>
 </ul>

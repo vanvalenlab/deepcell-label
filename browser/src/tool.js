@@ -21,6 +21,10 @@ document.addEventListener('DOMContentLoaded', function() {
     inDuration: 400,
     outDuration: 400,
   });
+
+  // Initialize tabs
+  var elems = document.querySelectorAll('.tabs');
+  var instances = M.Tabs.init(elems, {});
 });
 
 export function startDeepCellLabel(settings) {
