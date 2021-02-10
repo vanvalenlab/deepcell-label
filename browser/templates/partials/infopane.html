@@ -7,131 +7,271 @@
     </div>
     <div class="collapsible-body">
       <p dir="ltr">
-        DeepCell Label is a tool for correcting labels on biological images.
-        DeepCell Label displays images on the right-hand canvas, as well as useful information about the images to guide corrections in the left-hand table.
+        DeepCell Label is a tool for correcting labels on biological images. 
+        We control DeepCell Label through keybinds and using the mouse on the canvas. 
+        We see labels and images in the canvas on the right and a table about the canvas contents on the left.
+      </p>
+
+      <h4>The Infotable</h4>
+      <p dir="ltr">
+        The first three rows in the table tell us the which slice in an image stack we are currently viewing.
+        <br>
+        <strong>frame</strong> tells which slice of an image stack we are viewing. 
+        Frames move through space (like a 3D vertical image stack) or through time (like a timelapse)
+        <br>
+        <strong>channel</strong> tells us which raw image channel we are viewing.
+        Channels may be different imaging modalities, like phase or fluorescence, or different markers, like nuclear or cytoplasm.
       </p>
 
       <p dir="ltr">
-        The right pane of DeepCell Label displays an image of cells.
-        By default, this shows the cell segmentation mask overlaid the raw image.
-        Each label has a different color.
+        The next three rows tell us where the canvas is within the current frame.
+        <br>
+        <strong>zoom</strong> tells us how much the frame is zoomed in
+        <br>
+        <strong>viewing (x)</strong> the visible horizontal range
+        <br>
+        <strong>viewing (y)</strong> the visible vertical range
+      </p>
+
+       <p dir="ltr">
+        <strong>highlight</strong> tells us whether the label we're painting with is highlighted in red
+        <br>
+        <strong>brush size</strong> tells us the radius of the brush in pixels
       </p>
 
       <p dir="ltr">
-        The left pane of DeepCell Label displays information.
-        The frame number you are viewing will always be displayed in the top left corner.
-        When you mouse over a cell in the right pane, information about that cell will be displayed in the bottom left corner.
-        Label selections and confirmations will also be displayed in the bottom left corner.
+        The next two rows tell us about the label the mouse is hovering over
+        <br>
+        <strong>label</strong> is label number under the mouse
+        <br>
+        <strong>slices</strong> is a list of the frames that the label is present in
       </p>
 
-      <h4>Paitning</h4>
+      <p dir="ltr">
+        The next two rows tell us which labels we can edit with the brush tool
+        <br>
+        <strong>painting with label</strong> is the label the we brush will add to the canvas
+        <br>
+        <strong>painting over label</strong> is the label the brush will overwrite
+      </p>
 
-      When you first open DeepCell Label, you will be using the paint tool.
-      When you mouse over the canvas, you will see a crosshair on top of a translucent circle showing where the brush will paint over.
-      When you click and drag the mouse on the canvas, the brush will paint the 
+      <p dir="ltr">
+        The last two rows are about label editing actions
+        <br>
+        <strong>tool</strong> tells us what action will happen when we click on the canvas
+        See the Tools section. 
+        <br>
+        <strong>confirm action</strong> is a prompt displayed before some actions
+        We can confirm the action with the Enter key, or cancel it with the Escape key.
+        See the Actions section for more details.
+      </p>
 
-      <h4>Select Labels</h4>
+      <h4>The Canvas</h4>
 
-      When using the brush, you paint over 
+      <p dir="ltr">
+        The right-side canvas shows an images and labels.
+        Each label has a different color overlaid on the raw image.
+      </p>
 
-      <h4>The Keyboard Tools</h4>
+      <h3>Navigating the Canvas</h3>
 
-      <h5><em>Universal</em></h5>
+      <p dir="ltr">
+        To view the label, <strong>hover the mouse</strong> over the label.
+      </p>
 
-      <p><strong>Mouse</strong> over a cell mask to see cell label and lineage information.</p>
+      <p dir="ltr">
+        To zoom in, press the <strong>"+" key</strong> or <strong>hold Alt and scroll up</strong>
+        <br>
+        To zoom out, press the <strong>"-" key</strong> or <strong>hold Alt and scroll down</strong>
+      </p>
 
-      <p><strong>Spacebar + click and drag</strong> to pan across the viewed image.</p>
+      <p dir="ltr">
+        To pan around, <strong>hold Space and move the mouse</strong> on the canvas.
+      </p>
 
-      <p><strong>Scroll Wheel</strong> | In raw image or edit mode, scroll up/down to change the contrast of the image. Hold down the shift key while scrolling to change the brightness. (These values can be reset by pressing 0.)&nbsp;</p>
+      <p dir="ltr">
+        To view the next frame, press <strong>D key</strong> or press <strong>right arrow key</strong>.
+        To view the previous frame, press <strong>A key</strong> or press <strong>left arrow key</strong>.
+      </p>
 
-      <p><strong>Alt+Scroll Wheel</strong> or <strong>-</strong> and <strong>=</strong> | Zoom in and out on the image.</p>
+      <p dir="ltr">
+        To view the next channel, press <strong>C key</strong>
+        To view the previous channel, press <strong>Shift + C key</strong>.
+      </p>
 
-      <p><strong>0 (zero)</strong> | Reset the brightness and contrast settings, if viewing the raw image or in paint mode.&nbsp;</p>
+      <p dir="ltr">
+        To view the next feature, press <strong>F key</strong>
+        To view the previous feature, press <strong>Shift + F key</strong>.
+      </p>
 
-      <p><strong>z</strong> | Switch between annotations and raw images; use this to check if your masks and labels match up to the actual cell image.</p>
+      <h3>Adjusting the Canvas</h3>
 
-      <p><strong>e</strong> | Toggle between whole-label and paint modes. Note: this will not toggle between modes if anything is selected.</p>
+      <p dir="ltr">
+        DeepCell Label can adjust how to dispaly labels and images.
+        With these changes, we can make out finer details while labeling.
+      </p>
 
-      <p><strong>esc</strong> | Cancel operation; do this if you click on a cell(s) and want to undo your click.</p>
+      <p dir="ltr">
+        To change the raw image brightness, <strong>scroll</strong> with the mouse on the canvas.
+        To adjust the raw image contrast, <strong>hold Shift and scroll</strong> with the mouse on the canvas.
+        To reset the brightness and contrast, press <strong>0 key</strong>.
+      </p>
 
-      <p><em>To navigate through frames:</em></p>
+      <p dir="ltr">
+        To toggle between viewing the label overlay, the labels only, and the raw image only, press <strong>Z key</strong>.
+      </p>
 
-      <p><strong>a</strong> or <strong>left arrow key</strong> | Go back to previous frame</p>
+      <p dir="ltr">
+        To toggle highlighting the brush label in red, press <strong>H key</strong>.
+      </p>
 
-      <p><strong>d</strong> or <strong>right arrow key</strong> | Go forward to next frame</p>
+      <h4>Tools</h4>
 
-      <h5><em>Whole-label mode (default)</em></h5>
+      <p dir="ltr">
+        The tool controls which action happens when we click on the canvas.
+      </p>
+      <h5>Brush</h5>
+      
+      <p dir="ltr">
+        The brush tool lets us paint labels onto the canvas by clicking and dragging.
+        The brush will overwrite the label we're painting over with the label we're painting with,
+        leaving other labels unchanged.
+      </p>
 
-      <p><strong>space</strong> to confirm actions; this will apply some actions (create, replace, swap) to all frames.</p>
+      <p dir="ltr">
+        We can increase the brush size by pressing <strong>up arrow key</strong>
+        and decrease the brush size pressing <strong>down arrow key</strong>.
+      </p>
 
-      <p><strong>s</strong> to confirm the single-frame versions of create, replace, or swap.</p>
+      <p dir="ltr">
+        Switch to the brush by pressing <strong>B key</strong>.
+      </p>
 
-      <p><strong>Click</strong> on a cell mask to select it.</p>
+      <h5>Threshold</h5>
+      
+      <p dir="ltr">
+        The threshold tool lets us draw a bounding box on the raw image by clicking and dragging.
+        Once we draw the box, the brighter areas of the bounding box will be filled with the label we're painting with.
+      </p>
+      
+      <p dir="ltr">
+        Switch to the threshold tool by pressing <strong>T key</strong>.
+      </p>
 
-      <p><strong>h</strong> | Highlight mode; if used, this will highlight the cells that are selected with a red mask.</p>
+      <h5>Grow and Shrink</h5>
 
-      <p><strong>p</strong> | Predict relationships (npz files only); if used, this will reassign labels across frames. Does not detect cell divisions in timelapse movies.</p>
+      <p dir="ltr">
+        The grow and shrink tool expands or contracts a label's boundary by one pixel.
+        <br>
+        To grow a label, <strong>click</strong> on it.
+        <br>
+        To shrink a label, <strong>hold Shift + click</strong> on it.
+        
+      </p>
 
-      <p><em>Single-Click Edit Operations:</em></p>
+      <h5>Flood</h5>
+      
+      <p dir="ltr">
+        The flood tool fills a region with the label we're painting with.
+        <br>
+        To flood a region, <strong>click</strong> on it.
+      
+      </p>
 
-      <p><strong>alt+click</strong> | <em><u>flood label</u></em>: hold down the alt key while clicking on a cell. This will flood the label you clicked on with a new label. This can be used to relabel a cell that has a duplicate label elsewhere in the same frame.&nbsp;</p>
+      <p dir="ltr">
+        Switch to the flood tool by pressing <strong>G key</strong>.
+      </p>
 
-      <p><strong>shift+click</strong> | <em><u>trim pixels</u></em>: hold down the shift key while clicking on a cell. This will trim away stray pixels from the part of the label you clicked on. This can be used to quickly clean up a cell annotation if there are disconnected pixels with that label that should not exist.&nbsp;</p>
+      <h5>Trim</h5>
+      
+      <p dir="ltr">
+        The trim tool removes disconnected regions of a label.
+        <br>
+        To trim a region, <strong>click</strong> on it. Pixels connected to
+        that location will remain, and disconnected pixels will disappear.
+      
+      </p>
+      
+      <p dir="ltr">
+        Switch to the trim tool by pressing <strong>K key</strong>.
+      </p>
 
-      <p><strong>c</strong> | <em><u>create</u></em>: click on one cell mask (cell C). Hit “c” to create a new cell track starting from that frame.&nbsp;</p>
+      <h5>Autofit</h5>
+      
+      <p dir="ltr">
+        The autofit tool adjusts the boundary of a label to hug the nearest edges in the raw image.
+        This tool can fix the boundaries of an existing label, but cannot create a label from scratch.
+        <br>
+        To autofit a region, <strong>click</strong> on it.
+      
+      </p>
+      
+      <p dir="ltr">
+        Switch to the autofit tool by pressing <strong>M key</strong>.
+      </p>
 
-      <p dir="ltr"><strong>m</strong> | <em><u>autofit</u></em>: click on one cell mask (cell A). Hit "m" to reshape the mask. This will update the label to fit the cell shape more closely.</p>
 
-      <p dir="ltr"><strong>q</strong> | <em><u>shrink</u></em>: click on one cell mask (cell A). Hit "q" to slightly shrink the mask. This will delete the mask if it is small enough.</p>
+      <h5>Watershed</h5>
+      
+      <p dir="ltr">
+        The watershed tool splits one label into two, allowing us to separate adjacent cells that have been given the same label.
+        <br>
+        <strong>Click</strong>Click once on a label, then <strong>click</strong>click elsewhere in the same label.
+        These clicks should be the centers of the cells you are
+        trying to separate. The first click will remain the same label, and the second
+        click will become a new label.
+      </p>
+      
+      <p dir="ltr">
+        Switch to the watershed tool by pressing <strong>W key</strong>.
+      </p>
 
-      <p dir="ltr"><strong>Q</strong> | <em><u>expand</u></em>: click on one cell mask (cell A). Hit "Q" (shift + q) to slightly expand the mask. This will not overwrite any nearby labels.</p>
+      
 
-      <p dir="ltr"><strong>x</strong> | <em><u>delete</u></em>: click on one cell mask (cell A). Hit "x" to delete the mask. This is useful when you have a couple pixels in a frame that represent a cell, but you want to remove that label.</p>
+      <h4>Actions</h4>
 
-      <p dir="ltr"><em>Two-Click Edit Operations:</em></p>
+      <p dir="ltr">
+        Some actions are done with a keybind instead of clicking on the canvas.
+        These actions will need to be confirmed first by pressing <strong>Enter</strong>.
+        Press <strong>Escape</strong> to cancel an action instead.
+      </p>
 
-      <p><strong>r</strong> | <em><u>replace</u></em>: click on one cell mask (cell A) then another (cell B). Hit “r” to replace all instances of cell B with cell A.</p>
+      <p dir="ltr">
+        To swap the label we're painting over and the label we're painting with, press <strong>S key</strong>.
+        This action only swaps the labels on the current frame.
+      </p>
 
-      <p><strong>p</strong> | <em><u>parent</u></em> (tracked files only): click on one cell mask (cell D) then another (cell E). Hit “p” to assign cell D as the parent of cell E. Cell D will now include cell E in its list of daughter cells, and cell E will list cell D as its parent.</p>
+      <p dir="ltr">
+        To replace the label we're painting over with the label we're painting with, press <strong>R key</strong>.
+        To replace the label on all frames, press <strong>Shift + R</strong>.
+      </p>
 
-      <p dir="ltr"><strong>s&nbsp;</strong>| <em><u>swap</u></em>: click on one cell mask (cell F) then another (cell G). Hit “s” to swap the cell values (does not swap parent/daughter information). This affects all frames of the movie.</p>
+      <p dir="ltr">
+        To predict the labels based on the previous frame, press <strong>O key</strong>.
+        To predict the labels on all frames, press <strong>Shift + O</strong>.
+      </p>
 
-      <p dir="ltr"><strong>w</strong> | <em><u>watershed</u></em>: this function is to separate one cell mask (cell H) into two (cell H and cell I). Click on one pixel in a cell mask (cell H), then another pixel in the same cell mask. These points should correspond to the centers of the cells you are trying to separate. You can select these positions while you are looking at the raw channel. The first click should be on the cell that you want to remain cell H.</p>
+      <h4>Selecting Labels</h4>
 
-      <h5><em>Paint mode</em></h5>
+      <p dir="ltr">
+        As detailed above, some tools (like the brush and thresholding) and some actions (like swap and replace) will
+        use the label we're painting with and painting over.
+        Select different labels to control which labels the tools or actions will edit.
+      </p>
 
-      <p><em>Viewing:</em></p>
-
-      <p><strong>Scroll Wheel</strong> | Adjust contrast of raw image. Hold down the shift key to change the brightness. (These values can be reset by pressing 0.)</p>
-
-      <p><strong>h</strong> | Highlight mode; if used, pixels that match the current value of the brush will be displayed in red. (If using conversion brush, the label being overwritten does not change color, only the label that will replace it.)</p>
-
-      <p><strong>Click</strong> or <strong>click and drag</strong> to use the brush. Brush will draw the value that it is set to and will not overwrite other labels.</p>
-
-      <p><strong>x</strong> | Toggle eraser mode on or off. Eraser will only erase labels that the brush is set to.</p>
-
-      <p><em>To change the size of the brush:</em></p>
-
-      <p><strong>down arrow key</strong> | Decrease the brush size</p>
-
-      <p><strong>up arrow key</strong> | Increase the brush size</p>
-
-      <p><em>To change the value of the brush:</em></p>
-
-      <p><strong>[</strong> | Decrease the value of the brush</p>
-
-      <p><strong>]</strong> | Increase the value of the brush</p>
-
-      <p><strong>n</strong> | Set brush to an unused value</p>
-
-      <p><strong>p</strong> | Turn on color picker (click on a label to set brush to that value)</p>
-
-      <p><strong>r</strong> | Turn on conversion brush (allows you to replace one label with another without affecting background, follow prompts)</p>
-
-      <p><em>Misc:</em></p>
-
-      <p><strong>t</strong> | Use thresholding tool (click and drag a bounding box around area to threshold)</p>
-
+      <p dir="ltr">
+        To select a label to paint with, hold <strong>Shift</strong> and <strong>Click</strong> on the label.
+        <br>
+        To select a label to paint over, hold <strong>Shift</strong> and <strong>Right Click</strong> on the label.
+        <br>
+        To swap the labels to paint with and over, press <strong>X key</strong>.
+        <br>
+        To select a new label to paint with, press <strong>N key</strong>. This also selects the background to paint over.
+        <br>
+        To cycle between labels to paint with, press <strong>[ key</strong> (to cycle backwards) or <strong>] key</strong> (to cycle forwards).
+        <br>
+        To cycle between labels to paint over, press <strong>Shift + [</strong> (to cycle backwards) or <strong>Shift + ]</strong> (to cycle forwards).
+      </p>
     </div>
   </li>
 </ul>
