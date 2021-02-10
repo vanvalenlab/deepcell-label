@@ -3,11 +3,8 @@
  * Defines the statechart for Label in XState.
  */
 
-import { Machine, actions, assign, forwardTo, send, spawn, sendParent } from 'xstate';
-import $ from 'jquery';
-import npyjs from './npy';
+import { Machine, actions, assign, forwardTo, send } from 'xstate';
 import backendMachine from './backendMachine';
-import adjustMachine from './adjusterMachine';
 
 import {
   ToggleHighlight, ChangeFrame, ChangeFeature, ChangeChannel, BackendAction, Pan, Zoom,
@@ -28,40 +25,22 @@ const shiftRightMouse = (context, event) => event.button === 2 && event.shiftKey
 const twoLabels = (context, event) => true;
 
 // actions
-const updateCanvas = (context, event) => {
-  getModel().notifyImageChange();
-};
+const updateCanvas = (context, event) => { getModel().notifyImageChange(); };
 
 const pan = (context, event) => {
   const zoom = 100 / (getCanvas().zoom * getCanvas().scale);
   window.controller.history.addAction(new Pan(getModel(), event.movementX * zoom, event.movementY * zoom));
 };
 
-const editLabels = (context, event) => {
-  return $.ajax({
-    type: 'POST',
-    url: `${document.location.origin}/api/edit/${getModel().projectID}/${event.action}`,
-    data: event.args,
-    async: true
-  })
-};
-
 const addToTrace = assign({ trace: context => [...context.trace, [getCanvas().imgY, getCanvas().imgX]] });
 
-const resetTrace = assign({ trace: [] });
+const storeClick = assign({
+  storedLabel: () => getCanvas().label,
+  storedX: () => getCanvas().imgX,
+  storedY: () => getCanvas().imgY,
+});
 
-const draw = (context) => {
-  const args = {
-    trace: JSON.stringify(context.trace),
-    brush_value: getModel().selected.label,
-    target_value: getModel().selected.secondLabel,
-    brush_size: getModel().brush.size,
-    frame: getModel().frame,
-    erase: false
-  };
-  const action = new BackendAction(getModel(), 'handle_draw', args);
-  window.controller.history.addFencedAction(action);
-};
+const swapLabels = () => window.controller.history.addAction(new SwapForegroundBackground(getModel()));
 
 const selectLabel = choose([
   {
@@ -74,13 +53,19 @@ const selectLabel = choose([
   }
 ]);
 
-const swapLabels = () => window.controller.history.addAction(new SwapForegroundBackground(getModel()));
-
-const storeClick = assign({
-  storedLabel: () => getCanvas().label,
-  storedX: () => getCanvas().imgX,
-  storedY: () => getCanvas().imgY
-});
+// actions that edit labels
+const draw = (context) => {
+  const args = {
+    trace: JSON.stringify(context.trace),
+    brush_value: getModel().selected.label,
+    target_value: getModel().selected.secondLabel,
+    brush_size: getModel().brush.size,
+    frame: getModel().frame,
+    erase: false,
+  };
+  const action = new BackendAction(getModel(), 'handle_draw', args);
+  window.controller.history.addFencedAction(action);
+};
 
 const threshold = (context, event) => {
   const args = {
@@ -89,7 +74,7 @@ const threshold = (context, event) => {
     y2: getCanvas().imgY,
     x2: getCanvas().imgX,
     frame: getModel().frame,
-    label: getModel().selected.label
+    label: getModel().selected.label,
   };
   const action = new BackendAction(getModel(), 'threshold', args);
   window.controller.history.addFencedAction(action);
@@ -99,7 +84,7 @@ const flood = () => {
   const args = {
     label: getModel().selected.label,
     x_location: getCanvas().imgX,
-    y_location: getCanvas().imgY
+    y_location: getCanvas().imgY,
   };
   const action = new BackendAction(getModel(), 'flood', args);
   window.controller.history.addFencedAction(action);
@@ -110,7 +95,7 @@ const trim = () => {
     label: getCanvas().label,
     frame: getModel().frame,
     x_location: getCanvas().imgX,
-    y_location: getCanvas().imgY
+    y_location: getCanvas().imgY,
   };
   const action = new BackendAction(getModel(), 'trim_pixels', args);
   window.controller.history.addFencedAction(action);
@@ -196,18 +181,10 @@ const watershed = (context) => {
   window.controller.history.addFencedAction(action);
 };
 
-const changeContrast = (context, event) => window.controller.history.addAction(new ChangeContrast(getModel(), event.change));
-const changeBrightness = (context, event) => window.controller.history.addAction(new ChangeBrightness(getModel(), event.change));
-const toggleHighlight = () => window.controller.history.addAction(new ToggleHighlight(getModel()));
-const resetBrightnessContrast = () => window.controller.history.addAction(new ResetBrightnessContrast(getModel()));
-const toggleInvert = () => window.controller.history.addAction(new ToggleInvert(getModel()));
-const zoom = (context, event) => window.controller.history.addAction(new Zoom(getModel(), event.change));
-const updateMousePos = (context, event) => getModel().updateMousePos(event.offsetX, event.offsetY);
-const setBrushSize = (context, event) => { getModel().brush.size = event.size };
-
+// tool states
 const paintState = {
   initial: 'idle',
-  entry: 'resetTrace',
+  entry: assign({ trace: [] }),
   states: {
     idle: {
       on: {
@@ -228,32 +205,6 @@ const paintState = {
         }
       }
     }
-  }
-};
-
-const selectState = {
-  on: {
-    mousedown: {
-      actions: 'selectLabel'
-    },
-    'keydown.x': {
-      actions: 'swapLabels'
-    },
-    'keydown.n': {
-      actions: () => window.controller.history.addAction(new ResetLabels(getModel()))
-    },
-    'keydown.[': {
-      actions: () => window.controller.history.addAction(new SetForeground(getModel(), getModel().selected.label - 1))
-    },
-    'keydown.]': {
-      actions: () => window.controller.history.addAction(new SetForeground(getModel(), getModel().selected.label + 1))
-    },
-    'keydown.{': {
-      actions: () => window.controller.history.addAction(new SetBackground(getModel(), getModel().selected.secondLabel - 1))
-    },
-    'keydown.}': {
-      actions: () => window.controller.history.addAction(new SetBackground(getModel(), getModel().selected.secondLabel + 1))
-    },
   }
 };
 
@@ -344,7 +295,7 @@ const watershedState = {
 };
 
 /**
- * Handles tools to edit the labeling.
+ * Handles which current tool for mouse behavior.
  */
 const toolbarState = {
   initial: 'paint',
@@ -366,15 +317,6 @@ const toolbarState = {
     'keydown.g': '.flood',
     'keydown.k': '.trim',
     'keydown.q': '.erodeDilate',
-    // // tools only available in tracking mode
-    // 'keydown.p': {
-    //   target: '.parent',
-    //   in: 'track'
-    // },
-    // 'keydown.?': {
-    //   target: '.flag',
-    //   in: 'track'
-    // }
     // tools not available in RGB mode
     'keydown.t': {
       target: '.threshold',
@@ -392,7 +334,7 @@ const toolbarState = {
 };
 
 /**
- * Handles eveything that can edit the labeling.
+ * Handles tool behavior with a loading state.
  */
 const mouseState = {
   initial: 'toolbar',
@@ -415,6 +357,9 @@ const mouseState = {
   }
 };
 
+/**
+ * Handles adjustments to the images displayed on the canvas.
+ */
 const adjusterState = {
   on: {
     SCROLLCONTRAST: {
@@ -435,6 +380,9 @@ const adjusterState = {
   }
 };
 
+/**
+ * Handles moving around the canvas.
+ */
 const canvasState = {
   initial: 'idle',
   states: {
@@ -503,38 +451,14 @@ const frameState = {
   states: {
     idle: {
       on: {
-        'keydown.a': {
-          actions: () => window.controller.history.addFencedAction(
-            new ChangeFrame(getModel(), getModel().frame - 1))
-        },
-        'keydown.left': {
-          actions: () => window.controller.history.addFencedAction(
-            new ChangeFrame(getModel(), getModel().frame - 1))
-        },
-        'keydown.d': {
-          actions: () => window.controller.history.addFencedAction(
-            new ChangeFrame(getModel(), getModel().frame + 1))
-        },
-        'keydown.right': {
-          actions: () => window.controller.history.addFencedAction(
-            new ChangeFrame(getModel(), getModel().frame + 1))
-        },
-        'keydown.c': {
-          actions: () => window.controller.history.addFencedAction(
-            new ChangeChannel(getModel(), getModel().channel + 1))
-        },
-        'keydown.C': {
-          actions: () => window.controller.history.addFencedAction(
-            new ChangeChannel(getModel(), getModel().channel - 1))
-        },
-        'keydown.f': {
-          actions: () => window.controller.history.addFencedAction(
-            new ChangeFeature(getModel(), getModel().feature + 1))
-        },
-        'keydown.F': {
-          actions: () => window.controller.history.addFencedAction(
-            new ChangeFeature(getModel(), getModel().feature - 1))
-        },
+        'keydown.a': { actions: 'decrementFrame' },
+        'keydown.left': { actions: 'decrementFrame' },
+        'keydown.d': { actions: 'incrementFrame' },
+        'keydown.right': { actions: 'incrementFrame' },
+        'keydown.c': { actions: 'incrementChannel' },
+        'keydown.C': { actions: 'decrementChannel' },
+        'keydown.f': { actions: 'incrementFeature' },
+        'keydown.F': { actions: 'decrementFeature' },
         LOADING: 'loading',
       }
     },
@@ -633,183 +557,34 @@ const rgbState = {
   }
 };
 
-const toolState = {
-  initial: 'zstack',
-  states: {
-    zstack: {
-      on: {
-        TRACK: 'track',
-      }
+/**
+ * Handles selecting labels.
+ */
+const selectState = {
+  on: {
+    mousedown: {
+      actions: 'selectLabel'
     },
-    track: {},
+    'keydown.x': {
+      actions: 'swapLabels'
+    },
+    'keydown.n': {
+      actions: 'resetLabels'
+    },
+    'keydown.[': {
+      actions: 'decrementForeground'
+    },
+    'keydown.]': {
+      actions: 'incrementForeground'
+    },
+    'keydown.{': {
+      actions: 'decrementBackground'
+    },
+    'keydown.}': {
+      actions: 'incrementBackground'
+    },
   }
 };
-
-const invokeFetchRawFrame = (context) => {
-  const { id, channel, frame } = context;
-
-  return $.ajax({
-    type: 'GET',
-    url: `${document.location.origin}/api/rawpng/${id}/${channel}/${frame}`,
-  });
-};
-
-const invokeFetchLabelFrame = (context) => {
-  const { id, feature, frame } = context;
-
-  return $.ajax({
-    type: 'GET',
-    url: `${document.location.origin}/api/labelpng/${id}/${feature}/${frame}`,
-  });
-};
-
-const invokeFetchLabelArray = (context) => {
-  const { id, feature, frame } = context;
-  const numpyLoader = new npyjs();
-  return numpyLoader.load(`${document.location.origin}/api/labelarray/${id}/${feature}/${frame}`);
-  //   (array) => {
-  //   // need to convert 1d data to 2d array
-  //   const reshape = (arr, width) => 
-  //     arr.reduce((rows, key, index) => (index % width == 0 ? rows.push([key]) 
-  //       : rows[rows.length-1].push(key)) && rows, []);
-  //   canvas.segArray = reshape(array.data, array.shape[1]);
-  // });
-};
-
-const createRawFrameMachine = (id, channel, frame) => {
-  return Machine({
-    id: 'rawFrame',
-    initial: 'loading',
-    context: {
-      id,
-      channel,
-      frame,
-      image: null,
-      lastUpdated: null
-    },
-    states: {
-      loading: {
-        actions: sendParent('LOADING'),
-        invoke: {
-          id: 'fetchRawFrame',
-          src: invokeFetchRawFrame,
-          onDone: {
-            target: 'loaded',
-            actions: assign({
-              rawImage: (_, event) => event.data,
-              lastUpdated: () => Date.now()
-            })
-          },
-          onError: 'failure'
-        }
-      },
-      loaded: {
-        entry: sendParent('RAWLOADED'),
-        on: {
-          REFRESH: 'loading'
-        }
-      },
-      failure: {
-        on: {
-          RETRY: 'loading'
-        }
-      }
-    }
-  });
-};
-
-const createLabelFrameMachine = (id, feature, frame) => {
-  return Machine({
-    id: 'labelFrame',
-    initial: 'loading',
-    context: {
-      id,
-      feature,
-      frame,
-      image: null,
-      array: null,
-      lastUpdated: null
-    },
-    states: {
-      loading: {
-        actions: sendParent('LOADING'),
-        invoke: {
-          id: 'fetchLabelFrame',
-          src: invokeFetchLabelFrame,
-          onDone: {
-            target: 'loadingArray',
-            actions: assign({
-              image: (_, event) => event.data,
-              lastUpdated: () => Date.now()
-            })
-          },
-          onError: 'failure'
-        }
-      },
-      loadingArray: {
-        invoke: {
-          id: 'fetchLabelArray',
-          src: invokeFetchLabelArray,
-          onDone: {
-            target: 'loaded',
-            actions: [
-              (_, event) => console.log(event),
-              assign({
-                array: (_, event) => event.res,
-                lastUpdated: () => Date.now()
-              })
-            ]
-          },
-          onError: 'failure'
-        }
-      },
-      loaded: {
-        entry: sendParent('LABELLOADED'),
-        on: {
-          REFRESH: 'loading'
-        }
-      },
-      failure: {
-        on: {
-          RETRY: 'loading'
-        }
-      }
-    }
-  });
-};
-
-const setRawFrame = assign((context, event) => {
-  // Use the existing raw frame actor if one already exists
-  const name = `${context.channel}_${event.frame}`;
-  let rawFrame = context.rawFrames[name];
-  if (rawFrame) {
-    return {
-      ...context,
-      rawFrame
-    };
-  }
-
-  // Otherwise, spawn a new raw frame actor and
-  // save it in the rawFrame object
-  rawFrame = spawn(createRawFrameMachine(context.id, context.channel, event.frame));
-  return {
-    rawFrames: {
-      ...context.rawFrames,
-      [name]: rawFrame
-    },
-    rawFrame,
-    frame: event.frame
-  };
-});
-
-// NO CACHING (yet) for label frames
-const setLabelFrame = assign((context, event) => {
-  const labelFrame = spawn(createLabelFrameMachine(context.id, context.feature, event.frame));
-  return {
-    labelFrame,
-    frame: event.frame
-  };
-});
 
 export const deepcellLabelMachine = Machine(
   {
@@ -821,20 +596,12 @@ export const deepcellLabelMachine = Machine(
       storedLabel: 0,
       storedX: 0,
       storedY: 0,
-      frame: 0,
-      channel: 0,
-      feature: 0,
-      rawFrames: {},
-      rawFrame: null,
-      labelFrame: null,
     },
     invoke: [
       backendMachine,
-      adjustMachine,
     ],
     states: {
       rgb: rgbState,
-      tool: toolState,
       adjuster: adjusterState,
       canvas: canvasState,
       select: selectState,
@@ -844,23 +611,23 @@ export const deepcellLabelMachine = Machine(
       frame: frameState,
       confirm: confirmState,
     },
-    // on: {
-    //   SETFRAME: { actions: ['setRawFrame', 'setLabelFrame'] }
-    // }
   },
   {
     actions: {
-      setRawFrame: setRawFrame,
-      setLabelFrame: setLabelFrame,
       updateCanvas: updateCanvas,
-      pan: pan,
-      editLabels: editLabels,
+      // assign to context
       addToTrace: addToTrace,
-      resetTrace: resetTrace,
-      draw: draw,
+      storeClick: storeClick,
+      // select labels actions
       selectLabel: selectLabel,
       swapLabels: swapLabels,
-      storeClick: storeClick,
+      resetLabels: () => window.controller.history.addAction(new ResetLabels(getModel())),
+      decrementForeground: () => window.controller.history.addAction(new SetForeground(getModel(), getModel().selected.label - 1)),
+      incrementForeground: () => window.controller.history.addAction(new SetForeground(getModel(), getModel().selected.label + 1)),
+      decrementBackground: () => window.controller.history.addAction(new SetBackground(getModel(), getModel().selected.secondLabel - 1)),
+      incrementBackground: () => window.controller.history.addAction(new SetBackground(getModel(), getModel().selected.secondLabel + 1)),
+      // edit labels actions
+      draw: draw,
       threshold: threshold,
       flood: flood,
       erode: erode,
@@ -873,14 +640,25 @@ export const deepcellLabelMachine = Machine(
       replaceFrame: replaceFrame,
       replaceAll: replaceAll,
       watershed: watershed,
-      changeContrast: changeContrast,
-      changeBrightness: changeBrightness,
-      toggleHighlight: toggleHighlight,
-      resetBrightnessContrast: resetBrightnessContrast,
-      toggleInvert: toggleInvert,
-      zoom: zoom,
-      updateMousePos: updateMousePos,
-      setBrushSize: setBrushSize
+      // change frame actions
+      decrementFrame: () => window.controller.history.addFencedAction(new ChangeFrame(getModel(), getModel().frame - 1)),
+      incrementFrame: () => window.controller.history.addFencedAction(new ChangeFrame(getModel(), getModel().frame - 1)),
+      decrementChannel: () => window.controller.history.addFencedAction(new ChangeChannel(getModel(), getModel().channel - 1)),
+      incrementChannel: () => window.controller.history.addFencedAction(new ChangeChannel(getModel(), getModel().channel - 1)),
+      decrementFeature: () => window.controller.history.addFencedAction(new ChangeFeature(getModel(), getModel().feature - 1)),
+      incrementFeature: () => window.controller.history.addFencedAction(new ChangeFeature(getModel(), getModel().feature - 1)),
+      // adjuster actions
+      changeContrast: (_, event) => window.controller.history.addAction(new ChangeContrast(getModel(), event.change)),
+      changeBrightness: (_, event) => window.controller.history.addAction(new ChangeBrightness(getModel(), event.change)),
+      toggleHighlight: () => window.controller.history.addAction(new ToggleHighlight(getModel())),
+      resetBrightnessContrast: () => window.controller.history.addAction(new ResetBrightnessContrast(getModel())),
+      toggleInvert: () => window.controller.history.addAction(new ToggleInvert(getModel())),
+      // canvas actions
+      pan: pan,
+      zoom: (_, event) => window.controller.history.addAction(new Zoom(getModel(), event.change)),
+      updateMousePos: (_, event) => getModel().updateMousePos(event.offsetX, event.offsetY),
+      // brush actions
+      setBrushSize: (_, event) => { getModel().brush.size = event.size },
     },
     guards: {
       leftMouse: leftMouse,
