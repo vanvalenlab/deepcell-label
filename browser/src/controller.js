@@ -125,11 +125,8 @@ export class Controller {
   }
 
   addUndoBindings() {
-    const undoButton = document.getElementById('undo');
-    const redoButton = document.getElementById('redo');
-
-    undoButton.onclick = () => this.undo();
-    redoButton.onclick = () => this.redo();
+    document.getElementById('undo').onclick = () => this.undo();
+    document.getElementById('redo').onclick = () => this.redo();
   }
 
   /**
