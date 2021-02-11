@@ -155,6 +155,42 @@ class TestBaseEdit():
             assert edit.y_changed
             assert edit.labels_changed
 
+    def test_action_flood_background(self, app):
+        """Flooding background does NOT spread to diagonal areas."""
+        # 3 x 3 frame with label in diamond shape
+        labels = np.reshape([0, 1, 0, 1, 0, 1, 0, 1, 0], (1, 3, 3, 1))
+        project = models.Project.create(DummyLoader(labels=labels))
+        edit = label.TrackEdit(project)
+
+        flood_label, x_loc, y_loc = 2, 1, 1
+        feature = 0
+        expected_flood = np.reshape([0, 1, 0, 1, 2, 1, 0, 1, 0], (3, 3))
+
+        with app.app_context():
+            edit.action_flood(flood_label, x_loc, y_loc)
+            np.testing.assert_array_equal(
+                edit.frame[..., feature], expected_flood)
+            assert edit.y_changed
+            assert edit.labels_changed
+
+    def test_action_flood_label(self, app):
+        """Flooding a label does spread to diagonal areas."""
+        # 3 x 3 frame with label in diamond shape
+        labels = np.reshape([[0, 1, 0], [1, 0, 1], [0, 1, 0]], (1, 3, 3, 1))
+        project = models.Project.create(DummyLoader(labels=labels))
+        edit = label.TrackEdit(project)
+
+        flood_label, x_loc, y_loc = 2, 1, 0
+        feature = 0
+        expected_flood = np.reshape([[0, 2, 0], [2, 0, 2], [0, 2, 0]], (3, 3))
+
+        with app.app_context():
+            edit.action_flood(flood_label, x_loc, y_loc)
+            np.testing.assert_array_equal(
+                edit.frame[..., feature], expected_flood)
+            assert edit.y_changed
+            assert edit.labels_changed
+
 
 class TestZStackEdit():
 
