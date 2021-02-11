@@ -14,8 +14,11 @@ import {
 } from './actions.js';
 
 const { choose } = actions;
+
 const getModel = () => window.model;
 const getCanvas = () => window.model.canvas;
+const addAction = (action) => { window.controller.history.addAction(action) };
+const addFencedAction = (action) => { window.controller.history.addFencedAction(action) };
 
 // guards
 const leftMouse = (context, event) => event.button === 0;
@@ -27,17 +30,17 @@ const twoLabels = (context, event) => true;
 // actions
 const pan = (context, event) => {
   const zoom = 100 / (getCanvas().zoom * getCanvas().scale);
-  window.controller.history.addAction(new Pan(getModel(), event.movementX * zoom, event.movementY * zoom));
+  addAction(new Pan(event.movementX * zoom, event.movementY * zoom));
 };
 
 const selectLabel = choose([
   {
     cond: (context, event) => event.shiftKey && event.button === 0,
-    actions: () => window.controller.history.addAction(new SelectForeground(getModel()))
+    actions: () => addAction(new SelectForeground())
   },
   {
     cond: (context, event) => event.shiftKey && event.button === 2,
-    actions: () => window.controller.history.addAction(new SelectBackground(getModel()))
+    actions: () => addAction(new SelectBackground())
   }
 ]);
 
@@ -51,8 +54,8 @@ const draw = (context) => {
     frame: getModel().frame,
     erase: false,
   };
-  const action = new BackendAction(getModel(), 'handle_draw', args);
-  window.controller.history.addFencedAction(action);
+  const action = new BackendAction('handle_draw', args);
+  addFencedAction(action);
 };
 
 const threshold = (context) => {
@@ -64,8 +67,8 @@ const threshold = (context) => {
     frame: getModel().frame,
     label: getModel().selected.label,
   };
-  const action = new BackendAction(getModel(), 'threshold', args);
-  window.controller.history.addFencedAction(action);
+  const action = new BackendAction('threshold', args);
+  addFencedAction(action);
 };
 
 const flood = () => {
@@ -74,8 +77,8 @@ const flood = () => {
     x_location: getCanvas().imgX,
     y_location: getCanvas().imgY,
   };
-  const action = new BackendAction(getModel(), 'flood', args);
-  window.controller.history.addFencedAction(action);
+  const action = new BackendAction('flood', args);
+  addFencedAction(action);
 };
 
 const trim = () => {
@@ -85,46 +88,46 @@ const trim = () => {
     x_location: getCanvas().imgX,
     y_location: getCanvas().imgY,
   };
-  const action = new BackendAction(getModel(), 'trim_pixels', args);
-  window.controller.history.addFencedAction(action);
+  const action = new BackendAction('trim_pixels', args);
+  addFencedAction(action);
 };
 
 const erode = () => {
   const args = {
     label: getCanvas().label
   };
-  const action = new BackendAction(getModel(), 'erode', args);
-  window.controller.history.addFencedAction(action);
+  const action = new BackendAction('erode', args);
+  addFencedAction(action);
 };
 
 const dilate = () => {
   const args = {
     label: getCanvas().label
   };
-  const action = new BackendAction(getModel(), 'dilate', args);
-  window.controller.history.addFencedAction(action);
+  const action = new BackendAction('dilate', args);
+  addFencedAction(action);
 };
 
 const autofit = () => {
   const args = {
     label: getCanvas().label
   };
-  const action = new BackendAction(getModel(), 'active_contour', args);
-  window.controller.history.addFencedAction(action);
+  const action = new BackendAction('active_contour', args);
+  addFencedAction(action);
 };
 
 const predictFrame = () => {
   const args = {
     frame: getModel().frame
   };
-  const action = new BackendAction(getModel(), 'predict_single', args);
-  window.controller.history.addFencedAction(action);
+  const action = new BackendAction('predict_single', args);
+  addFencedAction(action);
 };
 
 const predictAll = () => {
   const args = {};
-  const action = new BackendAction(getModel(), 'predict_zstack', args);
-  window.controller.history.addFencedAction(action);
+  const action = new BackendAction('predict_zstack', args);
+  addFencedAction(action);
 };
 
 const swapFrame = () => {
@@ -133,8 +136,8 @@ const swapFrame = () => {
     label_2: getModel().selected.secondLabel,
     frame: getModel().frame
   };
-  const action = new BackendAction(getModel(), 'swap_single_frame', args);
-  window.controller.history.addFencedAction(action);
+  const action = new BackendAction('swap_single_frame', args);
+  addFencedAction(action);
 };
 
 const replaceFrame = () => {
@@ -143,8 +146,8 @@ const replaceFrame = () => {
     label_2: getModel().selected.secondLabel
     // frame: getModel().frame ???
   };
-  const action = new BackendAction(getModel(), 'replace_single', args);
-  window.controller.history.addFencedAction(action);
+  const action = new BackendAction('replace_single', args);
+  addFencedAction(action);
 };
 
 const replaceAll = () => {
@@ -152,8 +155,8 @@ const replaceAll = () => {
     label_1: getModel().selected.label,
     label_2: getModel().selected.secondLabel
   };
-  const action = new BackendAction(getModel(), 'replace', args);
-  window.controller.history.addFencedAction(action);
+  const action = new BackendAction('replace', args);
+  addFencedAction(action);
 };
 
 const watershed = (context) => {
@@ -165,8 +168,8 @@ const watershed = (context) => {
     x2_location: getCanvas().imgX,
     y2_location: getCanvas().imgY
   };
-  const action = new BackendAction(getModel(), 'watershed', args);
-  window.controller.history.addFencedAction(action);
+  const action = new BackendAction('watershed', args);
+  addFencedAction(action);
 };
 
 // tool states
@@ -609,12 +612,12 @@ export const deepcellLabelMachine = Machine(
       }),
       // select labels actions
       selectLabel: selectLabel,
-      swapLabels: () => window.controller.history.addAction(new SwapForegroundBackground(getModel())),
-      resetLabels: () => window.controller.history.addAction(new ResetLabels(getModel())),
-      decrementForeground: () => window.controller.history.addAction(new SetForeground(getModel(), getModel().selected.label - 1)),
-      incrementForeground: () => window.controller.history.addAction(new SetForeground(getModel(), getModel().selected.label + 1)),
-      decrementBackground: () => window.controller.history.addAction(new SetBackground(getModel(), getModel().selected.secondLabel - 1)),
-      incrementBackground: () => window.controller.history.addAction(new SetBackground(getModel(), getModel().selected.secondLabel + 1)),
+      swapLabels: () => addAction(new SwapForegroundBackground()),
+      resetLabels: () => addAction(new ResetLabels()),
+      decrementForeground: () => addAction(new SetForeground(getModel().selected.label - 1)),
+      incrementForeground: () => addAction(new SetForeground(getModel().selected.label + 1)),
+      decrementBackground: () => addAction(new SetBackground(getModel().selected.secondLabel - 1)),
+      incrementBackground: () => addAction(new SetBackground(getModel().selected.secondLabel + 1)),
       // edit labels actions
       draw: draw,
       threshold: threshold,
@@ -630,21 +633,21 @@ export const deepcellLabelMachine = Machine(
       replaceAll: replaceAll,
       watershed: watershed,
       // change frame actions
-      decrementFrame: () => window.controller.history.addFencedAction(new ChangeFrame(getModel(), getModel().frame - 1)),
-      incrementFrame: () => window.controller.history.addFencedAction(new ChangeFrame(getModel(), getModel().frame - 1)),
-      decrementChannel: () => window.controller.history.addFencedAction(new ChangeChannel(getModel(), getModel().channel - 1)),
-      incrementChannel: () => window.controller.history.addFencedAction(new ChangeChannel(getModel(), getModel().channel - 1)),
-      decrementFeature: () => window.controller.history.addFencedAction(new ChangeFeature(getModel(), getModel().feature - 1)),
-      incrementFeature: () => window.controller.history.addFencedAction(new ChangeFeature(getModel(), getModel().feature - 1)),
+      decrementFrame: () => addFencedAction(new ChangeFrame(getModel().frame - 1)),
+      incrementFrame: () => addFencedAction(new ChangeFrame(getModel().frame - 1)),
+      decrementChannel: () => addFencedAction(new ChangeChannel(getModel().channel - 1)),
+      incrementChannel: () => addFencedAction(new ChangeChannel(getModel().channel - 1)),
+      decrementFeature: () => addFencedAction(new ChangeFeature(getModel().feature - 1)),
+      incrementFeature: () => addFencedAction(new ChangeFeature(getModel().feature - 1)),
       // adjuster actions
-      changeContrast: (_, event) => window.controller.history.addAction(new ChangeContrast(getModel(), event.change)),
-      changeBrightness: (_, event) => window.controller.history.addAction(new ChangeBrightness(getModel(), event.change)),
-      toggleHighlight: () => window.controller.history.addAction(new ToggleHighlight(getModel())),
-      resetBrightnessContrast: () => window.controller.history.addAction(new ResetBrightnessContrast(getModel())),
-      toggleInvert: () => window.controller.history.addAction(new ToggleInvert(getModel())),
+      changeContrast: (_, event) => addAction(new ChangeContrast(event.change)),
+      changeBrightness: (_, event) => addAction(new ChangeBrightness(event.change)),
+      toggleHighlight: () => addAction(new ToggleHighlight()),
+      resetBrightnessContrast: () => addAction(new ResetBrightnessContrast()),
+      toggleInvert: () => addAction(new ToggleInvert()),
       // canvas actions
       pan: pan,
-      zoom: (_, event) => window.controller.history.addAction(new Zoom(getModel(), event.change)),
+      zoom: (_, event) => addAction(new Zoom(event.change)),
       updateMousePos: (_, event) => getModel().updateMousePos(event.offsetX, event.offsetY),
       // brush actions
       setBrushSize: (_, event) => { getModel().brush.size = event.size },

@@ -1,15 +1,10 @@
 /* eslint-disable comma-dangle */
 import { Action } from './history.js';
-import $ from 'jquery';
 
 export class ToggleHighlight extends Action {
-  constructor(model) {
-    super();
-    this.model = model;
-  }
 
   do() {
-    this.model.highlight = !this.model.highlight;
+    window.model.highlight = !window.model.highlight;
   }
 
   undo() {
@@ -23,15 +18,15 @@ export class ToggleHighlight extends Action {
 
 /** Action to change the viewed frame. */
 export class ChangeFrame extends Action {
-  constructor(model, frame) {
+  constructor(frame) {
     super();
-    this.model = model;
+    const model = window.model;
     this.oldValue = model.frame;
     this.newValue = frame.mod(model.numFrames);
   }
 
   do() {
-    window.controller.service.send({
+    window.service.send({
       type: 'SETFRAME',
       dimension: 'frame',
       value: this.newValue,
@@ -40,7 +35,7 @@ export class ChangeFrame extends Action {
   }
 
   undo() {
-    window.controller.service.send({
+    window.service.send({
       type: 'SETFRAME',
       dimension: 'frame',
       value: this.oldValue,
@@ -55,9 +50,9 @@ export class ChangeFrame extends Action {
 
 /** Action to change the viewed feature. */
 export class ChangeFeature extends Action {
-  constructor(model, feature) {
+  constructor(feature) {
     super();
-    this.model = model;
+    const model = window.model;
     this.oldValue = model.feature;
     this.newValue = feature.mod(model.numFeatures);
   }
@@ -85,9 +80,9 @@ export class ChangeFeature extends Action {
 
 /** Action to change the viewed channel. */
 export class ChangeChannel extends Action {
-  constructor(model, channel) {
+  constructor(channel) {
     super();
-    this.model = model;
+    const model = window.model;
     this.oldValue = model.channel;
     this.newValue = channel.mod(model.numChannels);
   }
@@ -114,9 +109,8 @@ export class ChangeChannel extends Action {
 }
 
 export class BackendAction extends Action {
-  constructor(model, action, args) {
+  constructor(action, args) {
     super();
-    this.model = model;
     this.action = action;
     this.args = args;
   }
@@ -140,46 +134,15 @@ export class BackendAction extends Action {
       type: 'REDO',
     });
   }
-
-  _checkInfo() {
-    if (this.action === 'swap_single_frame') {
-      if (this.selected.label === this.selected.secondLabel) {
-        return 'Cannot swap a label with itself.';
-      }
-      if (this.selected.frame !== this.selected.secondLabel) {
-        return 'Must swap cells on the same frame.';
-      }
-    } else if (this.action === 'replace_single') {
-      if (this.selected.label === this.selected.secondLabel) {
-        return 'Cannot replace a label with itself.';
-      }
-    } else if (this.action === 'replace') {
-      if (this.selected.label === this.selected.secondLabel) {
-        return 'Cannot replace a label with itself.';
-      }
-    } else if (this.action === 'swap_all_frame') {
-      if (this.selected.label === this.selected.secondLabel) {
-        return 'Cannot swap a label with itself.';
-      }
-    } else if (this.action === 'watershed') {
-      if (this.selected.label !== this.selected.secondLabel) {
-        return 'Must select same label twice to split with watershed.';
-      }
-      if (this.selected.frame !== this.selected.secondFrame) {
-        return 'Must select seeds on same frame to split with watershed.';
-      }
-    }
-    return '';
-  }
 }
 
 // actions on CanvasPosition
 
 export class Pan extends Action {
   // Implements command pattern for an undoable pan
-  constructor(model, dx, dy) {
+  constructor(dx, dy) {
     super();
-    this.canvas = model.canvas;
+    this.canvas = window.canvas;
     // previous canvas position
     this.oldSx = this.canvas.sx;
     this.oldSy = this.canvas.sy;
@@ -210,15 +173,15 @@ export class Pan extends Action {
 }
 
 export class Zoom extends Action {
-  constructor(model, dZoom) {
+  constructor(dZoom) {
     super();
-    this.canvas = model.canvas;
+    this.canvas = window.canvas;
     // point we zoom in around
     // need to store so undoing/redoing zooms around the same location
-    this.x = model.canvas.canvasPosX;
-    this.y = model.canvas.canvasPosY;
-    this.oldZoom = model.canvas.zoom;
-    this.newZoom = model.canvas.zoom - 10 * dZoom;
+    this.x = this.canvas.canvasPosX;
+    this.y = this.canvas.canvasPosY;
+    this.oldZoom = this.canvas.zoom;
+    this.newZoom = this.canvas.zoom - 10 * dZoom;
   }
 
   do() {
@@ -237,10 +200,10 @@ export class Zoom extends Action {
 // actions on ImageAdjuster
 
 export class ChangeContrast extends Action {
-  constructor(model, change) {
+  constructor(change) {
     super();
-    this.adjuster = model.adjuster;
-    this.oldContrast = model.adjuster.contrast;
+    this.adjuster = window.model.adjuster;
+    this.oldContrast = this.adjuster.contrast;
     this.change = -Math.sign(change) * 4;
     this.newContrast;
   }
@@ -256,10 +219,10 @@ export class ChangeContrast extends Action {
 }
 
 export class ChangeBrightness extends Action {
-  constructor(model, change) {
+  constructor(change) {
     super();
-    this.adjuster = model.adjuster;
-    this.oldBrightness = model.adjuster.brightness;
+    this.adjuster = window.model.adjuster;
+    this.oldBrightness = this.adjuster.brightness;
     this.change = -Math.sign(change);
     this.newBrightness;
   }
@@ -275,11 +238,11 @@ export class ChangeBrightness extends Action {
 }
 
 export class ResetBrightnessContrast extends Action {
-  constructor(model) {
+  constructor() {
     super();
-    this.adjuster = model.adjuster;
-    this.brightness = model.adjuster.brightness;
-    this.contrast = model.adjuster.contrast;
+    this.adjuster = window.model.adjuster;
+    this.brightness = this.adjuster.brightness;
+    this.contrast = this.adjuster.contrast;
   }
 
   do() {
@@ -296,9 +259,9 @@ export class ResetBrightnessContrast extends Action {
 }
 
 export class ToggleInvert extends Action {
-  constructor(model) {
+  constructor() {
     super();
-    this.adjuster = model.adjuster;
+    this.adjuster = window.model.adjuster;
   }
 
   do() {
@@ -311,12 +274,12 @@ export class ToggleInvert extends Action {
 }
 
 export class SelectForeground extends Action {
-  constructor(model) {
+  constructor() {
     super();
-    this.model = model;
-    this.selected = this.model.selected;
+    const model = window.model;
+    this.selected = model.selected;
 
-    this.oldValue = this.model.selected.label;
+    this.oldValue = model.selected.label;
     this.newValue;
   }
 
@@ -332,12 +295,12 @@ export class SelectForeground extends Action {
 }
 
 export class SelectBackground extends Action {
-  constructor(model) {
+  constructor() {
     super();
-    this.model = model;
-    this.selected = this.model.selected;
+    const model = window.model;
+    this.selected = model.selected;
 
-    this.oldValue = this.model.selected.secondLabel;
+    this.oldValue = model.selected.secondLabel;
     this.newValue;
   }
 
@@ -353,13 +316,13 @@ export class SelectBackground extends Action {
 }
 
 export class SwapForegroundBackground extends Action {
-  constructor(model) {
+  constructor() {
     super();
-    this.model = model;
-    this.selected = this.model.selected;
+    const model = window.model;
+    this.selected = model.selected;
 
-    this.foreground = this.model.selected.label;
-    this.background = this.model.selected.secondLabel;
+    this.foreground = model.selected.label;
+    this.background = model.selected.secondLabel;
   }
 
   do() {
@@ -376,9 +339,9 @@ export class SwapForegroundBackground extends Action {
 }
 
 export class SetForeground extends Action {
-  constructor(model, label) {
+  constructor(label) {
     super();
-    this.model = model;
+    const model = window.model;
     this.selected = model.selected;
     this.oldLabel = this.selected.label;
     // cycle highlight to next label
@@ -400,9 +363,9 @@ export class SetForeground extends Action {
 }
 
 export class SetBackground extends Action {
-  constructor(model, label) {
+  constructor(label) {
     super();
-    this.model = model;
+    const model = window.model;
     this.selected = model.selected;
     this.oldLabel = this.selected.secondLabel;
     // cycle highlight to next label
@@ -424,9 +387,9 @@ export class SetBackground extends Action {
 }
 
 export class ResetLabels extends Action {
-  constructor(model) {
+  constructor() {
     super();
-    this.model = model;
+    const model = window.model;
 
     this.oldForeground = model.selected.label;
     this.oldBackground = model.selected.secondLabel;
