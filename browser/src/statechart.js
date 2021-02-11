@@ -186,7 +186,13 @@ const thresholdState = {
     },
     dragging: {
       on: {
-        mouseup: { actions: 'threshold' }
+        mouseup: [
+          {
+            cond: 'nonemptyBox',
+            actions: 'threshold'
+          },
+          { target: 'idle' },
+        ]
       }
     }
   }
@@ -234,7 +240,7 @@ const watershedState = {
     idle: {
       on: {
         click: {
-          cond: 'notBackground',
+          cond: 'validSeed',
           target: 'clicked',
           actions: 'storeClick'
         }
@@ -243,7 +249,7 @@ const watershedState = {
     clicked: {
       on: {
         click: {
-          cond: 'sameLabel',
+          cond: 'validSecondSeed',
           actions: 'watershed'
         }
       }
@@ -582,8 +588,13 @@ export const deepcellLabelMachine = Machine(
       rightMouse: (_, event) => event.button === 2,
       shiftLeftMouse: (_, event) => event.button === 0 && event.shiftKey,
       shiftRightMouse: (_, event) => event.button === 2 && event.shiftKey,
-      notBackground: () => getCanvas().label !== 0,
-      sameLabel: (context) => getCanvas().label === context.storedLabel,
+      validSeed: () => getCanvas().label !== 0,
+      validSecondSeed: (context) => (
+        // same label, different point
+        getCanvas().label === context.storedLabel &&
+        (getCanvas().imgX !== context.storedX || getCanvas().imgY !== context.storedY)
+      ),
+      nonemptyBox: (context) => context.storedX !== getCanvas().imgX && context.storedY !== getCanvas().imgY,
     }
   }
 );
