@@ -4,15 +4,6 @@ import { CanvasPosition } from './canvas.js';
 
 export class Model {
   constructor(project) {
-    // Dynamic project attributes
-    this._frame = project.frame;
-    this._feature = project.feature;
-    this._channel = project.channel;
-
-    // Booleans
-    this._highlight = true;
-    this._rgb = false;
-
     // Static project attributes
     this.numFrames = project.numFrames;
     this.numFeatures = project.numFeatures;
@@ -23,19 +14,23 @@ export class Model {
     this.padding = 5;
     this.scale = 1;
 
+    // Dynamic project attributes
+    this._frame = project.frame;
+    this._feature = project.feature;
+    this._channel = project.channel;
+    // Image processing booleans
+    this._highlight = true;
+    this._rgb = false;
     // Selected labels
     this._foreground = 1; // label painted with
     this._background = 0; // label painted over
-
     // Brush size in pixels
     this._size = 5;
 
-    // Project data (images and label metadata)
     this._rawImage = new Image();
     this._segImage = new Image();
-    // array of arrays, contains annotation data for frame
-    this._segArray = null;
-    this._tracks = project.tracks;
+    this._segArray = null; // 2D array with label at each pixel in image
+    this._tracks = project.tracks; // object with the labels present in each frame
     this.maxLabelsMap = new Map();
     this.processMaxLabels();
 
