@@ -264,13 +264,9 @@ def project(token):
     Display a project in the Project database.
     """
     rgb = request.args.get('rgb', default='false', type=str)
-    pixel_only = request.args.get('pixel_only', default='false', type=str)
-    label_only = request.args.get('label_only', default='false', type=str)
 
     settings = {
         'rgb': bool(distutils.util.strtobool(rgb)),
-        'pixel_only': bool(distutils.util.strtobool(pixel_only)),
-        'label_only': bool(distutils.util.strtobool(label_only))
     }
 
     project = Project.get(token)
@@ -339,11 +335,7 @@ def make_settings(project):
         title = 'Z-Stack Tool'
 
     rgb = request.args.get('rgb', default='false', type=str)
-    pixel_only = request.args.get('pixel_only', default='false', type=str)
-    label_only = request.args.get('label_only', default='false', type=str)
     rgb = bool(distutils.util.strtobool(rgb))
-    pixel_only = bool(distutils.util.strtobool(pixel_only))
-    label_only = bool(distutils.util.strtobool(label_only))
     output_bucket = request.args.get(
         'output_bucket', default=S3_OUTPUT_BUCKET, type=str)
 
@@ -351,8 +343,6 @@ def make_settings(project):
         'filetype': filetype,
         'title': title,
         'rgb': rgb,
-        'pixel_only': pixel_only,
-        'label_only': label_only,
         'output_bucket': output_bucket,
         'token': project.token,
         'source': str(project.source)

@@ -1,11 +1,7 @@
 {% extends "base.html" %}
 
 {%- block content -%}
-{%- if settings['rgb'] -%}
-  {% include "partials/infopane_abridged.html" %}
-{%- else -%}
-  {% include "partials/infopane.html" %}
-{%- endif -%}
+{% include "partials/infopane.html" %}
 
 <main class="container">
   <div class="row">
@@ -17,7 +13,7 @@
 
       <div class="row">
         <div class="col s6">
-          <button id="submit" class="btn waves-effect waves-light indigo">
+          <button id="submit" class="btn waves-effect waves-light indigo" hidden=true>
             Submit<i class="material-icons right">send</i>
           </button>
         </div>
@@ -27,7 +23,7 @@
       </div>
       <div class="row">
         <div class="col s6">
-          <button id="download" class="btn waves-effect waves-light indigo">
+          <button id="download" class="btn waves-effect waves-light indigo" hidden=true>
             Download<i class="material-icons right">file_download</i>
           </button>
         </div>
