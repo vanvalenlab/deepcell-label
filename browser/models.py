@@ -465,56 +465,6 @@ class Project(db.Model):
                          cmap='cubehelix')
         return raw_png
 
-    def get_label_arr(self, feature, frame):
-        """
-        Returns:
-            BytesIO: contains numpy array of labels
-        """
-        # Create label array
-        label_frame = self.label_frames[frame]
-        label_arr = label_frame.frame[..., feature]
-        out = io.BytesIO()
-        np.save(out, add_outlines(label_arr))
-        out.seek(0)
-        return out
-
-    def get_label_png(self, feature, frame):
-        """
-        Returns:
-            BytesIO: returns the current label frame as a .png
-        """
-        # Create label png
-        label_frame = self.label_frames[frame]
-        label_arr = label_frame.frame[..., feature]
-        label_png = pngify(imgarr=np.ma.masked_equal(label_arr, 0),
-                           vmin=0,
-                           vmax=self.get_max_label(),
-                           cmap=self.colormap)
-        return label_png
-
-    def get_raw_png(self, channel, frame):
-        """
-        Returns:
-            BytesIO: contains the current raw frame as a .png
-        """
-        # RGB png
-        if self.rgb:
-            raw_frame = self.rgb_frames[frame]
-            raw_arr = raw_frame.frame
-            raw_png = pngify(imgarr=raw_arr,
-                             vmin=None,
-                             vmax=None,
-                             cmap=None)
-            return raw_png
-        # Raw png
-        raw_frame = self.raw_frames[frame]
-        raw_arr = raw_frame.frame[..., channel]
-        raw_png = pngify(imgarr=raw_arr,
-                         vmin=0,
-                         vmax=None,
-                         cmap='cubehelix')
-        return raw_png
-
 
 class Labels(db.Model):
     """
