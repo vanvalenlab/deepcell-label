@@ -12,7 +12,6 @@ export class Model {
     // Booleans
     this._highlight = true;
     this._rgb = false;
-    this._display_labels = true; // is true the right default value?
 
     // Static project attributes
     this.numFrames = project.numFrames;
@@ -140,15 +139,6 @@ export class Model {
   set rgb(value) {
     this._rgb = value;
     this.adjuster.makeCascade();
-  }
-
-  get display_labels() {
-    return this._display_labels;
-  }
-
-  set display_labels(value) {
-    this._display_labels = value;
-    this.notifyImageChange();
   }
 
   get tracks() {
