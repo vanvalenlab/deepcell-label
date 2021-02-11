@@ -71,12 +71,7 @@
 {%- block extraJs -%}
   <script src="{{ url_for('static', filename='js/tool.js') }}"></script>
   <script>
-    console.log(tool.startDeepCellLabel);
     var settings = {{ settings | tojson}};
-
-    Number.prototype.mod = function (n) {
-        return ((this % n) + n) % n;
-      };
 
     const outputBucket = settings.output_bucket;
     const projectID = settings.token;

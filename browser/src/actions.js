@@ -1,6 +1,10 @@
 /* eslint-disable comma-dangle */
 import { Action } from './history.js';
 
+Number.prototype.mod = function (n) {
+  return ((this % n) + n) % n;
+};
+
 export class ToggleHighlight extends Action {
 
   do() {
