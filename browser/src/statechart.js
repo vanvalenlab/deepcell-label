@@ -20,13 +20,6 @@ const getCanvas = () => window.model.canvas;
 const addAction = (action) => { window.controller.history.addAction(action) };
 const addFencedAction = (action) => { window.controller.history.addFencedAction(action) };
 
-// guards
-const leftMouse = (context, event) => event.button === 0;
-const rightMouse = (context, event) => event.button === 2;
-const shiftLeftMouse = (context, event) => event.button === 0 && event.shiftKey;
-const shiftRightMouse = (context, event) => event.button === 2 && event.shiftKey;
-const twoLabels = (context, event) => true;
-
 // actions
 const pan = (context, event) => {
   const zoom = 100 / (getCanvas().zoom * getCanvas().scale);
@@ -35,11 +28,11 @@ const pan = (context, event) => {
 
 const selectLabel = choose([
   {
-    cond: (context, event) => event.shiftKey && event.button === 0,
+    cond: 'shiftLeftMouse',
     actions: () => addAction(new SelectForeground())
   },
   {
-    cond: (context, event) => event.shiftKey && event.button === 2,
+    cond: 'shiftRightMouse',
     actions: () => addAction(new SelectBackground())
   }
 ]);
@@ -180,7 +173,7 @@ const paintState = {
     idle: {
       on: {
         mousedown: {
-          cond: (context, event) => event.button === 0 && !event.shiftKey,
+          cond: (_, event) => !event.shiftKey, // prevents select and paint at the same time
           target: 'dragging',
           actions: 'addToTrace'
         }
@@ -188,12 +181,8 @@ const paintState = {
     },
     dragging: {
       on: {
-        mousemove: {
-          actions: 'addToTrace'
-        },
-        mouseup: {
-          actions: 'draw'
-        }
+        mousemove: { actions: 'addToTrace' },
+        mouseup: { actions: 'draw' },
       }
     }
   }
@@ -212,9 +201,7 @@ const thresholdState = {
     },
     dragging: {
       on: {
-        mouseup: {
-          actions: 'threshold'
-        }
+        mouseup: { actions: 'threshold' }
       }
     }
   }
@@ -222,17 +209,13 @@ const thresholdState = {
 
 const floodState = {
   on: {
-    click: {
-      actions: 'flood'
-    }
+    click: { actions: 'flood' }
   }
 };
 
 const trimState = {
   on: {
-    click: {
-      actions: 'trim'
-    }
+    click: { actions: 'trim' }
   }
 };
 
@@ -241,11 +224,11 @@ const erodeDilateState = {
     mousedown: {
       actions: choose([
         {
-          cond: (context, event) => event.button === 0,
+          cond: 'leftMouse',
           actions: 'erode'
         },
         {
-          cond: (context, event) => event.button === 2,
+          cond: 'rightMouse',
           actions: 'dilate'
         }
       ])
@@ -255,9 +238,7 @@ const erodeDilateState = {
 
 const autofitState = {
   on: {
-    click: {
-      actions: 'autofit'
-    }
+    click: { actions: 'autofit' }
   }
 };
 
@@ -268,7 +249,7 @@ const watershedState = {
     idle: {
       on: {
         click: {
-          cond: () => getCanvas().label !== 0,
+          cond: 'notBackground',
           target: 'clicked',
           actions: 'storeClick'
         }
@@ -277,7 +258,7 @@ const watershedState = {
     clicked: {
       on: {
         click: {
-          cond: (context) => getCanvas().label === context.storedLabel,
+          cond: 'sameLabel',
           actions: 'watershed'
         }
       }
@@ -334,15 +315,9 @@ const mouseState = {
     }
   },
   on: {
-    EDIT: {
-      actions: forwardTo('backend')
-    },
-    UNDO: {
-      actions: forwardTo('backend')
-    },
-    REDO: {
-      actions: forwardTo('backend')
-    },
+    EDIT: { actions: forwardTo('backend') },
+    UNDO: { actions: forwardTo('backend') },
+    REDO: { actions: forwardTo('backend') },
   }
 };
 
@@ -351,21 +326,11 @@ const mouseState = {
  */
 const adjusterState = {
   on: {
-    SCROLLCONTRAST: {
-      actions: 'changeContrast'
-    },
-    SCROLLBRIGHTNESS: {
-      actions: 'changeBrightness'
-    },
-    'keydown.h': {
-      actions: 'toggleHighlight'
-    },
-    'keydown.0': {
-      actions: 'resetBrightnessContrast'
-    },
-    'keydown.i': {
-      actions: 'toggleInvert'
-    }
+    SCROLLCONTRAST: { actions: 'changeContrast' },
+    SCROLLBRIGHTNESS: { actions: 'changeBrightness' },
+    'keydown.h': { actions: 'toggleHighlight' },
+    'keydown.0': { actions: 'resetBrightnessContrast' },
+    'keydown.i': { actions: 'toggleInvert' }
   }
 };
 
@@ -381,27 +346,22 @@ const canvasState = {
     pan: {
       on: {
         'keyup.space': 'idle',
-        mousemove: {
-          actions: 'pan'
-        }
+        mousemove: { actions: 'pan' }
       }
     }
   },
   on: {
-    ZOOM: {
-      actions: 'zoom'
-    },
-    mousemove: {
-      actions: 'updateMousePos'
-    }
+    'keydown.-': { actions: send({ type: 'ZOOM', change: -1 }) },
+    'keydown.=': { actions: send({ type: 'ZOOM', change: 1 }) },
+    ZOOM: { actions: 'zoom' },
+    mousemove: { actions: 'updateMousePos' }
   }
 };
 
 const brushState = {
   on: {
-    SETSIZE: {
-      actions: 'setBrushSize'
-    }
+    'keydown.up': { actions: 'incrementBrushSize' },
+    'keydown.down': { actions: 'decrementBrushSize' }
   }
 };
 
@@ -452,15 +412,11 @@ const frameState = {
       }
     },
     loading: {
-      on: {
-        LOADED: 'idle'
-      }
+      on: { LOADED: 'idle' }
     }
   },
   on: {
-    SETFRAME: {
-      actions: forwardTo('backend')
-    },
+    SETFRAME: { actions: forwardTo('backend') },
   }
 };
 
@@ -478,41 +434,31 @@ const confirmState = {
     },
     predictFrame: {
       on: {
-        'keydown.Enter': {
-          actions: 'predictFrame',
-        },
+        'keydown.Enter': { actions: 'predictFrame' },
         'keydown.Escape': 'idle',
       }
     },
     predictAll: {
       on: {
-        'keydown.Enter': {
-          actions: 'predictAll',
-        },
+        'keydown.Enter': { actions: 'predictAll' },
         'keydown.Escape': 'idle',
       }
     },
     swapFrame: {
       on: {
-        'keydown.Enter': {
-          actions: 'swapFrame',
-        },
+        'keydown.Enter': { actions: 'swapFrame' },
         'keydown.Escape': 'idle',
       }
     },
     replaceFrame: {
       on: {
-        'keydown.Enter': {
-          actions: 'replaceFrame',
-        },
+        'keydown.Enter': { actions: 'replaceFrame' },
         'keydown.Escape': 'idle',
       }
     },
     replaceAll: {
       on: {
-        'keydown.Enter': {
-          actions: 'replaceAll',
-        },
+        'keydown.Enter': { actions: 'replaceAll' },
         'keydown.Escape': 'idle',
       }
     },
@@ -551,27 +497,13 @@ const rgbState = {
  */
 const selectState = {
   on: {
-    mousedown: {
-      actions: 'selectLabel'
-    },
-    'keydown.x': {
-      actions: 'swapLabels'
-    },
-    'keydown.n': {
-      actions: 'resetLabels'
-    },
-    'keydown.[': {
-      actions: 'decrementForeground'
-    },
-    'keydown.]': {
-      actions: 'incrementForeground'
-    },
-    'keydown.{': {
-      actions: 'decrementBackground'
-    },
-    'keydown.}': {
-      actions: 'incrementBackground'
-    },
+    mousedown: { actions: 'selectLabel' },
+    'keydown.x': { actions: 'swapLabels' },
+    'keydown.n': { actions: 'resetLabels' },
+    'keydown.[': { actions: 'decrementForeground' },
+    'keydown.]': { actions: 'incrementForeground' },
+    'keydown.{': { actions: 'decrementBackground' },
+    'keydown.}': { actions: 'incrementBackground' },
   }
 };
 
@@ -650,14 +582,17 @@ export const deepcellLabelMachine = Machine(
       zoom: (_, event) => addAction(new Zoom(event.change)),
       updateMousePos: (_, event) => getModel().updateMousePos(event.offsetX, event.offsetY),
       // brush actions
+      incrementBrushSize: () => { getModel().brush.size += 1 },
+      decrementBrushSize: () => { getModel().brush.size -= 1 },
       setBrushSize: (_, event) => { getModel().brush.size = event.size },
     },
     guards: {
-      leftMouse: leftMouse,
-      rightMouse: rightMouse,
-      shiftLeftMouse: shiftLeftMouse,
-      shiftRightMouse: shiftRightMouse,
-      twoLabels: twoLabels
+      leftMouse: (_, event) => event.button === 0,
+      rightMouse: (_, event) => event.button === 2,
+      shiftLeftMouse: (_, event) => event.button === 0 && event.shiftKey,
+      shiftRightMouse: (_, event) => event.button === 2 && event.shiftKey,
+      notBackground: () => getCanvas().label !== 0,
+      sameLabel: (context) => getCanvas().label === context.storedLabel,
     }
   }
 );
