@@ -212,13 +212,7 @@ class CanvasView {
   }
 
   get overlay() {
-    if (this.model.rgb) {
-      return this.model.adjuster.contrastedRaw;
-    } else if (!this.model.rgb && !this.model.display_labels) {
-      return this.model.adjuster.preCompRaw;
-    } else {
-      return this.model.adjuster.postCompImg;
-    }
+    return this.model.adjuster.postCompImg;
   }
 
   get raw() {
@@ -226,11 +220,7 @@ class CanvasView {
   }
 
   get labeled() {
-    if (this.model.rgb && !this.model.display_labels) {
-      return this.model.adjuster.postCompImg;
-    } else {
-      return this.model.adjuster.preCompSeg;
-    }
+    return this.model.adjuster.preCompSeg;
   }
 
   get sx() {

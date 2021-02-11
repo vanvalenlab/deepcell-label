@@ -11,7 +11,7 @@ export class Model {
 
     // Booleans
     this._highlight = true;
-    this.rgb = false;
+    this._rgb = false;
     this._display_labels = true; // is true the right default value?
 
     // Static project attributes
@@ -131,6 +131,15 @@ export class Model {
   set highlight(value) {
     this._highlight = value;
     this.notifyImageFormattingChange();
+  }
+
+  get rgb() {
+    return this._rgb;
+  }
+
+  set rgb(value) {
+    this._rgb = value;
+    this.adjuster.makeCascade();
   }
 
   get display_labels() {
