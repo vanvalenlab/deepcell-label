@@ -192,9 +192,9 @@
             <p dir="ltr">
               The grow and shrink tool expands or contracts a label's boundary by one pixel.
               <br>
-              To grow a label, <strong>click</strong> on it.
+              To grow a label, <strong>click</strong> on it while using this tool.
               <br>
-              To shrink a label, <strong>hold Shift + click</strong> on it.
+              To shrink a label, <strong>hold Shift + click</strong> on it while using this tool.
             
             </p>
             
@@ -203,7 +203,11 @@
             <p dir="ltr">
               The flood tool fills a region with the label we're painting with.
               <br>
-              To flood a region, <strong>click</strong> on it.
+              When flooding a background region, the tool will only flood adjacent pixels.
+              <br>
+              When flooding an existing label, the tool will also flood diagonally connected pixels.
+              <br>
+              To flood a region, <strong>click</strong> on it while using this tool.
             
             </p>
             
@@ -214,10 +218,9 @@
             <h5>Trim</h5>
             
             <p dir="ltr">
-              The trim tool removes disconnected regions of a label.
+              The trim tool removes disconnected regions of a label, leaving only the connected pixels behind.
               <br>
-              To trim a region, <strong>click</strong> on it. Pixels connected to
-              that location will remain, and disconnected pixels will disappear.
+              To trim a region, <strong>click</strong> on it while using this tool.
             
             </p>
             
@@ -229,9 +232,10 @@
             
             <p dir="ltr">
               The autofit tool adjusts the boundary of a label to hug the nearest edges in the raw image.
+              <br>
               This tool can fix the boundaries of an existing label, but cannot create a label from scratch.
               <br>
-              To autofit a region, <strong>click</strong> on it.
+              To autofit a region, <strong>click</strong> on it while using this tool.
             
             </p>
             
@@ -246,7 +250,7 @@
               The watershed tool splits one label into two, allowing us to separate adjacent cells that have been given the same
               label.
               <br>
-              <strong>Click</strong>Click once on a label, then <strong>click</strong>click elsewhere in the same label.
+              <strong>Click</strong> once on a label, then <strong>click</strong> elsewhere in the same label.
               <br>
               These clicks should be the centers of the cells you are trying to separate. 
               <br>
