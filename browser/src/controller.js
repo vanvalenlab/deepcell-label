@@ -157,14 +157,6 @@ export class Controller {
       this.redo();
     } else if ((evt.ctrlKey || evt.metaKey) && (evt.key === 'Z' || evt.key === 'z')) {
       this.undo();
-    } else if (evt.key === '-') {
-      this.service.send({ type: 'ZOOM', change: 1 });
-    } else if (evt.key === '=') {
-      this.service.send({ type: 'ZOOM', change: -1 });
-    } else if (evt.key === 'ArrowDown') {
-      this.service.send({ type: 'SETSIZE', size: this.model.brush.size - 1 });
-    } else if (evt.key === 'ArrowUp') {
-      this.service.send({ type: 'SETSIZE', size: this.model.brush.size + 1 });
     } else if (keydownLookup[evt.key]) {
       this.service.send(keydownLookup[evt.key]);
     }
