@@ -2,9 +2,10 @@ import { interpret } from 'xstate';
 import { inspect } from '@xstate/inspect';
 import $ from 'jquery';
 
-import { deepcellLabelMachine } from './statechart.js';
-import { Model } from './model.js';
-import { History } from './history.js';
+import { deepcellLabelMachine } from './statechart';
+import { Model } from './model';
+import { History } from './history';
+import keydownLookup from './keydownLookup';
 
 export class Controller {
   /**
@@ -13,18 +14,16 @@ export class Controller {
    */
   constructor(projectID) {
     // Interpret the machine, and add a listener for whenever a transition occurs.
-    const context = {
-      ...deepcellLabelMachine.initialState.context,
-      id: projectID,
-    }
-    const service = interpret(deepcellLabelMachine.withContext(context), { devTools: true });
+    const service = interpret(deepcellLabelMachine, { devTools: true });
     inspect({
-      iframe: false, // () => document.querySelector('iframe[data-xstate]'),
+      iframe: false,
       url: 'https://statecharts.io/inspect'
     });
     // Start the service
     service.start();
     this.service = service;
+    // allow global access to service
+    window.service = service;
 
     // Get Project from database
     const getProject = $.ajax({
@@ -37,13 +36,13 @@ export class Controller {
     getProject.done((project) => {
       this.model = new Model(project);
       this.view = this.model.view;
-
-      window.model = this.model;
-      window.view = this.view;
-
       this.history = new History();
       // TODO: fix initializeHistory to work with new Actions
       // this.history.initializeHistory(project.actionFrames);
+
+      window.model = this.model;
+      window.view = this.view;
+      window.history = this.history;
 
       this.overrideScroll();
       this.addWindowBindings();
@@ -159,86 +158,16 @@ export class Controller {
       this.service.send('REDO');
     } else if ((evt.ctrlKey || evt.metaKey) && (evt.key === 'Z' || evt.key === 'z')) {
       this.service.send('UNDO');
-    } else if (evt.key === 'z') {
-      this.service.send('keydown.z');
-    } else if (evt.key === 'a') {
-      this.service.send('keydown.a');
-    } else if (evt.key === 'ArrowLeft') {
-      this.service.send('keydown.left');
-    } else if (evt.key === 'd') {
-      this.service.send('keydown.d');
-    } else if (evt.key === 'ArrowRight') {
-      this.service.send('keydown.right');
     } else if (evt.key === '-') {
       this.service.send({ type: 'ZOOM', change: 1 });
     } else if (evt.key === '=') {
       this.service.send({ type: 'ZOOM', change: -1 });
-    } else if (evt.key === '0') {
-      this.service.send('keydown.0');
-    } else if (evt.key === 'h') {
-      this.service.send('keydown.h');
     } if (evt.key === 'ArrowDown') {
       this.service.send({ type: 'SETSIZE', size: this.model.brush.size - 1 });
     } else if (evt.key === 'ArrowUp') {
       this.service.send({ type: 'SETSIZE', size: this.model.brush.size + 1 });
-    } else if (evt.key === 'i') {
-      this.service.send('keydown.i');
-    } else if (evt.key === 'n') {
-      this.service.send('keydown.n');
-    } else if (evt.key === 'c') {
-      this.service.send('keydown.c');
-    } else if (evt.key === 'C') {
-      this.service.send('keydown.C');
-    } else if (evt.key === 'f') {
-      this.service.send('keydown.f');
-    } else if (evt.key === 'F') {
-      this.service.send('keydown.F');
-    } else if (evt.key === ']') {
-      this.service.send('keydown.]');
-    } else if (evt.key === '[') {
-      this.service.send('keydown.[');
-    } else if (evt.key === '}') {
-      this.service.send('keydown.}');
-    } else if (evt.key === '{') {
-      this.service.send('keydown.{');
-    } else if (evt.key === 'x') {
-      this.service.send('keydown.x');
-    } else if (evt.key === 'p') {
-      this.service.send('keydown.p');
-    } else if (evt.key === 'r') {
-      this.service.send('keydown.r');
-    } else if (evt.key === 't') {
-      this.service.send('keydown.t');
-    } else if (evt.key === 'w') {
-      this.service.send('keydown.w');
-    } else if (evt.key === ' ') {
-      this.service.send('keydown.space');
-    } else if (evt.key === 'b') {
-      this.service.send('keydown.b');
-    } else if (evt.key === 'k') {
-      this.service.send('keydown.k');
-    } else if (evt.key === 'q') {
-      this.service.send('keydown.q');
-    } else if (evt.key === 'm') {
-      this.service.send('keydown.m');
-    } else if (evt.key === 's') {
-      this.service.send('keydown.s');
-    } else if (evt.key === 'S') {
-      this.service.send('keydown.S')
-    } else if (evt.key === 'r') {
-      this.service.send('keydown.r')
-    } else if (evt.key === 'R') {
-      this.service.send('keydown.R')
-    } else if (evt.key === 'o') {
-      this.service.send('keydown.o')
-    } else if (evt.key === 'O') {
-      this.service.send('keydown.O')
-    } else if (evt.key === 'g') {
-      this.service.send('keydown.g')
-    } else if (evt.key === 'Enter') {
-      this.service.send('keydown.Enter')
-    } else if (evt.key === 'Escape') {
-      this.service.send('keydown.Escape')
+    } else if (keydownLookup[evt.key]) {
+      this.service.send(keydownLookup[evt.key]);
     }
   }
 

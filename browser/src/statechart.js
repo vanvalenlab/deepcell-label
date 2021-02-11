@@ -25,22 +25,10 @@ const shiftRightMouse = (context, event) => event.button === 2 && event.shiftKey
 const twoLabels = (context, event) => true;
 
 // actions
-const updateCanvas = (context, event) => { getModel().notifyImageChange(); };
-
 const pan = (context, event) => {
   const zoom = 100 / (getCanvas().zoom * getCanvas().scale);
   window.controller.history.addAction(new Pan(getModel(), event.movementX * zoom, event.movementY * zoom));
 };
-
-const addToTrace = assign({ trace: context => [...context.trace, [getCanvas().imgY, getCanvas().imgX]] });
-
-const storeClick = assign({
-  storedLabel: () => getCanvas().label,
-  storedX: () => getCanvas().imgX,
-  storedY: () => getCanvas().imgY,
-});
-
-const swapLabels = () => window.controller.history.addAction(new SwapForegroundBackground(getModel()));
 
 const selectLabel = choose([
   {
@@ -53,7 +41,7 @@ const selectLabel = choose([
   }
 ]);
 
-// actions that edit labels
+// label editing actions
 const draw = (context) => {
   const args = {
     trace: JSON.stringify(context.trace),
@@ -67,7 +55,7 @@ const draw = (context) => {
   window.controller.history.addFencedAction(action);
 };
 
-const threshold = (context, event) => {
+const threshold = (context) => {
   const args = {
     y1: context.storedY,
     x1: context.storedX,
@@ -307,8 +295,6 @@ const toolbarState = {
     paint: paintState,
     threshold: thresholdState,
     watershed: watershedState,
-    // divide: divideState,
-    // flag: flagState,
     hist: { type: 'history' }
   },
   on: {
@@ -591,7 +577,6 @@ export const deepcellLabelMachine = Machine(
     id: 'deepcellLabel',
     type: 'parallel',
     context: {
-      id: null,
       trace: [],
       storedLabel: 0,
       storedX: 0,
@@ -614,13 +599,17 @@ export const deepcellLabelMachine = Machine(
   },
   {
     actions: {
-      updateCanvas: updateCanvas,
+      updateCanvas: () => { getModel().notifyImageChange(); },
       // assign to context
-      addToTrace: addToTrace,
-      storeClick: storeClick,
+      addToTrace: assign({ trace: context => [...context.trace, [getCanvas().imgY, getCanvas().imgX]] }),
+      storeClick: assign({
+        storedLabel: () => getCanvas().label,
+        storedX: () => getCanvas().imgX,
+        storedY: () => getCanvas().imgY,
+      }),
       // select labels actions
       selectLabel: selectLabel,
-      swapLabels: swapLabels,
+      swapLabels: () => window.controller.history.addAction(new SwapForegroundBackground(getModel())),
       resetLabels: () => window.controller.history.addAction(new ResetLabels(getModel())),
       decrementForeground: () => window.controller.history.addAction(new SetForeground(getModel(), getModel().selected.label - 1)),
       incrementForeground: () => window.controller.history.addAction(new SetForeground(getModel(), getModel().selected.label + 1)),
