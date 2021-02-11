@@ -341,12 +341,12 @@ const canvasState = {
   initial: 'idle',
   states: {
     idle: {
-      on: { 'keydown.space': 'pan' }
+      on: { 'keydown.space': 'pan' },
     },
     pan: {
       on: {
         'keyup.space': 'idle',
-        mousemove: { actions: 'pan' }
+        mousemove: { actions: ['pan', 'updateMousePos'] }
       }
     }
   },
