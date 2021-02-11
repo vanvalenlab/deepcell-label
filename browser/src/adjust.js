@@ -54,32 +54,17 @@ export class ImageAdjuster {
     this.rawImage = new Image();
     this.contrastedRaw = new Image();
     this.preCompRaw = new Image();
-
     this.segImage = new Image();
     this.preCompSeg = new Image();
-
     // adjusted raw + annotations
     this.compositedImg = new Image();
-
     // composite image + outlines, transparent highlight
     this.postCompImg = new Image();
 
     this.rawLoaded = false;
     this.segLoaded = false;
 
-    // image processing cascade, finishing with a notification that images are ready
-    this.rawImage.onload = () => this.contrastRaw();
-    this.segImage.onload = () => this.preCompAdjust();
-    if (this.rgb) {
-      this.contrastedRaw.onload = () => this.rawAdjust();
-      this.preCompSeg.onload = () => this.segAdjust();
-    } else {
-      this.contrastedRaw.onload = () => this.preCompRawAdjust();
-      this.preCompRaw.onload = () => this.rawAdjust();
-      this.preCompSeg.onload = () => this.segAdjust();
-      this.compositedImg.onload = () => this.postCompAdjust();
-    }
-    this.postCompImg.onload = () => this.model.notifyImageChange();
+    this.makeCascade();
   }
 
   get rgb() {
@@ -143,6 +128,25 @@ export class ImageAdjuster {
 
   get maxContrast() {
     return this._maxContrast;
+  }
+
+  /**
+   * Sets up image processing cascade.
+   * Cascade finishes with a notification that images are ready to render.
+   */
+  makeCascade() {
+    this.rawImage.onload = () => this.contrastRaw();
+    this.segImage.onload = () => this.preCompAdjust();
+    if (this.rgb) {
+      this.contrastedRaw.onload = () => this.rawAdjust();
+      this.preCompSeg.onload = () => this.segAdjust();
+    } else {
+      this.contrastedRaw.onload = () => this.preCompRawAdjust();
+      this.preCompRaw.onload = () => this.rawAdjust();
+      this.preCompSeg.onload = () => this.segAdjust();
+      this.compositedImg.onload = () => this.postCompAdjust();
+    }
+    this.postCompImg.onload = () => this.model.notifyImageChange();
   }
 
   // modify image data in place to recolor
@@ -258,8 +262,8 @@ export class ImageAdjuster {
     if (this.model.highlight) {
       const segData = this.ctx.getImageData(0, 0, this.width, this.height);
 
-      const label = this.model.selected.label;
-      const secondLabel = this.model.selected.secondLabel === 0;
+      const label = this.model.foreground;
+      const secondLabel = this.model.background === 0;
       // Don't highlight background pixels by changing to -1
       const h1 = label === 0 ? -1 : label;
       const h2 = secondLabel === 0 ? -1 : secondLabel;
@@ -307,8 +311,8 @@ export class ImageAdjuster {
 
     let redOutline, r1, singleOutline, o1, outlineAll, translucent, t1, t2;
 
-    const foreground = this.model.selected.label;
-    const background = this.model.selected.secondLabel;
+    const foreground = this.model.foreground;
+    const background = this.model.background;
 
     if (foreground !== 0) {
       singleOutline = true;
@@ -341,7 +345,7 @@ export class ImageAdjuster {
     let redOutline, r1, singleOutline, o1, translucent, t1, t2;
 
     // red outline for brush target
-    const background = this.model.selected.secondLabel;
+    const background = this.model.background;
     if (background !== 0) {
       redOutline = true;
       r1 = background;
@@ -354,8 +358,8 @@ export class ImageAdjuster {
     // translucent highlight
     if (this.model.highlight) {
       translucent = true;
-      const foreground = this.model.selected.label;
-      const background = this.model.selected.secondLabel;
+      const foreground = this.model.foreground;
+      const background = this.model.background;
       if (foreground !== 0) {
         t1 = foreground;
       }

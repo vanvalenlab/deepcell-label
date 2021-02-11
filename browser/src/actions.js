@@ -30,7 +30,6 @@ export class ChangeFrame extends Action {
       type: 'SETFRAME',
       dimension: 'frame',
       value: this.newValue,
-      // frame: this.newValue,
     });
   }
 
@@ -39,7 +38,6 @@ export class ChangeFrame extends Action {
       type: 'SETFRAME',
       dimension: 'frame',
       value: this.oldValue,
-      // frame: this.oldValue,
     });
   }
 
@@ -273,64 +271,22 @@ export class ToggleInvert extends Action {
   redo() { this.do(); }
 }
 
-export class SelectForeground extends Action {
-  constructor() {
-    super();
-    const model = window.model;
-    this.selected = model.selected;
-
-    this.oldValue = model.selected.label;
-    this.newValue;
-  }
-
-  do() {
-    this.selected.pickLabel();
-    this.newValue = this.selected.label;
-  }
-
-  // TODO: revert to old label instead of clearing?
-  undo() { this.selected.clear(); }
-
-  redo() { this.selected.clear(); }
-}
-
-export class SelectBackground extends Action {
-  constructor() {
-    super();
-    const model = window.model;
-    this.selected = model.selected;
-
-    this.oldValue = model.selected.secondLabel;
-    this.newValue;
-  }
-
-  do() {
-    this.selected.pickSecondLabel();
-    this.newValue = this.selected.secondLabel;
-  }
-
-  // TODO: revert to old label instead of clearing?
-  undo() { this.selected.clear(); }
-
-  redo() { this.selected.clear(); }
-}
-
 export class SwapForegroundBackground extends Action {
   constructor() {
     super();
-    this.selected = window.model.selected;
-    this.foreground = this.selected.label;
-    this.background = this.selected.secondLabel;
+    this.model = window.model;
+    this.foreground = this.model.foreground;
+    this.background = this.model.background;
   }
 
   do() {
-    this.selected.label = this.background;
-    this.selected.secondLabel = this.foreground;
+    this.model.foreground = this.background;
+    this.model.background = this.foreground;
   }
 
   undo() {
-    this.selected.label = this.foreground;
-    this.selected.secondLabel = this.background;
+    this.model.foreground = this.foreground;
+    this.model.background = this.background;
   }
 
   redo() { this.do(); }
@@ -339,20 +295,19 @@ export class SwapForegroundBackground extends Action {
 export class SetForeground extends Action {
   constructor(label) {
     super();
-    const model = window.model;
-    this.selected = model.selected;
-    this.oldLabel = this.selected.label;
+    this.model = window.model;
+    this.oldLabel = this.model.foreground;
     // cycle highlight to next label
     const maxLabel = this.model.maxLabelsMap.get(this.model.feature);
     this.newLabel = (label).mod(maxLabel);
   }
 
   do() {
-    this.selected.label = this.newLabel;
+    this.model.foreground = this.newLabel;
   }
 
   undo() {
-    this.selected.label = this.oldLabel;
+    this.model.foreground = this.oldLabel;
   }
 
   redo() {
@@ -363,20 +318,19 @@ export class SetForeground extends Action {
 export class SetBackground extends Action {
   constructor(label) {
     super();
-    const model = window.model;
-    this.selected = model.selected;
-    this.oldLabel = this.selected.secondLabel;
+    this.model = window.model;
+    this.oldLabel = this.background;
     // cycle highlight to next label
     const maxLabel = this.model.maxLabelsMap.get(this.model.feature);
     this.newLabel = (label).mod(maxLabel);
   }
 
   do() {
-    this.selected.secondLabel = this.newLabel;
+    this.model.background = this.newLabel;
   }
 
   undo() {
-    this.selected.secondLabel = this.oldLabel;
+    this.model.background = this.oldLabel;
   }
 
   redo() {
@@ -387,22 +341,21 @@ export class SetBackground extends Action {
 export class ResetLabels extends Action {
   constructor() {
     super();
-    const model = window.model;
-
-    this.oldForeground = model.selected.label;
-    this.oldBackground = model.selected.secondLabel;
-    this.newForeground = model.maxLabelsMap.get(model.feature) + 1;
+    this.model = window.model;
+    this.oldForeground = this.model.foreground;
+    this.oldBackground = this.model.background;
+    this.newForeground = this.model.maxLabelsMap.get(this.model.feature) + 1;
     this.newBackground = 0;
   }
 
   do() {
-    this.model.selected.label = this.newForeground;
-    this.model.selected.secondLabel = this.newBackground;
+    this.model.foreground = this.newForeground;
+    this.model.background = this.newBackground;
   }
 
   undo() {
-    this.model.selected.label = this.oldForeground;
-    this.model.selected.secondLabel = this.oldBackground;
+    this.model.foreground = this.oldForeground;
+    this.model.background = this.oldBackground;
   }
 
   redo() {

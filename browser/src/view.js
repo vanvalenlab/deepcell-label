@@ -110,7 +110,6 @@ class InfopaneView {
   constructor(model) {
     this.model = model;
     this.canvas = model.canvas;
-    this.brush = model.brush;
   }
 
   /**
@@ -134,13 +133,13 @@ class InfopaneView {
 
     const highlightText = (this.model.highlight) ? 'ON' : 'OFF';
     document.getElementById('highlight').textContent = highlightText;
-    document.getElementById('edit_brush').textContent = this.brush.size;
+    document.getElementById('edit_brush').textContent = this.model.size;
     this.renderLabelRows();
     // always show 'state' and selected labels
     const states = window.controller.service.state.toStrings();
     document.getElementById('mode').textContent = states[states.length - 3];
-    const foreground = this.model.selected.label;
-    const background = this.model.selected.secondLabel;
+    const foreground = this.model.foreground;
+    const background = this.model.background;
     document.getElementById('foreground').textContent = foreground === 0 ? 'background' : foreground;
     document.getElementById('background').textContent = background === 0 ? 'background' : background;
 
@@ -163,8 +162,8 @@ class InfopaneView {
 
   renderPrompt() {
     const state = window.controller.service.state;
-    const label = this.model.selected.label;
-    const secondLabel = this.model.selected.secondLabel;
+    const label = this.model.foreground;
+    const secondLabel = this.model.background;
     const frame = this.model.frame;
     let prompt;
     if (state.matches('confirm.predictFrame')) {
@@ -375,8 +374,6 @@ class CanvasView {
 class BrushView {
   constructor(model) {
     this.model = model;
-    this.brush = model.brush;
-
     // opacity only applies to interior
     this._fillColor = 'white';
     this._opacity = 0.3;
@@ -386,8 +383,8 @@ class BrushView {
     this.canvas.id = 'brushCanvas';
     // this canvas should never be seen
     this.canvas.style.display = 'none';
-    this.canvas.height = model.height;
-    this.canvas.width = model.width;
+    this.canvas.height = this.model.height;
+    this.canvas.width = this.model.width;
     document.body.appendChild(this.canvas);
     this.ctx = document.getElementById('brushCanvas').getContext('2d');
     // set fillStyle here, it will never change
@@ -395,7 +392,7 @@ class BrushView {
   }
 
   get _outlineColor() {
-    return this.brush.value === 0 ? 'red' : 'white';
+    return this.model.foreground === 0 ? 'red' : 'white';
   }
 
   get padding() {
@@ -461,7 +458,7 @@ class BrushView {
       ctxDst.beginPath();
       const cX = (x - sx) * mag + this.padding;
       const cY = (y - sy) * mag + this.padding;
-      ctxDst.arc(cX, cY, mag * this.brush.size, 0, Math.PI * 2, true);
+      ctxDst.arc(cX, cY, mag * this.model.size, 0, Math.PI * 2, true);
       ctxDst.strokeStyle = this._outlineColor;
       ctxDst.closePath();
       ctxDst.stroke();
@@ -498,7 +495,7 @@ class BrushView {
       this.clear();
     }
     this.ctx.beginPath();
-    this.ctx.arc(x, y, this.brush.size, 0, Math.PI * 2, true);
+    this.ctx.arc(x, y, this.model.size, 0, Math.PI * 2, true);
     this.ctx.closePath();
     // no opacity needed; just shows where brush has been
     this.ctx.fill();

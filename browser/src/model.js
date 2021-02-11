@@ -1,8 +1,6 @@
 import { View } from './view.js';
 import { ImageAdjuster } from './adjust.js';
 import { CanvasPosition } from './canvas.js';
-import { Brush } from './brush.js';
-import { SelectedLabels } from './select.js';
 
 export class Model {
   constructor(project) {
@@ -26,6 +24,13 @@ export class Model {
     this.padding = 5;
     this.scale = 1;
 
+    // Selected labels
+    this._foreground = 1; // label painted with
+    this._background = 0; // label painted over
+
+    // Brush size in pixels
+    this._size = 5;
+
     // Project data (images and label metadata)
     this._rawImage = new Image();
     this._segImage = new Image();
@@ -41,8 +46,6 @@ export class Model {
     // Model objects
     this.adjuster = new ImageAdjuster(this);
     this.canvas = new CanvasPosition(this);
-    this.brush = new Brush(this);
-    this.selected = new SelectedLabels(this);
 
     // TODO: use Observable interface instead and allow any Observer to register
     // only observer right now is the view
@@ -99,6 +102,7 @@ export class Model {
 
   set feature(value) {
     this._feature = value;
+    this.resetLabels();
     this.notifyInfoChange();
   }
 
@@ -116,7 +120,6 @@ export class Model {
     this.adjuster.contrast = this.adjuster.contrastMap.get(value);
     this.adjuster.displayInvert = this.adjuster.invertMap.get(value);
 
-    this.clear();
     this._channel = value;
     this.notifyInfoChange();
   }
@@ -147,6 +150,44 @@ export class Model {
     this._tracks = value;
     this.processMaxLabels();
     this.notifyInfoChange();
+  }
+
+  get foreground() {
+    return this._foreground;
+  }
+
+  set foreground(value) {
+    this._foreground = value;
+    this.notifyInfoChange();
+    this.notifyImageFormattingChange();
+  }
+
+  get background() {
+    return this._background;
+  }
+
+  set background(value) {
+    this._background = value;
+    this.notifyInfoChange();
+    this.notifyImageFormattingChange();
+  }
+
+  get size() {
+    return this._size;
+  }
+
+  // set bounds on size of brush
+  set size(newSize) {
+    // don't need brush to take up whole frame
+    if (newSize > 0 && newSize < this.height / 2 && newSize < this.width / 2) {
+      this._size = newSize;
+      this.notifyImageChange();
+    }
+  }
+
+  resetLabels() {
+    this.foreground = this.maxLabelsMap.get(this.feature) + 1;
+    this.background = 0;
   }
 
   // TODO: use Observable interface instead of hard-coding the view as the only Observer
@@ -195,11 +236,6 @@ export class Model {
     if (payload.tracks) {
       this.tracks = payload.tracks;
     }
-  }
-
-  // deselect/cancel action/reset highlight
-  clear() {
-    this.selected.clear();
   }
 
   updateMousePos(x, y) {

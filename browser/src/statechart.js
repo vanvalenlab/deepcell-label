@@ -7,10 +7,10 @@ import { Machine, actions, assign, forwardTo, send } from 'xstate';
 import backendMachine from './backendMachine';
 
 import {
-  ToggleHighlight, ChangeFrame, ChangeFeature, ChangeChannel, BackendAction, Pan, Zoom,
-  ChangeContrast, ChangeBrightness, ResetBrightnessContrast,
-  ToggleInvert, SelectForeground, SelectBackground, SwapForegroundBackground,
-  SetForeground, SetBackground, ResetLabels
+  BackendAction, ChangeFrame, ChangeFeature, ChangeChannel,
+  Pan, Zoom,
+  ToggleHighlight, ToggleInvert, ChangeContrast, ChangeBrightness, ResetBrightnessContrast,
+  SetForeground, SetBackground, SwapForegroundBackground, ResetLabels,
 } from './actions.js';
 
 const { choose } = actions;
@@ -29,11 +29,11 @@ const pan = (context, event) => {
 const selectLabel = choose([
   {
     cond: 'shiftLeftMouse',
-    actions: () => addAction(new SelectForeground())
+    actions: () => addAction(new SetForeground(getCanvas().label))
   },
   {
     cond: 'shiftRightMouse',
-    actions: () => addAction(new SelectBackground())
+    actions: () => addAction(new SetBackground(getCanvas().label))
   }
 ]);
 
@@ -41,9 +41,9 @@ const selectLabel = choose([
 const draw = (context) => {
   const args = {
     trace: JSON.stringify(context.trace),
-    brush_value: getModel().selected.label,
-    target_value: getModel().selected.secondLabel,
-    brush_size: getModel().brush.size,
+    brush_value: getModel().foreground,
+    target_value: getModel().background,
+    brush_size: getModel().size,
     frame: getModel().frame,
     erase: false,
   };
@@ -58,7 +58,7 @@ const threshold = (context) => {
     y2: getCanvas().imgY,
     x2: getCanvas().imgX,
     frame: getModel().frame,
-    label: getModel().selected.label,
+    label: getModel().foreground,
   };
   const action = new BackendAction('threshold', args);
   addFencedAction(action);
@@ -66,7 +66,7 @@ const threshold = (context) => {
 
 const flood = () => {
   const args = {
-    label: getModel().selected.label,
+    label: getModel().foreground,
     x_location: getCanvas().imgX,
     y_location: getCanvas().imgY,
   };
@@ -125,8 +125,8 @@ const predictAll = () => {
 
 const swapFrame = () => {
   const args = {
-    label_1: getModel().selected.label,
-    label_2: getModel().selected.secondLabel,
+    label_1: getModel().foreground,
+    label_2: getModel().background,
     frame: getModel().frame
   };
   const action = new BackendAction('swap_single_frame', args);
@@ -135,8 +135,8 @@ const swapFrame = () => {
 
 const replaceFrame = () => {
   const args = {
-    label_1: getModel().selected.label,
-    label_2: getModel().selected.secondLabel
+    label_1: getModel().foreground,
+    label_2: getModel().background
     // frame: getModel().frame ???
   };
   const action = new BackendAction('replace_single', args);
@@ -145,8 +145,8 @@ const replaceFrame = () => {
 
 const replaceAll = () => {
   const args = {
-    label_1: getModel().selected.label,
-    label_2: getModel().selected.secondLabel
+    label_1: getModel().foreground,
+    label_2: getModel().background
   };
   const action = new BackendAction('replace', args);
   addFencedAction(action);
@@ -546,10 +546,10 @@ export const deepcellLabelMachine = Machine(
       selectLabel: selectLabel,
       swapLabels: () => addAction(new SwapForegroundBackground()),
       resetLabels: () => addAction(new ResetLabels()),
-      decrementForeground: () => addAction(new SetForeground(getModel().selected.label - 1)),
-      incrementForeground: () => addAction(new SetForeground(getModel().selected.label + 1)),
-      decrementBackground: () => addAction(new SetBackground(getModel().selected.secondLabel - 1)),
-      incrementBackground: () => addAction(new SetBackground(getModel().selected.secondLabel + 1)),
+      decrementForeground: () => addAction(new SetForeground(getModel().foreground - 1)),
+      incrementForeground: () => addAction(new SetForeground(getModel().foreground + 1)),
+      decrementBackground: () => addAction(new SetBackground(getModel().background - 1)),
+      incrementBackground: () => addAction(new SetBackground(getModel().background + 1)),
       // edit labels actions
       draw: draw,
       threshold: threshold,
@@ -582,9 +582,9 @@ export const deepcellLabelMachine = Machine(
       zoom: (_, event) => addAction(new Zoom(event.change)),
       updateMousePos: (_, event) => getModel().updateMousePos(event.offsetX, event.offsetY),
       // brush actions
-      incrementBrushSize: () => { getModel().brush.size += 1 },
-      decrementBrushSize: () => { getModel().brush.size -= 1 },
-      setBrushSize: (_, event) => { getModel().brush.size = event.size },
+      incrementBrushSize: () => { getModel().size += 1 },
+      decrementBrushSize: () => { getModel().size -= 1 },
+      setBrushSize: (_, event) => { getModel().size = event.size },
     },
     guards: {
       leftMouse: (_, event) => event.button === 0,
