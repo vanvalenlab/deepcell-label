@@ -8,34 +8,18 @@ import backendMachine from './backendMachine';
 
 import {
   BackendAction, ChangeFrame, ChangeFeature, ChangeChannel,
-  Pan, Zoom,
-  ToggleHighlight, ToggleInvert, ChangeContrast, ChangeBrightness, ResetBrightnessContrast,
+  Pan, Zoom, ToggleHighlight, ToggleInvert,
+  ChangeContrast, ChangeBrightness, ResetBrightnessContrast,
   SetForeground, SetBackground, SwapForegroundBackground, ResetLabels,
 } from './actions.js';
 
 const { choose } = actions;
 
+// access to other DeepCell Label classes (Model, Canvas, and History)
 const getModel = () => window.model;
 const getCanvas = () => window.model.canvas;
 const addAction = (action) => { window.controller.history.addAction(action) };
 const addFencedAction = (action) => { window.controller.history.addFencedAction(action) };
-
-// actions
-const pan = (context, event) => {
-  const zoom = 100 / (getCanvas().zoom * getCanvas().scale);
-  addAction(new Pan(event.movementX * zoom, event.movementY * zoom));
-};
-
-const selectLabel = choose([
-  {
-    cond: 'shiftLeftMouse',
-    actions: () => addAction(new SetForeground(getCanvas().label))
-  },
-  {
-    cond: 'shiftRightMouse',
-    actions: () => addAction(new SetBackground(getCanvas().label))
-  }
-]);
 
 // label editing actions
 const draw = (context) => {
@@ -136,8 +120,8 @@ const swapFrame = () => {
 const replaceFrame = () => {
   const args = {
     label_1: getModel().foreground,
-    label_2: getModel().background
-    // frame: getModel().frame ???
+    label_2: getModel().background,
+    // frame: getModel().frame? may need to add if we no longer store frame on backend
   };
   const action = new BackendAction('replace_single', args);
   addFencedAction(action);
@@ -173,7 +157,8 @@ const paintState = {
     idle: {
       on: {
         mousedown: {
-          cond: (_, event) => !event.shiftKey, // prevents select and paint at the same time
+          // prevents select and paint at the same time
+          cond: (_, event) => !event.shiftKey,
           target: 'dragging',
           actions: 'addToTrace'
         }
@@ -543,7 +528,10 @@ export const deepcellLabelMachine = Machine(
         storedY: () => getCanvas().imgY,
       }),
       // select labels actions
-      selectLabel: selectLabel,
+      selectLabel: choose([
+        { cond: 'shiftLeftMouse', actions: () => addAction(new SetForeground(getCanvas().label)) },
+        { cond: 'shiftRightMouse', actions: () => addAction(new SetBackground(getCanvas().label)) }
+      ]),
       swapLabels: () => addAction(new SwapForegroundBackground()),
       resetLabels: () => addAction(new ResetLabels()),
       decrementForeground: () => addAction(new SetForeground(getModel().foreground - 1)),
@@ -578,7 +566,10 @@ export const deepcellLabelMachine = Machine(
       resetBrightnessContrast: () => addAction(new ResetBrightnessContrast()),
       toggleInvert: () => addAction(new ToggleInvert()),
       // canvas actions
-      pan: pan,
+      pan: (_, event) => {
+        const zoom = 100 / (getCanvas().zoom * getCanvas().scale);
+        addAction(new Pan(event.movementX * zoom, event.movementY * zoom));
+      },
       zoom: (_, event) => addAction(new Zoom(event.change)),
       updateMousePos: (_, event) => getModel().updateMousePos(event.offsetX, event.offsetY),
       // brush actions
