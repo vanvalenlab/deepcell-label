@@ -97,8 +97,8 @@ export class Controller {
     window.addEventListener('resize', () => {
       waitForFinalEvent(() => {
         this.view.setCanvasDimensions();
-        // this.view.canvasView.brushView.refresh();
         this.view.displayUndoRedo();
+        this.view.canvasView.render();
       }, 500, 'canvasResize');
     });
 
