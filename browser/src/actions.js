@@ -318,21 +318,19 @@ export class SelectBackground extends Action {
 export class SwapForegroundBackground extends Action {
   constructor() {
     super();
-    const model = window.model;
-    this.selected = model.selected;
-
-    this.foreground = model.selected.label;
-    this.background = model.selected.secondLabel;
+    this.selected = window.model.selected;
+    this.foreground = this.selected.label;
+    this.background = this.selected.secondLabel;
   }
 
   do() {
-    this.model.selected.label = this.background;
-    this.model.selected.secondLabel = this.foreground;
+    this.selected.label = this.background;
+    this.selected.secondLabel = this.foreground;
   }
 
   undo() {
-    this.model.selected.label = this.foreground;
-    this.model.selected.secondLabel = this.background;
+    this.selected.label = this.foreground;
+    this.selected.secondLabel = this.background;
   }
 
   redo() { this.do(); }
