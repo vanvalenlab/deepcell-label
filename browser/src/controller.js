@@ -67,12 +67,12 @@ export class Controller {
   }
 
   /**
-   * Disable scrolling with the wheel (on the canvas) or with arrows (everywhere)
+   * Disable scrolling with the wheel (on the canvas) or with keys (everywhere)
    */
   overrideScroll() {
-    document.addEventListener('wheel', (event) => {
-      if (this.model.onCanvas) event.preventDefault();
-    }, { passive: false });
+    const canvasElement = document.getElementById('canvas');
+    canvasElement.onwheel = (event) => { event.preventDefault(); };
+    canvasElement.onmousewheel = (event) => { event.preventDefault(); };
 
     // disable space and up/down keys from moving around on page
     document.addEventListener('keydown', (event) => {

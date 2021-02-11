@@ -31,11 +31,8 @@ export class Model {
     this._segImage = new Image();
     this._segArray = null; // 2D array with label at each pixel in image
     this._tracks = project.tracks; // object with the labels present in each frame
-    this.maxLabelsMap = new Map();
-    this.processMaxLabels();
-
-    // Control booleans
-    this.onCanvas;
+    this.maxLabelsMap = new Map(); // records the maximum label for each feature
+    this.processMaxLabels(); // computes max labels from _tracks
 
     // Model objects
     this.adjuster = new ImageAdjuster(this);

@@ -101,7 +101,6 @@ export class CanvasPosition {
   // check if the mouse position in canvas matches to a displayed part of image
   inRange() {
     return (
-      // this.model.onCanvas &&
       this.canvasPosX >= 0 && this.canvasPosX < this.scaledWidth &&
       this.canvasPosY >= 0 && this.canvasPosY < this.scaledHeight
     );
