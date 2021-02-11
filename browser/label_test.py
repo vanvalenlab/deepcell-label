@@ -151,7 +151,8 @@ class TestBaseEdit():
 
         with app.app_context():
             edit.action_swap_single_frame(cell1, cell2)
-            np.testing.assert_array_equal(edit.frame[..., feature], expected_swap)
+            np.testing.assert_array_equal(
+                edit.frame[..., feature], expected_swap)
             assert edit.y_changed
             assert edit.labels_changed
 
@@ -248,29 +249,8 @@ class TestZStackEdit():
 
         with app.app_context():
             edit.action_replace(cell1, cell2)
-            np.testing.assert_array_equal(edit.project.label_array, expected_labels)
-
-    def test_action_swap_all_frame(self, app):
-        # three 2 x 2 frame with two labels: 1s in top row, 2s in bottom
-        frame = np.array([[[1], [1]],
-                          [[2], [2]]])
-        labels = np.array([frame] * 3)
-        assert labels.shape == (3, 2, 2, 1)
-        project = models.Project.create(DummyLoader(labels=labels))
-        edit = label.ZStackEdit(project)
-        expected_frame = np.array([[[2], [2]],
-                                   [[1], [1]]])
-        expected_labels = np.array(3 * [expected_frame])
-
-        cell1 = 1
-        cell2 = 2
-        frame = 1  # Replace on the middle frame
-
-        with app.app_context():
-            edit.project.frame = frame
-            edit.action_swap_all_frame(cell1, cell2)
-            np.testing.assert_array_equal(edit.project.label_array, expected_labels)
-            assert edit.y_changed
+            np.testing.assert_array_equal(
+                edit.project.label_array, expected_labels)
 
     def test_action_active_contour_other_labels_unchanged(self, app):
         """
@@ -321,7 +301,8 @@ class TestZStackEdit():
 
         with app.app_context():
             edit.action_active_contour(cell)
-            assert int((edit.frame == 1).sum()) < (labels[project.frame] == 1).sum()
+            assert int((edit.frame == 1).sum()) < (
+                labels[project.frame] == 1).sum()
 
     def test_action_erode_delete_label(self, app):
         """Tests that a label is correctly removed when eroding deletes all of its pixels."""
@@ -373,7 +354,8 @@ class TestTrackEdit():
 
     def test_track_add_cell_info(self):
         labels = np.zeros((1, 1, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
+        project = models.Project.create(
+            DummyLoader(labels=labels, path='test.trk'))
         edit = label.TrackEdit(project)
         tracks = edit.labels.tracks
 
@@ -396,7 +378,8 @@ class TestTrackEdit():
     def test_add_cell_info_multiple_frames(self):
         num_frames = 5
         labels = np.zeros((num_frames, 1, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
+        project = models.Project.create(
+            DummyLoader(labels=labels, path='test.trk'))
         edit = label.TrackEdit(project)
         tracks = edit.labels.tracks
 
@@ -422,7 +405,8 @@ class TestTrackEdit():
         labels = np.array([[[[0]]],
                            [[[1]]]])
         assert labels.shape == (2, 1, 1, 1)
-        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
+        project = models.Project.create(
+            DummyLoader(labels=labels, path='test.trk'))
         edit = label.TrackEdit(project)
         tracks = edit.labels.tracks
 
@@ -442,7 +426,8 @@ class TestTrackEdit():
         labels = np.array([[[[1]]],
                            [[[1]]]])
         assert labels.shape == (2, 1, 1, 1)
-        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
+        project = models.Project.create(
+            DummyLoader(labels=labels, path='test.trk'))
         edit = label.TrackEdit(project)
         tracks = edit.labels.tracks
 
