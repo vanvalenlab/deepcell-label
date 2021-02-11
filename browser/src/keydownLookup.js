@@ -39,14 +39,6 @@ const keydownLookup = {
   'ArrowRight': 'keydown.right',
   'ArrowUp': 'keydown.up',
   'ArrowDown': 'keydown.down',
-
-      this.service.send({ type: 'ZOOM', change: 1 });
-    } else if (evt.key === '=') {
-      this.service.send({ type: 'ZOOM', change: -1 });
-    } if (evt.key === 'ArrowDown') {
-      this.service.send({ type: 'SETSIZE', size: this.model.brush.size - 1 });
-    } else if (evt.key === 'ArrowUp') {
-      this.service.send({ type: 'SETSIZE', size: this.model.brush.size + 1 });
 };
 
 export default keydownLookup;

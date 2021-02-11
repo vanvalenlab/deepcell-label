@@ -142,7 +142,7 @@ export class Pan extends Action {
   // Implements command pattern for an undoable pan
   constructor(dx, dy) {
     super();
-    this.canvas = window.canvas;
+    this.canvas = window.model.canvas;
     // previous canvas position
     this.oldSx = this.canvas.sx;
     this.oldSy = this.canvas.sy;
@@ -175,7 +175,7 @@ export class Pan extends Action {
 export class Zoom extends Action {
   constructor(dZoom) {
     super();
-    this.canvas = window.canvas;
+    this.canvas = window.model.canvas;
     // point we zoom in around
     // need to store so undoing/redoing zooms around the same location
     this.x = this.canvas.canvasPosX;
