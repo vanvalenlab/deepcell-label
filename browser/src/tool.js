@@ -1,6 +1,7 @@
 import { Controller } from './controller.js';
 import { inspect } from '@xstate/inspect';
 import M from 'materialize-css';
+import $ from 'jquery';
 
 inspect({
   // options
