@@ -323,9 +323,12 @@ class BaseEdit(object):
     def action_flood(self, label, x_location, y_location):
         """
         Floods the region at (x, y) with the label.
+        Only floods diagonally connected pixels (connectivity == 2) when label != 0.
 
         Args:
-
+            label (int): label to fill region with
+            x_location (int): x coordinate of region to flood
+            y_location (int): y coordinate of region to flood
         """
         img = self.frame[..., self.feature]
         # Rescale click location to corresponding location in label array
