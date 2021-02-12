@@ -135,15 +135,24 @@ class InfopaneView {
     document.getElementById('highlight').textContent = highlightText;
     document.getElementById('edit_brush').textContent = this.model.size;
     this.renderLabelRows();
-    // always show 'state' and selected labels
-    const states = window.controller.service.state.toStrings();
-    document.getElementById('mode').textContent = states[states.length - 3];
+    // always show tool and selected labels
+
+    document.getElementById('mode').textContent = this.getTool();
     const foreground = this.model.foreground;
     const background = this.model.background;
     document.getElementById('foreground').textContent = foreground === 0 ? 'background' : foreground;
     document.getElementById('background').textContent = background === 0 ? 'background' : background;
 
     this.renderPrompt();
+  }
+
+  getTool() {
+    const states = window.controller.service.state.toStrings();
+    const toolbarState = 'mouse.toolbar.';
+    for (const state of states) {
+      if (state.startsWith(toolbarState)) { return state.substring(toolbarState.length); }
+    }
+    return 'loading...';
   }
 
   /**
