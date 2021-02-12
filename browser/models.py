@@ -353,7 +353,6 @@ class Project(db.Model):
         payload = {}
 
         img_payload = {}
-        def encode(x): return base64.encodebytes(x.read()).decode()
         raw_png = self._get_raw_png()
         img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
         label_png = self._get_label_png()
@@ -400,7 +399,6 @@ class Project(db.Model):
         """
         if x or y:
             img_payload = {}
-            def encode(x): return base64.encodebytes(x.read()).decode()
             if x:
                 raw_png = self._get_raw_png()
                 img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
@@ -780,3 +778,7 @@ class FrameMemento(db.Model):
 
 def consecutive(data, stepsize=1):
     return np.split(data, np.where(np.diff(data) != stepsize)[0] + 1)
+
+
+def encode(x):
+    return base64.encodebytes(x.read()).decode()
