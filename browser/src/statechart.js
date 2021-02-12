@@ -195,6 +195,12 @@ const thresholdState = {
         ]
       }
     }
+  },
+  on: {
+    TOGGLERGB: {
+      target: 'paint',
+      in: '#deepcellLabel.rgb.oneChannel'
+    },
   }
 };
 
@@ -229,7 +235,11 @@ const erodeDilateState = {
 
 const autofitState = {
   on: {
-    click: { actions: 'autofit' }
+    click: { actions: 'autofit' },
+    TOGGLERGB: {
+      target: 'paint',
+      in: '#deepcellLabel.rgb.oneChannel'
+    },
   }
 };
 
@@ -254,6 +264,12 @@ const watershedState = {
         }
       }
     }
+  },
+  on: {
+    TOGGLERGB: {
+      target: 'paint',
+      in: '#deepcellLabel.rgb.oneChannel'
+    },
   }
 };
 

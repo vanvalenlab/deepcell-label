@@ -154,6 +154,8 @@ export class Controller {
       this.redo();
     } else if ((evt.ctrlKey || evt.metaKey) && (evt.key === 'Z' || evt.key === 'z')) {
       this.undo();
+    } else if ((evt.ctrlKey || evt.metaKey) && evt.key === 'b') {
+      this.service.send('TOGGLERGB');
     } else if (keydownLookup[evt.key]) {
       this.service.send(keydownLookup[evt.key]);
     }
