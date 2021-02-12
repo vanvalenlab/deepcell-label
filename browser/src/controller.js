@@ -22,7 +22,7 @@ export class Controller {
     // Start the service
     service.start();
     this.service = service;
-    // allow global access to service
+    // Enable global access to service
     window.service = service;
 
     // Get Project from database
@@ -37,9 +37,8 @@ export class Controller {
       this.model = new Model(project);
       this.view = this.model.view;
       this.history = new History();
-      // TODO: fix initializeHistory to work with new Actions
-      // this.history.initializeHistory(project.actionFrames);
 
+      // Enable global access to model and view
       window.model = this.model;
       window.view = this.view;
 
@@ -68,7 +67,6 @@ export class Controller {
     canvasElement.onwheel = (event) => { event.preventDefault(); };
     canvasElement.onmousewheel = (event) => { event.preventDefault(); };
 
-    // disable space and up/down keys from moving around on page
     document.addEventListener('keydown', (event) => {
       if (event.key === ' ') {
         event.preventDefault();
