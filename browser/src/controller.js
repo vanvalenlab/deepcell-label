@@ -1,5 +1,4 @@
 import { interpret } from 'xstate';
-import { inspect } from '@xstate/inspect';
 import $ from 'jquery';
 
 import { deepcellLabelMachine } from './statechart';
@@ -14,11 +13,7 @@ export class Controller {
    */
   constructor(projectID) {
     // Interpret the machine, and add a listener for whenever a transition occurs.
-    const service = interpret(deepcellLabelMachine, { devTools: true });
-    inspect({
-      iframe: false,
-      url: 'https://statecharts.io/inspect'
-    });
+    const service = interpret(deepcellLabelMachine);
     // Start the service
     service.start();
     this.service = service;
