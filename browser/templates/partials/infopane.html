@@ -25,14 +25,14 @@
               Label shows an Info Table on the left with project details
               and an interactive Canvas on the right that shows images and labels.
               <br>
-              See the Info Table tab to learn more about table contents,
+              See the Info Table tab to learn about table contents,
               and see the Canvas tab to learn its controls.
             </p>
             <p dir="ltr">
-              Edit the labels by clicking on the Canvas with a Tool,
-              or by using an Action through a keypress.
+              Clicking on the Canvas with a Tool,
+              or use an Action with a keybind to edit the labels.
               <br>
-              Use these Tools and Actions on different labels by Selecting Labels.
+              Select Labels with <strong>Shift + Click</strong> to edit them with these Tools and Actions.
             </p>
           </div>
           <div id="tab2" class="col s12">
@@ -168,7 +168,7 @@
             <h4>Tools</h4>
             
             <p dir="ltr">
-              The tool controls which action happens when we click on the canvas.
+              The tool controls how to edit labeling when clicking on the canvas.
             </p>
             <h5>Brush</h5>
             
@@ -190,8 +190,11 @@
             <h5>Threshold</h5>
             
             <p dir="ltr">
-              The threshold tool lets us draw a bounding box on the raw image by clicking and dragging.
-              Once we draw the box, the brighter areas of the bounding box will be filled with the label we're painting with.
+              The threshold tool fills the brightest pixels within a bounding box with
+              the label we're painting with. The tool will only overwrite the background and 
+              won't edit any other labels.
+              <br>
+              Draw a bounding box by clicking and dragging on the canvas.
             </p>
             
             <p dir="ltr">
@@ -203,9 +206,9 @@
             <p dir="ltr">
               The grow and shrink tool expands or contracts a label's boundary by one pixel.
               <br>
-              To grow a label, <strong>click</strong> on it while using this tool.
+              To shrink a label, <strong>Click</strong> on it while using this tool.
               <br>
-              To shrink a label, <strong>hold Shift + click</strong> on it while using this tool.
+              To grow a label, <strong>Right Click</strong> on it while using this tool.
             
             </p>
             
@@ -218,7 +221,7 @@
               <br>
               When flooding an existing label, the tool will also flood diagonally connected pixels.
               <br>
-              To flood a region, <strong>click</strong> on it while using this tool.
+              To flood a region, <strong>Click</strong> on it while using this tool.
             
             </p>
             
@@ -231,7 +234,7 @@
             <p dir="ltr">
               The trim tool removes disconnected regions of a label, leaving only the connected pixels behind.
               <br>
-              To trim a region, <strong>click</strong> on it while using this tool.
+              To trim a region, <strong>Click</strong> on it while using this tool.
             
             </p>
             
@@ -246,7 +249,7 @@
               <br>
               This tool can fix the boundaries of an existing label, but cannot create a label from scratch.
               <br>
-              To autofit a region, <strong>click</strong> on it while using this tool.
+              To autofit a region, <strong>Click</strong> on it while using this tool.
             
             </p>
             
@@ -261,11 +264,11 @@
               The watershed tool splits one label into two, allowing us to separate adjacent cells that have been given the same
               label.
               <br>
-              <strong>Click</strong> once on a label, then <strong>click</strong> elsewhere in the same label.
+              <strong>Click</strong> once on a label, then <strong>Click</strong> elsewhere in the same label.
               <br>
               These clicks should be the centers of the cells you are trying to separate. 
               <br>
-              The first click will remain the same label, and the second click will become a new label.
+              The first click keeps the same label, and the second click becomes a new label.
             </p>
             
             <p dir="ltr">
