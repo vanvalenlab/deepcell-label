@@ -576,7 +576,7 @@ export const deepcellLabelMachine = Machine(
       watershed: watershed,
       // change frame actions
       decrementFrame: () => addFencedAction(new ChangeFrame(getModel().frame - 1)),
-      incrementFrame: () => addFencedAction(new ChangeFrame(getModel().frame - 1)),
+      incrementFrame: () => addFencedAction(new ChangeFrame(getModel().frame + 1)),
       decrementChannel: () => addFencedAction(new ChangeChannel(getModel().channel - 1)),
       incrementChannel: () => addFencedAction(new ChangeChannel(getModel().channel - 1)),
       decrementFeature: () => addFencedAction(new ChangeFeature(getModel().feature - 1)),
