@@ -12,14 +12,6 @@ export class Controller {
    * @param {string} projectID 12 character base64 ID for Project in DeepCell Label database
    */
   constructor(projectID) {
-    // Interpret the machine, and add a listener for whenever a transition occurs.
-    const service = interpret(deepcellLabelMachine);
-    // Start the service
-    service.start();
-    this.service = service;
-    // Enable global access to service
-    window.service = service;
-
     // Get Project from database
     const getProject = $.ajax({
       type: 'GET',
@@ -33,10 +25,19 @@ export class Controller {
       this.view = this.model.view;
       this.history = new History();
 
-      // Enable global access to model and view
+      // Interpret the statechart
+      this.service = interpret(deepcellLabelMachine);
+      // add a listener to update the info table whenever a transition occurs
+      this.service.onTransition(() => { this.model.notifyInfoChange() });
+      // Start the service
+      this.service.start();
+
+      // Enable global access
       window.model = this.model;
       window.view = this.view;
+      window.service = this.service;
 
+      // Add bindings
       this.overrideScroll();
       this.addWindowBindings();
       this.addCanvasBindings();
