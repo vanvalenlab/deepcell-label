@@ -46,11 +46,7 @@ export class Controller {
       this.overrideScroll();
       this.addWindowBindings();
       this.addCanvasBindings();
-
-      this.view.setCanvasDimensions();
-
       this.addUndoBindings();
-      this.view.displayUndoRedo();
     });
   }
 

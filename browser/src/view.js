@@ -3,9 +3,11 @@ export class View {
   constructor(model) {
     // TODO: use observer interface & have View subscribe to model
     this.model = model;
-
     this.infopaneView = new InfopaneView(model);
     this.canvasView = new CanvasView(model);
+
+    this.setCanvasDimensions();
+    this.displayUndoRedo();
   }
 
   /**
