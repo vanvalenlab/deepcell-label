@@ -53,13 +53,11 @@ export class Controller {
   undo() {
     this.history.undo();
     this.model.updateMousePos(this.model.canvas.rawX, this.model.canvas.rawY);
-    this.model.notifyImageChange();
   }
 
   redo() {
     this.history.redo();
     this.model.updateMousePos(this.model.canvas.rawX, this.model.canvas.rawY);
-    this.model.notifyImageChange();
   }
 
   /**
