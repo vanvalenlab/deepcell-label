@@ -122,6 +122,7 @@ export class Controller {
 
     canvasElement.addEventListener('wheel', (e) => this.handleScroll(e));
     canvasElement.addEventListener('contextmenu', (e) => e.preventDefault());
+    canvasElement.addEventListener('selectstart', (e) => e.preventDefault());
   }
 
   addUndoBindings() {
