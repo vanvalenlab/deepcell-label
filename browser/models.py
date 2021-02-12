@@ -6,7 +6,6 @@ from __future__ import print_function
 import base64
 import copy
 import enum
-import io
 import logging
 import os
 import timeit
