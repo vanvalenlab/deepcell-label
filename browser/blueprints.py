@@ -341,8 +341,7 @@ def make_settings(project):
 
     rgb = request.args.get('rgb', default='false', type=str)
     rgb = bool(distutils.util.strtobool(rgb))
-    output_bucket = request.args.get(
-        'output_bucket', default=S3_OUTPUT_BUCKET, type=str)
+    output_bucket = request.args.get('output_bucket', default=S3_OUTPUT_BUCKET, type=str)
 
     settings = {
         'filetype': filetype,

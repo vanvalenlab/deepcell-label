@@ -108,8 +108,7 @@ class Project(db.Model):
     action = db.relationship('Action', uselist=False, post_update=True,
                              primaryjoin="and_(Project.id==Action.project_id, "
                                          "foreign(Project.action_id)==Action.action_id)")
-    actions = db.relationship(
-        'Action', backref='project', foreign_keys='[Action.project_id]')
+    actions = db.relationship('Action', backref='project', foreign_keys='[Action.project_id]')
     num_actions = db.Column(db.Integer, default=0)
 
     def __init__(self, loader):
@@ -719,8 +718,7 @@ class Action(db.Model):
             valid_actions = filter(lambda action: action.done and action.action_id < self.action_id,
                                    frame.actions)
             # Action containing the most recent version
-            before_action = max(
-                valid_actions, key=lambda action: action.action_id)
+            before_action = max(valid_actions, key=lambda action: action.action_id)
             before_frame = next(filter(lambda bf, f=frame: bf.frame_id == f.frame_id,
                                        before_action.action_frames))
             before_frames.append(before_frame)

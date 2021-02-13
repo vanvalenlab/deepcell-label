@@ -24,8 +24,7 @@ class LabelInfoMaker():
         self._tracking = tracking
 
         if self._tracking and self.num_features != 1:
-            raise ValueError(
-                'Labels for tracking projects must have one feature.')
+            raise ValueError('Labels for tracking projects must have one feature.')
 
     @property
     def cell_ids(self):
@@ -60,8 +59,7 @@ class LabelInfoMaker():
         feature = int(feature)
         # Find the labels in the feature
         feature_labels = self.labels[..., feature]
-        feature_cells = np.unique(feature_labels)[
-            np.nonzero(np.unique(feature_labels))]
+        feature_cells = np.unique(feature_labels)[np.nonzero(np.unique(feature_labels))]
         self.cell_ids[feature] = feature_cells
 
     def compute_info(self):
@@ -80,8 +78,7 @@ class LabelInfoMaker():
         feature = int(feature)
         # Find the labels in the feature
         feature_labels = self.labels[..., feature]
-        feature_cells = np.unique(feature_labels)[
-            np.nonzero(np.unique(feature_labels))]
+        feature_cells = np.unique(feature_labels)[np.nonzero(np.unique(feature_labels))]
         # Compute the label metadata for the feature
         feature_info = {}
         for cell in feature_cells:
