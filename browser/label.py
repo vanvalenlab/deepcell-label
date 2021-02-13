@@ -1044,8 +1044,7 @@ def predict_zstack_cell_ids(img, next_img, threshold=0.1):
                             unmatched_cells = np.append(unmatched_cells, best_matched_next)
 
                         # in either case, we want to be done with the "matched_cell" from img
-                        used_cells_src = np.append(
-                            used_cells_src, matched_cell)
+                        used_cells_src = np.append(used_cells_src, matched_cell)
 
             # matched_cell != 0 is still true
             elif count_matches == 1:
