@@ -150,8 +150,7 @@ class TestBaseEdit():
 
         with app.app_context():
             edit.action_swap_single_frame(cell1, cell2)
-            np.testing.assert_array_equal(
-                edit.frame[..., feature], expected_swap)
+            np.testing.assert_array_equal(edit.frame[..., feature], expected_swap)
             assert edit.y_changed
             assert edit.labels_changed
 
@@ -168,8 +167,7 @@ class TestBaseEdit():
 
         with app.app_context():
             edit.action_flood(flood_label, x_loc, y_loc)
-            np.testing.assert_array_equal(
-                edit.frame[..., feature], expected_flood)
+            np.testing.assert_array_equal(edit.frame[..., feature], expected_flood)
             assert edit.y_changed
             assert edit.labels_changed
 
@@ -186,8 +184,7 @@ class TestBaseEdit():
 
         with app.app_context():
             edit.action_flood(flood_label, x_loc, y_loc)
-            np.testing.assert_array_equal(
-                edit.frame[..., feature], expected_flood)
+            np.testing.assert_array_equal(edit.frame[..., feature], expected_flood)
             assert edit.y_changed
             assert edit.labels_changed
 
@@ -279,8 +276,7 @@ class TestZStackEdit():
 
         with app.app_context():
             edit.action_replace(cell1, cell2)
-            np.testing.assert_array_equal(
-                edit.project.label_array, expected_labels)
+            np.testing.assert_array_equal(edit.project.label_array, expected_labels)
 
     def test_action_active_contour_other_labels_unchanged(self, app):
         """
