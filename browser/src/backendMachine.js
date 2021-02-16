@@ -1,4 +1,3 @@
-/* eslint-disable comma-dangle */
 import { Machine, assign, sendParent } from 'xstate';
 import $ from 'jquery';
 

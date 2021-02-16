@@ -1,4 +1,3 @@
-/* eslint-disable comma-dangle */
 import { Action } from './history.js';
 
 Number.prototype.mod = function (n) {

@@ -1,4 +1,3 @@
-/* eslint-disable comma-dangle */
 /**
  * Defines the statechart for Label in XState.
  */
