@@ -122,8 +122,8 @@ def change_display(token, display_attribute, value):
     return jsonify(payload)
 
 
-@bp.route('/api/rgb/<token>/<rgbValue>', methods=['POST'])
-def rgb(token, rgbValue):
+@bp.route('/api/rgb/<token>/<rgb_value>', methods=['POST'])
+def rgb(token, rgb_value):
     """
 
     Returns:
@@ -135,13 +135,12 @@ def rgb(token, rgbValue):
     if not project:
         return abort(404, description=f'project {token} not found')
 
-    rgb = bool(distutils.util.strtobool(rgbValue))
+    rgb = bool(distutils.util.strtobool(rgb_value))
     project.rgb = rgb
     project.update()
     payload = project.make_payload(x=True)
     current_app.logger.debug('Set RGB to %s for project %s in %s s.',
-                             rgb, token,
-                             timeit.default_timer() - start)
+                             rgb, token, timeit.default_timer() - start)
     return jsonify(payload)
 
 
