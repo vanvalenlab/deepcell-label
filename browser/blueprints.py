@@ -144,11 +144,6 @@ def rgb(token, rgbValue):
                              timeit.default_timer() - start)
     return jsonify(payload)
 
-    project = Project.get(token)
-    if not project:
-        return abort(404, description=f'project {token} not found')
-    payload = project.undo()
-
 
 @bp.route('/api/undo/<token>', methods=['POST'])
 def undo(token):
