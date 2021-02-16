@@ -20,7 +20,7 @@ export class Controller {
     });
 
     // Create model and view for Project and setup bindings
-    getProject.done((project) => {
+    getProject.done(project => {
       this.model = new Model(project);
       this.view = this.model.view;
       this.history = new History();
@@ -60,10 +60,10 @@ export class Controller {
    */
   overrideScroll() {
     const canvasElement = document.getElementById('canvas');
-    canvasElement.onwheel = (event) => { event.preventDefault(); };
-    canvasElement.onmousewheel = (event) => { event.preventDefault(); };
+    canvasElement.onwheel = event => { event.preventDefault(); };
+    canvasElement.onmousewheel = event => { event.preventDefault(); };
 
-    document.addEventListener('keydown', (event) => {
+    document.addEventListener('keydown', event => {
       if (event.key === ' ') {
         event.preventDefault();
       } else if (event.key === 'ArrowUp') {
@@ -79,7 +79,7 @@ export class Controller {
    */
   addWindowBindings() {
     // TODO: why is this bound to the document instead of the window
-    document.addEventListener('mouseup', (e) => this.service.send(e));
+    document.addEventListener('mouseup', e => this.service.send(e));
 
     // resize the canvas every time the window is resized
     window.addEventListener('resize', () => {
@@ -90,11 +90,11 @@ export class Controller {
       }, 500, 'canvasResize');
     });
 
-    window.addEventListener('keydown', (evt) => {
+    window.addEventListener('keydown', evt => {
       this.handleKeydown(evt);
     }, false);
 
-    window.addEventListener('keyup', (evt) => {
+    window.addEventListener('keyup', evt => {
       this.handleKeyup(evt);
     }, false);
   }
@@ -104,13 +104,13 @@ export class Controller {
    */
   addCanvasBindings() {
     const canvasElement = document.getElementById('canvas');
-    canvasElement.addEventListener('click', (e) => this.service.send(e));
-    canvasElement.addEventListener('mousedown', (e) => this.service.send(e));
-    canvasElement.addEventListener('mousemove', (e) => this.service.send(e));
+    canvasElement.addEventListener('click', e => this.service.send(e));
+    canvasElement.addEventListener('mousedown', e => this.service.send(e));
+    canvasElement.addEventListener('mousemove', e => this.service.send(e));
 
-    canvasElement.addEventListener('wheel', (e) => this.handleScroll(e));
-    canvasElement.addEventListener('contextmenu', (e) => e.preventDefault());
-    canvasElement.addEventListener('selectstart', (e) => e.preventDefault());
+    canvasElement.addEventListener('wheel', e => this.handleScroll(e));
+    canvasElement.addEventListener('contextmenu', e => e.preventDefault());
+    canvasElement.addEventListener('selectstart', e => e.preventDefault());
   }
 
   addUndoBindings() {
