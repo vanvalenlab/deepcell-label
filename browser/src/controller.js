@@ -60,8 +60,8 @@ export class Controller {
    */
   overrideScroll() {
     const canvasElement = document.getElementById('canvas');
-    canvasElement.onwheel = event => { event.preventDefault(); };
-    canvasElement.onmousewheel = event => { event.preventDefault(); };
+    canvasElement.onwheel = event => event.preventDefault();
+    canvasElement.onmousewheel = event => event.preventDefault();
 
     document.addEventListener('keydown', event => {
       if (event.key === ' ') {
