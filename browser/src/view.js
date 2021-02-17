@@ -251,7 +251,7 @@ class CanvasView {
   }
 
   get scaledWidth() {
-    return this.canvas.scaledHeight;
+    return this.canvas.scaledWidth;
   }
 
   get scaledHeight() {
@@ -267,7 +267,7 @@ class CanvasView {
   }
 
   get height() {
-    return this.canvas.width;
+    return this.canvas.height;
   }
 
   setBorders() {
