@@ -1,5 +1,4 @@
 import { Machine, assign, sendParent } from 'xstate';
-import $ from 'jquery';
 
 const getModel = () => window.model;
 
@@ -28,7 +27,12 @@ const backendMachine = Machine(
           src: 'edit',
           onDone: {
             target: 'loaded',
-            actions: assign({ data: (_, event) => event.data }),
+            actions: [
+              // (_, event) => console.log(event),
+              // (_, event) => console.log(event.data.json()),
+              assign({ data: (_, event) => event.data }),
+              (context) => console.log(context.data),
+            ],
           },
           onError: {
             target: 'error',
@@ -116,34 +120,33 @@ const backendMachine = Machine(
       handlePayload: (context) => getModel().handlePayload(context.data),
     },
     services: {
-      edit: (context, event) => $.ajax({
-        type: 'POST',
-        url: `${document.location.origin}/api/edit/${getModel().projectID}/${event.action}`,
-        data: event.args,
-      }),
-      undo: () => $.ajax({
-        type: 'POST',
-        url: `${document.location.origin}/api/undo/${getModel().projectID}`
-      }),
-      redo: () => $.ajax({
-        type: 'POST',
-        url: `${document.location.origin}/api/redo/${getModel().projectID}`
-      }),
+      edit: (context, event) => fetch(
+        `${document.location.origin}/api/edit/${getModel().projectID}/${event.action}`,
+        { method: 'POST', body: new URLSearchParams(event.args) },
+      ).then(response => response.json()),
+      undo: () => fetch(
+        `${document.location.origin}/api/undo/${getModel().projectID}`,
+        { method: 'POST' },
+      ).then(response => response.json()),
+      redo: () => fetch(
+        `${document.location.origin}/api/redo/${getModel().projectID}`,
+        { method: 'POST' },
+      ).then(response => response.json()),
       setFrame: (context, event) => {
-        const promise = $.ajax({
-          type: 'POST',
-          url: `${document.location.origin}/api/changedisplay/${getModel().projectID}/${event.dimension}/${event.value}`,
-        });
+        const promise = fetch(
+          `${document.location.origin}/api/changedisplay/${getModel().projectID}/${event.dimension}/${event.value}`,
+          { method: 'POST' },
+        );
         promise.then(() => { getModel()[event.dimension] = event.value });
-        return promise;
+        return promise.then(response => response.json());
       },
       toggleRGB: (context, event) => {
-        const promise = $.ajax({
-          type: 'POST',
-          url: `${document.location.origin}/api/rgb/${getModel().projectID}/${!getModel().rgb}`,
-        });
+        const promise = fetch(
+          `${document.location.origin}/api/rgb/${getModel().projectID}/${!getModel().rgb}`,
+          { method: 'POST' },
+        );
         promise.then(() => { getModel().rgb = !getModel().rgb });
-        return promise;
+        return promise.then(response => response.json());
       },
     }
   }

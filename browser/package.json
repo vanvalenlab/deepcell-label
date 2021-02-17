@@ -27,7 +27,6 @@
   },
   "dependencies": {
     "dropzone": "^5.7.2",
-    "jquery": "^3.5.1",
     "materialize": "^1.0.0",
     "materialize-css": "^1.0.0-rc.2",
     "merge-images": "^2.0.0",

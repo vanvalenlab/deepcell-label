@@ -1,6 +1,5 @@
 import M from 'materialize-css';
 import Dropzone from 'dropzone';
-import $ from 'jquery';
 
 // Initialize Materialize elements
 M.AutoInit();
@@ -17,17 +16,27 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-Dropzone.autoDiscover = false;
+// Dropzone.autoDiscover = false;
 
-$(function() {
-  var myDropzone = new Dropzone('#myDropzone', {
-    timeout: 1000 * 60 * 5, // 5 minutes
-  });
-  myDropzone.on('success', function(file, payload) {
-    // Called when file finishes uploading
-    window.location = `project/${payload.projectId}`;
-  });
-})
+// $(function() {
+//   var myDropzone = new Dropzone('#myDropzone', {
+//     timeout: 1000 * 60 * 5, // 5 minutes
+//   });
+//   myDropzone.on('success', function(file, payload) {
+//     // Called when file finishes uploading
+//     window.location = `project/${payload.projectId}`;
+//   });
+// })
+
+Dropzone.options.myDropzone = {
+  timeout: 1000 * 60 * 5, // 5 minutes
+  init: function () {
+    this.on('success', function(file, payload) {
+      // Redirect to project when file finishes uploading
+      window.location = `project/${payload.projectId}`;
+    });
+  }
+};
 
 // Enable submit button after selecting example file
 const submitButton = document.getElementById('submitExample');

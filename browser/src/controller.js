@@ -1,5 +1,4 @@
 import { interpret } from 'xstate';
-import $ from 'jquery';
 
 import { deepcellLabelMachine } from './statechart';
 import { Model } from './model';
@@ -13,14 +12,10 @@ export class Controller {
    */
   constructor(projectID) {
     // Get Project from database
-    const getProject = $.ajax({
-      type: 'GET',
-      url: `${document.location.origin}/api/project/${projectID}`,
-      async: true
-    });
+    const getProject = fetch(`${document.location.origin}/api/project/${projectID}`);
 
     // Create model and view for Project and setup bindings
-    getProject.done(project => {
+    getProject.then(response => response.json()).then(project => {
       this.model = new Model(project);
       this.view = this.model.view;
       this.history = new History();

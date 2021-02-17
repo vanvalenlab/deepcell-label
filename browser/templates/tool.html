@@ -6,15 +6,14 @@
 <main class="container">
   <div class="row">
 
-    <div id="table-col" class="col s5">
+    <div id="table-col" class="col s5"> 
 
       <h4>{{ settings['title'] | title }}</h4>
       <p>Filename will be given after submit button is pressed.</p>
 
-      {%- if settings['source'] == 'SourceEnum.s3' -%}
-      <div class="row">
+      <div class="row" id="submit-row" hidden=true>
         <div class="col s6">
-          <button id="submit" class="btn waves-effect waves-light indigo" hidden=true>
+          <button id="submit" class="btn waves-effect waves-light indigo">
             Submit<i class="material-icons right">send</i>
           </button>
         </div>
@@ -22,22 +21,13 @@
           {% include "partials/loading-bar.html" %}
         </div>
       </div>
-      <div class="row">
+      <div class="row" id="download-row" hidden=true>
         <div class="col s6">
-          <button id="download" class="btn waves-effect waves-light indigo" hidden=true>
+          <button id="download" class="btn waves-effect waves-light indigo">
             Download<i class="material-icons right">file_download</i>
           </button>
         </div>
       </div>
-      {%- else -%}
-      <div class = "row">
-        <div class = "col s6">
-          <button id="download" class="btn waves-effect waves-light indigo" onClick="download()">
-            Download<i class="material-icons right">file_download</i>
-          </button>
-        </div>
-      </div>
-      {%- endif -%}
 
       <div class="row">
         <div class="col s12">
@@ -85,12 +75,10 @@
       // disable button and show loading bar
       document.getElementById('submit').classList.add('disabled');
       document.getElementById('loading-bar').classList.add('active');
-      const promise = $.ajax({
-        type: 'POST',
-        url: `${document.location.origin}/upload_file/${outputBucket}/${projectID}`,
-        async: true
-      });
-      promise.done((payload) => {
+      const upload = fetch(`${document.location.origin}/upload_file/${outputBucket}/${projectID}`,
+        { method: 'POST' }
+      );
+      upload.then(() => {
         // disable loading bar and remove show output filename
         document.getElementById('loading-bar').classList.remove('active');
         document.getElementById('output').classList.remove('hide');
@@ -103,8 +91,8 @@
     submitButton.onclick = upload;
 
     const sourceS3 = settings.source == 'SourceEnum.s3';
-    downloadButton.hidden = sourceS3;
-    submitButton.hidden = !sourceS3;
+    document.getElementById('download-row').hidden = sourceS3;
+    document.getElementById('submit-row').hidden = !sourceS3;
 
     tool.startDeepCellLabel(settings);
   </script>
