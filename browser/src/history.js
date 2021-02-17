@@ -1,3 +1,5 @@
+import { ChangeFrame, BackendAction } from './actions';
+
 export class History {
   constructor() {
     /** @property {Array<Actions|string>} undoStack actions grouped by fenceposts */
@@ -107,6 +109,34 @@ export class History {
   formatButtons() {
     document.getElementById('undo').disabled = !this.canUndo;
     document.getElementById('redo').disabled = !this.canRedo;
+  }
+
+  /**
+   * Initializes the action history using the history stored on the backend
+   * @param {*} actionFrames frame of each action performed on the project
+   * @param {*} initFrame frame displayed at the bottom of the undoStack
+   * @param {*} finalFrame frame displayed at the top of the undoStack
+   */
+  initializeHistory(actionFrames) {
+    // Start the action history at the first edited frame
+    if (actionFrames.length > 0) {
+      var prevFrame = actionFrames[0];
+      window.model.frame = prevFrame;
+    }
+    for (const frame of actionFrames) {
+      // Jump to action frame before undoing action
+      if (frame !== prevFrame) {
+        const action = new ChangeFrame(frame);
+        this.undoStack.push(action);
+        this.addFence();
+        window.model.frame = frame;
+        prevFrame = frame;
+      }
+      const action = new BackendAction();
+      this.undoStack.push(action);
+      this.addFence();
+    }
+    this.formatButtons();
   }
 }
 

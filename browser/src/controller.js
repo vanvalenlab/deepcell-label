@@ -37,6 +37,8 @@ export class Controller {
       window.view = this.view;
       window.service = this.service;
 
+      this.history.initializeHistory(project.actionFrames);
+
       // Add bindings
       this.overrideScroll();
       this.addWindowBindings();
