@@ -92,12 +92,12 @@ export class Controller {
       }, 500, 'canvasResize');
     });
 
-    window.addEventListener('keydown', evt => {
-      this.handleKeydown(evt);
+    window.addEventListener('keydown', event => {
+      this.handleKeydown(event);
     }, false);
 
-    window.addEventListener('keyup', evt => {
-      this.handleKeyup(evt);
+    window.addEventListener('keyup', event => {
+      this.handleKeyup(event);
     }, false);
   }
 
@@ -122,38 +122,38 @@ export class Controller {
 
   /**
    * Handle mouse scroll to adjust contrast, brightness, or zoom
-   * @param {WheelEvent} evt
+   * @param {WheelEvent} event
    */
-  handleScroll(evt) {
-    if (evt.altKey) {
-      this.service.send({ type: 'ZOOM', change: Math.sign(evt.deltaY) })
-    } else if (evt.shiftKey) {
+  handleScroll(event) {
+    if (event.altKey) {
+      this.service.send({ type: 'ZOOM', change: Math.sign(event.deltaY) })
+    } else if (event.shiftKey) {
       // shift + scroll causes horizontal scroll on mice wheels, but not trackpads
-      const change = evt.deltaY === 0 ? evt.deltaX : evt.deltaY;
+      const change = event.deltaY === 0 ? event.deltaX : event.deltaY;
       this.service.send({ type: 'SCROLLBRIGHTNESS', change: change })
     } else {
-      this.service.send({ type: 'SCROLLCONTRAST', change: evt.deltaY })
+      this.service.send({ type: 'SCROLLCONTRAST', change: event.deltaY })
     }
   }
 
   /**
    * Handle all keybinds
-   * @param {KeyboardEvent} evt
+   * @param {KeyboardEvent} event
    */
-  handleKeydown(evt) {
-    if ((evt.ctrlKey || evt.metaKey) && evt.shiftKey && (evt.key === 'Z' || evt.key === 'z')) {
+  handleKeydown(event) {
+    if ((event.ctrlKey || event.metaKey) && event.shiftKey && (event.key === 'Z' || event.key === 'z')) {
       this.redo();
-    } else if ((evt.ctrlKey || evt.metaKey) && (evt.key === 'Z' || evt.key === 'z')) {
+    } else if ((event.ctrlKey || event.metaKey) && (event.key === 'Z' || event.key === 'z')) {
       this.undo();
-    } else if ((evt.ctrlKey || evt.metaKey) && evt.key === 'b') {
+    } else if ((event.ctrlKey || event.metaKey) && event.key === 'b') {
       this.service.send('TOGGLERGB');
-    } else if (keydownLookup[evt.key]) {
-      this.service.send(keydownLookup[evt.key]);
+    } else if (keydownLookup[event.key]) {
+      this.service.send(keydownLookup[event.key]);
     }
   }
 
-  handleKeyup(evt) {
-    if (evt.key === ' ') {
+  handleKeyup(event) {
+    if (event.key === ' ') {
       this.service.send('keyup.space')
     }
   }
