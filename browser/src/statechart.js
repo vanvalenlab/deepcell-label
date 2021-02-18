@@ -15,8 +15,8 @@ import {
 const { choose } = actions;
 
 // easier access to add to action history
-const addAction = action => { window.controller.history.addAction(action) };
-const addFencedAction = action => { window.controller.history.addFencedAction(action) };
+const addAction = action => window.controller.history.addAction(action);
+const addFencedAction = action => window.controller.history.addFencedAction(action);
 
 // label editing actions
 const draw = (context) => {
