@@ -14,9 +14,7 @@ import {
 
 const { choose } = actions;
 
-// access to other DeepCell Label classes (Model, Canvas, and History)
-const getModel = () => window.model;
-const getCanvas = () => window.model.canvas;
+// easier access to add to action history
 const addAction = action => { window.controller.history.addAction(action) };
 const addFencedAction = action => { window.controller.history.addFencedAction(action) };
 
@@ -24,10 +22,10 @@ const addFencedAction = action => { window.controller.history.addFencedAction(ac
 const draw = (context) => {
   const args = {
     trace: JSON.stringify(context.trace),
-    brush_value: getModel().foreground,
-    target_value: getModel().background,
-    brush_size: getModel().size,
-    frame: getModel().frame,
+    brush_value: window.model.foreground,
+    target_value: window.model.background,
+    brush_size: window.model.size,
+    frame: window.model.frame,
     erase: false,
   };
   const action = new BackendAction('handle_draw', args);
@@ -38,10 +36,10 @@ const threshold = (context) => {
   const args = {
     y1: context.storedY,
     x1: context.storedX,
-    y2: getCanvas().imgY,
-    x2: getCanvas().imgX,
-    frame: getModel().frame,
-    label: getModel().foreground,
+    y2: window.model.canvas.imgY,
+    x2: window.model.canvas.imgX,
+    frame: window.model.frame,
+    label: window.model.foreground,
   };
   const action = new BackendAction('threshold', args);
   addFencedAction(action);
@@ -49,9 +47,9 @@ const threshold = (context) => {
 
 const flood = () => {
   const args = {
-    label: getModel().foreground,
-    x_location: getCanvas().imgX,
-    y_location: getCanvas().imgY,
+    label: window.model.foreground,
+    x_location: window.model.canvas.imgX,
+    y_location: window.model.canvas.imgY,
   };
   const action = new BackendAction('flood', args);
   addFencedAction(action);
@@ -59,10 +57,10 @@ const flood = () => {
 
 const trim = () => {
   const args = {
-    label: getCanvas().label,
-    frame: getModel().frame,
-    x_location: getCanvas().imgX,
-    y_location: getCanvas().imgY,
+    label: window.model.canvas.label,
+    frame: window.model.frame,
+    x_location: window.model.canvas.imgX,
+    y_location: window.model.canvas.imgY,
   };
   const action = new BackendAction('trim_pixels', args);
   addFencedAction(action);
@@ -70,7 +68,7 @@ const trim = () => {
 
 const erode = () => {
   const args = {
-    label: getCanvas().label
+    label: window.model.canvas.label
   };
   const action = new BackendAction('erode', args);
   addFencedAction(action);
@@ -78,7 +76,7 @@ const erode = () => {
 
 const dilate = () => {
   const args = {
-    label: getCanvas().label
+    label: window.model.canvas.label
   };
   const action = new BackendAction('dilate', args);
   addFencedAction(action);
@@ -86,7 +84,7 @@ const dilate = () => {
 
 const autofit = () => {
   const args = {
-    label: getCanvas().label
+    label: window.model.canvas.label
   };
   const action = new BackendAction('active_contour', args);
   addFencedAction(action);
@@ -94,7 +92,7 @@ const autofit = () => {
 
 const predictFrame = () => {
   const args = {
-    frame: getModel().frame
+    frame: window.model.frame
   };
   const action = new BackendAction('predict_single', args);
   addFencedAction(action);
@@ -108,9 +106,9 @@ const predictAll = () => {
 
 const swapFrame = () => {
   const args = {
-    label_1: getModel().foreground,
-    label_2: getModel().background,
-    frame: getModel().frame
+    label_1: window.model.foreground,
+    label_2: window.model.background,
+    frame: window.model.frame
   };
   const action = new BackendAction('swap_single_frame', args);
   addFencedAction(action);
@@ -118,9 +116,9 @@ const swapFrame = () => {
 
 const replaceFrame = () => {
   const args = {
-    label_1: getModel().foreground,
-    label_2: getModel().background,
-    // frame: getModel().frame? may need to add if we no longer store frame on backend
+    label_1: window.model.foreground,
+    label_2: window.model.background,
+    // frame: window.model.frame? may need to add if we no longer store frame on backend
   };
   const action = new BackendAction('replace_single', args);
   addFencedAction(action);
@@ -128,8 +126,8 @@ const replaceFrame = () => {
 
 const replaceAll = () => {
   const args = {
-    label_1: getModel().foreground,
-    label_2: getModel().background
+    label_1: window.model.foreground,
+    label_2: window.model.background
   };
   const action = new BackendAction('replace', args);
   addFencedAction(action);
@@ -137,12 +135,12 @@ const replaceAll = () => {
 
 const watershed = (context) => {
   const args = {
-    frame: getModel().frame,
+    frame: window.model.frame,
     label: context.storedLabel,
     x1_location: context.storedX,
     y1_location: context.storedY,
-    x2_location: getCanvas().imgX,
-    y2_location: getCanvas().imgY
+    x2_location: window.model.canvas.imgX,
+    y2_location: window.model.canvas.imgY
   };
   const action = new BackendAction('watershed', args);
   addFencedAction(action);
@@ -540,25 +538,25 @@ export const deepcellLabelMachine = Machine(
   },
   {
     actions: {
-      updateCanvas: () => { getModel().notifyImageChange(); },
+      updateCanvas: () => { window.model.notifyImageChange(); },
       // assign to context
-      addToTrace: assign({ trace: context => [...context.trace, [getCanvas().imgY, getCanvas().imgX]] }),
+      addToTrace: assign({ trace: context => [...context.trace, [window.model.canvas.imgY, window.model.canvas.imgX]] }),
       storeClick: assign({
-        storedLabel: () => getCanvas().label,
-        storedX: () => getCanvas().imgX,
-        storedY: () => getCanvas().imgY,
+        storedLabel: () => window.model.canvas.label,
+        storedX: () => window.model.canvas.imgX,
+        storedY: () => window.model.canvas.imgY,
       }),
       // select labels actions
       selectLabel: choose([
-        { cond: 'shiftLeftMouse', actions: () => addAction(new SetForeground(getCanvas().label)) },
-        { cond: 'shiftRightMouse', actions: () => addAction(new SetBackground(getCanvas().label)) }
+        { cond: 'shiftLeftMouse', actions: () => addAction(new SetForeground(window.model.canvas.label)) },
+        { cond: 'shiftRightMouse', actions: () => addAction(new SetBackground(window.model.canvas.label)) }
       ]),
       swapLabels: () => addAction(new SwapForegroundBackground()),
       resetLabels: () => addAction(new ResetLabels()),
-      decrementForeground: () => addAction(new SetForeground(getModel().foreground - 1)),
-      incrementForeground: () => addAction(new SetForeground(getModel().foreground + 1)),
-      decrementBackground: () => addAction(new SetBackground(getModel().background - 1)),
-      incrementBackground: () => addAction(new SetBackground(getModel().background + 1)),
+      decrementForeground: () => addAction(new SetForeground(window.model.foreground - 1)),
+      incrementForeground: () => addAction(new SetForeground(window.model.foreground + 1)),
+      decrementBackground: () => addAction(new SetBackground(window.model.background - 1)),
+      incrementBackground: () => addAction(new SetBackground(window.model.background + 1)),
       // edit labels actions
       draw: draw,
       threshold: threshold,
@@ -574,12 +572,12 @@ export const deepcellLabelMachine = Machine(
       replaceAll: replaceAll,
       watershed: watershed,
       // change frame actions
-      decrementFrame: () => addFencedAction(new ChangeFrame(getModel().frame - 1)),
-      incrementFrame: () => addFencedAction(new ChangeFrame(getModel().frame + 1)),
-      decrementChannel: () => addFencedAction(new ChangeChannel(getModel().channel - 1)),
-      incrementChannel: () => addFencedAction(new ChangeChannel(getModel().channel - 1)),
-      decrementFeature: () => addFencedAction(new ChangeFeature(getModel().feature - 1)),
-      incrementFeature: () => addFencedAction(new ChangeFeature(getModel().feature - 1)),
+      decrementFrame: () => addFencedAction(new ChangeFrame(window.model.frame - 1)),
+      incrementFrame: () => addFencedAction(new ChangeFrame(window.model.frame + 1)),
+      decrementChannel: () => addFencedAction(new ChangeChannel(window.model.channel - 1)),
+      incrementChannel: () => addFencedAction(new ChangeChannel(window.model.channel - 1)),
+      decrementFeature: () => addFencedAction(new ChangeFeature(window.model.feature - 1)),
+      incrementFeature: () => addFencedAction(new ChangeFeature(window.model.feature - 1)),
       // adjuster actions
       changeContrast: (_, event) => addAction(new ChangeContrast(event.change)),
       changeBrightness: (_, event) => addAction(new ChangeBrightness(event.change)),
@@ -588,28 +586,28 @@ export const deepcellLabelMachine = Machine(
       toggleInvert: () => addAction(new ToggleInvert()),
       // canvas actions
       pan: (_, event) => {
-        const zoom = 100 / (getCanvas().zoom * getCanvas().scale);
+        const zoom = 100 / (window.model.canvas.zoom * window.model.canvas.scale);
         addAction(new Pan(event.movementX * zoom, event.movementY * zoom));
       },
       zoom: (_, event) => addAction(new Zoom(event.change)),
-      updateMousePos: (_, event) => getModel().updateMousePos(event.offsetX, event.offsetY),
+      updateMousePos: (_, event) => window.model.updateMousePos(event.offsetX, event.offsetY),
       // brush actions
-      incrementBrushSize: () => { getModel().size += 1 },
-      decrementBrushSize: () => { getModel().size -= 1 },
-      setBrushSize: (_, event) => { getModel().size = event.size },
+      incrementBrushSize: () => { window.model.size += 1 },
+      decrementBrushSize: () => { window.model.size -= 1 },
+      setBrushSize: (_, event) => { window.model.size = event.size },
     },
     guards: {
       leftMouse: (_, event) => event.button === 0,
       rightMouse: (_, event) => event.button === 2,
       shiftLeftMouse: (_, event) => event.button === 0 && event.shiftKey,
       shiftRightMouse: (_, event) => event.button === 2 && event.shiftKey,
-      validSeed: () => getCanvas().label !== 0,
+      validSeed: () => window.model.canvas.label !== 0,
       validSecondSeed: (context) => (
         // same label, different point
-        getCanvas().label === context.storedLabel &&
-        (getCanvas().imgX !== context.storedX || getCanvas().imgY !== context.storedY)
+        window.model.canvas.label === context.storedLabel &&
+        (window.model.canvas.imgX !== context.storedX || window.model.canvas.imgY !== context.storedY)
       ),
-      nonemptyBox: (context) => context.storedX !== getCanvas().imgX && context.storedY !== getCanvas().imgY,
+      nonemptyBox: (context) => context.storedX !== window.model.canvas.imgX && context.storedY !== window.model.canvas.imgY,
     }
   }
 );
