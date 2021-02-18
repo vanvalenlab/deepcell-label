@@ -1,5 +1,5 @@
 {
-  "name": "browser",
+  "name": "deepcell-label",
   "description": "This is a version of DeepCell Label that runs in a browser. The browser-based DeepCell Label application can be run locally or deployed to AWS Elastic Beanstalk.",
   "version": "0.1.0",
   "main": "index.js",
