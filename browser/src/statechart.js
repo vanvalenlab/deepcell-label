@@ -244,7 +244,6 @@ const autofitState = {
 };
 
 const watershedState = {
-  entry: 'storeClick',
   initial: 'idle',
   states: {
     idle: {
