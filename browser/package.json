@@ -8,7 +8,7 @@
     "build": "webpack"
   },
   "keywords": [],
-  "author": "",
+  "author": "The Van Valen Lab",
   "license": "SEE LICENSE IN ../LICENSE",
   "devDependencies": {
     "@xstate/inspect": "^0.4.1",
