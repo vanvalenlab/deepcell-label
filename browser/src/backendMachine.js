@@ -1,7 +1,5 @@
 import { Machine, assign, sendParent } from 'xstate';
 
-const getModel = () => window.model;
-
 const backendMachine = Machine(
   {
     id: 'backend',
@@ -117,35 +115,35 @@ const backendMachine = Machine(
   {
     actions: {
       logError: (context) => console.log(context.error),
-      handlePayload: (context) => getModel().handlePayload(context.data),
+      handlePayload: (context) => window.model.handlePayload(context.data),
     },
     services: {
       edit: (context, event) => fetch(
-        `${document.location.origin}/api/edit/${getModel().projectID}/${event.action}`,
+        `${document.location.origin}/api/edit/${window.model.projectID}/${event.action}`,
         { method: 'POST', body: new URLSearchParams(event.args) },
       ).then(response => response.json()),
       undo: () => fetch(
-        `${document.location.origin}/api/undo/${getModel().projectID}`,
+        `${document.location.origin}/api/undo/${window.model.projectID}`,
         { method: 'POST' },
       ).then(response => response.json()),
       redo: () => fetch(
-        `${document.location.origin}/api/redo/${getModel().projectID}`,
+        `${document.location.origin}/api/redo/${window.model.projectID}`,
         { method: 'POST' },
       ).then(response => response.json()),
       setFrame: (context, event) => {
         const promise = fetch(
-          `${document.location.origin}/api/changedisplay/${getModel().projectID}/${event.dimension}/${event.value}`,
+          `${document.location.origin}/api/changedisplay/${window.model.projectID}/${event.dimension}/${event.value}`,
           { method: 'POST' },
         );
-        promise.then(() => { getModel()[event.dimension] = event.value });
+        promise.then(() => { window.model[event.dimension] = event.value });
         return promise.then(response => response.json());
       },
       toggleRGB: (context, event) => {
         const promise = fetch(
-          `${document.location.origin}/api/rgb/${getModel().projectID}/${!getModel().rgb}`,
+          `${document.location.origin}/api/rgb/${window.model.projectID}/${!window.model.rgb}`,
           { method: 'POST' },
         );
-        promise.then(() => { getModel().rgb = !getModel().rgb });
+        promise.then(() => { window.model.rgb = !window.model.rgb });
         return promise.then(response => response.json());
       },
     }
