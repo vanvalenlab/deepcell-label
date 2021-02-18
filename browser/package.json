@@ -9,7 +9,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "SEE LICENSE IN ../LICENSE",
   "devDependencies": {
     "@xstate/inspect": "^0.4.1",
     "eslint": "^6.8.0",
