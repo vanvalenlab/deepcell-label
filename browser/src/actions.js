@@ -302,7 +302,7 @@ export class SetForeground extends Action {
     this.oldLabel = this.model.foreground;
     // cycle highlight to next label
     const maxLabel = this.model.maxLabelsMap.get(this.model.feature);
-    this.newLabel = (label).mod(maxLabel);
+    this.newLabel = (label).mod(maxLabel + 1);
   }
 
   do() {
@@ -325,7 +325,7 @@ export class SetBackground extends Action {
     this.oldLabel = this.background;
     // cycle highlight to next label
     const maxLabel = this.model.maxLabelsMap.get(this.model.feature);
-    this.newLabel = (label).mod(maxLabel);
+    this.newLabel = (label).mod(maxLabel + 1);
   }
 
   do() {
