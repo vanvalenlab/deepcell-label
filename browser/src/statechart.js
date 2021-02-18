@@ -166,7 +166,7 @@ const paintState = {
     dragging: {
       on: {
         mousemove: { actions: 'addToTrace' },
-        mouseup: { actions: 'draw' },
+        mouseup: { target: 'idle', actions: 'draw' },
       }
     }
   }
@@ -187,6 +187,7 @@ const thresholdState = {
       on: {
         mouseup: [
           {
+            target: 'idle',
             cond: 'nonemptyBox',
             actions: 'threshold'
           },
