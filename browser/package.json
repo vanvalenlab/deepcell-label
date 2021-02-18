@@ -28,7 +28,7 @@
   "dependencies": {
     "dropzone": "^5.7.2",
     "materialize": "^1.0.0",
-    "materialize-css": "^1.0.0-rc.2",
+    "materialize-css": "^1.0.0",
     "merge-images": "^2.0.0",
     "xstate": "^4.16.0"
   }
