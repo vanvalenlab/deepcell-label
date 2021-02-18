@@ -17,8 +17,8 @@ const { choose } = actions;
 // access to other DeepCell Label classes (Model, Canvas, and History)
 const getModel = () => window.model;
 const getCanvas = () => window.model.canvas;
-const addAction = (action) => { window.controller.history.addAction(action) };
-const addFencedAction = (action) => { window.controller.history.addFencedAction(action) };
+const addAction = action => { window.controller.history.addAction(action) };
+const addFencedAction = action => { window.controller.history.addFencedAction(action) };
 
 // label editing actions
 const draw = (context) => {
