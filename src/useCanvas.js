@@ -9,12 +9,10 @@ const useCanvas = draw => {
     const canvas = canvasRef.current;
     const context = canvas.getContext('2d');
     context.imageSmoothingEnabled = false;
-    let frameCount = 0;
     let animationFrameId;
     
     const render = () => {
-      frameCount++;
-      draw(context, frameCount);
+      draw(context);
       animationFrameId = window.requestAnimationFrame(render);
     };
     render();
