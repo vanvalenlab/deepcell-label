@@ -548,8 +548,8 @@ export const deepcellLabelMachine = Machine(
       }),
       // select labels actions
       selectLabel: choose([
-        { cond: 'shiftLeftMouse', actions: () => addAction(new SetForeground(window.model.canvas.label)) },
-        { cond: 'shiftRightMouse', actions: () => addAction(new SetBackground(window.model.canvas.label)) }
+        { cond: 'canSelectForegound', actions: () => addAction(new SetForeground(window.model.canvas.label)) },
+        { cond: 'canSelectBackgound', actions: () => addAction(new SetBackground(window.model.canvas.label)) }
       ]),
       swapLabels: () => addAction(new SwapForegroundBackground()),
       resetLabels: () => addAction(new ResetLabels()),
@@ -597,10 +597,10 @@ export const deepcellLabelMachine = Machine(
       setBrushSize: (_, event) => { window.model.size = event.size },
     },
     guards: {
-      leftMouse: (_, event) => event.button === 0,
-      rightMouse: (_, event) => event.button === 2,
-      shiftLeftMouse: (_, event) => event.button === 0 && event.shiftKey,
-      shiftRightMouse: (_, event) => event.button === 2 && event.shiftKey,
+      canSelectForegound: (_, event) => event.button === 0 && event.shiftKey && window.model.canvas.label !== window.model.background,
+      canSelectBackgound: (_, event) => event.button === 2 && event.shiftKey && window.model.canvas.label !== window.model.foreground,
+      leftMouse: (_, event) => event.button === 0 && !event.shiftKey,
+      rightMouse: (_, event) => event.button === 2 && !event.shiftKey,
       validSeed: () => window.model.canvas.label !== 0,
       validSecondSeed: (context) => (
         // same label, different point
