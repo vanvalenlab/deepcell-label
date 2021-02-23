@@ -549,11 +549,25 @@ export const deepcellLabelMachine = Machine(
       }),
       // select labels actions
       selectLabel: choose([
-        { cond: 'canSelectForeground', actions: 'setForeground' },
-        { cond: 'canSelectBackground', actions: 'setBackground' },
+        { cond: 'shiftLeftMouse', actions: 'setForeground' },
+        { cond: 'shiftRightMouse', actions: 'setBackground' },
       ]),
-      setForeground: () => addAction(new SetForeground(window.model.canvas.label)),
-      setBackground: () => addAction(new SetBackground(window.model.canvas.label)),
+      setForeground: () => {
+        const label = window.model.canvas.label;
+        const foreground = window.model.foreground;
+        const background = window.model.background;
+        // make foreground and background different labels
+        if (label === background) { addAction(new SetBackground(foreground)); }
+        addAction(new SetForeground(label));
+      },
+      setBackground: () => {
+        const label = window.model.canvas.label;
+        const foreground = window.model.foreground;
+        const background = window.model.background;
+        // make foreground and background different labels
+        if (label === foreground) { addAction(new SetForeground(background)); }
+        addAction(new SetBackground(label));
+      },
       swapLabels: () => addAction(new SwapForegroundBackground()),
       resetLabels: () => addAction(new ResetLabels()),
       decrementForeground: () => addAction(new SetForeground(window.model.foreground - 1)),
@@ -600,8 +614,8 @@ export const deepcellLabelMachine = Machine(
       setBrushSize: (_, event) => { window.model.size = event.size },
     },
     guards: {
-      canSelectForeground: (_, event) => event.button === 0 && event.shiftKey && window.model.canvas.label !== window.model.background,
-      canSelectBackground: (_, event) => event.button === 2 && event.shiftKey && window.model.canvas.label !== window.model.foreground,
+      shiftLeftMouse: (_, event) => event.button === 0 && event.shiftKey,
+      shiftRightMouse: (_, event) => event.button === 2 && event.shiftKey,
       leftMouse: (_, event) => event.button === 0 && !event.shiftKey,
       rightMouse: (_, event) => event.button === 2 && !event.shiftKey,
       notBackground: () => window.model.canvas.label !== 0,
