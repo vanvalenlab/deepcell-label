@@ -1,5 +1,12 @@
 import { Controller } from './controller.js';
 import M from 'materialize-css';
+import { inspect } from '@xstate/inspect';
+
+inspect({
+  // options
+  // url: 'https://statecharts.io/inspect', // (default)
+  iframe: false // open in new window
+});
 
 // Initialize Materialize elements
 M.AutoInit();
