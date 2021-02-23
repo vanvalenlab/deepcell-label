@@ -204,19 +204,20 @@ const thresholdState = {
 
 const floodState = {
   on: {
-    click: { actions: ['flood', 'setForeground'] }
+    click: { actions: ['flood', 'setBackground'] }
   }
 };
 
 const trimState = {
   on: {
-    click: { actions: ['trim', 'setForeground'] }
+    click: { cond: 'notBackground', actions: ['trim', 'setForeground'] }
   }
 };
 
 const erodeDilateState = {
   on: {
     mousedown: {
+      cond: 'notBackground',
       actions: choose([
         {
           cond: 'leftMouse',
@@ -233,7 +234,7 @@ const erodeDilateState = {
 
 const autofitState = {
   on: {
-    click: { actions: ['autofit', 'setForeground'] },
+    click: { cond: 'notBackground', actions: ['autofit', 'setForeground'] },
     TOGGLERGB: {
       target: 'paint',
       in: '#deepcellLabel.rgb.oneChannel'
@@ -247,7 +248,7 @@ const watershedState = {
     idle: {
       on: {
         click: {
-          cond: 'validSeed',
+          cond: 'notBackground',
           target: 'clicked',
           actions: ['storeClick', 'setForeground'],
         }
@@ -603,7 +604,7 @@ export const deepcellLabelMachine = Machine(
       canSelectBackgound: (_, event) => event.button === 2 && event.shiftKey && window.model.canvas.label !== window.model.foreground,
       leftMouse: (_, event) => event.button === 0 && !event.shiftKey,
       rightMouse: (_, event) => event.button === 2 && !event.shiftKey,
-      validSeed: () => window.model.canvas.label !== 0,
+      notBackground: () => window.model.canvas.label !== 0,
       validSecondSeed: (context) => (
         // same label, different point
         window.model.canvas.label === context.storedLabel &&
