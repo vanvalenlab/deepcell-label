@@ -147,18 +147,24 @@ const watershed = (context) => {
 };
 
 // tool states
+const noneState = {
+  on: {
+    mousedown: {
+      actions: 'selectLabel',
+    }
+  }
+};
+
 const paintState = {
   initial: 'idle',
   entry: assign({ trace: [] }),
   states: {
     idle: {
       on: {
-        mousedown: {
-          // prevents select and paint at the same time
-          cond: (_, event) => !event.shiftKey,
-          target: 'dragging',
-          actions: 'addToTrace'
-        }
+        mousedown: [
+          { cond: 'shift' },
+          { target: 'dragging', actions: 'addToTrace' },
+        ]
       }
     },
     dragging: {
@@ -167,7 +173,8 @@ const paintState = {
         mouseup: { target: 'idle', actions: 'draw' },
       }
     }
-  }
+  },
+  on: { 'keydown.b': 'none' },
 };
 
 const thresholdState = {
@@ -175,10 +182,10 @@ const thresholdState = {
   states: {
     idle: {
       on: {
-        mousedown: {
-          target: 'dragging',
-          actions: 'storeClick'
-        }
+        mousedown: [
+          { cond: 'shift' },
+          { target: 'dragging', actions: 'storeClick' },
+        ],
       }
     },
     dragging: {
@@ -195,50 +202,56 @@ const thresholdState = {
     }
   },
   on: {
-    TOGGLERGB: {
-      target: 'paint',
-      in: '#deepcellLabel.rgb.oneChannel'
-    },
+    TOGGLERGB: 'none',
+    'keydown.t': 'none',
   }
 };
 
 const floodState = {
   on: {
-    click: { actions: ['flood', 'setBackground'] }
+    click: [
+      { cond: 'shift' },
+      { actions: ['flood', 'setBackground'] },
+    ],
+    'keydown.g': 'none',
   }
 };
 
 const trimState = {
   on: {
-    click: { cond: 'notBackground', actions: ['trim', 'setForeground'] }
+    click: [
+      { cond: 'background' },
+      { actions: ['trim', 'setForeground'] },
+    ],
+    'keydown.k': 'none',
   }
 };
 
 const erodeDilateState = {
   on: {
-    mousedown: {
-      cond: 'notBackground',
-      actions: choose([
-        {
-          cond: 'leftMouse',
-          actions: ['erode', 'setForeground'],
-        },
-        {
-          cond: 'rightMouse',
-          actions: ['dilate', 'setForeground'],
-        }
-      ])
-    }
+    mousedown: [
+      { cond: 'background' },
+      { cond: 'shift' },
+      {
+        actions: choose([
+          { cond: 'leftMouse', actions: ['erode', 'setForeground'] },
+          { cond: 'rightMouse', actions: ['dilate', 'setForeground'] },
+        ])
+      },
+    ],
+    'keydown.q': 'none',
   }
 };
 
 const autofitState = {
   on: {
-    click: { cond: 'notBackground', actions: ['autofit', 'setForeground'] },
-    TOGGLERGB: {
-      target: 'paint',
-      in: '#deepcellLabel.rgb.oneChannel'
-    },
+    click: [
+      { cond: 'shift' },
+      { cond: 'background' },
+      { actions: ['autofit', 'setForeground'] }
+    ],
+    TOGGLERGB: 'none',
+    'keydown.m': 'none',
   }
 };
 
@@ -247,27 +260,25 @@ const watershedState = {
   states: {
     idle: {
       on: {
-        click: {
-          cond: 'notBackground',
-          target: 'clicked',
-          actions: ['storeClick', 'setForeground'],
-        }
+        click: [
+          { cond: 'background' },
+          { cond: 'shift' },
+          { target: 'clicked', actions: ['storeClick', 'setForeground'] }
+        ]
       }
     },
     clicked: {
       on: {
-        click: {
-          cond: 'validSecondSeed',
-          actions: 'watershed'
-        }
+        click: [
+          { cond: 'shift' },
+          { cond: 'validSecondSeed', actions: 'watershed' }
+        ]
       }
     }
   },
   on: {
-    TOGGLERGB: {
-      target: 'paint',
-      in: '#deepcellLabel.rgb.oneChannel'
-    },
+    TOGGLERGB: 'none',
+    'keydown.w': 'none',
   }
 };
 
@@ -275,8 +286,9 @@ const watershedState = {
  * Handles which current tool for mouse behavior.
  */
 const toolbarState = {
-  initial: 'paint',
+  initial: 'none',
   states: {
+    none: noneState,
     flood: floodState,
     trim: trimState,
     erodeDilate: erodeDilateState,
@@ -293,18 +305,9 @@ const toolbarState = {
     'keydown.k': '.trim',
     'keydown.q': '.erodeDilate',
     // tools not available in RGB mode
-    'keydown.t': {
-      target: '.threshold',
-      in: '#deepcellLabel.rgb.oneChannel'
-    },
-    'keydown.m': {
-      target: '.autofit',
-      in: '#deepcellLabel.rgb.oneChannel'
-    },
-    'keydown.w': {
-      target: '.watershed',
-      in: '#deepcellLabel.rgb.oneChannel'
-    },
+    'keydown.t': { target: '.threshold', in: '#deepcellLabel.rgb.oneChannel' },
+    'keydown.m': { target: '.autofit', in: '#deepcellLabel.rgb.oneChannel' },
+    'keydown.w': { target: '.watershed', in: '#deepcellLabel.rgb.oneChannel' },
   }
 };
 
@@ -502,7 +505,7 @@ const rgbState = {
  */
 const selectState = {
   on: {
-    mousedown: { actions: 'selectLabel' },
+    mousedown: { cond: 'shift', actions: 'selectLabel' },
     'keydown.x': { actions: 'swapLabels' },
     'keydown.n': { actions: 'resetLabels' },
     'keydown.[': { actions: 'decrementForeground' },
@@ -549,8 +552,8 @@ export const deepcellLabelMachine = Machine(
       }),
       // select labels actions
       selectLabel: choose([
-        { cond: 'shiftLeftMouse', actions: 'setForeground' },
-        { cond: 'shiftRightMouse', actions: 'setBackground' },
+        { cond: 'leftMouse', actions: 'setForeground' },
+        { cond: 'rightMouse', actions: 'setBackground' },
       ]),
       setForeground: () => {
         const label = window.model.canvas.label;
@@ -614,11 +617,10 @@ export const deepcellLabelMachine = Machine(
       setBrushSize: (_, event) => { window.model.size = event.size },
     },
     guards: {
-      shiftLeftMouse: (_, event) => event.button === 0 && event.shiftKey,
-      shiftRightMouse: (_, event) => event.button === 2 && event.shiftKey,
-      leftMouse: (_, event) => event.button === 0 && !event.shiftKey,
-      rightMouse: (_, event) => event.button === 2 && !event.shiftKey,
-      notBackground: () => window.model.canvas.label !== 0,
+      shift: (_, event) => event.shiftKey,
+      leftMouse: (_, event) => event.button === 0,
+      rightMouse: (_, event) => event.button === 2,
+      background: () => window.model.canvas.label === 0,
       validSecondSeed: (context) => (
         // same label, different point
         window.model.canvas.label === context.storedLabel &&
