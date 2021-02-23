@@ -355,8 +355,8 @@ const canvasState = {
     }
   },
   on: {
-    'keydown.-': { actions: send({ type: 'ZOOM', change: -1 }) },
-    'keydown.=': { actions: send({ type: 'ZOOM', change: 1 }) },
+    'keydown.-': { actions: send({ type: 'ZOOM', change: 1 }) },
+    'keydown.=': { actions: send({ type: 'ZOOM', change: -1 }) },
     ZOOM: { actions: 'zoom' },
     mousemove: { actions: 'updateMousePos' }
   }
