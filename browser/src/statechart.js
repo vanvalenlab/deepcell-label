@@ -204,13 +204,13 @@ const thresholdState = {
 
 const floodState = {
   on: {
-    click: { actions: 'flood' }
+    click: { actions: ['flood', 'setForeground'] }
   }
 };
 
 const trimState = {
   on: {
-    click: { actions: 'trim' }
+    click: { actions: ['trim', 'setForeground'] }
   }
 };
 
@@ -220,11 +220,11 @@ const erodeDilateState = {
       actions: choose([
         {
           cond: 'leftMouse',
-          actions: 'erode'
+          actions: ['erode', 'setForeground'],
         },
         {
           cond: 'rightMouse',
-          actions: 'dilate'
+          actions: ['dilate', 'setForeground'],
         }
       ])
     }
@@ -233,7 +233,7 @@ const erodeDilateState = {
 
 const autofitState = {
   on: {
-    click: { actions: 'autofit' },
+    click: { actions: ['autofit', 'setForeground'] },
     TOGGLERGB: {
       target: 'paint',
       in: '#deepcellLabel.rgb.oneChannel'
@@ -249,7 +249,7 @@ const watershedState = {
         click: {
           cond: 'validSeed',
           target: 'clicked',
-          actions: 'storeClick'
+          actions: ['storeClick', 'setForeground'],
         }
       }
     },
