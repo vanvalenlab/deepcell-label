@@ -549,8 +549,8 @@ export const deepcellLabelMachine = Machine(
       }),
       // select labels actions
       selectLabel: choose([
-        { cond: 'canSelectForegound', actions: () => 'setForeground' },
-        { cond: 'canSelectBackgound', actions: () => 'setBackground' },
+        { cond: 'canSelectForeground', actions: 'setForeground' },
+        { cond: 'canSelectBackground', actions: 'setBackground' },
       ]),
       setForeground: () => addAction(new SetForeground(window.model.canvas.label)),
       setBackground: () => addAction(new SetBackground(window.model.canvas.label)),
@@ -600,8 +600,8 @@ export const deepcellLabelMachine = Machine(
       setBrushSize: (_, event) => { window.model.size = event.size },
     },
     guards: {
-      canSelectForegound: (_, event) => event.button === 0 && event.shiftKey && window.model.canvas.label !== window.model.background,
-      canSelectBackgound: (_, event) => event.button === 2 && event.shiftKey && window.model.canvas.label !== window.model.foreground,
+      canSelectForeground: (_, event) => event.button === 0 && event.shiftKey && window.model.canvas.label !== window.model.background,
+      canSelectBackground: (_, event) => event.button === 2 && event.shiftKey && window.model.canvas.label !== window.model.foreground,
       leftMouse: (_, event) => event.button === 0 && !event.shiftKey,
       rightMouse: (_, event) => event.button === 2 && !event.shiftKey,
       notBackground: () => window.model.canvas.label !== 0,
