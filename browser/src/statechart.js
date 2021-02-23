@@ -548,9 +548,11 @@ export const deepcellLabelMachine = Machine(
       }),
       // select labels actions
       selectLabel: choose([
-        { cond: 'canSelectForegound', actions: () => addAction(new SetForeground(window.model.canvas.label)) },
-        { cond: 'canSelectBackgound', actions: () => addAction(new SetBackground(window.model.canvas.label)) }
+        { cond: 'canSelectForegound', actions: () => 'setForeground' },
+        { cond: 'canSelectBackgound', actions: () => 'setBackground' },
       ]),
+      setForeground: () => addAction(new SetForeground(window.model.canvas.label)),
+      setBackground: () => addAction(new SetBackground(window.model.canvas.label)),
       swapLabels: () => addAction(new SwapForegroundBackground()),
       resetLabels: () => addAction(new ResetLabels()),
       decrementForeground: () => addAction(new SetForeground(window.model.foreground - 1)),
