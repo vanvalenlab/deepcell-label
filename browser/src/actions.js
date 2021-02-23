@@ -322,7 +322,7 @@ export class SetBackground extends Action {
   constructor(label) {
     super();
     this.model = window.model;
-    this.oldLabel = this.background;
+    this.oldLabel = this.model.background;
     // cycle highlight to next label
     const maxLabel = this.model.maxLabelsMap.get(this.model.feature);
     this.newLabel = (label).mod(maxLabel + 1);
