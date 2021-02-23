@@ -31,19 +31,6 @@ export class History {
   }
 
   /**
-   * Executes an action,
-   * fences it in to be undone alone,
-   * and clears the actions to be redone.
-   *
-   * @param {Action} action
-   */
-  addFencedAction(action) {
-    this.addFence();
-    this.addAction(action);
-    this.addFence();
-  }
-
-  /**
    * Separates groups of actions.
    * When a fence is added before an action, the action will be the first in a new group,
    * and when a fense is added after, the action will be the last in the group.

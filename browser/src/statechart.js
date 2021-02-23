@@ -16,7 +16,6 @@ const { choose } = actions;
 
 // easier access to add to action history
 const addAction = action => window.controller.history.addAction(action);
-const addFencedAction = action => window.controller.history.addFencedAction(action);
 
 // label editing actions
 const draw = (context) => {
@@ -29,7 +28,7 @@ const draw = (context) => {
     erase: false,
   };
   const action = new BackendAction('handle_draw', args);
-  addFencedAction(action);
+  addAction(action);
 };
 
 const threshold = (context) => {
@@ -42,7 +41,7 @@ const threshold = (context) => {
     label: window.model.foreground,
   };
   const action = new BackendAction('threshold', args);
-  addFencedAction(action);
+  addAction(action);
 };
 
 const flood = () => {
@@ -52,7 +51,7 @@ const flood = () => {
     y_location: window.model.canvas.imgY,
   };
   const action = new BackendAction('flood', args);
-  addFencedAction(action);
+  addAction(action);
 };
 
 const trim = () => {
@@ -63,7 +62,7 @@ const trim = () => {
     y_location: window.model.canvas.imgY,
   };
   const action = new BackendAction('trim_pixels', args);
-  addFencedAction(action);
+  addAction(action);
 };
 
 const erode = () => {
@@ -71,7 +70,7 @@ const erode = () => {
     label: window.model.canvas.label
   };
   const action = new BackendAction('erode', args);
-  addFencedAction(action);
+  addAction(action);
 };
 
 const dilate = () => {
@@ -79,7 +78,7 @@ const dilate = () => {
     label: window.model.canvas.label
   };
   const action = new BackendAction('dilate', args);
-  addFencedAction(action);
+  addAction(action);
 };
 
 const autofit = () => {
@@ -87,7 +86,7 @@ const autofit = () => {
     label: window.model.canvas.label
   };
   const action = new BackendAction('active_contour', args);
-  addFencedAction(action);
+  addAction(action);
 };
 
 const predictFrame = () => {
@@ -95,13 +94,13 @@ const predictFrame = () => {
     frame: window.model.frame
   };
   const action = new BackendAction('predict_single', args);
-  addFencedAction(action);
+  addAction(action);
 };
 
 const predictAll = () => {
   const args = {};
   const action = new BackendAction('predict_zstack', args);
-  addFencedAction(action);
+  addAction(action);
 };
 
 const swapFrame = () => {
@@ -111,7 +110,7 @@ const swapFrame = () => {
     frame: window.model.frame
   };
   const action = new BackendAction('swap_single_frame', args);
-  addFencedAction(action);
+  addAction(action);
 };
 
 const replaceFrame = () => {
@@ -121,7 +120,7 @@ const replaceFrame = () => {
     // frame: window.model.frame? may need to add if we no longer store frame on backend
   };
   const action = new BackendAction('replace_single', args);
-  addFencedAction(action);
+  addAction(action);
 };
 
 const replaceAll = () => {
@@ -130,7 +129,7 @@ const replaceAll = () => {
     label_2: window.model.background
   };
   const action = new BackendAction('replace', args);
-  addFencedAction(action);
+  addAction(action);
 };
 
 const watershed = (context) => {
@@ -143,7 +142,7 @@ const watershed = (context) => {
     y2_location: window.model.canvas.imgY
   };
   const action = new BackendAction('watershed', args);
-  addFencedAction(action);
+  addAction(action);
 };
 
 // tool states
@@ -323,7 +322,7 @@ const mouseState = {
     }
   },
   on: {
-    EDIT: { actions: forwardTo('backend') },
+    EDIT: { actions: [forwardTo('backend'), () => window.controller.history.addFence()] },
     UNDO: { actions: forwardTo('backend') },
     REDO: { actions: forwardTo('backend') },
   }
@@ -592,12 +591,12 @@ export const deepcellLabelMachine = Machine(
       replaceAll: replaceAll,
       watershed: watershed,
       // change frame actions
-      decrementFrame: () => addFencedAction(new ChangeFrame(window.model.frame - 1)),
-      incrementFrame: () => addFencedAction(new ChangeFrame(window.model.frame + 1)),
-      decrementChannel: () => addFencedAction(new ChangeChannel(window.model.channel - 1)),
-      incrementChannel: () => addFencedAction(new ChangeChannel(window.model.channel - 1)),
-      decrementFeature: () => addFencedAction(new ChangeFeature(window.model.feature - 1)),
-      incrementFeature: () => addFencedAction(new ChangeFeature(window.model.feature - 1)),
+      decrementFrame: () => addAction(new ChangeFrame(window.model.frame - 1)),
+      incrementFrame: () => addAction(new ChangeFrame(window.model.frame + 1)),
+      decrementChannel: () => addAction(new ChangeChannel(window.model.channel - 1)),
+      incrementChannel: () => addAction(new ChangeChannel(window.model.channel - 1)),
+      decrementFeature: () => addAction(new ChangeFeature(window.model.feature - 1)),
+      incrementFeature: () => addAction(new ChangeFeature(window.model.feature - 1)),
       // adjuster actions
       changeContrast: (_, event) => addAction(new ChangeContrast(event.change)),
       changeBrightness: (_, event) => addAction(new ChangeBrightness(event.change)),
