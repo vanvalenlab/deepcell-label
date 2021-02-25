@@ -291,6 +291,8 @@ const toolbarState = {
     'keydown.t': { target: '.threshold', in: '#label.rgb.oneChannel' },
     'keydown.m': { target: '.autofit', in: '#label.rgb.oneChannel' },
     'keydown.w': { target: '.watershed', in: '#label.rgb.oneChannel' },
+    'keydown.Space': 'pan',
+
   }
 };
 
@@ -303,6 +305,9 @@ const mouseState = {
     toolbar: toolbarState,
     loading: {
       on: { LOADED: 'toolbar.hist' }
+    },
+    pan: {
+      on: { 'keyup.Space': 'toolbar.hist' },
     },
   },
   on: {
@@ -333,11 +338,11 @@ const canvasState = {
   initial: 'idle',
   states: {
     idle: {
-      on: { 'keydown.space': 'pan' },
+      on: { 'keydown.Space': 'pan' },
     },
     pan: {
       on: {
-        'keyup.space': 'idle',
+        'keyup.Space': 'idle',
         mousemove: { actions: ['pan', 'updateMousePos'] }
       }
     }

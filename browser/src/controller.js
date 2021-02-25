@@ -151,7 +151,7 @@ export class Controller {
 
   handleKeyup(event) {
     if (event.key === ' ') {
-      this.service.send('keyup.space')
+      this.service.send('keyup.Space')
     }
   }
 }

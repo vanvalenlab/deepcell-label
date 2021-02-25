@@ -149,11 +149,13 @@ class InfopaneView {
   }
 
   getTool() {
+    const state = window.controller.service.state;
     const states = window.controller.service.state.toStrings();
     const toolbarState = 'mouse.toolbar.';
     for (const state of states) {
       if (state.startsWith(toolbarState)) { return state.substring(toolbarState.length); }
     }
+    if (state.matches('mouse.pan')) { return 'panning'; }
     return 'loading...';
   }
 
