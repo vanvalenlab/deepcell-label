@@ -27,7 +27,7 @@ function App() {
     <div className={styles.root}>
       <Navbar />
       <InstructionPane />
-      <Box display="flex" justifyContent="space-evenly" alignItems="flex-start">
+      <Box display="flex" justifyContent="space-evenly" alignItems="flex-start" p={5}>
         <Box boxShadow={3}>
           <ControlPanel className={styles.controlPanel}q/>
         </Box>
