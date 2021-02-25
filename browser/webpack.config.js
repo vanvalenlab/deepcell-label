@@ -12,5 +12,5 @@ module.exports = {
     libraryTarget: 'var',
     library: '[name]'
   },
-  mode: 'development',
+  mode: 'production',
 }

@@ -1,7 +1,7 @@
 import { interpret } from 'xstate';
 
 import { labelMachine } from './statechart';
-import { inspect } from '@xstate/inspect';
+// import { inspect } from '@xstate/inspect';
 import { Model } from './model';
 import { History } from './history';
 import keydownLookup from './keydownLookup';
@@ -22,7 +22,7 @@ export class Controller {
       this.history = new History();
 
       // Interpret the statechart
-      this.service = interpret(labelMachine, { devTools: true });
+      this.service = interpret(labelMachine); // , { devTools: true });
       // add a listener to update the info table whenever a transition occurs
       this.service.onTransition(() => { this.model.notifyInfoChange() });
       // Start the service
