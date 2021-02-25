@@ -1,6 +1,6 @@
 import { interpret } from 'xstate';
 
-import { deepcellLabelMachine } from './statechart';
+import { labelMachine } from './statechart';
 import { inspect } from '@xstate/inspect';
 import { Model } from './model';
 import { History } from './history';
@@ -22,7 +22,7 @@ export class Controller {
       this.history = new History();
 
       // Interpret the statechart
-      this.service = interpret(deepcellLabelMachine, { devTools: true });
+      this.service = interpret(labelMachine, { devTools: true });
       // add a listener to update the info table whenever a transition occurs
       this.service.onTransition(() => { this.model.notifyInfoChange() });
       // Start the service
@@ -103,6 +103,7 @@ export class Controller {
   addCanvasBindings() {
     const canvasElement = document.getElementById('canvas');
     canvasElement.addEventListener('click', e => this.service.send(e));
+
     canvasElement.addEventListener('mousedown', e => this.service.send(e));
     canvasElement.addEventListener('mousemove', e => this.service.send(e));
 

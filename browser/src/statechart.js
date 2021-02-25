@@ -146,13 +146,6 @@ const watershed = (context) => {
 };
 
 // tool states
-const noneState = {
-  on: {
-    mousedown: {
-      actions: 'selectLabel',
-    }
-  }
-};
 
 const paintState = {
   initial: 'idle',
@@ -161,7 +154,6 @@ const paintState = {
     idle: {
       on: {
         mousedown: [
-          { cond: 'shift' },
           { target: 'dragging', actions: 'addToTrace' },
         ]
       }
@@ -169,8 +161,11 @@ const paintState = {
     dragging: {
       on: {
         mousemove: { actions: 'addToTrace' },
-        mouseup: { target: 'idle', actions: 'draw' },
+        mouseup: { target: 'done', actions: 'draw' },
       }
+    },
+    done: {
+      always: 'idle',
     }
   },
   on: { 'keydown.b': 'none' },
@@ -182,7 +177,6 @@ const thresholdState = {
     idle: {
       on: {
         mousedown: [
-          { cond: 'shift' },
           { target: 'dragging', actions: 'storeClick' },
         ],
       }
@@ -208,10 +202,7 @@ const thresholdState = {
 
 const floodState = {
   on: {
-    click: [
-      { cond: 'shift' },
-      { actions: ['flood', 'setBackground'] },
-    ],
+    click: { cond: 'shift', actions: 'flood' },
     'keydown.g': 'none',
   }
 };
@@ -220,7 +211,7 @@ const trimState = {
   on: {
     click: [
       { cond: 'background' },
-      { actions: ['trim', 'setForeground'] },
+      { actions: 'trim' },
     ],
     'keydown.k': 'none',
   }
@@ -228,15 +219,10 @@ const trimState = {
 
 const erodeDilateState = {
   on: {
-    mousedown: [
+    click: [
       { cond: 'background' },
-      { cond: 'shift' },
-      {
-        actions: choose([
-          { cond: 'leftMouse', actions: ['erode', 'setForeground'] },
-          { cond: 'rightMouse', actions: ['dilate', 'setForeground'] },
-        ])
-      },
+      { cond: 'shift', actions: 'erode' },
+      { actions: 'dilate' },
     ],
     'keydown.q': 'none',
   }
@@ -245,9 +231,8 @@ const erodeDilateState = {
 const autofitState = {
   on: {
     click: [
-      { cond: 'shift' },
       { cond: 'background' },
-      { actions: ['autofit', 'setForeground'] }
+      { actions: 'autofit' }
     ],
     TOGGLERGB: 'none',
     'keydown.m': 'none',
@@ -262,7 +247,7 @@ const watershedState = {
         click: [
           { cond: 'background' },
           { cond: 'shift' },
-          { target: 'clicked', actions: ['storeClick', 'setForeground'] }
+          { target: 'clicked', actions: 'storeClick' }
         ]
       }
     },
@@ -287,7 +272,7 @@ const watershedState = {
 const toolbarState = {
   initial: 'none',
   states: {
-    none: noneState,
+    none: {},
     flood: floodState,
     trim: trimState,
     erodeDilate: erodeDilateState,
@@ -295,18 +280,17 @@ const toolbarState = {
     paint: paintState,
     threshold: thresholdState,
     watershed: watershedState,
-    hist: { type: 'history' }
+    hist: { type: 'history', history: 'deep' }
   },
   on: {
-    LOADING: 'loading',
     'keydown.b': '.paint',
     'keydown.g': '.flood',
     'keydown.k': '.trim',
     'keydown.q': '.erodeDilate',
     // tools not available in RGB mode
-    'keydown.t': { target: '.threshold', in: '#deepcellLabel.rgb.oneChannel' },
-    'keydown.m': { target: '.autofit', in: '#deepcellLabel.rgb.oneChannel' },
-    'keydown.w': { target: '.watershed', in: '#deepcellLabel.rgb.oneChannel' },
+    'keydown.t': { target: '.threshold', in: '#label.rgb.oneChannel' },
+    'keydown.m': { target: '.autofit', in: '#label.rgb.oneChannel' },
+    'keydown.w': { target: '.watershed', in: '#label.rgb.oneChannel' },
   }
 };
 
@@ -319,12 +303,13 @@ const mouseState = {
     toolbar: toolbarState,
     loading: {
       on: { LOADED: 'toolbar.hist' }
-    }
+    },
   },
   on: {
     EDIT: { actions: [forwardTo('backend'), () => window.controller.history.addFence()] },
     UNDO: { actions: forwardTo('backend') },
     REDO: { actions: forwardTo('backend') },
+    LOADING: '.loading',
   }
 };
 
@@ -499,12 +484,19 @@ const rgbState = {
   }
 };
 
+// TODO: refactor into separate actor machine that receives SETFOREGROUND & SETBACKGROUND events
 /**
  * Handles selecting labels.
  */
 const selectState = {
   on: {
-    mousedown: { cond: 'shift', actions: 'selectLabel' },
+    mousedown: [
+      { in: '#label.mouse.toolbar.watershed.clicked' },
+      { cond: 'background', in: '#label.mouse.toolbar.threshold' },
+      { in: '#label.mouse.toolbar.threshold', actions: 'setForeground' },
+      { cond: 'shift', actions: 'setBackground' },
+      { actions: 'setForeground' },
+    ],
     'keydown.x': { actions: 'swapLabels' },
     'keydown.n': { actions: 'resetLabels' },
     'keydown.[': { actions: 'decrementForeground' },
@@ -514,9 +506,9 @@ const selectState = {
   }
 };
 
-export const deepcellLabelMachine = Machine(
+export const labelMachine = Machine(
   {
-    id: 'deepcellLabel',
+    id: 'label',
     type: 'parallel',
     context: {
       trace: [],
@@ -550,10 +542,6 @@ export const deepcellLabelMachine = Machine(
         storedY: () => window.model.canvas.imgY,
       }),
       // select labels actions
-      selectLabel: choose([
-        { cond: 'leftMouse', actions: 'setForeground' },
-        { cond: 'rightMouse', actions: 'setBackground' },
-      ]),
       setForeground: () => {
         const label = window.model.canvas.label;
         const foreground = window.model.foreground;
@@ -617,8 +605,6 @@ export const deepcellLabelMachine = Machine(
     },
     guards: {
       shift: (_, event) => event.shiftKey,
-      leftMouse: (_, event) => event.button === 0,
-      rightMouse: (_, event) => event.button === 2,
       background: () => window.model.canvas.label === 0,
       validSecondSeed: (context) => (
         // same label, different point
