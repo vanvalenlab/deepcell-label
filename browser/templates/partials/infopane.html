@@ -12,9 +12,9 @@
               <li class="tab col s2"><a class="active" href="#tab1">Overview</a></li>
               <li class="tab col s2"><a href="#tab2">Info Table</a></li>
               <li class="tab col s2"><a href="#tab3">Canvas</a></li>
-              <li class="tab col s2"><a href="#tab4">Tools</a></li>
-              <li class="tab col s2"><a href="#tab5">Actions</a></li>
-              <li class="tab col s2"><a href="#tab6">Select Labels</a></li>
+              <li class="tab col s2"><a href="#tab4">Select Labels</a></li>
+              <li class="tab col s2"><a href="#tab5">Tools</a></li>
+              <li class="tab col s2"><a href="#tab6">Actions</a></li>
             </ul>
           </div>
           <div id="tab1" class="col s12">
@@ -165,21 +165,53 @@
             </p>
           </div>
           <div id="tab4" class="col s12">
+            <h4>Select Labels</h4>
+          
+            <p dir="ltr">
+              Many tools will only edit the selected labels.
+              Select different labels to edit them.
+            </p>
+
+            <p dir="ltr">
+              Select a label by holding the <strong>Shift key</strong> and clicking on that label.
+              At first, the label will be selected to paint over, but selecting it a second time will select it to paint with.
+            </p>
+          
+            <p dir="ltr">
+              To unselect everything, press <strong>Escape</strong>.
+              <br>
+              To select a new label to paint with, press <strong>N key</strong>.
+              <br>
+              To swap the labels to paint with and over, press <strong>X key</strong>.
+              <br>
+              To cycle between labels to paint with, press <strong>[ key</strong> (to cycle backwards) or <strong>] key</strong>
+              (to
+              cycle forwards).
+              <br>
+              To cycle between labels to paint over, press <strong>Shift + [</strong> (to cycle backwards) or <strong>Shift +
+                ]</strong> (to cycle forwards).
+            </p>
+          
+            <p dir="ltr">
+              If you select the same label to both paint with and over, Label will instead swap the labels.
+            </p>
+          </div>
+          <div id="tab5" class="col s12">
             <h4>Tools</h4>
             
             <p dir="ltr">
-              The tool controls how to edit labeling when clicking on the canvas.
+              The tool controls how we edit selected labels when clicking on the canvas.
             </p>
             <h5>No Tool</h5>
 
             <p dir="ltr">
               Label starts using none of the tools.
               <br>
-              You can select labels by clicking on them while using the none tool.
+              Select labels by clicking on them while using the none tool instead of just Shift + click.
               <br>
               Use one of the keybinds listed below to switch to that tool.
               <br>
-              You can switch back by to the none tool by pressing the keybind the current tool a second time,
+              You can switch back by to the none tool by pressing the keybind the current tool again,
               like pressing <strong>B</strong> while you are already using the brush tool.
             </p>
 
@@ -219,11 +251,13 @@
             
             <p dir="ltr">
               The grow and shrink tool expands or contracts a label's boundary by one pixel.
+              The tool expands labels selected as the foreground, and contracts labels selected as the background.
               <br>
-              To shrink a label, <strong>Click</strong> on it while using this tool.
+              To grow or shrink a label, select it then <br>Click<br> on it.
               <br>
-              To grow a label, <strong>Right Click</strong> on it while using this tool.
-            
+              Click on an unselected label to make it the foreground label, then click again to grow it.
+              <br>
+              Shift + Click an unselected label to make it the background label, then click to shrink it.
             </p>
 
             <p dir="ltr">
@@ -233,13 +267,12 @@
             <h5>Flood</h5>
             
             <p dir="ltr">
-              The flood tool fills a region with the label we're painting with.
+              The flood tool fills the background label with the foreground label.
               <br>
-              When flooding a background region, the tool will only flood adjacent pixels.
+              To flood a region, select it as the background then <strong>Click</strong> on it.
               <br>
-              When flooding an existing label, the tool will also flood diagonally connected pixels.
-              <br>
-              To flood a region, <strong>Click</strong> on it while using this tool.
+              If you click on an unselected region with this tool, it becomes the background label,
+              so when you click on it again, you flood the region.
             
             </p>
             
@@ -250,9 +283,12 @@
             <h5>Trim</h5>
             
             <p dir="ltr">
-              The trim tool removes disconnected regions of a label, leaving only the connected pixels behind.
+              The trim tool removes disconnected regions of the background label, leaving only the connected pixels behind.
               <br>
-              To trim a region, <strong>Click</strong> on it while using this tool.
+              To trim a region, select it as the background then <strong>Click</strong> on it.
+              <br>
+              If you click on an unselected label, it becomes the background label,
+              so when you click on it again, you trim the label.
             
             </p>
             
@@ -263,11 +299,14 @@
             <h5>Autofit</h5>
             
             <p dir="ltr">
-              The autofit tool adjusts the boundary of a label to hug the nearest edges in the raw image.
+              The autofit tool adjusts the boundary of the foreground label to hug the nearest edges in the raw image.
               <br>
               This tool can fix the boundaries of an existing label, but cannot create a label from scratch.
               <br>
-              To autofit a region, <strong>Click</strong> on it while using this tool.
+              To autofit a region, select it as the foreground and <strong>Click</strong> on it.
+              <br>
+              If you click on an unselected label, it becomes the foreground label,
+              so when you click on it again, you autofit the label.
             
             </p>
             
@@ -279,7 +318,7 @@
             <h5>Watershed</h5>
             
             <p dir="ltr">
-              The watershed tool splits one label into two, allowing us to separate adjacent cells that have been given the same
+              The watershed tool splits the foreground label into two, allowing us to separate adjacent cells that have been given the same
               label.
               <br>
               <strong>Click</strong> once on a label, then <strong>Click</strong> elsewhere in the same label.
@@ -293,7 +332,7 @@
               Switch to the watershed tool by pressing <strong>W key</strong>.
             </p>
           </div>
-          <div id="tab5" class="col s12">
+          <div id="tab6" class="col s12">
             <h4>Actions</h4>
             
             <p dir="ltr">
@@ -316,34 +355,6 @@
             <p dir="ltr">
               To predict the labels based on the previous frame, press <strong>O key</strong>.
               To predict the labels on all frames, press <strong>Shift + O</strong>.
-            </p>
-          </div>
-          <div id="tab6" class="col s12">
-            <h4>Select Labels</h4>
-            
-            <p dir="ltr">
-              Some tools and actions edit the labels we're painting with and painting over.
-              Select different labels to control which labels these tools and actions edit.
-            </p>
-            
-            <p dir="ltr">
-              To select a label to paint with, hold <strong>Shift</strong> and <strong>Click</strong> on the label.
-              <br>
-              To select a label to paint over, hold <strong>Shift</strong> and <strong>Right Click</strong> on the label.
-              <br>
-              To swap the labels to paint with and over, press <strong>X key</strong>.
-              <br>
-              To select a new label to paint with, press <strong>N key</strong>. This also selects the background to paint over.
-              <br>
-              To cycle between labels to paint with, press <strong>[ key</strong> (to cycle backwards) or <strong>] key</strong> (to
-              cycle forwards).
-              <br>
-              To cycle between labels to paint over, press <strong>Shift + [</strong> (to cycle backwards) or <strong>Shift +
-                ]</strong> (to cycle forwards).
-            </p>
-
-            <p dir="ltr">
-              If you select the same label to both paint with and over, Label will instead swap the labels.
             </p>
           </div>
         </div>
