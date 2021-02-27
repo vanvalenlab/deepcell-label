@@ -341,6 +341,52 @@ export class SetBackground extends Action {
   }
 }
 
+export class NewForeground extends Action {
+  constructor() {
+    super();
+    this.model = window.model;
+    this.oldValue = this.model.foreground;
+    this.newValue = this.model.maxLabelsMap.get(this.model.feature) + 1;
+  }
+
+  do() {
+    this.model.foreground = this.newValue;
+  }
+
+  undo() {
+    this.model.foreground = this.oldValue;
+  }
+
+  redo() {
+    this.do();
+  }
+}
+
+export class ResetBackground extends Action {
+  constructor() {
+    super();
+    this.model = window.model;
+    this.oldBackground = this.model.background;
+    this.oldForeground = this.model.foreground;
+    this.newBackground = 0;
+    this.newForeground = 0;
+  }
+
+  do() {
+    this.model.foreground = this.newForeground;
+    this.model.background = this.newBackground;
+  }
+
+  undo() {
+    this.model.foreground = this.oldForeground;
+    this.model.background = this.oldBackground;
+  }
+
+  redo() {
+    this.do();
+  }
+}
+
 export class ResetLabels extends Action {
   constructor() {
     super();

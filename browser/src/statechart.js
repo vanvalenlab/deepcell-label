@@ -2,7 +2,7 @@
  * Defines the statechart for Label in XState.
  */
 
-import { Machine, actions, assign, forwardTo, send } from 'xstate';
+import { Machine, assign, forwardTo, send } from 'xstate';
 import backendMachine from './backendMachine';
 
 import {
@@ -10,12 +10,12 @@ import {
   Pan, Zoom, ToggleHighlight, ToggleInvert,
   ChangeContrast, ChangeBrightness, ResetBrightnessContrast,
   SetForeground, SetBackground, SwapForegroundBackground, ResetLabels,
+  NewForeground, ResetBackground,
 } from './actions.js';
-
-const { choose } = actions;
 
 // easier access to add to action history
 const addAction = action => window.controller.history.addAction(action);
+const addFencedAction = action => window.controller.history.addFencedAction(action);
 
 // label editing actions
 const draw = (context) => {
@@ -28,7 +28,7 @@ const draw = (context) => {
     erase: false,
   };
   const action = new BackendAction('handle_draw', args);
-  addAction(action);
+  addFencedAction(action);
 };
 
 const threshold = (context) => {
@@ -41,7 +41,7 @@ const threshold = (context) => {
     label: window.model.foreground,
   };
   const action = new BackendAction('threshold', args);
-  addAction(action);
+  addFencedAction(action);
 };
 
 const flood = () => {
@@ -51,7 +51,7 @@ const flood = () => {
     y_location: window.model.canvas.imgY,
   };
   const action = new BackendAction('flood', args);
-  addAction(action);
+  addFencedAction(action);
 };
 
 const trim = () => {
@@ -62,7 +62,7 @@ const trim = () => {
     y_location: window.model.canvas.imgY,
   };
   const action = new BackendAction('trim_pixels', args);
-  addAction(action);
+  addFencedAction(action);
 };
 
 const erode = () => {
@@ -70,7 +70,7 @@ const erode = () => {
     label: window.model.canvas.label
   };
   const action = new BackendAction('erode', args);
-  addAction(action);
+  addFencedAction(action);
 };
 
 const dilate = () => {
@@ -78,7 +78,7 @@ const dilate = () => {
     label: window.model.canvas.label
   };
   const action = new BackendAction('dilate', args);
-  addAction(action);
+  addFencedAction(action);
 };
 
 const autofit = () => {
@@ -86,7 +86,7 @@ const autofit = () => {
     label: window.model.canvas.label
   };
   const action = new BackendAction('active_contour', args);
-  addAction(action);
+  addFencedAction(action);
 };
 
 const predictFrame = () => {
@@ -94,13 +94,13 @@ const predictFrame = () => {
     frame: window.model.frame
   };
   const action = new BackendAction('predict_single', args);
-  addAction(action);
+  addFencedAction(action);
 };
 
 const predictAll = () => {
   const args = {};
   const action = new BackendAction('predict_zstack', args);
-  addAction(action);
+  addFencedAction(action);
 };
 
 const swapFrame = () => {
@@ -110,7 +110,7 @@ const swapFrame = () => {
     frame: window.model.frame
   };
   const action = new BackendAction('swap_single_frame', args);
-  addAction(action);
+  addFencedAction(action);
 };
 
 const replaceFrame = () => {
@@ -120,7 +120,7 @@ const replaceFrame = () => {
     // frame: window.model.frame? may need to add if we no longer store frame on backend
   };
   const action = new BackendAction('replace_single', args);
-  addAction(action);
+  addFencedAction(action);
 };
 
 const replaceAll = () => {
@@ -129,7 +129,7 @@ const replaceAll = () => {
     label_2: window.model.background
   };
   const action = new BackendAction('replace', args);
-  addAction(action);
+  addFencedAction(action);
 };
 
 const watershed = (context) => {
@@ -142,7 +142,7 @@ const watershed = (context) => {
     y2_location: window.model.canvas.imgY
   };
   const action = new BackendAction('watershed', args);
-  addAction(action);
+  addFencedAction(action);
 };
 
 // tool states
@@ -154,8 +154,9 @@ const paintState = {
     idle: {
       on: {
         mousedown: [
+          { cond: 'shift' },
           { target: 'dragging', actions: 'addToTrace' },
-        ]
+        ],
       }
     },
     dragging: {
@@ -168,7 +169,11 @@ const paintState = {
       always: 'idle',
     }
   },
-  on: { 'keydown.b': 'none' },
+  on: {
+    'keydown.b': 'none',
+    'keydown.n': { actions: 'newForeground' },
+    'keydown.Escape': { actions: 'resetBackground' },
+  },
 };
 
 const thresholdState = {
@@ -202,7 +207,10 @@ const thresholdState = {
 
 const floodState = {
   on: {
-    click: { cond: 'shift', actions: 'flood' },
+    click: [
+      { cond: 'onBackground', actions: 'flood' },
+      { actions: 'setBackground' },
+    ],
     'keydown.g': 'none',
   }
 };
@@ -210,29 +218,34 @@ const floodState = {
 const trimState = {
   on: {
     click: [
-      { cond: 'background' },
-      { actions: 'trim' },
+      { cond: 'onNoLabel' },
+      { cond: 'onBackground', actions: 'trim' },
+      { actions: 'setBackground' }
     ],
     'keydown.k': 'none',
   }
 };
 
 const erodeDilateState = {
+
   on: {
-    click: [
-      { cond: 'background' },
-      { cond: 'shift', actions: 'erode' },
-      { actions: 'dilate' },
+    mousedown: [
+      { cond: 'onNoLabel' },
+      { cond: 'shift' },
+      { cond: 'onBackground', actions: 'erode' },
+      { cond: 'onForeground', actions: 'dilate' },
+      { actions: 'setForeground' },
     ],
     'keydown.q': 'none',
-  }
+  },
 };
 
 const autofitState = {
   on: {
-    click: [
-      { cond: 'background' },
-      { actions: 'autofit' }
+    mousedown: [
+      { cond: 'onNoLabel' },
+      { cond: 'onForeground', actions: 'autofit' },
+      { actions: 'setForeground' },
     ],
     TOGGLERGB: 'none',
     'keydown.m': 'none',
@@ -244,10 +257,10 @@ const watershedState = {
   states: {
     idle: {
       on: {
-        click: [
-          { cond: 'background' },
+        mousedown: [
+          { cond: 'onNoLabel' },
           { cond: 'shift' },
-          { target: 'clicked', actions: 'storeClick' }
+          { target: 'clicked', actions: ['setForeground', 'storeClick'] }
         ]
       }
     },
@@ -255,7 +268,7 @@ const watershedState = {
       on: {
         click: [
           { cond: 'shift' },
-          { cond: 'validSecondSeed', actions: 'watershed' }
+          { cond: 'validSecondSeed', actions: 'watershed', target: 'idle' }
         ]
       }
     }
@@ -272,7 +285,14 @@ const watershedState = {
 const toolbarState = {
   initial: 'none',
   states: {
-    none: {},
+    none: {
+      on: {
+        mousedown: [
+          { cond: 'onBackground', actions: 'setForeground' },
+          { actions: 'setBackground' },
+        ],
+      }
+    },
     flood: floodState,
     trim: trimState,
     erodeDilate: erodeDilateState,
@@ -494,16 +514,24 @@ const rgbState = {
  * Handles selecting labels.
  */
 const selectState = {
+  initial: 'idle',
+  states: {
+    idle: {
+      on: {
+        mousedown: { cond: 'shift', target: 'select' },
+      }
+    },
+    select: {
+      always: [
+        { cond: 'onBackground', actions: 'setForeground', target: 'idle' },
+        { actions: 'setBackground', target: 'idle' },
+      ],
+    },
+  },
   on: {
-    mousedown: [
-      { in: '#label.mouse.toolbar.watershed.clicked' },
-      { cond: 'background', in: '#label.mouse.toolbar.threshold' },
-      { in: '#label.mouse.toolbar.threshold', actions: 'setForeground' },
-      { cond: 'shift', actions: 'setBackground' },
-      { actions: 'setForeground' },
-    ],
+    'keydown.n': { actions: 'newForeground' },
+    'keydown.Escape': { actions: 'resetBackground' },
     'keydown.x': { actions: 'swapLabels' },
-    'keydown.n': { actions: 'resetLabels' },
     'keydown.[': { actions: 'decrementForeground' },
     'keydown.]': { actions: 'incrementForeground' },
     'keydown.{': { actions: 'decrementBackground' },
@@ -565,6 +593,8 @@ export const labelMachine = Machine(
       },
       swapLabels: () => addAction(new SwapForegroundBackground()),
       resetLabels: () => addAction(new ResetLabels()),
+      newForeground: () => addAction(new NewForeground()),
+      resetBackground: () => addAction(new ResetBackground()),
       decrementForeground: () => addAction(new SetForeground(window.model.foreground - 1)),
       incrementForeground: () => addAction(new SetForeground(window.model.foreground + 1)),
       decrementBackground: () => addAction(new SetBackground(window.model.background - 1)),
@@ -584,12 +614,12 @@ export const labelMachine = Machine(
       replaceAll: replaceAll,
       watershed: watershed,
       // change frame actions
-      decrementFrame: () => addAction(new ChangeFrame(window.model.frame - 1)),
-      incrementFrame: () => addAction(new ChangeFrame(window.model.frame + 1)),
-      decrementChannel: () => addAction(new ChangeChannel(window.model.channel - 1)),
-      incrementChannel: () => addAction(new ChangeChannel(window.model.channel - 1)),
-      decrementFeature: () => addAction(new ChangeFeature(window.model.feature - 1)),
-      incrementFeature: () => addAction(new ChangeFeature(window.model.feature - 1)),
+      decrementFrame: () => addFencedAction(new ChangeFrame(window.model.frame - 1)),
+      incrementFrame: () => addFencedAction(new ChangeFrame(window.model.frame + 1)),
+      decrementChannel: () => addFencedAction(new ChangeChannel(window.model.channel - 1)),
+      incrementChannel: () => addFencedAction(new ChangeChannel(window.model.channel - 1)),
+      decrementFeature: () => addFencedAction(new ChangeFeature(window.model.feature - 1)),
+      incrementFeature: () => addFencedAction(new ChangeFeature(window.model.feature - 1)),
       // adjuster actions
       changeContrast: (_, event) => addAction(new ChangeContrast(event.change)),
       changeBrightness: (_, event) => addAction(new ChangeBrightness(event.change)),
@@ -610,7 +640,9 @@ export const labelMachine = Machine(
     },
     guards: {
       shift: (_, event) => event.shiftKey,
-      background: () => window.model.canvas.label === 0,
+      onNoLabel: () => window.model.canvas.label === 0,
+      onBackground: () => window.model.canvas.label === window.model.background,
+      onForeground: () => window.model.canvas.label === window.model.foreground,
       validSecondSeed: (context) => (
         // same label, different point
         window.model.canvas.label === context.storedLabel &&

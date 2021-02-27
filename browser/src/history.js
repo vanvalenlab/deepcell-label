@@ -40,6 +40,19 @@ export class History {
   }
 
   /**
+   * Executes an action,
+   * fences it in to be undone alone,
+   * and clears the actions to be redone.
+   *
+   * @param {Action} action
+   */
+  addFencedAction(action) {
+    this.addFence();
+    this.addAction(action);
+    this.addFence();
+  }
+
+  /**
    * Undoes the most recent group of actions, if any.
    */
   undo() {
