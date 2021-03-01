@@ -47,17 +47,8 @@ export default function NavBar() {
         open={mobileMoreAnchorEl !== null}
         onClose={setMobileMoreAnchorEl(null)}
       >
-        <Button color='inherit' href='/predict' className={classes.mobileMenuItem}>
-          Predict
-        </Button>
-        <Button color='inherit' href='/data' className={classes.mobileMenuItem}>
-          Data
-        </Button>
-        <Button color='inherit' href='/about' className={classes.mobileMenuItem}>
-          About
-        </Button>
-        <Button color='inherit' href='/faq' className={classes.mobileMenuItem}>
-          FAQ
+        <Button color='inherit' href='http://deepcell.org/' target='_blank' className={classes.mobileMenuItem}>
+          DeepCell
         </Button>
         <Button color='inherit' href='https://github.com/vanvalenlab' target='_blank' className={classes.mobileMenuItem}>
           <FaGithub size={28} />
@@ -72,24 +63,15 @@ export default function NavBar() {
         <Toolbar>
           <Typography variant='subtitle1' color='inherit' className={classes.grow}>
             <IconButton color='inherit' href='/'>
-              DeepCell
+              DeepCell Label
             </IconButton>
           </Typography>
           <div className={classes.grow} />
           <div className={classes.sectionDesktop}>
-            <Button color='inherit' href='/predict'>
-              Predict
+            <Button color='inherit' href='http://deepcell.org/' target='_blank' className={classes.mobileMenuItem}>
+              DeepCell
             </Button>
-            <Button color='inherit' href='/data'>
-              Data
-            </Button>
-            <Button color='inherit' href='/about'>
-              About
-            </Button>
-            <Button color='inherit' href='/faq'>
-              FAQ
-            </Button>
-            <Button color='inherit' href='https://github.com/vanvalenlab' target='_blank'>
+            <Button color='inherit' href='https://github.com/vanvalenlab' target='_blank' className={classes.mobileMenuItem}>
               <FaGithub size={28} />
             </Button>
           </div>
