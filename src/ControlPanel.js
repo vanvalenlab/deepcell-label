@@ -1,4 +1,5 @@
 import React from 'react';
+import { useState } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import Collapse from '@material-ui/core/Collapse';
 import IconButton from '@material-ui/core/IconButton';
@@ -21,8 +22,7 @@ import FormControlLabel from '@material-ui/core/FormControlLabel';
 import FormControl from '@material-ui/core/FormControl';
 import FormLabel from '@material-ui/core/FormLabel';
 
-
-
+import Predict from './Predict';
 import { useService } from '@xstate/react';
 import { labelService } from './service';
 
@@ -221,6 +221,14 @@ function LabelDisplayRow() {
 }
 
 export default function ControlPanel() {
+  const [selectedJobType, setSelectedJobType] = useState('');
+  const [showError, setShowError] = useState(false);
+  const [errorText, setErrorText] = useState('');
+
+  const showErrorMessage = (errText) => {
+    setErrorText(errText);
+    setShowError(true);
+  };
 
   return (
     <TableContainer id='control-panel' component={Paper}>
@@ -230,7 +238,10 @@ export default function ControlPanel() {
           <LabelDisplayRow />
           <RawDisplayRow />
           <ControlRow name={"Label"} header={"label: 1"}/>
-          <ControlRow name={"Tool"} header={"brush"}/>
+          <ControlRow name={"Tool"} header={"brush"} />
+          <ControlRow name={"Predict"}>
+            <Predict />
+          </ControlRow>
         </TableBody>
       </Table>
     </TableContainer>
