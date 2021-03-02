@@ -11,7 +11,6 @@ import axios from 'axios';
 import queryString from 'query-string';
 import ModelDropdown from './ModelDropdown';
 import ScaleForm from './ScaleForm';
-import FileUpload from './FileUpload';
 
 
 const useStyles = makeStyles(theme => ({
