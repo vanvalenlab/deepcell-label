@@ -4,6 +4,7 @@ import { makeStyles } from "@material-ui/core/styles";
 import ControlPanel from './ControlPanel';
 import Navbar from './Navbar';
 import Canvas from './Canvas';
+import { RawCanvas, LabelCanvas, OutlineCanvas } from './Canvas';
 import InstructionPane from './InstructionPane';
 import Footer from './Footer';
 
@@ -14,15 +15,19 @@ const useStyles = makeStyles({
     flexDirection: 'column',
   },
   main: {
+    display: "flex",
     flexGrow: 1,
+    padding: 40,
+    alignItems: "flex-start",
+    justifyContent: "space-evenly",
   },
   controlPanel: {
     flex: '0 1 auto',
   },
-  // canvas: {
-  //   flex: '1 1 auto',
-  //   height: '90vh'
-  // }
+  canvas: {
+    flex: '1 1 auto',
+    // height: '90vh'
+  }
 });
 
 function App() {
@@ -32,12 +37,14 @@ function App() {
     <div className={styles.root}>
       <Navbar />
       <InstructionPane />
-      <Box className={styles.main} display="flex" justifyContent="space-evenly" alignItems="flex-start" p={5}>
+      <Box className={styles.main}>
         <Box boxShadow={3}>
           <ControlPanel className={styles.controlPanel}/>
         </Box>
-        <Box display="flex" boxShadow={10}>
-          <Canvas />
+        <Box display="flex" className={styles.canvas} boxShadow={10}>
+          <RawCanvas />
+          <LabelCanvas />
+          <OutlineCanvas />
         </Box>
       </Box>
       <Footer />
