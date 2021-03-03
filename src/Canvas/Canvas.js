@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useService } from '@xstate/react';
 import axios from 'axios';
 import { makeStyles } from '@material-ui/core/styles';
@@ -61,78 +61,14 @@ const useStyles = makeStyles(() => {
   };
 });
 
-const width = 160;
-const height = 160;
-const padding = 5;
-
-
-const Canvas = props => {
-  const styles = useStyles();
-  const [current, send] = useService(labelService);
-  // const { sx, sy, sWidth, sHeight } = current.state.context;
-  const [sx, sy, sWidth, sHeight] = [0, 0, 160, 160];
-  
-  // const [scale, scaledHeight, scaledWidth] = useScaledDimensions(height, width, padding);
-  const [scale, scaledHeight, scaledWidth] = [4, 4 * 160, 4 * 160];
-  
-  // const [raw, label, labelArray] = current.state.context;
-  const [data, setData] = useState(null);
-  const [raw, setRaw] = useState(new Image());
-  const [label, setLabel] = useState(new Image());
-  const [labelArray, setLabelArray] = useState([[]]);
-
-  const draw = (ctx) => {
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    ctx.drawImage(
-      raw,
-      sx, sy,
-      sWidth, sHeight,
-      0, 0,
-      scaledWidth,
-      scaledHeight
-    );
-  };
-  
-  const canvasRef = useCanvas(draw);
-
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const result = await axios(
-        'http://0.0.0.0:5000/api/project/qUtuBnLdw5S-',
-      );
-      console.log(result.data);
-      setData(result.data);
-      const rawImage = new Image();
-      rawImage.src = result.data.imgs.raw;
-      setRaw(rawImage);
-      const labelImage = new Image();
-      labelImage.src = result.data.imgs.segmented;
-      setLabel(labelImage);
-    };
- 
-    fetchData();
-  }, []);
-  
-  return <canvas id='canvas'
-    className={styles.canvas}
-    ref={canvasRef}
-    width={scaledWidth}
-    height={scaledHeight}
-    {...props}
-  />;
-};
-
-export default Canvas;
-
 export const EmptyCanvas = props => {
   const styles = useStyles();
-  const [scale, scaledHeight, scaledWidth] = [4, 160, 160];
+  const [width, height] = [160, 160];
 
   return <canvas id='canvas'
     className={styles.empty}
-    width={scaledWidth}
-    height={scaledHeight}
+    width={width}
+    height={height}
     {...props}
   />;
 }
@@ -144,19 +80,26 @@ export const RawCanvas = props => {
   const [sx, sy, sWidth, sHeight] = [0, 0, 160, 160];
   const [scale, scaledHeight, scaledWidth] = [4, 160, 160];
 
-  const draw = (ctx) => {
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    ctx.drawImage(
+  const canvasRef = useRef();
+  const ctx = useRef();
+
+  useEffect(() => {
+    ctx.current = canvasRef.current.getContext('2d')
+  }, []);
+
+  useEffect(() => {
+    ctx.current.save();
+    ctx.current.clearRect(0, 0, ctx.current.canvas.width, ctx.current.canvas.height);
+    ctx.current.drawImage(
       raw,
       sx, sy,
       sWidth, sHeight,
       0, 0,
-      scaledWidth,
-      scaledHeight
+      ctx.current.canvas.width,
+      ctx.current.canvas.height
     );
-  };
-
-  const canvasRef = useCanvas(draw);
+    ctx.current.restore();
+  }, [raw, sx, sy, sWidth, sHeight]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -185,22 +128,27 @@ export const LabelCanvas = props => {
   const [sx, sy, sWidth, sHeight] = [0, 0, 160, 160];
   const [scale, scaledHeight, scaledWidth] = [4, 160, 160];
 
-  const draw = (ctx) => {
-    ctx.save();
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    ctx.globalAlpha = 0.5;
-    ctx.drawImage(
+  const canvasRef = useRef();
+  const ctx = useRef();
+
+  useEffect(() => {
+    ctx.current = canvasRef.current.getContext('2d')
+  }, []);
+
+  useEffect(() => {
+    ctx.current.save();
+    ctx.current.clearRect(0, 0, ctx.current.canvas.width, ctx.current.canvas.height);
+    ctx.current.globalAlpha = 0.5;
+    ctx.current.drawImage(
       label,
       sx, sy,
       sWidth, sHeight,
       0, 0,
-      scaledWidth,
-      scaledHeight
+      ctx.current.canvas.width,
+      ctx.current.canvas.height
     );
-    ctx.restore();
-  };
-
-  const canvasRef = useCanvas(draw);
+    ctx.current.restore();
+  }, [label, sx, sy, sWidth, sHeight]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -231,24 +179,16 @@ export const OutlineCanvas = props => {
   const [foreground, background] = [1, 2];
   const [all, setAll] = useState(false);
 
+
+  const canvasRef = useRef();
+  const ctx = useRef();
+
   const outlineCanvas = new OffscreenCanvas(width, height);
   const outlineCtx = outlineCanvas.getContext('2d');
 
-  const draw = (ctx) => {
-    ctx.save();
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    ctx.drawImage(
-      outlineCanvas,
-      sx, sy,
-      sWidth, sHeight,
-      0, 0,
-      scaledWidth,
-      scaledHeight
-    );
-    ctx.restore();
-  };
-
-  const canvasRef = useCanvas(draw);
+  useEffect(() => {
+    ctx.current = canvasRef.current.getContext('2d')
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -282,6 +222,19 @@ export const OutlineCanvas = props => {
     const data = new ImageData(array, width, height);
     outlineCtx.putImageData(data, 0, 0);
   }, [labelArray, foreground, background, outlineCtx]);
+
+  useEffect(() => {
+    ctx.current.save();
+    ctx.current.clearRect(0, 0, ctx.current.canvas.width, ctx.current.canvas.height);
+    ctx.current.drawImage(
+      outlineCanvas,
+      sx, sy,
+      sWidth, sHeight,
+      0, 0,
+      ctx.current.canvas.width, ctx.current.canvas.height,
+    );
+    ctx.current.restore();
+  }, [outlineCanvas, sx, sy, sWidth, sHeight]);
 
   return <canvas id='outline-canvas'
     className={styles.canvas}
