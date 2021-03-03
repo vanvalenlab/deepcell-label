@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useService } from '@xstate/react';
 import axios from 'axios';
 import { makeStyles } from '@material-ui/core/styles';
-import useCanvas from '../useCanvas';
 import { labelService } from '../statechart/service';
 
 
