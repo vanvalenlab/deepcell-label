@@ -79,6 +79,8 @@ export const RawCanvas = props => {
   const [raw, setRaw] = useState(new Image());
   const [sx, sy, sWidth, sHeight] = [0, 0, 160, 160];
   const [scale, scaledHeight, scaledWidth] = [4, 160, 160];
+  const [width, height] = [160, 160];
+
 
   const canvasRef = useRef();
   const ctx = useRef();
@@ -115,8 +117,8 @@ export const RawCanvas = props => {
   return <canvas id='raw-canvas'
     className={styles.canvas}
     ref={canvasRef}
-    width={scaledWidth}
-    height={scaledHeight}
+    width={width}
+    height={height}
     {...props}
   />;
 };
@@ -127,6 +129,8 @@ export const LabelCanvas = props => {
   const [label, setLabel] = useState(new Image());
   const [sx, sy, sWidth, sHeight] = [0, 0, 160, 160];
   const [scale, scaledHeight, scaledWidth] = [4, 160, 160];
+  const [width, height] = [160, 160];
+
 
   const canvasRef = useRef();
   const ctx = useRef();
@@ -163,8 +167,8 @@ export const LabelCanvas = props => {
   return <canvas id='label-canvas'
     className={styles.canvas}
     ref={canvasRef}
-    width={scaledWidth}
-    height={scaledHeight}
+    width={width}
+    height={height}
     {...props}
   />;
 };
@@ -239,8 +243,8 @@ export const OutlineCanvas = props => {
   return <canvas id='outline-canvas'
     className={styles.canvas}
     ref={canvasRef}
-    width={scaledWidth}
-    height={scaledHeight}
+    width={width}
+    height={height}
     {...props}
   />;
 };
