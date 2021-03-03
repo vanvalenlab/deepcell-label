@@ -21,10 +21,12 @@ import RadioGroup from '@material-ui/core/RadioGroup';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import FormControl from '@material-ui/core/FormControl';
 import FormLabel from '@material-ui/core/FormLabel';
+import Box from '@material-ui/core/Box';
+
 
 import Predict from './Predict';
 import { useService } from '@xstate/react';
-import { labelService } from './service';
+import { labelService } from '../statechart/service';
 
 const useRowStyles = makeStyles({
   root: {
@@ -62,7 +64,7 @@ function ControlRow(props) {
       </TableRow>
       <TableRow>
         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
-          <Collapse in={open} timeout="auto" unmountOnExit>
+          <Collapse className={classes.collapse} in={open} timeout="auto" unmountOnExit>
             {children}
           </Collapse>
         </TableCell>
@@ -191,31 +193,33 @@ function LabelDisplayRow() {
 
   return (
     <ControlRow name={"Label Display"} header={"highlight: on"}>
-      <ToggleButton
-        value="check"
-        selected={current.highlight}
-        onChange={handleHighlightChange}
-      >
-        <CheckIcon />
-      </ToggleButton>
-      <FormControl component="fieldset">
-        <FormLabel component="legend">Outline</FormLabel>
-        <RadioGroup row aria-label="outline" name="outline" value={current.outline || "selected"} onChange={handleOutlineChange}>
-          <FormControlLabel value="all" control={<Radio />} label="All" />
-          <FormControlLabel value="selected" control={<Radio />} label="Selected" />
-          <FormControlLabel value="none" control={<Radio />} label="None" />
-        </RadioGroup>
-      </FormControl>
-      <Typography gutterBottom>
-        Opacity
-      </Typography>
-      <Slider
-        value={current.opacity}
-        valueLabelDisplay="auto"
-        min={0}
-        max={1}
-        onChange={handleOpacityChange}
-      />
+      <Box display='flex' flexDirection='column'>
+        <ToggleButton
+          value="check"
+          selected={current.highlight}
+          onChange={handleHighlightChange}
+        >
+          <CheckIcon />
+        </ToggleButton>
+        <FormControl component="fieldset">
+          <FormLabel component="legend">Outline</FormLabel>
+          <RadioGroup row aria-label="outline" name="outline" value={current.outline || "selected"} onChange={handleOutlineChange}>
+            <FormControlLabel value="all" control={<Radio />} label="All" />
+            <FormControlLabel value="selected" control={<Radio />} label="Selected" />
+            <FormControlLabel value="none" control={<Radio />} label="None" />
+          </RadioGroup>
+        </FormControl>
+        <Typography gutterBottom>
+          Opacity
+        </Typography>
+        <Slider
+          value={current.opacity}
+          valueLabelDisplay="auto"
+          min={0}
+          max={1}
+          onChange={handleOpacityChange}
+        />
+      </Box>
     </ControlRow>
   );
 }
