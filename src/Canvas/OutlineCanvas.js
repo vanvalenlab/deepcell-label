@@ -61,7 +61,6 @@ const OutlineCanvas = props => {
   useEffect(() => {
     ctx.current.save();
     ctx.current.clearRect(0, 0, props.width, props.height);
-    ctx.current.globalAlpha = 0.5;
     ctx.current.drawImage(
       outlineCanvas,
       sx, sy,
