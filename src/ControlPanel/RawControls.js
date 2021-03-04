@@ -78,6 +78,7 @@ export default function RawDisplayRow() {
         max={1}
         step={0.01}
         onChange={handleBrightnessChange}
+        onDoubleClick={() => handleBrightnessChange('', 0)}
       />
       <Typography gutterBottom>
         Contrast
@@ -90,6 +91,7 @@ export default function RawDisplayRow() {
         max={1}
         step={0.01}
         onChange={handleContrastChange}
+        onDoubleClick={() => handleContrastChange('', 0)}
       />
     </ControlRow>
   );
