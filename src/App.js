@@ -7,6 +7,8 @@ import Canvas from './Canvas/Canvas';
 import { EmptyCanvas, RawCanvas, LabelCanvas, OutlineCanvas } from './Canvas/Canvas';
 import InstructionPane from './InstructionPane';
 import Footer from './Footer/Footer';
+import { Slider } from '@material-ui/core';
+import { useState, useRef, useEffect } from 'react';
 
 
 const useStyles = makeStyles({
@@ -19,7 +21,7 @@ const useStyles = makeStyles({
   main: {
     display: "inline-flex",
     flexGrow: 1,
-    padding: 40,
+    padding: 16,
     alignItems: "stretch",
     justifyContent: "space-evenly",
     height: 'calc(100vh - 66px - 57px - 60px - 80px - 1px)'
@@ -27,7 +29,7 @@ const useStyles = makeStyles({
   controlPanel: {
     flex: '0 0 auto',
   },
-  canvas: {
+  canvasSpace: {
     position: 'relative',
     flex: '1 1 auto',
     // height: 0,
@@ -37,6 +39,34 @@ const useStyles = makeStyles({
 
 function App() {
   const styles = useStyles();
+  const [zoom, setZoom] = useState(1);
+  const handleChange = (event, val) => {
+    console.log(2 ** val);
+    console.log(window.devicePixelRatio);
+    setZoom(2 ** val);
+  };
+
+  const canvasBoxRef = useRef({ offsetWidth: 0, offsetHeight: 0 });
+  const [canvasBoxWidth, setCanvasBoxWidth] = useState(0);
+  const [canvasBoxHeight, setCanvasBoxHeight] = useState(0);
+
+  
+  useEffect(() => {
+    console.log(canvasBoxRef.current);
+    console.log(canvasBoxRef.current.offsetWidth);
+    setCanvasBoxWidth(canvasBoxRef.current.offsetWidth);
+    setCanvasBoxHeight(canvasBoxRef.current.offsetHeight);
+  }, [canvasBoxRef]);
+
+  useEffect(() => {
+    const setCanvasBoxDimensions = () => {
+      setCanvasBoxWidth(canvasBoxRef.current.offsetWidth);
+      setCanvasBoxHeight(canvasBoxRef.current.offsetHeight);
+    }
+    setCanvasBoxDimensions();
+    window.addEventListener('resize', setCanvasBoxDimensions);
+    return () => window.removeEventListener('resize', setCanvasBoxDimensions);
+  }, [canvasBoxRef]);
 
   return (
     <div className={styles.root}>
@@ -44,13 +74,20 @@ function App() {
       <InstructionPane />
       <Box className={styles.main}>
         <Box>
-          <ControlPanel className={styles.controlPanel}/>
+          <ControlPanel className={styles.controlPanel} />
+          <Slider
+            defaultValue={0}
+            step={0.1}
+            marks
+            min={0}
+            max={3}
+            scale={(x) => (2 ** x).toFixed(2)}
+            valueLabelDisplay="auto"
+            onChange={handleChange}
+          />
         </Box>
-        <Box className={styles.canvas} boxShadow={10}>
-          <EmptyCanvas />
-          <RawCanvas />
-          <LabelCanvas />
-          <OutlineCanvas />
+        <Box ref={canvasBoxRef} className={styles.canvasSpace}>
+          <Canvas zoom={zoom} width={canvasBoxWidth} height={canvasBoxHeight} />
         </Box>
       </Box>
       <Footer />
