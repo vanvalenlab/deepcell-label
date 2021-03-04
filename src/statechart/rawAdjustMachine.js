@@ -19,7 +19,6 @@ const rawAdjustMachine = Machine(
   },
   {
     actions: {
-      log: (context, event) => console.log(context.brightness),
       toggleInvert: assign({ invert: (context) => !context.invert }),
       toggleGrayscale: assign({ grayscale: (context) => !context.grayscale }),
       setBrightness: assign({ brightness: (_, event) => Math.min(1, Math.max(-1, event.brightness)) }),
