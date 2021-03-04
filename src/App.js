@@ -41,8 +41,6 @@ function App() {
   const styles = useStyles();
   const [zoom, setZoom] = useState(1);
   const handleChange = (event, val) => {
-    console.log(2 ** val);
-    console.log(window.devicePixelRatio);
     setZoom(2 ** val);
   };
 
@@ -52,8 +50,6 @@ function App() {
 
   
   useEffect(() => {
-    console.log(canvasBoxRef.current);
-    console.log(canvasBoxRef.current.offsetWidth);
     setCanvasBoxWidth(canvasBoxRef.current.offsetWidth);
     setCanvasBoxHeight(canvasBoxRef.current.offsetHeight);
   }, [canvasBoxRef]);
