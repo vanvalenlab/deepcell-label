@@ -8,6 +8,7 @@ import Box from '@material-ui/core/Box';
 import RawCanvas from './RawCanvas';
 import LabelCanvas from './LabelCanvas';
 import OutlineCanvas from './OutlineCanvas';
+import BrushCanvas from './BrushCanvas';
 
 const useStyles = makeStyles(() => {
   const [current, send] = useService(labelService);
@@ -43,9 +44,6 @@ const useStyles = makeStyles(() => {
   };
 });
 
-
-export const BrushCanvas = () => { };
-
 function calculateScale(width, height, padding, maxWidth, maxHeight) {
   const scaleX = (maxWidth - 2 * padding) / width;
   const scaleY = (maxHeight - 2 * padding) / height;
@@ -56,10 +54,6 @@ function calculateScale(width, height, padding, maxWidth, maxHeight) {
 
 export const Canvas = props => {
   const { zoom, width, height, ...rest } = props;
-  console.log(width, height);
-  // const parentWidth = getParent().offsetWidth;
-  // const parentHeight = getParent().offsetHeight;
-  console.log(width, height);
   const [imageWidth, imageHeight] = [160, 160];
   const padding = 5;
   const scale = calculateScale(imageWidth, imageHeight, padding, width, height);
@@ -68,15 +62,23 @@ export const Canvas = props => {
 
   const styles = useStyles();
 
+  const canvasProps = {
+    className: styles.canvas,
+    zoom: zoom,
+    width: scaledWidth * window.devicePixelRatio,
+    height: scaledHeight * window.devicePixelRatio,
+  }
+
   return (
     <Box className={styles.canvasBox} boxShadow={10} width={scaledWidth + 2 * padding} height={scaledHeight + 2 * padding} >
       {/* <canvas id='canvas' width={scaledWidth} height={scaledHeight}/> */}
       {/* <RawCanvas className={styles.canvas} zoom={zoom} width={scaledWidth} height={scaledHeight}/>
       <LabelCanvas className={styles.canvas} zoom={zoom} width={scaledWidth} height={scaledHeight}/>
       <OutlineCanvas className={styles.canvas} zoom={zoom} width={scaledWidth} height={scaledHeight}/> */}
-      <RawCanvas className={styles.canvas} zoom={zoom} width={scaledWidth * window.devicePixelRatio} height={scaledHeight * window.devicePixelRatio}/>
-      <LabelCanvas className={styles.canvas} zoom={zoom} width={scaledWidth * window.devicePixelRatio} height={scaledHeight * window.devicePixelRatio}/>
-      <OutlineCanvas className={styles.canvas} zoom={zoom} width={scaledWidth * window.devicePixelRatio} height={scaledHeight * window.devicePixelRatio}/>
+      <RawCanvas {...canvasProps} />
+      <LabelCanvas {...canvasProps}/>
+      <OutlineCanvas {...canvasProps} />
+      <BrushCanvas {...canvasProps} />
     </Box>
   )
 }
