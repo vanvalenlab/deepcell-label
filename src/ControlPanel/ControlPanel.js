@@ -28,6 +28,9 @@ import Predict from './Predict';
 import { useService } from '@xstate/react';
 import { labelService } from '../statechart/service';
 
+import ControlRow from './ControlRow';
+import RawControls from './RawControls';
+
 const useRowStyles = makeStyles({
   root: {
     '& > *': {
@@ -39,39 +42,6 @@ const useRowStyles = makeStyles({
   },
 });
 
-
-function ControlRow(props) {
-  const { name, header, children } = props;
-  const [open, setOpen] = React.useState(false);
-  const classes = useRowStyles();
-
-  const [current, send] = useService(labelService);
-
-  return (
-    <>
-      <TableRow className={classes.root}>
-        <TableCell>
-          <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
-            {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-          </IconButton>
-        </TableCell>
-        <TableCell component="th" scope="row">
-          {name}
-        </TableCell>
-        <TableCell component="th" scope="row">
-          {header}
-        </TableCell>
-      </TableRow>
-      <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
-          <Collapse className={classes.collapse} in={open} timeout="auto" unmountOnExit>
-            {children}
-          </Collapse>
-        </TableCell>
-      </TableRow>
-    </>
-  )
-}
 
 function SliceSlider(props) {
   const { value, max, handler } = props;
@@ -109,7 +79,7 @@ function SliceRow() {
   };
 
   return (
-    <ControlRow name={"Slice"} header={"Frame: 0"}>
+    <ControlRow name={"Slice"}>
       <Typography id="discrete-slider" gutterBottom>
         Frame
       </Typography>
@@ -124,56 +94,6 @@ function SliceRow() {
       <SliceSlider value={current.feature} max={current.numFeatures - 1 || 1} handler={handleFeatureChange}/>
     </ControlRow>
   )
-}
-
-function RawDisplayRow() {
-  const [current, send] = useService(labelService);
-
-  const handleBrightnessChange = (event, newValue) => {
-    // send({ type: 'SETCONTRAST', value: newValue });
-  };
-
-  const handleContrastChange = (event, newValue) => {
-    // send({ type: 'SETCONTRAST', value: newValue });
-  };
-
-  const handleInvertChange = (event, newValue) => {
-    // send({ type: 'SETINVERT', value: newValue });
-  };
-
-  return (
-    <ControlRow name={"Raw Display"} header={"brightness: 0"}>
-      <Typography gutterBottom>
-        Brightness
-      </Typography>
-      <Slider
-        value={current.brightness}
-        valueLabelDisplay="auto"
-        min={0}
-        max={1}
-        onChange={handleBrightnessChange}
-      />
-      <Typography gutterBottom>
-        Contrast
-      </Typography>
-      <Slider
-        value={current.contrast}
-        valueLabelDisplay="auto"
-        min={0}
-        max={1}
-        onChange={handleContrastChange}
-      />
-      <ToggleButton
-        value="check"
-        selected={current.invert}
-        onChange={handleInvertChange}
-      >
-        <CheckIcon />
-      </ToggleButton>
-    </ControlRow>
-  );
-
-
 }
 
 function LabelDisplayRow() {
@@ -192,7 +112,7 @@ function LabelDisplayRow() {
   };
 
   return (
-    <ControlRow name={"Label Display"} header={"highlight: on"}>
+    <ControlRow name={"Label Display"}>
       <Box display='flex' flexDirection='column'>
         <ToggleButton
           value="check"
@@ -240,9 +160,9 @@ export default function ControlPanel() {
         <TableBody>
           <SliceRow />
           <LabelDisplayRow />
-          <RawDisplayRow />
-          <ControlRow name={"Label"} header={"label: 1"}/>
-          <ControlRow name={"Tool"} header={"brush"} />
+          <RawControls />
+          <ControlRow name={"Label"} />
+          <ControlRow name={"Tool"} />
           <ControlRow name={"Predict"}>
             <Predict />
           </ControlRow>

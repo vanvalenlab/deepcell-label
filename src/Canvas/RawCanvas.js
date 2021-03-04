@@ -36,8 +36,7 @@ const contrastImageData = (data, contrast) => {
 }
 
 // brightness between -1 and 1
-const brightnessImageData = (imageData, brightness) => {
-  const data = imageData.data;
+const brightnessImageData = (data, brightness) => {
   brightness *= 255;  // scale fraction to full range of pixel values
   for (let i = 0; i < data.length; i += 4) {  //pixel values in 4-byte blocks (r,g,b,a)
     data[i] = data[i] + brightness;     //r value
@@ -56,9 +55,7 @@ export const RawCanvas = props => {
   const [width, height] = [160, 160];
 
   const [currentAdjust, sendAdjust] = useService(rawAdjustService);
-  const { invert, grayscale } = currentAdjust.context;
-  const brightness = 0;
-  const contrast = 0.5;
+  const { invert, grayscale, brightness, contrast } = currentAdjust.context;
 
   const canvasRef = useRef();
   const ctx = useRef();
@@ -81,8 +78,8 @@ export const RawCanvas = props => {
     if (grayscale) {
       data = grayscaleImageData(data);
     }
-    // contrastImageData(rawData, contrast);
-    // brightnessImageData(rawData, brightness);
+    data = contrastImageData(data, contrast);
+    data = brightnessImageData(data, brightness);
     const adjustedData = new ImageData(data, width, height);
     rawCtx.putImageData(adjustedData, 0, 0);
   }, [raw, invert, grayscale, brightness, contrast, height, width, rawCtx]);
@@ -98,7 +95,7 @@ export const RawCanvas = props => {
       props.width, props.height,
     );
     ctx.current.restore();
-  }, [raw, sx, sy, zoom, width, height, props.width, props.height]);
+  }, [rawCanvas, sx, sy, zoom, width, height, props.width, props.height]);
 
   useEffect(() => {
     const fetchData = async () => {

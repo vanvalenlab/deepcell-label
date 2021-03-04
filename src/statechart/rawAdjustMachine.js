@@ -7,8 +7,8 @@ const rawAdjustMachine = Machine(
     context: {
       invert: true,
       grayscale: true,
-      brightness: true,
-      contrast: true,
+      brightness: 0,
+      contrast: 0,
     },
     on: {
       TOGGLEINVERT: { actions: 'toggleInvert' },
@@ -19,10 +19,11 @@ const rawAdjustMachine = Machine(
   },
   {
     actions: {
+      log: (context, event) => console.log(context.brightness),
       toggleInvert: assign({ invert: (context) => !context.invert }),
-      toggleGrayscale: assign({ greyscale: (context) => !context.grayscale }),
-      setBrightness: assign({ brightness: (_, event) => Math.min(1, Math.max(0, event.brightness)) }),
-      setContrast: assign({ brightness: (_, event) => Math.min(1, Math.max(0, event.brightness)) }),
+      toggleGrayscale: assign({ grayscale: (context) => !context.grayscale }),
+      setBrightness: assign({ brightness: (_, event) => Math.min(1, Math.max(-1, event.brightness)) }),
+      setContrast: assign({ contrast: (_, event) => Math.min(1, Math.max(-1, event.contrast)) }),
     }
   }
 );
