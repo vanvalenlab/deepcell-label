@@ -2,13 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useService } from '@xstate/react';
 import axios from 'axios';
 import { makeStyles } from '@material-ui/core/styles';
-import { labelService } from '../statechart/service';
 import Box from '@material-ui/core/Box';
 
 import RawCanvas from './RawCanvas';
 import LabelCanvas from './LabelCanvas';
 import OutlineCanvas from './OutlineCanvas';
 import BrushCanvas from './BrushCanvas';
+
+import { labelService, canvasService } from '../statechart/service';
+
 
 const useStyles = makeStyles(() => {
   const [current, send] = useService(labelService);
@@ -26,7 +28,7 @@ const useStyles = makeStyles(() => {
 
   return {
     canvasBox: {
-      boxSizing: 'border-box',
+      // boxSizing: 'border-box',
       alignSelf: 'flex-start',
       position: 'absolute',
       borderTop: `${padding}px solid ${topColor}`,
@@ -44,37 +46,37 @@ const useStyles = makeStyles(() => {
   };
 });
 
-function calculateScale(width, height, padding, maxWidth, maxHeight) {
-  const scaleX = (maxWidth - 2 * padding) / width;
-  const scaleY = (maxHeight - 2 * padding) / height;
-  // pick scale that accomodates both dimensions; can be less than 1
-  const scale = Math.min(scaleX, scaleY);
-  return scale;
-}
-
 export const Canvas = props => {
-  const { zoom, width, height, ...rest } = props;
-  const [imageWidth, imageHeight] = [160, 160];
-  const padding = 5;
-  const scale = calculateScale(imageWidth, imageHeight, padding, width, height);
-  const scaledWidth = scale * imageWidth;
-  const scaledHeight = scale * imageHeight;
+  const { zoom, ...rest } = props;
+  const [currentCanvas, sendCanvas] = useService(canvasService);
+  const { scale, width, height } = currentCanvas.context;
 
   const styles = useStyles();
+
+  const handleMouseMove = (event) => {
+    sendCanvas(event);
+  };
+
+  useEffect(() => {
+    const padding = 5;
+    sendCanvas({ type: 'RESIZE', width: props.width, height: props.height, padding: padding });
+  }, [sendCanvas, props.width, props.height]);
 
   const canvasProps = {
     className: styles.canvas,
     zoom: zoom,
-    width: scaledWidth * window.devicePixelRatio,
-    height: scaledHeight * window.devicePixelRatio,
+    width: width * scale * window.devicePixelRatio,
+    height: height * scale * window.devicePixelRatio,
   }
 
   return (
-    <Box className={styles.canvasBox} boxShadow={10} width={scaledWidth + 2 * padding} height={scaledHeight + 2 * padding} >
-      {/* <canvas id='canvas' width={scaledWidth} height={scaledHeight}/> */}
-      {/* <RawCanvas className={styles.canvas} zoom={zoom} width={scaledWidth} height={scaledHeight}/>
-      <LabelCanvas className={styles.canvas} zoom={zoom} width={scaledWidth} height={scaledHeight}/>
-      <OutlineCanvas className={styles.canvas} zoom={zoom} width={scaledWidth} height={scaledHeight}/> */}
+    <Box
+      className={styles.canvasBox}
+      boxShadow={10}
+      width={scale * width}
+      height={scale * height}
+      onMouseMove={handleMouseMove}
+    >
       <RawCanvas {...canvasProps} />
       <LabelCanvas {...canvasProps}/>
       <OutlineCanvas {...canvasProps} />

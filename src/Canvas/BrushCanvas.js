@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useService } from '@xstate/react';
-import { labelService } from '../statechart/service';
+import { labelService, canvasService } from '../statechart/service';
 
 const distance = (x, y) => {
   return Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2));
@@ -16,32 +16,23 @@ const BrushCanvas = props => {
   // TODO: get from state machine
   const { zoom, ...rest } = props;
   const [current, send] = useService(labelService);
-  const [labelArray, setLabelArray] = useState([[0]]);
-  const [sx, sy] = [0, 0];
   // const [sx, sy, zoom] = [0, 0, 1];
-  const [width, height] = [160, 160];
-  const [imgX, setImgX] = useState(10);
-  const [imgY, setImgY] = useState(10);
-  // let [imgX, imgY] = [10, 10];
 
   const brushSize = 8;
-  const scale = Math.max(0, props.width / width / devicePixelRatio);
 
+  const [currentCanvas, sendCanvas] = useService(canvasService);
+  const { sx, sy, imgX, imgY, width, height } = currentCanvas.context;
 
   const canvasRef = useRef();
   const ctx = useRef();
-  // to convert the brush into an image
-  const brushCanvas = new OffscreenCanvas(width, height);
-  const brushCtx = brushCanvas.getContext('2d');
-
-  const traceCanvas = new OffscreenCanvas(width, height);
-  const traceCtx = traceCanvas.getContext('2d');
-
   useEffect(() => {
     ctx.current = canvasRef.current.getContext('2d');
     ctx.current.imageSmoothingEnabled = false;
   }, [props]);
 
+  // to convert the brush into an image
+  const brushCanvas = new OffscreenCanvas(width, height);
+  const brushCtx = brushCanvas.getContext('2d');
   useEffect(() => {
     const array = new Uint8ClampedArray(width * height * 4);
     for (let j = 0; j < height; j += 1) { // y
@@ -58,6 +49,10 @@ const BrushCanvas = props => {
     brushCtx.putImageData(data, 0, 0);
   }, [brushCtx, imgX, imgY, brushSize, height, width]);
 
+
+  // const traceCanvas = new OffscreenCanvas(width, height);
+  // const traceCtx = traceCanvas.getContext('2d');
+
   useEffect(() => {
     ctx.current.save();
     ctx.current.clearRect(0, 0, props.width, props.height);
@@ -71,18 +66,8 @@ const BrushCanvas = props => {
     ctx.current.restore();
   }, [brushCanvas, sx, sy, zoom, width, height, props.width, props.height]);
 
-  const setImgCoords = (event) => {
-    setImgX(Math.floor((event.nativeEvent.offsetX / (scale * zoom) + sx)));
-    setImgY(Math.floor((event.nativeEvent.offsetY / (scale * zoom) + sy)));
-  };
-
-  const handleScroll = (event) => {
-
-  };
-
   return <canvas id='brush-canvas'
     ref={canvasRef}
-    onMouseMove={setImgCoords}
     {...rest}
   />;
 };
