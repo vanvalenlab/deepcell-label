@@ -4,7 +4,6 @@ import { makeStyles } from "@material-ui/core/styles";
 import ControlPanel from './ControlPanel/ControlPanel';
 import Navbar from './Navbar';
 import Canvas from './Canvas/Canvas';
-import { EmptyCanvas, RawCanvas, LabelCanvas, OutlineCanvas } from './Canvas/Canvas';
 import InstructionPane from './InstructionPane';
 import Footer from './Footer/Footer';
 import { Slider } from '@material-ui/core';
