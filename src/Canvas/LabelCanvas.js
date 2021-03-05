@@ -18,19 +18,13 @@ const highlightImageData = (data, label) => {
 
 const transparentBackgroundImageData = (data) => {
   for (let i = 0; i < data.length; i += 4) {
+    // TODO: access label array
+    // if ( label === 0) {
     if (data[i] === 0 && data[i + 1] === 0 && data[i + 2] === 0) {
       data[i + 3] = 0;
     }
-    // // TODO: access label array
-    // const element = 'TODO';
-    // if ( element === 0) {
-    //   data[i] += 255; // red
-    //   data[i + 1] -= 255; // green
-    //   data[i + 2] -= 255; // blue
-    // }
   }
   return data;
-
 };
 
 const opacityImageData = (data, opacity) => {
