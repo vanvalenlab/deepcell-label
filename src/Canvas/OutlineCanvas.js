@@ -27,7 +27,7 @@ const OutlineCanvas = props => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const result = await axios('http://0.0.0.0:5000/api/project/qUtuBnLdw5S-');
+      const result = await axios('http://0.0.0.0:5000/api/project/Df3GUkjcppjd');
       setLabelArray(result.data.imgs.seg_arr);
     };
     fetchData();

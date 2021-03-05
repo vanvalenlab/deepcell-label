@@ -99,7 +99,7 @@ export const RawCanvas = props => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const result = await axios('http://0.0.0.0:5000/api/project/qUtuBnLdw5S-');
+      const result = await axios('http://0.0.0.0:5000/api/project/Df3GUkjcppjd');
       const rawImage = new Image();
       rawImage.src = result.data.imgs.raw;
       setRaw(rawImage);

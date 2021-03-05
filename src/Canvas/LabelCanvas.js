@@ -94,7 +94,7 @@ export const LabelCanvas = props => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const result = await axios('http://0.0.0.0:5000/api/project/qUtuBnLdw5S-');
+      const result = await axios('http://0.0.0.0:5000/api/project/Df3GUkjcppjd');
       const labelImage = new Image();
       labelImage.src = result.data.imgs.segmented;
       setLabel(labelImage);
