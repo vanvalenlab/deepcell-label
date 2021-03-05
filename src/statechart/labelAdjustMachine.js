@@ -5,7 +5,7 @@ const labelAdjustMachine = Machine(
     initial: 'idle',
     states: { idle: {} },
     context: {
-      transparentBackground: true,
+      transparentBackground: false,
       highlight: true,
       opacity: 0.3,
     },
