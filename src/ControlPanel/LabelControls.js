@@ -31,7 +31,7 @@ import ControlRow from './ControlRow';
 
 export default function LabelControls() {
   const [current, send] = useService(labelAdjustService);
-  const { opacity } = current.context;
+  const { highlight, transparentBackground, opacity } = current.context;
 
   const handleHighlightChange = () => {
     // send({ type: 'SETHIGHLIGHT', value: !current.highlight });
@@ -45,15 +45,24 @@ export default function LabelControls() {
     send({ type: 'SETOPACITY', opacity: newValue });
   };
 
+  const handleTransparentBackgroundChange = (event, newValue) => {
+    send({ type: 'TOGGLETRANSPARENTBACKGROUND' });
+  };
+
   return (
     <ControlRow name={"Label Display"}>
       <Box display='flex' flexDirection='column'>
         <ToggleButton
-          value="check"
-          selected={current.highlight}
+          selected={highlight}
           onChange={handleHighlightChange}
         >
           Highlight
+        </ToggleButton>
+        <ToggleButton
+          selected={!transparentBackground}
+          onChange={handleTransparentBackgroundChange}
+        >
+          Show Background
         </ToggleButton>
         <FormControl component="fieldset">
           <FormLabel component="legend">Outline</FormLabel>
@@ -73,6 +82,7 @@ export default function LabelControls() {
           max={1}
           step={0.01}
           onChange={handleOpacityChange}
+          // onDoubleClick={() => handleOpacityChange('', 0.3)}
         />
       </Box>
     </ControlRow>
