@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useService } from '@xstate/react';
 import axios from 'axios';
-import { labelService } from '../statechart/service';
+import { labelService, labelAdjustService } from '../statechart/service';
 
 
 export const LabelCanvas = props => {
@@ -16,6 +16,11 @@ export const LabelCanvas = props => {
   const canvasRef = useRef();
   const ctx = useRef();
 
+
+  const [currentAdjust, sendAdjust] = useService(labelAdjustService);
+  const { opacity } = currentAdjust.context;
+  console.log(opacity);
+
   useEffect(() => {
     ctx.current = canvasRef.current.getContext('2d');
     ctx.current.imageSmoothingEnabled = false;
@@ -24,7 +29,7 @@ export const LabelCanvas = props => {
   useEffect(() => {
     ctx.current.save();
     ctx.current.clearRect(0, 0, props.width, props.height);
-    ctx.current.globalAlpha = 0.5;
+    ctx.current.globalAlpha = opacity;
     ctx.current.drawImage(
       label,
       sx, sy,
@@ -33,7 +38,7 @@ export const LabelCanvas = props => {
       props.width, props.height,
     );
     ctx.current.restore();
-  }, [label, sx, sy, zoom, width, height, props.width, props.height]);
+  }, [label, opacity, sx, sy, zoom, width, height, props.width, props.height]);
 
   useEffect(() => {
     const fetchData = async () => {

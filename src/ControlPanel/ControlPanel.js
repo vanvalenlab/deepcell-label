@@ -30,6 +30,8 @@ import { labelService } from '../statechart/service';
 
 import ControlRow from './ControlRow';
 import RawControls from './RawControls';
+import LabelControls from './LabelControls';
+
 
 const useRowStyles = makeStyles({
   root: {
@@ -96,54 +98,6 @@ function SliceRow() {
   )
 }
 
-function LabelDisplayRow() {
-  const [current, send] = useService(labelService);
-
-  const handleHighlightChange = () => {
-    // send({ type: 'SETHIGHLIGHT', value: !current.highlight });
-  };
-
-  const handleOutlineChange = (event, newValue) => {
-    // send({ type: 'SETOUTLINE', value: newValue });
-  };
-
-  const handleOpacityChange = (event, newValue) => {
-    // send({ type: 'SETOPACITY', value: newValue });
-  };
-
-  return (
-    <ControlRow name={"Label Display"}>
-      <Box display='flex' flexDirection='column'>
-        <ToggleButton
-          value="check"
-          selected={current.highlight}
-          onChange={handleHighlightChange}
-        >
-          <CheckIcon />
-        </ToggleButton>
-        <FormControl component="fieldset">
-          <FormLabel component="legend">Outline</FormLabel>
-          <RadioGroup row aria-label="outline" name="outline" value={current.outline || "selected"} onChange={handleOutlineChange}>
-            <FormControlLabel value="all" control={<Radio />} label="All" />
-            <FormControlLabel value="selected" control={<Radio />} label="Selected" />
-            <FormControlLabel value="none" control={<Radio />} label="None" />
-          </RadioGroup>
-        </FormControl>
-        <Typography gutterBottom>
-          Opacity
-        </Typography>
-        <Slider
-          value={current.opacity}
-          valueLabelDisplay="auto"
-          min={0}
-          max={1}
-          onChange={handleOpacityChange}
-        />
-      </Box>
-    </ControlRow>
-  );
-}
-
 export default function ControlPanel() {
   const [selectedJobType, setSelectedJobType] = useState('');
   const [showError, setShowError] = useState(false);
@@ -159,7 +113,7 @@ export default function ControlPanel() {
       <Table aria-label="collapsible table">
         <TableBody>
           <SliceRow />
-          <LabelDisplayRow />
+          <LabelControls />
           <RawControls />
           <ControlRow name={"Label"} />
           <ControlRow name={"Tool"} />
