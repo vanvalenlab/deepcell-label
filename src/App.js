@@ -19,7 +19,7 @@ const useStyles = makeStyles({
     flexDirection: 'column',
   },
   main: {
-    display: "inline-flex",
+    display: "flex",
     flexGrow: 1,
     padding: 16,
     alignItems: "stretch",
@@ -29,11 +29,9 @@ const useStyles = makeStyles({
   controlPanel: {
     flex: '0 0 auto',
   },
-  canvasSpace: {
+  canvasBox: {
     position: 'relative',
     flex: '1 1 auto',
-    // height: 0,
-    // paddingTop: 'calc(591.44 / 1127.34 * 100%)',
   },
 });
 
@@ -47,12 +45,6 @@ function App() {
   const canvasBoxRef = useRef({ offsetWidth: 0, offsetHeight: 0 });
   const [canvasBoxWidth, setCanvasBoxWidth] = useState(0);
   const [canvasBoxHeight, setCanvasBoxHeight] = useState(0);
-
-  
-  useEffect(() => {
-    setCanvasBoxWidth(canvasBoxRef.current.offsetWidth);
-    setCanvasBoxHeight(canvasBoxRef.current.offsetHeight);
-  }, [canvasBoxRef]);
 
   useEffect(() => {
     const setCanvasBoxDimensions = () => {
@@ -82,7 +74,7 @@ function App() {
             onChange={handleChange}
           />
         </Box>
-        <Box ref={canvasBoxRef} className={styles.canvasSpace}>
+        <Box ref={canvasBoxRef} className={styles.canvasBox}>
           <Canvas zoom={zoom} width={canvasBoxWidth} height={canvasBoxHeight} />
         </Box>
       </Box>
