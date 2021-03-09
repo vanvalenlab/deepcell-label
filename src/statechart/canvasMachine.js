@@ -7,10 +7,16 @@ const canvasMachine = Machine({
   initial: 'idle',
   states: {
     idle: {
-      on: {},
+      on: {
+        'keydown.Space': 'panning',
+        mousemove: { actions: 'moveCursor' },
+      },
     },
     panning: {
-      on: {},
+      on: {
+        'keyup.Space': 'idle',
+        mousemove: { actions: 'pan' },
+      },
     },
   },
   context: {
@@ -25,10 +31,8 @@ const canvasMachine = Machine({
     imgY: 0,
   },
   on: {
-    mousemove: { actions: 'moveCursor' },
     wheel: {actions: 'zoom' },
     RESIZE: { actions: 'resize' },
-    PAN: { actions: 'pan' },
   },
 
 },
@@ -56,7 +60,7 @@ const canvasMachine = Machine({
           return newSx;
         },
         sy: (context, event) => {
-          const dy = -1 * event.movementY * context.zoom;
+          const dy = -1 * event.movementY / context.zoom / context.scale;
           let newSy = context.sy + dy;
           newSy = Math.min(newSy, context.height * (1 - 1 / context.zoom));
           newSy = Math.max(newSy, 0);

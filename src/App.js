@@ -7,6 +7,7 @@ import Canvas from './Canvas/Canvas';
 import InstructionPane from './InstructionPane';
 import Footer from './Footer/Footer';
 import { useState, useRef, useEffect } from 'react';
+import './keybindings';
 
 const useStyles = makeStyles({
   root: {
