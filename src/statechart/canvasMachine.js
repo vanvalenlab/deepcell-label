@@ -5,7 +5,14 @@ import { Machine, actions, assign, forwardTo, send } from 'xstate';
 
 const canvasMachine = Machine({
   initial: 'idle',
-  states: { idle: {} },
+  states: {
+    idle: {
+      on: {},
+    },
+    panning: {
+      on: {},
+    },
+  },
   context: {
     scale: 1,  // how much the canvas is scaled to fill the available space
     zoom: 1,   // how much the image is scaled within the canvas
@@ -18,16 +25,19 @@ const canvasMachine = Machine({
     imgY: 0,
   },
   on: {
-    RESIZE: { actions: 'resize' },
-    ZOOM: { actions: 'setZoom' },
-    PAN: { actions: 'pan' },
     mousemove: { actions: 'moveCursor' },
+    wheel: {actions: 'zoom' },
+    RESIZE: { actions: 'resize' },
+    PAN: { actions: 'pan' },
   },
 
 },
   {
     actions: {
-      log: (context, event) => console.log(context.imgX),
+      moveCursor: assign({
+        imgX: (context, event) => Math.floor((event.nativeEvent.offsetX / context.scale / context.zoom + context.sx)),
+        imgY: (context, event) => Math.floor((event.nativeEvent.offsetY / context.scale / context.zoom + context.sy)),
+      }),
       resize: assign({
         scale: (context, event) => {
           const scaleX = (event.width - 2 * event.padding) / context.width;
@@ -36,12 +46,6 @@ const canvasMachine = Machine({
           const scale = Math.min(scaleX, scaleY);
           return scale;
         },
-      }),
-      setScale: assign({ scale: (_, event) => event.scale }),
-      setZoom: assign({ zoom: (context, event) => event.zoom }),
-      moveCursor: assign({
-        imgX: (context, event) => Math.floor((event.nativeEvent.offsetX / context.scale / context.zoom + context.sx)),
-        imgY: (context, event) => Math.floor((event.nativeEvent.offsetY / context.scale / context.zoom + context.sy)),
       }),
       pan: assign({
         sx: (context, event) => {
@@ -59,7 +63,32 @@ const canvasMachine = Machine({
           return newSy;
         },
       }),
-    }  
+      zoom: assign({
+        zoom: (context, event) => {
+          const zoomFactor = 1 + event.deltaY / window.innerHeight;
+          const newZoom = Math.max(context.zoom * zoomFactor, 1);
+          return newZoom;
+        },
+        sx: (context, event) => {
+          const zoomFactor = 1 + event.deltaY / window.innerHeight;
+          const newZoom = Math.max(context.zoom * zoomFactor, 1);
+          const propX = event.nativeEvent.offsetX / context.scale;
+          let newSx = context.sx + propX * (1 / context.zoom - 1 / newZoom);
+          newSx = Math.min(newSx, context.width * (1 - 1 / newZoom));
+          newSx = Math.max(newSx, 0);
+          return newSx;
+        },
+        sy: (context, event) => {
+          const zoomFactor = 1 + event.deltaY / window.innerHeight;
+          const newZoom = Math.max(context.zoom * zoomFactor, 1);
+          const propY = event.nativeEvent.offsetY / context.scale;
+          let newSy = context.sy + propY * (1 / context.zoom - 1 / newZoom);
+          newSy = Math.min(newSy, context.height * (1 - 1 / newZoom));
+          newSy = Math.max(newSy, 0);
+          return newSy;
+        },
+      }),
+    }
   }
 );
 

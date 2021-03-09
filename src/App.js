@@ -6,9 +6,7 @@ import Navbar from './Navbar';
 import Canvas from './Canvas/Canvas';
 import InstructionPane from './InstructionPane';
 import Footer from './Footer/Footer';
-import { Slider } from '@material-ui/core';
 import { useState, useRef, useEffect } from 'react';
-
 
 const useStyles = makeStyles({
   root: {
@@ -36,10 +34,6 @@ const useStyles = makeStyles({
 
 function App() {
   const styles = useStyles();
-  const [zoom, setZoom] = useState(1);
-  const handleChange = (event, val) => {
-    setZoom(2 ** val);
-  };
 
   const canvasBoxRef = useRef({ offsetWidth: 0, offsetHeight: 0 });
   const [canvasBoxWidth, setCanvasBoxWidth] = useState(0);
@@ -62,19 +56,9 @@ function App() {
       <Box className={styles.main}>
         <Box>
           <ControlPanel className={styles.controlPanel} />
-          <Slider
-            defaultValue={0}
-            step={0.1}
-            marks
-            min={0}
-            max={3}
-            scale={(x) => (2 ** x).toFixed(2)}
-            valueLabelDisplay="auto"
-            onChange={handleChange}
-          />
         </Box>
         <Box ref={canvasBoxRef} className={styles.canvasBox}>
-          <Canvas zoom={zoom} width={canvasBoxWidth} height={canvasBoxHeight} />
+          <Canvas width={canvasBoxWidth} height={canvasBoxHeight} />
         </Box>
       </Box>
       <Footer />
