@@ -3,18 +3,25 @@ import { Machine, actions, assign, forwardTo, send } from 'xstate';
 // NOTE: info coming from the browser needs to be normalized by scale and zoom
 // info coming from the statechart needs to be normalized by zoom only
 
+// const canvas = document.getElementById('brush-canvas');
+// canvas.requestPointerLock = canvas.requestPointerLock ||
+//                             canvas.mozRequestPointerLock;
+
+// document.exitPointerLock = document.exitPointerLock ||
+//                            document.mozExitPointerLock;
+
 const canvasMachine = Machine({
   initial: 'idle',
   states: {
     idle: {
       on: {
-        'keydown.Space': 'panning',
+        'keydown.Space': { target: 'panning', actions: 'lockPointer' },
         mousemove: { actions: 'moveCursor' },
       },
     },
     panning: {
       on: {
-        'keyup.Space': 'idle',
+        'keyup.Space': { target: 'idle', actions: 'unlockPointer' },
         mousemove: { actions: 'pan' },
       },
     },
@@ -38,6 +45,8 @@ const canvasMachine = Machine({
 },
   {
     actions: {
+      lockPointer: () => document.getElementById('canvasBox').requestPointerLock(),
+      unlockPointer: () => document.exitPointerLock(),
       moveCursor: assign({
         imgX: (context, event) => Math.floor((event.nativeEvent.offsetX / context.scale / context.zoom + context.sx)),
         imgY: (context, event) => Math.floor((event.nativeEvent.offsetY / context.scale / context.zoom + context.sy)),
