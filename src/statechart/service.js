@@ -4,7 +4,6 @@ import rawAdjustMachine from './rawAdjustMachine';
 import labelAdjustMachine from './labelAdjustMachine';
 import canvasMachine from './canvasMachine';
 
-
 export const labelService = interpret(labelMachine);
 labelService.start();
 
