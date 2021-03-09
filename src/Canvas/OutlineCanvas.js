@@ -1,17 +1,16 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useService } from '@xstate/react';
 import axios from 'axios';
-import { labelService } from '../statechart/service';
+import { labelService, canvasService } from '../statechart/service';
 
 const OutlineCanvas = props => {
-  const { zoom, ...rest } = props;
   const [current, send] = useService(labelService);
   const [labelArray, setLabelArray] = useState([[0]]);
-  const [sx, sy] = [0, 0];
-  // const [sx, sy, zoom] = [0, 0, 1];
-  const [width, height] = [160, 160];
   const [foreground, background] = [1, 2];
   const [all, setAll] = useState(false);
+
+  const [currentCanvas, sendCanvas] = useService(canvasService);
+  const { sx, sy, zoom, width, height } = currentCanvas.context;
 
 
   const canvasRef = useRef();
@@ -73,7 +72,7 @@ const OutlineCanvas = props => {
 
   return <canvas id='outline-canvas'
     ref={canvasRef}
-    {...rest}
+    {...props}
   />;
 };
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useService } from '@xstate/react';
 import axios from 'axios';
-import { labelService, rawAdjustService } from '../statechart/service';
+import { labelService, rawAdjustService, canvasService } from '../statechart/service';
 
 
 const invertImageData = (data) => {
@@ -47,15 +47,14 @@ const brightnessImageData = (data, brightness) => {
 }
 
 export const RawCanvas = props => { 
-  const { zoom, ...rest } = props
   const [current, send] = useService(labelService);
   const [raw, setRaw] = useState(new Image());
-  const [sx, sy] = [0, 0];
-  // const [sx, sy, zoom] = [0, 0, 1];
-  const [width, height] = [160, 160];
 
   const [currentAdjust, sendAdjust] = useService(rawAdjustService);
   const { invert, grayscale, brightness, contrast } = currentAdjust.context;
+
+  const [currentCanvas, sendCanvas] = useService(canvasService);
+  const { sx, sy, zoom, width, height } = currentCanvas.context;
 
   const canvasRef = useRef();
   const ctx = useRef();
@@ -110,7 +109,7 @@ export const RawCanvas = props => {
 
   return <canvas id='raw-canvas'
     ref={canvasRef}
-    {...rest}
+    {...props}
   />;
 };
 

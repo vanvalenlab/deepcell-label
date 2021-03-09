@@ -14,14 +14,13 @@ const border = (x, y, cx, cy, radius) => {
 
 const BrushCanvas = props => {
   // TODO: get from state machine
-  const { zoom, ...rest } = props;
   const [current, send] = useService(labelService);
   // const [sx, sy, zoom] = [0, 0, 1];
 
   const brushSize = 8;
 
   const [currentCanvas, sendCanvas] = useService(canvasService);
-  const { sx, sy, imgX, imgY, width, height } = currentCanvas.context;
+  const { sx, sy, zoom, imgX, imgY, width, height } = currentCanvas.context;
 
   const canvasRef = useRef();
   const ctx = useRef();
@@ -68,7 +67,7 @@ const BrushCanvas = props => {
 
   return <canvas id='brush-canvas'
     ref={canvasRef}
-    {...rest}
+    {...props}
   />;
 };
 

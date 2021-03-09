@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useService } from '@xstate/react';
 import axios from 'axios';
-import { labelService, labelAdjustService } from '../statechart/service';
+import { labelService, labelAdjustService, canvasService } from '../statechart/service';
 
 const highlightImageData = (data, label) => {
   for (let i = 0; i < data.length; i += 4) {
@@ -35,13 +35,12 @@ const opacityImageData = (data, opacity) => {
 };
 
 export const LabelCanvas = props => {
-  const { zoom, ...rest } = props
   const [current, send] = useService(labelService);
   const [label, setLabel] = useState(new Image());
-  const [sx, sy] = [0, 0];
-  // const [sx, sy, zoom] = [0, 0, 1];
-  const [width, height] = [160, 160];
   const [foreground, background] = [1, 2];
+
+  const [currentCanvas, sendCanvas] = useService(canvasService);
+  const { sx, sy, zoom, width, height } = currentCanvas.context;
 
 
   const canvasRef = useRef();
@@ -98,7 +97,7 @@ export const LabelCanvas = props => {
 
   return <canvas id='label-canvas'
     ref={canvasRef}
-    {...rest}
+    {...props}
   />;
 };
 
