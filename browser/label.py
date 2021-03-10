@@ -434,9 +434,9 @@ class BaseEdit(object):
             label (int): label drawn in threshold area
         """
         top_edge = min(y1, y2)
-        bottom_edge = max(y1, y2)
+        bottom_edge = max(y1, y2) + 1
         left_edge = min(x1, x2)
-        right_edge = max(x1, x2)
+        right_edge = max(x1, x2) + 1
 
         # pull out the selection portion of the raw frame
         predict_area = self.raw_frame[top_edge:bottom_edge,

@@ -181,21 +181,12 @@ const thresholdState = {
   states: {
     idle: {
       on: {
-        mousedown: [
-          { target: 'dragging', actions: 'storeClick' },
-        ],
+        mousedown: { target: 'dragging', actions: 'storeClick' },
       }
     },
     dragging: {
       on: {
-        mouseup: [
-          {
-            target: 'idle',
-            cond: 'nonemptyBox',
-            actions: 'threshold'
-          },
-          { target: 'idle' },
-        ]
+        mouseup: { target: 'idle', actions: 'threshold' },
       }
     }
   },
@@ -648,7 +639,6 @@ export const labelMachine = Machine(
         window.model.canvas.label === context.storedLabel &&
         (window.model.canvas.imgX !== context.storedX || window.model.canvas.imgY !== context.storedY)
       ),
-      nonemptyBox: (context) => context.storedX !== window.model.canvas.imgX && context.storedY !== window.model.canvas.imgY,
     }
   }
 );

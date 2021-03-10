@@ -421,7 +421,7 @@ class BrushView {
     const mag = this.model.canvas.scale * this.model.canvas.zoom / 100;
 
     // Update the translucent brush canvas
-    if (window.controller.service.state.matches('mouse.toolbar.threshold')) {
+    if (window.controller.service.state.matches('mouse.toolbar.threshold.dragging')) {
       this.drawThreshold();
     } else if (window.controller.service.state.matches('mouse.toolbar.paint')) {
       this.drawPaintbrush();
@@ -451,10 +451,10 @@ class BrushView {
       const storedY = window.controller.service.state.context.storedY;
       // solid box around threshold area
       ctxDst.strokeStyle = 'white';
-      const boxStartX = (storedX - sx) * mag + this.padding;
-      const boxStartY = (storedY - sy) * mag + this.padding;
-      const boxWidth = (x - storedX) * mag;
-      const boxHeight = (y - storedY) * mag;
+      const boxStartX = (Math.min(storedX, x) - sx) * mag + this.padding;
+      const boxStartY = (Math.min(storedY, y) - sy) * mag + this.padding;
+      const boxWidth = (Math.abs(x - storedX) + 1) * mag;
+      const boxHeight = (Math.abs(y - storedY) + 1) * mag;
       ctxDst.strokeRect(boxStartX, boxStartY, boxWidth, boxHeight);
     } else if (window.controller.service.state.matches('mouse.toolbar.paint')) {
       // solid circle around current brush location
@@ -478,13 +478,16 @@ class BrushView {
     const storedY = window.controller.service.state.context.storedY;
     const x = this.model.canvas.imgX;
     const y = this.model.canvas.imgY;
-    // interior of box; will be added to visible canvas with opacity
-    if (window.controller.service.state.matches('mouse.toolbar.threshold.dragging')) {
-      this.ctx.fillRect(
-        storedX, storedY,
-        x - storedX,
-        y - storedY);
-    }
+
+    const width = Math.abs(storedX - x) + 1;
+    const height = Math.abs(storedY - y) + 1;
+    const boxX = Math.min(storedX, x);
+    const boxY = Math.min(storedY, y);
+
+    this.ctx.fillRect(
+      boxX, boxY,
+      width,
+      height);
   }
 
   /**
