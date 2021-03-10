@@ -234,6 +234,7 @@ const erodeDilateState = {
 const autofitState = {
   on: {
     mousedown: [
+      { cond: 'shift' },
       { cond: 'onNoLabel' },
       { cond: 'onForeground', actions: 'autofit' },
       { actions: 'setForeground' },
