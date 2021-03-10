@@ -301,8 +301,8 @@ export class SetForeground extends Action {
     this.model = window.model;
     this.oldLabel = this.model.foreground;
     // cycle highlight to next label
-    const maxLabel = this.model.maxLabelsMap.get(this.model.feature);
-    this.newLabel = (label).mod(maxLabel + 1);
+    const maxLabel = this.model.maxLabel;
+    this.newLabel = (label).mod(maxLabel + 2);
   }
 
   do() {
@@ -324,8 +324,8 @@ export class SetBackground extends Action {
     this.model = window.model;
     this.oldLabel = this.model.background;
     // cycle highlight to next label
-    const maxLabel = this.model.maxLabelsMap.get(this.model.feature);
-    this.newLabel = (label).mod(maxLabel + 1);
+    const maxLabel = this.model.maxLabel;
+    this.newLabel = (label).mod(maxLabel + 2);
   }
 
   do() {
@@ -346,7 +346,7 @@ export class NewForeground extends Action {
     super();
     this.model = window.model;
     this.oldValue = this.model.foreground;
-    this.newValue = this.model.maxLabelsMap.get(this.model.feature) + 1;
+    this.newValue = this.model.maxLabel + 1;
   }
 
   do() {
@@ -393,7 +393,7 @@ export class ResetLabels extends Action {
     this.model = window.model;
     this.oldForeground = this.model.foreground;
     this.oldBackground = this.model.background;
-    this.newForeground = this.model.maxLabelsMap.get(this.model.feature) + 1;
+    this.newForeground = this.model.maxLabel + 1;
     this.newBackground = 0;
   }
 

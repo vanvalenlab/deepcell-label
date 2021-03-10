@@ -200,7 +200,12 @@ const floodState = {
   on: {
     click: [
       { cond: 'onBackground', actions: 'flood' },
-      { actions: 'setBackground' },
+      {
+        actions: send(
+          () => ({ type: 'SETBACKGROUND', label: window.model.canvas.label }),
+          { to: 'label' },
+        )
+      },
     ],
     'keydown.g': 'none',
   }
@@ -211,7 +216,12 @@ const trimState = {
     click: [
       { cond: 'onNoLabel' },
       { cond: 'onBackground', actions: 'trim' },
-      { actions: 'setBackground' }
+      {
+        actions: send(
+          () => ({ type: 'SETBACKGROUND', label: window.model.canvas.label }),
+          { to: 'label' },
+        )
+      }
     ],
     'keydown.k': 'none',
   }
@@ -225,7 +235,9 @@ const erodeDilateState = {
       { cond: 'shift' },
       { cond: 'onBackground', actions: 'erode' },
       { cond: 'onForeground', actions: 'dilate' },
-      { actions: 'setForeground' },
+      {
+        actions: send(() => ({ type: 'SETFOREGROUND', label: window.model.canvas.label }))
+      },
     ],
     'keydown.q': 'none',
   },
@@ -237,7 +249,9 @@ const autofitState = {
       { cond: 'shift' },
       { cond: 'onNoLabel' },
       { cond: 'onForeground', actions: 'autofit' },
-      { actions: 'setForeground' },
+      {
+        actions: send(() => ({ type: 'SETFOREGROUND', label: window.model.canvas.label }))
+      },
     ],
     TOGGLERGB: 'none',
     'keydown.m': 'none',
@@ -252,7 +266,12 @@ const watershedState = {
         mousedown: [
           { cond: 'onNoLabel' },
           { cond: 'shift' },
-          { target: 'clicked', actions: ['setForeground', 'storeClick'] }
+          {
+            target: 'clicked',
+            actions: [
+              send(() => ({ type: 'SETFOREGROUND', label: window.model.canvas.label })),
+              'storeClick']
+          }
         ]
       }
     },
@@ -260,7 +279,11 @@ const watershedState = {
       on: {
         click: [
           { cond: 'shift' },
-          { cond: 'validSecondSeed', actions: 'watershed', target: 'idle' }
+          {
+            cond: 'validSecondSeed',
+            target: 'idle',
+            actions: ['watershed', send(() => ({ type: 'SETBACKGROUND', label: window.model.maxLabel + 1 })), () => console.log(window.model.maxLabel + 1)]
+          }
         ]
       }
     }
@@ -280,8 +303,13 @@ const toolbarState = {
     none: {
       on: {
         mousedown: [
-          { cond: 'onBackground', actions: 'setForeground' },
-          { actions: 'setBackground' },
+          {
+            cond: 'onBackground',
+            actions: send(() => ({ type: 'SETFOREGROUND', label: window.model.canvas.label }))
+          },
+          {
+            actions: send(() => ({ type: 'SETBACKGROUND', label: window.model.canvas.label }))
+          },
         ],
       }
     },
@@ -515,8 +543,15 @@ const selectState = {
     },
     select: {
       always: [
-        { cond: 'onBackground', actions: 'setForeground', target: 'idle' },
-        { actions: 'setBackground', target: 'idle' },
+        {
+          cond: 'onBackground',
+          actions: send(() => ({ type: 'SETFOREGROUND', label: window.model.canvas.label })),
+          target: 'idle'
+        },
+        {
+          actions: send(() => ({ type: 'SETBACKGROUND', label: window.model.canvas.label })),
+          target: 'idle'
+        },
       ],
     },
   },
@@ -555,6 +590,28 @@ export const labelMachine = Machine(
       frame: frameState,
       confirm: confirmState,
     },
+    on: {
+      SETFOREGROUND: {
+        actions: (_, event) => {
+          const label = event.label;
+          const foreground = window.model.foreground;
+          const background = window.model.background;
+          // make foreground and background different labels
+          if (label === background) { addAction(new SetBackground(foreground)); }
+          addAction(new SetForeground(label));
+        },
+      },
+      SETBACKGROUND: {
+        actions: (_, event) => {
+          const label = event.label;
+          const foreground = window.model.foreground;
+          const background = window.model.background;
+          // make foreground and background different labels
+          if (label === foreground) { addAction(new SetForeground(background)); }
+          addAction(new SetBackground(label));
+        },
+      },
+    }
   },
   {
     actions: {
@@ -566,23 +623,6 @@ export const labelMachine = Machine(
         storedX: () => window.model.canvas.imgX,
         storedY: () => window.model.canvas.imgY,
       }),
-      // select labels actions
-      setForeground: () => {
-        const label = window.model.canvas.label;
-        const foreground = window.model.foreground;
-        const background = window.model.background;
-        // make foreground and background different labels
-        if (label === background) { addAction(new SetBackground(foreground)); }
-        addAction(new SetForeground(label));
-      },
-      setBackground: () => {
-        const label = window.model.canvas.label;
-        const foreground = window.model.foreground;
-        const background = window.model.background;
-        // make foreground and background different labels
-        if (label === foreground) { addAction(new SetForeground(background)); }
-        addAction(new SetBackground(label));
-      },
       swapLabels: () => addAction(new SwapForegroundBackground()),
       resetLabels: () => addAction(new ResetLabels()),
       newForeground: () => addAction(new NewForeground()),

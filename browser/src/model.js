@@ -176,8 +176,12 @@ export class Model {
     }
   }
 
+  get maxLabel() {
+    return this.maxLabelsMap.get(this.feature);
+  }
+
   resetLabels() {
-    this.foreground = this.maxLabelsMap.get(this.feature) + 1;
+    this.foreground = this.maxLabel + 1;
     this.background = 0;
   }
 
