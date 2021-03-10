@@ -35,6 +35,7 @@ const keydownLookup = {
   '{': 'keydown.{',
   0: 'keydown.0',
   ' ': 'keydown.Space',
+  Shift: 'keydown.Shift',
   Enter: 'keydown.Enter',
   Escape: 'keydown.Escape',
   ArrowLeft: 'keydown.left',

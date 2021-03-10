@@ -274,27 +274,6 @@ export class ToggleInvert extends Action {
   redo() { this.do(); }
 }
 
-export class SwapForegroundBackground extends Action {
-  constructor() {
-    super();
-    this.model = window.model;
-    this.foreground = this.model.foreground;
-    this.background = this.model.background;
-  }
-
-  do() {
-    this.model.foreground = this.background;
-    this.model.background = this.foreground;
-  }
-
-  undo() {
-    this.model.foreground = this.foreground;
-    this.model.background = this.background;
-  }
-
-  redo() { this.do(); }
-}
-
 export class SetForeground extends Action {
   constructor(label) {
     super();
@@ -334,77 +313,6 @@ export class SetBackground extends Action {
 
   undo() {
     this.model.background = this.oldLabel;
-  }
-
-  redo() {
-    this.do();
-  }
-}
-
-export class NewForeground extends Action {
-  constructor() {
-    super();
-    this.model = window.model;
-    this.oldValue = this.model.foreground;
-    this.newValue = this.model.maxLabel + 1;
-  }
-
-  do() {
-    this.model.foreground = this.newValue;
-  }
-
-  undo() {
-    this.model.foreground = this.oldValue;
-  }
-
-  redo() {
-    this.do();
-  }
-}
-
-export class ResetBackground extends Action {
-  constructor() {
-    super();
-    this.model = window.model;
-    this.oldBackground = this.model.background;
-    this.oldForeground = this.model.foreground;
-    this.newBackground = 0;
-    this.newForeground = 0;
-  }
-
-  do() {
-    this.model.foreground = this.newForeground;
-    this.model.background = this.newBackground;
-  }
-
-  undo() {
-    this.model.foreground = this.oldForeground;
-    this.model.background = this.oldBackground;
-  }
-
-  redo() {
-    this.do();
-  }
-}
-
-export class ResetLabels extends Action {
-  constructor() {
-    super();
-    this.model = window.model;
-    this.oldForeground = this.model.foreground;
-    this.oldBackground = this.model.background;
-    this.newForeground = this.model.maxLabel + 1;
-    this.newBackground = 0;
-  }
-
-  do() {
-    this.model.foreground = this.newForeground;
-    this.model.background = this.newBackground;
-  }
-
-  undo() {
-    this.model.foreground = this.oldForeground;
-    this.model.background = this.oldBackground;
   }
 
   redo() {

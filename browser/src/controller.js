@@ -151,7 +151,9 @@ export class Controller {
 
   handleKeyup(event) {
     if (event.key === ' ') {
-      this.service.send('keyup.Space')
+      this.service.send('keyup.Space');
+    } else if (event.key === 'Shift') {
+      this.service.send('keyup.Shift');
     }
   }
 }

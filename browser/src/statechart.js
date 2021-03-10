@@ -9,8 +9,7 @@ import {
   BackendAction, ChangeFrame, ChangeFeature, ChangeChannel,
   Pan, Zoom, ToggleHighlight, ToggleInvert,
   ChangeContrast, ChangeBrightness, ResetBrightnessContrast,
-  SetForeground, SetBackground, SwapForegroundBackground, ResetLabels,
-  NewForeground, ResetBackground,
+  SetForeground, SetBackground,
 } from './actions.js';
 
 // easier access to add to action history
@@ -199,13 +198,9 @@ const thresholdState = {
 const floodState = {
   on: {
     click: [
+      { cond: 'shift' },
       { cond: 'onBackground', actions: 'flood' },
-      {
-        actions: send(
-          () => ({ type: 'SETBACKGROUND', label: window.model.canvas.label }),
-          { to: 'label' },
-        )
-      },
+      { actions: 'selectBackground' },
     ],
     'keydown.g': 'none',
   }
@@ -214,14 +209,10 @@ const floodState = {
 const trimState = {
   on: {
     click: [
+      { cond: 'shift' },
       { cond: 'onNoLabel' },
       { cond: 'onBackground', actions: 'trim' },
-      {
-        actions: send(
-          () => ({ type: 'SETBACKGROUND', label: window.model.canvas.label }),
-          { to: 'label' },
-        )
-      }
+      { actions: 'selectBackground'}
     ],
     'keydown.k': 'none',
   }
@@ -236,7 +227,7 @@ const erodeDilateState = {
       { cond: 'onBackground', actions: 'erode' },
       { cond: 'onForeground', actions: 'dilate' },
       {
-        actions: send(() => ({ type: 'SETFOREGROUND', label: window.model.canvas.label }))
+        actions: 'selectForeground'
       },
     ],
     'keydown.q': 'none',
@@ -250,7 +241,7 @@ const autofitState = {
       { cond: 'onNoLabel' },
       { cond: 'onForeground', actions: 'autofit' },
       {
-        actions: send(() => ({ type: 'SETFOREGROUND', label: window.model.canvas.label }))
+        actions: 'selectForeground'
       },
     ],
     TOGGLERGB: 'none',
@@ -269,7 +260,7 @@ const watershedState = {
           {
             target: 'clicked',
             actions: [
-              send(() => ({ type: 'SETFOREGROUND', label: window.model.canvas.label })),
+              'selectForeground',
               'storeClick']
           }
         ]
@@ -279,11 +270,7 @@ const watershedState = {
       on: {
         click: [
           { cond: 'shift' },
-          {
-            cond: 'validSecondSeed',
-            target: 'idle',
-            actions: ['watershed', send(() => ({ type: 'SETBACKGROUND', label: window.model.maxLabel + 1 })), () => console.log(window.model.maxLabel + 1)]
-          }
+          { cond: 'validSecondSeed', target: 'idle', actions: ['watershed', 'newBackground'] },
         ]
       }
     }
@@ -303,13 +290,10 @@ const toolbarState = {
     none: {
       on: {
         mousedown: [
-          {
-            cond: 'onBackground',
-            actions: send(() => ({ type: 'SETFOREGROUND', label: window.model.canvas.label }))
-          },
-          {
-            actions: send(() => ({ type: 'SETBACKGROUND', label: window.model.canvas.label }))
-          },
+          { cond: 'shift' },
+          { cond: 'dblclick', actions: ['selectBackground', 'resetForeground'] },
+          { cond: 'onForeground', actions: 'selectBackground' },
+          { actions: 'selectForeground' },
         ],
       }
     },
@@ -538,20 +522,23 @@ const selectState = {
   states: {
     idle: {
       on: {
-        mousedown: { cond: 'shift', target: 'select' },
+        'keydown.Shift': 'select',
       }
     },
     select: {
+      on: {
+        'keyup.Shift': 'idle',
+        mousedown: [
+          {
+            cond: 'dblclick', actions: [ 'selectForeground', 'resetBackground'] },
+          { cond: 'onBackground', actions: 'selectForeground', },
+          {
+            actions: 'selectBackground',
+          },
+        ]
+      },
       always: [
-        {
-          cond: 'onBackground',
-          actions: send(() => ({ type: 'SETFOREGROUND', label: window.model.canvas.label })),
-          target: 'idle'
-        },
-        {
-          actions: send(() => ({ type: 'SETBACKGROUND', label: window.model.canvas.label })),
-          target: 'idle'
-        },
+
       ],
     },
   },
@@ -623,14 +610,33 @@ export const labelMachine = Machine(
         storedX: () => window.model.canvas.imgX,
         storedY: () => window.model.canvas.imgY,
       }),
-      swapLabels: () => addAction(new SwapForegroundBackground()),
-      resetLabels: () => addAction(new ResetLabels()),
-      newForeground: () => addAction(new NewForeground()),
-      resetBackground: () => addAction(new ResetBackground()),
-      decrementForeground: () => addAction(new SetForeground(window.model.foreground - 1)),
-      incrementForeground: () => addAction(new SetForeground(window.model.foreground + 1)),
-      decrementBackground: () => addAction(new SetBackground(window.model.background - 1)),
-      incrementBackground: () => addAction(new SetBackground(window.model.background + 1)),
+      selectForeground: send(() => ({ type: 'SETFOREGROUND', label: window.model.canvas.label })),
+      selectBackground: send(() => ({ type: 'SETBACKGROUND', label: window.model.canvas.label })),
+      resetForeground: send(() => ({ type: 'SETFOREGROUND', label: 0 })),
+      resetBackground: send(() => ({ type: 'SETBACKGROUND', label: 0 })),
+      newForeground: send(() => ({ type: 'SETFOREGROUND', label: window.model.maxLabel + 1 })),
+      newBackground: send(() => ({ type: 'SETBACKGROUND', label: window.model.maxLabel + 1 })),
+      incrementForeground: send(() => {
+        const numLabels = window.model.maxLabel + 1;
+        const nextLabel = (window.model.foreground + 1) % numLabels;
+        return { type: 'SETFOREGROUND', label: nextLabel };
+      }),
+      incrementBackground: send(() => {
+        const numLabels = window.model.maxLabel + 1;
+        const nextLabel = (window.model.background + 1) % numLabels;
+        return { type: 'SETBACKGROUND', label: nextLabel };
+      }),
+      decrementForeground: send(() => {
+        const numLabels = window.model.maxLabel + 1;
+        const prevLabel = ((window.model.foreground - 1) + numLabels) % numLabels;
+        return { type: 'SETFOREGROUND', label: prevLabel };
+      }),
+      decrementBackground: send(() => {
+        const numLabels = window.model.maxLabel + 1;
+        const prevLabel = ((window.model.background - 1) + numLabels) % numLabels;
+        return { type: 'SETBACKGROUND', label: prevLabel };
+      }),
+      swapLabels: send(() => ({ type: 'SETFOREGROUND', label: window.model.background })),
       // edit labels actions
       draw: draw,
       threshold: threshold,
@@ -672,6 +678,11 @@ export const labelMachine = Machine(
     },
     guards: {
       shift: (_, event) => event.shiftKey,
+      dblclick: (_, event) => {
+        console.log(event);
+        console.log('testing');
+        return event.detail === 2;
+      },
       onNoLabel: () => window.model.canvas.label === 0,
       onBackground: () => window.model.canvas.label === window.model.background,
       onForeground: () => window.model.canvas.label === window.model.foreground,
