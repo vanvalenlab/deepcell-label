@@ -98,7 +98,7 @@ export const RawCanvas = props => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const result = await axios('http://0.0.0.0:5000/api/project/Df3GUkjcppjd');
+      const result = await axios('https://label.deepcell.org/api/project/FHMlWcK_FOOC');
       const rawImage = new Image();
       rawImage.src = result.data.imgs.raw;
       setRaw(rawImage);
