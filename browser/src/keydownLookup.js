@@ -24,6 +24,7 @@ const keydownLookup = {
   R: 'keydown.R',
   s: 'keydown.s',
   t: 'keydown.t',
+  v: 'keydown.v',
   w: 'keydown.w',
   x: 'keydown.x',
   z: 'keydown.z',

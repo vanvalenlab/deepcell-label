@@ -169,7 +169,6 @@ const paintState = {
     }
   },
   on: {
-    'keydown.b': 'none',
     'keydown.n': { actions: 'newForeground' },
     'keydown.Escape': { actions: 'resetBackground' },
   },
@@ -190,8 +189,7 @@ const thresholdState = {
     }
   },
   on: {
-    TOGGLERGB: 'none',
-    'keydown.t': 'none',
+    TOGGLERGB: 'select',
   }
 };
 
@@ -202,7 +200,6 @@ const floodState = {
       { cond: 'onBackground', actions: 'flood' },
       { actions: 'selectBackground' },
     ],
-    'keydown.g': 'none',
   }
 };
 
@@ -212,9 +209,8 @@ const trimState = {
       { cond: 'shift' },
       { cond: 'onNoLabel' },
       { cond: 'onBackground', actions: 'trim' },
-      { actions: 'selectBackground'}
+      { actions: 'selectBackground' },
     ],
-    'keydown.k': 'none',
   }
 };
 
@@ -226,11 +222,8 @@ const erodeDilateState = {
       { cond: 'shift' },
       { cond: 'onBackground', actions: 'erode' },
       { cond: 'onForeground', actions: 'dilate' },
-      {
-        actions: 'selectForeground'
-      },
+      { actions: 'selectForeground' },
     ],
-    'keydown.q': 'none',
   },
 };
 
@@ -240,12 +233,9 @@ const autofitState = {
       { cond: 'shift' },
       { cond: 'onNoLabel' },
       { cond: 'onForeground', actions: 'autofit' },
-      {
-        actions: 'selectForeground'
-      },
+      { actions: 'selectForeground' },
     ],
-    TOGGLERGB: 'none',
-    'keydown.m': 'none',
+    TOGGLERGB: 'select',
   }
 };
 
@@ -257,12 +247,7 @@ const watershedState = {
         mousedown: [
           { cond: 'onNoLabel' },
           { cond: 'shift' },
-          {
-            target: 'clicked',
-            actions: [
-              'selectForeground',
-              'storeClick']
-          }
+          { target: 'clicked', actions: ['selectForeground', 'storeClick'] }
         ]
       }
     },
@@ -276,8 +261,7 @@ const watershedState = {
     }
   },
   on: {
-    TOGGLERGB: 'none',
-    'keydown.w': 'none',
+    TOGGLERGB: 'select',
   }
 };
 
@@ -285,9 +269,9 @@ const watershedState = {
  * Handles which current tool for mouse behavior.
  */
 const toolbarState = {
-  initial: 'none',
+  initial: 'select',
   states: {
-    none: {
+    select: {
       on: {
         mousedown: [
           { cond: 'shift' },
@@ -307,6 +291,7 @@ const toolbarState = {
     hist: { type: 'history', history: 'deep' }
   },
   on: {
+    'keydown.v': '.select',
     'keydown.b': '.paint',
     'keydown.g': '.flood',
     'keydown.k': '.trim',
@@ -316,7 +301,6 @@ const toolbarState = {
     'keydown.m': { target: '.autofit', in: '#label.rgb.oneChannel' },
     'keydown.w': { target: '.watershed', in: '#label.rgb.oneChannel' },
     'keydown.Space': 'pan',
-
   }
 };
 
