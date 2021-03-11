@@ -513,17 +513,13 @@ const selectState = {
       on: {
         'keyup.Shift': 'idle',
         mousedown: [
-          {
-            cond: 'dblclick', actions: [ 'selectForeground', 'resetBackground'] },
+          { cond: 'dblclick', actions: ['selectForeground', 'resetBackground'] },
           { cond: 'onBackground', actions: 'selectForeground', },
           {
             actions: 'selectBackground',
           },
         ]
       },
-      always: [
-
-      ],
     },
   },
   on: {
