@@ -113,3 +113,8 @@ venv.bak/
 .mypy_cache/
 
 node_modules
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml

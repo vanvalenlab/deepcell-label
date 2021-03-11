@@ -1,31 +1,13 @@
-FROM ubuntu:16.04
-
-# System maintenance
-RUN apt-get update && apt-get install -y \
-	python3-tk \
-    python3-dev \
-    python3-pip \
-    mesa-utils \
-    xorg-dev \
-    libglu1-mesa libgl1-mesa-dev \
-    x11vnc \
-    xvfb \
-    fluxbox \
-    wmctrl \
-    libsm6 && \
-  rm -rf /var/lib/apt/lists/* && \
-  pip3 install --upgrade pip
+FROM python:3.7
 
 WORKDIR /usr/src/app
 
-# Copy the requirements.txt and install the dependencies
-COPY setup.py requirements.txt ./
-RUN pip3 install -r requirements.txt
+COPY requirements.txt requirements.txt
 
-# Copy the rest of the package code and its scripts
+RUN pip install --no-cache-dir -r requirements.txt
+
 COPY . .
 
-# Install via setup.py
-RUN pip3 install .
+EXPOSE 5000
 
-CMD "bin/entrypoint.sh"
+CMD ["/bin/sh", "-c", "python application.py"]
