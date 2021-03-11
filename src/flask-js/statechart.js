@@ -10,7 +10,7 @@ import {
   Pan, Zoom, ToggleHighlight, ToggleInvert,
   ChangeContrast, ChangeBrightness, ResetBrightnessContrast,
   SetForeground, SetBackground,
-} from './flask-js/actions.js';
+} from './actions.js';
 
 // easier access to add to action history
 const addAction = action => window.controller.history.addAction(action);

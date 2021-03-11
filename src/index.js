@@ -1,44 +1,17 @@
-import M from 'materialize-css';
-import Dropzone from 'dropzone';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import './index.css';
+import App from './App';
+import reportWebVitals from './reportWebVitals';
 
-// Initialize Materialize elements
-M.AutoInit();
-document.addEventListener('DOMContentLoaded', function() {
-  // Initialize forms
-  var elems = document.querySelectorAll('select');
-  var instances = M.FormSelect.init(elems, {});
-  // Initialize collapsibles
-  var elems = document.querySelectorAll('.collapsible');
-  var instances = M.Collapsible.init(elems, {
-    accordion: true,
-    inDuration: 400,
-    outDuration: 400,
-  });
-});
+ReactDOM.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+  document.getElementById('root')
+);
 
-// Dropzone.autoDiscover = false;
-
-// $(function() {
-//   var myDropzone = new Dropzone('#myDropzone', {
-//     timeout: 1000 * 60 * 5, // 5 minutes
-//   });
-//   myDropzone.on('success', function(file, payload) {
-//     // Called when file finishes uploading
-//     window.location = `project/${payload.projectId}`;
-//   });
-// })
-
-Dropzone.options.myDropzone = {
-  timeout: 1000 * 60 * 5, // 5 minutes
-  init: function () {
-    this.on('success', function(file, payload) {
-      // Redirect to project when file finishes uploading
-      window.location = `project/${payload.projectId}`;
-    });
-  }
-};
-
-// Enable submit button after selecting example file
-const submitButton = document.getElementById('submitExample');
-const exampleFiles = document.getElementById('exampleFiles');
-exampleFiles.onchange = () => { submitButton.disabled = false };
+// If you want to start measuring performance in your app, pass a function
+// to log results (for example: reportWebVitals(console.log))
+// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+reportWebVitals();
