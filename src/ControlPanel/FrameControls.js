@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { useState } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import Collapse from '@material-ui/core/Collapse';
@@ -23,31 +23,13 @@ import FormControl from '@material-ui/core/FormControl';
 import FormLabel from '@material-ui/core/FormLabel';
 import Box from '@material-ui/core/Box';
 
-
-import Predict from './Predict';
 import { useService } from '@xstate/react';
-import { labelService } from '../statechart/service';
-
 import ControlRow from './ControlRow';
-import FrameControls from './FrameControls';
-import RawControls from './RawControls';
-import LabelControls from './LabelControls';
 
-
-const useRowStyles = makeStyles({
-  root: {
-    '& > *': {
-      borderBottom: 'unset',
-    },
-  },
-  slider: {
-    width: 300,
-  },
-});
-
+import { FrameContext } from '../ServiceContext';
 
 function SliceSlider(props) {
-  const { value, max, handler } = props;
+  const { value, max, onChange } = props;
 
   return (
     <>
@@ -58,37 +40,44 @@ function SliceSlider(props) {
         marks
         min={0}
         max={max}
-        onChange={handler}
+        onChange={onChange}
       />
     </>
   )
 }
 
+export default function LabelControls() {
+  
+  const service = useContext(FrameContext);
+  const [current, send] = useService(service);
+  const { frame, feature, channel } = current.context;
 
-export default function ControlPanel() {
-  const [selectedJobType, setSelectedJobType] = useState('');
-  const [showError, setShowError] = useState(false);
-  const [errorText, setErrorText] = useState('');
+  const handleFrameChange = (event, newValue) => {
+    send({ type: 'SETFRAME', frame: newValue });
+  };
 
-  const showErrorMessage = (errText) => {
-    setErrorText(errText);
-    setShowError(true);
+  const handleChannelChange = (event, newValue) => {
+    send({ type: 'SETCHANNEL', channel: newValue });
+  };
+
+  const handleFeatureChange = (event, newValue) => {
+    send({ type: 'SETFEATURE', feature: newValue });
   };
 
   return (
-    <TableContainer id='control-panel' component={Paper}>
-      <Table aria-label="collapsible table">
-        <TableBody>
-          <FrameControls />
-          <LabelControls />
-          <RawControls />
-          <ControlRow name={"Label"} />
-          <ControlRow name={"Tool"} />
-          <ControlRow name={"Predict"}>
-            <Predict />
-          </ControlRow>
-        </TableBody>
-      </Table>
-    </TableContainer>
-  );
+    <ControlRow name={"Slice"}>
+      <Typography id="discrete-slider" gutterBottom>
+        Frame
+      </Typography>
+      <SliceSlider value={frame} max={current.numFrames - 1 || 23} onChange={handleFrameChange}/>
+      <Typography gutterBottom>
+        Channel
+      </Typography>
+      <SliceSlider value={channel} max={current.numChannels - 1 || 1} onChange={handleChannelChange}/>
+      <Typography gutterBottom>
+        Feature
+      </Typography>
+      <SliceSlider value={feature} max={current.numFeatures - 1 || 2} onChange={handleFeatureChange}/>
+    </ControlRow>
+  )
 }
