@@ -8,7 +8,7 @@ export const FrameContext = createContext();
 const ServiceContext = (props) => {
   const location = useLocation();
   const projectId = new URLSearchParams(location.search).get('projectId');
-  const frameService = useInterpret(createFrameMachine(projectId, 0, 0, 0));
+  const frameService = useInterpret(createFrameMachine(projectId));
 
   return (
     <FrameContext.Provider value={frameService}>

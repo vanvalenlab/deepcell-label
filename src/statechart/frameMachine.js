@@ -75,15 +75,15 @@ function fetchFeature(context) {
 }
 
 
-const createFrameMachine = (projectId, frame, feature, channel) => {
+const createFrameMachine = (projectId) => {
   return Machine({
     id: `${projectId}-frame`,
     initial: 'loading',
     context: {
       projectId,
-      frame,
-      feature,
-      channel,
+      frame: 0,
+      feature: 0,
+      channel: 0,
       numFrames: 0,
       numFeatures: 0,
       numChannels: 0,
@@ -185,6 +185,9 @@ const createFrameMachine = (projectId, frame, feature, channel) => {
         rawImage: (context, event) => event.data[1],
         labelImage: (context, event) => event.data[2],
         labelArray: (context, event) => event.data[0].imgs.seg_arr,
+        frame: (context, event) => event.data[0].frame,
+        channel: (context, event) => event.data[0].channel,
+        feature: (context, event) => event.data[0].feature,
         numFrames: (context, event) => event.data[0].numFrames,
         numChannels: (context, event) => event.data[0].numChannels,
         numFeatures: (context, event) => event.data[0].numFeatures,
