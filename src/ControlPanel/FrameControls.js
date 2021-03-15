@@ -8,21 +8,22 @@ import ControlRow from './ControlRow';
 import { FrameContext } from '../ServiceContext';
 
 function SliceSlider(props) {
-  const { value, max, onChange } = props;
+  const { label, value, max, onChange } = props;
 
-  return (
-    <>
-      <Slider
-        value={value}
-        valueLabelDisplay="auto"
-        step={1}
-        marks
-        min={0}
-        max={max}
-        onChange={onChange}
-      />
-    </>
-  )
+  return <>
+    <Typography gutterBottom>
+      {label}
+    </Typography>
+    <Slider
+      value={value}
+      valueLabelDisplay="auto"
+      step={1}
+      marks
+      min={0}
+      max={max}
+      onChange={onChange}
+    />
+  </>;
 }
 
 export default function LabelControls() {
@@ -46,18 +47,9 @@ export default function LabelControls() {
 
   return (
     <ControlRow name={"Slice"}>
-      <Typography id="discrete-slider" gutterBottom>
-        Frame
-      </Typography>
-      <SliceSlider value={frame} max={numFrames - 1} onChange={handleFrameChange}/>
-      <Typography gutterBottom>
-        Channel
-      </Typography>
-      <SliceSlider value={channel} max={numChannels - 1} onChange={handleChannelChange}/>
-      <Typography gutterBottom>
-        Feature
-      </Typography>
-      <SliceSlider value={feature} max={numFeatures - 1} onChange={handleFeatureChange}/>
+      <SliceSlider label="Frame" value={frame} max={numFrames - 1} onChange={handleFrameChange}/>
+      <SliceSlider label="Channel" value={channel} max={numChannels - 1} onChange={handleChannelChange}/>
+      <SliceSlider label="Feature" value={feature} max={numFeatures - 1} onChange={handleFeatureChange}/>
     </ControlRow>
   )
 }
