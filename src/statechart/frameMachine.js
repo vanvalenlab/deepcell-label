@@ -42,8 +42,7 @@ function fetchProject(context) {
     .then(response => response.json());
   const loadRaw = loadProject.then(loadRawIntoImage);
   const loadLabel = loadProject.then(loadLabelIntoImage);
-  return Promise.all([loadProject, loadRaw, loadLabel])
-    .then(data => repackageImages(data[1], data[2], data[0].imgs.seg_arr));
+  return Promise.all([loadProject, loadRaw, loadLabel]);
 }
 
 function fetchFrame(context) {
@@ -85,6 +84,9 @@ const createFrameMachine = (projectId, frame, feature, channel) => {
       frame,
       feature,
       channel,
+      numFrames: 0,
+      numFeatures: 0,
+      numChannels: 0,
       rawImage: new Image(),
       labelImage: new Image(),
       labelArray: [[]],
@@ -97,7 +99,7 @@ const createFrameMachine = (projectId, frame, feature, channel) => {
           src: fetchProject,
           onDone: {
             target: 'loaded',
-            actions: 'handlePayload',
+            actions: ['handleFirstPayload', (c, e) => console.log(e.data)],
           },
           onError: {
             target: 'failure',
@@ -179,6 +181,14 @@ const createFrameMachine = (projectId, frame, feature, channel) => {
       newFeature: (context, event) => context.feature !== event.feature,
     },
     actions: {
+      handleFirstPayload: assign({
+        rawImage: (context, event) => event.data[1],
+        labelImage: (context, event) => event.data[2],
+        labelArray: (context, event) => event.data[0].imgs.seg_arr,
+        numFrames: (context, event) => event.data[0].numFrames,
+        numChannels: (context, event) => event.data[0].numChannels,
+        numFeatures: (context, event) => event.data[0].numFeatures,
+      }),
       handlePayload: assign({
         rawImage: (context, event) => event.data.rawImage,
         labelImage: (context, event) => event.data.labelImage,
