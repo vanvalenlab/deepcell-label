@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { useService } from '@xstate/react';
 import { makeStyles } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
@@ -9,6 +9,8 @@ import OutlineCanvas from './OutlineCanvas';
 import BrushCanvas from './BrushCanvas';
 
 import { labelService, canvasService } from '../statechart/service';
+import { bind, unbind } from 'mousetrap';
+import { FrameContext } from '../ServiceContext';
 
 const useStyles = makeStyles({
     canvasBox: {
@@ -30,6 +32,43 @@ export const Canvas = props => {
   const { sx, sy, zoom, scale, width, height } = currentCanvas.context;
 
   const styles = useStyles();
+
+  const frameService = useContext(FrameContext);
+  useEffect(() => {
+    bind('a', () => {
+      const { frame, numFrames } = frameService.state.context;
+      frameService.send({ type: 'SETFRAME', frame: (frame - 1 + numFrames) % numFrames });
+    });
+    bind('d', () => {
+      const { frame, numFrames } = frameService.state.context;
+      frameService.send({ type: 'SETFRAME', frame: (frame + 1) % numFrames });
+    });
+    bind('shift+c', () => {
+      const { channel, numChannels } = frameService.state.context;
+      frameService.send({ type: 'SETCHANNEL', channel: (channel - 1 + numChannels) % numChannels });
+    });
+    bind('c', () => {
+      const { channel, numChannels } = frameService.state.context;
+      frameService.send({ type: 'SETCHANNEL', channel: (channel + 1) % numChannels });
+    });
+    bind('shift+f', () => {
+      const { feature, numFeatures } = frameService.state.context;
+      frameService.send({ type: 'SETFEATURE', feature: (feature - 1 + numFeatures) % numFeatures });
+    });
+    bind('f', () => {
+      const { feature, numFeatures } = frameService.state.context;
+      frameService.send({ type: 'SETFEATURE', feature: (feature + 1) % numFeatures });
+    });
+
+    return () => {
+      unbind('a');
+      unbind('d');
+      unbind('c');
+      unbind('shift+c');
+      unbind('f')
+      unbind('shift+f');
+    }
+  }, []);
 
   useEffect(() => {
     const padding = 5;
