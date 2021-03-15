@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import Typography from '@material-ui/core/Typography';
 import Slider from '@material-ui/core/Slider';
 
@@ -9,6 +9,14 @@ import { FrameContext } from '../ServiceContext';
 
 function SliceSlider(props) {
   const { label, value, max, onChange } = props;
+  const [display, setDisplay] = useState("on");
+
+  // Display label for a second after the label changes
+  useEffect(() => {
+    setDisplay("on");
+    const displayTimeout = setTimeout(() => setDisplay("auto"), 1000);
+    return () => clearTimeout(displayTimeout);
+  }, [value]);
 
   return <>
     <Typography gutterBottom>
@@ -16,13 +24,15 @@ function SliceSlider(props) {
     </Typography>
     <Slider
       value={value}
-      valueLabelDisplay="auto"
+      valueLabelDisplay={display}
       step={1}
       marks
       min={0}
       max={max}
       onChange={onChange}
     />
+    
+    
   </>;
 }
 
