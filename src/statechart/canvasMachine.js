@@ -15,13 +15,13 @@ const canvasMachine = Machine({
   states: {
     idle: {
       on: {
-        'keydown.Space': { target: 'panning', actions: 'lockPointer' },
+        'keydown.Space': { target: 'panning' },
         mousemove: { actions: 'moveCursor' },
       },
     },
     panning: {
       on: {
-        'keyup.Space': { target: 'idle', actions: 'unlockPointer' },
+        'keyup.Space': { target: 'idle' },
         mousemove: { actions: 'pan' },
       },
     },
@@ -45,8 +45,6 @@ const canvasMachine = Machine({
 },
   {
     actions: {
-      lockPointer: () => document.getElementById('canvasBox').requestPointerLock(),
-      unlockPointer: () => document.exitPointerLock(),
       moveCursor: assign({
         imgX: (context, event) => Math.floor((event.nativeEvent.offsetX / context.scale / context.zoom + context.sx)),
         imgY: (context, event) => Math.floor((event.nativeEvent.offsetY / context.scale / context.zoom + context.sy)),
