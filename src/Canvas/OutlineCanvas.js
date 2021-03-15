@@ -1,17 +1,18 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useService } from '@xstate/react';
-import axios from 'axios';
+import React, { useState, useEffect, useRef, useContext } from 'react';
+import { useService, useSelector } from '@xstate/react';
 import { labelService, canvasService } from '../statechart/service';
+import { FrameContext } from '../ServiceContext';
 
 const OutlineCanvas = props => {
   const [current, send] = useService(labelService);
-  const [labelArray, setLabelArray] = useState([[0]]);
   const [foreground, background] = [1, 2];
   const [all, setAll] = useState(false);
 
   const [currentCanvas, sendCanvas] = useService(canvasService);
   const { sx, sy, zoom, width, height } = currentCanvas.context;
 
+  const service = useContext(FrameContext);
+  const labelArray = useSelector(service, state => state.context.labelArray);
 
   const canvasRef = useRef();
   const ctx = useRef();
@@ -25,16 +26,9 @@ const OutlineCanvas = props => {
   }, [props]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const result = await axios('https://label.deepcell.org/api/project/FHMlWcK_FOOC');
-      setLabelArray(result.data.imgs.seg_arr);
-    };
-    fetchData();
-  }, []);
-
-  useEffect(() => {
     const width = labelArray[0].length;
     const height = labelArray.length;
+    if (width * height === 0) { return; }
     const array = new Uint8ClampedArray(width * height * 4);
     // use label array to figure out which pixels to recolor
     for (let j = 0; j < height; j += 1) { // y

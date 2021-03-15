@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useService } from '@xstate/react';
-import axios from 'axios';
+import React, { useEffect, useRef, useContext } from 'react';
+import { useService, useSelector } from '@xstate/react';
 import { labelService, rawAdjustService, canvasService } from '../statechart/service';
-
+import { FrameContext } from '../ServiceContext';
 
 const invertImageData = (data) => {
   for (let i = 0; i < data.length; i += 4) {
@@ -48,13 +47,15 @@ const brightnessImageData = (data, brightness) => {
 
 export const RawCanvas = props => { 
   const [current, send] = useService(labelService);
-  const [raw, setRaw] = useState(new Image());
 
   const [currentAdjust, sendAdjust] = useService(rawAdjustService);
   const { invert, grayscale, brightness, contrast } = currentAdjust.context;
 
   const [currentCanvas, sendCanvas] = useService(canvasService);
   const { sx, sy, zoom, width, height } = currentCanvas.context;
+
+  const service = useContext(FrameContext);
+  const raw = useSelector(service, state => state.context.rawImage);
 
   const canvasRef = useRef();
   const ctx = useRef();
@@ -95,17 +96,6 @@ export const RawCanvas = props => {
     );
     ctx.current.restore();
   }, [rawCanvas, sx, sy, zoom, width, height, props.width, props.height]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const result = await axios('https://label.deepcell.org/api/project/FHMlWcK_FOOC');
-      const rawImage = new Image();
-      rawImage.src = result.data.imgs.raw;
-      setRaw(rawImage);
-    };
- 
-    fetchData();
-  }, []);
 
   return <canvas id='raw-canvas'
     ref={canvasRef}

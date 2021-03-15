@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useService } from '@xstate/react';
-import axios from 'axios';
+import React, { useState, useEffect, useRef, useContext } from 'react';
+import { useService, useSelector } from '@xstate/react';
 import { labelService, labelAdjustService, canvasService } from '../statechart/service';
+import { FrameContext } from '../ServiceContext';
 
 const highlightImageData = (data, label) => {
   for (let i = 0; i < data.length; i += 4) {
@@ -36,12 +36,14 @@ const opacityImageData = (data, opacity) => {
 
 export const LabelCanvas = props => {
   const [current, send] = useService(labelService);
-  const [label, setLabel] = useState(new Image());
+  // const [label, setLabel] = useState(new Image());
   const [foreground, background] = [1, 2];
 
   const [currentCanvas, sendCanvas] = useService(canvasService);
   const { sx, sy, zoom, width, height } = currentCanvas.context;
 
+  const service = useContext(FrameContext);
+  const labelImage = useSelector(service, state => state.context.labelImage);
 
   const canvasRef = useRef();
   const ctx = useRef();
@@ -59,7 +61,7 @@ export const LabelCanvas = props => {
   }, [props]);
 
   useEffect(() => {
-    labelCtx.drawImage(label, 0, 0);
+    labelCtx.drawImage(labelImage, 0, 0);
     let data = labelCtx.getImageData(0, 0, width, height).data;
     if (highlight) {
       data = highlightImageData(data, foreground);
@@ -70,7 +72,7 @@ export const LabelCanvas = props => {
     data = opacityImageData(data, opacity);
     const adjustedData = new ImageData(data, width, height);
     labelCtx.putImageData(adjustedData, 0, 0);
-  }, [label, foreground, highlight, transparentBackground, opacity, height, width, labelCtx]);
+  }, [labelImage, foreground, highlight, transparentBackground, opacity, height, width, labelCtx]);
 
   useEffect(() => {
     ctx.current.save();
@@ -85,15 +87,15 @@ export const LabelCanvas = props => {
     ctx.current.restore();
   }, [labelCanvas, sx, sy, zoom, width, height, props.width, props.height]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const result = await axios('https://label.deepcell.org/api/project/FHMlWcK_FOOC');
-      const labelImage = new Image();
-      labelImage.src = result.data.imgs.segmented;
-      setLabel(labelImage);
-    };
-    fetchData();
-  }, []);
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     const result = await axios(`/api/project/${projectId}`);
+  //     const labelImage = new Image();
+  //     labelImage.src = result.data.imgs.segmented;
+  //     setLabel(labelImage);
+  //   };
+  //   fetchData();
+  // }, []);
 
   return <canvas id='label-canvas'
     ref={canvasRef}
