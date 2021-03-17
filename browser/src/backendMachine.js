@@ -1,13 +1,13 @@
-import { Machine, assign, sendParent } from 'xstate';
+import { Machine, sendParent } from 'xstate';
 
 /** Returns a Promise for a DeepCell Label API call based on the event. */
 function getApiService(context, event) {
   switch (event.type) {
     case 'EDIT':
       return edit(context, event);
-    case 'UNDO':
+    case 'BACKENDUNDO':
       return undo(context, event);
-    case 'REDO':
+    case 'BACKENDREDO':
       return redo(context, event);
     case 'SETFRAME':
       return setFrame(context, event);
@@ -16,27 +16,31 @@ function getApiService(context, event) {
   }
 }
 
+function loadProject(context, event) {
+  return fetchErrorWrapper(`${document.location.origin}/api/project/${context.projectID}`);
+}
+
 function edit(context, event) {
   return fetchErrorWrapper(
-    `${document.location.origin}/api/edit/${window.model.projectID}/${event.action}`,
+    `${document.location.origin}/api/edit/${context.projectID}/${event.action}`,
     { method: 'POST', body: new URLSearchParams(event.args) });
 }
 
 function undo(context, event) {
   return fetchErrorWrapper(
-    `${document.location.origin}/api/undo/${window.model.projectID}`,
+    `${document.location.origin}/api/undo/${context.projectID}`,
     { method: 'POST' });
 }
 
 function redo(context, event) {
   return fetchErrorWrapper(
-    `${document.location.origin}/api/redo/${window.model.projectID}`,
+    `${document.location.origin}/api/redo/${context.projectID}`,
     { method: 'POST' });
 }
 
 function setFrame(context, event) {
   const promise = fetchErrorWrapper(
-    `${document.location.origin}/api/changedisplay/${window.model.projectID}/${event.dimension}/${event.value}`,
+    `${document.location.origin}/api/changedisplay/${context.projectID}/${event.dimension}/${event.value}`,
     { method: 'POST' },
   );
   // update index after receiving response
@@ -46,7 +50,7 @@ function setFrame(context, event) {
 
 function toggleRGB(context, event) {
   const promise = fetchErrorWrapper(
-    `${document.location.origin}/api/rgb/${window.model.projectID}/${!window.model.rgb}`,
+    `${document.location.origin}/api/rgb/${context.projectID}/${!window.model.rgb}`,
     { method: 'POST' },
   );
   // update RGB flag after receiving response
@@ -66,48 +70,60 @@ function fetchErrorWrapper(url, options) {
 const backendMachine = Machine(
   {
     id: 'backend',
-    initial: 'idle',
+    initial: 'firstLoad',
     context: {
+      projectID: '',
       data: null,
       error: null,
     },
     states: {
+      firstLoad: {
+        entry: [(context) => console.log(context.projectID), sendParent('LOADING')],
+        invoke: {
+          id: 'load-project',
+          src: loadProject,
+          onDone: {
+            target: 'idle',
+            actions: 'sendProjectLoaded',
+          },
+          onError: {
+            target: 'idle',
+            actions: 'sendError',
+          },
+        }
+      },
       idle: {
-        exit: sendParent('LOADING'),
         on: {
           EDIT: 'loading',
-          UNDO: 'loading',
-          REDO: 'loading',
+          BACKENDUNDO: 'loading',
+          BACKENDREDO: 'loading',
           SETFRAME: 'loading',
           TOGGLERGB: 'loading',
         },
       },
       loading: {
+        entry: 'sendLoading',
         invoke: {
           id: 'labelAPI',
           src: getApiService,
-          onDone: 'loaded',
-          onError: 'error',
+          onDone: {
+            target: 'idle',
+            actions: ['handlePayload', 'sendLoaded'],
+          },
+          onError: {
+            target: 'idle',
+            actions: 'sendError',
+          },
         }
       },
-      loaded: {
-        always: {
-          target: 'idle',
-          actions: ['handlePayload', sendParent('LOADED')],
-        }
-      },
-      error: {
-        always: {
-          target: 'idle',
-          actions: sendParent((_, event) => ({ type: 'ERROR', error: event.data.error })),
-        }
-      }
     }
   },
   {
     actions: {
-      saveError: assign({ error: (_, event) => event.data.error }),
-      saveData: assign({ data: (_, event) => event.data }),
+      sendProjectLoaded: sendParent((_, event) => ({ type: 'PROJECTLOADED', project: event.data })),
+      sendLoading: sendParent('LOADING'),
+      sendLoaded: sendParent('LOADED'),
+      sendError: sendParent((_, event) => ({ type: 'ERROR', error: event.data.error })),
       handlePayload: (_, event) => window.model.handlePayload(event.data),
     },
   }

@@ -1,6 +1,6 @@
 import { interpret } from 'xstate';
 
-import { labelMachine } from './statechart';
+import createLabelMachine, { labelMachine } from './statechart';
 // import { inspect } from '@xstate/inspect';
 import { Model } from './model';
 import { History } from './history';
@@ -12,45 +12,21 @@ export class Controller {
    * @param {string} projectID 12 character base64 ID for Project in DeepCell Label database
    */
   constructor(projectID) {
-    // Get Project from database
-    const getProject = fetch(`${document.location.origin}/api/project/${projectID}`);
 
-    // Create model and view for Project and setup bindings
-    getProject.then(response => response.json()).then(project => {
-      this.model = new Model(project);
-      this.view = this.model.view;
-      this.history = new History();
+    // Interpret the statechart
+    const labelMachine = createLabelMachine(projectID);
+    this.service = interpret(labelMachine); // , { devTools: true });
+    // add a listener to update the info table whenever a transition occurs
+    this.service.onTransition(() => { window.model?.notifyInfoChange() });
+    // Start the service
+    this.service.start();
+    window.service = this.service;
 
-      // Interpret the statechart
-      this.service = interpret(labelMachine); // , { devTools: true });
-      // add a listener to update the info table whenever a transition occurs
-      this.service.onTransition(() => { this.model.notifyInfoChange() });
-      // Start the service
-      this.service.start();
-
-      // Enable global access
-      window.model = this.model;
-      window.view = this.view;
-      window.service = this.service;
-
-      this.history.initializeHistory(project.actionFrames);
-
-      // Add bindings
-      this.overrideScroll();
-      this.addWindowBindings();
-      this.addCanvasBindings();
-      this.addUndoBindings();
-    });
-  }
-
-  undo() {
-    this.history.undo();
-    this.model.updateMousePos(this.model.canvas.rawX, this.model.canvas.rawY);
-  }
-
-  redo() {
-    this.history.redo();
-    this.model.updateMousePos(this.model.canvas.rawX, this.model.canvas.rawY);
+    // Add bindings
+    this.overrideScroll();
+    this.addWindowBindings();
+    this.addCanvasBindings();
+    this.addUndoBindings();
   }
 
   /**
@@ -79,15 +55,6 @@ export class Controller {
     // TODO: why is this bound to the document instead of the window
     document.addEventListener('mouseup', e => this.service.send(e));
 
-    // resize the canvas every time the window is resized
-    window.addEventListener('resize', () => {
-      waitForFinalEvent(() => {
-        this.view.setCanvasDimensions();
-        this.view.displayUndoRedo();
-        this.view.canvasView.render();
-      }, 500, 'canvasResize');
-    });
-
     window.addEventListener('keydown', event => {
       this.handleKeydown(event);
     }, false);
@@ -113,8 +80,8 @@ export class Controller {
   }
 
   addUndoBindings() {
-    document.getElementById('undo').onclick = () => this.undo();
-    document.getElementById('redo').onclick = () => this.redo();
+    document.getElementById('undo').onclick = () => this.service.send('UNDO');
+    document.getElementById('redo').onclick = () => this.service.send('REDO');
   }
 
   /**
@@ -157,19 +124,3 @@ export class Controller {
     }
   }
 }
-
-/**
- * Delays an event callback to prevent calling the callback too frequently.
- */
-const waitForFinalEvent = (function () {
-  var timers = {};
-  return function (callback, ms, uniqueId) {
-    if (!uniqueId) {
-      uniqueId = "Don't call this twice without a uniqueId";
-    }
-    if (timers[uniqueId]) {
-      clearTimeout(timers[uniqueId]);
-    }
-    timers[uniqueId] = setTimeout(callback, ms);
-  };
-})();

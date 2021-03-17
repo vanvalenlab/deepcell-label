@@ -8,6 +8,15 @@ export class View {
 
     this.setCanvasDimensions();
     this.displayUndoRedo();
+
+    // resize the canvas every time the window is resized
+    window.addEventListener('resize', () => {
+      waitForFinalEvent(() => {
+        this.setCanvasDimensions();
+        this.displayUndoRedo();
+        this.canvasView.render();
+      }, 500, 'canvasResize');
+    });
   }
 
   /**
@@ -102,13 +111,6 @@ export class View {
       )
     );
     return maxHeight;
-  }
-}
-
-/** Renders an error message when the last API call failed. */
-class ErrorView {
-  render() {
-
   }
 }
 
@@ -532,3 +534,19 @@ class BrushView {
     this.ctx.clearRect(0, 0, this.model.width, this.model.height);
   }
 }
+
+/**
+ * Delays an event callback to prevent calling the callback too frequently.
+ */
+const waitForFinalEvent = (function () {
+  var timers = {};
+  return function (callback, ms, uniqueId) {
+    if (!uniqueId) {
+      uniqueId = "Don't call this twice without a uniqueId";
+    }
+    if (timers[uniqueId]) {
+      clearTimeout(timers[uniqueId]);
+    }
+    timers[uniqueId] = setTimeout(callback, ms);
+  };
+})();

@@ -126,13 +126,13 @@ export class BackendAction extends Action {
 
   undo() {
     window.controller.service.send({
-      type: 'UNDO',
+      type: 'BACKENDUNDO',
     });
   }
 
   redo() {
     window.controller.service.send({
-      type: 'REDO',
+      type: 'BACKENDREDO',
     });
   }
 }
