@@ -312,7 +312,10 @@ const mouseState = {
   states: {
     toolbar: toolbarState,
     loading: {
-      on: { LOADED: 'toolbar.hist' }
+      on: {
+        LOADED: 'toolbar.hist',
+        ERROR: 'toolbar.hist',
+      }
     },
     pan: {
       on: { 'keyup.Space': 'toolbar.hist' },
@@ -417,7 +420,10 @@ const frameState = {
       }
     },
     loading: {
-      on: { LOADED: 'idle' }
+      on: {
+        LOADED: 'idle',
+        ERROR: 'idle',
+      }
     }
   },
   on: {
@@ -472,6 +478,7 @@ const confirmState = {
   on: {
     LOADING: '.loading',
     LOADED: '.idle',
+    ERROR: '.idle',
   }
 };
 
@@ -533,6 +540,21 @@ const selectState = {
   }
 };
 
+const errorState = {
+  initial: 'idle',
+  states: {
+    idle: {},
+    error: {},
+  },
+  on: {
+    LOADED: '.idle',
+    ERROR: {
+      target: '.error',
+      actions: assign({ error: (context, event) => event.error })
+    },
+  }
+}
+
 export const labelMachine = Machine(
   {
     id: 'label',
@@ -542,11 +564,13 @@ export const labelMachine = Machine(
       storedLabel: 0,
       storedX: 0,
       storedY: 0,
+      error: '',
     },
     invoke: [
       backendMachine,
     ],
     states: {
+      error: errorState,
       rgb: rgbState,
       adjuster: adjusterState,
       canvas: canvasState,

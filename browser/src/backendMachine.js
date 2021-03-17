@@ -1,5 +1,68 @@
 import { Machine, assign, sendParent } from 'xstate';
 
+/** Returns a Promise for a DeepCell Label API call based on the event. */
+function getApiService(context, event) {
+  switch (event.type) {
+    case 'EDIT':
+      return edit(context, event);
+    case 'UNDO':
+      return undo(context, event);
+    case 'REDO':
+      return redo(context, event);
+    case 'SETFRAME':
+      return setFrame(context, event);
+    case 'TOGGLERGB':
+      return toggleRGB(context, event);
+  }
+}
+
+function edit(context, event) {
+  return fetchErrorWrapper(
+    `${document.location.origin}/api/edit/${window.model.projectID}/${event.action}`,
+    { method: 'POST', body: new URLSearchParams(event.args) });
+}
+
+function undo(context, event) {
+  return fetchErrorWrapper(
+    `${document.location.origin}/api/undo/${window.model.projectID}`,
+    { method: 'POST' });
+}
+
+function redo(context, event) {
+  return fetchErrorWrapper(
+    `${document.location.origin}/api/redo/${window.model.projectID}`,
+    { method: 'POST' });
+}
+
+function setFrame(context, event) {
+  const promise = fetchErrorWrapper(
+    `${document.location.origin}/api/changedisplay/${window.model.projectID}/${event.dimension}/${event.value}`,
+    { method: 'POST' },
+  );
+  // update index after receiving response
+  promise.then(() => { window.model[event.dimension] = event.value });
+  return promise;
+}
+
+function toggleRGB(context, event) {
+  const promise = fetchErrorWrapper(
+    `${document.location.origin}/api/rgb/${window.model.projectID}/${!window.model.rgb}`,
+    { method: 'POST' },
+  );
+  // update RGB flag after receiving response
+  promise.then(() => { window.model.rgb = !window.model.rgb });
+  return promise;
+}
+
+/** Wraps fetch so that response codes other than 200-299 are rejected. */
+function fetchErrorWrapper(url, options) {
+  return fetch(url, options).then(response => {
+    return response.json().then(json => {
+      return response.ok ? json : Promise.reject(json);
+    });
+  });
+}
+
 const backendMachine = Machine(
   {
     id: 'backend',
@@ -12,141 +75,41 @@ const backendMachine = Machine(
       idle: {
         exit: sendParent('LOADING'),
         on: {
-          EDIT: 'edit',
-          UNDO: 'undo',
-          REDO: 'redo',
-          SETFRAME: 'setFrame',
-          TOGGLERGB: 'toggleRGB',
+          EDIT: 'loading',
+          UNDO: 'loading',
+          REDO: 'loading',
+          SETFRAME: 'loading',
+          TOGGLERGB: 'loading',
         },
       },
-      edit: {
+      loading: {
         invoke: {
-          id: 'edit',
-          src: 'edit',
-          onDone: {
-            target: 'loaded',
-            actions: [
-              // (_, event) => console.log(event),
-              // (_, event) => console.log(event.data.json()),
-              assign({ data: (_, event) => event.data }),
-              (context) => console.log(context.data),
-            ],
-          },
-          onError: {
-            target: 'error',
-            actions: assign({ error: (_, event) => event.error }),
-          }
+          id: 'labelAPI',
+          src: getApiService,
+          onDone: 'loaded',
+          onError: 'error',
         }
       },
-      undo: {
-        invoke: {
-          id: 'undo',
-          src: 'undo',
-          onDone: {
-            target: 'loaded',
-            actions: assign({ data: (_, event) => event.data }),
-          },
-          onError: {
-            target: 'error',
-            actions: assign({ error: (_, event) => event.error }),
-          }
-        },
-      },
-      redo: {
-        invoke: {
-          id: 'redo',
-          src: 'redo',
-          onDone: {
-            target: 'loaded',
-            actions: assign({ data: (_, event) => event.data }),
-          },
-          onError: {
-            target: 'error',
-            actions: assign({ error: (_, event) => event.error }),
-          }
-        },
-      },
-      setFrame: {
-        invoke: {
-          id: 'setFrame',
-          src: 'setFrame',
-          onDone: {
-            target: 'loaded',
-            actions: assign({ data: (_, event) => event.data }),
-          },
-          onError: {
-            target: 'error',
-            actions: assign({ error: (_, event) => event.error }),
-          }
-        },
-      },
-      toggleRGB: {
-        invoke: {
-          id: 'toggleRGB',
-          src: 'toggleRGB',
-          onDone: {
-            target: 'loaded',
-            actions: assign({ data: (_, event) => event.data }),
-          },
-          onError: {
-            target: 'error',
-            actions: assign({ error: (_, event) => event.error }),
-          }
-        },
-      },
       loaded: {
-        on: {
-          '': {
-            target: 'idle',
-            actions: ['handlePayload', sendParent('LOADED')]
-          }
+        always: {
+          target: 'idle',
+          actions: ['handlePayload', sendParent('LOADED')],
         }
       },
       error: {
-        on: {
-          '': {
-            target: 'idle',
-            actions: ['logError', sendParent('ERROR')]
-          }
+        always: {
+          target: 'idle',
+          actions: sendParent((_, event) => ({ type: 'ERROR', error: event.data.error })),
         }
       }
     }
   },
   {
     actions: {
-      logError: (context) => console.log(context.error),
-      handlePayload: (context) => window.model.handlePayload(context.data),
+      saveError: assign({ error: (_, event) => event.data.error }),
+      saveData: assign({ data: (_, event) => event.data }),
+      handlePayload: (_, event) => window.model.handlePayload(event.data),
     },
-    services: {
-      edit: (context, event) => fetch(
-        `${document.location.origin}/api/edit/${window.model.projectID}/${event.action}`,
-        { method: 'POST', body: new URLSearchParams(event.args) },
-      ).then(response => response.json()),
-      undo: () => fetch(
-        `${document.location.origin}/api/undo/${window.model.projectID}`,
-        { method: 'POST' },
-      ).then(response => response.json()),
-      redo: () => fetch(
-        `${document.location.origin}/api/redo/${window.model.projectID}`,
-        { method: 'POST' },
-      ).then(response => response.json()),
-      setFrame: (context, event) => {
-        const promise = fetch(
-          `${document.location.origin}/api/changedisplay/${window.model.projectID}/${event.dimension}/${event.value}`,
-          { method: 'POST' },
-        );
-        promise.then(() => { window.model[event.dimension] = event.value });
-        return promise.then(response => response.json());
-      },
-      toggleRGB: (context, event) => {
-        const promise = fetch(
-          `${document.location.origin}/api/rgb/${window.model.projectID}/${!window.model.rgb}`,
-          { method: 'POST' },
-        );
-        promise.then(() => { window.model.rgb = !window.model.rgb });
-        return promise.then(response => response.json());
-      },
-    }
   }
 );
 
