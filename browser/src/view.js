@@ -105,6 +105,13 @@ export class View {
   }
 }
 
+/** Renders an error message when the last API call failed. */
+class ErrorView {
+  render() {
+
+  }
+}
+
 /**
  * Renders the infopane.
  */
@@ -146,6 +153,7 @@ class InfopaneView {
     document.getElementById('background').textContent = background === 0 ? 'background' : background;
 
     this.renderPrompt();
+    this.renderError();
   }
 
   getTool() {
@@ -196,6 +204,16 @@ class InfopaneView {
       document.getElementById('prompt').textContent = prompt;
     } else {
       document.getElementById('prompt').textContent = '';
+    }
+  }
+
+  renderError() {
+    const state = window.controller.service.state;
+    if (state.matches('error.error')) {
+      const { error } = state.context;
+      document.getElementById('error').textContent = 'ERROR: ' + error;
+    } else {
+      document.getElementById('error').textContent = '';
     }
   }
 }
