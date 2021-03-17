@@ -582,26 +582,8 @@ export const labelMachine = Machine(
       confirm: confirmState,
     },
     on: {
-      SETFOREGROUND: {
-        actions: (_, event) => {
-          const label = event.label;
-          const foreground = window.model.foreground;
-          const background = window.model.background;
-          // make foreground and background different labels
-          if (label === background) { addAction(new SetBackground(foreground)); }
-          addAction(new SetForeground(label));
-        },
-      },
-      SETBACKGROUND: {
-        actions: (_, event) => {
-          const label = event.label;
-          const foreground = window.model.foreground;
-          const background = window.model.background;
-          // make foreground and background different labels
-          if (label === foreground) { addAction(new SetForeground(background)); }
-          addAction(new SetBackground(label));
-        },
-      },
+      SETFOREGROUND: { actions: 'setForeground' },
+      SETBACKGROUND: { actions: 'setBackground' },
     }
   },
   {
@@ -614,6 +596,20 @@ export const labelMachine = Machine(
         storedX: () => window.model.canvas.imgX,
         storedY: () => window.model.canvas.imgY,
       }),
+      setForeground: (_, event) => {
+        // swap foreground and background when selecting background
+        if (event.label === window.model.background) {
+          addAction(new SetBackground(window.model.foreground));
+        }
+        addAction(new SetForeground(event.label));
+      },
+      setBackground: (_, event) => {
+        // swap foreground and background when selecting foreground
+        if (event.label === window.model.foreground) {
+          addAction(new SetForeground(window.model.background));
+        }
+        addAction(new SetBackground(event.label));
+      },
       selectForeground: send(() => ({ type: 'SETFOREGROUND', label: window.model.canvas.label })),
       selectBackground: send(() => ({ type: 'SETBACKGROUND', label: window.model.canvas.label })),
       resetForeground: send(() => ({ type: 'SETFOREGROUND', label: 0 })),
