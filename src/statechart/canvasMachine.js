@@ -1,4 +1,5 @@
 import { Machine, actions, assign, forwardTo, send } from 'xstate';
+import { pickBy } from 'lodash';
 
 // NOTE: info coming from the browser needs to be normalized by scale and zoom
 // info coming from the statechart needs to be normalized by zoom only
@@ -10,19 +11,21 @@ import { Machine, actions, assign, forwardTo, send } from 'xstate';
 // document.exitPointerLock = document.exitPointerLock ||
 //                            document.mozExitPointerLock;
 
+const filterContext = ({ zoom, sx, sy, x, y, label }) => pickBy({ zoom, sx, sy, x, y, label }, (v) => v !== undefined);
+
 const canvasMachine = Machine({
   initial: 'idle',
   states: {
     idle: {
       on: {
         'keydown.Space': { target: 'panning' },
-        mousemove: { actions: 'moveCursor' },
+        mousemove: { actions: ['moveCursor', 'sendUpdate'] },
       },
     },
     panning: {
       on: {
         'keyup.Space': { target: 'idle' },
-        mousemove: { actions: 'pan' },
+        mousemove: { actions: ['pan', 'sendUpdate'] },
       },
     },
   },
@@ -34,20 +37,29 @@ const canvasMachine = Machine({
     // raw dimensions of image
     width: 160,
     height: 160,
-    imgX: 0,
-    imgY: 0,
+    x: 0,
+    y: 0,
+    labelArray: [[]],
   },
   on: {
-    wheel: {actions: 'zoom' },
+    wheel: { actions: ['zoom', 'sendUpdate'] },
     RESIZE: { actions: 'resize' },
   },
-
 },
   {
     actions: {
+      sendUpdate: sendParent((context) => ({
+        type: 'UPDATE',
+        context: filterContext(context),
+      })),
       moveCursor: assign({
-        imgX: (context, event) => Math.floor((event.nativeEvent.offsetX / context.scale / context.zoom + context.sx)),
-        imgY: (context, event) => Math.floor((event.nativeEvent.offsetY / context.scale / context.zoom + context.sy)),
+        x: (context, event) => Math.floor((event.nativeEvent.offsetX / context.scale / context.zoom + context.sx)),
+        y: (context, event) => Math.floor((event.nativeEvent.offsetY / context.scale / context.zoom + context.sy)),
+        label: (context, event) => {
+          const newX = Math.floor((event.nativeEvent.offsetX / context.scale / context.zoom + context.sx));
+          const newY = Math.floor((event.nativeEvent.offsetY / context.scale / context.zoom + context.sy));
+          return context.labelArray[newX][newY];
+        }
       }),
       resize: assign({
         scale: (context, event) => {
