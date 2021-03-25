@@ -4,12 +4,11 @@ import TableBody from '@material-ui/core/TableBody';
 import TableContainer from '@material-ui/core/TableContainer';
 import Paper from '@material-ui/core/Paper';
 
-
 import Predict from './Predict';
 import ControlRow from './ControlRow';
 import FrameControls from './FrameControls';
-import RawControls from './RawControls';
-import LabelControls from './LabelControls';
+import ChannelControls from './ChannelControls';
+import FeatureControls from './FeatureControls';
 
 
 export default function ControlPanel() {
@@ -18,8 +17,8 @@ export default function ControlPanel() {
       <Table aria-label="collapsible table">
         <TableBody>
           <FrameControls />
-          <LabelControls />
-          <RawControls />
+          <ChannelControls />
+          <FeatureControls />
           <ControlRow name={"Label"} />
           <ControlRow name={"Tool"} />
           <ControlRow name={"Predict"}>
