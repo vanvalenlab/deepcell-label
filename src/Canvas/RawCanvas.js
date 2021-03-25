@@ -1,7 +1,6 @@
-import React, { useEffect, useRef, useContext } from 'react';
-import { useService, useSelector } from '@xstate/react';
-import { labelService, rawAdjustService, canvasService } from '../statechart/service';
-import { FrameContext } from '../ServiceContext';
+import React, { useEffect, useRef } from 'react';
+import { useActor } from '@xstate/react';
+import { useRaw, useCanvas } from '../ServiceContext';
 
 const invertImageData = (data) => {
   for (let i = 0; i < data.length; i += 4) {
@@ -45,17 +44,13 @@ const brightnessImageData = (data, brightness) => {
   return data;
 }
 
-export const RawCanvas = props => { 
-  const [current, send] = useService(labelService);
+export const RawCanvas = props => {
+  const [currentRaw, sendRaw] = useRaw();
+  const [currentChannel, sendChannel] = useActor(currentRaw.context.channelActor);
+  const { invert, grayscale, brightness, contrast, rawImage } = currentChannel.context;
 
-  const [currentAdjust, sendAdjust] = useService(rawAdjustService);
-  const { invert, grayscale, brightness, contrast } = currentAdjust.context;
-
-  const [currentCanvas, sendCanvas] = useService(canvasService);
+  const [currentCanvas, sendCanvas] = useCanvas();
   const { sx, sy, zoom, width, height } = currentCanvas.context;
-
-  const service = useContext(FrameContext);
-  const raw = useSelector(service, state => state.context.rawImage);
 
   const canvasRef = useRef();
   const ctx = useRef();
@@ -70,7 +65,7 @@ export const RawCanvas = props => {
   }, [props]);
 
   useEffect(() => {
-    rawCtx.drawImage(raw, 0, 0);
+    rawCtx.drawImage(rawImage, 0, 0);
     let data = rawCtx.getImageData(0, 0, width, height).data;
     if (invert) {
       data = invertImageData(data);
@@ -82,7 +77,7 @@ export const RawCanvas = props => {
     data = brightnessImageData(data, brightness);
     const adjustedData = new ImageData(data, width, height);
     rawCtx.putImageData(adjustedData, 0, 0);
-  }, [raw, invert, grayscale, brightness, contrast, height, width, rawCtx]);
+  }, [rawImage, invert, grayscale, brightness, contrast, height, width, rawCtx]);
 
   useEffect(() => {
     ctx.current.save();
