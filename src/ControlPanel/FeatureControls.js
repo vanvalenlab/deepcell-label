@@ -1,20 +1,7 @@
 import React from 'react';
-import { useState } from 'react';
-import { makeStyles } from '@material-ui/core/styles';
-import Collapse from '@material-ui/core/Collapse';
-import IconButton from '@material-ui/core/IconButton';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableContainer from '@material-ui/core/TableContainer';
-import TableRow from '@material-ui/core/TableRow';
-import Paper from '@material-ui/core/Paper';
-import KeyboardArrowDownIcon from '@material-ui/icons/KeyboardArrowDown';
-import KeyboardArrowUpIcon from '@material-ui/icons/KeyboardArrowUp';
+import { useActor } from '@xstate/react';
 import Typography from '@material-ui/core/Typography';
 import Slider from '@material-ui/core/Slider';
-import Button from '@material-ui/core/Button';
-import CheckIcon from '@material-ui/icons/Check';
 import ToggleButton from '@material-ui/lab/ToggleButton';
 import Radio from '@material-ui/core/Radio';
 import RadioGroup from '@material-ui/core/RadioGroup';
@@ -23,15 +10,14 @@ import FormControl from '@material-ui/core/FormControl';
 import FormLabel from '@material-ui/core/FormLabel';
 import Box from '@material-ui/core/Box';
 
-import { useService } from '@xstate/react';
-import { labelAdjustService } from '../statechart/service';
 import ControlRow from './ControlRow';
+import { useLabeled } from '../ServiceContext';
 
 
-
-export default function LabelControls() {
-  const [current, send] = useService(labelAdjustService);
-  const { highlight, transparentBackground, opacity } = current.context;
+export default function FeatureControls() {
+  const [currentLabeled, sendLabeled] = useLabeled();
+  const [current, send] = useActor(currentLabeled.context.featureActor);
+  const { highlight, showNoLabel, opacity } = current.context;
 
   const handleHighlightChange = () => {
     // send({ type: 'SETHIGHLIGHT', value: !current.highlight });
@@ -45,8 +31,8 @@ export default function LabelControls() {
     send({ type: 'SETOPACITY', opacity: newValue });
   };
 
-  const handleTransparentBackgroundChange = (event, newValue) => {
-    send({ type: 'TOGGLETRANSPARENTBACKGROUND' });
+  const handleShowNoLabelChange = () => {
+    send({ type: 'TOGGLESHOWNOLABEL' });
   };
 
   return (
@@ -59,8 +45,8 @@ export default function LabelControls() {
           Highlight
         </ToggleButton>
         <ToggleButton
-          selected={!transparentBackground}
-          onChange={handleTransparentBackgroundChange}
+          selected={!showNoLabel}
+          onChange={handleShowNoLabelChange}
         >
           Show Background
         </ToggleButton>
