@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useRef, useContext } from 'react';
-import { useService, useSelector } from '@xstate/react';
-import { labelService, labelAdjustService, canvasService } from '../statechart/service';
-import { FrameContext } from '../ServiceContext';
+import React, { useEffect, useRef } from 'react';
+import { useActor } from '@xstate/react';
+import { useLabeled, useCanvas } from '../ServiceContext';
 
 const highlightImageData = (data, label) => {
   for (let i = 0; i < data.length; i += 4) {
@@ -16,7 +15,7 @@ const highlightImageData = (data, label) => {
   return data;
 };
 
-const transparentBackgroundImageData = (data) => {
+const removeNoLabelImageData = (data) => {
   for (let i = 0; i < data.length; i += 4) {
     // TODO: access label array
     // if ( label === 0) {
@@ -34,26 +33,20 @@ const opacityImageData = (data, opacity) => {
   return data;
 };
 
-export const LabelCanvas = props => {
-  const [current, send] = useService(labelService);
-  // const [label, setLabel] = useState(new Image());
+export const LabeledCanvas = props => {
+
+  const [currentLabeled, sendLabeled] = useLabeled();
+  const [currentFeature, sendFeature] = useActor(currentLabeled.context.featureActor);
+  const { highlight, showNoLabel, opacity, labeledImage } = currentFeature.context;
   const [foreground, background] = [1, 2];
 
-  const [currentCanvas, sendCanvas] = useService(canvasService);
+  const [currentCanvas, sendCanvas] = useCanvas();
   const { sx, sy, zoom, width, height } = currentCanvas.context;
-
-  const service = useContext(FrameContext);
-  const labelImage = useSelector(service, state => state.context.labelImage);
 
   const canvasRef = useRef();
   const ctx = useRef();
-
   const labelCanvas = new OffscreenCanvas(width, height);
   const labelCtx = labelCanvas.getContext('2d');
-
-
-  const [currentAdjust, sendAdjust] = useService(labelAdjustService);
-  const { highlight, transparentBackground, opacity } = currentAdjust.context;
 
   useEffect(() => {
     ctx.current = canvasRef.current.getContext('2d');
@@ -61,18 +54,18 @@ export const LabelCanvas = props => {
   }, [props]);
 
   useEffect(() => {
-    labelCtx.drawImage(labelImage, 0, 0);
+    labelCtx.drawImage(labeledImage, 0, 0);
     let data = labelCtx.getImageData(0, 0, width, height).data;
     if (highlight) {
       data = highlightImageData(data, foreground);
     }
-    if (transparentBackground) {
-      data = transparentBackgroundImageData(data);
+    if (!showNoLabel) {
+      data = removeNoLabelImageData(data);
     }
     data = opacityImageData(data, opacity);
     const adjustedData = new ImageData(data, width, height);
     labelCtx.putImageData(adjustedData, 0, 0);
-  }, [labelImage, foreground, highlight, transparentBackground, opacity, height, width, labelCtx]);
+  }, [labeledImage, foreground, highlight, showNoLabel, opacity, height, width, labelCtx]);
 
   useEffect(() => {
     ctx.current.save();
@@ -87,20 +80,10 @@ export const LabelCanvas = props => {
     ctx.current.restore();
   }, [labelCanvas, sx, sy, zoom, width, height, props.width, props.height]);
 
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     const result = await axios(`/api/project/${projectId}`);
-  //     const labelImage = new Image();
-  //     labelImage.src = result.data.imgs.segmented;
-  //     setLabel(labelImage);
-  //   };
-  //   fetchData();
-  // }, []);
-
-  return <canvas id='label-canvas'
+  return <canvas id='labeled-canvas'
     ref={canvasRef}
     {...props}
   />;
 };
 
-export default LabelCanvas;
+export default LabeledCanvas;
