@@ -1,97 +1,124 @@
 import { Machine, assign, send, sendParent } from 'xstate';
+import npyjs from '../npyjs';
 
-// only receive and send context updates for these fields
-const filterContext = ({ opacity, highlight, showBackground, frame, feature, labelImage }) =>
-  pickBy({ opacity, highlight, showBackground, frame, feature, labelImage },
-    (v) => v !== undefined);
+function fetchLabeled(context) {
+  const { projectId, feature, nextFrame: frame } = context;
+  const pathToLabeled = `/api/labeled/${projectId}/${feature}/${frame}`;
+  const pathToArray = `/api/array/${projectId}/${feature}/${frame}`;
+
+
+  const image = fetch(pathToLabeled)
+    // .then(validateResponse)
+    .then(readResponseAsBlob)
+    .then(makeImageURL)
+    .then(showImage);
+    // .catch(logError);
+  const npyLoader = new npyjs();
+  const array = npyLoader.load(pathToArray)
+    .then(reshapeArray);
+  return Promise.all([image, array]);
+}
+
+function readResponseAsBlob(response) {
+  return response.blob();
+}
+
+function makeImageURL(responseAsBlob) {
+  return URL.createObjectURL(responseAsBlob);
+}
+
+function showImage(imgUrl) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.src = imgUrl;
+  });
+}
+
+function reshapeArray(array) {
+  // need to convert 1d data to 2d array
+  const reshape = (arr, width) => 
+    arr.reduce((rows, key, index) => (index % width == 0 ? rows.push([key]) 
+      : rows[rows.length - 1].push(key)) && rows, []);
+  const result = reshape(array.data, array.shape[1]);
+  console.log(result);
+  return result;
+}
 
 const createFeatureMachine = ({ projectId, feature, frame }) => Machine(
   {
-    id: 'raw',
+    id: `labeled_feature${feature}`,
     context: {
       projectId,
       feature,
-      frame,  
+      frame,
+      nextFrame: frame,
       opacity: 0.3,
       highlight: false,
-      showBackground: true,
-      frameActor: null,
+      showNoLabel: true,
       frames: {},
-      rawImage: null,
+      labeledImage: new Image(),
+      labeledArray: [[]],
     },
-    entry: assign((context) => {
-      const frameActor = spawn(createLabelFrameMachine(context));
-      return {
-        frames: { [context.frame]: frameActor },
-        frameActor: frameActor,
-      }
-    }),
+    initial: 'loading',
     states: {
       idle: {
         on: {
-          SETFRAME: { cond: 'newFrame', actions: 'changeFrame', target: 'awaitUpdate' },
-          TOGGLEHIGHLIGHT: { actions: 'toggleHighlight', target: 'updated' },
-          BUBBLEUP: { actions: 'update', target: 'updated' },
-          BUBBLEDOWN: [
-            { cond: 'updateFrame', actions: ['update', 'updateActor'], target: 'awaitUpdate' },
-            { actions: 'update' },
-          ],
-        }
+          SETFRAME: {
+            cond: 'newFrame',
+            actions: assign({ nextFrame: (context, event) => event.frame }),
+            target: 'changeFrame'
+          },
+        },
       },
-      // when we change the actor, we need to bubble up an update from the actor
-      awaitBubbleUp: {
-        entry: 'getBubbleUp',
-        on: {
-          BUBBLEUP: { actions: 'update', target: 'updated' },
-        }
+      changeFrame: {
+        always: [
+          { cond: 'existingFrame', actions: 'changeToExistingFrame', target: 'notifyLabelChange' },
+          { target: 'loading' },
+        ]
       },
-      // when we change the context, inform the actors above
-      updated: {
-        entry: 'bubbleUp',
-        always: 'idle',
+      loading: {
+        invoke: {
+          src: fetchLabeled,
+          onDone: {
+            target: 'idle', actions: 'changeToNewFrame',
+          },
+          onError: { target: 'idle', actions: (context, event) => console.log(event) },
+        },
       },
+      notifyLabelChange: {
+        always: { target: 'idle', actions: 'sendNew' }
+      }
+    },
+    on: {
+      SETOPACITY: { actions: 'setOpacity' },
+      TOGGLESHOWNOLABEL: { actions: 'toggleShowNoLabel' },
     }
   },
   {
     guards: {
+      existingFrame: (context, event) => context.nextFrame in context.frames,
       updateFrame: (context, event) => context.frame !== event.context.frame,
       newFrame: (context, event) => context.frame !== event.frame,
     },
     actions: {
-      update: assign((ctx, event) => filterContext(event.context)),
-      getBubbleUp: send('GETBUBBLEUP', {to: (context) => context.frameActor }),
-      bubbleUp: sendParent((context) => ({ type: 'BUBBLEUP', context: filterContext(context)})),
-      updateActor: assign({
-        frameActor: (context, event) => context.frames[event.context.frame],
-      }),
-      changeFrame: assign((context, event) => {
-        // Use the existing frame actor if one already exists
-        let frameActor = context.frames[event.frame];
-        if (frameActor) {
-          return {
-            ...context,
-            frameActor,
-            frame: event.frame,
-          };
-        }
-
-        // Otherwise, spawn a new frame actor and save it in the frames object
-        frameActor = spawn(createRawFrameMachine({ ...context, frame: event.frame }));
-        return {
-          frames: {
-            ...context.frames,
-            [event.frame]: frameActor
-          },
-          frameActor,
-          frame: event.frame,
-        };
-      }),
-      toggleInvert: assign({ invert: (context) => !context.invert }),
-      toggleGrayscale: assign({ grayscale: (context) => !context.grayscale }),
-      setBrightness: assign({ brightness: (_, event) => Math.min(1, Math.max(-1, event.brightness)) }),
-      setContrast: assign({ contrast: (_, event) => Math.min(1, Math.max(-1, event.contrast)) }),
+      changeToExistingFrame: assign((context) => ({
+        frame: context.nextFrame,
+        labeledImage: context.frames[context.nextFrame],
+        labeledArray: context.arrays[context.nextFrame],
+      })),
+      changeToNewFrame: assign((context, event) => ({
+        frame: context.nextFrame,
+        labeledImage: event.data[0],
+        labeledArray: event.data[1],
+        frames: { ...context.frames, [context.nextFrame]: event.data[0] },
+        arrays: { ...context.arrays, [context.nextFrame]: event.data[1] },
+      })),
+      toggleHighlight: assign({ highlight: (context) => !context.highlight }),
+      toggleShowNoLabel: assign({ showNoLabel: (context) => !context.showNoLabel }),
+      setOpacity: assign({ opacity: (_, event) => Math.min(1, Math.max(0, event.opacity)) }),
     }
   }
 );
 
-export default createChannelMachine;
+export default createFeatureMachine;
