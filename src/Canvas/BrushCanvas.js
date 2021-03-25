@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useService } from '@xstate/react';
-import { labelService, canvasService } from '../statechart/service';
+import React, { useEffect, useRef } from 'react';
+import { useCanvas } from '../ServiceContext';
 
 const distance = (x, y) => {
   return Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2));
@@ -13,14 +12,9 @@ const border = (x, y, cx, cy, radius) => {
 };
 
 const BrushCanvas = props => {
-  // TODO: get from state machine
-  const [current, send] = useService(labelService);
-  // const [sx, sy, zoom] = [0, 0, 1];
-
   const brushSize = 8;
-
-  const [currentCanvas, sendCanvas] = useService(canvasService);
-  const { sx, sy, zoom, imgX, imgY, width, height } = currentCanvas.context;
+  const [currentCanvas, sendCanvas] = useCanvas();
+  const { sx, sy, zoom, x, y, width, height } = currentCanvas.context;
 
   const canvasRef = useRef();
   const ctx = useRef();
@@ -36,7 +30,7 @@ const BrushCanvas = props => {
     const array = new Uint8ClampedArray(width * height * 4);
     for (let j = 0; j < height; j += 1) { // y
       for (let i = 0; i < width; i += 1) { // x
-        if (border(i, j, imgX, imgY, brushSize)) {
+        if (border(i, j, x, y, brushSize)) {
           array[(j * width  + i) * 4 + 0] = 255;
           array[(j * width  + i) * 4 + 1] = 255;
           array[(j * width  + i) * 4 + 2] = 255;
@@ -46,7 +40,7 @@ const BrushCanvas = props => {
     }
     const data = new ImageData(array, width, height);
     brushCtx.putImageData(data, 0, 0);
-  }, [brushCtx, imgX, imgY, brushSize, height, width]);
+  }, [brushCtx, x, y, brushSize, height, width]);
 
 
   // const traceCanvas = new OffscreenCanvas(width, height);
