@@ -81,13 +81,16 @@ def labeled(token, feature, frame):
     return send_file(png, mimetype='image/png')
 
 
-# @bp.route('/api/array/<token>/<int:feature>/<int:frame>')
-# def array(token, feature, frame):
-#     project = Project.get(token)
-#     if not project:
-#         return abort(404, description=f'project {token} not found')
-#     png = project.get_labeled_array(frame, feature)
-#     return send_file(png, mimetype='image/png')
+@bp.route('/api/array/<token>/<int:feature>/<int:frame>')
+def array(token, feature, frame):
+    """
+    """
+    project = Project.get(token)
+    if not project:
+        return jsonify({'error': f'project {token} not found'}), 404
+    seg_array = project.get_labeled_array(feature, frame)
+    filename = f'{token}_array_feature{feature}_frame{frame}.npy'
+    return send_file(seg_array, attachment_filename=filename, cache_timeout=0)
 
 
 @bp.route('/api/edit/<token>/<action_type>', methods=['POST'])

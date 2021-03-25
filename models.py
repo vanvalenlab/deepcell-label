@@ -6,6 +6,7 @@ from __future__ import print_function
 import base64
 import copy
 import enum
+import io
 import logging
 import os
 import timeit
@@ -488,6 +489,19 @@ class Project(db.Model):
                            vmax=self.get_max_label(),
                            cmap=self.colormap)
         return label_png
+
+    def get_labeled_array(self, feature, frame):
+        """
+        Returns:
+            BytesIO: contains numpy array of labels
+        """
+        # Create label array
+        label_frame = self.label_frames[frame]
+        label_arr = label_frame.frame[..., feature]
+        out = io.BytesIO()
+        np.save(out, add_outlines(label_arr))
+        out.seek(0)
+        return out
 
 
 class Labels(db.Model):
