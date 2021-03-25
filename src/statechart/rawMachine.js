@@ -1,27 +1,20 @@
-import { Machine, assign, send, sendParent, forwardTo } from 'xstate';
+import { Machine, assign, forwardTo, spawn, actions } from 'xstate';
+import createChannelMachine from './channelMachine';
 
-// only receive and send context updates for these fields
-const filterContext = ({ brightness, contrast, invert, grayscale, channel, frame, rawImage }) =>
-  pickBy({ brightness, contrast, invert, grayscale, channel, frame, rawImage },
-    (v) => v !== undefined);
+const { pure } = actions;
 
-const createRawMachine = (projectId) => Machine(
+const rawMachine = Machine(
   {
     id: 'raw',
     context: {
-      projectId,
-      channel: 0,
-      frame: 0,
-      brightness: 0,
-      contrast: 0,
-      invert: true,
-      grayscale: true,
+      projectId: null,
+      frame: null,
+      channel: null,
       channelActor: null,
       channels: {},
-      rawImage: null,
     },
     entry: assign((context) => {
-      const channelActor = spawn(createChannelMachine(context.channel, context.frame), `channel${context.channel}`);
+      const channelActor = spawn(createChannelMachine(context));
       return {
         channels: {
           [context.channel]: channelActor,
@@ -30,61 +23,33 @@ const createRawMachine = (projectId) => Machine(
       }
     }),
     on: {
-      SETCHANNEL: { actions: ['changeChannel', 'getUpdate'] },
+      SETCHANNEL: { actions: 'changeChannel' },
+      SETFRAME: { actions: 'forwardToAllChannels' },
       TOGGLEINVERT: { actions: 'forwardToChannel' },
       TOGGLEGRAYSCALE: { actions: 'forwardToChannel' },
-      SETFRAME: { actions: 'forwardToChannel' },
       SETBRIGHTNESS: { actions: 'forwardToChannel' },
       SETCONTRAST: { actions: 'forwardToChannel' },
-      UPDATE: { actions: ['update', 'sendUpdate'] },
+      RESTORE: {},
     },
+    initial: 'idle',
     states: {
-      idle: {
-        on: {
-          SETCHANNEL: { actions: 'changeChannel', target: 'awaitBubbleUp' },
-          SETFRAME: { actions: 'bubbleDown' },
-          TOGGLEINVERT: { actions: 'bubbleDown' },
-          TOGGLEGRAYSCALE: { actions: 'bubbleDown' },
-          SETBRIGHTNESS: { actions: 'bubbleDown' },
-          SETCONTRAST: { actions: 'bubbleDown' },
-          BUBBLEUP: { actions: 'update', target: 'updated' },
-          BUBBLEDOWN: [
-            { cond: 'updateChannel', actions: ['update', 'updateActor', 'bubbleDown'], target: 'awaitBubbleUp' },
-            { actions: ['update', 'bubbleDown'] },
-          ],
-        }
-      },
-      // when we change the actor, we need to bubble up an update from the actor
-      awaitBubbleUp: {
-        entry: 'getBubbleUp',
-        on: {
-          BUBBLEUP: { actions: 'update', target: 'updated' },
-        }
-      },
-      // when we change the context, inform the actors above
-      updated: {
-        entry: 'bubbleUp',
-        always: 'idle',
-      },
+      idle: {},
     }
   },
   {
     actions: {
-      update: assign((ctx, event) => filterContext(event.context)),
-      getBubbleUp: send('GETBUBBLEUP', {to: (context) => context.channelActor}),
-      bubbleUp: sendParent((context) => ({
-        type: 'BUBBLEUP',
-        context: filterContext(context),
-      })),
-      updateActor: assign({
-        channelActor: (context, event) => context.channels[event.context.channel],
+      forwardToChannel: (context) => forwardTo(context.channelActor),
+      // Dynamically send an event to every spawned channel
+      forwardToAllChannels: pure((context) => {
+        const channels = Object.values(context.channels);
+        return channels.map((channel) => {
+          return forwardTo(channel);
+        });
       }),
-      bubbleDown: forwardTo((context) => context.channelActor),
       changeChannel: assign((context, event) => {
         // Use the existing channel actor if one already exists
         let channelActor = context.channels[event.channel];
         if (channelActor) {
-          channelActor.send({ type: 'SETFRAME', frame: context.frame });
           return {
             ...context,
             channelActor,
@@ -107,4 +72,4 @@ const createRawMachine = (projectId) => Machine(
   }
 );
 
-export default createRawMachine;
+export default rawMachine;

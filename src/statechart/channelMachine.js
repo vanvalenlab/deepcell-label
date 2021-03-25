@@ -1,95 +1,99 @@
-import { Machine, assign, send, sendParent } from 'xstate';
+import { Machine, assign } from 'xstate';
 
-// only receive and send context updates for these fields
-const filterContext = ({ brightness, contrast, invert, grayscale, frame, channel, rawImage }) =>
-  pickBy({ brightness, contrast, invert, grayscale, frame, channel, rawImage },
-    (v) => v !== undefined);
+function fetchRaw(context) {
+  const { projectId, channel, nextFrame: frame } = context;
+  const pathToRaw = `/api/raw/${projectId}/${channel}/${frame}`;
+
+  return fetch(pathToRaw)
+    // .then(validateResponse)
+    .then(readResponseAsBlob)
+    .then(makeImageURL)
+    .then(showImage);
+    // .catch(logError);
+}
+
+function readResponseAsBlob(response) {
+  return response.blob();
+}
+
+function makeImageURL(responseAsBlob) {
+  return URL.createObjectURL(responseAsBlob);
+}
+
+function showImage(imgUrl) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.src = imgUrl;
+  });
+}
 
 const createChannelMachine = ({ projectId, channel, frame }) => Machine(
   {
-    id: 'raw',
+    id: `raw_channel${channel}`,
     context: {
       projectId,
       channel,
       frame,
+      // numFrames,
+      nextFrame: frame,
       brightness: 0,
       contrast: 0,
       invert: true,
       grayscale: true,
-      frameActor: null,
       frames: {},
-      rawImage: null,
+      rawImage: new Image(),
     },
-    entry: assign((context) => {
-      const frameActor = spawn(createRawFrameMachine(context));
-      return {
-        frames: { [context.frame]: frameActor },
-        frameActor: frameActor,
-      }
-    }),
+    on: {
+      TOGGLEINVERT: { actions: 'toggleInvert' },
+      TOGGLEGRAYSCALE: { actions: 'toggleGrayscale' },
+      SETBRIGHTNESS: { actions: 'setBrightness' },
+      SETCONTRAST: { actions: 'setContrast' },
+    },
+    initial: 'loading',
     states: {
       idle: {
         on: {
-          SETFRAME: { cond: 'newFrame', actions: 'changeFrame', target: 'awaitUpdate' },
-          TOGGLEINVERT: { actions: 'toggleInvert', target: 'updated' },
-          TOGGLEGRAYSCALE: { actions: 'toggleGrayscale', target: 'updated' },
-          SETBRIGHTNESS: { actions: 'setBrightness', target: 'updated' },
-          SETCONTRAST: { actions: 'setContrast', target: 'updated' },
-          BUBBLEUP: { actions: 'update', target: 'updated' },
-          BUBBLEDOWN: [
-            { cond: 'updateFrame', actions: ['update', 'updateActor'], target: 'awaitUpdate' },
-            { actions: 'update' },
-          ],
-        }
+          SETFRAME: {
+            cond: 'newFrame',
+            actions: assign({ nextFrame: (context, event) => event.frame }),
+            target: 'changeFrame'
+          },
+        },
       },
-      // when we change the actor, we need to bubble up an update from the actor
-      awaitBubbleUp: {
-        entry: 'getBubbleUp',
-        on: {
-          BUBBLEUP: { actions: 'update', target: 'updated' },
-        }
+      changeFrame: {
+        always: [
+          { cond: 'existingFrame', actions: 'changeToExistingFrame', target: 'idle' },
+          { target: 'loading' },
+        ]
       },
-      // when we change the context, inform the actors above
-      updated: {
-        entry: 'bubbleUp',
-        always: 'idle',
+      loading: {
+        invoke: {
+          src: fetchRaw,
+          onDone: {
+            target: 'idle', actions: 'changeToNewFrame',
+          },
+          onError: { target: 'idle', actions: (context, event) => console.log(event) },
+        },
       },
     }
   },
   {
     guards: {
+      existingFrame: (context, event) => context.nextFrame in context.frames,
       updateFrame: (context, event) => context.frame !== event.context.frame,
       newFrame: (context, event) => context.frame !== event.frame,
     },
     actions: {
-      update: assign((ctx, event) => filterContext(event.context)),
-      getBubbleUp: send('GETBUBBLEUP', {to: (context) => context.frameActor }),
-      bubbleUp: sendParent((context) => ({ type: 'BUBBLEUP', context: filterContext(context)})),
-      updateActor: assign({
-        frameActor: (context, event) => context.frames[event.context.frame],
+      changeToNewFrame: assign({
+        frame: (context) => context.nextFrame,
+        rawImage: (context, event) => event.data,
+        frames: (context, event) => ({...context.frames, [context.nextFrame]: event.data}),
       }),
-      changeFrame: assign((context, event) => {
-        // Use the existing frame actor if one already exists
-        let frameActor = context.frames[event.frame];
-        if (frameActor) {
-          return {
-            ...context,
-            frameActor,
-            frame: event.frame,
-          };
-        }
-
-        // Otherwise, spawn a new frame actor and save it in the frames object
-        frameActor = spawn(createRawFrameMachine({ ...context, frame: event.frame }));
-        return {
-          frames: {
-            ...context.frames,
-            [event.frame]: frameActor
-          },
-          frameActor,
-          frame: event.frame,
-        };
-      }),
+      changeToExistingFrame: assign((context) => ({
+        frame: context.nextFrame,
+        rawImage: context.frames[context.nextFrame],
+      })),
       toggleInvert: assign({ invert: (context) => !context.invert }),
       toggleGrayscale: assign({ grayscale: (context) => !context.grayscale }),
       setBrightness: assign({ brightness: (_, event) => Math.min(1, Math.max(-1, event.brightness)) }),
