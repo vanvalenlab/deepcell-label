@@ -6,7 +6,7 @@ import Paper from '@material-ui/core/Paper';
 
 import Predict from './Predict';
 import ControlRow from './ControlRow';
-import FrameControls from './FrameControls';
+import ImageControls from './ImageControls';
 import ChannelControls from './ChannelControls';
 import FeatureControls from './FeatureControls';
 
@@ -16,7 +16,7 @@ export default function ControlPanel() {
     <TableContainer id='control-panel' component={Paper}>
       <Table aria-label="collapsible table">
         <TableBody>
-          <FrameControls />
+          <ImageControls />
           <ChannelControls />
           <FeatureControls />
           <ControlRow name={"Label"} />

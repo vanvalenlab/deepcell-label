@@ -4,7 +4,7 @@ import DiscreteSlider from './DiscreteSlider';
 import { useImage } from '../ServiceContext';
 
 
-export default function LabelControls() {
+export default function ImageControls() {
   const [current, send] = useImage();
   const { frame, feature, channel, numFrames, numFeatures, numChannels } = current.context;
 
