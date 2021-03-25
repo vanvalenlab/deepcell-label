@@ -10,7 +10,7 @@ import canvasMachine from './canvasMachine';
 // import undoMachine from './undoMachine';
 
 
-const createLabelMachine = (projectId) => Machine(
+const createDeepcellLabelMachine = (projectId) => Machine(
   {
     id: 'deepcellLabel',
     context: {
@@ -65,4 +65,4 @@ const createLabelMachine = (projectId) => Machine(
   }
 );
 
-export default createLabelMachine;
+export default createDeepcellLabelMachine;

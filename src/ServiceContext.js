@@ -130,7 +130,7 @@ const ServiceContext = (props) => {
   const location = useLocation();
   const projectId = new URLSearchParams(location.search).get('projectId');
   
-  const labelService = useInterpret(createLabelMachine(projectId));
+  const labelService = useInterpret(createDeepcellLabelMachine(projectId));
   labelService.start();
 
 
