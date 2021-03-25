@@ -461,6 +461,34 @@ class Project(db.Model):
                          cmap='cubehelix')
         return raw_png
 
+    def get_raw_png(self, channel, frame):
+        """
+        Returns:
+            BytesIO: contains the raw frame as a .png
+        """
+        # Raw png
+        raw_frame = self.raw_frames[frame]
+        raw_arr = raw_frame.frame[..., channel]
+        raw_png = pngify(imgarr=raw_arr,
+                         vmin=0,
+                         vmax=None,
+                         cmap='cubehelix')
+        return raw_png
+
+    def get_labeled_png(self, feature, frame):
+        """
+        Returns:
+            BytesIO: contains the raw frame as a .png
+        """
+        # Create label png
+        label_frame = self.label_frames[frame]
+        label_arr = label_frame.frame[..., feature]
+        label_png = pngify(imgarr=np.ma.masked_equal(label_arr, 0),
+                           vmin=0,
+                           vmax=self.get_max_label(),
+                           cmap=self.colormap)
+        return label_png
+
 
 class Labels(db.Model):
     """

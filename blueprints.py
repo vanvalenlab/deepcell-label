@@ -63,6 +63,33 @@ def handle_exception(error):
     return jsonify({'error': str(error)}), 500
 
 
+@bp.route('/api/raw/<token>/<int:channel>/<int:frame>')
+def raw(token, channel, frame):
+    project = Project.get(token)
+    if not project:
+        return abort(404, description=f'project {token} not found')
+    png = project.get_raw_png(channel, frame)
+    return send_file(png, mimetype='image/png')
+
+
+@bp.route('/api/labeled/<token>/<int:feature>/<int:frame>')
+def labeled(token, feature, frame):
+    project = Project.get(token)
+    if not project:
+        return abort(404, description=f'project {token} not found')
+    png = project.get_labeled_png(feature, frame)
+    return send_file(png, mimetype='image/png')
+
+
+# @bp.route('/api/array/<token>/<int:feature>/<int:frame>')
+# def array(token, feature, frame):
+#     project = Project.get(token)
+#     if not project:
+#         return abort(404, description=f'project {token} not found')
+#     png = project.get_labeled_array(frame, feature)
+#     return send_file(png, mimetype='image/png')
+
+
 @bp.route('/api/edit/<token>/<action_type>', methods=['POST'])
 def edit(token, action_type):
     """
