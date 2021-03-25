@@ -36,7 +36,6 @@ export function useImage() {
   useEffect(() => {
     bind('a', () => {
       const { frame, numFrames } = state.context;
-      console.log((frame - 1 + numFrames) % numFrames);
       send({ type: 'SETFRAME', frame: (frame - 1 + numFrames) % numFrames });
     });
     bind('d', () => {

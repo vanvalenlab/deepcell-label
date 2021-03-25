@@ -41,7 +41,6 @@ function reshapeArray(array) {
     arr.reduce((rows, key, index) => (index % width == 0 ? rows.push([key]) 
       : rows[rows.length - 1].push(key)) && rows, []);
   const result = reshape(array.data, array.shape[1]);
-  console.log(result);
   return result;
 }
 

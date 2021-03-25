@@ -78,7 +78,7 @@ const apiMachine = Machine(
     },
     states: {
       firstLoad: {
-        entry: [(context) => console.log(context.projectID), sendParent('LOADING')],
+        entry: sendParent('LOADING'),
         invoke: {
           id: 'load-project',
           src: loadProject,
