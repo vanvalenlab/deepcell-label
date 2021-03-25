@@ -1,18 +1,17 @@
-import React, { useState, useEffect, useRef, useContext } from 'react';
-import { useService, useSelector } from '@xstate/react';
-import { labelService, canvasService } from '../statechart/service';
-import { FrameContext } from '../ServiceContext';
+import React, { useState, useEffect, useRef } from 'react';
+import { useActor } from '@xstate/react';
+import { useCanvas, useLabeled } from '../ServiceContext';
 
 const OutlineCanvas = props => {
-  const [current, send] = useService(labelService);
   const [foreground, background] = [1, 2];
   const [all, setAll] = useState(false);
 
-  const [currentCanvas, sendCanvas] = useService(canvasService);
+  const [currentCanvas, sendCanvas] = useCanvas();
   const { sx, sy, zoom, width, height } = currentCanvas.context;
 
-  const service = useContext(FrameContext);
-  const labelArray = useSelector(service, state => state.context.labelArray);
+  const [currentLabeled, sendLabeled] = useLabeled();
+  const [currentFeature, sendFeature] = useActor(currentLabeled.context.featureActor);
+  const { labeledArray } = currentFeature.context;
 
   const canvasRef = useRef();
   const ctx = useRef();
@@ -26,14 +25,14 @@ const OutlineCanvas = props => {
   }, [props]);
 
   useEffect(() => {
-    const width = labelArray[0].length;
-    const height = labelArray.length;
+    const width = labeledArray[0].length;
+    const height = labeledArray.length;
     if (width * height === 0) { return; }
     const array = new Uint8ClampedArray(width * height * 4);
     // use label array to figure out which pixels to recolor
     for (let j = 0; j < height; j += 1) { // y
       for (let i = 0; i < width; i += 1) { // x
-        const label = labelArray[j][i];
+        const label = labeledArray[j][i];
         if (label === -1 * foreground) {
           array[(j * width  + i) * 4 + 0] = 255;
           array[(j * width  + i) * 4 + 1] = 255;
@@ -49,7 +48,7 @@ const OutlineCanvas = props => {
     }
     const data = new ImageData(array, width, height);
     outlineCtx.putImageData(data, 0, 0);
-  }, [labelArray, foreground, background, outlineCtx]);
+  }, [labeledArray, foreground, background, outlineCtx]);
 
   useEffect(() => {
     ctx.current.save();
