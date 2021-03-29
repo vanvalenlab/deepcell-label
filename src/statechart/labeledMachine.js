@@ -1,4 +1,4 @@
-import { Machine, assign, forwardTo, spawn, actions } from 'xstate';
+import { Machine, assign, forwardTo, send, spawn, actions } from 'xstate';
 import createFeatureMachine from './featureMachine';
 
 const { pure } = actions;
@@ -8,12 +8,11 @@ const labeledMachine = Machine(
     id: 'labeled',
     context: {
       projectId: null,
-      frame: null,
-      feature: null,
-      numFrames: null,
-      numFeatures: null,
+      frame: 0,
+      feature: 0,
       featureActor: null,
       features: {},
+      canvasRef: null,
     },
     entry: assign((context) => {
       const featureActor = spawn(createFeatureMachine(context));
@@ -25,12 +24,15 @@ const labeledMachine = Machine(
       }
     }),
     on: {
-      SETFEATURE: { actions: 'changeFeature', target: '' },
+      SETFEATURE: { actions: ['changeFeature', 'sendLabeledArray'] },
       SETFRAME: { actions: 'forwardToAllFeatures' },
       TOGGLEHIGHLIGHT: { actions: 'forwardToFeature' },
       TOGGLESHOWNOLABEL: { actions: 'forwardToFeature' },
       SETOPACITY: { actions: 'forwardToFeature' },
       RESTORE: {},
+      // CANVASREF: { actions: assign({ canvasRef: (context, event) => event.canvasRef }) },
+      SELECTREF: { actions: assign({ selectRef: (context, event) => event.selectRef }) },
+      LABELEDARRAY: { actions: forwardTo((context) => context.selectRef) },
     },
     initial: 'idle',
     states: {
@@ -39,6 +41,21 @@ const labeledMachine = Machine(
   },
   {
     actions: {
+      spawnFeatureActor: assign((context) => {
+        let featureActor = context.features[context.feature];
+        if (featureActor) {
+          return { ...context, featureActor };
+        }
+        featureActor = spawn(createFeatureMachine(context));
+        return {
+          features: {
+            ...context.features, 
+            [context.feature]: featureActor,
+          },
+          featureActor: featureActor,
+        }
+      }),
+      sendLabeledArray: send('SENDLABELEDARRAY', { to: (context) => context.featureActor }),
       forwardToFeature: (context) => forwardTo(context.featureActor),
       // Dynamically send an event to every spawned feature
       forwardToAllFeatures: pure((context) => {
