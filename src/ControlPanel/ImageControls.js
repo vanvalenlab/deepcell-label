@@ -21,10 +21,16 @@ export default function ImageControls() {
   };
 
   return (
-    <ControlRow name={"Slice"}>
-      <DiscreteSlider label="Frame" value={frame} max={numFrames - 1} onChange={handleFrameChange}/>
-      <DiscreteSlider label="Channel" value={channel} max={numChannels - 1} onChange={handleChannelChange}/>
-      <DiscreteSlider label="Feature" value={feature} max={numFeatures - 1} onChange={handleFeatureChange}/>
+    <ControlRow name={"Image"}>
+      { numFrames > 1 &&
+        <DiscreteSlider label="Frame" value={frame} max={numFrames - 1} onChange={handleFrameChange} />      
+      }
+      { numChannels > 1 &&
+        <DiscreteSlider label="Channel" value={channel} max={numChannels - 1} onChange={handleChannelChange}/>
+      }
+      { numFeatures > 1 &&
+        <DiscreteSlider label="Feature" value={feature} max={numFeatures - 1} onChange={handleFeatureChange} />
+      }
     </ControlRow>
   )
 }
