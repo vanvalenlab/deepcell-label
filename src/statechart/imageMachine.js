@@ -3,24 +3,17 @@ import rawMachine from './rawMachine';
 import labeledMachine from './labeledMachine';
 
 
-function fetchProject(context) {
-  const { projectId } = context;
-  return fetch(`/api/project/${projectId}`)
-    .then(response => response.json());
-}
-
 const createImageMachine = ({ projectId }) => Machine(
   {
     id: 'image',
-    initial: 'loading',
     context: {
       projectId,
       frame: 0,
       feature: 0,
       channel: 0,
-      numFrames: 23,
-      numFeatures: 2,
-      numChannels: 3,
+      numFrames: 1,
+      numFeatures: 1,
+      numChannels: 1,
       rawImage: new Image(),
       labeledImage: new Image(),
       labeledArray: [[]],
@@ -33,8 +26,6 @@ const createImageMachine = ({ projectId }) => Machine(
           projectId: (context) => context.projectId,
           frame: (context) => context.frame,
           channel: (context) => context.channel,
-          numFrames: (context) => context.numFrames,
-          numChannels: (context) => context.numChannels,
         },
       },
       {
@@ -44,31 +35,36 @@ const createImageMachine = ({ projectId }) => Machine(
           projectId: (context) => context.projectId,
           frame: (context) => context.frame,
           feature: (context) => context.feature,
-          numFrames: (context) => context.numFrames,
-          numFeatures: (context) => context.numFeatures,
         },
       }
     ],
+    initial: 'waitForProject',
     states: {
-      loading: {
-        invoke: {
-          id: 'fetch-project',
-          src: fetchProject,
-          onDone: {
-            target: 'idle',
-            actions: ['handleFirstPayload', (c, e) => console.log(e.data)],
+      waitForProject: {
+        on: {
+          PROJECT: {
+            target: 'idle', actions: 'handleProject',
           },
-          onError: {
-            target: 'idle',
-            actions: (context, event) => console.log(event.data),
-          },
-        }
+        },
       },
-      idle: {
-        
-      },
+      // loading: {
+      //   invoke: {
+      //     id: 'fetch-project',
+      //     src: fetchProject,
+      //     onDone: {
+      //       target: 'idle',
+      //       actions: ['handleFirstPayload', (c, e) => console.log(e.data)],
+      //     },
+      //     onError: {
+      //       target: 'idle',
+      //       actions: (context, event) => console.log(event.data),
+      //     },
+      //   }
+      // },
+      idle: {},
     },
     on: {
+      SELECTREF: { actions: forwardTo('labeled') },
       SETFRAME: {
         cond: 'newFrame',
         actions: [
@@ -114,19 +110,12 @@ const createImageMachine = ({ projectId }) => Machine(
       newFeature: (context, event) => context.feature !== event.feature,
     },
     actions: {
-      handleFirstPayload: assign({
-        frame: (context, event) => event.data.frame,
-        channel: (context, event) => event.data.channel,
-        feature: (context, event) => event.data.feature,
-        numFrames: (context, event) => event.data.numFrames,
-        numChannels: (context, event) => event.data.numChannels,
-        numFeatures: (context, event) => event.data.numFeatures,
-      }),
-      handlePayload: assign({
-        rawImage: (context, event) => event.data.rawImage,
-        labeledImage: (context, event) => event.data.labelImage,
-        labeledArray: (context, event) => event.data.labelArray,
-      }),
+      handleProject: assign(
+        (_, { frame, feature, channel, numFrames, numFeatures, numChannels }) => {
+          console.log({ frame, feature, channel, numFrames, numFeatures, numChannels });
+          return { frame, feature, channel, numFrames, numFeatures, numChannels };
+        }
+      ),
     }
   });
 

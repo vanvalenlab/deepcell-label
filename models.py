@@ -351,36 +351,59 @@ class Project(db.Model):
         """
         payload = {}
 
-        img_payload = {}
-        raw_png = self._get_raw_png()
-        img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
-        label_png = self._get_label_png()
-        img_payload['segmented'] = f'data:image/png;base64,{encode(label_png)}'
-        img_payload['seg_arr'] = self._get_label_arr()
-        payload['imgs'] = img_payload
-
-        payload['tracks'] = self.labels.readable_tracks
+        # payload['tracks'] = self.labels.readable_tracks
 
         # Other Project attributes to initialize frontend variables
         payload['frame'] = self.frame
-        payload['numFrames'] = self.num_frames
-        payload['project_id'] = self.token
-        payload['dimensions'] = (self.width, self.height)
-        # Attributes specific to filetype
-        if self.is_track:
-            payload['screen_scale'] = self.scale_factor
-        if self.is_zstack:
-            payload['channel'] = self.channel
-            payload['numChannels'] = self.num_channels
-            payload['feature'] = self.feature
-            payload['numFeatures'] = self.num_features
+        payload['channel'] = self.channel
+        payload['feature'] = self.feature
 
-        # First frame edited by each action
-        # Excludes the first action, which loads the project
-        payload['actionFrames'] = [action.frames[0].frame_id
-                                   for action in self.actions[1:] if action.done]
+        payload['numFrames'] = self.num_frames
+        payload['numChannels'] = self.num_channels
+        payload['numFeatures'] = self.num_features
+
+        payload['width'] = self.width
+        payload['height'] = self.height
+
+        # # First frame edited by each action
+        # # Excludes the first action, which loads the project
+        # payload['actionFrames'] = [action.frames[0].frame_id
+        #                            for action in self.actions[1:] if action.done]
 
         return payload
+
+        # payload = {}
+
+        # img_payload = {}
+        # raw_png = self._get_raw_png()
+        # img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
+        # label_png = self._get_label_png()
+        # img_payload['segmented'] = f'data:image/png;base64,{encode(label_png)}'
+        # img_payload['seg_arr'] = self._get_label_arr()
+        # payload['imgs'] = img_payload
+
+        # payload['tracks'] = self.labels.readable_tracks
+
+        # # Other Project attributes to initialize frontend variables
+        # payload['frame'] = self.frame
+        # payload['numFrames'] = self.num_frames
+        # payload['project_id'] = self.token
+        # payload['dimensions'] = (self.width, self.height)
+        # # Attributes specific to filetype
+        # if self.is_track:
+        #     payload['screen_scale'] = self.scale_factor
+        # if self.is_zstack:
+        #     payload['channel'] = self.channel
+        #     payload['numChannels'] = self.num_channels
+        #     payload['feature'] = self.feature
+        #     payload['numFeatures'] = self.num_features
+
+        # # First frame edited by each action
+        # # Excludes the first action, which loads the project
+        # payload['actionFrames'] = [action.frames[0].frame_id
+        #                            for action in self.actions[1:] if action.done]
+
+        # return payload
 
     def make_payload(self, x=False, y=False, labels=False):
         """

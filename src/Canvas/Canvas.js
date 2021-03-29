@@ -35,7 +35,7 @@ export const Canvas = props => {
   useEffect(() => {
     const padding = 5;
     sendCanvas({ type: 'RESIZE', width: props.width, height: props.height, padding: padding });
-  }, [sendCanvas, props.width, props.height]);
+  }, [sendCanvas, props.width, props.height, height, width]);
 
   // dynamic canvas border styling based on position
   const padding = 5;
