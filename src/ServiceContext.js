@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import createFrameMachine from './statechart/frameMachine';
 import createDeepcellLabelMachine from './statechart/deepcellLabelMachine';
 import { bind, unbind } from 'mousetrap';
+import { inspect } from '@xstate/inspect';
 
 export const LabelContext = createContext();
 
@@ -125,10 +126,35 @@ export function useCanvas() {
   return [state, send];
 }
 
+export function useSelect() {
+  const { service } = useLabelService();
+  const { select } = service.state.children;
+  const [state, send] = useActor(select);
+  useEffect(() => {
+    bind('x', (event) => send('keydown.x'));
+    bind('n', (event) => send('keydown.n'));
+    bind('esc', (event) => send('keydown.Escape'));
+    bind('[', (event) => send('keydown.['));
+    bind(']', (event) => send('keydown.]'));
+    bind('{', (event) => send('keydown.{'));
+    bind('}', (event) => send('keydown.}'));
+    return () => {
+      unbind('x');
+      unbind('n');
+      unbind('esc');
+      unbind('[');
+      unbind(']');
+      unbind('{');
+      unbind('}');
+    }
+  }, []);
+  return [state, send];
+}
+
 const ServiceContext = (props) => {
   const location = useLocation();
   const projectId = new URLSearchParams(location.search).get('projectId');
-  
+
   const labelService = useInterpret(createDeepcellLabelMachine(projectId));
   labelService.start();
 
