@@ -66,7 +66,7 @@ const canvasMachine = Machine({
   on: {
     wheel: { actions: 'zoom' },
     RESIZE: { actions: 'resize' },
-    SELECTREF: { actions: assign({ selectRef: (context, event) => event.selectRef }) }
+    TOOLREF: { actions: assign({ toolRef: (context, event) => event.toolRef }) }
   },
 },
   {
@@ -77,13 +77,13 @@ const canvasMachine = Machine({
       useNewCoordinates: assign((context) => ({ x: context.newX, y: context.newY })),
       sendCoordinates: send((context) => (
         { type: 'COORDINATES', x: context.x, y: context.y }),
-        {to: (context) => context.selectRef}
+        {to: (context) => context.toolRef}
       ),
       computeNewCoordinates: assign((context, event) => {
         let newX = Math.floor((event.nativeEvent.offsetX / context.scale / context.zoom + context.sx));
         let newY = Math.floor((event.nativeEvent.offsetY / context.scale / context.zoom + context.sy));
-        newX = Math.max(0, Math.min(newX, context.width));
-        newY = Math.max(0, Math.min(newY, context.height));
+        newX = Math.max(0, Math.min(newX, context.width - 1));
+        newY = Math.max(0, Math.min(newY, context.height - 1));
         return { newX, newY };
       }),
       resize: assign({
