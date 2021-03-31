@@ -4,51 +4,26 @@ import { send } from 'xstate/lib/actionTypes';
 
 // tool states
 
-const brushMachine = Machine(
-  {
-    initial: 'idle',
-    context: {
-      brushSize: 5,
-      trace: [],
-      x: 0,
-      y: 0,
-    },
-    states: {
-      idle: {
-        on: {
-          mousedown: [
-            { cond: 'shift' },
-            { target: 'dragging', actions: 'addToTrace' },
-          ],
-        }
-      },
-      dragging: {
-        on: {
-          COORDINATES: { actions: 'addToTrace' },
-          mouseup: 'done',
-        }
-      },
-      done: {
-        entry: 'sendPaint',
-        always: 'idle',
+const brushState = {
+  initial: 'idle',
+  states: {
+    idle: {
+      entry: assign({ trace: [] }),
+      on: {
+        mousedown: [
+          { cond: 'shift' },
+          { target: 'dragging', actions: 'addToTrace' },
+        ],
       }
     },
-    on: {
-      COORDINATES: { actions: 'updateCoordinates' },
-    }
+    dragging: {
+      on: {
+        COORDINATES: { actions: 'addToTrace' },
+        mouseup: { target: 'idle', actions: 'paint' }
+      }
+    },
   },
-  {
-    actions: {
-      'updateCoordinates': assign({ x: (context, event) => event.x, y: (context, event) => event.y }),
-      'addToTrace': assign({ trace: (context, event) => [...context.trace, [event.x, event.y]] }),
-      'sendPaint': sendParent((context) => ({
-        type: 'PAINT',
-        trace: context.trace,
-        size: context.brushSize,
-      })),
-    }
-  }
-);
+};
 
 const thresholdMachine = Machine(
   {
@@ -202,8 +177,8 @@ const toolMachine = Machine(
   {
     id: 'tool',
     context: {
-      tool: null,
-      tools: {},
+      // tool: null,
+      // tools: {},
       foreground: 1,
       background: 0,
       x: 0,
@@ -212,16 +187,18 @@ const toolMachine = Machine(
       frame: 0,
       feature: 0,
       channel: 0,
+      brushSize: 5,
+      trace: [],
     },
-    entry: assign(() => {
-      const brushActor = spawn(brushMachine, 'brush');
-      return {
-        tools: {
-          paint: brushActor,
-        },
-        tool: brushActor,
-      }
-    }),
+    // entry: assign(() => {
+    //   const brushActor = spawn(brushMachine, 'brush');
+    //   return {
+    //     tools: {
+    //       paint: brushActor,
+    //     },
+    //     tool: brushActor,
+    //   }
+    // }),
     initial: 'select',
     states: {
       select: {}, // clicking selects a label
@@ -230,19 +207,18 @@ const toolMachine = Machine(
       //   trim: trimState,
       //   erodeDilate: erodeDilateState,
       //   autofit: autofitState,
-      //   paint: paintState,
+      brush: brushState,
       //   threshold: thresholdState,
       //   watershed: watershedState,
       //   history: { type: 'history.deep' } // allows us to return to the current step of an action when selecting in between
       // }, 
     },
     on: {
-      'keydown.b': { actions: 'useBrush' },
+      'keydown.b': '.brush',
       'keydown.t': { actions: assign({ currentTool: (context) => context.tools['threshold'] }) },
       mousedown: { actions: 'forwardToTool' },
       mouseup: { actions: 'forwardToTool' },
       click: { actions: 'forwardToTool' },
-      UPDATE: { actions: ['forwardToTool', 'update'] },
       PAINT: { actions: 'paint' },
       THRESHOLD: { actions: 'threshold' },
 
@@ -253,7 +229,7 @@ const toolMachine = Machine(
       // 'keydown.m': '.autofit',
       // 'keydown.w': '.watershed',
 
-      COORDINATES: { actions: ['updateCoordinates', 'forwardToTool'] },
+      COORDINATES: { actions: 'updateCoordinates' },
       LABELEDARRAY: { actions: 'updateLabeled' },
       
       SETFOREGROUND: { actions: 'setForeground' },
@@ -268,10 +244,11 @@ const toolMachine = Machine(
     }
   },
   {
+    guards: {
+      shift: (context, event) => event.shiftKey,
+    },
     actions: {
-      useBrush: assign({ tool: (context) => context.tools['paint'] }),
-      useThreshold: assign({ tool: (context) => context.tools['threshold'] }),
-      forwardToTool: forwardTo((context) => context.tool),
+      // forwardToTool: forwardTo((context) => context.tool),
       paint: sendParent((context, event) => ({
         type: 'EDIT',
         action: 'handle_draw',
@@ -307,6 +284,7 @@ const toolMachine = Machine(
         y: event.y,
         label: Math.abs(context.labeledArray[event.y][event.x]),
       })),
+      addToTrace: assign({ trace: (context, event) => [...context.trace, [event.x, event.y]] }),
       setForeground: assign({
         foreground: (ctx, evt) => evt.label,
         background: (ctx, evt) => evt.label === ctx.background ? ctx.foreground : ctx.background,
