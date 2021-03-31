@@ -1,4 +1,6 @@
-class History{
+import { ChangeFrame, BackendAction } from './actions';
+
+export class History {
   constructor() {
     /** @property {Array<Actions|string>} undoStack actions grouped by fenceposts */
     this.undoStack = [];
@@ -29,6 +31,15 @@ class History{
   }
 
   /**
+   * Separates groups of actions.
+   * When a fence is added before an action, the action will be the first in a new group,
+   * and when a fense is added after, the action will be the last in the group.
+   */
+  addFence() {
+    this.undoStack.push('fencepost')
+  }
+
+  /**
    * Executes an action,
    * fences it in to be undone alone,
    * and clears the actions to be redone.
@@ -42,14 +53,6 @@ class History{
   }
 
   /**
-   * Separates groups of actions.
-   * When a fence is added before an action, the action will be the first in a new group,
-   * and when a fense is added after, the action will be the last in the group.
-   */
-  addFence() {
-    this.undoStack.push('fencepost')
-  }
-  /**
    * Undoes the most recent group of actions, if any.
    */
   undo() {
@@ -60,11 +63,11 @@ class History{
     if (action === 'fencepost') {
       this.redoStack.push('fencepost');
     }
-    while(this.canUndo && action === 'fencepost') {
+    while (this.canUndo && action === 'fencepost') {
       action = this.undoStack.pop();
     }
     // Undo actions until the end of the group or stack
-    while(true) {
+    while (true) {
       this.redoStack.push(action);
       action.undo();
       if (this.undoStack.length === 0) break;
@@ -85,7 +88,7 @@ class History{
     if (!this.canRedo) return;
     // Pop until we find an action to ensure redo does something
     let action = this.redoStack.pop();
-    while(this.canRedo && action === 'fencepost') {
+    while (this.canRedo && action === 'fencepost') {
       action = this.redoStack.pop();
     }
     // Redo actions until the end of the group or stack
@@ -103,41 +106,37 @@ class History{
     this.formatButtons();
   }
 
+  formatButtons() {
+    document.getElementById('undo').disabled = !this.canUndo;
+    document.getElementById('redo').disabled = !this.canRedo;
+  }
+
   /**
    * Initializes the action history using the history stored on the backend
    * @param {*} actionFrames frame of each action performed on the project
    * @param {*} initFrame frame displayed at the bottom of the undoStack
    * @param {*} finalFrame frame displayed at the top of the undoStack
    */
-  initializeHistory(actionFrames, initFrame = 0, finalFrame = current_frame) {
-      // Initialize undoStack to with actions recorded on backend
-      let prevFrame = initFrame;
-      for (let frame of actionFrames) {
-        // Display unedited frame before loading edited frame
-        if (frame != prevFrame) {
-          let action = new ChangeFrame(mode, frame);
-          action.oldValue = prevFrame;
-          this.undoStack.push(action);
-          this.addFence();
-          prevFrame = frame;
-        }
-        let action = new BackendAction();
+  initializeHistory(actionFrames) {
+    // Start the action history at the first edited frame
+    if (actionFrames.length > 0) {
+      var prevFrame = actionFrames[0];
+      window.model.frame = prevFrame;
+    }
+    for (const frame of actionFrames) {
+      // Jump to action frame before undoing action
+      if (frame !== prevFrame) {
+        const action = new ChangeFrame(frame);
         this.undoStack.push(action);
         this.addFence();
+        window.model.frame = frame;
+        prevFrame = frame;
       }
-      // Change to final project frame
-      if (prevFrame != current_frame) {
-        let action = new ChangeFrame(mode, current_frame);
-        action.oldValue = prevFrame;
-        this.undoStack.push(action);
-        this.addFence();
-      }
-      this.formatButtons();
-  }
-
-  formatButtons() {
-    document.getElementById('undo').disabled = !this.canUndo;
-    document.getElementById('redo').disabled = !this.canRedo;
+      const action = new BackendAction();
+      this.undoStack.push(action);
+      this.addFence();
+    }
+    this.formatButtons();
   }
 }
 
@@ -146,7 +145,7 @@ class History{
  *
  * @interface Action
  */
-class Action {
+export class Action {
 
   /**
    * Do the action before storing in the action history

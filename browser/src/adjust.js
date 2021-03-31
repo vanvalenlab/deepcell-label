@@ -1,7 +1,9 @@
-// helper functions
+import mergeImages from 'merge-images';
 
-class ImageAdjuster {
-  constructor(width, height, rgb, numChannels) {
+export class ImageAdjuster {
+  constructor(model) {
+    this.model = model;
+
     // canvas element used for image processing
     this.canvas = document.createElement('canvas');
     this.canvas.id = 'adjustCanvas';
@@ -10,18 +12,16 @@ class ImageAdjuster {
     this.canvas.style.display = 'none';
 
     // same dimensions as true image size
-    this.canvas.height = height;
-    this.canvas.width = width;
+    this.canvas.height = model.height;
+    this.canvas.width = model.width;
     document.body.appendChild(this.canvas);
 
     this.ctx = this.canvas.getContext('2d');
     this.ctx.imageSmoothingEnabled = false;
 
     // these will never change once initialized
-    this.height = height;
-    this.width = width;
-
-    this.rgb = rgb;
+    this.height = model.height;
+    this.width = model.width;
 
     // this can be between 0.0 and 1.0, inclusive (1 is fully opaque)
     // want to make user-adjustable in future
@@ -39,32 +39,76 @@ class ImageAdjuster {
     this.brightnessMap = new Map();
     this.invertMap = new Map();
 
-    for (let i = 0; i < numChannels; i++) {
+    for (let i = 0; i < model.numChannels; i++) {
       this.brightnessMap.set(i, 0);
       this.contrastMap.set(i, 0);
       this.invertMap.set(i, true);
     }
-    this.brightness = this.brightnessMap.get(0);
-    this.contrast = this.contrastMap.get(0);
-    this.displayInvert = this.invertMap.get(0);
+    this._brightness = 0;
+    this._contrast = 0;
+    this._displayInvert = true;
 
     // raw and adjusted image storage
     // cascasding image updates if raw or seg is reloaded
     this.rawImage = new Image();
     this.contrastedRaw = new Image();
     this.preCompRaw = new Image();
-
     this.segImage = new Image();
     this.preCompSeg = new Image();
-
     // adjusted raw + annotations
     this.compositedImg = new Image();
-
     // composite image + outlines, transparent highlight
     this.postCompImg = new Image();
 
     this.rawLoaded = false;
     this.segLoaded = false;
+
+    this.makeCascade();
+  }
+
+  get rgb() {
+    return this.model.rgb;
+  }
+
+  get brightness() {
+    return this._brightness;
+  }
+
+  set brightness(value) {
+    // limit how dim image can go
+    let newBrightness = Math.max(value, this.minBrightness);
+    // limit how bright image can go
+    newBrightness = Math.min(newBrightness, this.maxBrightness);
+    this._brightness = newBrightness;
+    this.rawLoaded = false;
+    this.contrastRaw();
+  }
+
+  get contrast() {
+    return this._contrast;
+  }
+
+  set contrast(value) {
+    // stop if fully desaturated
+    let newContrast = Math.max(value, this.minContrast);
+    // stop at 8x contrast
+    newContrast = Math.min(newContrast, this.maxContrast);
+    this._contrast = newContrast;
+    this.rawLoaded = false;
+    this.contrastRaw();
+  }
+
+  get displayInvert() {
+    return this._displayInvert;
+  }
+
+  set displayInvert(value) {
+    this._displayInvert = value;
+    this.preCompRawAdjust();
+  }
+
+  get segArray() {
+    return this.model.segArray;
   }
 
   // getters for brightness/contrast allowed ranges
@@ -83,6 +127,25 @@ class ImageAdjuster {
 
   get maxContrast() {
     return this._maxContrast;
+  }
+
+  /**
+   * Sets up image processing cascade.
+   * Cascade finishes with a notification that images are ready to render.
+   */
+  makeCascade() {
+    this.rawImage.onload = () => this.contrastRaw();
+    this.segImage.onload = () => this.preCompAdjust();
+    if (this.rgb) {
+      this.contrastedRaw.onload = () => this.rawAdjust();
+      this.preCompSeg.onload = () => this.segAdjust();
+    } else {
+      this.contrastedRaw.onload = () => this.preCompRawAdjust();
+      this.preCompRaw.onload = () => this.rawAdjust();
+      this.preCompSeg.onload = () => this.segAdjust();
+      this.compositedImg.onload = () => this.postCompAdjust();
+    }
+    this.postCompImg.onload = () => this.model.notifyImageChange();
   }
 
   // modify image data in place to recolor
@@ -127,14 +190,14 @@ class ImageAdjuster {
     }
   }
 
-  preCompositeLabelMod(img, segArray, h1, h2) {
+  preCompositeLabelMod(img, h1, h2) {
     let r, g, b;
     const ann = img.data;
     // use label array to figure out which pixels to recolor
-    for (let j = 0; j < segArray.length; j += 1) { // y
-      for (let i = 0; i < segArray[j].length; i += 1) { // x
-        const jlen = segArray[j].length;
-        const currentVal = Math.abs(segArray[j][i]);
+    for (let j = 0; j < this.segArray.length; j += 1) { // y
+      for (let i = 0; i < this.segArray[j].length; i += 1) { // x
+        const jlen = this.segArray[j].length;
+        const currentVal = Math.abs(this.segArray[j][i]);
         if (currentVal === h1 || currentVal === h2) {
           this._recolorScaled(ann, i, j, jlen, r = 255, g = -255, b = -255);
         }
@@ -142,7 +205,7 @@ class ImageAdjuster {
     }
   }
 
-  postCompositeLabelMod(img, segArray,
+  postCompositeLabelMod(img,
     redOutline = false, r1 = -1,
     singleOutline = false, o1 = -1,
     outlineAll = false,
@@ -150,10 +213,10 @@ class ImageAdjuster {
     let r, g, b;
     const ann = img.data;
     // use label array to figure out which pixels to recolor
-    for (let j = 0; j < segArray.length; j += 1) { // y
-      for (let i = 0; i < segArray[j].length; i += 1) { // x
-        const jlen = segArray[j].length;
-        const currentVal = segArray[j][i];
+    for (let j = 0; j < this.segArray.length; j += 1) { // y
+      for (let i = 0; i < this.segArray[j].length; i += 1) { // x
+        const jlen = this.segArray[j].length;
+        const currentVal = this.segArray[j][i];
         // outline red
         if (redOutline && currentVal === -r1) {
           this._recolorScaled(ann, i, j, jlen, r = 255, g = -255, b = -255);
@@ -188,27 +251,24 @@ class ImageAdjuster {
     this.contrastedRaw.src = this.canvas.toDataURL();
   }
 
-  preCompAdjust(segArray, currentHighlight, editMode, brush, mode) {
+  preCompAdjust() {
     this.segLoaded = false;
 
     // draw segImage so we can extract image data
     this.ctx.clearRect(0, 0, this.width, this.height);
     this.ctx.drawImage(this.segImage, 0, 0, this.width, this.height);
 
-    if (currentHighlight) {
+    if (this.model.highlight) {
       const segData = this.ctx.getImageData(0, 0, this.width, this.height);
-      let h1, h2;
 
-      if (editMode) {
-        h1 = brush.value;
-        h2 = -1;
-      } else {
-        h1 = mode.highlighted_cell_one;
-        h2 = mode.highlighted_cell_two;
-      }
+      const label = this.model.foreground;
+      const secondLabel = this.model.background === 0;
+      // Don't highlight background pixels by changing to -1
+      const h1 = label === 0 ? -1 : label;
+      const h2 = secondLabel === 0 ? -1 : secondLabel;
 
       // highlight
-      this.preCompositeLabelMod(segData, segArray, h1, h2);
+      this.preCompositeLabelMod(segData, h1, h2);
       this.ctx.putImageData(segData, 0, 0);
     }
 
@@ -233,19 +293,14 @@ class ImageAdjuster {
 
   // composite annotations on top of adjusted raw image
   compositeImages() {
-    this.ctx.drawImage(this.preCompRaw, 0, 0, this.width, this.height);
-
-    // add labels on top
-    this.ctx.save();
-    this.ctx.globalAlpha = this.labelTransparency;
-    this.ctx.drawImage(this.preCompSeg, 0, 0, this.width, this.height);
-    this.ctx.restore();
-
-    this.compositedImg.src = this.canvas.toDataURL();
+    mergeImages([
+      { src: this.preCompRaw.src },
+      { src: this.preCompSeg.src, opacity: this.labelTransparency },
+    ]).then(b64 => { this.compositedImg.src = b64 });
   }
 
   // apply white (and sometimes red) opaque outlines around cells, if needed
-  postCompAdjust(segArray, editMode, brush, currentHighlight) {
+  postCompAdjust() {
     // draw compositedImg so we can extract image data
     this.ctx.clearRect(0, 0, this.width, this.height);
     this.ctx.drawImage(this.compositedImg, 0, 0, this.width, this.height);
@@ -254,25 +309,22 @@ class ImageAdjuster {
     const imgData = this.ctx.getImageData(0, 0, this.width, this.height);
 
     let redOutline, r1, singleOutline, o1, outlineAll, translucent, t1, t2;
-    // red outline for conversion brush target
-    if (editMode && brush.conv && brush.target !== -1) {
+
+    const foreground = this.model.foreground;
+    const background = this.model.background;
+
+    if (foreground !== 0) {
+      singleOutline = true;
+      o1 = foreground;
+    }
+
+    if (background !== 0) {
       redOutline = true;
-      r1 = brush.target;
-    }
-    // white outline for conversion brush drawing value
-    if (editMode && brush.conv && brush.value !== -1) {
-      singleOutline = true;
-      o1 = brush.value;
-    }
-    // add an outline around the currently highlighted cell, if there is one
-    // but only if the brush isn't set to conversion brush mode
-    if (editMode && currentHighlight && !brush.conv) {
-      singleOutline = true;
-      o1 = brush.value;
+      r1 = background;
     }
 
     this.postCompositeLabelMod(
-      imgData, segArray, redOutline, r1, singleOutline, o1,
+      imgData, redOutline, r1, singleOutline, o1,
       outlineAll, translucent, t1, t2);
 
     this.ctx.putImageData(imgData, 0, 0);
@@ -281,7 +333,7 @@ class ImageAdjuster {
   }
 
   // apply outlines, transparent highlighting for RGB
-  postCompAdjustRGB(segArray, currentHighlight, editMode, brush, mode) {
+  postCompAdjustRGB() {
     // draw contrastedRaw so we can extract image data
     this.ctx.clearRect(0, 0, this.width, this.height);
     this.ctx.drawImage(this.contrastedRaw, 0, 0, this.width, this.height);
@@ -291,10 +343,11 @@ class ImageAdjuster {
 
     let redOutline, r1, singleOutline, o1, translucent, t1, t2;
 
-    // red outline for conversion brush target
-    if (editMode && brush.conv && brush.target !== -1) {
+    // red outline for brush target
+    const background = this.model.background;
+    if (background !== 0) {
       redOutline = true;
-      r1 = brush.target;
+      r1 = background;
     }
 
     // singleOutline never on for RGB
@@ -302,18 +355,20 @@ class ImageAdjuster {
     const outlineAll = true;
 
     // translucent highlight
-    if (currentHighlight) {
+    if (this.model.highlight) {
       translucent = true;
-      if (editMode) {
-        t1 = brush.value;
-      } else {
-        t1 = mode.highlighted_cell_one;
-        t2 = mode.highlighted_cell_two;
+      const foreground = this.model.foreground;
+      const background = this.model.background;
+      if (foreground !== 0) {
+        t1 = foreground;
+      }
+      if (background !== 0) {
+        t2 = background;
       }
     }
 
     this.postCompositeLabelMod(
-      imgData, segArray, redOutline, r1, singleOutline, o1,
+      imgData, redOutline, r1, singleOutline, o1,
       outlineAll, translucent, t1, t2);
 
     this.ctx.putImageData(imgData, 0, 0);
@@ -321,119 +376,25 @@ class ImageAdjuster {
     this.postCompImg.src = this.canvas.toDataURL();
   }
 
-  segAdjust(segArray, currentHighlight, editMode, brush, mode) {
+  segAdjust() {
     this.segLoaded = true;
     if (this.rawLoaded && this.segLoaded) {
       if (this.rgb) {
-        this.postCompAdjustRGB(segArray, currentHighlight, editMode, brush, mode);
+        this.postCompAdjustRGB();
       } else {
         this.compositeImages();
       }
     }
   }
 
-  rawAdjust(segArray, currentHighlight, editMode, brush, mode) {
+  rawAdjust() {
     this.rawLoaded = true;
     if (this.rawLoaded && this.segLoaded) {
       if (this.rgb) {
-        this.postCompAdjustRGB(segArray, currentHighlight, editMode, brush, mode);
+        this.postCompAdjustRGB();
       } else {
         this.compositeImages();
       }
     }
   }
-}
-
-class ChangeContrast extends Action {
-  constructor(adjuster, change) {
-    super();
-    this.adjuster = adjuster;
-    this.oldValue = adjuster.contrast;
-
-    const modContrast = -Math.sign(change) * 4;
-    // stop if fully desaturated
-    let newContrast = Math.max(adjuster.contrast + modContrast, adjuster.minContrast);
-    // stop at 8x contrast
-    newContrast = Math.min(newContrast, adjuster.maxContrast);
-    this.newValue = newContrast;
-  }
-
-  do() { this.setContrast(this.newValue); }
-
-  undo() { this.setContrast(this.oldValue); }
-
-  redo() { this.do(); }
-
-  setContrast(contrast) {
-    this.adjuster.rawLoaded = false;
-    this.adjuster.contrast = contrast;
-    this.adjuster.contrastRaw();
-  }
-}
-
-class ChangeBrightness extends Action {
-  constructor(adjuster, change) {
-    super();
-    this.adjuster = adjuster;
-    const modBrightness = -Math.sign(change);
-    // limit how dim image can go
-    let newBrightness = Math.max(adjuster.brightness + modBrightness, adjuster.minBrightness);
-    // limit how bright image can go
-    newBrightness = Math.min(newBrightness, adjuster.maxBrightness);
-    this.oldValue = adjuster.brightness;
-    this.newValue = newBrightness;
-  }
-
-  do() { this.setBrightness(this.newValue); }
-
-  undo() { this.setBrightness(this.oldValue); }
-
-  redo() { this.do(); }
-
-  setBrightness(brightness) {
-    this.adjuster.rawLoaded = false;
-    this.adjuster.brightness = brightness;
-    this.adjuster.contrastRaw();
-  }
-}
-
-class ResetBrightnessContrast extends Action {
-  constructor(adjuster) {
-    super();
-    this.adjuster = adjuster;
-    this.brightness = adjuster.brightness;
-    this.contrast = adjuster.contrast;
-  }
-
-  do() {
-    this.adjuster.brightness = 0;
-    this.adjuster.contrast = 0;
-    this.adjuster.rawLoaded = false;
-    this.adjuster.contrastRaw();
-  }
-
-  undo() {
-    this.adjuster.brightness = this.brightness;
-    this.adjuster.contrast = this.contrast;
-    this.adjuster.rawLoaded = false;
-    this.adjuster.contrastRaw();
-  }
-
-  redo() { this.do(); }
-}
-
-class ToggleInvert extends Action {
-  constructor(adjuster) {
-    super();
-    this.adjuster = adjuster;
-  }
-
-  do() {
-    this.adjuster.displayInvert = !this.adjuster.displayInvert;
-    this.adjuster.preCompRawAdjust();
-  }
-
-  undo() { this.do(); }
-
-  redo() { this.do(); }
 }

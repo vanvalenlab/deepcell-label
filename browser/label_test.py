@@ -139,8 +139,7 @@ class TestBaseEdit():
 
     def test_action_swap_single_frame(self, app):
         # single 2 x 2 frame with one feature; cell 1 in top row, cell 2 in bottom row
-        labels = np.array([[[[1], [1]], [[2], [2]]]])
-        assert labels.shape == (1, 2, 2, 1)
+        labels = np.reshape([1, 1, 2, 2], (1, 2, 2, 1))
         project = models.Project.create(DummyLoader(labels=labels))
         edit = label.TrackEdit(project)
 
@@ -152,6 +151,40 @@ class TestBaseEdit():
         with app.app_context():
             edit.action_swap_single_frame(cell1, cell2)
             np.testing.assert_array_equal(edit.frame[..., feature], expected_swap)
+            assert edit.y_changed
+            assert edit.labels_changed
+
+    def test_action_flood_background(self, app):
+        """Flooding background does NOT spread to diagonal areas."""
+        # 3 x 3 frame with label in diamond shape
+        labels = np.reshape([0, 1, 0, 1, 0, 1, 0, 1, 0], (1, 3, 3, 1))
+        project = models.Project.create(DummyLoader(labels=labels))
+        edit = label.TrackEdit(project)
+
+        flood_label, x_loc, y_loc = 2, 1, 1
+        feature = 0
+        expected_flood = np.reshape([0, 1, 0, 1, 2, 1, 0, 1, 0], (3, 3))
+
+        with app.app_context():
+            edit.action_flood(flood_label, x_loc, y_loc)
+            np.testing.assert_array_equal(edit.frame[..., feature], expected_flood)
+            assert edit.y_changed
+            assert edit.labels_changed
+
+    def test_action_flood_label(self, app):
+        """Flooding a label does spread to diagonal areas."""
+        # 3 x 3 frame with label in diamond shape
+        labels = np.reshape([[0, 1, 0], [1, 0, 1], [0, 1, 0]], (1, 3, 3, 1))
+        project = models.Project.create(DummyLoader(labels=labels))
+        edit = label.TrackEdit(project)
+
+        flood_label, x_loc, y_loc = 2, 1, 0
+        feature = 0
+        expected_flood = np.reshape([[0, 2, 0], [2, 0, 2], [0, 2, 0]], (3, 3))
+
+        with app.app_context():
+            edit.action_flood(flood_label, x_loc, y_loc)
+            np.testing.assert_array_equal(edit.frame[..., feature], expected_flood)
             assert edit.y_changed
             assert edit.labels_changed
 
@@ -215,9 +248,7 @@ class TestZStackEdit():
 
     def test_action_replace_single(self, app):
         # single 2 x 2 frame with two labels: 1s in top row, 2s in bottom
-        labels = np.array([[[[1], [1]],
-                            [[2], [2]]]])
-        assert labels.shape == (1, 2, 2, 1)
+        labels = np.reshape([1, 1, 2, 2], (1, 2, 2, 1))
         project = models.Project.create(DummyLoader(labels=labels))
         edit = label.ZStackEdit(project)
         expected_labels = np.array([[[1], [1]],
@@ -231,10 +262,7 @@ class TestZStackEdit():
 
     def test_action_replace(self, app):
         # three 2 x 2 frame with two labels: 1s in top row, 2s in bottom
-        frame = np.array([[[1], [1]],
-                          [[2], [2]]])
-        labels = np.array([frame] * 3)
-        assert labels.shape == (3, 2, 2, 1)
+        labels = np.reshape(3 * [1, 1, 2, 2], (3, 2, 2, 1))
         project = models.Project.create(DummyLoader(labels=labels))
         edit = label.ZStackEdit(project)
         expected_frame = np.array([[[1], [1]],
@@ -249,28 +277,6 @@ class TestZStackEdit():
         with app.app_context():
             edit.action_replace(cell1, cell2)
             np.testing.assert_array_equal(edit.project.label_array, expected_labels)
-
-    def test_action_swap_all_frame(self, app):
-        # three 2 x 2 frame with two labels: 1s in top row, 2s in bottom
-        frame = np.array([[[1], [1]],
-                          [[2], [2]]])
-        labels = np.array([frame] * 3)
-        assert labels.shape == (3, 2, 2, 1)
-        project = models.Project.create(DummyLoader(labels=labels))
-        edit = label.ZStackEdit(project)
-        expected_frame = np.array([[[2], [2]],
-                                   [[1], [1]]])
-        expected_labels = np.array(3 * [expected_frame])
-
-        cell1 = 1
-        cell2 = 2
-        frame = 1  # Replace on the middle frame
-
-        with app.app_context():
-            edit.project.frame = frame
-            edit.action_swap_all_frame(cell1, cell2)
-            np.testing.assert_array_equal(edit.project.label_array, expected_labels)
-            assert edit.y_changed
 
     def test_action_active_contour_other_labels_unchanged(self, app):
         """
@@ -340,8 +346,7 @@ class TestZStackEdit():
 
     def test_action_erode_other_labels_unchanged(self, app):
         """Tests that other labels not affected by eroding a label."""
-        labels = np.array([[[[1], [1]], [[2], [2]]]])
-        assert labels.shape == (1, 2, 2, 1)
+        labels = np.reshape([1, 1, 2, 2], (1, 2, 2, 1))
         project = models.Project.create(DummyLoader(labels=labels))
         edit = label.ZStackEdit(project)
 
@@ -355,8 +360,7 @@ class TestZStackEdit():
 
     def test_action_dilate_other_labels_unchanged(self, app):
         """Tests that other labels not affected by dilating a label."""
-        labels = np.array([[[[1], [1]], [[2], [2]]]])
-        assert labels.shape == (1, 2, 2, 1)
+        labels = np.reshape([1, 1, 2, 2], (1, 2, 2, 1))
         project = models.Project.create(DummyLoader(labels=labels))
         edit = label.ZStackEdit(project)
 
@@ -419,9 +423,7 @@ class TestTrackEdit():
     def test_action_new_track_first_frame_of_track(self, app):
         """A new track on the first frame a label appears does nothing."""
         # two 1x1 frames with one feature; cell starts on second frame
-        labels = np.array([[[[0]]],
-                           [[[1]]]])
-        assert labels.shape == (2, 1, 1, 1)
+        labels = np.reshape([0, 1], (2, 1, 1, 1))
         project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
         edit = label.TrackEdit(project)
         tracks = edit.labels.tracks
@@ -437,11 +439,9 @@ class TestTrackEdit():
             assert prev_track == tracks[cell]
 
     def test_action_new_track(self, app):
-        """A new track on the first frame a label appears does nothing."""
-        # two 1x1 frames with one feature; cell starts on second frame
-        labels = np.array([[[[1]]],
-                           [[[1]]]])
-        assert labels.shape == (2, 1, 1, 1)
+        """Create a new track on the second frame of a label."""
+        # two 1x1 frames with one feature; cell appears in both frames
+        labels = np.reshape([1, 1], (2, 1, 1, 1))
         project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
         edit = label.TrackEdit(project)
         tracks = edit.labels.tracks

@@ -13,18 +13,10 @@
 {%- endblock -%}
 
 {%- block extraJs -%}
-<!-- START DeepCell Label FUNCTION CALL -->
 <script>
-  document.getElementById("loading-bar").classList.add("active");
-  const input_bucket = "{{ input_bucket }}";
-  const output_bucket = "{{ output_bucket }}";
-  const path = "{{ path }}";
-  $.ajax({
-    type: 'POST',
-    url: `${document.location.origin}/api/project?source=s3&bucket=${input_bucket}&path=${path}`,
-    async: true
-  }).done((payload) => {window.location = `/project/${payload.projectId}?bucket=${output_bucket}`;} );
+  const inputBucket = '{{ input_bucket }}';
+  const outputBucket = '{{ output_bucket }}';
+  const path = '{{ path }}';
 </script>
-<!-- END DeepCell Label FUNCTION CALL -->
-
+<script src="{{ url_for('static', filename='js/loading.js') }}"></script>
 {%- endblock -%}

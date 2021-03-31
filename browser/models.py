@@ -351,7 +351,6 @@ class Project(db.Model):
         payload = {}
 
         img_payload = {}
-        encode = lambda x: base64.encodebytes(x.read()).decode()
         raw_png = self._get_raw_png()
         img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
         label_png = self._get_label_png()
@@ -370,7 +369,9 @@ class Project(db.Model):
         if self.is_track:
             payload['screen_scale'] = self.scale_factor
         if self.is_zstack:
+            payload['channel'] = self.channel
             payload['numChannels'] = self.num_channels
+            payload['feature'] = self.feature
             payload['numFeatures'] = self.num_features
 
         # First frame edited by each action
@@ -396,7 +397,6 @@ class Project(db.Model):
         """
         if x or y:
             img_payload = {}
-            encode = lambda x: base64.encodebytes(x.read()).decode()
             if x:
                 raw_png = self._get_raw_png()
                 img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
@@ -670,7 +670,8 @@ class Action(db.Model):
                            primary_key=True, nullable=False, autoincrement=False)
     action_id = db.Column(db.Integer, primary_key=True, nullable=False)
     action_time = db.Column(db.TIMESTAMP)   # Set when finishing an action
-    action_name = db.Column(db.String(64))  # Name of the action (e.g. "handle_draw")
+    # Name of the action (e.g. "handle_draw")
+    action_name = db.Column(db.String(64))
     # Action to jump to upon undo
     prev_action_id = db.Column(db.Integer, db.ForeignKey('actions.action_id'))
     prev_action = db.relationship('Action', uselist=False, post_update=True,
@@ -774,3 +775,7 @@ class FrameMemento(db.Model):
 
 def consecutive(data, stepsize=1):
     return np.split(data, np.where(np.diff(data) != stepsize)[0] + 1)
+
+
+def encode(x):
+    return base64.encodebytes(x.read()).decode()

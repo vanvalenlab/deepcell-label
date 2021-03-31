@@ -316,51 +316,41 @@ class BaseEdit(object):
 
         self.frame[..., self.feature] = img_trimmed
 
-    def action_fill_hole(self, label, x_location, y_location):
-        '''
-        fill a "hole" in a cell annotation with the cell label. Doesn't check
-        if annotation at (y,x) is zero (hole to fill) because that logic is handled in
-        javascript. Just takes the click location, scales it to match the actual annotation
-        size, then fills the hole with label (using skimage flood_fill). connectivity = 1
-        prevents hole fill from spilling out into background in some cases
-        '''
-        # rescale click location -> corresponding location in annotation array
+    def action_flood(self, label, x_location, y_location):
+        """
+        Floods the region at (x, y) with the label.
+        Only floods diagonally connected pixels (connectivity == 2) when label != 0.
+
+        Args:
+            label (int): label to fill region with
+            x_location (int): x coordinate of region to flood
+            y_location (int): y coordinate of region to flood
+        """
+        img = self.frame[..., self.feature]
+        # Rescale click location to corresponding location in label array
         hole_fill_seed = (int(y_location // self.scale_factor),
                           int(x_location // self.scale_factor))
-        # fill hole with label
-        img_ann = self.frame[..., self.feature]
-        filled_img_ann = flood_fill(img_ann, hole_fill_seed, label, connectivity=1)
+        # Check current label
+        old_label = img[hole_fill_seed]
 
-        # never changes info but always changes annotation
-        self.y_changed = True
+        # Flood region with label
+        # helps prevents hole fill from spilling into background
+        connectivity = 1 if old_label == 0 else 2
+        flooded = flood_fill(img, hole_fill_seed, label,
+                             connectivity=connectivity)
 
-        self.frame[..., self.feature] = filled_img_ann
+        # Update cell info dicts
+        label_in_original = np.any(np.isin(label, img))
+        label_in_flooded = np.any(np.isin(label, flooded))
+        old_label_in_flooded = np.any(np.isin(old_label, flooded))
 
-    def action_flood_contiguous(self, label, x_location, y_location):
-        """Flood fill a cell with a unique new label.
-
-        Alternative to watershed for fixing duplicate labels of
-        non-touching objects.
-        """
-        img_ann = self.frame[..., self.feature]
-        old_label = label
-        new_label = self.project.get_max_label() + 1
-
-        in_original = np.any(np.isin(img_ann, old_label))
-
-        filled_img_ann = flood_fill(img_ann,
-                                    (int(y_location / self.scale_factor),
-                                     int(x_location / self.scale_factor)),
-                                    new_label)
-
-        in_modified = np.any(np.isin(filled_img_ann, old_label))
-
-        # update cell info dicts since labels are changing
-        self.add_cell_info(add_label=new_label, frame=self.frame_id)
-        if in_original and not in_modified:
+        if label != 0 and not label_in_original and label_in_flooded:
+            self.add_cell_info(add_label=label, frame=self.frame_id)
+        if old_label != 0 and not old_label_in_flooded:
             self.del_cell_info(del_label=old_label, frame=self.frame_id)
 
-        self.frame[..., self.feature] = filled_img_ann
+        self.frame[..., self.feature] = flooded
+        self.y_changed = True
 
     def action_watershed(self, label, x1_location, y1_location, x2_location, y2_location):
         """Use watershed to segment different objects"""
@@ -444,9 +434,9 @@ class BaseEdit(object):
             label (int): label drawn in threshold area
         """
         top_edge = min(y1, y2)
-        bottom_edge = max(y1, y2)
+        bottom_edge = max(y1, y2) + 1
         left_edge = min(x1, x2)
-        right_edge = max(x1, x2)
+        right_edge = max(x1, x2) + 1
 
         # pull out the selection portion of the raw frame
         predict_area = self.raw_frame[top_edge:bottom_edge,
@@ -609,10 +599,17 @@ class ZStackEdit(BaseEdit):
         before sending action
         """
         img = self.frame[..., self.feature]
+        label_2_present = np.any(np.isin(label_2, img))
+
         img = np.where(img == label_2, label_1, img)
 
-        self.add_cell_info(add_label=label_1, frame=self.frame_id)
-        self.del_cell_info(del_label=label_2, frame=self.frame_id)
+        # Img only changes when label_2 is in the frame
+        if label_2_present:
+            if label_1 != 0:
+                self.add_cell_info(add_label=label_1, frame=self.frame_id)
+            if label_2 != 0:
+                self.del_cell_info(del_label=label_2, frame=self.frame_id)
+            self.y_changed = True
 
         self.frame[..., self.feature] = img
 
@@ -631,27 +628,6 @@ class ZStackEdit(BaseEdit):
                 self.add_cell_info(add_label=label_1, frame=self.frame_id)
                 self.del_cell_info(del_label=label_2, frame=self.frame_id)
                 label_frame.frame[..., self.feature] = img
-
-    def action_swap_all_frame(self, label_1, label_2):
-        """
-        Replaces all label_1 pixels with label_2 across all frames
-        in the current feature and vice versa.
-        """
-
-        for label_frame in self.project.label_frames:
-            img = label_frame.frame[..., self.feature]
-            img = np.where(img == label_1, -1, img)
-            img = np.where(img == label_2, label_1, img)
-            img = np.where(img == -1, label_2, img)
-            label_frame.frame[..., self.feature] = img
-
-        # update cell_info
-        cell_info_1 = self.labels.cell_info[self.feature][label_1].copy()
-        cell_info_2 = self.labels.cell_info[self.feature][label_2].copy()
-        self.labels.cell_info[self.feature][label_1]['frames'] = cell_info_2['frames']
-        self.labels.cell_info[self.feature][label_2]['frames'] = cell_info_1['frames']
-
-        self.y_changed = self.labels_changed = True
 
     def action_predict_single(self):
         """
@@ -827,7 +803,6 @@ class TrackEdit(BaseEdit):
 
             self.labels_changed = True
 
-    # TODO: handle multiple frames
     def action_replace(self, label_1, label_2):
         """
         Replacing label_2 with label_1 in all frames.

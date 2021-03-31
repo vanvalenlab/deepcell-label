@@ -17,6 +17,7 @@
   "rules": {
     "semi": "off",
     "js-doc": "off",
-    "space-before-function-paren": "off"
+    "space-before-function-paren": "off",
+    "comma-dangle": "off",
   }
 }
