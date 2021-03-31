@@ -24,24 +24,23 @@ const brushMachine = Machine(
       },
       dragging: {
         on: {
-          UPDATE: { actions: 'addToTrace' },
+          COORDINATES: { actions: 'addToTrace' },
           mouseup: 'done',
         }
       },
       done: {
-        type: 'final',
         entry: 'sendPaint',
         always: 'idle',
       }
     },
     on: {
-      UPDATE: { actions: 'updatePoint' },
+      COORDINATES: { actions: 'updateCoordinates' },
     }
   },
   {
     actions: {
-      'updatePoint': assign({ x: (context, event) => event.x, y: (context, event) => event.y }),
-      'addToTrace': assign({ trace: (context, event) => [...context.trace, (event.x, event.y)] }),
+      'updateCoordinates': assign({ x: (context, event) => event.x, y: (context, event) => event.y }),
+      'addToTrace': assign({ trace: (context, event) => [...context.trace, [event.x, event.y]] }),
       'sendPaint': sendParent((context) => ({
         type: 'PAINT',
         trace: context.trace,
@@ -215,13 +214,12 @@ const toolMachine = Machine(
       channel: 0,
     },
     entry: assign(() => {
-      paintActor = spawn(brushMachine, 'brush');
+      const brushActor = spawn(brushMachine, 'brush');
       return {
         tools: {
-          paint: paintActor,
-          threshold: spawn(thresholdMachine, 'threshold'),
+          paint: brushActor,
         },
-        tool: paintActor,
+        tool: brushActor,
       }
     }),
     initial: 'select',
@@ -254,6 +252,19 @@ const toolMachine = Machine(
       // 'keydown.t': '.threshold',
       // 'keydown.m': '.autofit',
       // 'keydown.w': '.watershed',
+
+      COORDINATES: { actions: ['updateCoordinates', 'forwardToTool'] },
+      LABELEDARRAY: { actions: 'updateLabeled' },
+      
+      SETFOREGROUND: { actions: 'setForeground' },
+      SETBACKGROUND: { actions: 'setBackground' },
+      'keydown.n': { actions: 'newForeground' },
+      'keydown.Escape': { actions: 'resetBackground' },
+      'keydown.x': { actions: 'swapLabels' },
+      'keydown.[': { actions: 'decrementForeground' },
+      'keydown.]': { actions: 'incrementForeground' },
+      'keydown.{': { actions: 'decrementBackground' },
+      'keydown.}': { actions: 'incrementBackground' },
     }
   },
   {
@@ -261,13 +272,6 @@ const toolMachine = Machine(
       useBrush: assign({ tool: (context) => context.tools['paint'] }),
       useThreshold: assign({ tool: (context) => context.tools['threshold'] }),
       forwardToTool: forwardTo((context) => context.tool),
-      update: assign({
-        foreground: (_, event) => event.foreground,
-        background: (_, event) => event.background,
-        x: (_, event) => event.x,
-        y: (_, event) => event.y,
-        label: (_, event) => event.label,
-      }),
       paint: sendParent((context, event) => ({
         type: 'EDIT',
         action: 'handle_draw',
@@ -275,7 +279,7 @@ const toolMachine = Machine(
           trace: JSON.stringify(event.trace),
           brush_value: context.foreground,
           target_value: context.background,
-          brush_size: eveent.size,
+          brush_size: event.size,
           frame: context.frame,
           erase: false,
         },
@@ -294,6 +298,35 @@ const toolMachine = Machine(
         },
         tool: 'threshold',
       })),
+      updateLabeled: assign((context, event) => ({
+        labeledArray: event.labeledArray,
+        label: event.labeledArray[context.y][context.x],
+      })),
+      updateCoordinates: assign((context, event) => ({
+        x: event.x,
+        y: event.y,
+        label: Math.abs(context.labeledArray[event.y][event.x]),
+      })),
+      setForeground: assign({
+        foreground: (ctx, evt) => evt.label,
+        background: (ctx, evt) => evt.label === ctx.background ? ctx.foreground : ctx.background,
+      }),
+      setBackground: assign({
+        foreground: (ctx, evt) => evt.label === ctx.foreground ? ctx.background : ctx.foreground,
+        background: (ctx, evt) => evt.label,
+      }),
+      swapLabels: assign({
+        foreground: (ctx) => ctx.background,
+        background: (ctx) => ctx.foreground,
+      }),
+      newForeground: assign({ foreground: (ctx) => ctx.newLabel }),
+      newBackground: assign({ background: (ctx) => ctx.newLabel }),
+      resetForeground: assign({ foreground: 0 }),
+      resetBackground: assign({ background: 0 }),
+      incrementForeground: assign({ foreground: (ctx) => (ctx.foreground + 1) % ctx.newLabel }),
+      incrementBackground: assign({ background: (ctx) => (ctx.background + 1) % ctx.newLabel }),
+      decrementForeground: assign({ background: (ctx) => (ctx.foreground - 1 + ctx.newLabel) % ctx.newLabel }),
+      decrementBackground: assign({ background: (ctx) => (ctx.background + 1 + ctx.newLabel) % ctx.newLabel }),
     }
   }
 );
