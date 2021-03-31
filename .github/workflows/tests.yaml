@@ -45,7 +45,7 @@ jobs:
         COVERALLS_FLAG_NAME: ${{ matrix.python-version }}
         COVERALLS_PARALLEL: true
       run: |
-        pytest deepcell_label --cov browser --pep8
+        pytest deepcell_label --cov deepcell_label --pep8
         coveralls
 
   coveralls:
