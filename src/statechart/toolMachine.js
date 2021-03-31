@@ -18,7 +18,7 @@ const brushState = {
     },
     dragging: {
       on: {
-        COORDINATES: { actions: 'addToTrace' },
+        COORDINATES: { actions: ['updateCoordinates', 'addToTrace'] },
         mouseup: { target: 'idle', actions: 'paint' }
       }
     },
@@ -199,7 +199,7 @@ const toolMachine = Machine(
     //     tool: brushActor,
     //   }
     // }),
-    initial: 'select',
+    initial: 'brush',
     states: {
       select: {}, // clicking selects a label
       // tool: { // clicking advances an action
@@ -215,13 +215,10 @@ const toolMachine = Machine(
     },
     on: {
       'keydown.b': '.brush',
-      'keydown.t': { actions: assign({ currentTool: (context) => context.tools['threshold'] }) },
-      mousedown: { actions: 'forwardToTool' },
-      mouseup: { actions: 'forwardToTool' },
-      click: { actions: 'forwardToTool' },
       PAINT: { actions: 'paint' },
       THRESHOLD: { actions: 'threshold' },
 
+      // 'keydown.t': '.threshold',
       // 'keydown.g': '.flood',
       // 'keydown.k': '.trim',
       // 'keydown.q': '.erodeDilate',
@@ -284,7 +281,7 @@ const toolMachine = Machine(
         y: event.y,
         label: Math.abs(context.labeledArray[event.y][event.x]),
       })),
-      addToTrace: assign({ trace: (context, event) => [...context.trace, [event.x, event.y]] }),
+      addToTrace: assign({ trace: (context, event) => [...context.trace, [context.x, context.y]] }),
       setForeground: assign({
         foreground: (ctx, evt) => evt.label,
         background: (ctx, evt) => evt.label === ctx.background ? ctx.foreground : ctx.background,

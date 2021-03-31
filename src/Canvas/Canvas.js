@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { useService } from '@xstate/react';
+import { useActor } from '@xstate/react';
 import { makeStyles } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
 
@@ -9,7 +9,7 @@ import OutlineCanvas from './OutlineCanvas';
 import BrushCanvas from './BrushCanvas';
 
 // import { canvasService } from '../statechart/service';
-import { useCanvas } from '../ServiceContext';
+import { useCanvas, useTool } from '../ServiceContext';
 
 const useStyles = makeStyles({
     canvasBox: {
@@ -29,6 +29,9 @@ const useStyles = makeStyles({
 export const Canvas = props => {
   const [currentCanvas, sendCanvas] = useCanvas();
   const { sx, sy, zoom, scale, width, height } = currentCanvas.context;
+
+  const [currentTool, sendTool] = useTool();
+  const { tool } = currentTool.context;
 
   const styles = useStyles();
 
@@ -58,11 +61,20 @@ export const Canvas = props => {
 
   // prevent scrolling page when over canvas
   useEffect(() => {
-    document.getElementById("canvasBox").addEventListener("wheel", e => e.preventDefault());
+    const canvasBox = document.getElementById("canvasBox");
+    canvasBox.addEventListener("wheel", e => e.preventDefault());
+    document.addEventListener('keydown', e => { if (e.key === ' ') { e.preventDefault(); } })
     return () => {
-      document.getElementById("canvasBox").removeEventListener("wheel", e => e.preventDefault());
+      canvasBox.removeEventListener("wheel", e => e.preventDefault());
+      document.removeEventListener('keydown', e => { if (e.key === ' ') { e.preventDefault(); } })
     }
   }, []);
+
+  const handleClick = e => {
+    // if (e.shiftKey) { sendSelect(e); }
+    // else { sendTool(e); }
+    sendTool(e);
+  }
 
   return (
     <Box
@@ -74,6 +86,9 @@ export const Canvas = props => {
       height={scale * height}
       onMouseMove={sendCanvas}
       onWheel={sendCanvas}
+      onMouseDown={sendTool}
+      onMouseUp={sendTool}
+      onClick={handleClick}
     >
       <RawCanvas {...canvasProps} />
       <LabeledCanvas {...canvasProps}/>
