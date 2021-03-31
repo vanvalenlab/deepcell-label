@@ -9,6 +9,8 @@ import ControlRow from './ControlRow';
 import ImageControls from './ImageControls';
 import ChannelControls from './ChannelControls';
 import FeatureControls from './FeatureControls';
+import LabelControls from './LabelControls';
+import ToolControls from './ToolControls';
 
 
 export default function ControlPanel() {
@@ -19,8 +21,8 @@ export default function ControlPanel() {
           <ImageControls />
           <ChannelControls />
           <FeatureControls />
-          <ControlRow name={"Label"} />
-          <ControlRow name={"Tool"} />
+          <LabelControls />
+          <ToolControls />
           <ControlRow name={"Predict"}>
             <Predict />
           </ControlRow>
