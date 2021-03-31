@@ -64,7 +64,7 @@ const createImageMachine = ({ projectId }) => Machine(
       idle: {},
     },
     on: {
-      SELECTREF: { actions: forwardTo('labeled') },
+      TOOLREF: { actions: forwardTo('labeled') },
       SETFRAME: {
         cond: 'newFrame',
         actions: [

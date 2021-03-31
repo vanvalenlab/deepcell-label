@@ -126,10 +126,10 @@ export function useCanvas() {
   return [state, send];
 }
 
-export function useSelect() {
+export function useTool() {
   const { service } = useLabelService();
-  const { select } = service.state.children;
-  const [state, send] = useActor(select);
+  const { tool } = service.state.children;
+  const [state, send] = useActor(tool);
   useEffect(() => {
     bind('x', (event) => send('keydown.x'));
     bind('n', (event) => send('keydown.n'));

@@ -31,8 +31,8 @@ const labeledMachine = Machine(
       SETOPACITY: { actions: 'forwardToFeature' },
       RESTORE: {},
       // CANVASREF: { actions: assign({ canvasRef: (context, event) => event.canvasRef }) },
-      SELECTREF: { actions: assign({ selectRef: (context, event) => event.selectRef }) },
-      LABELEDARRAY: { actions: forwardTo((context) => context.selectRef) },
+      TOOLREF: { actions: assign({ toolRef: (context, event) => event.toolRef }) },
+      LABELEDARRAY: { actions: forwardTo((context) => context.toolRef) },
     },
     initial: 'idle',
     states: {

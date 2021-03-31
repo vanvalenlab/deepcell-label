@@ -6,10 +6,9 @@ import { Machine, actions, assign, forwardTo, send, spawn } from 'xstate';
 import createImageMachine from './imageMachine';
 import canvasMachine from './canvasMachine';
 import { pure } from 'xstate/lib/actions';
-// toolMachine from './toolMachine';
+import toolMachine from './toolMachine';
 // import apiMachine from './apiMachine';
 // import undoMachine from './undoMachine';
-import selectMachine from './selectMachine';
 
 
 function fetchProject(context) {
@@ -94,18 +93,18 @@ const createDeepcellLabelMachine = (projectId) => Machine(
       spawnActors: assign({
         canvasRef: () => spawn(canvasMachine, 'canvas'),
         imageRef: (context) => spawn(createImageMachine(context), 'image'),
-        selectRef: () => spawn(selectMachine, 'select'),
+        toolRef: () => spawn(toolMachine, 'tool'),
       }),
       sendActorRefs: pure((context, event) => {
-        const sendSelectToImage = send(
-          { type: 'SELECTREF', selectRef: context.selectRef },
+        const sendToolToImage = send(
+          { type: 'TOOLREF', toolRef: context.toolRef },
           { to: context.imageRef }
         );
-        const sendSelectToCanvas = send(
-          { type: 'SELECTREF', selectRef: context.selectRef },
+        const sendToolToCanvas = send(
+          { type: 'TOOLREF', toolRef: context.toolRef },
           { to: context.canvasRef }
         );
-        return [sendSelectToImage, sendSelectToCanvas];
+        return [sendToolToImage, sendToolToCanvas];
       }),
       sendProject: pure((context, event) => {
         const sendToCanvas = send((context, event) => ({ type: 'PROJECT', ...event.data }), { to: 'canvas' });
