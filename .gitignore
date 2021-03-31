@@ -69,6 +69,9 @@ db.sqlite3
 instance/
 .webassets-cache
 
+# Flask monitoring dashboard
+flask_monitoringdashboard.db
+
 # Scrapy stuff:
 .scrapy
 
@@ -119,6 +122,13 @@ node_modules
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
 
+# VS Code
+settings.json
+
+# Environments with sensitive info
+.env
+fmd_config.cfg
+
 # from create-react-app
 
 # dependencies
@@ -143,3 +153,4 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 yarn.lock
+package-lock.json
