@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useActor } from '@xstate/react';
-import { useCanvas, useLabeled } from '../ServiceContext';
+import { useCanvas, useLabeled, useTool } from '../ServiceContext';
 
 const OutlineCanvas = props => {
-  const [foreground, background] = [1, 2];
+  // const [foreground, background] = [1, 2];
   const [all, setAll] = useState(false);
 
   const [currentCanvas, sendCanvas] = useCanvas();
@@ -12,6 +12,10 @@ const OutlineCanvas = props => {
   const [currentLabeled, sendLabeled] = useLabeled();
   const [currentFeature, sendFeature] = useActor(currentLabeled.context.featureActor);
   const { labeledArray } = currentFeature.context;
+
+  const [currentEditor, sendEditor] = useTool();
+  const { foreground, background } = currentEditor.context;
+
 
   const canvasRef = useRef();
   const ctx = useRef();
@@ -33,12 +37,12 @@ const OutlineCanvas = props => {
     for (let j = 0; j < height; j += 1) { // y
       for (let i = 0; i < width; i += 1) { // x
         const label = labeledArray[j][i];
-        if (label === -1 * foreground) {
+        if (foreground !== 0 && label === -1 * foreground) {
           array[(j * width  + i) * 4 + 0] = 255;
           array[(j * width  + i) * 4 + 1] = 255;
           array[(j * width  + i) * 4 + 2] = 255;
           array[(j * width  + i) * 4 + 3] = 255;
-        } else if (label === -1 * background) {
+        } else if (background !== 0 && label === -1 * background) {
           array[(j * width  + i) * 4 + 0] = 255;
           array[(j * width  + i) * 4 + 1] = 0;
           array[(j * width  + i) * 4 + 2] = 0;
