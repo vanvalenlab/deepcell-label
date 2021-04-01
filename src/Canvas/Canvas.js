@@ -30,8 +30,7 @@ export const Canvas = props => {
   const [currentCanvas, sendCanvas] = useCanvas();
   const { sx, sy, zoom, scale, width, height } = currentCanvas.context;
 
-  const [currentTool, sendTool] = useTool();
-  const { tool } = currentTool.context;
+  const [currentLabeler, sendLabeler] = useTool();
 
   const styles = useStyles();
 
@@ -70,12 +69,6 @@ export const Canvas = props => {
     }
   }, []);
 
-  const handleClick = e => {
-    // if (e.shiftKey) { sendSelect(e); }
-    // else { sendTool(e); }
-    sendTool(e);
-  }
-
   return (
     <Box
       id={"canvasBox"}
@@ -86,9 +79,9 @@ export const Canvas = props => {
       height={scale * height}
       onMouseMove={sendCanvas}
       onWheel={sendCanvas}
-      onMouseDown={sendTool}
-      onMouseUp={sendTool}
-      onClick={handleClick}
+      onMouseDown={sendLabeler}
+      onMouseUp={sendLabeler}
+      onClick={sendLabeler}
     >
       <RawCanvas {...canvasProps} />
       <LabeledCanvas {...canvasProps}/>
