@@ -2,6 +2,8 @@
 
 DeepCell Label is a web-based data annotation tool based on Flask and can be run locally or deployed to the cloud (e.g. AWS Elastic Beanstalk).
 
+For an up-to-date list of features, ee the [Controls](#Controls) section.
+
 ## DeepCell Label for Developers
 
 ### Install Dependencies
