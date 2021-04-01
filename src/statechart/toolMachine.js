@@ -171,7 +171,25 @@ const autofitState = {
 
 // OLDER
 
+const selectForegroundState = {
+  on: {
+    mousedown: [
+      { cond: 'doubleClick', actions: ['setBackground', 'resetForeground'] },
+      { cond: 'onForeground', actions: 'setBackground', },
+      { actions: 'setForeground' },
+    ]
+  },
+};
 
+const selectBackgroundState = {
+  on: {
+    mousedown: [
+      { cond: 'doubleClick', actions: ['setForeground', 'resetBackground'] },
+      { cond: 'onBackground', actions: 'setForeground', },
+      { actions: 'setBackground' },
+    ]
+  },
+};
 
 const toolMachine = Machine(
   {
@@ -199,15 +217,16 @@ const toolMachine = Machine(
     //     tool: brushActor,
     //   }
     // }),
+    entry: (context) => console.log(context.brushSize),
     initial: 'brush',
     states: {
-      select: {}, // clicking selects a label
-      // tool: { // clicking advances an action
+      selectForeground: selectForegroundState,
+      selectBackground: selectBackgroundState,
+      brush: brushState,
       //   flood: floodState,
       //   trim: trimState,
       //   erodeDilate: erodeDilateState,
       //   autofit: autofitState,
-      brush: brushState,
       //   threshold: thresholdState,
       //   watershed: watershedState,
       //   history: { type: 'history.deep' } // allows us to return to the current step of an action when selecting in between
@@ -217,6 +236,7 @@ const toolMachine = Machine(
       'keydown.b': '.brush',
       PAINT: { actions: 'paint' },
       THRESHOLD: { actions: 'threshold' },
+      'keydown.s': '.selectForeground',
 
       // 'keydown.t': '.threshold',
       // 'keydown.g': '.flood',
@@ -238,11 +258,20 @@ const toolMachine = Machine(
       'keydown.]': { actions: 'incrementForeground' },
       'keydown.{': { actions: 'decrementBackground' },
       'keydown.}': { actions: 'incrementBackground' },
+      'keydown.up': { actions: assign({ brushSize: (context) => context.brushSize + 1 }) },
+      'keydown.down': { actions: assign({ brushSize: (context) => Math.max(1, context.brushSize - 1) })},
+
+      SHIFTCLICK: [
+        { cond: 'onBackground'}
+      ],
     }
   },
   {
     guards: {
       shift: (context, event) => event.shiftKey,
+      doubleClick: (context, event) => event.detail === 2,
+      onBackground: (context) => context.label === context.background,
+      onForeground: (context) => context.label === context.foreground,
     },
     actions: {
       // forwardToTool: forwardTo((context) => context.tool),
@@ -283,12 +312,12 @@ const toolMachine = Machine(
       })),
       addToTrace: assign({ trace: (context, event) => [...context.trace, [context.x, context.y]] }),
       setForeground: assign({
-        foreground: (ctx, evt) => evt.label,
-        background: (ctx, evt) => evt.label === ctx.background ? ctx.foreground : ctx.background,
+        foreground: (ctx, evt) => ctx.label,
+        background: (ctx, evt) => ctx.label === ctx.background ? ctx.foreground : ctx.background,
       }),
       setBackground: assign({
-        foreground: (ctx, evt) => evt.label === ctx.foreground ? ctx.background : ctx.foreground,
-        background: (ctx, evt) => evt.label,
+        foreground: (ctx, evt) => ctx.label === ctx.foreground ? ctx.background : ctx.foreground,
+        background: (ctx, evt) => ctx.label,
       }),
       swapLabels: assign({
         foreground: (ctx) => ctx.background,
