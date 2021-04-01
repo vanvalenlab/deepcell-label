@@ -16,21 +16,19 @@ import { useTool } from '../ServiceContext';
 
 export default function LabelControls() {
   const [currentTool, sendTool] = useTool();
-  const { tool, brushSize } = currentTool.context;
-  const [current, send] = useActor(tool);
-  const { trace } = current.context;
+  const { brushSize, trace } = currentTool.context;
 
   return (
     <ControlRow name={"Tool"}>
       <Box display='flex' flexDirection='column'>
         <Typography gutterBottom>
-          tool: {tool.id}
+          tool: {currentTool.toStrings()[0]}
         </Typography>
         <Typography gutterBottom>
           brush size: {brushSize}
         </Typography>
         <Typography gutterBottom>
-          trace: {JSON.stringify(trace).substring(13, 30)}
+          trace: {JSON.stringify(trace).substring(0, 20)}
         </Typography>
       </Box>
     </ControlRow>
