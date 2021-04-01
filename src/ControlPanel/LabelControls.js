@@ -1,13 +1,5 @@
 import React from 'react';
-import { useActor } from '@xstate/react';
 import Typography from '@material-ui/core/Typography';
-import Slider from '@material-ui/core/Slider';
-import ToggleButton from '@material-ui/lab/ToggleButton';
-import Radio from '@material-ui/core/Radio';
-import RadioGroup from '@material-ui/core/RadioGroup';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import FormControl from '@material-ui/core/FormControl';
-import FormLabel from '@material-ui/core/FormLabel';
 import Box from '@material-ui/core/Box';
 
 import ControlRow from './ControlRow';
@@ -31,6 +23,12 @@ export default function LabelControls() {
         </Typography>
         <Typography gutterBottom>
           Label: {label}
+        </Typography>
+        <Typography gutterBottom>
+          foreground: {foreground === 0 ? 'no label' : foreground}
+        </Typography>
+        <Typography gutterBottom>
+          background: {background === 0 ? 'no label' : background}
         </Typography>
       </Box>
     </ControlRow>
