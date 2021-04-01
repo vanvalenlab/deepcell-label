@@ -131,6 +131,9 @@ export function useTool() {
   const { tool } = service.state.children;
   const [state, send] = useActor(tool);
   useEffect(() => {
+    bind('up', (event) => send('keydown.up'));
+    bind('down', (event) => send('keydown.down'));
+    bind('b', (event) => send('keydown.b'));
     bind('x', (event) => send('keydown.x'));
     bind('n', (event) => send('keydown.n'));
     bind('esc', (event) => send('keydown.Escape'));
@@ -139,6 +142,9 @@ export function useTool() {
     bind('{', (event) => send('keydown.{'));
     bind('}', (event) => send('keydown.}'));
     return () => {
+      unbind('up');
+      unbind('down');
+      unbind('b');
       unbind('x');
       unbind('n');
       unbind('esc');
