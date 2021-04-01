@@ -1,46 +1,57 @@
-# Browser-Based Application of DeepCell Label for Data Curation
+# DeepCell Label: A Web Application for  Data Curation
 
-This is an version of DeepCell Label that runs on a browser. The browser-based DeepCell Label application can be run locally or deployed to AWS Elastic Beanstalk.
+DeepCell Label is a web-based data annotation tool based on Flask and can be run locally or deployed to the cloud (e.g. AWS Elastic Beanstalk).
 
-Many key and mouse operations are the same between desktop and browser versions, but these versions are not guaranteed to share the same features. See the "Controls" section for an up-to-date list of features.
+## DeepCell Label for Developers
 
-# DeepCell Label for Developers
+### Install Dependencies
 
-## Install Dependencies
 Using a virtual environment to install dependencies is recommended.
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Run browser application in development mode
+### Run browser application in development mode
+
 ```bash
 python3 application.py
 ```
-## To use docker-compose for local development
+
+### Use docker-compose for local development
+
 Add your AWS credentials to ```docker-compose.yaml```.
 
 From the ```deepcell-label/browser``` folder, run:
+
 ```bash
 sudo docker-compose up --build -d
 ```
+
 Wait a minute for the database to finish setting up before running:
-```
+
+```bash
 sudo docker-compose restart app
 ```
+
 You can now go to 0.0.0.0:5000 in a browser window to access the local version of the tool.
 
 To interact with the local mysql database:
-```
+
+```bash
 sudo docker exec -it browser_db_1 bash
 mysql -p
 ```
+
 When finished:
-```
+
+```bash
 sudo docker-compose down
 ```
+
 (optional)
-```
+
+```bash
 sudo docker system prune --volumes
 ```
 
@@ -60,14 +71,13 @@ DeepCell Label can also be run locally using a SQLite database (this is the defa
 
 *A reminder of these controls can also be found in the "instructions" pane when editing a file in the browser.*
 
-### Navigation through Frames:
+### Navigation through Frames
 
 *a or &larr;* - Back one frame
 
 *d or &rarr;* - Forward one frame
 
-
-### Edit Operations:
+### Edit Operations
 
 DeepCell Label's default setting allows operations to be carried out quickly and easily on existing segmentations. The actions that can modify cell labels and/or lineage information are:
 
@@ -122,8 +132,7 @@ Annotation mode focuses on using an adjustable brush to modify annotations on a 
 
 *x* - toggle eraser mode
 
-
-### Viewing Options:
+### Viewing Options
 
 *spacebar + click and drag* - pan across canvas
 
