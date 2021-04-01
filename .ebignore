@@ -1,3 +1,5 @@
+.git
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -68,6 +70,9 @@ db.sqlite3
 # Flask stuff:
 instance/
 .webassets-cache
+
+# Flask Monitoring Dashboard
+flask_monitoringdashboard.db
 
 # Scrapy stuff:
 .scrapy
