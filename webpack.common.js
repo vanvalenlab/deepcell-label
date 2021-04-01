@@ -8,7 +8,7 @@ module.exports = {
   },
   output: {
     filename: '[name].js',
-    path: path.resolve(__dirname, './deepcell_label/static/js'),
+    path: path.resolve(__dirname, './static/js'),
     libraryTarget: 'var',
     library: '[name]',
   },
