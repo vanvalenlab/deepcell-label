@@ -22,9 +22,9 @@ python3 application.py
 
 ### Use docker-compose for local development
 
-Add your AWS credentials to `docker-compose.yaml`.
+Add your AWS credentials to `docker-compose.yaml` or set them via the environment.
 
-From the `deepcell-label/browser` folder, run:
+From the root directory, run:
 
 ```bash
 sudo docker-compose up --build -d
@@ -59,7 +59,7 @@ sudo docker system prune --volumes
 
 ## Structure of Browser Version
 
-Flask is used as an HTTP server that serves the frames as pngs and metadata as JSON. The .js files in the `browser/template` folder are what makes the requests to the Flask server.
+Flask is used as an HTTP server that serves the frames as pngs and metadata as JSON. The .js files in the `deepcell_label/template` folder are what makes the requests to the Flask server.
 
 ​Python Flask was used as a web application framework for constructing DeepCell Label. The Flask framework helps serves as the router that maps the specific URL with the associated function that is intended to perform some task. Specifically, the application.route decorator binds the URL rule to the function below it. Thus, if user performs actions that cause a change in the underlying data, the side-serving .js file will request to visits a specific URL, and the output of the function below the decorator will be rendered in the browser.
 
