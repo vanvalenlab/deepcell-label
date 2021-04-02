@@ -133,6 +133,7 @@ export function useTool() {
     bind('up', (event) => send('keydown.up'));
     bind('down', (event) => send('keydown.down'));
     bind('b', (event) => send('keydown.b'));
+    bind('v', (event) => send('keydown.v'));
     bind('x', (event) => send('keydown.x'));
     bind('n', (event) => send('keydown.n'));
     bind('esc', (event) => send('keydown.Escape'));
@@ -144,6 +145,7 @@ export function useTool() {
       unbind('up');
       unbind('down');
       unbind('b');
+      unbind('v');
       unbind('x');
       unbind('n');
       unbind('esc');

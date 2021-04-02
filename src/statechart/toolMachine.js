@@ -1,5 +1,4 @@
-import { Machine, assign, sendParent, spawn, forwardTo } from 'xstate';
-import { send } from 'xstate/lib/actionTypes';
+import { Machine, assign, sendParent, spawn, send, forwardTo } from 'xstate';
 
 
 // tool states
@@ -234,9 +233,9 @@ const toolMachine = Machine(
     },
     on: {
       'keydown.b': '.brush',
+      'keydown.v': '.selectForeground',
       PAINT: { actions: 'paint' },
       THRESHOLD: { actions: 'threshold' },
-      'keydown.s': '.selectForeground',
 
       // 'keydown.t': '.threshold',
       // 'keydown.g': '.flood',
