@@ -74,6 +74,10 @@ db.sqlite3
 instance/
 .webassets-cache
 
+# Flask monitoring dashboard stuff:
+flask_monitoringdashboard.db
+fmd_config.cfg
+
 # Scrapy stuff:
 .scrapy
 
@@ -117,5 +121,9 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+# VS Code
+.vscode
+
 # JavaScript Dependencies
 node_modules/
+package-lock.json
