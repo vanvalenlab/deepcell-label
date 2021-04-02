@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 import createFrameMachine from './statechart/frameMachine';
 import createDeepcellLabelMachine from './statechart/deepcellLabelMachine';
 import { bind, unbind } from 'mousetrap';
-import { inspect } from '@xstate/inspect';
+// import { inspect } from '@xstate/inspect';
 
 export const LabelContext = createContext();
 
