@@ -8,6 +8,7 @@ numpy>=1.16.4
 boto3==1.9.182
 scikit-image>=0.15.0,<0.17.0
 python-decouple==3.1
+python-dotenv==0.16.0
 pillow>=7.1.0
 flask-compress==1.5.0
 flask_monitoringdashboard==3.1.0
