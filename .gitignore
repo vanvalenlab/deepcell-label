@@ -128,3 +128,6 @@ venv.bak/
 node_modules/
 package-lock.json
 yarn.lock
+
+# Webpack builds javascript files into deepcell_label/static
+deepcell_label/static/js/*
