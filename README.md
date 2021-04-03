@@ -1,167 +1,303 @@
-# DeepCell Label: Data Curation Tools for DeepCell.
-[![Actions Status](https://github.com/vanvalenlab/deepcell-label/workflows/browser/badge.svg)](https://github.com/vanvalenlab/deepcell-label/actions)
+# DeepCell Label: A Web Application for Data Curation
 
-DeepCell Label is a segmentation and tracking tool used for human-in-the-loop data curation. It displays lineage data along with raw and annotated images. The output files prepare this information as training data for DeepCell.
+DeepCell Label is a web-based data annotation tool based on Flask and can be run locally or deployed to the cloud (e.g. AWS Elastic Beanstalk).
 
-## Instructions for Running DeepCell Label Locally on Desktop
-```bash
-git clone https://github.com/vanvalenlab/deepcell-label.git
-cd deepcell-label
-cd desktop
-python3 caliban.py [input file location]
-```
+For an up-to-date list of features, see the [Controls](#Controls) section.
 
-**Accepted file types:**
-DeepCell Label can open .trk files or .npz files. .npz files must contain two zipped files corresponding to raw images and annotated images. If the files are not named 'raw' and 'annotated' or 'X' and 'y', the first file in the .npz will be opened as the raw images. Raw and annotated images must both be in 4D arrays in the shape (frames, y, x, channels or features).
+## DeepCell Label for Developers
 
-## Tools Guide
-Files can be edited using keyboard operations.
+### Install Dependencies
 
-### Navigation through Frames:
-
-*a or &larr;* - Back one frame  
-
-*d or &rarr;* - Forward one frame
-
-
-### Edit Operations:
-
-DeepCell Label's default setting allows operations to be carried out quickly and easily on existing segmentations. The actions that can modify cell labels and/or lineage information are:
-
-*click* - click on a cell label to select it. Up to two labels can be selected at one time.
-
-*shift + click* - trim stray pixels away from selected part of label
-
-*ctrl + click* - flood selected part of label with a new, unused label
-
-*c* - create: relabel selected label with a new, unused label
-
-*f* - fill: select label, press "f", then follow prompt to fill a hole in the selected label
-
-*r* - replace: relabel all instances of a selected cell label with a second selected cell label; replaces lineage data in a trk file
-
-*r* - relabel: sequentially relabel all labels in frame, starting from 1, when no labels are selected (npz only)
-
-*p* - parent: assign parent/daughter relationship to pair of selected labels in trk file
-
-*p* - predict: predict zstack relationships in npz when no labels are selected
-
-*s* - swap: swap labels and lineage information between two selected labels  
-
-*x* - delete: remove selected cell mask in frame
-
-*w* - watershed: call watershed transform to split one cell label into two
-
-
-*esc* - cancel operation  
-*space bar* - confirm operation  
-*s* - confirm operation in a single frame, when applicable
-
-You can use *esc* to return back to a state where no labels are selected.
-
-**In annotation (pixel editing) mode:**
-
-Keybinds in pixel editing mode are different from those in the label-editing mode.
-
-Annotation mode focuses on using an adjustable brush to modify annotations on a pixel level, rather than using operations that apply to every instance of a label within a frame or set of frames. The brush tool will only make changes to the currently selected value. Ie, a brush set to edit label 5 will only add or erase "5" to the annotated image.
-
-*[ (left bracket) / ] (right bracket)* - decrement/increment value that brush is applying
-
-*&darr; &uarr;* - change size of brush tool
-
-*x* - toggle eraser mode
-
-*n* - change brush label to an unusued label, so that a new label can be created with a unique id. Can be used with conversion brush to overwrite existing label with unused label (follow conversion brush prompt).
-
-*p* - color picker (click on a label to change the brush label to it)
-
-*r* - turn on "conversion brush" setting, which changes brush behavior so that one label value is overwritten with another label value. No other labels are affected, and conversion brush will not draw on background. After turning on conversion brush, click on cell labels as prompted to set brush labels.
-
-*t* - threshold to predict annotations based on brightness. After turning this on, click and drag to draw a bounding box around the cell you wish to threshold. Make sure to include some background in the bounding box for accurate threshold predictions. Whatever was thresholded as foreground within the bounding box will be added to the annotation as a new cell with unique label.
-
-
-### Viewing Options:
-
-*F11* - toggle fullscreen
-
-*-/= or ctrl + scroll wheel* - change level of zoom
-
-**To pan in image:** Hold down the spacebar while clicking and dragging image to pan. Alternatively, the keys *home, page up, page down, and end* can be used to jump across the screen. Holding the shift key while using these pan buttons will result in a smaller jump; holding the control key will snap to the edge of the image.
-
-*h* - switch between highlighted mode and non-highlighted mode (highlight exists in whole-label mode and paint mode but is displayed differently; label-editing highlighting recolors solid label with red, paint mode highlighting adds white or red outline around label in image). Once highlight mode is on, use *[ (left bracket) / ] (right bracket)* to decrement/increment selected cell label number.
-
-*shift+h* - switch between showing and hiding annotation masks in the pixel editor
-
-*z* - switch between annotations and raw images (outside of pixel editor)
-
-*i* - invert greyscale raw image (viewing raw image or in pixel editor)
-
-*k* - apply sobel filter to raw image (viewing raw image or in pixel editor)
-
-*j* - apply adaptive histogram equalization to raw image (viewing raw image or in pixel editor)
-
-*f* - cycle between different annotations when no labels are selected (label-editing mode)
-
-*c* - cycle between different channels when no labels are selected (label-editing mode)
-
-*shift + &darr; / &uarr;* - cycle between colormaps for viewing raw images (does not apply to pixel editor)
-
-*e* - toggle annotation mode between paint mode and whole-label mode (when nothing else selected)
-
-*scroll wheel* - change image or annotation maximum brightness
-
-*shift + scroll wheel* - change image minimum brightness
-
-
-### To Save:
-
-Once done, use the following key to save the changed file.
-The tool will also save the original file in the same folder.
-In npz mode, a new npz file will be saved with a version number. An npz can be saved as a trk file (select "t" in response to save prompt). This will bundle together the current channel and feature of the npz along with a generated lineage file, which will contain label and frame information and empty parent/daughter entries for each cell. The new trk file can then be edited in DeepCell Label's trk mode to add relationship information.
-
-*s* - save
-
-
-## Instructions for Running DeepCell Label in a Docker Container
-
-In addition to having Docker, you will also need to have a VNC viewer to view the application inside the container.
-
-To install one, you can go to http://realvnc.com to download a free VNC viewer.
-[Direct Link to Download Page](https://www.realvnc.com/en/connect/download/viewer/)
-
-### Build a Docker Container
+Using a virtual environment to install dependencies is recommended.
 
 ```bash
-git clone https://github.com/vanvalenlab/deepcell-label.git
-cd deepcell-label
-docker build -t deepcell-label .
+pip install -r requirements.txt
 ```
-### Run the New Docker Image
+
+### Run browser application in development mode
 
 ```bash
-docker run \
--p 5900:5900 \
--v $PWD/desktop:/usr/src/app/desktop  \
---privileged \
-deepcell-label:latest
+python3 application.py
 ```
-This will launch a new Docker container and run Xvfb, Fluxbox, and a VNC server. To access the container’s display, point a VNC client to 127.0.0.1.
 
-Inside the VNC client, one can access DeepCell Label through the terminal emulator. Start the terminal by right-clicking the desktop and selecting
+### Use docker-compose for local development
+
+Add your AWS credentials to `docker-compose.yaml` or set them via the environment.
+
+From the root directory, run:
 
 ```bash
-Applications > Terminal Emulators > XTerm
+sudo docker-compose up --build -d
 ```
-Next, enter the following into the terminal and DeepCell Label will start:
+
+Wait a minute for the database to finish setting up before running:
 
 ```bash
-cd desktop
-python3 caliban.py [input file location]
+sudo docker-compose restart app
 ```
 
-To see an immediate example with a sample .trk file, you can run
+You can now go to 0.0.0.0:5000 in a browser window to access the local version of the tool.
+
+To interact with the local mysql database:
 
 ```bash
-cd desktop
-python3 caliban.py examples/trackfile1.trk
+sudo docker exec -it browser_db_1 bash
+mysql -p
 ```
+
+When finished:
+
+```bash
+sudo docker-compose down
+```
+
+(optional)
+
+```bash
+sudo docker system prune --volumes
+```
+
+## Structure of Browser Version
+
+Flask is used as an HTTP server that serves the frames as pngs and metadata as JSON. The .js files in the `deepcell_label/template` folder are what makes the requests to the Flask server.
+
+​Python Flask was used as a web application framework for constructing DeepCell Label. The Flask framework helps serves as the router that maps the specific URL with the associated function that is intended to perform some task. Specifically, the application.route decorator binds the URL rule to the function below it. Thus, if user performs actions that cause a change in the underlying data, the side-serving .js file will request to visits a specific URL, and the output of the function below the decorator will be rendered in the browser.
+
+Functions depend on Python libraries -- including NumPy, Matplotlib, and scikit-image – to change the data within files. After the desired change has been made to the lineage information or mask annotation, the Flask app routing will update the interface to reflect the alterations with support from side-serving JavaScript scripts.
+
+The final Flask application has been deployed to an AWS Elastic Beanstalk environment as a RESTful web service. A stable demo of the browser application can be accessed at label.deepcell.org. To deploy this application to AWS EB, an AWS RDS MySQL database must be set up and configured to handle data storage for application use. (Add database credentials to the .env configuration file.) Once a database is appropriately configured, the application can easily be launched by using the AWS EB command line tool or web interface. The .ebextensions folder will configure the web service to use the appropriate Flask application (eb_application.py, which uses a MySQL database instead of SQLite).
+
+DeepCell Label can also be run locally using a SQLite database (this is the default behavior). When we start using DeepCell Label, DeepCell Label creates a project with a unique 12 character ID, and stores it locally in `/tmp/deepcell_label.db`. Whenever we edit the project, DeepCell Label updates the object in the database. Running application.py creates the database if it does not already exist.
+
+## Layout
+
+Label shows an Info Table on the left with project details and an interactive Canvas on the right that shows images and labels.
+
+### Infopane
+
+The infopane is a table with information about the project,
+
+The first three rows in the table tell us the which slice in an image stack we are currently viewing
+
+- **frame** tells which slice of an image stack we are viewing
+  - Frames move through space (like a 3D vertical image stack) or
+    through time (like a timelapse)
+- **channel** tells us which raw image channel we are viewing
+  - Channels may be different imaging modalities, like phase or fluorescence, or different markers, like nuclear or cytoplasm
+- **feature** tells us which labeled features we are viewing
+  - Features may be [FILL IN]
+
+The next three rows tell us where the canvas is within the current frame.
+
+- **zoom** tells us how much the frame is zoomed in
+- **viewing (x)** the visible horizontal range
+- **viewing (y)** the visible vertical range
+
+These two rows tell us about visual settings
+
+- **highlight** tells us whether the label we're painting with is highlighted in red
+- **brush size** tells us the radius of the brush in pixels
+
+The next two rows tell us about the label the mouse is hovering over
+
+- **label** is the label number under the mouse
+- **slices** is a list of the frames that the label is present in
+
+The next two rows tell us which labels we can edit with the brush tool
+
+- **painting with label** is the label the we brush adds to the canvas
+- **painting over label** is the label the brush overwrites
+
+The last two rows are about label editing actions
+
+- **tool** tells us what action happens when we click on the canvas
+  - See the [Tools](#Tools) section for more details
+- **confirm action** is a prompt displayed before some actions
+  - We can confirm the action with Enter, or cancel it with Esc. See the [Actions](#Actions) section for more details.
+
+## Controls
+
+_These controls are also found in the dropdown "instructions" pane while editing a file._
+
+### Navigating the Canvas
+
+Hover the mouse over a label to view the label info.
+
+Press <kbd>+</kbd> or hold <kbd>Alt and scroll up</kbd> to zoom in.
+
+Press <kbd>+</kbd> or hold <kbd>Alt and scroll down</kbd> to zoom out.
+
+Hold <kbd>Space</kbd> and move the mouse on the canvas to pan around.
+
+Press <kbd>D</kbd> or <kbd>→</kbd> to view the next frame.
+
+Press <kbd>A</kbd> or <kbd>←</kbd> to view the previous frame.
+
+Press <kbd>C</kbd> to view the next channel.
+
+Press <kbd>Shift</kbd> + <kbd>C</kbd> to view the previous channel.
+
+Press <kbd>F</kbd> to view the next feature.
+
+Press <kbd>Shift</kbd> + <kbd>F</kbd> to view the previous feature.
+
+### Adjusting the Canvas
+
+DeepCell Label can adjust how to dispaly labels and images.
+With these changes, we can make out finer details while labeling.
+
+Scroll on the canvas to change brightness.
+
+Hold <kbd>Shift</kbd> and scroll on the canvas to change the contrast.
+
+Press <kbd>0</kbd> (zero) to reset the brightness and contrast.
+
+Press <kbd>Z</kbd> to toggle between viewing the label overlay, the labels only, and the raw image only.
+
+Press <kbd>H</kbd> to toggle highlighting the brush label in red.
+
+## Select Labels
+
+We control which labels we cab edit by selecting them as
+the <strong>foreground</strong> or the <strong>background</strong>.
+
+When a label is the foreground, we can add more of that label,
+while when a label is background, we can remove it.
+
+You select "no label" as either the foreground,
+which lets us remove existing labels, or the background,
+which lets us labels over unlabeled areas.
+
+We can select a label as the foreground in two ways:
+
+<strong>Click</strong> on it while using the Select Tool
+
+<strong><kbd>Shift</kbd> + Double Click</strong> while using any Tool.
+
+We can select a label as the background in two ways:
+
+<strong>Double Click</strong> on it while using the Select Tool.
+
+<strong><kbd>Shift</kbd> + Click</strong> while using any Tool.
+
+Double clicking also deselects other labels, instead making "no label" the other selected label.
+This helps avoid having selected labels that you are no longer working on.
+
+When you select an label that is already selected,
+the foreground and background swap instead.
+
+Use this as a shortcut when working on a pair of labels, like adjusting their boundary
+so you can quickly work in both directions.
+
+Here are some keyboard shortcuts to change the selected labels.
+
+- Press <kbd>Esc</kbd> to reset the background to "no label".
+- Press <kbd>N</kbd> to select a new, unused foreground label.
+  - This will be a label that doesn't exist yet in the labeling. Once you add the new label, <kbd>N</kbd> will select a new, even higher label.
+- Press <kbd>X</kbd> to swap the foreground and background. Remember that you can also swap them by selecting either label a second time with the mouse.
+- Press <kbd>[</kbd> or <kbd>]</kbd> to cycle the foreground labels.
+- Press <kbd>Shift</kbd> + <kbd>[</kbd> or <kbd>Shift</kbd> + <kbd>]</kbd> to cycle the background labels.
+
+## Tools
+
+Each tool lets us edit the labeling in a different way. To edit the labels with a tool, click on canvas while using the tool.
+
+### Select Tool
+
+Label starts with the Select tool by default, which selects the foreground and the background label.
+
+Press <kbd>V</kbd> to use the Select tool.
+
+<strong>Click</strong> on a label to select it as the foreground,
+
+<strong>Double Click</strong> on a label to select it as the background.
+
+You can also select labels while using <ital>any tool</ital> with
+<strong><kbd>Shift</kbd> + Click</strong> to select the background, or <strong><kbd>Shift</kbd> + Double Click</strong> to select the foreground.
+
+Double Click to select also deselects other labels.
+
+### Brush Tool
+
+The Brush tool paints the foreground label over the background label. Other labels are left unedited.
+
+Press <kbd>B</kbd> to use the Brush tool.
+
+<strong>Click + Drag</strong> to paint.
+
+Press <kbd>&uarr;</kbd> to increase the brush size.
+Press <kbd>&darr;</kbd> to decrease the brush size.
+
+### Threshold Tool
+
+The Threshold tool fills the brightest pixels within a bounding box with the foreground label. The tool only overwrites unlabeled area and does not edit any other labels.
+
+Press <kbd>T</kbd> to use the Threshold tool.
+
+<strong>Click + Drag</strong> on the canvas to draw a bounding box and threshold.
+
+### Grow/Shrink Tool
+
+The Grow/Shrink tool expands the foreground label by one pixel or contracts the background label by one pixel.
+
+Press <kbd>Q</kbd> to use the Grow/Shrink tool.
+
+<strong>Click</strong> on the foreground label to grow it.
+
+<strong>Click</strong> on the background label to shrink it.
+
+### Flood Tool
+
+The Flood tool fills connected areas of label with another label.
+
+Press <kbd>G</kbd> to use the Flood tool.
+
+<strong>Click</strong> on the background label to flood it with the foreground label.
+
+### Trim Tool
+
+The Trim tool removes disconnected areas of the background label, leaving only the connected pixels behind.
+
+Press <kbd>K</kbd> to use the Trim tool.
+
+<strong>Click</strong> on the background label to trim it.
+
+### Autofit Tool
+
+The Autofit tool adjusts foreground label boundary to hug the nearest edges in the raw image. This tool helps to fix the boundaries of an existing label, but it can't add a new label from scratch.
+
+Press <kbd>M</kbd> to use the Autofit tool.
+
+<strong>Click</strong> on the foreground label to autofit it.
+
+### Watershed Tool
+
+The Watershed tool splits the foreground label into two. We can separate adjacent cells that mistakenly have the same label with Watershed.
+
+Press the <kbd>W</kbd> to use the Watershed tool.
+
+<strong>Click</strong> in the center of one cell, then <strong>Click</strong> in the center of another cell elsewhere in the same label to split them with Watershed.
+
+### Tools with Select Shortcuts
+
+Tools like Autofit or Flood can only edit selected labels.
+
+To make these tools easier to use, clicking on an unselected label with these tools selects the label instead of doing an action. After clicking once to select, a second click on the same label always uses the tool and edits the labels.
+
+The Grow/Shrink, Autofit, and Watershed tools makes unselect labels the foreground.
+
+The Trim and Flood tools makes unselected labels the background.
+
+## Actions
+
+Actions edit labels with a keybind.
+Actions need to be confirmed with Enter or cancelled with Escape.
+
+Press <kbd>S</kbd> to swap the label foreground and background labels.
+This action can only swap the labels on the current frame.
+
+Press <kbd>R</kbd> to replace the background label with the foreground label.
+Press <kbd>Shift</kbd> + <kbd>R</kbd> to replace the background label on all frames.
+
+Press <kbd>O</kbd> to predict the labels based on the overlap with the previous frame.
+Press <kbd>Shift</kbd> + <kbd>O</kbd> to predict the labels on all frames.
