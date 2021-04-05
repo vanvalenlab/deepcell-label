@@ -66,14 +66,14 @@ const createFeatureMachine = ({ projectId, feature, frame }) => Machine(
           SETFRAME: {
             cond: 'newFrame',
             actions: assign({ nextFrame: (context, event) => event.frame }),
-            target: 'changeFrame'
+            target: 'checkLoaded'
           },
-          SENDLABELEDARRAY: { actions: 'sendLabeledArray' },
+          SENDLABELEDARRAY: 'sendLabeledArray',
         },
       },
-      changeFrame: {
+      checkLoaded: {
         always: [
-          { cond: 'existingFrame', actions: 'changeToExistingFrame', target: 'sendLabeledArray' },
+          { cond: 'loadedFrame', target: 'loaded' },
           { target: 'loading' },
         ]
       },
@@ -81,10 +81,14 @@ const createFeatureMachine = ({ projectId, feature, frame }) => Machine(
         invoke: {
           src: fetchLabeled,
           onDone: {
-            target: 'sendLabeledArray', actions: 'changeToNewFrame',
+            target: 'loaded', actions: 'saveFrame',
           },
           onError: { target: 'idle', actions: (context, event) => console.log(event) },
         },
+      },
+      loaded: {
+        entry: 'sendLabeledFrameToParent',
+        on: { FRAME: { target: 'sendLabeledArray', actions: 'useFrame' }},
       },
       sendLabeledArray: {
         always: { target: 'idle', actions: 'sendLabeledArray' }
@@ -97,21 +101,22 @@ const createFeatureMachine = ({ projectId, feature, frame }) => Machine(
   },
   {
     guards: {
-      existingFrame: (context, event) => context.nextFrame in context.frames,
-      updateFrame: (context, event) => context.frame !== event.context.frame,
+      loadedFrame: (context) => context.nextFrame in context.frames,
       newFrame: (context, event) => context.frame !== event.frame,
     },
     actions: {
-      sendLabeledArray: sendParent((context) => ({ type: 'LABELEDARRAY', labeledArray: context.labeledArray })),
-      changeToExistingFrame: assign((context) => ({
+      sendLabeledFrameToParent: sendParent((context) => (
+        { type: 'LABELEDFRAME', frame: context.nextFrame, feature: context.feature }
+      )),
+      sendLabeledArray: sendParent((context) => (
+        { type: 'LABELEDARRAY', labeledArray: context.labeledArray }
+      )),
+      useFrame: assign((context) => ({
         frame: context.nextFrame,
         labeledImage: context.frames[context.nextFrame],
         labeledArray: context.arrays[context.nextFrame],
       })),
-      changeToNewFrame: assign((context, event) => ({
-        frame: context.nextFrame,
-        labeledImage: event.data[0],
-        labeledArray: event.data[1],
+      saveFrame: assign((context, event) => ({
         frames: { ...context.frames, [context.nextFrame]: event.data[0] },
         arrays: { ...context.arrays, [context.nextFrame]: event.data[1] },
       })),

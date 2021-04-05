@@ -1,17 +1,18 @@
-import { Machine, assign, forwardTo, spawn, actions } from 'xstate';
+import { Machine, assign, forwardTo, spawn, actions, sendParent, send } from 'xstate';
 import createChannelMachine from './channelMachine';
 
 const { pure } = actions;
 
-const rawMachine = Machine(
+const createRawMachine = ({ projectId }) => Machine(
   {
     id: 'raw',
     context: {
-      projectId: null,
-      frame: null,
-      channel: null,
+      projectId,
+      frame: 0,
+      channel: 0,
       channelActor: null,
       channels: {},
+      labeledRef: null,
     },
     entry: assign((context) => {
       const channelActor = spawn(createChannelMachine(context));
@@ -24,21 +25,54 @@ const rawMachine = Machine(
     }),
     on: {
       SETCHANNEL: { actions: 'changeChannel' },
-      SETFRAME: { actions: 'forwardToAllChannels' },
       TOGGLEINVERT: { actions: 'forwardToChannel' },
       TOGGLEGRAYSCALE: { actions: 'forwardToChannel' },
       SETBRIGHTNESS: { actions: 'forwardToChannel' },
       SETCONTRAST: { actions: 'forwardToChannel' },
       RESTORE: {},
+      LABELEDREF: { actions: assign({ labeledRef: (context, event) => event.labeledRef }) },
     },
-    initial: 'idle',
+    initial: 'loading',
     states: {
-      idle: {},
+      idle: {
+        on: {
+          SETFRAME: { target: 'loading', actions: [(context, event) => console.log(event), 'forwardToAllChannels'] },
+        },
+      },
+      loading: {
+        on: {
+          RAWFRAME: { target: 'loaded', cond: 'currentChannel', actions: 'forwardToLabeled' }, 
+        },
+      },
+      loaded: {
+        on: {
+          LABELEDFRAME: { actions: 'sendFrame', target: 'idle' },
+          FRAME: { actions: 'forwardFrame', target: 'idle' },
+        },
+      },
     }
   },
   {
+    guards: {
+      currentChannel: (context, event) => context.channel === event.channel,
+    },
     actions: {
-      forwardToChannel: (context) => forwardTo(context.channelActor),
+      sendFrame: pure((context, event) => {
+        return [
+          sendParent({ type: 'FRAME', frame: event.frame }),
+          send({ type: 'FRAME', frame: event.frame }, { to: context.channelActor }),
+          send({ type: 'FRAME', frame: event.frame }, { to: context.labeledRef }),
+        ];
+      }),
+      forwardFrame: pure((context, event) => {
+        return [
+          sendParent(event),
+          forwardTo(context.channelActor),
+        ];
+      }),
+      forwardToParent: sendParent((context, event) => event),
+      forwardToLabeled: forwardTo((context) => context.labeledRef),
+      forwardToChannel: forwardTo((context) => context.channelActor),
       // Dynamically send an event to every spawned channel
       forwardToAllChannels: pure((context) => {
         const channels = Object.values(context.channels);
@@ -72,4 +106,4 @@ const rawMachine = Machine(
   }
 );
 
-export default rawMachine;
+export default createRawMachine;

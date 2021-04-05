@@ -9,7 +9,9 @@ export default function ImageControls() {
   const { frame, feature, channel, numFrames, numFeatures, numChannels } = current.context;
 
   const handleFrameChange = (event, newValue) => {
-    send({ type: 'SETFRAME', frame: newValue });
+    if (newValue !== frame) {
+      send({ type: 'SETFRAME', frame: newValue });
+    }
   };
 
   const handleChannelChange = (event, newValue) => {

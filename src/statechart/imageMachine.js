@@ -1,7 +1,8 @@
-import { Machine, assign, forwardTo } from 'xstate';
-import rawMachine from './rawMachine';
-import labeledMachine from './labeledMachine';
+import { Machine, assign, forwardTo, actions, spawn, send } from 'xstate';
+import createRawMachine from './rawMachine';
+import createLabeledMachine from './labeledMachine';
 
+const { pure } = actions;
 
 const createImageMachine = ({ projectId }) => Machine(
   {
@@ -14,30 +15,7 @@ const createImageMachine = ({ projectId }) => Machine(
       numFrames: 1,
       numFeatures: 1,
       numChannels: 1,
-      rawImage: new Image(),
-      labeledImage: new Image(),
-      labeledArray: [[]],
     },
-    invoke: [
-      {
-        id: 'raw',
-        src: rawMachine,
-        data: {
-          projectId: (context) => context.projectId,
-          frame: (context) => context.frame,
-          channel: (context) => context.channel,
-        },
-      },
-      {
-        id: 'labeled',
-        src: labeledMachine,
-        data: {
-          projectId: (context) => context.projectId,
-          frame: (context) => context.frame,
-          feature: (context) => context.feature,
-        },
-      }
-    ],
     initial: 'waitForProject',
     states: {
       waitForProject: {
@@ -47,60 +25,17 @@ const createImageMachine = ({ projectId }) => Machine(
           },
         },
       },
-      // loading: {
-      //   invoke: {
-      //     id: 'fetch-project',
-      //     src: fetchProject,
-      //     onDone: {
-      //       target: 'idle',
-      //       actions: ['handleFirstPayload', (c, e) => console.log(e.data)],
-      //     },
-      //     onError: {
-      //       target: 'idle',
-      //       actions: (context, event) => console.log(event.data),
-      //     },
-      //   }
-      // },
       idle: {},
     },
+    entry: ['spawnActors', 'sendActorRefs'],
     on: {
-      TOOLREF: { actions: forwardTo('labeled') },
-      SETFRAME: {
-        cond: 'newFrame',
-        actions: [
-          assign({ frame: (context, event) => event.frame }),
-          forwardTo('raw'),
-          forwardTo('labeled'),
-        ],
-      },
-      SETCHANNEL: {
-        cond: 'newChannel',
-        actions: [
-          assign({ channel: (context, event) => event.channel }),
-          forwardTo('raw'),
-        ],
-      },
-      SETFEATURE: {
-        cond: 'newFeature',
-        actions: [
-          assign({ feature: (context, event) => event.feature }),
-          forwardTo('labeled'),
-        ]
-      },
-      // LOADEDCHANNEL: {
-      //   // target: 'idle',
-      //   actions: assign({ rawImage: event.rawImage, channel: event.channel })
-      // },
-      // LOADEDFEATURE: {
-      //   // target: 'idle',
-      //   actions: [
-      //     assign({ labelImage: new Image(), labelArray: [[]], channel: 0 }),
-      //     send((context, event) => (
-      //       { type: 'NEWLABELARRAY', labelArray: event.labelArray }),
-      //       { to: 'canvas' }
-      //     ),
-      //   ],
-      // },
+      SETFRAME: { cond: 'newFrame', actions: ['forwardToRaw', 'forwardToLabeled'] },
+      SETCHANNEL: { cond: 'newChannel', actions: 'forwardToRaw' },
+      SETFEATURE: { cond: 'newFeature', actions: 'forwardToLabeled' },
+      FRAME: { actions: ['saveFrame', 'forwardToTool'] },
+      CHANNEL: { actions: ['saveChannel', 'forwardToTool'] },
+      FEATURE: { actions: ['saveFeature', 'forwardToTool'] },
+      TOOLREF: { actions: [assign({ toolRef: (context, event) => event.toolRef }), forwardTo('labeled')] },
     },
   },
   {
@@ -110,12 +45,33 @@ const createImageMachine = ({ projectId }) => Machine(
       newFeature: (context, event) => context.feature !== event.feature,
     },
     actions: {
+      spawnActors: assign({
+        rawRef: (context) => spawn(createRawMachine(context), 'raw'),
+        labeledRef: (context) => spawn(createLabeledMachine(context), 'labeled'),
+      }),
+      sendActorRefs: pure((context) => {
+        const sendRawToLabeled = send(
+          { type: 'RAWREF', rawRef: context.rawRef },
+          { to: context.labeledRef }
+        );
+        const sendLabeledToRaw = send(
+          { type: 'LABELEDREF', labeledRef: context.labeledRef },
+          { to: context.rawRef }
+        );
+        return [sendRawToLabeled, sendLabeledToRaw];
+      }),
       handleProject: assign(
         (_, { frame, feature, channel, numFrames, numFeatures, numChannels }) => {
-          console.log({ frame, feature, channel, numFrames, numFeatures, numChannels });
           return { frame, feature, channel, numFrames, numFeatures, numChannels };
         }
       ),
+      saveFrame: assign({ frame: (context, event) => event.frame }),
+      saveChannel: assign({ channel: (context, event) => event.channel }),
+      saveFeature: assign({ feature: (context, event) => event.feature }),
+      forwardToRaw: forwardTo((context) => context.rawRef),
+      forwardToLabeled: forwardTo((context) => context.labeledRef),
+      forwardToTool: forwardTo((context) => context.toolRef),
+
     }
   });
 

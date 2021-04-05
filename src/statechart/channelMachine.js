@@ -1,4 +1,4 @@
-import { Machine, assign } from 'xstate';
+import { Machine, assign, sendParent } from 'xstate';
 
 function fetchRaw(context) {
   const { projectId, channel, nextFrame: frame } = context;
@@ -35,7 +35,6 @@ const createChannelMachine = ({ projectId, channel, frame }) => Machine(
       projectId,
       channel,
       frame,
-      // numFrames,
       nextFrame: frame,
       brightness: 0,
       contrast: 0,
@@ -57,43 +56,43 @@ const createChannelMachine = ({ projectId, channel, frame }) => Machine(
           SETFRAME: {
             cond: 'newFrame',
             actions: assign({ nextFrame: (context, event) => event.frame }),
-            target: 'changeFrame'
+            target: 'checkLoaded'
           },
         },
       },
-      changeFrame: {
+      checkLoaded: {
         always: [
-          { cond: 'existingFrame', actions: 'changeToExistingFrame', target: 'idle' },
+          { cond: 'loadedFrame', target: 'loaded' },
           { target: 'loading' },
         ]
       },
       loading: {
         invoke: {
           src: fetchRaw,
-          onDone: {
-            target: 'idle', actions: 'changeToNewFrame',
-          },
+          onDone: { target: 'loaded', actions: 'saveFrame' },
           onError: { target: 'idle', actions: (context, event) => console.log(event) },
         },
       },
+      loaded: {
+        entry: 'sendRawFrameToParent',
+        on: { FRAME: { target: 'idle', actions: 'useFrame' } },
+      }
     }
   },
   {
     guards: {
-      existingFrame: (context, event) => context.nextFrame in context.frames,
-      updateFrame: (context, event) => context.frame !== event.context.frame,
+      loadedFrame: (context, event) => context.nextFrame in context.frames,
       newFrame: (context, event) => context.frame !== event.frame,
     },
     actions: {
-      changeToNewFrame: assign({
-        frame: (context) => context.nextFrame,
-        rawImage: (context, event) => event.data,
+      sendRawFrameToParent: sendParent((context) => ({ type: 'RAWFRAME', frame: context.nextFrame, channel: context.channel })), 
+      saveFrame: assign({
         frames: (context, event) => ({...context.frames, [context.nextFrame]: event.data}),
       }),
-      changeToExistingFrame: assign((context) => ({
-        frame: context.nextFrame,
-        rawImage: context.frames[context.nextFrame],
-      })),
+      useFrame: assign({
+        frame: (context) => context.nextFrame,
+        rawImage: (context, event) => context.frames[context.nextFrame],
+      }),
       toggleInvert: assign({ invert: (context) => !context.invert }),
       toggleGrayscale: assign({ grayscale: (context) => !context.grayscale }),
       setBrightness: assign({ brightness: (_, event) => Math.min(1, Math.max(-1, event.brightness)) }),
