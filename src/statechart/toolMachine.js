@@ -247,6 +247,10 @@ const toolMachine = Machine(
 
       COORDINATES: { actions: 'updateCoordinates' },
       LABELEDARRAY: { actions: 'updateLabeled' },
+      FRAME: { actions: assign((context, event) => ({ frame: event.frame })) },
+      CHANNEL: { actions: assign((context, event) => ({ channel: event.channel })) },
+      FEATURE: { actions: assign((context, event) => ({ feature: event.channel })) },
+      
       
       SETFOREGROUND: { actions: 'setForeground' },
       SETBACKGROUND: { actions: 'setBackground' },
