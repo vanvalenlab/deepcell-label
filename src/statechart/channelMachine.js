@@ -43,12 +43,6 @@ const createChannelMachine = ({ projectId, channel, frame }) => Machine(
       frames: {},
       rawImage: new Image(),
     },
-    on: {
-      TOGGLEINVERT: { actions: 'toggleInvert' },
-      TOGGLEGRAYSCALE: { actions: 'toggleGrayscale' },
-      SETBRIGHTNESS: { actions: 'setBrightness' },
-      SETCONTRAST: { actions: 'setContrast' },
-    },
     initial: 'loading',
     states: {
       idle: {},
@@ -70,12 +64,18 @@ const createChannelMachine = ({ projectId, channel, frame }) => Machine(
       }
     },
     on: {
+      // fetching
       SETFRAME: {
         actions: assign({ nextFrame: (context, event) => event.frame }),
         target: 'checkLoaded'
       },
       FRAME: { target: 'idle', actions: 'useFrame' },
       CHANNEL: { target: 'idle', actions: 'useFrame' },
+      // image settings
+      TOGGLEINVERT: { actions: 'toggleInvert' },
+      TOGGLEGRAYSCALE: { actions: 'toggleGrayscale' },
+      SETBRIGHTNESS: { actions: 'setBrightness' },
+      SETCONTRAST: { actions: 'setContrast' },
     }
   },
   {
@@ -84,6 +84,7 @@ const createChannelMachine = ({ projectId, channel, frame }) => Machine(
       newFrame: (context, event) => context.frame !== event.frame,
     },
     actions: {
+      // fetching
       sendRawLoaded: sendParent((context) => ({ type: 'RAWLOADED', frame: context.nextFrame, channel: context.channel })), 
       saveFrame: assign({
         frames: (context, event) => ({...context.frames, [context.nextFrame]: event.data}),
@@ -92,6 +93,7 @@ const createChannelMachine = ({ projectId, channel, frame }) => Machine(
         frame: (context, event) => event.frame,
         rawImage: (context, event) => context.frames[event.frame],
       }),
+      // image settings
       toggleInvert: assign({ invert: (context) => !context.invert }),
       toggleGrayscale: assign({ grayscale: (context) => !context.grayscale }),
       setBrightness: assign({ brightness: (_, event) => Math.min(1, Math.max(-1, event.brightness)) }),
