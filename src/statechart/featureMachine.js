@@ -61,16 +61,7 @@ const createFeatureMachine = ({ projectId, feature, frame }) => Machine(
     },
     initial: 'loading',
     states: {
-      idle: {
-        on: {
-          SETFRAME: {
-            cond: 'newFrame',
-            actions: assign({ nextFrame: (context, event) => event.frame }),
-            target: 'checkLoaded'
-          },
-          SENDLABELEDARRAY: 'sendLabeledArray',
-        },
-      },
+      idle: {},
       checkLoaded: {
         always: [
           { cond: 'loadedFrame', target: 'loaded' },
@@ -80,21 +71,25 @@ const createFeatureMachine = ({ projectId, feature, frame }) => Machine(
       loading: {
         invoke: {
           src: fetchLabeled,
-          onDone: {
-            target: 'loaded', actions: 'saveFrame',
-          },
+          onDone: { target: 'loaded', actions: 'saveFrame' },
           onError: { target: 'idle', actions: (context, event) => console.log(event) },
         },
       },
       loaded: {
-        entry: 'sendLabeledFrameToParent',
-        on: { FRAME: { target: 'sendLabeledArray', actions: 'useFrame' }},
+        entry: 'sendLabeledLoaded',
       },
       sendLabeledArray: {
         always: { target: 'idle', actions: 'sendLabeledArray' }
       }
     },
     on: {
+      SETFRAME: {
+        actions: assign({ nextFrame: (context, event) => event.frame }),
+        target: 'checkLoaded'
+      },
+      FRAME: { target: 'sendLabeledArray', actions: 'useFrame' },
+      FEATURE: { target: 'sendLabeledArray', actions: 'useFrame' },
+      SENDLABELEDARRAY: 'sendLabeledArray',
       SETOPACITY: { actions: 'setOpacity' },
       TOGGLESHOWNOLABEL: { actions: 'toggleShowNoLabel' },
     }
@@ -105,16 +100,16 @@ const createFeatureMachine = ({ projectId, feature, frame }) => Machine(
       newFrame: (context, event) => context.frame !== event.frame,
     },
     actions: {
-      sendLabeledFrameToParent: sendParent((context) => (
-        { type: 'LABELEDFRAME', frame: context.nextFrame, feature: context.feature }
+      sendLabeledLoaded: sendParent((context) => (
+        { type: 'LABELEDLOADED', frame: context.nextFrame, feature: context.feature }
       )),
       sendLabeledArray: sendParent((context) => (
         { type: 'LABELEDARRAY', labeledArray: context.labeledArray }
       )),
-      useFrame: assign((context) => ({
-        frame: context.nextFrame,
-        labeledImage: context.frames[context.nextFrame],
-        labeledArray: context.arrays[context.nextFrame],
+      useFrame: assign((context, event) => ({
+        frame: event.frame,
+        labeledImage: context.frames[event.frame],
+        labeledArray: context.arrays[event.frame],
       })),
       saveFrame: assign((context, event) => ({
         frames: { ...context.frames, [context.nextFrame]: event.data[0] },

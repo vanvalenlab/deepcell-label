@@ -9,8 +9,11 @@ const createLabeledMachine = ({ projectId }) => Machine(
     context: {
       projectId,
       frame: 0,
+      nextFrame: 0,
       feature: 0,
+      nextFeature: 0,
       featureActor: null,
+      nextFeatureActor: null,
       features: {},
       canvasRef: null,
       rawRef: null,
@@ -29,91 +32,110 @@ const createLabeledMachine = ({ projectId }) => Machine(
       TOGGLESHOWNOLABEL: { actions: 'forwardToFeature' },
       SETOPACITY: { actions: 'forwardToFeature' },
       RESTORE: {},
-      // CANVASREF: { actions: assign({ canvasRef: (context, event) => event.canvasRef }) },
       TOOLREF: { actions: assign({ toolRef: (context, event) => event.toolRef }) },
       RAWREF: { actions: assign({ rawRef: (context, event) => event.rawRef }) },
       LABELEDARRAY: { actions: forwardTo((context) => context.toolRef) },
     },
-    initial: 'loading',
+    type: 'parallel',
     states: {
-      idle: {
-        on: {
-          SETFRAME: { target: 'loading', actions: 'forwardToAllFeatures' },
-          SETFEATURE: { actions: ['changeFeature', 'sendLabeledArray'] },
+       frame: {
+        initial: 'loading',
+        states: {
+          idle: {},
+          loading: {
+            entry: send(
+              (context) => ({ type: 'SETFRAME', frame: context.nextFrame }),
+              { to: (context) => context.featureActor }
+            ),
+            on: {
+              FEATURE: { target: 'loading', internal: false },
+              LABELEDLOADED: { target: 'loaded', cond: 'nextFrame', actions: 'forwardToRaw' },
+            },
+          },
+          loaded: {
+            on: {
+              RAWLOADED: { actions: 'sendFrame' },
+              FRAME: { actions: 'useFrame', target: 'idle' },
+              FEATURE: { target: 'loading', internal: false },
+            },
+          },
         },
-      },
-      loading: {
         on: {
-          LABELEDFRAME: { target: 'loaded', cond: 'currentFeature', actions: 'forwardToRaw' },
+          SETFRAME: { target: '.loading', actions: 'assignNextFrame', internal: false },
         }
       },
-      loaded: {
-        on: {
-          RAWFRAME: { target: 'idle', actions: 'sendFrame' },
-          FRAME: { actions: 'forwardFrame', target: 'idle' },
+      feature: {
+        initial: 'idle',
+        states: {
+          idle: {},
+          loading: {
+            entry: send(
+              (context) => ({ type: 'SETFRAME', frame: context.frame }),
+              { to: (context) => context.nextFeatureActor }
+            ),
+            on: {
+              LABELEDLOADED: { cond: 'nextFeature', actions: 'sendFeature' },
+              FEATURE: { target: 'idle', actions: 'useFeature' },
+              FRAME: { target: 'loading', internal: false }
+            }
+          },
         },
-      },
-    }
+        on: {
+          SETFEATURE: { target: '.loading', actions: 'stageNextFeature', internal: false },
+        }
+      }
+    },
   },
   {
     guards: {
-      currentFeature: (context, event, { _event }) => context.featureActor.sessionId === _event.origin,
+      nextFrame: (context, event) => context.nextFrame === event.frame && context.feature === event.feature,
+      nextFeature: (context, event) => context.frame === event.frame && context.nextFeature === event.feature,
     },
     actions: {
+      sendLabeledArray: send('SENDLABELEDARRAY', { to: (context) => context.featureActor }),
+      assignNextFrame: assign({ nextFrame: (context, event) => event.frame }),
+      sendFeature: pure((context, event) => {
+        const featureEvent = { type: 'FEATURE', feature: event.feature, frame: event.frame };
+        return [
+          send(featureEvent),
+          sendParent(featureEvent),
+        ];
+      }),
+      useFeature: pure((context, event) => {
+        return [
+          forwardTo((context) => context.featureActor), // happens AFTER assigning featureActor
+          assign({
+            feature: (context) => context.nextFeature,
+            featureActor: (context, event) => context.nextFeatureActor,
+          }),
+        ];
+      }),
       sendFrame: pure((context, event) => {
         const frameEvent = { type: 'FRAME', frame: event.frame };
         return [
-          sendParent(frameEvent),
-          send(frameEvent, { to: context.featureActor }),
+          send(frameEvent),
           send(frameEvent, { to: context.rawRef }),
+          sendParent(frameEvent),
         ];
       }),
-      forwardFrame: pure((context, event) => {
+      useFrame: pure((context, event) => {
         return [
-          sendParent(event),
           forwardTo(context.featureActor),
+          assign({ frame: (context, event) => event.frame }),
         ];
       }),
-      spawnFeatureActor: assign((context) => {
-        let featureActor = context.features[context.feature];
-        if (featureActor) {
-          return { ...context, featureActor };
-        }
-        featureActor = spawn(createFeatureMachine(context));
-        return {
-          features: {
-            ...context.features, 
-            [context.feature]: featureActor,
-          },
-          featureActor: featureActor,
-        }
-      }),
-      sendFrameToParent: sendParent((context, event) => ({ type: 'FRAME', frame: event.frame })),
-      sendFrameToFeature: send(
-        (context, event) => ({ type: 'FRAME', frame: event.frame }),
-        { to: context => context.featureActor }
-      ),
-      sendLabeledArray: send('SENDLABELEDARRAY', { to: (context) => context.featureActor }),
-      forwardToFeature: (context) => forwardTo(context.featureActor),
       forwardToRaw: forwardTo((context) => context.rawRef),
-      // Dynamically send an event to every spawned feature
-      forwardToAllFeatures: pure((context) => {
-        const features = Object.values(context.features);
-        return features.map((feature) => {
-          return forwardTo(feature);
-        });
-      }),
-      changeFeature: assign((context, event) => {
+      forwardToFeature: forwardTo((context) => context.featureActor),
+      stageNextFeature: assign((context, event) => {
         // Use the existing feature actor if one already exists
         let featureActor = context.features[event.feature];
         if (featureActor) {
           return {
             ...context,
-            featureActor,
-            feature: event.feature,
+            nextFeatureActor: featureActor,
+            nextFeature: event.feature,
           };
         }
-
         // Otherwise, spawn a new feature actor and save it in the features object
         featureActor = spawn(createFeatureMachine({ ...context, feature: event.feature }));
         return {
@@ -121,10 +143,10 @@ const createLabeledMachine = ({ projectId }) => Machine(
             ...context.features,
             [event.feature]: featureActor
           },
-          featureActor,
-          feature: event.feature,
+          nextFeature: event.feature,
+          nextFeatureActor: featureActor,
         };
-      })
+      }),
     }
   }
 );
