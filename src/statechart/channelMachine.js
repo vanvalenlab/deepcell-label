@@ -51,15 +51,7 @@ const createChannelMachine = ({ projectId, channel, frame }) => Machine(
     },
     initial: 'loading',
     states: {
-      idle: {
-        on: {
-          SETFRAME: {
-            cond: 'newFrame',
-            actions: assign({ nextFrame: (context, event) => event.frame }),
-            target: 'checkLoaded'
-          },
-        },
-      },
+      idle: {},
       checkLoaded: {
         always: [
           { cond: 'loadedFrame', target: 'loaded' },
@@ -74,9 +66,16 @@ const createChannelMachine = ({ projectId, channel, frame }) => Machine(
         },
       },
       loaded: {
-        entry: 'sendRawFrameToParent',
-        on: { FRAME: { target: 'idle', actions: 'useFrame' } },
+        entry: 'sendRawLoaded',
       }
+    },
+    on: {
+      SETFRAME: {
+        actions: assign({ nextFrame: (context, event) => event.frame }),
+        target: 'checkLoaded'
+      },
+      FRAME: { target: 'idle', actions: 'useFrame' },
+      CHANNEL: { target: 'idle', actions: 'useFrame' },
     }
   },
   {
@@ -85,13 +84,13 @@ const createChannelMachine = ({ projectId, channel, frame }) => Machine(
       newFrame: (context, event) => context.frame !== event.frame,
     },
     actions: {
-      sendRawFrameToParent: sendParent((context) => ({ type: 'RAWFRAME', frame: context.nextFrame, channel: context.channel })), 
+      sendRawLoaded: sendParent((context) => ({ type: 'RAWLOADED', frame: context.nextFrame, channel: context.channel })), 
       saveFrame: assign({
         frames: (context, event) => ({...context.frames, [context.nextFrame]: event.data}),
       }),
       useFrame: assign({
-        frame: (context) => context.nextFrame,
-        rawImage: (context, event) => context.frames[context.nextFrame],
+        frame: (context, event) => event.frame,
+        rawImage: (context, event) => context.frames[event.frame],
       }),
       toggleInvert: assign({ invert: (context) => !context.invert }),
       toggleGrayscale: assign({ grayscale: (context) => !context.grayscale }),

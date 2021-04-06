@@ -9,8 +9,11 @@ const createRawMachine = ({ projectId }) => Machine(
     context: {
       projectId,
       frame: 0,
+      nextFrame: 0,
       channel: 0,
+      nextChannel: 0,
       channelActor: null,
+      nextChannelActor: null,
       channels: {},
       labeledRef: null,
     },
@@ -24,7 +27,6 @@ const createRawMachine = ({ projectId }) => Machine(
       }
     }),
     on: {
-      SETCHANNEL: { actions: 'changeChannel' },
       TOGGLEINVERT: { actions: 'forwardToChannel' },
       TOGGLEGRAYSCALE: { actions: 'forwardToChannel' },
       SETBRIGHTNESS: { actions: 'forwardToChannel' },
@@ -32,65 +34,105 @@ const createRawMachine = ({ projectId }) => Machine(
       RESTORE: {},
       LABELEDREF: { actions: assign({ labeledRef: (context, event) => event.labeledRef }) },
     },
-    initial: 'loading',
+    type: 'parallel',
     states: {
-      idle: {
-        on: {
-          SETFRAME: { target: 'loading', actions: [(context, event) => console.log(event), 'forwardToAllChannels'] },
+       frame: {
+        initial: 'loading',
+        states: {
+          idle: {},
+          loading: {
+            entry: send(
+              (context) => ({ type: 'SETFRAME', frame: context.nextFrame }),
+              { to: (context) => context.channelActor }
+            ),
+            on: {
+              CHANNEL: { target: 'loading', internal: false },
+              RAWLOADED: { target: 'loaded', cond: 'nextFrame', actions: 'forwardToLabeled' },
+            },
+          },
+          loaded: {
+            on: {
+              LABELEDLOADED: { actions: 'sendFrame' },
+              FRAME: { actions: 'useFrame', target: 'idle' },
+              CHANNEL: { target: 'loading', internal: false },
+            },
+          },
         },
-      },
-      loading: {
         on: {
-          RAWFRAME: { target: 'loaded', cond: 'currentChannel', actions: 'forwardToLabeled' }, 
-        },
+          SETFRAME: { target: '.loading', actions: 'assignNextFrame', internal: false },
+        }
       },
-      loaded: {
+      channel: {
+        initial: 'idle',
+        states: {
+          idle: {},
+          loading: {
+            entry: send(
+              (context) => ({ type: 'SETFRAME', frame: context.frame }),
+              { to: (context) => context.nextChannelActor }
+            ),
+            on: {
+              RAWLOADED: { cond: 'nextChannel', actions: 'sendChannel' },
+              CHANNEL: { target: 'idle', actions: 'useChannel' },
+              FRAME: { target: 'loading', internal: false }
+            }
+          },
+        },
         on: {
-          LABELEDFRAME: { actions: 'sendFrame', target: 'idle' },
-          FRAME: { actions: 'forwardFrame', target: 'idle' },
-        },
-      },
-    }
+          SETCHANNEL: { target: '.loading', actions: 'stageNextChannel', internal: false },
+        }
+      }
+    },
   },
   {
     guards: {
-      currentChannel: (context, event) => context.channel === event.channel,
+      nextFrame: (context, event) => context.nextFrame === event.frame && context.channel === event.channel,
+      nextChannel: (context, event) => context.frame === event.frame && context.nextChannel === event.channel,
     },
     actions: {
+      assignNextFrame: assign({ nextFrame: (context, event) => event.frame }),
+      sendChannel: pure((context, event) => {
+        const channelEvent = { type: 'CHANNEL', channel: event.channel, frame: event.frame };
+        return [
+          send(channelEvent),
+          sendParent(channelEvent),
+        ];
+      }),
+      useChannel: pure((context, event) => {
+        return [
+          forwardTo((context) => context.channelActor), // happens AFTER assigning channelActor
+          assign({
+            channel: (context) => context.nextChannel,
+            channelActor: (context, event) => context.nextChannelActor,
+          }),
+        ];
+      }),
       sendFrame: pure((context, event) => {
+        const frameEvent = { type: 'FRAME', frame: event.frame };
         return [
-          sendParent({ type: 'FRAME', frame: event.frame }),
-          send({ type: 'FRAME', frame: event.frame }, { to: context.channelActor }),
-          send({ type: 'FRAME', frame: event.frame }, { to: context.labeledRef }),
+          send(frameEvent),
+          send(frameEvent, { to: context.labeledRef }),
+          sendParent(frameEvent),
         ];
       }),
-      forwardFrame: pure((context, event) => {
+      useFrame: pure((context, event) => {
         return [
-          sendParent(event),
           forwardTo(context.channelActor),
+          assign({ frame: (context, event) => event.frame }),
         ];
       }),
-      forwardToParent: sendParent((context, event) => event),
       forwardToLabeled: forwardTo((context) => context.labeledRef),
       forwardToChannel: forwardTo((context) => context.channelActor),
-      // Dynamically send an event to every spawned channel
-      forwardToAllChannels: pure((context) => {
-        const channels = Object.values(context.channels);
-        return channels.map((channel) => {
-          return forwardTo(channel);
-        });
-      }),
-      changeChannel: assign((context, event) => {
+      stageNextChannel: assign((context, event) => {
         // Use the existing channel actor if one already exists
         let channelActor = context.channels[event.channel];
         if (channelActor) {
           return {
             ...context,
-            channelActor,
-            channel: event.channel,
+            nextChannelActor: channelActor,
+            nextChannel: event.channel,
           };
         }
-
         // Otherwise, spawn a new channel actor and save it in the channels object
         channelActor = spawn(createChannelMachine({ ...context, channel: event.channel }));
         return {
@@ -98,10 +140,10 @@ const createRawMachine = ({ projectId }) => Machine(
             ...context.channels,
             [event.channel]: channelActor
           },
-          channelActor,
-          channel: event.channel,
+          nextChannel: event.channel,
+          nextChannelActor: channelActor,
         };
-      })
+      }),
     }
   }
 );
