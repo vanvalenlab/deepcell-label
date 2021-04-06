@@ -56,36 +56,11 @@ const createDeepcellLabelMachine = (projectId) => Machine(
             actions: [
               'sendProject',
               assign((context, event) => event.data),
-              (context, event) => console.log(event.data)
             ]
           },
         }
       },
-      // spawning: {
-      //   entry: assign({
-      //     imageRef: (context) => spawn(createImageMachine(context), 'image'),
-      //     canvasRef: (context) => spawn(createCanvasMachine(context), 'canvas'),
-      //   }),
-      //   always: {
-      //     target: 'idle',
-      //     actions: [
-      //       'sendCanvasRef',
-      //     ],
-      //   }
-      // },
       idle: {},
-      // idle: {
-      //   on: {
-      //     LOADING: 'loading',
-      //     EDIT: { actions: ['saveTool', 'edit', 'recordContext'] },
-      //   }
-      // },
-      // loading: {
-      //   on: {
-      //     LOADED: 'idle',
-      //     ERROR: 'idle',
-      //   }
-      // },
     },
   },
   {
