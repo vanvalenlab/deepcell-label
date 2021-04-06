@@ -61,7 +61,9 @@ const createFeatureMachine = ({ projectId, feature, frame }) => Machine(
     },
     initial: 'loading',
     states: {
-      idle: {},
+      idle: {
+        entry: 'sendLabeledArray'
+      },
       checkLoaded: {
         always: [
           { cond: 'loadedFrame', target: 'loaded' },
@@ -78,18 +80,14 @@ const createFeatureMachine = ({ projectId, feature, frame }) => Machine(
       loaded: {
         entry: 'sendLabeledLoaded',
       },
-      sendLabeledArray: {
-        always: { target: 'idle', actions: 'sendLabeledArray' }
-      }
     },
     on: {
       SETFRAME: {
+        target: 'checkLoaded',
         actions: assign({ nextFrame: (context, event) => event.frame }),
-        target: 'checkLoaded'
       },
-      FRAME: { target: 'sendLabeledArray', actions: 'useFrame' },
-      FEATURE: { target: 'sendLabeledArray', actions: 'useFrame' },
-      SENDLABELEDARRAY: 'sendLabeledArray',
+      FRAME: { target: 'idle', actions: 'useFrame' },
+      FEATURE: { target: 'idle', actions: 'useFrame' },
       SETOPACITY: { actions: 'setOpacity' },
       TOGGLESHOWNOLABEL: { actions: 'toggleShowNoLabel' },
     }

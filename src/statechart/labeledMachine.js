@@ -92,7 +92,6 @@ const createLabeledMachine = ({ projectId }) => Machine(
       nextFeature: (context, event) => context.frame === event.frame && context.nextFeature === event.feature,
     },
     actions: {
-      sendLabeledArray: send('SENDLABELEDARRAY', { to: (context) => context.featureActor }),
       assignNextFrame: assign({ nextFrame: (context, event) => event.frame }),
       sendFeature: pure((context, event) => {
         const featureEvent = { type: 'FEATURE', feature: event.feature, frame: event.frame };
