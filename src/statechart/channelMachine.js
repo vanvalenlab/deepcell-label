@@ -66,8 +66,8 @@ const createChannelMachine = ({ projectId, channel, frame }) => Machine(
     on: {
       // fetching
       SETFRAME: {
+        target: 'checkLoaded',
         actions: assign({ nextFrame: (context, event) => event.frame }),
-        target: 'checkLoaded'
       },
       FRAME: { target: 'idle', actions: 'useFrame' },
       CHANNEL: { target: 'idle', actions: 'useFrame' },
