@@ -18,9 +18,12 @@ const brushState = {
     dragging: {
       on: {
         COORDINATES: { actions: ['updateCoordinates', 'addToTrace'] },
-        mouseup: { target: 'idle', actions: 'paint' }
+        mouseup: { target: 'done', actions: 'paint' }
       }
     },
+    done: {
+      always: 'idle',
+    }
   },
 };
 
@@ -282,12 +285,14 @@ const toolMachine = Machine(
         type: 'EDIT',
         action: 'handle_draw',
         args: {
-          trace: JSON.stringify(event.trace),
+          trace: JSON.stringify(context.trace),
           brush_value: context.foreground,
           target_value: context.background,
-          brush_size: event.size,
-          frame: context.frame,
+          brush_size: context.brushSize,
           erase: false,
+          frame: context.frame,
+          feature: context.feature,
+          channel: context.channel,
         },
         tool: 'brush',
       })),

@@ -80,6 +80,13 @@ const createFeatureMachine = ({ projectId, feature, frame }) => Machine(
       loaded: {
         entry: 'sendLabeledLoaded',
       },
+      reloading: {
+        invoke: {
+          src: fetchLabeled,
+          onDone: { target: 'idle', actions: ['saveFrame', 'useFrame'] },
+          onError: { target: 'idle', actions: (context, event) => console.log(event) },
+        },
+      }
     },
     on: {
       SETFRAME: {
@@ -90,12 +97,14 @@ const createFeatureMachine = ({ projectId, feature, frame }) => Machine(
       FEATURE: { target: 'idle', actions: 'useFrame' },
       SETOPACITY: { actions: 'setOpacity' },
       TOGGLESHOWNOLABEL: { actions: 'toggleShowNoLabel' },
+      LOADED: { target: 'reloading', cond: 'labeledChanged', actions: (context, event) => console.log(event) },
     }
   },
   {
     guards: {
       loadedFrame: (context) => context.nextFrame in context.frames,
       newFrame: (context, event) => context.frame !== event.frame,
+      labeledChanged: (context, event) => event.data.labeled_changed,
     },
     actions: {
       sendLabeledLoaded: sendParent((context) => (
@@ -105,9 +114,9 @@ const createFeatureMachine = ({ projectId, feature, frame }) => Machine(
         { type: 'LABELEDARRAY', labeledArray: context.labeledArray }
       )),
       useFrame: assign((context, event) => ({
-        frame: event.frame,
-        labeledImage: context.frames[event.frame],
-        labeledArray: context.arrays[event.frame],
+        frame: context.nextFrame,
+        labeledImage: context.frames[context.nextFrame],
+        labeledArray: context.arrays[context.nextFrame],
       })),
       saveFrame: assign((context, event) => ({
         frames: { ...context.frames, [context.nextFrame]: event.data[0] },

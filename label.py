@@ -23,79 +23,6 @@ from skimage.segmentation import morphological_chan_vese
 from labelmaker import LabelInfoMaker
 
 
-class ChangeDisplay(object):
-    """
-    Class to change the frame, feature or channel displayed and edited by a DeepCell Label Project.
-    """
-
-    def __init__(self, project):
-        self.project = project
-        self.num_frames = project.num_frames
-        self.num_channels = project.num_channels
-        self.num_features = project.num_features
-
-    def change(self, display_attribute, value):
-        """
-        Call a change view based on the passed view attribute name.
-
-        Args:
-            display_attribute (str): name of attribute to change (e.g. 'frame')
-            value (int): value to set for view attribute
-
-        Returns:
-            dict: payload to send to frontend application
-        """
-        fn_name = 'change_{}'.format(display_attribute)
-        try:
-            change_fn = getattr(self, fn_name)
-            payload = change_fn(value)
-        except AttributeError:
-            raise ValueError('Invalid display attribute "{}"'.format(display_attribute))
-        return payload
-
-    def change_frame(self, frame):
-        """
-        Args:
-            frame (int): index of frame to display
-
-        Raises:
-            ValueError: raised by out-of-range frame index
-        """
-        if frame < 0 or frame > self.num_frames - 1:
-            raise ValueError('Frame {} is outside of range [0, {}].'.format(
-                frame, self.num_frames - 1))
-        self.project.frame = frame
-        return self.project.make_payload(x=True, y=True)
-
-    def change_channel(self, channel):
-        """
-        Args:
-            channel (int): index of channel to display
-
-        Raises:
-            ValueError: raised by out of range channel index
-        """
-        if channel < 0 or channel > self.num_channels - 1:
-            raise ValueError('Channel {} is outside of range [0, {}].'.format(
-                channel, self.num_channels - 1))
-        self.project.channel = channel
-        return self.project.make_payload(x=True)
-
-    def change_feature(self, feature):
-        """
-        Args:
-            feature (int): index of feature to display
-
-        Raises:
-            ValueError: raised by out of range channel index
-        """
-        if feature < 0 or feature > self.num_features - 1:
-            raise ValueError('Feature {} is outside of range [0, {}].'.format(
-                feature, self.num_features - 1))
-        self.project.feature = feature
-        return self.project.make_payload(y=True)
-
-
 class BaseEdit(object):
     """
     Base class for editing frames in DeepCell Label.
@@ -115,6 +42,9 @@ class BaseEdit(object):
     def __init__(self, project):
         self.project = project
         self.labels = project.labels
+        self.frame_id = project.frame
+        self.feature = project.feature
+        self.channel = project.channel
 
         self.y_changed = False
         self.labels_changed = False
@@ -136,30 +66,6 @@ class BaseEdit(object):
         return self.project.raw_frames[self.frame_id].frame
 
     # Access dynamic display attributes
-    @property
-    def frame_id(self):
-        """
-        Returns:
-            int: index of the current frame
-        """
-        return self.project.frame
-
-    @property
-    def feature(self):
-        """
-        Returns:
-            int: index of the current feature
-        """
-        return self.project.feature
-
-    @property
-    def channel(self):
-        """
-        Returns:
-            int: index of the current channel
-        """
-        return self.project.channel
-
     @property
     def scale_factor(self):
         """
@@ -186,8 +92,10 @@ class BaseEdit(object):
             action_fn(**info)
         except AttributeError:
             raise ValueError('Invalid action "{}"'.format(action))
-        return self.project.make_payload(y=self.y_changed,
-                                         labels=self.labels_changed)
+        # payload = self.project.make_payload(y=self.y_changed, labels=self.labels_changed)
+        payload = {'labeled_changed': bool(self.y_changed),
+                   'label_data_changed': bool(self.labels_changed)}
+        return payload
 
     def add_cell_info(self, add_label, frame):
         raise NotImplementedError('add_cell_info is not implemented in BaseEdit')
@@ -262,9 +170,9 @@ class BaseEdit(object):
         img_erase = np.where(img == brush_value, target_value, img)
 
         for loc in trace:
-            # each element of trace is an array with [y,x] coordinates of array
-            x_loc = loc[1]
-            y_loc = loc[0]
+            # each element of trace is an array with [x, y] coordinates of array
+            x_loc = loc[0]
+            y_loc = loc[1]
 
             brush_area = circle(y_loc, x_loc,
                                 brush_size // self.scale_factor,

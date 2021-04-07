@@ -32,6 +32,7 @@ const createImageMachine = ({ projectId }) => Machine(
     },
     entry: ['spawnActors', 'sendActorRefs'],
     on: {
+      LOADED: { actions: 'forwardToLabeled' },
       SETFRAME: { cond: 'newNextFrame', actions: ['saveFrame', 'forwardToRaw', 'forwardToLabeled'] },
       SETCHANNEL: { cond: 'newNextChannel', actions: ['saveChannel', 'forwardToRaw'] },
       SETFEATURE: { cond: 'newNextFeature', actions: ['saveFeature', 'forwardToLabeled'] },

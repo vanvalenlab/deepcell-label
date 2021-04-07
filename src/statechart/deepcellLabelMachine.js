@@ -7,7 +7,7 @@ import createImageMachine from './imageMachine';
 import canvasMachine from './canvasMachine';
 import { pure } from 'xstate/lib/actions';
 import toolMachine from './toolMachine';
-// import apiMachine from './apiMachine';
+import createApiMachine from './apiMachine';
 // import undoMachine from './undoMachine';
 
 
@@ -24,25 +24,9 @@ const createDeepcellLabelMachine = (projectId) => Machine(
       projectId,
     },
     // invoke: [
-    //   {
-    //     id: 'image',
-    //     src: createImageMachine,
-    //   },
-    //   {
-    //     id: 'canvas',
-    //     src: canvasMachine,
-    //   },
-    //   // {
-    //   //   id: 'tool',
-    //   //   src: toolMachine,
-    //   // },
     //   // {
     //   //   id: 'undo',
     //   //   src: undoMachine,
-    //   // },
-    //   // {
-    //   //   id: 'api',
-    //   //   src: apiMachine,
     //   // },
     // ],
     entry: ['spawnActors', 'sendActorRefs'],
@@ -62,6 +46,10 @@ const createDeepcellLabelMachine = (projectId) => Machine(
       },
       idle: {},
     },
+    on: {
+      EDIT: { actions: forwardTo('api') },
+      LOADED: { actions: forwardTo('image') }
+    }
   },
   {
     actions: {
@@ -69,6 +57,7 @@ const createDeepcellLabelMachine = (projectId) => Machine(
         canvasRef: () => spawn(canvasMachine, 'canvas'),
         imageRef: (context) => spawn(createImageMachine(context), 'image'),
         toolRef: () => spawn(toolMachine, 'tool'),
+        apiRef: (context) => spawn(createApiMachine(context), 'api'),
       }),
       sendActorRefs: pure((context, event) => {
         const sendToolToImage = send(

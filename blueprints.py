@@ -21,7 +21,7 @@ from flask import current_app
 from flask import send_file
 from werkzeug.exceptions import HTTPException
 
-from label import TrackEdit, ZStackEdit, BaseEdit, ChangeDisplay
+from label import TrackEdit, ZStackEdit, BaseEdit
 from models import Project
 import loaders
 import exporters
@@ -103,14 +103,18 @@ def edit(token, action_type):
     # obtain 'info' parameter data sent by .js script
     info = {k: json.loads(v) for k, v in request.values.to_dict().items()}
 
-    # TODO: remove frame from request values in front-end
-    # Frame is instead tracked by the frame column in the State column
-    if 'frame' in info:
-        del info['frame']
-
     project = Project.get(token)
     if not project:
         return abort(404, description=f'project {token} not found')
+    # TODO: remove frame/feature/channel columns from db schema? or keep them around
+    # to load projects on the last edited frame
+    project.frame = info['frame']
+    project.feature = info['feature']
+    project.channel = info['channel']
+    del info['frame']
+    del info['feature']
+    del info['channel']
+
     edit = get_edit(project)
     payload = edit.dispatch_action(action_type, info)
     project.create_memento(action_type)
@@ -118,36 +122,6 @@ def edit(token, action_type):
 
     current_app.logger.debug('Finished action %s for project %s in %s s.',
                              action_type, token,
-                             timeit.default_timer() - start)
-
-    return jsonify(payload)
-
-
-@bp.route('/api/changedisplay/<token>/<display_attribute>/<int:value>', methods=['POST'])
-def change_display(token, display_attribute, value):
-    """
-    Change the displayed frame, feature, or channel
-    and send back the changed image data.
-
-    Args:
-        token (str): base64 ID of project
-        display_attribute (str): choice between 'frame', 'feature', or 'channel'
-        value (int): index of frame, feature, or channel to display
-
-    Returns:
-        dict: contains the raw and/or labeled image data
-    """
-    start = timeit.default_timer()
-
-    project = Project.get(token)
-    if not project:
-        return abort(404, description=f'project {token} not found')
-    change = ChangeDisplay(project)
-    payload = change.change(display_attribute, value)
-    project.update()
-
-    current_app.logger.debug('Changed to %s %s for project %s in %s s.',
-                             display_attribute, value, token,
                              timeit.default_timer() - start)
     return jsonify(payload)
 

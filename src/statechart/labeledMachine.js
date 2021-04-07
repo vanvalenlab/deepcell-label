@@ -35,6 +35,7 @@ const createLabeledMachine = ({ projectId }) => Machine(
       TOOLREF: { actions: assign({ toolRef: (context, event) => event.toolRef }) },
       RAWREF: { actions: assign({ rawRef: (context, event) => event.rawRef }) },
       LABELEDARRAY: { actions: forwardTo((context) => context.toolRef) },
+      LOADED: { actions: 'forwardToFeature' },
     },
     type: 'parallel',
     states: {
