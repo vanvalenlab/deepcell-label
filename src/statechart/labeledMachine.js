@@ -102,7 +102,7 @@ const createLabeledMachine = ({ projectId }) => Machine(
       }),
       useFeature: pure((context, event) => {
         return [
-          forwardTo((context) => context.featureActor), // happens AFTER assigning featureActor
+          forwardTo((context) => context.nextFeatureActor),
           assign({
             feature: (context) => context.nextFeature,
             featureActor: (context, event) => context.nextFeatureActor,

@@ -94,13 +94,13 @@ const createRawMachine = ({ projectId }) => Machine(
       sendChannel: pure((context, event) => {
         const channelEvent = { type: 'CHANNEL', channel: event.channel, frame: event.frame };
         return [
-          send(channelEvent),
+          send(channelEvent), 
           sendParent(channelEvent),
         ];
       }),
       useChannel: pure((context, event) => {
         return [
-          forwardTo((context) => context.channelActor), // happens AFTER assigning channelActor
+          forwardTo((context) => context.nextChannelActor),
           assign({
             channel: (context) => context.nextChannel,
             channelActor: (context, event) => context.nextChannelActor,
