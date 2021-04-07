@@ -109,14 +109,14 @@ const BrushCanvas = props => {
 
   // draws the brush outline
   useEffect(() => {
-    brushCtx.current.clearRect(0, 0, height, width);
+    brushCtx.current.clearRect(0, 0, width, height);
     drawBrush(brushCtx.current, x, y, brushSize);
   }, [brushCtx, x, y, brushSize, height, width]);
 
   // draws the brush trace
   useEffect(() => {
     if (trace.length === 0) { // clear the trace canvas
-      traceCtx.current.clearRect(0, 0, height, width);
+      traceCtx.current.clearRect(0, 0, width, height);
     } else { // add to trace
       const [tx, ty] = trace[trace.length - 1];
       drawTrace(traceCtx.current, tx, ty, brushSize);
