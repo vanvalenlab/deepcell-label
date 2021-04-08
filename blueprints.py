@@ -78,7 +78,7 @@ def labeled(token, feature, frame):
     if not project:
         return abort(404, description=f'project {token} not found')
     png = project.get_labeled_png(feature, frame)
-    return send_file(png, mimetype='image/png')
+    return send_file(png, mimetype='image/png', cache_timeout=0)
 
 
 @bp.route('/api/array/<token>/<int:feature>/<int:frame>')
@@ -116,9 +116,12 @@ def edit(token, action_type):
     del info['channel']
 
     edit = get_edit(project)
-    payload = edit.dispatch_action(action_type, info)
+    edit.dispatch_action(action_type, info)
     project.create_memento(action_type)
     project.update()
+
+    changed_frames = [frame.frame_id for frame in project.action.frames]
+    payload = {'feature': project.feature, 'labeled_changed': changed_frames}
 
     current_app.logger.debug('Finished action %s for project %s in %s s.',
                              action_type, token,

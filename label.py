@@ -82,9 +82,6 @@ class BaseEdit(object):
             action (str): name of action method after "action_"
                           e.g. "handle_draw" to call "action_handle_draw"
             info (dict): key value pairs with arguments for action
-
-        Returns:
-            dict: payload to send to frontend application
         """
         attr_name = 'action_{}'.format(action)
         try:
@@ -92,10 +89,6 @@ class BaseEdit(object):
             action_fn(**info)
         except AttributeError:
             raise ValueError('Invalid action "{}"'.format(action))
-        # payload = self.project.make_payload(y=self.y_changed, labels=self.labels_changed)
-        payload = {'labeled_changed': bool(self.y_changed),
-                   'label_data_changed': bool(self.labels_changed)}
-        return payload
 
     def add_cell_info(self, add_label, frame):
         raise NotImplementedError('add_cell_info is not implemented in BaseEdit')
@@ -112,7 +105,7 @@ class BaseEdit(object):
         """
         # Get and edit the displayed labels
         img = self.frame[..., self.feature]
-        new_label = self.project.get_max_label() + 1
+        new_label = self.project.get_max_label(self.feature) + 1
         img[img == label] = new_label
         # Update label metadata
         self.del_cell_info(del_label=label, frame=self.frame_id)
@@ -264,7 +257,7 @@ class BaseEdit(object):
         """Use watershed to segment different objects"""
         # Pull the label that is being split and find a new valid label
         current_label = label
-        new_label = self.project.get_max_label() + 1
+        new_label = self.project.get_max_label(self.feature) + 1
 
         # Locally store the frames to work on
         img_raw = self.raw_frame[..., self.channel]
@@ -489,7 +482,7 @@ class ZStackEdit(BaseEdit):
         Args:
             label (int): label to replace with a new label
         """
-        new_label = self.project.get_max_label() + 1
+        new_label = self.project.get_max_label(self.feature) + 1
         # Replace old label with new in every frame until end
         for label_frame in self.project.label_frames[self.frame_id:]:
             img = label_frame.frame[..., self.feature]
@@ -644,7 +637,7 @@ class TrackEdit(BaseEdit):
         Args:
             label (int): label to replace in subsequent frames
         """
-        new_label = self.project.get_max_label() + 1
+        new_label = self.project.get_max_label(self.feature) + 1
         track = self.labels.tracks[label]
 
         # Don't create a new track on the first frame of a track

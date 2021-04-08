@@ -325,7 +325,7 @@ class Project(db.Model):
                      next_action.action_id, self.id, timeit.default_timer() - start)
         return payload
 
-    def get_max_label(self):
+    def get_max_label(self, feature):
         """
         Get the highest label in use in currently-viewed feature.
         If feature is empty, returns 0 to prevent other functions from crashing.
@@ -334,11 +334,11 @@ class Project(db.Model):
             int: highest label in the current feature
         """
         # check this first, np.max of empty array will crash
-        if len(self.labels.cell_ids[self.feature]) == 0:
+        if len(self.labels.cell_ids[feature]) == 0:
             max_label = 0
         # if any labels exist in feature, find the max label
         else:
-            max_label = int(np.max(self.labels.cell_ids[self.feature]))
+            max_label = int(np.max(self.labels.cell_ids[feature]))
         return max_label
 
     def make_first_payload(self):
@@ -351,9 +351,7 @@ class Project(db.Model):
         """
         payload = {}
 
-        # payload['tracks'] = self.labels.readable_tracks
-
-        # Other Project attributes to initialize frontend variables
+        # Project attributes to initialize frontend variables
         payload['frame'] = self.frame
         payload['channel'] = self.channel
         payload['feature'] = self.feature
@@ -371,119 +369,6 @@ class Project(db.Model):
         #                            for action in self.actions[1:] if action.done]
 
         return payload
-
-        # payload = {}
-
-        # img_payload = {}
-        # raw_png = self._get_raw_png()
-        # img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
-        # label_png = self._get_label_png()
-        # img_payload['segmented'] = f'data:image/png;base64,{encode(label_png)}'
-        # img_payload['seg_arr'] = self._get_label_arr()
-        # payload['imgs'] = img_payload
-
-        # payload['tracks'] = self.labels.readable_tracks
-
-        # # Other Project attributes to initialize frontend variables
-        # payload['frame'] = self.frame
-        # payload['numFrames'] = self.num_frames
-        # payload['project_id'] = self.token
-        # payload['dimensions'] = (self.width, self.height)
-        # # Attributes specific to filetype
-        # if self.is_track:
-        #     payload['screen_scale'] = self.scale_factor
-        # if self.is_zstack:
-        #     payload['channel'] = self.channel
-        #     payload['numChannels'] = self.num_channels
-        #     payload['feature'] = self.feature
-        #     payload['numFeatures'] = self.num_features
-
-        # # First frame edited by each action
-        # # Excludes the first action, which loads the project
-        # payload['actionFrames'] = [action.frames[0].frame_id
-        #                            for action in self.actions[1:] if action.done]
-
-        # return payload
-
-    def make_payload(self, x=False, y=False, labels=False):
-        """
-        Creates a payload to send to the front-end after completing an action.
-
-        Args:
-            x (bool): when True, payload includes raw image PNG
-            y (bool): when True, payload includes labeled image data
-                           sends both a PNG and an array of where each label is
-            labels (bool): when True, payload includes the label "tracks",
-                           or the frames that each label appears in (e.g. [0-10, 15-20])
-
-        Returns:
-            dict: payload with image data and label tracks
-        """
-        if x or y:
-            img_payload = {}
-            if x:
-                raw_png = self._get_raw_png()
-                img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
-            if y:
-                label_png = self._get_label_png()
-                img_payload['segmented'] = f'data:image/png;base64,{encode(label_png)}'
-                img_payload['seg_arr'] = self._get_label_arr()
-        else:
-            img_payload = False
-
-        if labels:
-            tracks = self.labels.readable_tracks
-        else:
-            tracks = False
-
-        return {'imgs': img_payload, 'tracks': tracks}
-
-    def _get_label_arr(self):
-        """
-        Returns:
-            list: nested list of labels at each positions, with negative label outlines.
-        """
-        # Create label array
-        label_frame = self.label_frames[self.frame]
-        label_arr = label_frame.frame[..., self.feature]
-        return add_outlines(label_arr).tolist()
-
-    def _get_label_png(self):
-        """
-        Returns:
-            BytesIO: returns the current label frame as a .png
-        """
-        # Create label png
-        label_frame = self.label_frames[self.frame]
-        label_arr = label_frame.frame[..., self.feature]
-        label_png = pngify(imgarr=np.ma.masked_equal(label_arr, 0),
-                           vmin=0,
-                           vmax=self.get_max_label(),
-                           cmap=self.colormap)
-        return label_png
-
-    def _get_raw_png(self):
-        """
-        Returns:
-            BytesIO: contains the current raw frame as a .png
-        """
-        # RGB png
-        if self.rgb:
-            raw_frame = self.rgb_frames[self.frame]
-            raw_arr = raw_frame.frame
-            raw_png = pngify(imgarr=raw_arr,
-                             vmin=None,
-                             vmax=None,
-                             cmap=None)
-            return raw_png
-        # Raw png
-        raw_frame = self.raw_frames[self.frame]
-        raw_arr = raw_frame.frame[..., self.channel]
-        raw_png = pngify(imgarr=raw_arr,
-                         vmin=0,
-                         vmax=None,
-                         cmap='cubehelix')
-        return raw_png
 
     def get_raw_png(self, channel, frame):
         """
@@ -509,7 +394,7 @@ class Project(db.Model):
         label_arr = label_frame.frame[..., feature]
         label_png = pngify(imgarr=np.ma.masked_equal(label_arr, 0),
                            vmin=0,
-                           vmax=self.get_max_label(),
+                           vmax=self.get_max_label(feature),
                            cmap=self.colormap)
         return label_png
 
