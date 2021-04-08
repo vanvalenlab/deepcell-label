@@ -97,16 +97,29 @@ const createFeatureMachine = ({ projectId, feature, frame }) => Machine(
       FEATURE: { target: 'idle', actions: 'useFrame' },
       SETOPACITY: { actions: 'setOpacity' },
       TOGGLESHOWNOLABEL: { actions: 'toggleShowNoLabel' },
-      LOADED: { target: 'reloading', cond: 'labeledChanged', actions: (context, event) => console.log(event) },
+      LOADED: [
+        { target: 'reloading', cond: 'frameChanged', actions: 'clearChangedFrames' },
+        { actions: 'clearChangedFrames' }
+      ],
     }
   },
   {
     guards: {
       loadedFrame: (context) => context.nextFrame in context.frames,
       newFrame: (context, event) => context.frame !== event.frame,
-      labeledChanged: (context, event) => event.data.labeled_changed,
+      frameChanged: (context, event) => event.data.labeled_changed.includes(context.frame),
     },
     actions: {
+      clearChangedFrames: assign({
+        frames: (context, event) => {
+          const changedFrames = event.data.labeled_changed;
+          const framesAsArray = Object.entries(context.frames);
+          const filteredFramesAsArray = framesAsArray.filter(
+            ([key, value]) => !changedFrames.includes(Number(key)));
+          const filteredFrames = Object.fromEntries(filteredFramesAsArray);
+          return filteredFrames;
+        }
+      }),
       sendLabeledLoaded: sendParent((context) => (
         { type: 'LABELEDLOADED', frame: context.nextFrame, feature: context.feature }
       )),
