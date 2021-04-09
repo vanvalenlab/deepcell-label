@@ -173,22 +173,12 @@ const autofitState = {
 
 // OLDER
 
-const selectForegroundState = {
+const selectState = {
   on: {
     mousedown: [
       { cond: 'doubleClick', actions: ['setBackground', 'resetForeground'] },
       { cond: 'onForeground', actions: 'setBackground', },
       { actions: 'setForeground' },
-    ]
-  },
-};
-
-const selectBackgroundState = {
-  on: {
-    mousedown: [
-      { cond: 'doubleClick', actions: ['setForeground', 'resetBackground'] },
-      { cond: 'onBackground', actions: 'setForeground', },
-      { actions: 'setBackground' },
     ]
   },
 };
@@ -222,8 +212,7 @@ const toolMachine = Machine(
     entry: (context) => console.log(context.brushSize),
     initial: 'brush',
     states: {
-      selectForeground: selectForegroundState,
-      selectBackground: selectBackgroundState,
+      select: selectState,
       brush: brushState,
       //   flood: floodState,
       //   trim: trimState,
@@ -235,11 +224,9 @@ const toolMachine = Machine(
       // }, 
     },
     on: {
+      // keybinds to switch tools
       'keydown.b': '.brush',
-      'keydown.v': '.selectForeground',
-      PAINT: { actions: 'paint' },
-      THRESHOLD: { actions: 'threshold' },
-
+      'keydown.v': '.select',
       // 'keydown.t': '.threshold',
       // 'keydown.g': '.flood',
       // 'keydown.k': '.trim',
@@ -247,16 +234,20 @@ const toolMachine = Machine(
       // 'keydown.t': '.threshold',
       // 'keydown.m': '.autofit',
       // 'keydown.w': '.watershed',
-
+      
+      // updates from other actors
       COORDINATES: { actions: 'updateCoordinates' },
       LABELEDARRAY: { actions: 'updateLabeled' },
       FRAME: { actions: assign((context, event) => ({ frame: event.frame })) },
       CHANNEL: { actions: assign((context, event) => ({ channel: event.channel })) },
       FEATURE: { actions: assign((context, event) => ({ feature: event.feature })) },
       
-      
+      // events sent by tool actor (this actor)
+      PAINT: { actions: 'paint' },
+      THRESHOLD: { actions: 'threshold' },
       SETFOREGROUND: { actions: 'setForeground' },
       SETBACKGROUND: { actions: 'setBackground' },
+
       'keydown.n': { actions: 'newForeground' },
       'keydown.Escape': { actions: 'resetBackground' },
       'keydown.x': { actions: 'swapLabels' },
@@ -267,8 +258,11 @@ const toolMachine = Machine(
       'keydown.up': { actions: assign({ brushSize: (context) => context.brushSize + 1 }) },
       'keydown.down': { actions: assign({ brushSize: (context) => Math.max(1, context.brushSize - 1) })},
 
+      // special shift click event 
       SHIFTCLICK: [
-        { cond: 'onBackground'}
+        { cond: 'doubleClick', actions: ['setForeground', 'resetBackground'] },
+        { cond: 'onBackground', actions: 'setForeground', },
+        { actions: 'setBackground' },
       ],
     }
   },
