@@ -48,7 +48,7 @@ const createDeepcellLabelMachine = (projectId) => Machine(
       idle: {},
     },
     on: {
-      EDIT: { actions: forwardTo('api') },
+      EDIT: { actions: [forwardTo('api'), forwardTo('undo')] },
       LOADED: { actions: forwardTo('image') }
     }
   },
@@ -72,7 +72,7 @@ const createDeepcellLabelMachine = (projectId) => Machine(
         return [sendToolToImage, sendToolToCanvas];
       }),
       spawnUndo: assign({
-        undoRef: (context) => spawn(createUndoMachine(context)),
+        undoRef: (context) => spawn(createUndoMachine(context), 'undo'),
       }), 
       sendProject: pure((context, event) => {
         const sendToCanvas = send((context, event) => ({ type: 'PROJECT', ...event.data }), { to: 'canvas' });
