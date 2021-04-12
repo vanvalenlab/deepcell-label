@@ -110,6 +110,7 @@ export class Controller {
     } else if ((event.ctrlKey || event.metaKey) && (event.key === 'Z' || event.key === 'z')) {
       this.undo();
     } else if ((event.ctrlKey || event.metaKey) && event.key === 'b') {
+      event.preventDefault();
       this.service.send('TOGGLERGB');
     } else if (keydownLookup[event.key]) {
       this.service.send(keydownLookup[event.key]);
