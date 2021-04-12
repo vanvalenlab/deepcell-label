@@ -28,8 +28,29 @@ export function useLabel() {
   return [state, send];
 }
 
+export function useUndo() {
+  const { service } = useLabelService();
+  const { undo } = service.state.children;
+  const [state, send] = useActor(undo);
+  window.undoState = state;
+  useEffect(() => {
+    bind('command+z', () => send('UNDO'));
+    bind('command+shift+z', () => send('REDO'));
+    return () => {
+      unbind('command+z');
+      unbind('command+shift+z');
+    };
+  }, []);
+  return [state, send];
+}
+
 export function useImage() {
   const { service } = useLabelService();
+
+  // REMOVE
+  const [dclState, dclSend] = useActor(service);
+  window.dclState = dclState;
+
   const { image } = service.state.children;
   const [state, send] = useActor(image);
 
@@ -77,6 +98,7 @@ export function useRaw() {
   const { image } = service.state.children;
   const { raw } = image.state.children;
   const [state, send] = useActor(raw);
+  window.rawState = state;
   return [state, send];
 }
 
@@ -104,6 +126,7 @@ export function useLabeled() {
   const { image } = service.state.children;
   const { labeled } = image.state.children;
   const [state, send] = useActor(labeled);
+  window.labeledState = state;
   return [state, send];
 }
 
@@ -129,6 +152,7 @@ export function useTool() {
   const { service } = useLabelService();
   const { tool } = service.state.children;
   const [state, send] = useActor(tool);
+  window.toolState = state;
   useEffect(() => {
     bind('up', (event) => send('keydown.up'));
     bind('down', (event) => send('keydown.down'));

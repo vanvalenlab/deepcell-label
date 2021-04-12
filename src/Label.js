@@ -1,6 +1,7 @@
 import Box from '@material-ui/core/Box';
 import { makeStyles } from "@material-ui/core/styles";
 import ControlPanel from './ControlPanel/ControlPanel';
+import UndoRedo from './ControlPanel/UndoRedo';
 import Navbar from './Navbar';
 import Canvas from './Canvas/Canvas';
 import InstructionPane from './InstructionPane';
@@ -59,6 +60,7 @@ function Label() {
       <InstructionPane />
       <Box className={styles.main}>
         <Box>
+          <UndoRedo />
           <ControlPanel className={styles.controlPanel} />
         </Box>
         <Box ref={canvasBoxRef} className={styles.canvasBox}>
