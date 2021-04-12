@@ -107,17 +107,16 @@ const createFeatureMachine = ({ projectId, feature, frame }) => Machine(
     guards: {
       loadedFrame: (context) => context.nextFrame in context.frames,
       newFrame: (context, event) => context.frame !== event.frame,
-      frameChanged: (context, event) => event.data.labeled_changed.includes(context.frame),
+      frameChanged: (context, event) => event.data.frames.includes(context.frame),
     },
     actions: {
       clearChangedFrames: assign({
         frames: (context, event) => {
-          const changedFrames = event.data.labeled_changed;
-          const framesAsArray = Object.entries(context.frames);
-          const filteredFramesAsArray = framesAsArray.filter(
-            ([key, value]) => !changedFrames.includes(Number(key)));
-          const filteredFrames = Object.fromEntries(filteredFramesAsArray);
-          return filteredFrames;
+          const newFrames = event.data.frames;
+          const frames = Object.entries(context.frames);
+          const filteredFrames = frames.filter(
+            ([key, value]) => !newFrames.includes(Number(key)));
+          return Object.fromEntries(filteredFrames);
         }
       }),
       sendLabeledLoaded: sendParent((context) => (
