@@ -1,4 +1,5 @@
 import { Machine, actions, assign, forwardTo, send, sendParent } from 'xstate';
+import { respond } from 'xstate/lib/actions';
 
 // NOTE: info coming from the browser needs to be normalized by scale and zoom
 // info coming from the statechart needs to be normalized by zoom only
@@ -13,6 +14,37 @@ import { Machine, actions, assign, forwardTo, send, sendParent } from 'xstate';
 
 const canvasMachine = Machine({
   id: 'canvas',
+  context: {
+    // raw dimensions of image
+    width: 512,
+    height: 512,
+    scale: 1,  // how much the canvas is scaled to fill the available space
+    zoom: 1,   // how much the image is scaled within the canvas
+    // position of canvas within image
+    sx: 0,
+    sy: 0,
+    // position of cursor within image
+    x: 0,
+    y: 0,
+  },
+  on: {
+    wheel: { actions: 'zoom' },
+    RESIZE: { actions: 'resize' },
+    TOOLREF: { actions: assign({ toolRef: (context, event) => event.toolRef }) },
+    SAVE: {
+      actions: respond((context) => ({
+        type: 'RESTORE',
+        sx: context.sx,
+        sy: context.sy,
+        zoom: context.zoom,
+      }))
+    },
+    RESTORE: [
+      { cond: 'newContext', actions: ['restoreContext', respond('RESTORED')] },
+      { actions: respond('SAMECONTEXT') },
+    ],
+      
+  },
   initial: 'waitForProject',
   states: {
     waitForProject: {
@@ -50,30 +82,17 @@ const canvasMachine = Machine({
       always: { actions: 'sendCoordinates', target: 'idle' }
     }
   },
-  context: {
-    // raw dimensions of image
-    width: 512,
-    height: 512,
-    scale: 1,  // how much the canvas is scaled to fill the available space
-    zoom: 1,   // how much the image is scaled within the canvas
-    // position of canvas within image
-    sx: 0,
-    sy: 0,
-    // position of cursor within image
-    x: 0,
-    y: 0,
-  },
-  on: {
-    wheel: { actions: 'zoom' },
-    RESIZE: { actions: 'resize' },
-    TOOLREF: { actions: assign({ toolRef: (context, event) => event.toolRef }) }
-  },
 },
   {
     guards: {
       newCoordinates: (context) => context.newX !== context.x || context.newY !== context.y,
+      newContext: (context, event) => context.sx !== event.sx || context.sy !== event.sy || context.zoom !== event.zoom,
     },
     actions: {
+      restoreContext: assign((context, event) => {
+        delete event.type;
+        return event;
+      }),
       useNewCoordinates: assign((context) => ({ x: context.newX, y: context.newY })),
       sendCoordinates: send((context) => (
         { type: 'COORDINATES', x: context.x, y: context.y }),
