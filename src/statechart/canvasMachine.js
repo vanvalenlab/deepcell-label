@@ -90,8 +90,8 @@ const canvasMachine = Machine({
     },
     actions: {
       restoreContext: assign((context, event) => {
-        delete event.type;
-        return event;
+        const { type, ...newEvent } = event;
+        return newEvent;
       }),
       useNewCoordinates: assign((context) => ({ x: context.newX, y: context.newY })),
       sendCoordinates: send((context) => (
