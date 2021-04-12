@@ -31,15 +31,15 @@ const createHistoryMachine = (ref) => Machine(
       restoringPast: {
         entry: 'restorePast',
         on: {
-          SAMECONTEXT: { actions: ['forwardToParent'] },
-          RESTORED: { actions: 'forwardToParent' },
+          SAMECONTEXT: { target: 'idle', actions: ['forwardToParent'] },
+          RESTORED: { target: 'idle', actions: 'forwardToParent' },
         },
       },
       restoringFuture: {
         entry: 'restoreFuture',
         on: {
-          SAMECONTEXT: { actions: 'forwardToParent' },
-          RESTORED: { actions: 'forwardToParent' },
+          SAMECONTEXT: { target: 'idle', actions: 'forwardToParent' },
+          RESTORED: { target: 'idle', actions: 'forwardToParent' },
         },
       },
     },
