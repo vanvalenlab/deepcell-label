@@ -80,6 +80,8 @@ const createUndoMachine = ({ canvasRef }) => Machine(
       historyActors: null,
       count: 0,
       numActors: 0,
+      action: 0,
+      numActions: 0,
     },
     initial: 'setUpHistories',
     states: {
@@ -89,9 +91,11 @@ const createUndoMachine = ({ canvasRef }) => Machine(
       },
       idle: {
         on: {
-          EDIT: { target: 'saving', actions: 'forwardToHistories' },
-          UNDO: { target: 'undoing', actions: 'forwardToHistories' },
-          REDO: { target: 'redoing', actions: 'forwardToHistories' },
+          EDIT: { target: 'saving', actions: ['newAction', 'forwardToHistories'] },
+          UNDO: { target: 'undoing', cond: 'canUndo', actions: 'forwardToHistories' },
+          REDO: { target: 'redoing', cond: 'canRedo', actions: 'forwardToHistories' },
+          BACKENDUNDO: { actions: ['decrementAction', sendParent('BACKENDUNDO'), 'forwardToHistories'] },
+          BACKENDREDO: { actions: ['incrementAction', sendParent('BACKENDREDO'), 'forwardToHistories'] },
         },
       },
       saving: {
@@ -105,7 +109,7 @@ const createUndoMachine = ({ canvasRef }) => Machine(
           SAMECONTEXT: { actions: 'incrementCount' },
           RESTORED: { target: 'restored', actions: 'incrementCount' },
         },
-        always: { cond: 'allHistoriesResponded', target: 'idle', actions: 'backendUndo'}
+        always: { cond: 'allHistoriesResponded', target: 'idle', actions: send('BACKENDUNDO') }
       },
       redoing: {
         entry: 'resetCounts',
@@ -113,7 +117,7 @@ const createUndoMachine = ({ canvasRef }) => Machine(
           SAMECONTEXT: { actions: 'incrementCount' },
           RESTORED: { target: 'restored', actions: 'incrementCount' },
         },
-        always: { cond: 'allHistoriesResponded', target: 'idle', actions: 'backendRedo'}
+        always: { cond: 'allHistoriesResponded', target: 'idle', actions: send('BACKENDREDO') }
       },
       restored: {
         on: {
@@ -127,6 +131,8 @@ const createUndoMachine = ({ canvasRef }) => Machine(
   {
     guards: {
       allHistoriesResponded: (context) => context.count === context.numActors,
+      canUndo: (context) => context.action > 0,
+      canRedo: (context) => context.action < context.numActions,
     },
     actions: {
       setUpHistories: assign({
@@ -142,8 +148,16 @@ const createUndoMachine = ({ canvasRef }) => Machine(
       incrementCount: assign({
         count: (context) => context.count + 1,
       }),
-      backendUndo: sendParent('BACKENDUNDO'),
-      backendRedo: sendParent('BACKENDREDO'),
+      newAction: assign({
+        action: (context) => context.action + 1,
+        numActions: (context) => context.action + 1,
+      }),
+      incrementAction: assign({
+        action: (context) => context.action + 1,
+      }),
+      decrementAction: assign({
+        action: (context) => context.action - 1,
+      }),
     },
   }
 );
