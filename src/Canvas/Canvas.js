@@ -69,6 +69,14 @@ export const Canvas = props => {
     }
   }, []);
 
+  const handleMouseDown = (event) => {
+    if (event.shiftKey) {
+      sendLabeler( {...event, type: 'SHIFTCLICK' })
+    } else {
+      sendLabeler(event);
+    }
+  };
+
   return (
     <Box
       id={"canvasBox"}
@@ -79,7 +87,7 @@ export const Canvas = props => {
       height={scale * height}
       onMouseMove={sendCanvas}
       onWheel={sendCanvas}
-      onMouseDown={sendLabeler}
+      onMouseDown={handleMouseDown}
       onMouseUp={sendLabeler}
       onClick={sendLabeler}
     >
