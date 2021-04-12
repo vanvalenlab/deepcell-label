@@ -8,7 +8,7 @@ import canvasMachine from './canvasMachine';
 import { pure } from 'xstate/lib/actions';
 import toolMachine from './toolMachine';
 import createApiMachine from './apiMachine';
-// import undoMachine from './undoMachine';
+import createUndoMachine from './undoMachine';
 
 
 function fetchProject(context) {
@@ -23,15 +23,16 @@ const createDeepcellLabelMachine = (projectId) => Machine(
     context: {
       projectId,
     },
-    // invoke: [
-    //   // {
-    //   //   id: 'undo',
-    //   //   src: undoMachine,
-    //   // },
-    // ],
-    entry: ['spawnActors', 'sendActorRefs'],
-    initial: 'loading',
+    initial: 'setUpActors',
     states: {
+      setUpActors: {
+        entry: ['spawnActors', 'sendActorRefs'],
+        always: 'setUpUndo',
+      },
+      setUpUndo: {
+        entry: 'spawnUndo',
+        always: 'loading',
+      },
       loading: {
         invoke: {
           src: fetchProject,
@@ -70,6 +71,9 @@ const createDeepcellLabelMachine = (projectId) => Machine(
         );
         return [sendToolToImage, sendToolToCanvas];
       }),
+      spawnUndo: assign({
+        undoRef: (context) => spawn(createUndoMachine(context)),
+      }), 
       sendProject: pure((context, event) => {
         const sendToCanvas = send((context, event) => ({ type: 'PROJECT', ...event.data }), { to: 'canvas' });
         const sendToImage = send((context, event) => ({ type: 'PROJECT', ...event.data }), { to: 'image' });
