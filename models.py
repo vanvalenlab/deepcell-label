@@ -256,6 +256,8 @@ class Project(db.Model):
             if frame in session.dirty or all_frames:
                 session.add(FrameMemento(action=action, frame=frame))
         action.labels = self.labels
+        action.feature = self.feature
+        action.channel = self.channel
         if self.action is not None:
             self.action.next_action = action
         # Move the Project to the new action
@@ -283,8 +285,10 @@ class Project(db.Model):
             self.labels.cell_ids = action.before_labels.cell_ids
             self.labels.cell_info = action.before_labels.cell_info
 
-        payload = self.make_payload(y=action.y_changed,
-                                    labels=action.labels_changed)
+        payload = {'feature': action.feature,
+                   'channel': action.channel,
+                   'frames': [frame.frame_id for frame in action.frames]}
+
         action.done = False
         self.action = action.prev_action
 
@@ -315,8 +319,10 @@ class Project(db.Model):
             self.labels.cell_ids = next_action.after_labels.cell_ids
             self.labels.cell_info = next_action.after_labels.cell_info
 
-        payload = self.make_payload(y=next_action.y_changed,
-                                    labels=next_action.labels_changed)
+        payload = {'feature': next_action.feature,
+                   'channel': next_action.channel,
+                   'frames': [frame.frame_id for frame in next_action.frames]}
+
         self.action = self.action.next_action
         next_action.done = True
 
@@ -637,6 +643,9 @@ class Action(db.Model):
     # Records label info after an action (whether or not its changed)
     # Pickles an ORM row from the Labels table
     labels = db.Column(db.PickleType)
+
+    feature = db.Column(db.Integer, nullable=False)
+    channel = db.Column(db.Integer, nullable=False)
 
     frames = association_proxy('action_frames', 'frame')
 
