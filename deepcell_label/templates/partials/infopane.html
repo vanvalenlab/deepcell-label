@@ -101,8 +101,14 @@
             <h4>The Canvas</h4>
             
             <p dir="ltr">
-              The right-side canvas shows an images and labels.
+              The right-side canvas shows images and labels.
               Each label has a different color overlaid on the raw image.
+            </p>
+
+            <p dir="ltr">
+              The borders of the canvas help show where we are within an image. 
+              If a border is white, we are along an edge of the image. 
+              If a border is black, the image extends off-canvas in that direction and we can pan or zoom out to view it.
             </p>
             
             <h5>Navigating the Canvas</h5>
@@ -142,24 +148,33 @@
             <h5>Adjusting the Canvas</h5>
             
             <p dir="ltr">
-              DeepCell Label can adjust how to dispaly labels and images.
+              DeepCell Label can adjust how to display labels and images.
               With these changes, we can make out finer details while labeling.
             </p>
             
             <p dir="ltr">
-              <strong>Scroll</strong> on the canvas to change brightness.
+              <strong>Scroll</strong> on the canvas to change brightness. Brightness makes the whole image lighter or darker.
               <br>
-              <strong>Hold <kbd>Shift</kbd> and scroll</strong> on the canvas to change the contrast.
+              <strong>Hold <kbd>Shift</kbd> and scroll</strong> on the canvas to change the contrast. Increasing contrast improves the visibility of objects in the raw image.
               <br>
               Press <kbd>0</kbd> to reset the brightness and contrast.
+              <br>
+              Each channel adjusts its brightness and contrast separately.
             </p>
             
             <p dir="ltr">
               Press <kbd>Z</kbd> to toggle between viewing the label overlay, the labels only, and the raw image only.
             </p>
+
+            <p dir="ltr">
+              Press <kbd>I</kbd> to invert the raw image. 
+              Inverting the raw image helps to see objects under the label overlay. 
+              We can only invert the image when viewing label overlay.
+            </p>
             
             <p dir="ltr">
-              Press <kbd>H</kbd> to toggle highlighting the brush label in red.
+              Press <kbd>H</kbd> to toggle highlighting. 
+              Highlighting makes the foreground label bright red and helps to see which label we are editing.
             </p>
           </div>
           <div id="tab4" class="col s12">

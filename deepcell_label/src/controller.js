@@ -17,7 +17,10 @@ export class Controller {
     const labelMachine = createLabelMachine(projectID);
     this.service = interpret(labelMachine); // , { devTools: true });
     // add a listener to update the info table whenever a transition occurs
-    this.service.onTransition(() => { window.model?.notifyInfoChange() });
+    this.service.onTransition(() => {
+      window.model?.notifyInfoChange();
+      window.model?.notifyImageChange();
+    });
     // Start the service
     this.service.start();
     window.service = this.service;
@@ -110,6 +113,7 @@ export class Controller {
     } else if ((event.ctrlKey || event.metaKey) && (event.key === 'Z' || event.key === 'z')) {
       this.undo();
     } else if ((event.ctrlKey || event.metaKey) && event.key === 'b') {
+      event.preventDefault();
       this.service.send('TOGGLERGB');
     } else if (keydownLookup[event.key]) {
       this.service.send(keydownLookup[event.key]);
