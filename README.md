@@ -143,7 +143,7 @@ Press <kbd>Shift</kbd> + <kbd>F</kbd> to view the previous feature.
 
 ### Adjusting the Canvas
 
-DeepCell Label can adjust how to dispaly labels and images.
+DeepCell Label can adjust how to display labels and images.
 With these changes, we can make out finer details while labeling.
 
 Scroll on the canvas to change brightness.
