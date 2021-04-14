@@ -17,7 +17,10 @@ export class Controller {
     const labelMachine = createLabelMachine(projectID);
     this.service = interpret(labelMachine); // , { devTools: true });
     // add a listener to update the info table whenever a transition occurs
-    this.service.onTransition(() => { window.model?.notifyInfoChange() });
+    this.service.onTransition(() => {
+      window.model?.notifyInfoChange();
+      window.model?.notifyImageChange();
+    });
     // Start the service
     this.service.start();
     window.service = this.service;
