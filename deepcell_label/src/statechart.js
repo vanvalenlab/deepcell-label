@@ -640,9 +640,9 @@ const createLabelMachine = (projectID) => {
         decrementFrame: () => addFencedAction(new ChangeFrame(window.model.frame - 1)),
         incrementFrame: () => addFencedAction(new ChangeFrame(window.model.frame + 1)),
         decrementChannel: () => addFencedAction(new ChangeChannel(window.model.channel - 1)),
-        incrementChannel: () => addFencedAction(new ChangeChannel(window.model.channel - 1)),
+        incrementChannel: () => addFencedAction(new ChangeChannel(window.model.channel + 1)),
         decrementFeature: () => addFencedAction(new ChangeFeature(window.model.feature - 1)),
-        incrementFeature: () => addFencedAction(new ChangeFeature(window.model.feature - 1)),
+        incrementFeature: () => addFencedAction(new ChangeFeature(window.model.feature + 1)),
         // adjuster actions
         changeContrast: (_, event) => addAction(new ChangeContrast(event.change)),
         changeBrightness: (_, event) => addAction(new ChangeBrightness(event.change)),
