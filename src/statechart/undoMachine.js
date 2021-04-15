@@ -72,11 +72,11 @@ const createHistoryMachine = (ref) => Machine(
   }
 );
 
-const createUndoMachine = ({ canvasRef }) => Machine(
+const createUndoMachine = ({ canvasRef, imageRef }) => Machine(
   {
     id: 'undo',
     context: {
-      actors: [canvasRef],
+      undoableActors: [canvasRef, imageRef],
       historyActors: null,
       count: 0,
       numActors: 0,
@@ -136,10 +136,14 @@ const createUndoMachine = ({ canvasRef }) => Machine(
     },
     actions: {
       setUpHistories: assign({
-        historyActors: (context) => context.actors.map((actor) => spawn(createHistoryMachine(actor))),
+        historyActors: (context) => context.undoableActors.map(
+          (actor) => spawn(createHistoryMachine(actor))
+        ),
       }),
       forwardToHistories: pure((context) => {
-        return context.historyActors.map((actor) => forwardTo(actor));
+        return context.historyActors.map(
+          (actor) => forwardTo(actor)
+        );
       }),
       resetCounts: assign({
         count: 0,
