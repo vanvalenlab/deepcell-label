@@ -2,7 +2,7 @@ import { Machine, assign, send, sendParent } from 'xstate';
 import npyjs from '../npyjs';
 
 function fetchLabeled(context) {
-  const { projectId, feature, nextFrame: frame } = context;
+  const { projectId, feature, loadingFrame: frame } = context;
   const pathToLabeled = `/api/labeled/${projectId}/${feature}/${frame}`;
   const pathToArray = `/api/array/${projectId}/${feature}/${frame}`;
 
@@ -51,11 +51,12 @@ const createFeatureMachine = ({ projectId, feature, frame }) => Machine(
       projectId,
       feature,
       frame,
-      nextFrame: frame,
+      loadingFrame: frame,
       opacity: 0.3,
       highlight: false,
       showNoLabel: true,
       frames: {},
+      arrays: {},
       labeledImage: new Image(),
       labeledArray: [[]],
     },
@@ -91,7 +92,7 @@ const createFeatureMachine = ({ projectId, feature, frame }) => Machine(
     on: {
       SETFRAME: {
         target: 'checkLoaded',
-        actions: assign({ nextFrame: (context, event) => event.frame }),
+        actions: assign({ loadingFrame: (context, event) => event.frame }),
       },
       FRAME: { target: 'idle', actions: 'useFrame' },
       FEATURE: { target: 'idle', actions: 'useFrame' },
@@ -105,34 +106,37 @@ const createFeatureMachine = ({ projectId, feature, frame }) => Machine(
   },
   {
     guards: {
-      loadedFrame: (context) => context.nextFrame in context.frames,
+      loadedFrame: (context) => context.loadingFrame in context.frames,
       newFrame: (context, event) => context.frame !== event.frame,
       frameChanged: (context, event) => event.data.frames.includes(context.frame),
     },
     actions: {
-      clearChangedFrames: assign({
-        frames: (context, event) => {
-          const newFrames = event.data.frames;
-          const frames = Object.entries(context.frames);
-          const filteredFrames = frames.filter(
-            ([key, value]) => !newFrames.includes(Number(key)));
-          return Object.fromEntries(filteredFrames);
-        }
+      clearChangedFrames: assign((context, event) => {
+        const newFrames = event.data.frames;
+        const notInNew = ([key, value]) => !newFrames.includes(Number(key));
+        const frames = Object.entries(context.frames);
+        const arrays = Object.entries(context.arrays);
+        const filteredFrames = frames.filter(notInNew);
+        const filteredArrays = arrays.filter(notInNew);
+        return {
+          frames: Object.fromEntries(filteredFrames),
+          arrays: Object.fromEntries(filteredArrays),
+        };
       }),
       sendLabeledLoaded: sendParent((context) => (
-        { type: 'LABELEDLOADED', frame: context.nextFrame, feature: context.feature }
+        { type: 'LABELEDLOADED', frame: context.loadingFrame, feature: context.feature }
       )),
       sendLabeledArray: sendParent((context) => (
         { type: 'LABELEDARRAY', labeledArray: context.labeledArray }
       )),
       useFrame: assign((context, event) => ({
-        frame: context.nextFrame,
-        labeledImage: context.frames[context.nextFrame],
-        labeledArray: context.arrays[context.nextFrame],
+        frame: event.frame,
+        labeledImage: context.frames[event.frame],
+        labeledArray: context.arrays[event.frame],
       })),
       saveFrame: assign((context, event) => ({
-        frames: { ...context.frames, [context.nextFrame]: event.data[0] },
-        arrays: { ...context.arrays, [context.nextFrame]: event.data[1] },
+        frames: { ...context.frames, [context.loadingFrame]: event.data[0] },
+        arrays: { ...context.arrays, [context.loadingFrame]: event.data[1] },
       })),
       toggleHighlight: assign({ highlight: (context) => !context.highlight }),
       toggleShowNoLabel: assign({ showNoLabel: (context) => !context.showNoLabel }),
