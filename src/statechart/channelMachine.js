@@ -1,7 +1,7 @@
 import { Machine, assign, sendParent } from 'xstate';
 
 function fetchRaw(context) {
-  const { projectId, channel, nextFrame: frame } = context;
+  const { projectId, channel, loadingFrame: frame } = context;
   const pathToRaw = `/api/raw/${projectId}/${channel}/${frame}`;
 
   return fetch(pathToRaw)
@@ -35,7 +35,7 @@ const createChannelMachine = ({ projectId, channel, frame }) => Machine(
       projectId,
       channel,
       frame,
-      nextFrame: frame,
+      loadingFrame: frame,
       brightness: 0,
       contrast: 0,
       invert: true,
@@ -67,7 +67,7 @@ const createChannelMachine = ({ projectId, channel, frame }) => Machine(
       // fetching
       SETFRAME: {
         target: 'checkLoaded',
-        actions: assign({ nextFrame: (context, event) => event.frame }),
+        actions: assign({ loadingFrame: (context, event) => event.frame }),
       },
       FRAME: { target: 'idle', actions: 'useFrame' },
       CHANNEL: { target: 'idle', actions: 'useFrame' },
@@ -80,14 +80,14 @@ const createChannelMachine = ({ projectId, channel, frame }) => Machine(
   },
   {
     guards: {
-      loadedFrame: (context, event) => context.nextFrame in context.frames,
+      loadedFrame: (context, event) => context.loadingFrame in context.frames,
       newFrame: (context, event) => context.frame !== event.frame,
     },
     actions: {
       // fetching
-      sendRawLoaded: sendParent((context) => ({ type: 'RAWLOADED', frame: context.nextFrame, channel: context.channel })), 
+      sendRawLoaded: sendParent((context) => ({ type: 'RAWLOADED', frame: context.loadingFrame, channel: context.channel })), 
       saveFrame: assign({
-        frames: (context, event) => ({...context.frames, [context.nextFrame]: event.data}),
+        frames: (context, event) => ({...context.frames, [context.loadingFrame]: event.data}),
       }),
       useFrame: assign({
         frame: (context, event) => event.frame,
