@@ -28,14 +28,14 @@ function showImage(imgUrl) {
   });
 }
 
-const createChannelMachine = ({ projectId, channel, frame }) => Machine(
+const createChannelMachine = (projectId, channel) => Machine(
   {
-    id: `raw_channel${channel}`,
+    id: `channel${channel}`,
     context: {
       projectId,
       channel,
-      frame,
-      loadingFrame: frame,
+      frame: null,
+      loadingFrame: null,
       brightness: 0,
       contrast: 0,
       invert: true,
@@ -43,7 +43,7 @@ const createChannelMachine = ({ projectId, channel, frame }) => Machine(
       frames: {},
       rawImage: new Image(),
     },
-    initial: 'loading',
+    initial: 'idle',
     states: {
       idle: {},
       checkLoaded: {
@@ -65,7 +65,7 @@ const createChannelMachine = ({ projectId, channel, frame }) => Machine(
     },
     on: {
       // fetching
-      SETFRAME: {
+      LOADFRAME: {
         target: 'checkLoaded',
         actions: assign({ loadingFrame: (context, event) => event.frame }),
       },

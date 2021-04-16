@@ -6,7 +6,6 @@ function fetchLabeled(context) {
   const pathToLabeled = `/api/labeled/${projectId}/${feature}/${frame}`;
   const pathToArray = `/api/array/${projectId}/${feature}/${frame}`;
 
-
   const image = fetch(pathToLabeled)
     // .then(validateResponse)
     .then(readResponseAsBlob)
@@ -44,27 +43,25 @@ function reshapeArray(array) {
   return result;
 }
 
-const createFeatureMachine = ({ projectId, feature, frame }) => Machine(
+const createFeatureMachine = (projectId, feature) => Machine(
   {
     id: `labeled_feature${feature}`,
     context: {
       projectId,
       feature,
-      frame,
-      loadingFrame: frame,
+      frame: null,
+      loadingFrame: null,
       opacity: 0.3,
       highlight: false,
       showNoLabel: true,
       frames: {},
       arrays: {},
       labeledImage: new Image(),
-      labeledArray: [[]],
+      labeledArray: null,
     },
-    initial: 'loading',
+    initial: 'idle',
     states: {
-      idle: {
-        entry: 'sendLabeledArray'
-      },
+      idle: {},
       checkLoaded: {
         always: [
           { cond: 'loadedFrame', target: 'loaded' },
@@ -80,6 +77,7 @@ const createFeatureMachine = ({ projectId, feature, frame }) => Machine(
       },
       loaded: {
         entry: 'sendLabeledLoaded',
+        exit: 'sendLabeledArray'
       },
       reloading: {
         invoke: {
@@ -87,10 +85,11 @@ const createFeatureMachine = ({ projectId, feature, frame }) => Machine(
           onDone: { target: 'idle', actions: ['saveFrame', 'useFrame'] },
           onError: { target: 'idle', actions: (context, event) => console.log(event) },
         },
+        exit: 'sendLabeledArray',
       }
     },
     on: {
-      SETFRAME: {
+      LOADFRAME: {
         target: 'checkLoaded',
         actions: assign({ loadingFrame: (context, event) => event.frame }),
       },
