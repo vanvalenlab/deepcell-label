@@ -82,10 +82,10 @@ const createFeatureMachine = (projectId, feature) => Machine(
       reloading: {
         invoke: {
           src: fetchLabeled,
-          onDone: { target: 'idle', actions: ['saveFrame', 'useFrame'] },
+          onDone: { target: 'idle', actions: 'reloadFrame' },
           onError: { target: 'idle', actions: (context, event) => console.log(event) },
         },
-        exit: 'sendLabeledArray',
+        exit: [(c) => console.log(c), 'sendLabeledArray'],
       }
     },
     on: {
@@ -137,9 +137,15 @@ const createFeatureMachine = (projectId, feature) => Machine(
         frames: { ...context.frames, [context.loadingFrame]: event.data[0] },
         arrays: { ...context.arrays, [context.loadingFrame]: event.data[1] },
       })),
-      toggleHighlight: assign({ highlight: (context) => !context.highlight }),
-      toggleShowNoLabel: assign({ showNoLabel: (context) => !context.showNoLabel }),
-      setOpacity: assign({ opacity: (_, event) => Math.min(1, Math.max(0, event.opacity)) }),
+      reloadFrame: assign(({ frame, frames, arrays }, { data: [image, array] }) => ({
+        labeledImage: image,
+        labeledArray: array,
+        frames: { ...frames, [frame]: image },
+        arrays: { ...arrays, [frame]: array },
+      })),
+      toggleHighlight: assign({ highlight: ({ highlight }) => !highlight }),
+      toggleShowNoLabel: assign({ showNoLabel: ({ showNoLabel }) => !showNoLabel }),
+      setOpacity: assign({ opacity: (_, { opacity }) => Math.min(1, Math.max(0, opacity)) }),
     }
   }
 );

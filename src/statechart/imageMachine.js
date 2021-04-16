@@ -213,13 +213,7 @@ const createImageMachine = ({ projectId }) => Machine(
       },
     },
     on: {
-      // LOADED: { actions: 'forwardToLabeled' },
-      // LOADFRAME: { cond: 'newNextFrame', actions: ['saveFrame', 'forwardToRaw', 'forwardToLabeled'] },
-      // LOADCHANNEL: { cond: 'newNextChannel', actions: ['saveChannel', 'forwardToRaw'] },
-      // LOADFEATURE: { cond: 'newNextFeature', actions: ['saveFeature', 'forwardToLabeled'] },
-      // FRAME: { actions: ['useFrame', 'forwardToTool'] },
-      // CHANNEL: { actions: ['useChannel', 'forwardToTool'] },
-      // FEATURE: { actions: ['useFeature', 'forwardToTool'] },
+      LOADED: { actions: forwardTo((context, event) => context.features[event.data.feature]) },
       
       // TOGGLEINVERT: { actions: 'forwardToChannel' },
       // TOGGLEGRAYSCALE: { actions: 'forwardToChannel' },
