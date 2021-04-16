@@ -105,9 +105,9 @@ const createFeatureMachine = (projectId, feature) => Machine(
   },
   {
     guards: {
-      loadedFrame: (context) => context.loadingFrame in context.frames,
+      loadedFrame: ({ loadingFrame, frames }) => loadingFrame in frames,
       newFrame: (context, event) => context.frame !== event.frame,
-      frameChanged: (context, event) => event.data.frames.includes(context.frame),
+      frameChanged: ({ frame }, { data: { frames }}) => frames.includes(frame),
     },
     actions: {
       clearChangedFrames: assign((context, event) => {
@@ -122,20 +122,20 @@ const createFeatureMachine = (projectId, feature) => Machine(
           arrays: Object.fromEntries(filteredArrays),
         };
       }),
-      sendLabeledLoaded: sendParent((context) => (
-        { type: 'LABELEDLOADED', frame: context.loadingFrame, feature: context.feature }
+      sendLabeledLoaded: sendParent(({ loadingFrame, feature }) => (
+        { type: 'LABELEDLOADED', frame: loadingFrame, feature }
       )),
-      sendLabeledArray: sendParent((context) => (
-        { type: 'LABELEDARRAY', labeledArray: context.labeledArray }
+      sendLabeledArray: sendParent(({ labeledArray }) => (
+        { type: 'LABELEDARRAY', labeledArray }
       )),
-      useFrame: assign((context, event) => ({
-        frame: event.frame,
-        labeledImage: context.frames[event.frame],
-        labeledArray: context.arrays[event.frame],
+      useFrame: assign(({ frames, arrays }, { frame }) => ({
+        frame,
+        labeledImage: frames[frame],
+        labeledArray: arrays[frame],
       })),
-      saveFrame: assign((context, event) => ({
-        frames: { ...context.frames, [context.loadingFrame]: event.data[0] },
-        arrays: { ...context.arrays, [context.loadingFrame]: event.data[1] },
+      saveFrame: assign(({ frames, arrays, loadingFrame }, { data: [image, array] }) => ({
+        frames: { ...frames, [loadingFrame]: image },
+        arrays: { ...arrays, [loadingFrame]: array },
       })),
       reloadFrame: assign(({ frame, frames, arrays }, { data: [image, array] }) => ({
         labeledImage: image,
