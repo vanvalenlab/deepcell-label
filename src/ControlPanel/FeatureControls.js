@@ -23,7 +23,7 @@ export default function FeatureControls({ feature }) {
   };
 
   const handleOutlineChange = (event, newValue) => {
-    // send({ type: 'SETOUTLINE', value: newValue });
+    send({ type: 'SETOUTLINE', outline: newValue });
   };
 
   const handleOpacityChange = (event, newValue) => {
@@ -51,7 +51,7 @@ export default function FeatureControls({ feature }) {
         </ToggleButton>
         <FormControl component="fieldset">
           <FormLabel component="legend">Outline</FormLabel>
-          <RadioGroup row aria-label="outline" name="outline" value={outline || "selected"} onChange={handleOutlineChange}>
+          <RadioGroup row aria-label="outline" name="outline" value={outline} onChange={handleOutlineChange}>
             <FormControlLabel value="all" control={<Radio />} label="All" />
             <FormControlLabel value="selected" control={<Radio />} label="Selected" />
             <FormControlLabel value="none" control={<Radio />} label="None" />

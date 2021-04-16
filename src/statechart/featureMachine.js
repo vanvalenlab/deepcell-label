@@ -54,6 +54,7 @@ const createFeatureMachine = (projectId, feature) => Machine(
       opacity: 0.3,
       highlight: false,
       showNoLabel: true,
+      outline: 'selected',
       frames: {},
       arrays: {},
       labeledImage: new Image(),
@@ -95,6 +96,7 @@ const createFeatureMachine = (projectId, feature) => Machine(
       },
       FRAME: { target: 'idle', actions: 'useFrame' },
       FEATURE: { target: 'idle', actions: 'useFrame' },
+      SETOUTLINE: { actions: 'setOutline' },
       SETOPACITY: { actions: 'setOpacity' },
       TOGGLESHOWNOLABEL: { actions: 'toggleShowNoLabel' },
       LOADED: [
@@ -146,6 +148,7 @@ const createFeatureMachine = (projectId, feature) => Machine(
       toggleHighlight: assign({ highlight: ({ highlight }) => !highlight }),
       toggleShowNoLabel: assign({ showNoLabel: ({ showNoLabel }) => !showNoLabel }),
       setOpacity: assign({ opacity: (_, { opacity }) => Math.min(1, Math.max(0, opacity)) }),
+      setOutline: assign({ outline: (_, { outline }) => outline }),
     }
   }
 );

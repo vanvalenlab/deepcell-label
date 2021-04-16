@@ -2,6 +2,43 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useActor } from '@xstate/react';
 import { useCanvas, useTool } from '../ServiceContext';
 
+function outlineSelected(imageData, labeledArray, foreground, background) {
+  const { data, width, height } = imageData;
+  // use label array to figure out which pixels to recolor
+  for (let j = 0; j < height; j += 1) { // y
+    for (let i = 0; i < width; i += 1) { // x
+      const label = labeledArray[j][i];
+      if (foreground !== 0 && label === -1 * foreground) {
+        data[(j * width  + i) * 4 + 0] = 255;
+        data[(j * width  + i) * 4 + 1] = 255;
+        data[(j * width  + i) * 4 + 2] = 255;
+        data[(j * width  + i) * 4 + 3] = 255;
+      } else if (background !== 0 && label === -1 * background) {
+        data[(j * width  + i) * 4 + 0] = 255;
+        data[(j * width  + i) * 4 + 1] = 0;
+        data[(j * width  + i) * 4 + 2] = 0;
+        data[(j * width  + i) * 4 + 3] = 255;
+      }
+    }
+  }
+}
+
+function outlineAll(imageData, labeledArray) {
+  const { data, width, height } = imageData;
+  // use label array to figure out which pixels to recolor
+  for (let j = 0; j < height; j += 1) { // y
+    for (let i = 0; i < width; i += 1) { // x
+      const label = labeledArray[j][i];
+      if (label < 0) {
+        data[(j * width  + i) * 4 + 0] = 255;
+        data[(j * width  + i) * 4 + 1] = 255;
+        data[(j * width  + i) * 4 + 2] = 255;
+        data[(j * width  + i) * 4 + 3] = 255;
+      }
+    }
+  }
+}
+
 const OutlineCanvas = ({ feature, ...props }) => {
   // const [foreground, background] = [1, 2];
   const [all, setAll] = useState(false);
@@ -15,7 +52,7 @@ const OutlineCanvas = ({ feature, ...props }) => {
   const { foreground, background } = currentTool.context;
 
   const [currentFeature, sendFeature] = useActor(feature);
-  let { labeledArray } = currentFeature.context;
+  let { labeledArray, outline } = currentFeature.context;
   if (!labeledArray) { labeledArray = Array(height).fill(Array(width).fill(0)); }
 
   const canvasRef = useRef();
@@ -32,26 +69,15 @@ const OutlineCanvas = ({ feature, ...props }) => {
   useEffect(() => {
     const width = labeledArray[0].length;
     const height = labeledArray.length;
-    if (width * height === 0) { return; }
-    const array = new Uint8ClampedArray(width * height * 4);
-    // use label array to figure out which pixels to recolor
-    for (let j = 0; j < height; j += 1) { // y
-      for (let i = 0; i < width; i += 1) { // x
-        const label = labeledArray[j][i];
-        if (foreground !== 0 && label === -1 * foreground) {
-          array[(j * width  + i) * 4 + 0] = 255;
-          array[(j * width  + i) * 4 + 1] = 255;
-          array[(j * width  + i) * 4 + 2] = 255;
-          array[(j * width  + i) * 4 + 3] = 255;
-        } else if (background !== 0 && label === -1 * background) {
-          array[(j * width  + i) * 4 + 0] = 255;
-          array[(j * width  + i) * 4 + 1] = 0;
-          array[(j * width  + i) * 4 + 2] = 0;
-          array[(j * width  + i) * 4 + 3] = 255;
-        }
-      }
+    const data = new ImageData(width, height);
+    switch (outline) {
+      case 'all':
+        outlineAll(data, labeledArray);
+      case 'selected':
+        outlineSelected(data, labeledArray, foreground, background);
+      case 'none':
+      default:
     }
-    const data = new ImageData(array, width, height);
     outlineCtx.putImageData(data, 0, 0);
   }, [labeledArray, foreground, background, outlineCtx]);
 
