@@ -1,25 +1,29 @@
 import React from 'react';
+import { useActor } from '@xstate/react';
 import ControlRow from './ControlRow';
 import DiscreteSlider from './DiscreteSlider';
 import { useImage } from '../ServiceContext';
 
 
+
 export default function ImageControls() {
-  const [current, send] = useImage();
+  const image = useImage();
+  const [current, send] = useActor(image);
   const { frame, feature, channel, numFrames, numFeatures, numChannels } = current.context;
+
 
   const handleFrameChange = (event, newValue) => {
     if (newValue !== frame) {
-      send({ type: 'SETFRAME', frame: newValue });
+      send({ type: 'LOADFRAME', frame: newValue });
     }
   };
 
   const handleChannelChange = (event, newValue) => {
-    send({ type: 'SETCHANNEL', channel: newValue });
+    send({ type: 'LOADCHANNEL', channel: newValue });
   };
 
   const handleFeatureChange = (event, newValue) => {
-    send({ type: 'SETFEATURE', feature: newValue });
+    send({ type: 'LOADFEATURE', feature: newValue });
   };
 
   return (

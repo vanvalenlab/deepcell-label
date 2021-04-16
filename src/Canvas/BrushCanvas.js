@@ -1,3 +1,4 @@
+import { useActor } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
 import { useCanvas, useTool } from '../ServiceContext';
 
@@ -82,10 +83,12 @@ const drawTrace = (ctx, x, y, brushSize) => {
 };
 
 const BrushCanvas = props => {
-  const [currentCanvas, sendCanvas] = useCanvas();
+  const canvas = useCanvas();
+  const [currentCanvas, sendCanvas] = useActor(canvas);
   const { sx, sy, zoom, width, height } = currentCanvas.context;
-
-  const [currentTool, sendTool] = useTool();
+  
+  const tool = useTool();
+  const [currentTool, sendTool] = useActor(tool);
   const { x, y, trace, brushSize } = currentTool.context;
 
   const canvasRef = useRef();

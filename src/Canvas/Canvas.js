@@ -9,7 +9,7 @@ import OutlineCanvas from './OutlineCanvas';
 import BrushCanvas from './BrushCanvas';
 
 // import { canvasService } from '../statechart/service';
-import { useCanvas, useTool } from '../ServiceContext';
+import { useCanvas, useTool, useImage } from '../ServiceContext';
 
 const useStyles = makeStyles({
     canvasBox: {
@@ -27,17 +27,23 @@ const useStyles = makeStyles({
 });
 
 export const Canvas = props => {
-  const [currentCanvas, sendCanvas] = useCanvas();
-  const { sx, sy, zoom, scale, width, height } = currentCanvas.context;
 
-  const [currentLabeler, sendLabeler] = useTool();
+  const image = useImage();
+  const [currentImage, sendImage] = useActor(image);
+  const { channels, channel, features, feature } = currentImage.context;
+
+  const canvas = useCanvas();
+  const [currentCanvas, sendCanvas] = useActor(canvas);
+  const { sx, sy, zoom, width, height, scale } = currentCanvas.context;
+
+  const tool = useTool();
 
   const styles = useStyles();
 
   useEffect(() => {
     const padding = 5;
-    sendCanvas({ type: 'RESIZE', width: props.width, height: props.height, padding: padding });
-  }, [sendCanvas, props.width, props.height, height, width]);
+    canvas.send({ type: 'RESIZE', width: props.width, height: props.height, padding: padding });
+  }, [canvas, props.width, props.height, height, width]);
 
   // dynamic canvas border styling based on position
   const padding = 5;
@@ -71,9 +77,9 @@ export const Canvas = props => {
 
   const handleMouseDown = (event) => {
     if (event.shiftKey) {
-      sendLabeler( {...event, type: 'SHIFTCLICK' })
+      tool.send( {...event, type: 'SHIFTCLICK' })
     } else {
-      sendLabeler(event);
+      tool.send(event);
     }
   };
 
@@ -85,15 +91,15 @@ export const Canvas = props => {
       boxShadow={10}
       width={scale * width}
       height={scale * height}
-      onMouseMove={sendCanvas}
-      onWheel={sendCanvas}
+      onMouseMove={canvas.send}
+      onWheel={canvas.send}
       onMouseDown={handleMouseDown}
-      onMouseUp={sendLabeler}
-      onClick={sendLabeler}
+      onMouseUp={tool.send}
+      onClick={tool.send}
     >
-      <RawCanvas {...canvasProps} />
-      <LabeledCanvas {...canvasProps}/>
-      <OutlineCanvas {...canvasProps} />
+      {channels[channel] && <RawCanvas channel={channels[channel]} {...canvasProps} />}
+      {features[feature] && <LabeledCanvas feature={features[feature]} {...canvasProps} />}
+      {features[feature] && <OutlineCanvas feature={features[feature]} {...canvasProps} />}
       <BrushCanvas {...canvasProps} />
     </Box>
   )

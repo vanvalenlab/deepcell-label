@@ -6,6 +6,7 @@ import UndoIcon from '@material-ui/icons/Undo';
 import RedoIcon from '@material-ui/icons/Redo';
 
 import { useUndo } from '../ServiceContext';
+import { useSelector } from '@xstate/react';
 
 const useStyles = makeStyles({
   button: {
@@ -14,8 +15,9 @@ const useStyles = makeStyles({
 });
 
 export default function UndoRedo() {
-  const [state, send] = useUndo();
-  const { action, numActions } = state.context;
+  const undo = useUndo();
+  const action = useSelector(undo, state => state.context.action);
+  const numActions = useSelector(undo, state => state.context.numActions);
   const cannotUndo = action === 0;
   const cannotRedo = action === numActions;
 
@@ -27,7 +29,7 @@ export default function UndoRedo() {
       variant="contained"
       color="primary"
       disabled={cannotUndo}
-      onClick={() => send('UNDO')}
+      onClick={() => undo.send('UNDO')}
     >
       Undo
       <UndoIcon/>
@@ -37,7 +39,7 @@ export default function UndoRedo() {
       variant="contained"
       color="primary"
       disabled={cannotRedo}
-      onClick={() => send('REDO')}
+      onClick={() => undo.send('REDO')}
     >
       Redo
       <RedoIcon/>

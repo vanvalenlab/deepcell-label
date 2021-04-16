@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useActor } from '@xstate/react';
-import { useLabeled, useCanvas } from '../ServiceContext';
+import { useCanvas } from '../ServiceContext';
 
 const highlightImageData = (data, label) => {
   for (let i = 0; i < data.length; i += 4) {
@@ -33,14 +33,14 @@ const opacityImageData = (data, opacity) => {
   return data;
 };
 
-export const LabeledCanvas = props => {
+export const LabeledCanvas = ({ feature, ...props }) => {
 
-  const [currentLabeled, sendLabeled] = useLabeled();
-  const [currentFeature, sendFeature] = useActor(currentLabeled.context.featureActor);
+  const [currentFeature, sendFeature] = useActor(feature);
   const { highlight, showNoLabel, opacity, labeledImage } = currentFeature.context;
   const [foreground, background] = [1, 2];
 
-  const [currentCanvas, sendCanvas] = useCanvas();
+  const canvas = useCanvas();
+  const [currentCanvas, sendCanvas] = useActor(canvas);
   const { sx, sy, zoom, width, height } = currentCanvas.context;
 
   const canvasRef = useRef();

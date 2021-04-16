@@ -11,13 +11,12 @@ import FormLabel from '@material-ui/core/FormLabel';
 import Box from '@material-ui/core/Box';
 
 import ControlRow from './ControlRow';
-import { useLabeled } from '../ServiceContext';
 
 
-export default function FeatureControls() {
-  const [currentLabeled, sendLabeled] = useLabeled();
-  const [current, send] = useActor(currentLabeled.context.featureActor);
-  const { highlight, showNoLabel, opacity } = current.context;
+export default function FeatureControls({ feature }) {
+
+  const [current, send] = useActor(feature);
+  const { highlight, showNoLabel, opacity, outline } = current.context;
 
   const handleHighlightChange = () => {
     // send({ type: 'SETHIGHLIGHT', value: !current.highlight });
@@ -52,7 +51,7 @@ export default function FeatureControls() {
         </ToggleButton>
         <FormControl component="fieldset">
           <FormLabel component="legend">Outline</FormLabel>
-          <RadioGroup row aria-label="outline" name="outline" value={current.outline || "selected"} onChange={handleOutlineChange}>
+          <RadioGroup row aria-label="outline" name="outline" value={outline || "selected"} onChange={handleOutlineChange}>
             <FormControlLabel value="all" control={<Radio />} label="All" />
             <FormControlLabel value="selected" control={<Radio />} label="Selected" />
             <FormControlLabel value="none" control={<Radio />} label="None" />

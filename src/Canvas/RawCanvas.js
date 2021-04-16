@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useActor } from '@xstate/react';
-import { useRaw, useCanvas } from '../ServiceContext';
+import { useCanvas } from '../ServiceContext';
 
 const invertImageData = (data) => {
   for (let i = 0; i < data.length; i += 4) {
@@ -44,12 +44,12 @@ const brightnessImageData = (data, brightness) => {
   return data;
 }
 
-export const RawCanvas = props => {
-  const [currentRaw, sendRaw] = useRaw();
-  const [currentChannel, sendChannel] = useActor(currentRaw.context.channelActor);
+export const RawCanvas = ({channel,  ...props }) => {
+  const [currentChannel, sendChannel] = useActor(channel);
   const { invert, grayscale, brightness, contrast, rawImage } = currentChannel.context;
 
-  const [currentCanvas, sendCanvas] = useCanvas();
+  const canvas = useCanvas();
+  const [currentCanvas, sendCanvas] = useActor(canvas);
   const { sx, sy, zoom, width, height } = currentCanvas.context;
 
   const canvasRef = useRef();

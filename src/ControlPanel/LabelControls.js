@@ -1,16 +1,17 @@
 import React from 'react';
 import Typography from '@material-ui/core/Typography';
 import Box from '@material-ui/core/Box';
+import { useActor } from '@xstate/react';
+
 
 import ControlRow from './ControlRow';
 import { useTool } from '../ServiceContext';
 
 
 export default function LabelControls() {
-  const [currentTool, sendTool] = useTool();
-  // const [current, send] = useActor(currentLabeled.context.featureActor);
-  const { x, y, label, foreground, background } = currentTool.context;
-
+  const tool = useTool();
+  const [current, send] = useActor(tool);
+  const { x, y, label, foreground, background } = current.context;
 
   return (
     <ControlRow name={"Label"}>

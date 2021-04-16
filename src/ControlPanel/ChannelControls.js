@@ -5,12 +5,10 @@ import ToggleButton from '@material-ui/lab/ToggleButton';
 import { useActor } from '@xstate/react';
 
 import ControlRow from './ControlRow';
-import { useRaw } from '../ServiceContext';
 
-export default function ChannelControls() {
-  const [currentRaw, sendRaw] = useRaw();
-  const [current, send] = useActor(currentRaw.context.channelActor);
 
+export default function ChannelControls({ channel }) {
+  const [current, send] = useActor(channel);
   const { invert, grayscale, brightness, contrast } = current.context;
 
   const handleBrightnessChange = (event, newValue) => {

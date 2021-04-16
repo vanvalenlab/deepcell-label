@@ -1,21 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useActor } from '@xstate/react';
-import { useCanvas, useLabeled, useTool } from '../ServiceContext';
+import { useCanvas, useTool } from '../ServiceContext';
 
-const OutlineCanvas = props => {
+const OutlineCanvas = ({ feature, ...props }) => {
   // const [foreground, background] = [1, 2];
   const [all, setAll] = useState(false);
 
-  const [currentCanvas, sendCanvas] = useCanvas();
+  const canvas = useCanvas();
+  const [currentCanvas, sendCanvas] = useActor(canvas);
   const { sx, sy, zoom, width, height } = currentCanvas.context;
 
-  const [currentLabeled, sendLabeled] = useLabeled();
-  const [currentFeature, sendFeature] = useActor(currentLabeled.context.featureActor);
-  const { labeledArray } = currentFeature.context;
+  const tool = useTool();
+  const [currentTool, sendTool] = useActor(tool);
+  const { foreground, background } = currentTool.context;
 
-  const [currentEditor, sendEditor] = useTool();
-  const { foreground, background } = currentEditor.context;
-
+  const [currentFeature, sendFeature] = useActor(feature);
+  let { labeledArray } = currentFeature.context;
+  if (!labeledArray) { labeledArray = Array(height).fill(Array(width).fill(0)); }
 
   const canvasRef = useRef();
   const ctx = useRef();
