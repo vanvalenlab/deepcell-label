@@ -13,7 +13,7 @@ import Box from '@material-ui/core/Box';
 import ControlRow from './ControlRow';
 
 const HighlightButton = ({ feature }) => {
-  const highlight = useSelector(channel, state => state.context.highlight);
+  const highlight = useSelector(feature, state => state.context.highlight);
 
   const handleHighlightChange = () => {
     // feature.send({ type: 'SETHIGHLIGHT', value: !current.highlight });
@@ -28,7 +28,7 @@ const HighlightButton = ({ feature }) => {
 };
 
 const ShowNoLabelButton = ({ feature }) => {
-  const showNoLabel = useSelector(channel, state => state.context.showNoLabel);
+  const showNoLabel = useSelector(feature, state => state.context.showNoLabel);
 
   const handleShowNoLabelChange = () => {
     feature.send({ type: 'TOGGLESHOWNOLABEL' });
@@ -43,7 +43,7 @@ const ShowNoLabelButton = ({ feature }) => {
 };
 
 const OutlineRadioButtons = ({ feature }) => {
-  const outline = useSelector(channel, state => state.context.outline);
+  const outline = useSelector(feature, state => state.context.outline);
 
   const handleOutlineChange = (event, newValue) => {
     feature.send({ type: 'SETOUTLINE', outline: newValue });
@@ -60,7 +60,7 @@ const OutlineRadioButtons = ({ feature }) => {
 };
 
 const OpacitySlider = ({ feature }) => {
-  const opacity = useSelector(channel, state => state.context.opacity);
+  const opacity = useSelector(feature, state => state.context.opacity);
 
   const handleOpacityChange = (event, newValue) => {
     feature.send({ type: 'SETOPACITY', opacity: newValue });
