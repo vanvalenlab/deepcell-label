@@ -8,7 +8,7 @@ import { useImage } from '../ServiceContext';
 const FrameSlider = () => {
   const image = useImage();
   const frame = useSelector(image, state => state.context.frame);
-  const numFrames = useSelector(image, state => state.context.frame);
+  const numFrames = useSelector(image, state => state.context.numFrames);
 
   const handleFrameChange = (event, newValue) => {
     if (newValue !== frame) {
@@ -28,7 +28,7 @@ const FrameSlider = () => {
 const ChannelSlider = () => {
   const image = useImage();
   const channel = useSelector(image, state => state.context.channel);
-  const numChannels = useSelector(image, state => state.context.channel);
+  const numChannels = useSelector(image, state => state.context.numChannels);
 
   const handleChannelChange = (event, newValue) => {
     image.send({ type: 'LOADCHANNEL', channel: newValue });
@@ -46,7 +46,7 @@ const ChannelSlider = () => {
 const FeatureSlider = () => {
   const image = useImage();
   const feature = useSelector(image, state => state.context.feature);
-  const numFeatures = useSelector(image, state => state.context.feature);
+  const numFeatures = useSelector(image, state => state.context.numFeatures);
 
   const handleFeatureChange = (event, newValue) => {
     image.send({ type: 'LOADFEATURE', feature: newValue });
@@ -61,7 +61,7 @@ const FeatureSlider = () => {
     />;
 };
 
-export default function ImageControls() {
+const ImageControls = () => {
   return (
     <ControlRow name={"Image"}>
       <FrameSlider />
@@ -69,4 +69,6 @@ export default function ImageControls() {
       <FeatureSlider />
     </ControlRow>
   )
-}
+};
+
+export default React.memo(ImageControls);
