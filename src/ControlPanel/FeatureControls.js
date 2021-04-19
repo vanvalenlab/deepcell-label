@@ -1,5 +1,5 @@
 import React from 'react';
-import { useActor } from '@xstate/react';
+import { useSelector } from '@xstate/react';
 import Typography from '@material-ui/core/Typography';
 import Slider from '@material-ui/core/Slider';
 import ToggleButton from '@material-ui/lab/ToggleButton';
@@ -12,64 +12,90 @@ import Box from '@material-ui/core/Box';
 
 import ControlRow from './ControlRow';
 
-
-export default function FeatureControls({ feature }) {
-
-  const [current, send] = useActor(feature);
-  const { highlight, showNoLabel, opacity, outline } = current.context;
+const HighlightButton = ({ feature }) => {
+  const highlight = useSelector(channel, state => state.context.highlight);
 
   const handleHighlightChange = () => {
-    // send({ type: 'SETHIGHLIGHT', value: !current.highlight });
+    // feature.send({ type: 'SETHIGHLIGHT', value: !current.highlight });
   };
 
-  const handleOutlineChange = (event, newValue) => {
-    send({ type: 'SETOUTLINE', outline: newValue });
-  };
+  return <ToggleButton
+    selected={highlight}
+    onChange={handleHighlightChange}
+  >
+    Highlight
+  </ToggleButton>;
+};
 
-  const handleOpacityChange = (event, newValue) => {
-    send({ type: 'SETOPACITY', opacity: newValue });
-  };
+const ShowNoLabelButton = ({ feature }) => {
+  const showNoLabel = useSelector(channel, state => state.context.showNoLabel);
 
   const handleShowNoLabelChange = () => {
-    send({ type: 'TOGGLESHOWNOLABEL' });
+    feature.send({ type: 'TOGGLESHOWNOLABEL' });
   };
 
+  return <ToggleButton
+    selected={!showNoLabel}
+    onChange={handleShowNoLabelChange}
+  >
+    Hide Unlabeled Area
+  </ToggleButton>;
+};
+
+const OutlineRadioButtons = ({ feature }) => {
+  const outline = useSelector(channel, state => state.context.outline);
+
+  const handleOutlineChange = (event, newValue) => {
+    feature.send({ type: 'SETOUTLINE', outline: newValue });
+  };
+
+  return <FormControl component="fieldset">
+    <FormLabel component="legend">Outline</FormLabel>
+    <RadioGroup row aria-label="outline" name="outline" value={outline} onChange={handleOutlineChange}>
+      <FormControlLabel value="all" control={<Radio />} label="All" />
+      <FormControlLabel value="selected" control={<Radio />} label="Selected" />
+      <FormControlLabel value="none" control={<Radio />} label="None" />
+    </RadioGroup>
+  </FormControl>;
+};
+
+const OpacitySlider = ({ feature }) => {
+  const opacity = useSelector(channel, state => state.context.opacity);
+
+  const handleOpacityChange = (event, newValue) => {
+    feature.send({ type: 'SETOPACITY', opacity: newValue });
+  };
+
+  return <>
+    <Typography gutterBottom>
+      Opacity
+        </Typography>
+    <Slider
+      value={opacity}
+      valueLabelDisplay="auto"
+      min={0}
+      max={1}
+      step={0.01}
+      onChange={handleOpacityChange}
+    // onDoubleClick={() => handleOpacityChange('', 0.3)}
+    />
+  </>;
+}
+
+
+
+
+const FeatureControls = ({ feature }) => {
   return (
     <ControlRow name={"Label Display"}>
       <Box display='flex' flexDirection='column'>
-        <ToggleButton
-          selected={highlight}
-          onChange={handleHighlightChange}
-        >
-          Highlight
-        </ToggleButton>
-        <ToggleButton
-          selected={!showNoLabel}
-          onChange={handleShowNoLabelChange}
-        >
-          Show Background
-        </ToggleButton>
-        <FormControl component="fieldset">
-          <FormLabel component="legend">Outline</FormLabel>
-          <RadioGroup row aria-label="outline" name="outline" value={outline} onChange={handleOutlineChange}>
-            <FormControlLabel value="all" control={<Radio />} label="All" />
-            <FormControlLabel value="selected" control={<Radio />} label="Selected" />
-            <FormControlLabel value="none" control={<Radio />} label="None" />
-          </RadioGroup>
-        </FormControl>
-        <Typography gutterBottom>
-          Opacity
-        </Typography>
-        <Slider
-          value={opacity}
-          valueLabelDisplay="auto"
-          min={0}
-          max={1}
-          step={0.01}
-          onChange={handleOpacityChange}
-          // onDoubleClick={() => handleOpacityChange('', 0.3)}
-        />
+        <HighlightButton feature={feature} />
+        <ShowNoLabelButton feature={feature} />
+        <OutlineRadioButtons feature={feature} />
+        <OpacitySlider feature={feature} />
       </Box>
     </ControlRow>
   );
-}
+};
+
+export default React.memo(FeatureControls);
