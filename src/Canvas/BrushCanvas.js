@@ -1,6 +1,6 @@
 import { useActor } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-import { useCanvas, useTool } from '../ServiceContext';
+import { useTool } from '../ServiceContext';
 
 const distance = (x, y) => {
   return Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2));
@@ -82,11 +82,8 @@ const drawTrace = (ctx, x, y, brushSize) => {
   ctx.putImageData(imageData, sx, sy);
 };
 
-const BrushCanvas = props => {
-  const canvas = useCanvas();
-  const [currentCanvas, sendCanvas] = useActor(canvas);
-  const { sx, sy, zoom, width, height } = currentCanvas.context;
-  
+const BrushCanvas = ({ sx, sy, sw, sh, zoom, ...props }) => {
+
   const tool = useTool();
   const [currentTool, sendTool] = useActor(tool);
   const { x, y, trace, brushSize } = currentTool.context;
@@ -104,31 +101,31 @@ const BrushCanvas = props => {
   const traceCanvas = useRef();
   const traceCtx = useRef();
   useEffect(() => {
-    brushCanvas.current = new OffscreenCanvas(width, height);
+    brushCanvas.current = new OffscreenCanvas(sw, sh);
     brushCtx.current = brushCanvas.current.getContext('2d');
-    traceCanvas.current = new OffscreenCanvas(width, height);
+    traceCanvas.current = new OffscreenCanvas(sw, sh);
     traceCtx.current = traceCanvas.current.getContext('2d');
-  }, [width, height]);
+  }, [sw, sh]);
 
   // draws the brush outline
   useEffect(() => {
-    brushCtx.current.clearRect(0, 0, width, height);
+    brushCtx.current.clearRect(0, 0, sw, sh);
     drawBrush(brushCtx.current, x, y, brushSize);
-  }, [brushCtx, x, y, brushSize, height, width]);
+  }, [brushCtx, x, y, brushSize, sh, sw]);
 
   // draws the brush trace
   useEffect(() => {
     if (trace.length === 0) { // clear the trace canvas
-      traceCtx.current.clearRect(0, 0, width, height);
+      traceCtx.current.clearRect(0, 0, sw, sh);
     } else { // add to trace
       const [tx, ty] = trace[trace.length - 1];
       drawTrace(traceCtx.current, tx, ty, brushSize);
     }
-  }, [traceCtx, trace, brushSize, height, width]);
+  }, [traceCtx, trace, brushSize, sh, sw]);
 
   // redraws the brush trace when resizing the brush size
   useEffect(() => {
-    traceCtx.current.clearRect(0, 0, height, width);
+    traceCtx.current.clearRect(0, 0, sh, sw);
     for (const [tx, ty] of trace) {
       drawTrace(traceCtx.current, tx, ty, brushSize);
     }
@@ -140,18 +137,18 @@ const BrushCanvas = props => {
     ctx.current.drawImage(
       traceCanvas.current,
       sx, sy,
-      width / zoom, height / zoom,
+      sw / zoom, sh / zoom,
       0, 0,
       props.width, props.height,
     );
     ctx.current.drawImage(
       brushCanvas.current,
       sx, sy,
-      width / zoom, height / zoom,
+      sw / zoom, sh / zoom,
       0, 0,
       props.width, props.height,
     );
-  }, [trace, brushSize, x, y, sx, sy, zoom, width, height, props.width, props.height]);
+  }, [trace, brushSize, x, y, sx, sy, zoom, sw, sh, props.width, props.height]);
 
   return <canvas id='brush-canvas'
     ref={canvasRef}

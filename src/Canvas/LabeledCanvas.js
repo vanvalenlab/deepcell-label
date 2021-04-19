@@ -33,19 +33,15 @@ const opacityImageData = (data, opacity) => {
   return data;
 };
 
-export const LabeledCanvas = ({ feature, ...props }) => {
+export const LabeledCanvas = ({ feature, sx, sy, sw, sh, zoom, ...props }) => {
 
   const [currentFeature, sendFeature] = useActor(feature);
   const { highlight, showNoLabel, opacity, labeledImage } = currentFeature.context;
   const [foreground, background] = [1, 2];
 
-  const canvas = useCanvas();
-  const [currentCanvas, sendCanvas] = useActor(canvas);
-  const { sx, sy, zoom, width, height } = currentCanvas.context;
-
   const canvasRef = useRef();
   const ctx = useRef();
-  const labelCanvas = new OffscreenCanvas(width, height);
+  const labelCanvas = new OffscreenCanvas(sw, sh);
   const labelCtx = labelCanvas.getContext('2d');
 
   useEffect(() => {
@@ -55,7 +51,7 @@ export const LabeledCanvas = ({ feature, ...props }) => {
 
   useEffect(() => {
     labelCtx.drawImage(labeledImage, 0, 0);
-    let data = labelCtx.getImageData(0, 0, width, height).data;
+    let data = labelCtx.getImageData(0, 0, sw, sh).data;
     if (highlight) {
       data = highlightImageData(data, foreground);
     }
@@ -63,9 +59,9 @@ export const LabeledCanvas = ({ feature, ...props }) => {
       data = removeNoLabelImageData(data);
     }
     data = opacityImageData(data, opacity);
-    const adjustedData = new ImageData(data, width, height);
+    const adjustedData = new ImageData(data, sw, sh);
     labelCtx.putImageData(adjustedData, 0, 0);
-  }, [labeledImage, foreground, highlight, showNoLabel, opacity, height, width, labelCtx]);
+  }, [labeledImage, foreground, highlight, showNoLabel, opacity, sh, sw, labelCtx]);
 
   useEffect(() => {
     ctx.current.save();
@@ -73,12 +69,12 @@ export const LabeledCanvas = ({ feature, ...props }) => {
     ctx.current.drawImage(
       labelCanvas,
       sx, sy,
-      width / zoom, height / zoom,
+      sw / zoom, sh / zoom,
       0, 0,
       props.width, props.height,
     );
     ctx.current.restore();
-  }, [labelCanvas, sx, sy, zoom, width, height, props.width, props.height]);
+  }, [labelCanvas, sx, sy, zoom, sw, sh, props.width, props.height]);
 
   return <canvas id='labeled-canvas'
     ref={canvasRef}

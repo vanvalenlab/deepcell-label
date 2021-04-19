@@ -34,7 +34,8 @@ export const Canvas = props => {
 
   const canvas = useCanvas();
   const [currentCanvas, sendCanvas] = useActor(canvas);
-  const { sx, sy, zoom, width, height, scale } = currentCanvas.context;
+  const { sx, sy, zoom, width: sw, height: sh, scale } = currentCanvas.context;
+  const canvasProps = { sx, sy, zoom, sw, sh };
 
   const tool = useTool();
 
@@ -43,13 +44,13 @@ export const Canvas = props => {
   useEffect(() => {
     const padding = 5;
     canvas.send({ type: 'RESIZE', width: props.width, height: props.height, padding: padding });
-  }, [canvas, props.width, props.height, height, width]);
+  }, [canvas, props.width, props.height, sh, sw]);
 
   // dynamic canvas border styling based on position
   const padding = 5;
   const topColor = (Math.floor(sy) === 0) ? 'white' : 'black';
-  const bottomColor = (Math.ceil(sy + height / zoom) === height) ? 'white' : 'black';
-  const rightColor = (Math.ceil(sx + width / zoom) === width) ? 'white' : 'black';
+  const bottomColor = (Math.ceil(sy + sh / zoom) === sw) ? 'white' : 'black';
+  const rightColor = (Math.ceil(sx + sw / zoom) === sw) ? 'white' : 'black';
   const leftColor = (Math.floor(sx) === 0) ? 'white' : 'black';
   const borderStyles = {
     borderTop: `${padding}px solid ${topColor}`,
@@ -58,10 +59,10 @@ export const Canvas = props => {
     borderRight: `${padding}px solid ${rightColor}`,
   };
 
-  const canvasProps = {
+  const styleProps = {
     className: styles.canvas,
-    width: width * scale * window.devicePixelRatio,
-    height: height * scale * window.devicePixelRatio,
+    width: sw * scale * window.devicePixelRatio,
+    height: sh * scale * window.devicePixelRatio,
   }
 
   // prevent scrolling page when over canvas
@@ -89,18 +90,18 @@ export const Canvas = props => {
       className={styles.canvasBox}
       style={borderStyles}
       boxShadow={10}
-      width={scale * width}
-      height={scale * height}
+      width={scale * sw}
+      height={scale * sh}
       onMouseMove={canvas.send}
       onWheel={canvas.send}
       onMouseDown={handleMouseDown}
       onMouseUp={tool.send}
       onClick={tool.send}
     >
-      {channels[channel] && <RawCanvas channel={channels[channel]} {...canvasProps} />}
-      {features[feature] && <LabeledCanvas feature={features[feature]} {...canvasProps} />}
-      {features[feature] && <OutlineCanvas feature={features[feature]} {...canvasProps} />}
-      <BrushCanvas {...canvasProps} />
+      {channels[channel] && <RawCanvas channel={channels[channel]} {...canvasProps} {...styleProps} />}
+      {features[feature] && <LabeledCanvas feature={features[feature]} {...canvasProps} {...styleProps} />}
+      {features[feature] && <OutlineCanvas feature={features[feature]} {...canvasProps} {...styleProps} />}
+      <BrushCanvas {...canvasProps} {...styleProps} />
     </Box>
   )
 }

@@ -39,13 +39,7 @@ function outlineAll(imageData, labeledArray) {
   }
 }
 
-const OutlineCanvas = ({ feature, ...props }) => {
-  // const [foreground, background] = [1, 2];
-  const [all, setAll] = useState(false);
-
-  const canvas = useCanvas();
-  const [currentCanvas, sendCanvas] = useActor(canvas);
-  const { sx, sy, zoom, width, height } = currentCanvas.context;
+const OutlineCanvas = ({ feature, sx, sy, sw, sh, zoom, ...props }) => {
 
   const tool = useTool();
   const [currentTool, sendTool] = useActor(tool);
@@ -53,12 +47,12 @@ const OutlineCanvas = ({ feature, ...props }) => {
 
   const [currentFeature, sendFeature] = useActor(feature);
   let { labeledArray, outline } = currentFeature.context;
-  if (!labeledArray) { labeledArray = Array(height).fill(Array(width).fill(0)); }
+  if (!labeledArray) { labeledArray = Array(sh).fill(Array(sw).fill(0)); }
 
   const canvasRef = useRef();
   const ctx = useRef();
   // to convert the outline array into an image
-  const outlineCanvas = new OffscreenCanvas(width, height);
+  const outlineCanvas = new OffscreenCanvas(sw, sh);
   const outlineCtx = outlineCanvas.getContext('2d');
 
   useEffect(() => {
@@ -87,12 +81,12 @@ const OutlineCanvas = ({ feature, ...props }) => {
     ctx.current.drawImage(
       outlineCanvas,
       sx, sy,
-      width / zoom, height / zoom,
+      sw / zoom, sh / zoom,
       0, 0,
       props.width, props.height,
     );
     ctx.current.restore();
-  }, [outlineCanvas, sx, sy, zoom, width, height, props.width, props.height]);
+  }, [outlineCanvas, sx, sy, zoom, sw, sh, props.width, props.height]);
 
   return <canvas id='outline-canvas'
     ref={canvasRef}

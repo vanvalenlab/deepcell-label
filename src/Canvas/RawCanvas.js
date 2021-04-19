@@ -44,18 +44,14 @@ const brightnessImageData = (data, brightness) => {
   return data;
 }
 
-export const RawCanvas = ({channel,  ...props }) => {
+export const RawCanvas = ({channel, sx, sy, sw, sh, zoom, ...props }) => {
   const [currentChannel, sendChannel] = useActor(channel);
   const { invert, grayscale, brightness, contrast, rawImage } = currentChannel.context;
-
-  const canvas = useCanvas();
-  const [currentCanvas, sendCanvas] = useActor(canvas);
-  const { sx, sy, zoom, width, height } = currentCanvas.context;
 
   const canvasRef = useRef();
   const ctx = useRef();
 
-  const rawCanvas = new OffscreenCanvas(width, height);
+  const rawCanvas = new OffscreenCanvas(sw, sh);
   const rawCtx = rawCanvas.getContext('2d');
 
 
@@ -66,7 +62,7 @@ export const RawCanvas = ({channel,  ...props }) => {
 
   useEffect(() => {
     rawCtx.drawImage(rawImage, 0, 0);
-    let data = rawCtx.getImageData(0, 0, width, height).data;
+    let data = rawCtx.getImageData(0, 0, sw, sh).data;
     if (invert) {
       data = invertImageData(data);
     }
@@ -75,9 +71,9 @@ export const RawCanvas = ({channel,  ...props }) => {
     }
     data = contrastImageData(data, contrast);
     data = brightnessImageData(data, brightness);
-    const adjustedData = new ImageData(data, width, height);
+    const adjustedData = new ImageData(data, sw, sh);
     rawCtx.putImageData(adjustedData, 0, 0);
-  }, [rawImage, invert, grayscale, brightness, contrast, height, width, rawCtx]);
+  }, [rawImage, invert, grayscale, brightness, contrast, sh, sw, rawCtx]);
 
   useEffect(() => {
     ctx.current.save();
@@ -85,12 +81,12 @@ export const RawCanvas = ({channel,  ...props }) => {
     ctx.current.drawImage(
       rawCanvas,
       sx, sy,
-      width / zoom, height / zoom,
+      sw / zoom, sh / zoom,
       0, 0,
       props.width, props.height,
     );
     ctx.current.restore();
-  }, [rawCanvas, sx, sy, zoom, width, height, props.width, props.height]);
+  }, [rawCanvas, sx, sy, zoom, sw, sh, props.width, props.height]);
 
   return <canvas id='raw-canvas'
     ref={canvasRef}
