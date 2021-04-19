@@ -39,7 +39,7 @@ function outlineAll(imageData, labeledArray) {
   }
 }
 
-const OutlineCanvas = ({ feature, sx, sy, sw, sh, zoom, ...props }) => {
+const OutlineCanvas = ({ feature, sx, sy, sw, sh, zoom, width, height, className }) => {
 
   const tool = useTool();
   const foreground = useSelector(tool, state => state.context.foreground);
@@ -58,7 +58,7 @@ const OutlineCanvas = ({ feature, sx, sy, sw, sh, zoom, ...props }) => {
   useEffect(() => {
     ctx.current = canvasRef.current.getContext('2d');
     ctx.current.imageSmoothingEnabled = false;
-  }, [props]);
+  }, [width, height]);
 
   useEffect(() => {
     const width = labeledArray[0].length;
@@ -77,20 +77,22 @@ const OutlineCanvas = ({ feature, sx, sy, sw, sh, zoom, ...props }) => {
 
   useEffect(() => {
     ctx.current.save();
-    ctx.current.clearRect(0, 0, props.width, props.height);
+    ctx.current.clearRect(0, 0, width, height);
     ctx.current.drawImage(
       outlineCanvas,
       sx, sy,
       sw / zoom, sh / zoom,
       0, 0,
-      props.width, props.height,
+      width, height,
     );
     ctx.current.restore();
-  }, [outlineCanvas, sx, sy, zoom, sw, sh, props.width, props.height]);
+  }, [outlineCanvas, sx, sy, zoom, sw, sh, width, height]);
 
   return <canvas id='outline-canvas'
     ref={canvasRef}
-    {...props}
+    width={width}
+    height={height}
+    className={className}
   />;
 };
 

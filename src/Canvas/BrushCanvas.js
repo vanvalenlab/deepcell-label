@@ -82,7 +82,7 @@ const drawTrace = (ctx, x, y, brushSize) => {
   ctx.putImageData(imageData, sx, sy);
 };
 
-const BrushCanvas = ({ sx, sy, sw, sh, zoom, ...props }) => {
+const BrushCanvas = ({ sx, sy, sw, sh, zoom, width, height, className }) => {
 
   const tool = useTool();
   const x = useSelector(tool, state => state.context.x);
@@ -95,7 +95,7 @@ const BrushCanvas = ({ sx, sy, sw, sh, zoom, ...props }) => {
   useEffect(() => {
     ctx.current = canvasRef.current.getContext('2d');
     ctx.current.imageSmoothingEnabled = false;
-  }, [props.height, props.width]);
+  }, [width, height]);
 
   // create references for the brush outline and trace
   const brushCanvas = useRef();
@@ -135,26 +135,28 @@ const BrushCanvas = ({ sx, sy, sw, sh, zoom, ...props }) => {
 
   // draws the brush outline and trace onto the visible canvas
   useEffect(() => {
-    ctx.current.clearRect(0, 0, props.width, props.height);
+    ctx.current.clearRect(0, 0, width, height);
     ctx.current.drawImage(
       traceCanvas.current,
       sx, sy,
       sw / zoom, sh / zoom,
       0, 0,
-      props.width, props.height,
+      width, height,
     );
     ctx.current.drawImage(
       brushCanvas.current,
       sx, sy,
       sw / zoom, sh / zoom,
       0, 0,
-      props.width, props.height,
+      width, height,
     );
-  }, [trace, brushSize, x, y, sx, sy, zoom, sw, sh, props.width, props.height]);
+  }, [trace, brushSize, x, y, sx, sy, zoom, sw, sh, width, height]);
 
   return <canvas id='brush-canvas'
     ref={canvasRef}
-    {...props}
+    width={width}
+    height={height}
+    className={className}
   />;
 };
 

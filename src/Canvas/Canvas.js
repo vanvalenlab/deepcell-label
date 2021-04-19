@@ -26,8 +26,8 @@ const useStyles = makeStyles({
     },
 });
 
-export const Canvas = props => {
-  
+export const Canvas = ({ height, width }) => {
+
   const image = useImage();
   const channels = useSelector(image, state => state.context.channels);
   const channel = useSelector(image, state => state.context.channel);
@@ -49,8 +49,8 @@ export const Canvas = props => {
 
   useEffect(() => {
     const padding = 5;
-    canvas.send({ type: 'RESIZE', width: props.width, height: props.height, padding: padding });
-  }, [canvas, props.width, props.height, sh, sw]);
+    canvas.send({ type: 'RESIZE', width, height, padding });
+  }, [canvas, width, height, sh, sw]);
 
   // dynamic canvas border styling based on position
   const padding = 5;

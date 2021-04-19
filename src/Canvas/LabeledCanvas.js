@@ -32,7 +32,7 @@ const opacityImageData = (data, opacity) => {
   return data;
 };
 
-export const LabeledCanvas = ({ feature, sx, sy, sw, sh, zoom, ...props }) => {
+export const LabeledCanvas = ({ feature, sx, sy, sw, sh, zoom, width, height, className }) => {
 
   const highlight = useSelector(feature, state => state.context.highlight);
   const showNoLabel = useSelector(feature, state => state.context.showNoLabel);
@@ -48,7 +48,7 @@ export const LabeledCanvas = ({ feature, sx, sy, sw, sh, zoom, ...props }) => {
   useEffect(() => {
     ctx.current = canvasRef.current.getContext('2d');
     ctx.current.imageSmoothingEnabled = false;
-  }, [props]);
+  }, [width, height]);
 
   useEffect(() => {
     labelCtx.drawImage(labeledImage, 0, 0);
@@ -66,20 +66,22 @@ export const LabeledCanvas = ({ feature, sx, sy, sw, sh, zoom, ...props }) => {
 
   useEffect(() => {
     ctx.current.save();
-    ctx.current.clearRect(0, 0, props.width, props.height);
+    ctx.current.clearRect(0, 0, width, height);
     ctx.current.drawImage(
       labelCanvas,
       sx, sy,
       sw / zoom, sh / zoom,
       0, 0,
-      props.width, props.height,
+      width, height,
     );
     ctx.current.restore();
-  }, [labelCanvas, sx, sy, zoom, sw, sh, props.width, props.height]);
+  }, [labelCanvas, sx, sy, zoom, sw, sh, width, height]);
 
   return <canvas id='labeled-canvas'
     ref={canvasRef}
-    {...props}
+    width={width}
+    height={height}
+    className={className}
   />;
 };
 
