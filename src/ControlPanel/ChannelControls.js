@@ -26,7 +26,7 @@ const GrayscaleButton = ({ channel }) => {
   const grayscale = useSelector(channel, state => state.context.grayscale);
 
   const handleGrayscaleChange = (event) => {
-    channel.channelsend({ type: 'TOGGLEGRAYSCALE' });
+    channel.send({ type: 'TOGGLEGRAYSCALE' });
   };
 
   return <ToggleButton
@@ -42,7 +42,7 @@ const BrightnessSlider = ({ channel }) => {
   const brightness = useSelector(channel, state => state.context.brightness);
 
   const handleBrightnessChange = (event, newValue) => {
-    send({ type: 'SETBRIGHTNESS', brightness: newValue });
+    channel.send({ type: 'SETBRIGHTNESS', brightness: newValue });
   };
 
   return <>
@@ -65,7 +65,7 @@ const ContrastSlider = ({ channel }) => {
   const contrast = useSelector(channel, state => state.context.contrast);
 
   const handleContrastChange = (event, newValue) => {
-    send({ type: 'SETCONTRAST', contrast: newValue });
+    channel.send({ type: 'SETCONTRAST', contrast: newValue });
   };
 
   return <>
