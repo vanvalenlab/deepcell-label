@@ -5,6 +5,7 @@ import ToggleButton from '@material-ui/lab/ToggleButton';
 import { useSelector } from '@xstate/react';
 
 import ControlRow from './ControlRow';
+import { useImage } from '../ServiceContext';
 
 const InvertButton = ({ channel }) => {
   const invert = useSelector(channel, state => state.context.invert);
@@ -85,15 +86,21 @@ const ContrastSlider = ({ channel }) => {
 };
 
 
-const ChannelControls = ({ channel }) => {
-  return (
-    <ControlRow name={"Raw Display"}>
-      <InvertButton channel={channel} />
-      <GrayscaleButton channel={channel} />
-      <BrightnessSlider channel={channel} />
-      <ContrastSlider channel={channel} />
-    </ControlRow>
-  );
+const ChannelControls = () => {
+  const image = useImage();
+  const channels = useSelector(image, state => state.context.channels);
+  const channel = useSelector(image, state => state.context.channel);
+
+  if (!channels[channel]) {
+    return null;
+  }
+
+  return <ControlRow name={"Raw Display"}>
+    <InvertButton channel={channels[channel]} />
+    <GrayscaleButton channel={channels[channel]} />
+    <BrightnessSlider channel={channels[channel]} />
+    <ContrastSlider channel={channels[channel]} />
+  </ControlRow>;
 }
 
-export default React.memo(ChannelControls);
+export default ChannelControls;

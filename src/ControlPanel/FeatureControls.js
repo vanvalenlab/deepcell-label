@@ -11,6 +11,7 @@ import FormLabel from '@material-ui/core/FormLabel';
 import Box from '@material-ui/core/Box';
 
 import ControlRow from './ControlRow';
+import { useImage } from '../ServiceContext';
 
 const HighlightButton = ({ feature }) => {
   const highlight = useSelector(feature, state => state.context.highlight);
@@ -85,17 +86,23 @@ const OpacitySlider = ({ feature }) => {
 
 
 
-const FeatureControls = ({ feature }) => {
-  return (
-    <ControlRow name={"Label Display"}>
-      <Box display='flex' flexDirection='column'>
-        <HighlightButton feature={feature} />
-        <ShowNoLabelButton feature={feature} />
-        <OutlineRadioButtons feature={feature} />
-        <OpacitySlider feature={feature} />
-      </Box>
-    </ControlRow>
-  );
+const FeatureControls = () => {
+  const image = useImage();
+  const features = useSelector(image, state => state.context.features);
+  const feature = useSelector(image, state => state.context.feature);
+
+  if (!features[feature]) {
+    return null;
+  }
+
+  return <ControlRow name={"Label Display"}>
+    <Box display='flex' flexDirection='column'>
+      <HighlightButton feature={features[feature]} />
+      <ShowNoLabelButton feature={features[feature]} />
+      <OutlineRadioButtons feature={features[feature]} />
+      <OpacitySlider feature={features[feature]} />
+    </Box>
+  </ControlRow>;
 };
 
 export default React.memo(FeatureControls);

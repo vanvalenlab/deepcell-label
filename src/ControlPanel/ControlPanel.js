@@ -12,24 +12,15 @@ import FeatureControls from './FeatureControls';
 import LabelControls from './LabelControls';
 import ToolControls from './ToolControls';
 
-import { useImage } from '../ServiceContext';
-import { useSelector } from '@xstate/react';
-
-
 export default function ControlPanel() {
-  const image = useImage();
-  const channels = useSelector(image, state => state.context.channels);
-  const channel = useSelector(image, state => state.context.channel);
-  const features = useSelector(image, state => state.context.features);
-  const feature = useSelector(image, state => state.context.feature);
 
   return (
     <TableContainer id='control-panel' component={Paper}>
       <Table aria-label="collapsible table">
         <TableBody>
           <ImageControls />
-          {channels[channel] && <ChannelControls channel={channels[channel]} />}
-          {features[feature] && <FeatureControls feature={features[feature]} />}
+          <ChannelControls />
+          <FeatureControls />
           <LabelControls />
           <ToolControls />
           <ControlRow name={"Predict"}>
