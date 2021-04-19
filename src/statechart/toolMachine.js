@@ -17,7 +17,7 @@ const brushState = {
     },
     dragging: {
       on: {
-        COORDINATES: { actions: ['updateCoordinates', 'addToTrace'] },
+        COORDINATES: { actions: ['updateCoordinates', 'updateLabel', 'addToTrace'] },
         mouseup: { target: 'done', actions: 'paint' }
       }
     },
@@ -209,9 +209,14 @@ const toolMachine = Machine(
     //     tool: brushActor,
     //   }
     // }),
-    entry: (context) => console.log(context.brushSize),
-    initial: 'brush',
+    initial: 'waitingForArray',
     states: {
+      waitingForArray: {
+        on: {
+          LABELEDARRAY: { target: 'brush', actions: ['updateLabeledArray', 'updateLabel'] },
+          COORDINATES: { actions: 'updateCoordinates' },
+        }
+      },
       select: selectState,
       brush: brushState,
       //   flood: floodState,
@@ -236,8 +241,8 @@ const toolMachine = Machine(
       // 'keydown.w': '.watershed',
       
       // updates from other actors
-      COORDINATES: { actions: 'updateCoordinates' },
-      LABELEDARRAY: { actions: 'updateLabeled' },
+      COORDINATES: { actions: ['updateCoordinates', 'updateLabel'] },
+      LABELEDARRAY: { actions: ['updateLabeledArray', 'updateLabel'] },
       FRAME: { actions: assign((context, event) => ({ frame: event.frame })) },
       CHANNEL: { actions: assign((context, event) => ({ channel: event.channel })) },
       FEATURE: { actions: assign((context, event) => ({ feature: event.feature })) },
@@ -303,16 +308,10 @@ const toolMachine = Machine(
         },
         tool: 'threshold',
       })),
-      updateLabeled: assign((context, event) => ({
-        labeledArray: event.labeledArray,
-        label: event.labeledArray[context.y][context.x],
-      })),
-      updateCoordinates: assign((context, event) => ({
-        x: event.x,
-        y: event.y,
-        label: Math.abs(context.labeledArray[event.y][event.x]),
-      })),
-      addToTrace: assign({ trace: (context, event) => [...context.trace, [context.x, context.y]] }),
+      updateLabeledArray: assign((_, { labeledArray }) => ({ labeledArray })),
+      updateCoordinates: assign((_, { x, y }) => ({ x, y })),
+      updateLabel: assign({ label: ({ labeledArray: array, x, y}) => array ? Math.abs(array[y][x]) : 0 }),
+      addToTrace: assign({ trace: (context) => [...context.trace, [context.x, context.y]] }),
       setForeground: assign({
         foreground: (ctx, evt) => ctx.label,
         background: (ctx, evt) => ctx.label === ctx.background ? ctx.foreground : ctx.background,
