@@ -69,7 +69,7 @@ export const Canvas = ({ height, width }) => {
     className: styles.canvas,
     width: sw * scale * window.devicePixelRatio,
     height: sh * scale * window.devicePixelRatio,
-  }
+  };
 
   // prevent scrolling page when over canvas
   useEffect(() => {

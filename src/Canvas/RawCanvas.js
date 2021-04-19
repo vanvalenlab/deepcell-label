@@ -67,9 +67,6 @@ export const RawCanvas = ({ channel, sx, sy, sw, sh, zoom, width, height, classN
   const rawCanvas = new OffscreenCanvas(sw, sh);
   const rawCtx = rawCanvas.getContext('2d');
 
-  const styles = useStyles();
-
-
   useEffect(() => {
     ctx.current = canvasRef.current.getContext('2d')
     ctx.current.imageSmoothingEnabled = false;
