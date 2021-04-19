@@ -1,7 +1,7 @@
 import React from 'react';
 import Typography from '@material-ui/core/Typography';
 import Box from '@material-ui/core/Box';
-import { useActor } from '@xstate/react';
+import { useSelector } from '@xstate/react';
 
 
 import ControlRow from './ControlRow';
@@ -10,8 +10,11 @@ import { useTool } from '../ServiceContext';
 
 export default function LabelControls() {
   const tool = useTool();
-  const [current, send] = useActor(tool);
-  const { x, y, label, foreground, background } = current.context;
+  const x = useSelector(tool, state => state.context.x);
+  const y = useSelector(tool, state => state.context.y);
+  const label = useSelector(tool, state => state.context.label);
+  const foreground = useSelector(tool, state => state.context.foreground);
+  const background = useSelector(tool, state => state.context.background);
 
   return (
     <ControlRow name={"Label"}>

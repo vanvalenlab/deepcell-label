@@ -3,8 +3,7 @@ import { Slider } from "@material-ui/core";
 import Typography from '@material-ui/core/Typography';
 
 
-function DiscreteSlider(props) {
-  const { label, value, max, onChange } = props;
+function DiscreteSlider({ label, value, max, onChange }) {
   const [display, setDisplay] = useState("on");
 
   // Display label for a second after the label changes
@@ -30,4 +29,4 @@ function DiscreteSlider(props) {
   </>;
 }
 
-export default DiscreteSlider;
+export default React.memo(DiscreteSlider);

@@ -1,5 +1,5 @@
-import { useActor } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
+import { useSelector } from '@xstate/react';
 import { useTool } from '../ServiceContext';
 
 const distance = (x, y) => {
@@ -85,8 +85,10 @@ const drawTrace = (ctx, x, y, brushSize) => {
 const BrushCanvas = ({ sx, sy, sw, sh, zoom, ...props }) => {
 
   const tool = useTool();
-  const [currentTool, sendTool] = useActor(tool);
-  const { x, y, trace, brushSize } = currentTool.context;
+  const x = useSelector(tool, state => state.context.x);
+  const y = useSelector(tool, state => state.context.y);
+  const trace = useSelector(tool, state => state.context.trace);
+  const brushSize = useSelector(tool, state => state.context.brushSize);
 
   const canvasRef = useRef();
   const ctx = useRef();
@@ -156,4 +158,4 @@ const BrushCanvas = ({ sx, sy, sw, sh, zoom, ...props }) => {
   />;
 };
 
-export default BrushCanvas;
+export default React.memo(BrushCanvas);

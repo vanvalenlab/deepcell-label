@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { useActor } from '@xstate/react';
+import { useSelector } from '@xstate/react';
 import { makeStyles } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
 
@@ -27,14 +27,20 @@ const useStyles = makeStyles({
 });
 
 export const Canvas = props => {
-
+  
   const image = useImage();
-  const [currentImage, sendImage] = useActor(image);
-  const { channels, channel, features, feature } = currentImage.context;
+  const channels = useSelector(image, state => state.context.channels);
+  const channel = useSelector(image, state => state.context.channel);
+  const features = useSelector(image, state => state.context.features);
+  const feature = useSelector(image, state => state.context.feature);
 
   const canvas = useCanvas();
-  const [currentCanvas, sendCanvas] = useActor(canvas);
-  const { sx, sy, zoom, width: sw, height: sh, scale } = currentCanvas.context;
+  const sx = useSelector(canvas, state => state.context.sx);
+  const sy = useSelector(canvas, state => state.context.sy);
+  const zoom = useSelector(canvas, state => state.context.zoom);
+  const sw = useSelector(canvas, state => state.context.width);
+  const sh = useSelector(canvas, state => state.context.height);
+  const scale = useSelector(canvas, state => state.context.scale);
   const canvasProps = { sx, sy, zoom, sw, sh };
 
   const tool = useTool();

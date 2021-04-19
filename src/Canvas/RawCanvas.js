@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { useActor } from '@xstate/react';
-import { useCanvas } from '../ServiceContext';
+import { useSelector } from '@xstate/react';
+import { makeStyles } from '@material-ui/core/styles';
 
 const invertImageData = (data) => {
   for (let i = 0; i < data.length; i += 4) {
@@ -44,9 +44,22 @@ const brightnessImageData = (data, brightness) => {
   return data;
 }
 
-export const RawCanvas = ({channel, sx, sy, sw, sh, zoom, ...props }) => {
-  const [currentChannel, sendChannel] = useActor(channel);
-  const { invert, grayscale, brightness, contrast, rawImage } = currentChannel.context;
+const useStyles = makeStyles({
+    canvas: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      maxHeight: '100%',
+      maxWidth: '100%',
+    },
+});
+
+export const RawCanvas = ({ channel, sx, sy, sw, sh, zoom, width, height, className }) => {
+  const invert = useSelector(channel, state => state.context.invert);
+  const grayscale = useSelector(channel, state => state.context.grayscale);
+  const brightness = useSelector(channel, state => state.context.brightness);
+  const contrast = useSelector(channel, state => state.context.contrast);
+  const rawImage = useSelector(channel, state => state.context.rawImage);
 
   const canvasRef = useRef();
   const ctx = useRef();
@@ -54,11 +67,13 @@ export const RawCanvas = ({channel, sx, sy, sw, sh, zoom, ...props }) => {
   const rawCanvas = new OffscreenCanvas(sw, sh);
   const rawCtx = rawCanvas.getContext('2d');
 
+  const styles = useStyles();
+
 
   useEffect(() => {
     ctx.current = canvasRef.current.getContext('2d')
     ctx.current.imageSmoothingEnabled = false;
-  }, [props]);
+  }, [height, width]);
 
   useEffect(() => {
     rawCtx.drawImage(rawImage, 0, 0);
@@ -77,21 +92,23 @@ export const RawCanvas = ({channel, sx, sy, sw, sh, zoom, ...props }) => {
 
   useEffect(() => {
     ctx.current.save();
-    ctx.current.clearRect(0, 0, props.width, props.height);
+    ctx.current.clearRect(0, 0, width, height);
     ctx.current.drawImage(
       rawCanvas,
       sx, sy,
       sw / zoom, sh / zoom,
       0, 0,
-      props.width, props.height,
+      width, height,
     );
     ctx.current.restore();
-  }, [rawCanvas, sx, sy, zoom, sw, sh, props.width, props.height]);
+  }, [rawCanvas, sx, sy, zoom, sw, sh, width, height]);
 
   return <canvas id='raw-canvas'
+    className={className}
     ref={canvasRef}
-    {...props}
+    width={width}
+    height={height}
   />;
 };
 
-export default RawCanvas;
+export default React.memo(RawCanvas);

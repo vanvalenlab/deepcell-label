@@ -1,5 +1,5 @@
 import React from 'react';
-import { useActor } from '@xstate/react';
+import { useSelector } from '@xstate/react';
 import Typography from '@material-ui/core/Typography';
 import Slider from '@material-ui/core/Slider';
 import ToggleButton from '@material-ui/lab/ToggleButton';
@@ -14,10 +14,10 @@ import ControlRow from './ControlRow';
 import { useTool } from '../ServiceContext';
 
 
-export default function LabelControls() {
+export default function ToolControls() {
   const tool = useTool();
-  const [current, send] = useActor(tool);
-  const { brushSize, trace } = current.context;
+  const brushSize = useSelector(tool, state => state.context.brushSize);
+  const trace = useSelector(tool, state => state.context.trace);
 
   return (
     <ControlRow name={"Tool"}>

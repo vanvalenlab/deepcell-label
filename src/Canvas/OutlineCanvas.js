@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useActor } from '@xstate/react';
-import { useCanvas, useTool } from '../ServiceContext';
+import { useSelector } from '@xstate/react';
+import { useTool } from '../ServiceContext';
 
 function outlineSelected(imageData, labeledArray, foreground, background) {
   const { data, width, height } = imageData;
@@ -42,11 +42,11 @@ function outlineAll(imageData, labeledArray) {
 const OutlineCanvas = ({ feature, sx, sy, sw, sh, zoom, ...props }) => {
 
   const tool = useTool();
-  const [currentTool, sendTool] = useActor(tool);
-  const { foreground, background } = currentTool.context;
+  const foreground = useSelector(tool, state => state.context.foreground);
+  const background = useSelector(tool, state => state.context.background);
 
-  const [currentFeature, sendFeature] = useActor(feature);
-  let { labeledArray, outline } = currentFeature.context;
+  const outline = useSelector(feature, state => state.context.outline);
+  let labeledArray = useSelector(feature, state => state.context.labeledArray);
   if (!labeledArray) { labeledArray = Array(sh).fill(Array(sw).fill(0)); }
 
   const canvasRef = useRef();
@@ -94,4 +94,4 @@ const OutlineCanvas = ({ feature, sx, sy, sw, sh, zoom, ...props }) => {
   />;
 };
 
-export default OutlineCanvas;
+export default React.memo(OutlineCanvas);

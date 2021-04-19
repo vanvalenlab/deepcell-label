@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect } from 'react';
-import { useInterpret, useActor } from '@xstate/react';
+import { useInterpret, useSelector } from '@xstate/react';
 import { useLocation } from "react-router-dom";
 import createDeepcellLabelMachine from './statechart/deepcellLabelMachine';
 import { bind, unbind } from 'mousetrap';
@@ -22,12 +22,6 @@ function useReturnContext(contextType) {
     return context;
 }
 
-export function useLabel() {
-  const { service } = useLabelService();
-  const [state, send] = useActor(service);
-  return [state, send];
-}
-
 export function useUndo() {
   const { service } = useLabelService();
   const { undo } = service.state.children;
@@ -45,8 +39,14 @@ export function useUndo() {
 export function useImage() {
   const { service } = useLabelService();
   const { image } = service.state.children;
-  const [current, send] = useActor(image);
-  const { frame, numFrames, channel, numChannels, feature, numFeatures } = current.context;
+  const { send } = image;
+  
+  const frame = useSelector(image, state => state.context.frame);
+  const channel = useSelector(image, state => state.context.channel);
+  const feature = useSelector(image, state => state.context.feature);
+  const numFrames = useSelector(image, state => state.context.numFrames);
+  const numChannels = useSelector(image, state => state.context.numChannels);
+  const numFeatures = useSelector(image, state => state.context.numFeatures);
 
   useEffect(() => {
     bind('a', () => {

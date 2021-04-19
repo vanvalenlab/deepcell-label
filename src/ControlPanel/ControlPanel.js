@@ -13,13 +13,15 @@ import LabelControls from './LabelControls';
 import ToolControls from './ToolControls';
 
 import { useImage } from '../ServiceContext';
-import { useActor } from '@xstate/react';
+import { useSelector } from '@xstate/react';
 
 
 export default function ControlPanel() {
   const image = useImage();
-  const [currentImage, sendImage] = useActor(image);
-  const { channels, channel, features, feature } = currentImage.context;
+  const channels = useSelector(image, state => state.context.channels);
+  const channel = useSelector(image, state => state.context.channel);
+  const features = useSelector(image, state => state.context.features);
+  const feature = useSelector(image, state => state.context.feature);
 
   return (
     <TableContainer id='control-panel' component={Paper}>

@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { useActor } from '@xstate/react';
-import { useCanvas } from '../ServiceContext';
+import { useSelector } from '@xstate/react';
 
 const highlightImageData = (data, label) => {
   for (let i = 0; i < data.length; i += 4) {
@@ -35,8 +34,10 @@ const opacityImageData = (data, opacity) => {
 
 export const LabeledCanvas = ({ feature, sx, sy, sw, sh, zoom, ...props }) => {
 
-  const [currentFeature, sendFeature] = useActor(feature);
-  const { highlight, showNoLabel, opacity, labeledImage } = currentFeature.context;
+  const highlight = useSelector(feature, state => state.context.highlight);
+  const showNoLabel = useSelector(feature, state => state.context.showNoLabel);
+  const opacity = useSelector(feature, state => state.context.opacity);
+  const labeledImage = useSelector(feature, state => state.context.labeledImage);
   const [foreground, background] = [1, 2];
 
   const canvasRef = useRef();
@@ -82,4 +83,4 @@ export const LabeledCanvas = ({ feature, sx, sy, sw, sh, zoom, ...props }) => {
   />;
 };
 
-export default LabeledCanvas;
+export default React.memo(LabeledCanvas);
