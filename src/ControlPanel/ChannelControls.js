@@ -61,7 +61,7 @@ const BrightnessSlider = ({ channel }) => {
   </>;
 };
 
-const ContrastSlider = () => {
+const ContrastSlider = ({ channel }) => {
   const contrast = useSelector(channel, state => state.context.contrast);
 
   const handleContrastChange = (event, newValue) => {
