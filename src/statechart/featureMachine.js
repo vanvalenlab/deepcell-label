@@ -43,12 +43,13 @@ function reshapeArray(array) {
   return result;
 }
 
-const createFeatureMachine = (projectId, feature) => Machine(
+const createFeatureMachine = (projectId, feature, numFrames) => Machine(
   {
     id: `labeled_feature${feature}`,
     context: {
       projectId,
       feature,
+      numFrames,
       frame: null,
       loadingFrame: null,
       opacity: 0.3,
@@ -62,7 +63,21 @@ const createFeatureMachine = (projectId, feature) => Machine(
     },
     initial: 'idle',
     states: {
-      idle: {},
+      idle: {
+        always: [
+          { cond: 'allLoaded', target: 'allLoaded' },
+          'preload',
+        ],
+      },
+      allLoaded: {},
+      preload: {
+        entry: 'loadNextFrame',
+        invoke: {
+          src: fetchLabeled,
+          onDone: { target: 'idle', actions: 'saveFrame' },
+          onError: { actions: (context, event) => console.log(event) },
+        }
+      },
       checkLoaded: {
         always: [
           { cond: 'loadedFrame', target: 'loaded' },
@@ -78,24 +93,26 @@ const createFeatureMachine = (projectId, feature) => Machine(
       },
       loaded: {
         entry: 'sendLabeledLoaded',
-        exit: 'sendLabeledArray'
       },
       reloading: {
         invoke: {
           src: fetchLabeled,
-          onDone: { target: 'idle', actions: 'reloadFrame' },
+          onDone: { target: 'sendLabeledArray', actions: 'reloadFrame' },
           onError: { target: 'idle', actions: (context, event) => console.log(event) },
         },
-        exit: [(c) => console.log(c), 'sendLabeledArray'],
-      }
+      },
+      sendLabeledArray: {
+        entry: 'sendLabeledArray',
+        always: 'idle',
+      },
     },
     on: {
       LOADFRAME: {
         target: 'checkLoaded',
         actions: assign({ loadingFrame: (context, event) => event.frame }),
       },
-      FRAME: { target: 'idle', actions: 'useFrame' },
-      FEATURE: { target: 'idle', actions: 'useFrame' },
+      FRAME: { target: 'sendLabeledArray', actions: 'useFrame' },
+      FEATURE: { target: 'sendLabeledArray', actions: 'useFrame' },
       SETOUTLINE: { actions: 'setOutline' },
       SETOPACITY: { actions: 'setOpacity' },
       TOGGLESHOWNOLABEL: { actions: 'toggleShowNoLabel' },
@@ -109,7 +126,8 @@ const createFeatureMachine = (projectId, feature) => Machine(
     guards: {
       loadedFrame: ({ loadingFrame, frames }) => loadingFrame in frames,
       newFrame: (context, event) => context.frame !== event.frame,
-      frameChanged: ({ frame }, { data: { frames }}) => frames.includes(frame),
+      frameChanged: ({ frame }, { data: { frames } }) => frames.includes(frame),
+      allLoaded: ({ frames, numFrames }) => Object.keys(frames).length === numFrames,
     },
     actions: {
       clearChangedFrames: assign((context, event) => {
@@ -145,6 +163,18 @@ const createFeatureMachine = (projectId, feature) => Machine(
         frames: { ...frames, [frame]: image },
         arrays: { ...arrays, [frame]: array },
       })),
+      loadNextFrame: assign({
+        loadingFrame: ({ numFrames, frame, frames }) => {
+          const allFrames = [...Array(numFrames).keys()];
+          return allFrames
+            // remove loaded frames
+            .filter((frame) => !(frame in frames))
+            // load the closest unloaded frame to the current frame
+            .reduce((prev, curr) =>
+              Math.abs(curr - frame) < Math.abs(prev - frame) ? curr : prev
+            );
+        }
+      }),
       toggleHighlight: assign({ highlight: ({ highlight }) => !highlight }),
       toggleShowNoLabel: assign({ showNoLabel: ({ showNoLabel }) => !showNoLabel }),
       setOpacity: assign({ opacity: (_, { opacity }) => Math.min(1, Math.max(0, opacity)) }),

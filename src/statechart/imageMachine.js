@@ -39,7 +39,9 @@ const frameState = {
 const featureState = {
   initial: 'idle',
   states: {
-    idle: {},
+    idle: {
+      entry: 'preloadFeatures',
+    },
     loading: {
       on: {
         LABELEDLOADED: { target: 'idle', cond: 'loadedFeature', actions: 'useFeature' },
@@ -56,10 +58,14 @@ const featureState = {
 const channelState = {
   initial: 'idle',
   states: {
-    idle: {},
+    idle: {
+      entry: 'preloadChannels',
+    },
     loading: {
       on: {
-        RAWLOADED: { target: 'idle', cond: 'loadedChannel', actions: 'useChannel' },
+        RAWLOADED: [
+          { target: 'idle', cond: 'loadedChannel', actions: 'useChannel' },
+          { actions: (c, e) => console.log(e)}],
         FRAME: { actions: 'loadChannel' },
       }
     },
@@ -69,13 +75,51 @@ const channelState = {
   }
 };
 
+const restoringState = {
+  initial: 'idle',
+  states: {
+    idle: {
+      on: {
+        RESTORE: [
+          // { cond: 'canRestore', target: 'restoring', actions: ['saveHistoryRef', 'restore'] },
+          { actions: respond('SAMECONTEXT') },
+        ]
+      }
+    },
+    // restoring: {
+    //     on: {
+    //       RAWLOADED: { target: 'checkRestored', actions: assign({ loadedFrame: (_, evt) => evt.frame }) },
+    //       LABELEDLOADED: { target: 'checkRestored', actions: assign({ loadedFeature: (_, evt) => evt.frame }) },
+    //       CHANNEL: { target: 'checkRestored', actions: assign({ loadedChannel: (_, evt) => evt.frame }) },
+    //     },
+    // },
+    // restoringFrame: {},
+    // restoringFeature: {},
+    // restoringChannel: {
+    //   on: {
+    //     RAWLOADED: { target: 'idle', cond: ({ restoringChannel, restoringFrame }, { channel, frame}) => }
+    //   }
+    // },
+    // checkRestored: {
+    //   entry: (context, event) => console.log(event),
+    //   always: [
+    //     { cond: 'restored', target: 'idle', actions: 'restored' },
+    //     'restoring',
+    //   ]
+    // },
+  }
+}
+
 const imageGuards = {
   newLoadingFrame: (context, event) => context.loadingFrame !== event.frame,
   newLoadingChannel: (context, event) => context.loadingChannel !== event.channel,
   newLoadingFeature: (context, event) => context.loadingFeature !== event.feature,
-  loadedFrame: (context, event) => context.loadingFrame === event.frame,
-  loadedFeature: (context, event) => context.frame === event.frame && context.loadingChannel === event.channel,
-  loadedChannel: (context, event) => context.frame === event.frame && context.loadingFeature === event.feature,
+  loadedFrame: (context, event) => {
+    return (context.loadingFrame === event.frame &&
+      (context.channel === event.channel || context.feature === event.feature));
+  },
+  loadedChannel: (context, event) => context.frame === event.frame && context.loadingChannel === event.channel,
+  loadedFeature: (context, event) => context.frame === event.frame && context.loadingFeature === event.feature,
   // restored: (context, event) => ( // just a guess, not sure about this approach
   //   context.restoredFrame === event.restoringFrame
   //   && context.restoredFeature === event.restoringFeature
@@ -104,14 +148,14 @@ const imageActions = {
     }
   ),
   spawnActors: assign((context) => {
-    const { projectId, numChannels, numFeatures } = context;
+    const { projectId, numChannels, numFeatures, numFrames } = context;
     const channels = {};
     const features = {};
     for (let channel = 0; channel < numChannels; channel++) {
-      channels[channel] = spawn(createChannelMachine(projectId, channel), `channel${channel}`);
+      channels[channel] = spawn(createChannelMachine(projectId, channel, numFrames), `channel${channel}`);
     }
     for (let feature = 0; feature < numFeatures; feature++) {
-      features[feature] = spawn(createFeatureMachine(projectId, feature), `feature${feature}`);
+      features[feature] = spawn(createFeatureMachine(projectId, feature, numFrames), `feature${feature}`);
     }
     return { channels, features };
   }),
@@ -134,6 +178,20 @@ const imageActions = {
     ({ frame }) => ({ type: 'LOADFRAME', frame }),
     { to: ({ channels, loadingChannel }) => channels[loadingChannel] }
   ),
+  preloadFeatures: pure(({ frame, feature, features }) => {
+    const loadFrame = { type: 'LOADFRAME', frame };
+    return Object.entries(features)
+      .filter(([key, val]) => Number(key) !== feature)
+      // .filter(([key, val]) => Math.abs(Number(key) - feature) < 3)
+      .map(([key, val]) => send(loadFrame, { to: val }));
+  }),
+  preloadChannels: pure(({ frame, channel, channels }) => {
+    const loadFrame = { type: 'LOADFRAME', frame };
+    return Object.entries(channels)
+      .filter(([key, val]) => Number(key) !== channel)
+      // .filter(([key, val]) => Math.abs(Number(key) - channel) < 3)
+      .map(([key, val]) => send(loadFrame, { to: val }));
+  }),
   useFrame: pure(({ channel, channels, feature, features, toolRef }, { frame }) => {
     const frameEvent = { type: 'FRAME', frame };
     return [
@@ -144,8 +202,8 @@ const imageActions = {
       send(frameEvent, { to: toolRef }),
     ];
   }),
-  useFeature: pure(({ features, toolRef }, { feature }) => {
-    const featureEvent = { type: 'FEATURE', feature };
+  useFeature: pure(({ features, toolRef }, { feature, frame }) => {
+    const featureEvent = { type: 'FEATURE', feature, frame };
     return [
       assign({ feature }),
       send(featureEvent),
@@ -153,8 +211,8 @@ const imageActions = {
       send(featureEvent, { to: toolRef }),
     ];
   }),
-  useChannel: pure(({ channels, toolRef }, { channel }) => {
-    const channelEvent = { type: 'CHANNEL', channel };
+  useChannel: pure(({ channels, toolRef }, { channel, frame }) => {
+    const channelEvent = { type: 'CHANNEL', channel, frame };
     return [
       assign({ channel }),
       send(channelEvent),
@@ -197,45 +255,12 @@ const createImageMachine = ({ projectId }) => Machine(
           channel: channelState,
         },
       },
-      restoring: {
-        on: {
-          FRAME: { target: 'checkRestored', actions: assign({ loadedFrame: (_, evt) => evt.frame }) },
-          FEATURE: { target: 'checkRestored', actions: assign({ loadedFeature: (_, evt) => evt.frame }) },
-          CHANNEL: { target: 'checkRestored', actions: assign({ loadedChannel: (_, evt) => evt.frame }) },
-        },
-      },
-      checkRestored: {
-        entry: (context, event) => console.log(event),
-        always: [
-          { cond: 'restored', target: 'idle', actions: 'restored' },
-          'restoring',
-        ]
-      },
+      restoring: restoringState,
     },
     on: {
       LOADED: { actions: forwardTo((context, event) => context.features[event.data.feature]) },
-      
-      // TOGGLEINVERT: { actions: 'forwardToChannel' },
-      // TOGGLEGRAYSCALE: { actions: 'forwardToChannel' },
-      // SETBRIGHTNESS: { actions: 'forwardToChannel' },
-      // SETCONTRAST: { actions: 'forwardToChannel' },
-
-      // TOGGLEHIGHLIGHT: { actions: 'forwardToFeature' },
-      // TOGGLESHOWNOLABEL: { actions: 'forwardToFeature' },
-      // SETOPACITY: { actions: 'forwardToFeature' },
-
       TOOLREF: { actions: assign({ toolRef: (context, event) => event.toolRef }) },
       SAVE: { actions: 'save' },
-      RESTORE: [
-        {
-          cond: 'canRestore',
-          target: 'restoring',
-          actions: ['saveHistoryRef', 'restore'],
-        },
-        {
-          actions: respond('SAMECONTEXT'),
-        },
-      ]
     },
   },
   {

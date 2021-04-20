@@ -28,24 +28,39 @@ function showImage(imgUrl) {
   });
 }
 
-const createChannelMachine = (projectId, channel) => Machine(
+const createChannelMachine = (projectId, channel, numFrames) => Machine(
   {
     id: `channel${channel}`,
     context: {
       projectId,
       channel,
-      frame: null,
+      numFrames,
+      frame: 0,
       loadingFrame: null,
       brightness: 0,
       contrast: 0,
-      invert: true,
-      grayscale: true,
+      invert: false,
+      grayscale: false,
       frames: {},
       rawImage: new Image(),
     },
     initial: 'idle',
     states: {
-      idle: {},
+      idle: {
+        always: [
+          { cond: 'allLoaded', target: 'allLoaded' },
+          'preload',
+        ],
+      },
+      allLoaded: {},
+      preload: {
+        entry: 'loadNextFrame',
+        invoke: {
+          src: fetchRaw,
+          onDone: { target: 'idle', actions: 'saveFrame' },
+          onError: { actions: (context, event) => console.log(event) },
+        }
+      },
       checkLoaded: {
         always: [
           { cond: 'loadedFrame', target: 'loaded' },
@@ -82,6 +97,7 @@ const createChannelMachine = (projectId, channel) => Machine(
     guards: {
       loadedFrame: (context, event) => context.loadingFrame in context.frames,
       newFrame: (context, event) => context.frame !== event.frame,
+      allLoaded: ({ frames, numFrames }) => Object.keys(frames).length === numFrames,
     },
     actions: {
       // fetching
@@ -92,6 +108,18 @@ const createChannelMachine = (projectId, channel) => Machine(
       useFrame: assign({
         frame: (context, event) => event.frame,
         rawImage: (context, event) => context.frames[event.frame],
+      }),
+      loadNextFrame: assign({
+        loadingFrame: ({ numFrames, frame, frames }) => {
+          const allFrames = [...Array(numFrames).keys()];
+          return allFrames
+            // remove loaded frames
+            .filter((frame) => !(frame in frames))
+            // load the closest unloaded frame to the current frame
+            .reduce((prev, curr) =>
+              Math.abs(curr - frame) < Math.abs(prev - frame) ? curr : prev
+            );
+        }
       }),
       // image settings
       toggleInvert: assign({ invert: (context) => !context.invert }),
