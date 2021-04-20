@@ -95,6 +95,7 @@ const createFeatureMachine = (projectId, feature, numFrames) => Machine(
         entry: 'sendLabeledLoaded',
       },
       reloading: {
+        entry: assign({ loadingFrame: (context) => context.frame }),
         invoke: {
           src: fetchLabeled,
           onDone: { target: 'sendLabeledArray', actions: 'reloadFrame' },
@@ -132,11 +133,15 @@ const createFeatureMachine = (projectId, feature, numFrames) => Machine(
     actions: {
       clearChangedFrames: assign((context, event) => {
         const newFrames = event.data.frames;
+        const inNew = ([key, value]) => newFrames.includes(Number(key));
         const notInNew = ([key, value]) => !newFrames.includes(Number(key));
         const frames = Object.entries(context.frames);
         const arrays = Object.entries(context.arrays);
         const filteredFrames = frames.filter(notInNew);
         const filteredArrays = arrays.filter(notInNew);
+        for (const [frame, image] of frames.filter(inNew)) {
+          URL.revokeObjectURL(image.src);
+        }
         return {
           frames: Object.fromEntries(filteredFrames),
           arrays: Object.fromEntries(filteredArrays),
