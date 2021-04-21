@@ -9,7 +9,13 @@ const frameState = {
   entry: ['loadRawFrame', 'loadLabeledFrame'],
   initial: 'loading',
   states: {
-    idle: {},
+    idle: {
+      entry: ['preloadRawFrame', 'preloadLabeledFrame', 'preloadFeatures', 'preloadChannels'],
+      on: {
+        RAWLOADED: { actions: 'preloadRawFrame' },
+        LABELEDLOADED: { actions: 'preloadLabeledFrame' },
+      },
+    },
     loading: {
       on: {
         RAWLOADED: { target: 'rawLoaded', cond: 'loadedFrame' },
@@ -39,9 +45,7 @@ const frameState = {
 const featureState = {
   initial: 'idle',
   states: {
-    idle: {
-      entry: 'preloadFeatures',
-    },
+    idle: {},
     loading: {
       on: {
         LABELEDLOADED: { target: 'idle', cond: 'loadedFeature', actions: 'useFeature' },
@@ -58,9 +62,7 @@ const featureState = {
 const channelState = {
   initial: 'idle',
   states: {
-    idle: {
-      entry: 'preloadChannels',
-    },
+    idle: {},
     loading: {
       on: {
         RAWLOADED: [
@@ -147,17 +149,23 @@ const imageActions = {
       };
     }
   ),
-  spawnActors: assign((context) => {
-    const { projectId, numChannels, numFeatures, numFrames } = context;
-    const channels = {};
-    const features = {};
-    for (let channel = 0; channel < numChannels; channel++) {
-      channels[channel] = spawn(createChannelMachine(projectId, channel, numFrames), `channel${channel}`);
-    }
-    for (let feature = 0; feature < numFeatures; feature++) {
-      features[feature] = spawn(createFeatureMachine(projectId, feature, numFrames), `feature${feature}`);
-    }
-    return { channels, features };
+  spawnActors: assign({
+    channels: ({ projectId, numChannels, numFrames, channels }) => {
+      if (Object.keys(channels).length !== 0) return channels;
+      channels = {};
+      for (let channel = 0; channel < numChannels; channel++) {
+        channels[channel] = spawn(createChannelMachine(projectId, channel, numFrames), `channel${channel}`);
+      }
+      return channels;
+    },
+    features: ({ projectId, numFeatures, numFrames, features}) => {
+      if (Object.keys(features).length !== 0) return features;
+      features = {};
+      for (let feature = 0; feature < numFeatures; feature++) {
+        features[feature] = spawn(createFeatureMachine(projectId, feature, numFrames), `feature${feature}`);
+      }
+      return features;
+    },
   }),
   assignLoadingFrame: assign({ loadingFrame: (context, { frame }) => frame }),
   assignLoadingChannel: assign({ loadingChannel: (context, { channel }) => channel }),
@@ -178,6 +186,8 @@ const imageActions = {
     ({ frame }) => ({ type: 'LOADFRAME', frame }),
     { to: ({ channels, loadingChannel }) => channels[loadingChannel] }
   ),
+  preloadRawFrame: send('PRELOAD', { to: ({ channels, channel }) => channels[channel] }),
+  preloadLabeledFrame: send('PRELOAD', { to: ({ features, feature }) => features[feature] }),
   preloadFeatures: pure(({ frame, feature, features }) => {
     const loadFrame = { type: 'LOADFRAME', frame };
     return Object.entries(features)
@@ -243,11 +253,13 @@ const createImageMachine = ({ projectId }) => Machine(
     states: {
       waitForProject: {
         on: {
-          PROJECT: { target: 'idle', actions: 'handleProject', },
+          PROJECT: { target: 'setUpActors', actions: 'handleProject' },
         },
       },
+      setUpActors: {
+        always: { target: 'idle', actions: 'spawnActors' },
+      },
       idle: {
-        entry: 'spawnActors',
         type: 'parallel',
         states: {
           frame: frameState,

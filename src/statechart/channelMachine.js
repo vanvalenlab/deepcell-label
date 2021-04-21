@@ -47,36 +47,23 @@ const createChannelMachine = (projectId, channel, numFrames) => Machine(
     initial: 'idle',
     states: {
       idle: {
-        always: [
-          { cond: 'allLoaded', target: 'allLoaded' },
-          'preload',
-        ],
-      },
-      allLoaded: {},
-      preload: {
-        entry: 'loadNextFrame',
-        invoke: {
-          src: fetchRaw,
-          onDone: { target: 'idle', actions: 'saveFrame' },
-          onError: { actions: (context, event) => console.log(event) },
+        on: {
+          PRELOAD: { cond: 'canPreload', target: 'loading', actions: 'loadNextFrame' },
         }
       },
       checkLoaded: {
         always: [
-          { cond: 'loadedFrame', target: 'loaded' },
+          { cond: 'loadedFrame', target: 'idle', actions: 'sendRawLoaded' },
           { target: 'loading' },
         ]
       },
       loading: {
         invoke: {
           src: fetchRaw,
-          onDone: { target: 'loaded', actions: 'saveFrame' },
+          onDone: { target: 'idle', actions: ['saveFrame', 'sendRawLoaded'] },
           onError: { target: 'idle', actions: (context, event) => console.log(event) },
         },
       },
-      loaded: {
-        entry: 'sendRawLoaded',
-      }
     },
     on: {
       // fetching
@@ -84,8 +71,8 @@ const createChannelMachine = (projectId, channel, numFrames) => Machine(
         target: 'checkLoaded',
         actions: assign({ loadingFrame: (context, event) => event.frame }),
       },
-      FRAME: { target: 'idle', actions: 'useFrame' },
-      CHANNEL: { target: 'idle', actions: 'useFrame' },
+      FRAME: { actions: 'useFrame' },
+      CHANNEL: { actions: 'useFrame' },
       // image settings
       TOGGLEINVERT: { actions: 'toggleInvert' },
       TOGGLEGRAYSCALE: { actions: 'toggleGrayscale' },
@@ -97,7 +84,7 @@ const createChannelMachine = (projectId, channel, numFrames) => Machine(
     guards: {
       loadedFrame: (context, event) => context.loadingFrame in context.frames,
       newFrame: (context, event) => context.frame !== event.frame,
-      allLoaded: ({ frames, numFrames }) => Object.keys(frames).length === numFrames,
+      canPreload: ({ frames, numFrames }) => Object.keys(frames).length !== numFrames,
     },
     actions: {
       // fetching

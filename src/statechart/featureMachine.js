@@ -64,47 +64,37 @@ const createFeatureMachine = (projectId, feature, numFrames) => Machine(
     initial: 'idle',
     states: {
       idle: {
-        always: [
-          { cond: 'allLoaded', target: 'allLoaded' },
-          'preload',
-        ],
-      },
-      allLoaded: {},
-      preload: {
-        entry: 'loadNextFrame',
-        invoke: {
-          src: fetchLabeled,
-          onDone: { target: 'idle', actions: 'saveFrame' },
-          onError: { actions: (context, event) => console.log(event) },
+        on: {
+          PRELOAD: { cond: 'canPreload', target: 'loading', actions: 'loadNextFrame' },
         }
       },
       checkLoaded: {
         always: [
-          { cond: 'loadedFrame', target: 'loaded' },
+          { cond: 'loadedFrame', target: 'idle', actions: 'sendLabeledLoaded' },
           { target: 'loading' },
         ]
       },
       loading: {
         invoke: {
           src: fetchLabeled,
-          onDone: { target: 'loaded', actions: 'saveFrame' },
+          onDone: { target: 'idle', actions: ['saveFrame', 'sendLabeledLoaded'] },
           onError: { target: 'idle', actions: (context, event) => console.log(event) },
         },
       },
-      loaded: {
-        entry: 'sendLabeledLoaded',
+      reload: {
+        entry: 'clearChangedFrames',
+        always: [
+          { cond: 'frameChanged', target: 'reloading' },
+          'idle'
+        ]
       },
       reloading: {
         entry: assign({ loadingFrame: (context) => context.frame }),
         invoke: {
           src: fetchLabeled,
-          onDone: { target: 'sendLabeledArray', actions: 'reloadFrame' },
+          onDone: { target: 'idle', actions: ['reloadFrame', 'sendLabeledArray'] },
           onError: { target: 'idle', actions: (context, event) => console.log(event) },
         },
-      },
-      sendLabeledArray: {
-        entry: 'sendLabeledArray',
-        always: 'idle',
       },
     },
     on: {
@@ -112,23 +102,20 @@ const createFeatureMachine = (projectId, feature, numFrames) => Machine(
         target: 'checkLoaded',
         actions: assign({ loadingFrame: (context, event) => event.frame }),
       },
-      FRAME: { target: 'sendLabeledArray', actions: 'useFrame' },
-      FEATURE: { target: 'sendLabeledArray', actions: 'useFrame' },
+      FRAME: { actions: ['useFrame', 'sendLabeledArray'], },
+      FEATURE: { actions: ['useFrame', 'sendLabeledArray'], },
       SETOUTLINE: { actions: 'setOutline' },
       SETOPACITY: { actions: 'setOpacity' },
       TOGGLESHOWNOLABEL: { actions: 'toggleShowNoLabel' },
-      LOADED: [
-        { target: 'reloading', cond: 'frameChanged', actions: 'clearChangedFrames' },
-        { actions: 'clearChangedFrames' }
-      ],
+      LOADED: { target: 'reload', actions: assign({ newFrames: (_, { data: { frames } }) => frames }) },
     }
   },
   {
     guards: {
       loadedFrame: ({ loadingFrame, frames }) => loadingFrame in frames,
       newFrame: (context, event) => context.frame !== event.frame,
-      frameChanged: ({ frame }, { data: { frames } }) => frames.includes(frame),
-      allLoaded: ({ frames, numFrames }) => Object.keys(frames).length === numFrames,
+      frameChanged: ({ frame, newFrames }) => newFrames.includes(frame),
+      canPreload: ({ frames, numFrames }) => Object.keys(frames).length !== numFrames,
     },
     actions: {
       clearChangedFrames: assign((context, event) => {
