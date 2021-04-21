@@ -103,9 +103,7 @@ const BrushCanvas = ({ sx, sy, sw, sh, zoom, width, height, className }) => {
   const traceCanvas = useRef();
   const traceCtx = useRef();
   useEffect(() => {
-    brushCanvas.current = new OffscreenCanvas(sw, sh);
     brushCtx.current = brushCanvas.current.getContext('2d');
-    traceCanvas.current = new OffscreenCanvas(sw, sh);
     traceCtx.current = traceCanvas.current.getContext('2d');
   }, [sw, sh]);
 
@@ -152,12 +150,26 @@ const BrushCanvas = ({ sx, sy, sw, sh, zoom, width, height, className }) => {
     );
   }, [trace, brushSize, x, y, sx, sy, zoom, sw, sh, width, height]);
 
-  return <canvas id='brush-canvas'
-    ref={canvasRef}
-    width={width}
-    height={height}
-    className={className}
-  />;
+  return <>
+    <canvas id='brush-processing'
+      hidden={true}
+      ref={brushCanvas}
+      width={sw}
+      height={sh}
+    />
+    <canvas id='trace-processing'
+      hidden={true}
+      ref={traceCanvas}
+      width={sw}
+      height={sh}
+    />
+    <canvas id='brush-canvas'
+      ref={canvasRef}
+      width={width}
+      height={height}
+      className={className}
+    />
+  </>;
 };
 
 export default React.memo(BrushCanvas);

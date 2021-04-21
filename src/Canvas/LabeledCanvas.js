@@ -42,8 +42,8 @@ export const LabeledCanvas = ({ feature, sx, sy, sw, sh, zoom, width, height, cl
 
   const canvasRef = useRef();
   const ctx = useRef();
-  const labelCanvas = new OffscreenCanvas(sw, sh);
-  const labelCtx = labelCanvas.getContext('2d');
+  const hiddenCanvasRef = useRef();
+  const hiddenCtx = useRef();
 
   useEffect(() => {
     ctx.current = canvasRef.current.getContext('2d');
@@ -51,8 +51,12 @@ export const LabeledCanvas = ({ feature, sx, sy, sw, sh, zoom, width, height, cl
   }, [width, height]);
 
   useEffect(() => {
-    labelCtx.drawImage(labeledImage, 0, 0);
-    let data = labelCtx.getImageData(0, 0, sw, sh).data;
+    hiddenCtx.current = hiddenCanvasRef.current.getContext('2d');
+  }, [sw, sh]);
+
+  useEffect(() => {
+    hiddenCtx.current.drawImage(labeledImage, 0, 0);
+    let data = hiddenCtx.current.getImageData(0, 0, sw, sh).data;
     if (highlight) {
       data = highlightImageData(data, foreground);
     }
@@ -61,28 +65,37 @@ export const LabeledCanvas = ({ feature, sx, sy, sw, sh, zoom, width, height, cl
     }
     data = opacityImageData(data, opacity);
     const adjustedData = new ImageData(data, sw, sh);
-    labelCtx.putImageData(adjustedData, 0, 0);
-  }, [labeledImage, foreground, highlight, showNoLabel, opacity, sh, sw, labelCtx]);
+    hiddenCtx.current.putImageData(adjustedData, 0, 0);
+  }, [labeledImage, foreground, highlight, showNoLabel, opacity, sh, sw]);
 
   useEffect(() => {
     ctx.current.save();
     ctx.current.clearRect(0, 0, width, height);
     ctx.current.drawImage(
-      labelCanvas,
+      hiddenCanvasRef.current,
       sx, sy,
       sw / zoom, sh / zoom,
       0, 0,
       width, height,
     );
     ctx.current.restore();
-  }, [labelCanvas, sx, sy, zoom, sw, sh, width, height]);
+  }, [labeledImage, foreground, highlight, showNoLabel, opacity, sw, sh, sx, sy, zoom, width, height]);
 
-  return <canvas id='labeled-canvas'
-    ref={canvasRef}
-    width={width}
-    height={height}
-    className={className}
-  />;
+  return <>
+    {/* hidden processing canvas */}
+    <canvas id='labeled-processing'
+      hidden={true}
+      ref={hiddenCanvasRef}
+      width={sw}
+      height={sh}
+    />
+    <canvas id='labeled-canvas'
+      ref={canvasRef}
+      width={width}
+      height={height}
+      className={className}
+    />
+  </>;
 };
 
 export default React.memo(LabeledCanvas);

@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import { useSelector } from '@xstate/react';
-import { makeStyles } from '@material-ui/core/styles';
 
 const invertImageData = (data) => {
   for (let i = 0; i < data.length; i += 4) {
@@ -44,16 +43,6 @@ const brightnessImageData = (data, brightness) => {
   return data;
 }
 
-const useStyles = makeStyles({
-    canvas: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      maxHeight: '100%',
-      maxWidth: '100%',
-    },
-});
-
 export const RawCanvas = ({ channel, sx, sy, sw, sh, zoom, width, height, className }) => {
   const invert = useSelector(channel, state => state.context.invert);
   const grayscale = useSelector(channel, state => state.context.grayscale);
@@ -64,17 +53,24 @@ export const RawCanvas = ({ channel, sx, sy, sw, sh, zoom, width, height, classN
   const canvasRef = useRef();
   const ctx = useRef();
 
-  const rawCanvas = new OffscreenCanvas(sw, sh);
-  const rawCtx = rawCanvas.getContext('2d');
+  const hiddenCanvasRef = useRef();
+  const hiddenCtx = useRef();
+
+  console.log(rawImage);
+
 
   useEffect(() => {
-    ctx.current = canvasRef.current.getContext('2d')
+    ctx.current = canvasRef.current.getContext('2d');
     ctx.current.imageSmoothingEnabled = false;
   }, [height, width]);
 
   useEffect(() => {
-    rawCtx.drawImage(rawImage, 0, 0);
-    let data = rawCtx.getImageData(0, 0, sw, sh).data;
+    hiddenCtx.current = hiddenCanvasRef.current.getContext('2d');
+  }, [sw, sh]);
+
+  useEffect(() => {
+    hiddenCtx.current.drawImage(rawImage, 0, 0);
+    let data = hiddenCtx.current.getImageData(0, 0, sw, sh).data;
     if (invert) {
       data = invertImageData(data);
     }
@@ -84,28 +80,38 @@ export const RawCanvas = ({ channel, sx, sy, sw, sh, zoom, width, height, classN
     data = contrastImageData(data, contrast);
     data = brightnessImageData(data, brightness);
     const adjustedData = new ImageData(data, sw, sh);
-    rawCtx.putImageData(adjustedData, 0, 0);
-  }, [rawImage, invert, grayscale, brightness, contrast, sh, sw, rawCtx]);
+    hiddenCtx.current.putImageData(adjustedData, 0, 0);
+  }, [rawImage, invert, grayscale, brightness, contrast, sh, sw]);
 
   useEffect(() => {
     ctx.current.save();
     ctx.current.clearRect(0, 0, width, height);
     ctx.current.drawImage(
-      rawCanvas,
+      hiddenCanvasRef.current,
       sx, sy,
       sw / zoom, sh / zoom,
       0, 0,
       width, height,
     );
     ctx.current.restore();
-  }, [rawCanvas, sx, sy, zoom, sw, sh, width, height]);
+  }, [rawImage, invert, grayscale, brightness, contrast, sh, sw, sx, sy, zoom, sw, sh, width, height]);
 
-  return <canvas id='raw-canvas'
-    className={className}
-    ref={canvasRef}
-    width={width}
-    height={height}
-  />;
+  return <>
+    {/* hidden processing canvas */}
+    <canvas id='raw-processing'
+      hidden={true}
+      ref={hiddenCanvasRef}
+      width={sw}
+      height={sh}
+    />
+    {/* visible output canvas */}
+    <canvas id='raw-canvas'
+      className={className}
+      ref={canvasRef}
+      width={width}
+      height={height}
+    />
+  </>;
 };
 
 export default React.memo(RawCanvas);

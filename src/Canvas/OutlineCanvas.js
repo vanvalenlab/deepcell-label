@@ -51,14 +51,18 @@ const OutlineCanvas = ({ feature, sx, sy, sw, sh, zoom, width, height, className
 
   const canvasRef = useRef();
   const ctx = useRef();
-  // to convert the outline array into an image
-  const outlineCanvas = new OffscreenCanvas(sw, sh);
-  const outlineCtx = outlineCanvas.getContext('2d');
+  // hidden canvas convert the outline array into an image
+  const hiddenCanvasRef = useRef();
+  const hiddenCtx = useRef();
 
   useEffect(() => {
     ctx.current = canvasRef.current.getContext('2d');
     ctx.current.imageSmoothingEnabled = false;
   }, [width, height]);
+
+  useEffect(() => {
+    hiddenCtx.current = hiddenCanvasRef.current.getContext('2d');
+  }, [sw, sh]);
 
   useEffect(() => {
     const width = labeledArray[0].length;
@@ -72,28 +76,37 @@ const OutlineCanvas = ({ feature, sx, sy, sw, sh, zoom, width, height, className
       case 'none':
       default:
     }
-    outlineCtx.putImageData(data, 0, 0);
-  }, [labeledArray, foreground, background, outlineCtx]);
+    hiddenCtx.current.putImageData(data, 0, 0);
+  }, [labeledArray, foreground, background, sw, sh]);
 
   useEffect(() => {
     ctx.current.save();
     ctx.current.clearRect(0, 0, width, height);
     ctx.current.drawImage(
-      outlineCanvas,
+      hiddenCanvasRef.current,
       sx, sy,
       sw / zoom, sh / zoom,
       0, 0,
       width, height,
     );
     ctx.current.restore();
-  }, [outlineCanvas, sx, sy, zoom, sw, sh, width, height]);
+  }, [labeledArray, foreground, background, sw, sh, sx, sy, zoom, width, height]);
 
-  return <canvas id='outline-canvas'
-    ref={canvasRef}
-    width={width}
-    height={height}
-    className={className}
-  />;
+  return <>
+    {/* hidden processing canvas */}
+    <canvas id='outline-processing'
+      hidden={true}
+      ref={hiddenCanvasRef}
+      width={sw}
+      height={sh}
+    />
+    <canvas id='outline-canvas'
+      ref={canvasRef}
+      width={width}
+      height={height}
+      className={className}
+    />
+  </>;
 };
 
 export default React.memo(OutlineCanvas);
