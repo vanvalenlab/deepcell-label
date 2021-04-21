@@ -43,6 +43,10 @@ const createDeepcellLabelMachine = (projectId) => Machine(
               assign((context, event) => event.data),
             ]
           },
+          onError: {
+            target: 'idle',
+            actions: (context, event) => console.log(event),
+          }
         }
       },
       idle: {},
