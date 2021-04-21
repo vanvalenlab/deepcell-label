@@ -7,7 +7,6 @@ import Canvas from './Canvas/Canvas';
 import InstructionPane from './InstructionPane';
 import Footer from './Footer/Footer';
 import { useState, useRef, useEffect } from 'react';
-
 import { useLocation } from "react-router-dom";
 
 const useStyles = makeStyles({
