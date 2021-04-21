@@ -3,7 +3,7 @@ import { useInterpret } from '@xstate/react';
 import { useLocation } from "react-router-dom";
 import createDeepcellLabelMachine from './statechart/deepcellLabelMachine';
 import Hotkeys from './Hotkeys';
-// import { inspect } from '@xstate/inspect';
+import { inspect } from '@xstate/inspect';
 
 
 export const LabelContext = createContext();
@@ -49,8 +49,8 @@ export function useTool() {
 const ServiceContext = (props) => {
   const location = useLocation();
   const projectId = new URLSearchParams(location.search).get('projectId');
-
-  const labelService = useInterpret(createDeepcellLabelMachine(projectId));
+  const labelMachine = createDeepcellLabelMachine(projectId);
+  const labelService = useInterpret(labelMachine); // , { devTools: true });
   labelService.start();
   window.dcl = labelService;
 
