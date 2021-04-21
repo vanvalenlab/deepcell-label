@@ -393,7 +393,7 @@ class Project(db.Model):
     def get_labeled_png(self, feature, frame):
         """
         Returns:
-            BytesIO: contains the raw frame as a .png
+            BytesIO: contains the labeled frame as a .png
         """
         # Create label png
         label_frame = self.label_frames[frame]
