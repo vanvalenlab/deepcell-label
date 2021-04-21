@@ -27,11 +27,8 @@ const undoMachine = Machine(
       cannotUndo: (context) => context.past.length === 0,
       cannotRedo: (context) => context.future.length === 0,
       differentPast: (context, event) => {
-        console.log('hello');
         const { context: currentContext } = event;
         const pastContext = context.past[context.past.length - 1];
-        console.log(pastContext);
-        console.log(currentContext);
         for (const [key, value] of Object.entries(pastContext)) {
           if (value !== currentContext[key]) return true;
         }
