@@ -77,7 +77,7 @@ const OutlineCanvas = ({ feature, sx, sy, sw, sh, zoom, width, height, className
       default:
     }
     hiddenCtx.current.putImageData(data, 0, 0);
-  }, [labeledArray, foreground, background, sw, sh]);
+  }, [labeledArray, foreground, background, outline, sw, sh]);
 
   useEffect(() => {
     ctx.current.save();
@@ -90,7 +90,7 @@ const OutlineCanvas = ({ feature, sx, sy, sw, sh, zoom, width, height, className
       width, height,
     );
     ctx.current.restore();
-  }, [labeledArray, foreground, background, sw, sh, sx, sy, zoom, width, height]);
+  }, [labeledArray, foreground, background, outline, sw, sh, sx, sy, zoom, width, height]);
 
   return <>
     {/* hidden processing canvas */}
