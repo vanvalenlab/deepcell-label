@@ -56,9 +56,6 @@ export const RawCanvas = ({ channel, sx, sy, sw, sh, zoom, width, height, classN
   const hiddenCanvasRef = useRef();
   const hiddenCtx = useRef();
 
-  console.log(rawImage);
-
-
   useEffect(() => {
     ctx.current = canvasRef.current.getContext('2d');
     ctx.current.imageSmoothingEnabled = false;
