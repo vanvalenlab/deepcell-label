@@ -23,7 +23,8 @@ from werkzeug.exceptions import HTTPException
 
 from label import TrackEdit, ZStackEdit, BaseEdit
 from models import Project
-import loaders
+# import loaders
+import url_loaders
 import exporters
 from config import S3_INPUT_BUCKET, S3_OUTPUT_BUCKET
 
@@ -41,7 +42,7 @@ def handle_404(error):
     return render_template('404.html'), 404
 
 
-@bp.errorhandler(loaders.InvalidExtension)
+@bp.errorhandler(url_loaders.InvalidExtension)
 def handle_invalid_extension(error):
     response = jsonify(error.to_dict())
     response.status_code = error.status_code
@@ -251,16 +252,30 @@ def get_project(token):
     return jsonify(payload)
 
 
+# @bp.route('/api/project', methods=['POST'])
+# def create_project():
+#     """
+#     Create a new Project.
+#     """
+#     start = timeit.default_timer()
+#     loader = loaders.get_loader(request)
+#     project = Project.create(loader)
+#     current_app.logger.info('Created project from %s in %s s.',
+#                             loader.path, timeit.default_timer() - start)
+#     return jsonify({'projectId': project.token})
+
+
 @bp.route('/api/project', methods=['POST'])
-def create_project():
+def create_project_from_url():
     """
-    Create a new Project.
+    Create a new Project from URL.
     """
     start = timeit.default_timer()
-    loader = loaders.get_loader(request)
+    url_form = request.form
+    loader = url_loaders.Loader(url_form)
     project = Project.create(loader)
     current_app.logger.info('Created project from %s in %s s.',
-                            loader.path, timeit.default_timer() - start)
+                            loader.url, timeit.default_timer() - start)
     return jsonify({'projectId': project.token})
 
 
