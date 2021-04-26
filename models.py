@@ -4,6 +4,7 @@ from __future__ import division
 from __future__ import print_function
 
 import base64
+from blueprints import labeled
 import copy
 import enum
 import io
@@ -21,6 +22,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy.schema import PrimaryKeyConstraint, ForeignKeyConstraint
+from PIL import Image
 
 from imgutils import pngify, add_outlines
 
@@ -66,12 +68,6 @@ class MutableNdarray(Mutable, np.ndarray):
         self.changed()
 
 
-class SourceEnum(enum.Enum):
-    s3 = 's3'
-    dropped = 'dropped'
-    lfs = 'lfs'
-
-
 class Project(db.Model):
     """Project table definition."""
     # pylint: disable=E1101
@@ -81,8 +77,8 @@ class Project(db.Model):
     createdAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now())
     finished = db.Column(db.TIMESTAMP)
 
-    path = db.Column(db.Text, nullable=False)
-    source = db.Column(db.Enum(SourceEnum), nullable=False)
+    url = db.Column(db.Text, nullable=False)
+    labeled_url = db.Column(db.Text, nullable=True)
     height = db.Column(db.Integer, nullable=False)
     width = db.Column(db.Integer, nullable=False)
     num_frames = db.Column(db.Integer, nullable=False)
@@ -92,7 +88,6 @@ class Project(db.Model):
     frame = db.Column(db.Integer, default=0)
     channel = db.Column(db.Integer, default=0)
     feature = db.Column(db.Integer, default=0)
-    scale_factor = db.Column(db.Float, default=1)
     colormap = db.Column(db.PickleType)
 
     raw_frames = db.relationship('RawFrame', backref='project')
@@ -118,8 +113,8 @@ class Project(db.Model):
         label = loader.label_array
 
         # Record static project attributes
-        self.path = str(loader.path)
-        self.source = loader.source
+        self.url = loader.url
+        self.labeled_url = loader.labeled_url
         self.num_frames = raw.shape[0]
         self.height = raw.shape[1]
         self.width = raw.shape[2]
@@ -128,10 +123,6 @@ class Project(db.Model):
         cmap = plt.get_cmap('viridis')
         cmap.set_bad('black')
         self.colormap = cmap
-
-        if self.is_track:
-            # Track files require a different scale factor
-            self.scale_factor = 2
 
         # Create frames from raw, RGB, and labeled images
         self.raw_frames = [RawFrame(i, frame)
