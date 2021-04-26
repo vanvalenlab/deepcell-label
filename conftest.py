@@ -22,7 +22,7 @@ TEST_DATABASE_URI = 'sqlite:///{}'.format(TESTDB_PATH)
 
 # TODO: Could this become a fixture?
 class DummyLoader(Loader):
-    def __init__(self, raw=None, labels=None, path='test.npz', source='s3'):
+    def __init__(self, raw=None, labels=None, url='test.npz'):
         super().__init__()
         if raw is None:
             raw = np.zeros((1, 1, 1, 1))
@@ -32,10 +32,9 @@ class DummyLoader(Loader):
         elif labels.shape != raw.shape:
             raw = np.zeros(labels.shape)
 
-        self._raw_array = raw
-        self._label_array = labels
-        self.path = path
-        self.source = source
+        self.raw_array = raw
+        self.label_array = labels
+        self.url = url
 
 
 @pytest.fixture(scope='session')
