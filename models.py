@@ -4,7 +4,6 @@ from __future__ import division
 from __future__ import print_function
 
 import base64
-from blueprints import labeled
 import copy
 import enum
 import io
@@ -138,7 +137,7 @@ class Project(db.Model):
         self.labels.cell_info = loader.cell_info
 
         logger.debug('Initialized project from %s in %ss.',
-                     self.path, timeit.default_timer() - init_start)
+                     self.url, timeit.default_timer() - init_start)
 
     @property
     def label_array(self):
@@ -152,11 +151,11 @@ class Project(db.Model):
 
     @property
     def is_zstack(self):
-        return os.path.splitext(self.path.lower())[-1] in {'.npz', '.png', '.tif', '.tiff'}
+        return os.path.splitext(self.url.lower())[-1] in {'.npz', '.png', '.tif', '.tiff'}
 
     @property
     def is_track(self):
-        return os.path.splitext(self.path.lower())[-1] in {'.trk', '.trks'}
+        return os.path.splitext(self.url.lower())[-1] in {'.trk', '.trks'}
 
     @staticmethod
     def get(token):
