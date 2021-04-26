@@ -96,7 +96,6 @@ def test_create():
     assert project.frame is not None
     assert project.channel is not None
     assert project.feature is not None
-    assert project.scale_factor is not None
 
     # Check relationships
     assert project.labels is not None
