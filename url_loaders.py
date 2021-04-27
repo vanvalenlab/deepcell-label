@@ -180,7 +180,7 @@ def permute_axes(array, input_axes, output_axes=DCL_AXES):
 
 def add_missing_axes(array, input_axes, output_axes=DCL_AXES):
     """
-    Given array with axis order input_axes, inserts missing axes from output_axes. 
+    Given array with axis order input_axes, inserts missing axes from output_axes.
 
     Arguments:
         array (ndarray): array to expand
@@ -286,7 +286,7 @@ def load_tiff(data):
 def load_zip(data):
     """Loads labeled image data from a zip of TIFF files."""
     zf = zipfile.ZipFile(data, 'r')
-    features = [load_tiff(zf.open(info).read()) for info in zf.filelist]
+    features = [load_tiff(io.BytesIO(zf.open(info).read())) for info in zf.filelist]
     return np.array(features)
 
 
