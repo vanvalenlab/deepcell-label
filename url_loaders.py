@@ -285,7 +285,7 @@ def load_tiff(data):
 def load_zip(data):
     """Loads labeled image data from a zip of TIFF files."""
     zf = zipfile.ZipFile(data, 'r')
-    features = [load_tiff(zf.open(info)) for info in zf.filelist]
+    features = [load_tiff(io.BytesIO(zf.open(info))) for info in zf.filelist]
     return np.array(features)
 
 
