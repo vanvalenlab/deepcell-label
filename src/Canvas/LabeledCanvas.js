@@ -64,7 +64,8 @@ export const LabeledCanvas = ({ feature, sx, sy, sw, sh, zoom, width, height, cl
   const opacity = useSelector(image, state => state.context.opacity);
   
   const labeledImage = useSelector(feature, state => state.context.labeledImage);
-  const labeledArray = useSelector(feature, state => state.context.labeledArray);
+  let labeledArray = useSelector(feature, state => state.context.labeledArray);
+  if (!labeledArray) { labeledArray = Array(sh).fill(Array(sw).fill(0)) }
 
   const tool = useTool();
   const foreground = useSelector(tool, state => state.context.foreground);
