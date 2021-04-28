@@ -7,11 +7,12 @@ import { useSelector } from '@xstate/react';
 import ControlRow from './ControlRow';
 import { useImage } from '../ServiceContext';
 
-const InvertButton = ({ channel }) => {
-  const invert = useSelector(channel, state => state.context.invert);
+const InvertButton = () => {
+  const image = useImage();
+  const invert = useSelector(image, state => state.context.invert);
 
   const handleInvertChange = (event) => {
-    channel.send({ type: 'TOGGLEINVERT' });
+    image.send({ type: 'TOGGLEINVERT' });
   };
 
   return <ToggleButton
@@ -23,11 +24,12 @@ const InvertButton = ({ channel }) => {
   </ToggleButton>;
 };
 
-const GrayscaleButton = ({ channel }) => {
-  const grayscale = useSelector(channel, state => state.context.grayscale);
+const GrayscaleButton = () => {
+  const image = useImage();
+  const grayscale = useSelector(image, state => state.context.grayscale);
 
   const handleGrayscaleChange = (event) => {
-    channel.send({ type: 'TOGGLEGRAYSCALE' });
+    image.send({ type: 'TOGGLEGRAYSCALE' });
   };
 
   return <ToggleButton
@@ -39,11 +41,19 @@ const GrayscaleButton = ({ channel }) => {
   </ToggleButton>;
 };
 
-const BrightnessSlider = ({ channel }) => {
-  const brightness = useSelector(channel, state => state.context.brightness);
+const BrightnessSlider = () => {
+  const image = useImage();
+  const channels = useSelector(image, state => state.context.channels);
+  const channel = useSelector(image, state => state.context.channel);
+  const channelActor = channels[channel];
+
+  if (!channelActor) {
+    return null;
+  }
+  const brightness = useSelector(channelActor, state => state.context.brightness);
 
   const handleBrightnessChange = (event, newValue) => {
-    channel.send({ type: 'SETBRIGHTNESS', brightness: newValue });
+    channelActor.send({ type: 'SETBRIGHTNESS', brightness: newValue });
   };
 
   return <>
@@ -62,11 +72,19 @@ const BrightnessSlider = ({ channel }) => {
   </>;
 };
 
-const ContrastSlider = ({ channel }) => {
-  const contrast = useSelector(channel, state => state.context.contrast);
+const ContrastSlider = () => {
+  const image = useImage();
+  const channels = useSelector(image, state => state.context.channels);
+  const channel = useSelector(image, state => state.context.channel);
+  const channelActor = channels[channel];
 
+  if (!channelActor) {
+    return null;
+  }
+
+  const contrast = useSelector(channelActor, state => state.context.contrast);
   const handleContrastChange = (event, newValue) => {
-    channel.send({ type: 'SETCONTRAST', contrast: newValue });
+    channelActor.send({ type: 'SETCONTRAST', contrast: newValue });
   };
 
   return <>
@@ -87,19 +105,12 @@ const ContrastSlider = ({ channel }) => {
 
 
 const ChannelControls = () => {
-  const image = useImage();
-  const channels = useSelector(image, state => state.context.channels);
-  const channel = useSelector(image, state => state.context.channel);
-
-  if (!channels[channel]) {
-    return null;
-  }
 
   return <ControlRow name={"Raw Display"}>
-    <InvertButton channel={channels[channel]} />
-    <GrayscaleButton channel={channels[channel]} />
-    <BrightnessSlider channel={channels[channel]} />
-    <ContrastSlider channel={channels[channel]} />
+    <InvertButton />
+    <GrayscaleButton />
+    <BrightnessSlider />
+    <ContrastSlider />
   </ControlRow>;
 }
 

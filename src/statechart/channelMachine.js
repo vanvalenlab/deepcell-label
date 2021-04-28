@@ -39,8 +39,6 @@ const createChannelMachine = (projectId, channel, numFrames) => Machine(
       loadingFrame: null,
       brightness: 0,
       contrast: 0,
-      invert: false,
-      grayscale: false,
       frames: {},
       rawImage: new Image(),
     },
@@ -74,8 +72,6 @@ const createChannelMachine = (projectId, channel, numFrames) => Machine(
       FRAME: { actions: 'useFrame' },
       CHANNEL: { actions: 'useFrame' },
       // image settings
-      TOGGLEINVERT: { actions: 'toggleInvert' },
-      TOGGLEGRAYSCALE: { actions: 'toggleGrayscale' },
       SETBRIGHTNESS: { actions: 'setBrightness' },
       SETCONTRAST: { actions: 'setContrast' },
     }
@@ -109,8 +105,6 @@ const createChannelMachine = (projectId, channel, numFrames) => Machine(
         }
       }),
       // image settings
-      toggleInvert: assign({ invert: (context) => !context.invert }),
-      toggleGrayscale: assign({ grayscale: (context) => !context.grayscale }),
       setBrightness: assign({ brightness: (_, event) => Math.min(1, Math.max(-1, event.brightness)) }),
       setContrast: assign({ contrast: (_, event) => Math.min(1, Math.max(-1, event.contrast)) }),
     }

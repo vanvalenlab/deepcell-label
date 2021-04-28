@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useSelector } from '@xstate/react';
+import { useImage } from '../ServiceContext';
 
 const invertImageData = (data) => {
   for (let i = 0; i < data.length; i += 4) {
@@ -44,8 +45,9 @@ const brightnessImageData = (data, brightness) => {
 }
 
 export const RawCanvas = ({ channel, sx, sy, sw, sh, zoom, width, height, className }) => {
-  const invert = useSelector(channel, state => state.context.invert);
-  const grayscale = useSelector(channel, state => state.context.grayscale);
+  const image = useImage();
+  const invert = useSelector(image, state => state.context.invert);
+  const grayscale = useSelector(image, state => state.context.grayscale);
   const brightness = useSelector(channel, state => state.context.brightness);
   const contrast = useSelector(channel, state => state.context.contrast);
   const rawImage = useSelector(channel, state => state.context.rawImage);

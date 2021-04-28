@@ -230,6 +230,12 @@ const imageActions = {
       send(channelEvent, { to: toolRef }),
     ];
   }),
+  toggleHighlight: assign({ highlight: ({ highlight }) => !highlight }),
+  toggleShowNoLabel: assign({ showNoLabel: ({ showNoLabel }) => !showNoLabel }),
+  setOpacity: assign({ opacity: (_, { opacity }) => Math.min(1, Math.max(0, opacity)) }),
+  setOutline: assign({ outline: (_, { outline }) => outline }),
+  toggleInvert: assign({ invert: (context) => !context.invert }),
+  toggleGrayscale: assign({ grayscale: (context) => !context.grayscale }),
 };
 
 const createImageMachine = ({ projectId }) => Machine(
@@ -248,6 +254,12 @@ const createImageMachine = ({ projectId }) => Machine(
       numChannels: 1,
       channels: {},
       features: {},
+      opacity: 0.3,
+      highlight: false,
+      showNoLabel: true,
+      outline: 'selected',
+      invert: false,
+      grayscale: false,
     },
     initial: 'waitForProject',
     states: {
@@ -273,6 +285,12 @@ const createImageMachine = ({ projectId }) => Machine(
       LOADED: { actions: forwardTo((context, event) => context.features[event.data.feature]) },
       TOOLREF: { actions: assign({ toolRef: (context, event) => event.toolRef }) },
       SAVE: { actions: 'save' },
+      // image adjustment
+      SETOUTLINE: { actions: 'setOutline' },
+      SETOPACITY: { actions: 'setOpacity' },
+      TOGGLESHOWNOLABEL: { actions: 'toggleShowNoLabel' },
+      TOGGLEINVERT: { actions: 'toggleInvert' },
+      TOGGLEGRAYSCALE: { actions: 'toggleGrayscale' },
     },
   },
   {

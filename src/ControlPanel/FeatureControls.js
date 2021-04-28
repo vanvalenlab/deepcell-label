@@ -13,11 +13,12 @@ import Box from '@material-ui/core/Box';
 import ControlRow from './ControlRow';
 import { useImage } from '../ServiceContext';
 
-const HighlightButton = ({ feature }) => {
-  const highlight = useSelector(feature, state => state.context.highlight);
+const HighlightButton = () => {
+  const image = useImage();
+  const highlight = useSelector(image, state => state.context.highlight);
 
   const handleHighlightChange = () => {
-    // feature.send({ type: 'SETHIGHLIGHT', value: !current.highlight });
+    // image.send({ type: 'SETHIGHLIGHT', value: !current.highlight });
   };
 
   return <ToggleButton
@@ -29,10 +30,11 @@ const HighlightButton = ({ feature }) => {
 };
 
 const ShowNoLabelButton = ({ feature }) => {
-  const showNoLabel = useSelector(feature, state => state.context.showNoLabel);
+  const image = useImage();
+  const showNoLabel = useSelector(image, state => state.context.showNoLabel);
 
   const handleShowNoLabelChange = () => {
-    feature.send({ type: 'TOGGLESHOWNOLABEL' });
+    image.send({ type: 'TOGGLESHOWNOLABEL' });
   };
 
   return <ToggleButton
@@ -43,11 +45,12 @@ const ShowNoLabelButton = ({ feature }) => {
   </ToggleButton>;
 };
 
-const OutlineRadioButtons = ({ feature }) => {
-  const outline = useSelector(feature, state => state.context.outline);
+const OutlineRadioButtons = () => {
+  const image = useImage();
+  const outline = useSelector(image, state => state.context.outline);
 
   const handleOutlineChange = (event, newValue) => {
-    feature.send({ type: 'SETOUTLINE', outline: newValue });
+    image.send({ type: 'SETOUTLINE', outline: newValue });
   };
 
   return <FormControl component="fieldset">
@@ -60,11 +63,12 @@ const OutlineRadioButtons = ({ feature }) => {
   </FormControl>;
 };
 
-const OpacitySlider = ({ feature }) => {
-  const opacity = useSelector(feature, state => state.context.opacity);
+const OpacitySlider = () => {
+  const image = useImage();
+  const opacity = useSelector(image, state => state.context.opacity);
 
   const handleOpacityChange = (event, newValue) => {
-    feature.send({ type: 'SETOPACITY', opacity: newValue });
+    image.send({ type: 'SETOPACITY', opacity: newValue });
   };
 
   return <>
@@ -87,20 +91,12 @@ const OpacitySlider = ({ feature }) => {
 
 
 const FeatureControls = () => {
-  const image = useImage();
-  const features = useSelector(image, state => state.context.features);
-  const feature = useSelector(image, state => state.context.feature);
-
-  if (!features[feature]) {
-    return null;
-  }
-
   return <ControlRow name={"Label Display"}>
     <Box display='flex' flexDirection='column'>
-      <HighlightButton feature={features[feature]} />
-      <ShowNoLabelButton feature={features[feature]} />
-      <OutlineRadioButtons feature={features[feature]} />
-      <OpacitySlider feature={features[feature]} />
+      <HighlightButton />
+      <ShowNoLabelButton />
+      <OutlineRadioButtons />
+      <OpacitySlider />
     </Box>
   </ControlRow>;
 };

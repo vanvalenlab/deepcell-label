@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useSelector } from '@xstate/react';
+import { useImage } from '../ServiceContext';
 
 const highlightImageData = (data, label) => {
   for (let i = 0; i < data.length; i += 4) {
@@ -33,10 +34,11 @@ const opacityImageData = (data, opacity) => {
 };
 
 export const LabeledCanvas = ({ feature, sx, sy, sw, sh, zoom, width, height, className }) => {
-
-  const highlight = useSelector(feature, state => state.context.highlight);
-  const showNoLabel = useSelector(feature, state => state.context.showNoLabel);
-  const opacity = useSelector(feature, state => state.context.opacity);
+  const image = useImage();
+  const highlight = useSelector(image, state => state.context.highlight);
+  const showNoLabel = useSelector(image, state => state.context.showNoLabel);
+  const opacity = useSelector(image, state => state.context.opacity);
+  
   const labeledImage = useSelector(feature, state => state.context.labeledImage);
   const [foreground, background] = [1, 2];
 

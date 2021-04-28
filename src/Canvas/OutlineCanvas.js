@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useSelector } from '@xstate/react';
-import { useTool } from '../ServiceContext';
+import { useTool, useImage } from '../ServiceContext';
 
 function outlineSelected(imageData, labeledArray, foreground, background) {
   const { data, width, height } = imageData;
@@ -45,7 +45,9 @@ const OutlineCanvas = ({ feature, sx, sy, sw, sh, zoom, width, height, className
   const foreground = useSelector(tool, state => state.context.foreground);
   const background = useSelector(tool, state => state.context.background);
 
-  const outline = useSelector(feature, state => state.context.outline);
+  const image = useImage();
+  const outline = useSelector(image, state => state.context.outline);
+
   let labeledArray = useSelector(feature, state => state.context.labeledArray);
   if (!labeledArray) { labeledArray = Array(sh).fill(Array(sw).fill(0)); }
 
