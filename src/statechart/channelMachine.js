@@ -67,7 +67,7 @@ const createChannelMachine = (projectId, channel, numFrames) => Machine(
       // fetching
       LOADFRAME: {
         target: 'checkLoaded',
-        actions: assign({ loadingFrame: (context, event) => event.frame }),
+        actions: assign({ loadingFrame: (_, { frame }) => frame }),
       },
       FRAME: { actions: 'useFrame' },
       CHANNEL: { actions: 'useFrame' },
@@ -78,19 +78,19 @@ const createChannelMachine = (projectId, channel, numFrames) => Machine(
   },
   {
     guards: {
-      loadedFrame: (context, event) => context.loadingFrame in context.frames,
+      loadedFrame: ({ frames, loadingFrame }) => loadingFrame in frames,
       newFrame: (context, event) => context.frame !== event.frame,
       canPreload: ({ frames, numFrames }) => Object.keys(frames).length !== numFrames,
     },
     actions: {
       // fetching
-      sendRawLoaded: sendParent((context) => ({ type: 'RAWLOADED', frame: context.loadingFrame, channel: context.channel })), 
+      sendRawLoaded: sendParent(({ loadingFrame, channel }) => ({ type: 'RAWLOADED', frame: loadingFrame, channel })), 
       saveFrame: assign({
-        frames: (context, event) => ({...context.frames, [context.loadingFrame]: event.data}),
+        frames: ({ frames , loadingFrame }, { data }) => ({...frames, [loadingFrame]: data}),
       }),
       useFrame: assign({
-        frame: (context, event) => event.frame,
-        rawImage: (context, event) => context.frames[event.frame],
+        frame: (_, { frame }) => frame,
+        rawImage: ({ frames }, { frame }) => frames[frame],
       }),
       loadNextFrame: assign({
         loadingFrame: ({ numFrames, frame, frames }) => {
@@ -105,8 +105,8 @@ const createChannelMachine = (projectId, channel, numFrames) => Machine(
         }
       }),
       // image settings
-      setBrightness: assign({ brightness: (_, event) => Math.min(1, Math.max(-1, event.brightness)) }),
-      setContrast: assign({ contrast: (_, event) => Math.min(1, Math.max(-1, event.contrast)) }),
+      setBrightness: assign({ brightness: (_, { brightness }) => Math.min(1, Math.max(-1, brightness)) }),
+      setContrast: assign({ contrast: (_, { contrast }) => Math.min(1, Math.max(-1, contrast)) }),
     }
   }
 );
