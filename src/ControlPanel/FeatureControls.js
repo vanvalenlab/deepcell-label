@@ -18,7 +18,7 @@ const HighlightButton = () => {
   const highlight = useSelector(image, state => state.context.highlight);
 
   const handleHighlightChange = () => {
-    // image.send({ type: 'SETHIGHLIGHT', value: !current.highlight });
+    image.send({ type: 'TOGGLEHIGHLIGHT' });
   };
 
   return <ToggleButton

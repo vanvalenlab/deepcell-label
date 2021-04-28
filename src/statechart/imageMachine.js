@@ -286,6 +286,7 @@ const createImageMachine = ({ projectId }) => Machine(
       TOOLREF: { actions: assign({ toolRef: (context, event) => event.toolRef }) },
       SAVE: { actions: 'save' },
       // image adjustment
+      TOGGLEHIGHLIGHT: { actions: 'toggleHighlight' },
       SETOUTLINE: { actions: 'setOutline' },
       SETOPACITY: { actions: 'setOpacity' },
       TOGGLESHOWNOLABEL: { actions: 'toggleShowNoLabel' },
