@@ -2,38 +2,55 @@ import React, { useEffect, useRef } from 'react';
 import { useSelector } from '@xstate/react';
 import { useTool, useImage } from '../ServiceContext';
 
-function outlineSelected(imageData, labeledArray, foreground, background) {
+/**
+ * Draws fColor around the foreground label and bColor 
+ * @param {ImageData} imageData where to draw outlines
+ * @param {Array} labeledArray describes the label at each pixel; has negative values on the label borders
+ * @param {int} foreground value of foreground label
+ * @param {int} background value of background label
+ * @param {Array} fColor RGBA color
+ * @param {Array} bColor RGBA color
+ */
+function outlineSelected(imageData, labeledArray, foreground, background, fColor, bColor) {
+  const [fr, fg, fb, fa] = fColor;
+  const [br, bg, bb, ba] = bColor;
   const { data, width, height } = imageData;
-  // use label array to figure out which pixels to recolor
   for (let j = 0; j < height; j += 1) { // y
     for (let i = 0; i < width; i += 1) { // x
       const label = labeledArray[j][i];
       if (foreground !== 0 && label === -1 * foreground) {
-        data[(j * width  + i) * 4 + 0] = 255;
-        data[(j * width  + i) * 4 + 1] = 255;
-        data[(j * width  + i) * 4 + 2] = 255;
-        data[(j * width  + i) * 4 + 3] = 255;
+        data[(j * width + i) * 4 + 0] = fr;
+        data[(j * width + i) * 4 + 1] = fg;
+        data[(j * width + i) * 4 + 2] = fb;
+        data[(j * width + i) * 4 + 3] = fa;
       } else if (background !== 0 && label === -1 * background) {
-        data[(j * width  + i) * 4 + 0] = 255;
-        data[(j * width  + i) * 4 + 1] = 0;
-        data[(j * width  + i) * 4 + 2] = 0;
-        data[(j * width  + i) * 4 + 3] = 255;
+        data[(j * width + i) * 4 + 0] = br;
+        data[(j * width + i) * 4 + 1] = bg;
+        data[(j * width + i) * 4 + 2] = bb;
+        data[(j * width + i) * 4 + 3] = ba;
       }
     }
   }
 }
 
-function outlineAll(imageData, labeledArray) {
+/**
+ * Draws color outlines around all labels in labeledArray.
+ * @param {ImageData} imageData where to draw outlines
+ * @param {Array} labeledArray describes the label at each pixel; has negative values on the label borders 
+ * @param {Array} color RGBA color
+ * @returns 
+ */
+function outlineAll(imageData, labeledArray, color) {
   const { data, width, height } = imageData;
-  // use label array to figure out which pixels to recolor
+  const [r, g, b, a] = color;
   for (let j = 0; j < height; j += 1) { // y
     for (let i = 0; i < width; i += 1) { // x
       const label = labeledArray[j][i];
       if (label < 0) {
-        data[(j * width  + i) * 4 + 0] = 255;
-        data[(j * width  + i) * 4 + 1] = 255;
-        data[(j * width  + i) * 4 + 2] = 255;
-        data[(j * width  + i) * 4 + 3] = 255;
+        data[(j * width  + i) * 4 + 0] = r;
+        data[(j * width  + i) * 4 + 1] = g;
+        data[(j * width  + i) * 4 + 2] = b;
+        data[(j * width  + i) * 4 + 3] = a;
       }
     }
   }
@@ -47,6 +64,7 @@ const OutlineCanvas = ({ feature, sx, sy, sw, sh, zoom, width, height, className
 
   const image = useImage();
   const outline = useSelector(image, state => state.context.outline);
+  const invert = useSelector(image, state => state.context.invert);
 
   let labeledArray = useSelector(feature, state => state.context.labeledArray);
   if (!labeledArray) { labeledArray = Array(sh).fill(Array(sw).fill(0)); }
@@ -66,20 +84,24 @@ const OutlineCanvas = ({ feature, sx, sy, sw, sh, zoom, width, height, className
     hiddenCtx.current = hiddenCanvasRef.current.getContext('2d');
   }, [sw, sh]);
 
+  const white = [255, 255, 255, 255];
+  const black = [0, 0, 0, 255];
+  const red = [255, 0, 0, 255];
   useEffect(() => {
     const width = labeledArray[0].length;
     const height = labeledArray.length;
     const data = new ImageData(width, height);
+    const fColor = invert ? black : white;
+    const bColor = red;
     switch (outline) {
       case 'all':
-        outlineAll(data, labeledArray);
+        outlineAll(data, labeledArray, fColor);
       case 'selected':
-        outlineSelected(data, labeledArray, foreground, background);
-      case 'none':
+        outlineSelected(data, labeledArray, foreground, background, fColor, bColor);
       default:
     }
     hiddenCtx.current.putImageData(data, 0, 0);
-  }, [labeledArray, foreground, background, outline, sw, sh]);
+  }, [labeledArray, foreground, background, outline, invert, sw, sh]);
 
   useEffect(() => {
     ctx.current.save();
@@ -92,7 +114,7 @@ const OutlineCanvas = ({ feature, sx, sy, sw, sh, zoom, width, height, className
       width, height,
     );
     ctx.current.restore();
-  }, [labeledArray, foreground, background, outline, sw, sh, sx, sy, zoom, width, height]);
+  }, [labeledArray, foreground, background, outline, invert, sw, sh, sx, sy, zoom, width, height]);
 
   return <>
     {/* hidden processing canvas */}
