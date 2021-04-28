@@ -1,36 +1,60 @@
 import React, { useEffect, useRef } from 'react';
 import { useSelector } from '@xstate/react';
-import { useImage } from '../ServiceContext';
+import { useImage, useTool } from '../ServiceContext';
 
-const highlightImageData = (data, label) => {
-  for (let i = 0; i < data.length; i += 4) {
-    // TODO: access label array
-    const element = 'TODO';
-    if ( element === label) {
-      data[i] += 255; // red
-      data[i + 1] -= 255; // green
-      data[i + 2] -= 255; // blue
+/**
+ * Highlights a label with color.
+ * Does not highlight the border.
+ * @param {ImageData} imageData where we draw the highlight
+ * @param {Array} labeledArray describes label at each pixel; has negative label values on label border
+ * @param {int} label label to highlight
+ * @param {Array} color color to highlight label with
+ */
+const highlightImageData = (imageData, labeledArray, label, color) => {
+  const [r, g, b, a] = color;
+  const { data, width, height } = imageData;
+  for (let j = 0; j < height; j += 1) { // y
+    for (let i = 0; i < width; i += 1) { // x
+      const element = labeledArray[j][i];
+      if (element === label) {
+        data[(j * width + i) * 4 + 0] = r;
+        data[(j * width + i) * 4 + 1] = g;
+        data[(j * width + i) * 4 + 2] = b;
+        data[(j * width + i) * 4 + 3] = a;
+      }
     }
   }
-  return data;
 };
 
-const removeNoLabelImageData = (data) => {
-  for (let i = 0; i < data.length; i += 4) {
-    // TODO: access label array
-    // if ( label === 0) {
-    if (data[i] === 0 && data[i + 1] === 0 && data[i + 2] === 0) {
-      data[i + 3] = 0;
+/**
+ * Makes the areas without a label (i.e. label is 0) transparent.
+ * @param {ImageData} imageData where we draw the transparent changes
+ * @param {Array} labeledArray describes label at each pixel; has negative label values on label border
+ */
+const removeNoLabelImageData = (imageData, labeledArray) => {
+  const { data, height, width } = imageData;
+  for (let j = 0; j < height; j += 1) { // y
+    for (let i = 0; i < width; i += 1) { // x
+      if (labeledArray[j][i] === 0) {
+        data[(j * width + i) * 4 + 0] = 0;
+        data[(j * width + i) * 4 + 1] = 0;
+        data[(j * width + i) * 4 + 2] = 0;
+        data[(j * width + i) * 4 + 3] = 0;
+      }
     }
   }
-  return data;
 };
 
-const opacityImageData = (data, opacity) => {
+/**
+ * Changes the opacity of the image.
+ * @param {ImageData} imageData
+ * @param {float} opacity between 0 and 1; 0 makes the image transparent, and 1 does nothing
+ */
+const opacityImageData = (imageData, opacity) => {
+  const { data } = imageData;
   for (let i = 0; i < data.length; i += 4) {
     data[i + 3] *= opacity;
   }
-  return data;
 };
 
 export const LabeledCanvas = ({ feature, sx, sy, sw, sh, zoom, width, height, className }) => {
@@ -40,7 +64,11 @@ export const LabeledCanvas = ({ feature, sx, sy, sw, sh, zoom, width, height, cl
   const opacity = useSelector(image, state => state.context.opacity);
   
   const labeledImage = useSelector(feature, state => state.context.labeledImage);
-  const [foreground, background] = [1, 2];
+  const labeledArray = useSelector(feature, state => state.context.labeledArray);
+
+  const tool = useTool();
+  const foreground = useSelector(tool, state => state.context.foreground);
+  const background = useSelector(tool, state => state.context.background);
 
   const canvasRef = useRef();
   const ctx = useRef();
@@ -58,17 +86,17 @@ export const LabeledCanvas = ({ feature, sx, sy, sw, sh, zoom, width, height, cl
 
   useEffect(() => {
     hiddenCtx.current.drawImage(labeledImage, 0, 0);
-    let data = hiddenCtx.current.getImageData(0, 0, sw, sh).data;
-    if (highlight) {
-      data = highlightImageData(data, foreground);
+    let data = hiddenCtx.current.getImageData(0, 0, sw, sh);
+    if (highlight && foreground !== 0) {
+      const red = [255, 0, 0, 255];
+      highlightImageData(data, labeledArray, foreground, red);
     }
     if (!showNoLabel) {
-      data = removeNoLabelImageData(data);
+      removeNoLabelImageData(data, labeledArray);
     }
-    data = opacityImageData(data, opacity);
-    const adjustedData = new ImageData(data, sw, sh);
-    hiddenCtx.current.putImageData(adjustedData, 0, 0);
-  }, [labeledImage, foreground, highlight, showNoLabel, opacity, sh, sw]);
+    opacityImageData(data, opacity);
+    hiddenCtx.current.putImageData(data, 0, 0);
+  }, [labeledImage, labeledArray, foreground, highlight, showNoLabel, opacity, sh, sw]);
 
   useEffect(() => {
     ctx.current.save();
@@ -81,7 +109,7 @@ export const LabeledCanvas = ({ feature, sx, sy, sw, sh, zoom, width, height, cl
       width, height,
     );
     ctx.current.restore();
-  }, [labeledImage, foreground, highlight, showNoLabel, opacity, sw, sh, sx, sy, zoom, width, height]);
+  }, [labeledImage, labeledArray, foreground, highlight, showNoLabel, opacity, sw, sh, sx, sy, zoom, width, height]);
 
   return <>
     {/* hidden processing canvas */}
