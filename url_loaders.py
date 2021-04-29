@@ -154,44 +154,67 @@ def reshape(array, input_axes, output_axes):
         ndarray: reshaped array
     """
     if array.ndim != len(input_axes):
-        print(f'truncating input axes {input_axes} to {input_axes[:array.ndim]}')
+        print(f'input axis order {input_axes} has more dimensions than array with shape {array.shape}')
+        print(f'truncating input axis order {input_axes} to {input_axes[:array.ndim]}')
         input_axes = input_axes[:array.ndim]
-    permuted = permute_axes(array, input_axes, output_axes)
-    expanded = add_missing_axes(permuted, input_axes, output_axes)
-    return expanded
+    dropped = drop_axes(array, input_axes, output_axes)
+    expanded = expand_axes(dropped, input_axes, output_axes)
+    permuted = permute_axes(expanded, input_axes, output_axes)
+    return permuted
 
 
-def permute_axes(array, input_axes, output_axes=DCL_AXES):
+
+def drop_axes(array, input_axes, output_axes=DCL_AXES):
     """
-    Transpose the array with input_axes axis order to match output_axes axis order.
-    Does not add any axes, only changes the axis order.
+    Drops the dimensions in input_axes that are not in output_axes.
+    Takes the first slice (index 0) of the dropped axes.
 
     Arguments:
-        array (ndarray): array to transpose
-        input_axes (string): dimension order of input array
-        output_axes (string): dimension order after permuting
+        array (ndarray): array to drop
+        input_axes (string): dimension order
+        output_axes (string): dimension order
 
     Returns:
-        ndarray: transposed array
+        ndarray: expanded array
     """
-    permutation = tuple(input_axes.find(i) for i in output_axes if i in input_axes)
-    return array.transpose(permutation)
+    extra_axes = tuple(slice(None) if axis in output_axes else 0 for i, axis in enumerate(input_axes))
+    new_input_axes = ''.join(c for c in input_axes if c in output_axes)
+    return array[extra_axes]
 
 
-def add_missing_axes(array, input_axes, output_axes=DCL_AXES):
+def expand_axes(array, input_axes, output_axes=DCL_AXES):
     """
-    Given array with axis order input_axes, inserts missing axes from output_axes.
+    Adds the dimensions in output_axes that are not in input_axes.
 
     Arguments:
         array (ndarray): array to expand
-        input_axes (string): dimension order of input array
-        output_axes (string): dimension order to expand to
+        input_axes (string): dimension order
+        output_axes (string): dimension order
 
     Returns:
         ndarray: expanded array
     """
     missing_axes = tuple(i for i, axis in enumerate(output_axes) if axis not in input_axes)
     return np.expand_dims(array, axis=missing_axes)
+
+
+def permute_axes(array, input_axes, output_axes=DCL_AXES):
+    """
+    Transpose the array with input_axes axis order to match output_axes axis order.
+    Assumes that array has all the dimensions in output_axes, 
+    just in different orders, and drops/adds dims to the input axis order.
+
+    Arguments:
+        array (ndarray): array to transpose
+        input_axes (string): dimension order
+        output_axes (string): dimension order
+
+    Returns:
+        ndarray: transposed array
+    """
+    merged_axes = ''.join(input_axes[i] if dim in input_axes else dim for i, dim in enumerate(output_axes))
+    permutation = tuple(merged_axes.find(dim) for dim in output_axes)
+    return array.transpose(permutation)
 
 
 def load_raw_npz(data):
@@ -222,6 +245,8 @@ def load_labeled_npz(data):
         return npz['annotated']
     elif len(npz.files) > 1:
         return npz[npz.files[1]]
+    else:
+        return npz[npz.files[0]]
 
 
 def load_raw_trk(data):
