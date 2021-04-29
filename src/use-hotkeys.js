@@ -5,6 +5,21 @@ import { useImage, useCanvas, useUndo, useTool } from './ServiceContext';
 
 export function useImageHotkeys() {
   const image = useImage();
+  const { send } = image;
+
+  useEffect(() => {
+    bind('i', () => { send('TOGGLEINVERT'); });
+    bind('h', () => { send('TOGGLEHIGHLIGHT'); });
+    bind('0', () => {
+      send('SETBRIGHTNESS', { brightness: 0 });
+      send('SETCONTRAST', { contrast: 0 });
+    });
+    return () => {
+      unbind('i');
+      unbind('h');
+      unbind('0');
+    };
+  }, []);
 
   const frame = useSelector(image, state => state.context.frame);
   const channel = useSelector(image, state => state.context.channel);
@@ -13,7 +28,6 @@ export function useImageHotkeys() {
   const numChannels = useSelector(image, state => state.context.numChannels);
   const numFeatures = useSelector(image, state => state.context.numFeatures);
 
-  const { send } = image;
   useEffect(() => {
     bind('a', () => {
       send({ type: 'LOADFRAME', frame: (frame - 1 + numFrames) % numFrames });

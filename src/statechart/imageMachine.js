@@ -292,6 +292,8 @@ const createImageMachine = ({ projectId }) => Machine(
       TOGGLESHOWNOLABEL: { actions: 'toggleShowNoLabel' },
       TOGGLEINVERT: { actions: 'toggleInvert' },
       TOGGLEGRAYSCALE: { actions: 'toggleGrayscale' },
+      SETBRIGHTNESS: { actions: forwardTo(({ channels, channel }) => channels[channel]) },
+      SETCONTRAST: { actions: forwardTo(({ channels, channel }) => channels[channel]) },
     },
   },
   {
