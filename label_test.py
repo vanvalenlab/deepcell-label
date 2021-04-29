@@ -20,51 +20,6 @@ def enable_transactional_tests(app, db_session):
 # by setting edit.project.frame/feature/channel within the test
 
 
-class TestChangeDisplay():
-
-    def test_change_channel(self, app):
-        raw = np.zeros((1, 1, 1, 3))
-        project = models.Project.create(DummyLoader(raw=raw))
-        change_display = label.ChangeDisplay(project)
-
-        with app.app_context():
-            for channel in range(3):
-                change_display.change('channel', channel)
-                assert change_display.project.channel == channel
-            with pytest.raises(ValueError):
-                change_display.change('channel', -1)
-            with pytest.raises(ValueError):
-                change_display.change('channel', 3)
-
-    def test_change_feature(self, app):
-        labels = np.zeros((1, 1, 1, 3))
-        project = models.Project.create(DummyLoader(labels=labels))
-        change_display = label.ChangeDisplay(project)
-
-        with app.app_context():
-            for feature in range(3):
-                change_display.change('feature', feature)
-                assert change_display.project.feature == feature
-            with pytest.raises(ValueError):
-                change_display.change('feature', -1)
-            with pytest.raises(ValueError):
-                change_display.change('feature', 3)
-
-    def test_change_frame(self, app):
-        raw = np.zeros((3, 1, 1, 1))
-        project = models.Project.create(DummyLoader(raw=raw))
-        change_display = label.ChangeDisplay(project)
-
-        with app.app_context():
-            for frame in range(3):
-                change_display.change('frame', frame)
-                assert change_display.project.frame == frame
-            with pytest.raises(ValueError):
-                change_display.change('frame', -1)
-            with pytest.raises(ValueError):
-                change_display.change('frame', 3)
-
-
 class TestBaseEdit():
 
     def test_del_cell_info_last_frame(self):
@@ -264,15 +219,14 @@ class TestZStackEdit():
         # three 2 x 2 frame with two labels: 1s in top row, 2s in bottom
         labels = np.reshape(3 * [1, 1, 2, 2], (3, 2, 2, 1))
         project = models.Project.create(DummyLoader(labels=labels))
+        cell1 = 1
+        cell2 = 2
+        frame = 1  # Replace on the middle frame
+        project.frame = frame
         edit = label.ZStackEdit(project)
         expected_frame = np.array([[[1], [1]],
                                    [[1], [1]]])
         expected_labels = np.array(3 * [expected_frame])
-
-        cell1 = 1
-        cell2 = 2
-        frame = 1  # Replace on the middle frame
-        edit.project.frame = frame
 
         with app.app_context():
             edit.action_replace(cell1, cell2)
@@ -377,7 +331,7 @@ class TestTrackEdit():
 
     def test_track_add_cell_info(self):
         labels = np.zeros((1, 1, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
+        project = models.Project.create(DummyLoader(labels=labels, url='test.trk'))
         edit = label.TrackEdit(project)
         tracks = edit.labels.tracks
 
@@ -400,7 +354,7 @@ class TestTrackEdit():
     def test_add_cell_info_multiple_frames(self):
         num_frames = 5
         labels = np.zeros((num_frames, 1, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
+        project = models.Project.create(DummyLoader(labels=labels, url='test.trk'))
         edit = label.TrackEdit(project)
         tracks = edit.labels.tracks
 
@@ -424,16 +378,17 @@ class TestTrackEdit():
         """A new track on the first frame a label appears does nothing."""
         # two 1x1 frames with one feature; cell starts on second frame
         labels = np.reshape([0, 1], (2, 1, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
-        edit = label.TrackEdit(project)
-        tracks = edit.labels.tracks
-
+        project = models.Project.create(DummyLoader(labels=labels, url='test.trk'))
         cell = 1
         frame = 1
         feature = 0
+        project.frame = frame
+        project.feature = feature
+        edit = label.TrackEdit(project)
+        tracks = edit.labels.tracks
+
         prev_track = tracks[cell].copy()
         with app.app_context():
-            edit.project.frame = frame
             edit.action_new_track(cell)
             assert cell in edit.frame[..., feature]
             assert prev_track == tracks[cell]
@@ -442,17 +397,17 @@ class TestTrackEdit():
         """Create a new track on the second frame of a label."""
         # two 1x1 frames with one feature; cell appears in both frames
         labels = np.reshape([1, 1], (2, 1, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
-        edit = label.TrackEdit(project)
-        tracks = edit.labels.tracks
-
+        project = models.Project.create(DummyLoader(labels=labels, url='test.trk'))
         cell = 1
         frame = 1
         feature = 0
         expected_new_cell = 2
+        project.frame = frame
+        edit = label.TrackEdit(project)
+        tracks = edit.labels.tracks
         prev_track = tracks[cell].copy()
+
         with app.app_context():
-            edit.project.frame = frame
             edit.action_new_track(cell)
             assert cell not in edit.frame[..., feature]
             assert expected_new_cell in edit.frame[..., feature]
