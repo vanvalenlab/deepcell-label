@@ -81,9 +81,13 @@ export function useCanvasHotkeys() {
       canvas.send('keydown.Space');
     });
     bind('space', () => send('keyup.Space'), 'keyup');
+    bind('=', () => send('ZOOMIN'));
+    bind('-', () => send('ZOOMOUT'));
     return () => {
       unbind('space');
       unbind('space', 'keyup');
+      unbind('=');
+      unbind('-');
     }
   }, [send]);
 }

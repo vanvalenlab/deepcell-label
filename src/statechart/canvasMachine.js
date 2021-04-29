@@ -29,6 +29,8 @@ const canvasMachine = Machine({
   },
   on: {
     wheel: { actions: 'zoom' },
+    ZOOMIN: { actions: 'zoomIn' },
+    ZOOMOUT: { actions: 'zoomOut' },
     RESIZE: { actions: 'resize' },
     TOOLREF: { actions: assign({ toolRef: (context, event) => event.toolRef }) },
     SAVE: {
@@ -141,6 +143,26 @@ const canvasMachine = Machine({
         newSy = Math.min(newSy, context.height * (1 - 1 / newZoom));
         newSy = Math.max(newSy, 0);
 
+        return { zoom: newZoom, sx: newSx, sy: newSy };
+      }),
+      zoomIn: assign(({ zoom, width, height, sx, sy }) => {
+        const newZoom = 1.1 * zoom;
+        const propX = width / 2;
+        const propY = height / 2;
+        const newSx = sx + propX * (1 / zoom - 1 / newZoom);
+        const newSy = sy + propY * (1 / zoom - 1 / newZoom);
+        return { zoom: newZoom, sx: newSx, sy: newSy };
+      }),
+      zoomOut: assign(({ zoom, width, height, sx, sy }) => {
+        const newZoom = Math.max(zoom / 1.1, 1);
+        const propX = width / 2;
+        const propY = height / 2;
+        let newSx = sx + propX * (1 / zoom - 1 / newZoom);
+        newSx = Math.min(newSx, width * (1 - 1 / newZoom));
+        newSx = Math.max(newSx, 0);
+        let newSy = sy + propY * (1 / zoom - 1 / newZoom);
+        newSy = Math.min(newSy, height * (1 - 1 / newZoom));
+        newSy = Math.max(newSy, 0);
         return { zoom: newZoom, sx: newSx, sy: newSy };
       }),
     }
