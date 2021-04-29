@@ -286,16 +286,17 @@ def test_redo_frame_not_changed_in_next_action():
     assert 1 in project.label_frames[1].frame
 
 
-def test_get_label_array():
+def test_get_labeled_array():
     """
     Test outlined label arrays to send to the front-end.
     """
     project = models.Project.create(DummyLoader())
+    frame = 0
+    feature = 0
+    expected_frame = project.label_frames[frame].frame[..., feature]
 
-    expected_frame = project.label_frames[project.frame].frame[..., project.channel]
-
-    label_arr = project._get_label_arr()
-    label_frame = np.array(label_arr)
+    label_arr = project.get_labeled_array(frame, feature)
+    label_frame = np.load(label_arr)
 
     assert label_frame.shape == (project.height, project.width)
     np.testing.assert_array_equal(label_frame[label_frame >= 0],
@@ -304,84 +305,96 @@ def test_get_label_array():
                                   -expected_frame[label_frame < 0])
 
 
-def test_get_label_png():
+def test_get_labeled_png():
     """
     Test label frame PNGs to send to the front-end.
     """
     project = models.Project.create(DummyLoader())
-
-    expected_frame = project.label_frames[project.frame].frame[..., project.feature]
+    frame = 0
+    feature = 0
+    expected_frame = project.label_frames[frame].frame[..., feature]
     expected_frame = np.ma.masked_equal(expected_frame, 0)
     expected_png = pngify(expected_frame,
                           vmin=0,
-                          vmax=project.get_max_label(),
+                          vmax=project.get_max_label(feature),
                           cmap=project.colormap)
 
-    label_png = project._get_label_png()
+    label_png = project.get_labeled_png(frame, feature)
 
     assert isinstance(label_png, io.BytesIO)
     assert label_png.getvalue() == expected_png.getvalue()
 
 
-def test_get_raw_png_greyscale():
+def test_get_raw_png_one_channel():
     """
     Test raw frame PNGs to send to the front-end.
     """
     project = models.Project.create(DummyLoader())
-    project.rgb = False
-    project.update()
-    expected_frame = project.raw_frames[project.frame].frame[..., project.channel]
+    frame = 0
+    channel = 0
+    expected_frame = project.raw_frames[frame].frame[..., channel]
     expected_png = pngify(expected_frame, vmin=0, vmax=None, cmap='cubehelix')
 
-    raw_png = project._get_raw_png()
+    raw_png = project.get_raw_png(frame, channel)
     assert isinstance(raw_png, io.BytesIO)
     assert raw_png.getvalue() == expected_png.getvalue()
 
 
-def test_get_raw_png_rgb():
-    project = models.Project.create(DummyLoader())
-    project.rgb = True
-    project.update()
+# def test_get_raw_png_rgb():
+#     project = models.Project.create(DummyLoader())
+#     project.rgb = True
+#     project.update()
+#     frame = 0
+#     expected_frame = project.rgb_frames[frame].frame
+#     expected_png = pngify(expected_frame, vmin=None, vmax=None, cmap=None)
 
-    expected_frame = project.rgb_frames[project.frame].frame
-    expected_png = pngify(expected_frame, vmin=None, vmax=None, cmap=None)
-
-    raw_png = project._get_raw_png()
-    assert isinstance(raw_png, io.BytesIO)
-    assert raw_png.getvalue() == expected_png.getvalue()
+#     raw_png = project.get_raw_png(frame)
+#     assert isinstance(raw_png, io.BytesIO)
+#     assert raw_png.getvalue() == expected_png.getvalue()
 
 
 def test_get_max_label_all_zeroes():
     labels = np.zeros((1, 1, 1, 1))
     project = models.Project.create(DummyLoader(labels=labels))
-    max_label = project.get_max_label()
+    feature = 0
+    project.feature = feature
+    project.update()
+    max_label = project.get_max_label(feature)
     assert max_label == 0
 
 
 def test_get_max_label_all_ones():
     labels = np.ones((1, 1, 1, 1))
     project = models.Project.create(DummyLoader(labels=labels))
-    max_label = project.get_max_label()
+    feature = 0
+    project.feature = feature
+    project.update()
+    max_label = project.get_max_label(feature)
     assert max_label == 1
 
 
 def test_get_max_label_two_features():
     labels = np.array([[[[1, 2]]]])
     project = models.Project.create(DummyLoader(labels=labels))
-    project.feature = 0
+    feature = 0
+    project.feature = feature
     project.update()
-    max_label = project.get_max_label()
+    max_label = project.get_max_label(feature)
     assert max_label == 1
-    project.feature = 1
+    feature = 1
+    project.feature = feature
     project.update()
-    max_label = project.get_max_label()
+    max_label = project.get_max_label(feature)
     assert max_label == 2
 
 
 def test_get_max_label_two_frames():
     labels = np.array([[[[1]]], [[[2]]]])
     project = models.Project.create(DummyLoader(labels=labels))
-    max_label = project.get_max_label()
+    feature = 0
+    project.feature = feature
+    project.update()
+    max_label = project.get_max_label(feature)
     assert max_label == 2
 
 
