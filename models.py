@@ -67,6 +67,12 @@ class MutableNdarray(Mutable, np.ndarray):
         self.changed()
 
 
+class SourceEnum(enum.Enum):
+    s3 = 's3'
+    dropped = 'dropped'
+    lfs = 'lfs'
+
+
 class Project(db.Model):
     """Project table definition."""
     # pylint: disable=E1101
@@ -76,8 +82,8 @@ class Project(db.Model):
     createdAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now())
     finished = db.Column(db.TIMESTAMP)
 
-    url = db.Column(db.Text, nullable=False)
-    labeled_url = db.Column(db.Text, nullable=True)
+    path = db.Column(db.Text, nullable=False)
+    source = db.Column(db.Enum(SourceEnum), nullable=False)
     height = db.Column(db.Integer, nullable=False)
     width = db.Column(db.Integer, nullable=False)
     num_frames = db.Column(db.Integer, nullable=False)
@@ -87,6 +93,7 @@ class Project(db.Model):
     frame = db.Column(db.Integer, default=0)
     channel = db.Column(db.Integer, default=0)
     feature = db.Column(db.Integer, default=0)
+    scale_factor = db.Column(db.Float, default=1)
     colormap = db.Column(db.PickleType)
 
     raw_frames = db.relationship('RawFrame', backref='project')
@@ -112,8 +119,8 @@ class Project(db.Model):
         label = loader.label_array
 
         # Record static project attributes
-        self.url = loader.url
-        self.labeled_url = loader.labeled_url
+        self.path = loader.url
+        self.source = 's3'
         self.num_frames = raw.shape[0]
         self.height = raw.shape[1]
         self.width = raw.shape[2]
@@ -137,7 +144,7 @@ class Project(db.Model):
         self.labels.cell_info = loader.cell_info
 
         logger.debug('Initialized project from %s in %ss.',
-                     self.url, timeit.default_timer() - init_start)
+                     self.path, timeit.default_timer() - init_start)
 
     @property
     def label_array(self):
@@ -151,11 +158,11 @@ class Project(db.Model):
 
     @property
     def is_zstack(self):
-        return os.path.splitext(self.url.lower())[-1] in {'.npz', '.png', '.tif', '.tiff'}
+        return os.path.splitext(self.path.lower())[-1] in {'.npz', '.png', '.tif', '.tiff'}
 
     @property
     def is_track(self):
-        return os.path.splitext(self.url.lower())[-1] in {'.trk', '.trks'}
+        return os.path.splitext(self.path.lower())[-1] in {'.trk', '.trks'}
 
     @staticmethod
     def get(token):
