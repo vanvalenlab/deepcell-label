@@ -6,10 +6,12 @@ from flask_sqlalchemy import SQLAlchemy
 import numpy as np
 import pytest
 from pytest_lazyfixture import lazy_fixture
+from unittest.mock import MagicMock
+
 
 from application import create_app  # pylint: disable=C0413
 from models import Project, Action
-from loaders import Loader
+from url_loaders import Loader
 from labelmaker import LabelInfoMaker
 
 
@@ -23,7 +25,6 @@ TEST_DATABASE_URI = 'sqlite:///{}'.format(TESTDB_PATH)
 # TODO: Could this become a fixture?
 class DummyLoader(Loader):
     def __init__(self, raw=None, labels=None, url='test.npz'):
-        super().__init__()
         if raw is None:
             raw = np.zeros((1, 1, 1, 1))
 
@@ -35,6 +36,9 @@ class DummyLoader(Loader):
         self.raw_array = raw
         self.label_array = labels
         self.url = url
+
+        DummyLoader.load = MagicMock() # monkeypatch to avoid network requests
+        super().__init__(url_form={'url': url })
 
 
 @pytest.fixture(scope='session')
