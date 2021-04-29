@@ -12,7 +12,7 @@ from conftest import DummyLoader
 def npz_exporter(app, db_session):
     with app.app_context():
         db_session.autoflush = False
-        project = models.Project.create(DummyLoader(path='test.npz'))
+        project = models.Project.create(DummyLoader(url='test.npz'))
         exporter = exporters.Exporter(project)
         return exporter
 
@@ -21,7 +21,7 @@ def npz_exporter(app, db_session):
 def trk_exporter(app, db_session):
     with app.app_context():
         db_session.autoflush = False
-        project = models.Project.create(DummyLoader(path='test.trk'))
+        project = models.Project.create(DummyLoader(url='test.trk'))
         exporter = exporters.Exporter(project)
         return exporter
 
