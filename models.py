@@ -253,8 +253,8 @@ class Project(db.Model):
             if frame in session.dirty or all_frames:
                 session.add(FrameMemento(action=action, frame=frame))
         action.labels = self.labels
-        action.feature = self.feature
-        action.channel = self.channel
+        # action.feature = self.feature
+        # action.channel = self.channel
         if self.action is not None:
             self.action.next_action = action
         # Move the Project to the new action
@@ -641,8 +641,8 @@ class Action(db.Model):
     # Pickles an ORM row from the Labels table
     labels = db.Column(db.PickleType)
 
-    feature = db.Column(db.Integer, nullable=False)
-    channel = db.Column(db.Integer, nullable=False)
+    # feature = db.Column(db.Integer, nullable=False)
+    # channel = db.Column(db.Integer, nullable=False)
 
     frames = association_proxy('action_frames', 'frame')
 
