@@ -1,5 +1,6 @@
-import { Machine, assign, sendParent, spawn, send, forwardTo } from 'xstate';
+import { Machine, assign, sendParent, actions, spawn, send, forwardTo } from 'xstate';
 
+const { pure } = actions;
 
 // tool states
 
@@ -176,9 +177,9 @@ const autofitState = {
 const selectState = {
   on: {
     mousedown: [
-      { cond: 'doubleClick', actions: ['setBackground', 'resetForeground'] },
-      { cond: 'onForeground', actions: 'setBackground', },
-      { actions: 'setForeground' },
+      { cond: 'doubleClick', actions: ['selectBackground', 'resetForeground'] },
+      { cond: 'onForeground', actions: 'selectBackground', },
+      { actions: 'selectForeground' },
     ]
   },
 };
@@ -265,9 +266,9 @@ const toolMachine = Machine(
 
       // special shift click event 
       SHIFTCLICK: [
-        { cond: 'doubleClick', actions: ['setForeground', 'resetBackground'] },
-        { cond: 'onBackground', actions: 'setForeground', },
-        { actions: 'setBackground' },
+        { cond: 'doubleClick', actions: ['selectForeground', 'resetBackground'] },
+        { cond: 'onBackground', actions: 'selectForeground', },
+        { actions: 'selectBackground' },
       ],
     }
   },
@@ -312,26 +313,20 @@ const toolMachine = Machine(
       updateCoordinates: assign((_, { x, y }) => ({ x, y })),
       updateLabel: assign({ label: ({ labeledArray: array, x, y}) => array ? Math.abs(array[y][x]) : 0 }),
       addToTrace: assign({ trace: (context) => [...context.trace, [context.x, context.y]] }),
-      setForeground: assign({
-        foreground: (ctx, evt) => ctx.label,
-        background: (ctx, evt) => ctx.label === ctx.background ? ctx.foreground : ctx.background,
+      setForeground: assign((_, { foreground }) => ({ foreground })),
+      setBackground: assign((_, { background }) => ({ background })),
+      selectForeground: pure(({ label, foreground, background }) => {
+        return [
+          send({ type: 'SETFOREGROUND', foreground: label }),
+          send({ type: 'SETBACKGROUND', background: label === background ? foreground : background }),
+        ];
       }),
-      setBackground: assign({
-        foreground: (ctx, evt) => ctx.label === ctx.foreground ? ctx.background : ctx.foreground,
-        background: (ctx, evt) => ctx.label,
+      selectBackground: pure(({ label, foreground, background }) => {
+        return [
+          send({ type: 'SETBACKGROUND', background: label }),
+          send({ type: 'SETFOREGROUND', foreground: label === foreground ? background : foreground }),
+        ];
       }),
-      swapLabels: assign({
-        foreground: (ctx) => ctx.background,
-        background: (ctx) => ctx.foreground,
-      }),
-      newForeground: assign({ foreground: (ctx) => ctx.newLabel }),
-      newBackground: assign({ background: (ctx) => ctx.newLabel }),
-      resetForeground: assign({ foreground: 0 }),
-      resetBackground: assign({ background: 0 }),
-      incrementForeground: assign({ foreground: (ctx) => (ctx.foreground + 1) % ctx.newLabel }),
-      incrementBackground: assign({ background: (ctx) => (ctx.background + 1) % ctx.newLabel }),
-      decrementForeground: assign({ background: (ctx) => (ctx.foreground - 1 + ctx.newLabel) % ctx.newLabel }),
-      decrementBackground: assign({ background: (ctx) => (ctx.background + 1 + ctx.newLabel) % ctx.newLabel }),
     }
   }
 );

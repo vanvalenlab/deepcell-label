@@ -29,34 +29,37 @@ export function useImageHotkeys() {
   const numFeatures = useSelector(image, state => state.context.numFeatures);
 
   useEffect(() => {
-    bind('a', () => {
-      send({ type: 'LOADFRAME', frame: (frame - 1 + numFrames) % numFrames });
-    });
-    bind('d', () => {
-      send({ type: 'LOADFRAME', frame: (frame + 1) % numFrames });
-    });
-    bind('shift+c', () => {
-      send({ type: 'LOADCHANNEL', channel: (channel - 1 + numChannels) % numChannels });
-    });
-    bind('c', () => {
-      send({ type: 'LOADCHANNEL', channel: (channel + 1) % numChannels });
-    });
-    bind('shift+f', () => {
-      send({ type: 'LOADFEATURE', feature: (feature - 1 + numFeatures) % numFeatures });
-    });
-    bind('f', () => {
-      send({ type: 'LOADFEATURE', feature: (feature + 1) % numFeatures });
-    });
-
+    const prevFrame = (frame - 1 + numFrames) % numFrames;
+    const nextFrame = (frame + 1) % numFrames;
+    bind('a', () => send('LOADFRAME', { frame: prevFrame }));
+    bind('d', () => send('LOADFRAME', { frame: nextFrame }));
     return () => {
       unbind('a');
       unbind('d');
-      unbind('c');
-      unbind('shift+c');
-      unbind('f')
-      unbind('shift+f');
     }
-  }, [frame, numFrames, channel, numChannels, feature, numFeatures, send]);
+  }, [frame, numFrames]);
+
+  useEffect(() => {
+    const prevChannel = (channel - 1 + numChannels) % numChannels;
+    const nextChannel = (channel + 1) % numChannels;
+    bind('shift+c', () => send('LOADCHANNEL', { channel: prevChannel }));
+    bind('c', () => send('LOADCHANNEL', { channel: nextChannel }));
+    return () => {
+      unbind('shift+c');
+      unbind('c');
+    }
+  }, [channel, numChannels]);
+
+  useEffect(() => {
+    const prevFeature = (feature - 1 + numFeatures) % numFeatures;
+    const nextFeature = (feature + 1) % numFeatures;
+    bind('shift+f', () => send('LOADFEATURE', { feature: prevFeature }));
+    bind('f', () => send('LOADFEATURE', { feature: nextFeature }));
+    return () => {
+      unbind('shift+f');
+      unbind('f');
+    }
+  }, [feature, numFeatures]);
 }
 
 export function useUndoHotkeys() {
@@ -100,18 +103,38 @@ export function useToolHotkeys() {
     bind('down', (event) => send('keydown.down'));
     bind('b', (event) => send('keydown.b'));
     bind('v', (event) => send('keydown.v'));
-    bind('x', (event) => send('keydown.x'));
-    bind('n', (event) => send('keydown.n'));
-    bind('esc', (event) => send('keydown.Escape'));
-    bind('[', (event) => send('keydown.['));
-    bind(']', (event) => send('keydown.]'));
-    bind('{', (event) => send('keydown.{'));
-    bind('}', (event) => send('keydown.}'));
     return () => {
       unbind('up');
       unbind('down');
       unbind('b');
       unbind('v');
+    }
+  }, [send]);
+};
+
+export function useSelectHotkeys(feature) {
+  const tool = useTool();
+  const { send } = tool;
+  const foreground = useSelector(tool, state => state.context.foreground);
+  const background = useSelector(tool, state => state.context.background);
+  console.log(foreground);
+  
+  const labels = useSelector(feature, state => state.context.semanticInstanceLabels);
+  const maxLabel = labels.length === 0 ? 1 : Math.max(...Object.keys(labels).map(Number));
+  console.log(maxLabel);
+
+  useEffect(() => {
+    bind('x', () => {
+      send('SETFOREGROUND', { foreground: background });
+      send('SETBACKGROUND', { background: foreground });
+    });
+    bind('n', () => send('SETFOREGROUND', { foreground: maxLabel + 1 }));
+    bind('esc', () => send('SETBACKGROUND', { background: 0 }));
+    bind('[', () => send('SETFOREGROUND', { foreground: foreground <= 1 ? maxLabel : foreground - 1 }));
+    bind(']', () => send('SETFOREGROUND', { foreground: foreground >= maxLabel ? 1 : foreground + 1 }));
+    bind('{', () => send('SETBACKGROUND', { background: background <= 1 ? maxLabel : background - 1 }));
+    bind('}', () => send('SETBACKGROUND', { background: background >= maxLabel ? 1 : background + 1 }));
+    return () => {
       unbind('x');
       unbind('n');
       unbind('esc');
@@ -120,5 +143,6 @@ export function useToolHotkeys() {
       unbind('{');
       unbind('}');
     }
-  }, [send]);
-};
+  }, [foreground, background, maxLabel, send]);
+
+}
