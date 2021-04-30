@@ -1,7 +1,7 @@
 import { Machine, assign, send, sendParent } from 'xstate';
 import npyjs from '../npyjs';
 
-function fetchLabeled(context) {
+function fetchLabeledFrame(context) {
   const { projectId, feature, loadingFrame: frame } = context;
   const pathToLabeled = `/api/labeled/${projectId}/${feature}/${frame}`;
   const pathToArray = `/api/array/${projectId}/${feature}/${frame}`;
@@ -12,10 +12,18 @@ function fetchLabeled(context) {
     .then(makeImageURL)
     .then(showImage);
     // .catch(logError);
+
   const npyLoader = new npyjs();
   const array = npyLoader.load(pathToArray)
     .then(reshapeArray);
+  
   return Promise.all([image, array]);
+}
+
+function fetchSemanticInstanceLabels(context) {
+  const { projectId, feature } = context;
+  const pathToInstances = `/api/instances/${projectId}/${feature}`;
+  return fetch(pathToInstances).then(res => res.json());
 }
 
 function readResponseAsBlob(response) {
@@ -56,8 +64,15 @@ const createFeatureMachine = (projectId, feature, numFrames) => Machine(
       arrays: {},
       labeledImage: new Image(),
       labeledArray: null,
+      semanticInstanceLabels: {},
+      // semanticClassLabels: {},
     },
     initial: 'idle',
+    invoke: {
+      src: fetchSemanticInstanceLabels,
+      onDone: { actions: ['saveSemanticInstanceLabels'] },
+      onError: { actions: (context, event) => console.log(event) },
+    },
     states: {
       idle: {
         on: {
@@ -72,7 +87,7 @@ const createFeatureMachine = (projectId, feature, numFrames) => Machine(
       },
       loading: {
         invoke: {
-          src: fetchLabeled,
+          src: fetchLabeledFrame,
           onDone: { target: 'idle', actions: ['saveFrame', 'sendLabeledLoaded'] },
           onError: { target: 'idle', actions: (context, event) => console.log(event) },
         },
@@ -87,7 +102,7 @@ const createFeatureMachine = (projectId, feature, numFrames) => Machine(
       reloading: {
         entry: assign({ loadingFrame: (context) => context.frame }),
         invoke: {
-          src: fetchLabeled,
+          src: fetchLabeledFrame,
           onDone: { target: 'idle', actions: ['reloadFrame', 'sendLabeledArray'] },
           onError: { target: 'idle', actions: (context, event) => console.log(event) },
         },
@@ -111,6 +126,7 @@ const createFeatureMachine = (projectId, feature, numFrames) => Machine(
       canPreload: ({ frames, numFrames }) => Object.keys(frames).length !== numFrames,
     },
     actions: {
+      saveSemanticInstanceLabels: assign({ semanticInstanceLabels: (context, event) => event.data }),
       clearChangedFrames: assign((context, event) => {
         const newFrames = event.data.frames;
         const inNew = ([key, value]) => newFrames.includes(Number(key));
