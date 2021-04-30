@@ -58,3 +58,43 @@ def test_add_outlines(db_session):
     outlined = imgutils.add_outlines(label_array)
     assert (outlined[outlined >= 0] == label_array[outlined >= 0]).all()
     assert (outlined[outlined < 0] == -label_array[outlined < 0]).all()
+
+
+def test_reshape_out_of_order():
+    array = np.zeros((1, 2, 3))
+    expected = np.zeros((3, 1, 2))
+    input_axes = 'XYZ'
+    output_axes = 'ZXY'
+
+    reshaped = imgutils.reshape(array, input_axes, output_axes)
+    np.testing.assert_array_equal(reshaped, expected)
+
+
+def test_reshape_more_dimensions():
+    array = np.zeros((1, 2, 3))
+    expected = np.zeros((1, 2, 3, 1))
+    input_axes = 'XYZ'
+    output_axes = 'XYZC'
+
+    reshaped = imgutils.reshape(array, input_axes, output_axes)
+    np.testing.assert_array_equal(reshaped, expected)
+
+
+def test_reshape_fewer_dimensions():
+    array = np.zeros((1, 2, 3, 4))
+    expected = np.zeros((1, 2, 4))
+    input_axes = 'XYZC'
+    output_axes = 'XYC'
+
+    reshaped = imgutils.reshape(array, input_axes, output_axes) 
+    np.testing.assert_array_equal(reshaped, expected)
+
+
+def test_reshape_too_many_input_dimensions():
+    array = np.zeros((1, 2))
+    expected = np.zeros((1, 2, 1, 1, 1))
+    input_axes = 'XYZCT'
+    output_axes = 'XYZCT'
+
+    reshaped = imgutils.reshape(array, input_axes, output_axes)
+    np.testing.assert_array_equal(reshaped, expected)

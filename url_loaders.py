@@ -21,6 +21,7 @@ import numpy as np
 from PIL import Image
 from skimage.external.tifffile import TiffFile
 
+from imgutils import reshape
 from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_INPUT_BUCKET
 from labelmaker import LabelInfoMaker
 
@@ -75,6 +76,10 @@ class Loader():
         else:
             ext = pathlib.Path(url).suffix
             raise InvalidExtension('invalid file extension: {}'.format(ext))
+
+        if label_array is None:
+            label_array = np.zeros(raw_array.shape)
+
         self.raw_array = reshape(raw_array, self.input_axes, self.output_axes)
         self.label_array = reshape(label_array, self.input_axes, self.output_axes)
 
@@ -105,6 +110,8 @@ class Loader():
         #     raise ValueError(r.status_code)
         if is_npz(url):
             label_array = load_labeled_npz(data)
+            if label_array is None:
+                label_array = load_npz(data)
         elif is_trk(url):
             label_array = load_labeled_trk(data)
             # self._cell_info = load_lineage_trk(data)
@@ -140,82 +147,10 @@ def is_zip(url):
     return pathlib.Path(url).suffix in {'.zip'}
 
 
-def reshape(array, input_axes, output_axes):
-    """
-    Reshapes an array with input_axes axis order to output_axes axis order.
-    Axes order should be a string like 'ZYXCT'.
-
-    Arguments:
-        array (ndarray): array to reshape
-        input_axes (string): dimension order of input array
-        output_axes (string): dimension order after reshaping
-
-    Returns:
-        ndarray: reshaped array
-    """
-    if array.ndim != len(input_axes):
-        print(f'input axis order {input_axes} has more dimensions than array with shape {array.shape}')
-        print(f'truncating input axis order {input_axes} to {input_axes[:array.ndim]}')
-        input_axes = input_axes[:array.ndim]
-    dropped = drop_axes(array, input_axes, output_axes)
-    expanded = expand_axes(dropped, input_axes, output_axes)
-    permuted = permute_axes(expanded, input_axes, output_axes)
-    return permuted
-
-
-
-def drop_axes(array, input_axes, output_axes=DCL_AXES):
-    """
-    Drops the dimensions in input_axes that are not in output_axes.
-    Takes the first slice (index 0) of the dropped axes.
-
-    Arguments:
-        array (ndarray): array to drop
-        input_axes (string): dimension order
-        output_axes (string): dimension order
-
-    Returns:
-        ndarray: expanded array
-    """
-    extra_axes = tuple(slice(None) if axis in output_axes else 0 for i, axis in enumerate(input_axes))
-    new_input_axes = ''.join(c for c in input_axes if c in output_axes)
-    return array[extra_axes]
-
-
-def expand_axes(array, input_axes, output_axes=DCL_AXES):
-    """
-    Adds the dimensions in output_axes that are not in input_axes.
-
-    Arguments:
-        array (ndarray): array to expand
-        input_axes (string): dimension order
-        output_axes (string): dimension order
-
-    Returns:
-        ndarray: expanded array
-    """
-    missing_axes = tuple(i for i, axis in enumerate(output_axes) if axis not in input_axes)
-    return np.expand_dims(array, axis=missing_axes)
-
-
-def permute_axes(array, input_axes, output_axes=DCL_AXES):
-    """
-    Transpose the array with input_axes axis order to match output_axes axis order.
-    Assumes that array has all the dimensions in output_axes, 
-    just in different orders, and drops/adds dims to the input axis order.
-
-    Arguments:
-        array (ndarray): array to transpose
-        input_axes (string): dimension order
-        output_axes (string): dimension order
-
-    Returns:
-        ndarray: transposed array
-    """
-    merged_axes = ''.join(input_axes[i] if dim in input_axes else dim for i, dim in enumerate(output_axes))
-    permutation = tuple(merged_axes.find(dim) for dim in output_axes)
-    return array.transpose(permutation)
-
+def load_npz(data):
+    """Returns the first array in an npz."""
+    npz = np.load(data)
+    return npz[npz.files[0]]
 
 def load_raw_npz(data):
     """
@@ -235,7 +170,10 @@ def load_raw_npz(data):
 
 
 def load_labeled_npz(data):
-    """Returns labeled image array from an NPZ file."""
+    """
+    Returns labeled image array from an NPZ file.
+    Returns None when the labeled image array is not present.
+    """
     npz = np.load(data)
 
     # Look for label filenames
@@ -245,8 +183,6 @@ def load_labeled_npz(data):
         return npz['annotated']
     elif len(npz.files) > 1:
         return npz[npz.files[1]]
-    else:
-        return npz[npz.files[0]]
 
 
 def load_raw_trk(data):
@@ -309,10 +245,10 @@ def load_tiff(data):
 
 
 def load_zip(data):
-    """Loads labeled image data from a zip of TIFF files."""
+    """Loads a series of image arrays from a zip of TIFF files."""
     zf = zipfile.ZipFile(data, 'r')
-    features = [load_tiff(io.BytesIO(zf.open(info).read())) for info in zf.filelist]
-    return np.array(features)
+    channels = [load_tiff(io.BytesIO(zf.open(info).read())) for info in zf.filelist]
+    return np.array(channels)
 
 
 class InvalidExtension(Exception):
