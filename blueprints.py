@@ -138,28 +138,6 @@ def edit(token, action_type):
     return jsonify(payload)
 
 
-@bp.route('/api/rgb/<token>/<rgb_value>', methods=['POST'])
-def rgb(token, rgb_value):
-    """
-
-    Returns:
-        json with raw image data
-    """
-    start = timeit.default_timer()
-
-    project = Project.get(token)
-    if not project:
-        return abort(404, description=f'project {token} not found')
-
-    rgb = bool(distutils.util.strtobool(rgb_value))
-    project.rgb = rgb
-    project.update()
-    payload = project.make_payload(x=True)
-    current_app.logger.debug('Set RGB to %s for project %s in %s s.',
-                             rgb, token, timeit.default_timer() - start)
-    return jsonify(payload)
-
-
 @bp.route('/api/undo/<token>', methods=['POST'])
 def undo(token):
     start = timeit.default_timer()
@@ -192,52 +170,6 @@ def redo(token):
 def form():
     """Request HTML landing page to be rendered."""
     return render_template('index.html')
-
-
-@bp.route('/tool', methods=['GET', 'POST'])
-def tool():
-    """
-    Request HTML DeepCell Label tool page to be rendered after user inputs
-    filename in the landing page.
-    """
-    if 'filename' not in request.form:
-        return redirect('/')
-
-    filename = request.form['filename']
-    current_app.logger.info('%s is filename', filename)
-    path = 'test__{}'.format(filename)
-
-    return render_template(
-        'loading.html',
-        input_bucket='caliban-input',
-        output_bucket='caliban-output',
-        path=path)
-
-
-@bp.route('/<filename>', methods=['GET', 'POST'])
-def shortcut(filename):
-    """
-    Request HTML DeepCell Label tool page to be rendered if user makes a URL
-    request to access a specific data file that has been preloaded to the
-    input S3 bucket (ex. http://127.0.0.1:5000/test.npz).
-    """
-
-    folders = re.split('__', filename)
-    # TODO: better parsing when buckets are not present
-    input_bucket = folders[0] if len(folders) > 1 else S3_INPUT_BUCKET
-    output_bucket = folders[1] if len(folders) > 2 else S3_OUTPUT_BUCKET
-    start_of_path = min(len(folders) - 1, 2)
-    path = '__'.join(folders[start_of_path:])
-
-    # TODO: uncomment to use URL parameters instead of rigid bucket formatting within filename
-    # input_bucket = request.args.get('input_bucket', default=S3_INPUT_BUCKET, type=str)
-    # output_bucket = request.args.get('output_bucket', default=S3_OUTPUT_BUCKET, type=str)
-
-    return render_template(
-        'loading.html',
-        input_bucket=input_bucket,
-        output_bucket=output_bucket,
-        path=path)
 
 
 @bp.route('/api/project/<token>', methods=['GET'])
@@ -287,30 +219,6 @@ def create_project_from_url():
     return jsonify({'projectId': project.token})
 
 
-@bp.route('/project/<token>')
-def project(token):
-    """
-    Display a project in the Project database.
-    """
-    rgb = request.args.get('rgb', default='false', type=str)
-
-    settings = {
-        'rgb': bool(distutils.util.strtobool(rgb)),
-    }
-
-    project = Project.get(token)
-    if not project:
-        return abort(404, description=f'project {token} not found')
-    if project.finished is not None:
-        return abort(410, description=f'project {token} already submitted')
-
-    settings = make_settings(project)
-
-    return render_template(
-        'tool.html',
-        settings=settings)
-
-
 @bp.route('/downloadproject/<token>', methods=['GET'])
 def download_project(token):
     """
@@ -352,28 +260,3 @@ def get_edit(project):
         return TrackEdit(project)
     else:
         return ZStackEdit(project)
-
-
-def make_settings(project):
-    """Returns a dictionary of settings to send to the front-end."""
-    if project.is_track:
-        filetype = 'track'
-        title = 'Tracking Tool'
-    else:
-        filetype = 'zstack'
-        title = 'Z-Stack Tool'
-
-    rgb = request.args.get('rgb', default='false', type=str)
-    rgb = bool(distutils.util.strtobool(rgb))
-    output_bucket = request.args.get('output_bucket', default=S3_OUTPUT_BUCKET, type=str)
-
-    settings = {
-        'filetype': filetype,
-        'title': title,
-        'rgb': rgb,
-        'output_bucket': output_bucket,
-        'token': project.token,
-        'source': str(project.source)
-    }
-
-    return settings
