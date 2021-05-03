@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from labelmaker import LabelInfoMaker
+from deepcell_label.labelmaker import LabelInfoMaker
 
 
 class TestLabelInfoMaker():

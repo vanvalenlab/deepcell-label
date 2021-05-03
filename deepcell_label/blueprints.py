@@ -21,12 +21,12 @@ from flask import current_app
 from flask import send_file
 from werkzeug.exceptions import HTTPException
 
-from label import TrackEdit, ZStackEdit, BaseEdit
-from models import Project
+from deepcell_label.label import TrackEdit, ZStackEdit, BaseEdit
+from deepcell_label.models import Project
 # import loaders
-import url_loaders
-import exporters
-from config import S3_INPUT_BUCKET, S3_OUTPUT_BUCKET
+from deepcell_label import url_loaders
+from deepcell_label import exporters
+from deepcell_label.config import S3_INPUT_BUCKET, S3_OUTPUT_BUCKET
 
 bp = Blueprint('label', __name__)  # pylint: disable=C0103
 

@@ -17,8 +17,8 @@ import numpy as np
 from PIL import Image
 from skimage.external import tifffile
 
-from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_INPUT_BUCKET
-from labelmaker import LabelInfoMaker
+from deepcell_label.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_INPUT_BUCKET
+from deepcell_label.labelmaker import LabelInfoMaker
 
 
 class Loader():
@@ -144,9 +144,9 @@ class Loader():
         if 'y' in npz.files:
             self._label_array = npz['y']
         elif 'annotated' in npz.files:
-                self._label_array = npz['annotated']
+            self._label_array = npz['annotated']
         elif len(npz.files) > 1:
-                self._label_array = npz[npz.files[1]]
+            self._label_array = npz[npz.files[1]]
 
     def _load_trk(self):
         """
@@ -262,6 +262,7 @@ class LocalFileSystemLoader(Loader):
     """
     Loader implementation for local file systems.
     """
+
     def __init__(self, path):
         super(LocalFileSystemLoader, self).__init__()
         # path to file including filename

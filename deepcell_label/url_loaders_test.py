@@ -6,7 +6,7 @@ import pytest
 import numpy as np
 import responses
 
-import url_loaders
+from deepcell_label import url_loaders
 
 # @responses.activate
 # def test_load_raw_npz():

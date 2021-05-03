@@ -7,8 +7,8 @@ import numpy as np
 
 # from flask_sqlalchemy import SQLAlchemy
 
-import models
-from conftest import DummyLoader
+from deepcell_label import models
+from deepcell_label.conftest import DummyLoader
 
 
 # Automatically enable transactions for all tests, without importing any extra fixtures.
@@ -78,7 +78,7 @@ def test_redo(client):
 
 
 def test_create_project(client, mocker):
-    mocker.patch('blueprints.url_loaders.Loader', lambda *args: DummyLoader())
+    mocker.patch('deepcell_label.blueprints.url_loaders.Loader', lambda *args: DummyLoader())
     response = client.post(f'/api/project')
     assert response.status_code == 200
 

@@ -5,9 +5,9 @@ import io
 import numpy as np
 import pytest
 
-import models
-from imgutils import pngify
-from conftest import DummyLoader
+from deepcell_label import models
+from deepcell_label.imgutils import pngify
+from deepcell_label.conftest import DummyLoader
 
 
 # Automatically enable transactions for all tests, without importing any extra fixtures.

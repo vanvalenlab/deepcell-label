@@ -7,9 +7,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pytest
 
-import imgutils
-import models
-from conftest import DummyLoader
+from deepcell_label import imgutils
+from deepcell_label import models
+from deepcell_label.conftest import DummyLoader
 
 
 def test_pngify(tmpdir):

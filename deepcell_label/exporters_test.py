@@ -3,9 +3,9 @@
 import pytest
 import io
 
-import models
-import exporters
-from conftest import DummyLoader
+from deepcell_label import models
+from deepcell_label import exporters
+from deepcell_label.conftest import DummyLoader
 
 
 @pytest.fixture

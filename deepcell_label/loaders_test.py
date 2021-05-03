@@ -9,7 +9,7 @@ import pytest
 import numpy as np
 from PIL import Image
 
-import loaders
+from deepcell_label import loaders
 
 
 def test_load_raw_npz():
@@ -96,15 +96,15 @@ def test_load_trk_no_lineage():
     trk = io.BytesIO()
     with tarfile.open(fileobj=trk, mode='w') as trks:
 
-            with tempfile.NamedTemporaryFile() as raw_file:
-                np.save(raw_file, expected_raw)
-                raw_file.flush()
-                trks.add(raw_file.name, 'raw.npy')
+        with tempfile.NamedTemporaryFile() as raw_file:
+            np.save(raw_file, expected_raw)
+            raw_file.flush()
+            trks.add(raw_file.name, 'raw.npy')
 
-            with tempfile.NamedTemporaryFile() as tracked_file:
-                np.save(tracked_file, expected_label)
-                tracked_file.flush()
-                trks.add(tracked_file.name, 'tracked.npy')
+        with tempfile.NamedTemporaryFile() as tracked_file:
+            np.save(tracked_file, expected_label)
+            tracked_file.flush()
+            trks.add(tracked_file.name, 'tracked.npy')
     trk.seek(0)
 
     loader = loaders.Loader('ZYXC')

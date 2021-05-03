@@ -23,7 +23,7 @@ from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy.schema import PrimaryKeyConstraint, ForeignKeyConstraint
 from PIL import Image
 
-from imgutils import pngify, add_outlines
+from deepcell_label.imgutils import pngify, add_outlines
 
 
 logger = logging.getLogger('models.Project')  # pylint: disable=C0103

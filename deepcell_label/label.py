@@ -20,7 +20,7 @@ from skimage.exposure import rescale_intensity
 from skimage.measure import regionprops
 from skimage.segmentation import morphological_chan_vese
 
-from labelmaker import LabelInfoMaker
+from deepcell_label.labelmaker import LabelInfoMaker
 
 
 class BaseEdit(object):

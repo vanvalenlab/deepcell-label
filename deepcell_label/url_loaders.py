@@ -21,9 +21,9 @@ import numpy as np
 from PIL import Image
 from skimage.external.tifffile import TiffFile
 
-from imgutils import reshape
-from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_INPUT_BUCKET
-from labelmaker import LabelInfoMaker
+from deepcell_label.imgutils import reshape
+from deepcell_label.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_INPUT_BUCKET
+from deepcell_label.labelmaker import LabelInfoMaker
 
 DCL_AXES = 'ZYXC'
 

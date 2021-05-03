@@ -9,10 +9,10 @@ from pytest_lazyfixture import lazy_fixture
 from unittest.mock import MagicMock
 
 
-from application import create_app  # pylint: disable=C0413
-from models import Project, Action
-from url_loaders import Loader
-from labelmaker import LabelInfoMaker
+from deepcell_label import create_app  # pylint: disable=C0413
+from deepcell_label.models import Project, Action
+from deepcell_label.url_loaders import Loader
+from deepcell_label.labelmaker import LabelInfoMaker
 
 
 # flask-sqlalchemy fixtures from http://alexmic.net/flask-sqlalchemy-pytest/
