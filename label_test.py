@@ -143,6 +143,43 @@ class TestBaseEdit():
             assert edit.y_changed
             assert edit.labels_changed
 
+    def test_action_handle_draw_remove_label(self, app):
+        """Erasing a label with by drawing over it."""
+        labels = np.reshape([1], (1, 1, 1, 1))
+        project = models.Project.create(DummyLoader(labels=labels))
+        feature = 0
+        project.feature = 0
+        edit = label.TrackEdit(project)
+
+        trace, foreground, background, brush_size = [(0, 0)], 0, 1, 1
+        expected_draw = np.reshape([0], (1, 1))
+
+        with app.app_context():
+            edit.action_handle_draw(trace, foreground, background, brush_size)
+            np.testing.assert_array_equal(edit.frame[..., feature], expected_draw)
+            assert edit.y_changed
+            assert edit.labels_changed
+            assert foreground not in edit.labels[feature].cell_info
+            assert foreground not in edit.labels[feature].cell_ids
+
+    def test_action_handle_draw_remove_label(self, app):
+        """Adding a label with by drawing it in."""
+        labels = np.reshape([0], (1, 1, 1, 1))
+        project = models.Project.create(DummyLoader(labels=labels))
+        edit = label.TrackEdit(project)
+
+        trace, foreground, background, brush_size = [(0, 0)], 1, 0, 1
+        feature = 0
+        expected_draw = np.reshape([1], (1, 1))
+
+        with app.app_context():
+            edit.action_handle_draw(trace, foreground, background, brush_size)
+            np.testing.assert_array_equal(edit.frame[..., feature], expected_draw)
+            assert edit.y_changed
+            assert edit.labels_changed
+            assert foreground in edit.labels[feature].cell_info
+            assert foreground in edit.labels[feature].cell_ids
+
 
 class TestZStackEdit():
 

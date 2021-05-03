@@ -134,7 +134,7 @@ class BaseEdit(object):
         self.y_changed = self.labels_changed = True
         self.frame[..., self.feature] = img
 
-    def action_handle_draw(self, trace, target_value, brush_value, brush_size, erase):
+    def action_handle_draw(self, trace, foreground, background, brush_size):
         """
         Use a "brush" to draw in the brush value along trace locations of
         the annotated data.
@@ -142,40 +142,36 @@ class BaseEdit(object):
 
         Args:
             trace (list): list of (x, y) coordinates where the brush has painted
-            target_value (int): label overwritten by the brush
-            brush_value (int): label written by the bush
-            brush_size (int): radius of the brush
-            erase (bool): sets target_value in trace area to 0 when True
+            foreground (int): label written by the bush
+            background (int): label overwritten by the brush
+            brush_size (int): radius of the brush in pixels
         """
         img = np.copy(self.frame[..., self.feature])
-        in_original = np.any(np.isin(img, brush_value))
-
-        img_draw = np.where(img == target_value, brush_value, img)
-        img_erase = np.where(img == brush_value, target_value, img)
+        foreground_in_original = np.any(np.isin(img, foreground))
+        background_in_original = np.any(np.isin(img, background))
+        # only overwrite the background image
+        img_replaced = np.where(img == background, foreground, img)
 
         for loc in trace:
-            # each element of trace is an array with [x, y] coordinates of array
             x_loc = loc[0]
             y_loc = loc[1]
-
             brush_area = circle(y_loc, x_loc, brush_size,
                                 (self.project.height, self.project.width))
+            img[brush_area] = img_replaced[brush_area]
 
-            # do not overwrite or erase labels other than the one you're editing
-            if not erase:
-                img[brush_area] = img_draw[brush_area]
-            else:
-                img[brush_area] = img_erase[brush_area]
+        foreground_in_modified = np.any(np.isin(img, foreground))
+        background_in_modified = np.any(np.isin(img, background))
 
-        in_modified = np.any(np.isin(img, brush_value))
+        foreground_added = not foreground_in_original and foreground_in_modified and foreground != 0
+        background_deleted = background_in_original and not background_in_modified and background != 0
 
         # cell deletion
-        if in_original and not in_modified:
-            self.del_cell_info(del_label=brush_value, frame=self.frame_id)
+        if background_deleted:
+            self.del_cell_info(del_label=background, frame=self.frame_id)
 
         # cell addition
-        elif in_modified and not in_original:
-            self.add_cell_info(add_label=brush_value, frame=self.frame_id)
+        elif foreground_added:
+            self.add_cell_info(add_label=foreground, frame=self.frame_id)
 
         # check for image change, in case pixels changed but no new or del cell
         comparison = np.where(img != self.frame[..., self.feature])

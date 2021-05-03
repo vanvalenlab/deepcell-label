@@ -286,10 +286,9 @@ const toolMachine = Machine(
         action: 'handle_draw',
         args: {
           trace: JSON.stringify(context.trace),
-          brush_value: context.foreground,
-          target_value: context.background,
+          foreground: context.foreground,
+          background: context.background,
           brush_size: context.brushSize,
-          erase: false,
           frame: context.frame,
           feature: context.feature,
           channel: context.channel,
