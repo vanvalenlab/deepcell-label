@@ -111,7 +111,7 @@ def expand_axes(array, input_axes, output_axes):
 def permute_axes(array, input_axes, output_axes):
     """
     Transpose the array with input_axes axis order to match output_axes axis order.
-    Assumes that array has all the dimensions in output_axes, 
+    Assumes that array has all the dimensions in output_axes,
     just in different orders, and drops/adds dims to the input axis order.
 
     Arguments:
