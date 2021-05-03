@@ -282,9 +282,10 @@ class Project(db.Model):
             self.labels.cell_ids = action.before_labels.cell_ids
             self.labels.cell_info = action.before_labels.cell_info
 
-        payload = {'feature': action.feature,
-                   'channel': action.channel,
-                   'frames': [frame.frame_id for frame in action.frames]}
+        payload = {
+            # 'feature': action.feature,
+            # 'channel': action.channel,
+            'frames': [frame.frame_id for frame in action.frames]}
 
         action.done = False
         self.action = action.prev_action
@@ -316,9 +317,10 @@ class Project(db.Model):
             self.labels.cell_ids = next_action.after_labels.cell_ids
             self.labels.cell_info = next_action.after_labels.cell_info
 
-        payload = {'feature': next_action.feature,
-                   'channel': next_action.channel,
-                   'frames': [frame.frame_id for frame in next_action.frames]}
+        payload = {
+            # 'feature': next_action.feature,
+            # 'channel': next_action.channel,
+            'frames': [frame.frame_id for frame in next_action.frames]}
 
         self.action = self.action.next_action
         next_action.done = True
