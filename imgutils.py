@@ -57,8 +57,8 @@ def reshape(array, input_axes, output_axes):
         ndarray: reshaped array
     """
     if array.ndim != len(input_axes):
-        print(
-            f'input axis order {input_axes} has more dimensions than array with shape {array.shape}')
+        print(f'input axis order {input_axes} '
+              f'has more dimensions than array with shape {array.shape}')
         print(f'truncating input axis order {input_axes} to {input_axes[:array.ndim]}')
         input_axes = input_axes[:array.ndim]
     dropped, input_axes = drop_axes(array, input_axes, output_axes)
