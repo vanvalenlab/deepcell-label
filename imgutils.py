@@ -57,7 +57,8 @@ def reshape(array, input_axes, output_axes):
         ndarray: reshaped array
     """
     if array.ndim != len(input_axes):
-        print(f'input axis order {input_axes} has more dimensions than array with shape {array.shape}')
+        print(
+            f'input axis order {input_axes} has more dimensions than array with shape {array.shape}')
         print(f'truncating input axis order {input_axes} to {input_axes[:array.ndim]}')
         input_axes = input_axes[:array.ndim]
     dropped, input_axes = drop_axes(array, input_axes, output_axes)
@@ -65,7 +66,6 @@ def reshape(array, input_axes, output_axes):
     permuted = permute_axes(expanded, input_axes, output_axes)
     assert len(permuted.shape) == len(output_axes)
     return permuted
-
 
 
 def drop_axes(array, input_axes, output_axes):
@@ -82,7 +82,8 @@ def drop_axes(array, input_axes, output_axes):
         ndarray: expanded array
         string: input_axes with axes not in output_axes removed
     """
-    extra_axes = tuple(slice(None) if axis in output_axes else 0 for i, axis in enumerate(input_axes))
+    extra_axes = tuple(slice(None) if axis in output_axes else 0 for i,
+                       axis in enumerate(input_axes))
     axes = ''.join(char for char in input_axes if char in output_axes)
     return array[extra_axes], axes
 

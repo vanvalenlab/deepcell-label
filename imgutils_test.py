@@ -86,7 +86,7 @@ def test_reshape_fewer_dimensions():
     input_axes = 'XYZC'
     output_axes = 'XYC'
 
-    reshaped = imgutils.reshape(array, input_axes, output_axes) 
+    reshaped = imgutils.reshape(array, input_axes, output_axes)
     np.testing.assert_array_equal(reshaped, expected)
 
 

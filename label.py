@@ -147,8 +147,8 @@ class BaseEdit(object):
             brush_size (int): radius of the brush in pixels
         """
         img = np.copy(self.frame[..., self.feature])
-        foreground_in_original = np.any(np.isin(img, foreground))
-        background_in_original = np.any(np.isin(img, background))
+        foreground_in_before = np.any(np.isin(img, foreground))
+        background_in_before = np.any(np.isin(img, background))
         # only overwrite the background image
         img_replaced = np.where(img == background, foreground, img)
 
@@ -159,11 +159,11 @@ class BaseEdit(object):
                                 (self.project.height, self.project.width))
             img[brush_area] = img_replaced[brush_area]
 
-        foreground_in_modified = np.any(np.isin(img, foreground))
-        background_in_modified = np.any(np.isin(img, background))
+        foreground_in_after = np.any(np.isin(img, foreground))
+        background_in_after = np.any(np.isin(img, background))
 
-        foreground_added = not foreground_in_original and foreground_in_modified and foreground != 0
-        background_deleted = background_in_original and not background_in_modified and background != 0
+        foreground_added = not foreground_in_before and foreground_in_after and foreground != 0
+        background_deleted = background_in_before and not background_in_after and background != 0
 
         # cell deletion
         if background_deleted:

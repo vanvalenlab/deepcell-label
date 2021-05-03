@@ -89,7 +89,6 @@ def test_get_project(client):
     assert response.status_code == 200
 
 
-
 def test_get_project_missing(client):
     pass
     # response = client.get('/project/abc')

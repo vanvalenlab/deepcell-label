@@ -37,8 +37,8 @@ class DummyLoader(Loader):
         self.label_array = labels
         self.url = url
 
-        DummyLoader.load = MagicMock() # monkeypatch to avoid network requests
-        super().__init__(url_form={'url': url })
+        DummyLoader.load = MagicMock()  # monkeypatch to avoid network requests
+        super().__init__(url_form={'url': url})
 
 
 @pytest.fixture(scope='session')

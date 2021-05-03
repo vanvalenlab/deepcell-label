@@ -152,6 +152,7 @@ def load_npz(data):
     npz = np.load(data)
     return npz[npz.files[0]]
 
+
 def load_raw_npz(data):
     """
     Returns raw image array from an NPZ file.

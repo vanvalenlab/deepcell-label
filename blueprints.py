@@ -93,6 +93,7 @@ def array(token, feature, frame):
     filename = f'{token}_array_feature{feature}_frame{frame}.npy'
     return send_file(seg_array, attachment_filename=filename, cache_timeout=0)
 
+
 @bp.route('/api/instances/<project_id>/<int:feature>')
 def semantic_instance_labels(project_id, feature):
     project = Project.get(project_id)
