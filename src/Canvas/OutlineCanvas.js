@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useSelector } from '@xstate/react';
-import { useTool, useImage } from '../ServiceContext';
+import { useTool, useImage, useFeature } from '../ServiceContext';
 
 /**
  * Draws fColor around the foreground label and bColor 
@@ -56,7 +56,7 @@ function outlineAll(imageData, labeledArray, color) {
   }
 }
 
-const OutlineCanvas = ({ feature, sx, sy, sw, sh, zoom, width, height, className }) => {
+const OutlineCanvas = ({ sx, sy, sw, sh, zoom, width, height, className }) => {
 
   const tool = useTool();
   const foreground = useSelector(tool, state => state.context.foreground);
@@ -66,6 +66,7 @@ const OutlineCanvas = ({ feature, sx, sy, sw, sh, zoom, width, height, className
   const outline = useSelector(image, state => state.context.outline);
   const invert = useSelector(image, state => state.context.invert);
 
+  const feature = useFeature();
   let labeledArray = useSelector(feature, state => state.context.labeledArray);
   if (!labeledArray) { labeledArray = Array(sh).fill(Array(sw).fill(0)); }
 

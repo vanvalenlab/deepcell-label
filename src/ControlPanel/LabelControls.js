@@ -5,7 +5,18 @@ import { useSelector } from '@xstate/react';
 
 
 import ControlRow from './ControlRow';
-import { useTool } from '../ServiceContext';
+import { useTool, useFeature } from '../ServiceContext';
+
+const LabelsInfo = () => {
+  const feature = useFeature();
+  const labels = useSelector(feature, state => state.context.semanticInstanceLabels);
+  const maxLabel = labels.length === 0 ? 0 : Math.max(...Object.keys(labels).map(Number));
+
+  return <Typography gutterBottom>
+    maxLabel: {maxLabel}
+  </Typography>
+
+}
 
 
 export default function LabelControls() {
@@ -15,6 +26,8 @@ export default function LabelControls() {
   const label = useSelector(tool, state => state.context.label);
   const foreground = useSelector(tool, state => state.context.foreground);
   const background = useSelector(tool, state => state.context.background);
+
+  const feature = useFeature();
 
   return (
     <ControlRow name={"Label"}>
@@ -34,6 +47,7 @@ export default function LabelControls() {
         <Typography gutterBottom>
           background: {background === 0 ? 'no label' : background}
         </Typography>
+        { feature && <LabelsInfo/>}
       </Box>
     </ControlRow>
   );

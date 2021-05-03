@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useSelector } from '@xstate/react';
 import { bind, unbind } from 'mousetrap';
-import { useImage, useCanvas, useUndo, useTool } from './ServiceContext';
+import { useImage, useCanvas, useUndo, useTool, useFeature } from './ServiceContext';
 
 export function useImageHotkeys() {
   const image = useImage();
@@ -112,16 +112,15 @@ export function useToolHotkeys() {
   }, [send]);
 };
 
-export function useSelectHotkeys(feature) {
+export function useSelectHotkeys() {
   const tool = useTool();
   const { send } = tool;
   const foreground = useSelector(tool, state => state.context.foreground);
   const background = useSelector(tool, state => state.context.background);
-  console.log(foreground);
   
+  const feature = useFeature();
   const labels = useSelector(feature, state => state.context.semanticInstanceLabels);
-  const maxLabel = labels.length === 0 ? 1 : Math.max(...Object.keys(labels).map(Number));
-  console.log(maxLabel);
+  const maxLabel = labels.length === 0 ? 0 : Math.max(...Object.keys(labels).map(Number));
 
   useEffect(() => {
     bind('x', () => {

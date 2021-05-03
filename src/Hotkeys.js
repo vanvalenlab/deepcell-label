@@ -6,32 +6,43 @@ import {
   useToolHotkeys,
   useSelectHotkeys
 } from './use-hotkeys';
-import { useImage } from './ServiceContext';
-import { useSelector } from '@xstate/react';
+import { useFeature } from './ServiceContext';
 
-// these hotkeys require a feature actor
-// only "render" them once the actor exists
-const SelectHotkeys = ({ feature }) => {
-  useSelectHotkeys(feature);
+const SelectHotkeys = () => {
+  useSelectHotkeys();
   return null;
 };
 
-const Hotkeys = () => {
+const CanvasHotkeys = () => {
   useCanvasHotkeys();
+  return null;
+}
+
+const UndoHotkeys = () => {
   useUndoHotkeys();
+  return null;
+}
+
+const ImageHotkeys = () => {
   useImageHotkeys();
+  return null;
+}
+
+const ToolHotkeys = () => {
   useToolHotkeys();
+  return null;
+}
+const Hotkeys = () => {
+  const feature = useFeature();
 
-  const image = useImage();
-  const feature = useSelector(image, state => state.context.feature);
-  const features = useSelector(image, state => state.context.features);
-  const featureActor = features[feature];
-  console.log(featureActor);
-  if (!featureActor) {
-    return null;
-  }
-
-  return <SelectHotkeys feature={featureActor} />;
+  return <>
+    <CanvasHotkeys />
+    <UndoHotkeys />
+    <ImageHotkeys />
+    <ToolHotkeys />
+    {/*  // uses feature to check which labels can be selected */}
+    { feature && <SelectHotkeys /> } 
+  </>;
 }
 
 export default Hotkeys;

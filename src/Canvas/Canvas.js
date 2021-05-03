@@ -9,7 +9,7 @@ import OutlineCanvas from './OutlineCanvas';
 import BrushCanvas from './BrushCanvas';
 
 // import { canvasService } from '../statechart/service';
-import { useCanvas, useTool, useImage } from '../ServiceContext';
+import { useCanvas, useTool, useChannel, useFeature } from '../ServiceContext';
 
 const useStyles = makeStyles({
     canvasBox: {
@@ -28,11 +28,8 @@ const useStyles = makeStyles({
 
 export const Canvas = ({ height, width }) => {
 
-  const image = useImage();
-  const channels = useSelector(image, state => state.context.channels);
-  const channel = useSelector(image, state => state.context.channel);
-  const features = useSelector(image, state => state.context.features);
-  const feature = useSelector(image, state => state.context.feature);
+  const channel = useChannel();
+  const feature = useFeature();
 
   const canvas = useCanvas();
   const sx = useSelector(canvas, state => state.context.sx);
@@ -104,9 +101,9 @@ export const Canvas = ({ height, width }) => {
       onMouseUp={tool.send}
       onClick={tool.send}
     >
-      {channels[channel] && <RawCanvas channel={channels[channel]} {...canvasProps} {...styleProps} />}
-      {features[feature] && <LabeledCanvas feature={features[feature]} {...canvasProps} {...styleProps} />}
-      {features[feature] && <OutlineCanvas feature={features[feature]} {...canvasProps} {...styleProps} />}
+      {channel && <RawCanvas {...canvasProps} {...styleProps} />}
+      {feature && <LabeledCanvas {...canvasProps} {...styleProps} />}
+      {feature && <OutlineCanvas {...canvasProps} {...styleProps} />}
       <BrushCanvas {...canvasProps} {...styleProps} />
     </Box>
   )

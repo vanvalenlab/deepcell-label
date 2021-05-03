@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from 'react';
-import { useInterpret } from '@xstate/react';
+import { useInterpret, useSelector } from '@xstate/react';
 import { useLocation } from "react-router-dom";
 import createDeepcellLabelMachine from './statechart/deepcellLabelMachine';
 import Hotkeys from './Hotkeys';
@@ -32,6 +32,20 @@ export function useImage() {
   const { service } = useLabelService();
   const { image } = service.state.children;
   return image;
+}
+
+export function useFeature() {
+  const image = useImage();
+  const features = useSelector(image, state => state.context.features);
+  const feature = useSelector(image, state => state.context.feature);
+  return features[feature];
+}
+
+export function useChannel() {
+  const image = useImage();
+  const channels = useSelector(image, state => state.context.channels);
+  const channel = useSelector(image, state => state.context.channel);
+  return channels[channel];
 }
 
 export function useCanvas() {
