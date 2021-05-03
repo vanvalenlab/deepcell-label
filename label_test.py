@@ -157,12 +157,10 @@ class TestBaseEdit():
         with app.app_context():
             edit.action_handle_draw(trace, foreground, background, brush_size)
             np.testing.assert_array_equal(edit.frame[..., feature], expected_draw)
-            assert edit.y_changed
-            assert edit.labels_changed
-            assert foreground not in edit.labels[feature].cell_info
-            assert foreground not in edit.labels[feature].cell_ids
+            assert background not in edit.labels.cell_info[feature]
+            assert background not in edit.labels.cell_ids[feature]
 
-    def test_action_handle_draw_remove_label(self, app):
+    def test_action_handle_draw_add_label(self, app):
         """Adding a label with by drawing it in."""
         labels = np.reshape([0], (1, 1, 1, 1))
         project = models.Project.create(DummyLoader(labels=labels))
@@ -175,10 +173,8 @@ class TestBaseEdit():
         with app.app_context():
             edit.action_handle_draw(trace, foreground, background, brush_size)
             np.testing.assert_array_equal(edit.frame[..., feature], expected_draw)
-            assert edit.y_changed
-            assert edit.labels_changed
-            assert foreground in edit.labels[feature].cell_info
-            assert foreground in edit.labels[feature].cell_ids
+            assert foreground in edit.labels.cell_info[feature]
+            assert foreground in edit.labels.cell_ids[feature]
 
 
 class TestZStackEdit():
