@@ -16,5 +16,6 @@
     "js-doc": "off",
     "space-before-function-paren": "off",
     "comma-dangle": "off",
-  }
+  },
+  "parser": "babel-eslint"
 }
