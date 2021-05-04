@@ -440,15 +440,11 @@ class Project(db.Model):
     def get_labeled_array(self, feature, frame):
         """
         Returns:
-            BytesIO: contains numpy array of labels
+            ndarray: numpy array of labels
         """
-        # Create label array
         label_frame = self.label_frames[frame]
         label_arr = label_frame.frame[..., feature]
-        out = io.BytesIO()
-        np.save(out, add_outlines(label_arr))
-        out.seek(0)
-        return out
+        return add_outlines(label_arr)
 
 
 class Labels(db.Model):

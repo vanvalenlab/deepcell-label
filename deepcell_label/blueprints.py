@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import distutils
 import distutils.util
+import gzip
 import json
 import timeit
 import traceback
@@ -16,6 +17,7 @@ from flask import request
 from flask import redirect
 from flask import current_app
 from flask import send_file
+from flask import make_response
 from werkzeug.exceptions import HTTPException
 
 from deepcell_label.label import TrackEdit, ZStackEdit
@@ -81,9 +83,15 @@ def array(token, feature, frame):
     project = Project.get(token)
     if not project:
         return jsonify({'error': f'project {token} not found'}), 404
-    seg_array = project.get_labeled_array(feature, frame)
-    filename = f'{token}_array_feature{feature}_frame{frame}.npy'
-    return send_file(seg_array, attachment_filename=filename, cache_timeout=0)
+    labeled_array = project.get_labeled_array(feature, frame)
+    content = gzip.compress(json.dumps(labeled_array.tolist()).encode('utf8'), 5)
+    response = make_response(content)
+    response.headers['Content-length'] = len(content)
+    response.headers['Content-Encoding'] = 'gzip'
+    return response
+    # seg_array = project.get_labeled_array(feature, frame)
+    # filename = f'{token}_array_feature{feature}_frame{frame}.npy'
+    # return send_file(seg_array, attachment_filename=filename, cache_timeout=0)
 
 
 @bp.route('/api/instances/<project_id>/<int:feature>')

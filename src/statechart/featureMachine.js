@@ -1,5 +1,4 @@
 import { Machine, assign, send, sendParent } from 'xstate';
-import npyjs from '../npyjs';
 
 function fetchLabeledFrame(context) {
   const { projectId, feature, loadingFrame: frame } = context;
@@ -13,9 +12,8 @@ function fetchLabeledFrame(context) {
     .then(showImage);
     // .catch(logError);
 
-  const npyLoader = new npyjs();
-  const array = npyLoader.load(pathToArray)
-    .then(reshapeArray);
+  const array = fetch(pathToArray)
+    .then(res => res.json());
   
   return Promise.all([image, array]);
 }
@@ -23,7 +21,8 @@ function fetchLabeledFrame(context) {
 function fetchSemanticInstanceLabels(context) {
   const { projectId, feature } = context;
   const pathToInstances = `/api/instances/${projectId}/${feature}`;
-  return fetch(pathToInstances).then(res => res.json());
+  return fetch(pathToInstances)
+    .then(res => res.json());
 }
 
 function readResponseAsBlob(response) {
@@ -40,15 +39,6 @@ function showImage(imgUrl) {
     img.onload = () => resolve(img);
     img.src = imgUrl;
   });
-}
-
-function reshapeArray(array) {
-  // need to convert 1d data to 2d array
-  const reshape = (arr, width) => 
-    arr.reduce((rows, key, index) => (index % width == 0 ? rows.push([key]) 
-      : rows[rows.length - 1].push(key)) && rows, []);
-  const result = reshape(array.data, array.shape[1]);
-  return result;
 }
 
 const createFeatureMachine = (projectId, feature, numFrames) => Machine(
