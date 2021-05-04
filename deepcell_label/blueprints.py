@@ -37,11 +37,6 @@ def health():
     return jsonify({'message': 'success'}), 200
 
 
-@bp.errorhandler(404)
-def handle_404(error):
-    return render_template('404.html'), 404
-
-
 @bp.errorhandler(url_loaders.InvalidExtension)
 def handle_invalid_extension(error):
     response = jsonify(error.to_dict())
