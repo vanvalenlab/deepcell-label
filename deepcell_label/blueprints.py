@@ -241,37 +241,6 @@ def create_project_from_url():
     return jsonify({'projectId': project.token})
 
 
-<< << << < HEAD: deepcell_label/blueprints.py
-== == == =
-
-
-@bp.route('/project/<token>')
-def project(token):
-    """
-    Display a project in the Project database.
-    """
-    rgb = request.args.get('rgb', default='false', type=str)
-
-    settings = {
-        'rgb': bool(distutils.util.strtobool(rgb)),
-    }
-
-    project = Project.get(token)
-    if not project:
-        return abort(404, description=f'project {token} not found')
-    if project.finished is not None:
-        return abort(410, description=f'project {token} already submitted')
-
-    settings = make_settings(project)
-
-    return render_template(
-        'tool.html',
-        settings=settings)
-
-
->>>>>> > master: browser/blueprints.py
-
-
 @bp.route('/downloadproject/<token>', methods=['GET'])
 def download_project(token):
     """
