@@ -1,3 +1,8 @@
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -69,8 +74,9 @@ db.sqlite3
 instance/
 .webassets-cache
 
-# Flask monitoring dashboard
+# Flask monitoring dashboard stuff:
 flask_monitoringdashboard.db
+fmd_config.cfg
 
 # Scrapy stuff:
 .scrapy
@@ -124,6 +130,7 @@ node_modules
 
 # VS Code
 settings.json
+.vscode
 
 # Environments with sensitive info
 .env
@@ -154,3 +161,6 @@ yarn-debug.log*
 yarn-error.log*
 yarn.lock
 package-lock.json
+
+# Webpack builds javascript files into deepcell_label/static
+deepcell_label/static/js/*

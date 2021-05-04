@@ -411,7 +411,16 @@ class TestTrackEdit():
         """A new track on the first frame a label appears does nothing."""
         # two 1x1 frames with one feature; cell starts on second frame
         labels = np.reshape([0, 1], (2, 1, 1, 1))
+
+
+<< << << < HEAD: deepcell_label/label_test.py
         project = models.Project.create(DummyLoader(labels=labels, url='test.trk'))
+== == == =
+        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
+        edit = label.TrackEdit(project)
+        tracks = edit.labels.tracks
+
+>>>>>> > master: browser/label_test.py
         cell = 1
         frame = 1
         feature = 0

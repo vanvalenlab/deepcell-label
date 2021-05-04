@@ -9,8 +9,8 @@ services:
     depends_on:
       - db
     environment:
-      AWS_ACCESS_KEY_ID: ''
-      AWS_SECRET_ACCESS_KEY: ''
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       SQLALCHEMY_DATABASE_URI: mysql://root:password@db:3306/deepcell-label
   db:
     image: mysql:8.0

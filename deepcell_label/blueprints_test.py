@@ -89,12 +89,6 @@ def test_get_project(client):
     assert response.status_code == 200
 
 
-def test_get_project_missing(client):
-    pass
-    # response = client.get('/project/abc')
-    # assert response.status_code == 404
-
-
 # def test_project_finished(client):
 #     project = models.Project.create(DummyLoader())
 #     project.finish()
@@ -104,7 +98,7 @@ def test_get_project_missing(client):
 
 # def test_download_project(client, mocker):
 #     project = models.Project.create(DummyLoader())
-#     mocked_export = mocker.patch('blueprints.exporters.Exporter.export',
+#     mocked_export = mocker.patch('deepcell_label.blueprints.exporters.Exporter.export',
 #                                  return_value=io.BytesIO())
 #     response = client.get(f'/downloadproject/{project.token}')
 #     assert response.status_code == 200
@@ -113,7 +107,7 @@ def test_get_project_missing(client):
 
 # def test_upload_to_s3_npz(client, mocker):
 #     project = models.Project.create(DummyLoader(path='test.npz'))
-#     mocked_export = mocker.patch('blueprints.exporters.S3Exporter.export')
+#     mocked_export = mocker.patch('deepcell_label.blueprints.exporters.S3Exporter.export')
 #     response = client.get(f'/api/upload/caliban-output/{project.token}')
 #     assert response.status_code == 302
 #     mocked_export.assert_called()
@@ -121,13 +115,13 @@ def test_get_project_missing(client):
 
 # def test_upload_to_s3_trk(client, mocker):
 #     project = models.Project.create(DummyLoader(path='test.trk'))
-#     mocked_export = mocker.patch('blueprints.exporters.S3Exporter.export')
+#     mocked_export = mocker.patch('deepcell_label.blueprints.exporters.S3Exporter.export')
 #     response = client.get(f'/api/upload/caliban-output/{project.token}')
 #     assert response.status_code == 302
 #     mocked_export.assert_called()
 
 
 # def test_upload_to_s3_missing(client, mocker):
-#     mocker.patch('blueprints.exporters.S3Exporter.export')
+#     mocker.patch('deepcell_label.blueprints.exporters.S3Exporter.export')
 #     response = client.get('/api/upload/caliban-output/1')
 #     assert response.status_code == 404
