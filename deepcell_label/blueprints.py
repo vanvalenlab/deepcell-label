@@ -282,35 +282,3 @@ def get_edit(project):
         return TrackEdit(project)
     else:
         return ZStackEdit(project)
-
-
-<< << << < HEAD: deepcell_label/blueprints.py
-== == == =
-
-
-def make_settings(project):
-    """Returns a dictionary of settings to send to the front-end."""
-    if project.is_track:
-        filetype = 'track'
-        title = 'Tracking Tool'
-    else:
-        filetype = 'zstack'
-        title = 'Z-Stack Tool'
-
-    rgb = request.args.get('rgb', default='false', type=str)
-    rgb = bool(distutils.util.strtobool(rgb))
-    output_bucket = request.args.get('output_bucket', default=S3_OUTPUT_BUCKET, type=str)
-
-    settings = {
-        'filetype': filetype,
-        'title': title,
-        'rgb': rgb,
-        'output_bucket': output_bucket,
-        'token': project.token,
-        'source': str(project.source)
-    }
-
-    return settings
-
-
->>>>>> > master: browser/blueprints.py
