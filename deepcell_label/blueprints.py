@@ -14,7 +14,6 @@ import traceback
 from flask import abort
 from flask import Blueprint
 from flask import jsonify
-from flask import render_template
 from flask import request
 from flask import redirect
 from flask import current_app
@@ -181,12 +180,6 @@ def redo(token):
     current_app.logger.debug('Redid action for project %s finished in %s s.',
                              token, timeit.default_timer() - start)
     return jsonify(payload)
-
-
-@bp.route('/', methods=['GET', 'POST'])
-def form():
-    """Request HTML landing page to be rendered."""
-    return render_template('index.html')
 
 
 @bp.route('/api/project/<token>', methods=['GET'])
