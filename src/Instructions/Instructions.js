@@ -48,8 +48,8 @@ const AccordionDetails = withStyles((theme) => ({
   },
 }))(MuiAccordionDetails);
 
-export default function InstructionPane() {
-  const [expanded, setExpanded] = React.useState('');
+export default function Instructions() {
+  const [expanded, setExpanded] = React.useState(false);
 
   const [value, setValue] = React.useState(2);
 
@@ -57,13 +57,13 @@ export default function InstructionPane() {
     setValue(newValue);
   };
 
-  const handlePanelChange = (panel) => (event, newExpanded) => {
-    setExpanded(newExpanded ? panel : false);
+  const toggleExpanded = () => {
+    setExpanded(!expanded);
   };
 
   return (
     <div>
-      <Accordion square expanded={expanded === 'panel1'} onChange={handlePanelChange('panel1')}>
+      <Accordion square expanded={expanded} onChange={toggleExpanded}>
         <AccordionSummary aria-controls="panel1d-content" id="panel1d-header">
           <Typography>Instructions (Click to expand/collapse)</Typography>
         </AccordionSummary>

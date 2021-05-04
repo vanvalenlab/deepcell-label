@@ -4,7 +4,7 @@ import ControlPanel from './ControlPanel/ControlPanel';
 import UndoRedo from './ControlPanel/UndoRedo';
 import Navbar from './Navbar';
 import Canvas from './Canvas/Canvas';
-import InstructionPane from './InstructionPane';
+import Instructions from './Instructions/Instructions';
 import Footer from './Footer/Footer';
 import { useState, useRef, useEffect } from 'react';
 import { useLocation } from "react-router-dom";
@@ -56,7 +56,7 @@ function Label() {
   return (
     <div className={styles.root}>
       <Navbar />
-      <InstructionPane />
+      <Instructions />
       <Box className={styles.main}>
         <Box>
           <UndoRedo />
