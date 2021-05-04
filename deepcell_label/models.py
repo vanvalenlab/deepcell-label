@@ -21,7 +21,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy.schema import PrimaryKeyConstraint, ForeignKeyConstraint
-from PIL import Image
+import sqlalchemy.types as types
 
 from deepcell_label.imgutils import pngify, add_outlines
 
@@ -30,6 +30,40 @@ logger = logging.getLogger('models.Project')  # pylint: disable=C0103
 # Accessing relationships (like project.label_frames) issues a Query, causing a flush
 # autoflush=False prevents the flush, so we still access the db.session.dirty after the query
 db = SQLAlchemy(session_options={'autoflush': False})  # pylint: disable=C0103
+
+
+class Npz(types.TypeDecorator):
+    """Marshals a numpy array to and from a npz"""
+
+    impl = types.LargeBinary
+
+    def process_bind_param(self, value, dialect):
+        bytestream = io.BytesIO()
+        np.savez(bytestream, array=value)
+        bytestream.seek(0)
+        return bytestream.read()
+
+    def process_result_value(self, value, dialect):
+        bytestream = io.BytesIO(value)
+        bytestream.seek(0)
+        return np.load(bytestream)['array']
+
+
+class CompressedNpz(types.TypeDecorator):
+    """Marshals a numpy array to and from a compressed npz"""
+
+    impl = types.LargeBinary
+
+    def process_bind_param(self, value, dialect):
+        bytestream = io.BytesIO()
+        np.savez_compressed(bytestream, array=value)
+        bytestream.seek(0)
+        return bytestream.read()
+
+    def process_result_value(self, value, dialect):
+        bytestream = io.BytesIO(value)
+        bytestream.seek(0)
+        return np.load(bytestream)['array']
 
 
 @compiles(db.PickleType, 'mysql')
@@ -481,7 +515,7 @@ class RawFrame(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
                            primary_key=True, nullable=False)
     frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
-    frame = db.Column(db.PickleType)
+    frame = db.Column(Npz)
 
     def __init__(self, frame_id, frame):
         self.frame_id = frame_id
@@ -503,7 +537,7 @@ class RGBFrame(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
                            primary_key=True, nullable=False)
     frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
-    frame = db.Column(db.PickleType)
+    frame = db.Column(Npz)
 
     def __init__(self, frame_id, frame):
         self.frame_id = frame_id
@@ -601,7 +635,7 @@ class LabelFrame(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
                            primary_key=True, nullable=False)
     frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
-    frame = db.Column(MutableNdarray.as_mutable(db.PickleType))
+    frame = db.Column(MutableNdarray.as_mutable(CompressedNpz))
 
     actions = association_proxy('frame_actions', 'action')
 
