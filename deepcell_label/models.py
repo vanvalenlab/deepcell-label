@@ -308,9 +308,8 @@ class Project(db.Model):
             return
         # Restore edited label frames
         for prev_frame in action.before_frames:
-            frame_id = prev_frame.frame_id
-            frame = prev_frame.frame_array
-            self.label_frames[frame_id].frame = frame
+            current_frame = LabelFrame.get(self.id, prev_frame.frame_id)
+            current_frame.frame = prev_frame.frame_array
         # Restore edited label info
         if action.before_labels is not None:
             self.labels.cell_ids = action.before_labels.cell_ids
@@ -340,12 +339,10 @@ class Project(db.Model):
         if self.action.next_action is None:
             return
         next_action = self.action.next_action
-
         # Restore edited label frames
         for after_frame in next_action.after_frames:
-            frame_id = after_frame.frame_id
-            frame = after_frame.frame_array
-            self.label_frames[frame_id].frame = frame
+            current_frame = LabelFrame.get(self.id, after_frame.frame_id)
+            current_frame.frame = after_frame.frame_array
         # Restore edited label info
         if next_action.after_labels is not None:
             self.labels.cell_ids = next_action.after_labels.cell_ids
@@ -415,7 +412,8 @@ class Project(db.Model):
             BytesIO: contains the raw frame as a .png
         """
         # Raw png
-        raw_frame = self.raw_frames[frame]
+
+        raw_frame = RawFrame.get(self.id, frame)
         raw_arr = raw_frame.frame[..., channel]
         raw_png = pngify(imgarr=raw_arr,
                          vmin=0,
@@ -429,7 +427,7 @@ class Project(db.Model):
             BytesIO: contains the labeled frame as a .png
         """
         # Create label png
-        label_frame = self.label_frames[frame]
+        label_frame = LabelFrame.get(self.id, frame)
         label_arr = label_frame.frame[..., feature]
         label_png = pngify(imgarr=np.ma.masked_equal(label_arr, 0),
                            vmin=0,
@@ -442,7 +440,7 @@ class Project(db.Model):
         Returns:
             ndarray: numpy array of labels
         """
-        label_frame = self.label_frames[frame]
+        label_frame = LabelFrame.get(self.id, frame)
         label_arr = label_frame.frame[..., feature]
         return add_outlines(label_arr)
 
@@ -516,6 +514,13 @@ class RawFrame(db.Model):
     def __init__(self, frame_id, frame):
         self.frame_id = frame_id
         self.frame = frame
+
+    @staticmethod
+    def get(project_id, frame_id):
+        return (db.session
+                .query(RawFrame)
+                .filter_by(project_id=project_id, frame_id=frame_id)
+                .first())
 
     def finish(self):
         """
@@ -638,6 +643,13 @@ class LabelFrame(db.Model):
     def __init__(self, frame_id, frame):
         self.frame_id = frame_id
         self.frame = frame
+
+    @staticmethod
+    def get(project_id, frame_id):
+        return (db.session
+                .query(LabelFrame)
+                .filter_by(project_id=project_id, frame_id=frame_id)
+                .first())
 
     def finish(self):
         """Finish a frame by setting its frame to null."""
