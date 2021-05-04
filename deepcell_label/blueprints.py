@@ -6,8 +6,6 @@ from __future__ import print_function
 import distutils
 import distutils.util
 import json
-import os
-import re
 import timeit
 import traceback
 
