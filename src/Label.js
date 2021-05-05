@@ -19,11 +19,13 @@ const useStyles = makeStyles({
     flexDirection: 'column',
   },
   main: {
+    boxSizing: 'border-box',
     display: "flex",
     flexGrow: 1,
     padding: 16,
     alignItems: "stretch",
     justifyContent: "space-evenly",
+    minHeight: 'calc(100vh - 66px - 57px - 60px - 1px)',
     // height: 'calc(100vh - 66px - 57px - 60px - 80px - 1px)'
   },
   controlPanel: {
