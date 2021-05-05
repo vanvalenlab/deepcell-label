@@ -4,7 +4,6 @@ import { useFeature, useImage, useTool } from '../ServiceContext';
 
 /**
  * Highlights a label with color.
- * Does not highlight the border.
  * @param {ImageData} imageData where we draw the highlight
  * @param {Array} labeledArray describes label at each pixel; has negative label values on label border
  * @param {int} label label to highlight
@@ -15,7 +14,7 @@ const highlightImageData = (imageData, labeledArray, label, color) => {
   const { data, width, height } = imageData;
   for (let j = 0; j < height; j += 1) { // y
     for (let i = 0; i < width; i += 1) { // x
-      const element = labeledArray[j][i];
+      const element = Math.abs(labeledArray[j][i]);
       if (element === label) {
         data[(j * width + i) * 4 + 0] = r;
         data[(j * width + i) * 4 + 1] = g;
