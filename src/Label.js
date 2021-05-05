@@ -63,7 +63,7 @@ function Label() {
       <Instructions />
       <Box className={styles.main}>
         <Box>
-          {process.env.NODE_ENV !== 'development' && <UndoRedo />}
+          {/* <UndoRedo /> */}
           <ControlPanel className={styles.controlPanel} />
         </Box>
         <Box ref={canvasBoxRef} className={styles.canvasBox}>

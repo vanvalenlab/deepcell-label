@@ -123,24 +123,25 @@ export function useSelectHotkeys() {
   const maxLabel = labels.length === 0 ? 0 : Math.max(...Object.keys(labels).map(Number));
 
   useEffect(() => {
-    bind('x', () => {
-      send('SETFOREGROUND', { foreground: background });
-      send('SETBACKGROUND', { background: foreground });
-    });
-    bind('n', () => send('SETFOREGROUND', { foreground: maxLabel + 1 }));
-    bind('esc', () => send('SETBACKGROUND', { background: 0 }));
+    // bind('x', () => {
+    //   send('SETFOREGROUND', { foreground: background });
+    //   send('SETBACKGROUND', { background: foreground });
+    // });
+    // bind('n', () => send('SETFOREGROUND', { foreground: maxLabel + 1 }));
+    // bind('esc', () => send('SETBACKGROUND', { background: 0 }));
+    bind('esc', () => send('SETFOREGROUND', { background: 0 }));
     bind('[', () => send('SETFOREGROUND', { foreground: foreground <= 1 ? maxLabel : foreground - 1 }));
     bind(']', () => send('SETFOREGROUND', { foreground: foreground >= maxLabel ? 1 : foreground + 1 }));
-    bind('{', () => send('SETBACKGROUND', { background: background <= 1 ? maxLabel : background - 1 }));
-    bind('}', () => send('SETBACKGROUND', { background: background >= maxLabel ? 1 : background + 1 }));
+    // bind('{', () => send('SETBACKGROUND', { background: background <= 1 ? maxLabel : background - 1 }));
+    // bind('}', () => send('SETBACKGROUND', { background: background >= maxLabel ? 1 : background + 1 }));
     return () => {
-      unbind('x');
-      unbind('n');
+      // unbind('x');
+      // unbind('n');
       unbind('esc');
       unbind('[');
       unbind(']');
-      unbind('{');
-      unbind('}');
+      // unbind('{');
+      // unbind('}');
     }
   }, [foreground, background, maxLabel, send]);
 

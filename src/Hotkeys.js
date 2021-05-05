@@ -37,9 +37,9 @@ const Hotkeys = () => {
 
   return <>
     <CanvasHotkeys />
-    <UndoHotkeys />
+    {/* <UndoHotkeys /> */}
     <ImageHotkeys />
-    <ToolHotkeys />
+    {/* <ToolHotkeys /> */}
     {/*  // uses feature to check which labels can be selected */}
     { feature && <SelectHotkeys /> } 
   </>;
