@@ -22,10 +22,12 @@ export default function ControlPanel() {
           <ChannelControls />
           <FeatureControls />
           <LabelControls />
-          <ToolControls />
-          <ControlRow name={"Predict"}>
-            <Predict />
-          </ControlRow>
+          {process.env.NODE_ENV !== 'development' && <ToolControls />}
+          {process.env.NODE_ENV !== 'development' &&
+            <ControlRow name={"Predict"}>
+              <Predict />
+            </ControlRow>
+          }
         </TableBody>
       </Table>
     </TableContainer>

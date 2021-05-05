@@ -104,7 +104,7 @@ export const Canvas = ({ height, width }) => {
       {channel && <RawCanvas {...canvasProps} {...styleProps} />}
       {feature && <LabeledCanvas {...canvasProps} {...styleProps} />}
       {feature && <OutlineCanvas {...canvasProps} {...styleProps} />}
-      <BrushCanvas {...canvasProps} {...styleProps} />
+      {process.env.NODE_ENV !== 'development' && <BrushCanvas {...canvasProps} {...styleProps} />}
     </Box>
   )
 }
