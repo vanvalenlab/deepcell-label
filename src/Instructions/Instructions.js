@@ -61,10 +61,14 @@ export default function Instructions() {
     setExpanded(!expanded);
   };
 
+  const stopExpansion = (event) => {
+    if (event.key === ' ') { event.preventDefault();}
+  }
+
   return (
     <div>
       <Accordion square expanded={expanded} onChange={toggleExpanded}>
-        <AccordionSummary aria-controls="panel1d-content" id="panel1d-header">
+        <AccordionSummary aria-controls="panel1d-content" id="panel1d-header" onKeyUp={stopExpansion}>
           <Typography>Instructions (Click to expand/collapse)</Typography>
         </AccordionSummary>
         <AccordionDetails>
