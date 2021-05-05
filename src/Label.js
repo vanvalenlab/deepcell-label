@@ -28,7 +28,8 @@ const useStyles = makeStyles({
     minHeight: 'calc(100vh - 66px - 57px - 60px - 1px)',
     // height: 'calc(100vh - 66px - 57px - 60px - 80px - 1px)'
   },
-  controlPanel: {
+  controlPanelBox: {
+    minWidth: '300px',
     flex: '0 0 auto',
   },
   canvasBox: {
@@ -64,9 +65,9 @@ function Label() {
       <Navbar />
       <Instructions />
       <Box className={styles.main}>
-        <Box>
+        <Box className={styles.controlPanelBox}>
           {/* <UndoRedo /> */}
-          <ControlPanel className={styles.controlPanel} />
+          <ControlPanel />
         </Box>
         <Box ref={canvasBoxRef} className={styles.canvasBox}>
           <Canvas width={canvasBoxWidth} height={canvasBoxHeight} />
