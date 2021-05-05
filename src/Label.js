@@ -8,6 +8,8 @@ import Instructions from './Instructions/Instructions';
 import Footer from './Footer/Footer';
 import { useState, useRef, useEffect } from 'react';
 import { useLocation } from "react-router-dom";
+import { ResizeSensor } from 'css-element-queries';
+import debounce from 'lodash.debounce';
 
 const useStyles = makeStyles({
   root: {
@@ -22,7 +24,7 @@ const useStyles = makeStyles({
     padding: 16,
     alignItems: "stretch",
     justifyContent: "space-evenly",
-    height: 'calc(100vh - 66px - 57px - 60px - 80px - 1px)'
+    // height: 'calc(100vh - 66px - 57px - 60px - 80px - 1px)'
   },
   controlPanel: {
     flex: '0 0 auto',
@@ -30,6 +32,8 @@ const useStyles = makeStyles({
   canvasBox: {
     position: 'relative',
     flex: '1 1 auto',
+    maxHeight: '100vh',
+    maxWidth: '100vw',
   },
 });
 
@@ -47,10 +51,10 @@ function Label() {
     const setCanvasBoxDimensions = () => {
       setCanvasBoxWidth(canvasBoxRef.current.offsetWidth);
       setCanvasBoxHeight(canvasBoxRef.current.offsetHeight);
-    }
+    };
     setCanvasBoxDimensions();
-    window.addEventListener('resize', setCanvasBoxDimensions);
-    return () => window.removeEventListener('resize', setCanvasBoxDimensions);
+
+    new ResizeSensor(canvasBoxRef.current, debounce(setCanvasBoxDimensions, 20));
   }, [canvasBoxRef]);
 
   return (
