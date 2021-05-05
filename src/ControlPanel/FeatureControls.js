@@ -13,7 +13,7 @@ import Box from '@material-ui/core/Box';
 import ControlRow from './ControlRow';
 import { useImage } from '../ServiceContext';
 
-const HighlightButton = () => {
+export const HighlightButton = () => {
   const image = useImage();
   const highlight = useSelector(image, state => state.context.highlight);
 
@@ -29,7 +29,7 @@ const HighlightButton = () => {
   </ToggleButton>;
 };
 
-const ShowNoLabelButton = ({ feature }) => {
+export const ShowNoLabelButton = ({ feature }) => {
   const image = useImage();
   const showNoLabel = useSelector(image, state => state.context.showNoLabel);
 
@@ -45,7 +45,7 @@ const ShowNoLabelButton = ({ feature }) => {
   </ToggleButton>;
 };
 
-const OutlineRadioButtons = () => {
+export const OutlineRadioButtons = () => {
   const image = useImage();
   const outline = useSelector(image, state => state.context.outline);
 
@@ -63,7 +63,7 @@ const OutlineRadioButtons = () => {
   </FormControl>;
 };
 
-const OpacitySlider = () => {
+export const OpacitySlider = () => {
   const image = useImage();
   const opacity = useSelector(image, state => state.context.opacity);
 

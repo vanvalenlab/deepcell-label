@@ -1,11 +1,50 @@
 import React from 'react';
+import { makeStyles } from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
-import Box from '@material-ui/core/Box';
+import Table from '@material-ui/core/Table';
+import TableBody from '@material-ui/core/TableBody';
+import TableCell from '@material-ui/core/TableCell';
+import TableContainer from '@material-ui/core/TableContainer';
+import TableRow from '@material-ui/core/TableRow';
 import { useSelector } from '@xstate/react';
 
 
 import ControlRow from './ControlRow';
 import { useTool, useFeature } from '../ServiceContext';
+
+export const LabelTable = () => {
+  const tool = useTool();
+  const foreground = useSelector(tool, state => state.context.foreground);
+  const label = useSelector(tool, state => state.context.label);
+  const x = useSelector(tool, state => state.context.x);
+  const y = useSelector(tool, state => state.context.y);
+
+  return <>
+    <TableContainer size="small">
+      <Table >
+        <TableBody>
+          <TableRow>
+            <TableCell component="th" scope="row">selected label:</TableCell>
+            <TableCell align="right">{foreground === 0 ? 'no label' : foreground}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell component="th" scope="row">cursor over label:</TableCell>
+            <TableCell align="right">{label === 0 ? 'no label' : label}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell component="th" scope="row">cursor x coordinate:</TableCell>
+            <TableCell align="right">{x}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell component="th" scope="row">cursor y coordinate:</TableCell>
+            <TableCell align="right">{y}</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </TableContainer>
+  </>;
+
+};
 
 const LabelsInfo = () => {
   const feature = useFeature();
@@ -16,39 +55,13 @@ const LabelsInfo = () => {
     maxLabel: {maxLabel}
   </Typography>
 
-}
+};
 
 
 export default function LabelControls() {
-  const tool = useTool();
-  const x = useSelector(tool, state => state.context.x);
-  const y = useSelector(tool, state => state.context.y);
-  const label = useSelector(tool, state => state.context.label);
-  const foreground = useSelector(tool, state => state.context.foreground);
-  const background = useSelector(tool, state => state.context.background);
-
-  const feature = useFeature();
-
   return (
     <ControlRow name={"Label"}>
-      <Box display='flex' flexDirection='column'>
-        <Typography gutterBottom>
-          x: {x}
-        </Typography>
-        <Typography gutterBottom>
-          y: {y}
-        </Typography>
-        <Typography gutterBottom>
-          Label: {label}
-        </Typography>
-        <Typography gutterBottom>
-          foreground: {foreground === 0 ? 'no label' : foreground}
-        </Typography>
-        <Typography gutterBottom>
-          background: {background === 0 ? 'no label' : background}
-        </Typography>
-        { feature && <LabelsInfo/>}
-      </Box>
+      <LabelTable/>
     </ControlRow>
   );
 }

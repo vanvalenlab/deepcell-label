@@ -7,7 +7,7 @@ import { useSelector } from '@xstate/react';
 import ControlRow from './ControlRow';
 import { useChannel, useImage } from '../ServiceContext';
 
-const InvertButton = () => {
+export const InvertButton = () => {
   const image = useImage();
   const invert = useSelector(image, state => state.context.invert);
 
@@ -24,7 +24,7 @@ const InvertButton = () => {
   </ToggleButton>;
 };
 
-const GrayscaleButton = () => {
+export const GrayscaleButton = () => {
   const image = useImage();
   const grayscale = useSelector(image, state => state.context.grayscale);
 
@@ -41,7 +41,7 @@ const GrayscaleButton = () => {
   </ToggleButton>;
 };
 
-const BrightnessSlider = () => {
+export const BrightnessSlider = () => {
   const channel = useChannel();
   const brightness = useSelector(channel, state => state.context.brightness);
 
@@ -65,7 +65,7 @@ const BrightnessSlider = () => {
   </>;
 };
 
-const ContrastSlider = () => {
+export const ContrastSlider = () => {
   const channel = useChannel();
   const contrast = useSelector(channel, state => state.context.contrast);
 

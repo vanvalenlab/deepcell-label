@@ -5,7 +5,7 @@ import DiscreteSlider from './DiscreteSlider';
 import { useImage } from '../ServiceContext';
 
 
-const FrameSlider = () => {
+export const FrameSlider = () => {
   const image = useImage();
   const frame = useSelector(image, state => state.context.frame);
   const numFrames = useSelector(image, state => state.context.numFrames);
@@ -25,7 +25,7 @@ const FrameSlider = () => {
     />;
 };
 
-const ChannelSlider = () => {
+export const ChannelSlider = () => {
   const image = useImage();
   const channel = useSelector(image, state => state.context.channel);
   const numChannels = useSelector(image, state => state.context.numChannels);
@@ -43,7 +43,7 @@ const ChannelSlider = () => {
     />;
 };
 
-const FeatureSlider = () => {
+export const FeatureSlider = () => {
   const image = useImage();
   const feature = useSelector(image, state => state.context.feature);
   const numFeatures = useSelector(image, state => state.context.numFeatures);
