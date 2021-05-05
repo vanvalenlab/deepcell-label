@@ -23,11 +23,11 @@ function outlineSelected(imageData, labeledArray, foreground, background, fColor
         data[(j * width + i) * 4 + 1] = fg;
         data[(j * width + i) * 4 + 2] = fb;
         data[(j * width + i) * 4 + 3] = fa;
-      } else if (background !== 0 && label === -1 * background) {
-        data[(j * width + i) * 4 + 0] = br;
-        data[(j * width + i) * 4 + 1] = bg;
-        data[(j * width + i) * 4 + 2] = bb;
-        data[(j * width + i) * 4 + 3] = ba;
+      // } else if (background !== 0 && label === -1 * background) {
+      //   data[(j * width + i) * 4 + 0] = br;
+      //   data[(j * width + i) * 4 + 1] = bg;
+      //   data[(j * width + i) * 4 + 2] = bb;
+      //   data[(j * width + i) * 4 + 3] = ba;
       }
     }
   }
