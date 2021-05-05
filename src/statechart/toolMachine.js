@@ -114,7 +114,6 @@ const trimState = {
 };
 
 const erodeDilateState = {
-
   on: {
     mousedown: [
       { cond: 'onNoLabel' },
@@ -172,7 +171,16 @@ const autofitState = {
 //   }
 // );
 
-// OLDER
+// to use for visualizer where we can only select the foreground
+const tempSelectState = {
+  on: {
+    mousedown: [
+      { cond: 'onForeground', actions: send({ type: 'SETFOREGROUND', foreground: 0 }) },
+      { actions: send(({ label }) => ({ type: 'SETFOREGROUND', foreground: label })) },
+    ]
+  }
+};
+
 
 const selectState = {
   on: {
@@ -214,12 +222,13 @@ const toolMachine = Machine(
     states: {
       waitingForArray: {
         on: {
-          LABELEDARRAY: { target: 'brush', actions: ['updateLabeledArray', 'updateLabel'] },
+          LABELEDARRAY: { target: 'select', actions: ['updateLabeledArray', 'updateLabel'] },
           COORDINATES: { actions: 'updateCoordinates' },
         }
       },
-      select: selectState,
-      brush: brushState,
+      select: tempSelectState,
+      // select: selectState,
+      // brush: brushState,
       //   flood: floodState,
       //   trim: trimState,
       //   erodeDilate: erodeDilateState,
@@ -231,8 +240,8 @@ const toolMachine = Machine(
     },
     on: {
       // keybinds to switch tools
-      'keydown.b': '.brush',
-      'keydown.v': '.select',
+      // 'keydown.b': '.brush',
+      // 'keydown.v': '.select',
       // 'keydown.t': '.threshold',
       // 'keydown.g': '.flood',
       // 'keydown.k': '.trim',
@@ -253,23 +262,15 @@ const toolMachine = Machine(
       THRESHOLD: { actions: 'threshold' },
       SETFOREGROUND: { actions: 'setForeground' },
       SETBACKGROUND: { actions: 'setBackground' },
+      // 'keydown.up': { actions: assign({ brushSize: (context) => context.brushSize + 1 }) },
+      // 'keydown.down': { actions: assign({ brushSize: (context) => Math.max(1, context.brushSize - 1) }) },
 
-      'keydown.n': { actions: 'newForeground' },
-      'keydown.Escape': { actions: 'resetBackground' },
-      'keydown.x': { actions: 'swapLabels' },
-      'keydown.[': { actions: 'decrementForeground' },
-      'keydown.]': { actions: 'incrementForeground' },
-      'keydown.{': { actions: 'decrementBackground' },
-      'keydown.}': { actions: 'incrementBackground' },
-      'keydown.up': { actions: assign({ brushSize: (context) => context.brushSize + 1 }) },
-      'keydown.down': { actions: assign({ brushSize: (context) => Math.max(1, context.brushSize - 1) }) },
-
-      // special shift click event 
-      SHIFTCLICK: [
-        { cond: 'doubleClick', actions: ['selectForeground', send('SETBACKGROUND', { background: 0 })] },
-        { cond: 'onBackground', actions: 'selectForeground', },
-        { actions: 'selectBackground' },
-      ],
+      // // special shift click event 
+      // SHIFTCLICK: [
+      //   { cond: 'doubleClick', actions: ['selectForeground', send('SETBACKGROUND', { background: 0 })] },
+      //   { cond: 'onBackground', actions: 'selectForeground', },
+      //   { actions: 'selectBackground' },
+      // ],
     }
   },
   {
