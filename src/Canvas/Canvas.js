@@ -23,6 +23,7 @@ const useStyles = makeStyles({
       left: 0,
       maxHeight: '100%',
       maxWidth: '100%',
+      cursor: 'crosshair',
     },
 });
 
