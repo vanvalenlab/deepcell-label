@@ -12,19 +12,19 @@ import BrushCanvas from './BrushCanvas';
 import { useCanvas, useTool, useChannel, useFeature } from '../ServiceContext';
 
 const useStyles = makeStyles({
-    canvasBox: {
-      // boxSizing: 'border-box',
-      alignSelf: 'flex-start',
-      position: 'absolute',
-    },
-    canvas: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      maxHeight: '100%',
-      maxWidth: '100%',
-      cursor: 'crosshair',
-    },
+  canvasBox: {
+    boxSizing: 'border-box',
+    alignSelf: 'flex-start',
+    position: 'absolute',
+  },
+  canvas: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    maxHeight: '100%',
+    maxWidth: '100%',
+    cursor: 'crosshair',
+  },
 });
 
 export const Canvas = ({ height, width }) => {
@@ -81,11 +81,13 @@ export const Canvas = ({ height, width }) => {
   }, []);
 
   const handleMouseDown = (event) => {
-    if (event.shiftKey) {
-      tool.send( {...event, type: 'SHIFTCLICK' })
-    } else {
-      tool.send(event);
-    }
+    // if (event.shiftKey) {
+    //   tool.send( {...event, type: 'SHIFTCLICK' })
+    // } else {
+    //   tool.send(event);
+    // }
+    event.preventDefault();
+    tool.send(event);
   };
 
   return (
@@ -105,7 +107,7 @@ export const Canvas = ({ height, width }) => {
       {channel && <RawCanvas {...canvasProps} {...styleProps} />}
       {feature && <LabeledCanvas {...canvasProps} {...styleProps} />}
       {feature && <OutlineCanvas {...canvasProps} {...styleProps} />}
-      {process.env.NODE_ENV !== 'development' && <BrushCanvas {...canvasProps} {...styleProps} />}
+      {/* <BrushCanvas {...canvasProps} {...styleProps} /> */}
     </Box>
   )
 }
