@@ -177,7 +177,7 @@ const autofitState = {
 const selectState = {
   on: {
     mousedown: [
-      { cond: 'doubleClick', actions: ['selectBackground', 'resetForeground'] },
+      { cond: 'doubleClick', actions: ['selectBackground', send('SETFOREGROUND', { foreground: 0 })] },
       { cond: 'onForeground', actions: 'selectBackground', },
       { actions: 'selectForeground' },
     ]
@@ -262,11 +262,11 @@ const toolMachine = Machine(
       'keydown.{': { actions: 'decrementBackground' },
       'keydown.}': { actions: 'incrementBackground' },
       'keydown.up': { actions: assign({ brushSize: (context) => context.brushSize + 1 }) },
-      'keydown.down': { actions: assign({ brushSize: (context) => Math.max(1, context.brushSize - 1) })},
+      'keydown.down': { actions: assign({ brushSize: (context) => Math.max(1, context.brushSize - 1) }) },
 
       // special shift click event 
       SHIFTCLICK: [
-        { cond: 'doubleClick', actions: ['selectForeground', 'resetBackground'] },
+        { cond: 'doubleClick', actions: ['selectForeground', send('SETBACKGROUND', { background: 0 })] },
         { cond: 'onBackground', actions: 'selectForeground', },
         { actions: 'selectBackground' },
       ],
