@@ -116,3 +116,8 @@ venv.bak/
 
 # JavaScript Dependencies
 node_modules/
+
+# Frontend files
+src/
+public/
+build/
