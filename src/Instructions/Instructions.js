@@ -14,6 +14,7 @@ import ImageControlInstructions from './ImageControlInstructions';
 import RawDisplayInstructions from './RawDisplayInstructions';
 import LabelDisplayInstructions from './LabelDisplayInstructions';
 import LabelInstructions from './LabelInstructions';
+import CanvasInstructions from './CanvasInstructions';
 
 
 function TabPanel(props) {
@@ -144,7 +145,7 @@ export default function Instructions() {
             <ControlPanelInstructions />
           </TabPanel>
           <TabPanel value={value} index={2}>
-            Item Three
+            <CanvasInstructions />
           </TabPanel>
           <TabPanel value={value} index={3}>
             Item Four
