@@ -6,9 +6,11 @@ import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableRow from '@material-ui/core/TableRow';
 import { InvertButton, GrayscaleButton, BrightnessSlider, ContrastSlider } from '../ControlPanel/ChannelControls';
+import { useChannel } from '../ServiceContext';
 
 
 const RawDisplayInstructions = () => {
+  const channel = useChannel();
 
   return <>
     <Typography variant='h5'>
@@ -37,7 +39,7 @@ const RawDisplayInstructions = () => {
             </TableCell>
           </TableRow>
           <TableRow>
-            <TableCell><BrightnessSlider /></TableCell>
+            <TableCell>{channel && <BrightnessSlider />}</TableCell>
             <TableCell>
               <Typography>
                 The brightness slider makes the raw image lighter or darker.
@@ -48,7 +50,7 @@ const RawDisplayInstructions = () => {
             </TableCell>
           </TableRow>
           <TableRow>
-            <TableCell><ContrastSlider /></TableCell>
+            <TableCell>{channel && <ContrastSlider />}</TableCell>
             <TableCell>
               <Typography>
                 The contrast slider adjusts the contrast from -1 to +1.
