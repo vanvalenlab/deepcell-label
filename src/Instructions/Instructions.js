@@ -9,7 +9,6 @@ import Tab from '@material-ui/core/Tab';
 import Box from '@material-ui/core/Box';
 import Typography from '@material-ui/core/Typography';
 
-import OverviewInstructions from './OverviewInstructions';
 import ImageControlInstructions from './ImageControlInstructions';
 import RawDisplayInstructions from './RawDisplayInstructions';
 import LabelDisplayInstructions from './LabelDisplayInstructions';
@@ -131,7 +130,6 @@ export default function Instructions() {
             textColor="primary"
             variant="fullWidth"
           >
-            <Tab label="Overview" />
             <Tab label="Control Panel" />
             <Tab label="Canvas" />
             {/* <Tab label="Tools" />
@@ -139,22 +137,10 @@ export default function Instructions() {
             <Tab label="Select Labels" /> */}
           </Tabs>
           <TabPanel value={value} index={0}>
-            <OverviewInstructions/>
-          </TabPanel>
-          <TabPanel value={value} index={1}>
             <ControlPanelInstructions />
           </TabPanel>
-          <TabPanel value={value} index={2}>
+          <TabPanel value={value} index={1}>
             <CanvasInstructions />
-          </TabPanel>
-          <TabPanel value={value} index={3}>
-            Item Four
-          </TabPanel>
-          <TabPanel value={value} index={4}>
-            Item Five
-          </TabPanel>
-          <TabPanel value={value} index={5}>
-            Item Six
           </TabPanel>
         </AccordionDetails>
       </Accordion>
