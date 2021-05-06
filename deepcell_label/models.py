@@ -33,34 +33,21 @@ db = SQLAlchemy(session_options={'autoflush': False})  # pylint: disable=C0103
 
 
 class Npz(types.TypeDecorator):
-    """Marshals a numpy array to and from a npz"""
-
-    impl = types.LargeBinary
-
-    def process_bind_param(self, value, dialect):
-        bytestream = io.BytesIO()
-        np.savez(bytestream, array=value)
-        bytestream.seek(0)
-        return bytestream.read()
-
-    def process_result_value(self, value, dialect):
-        bytestream = io.BytesIO(value)
-        bytestream.seek(0)
-        return np.load(bytestream)['array']
-
-
-class CompressedNpz(types.TypeDecorator):
     """Marshals a numpy array to and from a compressed npz"""
 
     impl = types.LargeBinary
 
     def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
         bytestream = io.BytesIO()
         np.savez_compressed(bytestream, array=value)
         bytestream.seek(0)
         return bytestream.read()
 
     def process_result_value(self, value, dialect):
+        if value is None:
+            return None
         bytestream = io.BytesIO(value)
         bytestream.seek(0)
         return np.load(bytestream)['array']
@@ -636,7 +623,7 @@ class LabelFrame(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
                            primary_key=True, nullable=False)
     frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
-    frame = db.Column(MutableNdarray.as_mutable(CompressedNpz))
+    frame = db.Column(MutableNdarray.as_mutable(Npz))
 
     actions = association_proxy('frame_actions', 'action')
 
@@ -750,7 +737,7 @@ class FrameMemento(db.Model):
     project_id = db.Column(db.Integer)
     action_id = db.Column(db.Integer)
     frame_id = db.Column(db.Integer)
-    frame_array = db.Column(db.PickleType)
+    frame_array = db.Column(Npz)
 
     action = db.relationship("Action", backref="action_frames")
     frame = db.relationship("LabelFrame", backref="frame_actions")
