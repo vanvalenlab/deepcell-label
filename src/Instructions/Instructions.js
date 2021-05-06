@@ -118,8 +118,17 @@ export default function Instructions() {
 
   return (
     <div>
-      <Accordion square expanded={expanded} onChange={toggleExpanded}>
-        <AccordionSummary aria-controls="panel1d-content" id="panel1d-header" onKeyUp={stopExpansion}>
+      <Accordion
+        square
+        expanded={expanded}
+        onChange={toggleExpanded}
+        TransitionProps={{ unmountOnExit: true }}
+      >
+        <AccordionSummary
+          aria-controls="panel1d-content"
+          id="panel1d-header"
+          onKeyUp={stopExpansion}
+        >
           <Typography>Instructions (Click to expand/collapse)</Typography>
         </AccordionSummary>
         <AccordionDetails>
