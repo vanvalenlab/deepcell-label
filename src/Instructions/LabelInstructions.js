@@ -21,7 +21,7 @@ const LabelInstructions = () => {
               <Typography>
                 The Label panel shows us a table about which labels we are viewing on the canvas.
                 We can see the currently selected label, the label underneath the cursor, and the cursor coordinates in pixels.
-                Click on a label to select or unselect it.
+                Click on a label to select or unselect it. We can also press <kbd>Esc</kbd> to unselect a label from anywhere.
                 Press <kbd>[</kbd> or <kbd>]</kbd> to cycle through and select each label in order.
               </Typography>
             </TableCell>
