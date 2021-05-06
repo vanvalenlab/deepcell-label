@@ -48,6 +48,8 @@ class PickleToNpz(types.TypeDecorator):
     impl = types.LargeBinary
 
     def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
         bytestream = io.BytesIO()
         np.savez_compressed(bytestream, array=value)
         bytestream.seek(0)
@@ -56,6 +58,8 @@ class PickleToNpz(types.TypeDecorator):
     def process_result_value(self, value, dialect):
         # Some columns are still pickles,
         # others have been converted to NPZ
+        if value is None:
+            return None
         try:
             result = load_pickle_obj(value)
         except pickle.UnpicklingError:
