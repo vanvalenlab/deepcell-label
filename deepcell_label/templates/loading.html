@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{%- block content -%}
+
+<main class="container">
+  <div class="row">
+    <div class="col s12 center-align">
+      <p>Loading file from S3 bucket:</p>
+      <p>{{ path }}</p>
+      {% include "partials/loading-bar.html" %}
+    </div>
+</main>
+{%- endblock -%}
+
+{%- block extraJs -%}
+<script>
+  const inputBucket = '{{ input_bucket }}';
+  const outputBucket = '{{ output_bucket }}';
+  const path = '{{ path }}';
+</script>
+<script src="{{ url_for('static', filename='js/loading.js') }}"></script>
+{%- endblock -%}
