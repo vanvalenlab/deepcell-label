@@ -1,7 +1,22 @@
 import { useEffect } from 'react';
 import { useSelector } from '@xstate/react';
-import { bind, unbind } from 'mousetrap';
+import Mousetrap, { bind, unbind } from 'mousetrap';
 import { useImage, useCanvas, useUndo, useTool, useFeature } from './ServiceContext';
+
+// override stopCallback so keybinds work on radio buttons
+Mousetrap.prototype.stopCallback = function(e, element, combo) {
+  // if the element has the class "mousetrap" then no need to stop
+  if ((' ' + element.className + ' ').indexOf(' mousetrap ') > -1) {
+      return false;
+  }
+
+  if (element.type == 'radio') {
+    return false;
+  }
+
+  // stop for input, select, and textarea
+  return element.tagName == 'INPUT' || element.tagName == 'SELECT' || element.tagName == 'TEXTAREA' || (element.contentEditable && element.contentEditable == 'true');
+}
 
 export function useImageHotkeys() {
   const image = useImage();
