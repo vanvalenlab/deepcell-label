@@ -1,9 +1,10 @@
 import { Machine, assign, send, sendParent } from 'xstate';
 
 function fetchLabeledFrame(context) {
-  const { projectId, feature, loadingFrame: frame } = context;
+  const { projectId, feature, loadingFrame: frame, semanticInstanceLabels } = context;
   const pathToLabeled = `/api/labeled/${projectId}/${feature}/${frame}`;
   const pathToArray = `/api/array/${projectId}/${feature}/${frame}`;
+  const pathToInstances = `/api/instances/${projectId}/${feature}`;
 
   const image = fetch(pathToLabeled)
     // .then(validateResponse)
@@ -15,14 +16,12 @@ function fetchLabeledFrame(context) {
   const array = fetch(pathToArray)
     .then(res => res.json());
   
-  return Promise.all([image, array]);
-}
-
-function fetchSemanticInstanceLabels(context) {
-  const { projectId, feature } = context;
-  const pathToInstances = `/api/instances/${projectId}/${feature}`;
-  return fetch(pathToInstances)
-    .then(res => res.json());
+  // Don't reload instanceLabels if already present
+  const instanceLabels = !semanticInstanceLabels ?
+    fetch(pathToInstances).then(res => res.json()) :
+    Promise.resolve(semanticInstanceLabels);
+  
+  return Promise.all([image, array, instanceLabels]);
 }
 
 function readResponseAsBlob(response) {
@@ -54,15 +53,9 @@ const createFeatureMachine = (projectId, feature, numFrames) => Machine(
       arrays: {},
       labeledImage: new Image(),
       labeledArray: null,
-      semanticInstanceLabels: {},
-      // semanticClassLabels: {},
+      semanticInstanceLabels: null,
     },
     initial: 'idle',
-    invoke: {
-      src: fetchSemanticInstanceLabels,
-      onDone: { actions: ['saveSemanticInstanceLabels'] },
-      onError: { actions: (context, event) => console.log(event) },
-    },
     states: {
       idle: {
         on: {
@@ -144,9 +137,10 @@ const createFeatureMachine = (projectId, feature, numFrames) => Machine(
         labeledImage: frames[frame],
         labeledArray: arrays[frame],
       })),
-      saveFrame: assign(({ frames, arrays, loadingFrame }, { data: [image, array] }) => ({
+      saveFrame: assign(({ frames, arrays, loadingFrame }, { data: [image, array, instanceLabels] }) => ({
         frames: { ...frames, [loadingFrame]: image },
         arrays: { ...arrays, [loadingFrame]: array },
+        semanticInstanceLabels: instanceLabels,
       })),
       reloadFrame: assign(({ frame, frames, arrays }, { data: [image, array] }) => ({
         labeledImage: image,

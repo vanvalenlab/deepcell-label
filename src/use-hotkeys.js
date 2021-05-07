@@ -135,7 +135,7 @@ export function useSelectHotkeys() {
   
   const feature = useFeature();
   const labels = useSelector(feature, state => state.context.semanticInstanceLabels);
-  const maxLabel = labels.length === 0 ? 0 : Math.max(...Object.keys(labels).map(Number));
+  const maxLabel = !labels ? 0 : Math.max(...Object.keys(labels).map(Number));
 
   useEffect(() => {
     // bind('x', () => {
