@@ -1,16 +1,8 @@
 import { Machine, actions, assign, forwardTo, send, sendParent } from 'xstate';
 import { respond } from 'xstate/lib/actions';
 
-// NOTE: info coming from the browser needs to be normalized by scale and zoom
-// info coming from the statechart needs to be normalized by zoom only
-
-// const canvas = document.getElementById('brush-canvas');
-// canvas.requestPointerLock = canvas.requestPointerLock ||
-//                             canvas.mozRequestPointerLock;
-
-// document.exitPointerLock = document.exitPointerLock ||
-//                            document.mozExitPointerLock;
-
+// NOTE: data coming from the browser needs to be normalized by both scale and zoom
+// data coming from the statechart needs to be normalized by zoom only
 
 const canvasMachine = Machine({
   id: 'canvas',
