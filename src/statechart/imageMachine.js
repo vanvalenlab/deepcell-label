@@ -16,6 +16,8 @@ const frameState = {
         LABELEDLOADED: { actions: 'preloadLabeledFrame' },
       },
     },
+    // when the channel or feature changes, 
+    // we jump back to loading and load data for the new channel/feature
     loading: {
       on: {
         RAWLOADED: { target: 'rawLoaded', cond: 'loadedFrame' },
@@ -24,12 +26,14 @@ const frameState = {
         FEATURE: { actions: 'loadLabeledFrame' },
       },
     },
+    // once labeled data is loaded, wait for raw to load
     labeledLoaded: {
       on: {
         RAWLOADED: { target: 'idle', cond: 'loadedFrame', actions: 'useFrame' },
         FEATURE: { target: 'loading', actions: 'loadLabeledFrame' },
       },
     },
+    // once raw data is loaded, wait for labeled to load
     rawLoaded: {
       on: {
         LABELEDLOADED: { target: 'idle', cond: 'loadedFrame', actions: 'useFrame' },
@@ -49,13 +53,12 @@ const featureState = {
     loading: {
       on: {
         LABELEDLOADED: { target: 'idle', cond: 'loadedFeature', actions: 'useFeature' },
-        FRAME: { actions: 'loadFeature' },
+        FRAME: { actions: 'loadFeature' }, // when frame changes, load that frame instead
       }
     },
   },
   on: {
-    LOADFEATURE: { target: '.loading', actions: ['assignLoadingFeature', 'loadFeature'] },
-    LABELEDARRAY: { actions: forwardTo(({ toolRef }) => toolRef) },
+    LOADFEATURE: { target: '.loading', cond: 'newLoadingFeature', actions: ['assignLoadingFeature', 'loadFeature'] },
   }
 };
 
@@ -65,52 +68,15 @@ const channelState = {
     idle: {},
     loading: {
       on: {
-        RAWLOADED: [
-          { target: 'idle', cond: 'loadedChannel', actions: 'useChannel' },
-          { actions: (c, e) => console.log(e)}],
-        FRAME: { actions: 'loadChannel' },
+        RAWLOADED: { target: 'idle', cond: 'loadedChannel', actions: 'useChannel' },
+        FRAME: { actions: 'loadChannel' }, // when frame changes, load that frame instead
       }
     },
   },
   on: {
-    LOADCHANNEL: { target: '.loading', actions: ['assignLoadingChannel','loadChannel'] },
+    LOADCHANNEL: { target: '.loading', cond: 'newLoadingChannel', actions: ['assignLoadingChannel','loadChannel'] },
   }
 };
-
-const restoringState = {
-  initial: 'idle',
-  states: {
-    idle: {
-      on: {
-        RESTORE: [
-          // { cond: 'canRestore', target: 'restoring', actions: ['saveHistoryRef', 'restore'] },
-          { actions: respond('SAMECONTEXT') },
-        ]
-      }
-    },
-    // restoring: {
-    //     on: {
-    //       RAWLOADED: { target: 'checkRestored', actions: assign({ loadedFrame: (_, evt) => evt.frame }) },
-    //       LABELEDLOADED: { target: 'checkRestored', actions: assign({ loadedFeature: (_, evt) => evt.frame }) },
-    //       CHANNEL: { target: 'checkRestored', actions: assign({ loadedChannel: (_, evt) => evt.frame }) },
-    //     },
-    // },
-    // restoringFrame: {},
-    // restoringFeature: {},
-    // restoringChannel: {
-    //   on: {
-    //     RAWLOADED: { target: 'idle', cond: ({ restoringChannel, restoringFrame }, { channel, frame}) => }
-    //   }
-    // },
-    // checkRestored: {
-    //   entry: (context, event) => console.log(event),
-    //   always: [
-    //     { cond: 'restored', target: 'idle', actions: 'restored' },
-    //     'restoring',
-    //   ]
-    // },
-  }
-}
 
 const imageGuards = {
   newLoadingFrame: (context, event) => context.loadingFrame !== event.frame,
@@ -122,54 +88,14 @@ const imageGuards = {
   },
   loadedChannel: (context, event) => context.frame === event.frame && context.loadingChannel === event.channel,
   loadedFeature: (context, event) => context.frame === event.frame && context.loadingFeature === event.feature,
-  // restored: (context, event) => ( // just a guess, not sure about this approach
-  //   context.restoredFrame === event.restoringFrame
-  //   && context.restoredFeature === event.restoringFeature
-  //   && context.restoredChannel === event.restoringChannel
-  // ),
-  // canRestore: ({ frame, feature, channel }, event) => (
-  //   frame !== event.frame
-  //   || feature !== event.feature
-  //   || channel !== event.channel
-  // ),
-  // restored: ({ frame, feature, channel, loadedFrame, loadedFeature, loadedChannel, nextFrame, nextFeature, nextChannel }) => (
-  //   (frame === nextFrame || loadedFrame === nextFrame)
-  //   && (feature === nextFeature || loadedFeature === nextFeature)
-  //   && (channel === nextChannel || loadedChannel === nextChannel)
-  // ),
 };
 
-const imageActions = {
-  handleProject: assign(
-    (_, { frame, feature, channel, numFrames, numFeatures, numChannels }) => {
-      return {
-        frame, feature, channel,
-        numFrames, numFeatures, numChannels,
-        loadingFrame: frame,
-      };
-    }
-  ),
-  spawnActors: assign({
-    channels: ({ projectId, numChannels, numFrames, channels }) => {
-      if (Object.keys(channels).length !== 0) return channels;
-      channels = {};
-      for (let channel = 0; channel < numChannels; channel++) {
-        channels[channel] = spawn(createChannelMachine(projectId, channel, numFrames), `channel${channel}`);
-      }
-      return channels;
-    },
-    features: ({ projectId, numFeatures, numFrames, features}) => {
-      if (Object.keys(features).length !== 0) return features;
-      features = {};
-      for (let feature = 0; feature < numFeatures; feature++) {
-        features[feature] = spawn(createFeatureMachine(projectId, feature, numFrames), `feature${feature}`);
-      }
-      return features;
-    },
-  }),
+const loadActions = {
+  // record which data we are waiting to load
   assignLoadingFrame: assign({ loadingFrame: (context, { frame }) => frame }),
   assignLoadingChannel: assign({ loadingChannel: (context, { channel }) => channel }),
   assignLoadingFeature: assign({ loadingFeature: (context, { feature }) => feature }),
+  // send LOADFRAME events to child actors
   loadLabeledFrame: send(
     ({ loadingFrame}) => ({ type: 'LOADFRAME', frame: loadingFrame }),
     { to: ({ features, feature }) => features[feature] }
@@ -186,22 +112,7 @@ const imageActions = {
     ({ frame }) => ({ type: 'LOADFRAME', frame }),
     { to: ({ channels, loadingChannel }) => channels[loadingChannel] }
   ),
-  preloadRawFrame: send('PRELOAD', { to: ({ channels, channel }) => channels[channel] }),
-  preloadLabeledFrame: send('PRELOAD', { to: ({ features, feature }) => features[feature] }),
-  preloadFeatures: pure(({ frame, feature, features }) => {
-    const loadFrame = { type: 'LOADFRAME', frame };
-    return Object.entries(features)
-      .filter(([key, val]) => Number(key) !== feature)
-      // .filter(([key, val]) => Math.abs(Number(key) - feature) < 3)
-      .map(([key, val]) => send(loadFrame, { to: val }));
-  }),
-  preloadChannels: pure(({ frame, channel, channels }) => {
-    const loadFrame = { type: 'LOADFRAME', frame };
-    return Object.entries(channels)
-      .filter(([key, val]) => Number(key) !== channel)
-      // .filter(([key, val]) => Math.abs(Number(key) - channel) < 3)
-      .map(([key, val]) => send(loadFrame, { to: val }));
-  }),
+  // assign current frame and inform other actors of the new frame
   useFrame: pure(({ channel, channels, feature, features, toolRef }, { frame }) => {
     const frameEvent = { type: 'FRAME', frame };
     return [
@@ -230,12 +141,72 @@ const imageActions = {
       send(channelEvent, { to: toolRef }),
     ];
   }),
+};
+
+const preloadActions = {
+  // preload other frames in series for the current channel & feature
+  preloadRawFrame: send('PRELOAD', { to: ({ channels, channel }) => channels[channel] }),
+  preloadLabeledFrame: send('PRELOAD', { to: ({ features, feature }) => features[feature] }),
+  // preload the current frame in parallel across all other features
+  preloadFeatures: pure(({ frame, feature, features }) => {
+    const loadFrame = { type: 'LOADFRAME', frame };
+    return Object.entries(features)
+      .filter(([key, val]) => Number(key) !== feature)
+      // .filter(([key, val]) => Math.abs(Number(key) - feature) < 3)
+      .map(([key, val]) => send(loadFrame, { to: val }));
+  }),
+  // preload the current frame in parallel across all other channels
+  preloadChannels: pure(({ frame, channel, channels }) => {
+    const loadFrame = { type: 'LOADFRAME', frame };
+    return Object.entries(channels)
+      .filter(([key, val]) => Number(key) !== channel)
+      // .filter(([key, val]) => Math.abs(Number(key) - channel) < 3)
+      .map(([key, val]) => send(loadFrame, { to: val }));
+  }),
+};
+
+const adjustActions = {
   toggleHighlight: assign({ highlight: ({ highlight }) => !highlight }),
   toggleShowNoLabel: assign({ showNoLabel: ({ showNoLabel }) => !showNoLabel }),
   setOpacity: assign({ opacity: (_, { opacity }) => Math.min(1, Math.max(0, opacity)) }),
   setOutline: assign({ outline: (_, { outline }) => outline }),
   toggleInvert: assign({ invert: (context) => !context.invert }),
   toggleGrayscale: assign({ grayscale: (context) => !context.grayscale }),
+};
+
+const imageActions = {
+  ...loadActions,
+  ...preloadActions,
+  ...adjustActions,
+  // initialize context based on project data
+  handleProject: assign(
+    (_, { frame, feature, channel, numFrames, numFeatures, numChannels }) => {
+      return {
+        frame, feature, channel,
+        numFrames, numFeatures, numChannels,
+        loadingFrame: frame,
+      };
+    }
+  ),
+  // create child actors to fetch raw & labeled data
+  spawnActors: assign({
+    channels: ({ projectId, numChannels, numFrames, channels }) => {
+      if (Object.keys(channels).length !== 0) return channels;
+      channels = {};
+      for (let channel = 0; channel < numChannels; channel++) {
+        channels[channel] = spawn(createChannelMachine(projectId, channel, numFrames), `channel${channel}`);
+      }
+      return channels;
+    },
+    features: ({ projectId, numFeatures, numFrames, features}) => {
+      if (Object.keys(features).length !== 0) return features;
+      features = {};
+      for (let feature = 0; feature < numFeatures; feature++) {
+        features[feature] = spawn(createFeatureMachine(projectId, feature, numFrames), `feature${feature}`);
+      }
+      return features;
+    },
+  }),
 };
 
 const createImageMachine = ({ projectId }) => Machine(
@@ -279,12 +250,11 @@ const createImageMachine = ({ projectId }) => Machine(
           channel: channelState,
         },
       },
-      restoring: restoringState,
     },
     on: {
       LOADED: { actions: forwardTo((context, event) => context.features[event.data.feature]) },
+      LABELEDARRAY: { actions: forwardTo(({ toolRef }) => toolRef) },
       TOOLREF: { actions: assign({ toolRef: (context, event) => event.toolRef }) },
-      SAVE: { actions: 'save' },
       // image adjustment
       TOGGLEHIGHLIGHT: { actions: 'toggleHighlight' },
       SETOUTLINE: { actions: 'setOutline' },
@@ -298,28 +268,7 @@ const createImageMachine = ({ projectId }) => Machine(
   },
   {
     guards: { ...imageGuards },
-    actions: {
-      ...imageActions,
-      saveHistoryRef: assign({ historyRef: (_, __, { _event: { origin } }) => origin }),
-      save: respond(({ frame, feature, channel }) => ({ type: 'RESTORE', frame, feature, channel })),
-      restore: pure((context, event) => {
-        return [
-          send({ type: 'LOADFRAME', frame: event.frame }),
-          send({ type: 'LOADCHANNEL', channel: event.channel }),
-          send({ type: 'LOADFEATURE', feature: event.feature }),
-        ];
-      }),
-      restored: pure((context, event) => {
-        const { toolRef, historyRef, nextFrame: frame, nextChannel: channel, nextFeature: feature } = context;
-        return [
-          assign({ frame, channel, feature }),
-          send({ type: 'FRAME', frame }, { to: toolRef }),
-          send({ type: 'CHANNEL', channel }, { to: toolRef }),
-          send({ type: 'FEATURE', feature }, { to: toolRef }),
-          send('RESTORED', { to: historyRef }),
-        ];
-      }),
-    }
+    actions: { ...imageActions },
   });
 
 export default createImageMachine;
