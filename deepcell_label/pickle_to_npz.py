@@ -41,7 +41,7 @@ sys.modules['models'] = models
 
 
 def convert_to_npz(data):
-    if obj is None:
+    if data is None:
         return None
     bytestream = io.BytesIO()
     np.savez_compressed(bytestream, array=data)
