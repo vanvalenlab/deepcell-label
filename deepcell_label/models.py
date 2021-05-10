@@ -48,7 +48,7 @@ class Npz(types.TypeDecorator):
     def process_result_value(self, value, dialect):
         if value is None:
             return None
-        bytestream = io.BytesIO(obj)
+        bytestream = io.BytesIO(value)
         bytestream.seek(0)
         return np.load(bytestream)['array']
 
