@@ -150,7 +150,9 @@ def update_frames(project_id, table):
             try:
                 loaded_array = load_npz_from_db(row[0])
                 np.testing.assert_array_equal(unpickled_array, loaded_array)
-                print(table, 'row', i, 'size changed from', len(frame), 'to', len(row[0]))
+                old_length = len(frame) if frame is not None else 0
+                new_length = len(row[0]) if row[0] is not None else 0
+                print(table, 'row', i, 'size changed from', old_length, 'to', new_length)
             except AssertionError:
                 print(
                     '%s: loaded npz is not equal to loaded pickle for '
