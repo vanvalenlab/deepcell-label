@@ -33,17 +33,7 @@ logger = logging.getLogger('models.Project')  # pylint: disable=C0103
 db = SQLAlchemy(session_options={'autoflush': False})  # pylint: disable=C0103
 
 
-def load_pickle_obj(obj):
-    return pickle.loads(obj)
-
-
-def load_npz_from_db(obj):
-    bytestream = io.BytesIO(obj)
-    bytestream.seek(0)
-    return np.load(bytestream)['array']
-
-
-class PickleToNpz(types.TypeDecorator):
+class Npz(types.TypeDecorator):
     """Marshals a pickles already in the database to npz if not already npz"""
     impl = types.LargeBinary
 
@@ -56,15 +46,11 @@ class PickleToNpz(types.TypeDecorator):
         return bytestream.read()
 
     def process_result_value(self, value, dialect):
-        # Some columns are still pickles,
-        # others have been converted to NPZ
         if value is None:
             return None
-        try:
-            result = load_pickle_obj(value)
-        except pickle.UnpicklingError:
-            result = load_npz_from_db(value)
-        return result
+        bytestream = io.BytesIO(obj)
+        bytestream.seek(0)
+        return np.load(bytestream)['array']
 
 
 @compiles(db.PickleType, 'mysql')
@@ -563,7 +549,7 @@ class RawFrame(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
                            primary_key=True, nullable=False)
     frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
-    frame = db.Column(PickleToNpz)
+    frame = db.Column(Npz)
 
     def __init__(self, frame_id, frame):
         self.frame_id = frame_id
@@ -585,7 +571,7 @@ class RGBFrame(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
                            primary_key=True, nullable=False)
     frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
-    frame = db.Column(PickleToNpz)
+    frame = db.Column(Npz)
 
     def __init__(self, frame_id, frame):
         self.frame_id = frame_id
@@ -683,7 +669,7 @@ class LabelFrame(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
                            primary_key=True, nullable=False)
     frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
-    frame = db.Column(MutableNdarray.as_mutable(PickleToNpz))
+    frame = db.Column(MutableNdarray.as_mutable(Npz))
 
     actions = association_proxy('frame_actions', 'action')
 
@@ -787,7 +773,7 @@ class FrameMemento(db.Model):
     project_id = db.Column(db.Integer)
     action_id = db.Column(db.Integer)
     frame_id = db.Column(db.Integer)
-    frame_array = db.Column(PickleToNpz)
+    frame_array = db.Column(Npz)
 
     action = db.relationship("Action", backref="action_frames")
     frame = db.relationship("LabelFrame", backref="frame_actions")
