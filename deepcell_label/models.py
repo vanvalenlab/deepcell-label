@@ -10,6 +10,8 @@ import logging
 import os
 import timeit
 from secrets import token_urlsafe
+import pickle
+import io
 
 from flask import current_app
 from flask_sqlalchemy import SQLAlchemy
@@ -20,6 +22,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy.schema import PrimaryKeyConstraint, ForeignKeyConstraint
+from sqlalchemy import types
 
 from deepcell_label.imgutils import pngify, add_outlines
 
@@ -28,6 +31,40 @@ logger = logging.getLogger('models.Project')  # pylint: disable=C0103
 # Accessing relationships (like project.label_frames) issues a Query, causing a flush
 # autoflush=False prevents the flush, so we still access the db.session.dirty after the query
 db = SQLAlchemy(session_options={'autoflush': False})  # pylint: disable=C0103
+
+
+def load_pickle_obj(obj):
+    return pickle.loads(obj)
+
+
+def load_npz_from_db(obj):
+    bytestream = io.BytesIO(obj)
+    bytestream.seek(0)
+    return np.load(bytestream)['array']
+
+
+class PickleToNpz(types.TypeDecorator):
+    """Marshals a pickles already in the database to npz if not already npz"""
+    impl = types.LargeBinary
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        bytestream = io.BytesIO()
+        np.savez_compressed(bytestream, array=value)
+        bytestream.seek(0)
+        return bytestream.read()
+
+    def process_result_value(self, value, dialect):
+        # Some columns are still pickles,
+        # others have been converted to NPZ
+        if value is None:
+            return None
+        try:
+            result = load_pickle_obj(value)
+        except pickle.UnpicklingError:
+            result = load_npz_from_db(value)
+        return result
 
 
 @compiles(db.PickleType, 'mysql')
@@ -526,7 +563,7 @@ class RawFrame(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
                            primary_key=True, nullable=False)
     frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
-    frame = db.Column(db.PickleType)
+    frame = db.Column(PickleToNpz)
 
     def __init__(self, frame_id, frame):
         self.frame_id = frame_id
@@ -548,7 +585,7 @@ class RGBFrame(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
                            primary_key=True, nullable=False)
     frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
-    frame = db.Column(db.PickleType)
+    frame = db.Column(PickleToNpz)
 
     def __init__(self, frame_id, frame):
         self.frame_id = frame_id
@@ -646,7 +683,7 @@ class LabelFrame(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
                            primary_key=True, nullable=False)
     frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
-    frame = db.Column(MutableNdarray.as_mutable(db.PickleType))
+    frame = db.Column(MutableNdarray.as_mutable(PickleToNpz))
 
     actions = association_proxy('frame_actions', 'action')
 
@@ -750,7 +787,7 @@ class FrameMemento(db.Model):
     project_id = db.Column(db.Integer)
     action_id = db.Column(db.Integer)
     frame_id = db.Column(db.Integer)
-    frame_array = db.Column(db.PickleType)
+    frame_array = db.Column(PickleToNpz)
 
     action = db.relationship("Action", backref="action_frames")
     frame = db.relationship("LabelFrame", backref="frame_actions")
