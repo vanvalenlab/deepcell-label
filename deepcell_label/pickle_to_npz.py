@@ -83,7 +83,14 @@ def load_npz_from_db(obj):
         return None
     bytestream = io.BytesIO(obj)
     bytestream.seek(0)
-    return np.load(bytestream)['array']
+    array = np.load(bytestream, allow_pickle=True)['array']
+    if None in array:
+        print('loaded array with None')
+        return None
+    elif np.array(None).dtype is np.dtype('O'):
+        print('loaded object array')
+        print(array)
+    return array
 
 
 def _unpickle(obj):
