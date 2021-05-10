@@ -41,6 +41,8 @@ sys.modules['models'] = models
 
 
 def convert_to_npz(data):
+    if obj is None:
+        return None
     bytestream = io.BytesIO()
     np.savez_compressed(bytestream, array=data)
     bytestream.seek(0)
@@ -71,10 +73,14 @@ def initialize_logger():
 
 
 def load_pickle_obj(obj):
+    if obj is None:
+        return None
     return pickle.loads(obj)
 
 
 def load_npz_from_db(obj):
+    if obj is None:
+        return None
     bytestream = io.BytesIO(obj)
     bytestream.seek(0)
     return np.load(bytestream)['array']
