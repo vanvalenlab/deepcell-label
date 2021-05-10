@@ -41,6 +41,8 @@ sys.modules['models'] = models
 
 
 def convert_to_npz(data):
+    if data is None:
+        return None
     bytestream = io.BytesIO()
     np.savez_compressed(bytestream, array=data)
     bytestream.seek(0)
@@ -71,13 +73,21 @@ def initialize_logger():
 
 
 def load_pickle_obj(obj):
+    if obj is None:
+        return None
     return pickle.loads(obj)
 
 
 def load_npz_from_db(obj):
+    if obj is None:
+        return None
     bytestream = io.BytesIO(obj)
     bytestream.seek(0)
-    return np.load(bytestream)['array']
+    array = np.load(bytestream, allow_pickle=True)['array']
+    if None in array:
+        print('loaded array with None')
+        return None
+    return array
 
 
 def _unpickle(obj):
@@ -137,7 +147,9 @@ def update_frames(project_id, table):
             try:
                 loaded_array = load_npz_from_db(row[0])
                 np.testing.assert_array_equal(unpickled_array, loaded_array)
-                print(table, 'row', i, 'size changed from', len(frame), 'to', len(row[0]))
+                old_length = len(frame) if frame is not None else 0
+                new_length = len(row[0]) if row[0] is not None else 0
+                print(table, 'row', i, 'size changed from', old_length, 'to', new_length)
             except AssertionError:
                 print(
                     '%s: loaded npz is not equal to loaded pickle for '
