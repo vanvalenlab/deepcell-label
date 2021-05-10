@@ -87,9 +87,6 @@ def load_npz_from_db(obj):
     if None in array:
         print('loaded array with None')
         return None
-    elif np.array(None).dtype is np.dtype('O'):
-        print('loaded object array')
-        print(array)
     return array
 
 
