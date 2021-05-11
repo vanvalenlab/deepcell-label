@@ -11,6 +11,7 @@ import ChannelControls from './ChannelControls';
 import FeatureControls from './FeatureControls';
 import LabelControls from './LabelControls';
 import ToolControls from './ToolControls';
+import RGBControls from './RGBControls';
 
 export default function ControlPanel() {
 
@@ -18,6 +19,7 @@ export default function ControlPanel() {
     <TableContainer id='control-panel' component={Paper}>
       <Table aria-label="collapsible table">
         <TableBody>
+          <RGBControls />
           <ImageControls />
           <ChannelControls />
           <FeatureControls />

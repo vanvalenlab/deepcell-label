@@ -39,6 +39,7 @@ const createChannelMachine = (projectId, channel, numFrames) => Machine(
       loadingFrame: null,
       brightness: 0,
       contrast: 0,
+      range: [0, 255],
       frames: {},
       rawImage: new Image(),
     },
@@ -74,6 +75,7 @@ const createChannelMachine = (projectId, channel, numFrames) => Machine(
       // image settings
       SETBRIGHTNESS: { actions: 'setBrightness' },
       SETCONTRAST: { actions: 'setContrast' },
+      SETRANGE: { actions: 'setRange' },
     }
   },
   {
@@ -107,6 +109,12 @@ const createChannelMachine = (projectId, channel, numFrames) => Machine(
       // image settings
       setBrightness: assign({ brightness: (_, { brightness }) => Math.min(1, Math.max(-1, brightness)) }),
       setContrast: assign({ contrast: (_, { contrast }) => Math.min(1, Math.max(-1, contrast)) }),
+      setRange: assign({
+        range: (_, { range }) => [
+          Math.max(0, Math.min(255, range[0])),
+          Math.max(0, Math.min(255, range[1])),
+        ]
+      }),
     }
   }
 );
