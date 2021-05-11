@@ -198,6 +198,14 @@ const imageActions = {
       }
       return channels;
     },
+    channelColors: ({ numChannels }) => {
+      let channelColors = { 0: '#FF0000', 1: '#00FF00', 2: '#0000FF' };
+      channelColors = Object.fromEntries(
+        Object.entries(channelColors)
+          .filter(([index, color]) => index < numChannels)
+      );
+      return channelColors;
+    },
     features: ({ projectId, numFeatures, numFrames, features}) => {
       if (Object.keys(features).length !== 0) return features;
       features = {};
@@ -224,12 +232,13 @@ const createImageMachine = ({ projectId }) => Machine(
       numFeatures: 1,
       numChannels: 1,
       channels: {},
+      channelColors: {},
       features: {},
-      opacity: 0.3,
+      opacity: 0,
       highlight: true,
       showNoLabel: true,
       outline: 'all',
-      invert: true,
+      invert: false,
       grayscale: true,
     },
     initial: 'waitForProject',
