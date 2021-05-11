@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { useInterpret, useSelector } from '@xstate/react';
 import { useLocation } from "react-router-dom";
 import createDeepcellLabelMachine from './statechart/deepcellLabelMachine';
@@ -46,6 +46,38 @@ export function useChannel() {
   const channels = useSelector(image, state => state.context.channels);
   const channel = useSelector(image, state => state.context.channel);
   return channels[channel];
+}
+
+export function useComposeChannels() {
+  const canvas = useCanvas();
+  const width = useSelector(canvas, state => state.context.width);
+  const height = useSelector(canvas, state => state.context.height);
+
+  // keys are channels indices (0, 1, 2, ...)
+  // values are references to canvases containing the channel image
+  // NOTE: as {} !== {}, any assignment with setChannelRefs rerenders
+  const [canvases, setCanvases] = useState({});
+
+  const canvasRef = useRef();
+  const ctxRef = useRef();
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.globalCompositeOperation = 'lighter';
+    ctxRef.current = ctx;
+  }, [height, width]);
+
+  useEffect(() => {
+    const ctx = ctxRef.current;
+    ctx.clearRect(0, 0, width, height);
+    Object.values(canvases).forEach(
+      canvas => ctx.drawImage(canvas, 0, 0)
+    );
+  });
+
+  return [canvasRef, canvases, setCanvases];
+
 }
 
 export function useCanvas() {
