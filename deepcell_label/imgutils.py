@@ -24,6 +24,16 @@ def pngify(imgarr, vmin, vmax, cmap=None):
     return out
 
 
+def grayscale_pngify(imgarr):
+    out = io.BytesIO()
+    imgarr = Normalize(vmin=0)(imgarr)
+    imgarr = (imgarr * 255).astype('uint8')
+    img = Image.fromarray(imgarr)
+    img.save(out, format="png")
+    out.seek(0)
+    return out
+
+
 def add_outlines(frame):
     """
     Shows the frame with each label outlined with negative label values.

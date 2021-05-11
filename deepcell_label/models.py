@@ -23,7 +23,7 @@ from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy.schema import PrimaryKeyConstraint, ForeignKeyConstraint
 import sqlalchemy.types as types
 
-from deepcell_label.imgutils import pngify, add_outlines
+from deepcell_label.imgutils import grayscale_pngify, pngify, add_outlines
 
 
 logger = logging.getLogger('models.Project')  # pylint: disable=C0103
@@ -402,10 +402,11 @@ class Project(db.Model):
 
         raw_frame = RawFrame.get(self.id, frame)
         raw_arr = raw_frame.frame[..., channel]
-        raw_png = pngify(imgarr=raw_arr,
-                         vmin=0,
-                         vmax=None,
-                         cmap='cubehelix')
+        raw_png = grayscale_pngify(raw_arr)
+        # raw_png = pngify(imgarr=raw_arr,
+        #                  vmin=0,
+        #                  vmax=None,
+        #                  cmap='cubehelix')
         return raw_png
 
     def get_labeled_png(self, feature, frame):
