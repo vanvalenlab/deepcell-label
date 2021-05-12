@@ -59,7 +59,8 @@ class Exporter():
         Creates a npz file based on the image stacks edited in a DeepCell Label project.
 
         Args:
-            project (deepcell_label.models.Project): DeepCell Label project containing image data to save
+            project (deepcell_label.models.Project):
+                DeepCell Label project containing image data to save
 
         Returns:
             BytesIO: data buffer containing .npz data
