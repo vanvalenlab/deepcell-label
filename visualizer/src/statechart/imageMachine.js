@@ -1,12 +1,11 @@
 import { Machine, assign, forwardTo, actions, spawn, send } from 'xstate';
 import createChannelMachine from './channelMachine';
 import createFeatureMachine from './featureMachine';
-import { respond } from 'xstate/lib/actions';
 
 const { pure } = actions;
 
 const frameState = {
-  entry: ['loadRawFrame', 'loadLabeledFrame'],
+  entry: ['assignLoadingFrame', 'loadRawFrame', 'loadLabeledFrame'],
   initial: 'loading',
   states: {
     idle: {
@@ -16,29 +15,21 @@ const frameState = {
         LABELEDLOADED: { actions: 'preloadLabeledFrame' },
       },
     },
-    // when the channel or feature changes, 
-    // we jump back to loading and load data for the new channel/feature
     loading: {
       on: {
-        RAWLOADED: { target: 'rawLoaded', cond: 'loadedFrame' },
-        LABELEDLOADED: { target: 'labeledLoaded', cond: 'loadedFrame' },
-        CHANNEL: { actions: 'loadRawFrame' },
+        RAWLOADED: { target: 'checkLoaded', cond: 'loadedFrame', actions: 'rawLoaded' },
+        LABELEDLOADED: { target: 'checkLoaded', cond: 'loadedFrame', actions: 'labeledLoaded' },
+        // when the channel or feature changes before the frame does, 
+        // we need to load the frame for the new channel/feature
+        CHANNEL: { actions: 'addChannelToLoadingFrame' },
         FEATURE: { actions: 'loadLabeledFrame' },
       },
     },
-    // once labeled data is loaded, wait for raw to load
-    labeledLoaded: {
-      on: {
-        RAWLOADED: { target: 'idle', cond: 'loadedFrame', actions: 'useFrame' },
-        FEATURE: { target: 'loading', actions: 'loadLabeledFrame' },
-      },
-    },
-    // once raw data is loaded, wait for labeled to load
-    rawLoaded: {
-      on: {
-        LABELEDLOADED: { target: 'idle', cond: 'loadedFrame', actions: 'useFrame' },
-        CHANNEL: { target: 'loading', actions: 'loadRawFrame' },
-      },
+    checkLoaded: {
+      always: [
+        { cond: 'isFrameLoaded', target: 'idle', actions: 'useFrame' },
+        { target: 'loading' }
+      ],
     },
   },
   on: {
@@ -78,32 +69,48 @@ const channelState = {
   }
 };
 
+/** Checks if every leaf value in a nested object is truthy. */
+const allTrue = (obj) => {
+  return Object.values(obj).every(item => typeof item === "object" ? allTrue(item) : item);
+};
+
 const imageGuards = {
   newLoadingFrame: (context, event) => context.loadingFrame !== event.frame,
   newLoadingChannel: (context, event) => context.loadingChannel !== event.channel,
   newLoadingFeature: (context, event) => context.loadingFeature !== event.feature,
   loadedFrame: (context, event) => {
     return (context.loadingFrame === event.frame &&
-      (context.channel === event.channel || context.feature === event.feature));
+      (event.channel in context.loaded.raw || context.feature === event.feature));
   },
   loadedChannel: (context, event) => context.frame === event.frame && context.loadingChannel === event.channel,
   loadedFeature: (context, event) => context.frame === event.frame && context.loadingFeature === event.feature,
+  isFrameLoaded: ({ loaded }) => allTrue(loaded),
 };
 
 const loadActions = {
   // record which data we are waiting to load
-  assignLoadingFrame: assign({ loadingFrame: (context, { frame }) => frame }),
+  assignLoadingFrame: assign({
+    loadingFrame: ({ loadingFrame }, { frame }) => frame ? frame : loadingFrame,
+    loaded: ({ channels }) => ({
+      labeled: false,
+      raw: Object.fromEntries(Object.keys(channels).map(key => [key, false])),
+    }),
+  }),
   assignLoadingChannel: assign({ loadingChannel: (context, { channel }) => channel }),
   assignLoadingFeature: assign({ loadingFeature: (context, { feature }) => feature }),
   // send LOADFRAME events to child actors
   loadLabeledFrame: send(
-    ({ loadingFrame}) => ({ type: 'LOADFRAME', frame: loadingFrame }),
+    ({ loadingFrame }) => ({ type: 'LOADFRAME', frame: loadingFrame }),
     { to: ({ features, feature }) => features[feature] }
   ),
-  loadRawFrame: send(
-    ({ loadingFrame }) => ({ type: 'LOADFRAME', frame: loadingFrame }),
-    { to: ({ channels, channel }) => channels[channel] }
-  ),
+  loadRawFrame: pure(({ loadingFrame, channels }) => {
+    return Object.values(channels).map(
+      channel => send(
+        { type: 'LOADFRAME', frame: loadingFrame },
+        { to: channel }
+      )
+    );
+  }),
   loadFeature: send(
     ({ frame }) => ({ type: 'LOADFRAME', frame }),
     { to: ({ features, loadingFeature }) => features[loadingFeature] },
@@ -112,13 +119,36 @@ const loadActions = {
     ({ frame }) => ({ type: 'LOADFRAME', frame }),
     { to: ({ channels, loadingChannel }) => channels[loadingChannel] }
   ),
+  addChannelToLoadingFrame: pure(({ loaded, loadingFrame, channels }, { channel }) => {
+    const addToLoaded = assign({ loaded: { ...loaded, raw: { ...loaded.raw, [channel]: false } } });
+    const sendLoad = send(
+      { type: 'LOADFRAME', frame: loadingFrame },
+      { to: channels[channel] }
+    );
+    return [addToLoaded, sendLoad];
+  }),
+  addFeatureToLoadingFrame: pure(({ loaded, loadingFrame, features }, { feature }) => {
+    const addToLoaded = assign({ loaded: { ...loaded, labeled: false } });
+    const sendLoad = send(
+      { type: 'LOADFRAME', frame: loadingFrame },
+      { to: features[feature] }
+    );
+    return [addToLoaded, sendLoad];
+  }),
+  // record what data is loaded as it comes in
+  rawLoaded: assign({
+    loaded: ({ loaded }, { channel }) => ({ ...loaded, raw: {...loaded.raw, [channel]: true } })
+  }),
+  labeledLoaded: assign({
+    loaded: ({ loaded }) => ({ ...loaded, labeled: true })
+  }),
   // assign current frame and inform other actors of the new frame
-  useFrame: pure(({ channel, channels, feature, features, toolRef }, { frame }) => {
-    const frameEvent = { type: 'FRAME', frame };
+  useFrame: pure(({ channel, channels, feature, features, toolRef, loaded, loadingFrame }) => {
+    const frameEvent = { type: 'FRAME', frame: loadingFrame };
     return [
-      assign({ frame }),
+      assign({ frame: loadingFrame }),
       send(frameEvent),
-      send(frameEvent, { to: channels[channel] }),
+      ...Object.values(channels).map(channel => send(frameEvent, { to: channel })),
       send(frameEvent, { to: features[feature] }),
       send(frameEvent, { to: toolRef }),
     ];
@@ -198,14 +228,6 @@ const imageActions = {
       }
       return channels;
     },
-    channelColors: ({ numChannels }) => {
-      let channelColors = { 0: '#FF0000', 1: '#00FF00', 2: '#0000FF' };
-      channelColors = Object.fromEntries(
-        Object.entries(channelColors)
-          .filter(([index, color]) => index < numChannels)
-      );
-      return channelColors;
-    },
     features: ({ projectId, numFeatures, numFrames, features}) => {
       if (Object.keys(features).length !== 0) return features;
       features = {};
@@ -232,7 +254,6 @@ const createImageMachine = ({ projectId }) => Machine(
       numFeatures: 1,
       numChannels: 1,
       channels: {},
-      channelColors: {},
       features: {},
       opacity: 0,
       highlight: true,
