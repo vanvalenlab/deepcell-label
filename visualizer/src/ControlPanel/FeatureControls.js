@@ -9,6 +9,7 @@ import FormControlLabel from '@material-ui/core/FormControlLabel';
 import FormControl from '@material-ui/core/FormControl';
 import FormLabel from '@material-ui/core/FormLabel';
 import Box from '@material-ui/core/Box';
+import Tooltip from '@material-ui/core/Tooltip';
 
 import ControlRow from './ControlRow';
 import { useImage } from '../ServiceContext';
@@ -56,9 +57,15 @@ export const OutlineRadioButtons = () => {
   return <FormControl component="fieldset">
     <FormLabel component="legend">Outline</FormLabel>
     <RadioGroup row aria-label="outline" name="outline" value={outline} onChange={handleOutlineChange}>
-      <FormControlLabel value="all" control={<Radio />} label="All" />
-      <FormControlLabel value="selected" control={<Radio />} label="Selected" />
-      <FormControlLabel value="none" control={<Radio />} label="None" />
+      <Tooltip title='Show border around all cells'>
+        <FormControlLabel value="all" control={<Radio />} label="All" />
+      </Tooltip>
+      <Tooltip title={<div>Show border around one cell. <br /> Click on a cell to outline it.</div>}>
+        <FormControlLabel value="selected" control={<Radio />} label="Selected" />
+      </Tooltip>
+      <Tooltip title='Hide borders.'>
+        <FormControlLabel value="none" control={<Radio />} label="None" />
+      </Tooltip>
     </RadioGroup>
   </FormControl>;
 };

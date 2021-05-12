@@ -2,6 +2,8 @@ import React from 'react';
 import Typography from '@material-ui/core/Typography';
 import Slider from '@material-ui/core/Slider';
 import { useSelector } from '@xstate/react';
+import Tooltip from '@material-ui/core/Tooltip';
+import FormLabel from '@material-ui/core/FormLabel';
 
 import ControlRow from './ControlRow';
 import { useImage } from '../ServiceContext';
@@ -24,7 +26,7 @@ export const ChannelSlider = ({ channel, color }) => {
       onChange={handleChange}
       valueLabelDisplay="off"
       style={{ color }}
-    />
+      />
   </>;
 }
 
@@ -34,6 +36,14 @@ export const ChannelSliders = () => {
   const colors = useSelector(image, state => state.context.channelColors);
 
   return <>
+    <Tooltip title={<div>
+      Decrease the max value on the right to make the channel lighter.
+      <br />
+      Increase the min value on the left to make the channel darker.
+      </div>}>
+      <FormLabel component="legend">Adjust Channels</FormLabel>
+    </Tooltip>
+    <br />
     {Object.entries(colors).map(
       ([index, color]) => <ChannelSlider channel={channels[index]} color={color} />
     )}
