@@ -24,6 +24,14 @@ const recolorImageData = (data, color) => {
   return data;
 }
 
+/** Converts a hex string like #FF0000 to three element array for the RGB values. */
+const hexToRGB = (hex) => {
+  const r = parseInt("0x" + hex[1] + hex[2]);
+  const g = parseInt("0x" + hex[3] + hex[4]);
+  const b = parseInt("0x" + hex[5] + hex[6]);
+  return [r, g, b];
+}
+
 export const ChannelCanvas = ({ channel, setChannelCanvases }) => {
 
   const canvas = useCanvas();
@@ -38,38 +46,18 @@ export const ChannelCanvas = ({ channel, setChannelCanvases }) => {
   const [min, max] = useSelector(channel, state => state.context.range);
 
   useEffect(() => {
+    // draw image onto canvas to get image data
     const channelCanvas = canvasRef.current;
     const ctx = channelCanvas.getContext('2d');
     ctx.drawImage(rawImage, 0, 0);
-    console.log(rawImage);
+    // adjust image data
     let data = ctx.getImageData(0, 0, width, height).data;
-
     data = adjustRangeImageData(data, min, max);
-
-    switch (channelIndex) {
-      case 0:
-        data = recolorImageData(data, [255, 0, 0]);
-        break;
-      case 1:
-        data = recolorImageData(data, [0, 255, 0]);
-        break;
-      case 2:
-        data = recolorImageData(data, [0, 0, 255]);
-        break;
-      case 3:
-        data = recolorImageData(data, [0, 255, 255]);
-        break;
-      case 4:
-        data = recolorImageData(data, [255, 0, 255]);
-        break;
-      case 5:
-        data = recolorImageData(data, [255, 255, 0]);
-        break;
-      default:
-        break;
-    }
+    data = recolorImageData(data, hexToRGB(color));
+    // redraw with adjustedata data
     const adjustedData = new ImageData(data, width, height);
     ctx.putImageData(adjustedData, 0, 0);
+    // assign to channelCanvases to rerender
     setChannelCanvases(prevChannels => ({ ...prevChannels, [channelIndex]: channelCanvas }));
   }, [canvasRef, setChannelCanvases, channelIndex, rawImage, color, min, max, width, height]);
   
