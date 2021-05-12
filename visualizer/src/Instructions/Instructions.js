@@ -14,7 +14,6 @@ import RawDisplayInstructions from './RawDisplayInstructions';
 import LabelDisplayInstructions from './LabelDisplayInstructions';
 import LabelInstructions from './LabelInstructions';
 import CanvasInstructions from './CanvasInstructions';
-import VisualizerControlsInstructions from './VisualizerControlsInstructions';
 
 
 function TabPanel(props) {
@@ -129,7 +128,7 @@ export default function Instructions() {
           <Typography>Instructions (Click to expand/collapse)</Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <Tabs
+          {/* <Tabs
             value={value}
             onChange={handleTabChange}
             indicatorColor="primary"
@@ -138,17 +137,16 @@ export default function Instructions() {
           >
             <Tab label="Controls" />
             <Tab label="Canvas" />
-            {/* <Tab label="Tools" />
+            <Tab label="Tools" />
             <Tab label="Actions" />
-            <Tab label="Select Labels" /> */}
-          </Tabs>
-          <TabPanel value={value} index={0}>
-            {/* <ControlPanelInstructions /> */}
-            <VisualizerControlsInstructions />
-          </TabPanel>
-          <TabPanel value={value} index={1}>
+            <Tab label="Select Labels" />
+          </Tabs> */}
+          {/* <TabPanel value={value} index={0}>
+            <ControlPanelInstructions />
+          </TabPanel> */}
+          {/* <TabPanel value={value} index={1}> */}
             <CanvasInstructions />
-          </TabPanel>
+          {/* </TabPanel> */}
         </AccordionDetails>
       </Accordion>
     </div>
