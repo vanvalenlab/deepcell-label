@@ -43,6 +43,18 @@ def test_pngify(tmpdir):
     np.testing.assert_equal(imgarr.shape, loaded_image.shape[:-1])
 
 
+def test_greyscale_pngify(tmpdir):
+    outfile = os.path.join(str(tmpdir), 'output.png')
+    imgarr = np.random.randint(0, 255, size=(32, 32), dtype='uint16')
+
+    out = imgutils.grayscale_pngify(imgarr)
+    with open(outfile, 'wb') as f:
+        f.write(out.getbuffer())
+
+    loaded_image = np.uint16(imread(outfile))
+    np.testing.assert_equal(imgarr.shape, loaded_image.shape)
+
+
 def test_add_outlines(db_session):
     db_session.autoflush = False
     labels = np.identity(10)

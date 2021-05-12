@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from deepcell_label import models
-from deepcell_label.imgutils import pngify
+from deepcell_label.imgutils import grayscale_pngify, pngify
 from deepcell_label.conftest import DummyLoader
 
 
@@ -296,13 +296,12 @@ def test_get_labeled_array():
     expected_frame = project.label_frames[frame].frame[..., feature]
 
     label_arr = project.get_labeled_array(frame, feature)
-    label_frame = np.load(label_arr)
 
-    assert label_frame.shape == (project.height, project.width)
-    np.testing.assert_array_equal(label_frame[label_frame >= 0],
-                                  expected_frame[label_frame >= 0])
-    np.testing.assert_array_equal(label_frame[label_frame < 0],
-                                  -expected_frame[label_frame < 0])
+    assert label_arr.shape == (project.height, project.width)
+    np.testing.assert_array_equal(label_arr[label_arr >= 0],
+                                  expected_frame[label_arr >= 0])
+    np.testing.assert_array_equal(label_arr[label_arr < 0],
+                                  -expected_frame[label_arr < 0])
 
 
 def test_get_labeled_png():
@@ -333,24 +332,11 @@ def test_get_raw_png_one_channel():
     frame = 0
     channel = 0
     expected_frame = project.raw_frames[frame].frame[..., channel]
-    expected_png = pngify(expected_frame, vmin=0, vmax=None, cmap='cubehelix')
+    expected_png = grayscale_pngify(expected_frame)
 
     raw_png = project.get_raw_png(frame, channel)
     assert isinstance(raw_png, io.BytesIO)
     assert raw_png.getvalue() == expected_png.getvalue()
-
-
-# def test_get_raw_png_rgb():
-#     project = models.Project.create(DummyLoader())
-#     project.rgb = True
-#     project.update()
-#     frame = 0
-#     expected_frame = project.rgb_frames[frame].frame
-#     expected_png = pngify(expected_frame, vmin=None, vmax=None, cmap=None)
-
-#     raw_png = project.get_raw_png(frame)
-#     assert isinstance(raw_png, io.BytesIO)
-#     assert raw_png.getvalue() == expected_png.getvalue()
 
 
 def test_get_max_label_all_zeroes():

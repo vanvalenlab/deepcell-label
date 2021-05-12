@@ -403,10 +403,6 @@ class Project(db.Model):
         raw_frame = RawFrame.get(self.id, frame)
         raw_arr = raw_frame.frame[..., channel]
         raw_png = grayscale_pngify(raw_arr)
-        # raw_png = pngify(imgarr=raw_arr,
-        #                  vmin=0,
-        #                  vmax=None,
-        #                  cmap='cubehelix')
         return raw_png
 
     def get_labeled_png(self, feature, frame):
