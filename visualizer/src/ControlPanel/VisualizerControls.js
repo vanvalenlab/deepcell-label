@@ -8,6 +8,9 @@ import FormLabel from '@material-ui/core/FormLabel';
 import TableCell from '@material-ui/core/TableCell';
 import TableRow from '@material-ui/core/TableRow';
 import TableContainer from '@material-ui/core/TableContainer';
+import HelpOutlineIcon from '@material-ui/icons/HelpOutline';
+import Box from '@material-ui/core/Box';
+import Tooltip from '@material-ui/core/Tooltip';
 
 import { ChannelSliders } from './RGBControls';
 import { OutlineRadioButtons } from './FeatureControls';
@@ -36,7 +39,7 @@ export const FeatureRadioButtons = () => {
 const VisualizerControls = () => {
 
   return (
-    <TableContainer id='control-panel'>
+    <TableContainer id='control-panel' style={{overflow: 'hidden'}}>
       <TableRow >
         <TableCell>
           <ChannelSliders />
@@ -44,12 +47,22 @@ const VisualizerControls = () => {
       </TableRow>
       <TableRow>
         <TableCell>
-          <FeatureRadioButtons />
+          <Box display='flex' flexDirection='row' justifyContent='space-between'>
+            <FeatureRadioButtons />
+            <Tooltip title="Press F to toggle the segmentation.">
+              <HelpOutlineIcon color="action" />
+            </Tooltip>
+          </Box>
         </TableCell>
       </TableRow>
       <TableRow>
         <TableCell>
-          <OutlineRadioButtons />
+          <Box display='flex' flexDirection='row' justifyContent='space-between'>
+            <OutlineRadioButtons />
+            <Tooltip title="Press I to toggle the outline color as black or white.">
+              <HelpOutlineIcon color="action" />
+            </Tooltip>
+          </Box>
         </TableCell>
       </TableRow>
     </TableContainer>
