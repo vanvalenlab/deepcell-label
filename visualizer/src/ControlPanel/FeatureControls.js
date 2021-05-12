@@ -10,7 +10,6 @@ import FormControl from '@material-ui/core/FormControl';
 import FormLabel from '@material-ui/core/FormLabel';
 import Box from '@material-ui/core/Box';
 import Tooltip from '@material-ui/core/Tooltip';
-import HelpOutlineIcon from '@material-ui/icons/HelpOutline';
 
 import ControlRow from './ControlRow';
 import { useImage } from '../ServiceContext';
