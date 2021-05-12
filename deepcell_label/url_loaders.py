@@ -57,7 +57,7 @@ class Loader():
         """
         url = self.url
         r = requests.get(url)
-        data = io.BytesIO(r.content)
+        data = r.content
         # if r.status_code !== 200:
         #     raise ValueError(r.status_code)
         if is_npz(url):
@@ -73,6 +73,9 @@ class Loader():
         elif is_tiff(url):
             raw_array = load_tiff(data)
             label_array = np.zeros(raw_array.shape)
+        elif is_zip(url):
+            raw_array = load_zip(data)
+            label_array = np.zeros(raw_array.shape)
         else:
             ext = pathlib.Path(url).suffix
             raise InvalidExtension('invalid file extension: {}'.format(ext))
@@ -86,7 +89,7 @@ class Loader():
     def load_raw(self):
         url = self.url
         r = requests.get(url)
-        data = io.BytesIO(r.content)
+        data = r.content
         # if r.status_code !== 200:
         #     raise ValueError(r.status_code)
         if is_npz(url):
@@ -97,6 +100,8 @@ class Loader():
             raw_array = load_png(data)
         elif is_tiff(url):
             raw_array = load_tiff(data)
+        elif is_zip(url):
+            raw_array = load_zip(data)
         else:
             ext = pathlib.Path(url).suffix
             raise InvalidExtension('invalid file extension: {}'.format(ext))
@@ -105,9 +110,7 @@ class Loader():
     def load_labeled(self):
         url = self.labeled_url
         r = requests.get(url)
-        data = io.BytesIO(r.content)
-        # if r.status_code !== 200:
-        #     raise ValueError(r.status_code)
+        data = r.content
         if is_npz(url):
             label_array = load_labeled_npz(data)
             if label_array is None:
@@ -149,7 +152,7 @@ def is_zip(url):
 
 def load_npz(data):
     """Returns the first array in an npz."""
-    npz = np.load(data)
+    npz = np.load(io.BytesIO(data))
     return npz[npz.files[0]]
 
 
@@ -157,7 +160,7 @@ def load_raw_npz(data):
     """
     Returns raw image array from an NPZ file.
     """
-    npz = np.load(data)
+    npz = np.load(io.BytesIO(data))
 
     # standard names for image (X) and labeled (y)
     if 'X' in npz.files:
@@ -175,7 +178,7 @@ def load_labeled_npz(data):
     Returns labeled image array from an NPZ file.
     Returns None when the labeled image array is not present.
     """
-    npz = np.load(data)
+    npz = np.load(io.BytesIO(data))
 
     # Look for label filenames
     if 'y' in npz.files:
@@ -236,19 +239,22 @@ def load_lineage_trk(data):
 
 def load_png(data):
     """Returns image array from a PNG file."""
-    return np.array(Image.open(data))
+    return np.array(Image.open(io.BytesIO(data)))
 
 
 def load_tiff(data):
     """Returns image array from a TIFF file."""
     # return np.asarray(imageio.imread(data))
-    return TiffFile(data).asarray()
+    return TiffFile(io.BytesIO(data)).asarray()
 
 
 def load_zip(data):
-    """Loads a series of image arrays from a zip of TIFF files."""
-    zf = zipfile.ZipFile(data, 'r')
-    channels = [load_tiff(io.BytesIO(zf.open(info).read())) for info in zf.filelist]
+    """
+    Loads a series of image arrays from a zip of TIFFs.
+    Treats separate TIFFs as channels.
+    """
+    zip_file = zipfile.ZipFile(io.BytesIO(data), 'r')
+    channels = [load_tiff(zip_file.open(info).read()) for info in zip_file.filelist]
     return np.array(channels)
 
 
