@@ -9,9 +9,10 @@ import ControlRow from './ControlRow';
 import { useImage } from '../ServiceContext';
 
 
-export const ChannelSlider = ({ channel, color }) => {
+export const ChannelSlider = ({ channel }) => {
   const channelIndex = useSelector(channel, state => state.context.channel);
   const range = useSelector(channel, state => state.context.range);
+  const color = useSelector(channel, state => state.context.color);
 
   const handleChange = (event, newValue) => {
     channel.send({ type: 'SETRANGE', range: newValue });
@@ -33,7 +34,6 @@ export const ChannelSlider = ({ channel, color }) => {
 export const ChannelSliders = () => {
   const image = useImage();
   const channels = useSelector(image, state => state.context.channels);
-  const colors = useSelector(image, state => state.context.channelColors);
 
   return <>
     <Tooltip title={<div>
@@ -44,8 +44,8 @@ export const ChannelSliders = () => {
       <FormLabel component="legend">Adjust Channels</FormLabel>
     </Tooltip>
     <br />
-    {Object.entries(colors).map(
-      ([index, color]) => <ChannelSlider channel={channels[index]} color={color} />
+    {Object.entries(channels).map(
+      ([index, channel]) => <ChannelSlider key={index} channel={channel} />
     )}
   </>;
 }
