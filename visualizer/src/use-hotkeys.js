@@ -4,18 +4,23 @@ import Mousetrap, { bind, unbind } from 'mousetrap';
 import { useImage, useCanvas, useUndo, useTool, useFeature } from './ServiceContext';
 
 // override stopCallback so keybinds work on radio buttons
+// modified from https://craig.is/killing/mice
 Mousetrap.prototype.stopCallback = function(e, element, combo) {
   // if the element has the class "mousetrap" then no need to stop
   if ((' ' + element.className + ' ').indexOf(' mousetrap ') > -1) {
       return false;
   }
 
-  if (element.type == 'radio') {
+  if (element.type === 'radio') {
     return false;
   }
 
   // stop for input, select, and textarea
-  return element.tagName == 'INPUT' || element.tagName == 'SELECT' || element.tagName == 'TEXTAREA' || (element.contentEditable && element.contentEditable == 'true');
+  return (element.tagName === 'INPUT'
+    || element.tagName === 'SELECT'
+    || element.tagName === 'TEXTAREA'
+    || (element.contentEditable && element.contentEditable === 'true')
+  );
 }
 
 export function useImageHotkeys() {
