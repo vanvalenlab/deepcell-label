@@ -4,7 +4,6 @@ import Slider from '@material-ui/core/Slider';
 import ToggleButton from '@material-ui/lab/ToggleButton';
 import Radio from '@material-ui/core/Radio';
 import { withStyles } from '@material-ui/core/styles';
-import { red, green, blue } from '@material-ui/core/colors';
 import { useSelector } from '@xstate/react';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -14,7 +13,6 @@ import TableRow from '@material-ui/core/TableRow';
 
 import ControlRow from './ControlRow';
 import { useChannel, useImage } from '../ServiceContext';
-import { useSelectHotkeys } from '../use-hotkeys';
 
 const RedRadio = withStyles({
   root: {
@@ -85,35 +83,44 @@ const ChannelColorRow = ({ channel }) => {
   const channelIndex = useSelector(channel, state => state.context.channel);
   console.log(channelIndex);
 
-  return <TableRow>
-    <TableCell component="th" scope="row">Channel { channelIndex }</TableCell>
-    <TableCell align="right"><ColorRadio channel={channel}/></TableCell>
-  </TableRow>;
+  return <>
+    <Typography>Channel {channelIndex}</Typography>
+    <ColorRadio channel={channel}/>
+  </>;
 }
 
-const ChannelSlider = ({ channel, color }) => {
+export const ChannelSlider = ({ channel, color }) => {
   const channelIndex = useSelector(channel, state => state.context.channel);
   const range = useSelector(channel, state => state.context.range);
-  console.log(range);
-  // const [value, setValue] = React.useState([0, 127]);
 
   const handleChange = (event, newValue) => {
     channel.send({ type: 'SETRANGE', range: newValue });
   };
 
-  return <TableRow>
-    <TableCell component="th" scope="row">Channel { channelIndex }</TableCell>
-    <TableCell width='130px' align="right">
-      <Slider
-        min={0}
-        max={255}
-        value={range}
-        onChange={handleChange}
-        valueLabelDisplay="off"
-        style={{ color }}
-      />
-    </TableCell>
-  </TableRow>;
+  return <>
+    <Typography>Channel {channelIndex}</Typography>
+    <Slider
+      min={0}
+      max={255}
+      value={range}
+      onChange={handleChange}
+      valueLabelDisplay="off"
+      style={{ color }}
+    />
+  </>;
+}
+
+export const ChannelSliders = () => {
+
+  const image = useImage();
+  const channels = useSelector(image, state => state.context.channels);
+  const colors = useSelector(image, state => state.context.channelColors);
+
+  return <>
+    {Object.entries(colors).map(
+      ([index, color]) => <ChannelSlider channel={channels[index]} color={color} />
+    )}
+  </>;
 }
 
 const RGBControls = () => {
@@ -122,14 +129,14 @@ const RGBControls = () => {
   const colors = useSelector(image, state => state.context.channelColors);
 
   return <ControlRow name={"RGB"}>
-    <TableContainer size="small">
+    {/* <TableContainer size="small">
       <Table >
-        <TableBody>
-          {/* {Object.values(channels).map((channel) => <ChannelColorRow channel={channel} />)} */}
-          {Object.entries(colors).map(([index, color]) => <ChannelSlider channel={channels[index]} color={color} />)}
-        </TableBody>
+        <TableBody> */}
+    {/* {Object.values(channels).map((channel) => <ChannelColorRow channel={channel} />)} */}
+    <ChannelSliders />
+    {/* </TableBody>
       </Table>
-    </TableContainer>
+    </TableContainer> */}
   </ControlRow>;
 }
 

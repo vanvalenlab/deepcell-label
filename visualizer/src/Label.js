@@ -1,5 +1,6 @@
 import Box from '@material-ui/core/Box';
 import { makeStyles } from "@material-ui/core/styles";
+import VisualizerControls from './ControlPanel/VisualizerControls';
 import ControlPanel from './ControlPanel/ControlPanel';
 import UndoRedo from './ControlPanel/UndoRedo';
 import Navbar from './Navbar';
@@ -7,7 +8,6 @@ import Canvas from './Canvas/Canvas';
 import Instructions from './Instructions/Instructions';
 import Footer from './Footer/Footer';
 import { useState, useRef, useEffect } from 'react';
-import { useLocation } from "react-router-dom";
 import { ResizeSensor } from 'css-element-queries';
 import debounce from 'lodash.debounce';
 
@@ -43,9 +43,6 @@ const useStyles = makeStyles({
 function Label() {
   const styles = useStyles();
 
-  const location = useLocation();
-  const projectId = new URLSearchParams(location.search).get('projectId');
-
   const canvasBoxRef = useRef({ offsetWidth: 0, offsetHeight: 0 });
   const [canvasBoxWidth, setCanvasBoxWidth] = useState(0);
   const [canvasBoxHeight, setCanvasBoxHeight] = useState(0);
@@ -67,7 +64,8 @@ function Label() {
       <Box className={styles.main}>
         <Box className={styles.controlPanelBox}>
           {/* <UndoRedo /> */}
-          <ControlPanel />
+          {/* <ControlPanel /> */}
+          <VisualizerControls />
         </Box>
         <Box ref={canvasBoxRef} className={styles.canvasBox}>
           <Canvas width={canvasBoxWidth} height={canvasBoxHeight} />
