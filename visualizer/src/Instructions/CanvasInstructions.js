@@ -27,7 +27,7 @@ const CanvasInstructions = () => {
       Select Labels
     </Typography>
     <Typography>
-      The selected label is highlighted in red and outlined to distinguish it from other labels.
+      {/* The selected label is highlighted in red and outlined to distinguish it from other labels. */}
        <br />
       Click on a label to select, and click it again to unselect.
       <br />
