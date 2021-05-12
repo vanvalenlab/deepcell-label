@@ -14,6 +14,7 @@ import RawDisplayInstructions from './RawDisplayInstructions';
 import LabelDisplayInstructions from './LabelDisplayInstructions';
 import LabelInstructions from './LabelInstructions';
 import CanvasInstructions from './CanvasInstructions';
+import VisualizerControlsInstructions from './VisualizerControlsInstructions';
 
 
 function TabPanel(props) {
@@ -86,9 +87,6 @@ const AccordionDetails = withStyles((theme) => ({
   },
 }))(MuiAccordionDetails);
 
-
-
-
 const ControlPanelInstructions = () => {
   return <>
     <ImageControlInstructions />
@@ -97,7 +95,6 @@ const ControlPanelInstructions = () => {
     <LabelInstructions />
   </>;
 };
-
 
 export default function Instructions() {
   const [expanded, setExpanded] = React.useState(false);
@@ -139,14 +136,15 @@ export default function Instructions() {
             textColor="primary"
             variant="fullWidth"
           >
-            <Tab label="Control Panel" />
+            <Tab label="Controls" />
             <Tab label="Canvas" />
             {/* <Tab label="Tools" />
             <Tab label="Actions" />
             <Tab label="Select Labels" /> */}
           </Tabs>
           <TabPanel value={value} index={0}>
-            <ControlPanelInstructions />
+            {/* <ControlPanelInstructions /> */}
+            <VisualizerControlsInstructions />
           </TabPanel>
           <TabPanel value={value} index={1}>
             <CanvasInstructions />
