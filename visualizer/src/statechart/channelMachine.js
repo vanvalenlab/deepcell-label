@@ -28,6 +28,8 @@ function showImage(imgUrl) {
   });
 }
 
+const CHANNEL_COLORS = ['#FF0000', '#00FF00', '#0000FF'];
+
 const createChannelMachine = (projectId, channel, numFrames) => Machine(
   {
     id: `channel${channel}`,
@@ -40,6 +42,7 @@ const createChannelMachine = (projectId, channel, numFrames) => Machine(
       brightness: 0,
       contrast: 0,
       range: [0, 255],
+      color: CHANNEL_COLORS[channel],
       frames: {},
       rawImage: new Image(),
     },
