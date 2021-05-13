@@ -1,9 +1,8 @@
-import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { useInterpret, useSelector } from '@xstate/react';
 import { useLocation } from "react-router-dom";
 import createDeepcellLabelMachine from './statechart/deepcellLabelMachine';
 import Hotkeys from './Hotkeys';
-import { inspect } from '@xstate/inspect';
 
 
 export const LabelContext = createContext();
@@ -55,7 +54,7 @@ export function useComposeChannels() {
 
   // keys are channels indices (0, 1, 2, ...)
   // values are references to canvases containing the channel image
-  // NOTE: as {} !== {}, any assignment with setChannelRefs rerenders
+  // NOTE: as objects use reference equality, any assignment with setChannelRefs rerenders
   const [canvases, setCanvases] = useState({});
 
   const canvasRef = useRef();
@@ -98,8 +97,6 @@ const ServiceContext = (props) => {
   const labelMachine = createDeepcellLabelMachine(projectId);
   const labelService = useInterpret(labelMachine); // , { devTools: true });
   labelService.start();
-  window.dcl = labelService;
-
 
   return (
     <LabelContext.Provider value={labelService}>
@@ -108,7 +105,5 @@ const ServiceContext = (props) => {
     </LabelContext.Provider>
   );
 };
-
-
 
 export default ServiceContext;
