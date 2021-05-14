@@ -50,7 +50,7 @@ const VisualizerControls = () => {
           <Box display='flex' flexDirection='row' justifyContent='space-between'>
             <FeatureRadioButtons />
             <Tooltip title="Press F to toggle the segmentation.">
-              <HelpOutlineIcon color="action" />
+              <HelpOutlineIcon color="action" fontSize="large" />
             </Tooltip>
           </Box>
         </TableCell>
@@ -60,7 +60,7 @@ const VisualizerControls = () => {
           <Box display='flex' flexDirection='row' justifyContent='space-between'>
             <OutlineRadioButtons />
             <Tooltip title="Press I to toggle the outline color as black or white.">
-              <HelpOutlineIcon color="action" />
+              <HelpOutlineIcon color="action" fontSize="large" />
             </Tooltip>
           </Box>
         </TableCell>

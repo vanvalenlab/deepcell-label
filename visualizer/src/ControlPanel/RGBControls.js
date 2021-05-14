@@ -48,7 +48,7 @@ export const ChannelSliders = () => {
         Increase the min value on the left to make the channel darker.
         </div>}
       >
-        <HelpOutlineIcon color="action" />
+        <HelpOutlineIcon color="action" fontSize="large" />
       </Tooltip>
     </Box>  
     {Object.entries(channels).map(
