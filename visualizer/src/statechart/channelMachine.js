@@ -28,7 +28,7 @@ function showImage(imgUrl) {
   });
 }
 
-const CHANNEL_COLORS = ['#FF0000', '#00FF00', '#0000FF'];
+const CHANNEL_COLORS = ['#FF0000', '#00FF00', '#0000FF', '#00FFFF', '#FF00FF', '#FFFF00'];
 
 const createChannelMachine = (projectId, channel, numFrames) => Machine(
   {
@@ -42,7 +42,7 @@ const createChannelMachine = (projectId, channel, numFrames) => Machine(
       brightness: 0,
       contrast: 0,
       range: [0, 255],
-      color: CHANNEL_COLORS[channel],
+      color: channel <= 6 ? CHANNEL_COLORS[channel] : '#000000',
       frames: {},
       rawImage: new Image(),
     },
