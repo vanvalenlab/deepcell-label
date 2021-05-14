@@ -20,16 +20,23 @@ export const ChannelSlider = ({ channel }) => {
     channel.send({ type: 'SETRANGE', range: newValue });
   };
 
+  const slider = <Slider
+    min={0}
+    max={255}
+    value={range}
+    onChange={handleChange}
+    valueLabelDisplay="off"
+    style={{ color }}
+  />;
+
   return <>
     <Typography>Channel {channelIndex}</Typography>
-    <Slider
-      min={0}
-      max={255}
-      value={range}
-      onChange={handleChange}
-      valueLabelDisplay="off"
-      style={{ color }}
-      />
+    {channelIndex === 0 ?
+      <Tooltip placement="top" title='Move sliders to adjust channel brightness.'>
+        {slider}
+      </Tooltip>
+      : slider
+    }
   </>;
 }
 
@@ -50,7 +57,7 @@ export const ChannelSliders = () => {
       >
         <HelpOutlineIcon color="action" fontSize="large" />
       </Tooltip>
-    </Box>  
+    </Box>
     {Object.entries(channels).map(
       ([index, channel]) => <ChannelSlider key={index} channel={channel} />
     )}
