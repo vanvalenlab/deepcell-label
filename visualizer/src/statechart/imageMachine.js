@@ -69,6 +69,27 @@ const channelState = {
   }
 };
 
+const colorModeState = {
+  initial: 'multiChannel',
+  states: {
+    multiChannel: {
+      on: {
+        'keydown.z': 'oneChannel',
+      }
+    },
+    oneChannel: {
+      on: {
+        'keydown.z': 'labelsOnly',
+      }
+    },
+    labelsOnly: {
+      on: {
+        'keydown.z': 'multiChannel',
+      }
+    },
+  },
+}
+
 /** Checks if every leaf value in a nested object is truthy. */
 const allTrue = (obj) => {
   return Object.values(obj).every(item => typeof item === "object" ? allTrue(item) : item);
@@ -278,6 +299,7 @@ const createImageMachine = ({ projectId }) => Machine(
           frame: frameState,
           feature: featureState,
           channel: channelState,
+          colorMode: colorModeState,
         },
       },
     },
