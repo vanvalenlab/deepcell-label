@@ -73,7 +73,7 @@ const createChannelMachine = (projectId, channel, numFrames) => Machine(
         target: 'checkLoaded',
         actions: assign({ loadingFrame: (_, { frame }) => frame }),
       },
-      FRAME: { actions: 'useFrame' },
+      FRAME: { actions: [() => console.log('using channel frame'), 'useFrame'] },
       CHANNEL: { actions: 'useFrame' },
       // image settings
       SETBRIGHTNESS: { actions: 'setBrightness' },

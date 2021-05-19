@@ -1,4 +1,4 @@
-import { Machine, assign, send, sendParent } from 'xstate';
+import { Machine, assign, sendParent } from 'xstate';
 
 function fetchLabeledFrame(context) {
   const { projectId, feature, loadingFrame: frame, semanticInstanceLabels } = context;
