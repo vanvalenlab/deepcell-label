@@ -32,23 +32,30 @@ const hexToRGB = (hex) => {
   return [r, g, b];
 }
 
-export const ChannelCanvas = ({ channel, setChannelCanvases }) => {
+export const ChannelCanvas = ({ channel, color, setChannelCanvases }) => {
 
   const canvas = useCanvas();
   const width = useSelector(canvas, state => state.context.width);
   const height = useSelector(canvas, state => state.context.height);
 
   const canvasRef = useRef();
+  const ctxRef = useRef();
 
   const channelIndex = useSelector(channel, state => state.context.channel);
   const rawImage = useSelector(channel, state => state.context.rawImage);
-  const color = useSelector(channel, state => state.context.color);
+  // const color = useSelector(channel, state => state.context.color);
   const [min, max] = useSelector(channel, state => state.context.range);
+
+  useEffect(() => {
+    const channelCanvas = canvasRef.current;
+    ctxRef.current = channelCanvas.getContext('2d');
+  }, [canvasRef]);
 
   useEffect(() => {
     // draw image onto canvas to get image data
     const channelCanvas = canvasRef.current;
-    const ctx = channelCanvas.getContext('2d');
+    const ctx = ctxRef.current;
+    console.log(rawImage);
     ctx.drawImage(rawImage, 0, 0);
     // adjust image data
     let data = ctx.getImageData(0, 0, width, height).data;

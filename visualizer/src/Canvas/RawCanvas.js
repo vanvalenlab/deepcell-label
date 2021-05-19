@@ -1,11 +1,17 @@
 import React, { useEffect, useRef } from 'react';
 import { useSelector } from '@xstate/react';
-import { useImage, useComposeChannels } from '../ServiceContext';
+import { useRaw, useComposeChannels } from '../ServiceContext';
 import ChannelCanvas from './ChannelCanvas';
 
 export const RawCanvas = ({ sx, sy, sw, sh, zoom, width, height, className }) => {
-  const image = useImage();
-  const channels = useSelector(image, state => state.context.channels);
+  const raw = useRaw();
+  const layers = useSelector(raw, state => state.context.layers);
+  const channels = useSelector(raw, state => state.context.channels);
+  const layerColors = useSelector(raw, state => state.context.layerColors);
+  const activeLayers = useSelector(raw, state => state.context.activeLayers);
+
+  console.log(layerColors);
+
   const canvasRef = useRef();
   const ctx = useRef();
   const [composeCanvasRef, channelCanvases, setChannelCanvases] = useComposeChannels();
@@ -42,10 +48,15 @@ export const RawCanvas = ({ sx, sy, sw, sh, zoom, width, height, className }) =>
       width={width}
       height={height}
     />
-    {Object.entries(channels).map(([index, channel]) => <ChannelCanvas
-      key={index}
-      channel={channel}
-      setChannelCanvases={setChannelCanvases}/>)}
+    {layers
+      .map((layer, index) => <ChannelCanvas
+        key={index}
+        channel={channels[layer]}
+        color={layerColors[index]}
+        setChannelCanvases={setChannelCanvases} />)
+      .filter((layer, index) =>
+        activeLayers[index]
+      )}
   </>;
 };
 
