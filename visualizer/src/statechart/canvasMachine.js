@@ -1,5 +1,6 @@
 import { Machine, actions, assign, forwardTo, send, sendParent } from 'xstate';
-import { respond } from 'xstate/lib/actions';
+
+const { respond } = actions;
 
 // NOTE: data coming from the browser needs to be normalized by both scale and zoom
 // data coming from the statechart needs to be normalized by zoom only
