@@ -33,19 +33,31 @@ export function useImage() {
   return image;
 }
 
-export function useFeature() {
+export function useRaw() {
   const image = useImage();
-  const features = useSelector(image, state => state.context.features);
-  const feature = useSelector(image, state => state.context.feature);
+  const raw = useSelector(image, state => state.context.rawRef);
+  return raw;
+}
+
+export function useLabeled() {
+  const image = useImage();
+  const labeled = useSelector(image, state => state.context.labeledRef);
+  return labeled;
+}
+
+export function useFeature() {
+  const labeled = useLabeled();
+  const features = useSelector(labeled, state => state.context.features);
+  const feature = useSelector(labeled, state => state.context.feature);
   return features[feature];
 }
 
-export function useChannel() {
-  const image = useImage();
-  const channels = useSelector(image, state => state.context.channels);
-  const channel = useSelector(image, state => state.context.channel);
-  return channels[channel];
-}
+// export function useChannel() {
+//   const image = useImage();
+//   const channels = useSelector(image, state => state.context.channels);
+//   const channel = useSelector(image, state => state.context.channel);
+//   return channels[channel];
+// }
 
 export function useComposeChannels() {
   const canvas = useCanvas();
@@ -97,6 +109,7 @@ const ServiceContext = (props) => {
   const labelMachine = createDeepcellLabelMachine(projectId);
   const labelService = useInterpret(labelMachine); // , { devTools: true });
   labelService.start();
+  window.dcl = labelService;
 
   return (
     <LabelContext.Provider value={labelService}>

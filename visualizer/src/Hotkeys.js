@@ -6,7 +6,7 @@ import {
   useToolHotkeys,
   useSelectHotkeys
 } from './use-hotkeys';
-import { useFeature } from './ServiceContext';
+import { useLabeled } from './ServiceContext';
 
 const SelectHotkeys = () => {
   useSelectHotkeys();
@@ -33,7 +33,7 @@ const ToolHotkeys = () => {
   return null;
 }
 const Hotkeys = () => {
-  const feature = useFeature();
+  const labeled = useLabeled();
 
   return <>
     <CanvasHotkeys />
@@ -41,7 +41,7 @@ const Hotkeys = () => {
     <ImageHotkeys />
     {/* <ToolHotkeys /> */}
     {/*  // uses feature to check which labels can be selected */}
-    { feature && <SelectHotkeys /> } 
+    { labeled && <SelectHotkeys /> } 
   </>;
 }
 
