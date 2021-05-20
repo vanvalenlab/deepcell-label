@@ -126,8 +126,6 @@ const createImageMachine = ({ projectId }) => Machine(
       }),
       useFrame: pure(({ rawRef, labeledRef, toolRef, loadingFrame }) => {
         const frameEvent = { type: 'FRAME', frame: loadingFrame };
-        console.log(frameEvent);
-        console.log(rawRef);
         return [
           assign({ frame: loadingFrame }),
           send(frameEvent),
