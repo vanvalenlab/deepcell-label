@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useSelector } from '@xstate/react';
-import { useCanvas } from '../ServiceContext';
+import { useCanvas, useChannel } from '../ServiceContext';
 
 const adjustRangeImageData = (data, min, max) => {
   const diff = (max - min);
@@ -32,8 +32,8 @@ const hexToRGB = (hex) => {
   return [r, g, b];
 }
 
-export const ChannelCanvas = ({ channel, color, setChannelCanvases }) => {
-
+export const ChannelCanvas = ({ layer, setCanvases }) => {
+  
   const canvas = useCanvas();
   const width = useSelector(canvas, state => state.context.width);
   const height = useSelector(canvas, state => state.context.height);
@@ -41,10 +41,14 @@ export const ChannelCanvas = ({ channel, color, setChannelCanvases }) => {
   const canvasRef = useRef();
   const ctxRef = useRef();
 
-  const channelIndex = useSelector(channel, state => state.context.channel);
+  const layerIndex = useSelector(layer, state => state.context.layer);
+  const channelIndex = useSelector(layer, state => state.context.channel);
+  const color = useSelector(layer, state => state.context.color);
+  const [min, max] = useSelector(layer, state => state.context.range);
+  const on = useSelector(layer, state => state.context.on);
+  
+  const channel = useChannel(channelIndex);
   const rawImage = useSelector(channel, state => state.context.rawImage);
-  // const color = useSelector(channel, state => state.context.color);
-  const [min, max] = useSelector(channel, state => state.context.range);
 
   useEffect(() => {
     const channelCanvas = canvasRef.current;
@@ -53,22 +57,32 @@ export const ChannelCanvas = ({ channel, color, setChannelCanvases }) => {
 
   useEffect(() => {
     // draw image onto canvas to get image data
-    const channelCanvas = canvasRef.current;
+    const canvas = canvasRef.current;
     const ctx = ctxRef.current;
-    console.log(rawImage);
-    ctx.drawImage(rawImage, 0, 0);
-    // adjust image data
-    let data = ctx.getImageData(0, 0, width, height).data;
-    data = adjustRangeImageData(data, min, max);
-    data = recolorImageData(data, hexToRGB(color));
-    // redraw with adjustedata data
-    const adjustedData = new ImageData(data, width, height);
-    ctx.putImageData(adjustedData, 0, 0);
+    if (on) {
+      ctx.drawImage(rawImage, 0, 0);
+      // adjust image data
+      let data = ctx.getImageData(0, 0, width, height).data;
+      data = adjustRangeImageData(data, min, max);
+      data = recolorImageData(data, hexToRGB(color));
+      // redraw with adjustedata data
+      const adjustedData = new ImageData(data, width, height);
+      ctx.putImageData(adjustedData, 0, 0);
+    } else {
+      ctx.clearRect(0, 0, width, height);
+    }
     // assign to channelCanvases to rerender
-    setChannelCanvases(prevChannels => ({ ...prevChannels, [channelIndex]: channelCanvas }));
-  }, [canvasRef, setChannelCanvases, channelIndex, rawImage, color, min, max, width, height]);
+    setCanvases(prevCanvases => ({ ...prevCanvases, [layerIndex]: canvas }));
+  }, [canvasRef, setCanvases, on, layerIndex, rawImage, color, min, max, width, height]);
+
+  useEffect(() => {
+    return () => setCanvases(prevCanvases => {
+      delete prevCanvases[layerIndex];
+      return { ...prevCanvases };
+    });
+  }, [setCanvases, layerIndex]);
   
-  return <canvas id={`channel${channelIndex}-processing`}
+  return <canvas id={`layer${layerIndex}-processing`}
     hidden={true}
     ref={canvasRef}
     width={width}
