@@ -97,7 +97,7 @@ const createFeatureMachine = (projectId, feature, numFrames) => Machine(
         actions: assign({ loadingFrame: (context, event) => event.frame }),
       },
       FRAME: { actions: ['useFrame', 'sendLabeledArray'], },
-      FEATURE: { actions: ['useFrame', 'sendLabeledArray'], },
+      // FEATURE: { actions: ['useFrame', 'sendLabeledArray'], },
       LOADED: { target: 'reload', actions: assign({ newFrames: (_, { data: { frames } }) => frames }) },
     }
   },
