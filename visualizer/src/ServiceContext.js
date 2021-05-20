@@ -52,21 +52,24 @@ export function useFeature() {
   return features[feature];
 }
 
-// export function useChannel() {
-//   const image = useImage();
-//   const channels = useSelector(image, state => state.context.channels);
-//   const channel = useSelector(image, state => state.context.channel);
-//   return channels[channel];
-// }
+export function useChannel(channel) {
+  const raw = useRaw();
+  const channels = useSelector(raw, state => state.context.channels);
+  return channels[channel];
+}
 
-export function useComposeChannels() {
+export function useLayer(layer) {
+  const raw = useRaw();
+  const layers = useSelector(raw, state => state.context.layers);
+  return layers[layer];
+}
+
+export function useComposeLayers() {
   const canvas = useCanvas();
   const width = useSelector(canvas, state => state.context.width);
   const height = useSelector(canvas, state => state.context.height);
 
-  // keys are channels indices (0, 1, 2, ...)
-  // values are references to canvases containing the channel image
-  // NOTE: as objects use reference equality, any assignment with setChannelRefs rerenders
+  // keys: layer index, values: canvas with image of each layer
   const [canvases, setCanvases] = useState({});
 
   const canvasRef = useRef();
