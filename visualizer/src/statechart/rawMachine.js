@@ -131,6 +131,7 @@ const createRawMachine = (projectId, numChannels, numFrames) => Machine(
           return loadedChannels.set(channel, true);
         }
       }),
+      assignLoadingFrame: assign({ loadingFrame: (_, { frame }) => frame }),
       /** Load a frame for all the channels. */
       loadFrame: pure(({ loadingFrame, channels, loadedChannels }) => {
         return [
