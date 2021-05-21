@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useSelector } from '@xstate/react';
-import { useTool, useImage, useFeature } from '../ServiceContext';
+import { useTool, useFeature, useLabeled } from '../ServiceContext';
 
 /**
  * Draws fColor around the foreground label and bColor 
@@ -56,17 +56,22 @@ function outlineAll(imageData, labeledArray, color) {
   }
 }
 
+const white = [255, 255, 255, 255];
+const black = [0, 0, 0, 255];
+const red = [255, 0, 0, 255];
+
 const OutlineCanvas = ({ sx, sy, sw, sh, zoom, width, height, className }) => {
 
   const tool = useTool();
   const foreground = useSelector(tool, state => state.context.foreground);
   const background = useSelector(tool, state => state.context.background);
 
-  const image = useImage();
-  const outline = useSelector(image, state => state.context.outline);
-  const invert = useSelector(image, state => state.context.invert);
+  const labeled = useLabeled();
+  const featureIndex = useSelector(labeled, state => state.context.feature);
+  const outline = useSelector(labeled, state => state.context.outline);
+  const invert = useSelector(labeled, state => state.context.invert);
 
-  const feature = useFeature();
+  const feature = useFeature(featureIndex);
   let labeledArray = useSelector(feature, state => state.context.labeledArray);
   if (!labeledArray) { labeledArray = Array(sh).fill(Array(sw).fill(0)); }
 
@@ -85,9 +90,6 @@ const OutlineCanvas = ({ sx, sy, sw, sh, zoom, width, height, className }) => {
     hiddenCtx.current = hiddenCanvasRef.current.getContext('2d');
   }, [sw, sh]);
 
-  const white = [255, 255, 255, 255];
-  const black = [0, 0, 0, 255];
-  const red = [255, 0, 0, 255];
   useEffect(() => {
     const width = labeledArray[0].length;
     const height = labeledArray.length;

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useSelector } from '@xstate/react';
-import { useFeature, useImage, useTool } from '../ServiceContext';
+import { useLabeled, useFeature, useTool } from '../ServiceContext';
 
 /**
  * Highlights a label with color.
@@ -57,12 +57,13 @@ const opacityImageData = (imageData, opacity) => {
 };
 
 export const LabeledCanvas = ({ sx, sy, sw, sh, zoom, width, height, className }) => {
-  const image = useImage();
-  const highlight = useSelector(image, state => state.context.highlight);
-  const showNoLabel = useSelector(image, state => state.context.showNoLabel);
-  const opacity = useSelector(image, state => state.context.opacity);
+  const labeled = useLabeled();
+  const featureIndex = useSelector(labeled, state => state.context.feature);
+  const highlight = useSelector(labeled, state => state.context.highlight);
+  const showNoLabel = useSelector(labeled, state => state.context.showNoLabel);
+  const opacity = useSelector(labeled, state => state.context.opacity);
   
-  const feature = useFeature();
+  const feature = useFeature(featureIndex);
   const labeledImage = useSelector(feature, state => state.context.labeledImage);
   let labeledArray = useSelector(feature, state => state.context.labeledArray);
   if (!labeledArray) { labeledArray = Array(sh).fill(Array(sw).fill(0)) }
