@@ -74,7 +74,7 @@ const createRawMachine = (projectId, numChannels, numFrames) => Machine(
       loadingFrame: 0, // needed ??
       loadedLayers: [],
       channelsInLayers: [],
-      // invert: false,
+      invert: false,
       // grayscale: true,
     },
     entry: ['spawnChannels', 'spawnLayers'],
@@ -87,6 +87,7 @@ const createRawMachine = (projectId, numChannels, numFrames) => Machine(
       ADD_LAYER: { actions: 'addLayer' },
       REMOVE_LAYER: { actions: 'removeLayer' },
       CHANNEL_IN_LAYER: {},
+      TOGGLE_INVERT: { actions: 'toggleInvert' },
     }
   },
   {
@@ -109,7 +110,7 @@ const createRawMachine = (projectId, numChannels, numFrames) => Machine(
               createChannelMachine(projectId, index, numFrames), `channel${index}`
             ));
         },
-        channelNames: ['nuclear', 'membrane'],
+        channelNames: ({ numChannels }) => [...Array(numChannels).keys()].map(i => `channel ${i}`),
       }),
       spawnLayers: assign({
         layers: ({ numChannels }) => {
@@ -165,8 +166,7 @@ const createRawMachine = (projectId, numChannels, numFrames) => Machine(
       preload: respond('PRELOAD'),
       /** Tell imageMachine that all channels in layers are loaded. */
       sendLoaded: sendParent('RAWLOADED'),
-      toggleInvert: assign({ invert: (context) => !context.invert }),
-      toggleGrayscale: assign({ grayscale: (context) => !context.grayscale }),
+      toggleInvert: assign({ invert: ({ invert }) => !invert }),
       useFrame: assign((_, { frame }) => ({ frame })),
       useChannel: pure(({ loadingChannels, loadedChannels, channels }, { channel, frame }) => {
         const channelEvent = { type: 'CHANNEL', channel };

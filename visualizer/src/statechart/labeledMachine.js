@@ -113,6 +113,7 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) => Machine(
               createFeatureMachine(projectId, index, numFrames), `feature${index}`
             ));
         },
+        featureNames: ({ numFeatures }) => [...Array(numFeatures).keys()].map(i => `feature ${i}`),
       }),
       /** Record which frame we are loading. */
       assignLoadingFrame: assign({ loadingFrame: (_, { frame }) => frame }),
