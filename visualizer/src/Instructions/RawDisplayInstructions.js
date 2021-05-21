@@ -5,15 +5,14 @@ import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableRow from '@material-ui/core/TableRow';
-import { InvertButton, GrayscaleButton, BrightnessSlider, ContrastSlider } from '../ControlPanel/ChannelControls';
-import { useChannel } from '../ServiceContext';
+// import { useChannel } from '../ServiceContext';
 
 
 const RawDisplayInstructions = () => {
-  const channel = useChannel();
+  // const channel = useChannel();
 
   return <>
-    <Typography variant='h5'>
+    {/* <Typography variant='h5'>
       Raw Display
     </Typography>
     <TableContainer>
@@ -37,8 +36,8 @@ const RawDisplayInstructions = () => {
                 A black and white image lets us clearly see the colored label overlay.
               </Typography>
             </TableCell>
-          </TableRow>
-          <TableRow>
+          </TableRow> */}
+          {/* <TableRow>
             <TableCell>{channel && <BrightnessSlider />}</TableCell>
             <TableCell>
               <Typography>
@@ -58,10 +57,10 @@ const RawDisplayInstructions = () => {
                 Double click on the slider to reset it to 0.
               </Typography>
             </TableCell>
-          </TableRow>
-        </TableBody>
+          </TableRow> */}
+        {/* </TableBody>
       </Table>
-    </TableContainer>
+    </TableContainer> */}
   </>;
 };
 

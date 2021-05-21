@@ -10,7 +10,6 @@ import FormControl from '@material-ui/core/FormControl';
 import FormLabel from '@material-ui/core/FormLabel';
 import Box from '@material-ui/core/Box';
 
-import ControlRow from './ControlRow';
 import { useTool } from '../ServiceContext';
 
 
@@ -20,18 +19,16 @@ export default function ToolControls() {
   const trace = useSelector(tool, state => state.context.trace);
 
   return (
-    <ControlRow name={"Tool"}>
-      <Box display='flex' flexDirection='column'>
-        <Typography gutterBottom>
-          tool: {tool.state.toStrings()[0]}
-        </Typography>
-        <Typography gutterBottom>
-          brush size: {brushSize}
-        </Typography>
-        <Typography gutterBottom>
-          trace: {JSON.stringify(trace).substring(0, 20)}
-        </Typography>
-      </Box>
-    </ControlRow>
+    <Box display='flex' flexDirection='column'>
+      <Typography gutterBottom>
+        tool: {tool.state.toStrings()[0]}
+      </Typography>
+      <Typography gutterBottom>
+        brush size: {brushSize}
+      </Typography>
+      <Typography gutterBottom>
+        trace: {JSON.stringify(trace).substring(0, 20)}
+      </Typography>
+    </Box>
   );
 }

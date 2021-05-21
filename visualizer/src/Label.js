@@ -1,7 +1,9 @@
 import Box from '@material-ui/core/Box';
 import { makeStyles } from "@material-ui/core/styles";
+
+import ImageControls from './ControlPanel/ImageControls';
+import LabeledController from './ControlPanel/LabeledController';
 import VisualizerControls from './ControlPanel/VisualizerControls';
-import ControlPanel from './ControlPanel/ControlPanel';
 import UndoRedo from './ControlPanel/UndoRedo';
 import Navbar from './Navbar';
 import Canvas from './Canvas/Canvas';
@@ -65,7 +67,8 @@ function Label() {
         <Box className={styles.controlPanelBox}>
           {/* <UndoRedo /> */}
           {/* <ControlPanel /> */}
-          <VisualizerControls />
+          {/* <VisualizerControls /> */}
+          <ImageControls />
         </Box>
         <Box ref={canvasBoxRef} className={styles.canvasBox}>
           <Canvas width={canvasBoxWidth} height={canvasBoxHeight} />

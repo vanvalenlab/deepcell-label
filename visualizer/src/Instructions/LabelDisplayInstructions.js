@@ -5,12 +5,12 @@ import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableRow from '@material-ui/core/TableRow';
-import { HighlightButton, ShowNoLabelButton, OutlineRadioButtons, OpacitySlider } from '../ControlPanel/FeatureControls';
+// import { HighlightButton, ShowNoLabelButton, OutlineRadioButtons, OpacitySlider } from '../ControlPanel/FeatureControls';
 
 
 const LabelDisplayInstructions = () => {
   return <>
-    <Typography variant='h5'>
+    {/* <Typography variant='h5'>
       Label Display
     </Typography>
     <TableContainer>
@@ -52,7 +52,7 @@ const LabelDisplayInstructions = () => {
           </TableRow>
         </TableBody>
       </Table>
-    </TableContainer>
+    </TableContainer> */}
   </>;
 };
 

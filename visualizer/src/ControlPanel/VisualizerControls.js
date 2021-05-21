@@ -12,18 +12,34 @@ import HelpOutlineIcon from '@material-ui/icons/HelpOutline';
 import Box from '@material-ui/core/Box';
 import Tooltip from '@material-ui/core/Tooltip';
 
-import { ChannelSliders } from './RGBControls';
-import { OutlineRadioButtons } from './FeatureControls';
-import { useImage } from '../ServiceContext';
+import { MultiChannelController } from './RawController';
+import { OutlineRadioButtons } from './LabeledController';
+import { useRaw, useLabeled } from '../ServiceContext';
 
+
+export const ColorModeRadioButtons = () => {
+
+  const colorMode = 'multichannel';
+  const handleColorModeChange = () => { };
+  return (
+    <FormControl component="fieldset">
+      <FormLabel component="legend">Segmentation</FormLabel>
+      <RadioGroup row aria-label="colorMode" name="colorMode" value={colorMode} onChange={handleColorModeChange}>
+        <FormControlLabel value='multichannel' control={<Radio />} label="Multi-channel" />
+        <FormControlLabel value='one channel' control={<Radio />} label="Single channel" />
+        <FormControlLabel value='labels only' control={<Radio />} label="Labels only" />
+      </RadioGroup>
+    </FormControl>
+  );
+}
 
 export const FeatureRadioButtons = () => {
-  const image = useImage();
-  const feature = useSelector(image, state => state.context.feature);
-  const numFeatures = useSelector(image, state => state.context.numFeatures);
+  const labeled = useLabeled();
+  const feature = useSelector(labeled, state => state.context.feature);
+  const numFeatures = useSelector(labeled, state => state.context.numFeatures);
 
   const handleFeatureChange = (event, newValue) => {
-    image.send({ type: 'LOADFEATURE', feature: Number(newValue) });
+    labeled.send({ type: 'LOADFEATURE', feature: Number(newValue) });
   };
 
   return numFeatures > 1 &&
@@ -37,18 +53,20 @@ export const FeatureRadioButtons = () => {
 };
 
 const VisualizerControls = () => {
+  const raw = useRaw();
+  const labeled = useLabeled();
 
   return (
     <TableContainer id='control-panel' style={{overflow: 'hidden'}}>
       <TableRow >
         <TableCell>
-          <ChannelSliders />
+          {raw && <MultiChannelController />}
         </TableCell>
       </TableRow>
       <TableRow>
         <TableCell>
           <Box display='flex' flexDirection='row' justifyContent='space-between'>
-            <FeatureRadioButtons />
+            {labeled && <FeatureRadioButtons />}
             <Tooltip title="Press F to toggle the segmentation.">
               <HelpOutlineIcon color="action" fontSize="large" />
             </Tooltip>
@@ -58,7 +76,7 @@ const VisualizerControls = () => {
       <TableRow>
         <TableCell>
           <Box display='flex' flexDirection='row' justifyContent='space-between'>
-            <OutlineRadioButtons />
+            {labeled && <OutlineRadioButtons />}
             <Tooltip title="Press I to toggle the outline color as black or white.">
               <HelpOutlineIcon color="action" fontSize="large" />
             </Tooltip>

@@ -1,8 +1,14 @@
 import React from 'react';
 import { useSelector } from '@xstate/react';
-import ControlRow from './ControlRow';
+import TableCell from '@material-ui/core/TableCell';
+import TableRow from '@material-ui/core/TableRow';
+import TableContainer from '@material-ui/core/TableContainer';
+
 import DiscreteSlider from './DiscreteSlider';
-import { useImage } from '../ServiceContext';
+import { useImage, useRaw, useLabeled } from '../ServiceContext';
+
+import RawController from './RawController';
+import LabeledController from './LabeledController';
 
 
 export const FrameSlider = () => {
@@ -25,50 +31,29 @@ export const FrameSlider = () => {
     />;
 };
 
-export const ChannelSlider = () => {
-  const image = useImage();
-  const channel = useSelector(image, state => state.context.channel);
-  const numChannels = useSelector(image, state => state.context.numChannels);
-
-  const handleChannelChange = (event, newValue) => {
-    image.send({ type: 'LOADCHANNEL', channel: newValue });
-  };
-
-  return numChannels > 1 &&
-    <DiscreteSlider
-      label="Channel"
-      value={channel}
-      max={numChannels - 1}
-      onChange={handleChannelChange}
-    />;
-};
-
-export const FeatureSlider = () => {
-  const image = useImage();
-  const feature = useSelector(image, state => state.context.feature);
-  const numFeatures = useSelector(image, state => state.context.numFeatures);
-
-  const handleFeatureChange = (event, newValue) => {
-    image.send({ type: 'LOADFEATURE', feature: newValue });
-  };
-
-  return numFeatures > 1 &&
-    <DiscreteSlider
-      label="Feature"
-      value={feature}
-      max={numFeatures - 1}
-      onChange={handleFeatureChange}
-    />;
-};
-
 const ImageControls = () => {
+  const raw = useRaw();
+  const labeled = useLabeled();
+
   return (
-    <ControlRow name={"Image"}>
-      <FrameSlider />
-      <ChannelSlider />
-      <FeatureSlider />
-    </ControlRow>
-  )
+    <TableContainer id='control-panel' style={{overflow: 'hidden'}}>
+      <TableRow>
+        <TableCell>
+          <FrameSlider />
+        </TableCell>
+      </TableRow>
+      <TableRow >
+        <TableCell>
+          {raw && <RawController />}
+        </TableCell>
+      </TableRow>
+      <TableRow >
+        <TableCell>
+          {labeled && <LabeledController />}
+        </TableCell>
+      </TableRow>
+    </TableContainer>
+  );
 };
 
-export default React.memo(ImageControls);
+export default ImageControls;
