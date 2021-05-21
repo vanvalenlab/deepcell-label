@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useSelector } from '@xstate/react';
 import Mousetrap, { bind, unbind } from 'mousetrap';
-import { useImage, useCanvas, useUndo, useTool, useFeature } from './ServiceContext';
+import { useImage, useCanvas, useUndo, useTool, useFeature, useLabeled, useRaw } from './ServiceContext';
 
 // override stopCallback so keybinds work on radio buttons
 // modified from https://craig.is/killing/mice
@@ -23,30 +23,64 @@ Mousetrap.prototype.stopCallback = function(e, element, combo) {
   );
 }
 
+export function useLabeledHotkeys() {
+  const labeled = useLabeled();
+  const { send } = labeled;
+
+  const feature = useSelector(labeled, state => state.context.feature);
+  const numFeatures = useSelector(labeled, state => state.context.numFeatures);
+
+
+  useEffect(() => {
+    bind('h', () => send('TOGGLEHIGHLIGHT'));
+    return () => {
+      unbind('h');
+    };
+  }, [send]);
+
+  useEffect(() => {
+    const prevFeature = (feature - 1 + numFeatures) % numFeatures;
+    const nextFeature = (feature + 1) % numFeatures;
+    bind('shift+f', () => send('LOADFEATURE', { feature: prevFeature }));
+    bind('f', () => send('LOADFEATURE', { feature: nextFeature }));
+    return () => {
+      unbind('shift+f');
+      unbind('f');
+    }
+  }, [send, feature, numFeatures]);
+}
+
+export function useRawHotkeys() {
+  const raw = useRaw();
+
+  const layers = useSelector(raw, state => state.context.layers);
+
+  useEffect(() => {
+    bind('0', () => 
+    layers.map(layer => layer.send('SETRANGE', { range: [0, 255] }))
+    );
+    return () => {
+      unbind('0');
+    };
+  }, [layers]);
+}
+
 export function useImageHotkeys() {
   const image = useImage();
   const { send } = image;
 
+  const frame = useSelector(image, state => state.context.frame);
+  const numFrames = useSelector(image, state => state.context.numFrames);
+
+  // const channel = useSelector(image, state => state.context.channel);
+  // const numChannels = useSelector(image, state => state.context.numChannels);
+
   useEffect(() => {
-    bind('i', () => { send('TOGGLEINVERT'); });
-    bind('h', () => { send('TOGGLEHIGHLIGHT'); });
-    bind('0', () => {
-      send('SETBRIGHTNESS', { brightness: 0 });
-      send('SETCONTRAST', { contrast: 0 });
-    });
+    bind('i', () => send('TOGGLEINVERT'));
     return () => {
       unbind('i');
-      unbind('h');
-      unbind('0');
     };
-  }, []);
-
-  const frame = useSelector(image, state => state.context.frame);
-  const channel = useSelector(image, state => state.context.channel);
-  const feature = useSelector(image, state => state.context.feature);
-  const numFrames = useSelector(image, state => state.context.numFrames);
-  const numChannels = useSelector(image, state => state.context.numChannels);
-  const numFeatures = useSelector(image, state => state.context.numFeatures);
+  }, [send]);
 
   useEffect(() => {
     const prevFrame = (frame - 1 + numFrames) % numFrames;
@@ -59,27 +93,16 @@ export function useImageHotkeys() {
     }
   }, [frame, numFrames]);
 
-  useEffect(() => {
-    const prevChannel = (channel - 1 + numChannels) % numChannels;
-    const nextChannel = (channel + 1) % numChannels;
-    bind('shift+c', () => send('LOADCHANNEL', { channel: prevChannel }));
-    bind('c', () => send('LOADCHANNEL', { channel: nextChannel }));
-    return () => {
-      unbind('shift+c');
-      unbind('c');
-    }
-  }, [channel, numChannels]);
-
-  useEffect(() => {
-    const prevFeature = (feature - 1 + numFeatures) % numFeatures;
-    const nextFeature = (feature + 1) % numFeatures;
-    bind('shift+f', () => send('LOADFEATURE', { feature: prevFeature }));
-    bind('f', () => send('LOADFEATURE', { feature: nextFeature }));
-    return () => {
-      unbind('shift+f');
-      unbind('f');
-    }
-  }, [feature, numFeatures]);
+  // useEffect(() => {
+  //   const prevChannel = (channel - 1 + numChannels) % numChannels;
+  //   const nextChannel = (channel + 1) % numChannels;
+  //   bind('shift+c', () => send('LOADCHANNEL', { channel: prevChannel }));
+  //   bind('c', () => send('LOADCHANNEL', { channel: nextChannel }));
+  //   return () => {
+  //     unbind('shift+c');
+  //     unbind('c');
+  //   }
+  // }, [channel, numChannels]);
 }
 
 export function useUndoHotkeys() {
