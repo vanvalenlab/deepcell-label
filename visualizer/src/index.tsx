@@ -4,9 +4,27 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
+import { ThemeProvider, createMuiTheme } from '@material-ui/core/styles';
+import { grey } from '@material-ui/core/colors';
+
+const darkTheme = createMuiTheme({
+  palette: {
+    type: 'dark',
+    primary: grey,
+    secondary: grey,
+  },
+  props: {
+    MuiButtonBase: {
+      disableRipple: true
+    }
+  }
+});
+
 ReactDOM.render(
   <React.StrictMode>
-    <App />
+    {/* <ThemeProvider theme={darkTheme}> */}
+      <App />
+    {/* </ThemeProvider> */}
   </React.StrictMode>,
   document.getElementById('root')
 );
