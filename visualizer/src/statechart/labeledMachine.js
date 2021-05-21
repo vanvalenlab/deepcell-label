@@ -16,15 +16,17 @@ const frameState = {
     },
     loading: {
       on: {
-        LABELEDLOADED: { target: 'idle', cond: 'loadedFrame', actions: 'sendLoaded' },
+        LABELEDLOADED: { target: 'loaded', cond: 'loadedFrame', actions: 'sendLoaded' },
         // when the feature changes before the frame does, 
         // we need to load the frame for the new feature
         FEATURE: { actions: 'loadFrame' },
       },
     },
     loaded: {
-      FEATURE: { target: 'loading', actions: 'loadFrame' },
-      FRAME: { target: 'idle', actions: ['useFrame', 'forwardToFeatures'] }
+      on: {
+        FEATURE: { target: 'loading', actions: 'loadFrame' },
+        FRAME: { target: 'idle', actions: ['useFrame', 'forwardToFeature'] }
+      }
     },
   },
   on: {
@@ -85,6 +87,7 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) => Machine(
       SETOUTLINE: { actions: 'setOutline' },
       SETOPACITY: { actions: 'setOpacity' },
       TOGGLESHOWNOLABEL: { actions: 'toggleShowNoLabel' },
+      LABELEDARRAY: { actions: sendParent((c, e) => e) },
     }
   },
   {
@@ -146,6 +149,7 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) => Machine(
       useFrame: assign((_, { frame }) => ({ frame })),
       /** Send event to all features. */
       forwardToFeatures: pure(({ features }) => features.map(feature => forwardTo(feature))),
+      forwardToFeature: forwardTo(({ features, feature }) => features[feature]),
       /** Tell imageMachine that the labeled data is loaded. */
       sendLoaded: sendParent('LABELEDLOADED'),
       toggleHighlight: assign({ highlight: ({ highlight }) => !highlight }),
