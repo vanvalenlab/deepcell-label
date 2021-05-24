@@ -6,6 +6,9 @@ const { pure } = actions;
 
 const brushState = {
   initial: 'idle',
+  invoke: {
+    src: 'listenForBrushHotkeys',
+  },
   states: {
     idle: {
       entry: assign({ trace: [] }),
@@ -25,6 +28,10 @@ const brushState = {
     done: {
       always: 'idle',
     }
+  },
+  on: {
+    INCREASE_BRUSH_SIZE: { actions: assign({ brushSize: (context) => context.brushSize + 1 }) },
+    DECREASE_BRUSH_SIZE: { actions: assign({ brushSize: (context) => Math.max(1, context.brushSize - 1) }) },
   },
 };
 
@@ -218,37 +225,31 @@ const toolMachine = Machine(
     //     tool: brushActor,
     //   }
     // }),
-    initial: 'waitingForArray',
+    invoke: {
+      src: 'listenForToolHotkeys',
+    },
+    initial: 'brush',
     states: {
-      waitingForArray: {
-        on: {
-          LABELEDARRAY: { target: 'select', actions: ['updateLabeledArray', 'updateLabel'] },
-          COORDINATES: { actions: 'updateCoordinates' },
-        }
-      },
-      select: tempSelectState,
-      // select: selectState,
-      // brush: brushState,
-      //   flood: floodState,
-      //   trim: trimState,
-      //   erodeDilate: erodeDilateState,
-      //   autofit: autofitState,
-      //   threshold: thresholdState,
-      //   watershed: watershedState,
-      //   history: { type: 'history.deep' } // allows us to return to the current step of an action when selecting in between
-      // }, 
+      // select: tempSelectState,
+      select: selectState,
+      brush: brushState,
+      // flood: floodState,
+      trim: trimState,
+      erodeDilate: erodeDilateState,
+      autofit: autofitState,
+      // threshold: thresholdState,
+      // watershed: watershedState,
+      // history: { type: 'history.deep' } // allows us to return to the current step of an action when selecting in between
     },
     on: {
-      // keybinds to switch tools
-      // 'keydown.b': '.brush',
-      // 'keydown.v': '.select',
-      // 'keydown.t': '.threshold',
-      // 'keydown.g': '.flood',
-      // 'keydown.k': '.trim',
-      // 'keydown.q': '.erodeDilate',
-      // 'keydown.t': '.threshold',
-      // 'keydown.m': '.autofit',
-      // 'keydown.w': '.watershed',
+      USE_BRUSH: '.brush',
+      USE_SELECT: '.select',
+      // USE_THRESHOLD: '.threshold',
+      // USE_FLOOD: '.flood',
+      USE_TRIM: '.trim',
+      USE_ERODE_DILATE: '.erodeDilate',
+      USE_AUTOFIT: '.autofit',
+      // USE_WATERSHED: '.watershed',
       
       // updates from other actors
       COORDINATES: { actions: ['updateCoordinates', 'updateLabel'] },
@@ -262,8 +263,8 @@ const toolMachine = Machine(
       THRESHOLD: { actions: 'threshold' },
       SETFOREGROUND: { actions: 'setForeground' },
       SETBACKGROUND: { actions: 'setBackground' },
-      // 'keydown.up': { actions: assign({ brushSize: (context) => context.brushSize + 1 }) },
-      // 'keydown.down': { actions: assign({ brushSize: (context) => Math.max(1, context.brushSize - 1) }) },
+      INCREASE_BRUSH_SIZE: { actions: assign({ brushSize: (context) => context.brushSize + 1 }) },
+      DECREASE_BRUSH_SIZE: { actions: assign({ brushSize: (context) => Math.max(1, context.brushSize - 1) }) },
 
       // // special shift click event 
       // SHIFTCLICK: [
@@ -274,6 +275,43 @@ const toolMachine = Machine(
     }
   },
   {
+    services: {
+      listenForToolHotkeys: () => (send) => {
+        const lookup = {
+          'b': 'USE_BRUSH',
+          'v': 'USE_SELECT',
+          't': 'USE_THRESHOLD',
+          'x': 'USE_TRIM',
+          'g': 'USE_FLOOD',
+          'q': 'USE_ERODE_DILATE',
+          'm': 'USE_AUTOFIT',
+          'w': 'USE_WATERSHED',
+        };
+
+        const listener = (e) => {
+          if (e.key in lookup) {
+            send(lookup[e.key]);
+          }
+        };
+
+        window.addEventListener('keydown', listener);
+        return () => window.removeEventListener('keydown', listener);
+      },
+      listenForBrushHotkeys: () => (send) => {
+        const lookup = { 
+          'ArrowUp': 'INCREASE_BRUSH_SIZE',
+          'ArrowDown': 'DECREASE_BRUSH_SIZE',
+        };
+        const listener = (e) => {
+          if (e.key in lookup) {
+            e.preventDefault();
+            send(lookup[e.key]);
+          }
+        };
+        window.addEventListener('keydown', listener); 
+        return () => window.removeEventListener('keydown', listener);
+      }
+    },
     guards: {
       shift: (context, event) => event.shiftKey,
       doubleClick: (context, event) => event.detail === 2,

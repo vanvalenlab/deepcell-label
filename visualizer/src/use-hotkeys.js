@@ -138,23 +138,6 @@ export function useCanvasHotkeys() {
   }, [send]);
 }
 
-export function useToolHotkeys() {
-  const tool = useTool();
-  const { send } = tool;
-  useEffect(() => {
-    bind('up', (event) => send('keydown.up'));
-    bind('down', (event) => send('keydown.down'));
-    bind('b', (event) => send('keydown.b'));
-    bind('v', (event) => send('keydown.v'));
-    return () => {
-      unbind('up');
-      unbind('down');
-      unbind('b');
-      unbind('v');
-    }
-  }, [send]);
-};
-
 export function useSelectHotkeys() {
   const tool = useTool();
   const { send } = tool;

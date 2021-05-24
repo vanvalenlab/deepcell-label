@@ -12,6 +12,7 @@ import Footer from './Footer/Footer';
 import { useState, useRef, useEffect } from 'react';
 import { ResizeSensor } from 'css-element-queries';
 import debounce from 'lodash.debounce';
+import ToolControls from './ControlPanel/ToolControls';
 
 const useStyles = makeStyles({
   root: {
@@ -69,6 +70,7 @@ function Label() {
           {/* <ControlPanel /> */}
           {/* <VisualizerControls /> */}
           <ImageControls />
+          <ToolControls />
         </Box>
         <Box ref={canvasBoxRef} className={styles.canvasBox}>
           <Canvas width={canvasBoxWidth} height={canvasBoxHeight} />

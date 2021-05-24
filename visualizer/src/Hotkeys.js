@@ -40,10 +40,6 @@ const LabeledHotkeys = () => {
   return null;
 }
 
-const ToolHotkeys = () => {
-  useToolHotkeys();
-  return null;
-}
 const Hotkeys = () => {
   const raw = useRaw();
   const labeled = useLabeled();
@@ -54,7 +50,6 @@ const Hotkeys = () => {
     <ImageHotkeys />
     {raw && <RawHotkeys />}
     {labeled && <LabeledHotkeys />}
-    {/* <ToolHotkeys /> */}
     {/*  // uses feature to check which labels can be selected */}
     { labeled && <SelectHotkeys /> } 
   </>;

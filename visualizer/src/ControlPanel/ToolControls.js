@@ -15,12 +15,14 @@ import { useTool } from '../ServiceContext';
 
 export default function ToolControls() {
   const tool = useTool();
+  const value = useSelector(tool, state => state.value);
   const brushSize = useSelector(tool, state => state.context.brushSize);
   const trace = useSelector(tool, state => state.context.trace);
 
   return (
     <Box display='flex' flexDirection='column'>
       <Typography gutterBottom>
+        {/* tool: {value} */}
         tool: {tool.state.toStrings()[0]}
       </Typography>
       <Typography gutterBottom>
