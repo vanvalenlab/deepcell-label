@@ -15,6 +15,7 @@ const useStyles = makeStyles({
   canvasBox: {
     alignSelf: 'flex-start',
     position: 'absolute',
+    cursor: 'crosshair',
   },
   canvas: {
     position: 'absolute',
@@ -22,7 +23,6 @@ const useStyles = makeStyles({
     left: 0,
     maxHeight: '100%',
     maxWidth: '100%',
-    cursor: 'crosshair',
   },
 });
 
