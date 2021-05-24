@@ -30,7 +30,7 @@ const frameState = {
     },
     loaded: {
       on: {
-        FRAME: { target: 'idle', actions: ['useFrame', 'forwardToChannels'] },
+        FRAME: { target: 'idle', actions: ['useFrame', 'forwardToLoadedChannels'] },
         // CHANNEL: { target: 'loading', actions: 'addChannelToLoading' },
       }
     }
@@ -44,21 +44,22 @@ const frameState = {
   }
 };
 
-// const channelState = {
-//   initial: 'idle',
-//   states: {
-//     idle: {},
-//     loading: {
-//       on: {
-//         RAWLOADED: { target: 'idle', cond: 'loadedChannel', actions: 'useChannel' },
-//         FRAME: { actions: 'loadChannel' }, // when frame changes, load that frame instead
-//       }
-//     },
-//   },
-//   on: {
-//     LOADCHANNEL: { target: '.loading', cond: 'newLoadingChannel', actions: 'loadChannel' },
-//   }
-// };
+const channelState = {
+  initial: 'idle',
+  states: {
+    idle: {},
+    loading: {
+      on: {
+        RAWLOADED: { target: 'idle', cond: 'isLoadingChannel', actions: 'useChannel' },
+         // when frame changes, load that frame instead
+        FRAME: { actions: 'reloadLoadingChannels' },
+      }
+    },
+  },
+  on: {
+    LOADCHANNEL: { target: '.loading', cond: 'newChannel', actions: 'loadChannel' },
+  }
+};
 
 const createRawMachine = (projectId, numChannels, numFrames) => Machine(
   {
@@ -86,7 +87,7 @@ const createRawMachine = (projectId, numChannels, numFrames) => Machine(
     on: {
       ADD_LAYER: { actions: 'addLayer' },
       REMOVE_LAYER: { actions: 'removeLayer' },
-      CHANNEL_IN_LAYER: {},
+      LAYER_CHANNEL_CHANGE: { actions: 'addToLoading' },
       TOGGLE_INVERT: { actions: 'toggleInvert' },
     }
   },
@@ -97,8 +98,8 @@ const createRawMachine = (projectId, numChannels, numFrames) => Machine(
       /** Check if the data is for the loading frame. */
       isLoadingFrame: ({ loadingFrame }, { frame }) => loadingFrame === frame,
       newLoadingFrame: ({ loadingFrame }, { frame }) => loadingFrame !== frame,
+      newChannel: ({ loadedChannels, loadingChannels }, { channel }) => !loadedChannels.has(channel) && !loadingChannels.has(channel),
       isLoadingChannel: ({ loadingChannels }, { channel }) => loadingChannels.has(channel),
-      newLoadingChannel: ({ loadingChannels }, { channel }) => !loadingChannels.has(channel),
     },
     actions: {
       /** Create a channel actor for each channel */
@@ -150,13 +151,17 @@ const createRawMachine = (projectId, numChannels, numFrames) => Machine(
           ))
         ];
       }),
-      loadChannel: pure(({ loadingFrame, channels }, { channel }) => {
+      loadChannel: pure(({ frame, channels }, { channel }) => {
         return [
           assign({
-            loadingChannels: ({ loadingChannels }) => [...loadingChannels, channel]
+            loadingChannels: ({ loadingChannels }) => loadingChannels.add(channel)
           }),
-          send({ type: 'LOADFRAME', frame: loadingFrame }, { to: channels[channel] })
+          send({ type: 'LOADFRAME', frame }, { to: channels[channel] })
         ];
+      }),
+      reloadLoadingChannels: pure(({ frame, channels, loadingChannels }) => {
+        const frameEvent = { type: 'LOADFRAME', frame };
+        return [...loadingChannels].map(channel => send(frameEvent, channels[channel]));
       }),
       /** Start preloading in all channels. */
       startPreload: pure(
@@ -172,7 +177,7 @@ const createRawMachine = (projectId, numChannels, numFrames) => Machine(
         const channelEvent = { type: 'CHANNEL', channel };
         return [
           assign({
-            loadingChannels: loadingChannels.filter(val => val !== channel),
+            loadingChannels: loadingChannels.delete(channel),
             loadedChannels: loadedChannels.set(channel, true),
           }),
           send(channelEvent),
@@ -181,7 +186,10 @@ const createRawMachine = (projectId, numChannels, numFrames) => Machine(
         ]
       }),
       addChannelToLoading: () => { },
-      forwardToChannels: pure(({ channels }) => channels.map(channel => forwardTo(channel))),
+      forwardToLoadedChannels: pure(
+        ({ channels, loadedChannels }) => 
+          [...loadedChannels.keys()].map(channel => forwardTo(channels[channel]))
+      ),
       addLayer: assign({ layers: ({ layers }) => [...layers, spawn(createLayerMachine(layers.length))] }),
       removeLayer: assign({ layers: ({ layers }, { layer }) => [...layers.filter(val => val !== layer )] }),
       // loadFrameForNewChannel: pure(({ loadedLayers, loadingFrame, channels }, { channel }) => {
