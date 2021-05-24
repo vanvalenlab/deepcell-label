@@ -9,7 +9,6 @@ import TableRow from '@material-ui/core/TableRow';
 import { useSelector } from '@xstate/react';
 
 
-import ControlRow from './ControlRow';
 import { useTool, useFeature } from '../ServiceContext';
 
 export const LabelTable = () => {
@@ -57,11 +56,4 @@ const LabelsInfo = () => {
 
 };
 
-
-export default function LabelControls() {
-  return (
-    <ControlRow name={"Label"}>
-      <LabelTable/>
-    </ControlRow>
-  );
-}
+export default LabelTable;
