@@ -1,60 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useSelector } from '@xstate/react';
 import { useTool, useFeature, useLabeled } from '../ServiceContext';
-
-/**
- * Draws fColor around the foreground label and bColor 
- * @param {ImageData} imageData where to draw outlines
- * @param {Array} labeledArray describes the label at each pixel; has negative values on the label borders
- * @param {int} foreground value of foreground label
- * @param {int} background value of background label
- * @param {Array} fColor RGBA color
- * @param {Array} bColor RGBA color
- */
-function outlineSelected(imageData, labeledArray, foreground, background, fColor, bColor) {
-  const [fr, fg, fb, fa] = fColor;
-  const [br, bg, bb, ba] = bColor;
-  const { data, width, height } = imageData;
-  for (let j = 0; j < height; j += 1) { // y
-    for (let i = 0; i < width; i += 1) { // x
-      const label = labeledArray[j][i];
-      if (foreground !== 0 && label === -1 * foreground) {
-        data[(j * width + i) * 4 + 0] = fr;
-        data[(j * width + i) * 4 + 1] = fg;
-        data[(j * width + i) * 4 + 2] = fb;
-        data[(j * width + i) * 4 + 3] = fa;
-      // } else if (background !== 0 && label === -1 * background) {
-      //   data[(j * width + i) * 4 + 0] = br;
-      //   data[(j * width + i) * 4 + 1] = bg;
-      //   data[(j * width + i) * 4 + 2] = bb;
-      //   data[(j * width + i) * 4 + 3] = ba;
-      }
-    }
-  }
-}
-
-/**
- * Draws color outlines around all labels in labeledArray.
- * @param {ImageData} imageData where to draw outlines
- * @param {Array} labeledArray describes the label at each pixel; has negative values on the label borders 
- * @param {Array} color RGBA color
- * @returns 
- */
-function outlineAll(imageData, labeledArray, color) {
-  const { data, width, height } = imageData;
-  const [r, g, b, a] = color;
-  for (let j = 0; j < height; j += 1) { // y
-    for (let i = 0; i < width; i += 1) { // x
-      const label = labeledArray[j][i];
-      if (label < 0) {
-        data[(j * width  + i) * 4 + 0] = r;
-        data[(j * width  + i) * 4 + 1] = g;
-        data[(j * width  + i) * 4 + 2] = b;
-        data[(j * width  + i) * 4 + 3] = a;
-      }
-    }
-  }
-}
+import { outlineAll, outlineSelected } from '../imageUtils';
 
 const white = [255, 255, 255, 255];
 const black = [0, 0, 0, 255];
@@ -70,6 +17,7 @@ const OutlineCanvas = ({ sx, sy, sw, sh, zoom, width, height, className }) => {
   const featureIndex = useSelector(labeled, state => state.context.feature);
   const outline = useSelector(labeled, state => state.context.outline);
   const invert = useSelector(labeled, state => state.context.invert);
+  const opacity = useSelector(labeled, state => state.context.opacity);
 
   const feature = useFeature(featureIndex);
   let labeledArray = useSelector(feature, state => state.context.labeledArray);

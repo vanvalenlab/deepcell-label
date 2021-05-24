@@ -1,60 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { useSelector } from '@xstate/react';
 import { useLabeled, useFeature, useTool } from '../ServiceContext';
+import { highlightImageData, removeNoLabelImageData, opacityImageData } from '../imageUtils';
 
-/**
- * Highlights a label with color.
- * @param {ImageData} imageData where we draw the highlight
- * @param {Array} labeledArray describes label at each pixel; has negative label values on label border
- * @param {int} label label to highlight
- * @param {Array} color color to highlight label with
- */
-const highlightImageData = (imageData, labeledArray, label, color) => {
-  const [r, g, b, a] = color;
-  const { data, width, height } = imageData;
-  for (let j = 0; j < height; j += 1) { // y
-    for (let i = 0; i < width; i += 1) { // x
-      const element = Math.abs(labeledArray[j][i]);
-      if (element === label) {
-        data[(j * width + i) * 4 + 0] = r;
-        data[(j * width + i) * 4 + 1] = g;
-        data[(j * width + i) * 4 + 2] = b;
-        data[(j * width + i) * 4 + 3] = a;
-      }
-    }
-  }
-};
-
-/**
- * Makes the areas without a label (i.e. label is 0) transparent.
- * @param {ImageData} imageData where we draw the transparent changes
- * @param {Array} labeledArray describes label at each pixel; has negative label values on label border
- */
-const removeNoLabelImageData = (imageData, labeledArray) => {
-  const { data, height, width } = imageData;
-  for (let j = 0; j < height; j += 1) { // y
-    for (let i = 0; i < width; i += 1) { // x
-      if (labeledArray[j][i] === 0) {
-        data[(j * width + i) * 4 + 0] = 0;
-        data[(j * width + i) * 4 + 1] = 0;
-        data[(j * width + i) * 4 + 2] = 0;
-        data[(j * width + i) * 4 + 3] = 0;
-      }
-    }
-  }
-};
-
-/**
- * Changes the opacity of the image.
- * @param {ImageData} imageData
- * @param {float} opacity between 0 and 1; 0 makes the image transparent, and 1 does nothing
- */
-const opacityImageData = (imageData, opacity) => {
-  const { data } = imageData;
-  for (let i = 0; i < data.length; i += 4) {
-    data[i + 3] *= opacity;
-  }
-};
 
 export const LabeledCanvas = ({ sx, sy, sw, sh, zoom, width, height, className }) => {
   const labeled = useLabeled();

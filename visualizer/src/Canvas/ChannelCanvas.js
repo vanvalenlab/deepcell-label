@@ -2,27 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import { useSelector } from '@xstate/react';
 import { useCanvas, useChannel } from '../ServiceContext';
 
-const adjustRangeImageData = (data, min, max) => {
-  const diff = (max - min);
-  const scale = diff === 0 ? 255 : 255 / diff;
+import { adjustRangeImageData, recolorImageData } from '../imageUtils';
 
-  for (let i = 0; i < data.length; i += 4) {  //pixel values in 4-byte blocks (r,g,b,a)
-    data[i] = (data[i] - min) * scale;     //r value
-    data[i+1] = (data[i+1] - min) * scale; //g value
-    data[i+2] = (data[i+2] - min) * scale; //b value
-  }
-  return data;
-}
-
-const recolorImageData = (data, color) => {
-  const [red, green, blue] = color;
-  for (let i = 0; i < data.length; i += 4) {
-    data[i] *= red / 255;
-    data[i + 1] *= green / 255;
-    data[i + 2] *= blue / 255;
-  }
-  return data;
-}
 
 /** Converts a hex string like #FF0000 to three element array for the RGB values. */
 const hexToRGB = (hex) => {
