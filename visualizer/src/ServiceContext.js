@@ -64,7 +64,20 @@ export function useLayer(layer) {
   return layers[layer];
 }
 
+const invertImageData = (imageData) => {
+  const { data, width, height } = imageData;
+  for (let i = 0; i < data.length; i += 4) {  //pixel values in 4-byte blocks (r,g,b,a)
+    data[i] = 255 - data[i];
+    data[i+1] = 255 - data[i+1];
+    data[i+2] = 255 - data[i+2];
+  }
+  return new ImageData(data, width, height);
+}
+
 export function useComposeLayers() {
+  const raw = useRaw();
+  const invert = useSelector(raw, state => state.context.invert);
+
   const canvas = useCanvas();
   const width = useSelector(canvas, state => state.context.width);
   const height = useSelector(canvas, state => state.context.height);
@@ -88,6 +101,10 @@ export function useComposeLayers() {
     Object.values(canvases).forEach(
       canvas => ctx.drawImage(canvas, 0, 0)
     );
+    if (invert) {
+      const data = ctx.getImageData(0, 0, width, height);
+      ctx.putImageData(invertImageData(data), 0, 0);
+    }
   });
 
   return [canvasRef, canvases, setCanvases];

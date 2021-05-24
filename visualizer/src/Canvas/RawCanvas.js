@@ -5,6 +5,7 @@ import ChannelCanvas from './ChannelCanvas';
 
 export const RawCanvas = ({ sx, sy, sw, sh, zoom, width, height, className }) => {
   const raw = useRaw();
+  const invert = useSelector(raw, state => state.context.invert);
   const layers = useSelector(raw, state => state.context.layers);
 
   const canvasRef = useRef();
@@ -26,7 +27,7 @@ export const RawCanvas = ({ sx, sy, sw, sh, zoom, width, height, className }) =>
       0, 0,
       width, height,
     );
-  }, [composeCanvasRef, canvases, sx, sy, zoom, sw, sh, width, height]);
+  }, [composeCanvasRef, canvases, invert, sx, sy, zoom, sw, sh, width, height]);
 
   return <>
     {/* hidden processing canvas */}

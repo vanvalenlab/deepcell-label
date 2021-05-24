@@ -5,6 +5,7 @@ import Checkbox from '@material-ui/core/Checkbox';
 import Grid from '@material-ui/core/Grid';
 import Slider from '@material-ui/core/Slider';
 import Select from '@material-ui/core/Select';
+import ToggleButton from '@material-ui/lab/ToggleButton';
 import { makeStyles } from '@material-ui/core/styles';
 
 import ChannelOptions from './LayerOptions';
@@ -27,6 +28,7 @@ function LayerController({ layer }) {
   const isOn = useSelector(layer, state => state.context.on);
 
   const raw = useRaw();
+  const invert = useSelector(raw, state => state.context.invert);
   const channelOptions = useSelector(raw, state => state.context.channelNames);
   
   const name = channelOptions[channel];
