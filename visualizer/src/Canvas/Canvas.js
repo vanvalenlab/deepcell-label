@@ -41,6 +41,8 @@ export const Canvas = ({ height, width }) => {
   const canvasProps = { sx, sy, zoom, sw, sh };
 
   const tool = useTool();
+  const usingBrush = useSelector(tool, state => state.matches('brush'));
+  // const usingThreshold = useSelector(tool, state => state.matches('threshold'));
 
   const styles = useStyles();
 
@@ -106,7 +108,8 @@ export const Canvas = ({ height, width }) => {
       {raw && <RawCanvas {...canvasProps} {...styleProps} />}
       {labeled && <LabeledCanvas {...canvasProps} {...styleProps} />}
       {labeled && <OutlineCanvas {...canvasProps} {...styleProps} />}
-      {/* <BrushCanvas {...canvasProps} {...styleProps} /> */}
+      {usingBrush && <BrushCanvas {...canvasProps} {...styleProps} />}
+      {/* {usingThreshold && <ThresholdCanvas {...canvasProps} { ..styleProps} />} */}
     </Box>
   )
 }
