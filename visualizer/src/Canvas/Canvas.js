@@ -13,7 +13,6 @@ import { useCanvas, useTool, useRaw, useLabeled } from '../ServiceContext';
 
 const useStyles = makeStyles({
   canvasBox: {
-    boxSizing: 'border-box',
     alignSelf: 'flex-start',
     position: 'absolute',
   },
