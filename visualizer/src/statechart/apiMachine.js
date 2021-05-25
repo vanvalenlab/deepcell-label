@@ -13,23 +13,23 @@ function getApiService(context, event) {
 }
 
 function edit(context, event) {
-  const editLocation = `${document.location.origin}/api/edit/${context.projectId}/${event.action}`;
+  const editRoute = `${document.location.origin}/api/edit/${context.projectId}/${event.action}`;
   const options = { method: 'POST', body: new URLSearchParams(event.args) };
-  return fetch(editLocation, options)
+  return fetch(editRoute, options)
     .then(checkResponseCode);
 }
 
 function undo(context, event) {
-  const undoLocation = `${document.location.origin}/api/undo/${context.projectId}`;
+  const undoRoute = `${document.location.origin}/api/undo/${context.projectId}`;
   const options = { method: 'POST' };
-  return fetch(undoLocation, options)
+  return fetch(undoRoute, options)
     .then(checkResponseCode);
 }
 
 function redo(context, event) {
-  const redoLocation = `${document.location.origin}/api/redo/${context.projectId}`;
+  const redoRoute = `${document.location.origin}/api/redo/${context.projectId}`;
   const options = { method: 'POST' };
-  return fetch(redoLocation, options)
+  return fetch(redoRoute, options)
     .then(checkResponseCode);
 }
 
