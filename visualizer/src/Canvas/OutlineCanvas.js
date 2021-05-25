@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useSelector } from '@xstate/react';
 import { useTool, useFeature, useLabeled } from '../ServiceContext';
-import { outlineAll, outlineSelected } from '../imageUtils';
+import { highlightImageData, outlineAll, outlineSelected } from '../imageUtils';
 
 const white = [255, 255, 255, 255];
 const black = [0, 0, 0, 255];
@@ -44,10 +44,12 @@ const OutlineCanvas = ({ sx, sy, sw, sh, zoom, width, height, className }) => {
     const data = new ImageData(width, height);
     const fColor = invert ? black : white;
     const bColor = red;
+    const hColor = [255, 255, 255, 128];
     switch (outline) {
       case 'all':
         outlineAll(data, labeledArray, fColor);
       case 'selected':
+        highlightImageData(data, labeledArray, foreground, hColor);
         outlineSelected(data, labeledArray, foreground, background, fColor, bColor);
       default:
     }

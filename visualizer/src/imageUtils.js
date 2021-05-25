@@ -8,6 +8,7 @@
  * @param {Array} color color to highlight label with
  */
 export const highlightImageData = (imageData, labeledArray, label, color) => {
+  if (label === 0) { return; }
   const [r, g, b, a] = color;
   const { data, width, height } = imageData;
   for (let j = 0; j < height; j += 1) { // y
