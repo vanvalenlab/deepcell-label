@@ -266,12 +266,12 @@ const toolMachine = Machine(
       INCREASE_BRUSH_SIZE: { actions: assign({ brushSize: (context) => context.brushSize + 1 }) },
       DECREASE_BRUSH_SIZE: { actions: assign({ brushSize: (context) => Math.max(1, context.brushSize - 1) }) },
 
-      // // special shift click event 
-      // SHIFTCLICK: [
-      //   { cond: 'doubleClick', actions: ['selectForeground', send('SETBACKGROUND', { background: 0 })] },
-      //   { cond: 'onBackground', actions: 'selectForeground', },
-      //   { actions: 'selectBackground' },
-      // ],
+      // special shift click event 
+      SHIFTCLICK: [
+        { cond: 'doubleClick', actions: ['selectForeground', send('SETBACKGROUND', { background: 0 })] },
+        { cond: 'onBackground', actions: 'selectForeground', },
+        { actions: 'selectBackground' },
+      ],
     }
   },
   {

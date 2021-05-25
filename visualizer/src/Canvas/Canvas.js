@@ -82,13 +82,12 @@ export const Canvas = ({ height, width }) => {
   }, []);
 
   const handleMouseDown = (event) => {
-    // if (event.shiftKey) {
-    //   tool.send( {...event, type: 'SHIFTCLICK' })
-    // } else {
-    //   tool.send(event);
-    // }
     event.preventDefault();
-    tool.send(event);
+    if (event.shiftKey) {
+      tool.send( {...event, type: 'SHIFTCLICK' });
+    } else {
+      tool.send(event);
+    }
   };
 
   return (
