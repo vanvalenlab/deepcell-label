@@ -281,7 +281,7 @@ const toolMachine = Machine(
           b: 'USE_BRUSH',
           v: 'USE_SELECT',
           t: 'USE_THRESHOLD',
-          x: 'USE_TRIM',
+          k: 'USE_TRIM',
           g: 'USE_FLOOD',
           q: 'USE_ERODE_DILATE',
           m: 'USE_AUTOFIT',
