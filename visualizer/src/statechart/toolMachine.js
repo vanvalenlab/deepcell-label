@@ -278,14 +278,14 @@ const toolMachine = Machine(
     services: {
       listenForToolHotkeys: () => (send) => {
         const lookup = {
-          'b': 'USE_BRUSH',
-          'v': 'USE_SELECT',
-          't': 'USE_THRESHOLD',
-          'x': 'USE_TRIM',
-          'g': 'USE_FLOOD',
-          'q': 'USE_ERODE_DILATE',
-          'm': 'USE_AUTOFIT',
-          'w': 'USE_WATERSHED',
+          b: 'USE_BRUSH',
+          v: 'USE_SELECT',
+          t: 'USE_THRESHOLD',
+          x: 'USE_TRIM',
+          g: 'USE_FLOOD',
+          q: 'USE_ERODE_DILATE',
+          m: 'USE_AUTOFIT',
+          w: 'USE_WATERSHED',
         };
 
         const listener = (e) => {
@@ -299,8 +299,8 @@ const toolMachine = Machine(
       },
       listenForBrushHotkeys: () => (send) => {
         const lookup = { 
-          'ArrowUp': 'INCREASE_BRUSH_SIZE',
-          'ArrowDown': 'DECREASE_BRUSH_SIZE',
+          ArrowUp: 'INCREASE_BRUSH_SIZE',
+          ArrowDown: 'DECREASE_BRUSH_SIZE',
         };
         const listener = (e) => {
           if (e.key in lookup) {
