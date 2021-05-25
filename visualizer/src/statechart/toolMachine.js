@@ -192,7 +192,7 @@ const tempSelectState = {
 const selectState = {
   on: {
     mousedown: [
-      { cond: 'doubleClick', actions: ['selectBackground', send('SETFOREGROUND', { foreground: 0 })] },
+      { cond: 'doubleClick', actions: ['selectBackground', send({ type: 'SETFOREGROUND', foreground: 0 })] },
       { cond: 'onForeground', actions: 'selectBackground', },
       { actions: 'selectForeground' },
     ]
@@ -268,7 +268,7 @@ const toolMachine = Machine(
 
       // special shift click event 
       SHIFTCLICK: [
-        { cond: 'doubleClick', actions: ['selectForeground', send('SETBACKGROUND', { background: 0 })] },
+        { cond: 'doubleClick', actions: ['selectForeground', send({ type: 'SETBACKGROUND', background: 0 })] },
         { cond: 'onBackground', actions: 'selectForeground', },
         { actions: 'selectBackground' },
       ],
