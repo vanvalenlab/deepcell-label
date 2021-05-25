@@ -44,8 +44,6 @@ const createApiMachine = ({ projectId }) => Machine(
     id: 'api',
     context: {
       projectId,
-      data: null,
-      error: null,
     },
     initial: 'idle',
     states: {
@@ -62,10 +60,7 @@ const createApiMachine = ({ projectId }) => Machine(
           src: getApiService,
           onDone: {
             target: 'idle',
-            actions: [
-              'sendLoaded',
-              'saveData',
-            ],
+            actions: 'sendEdited',
           },
           onError: {
             target: 'idle',
@@ -77,9 +72,7 @@ const createApiMachine = ({ projectId }) => Machine(
   },
   {
     actions: {
-      saveData: assign({ data: (context, event) => event.data }),
-      saveError: assign({ error: (context, event) => event.data.error }),
-      sendLoaded: sendParent((_, event) => ({ type: 'LOADED', data: event.data })),
+      sendEdited: sendParent((_, event) => ({ type: 'EDITED', data: event.data })),
       sendError: sendParent((_, event) => ({ type: 'ERROR', error: event.data.error })),
     },
   }

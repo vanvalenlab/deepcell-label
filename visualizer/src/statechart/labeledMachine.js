@@ -88,6 +88,7 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) => Machine(
       SETOPACITY: { actions: 'setOpacity' },
       TOGGLESHOWNOLABEL: { actions: 'toggleShowNoLabel' },
       LABELEDARRAY: { actions: sendParent((c, e) => e) },
+      EDITED: { actions: forwardTo(({ features }, event) => features[event.data.feature]) },
     }
   },
   {

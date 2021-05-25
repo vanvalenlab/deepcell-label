@@ -55,7 +55,7 @@ const createDeepcellLabelMachine = (projectId) => Machine(
       EDIT: { actions: [forwardTo('api'), forwardTo('undo')] },
       BACKENDUNDO: { actions: forwardTo('api') },
       BACKENDREDO: { actions: forwardTo('api') },
-      LOADED: { actions: forwardTo('image') },
+      EDITED: { actions: forwardTo('image') },
     }
   },
   {

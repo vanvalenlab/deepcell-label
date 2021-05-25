@@ -83,7 +83,7 @@ const createImageMachine = ({ projectId }) => Machine(
       },
     },
     on: {
-      // LOADED: { actions: forwardTo((context, event) => context.features[event.data.feature]) },
+      EDITED: { actions: forwardTo(({ labeledRef }) => labeledRef) },
       LABELEDARRAY: { actions: forwardTo(({ toolRef }) => toolRef) },
       TOOLREF: { actions: assign({ toolRef: (context, event) => event.toolRef }) },
       // image adjustment
