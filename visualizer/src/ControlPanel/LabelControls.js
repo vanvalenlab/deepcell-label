@@ -9,35 +9,40 @@ import TableRow from '@material-ui/core/TableRow';
 import { useSelector } from '@xstate/react';
 
 
-import { useTool, useFeature } from '../ServiceContext';
+import { useToolbar, useFeature } from '../ServiceContext';
 
 export const LabelTable = () => {
-  const tool = useTool();
-  const foreground = useSelector(tool, state => state.context.foreground);
-  const label = useSelector(tool, state => state.context.label);
-  const x = useSelector(tool, state => state.context.x);
-  const y = useSelector(tool, state => state.context.y);
+  const toolbar = useToolbar();
+  const foreground = useSelector(toolbar, state => state.context.foreground);
+  const background = useSelector(toolbar, state => state.context.background);
+  const label = useSelector(toolbar, state => state.context.label);
+  const x = useSelector(toolbar, state => state.context.x);
+  const y = useSelector(toolbar, state => state.context.y);
 
   return <>
     <TableContainer size="small">
       <Table >
         <TableBody>
           <TableRow>
-            <TableCell component="th" scope="row">selected label:</TableCell>
+            <TableCell component="th" scope="row">foreground label:</TableCell>
             <TableCell align="right">{foreground === 0 ? 'no label' : foreground}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell component="th" scope="row">background label:</TableCell>
+            <TableCell align="right">{background === 0 ? 'no label' : background}</TableCell>
           </TableRow>
           <TableRow>
             <TableCell component="th" scope="row">cursor over label:</TableCell>
             <TableCell align="right">{label === 0 ? 'no label' : label}</TableCell>
           </TableRow>
-          <TableRow>
+          {/* <TableRow>
             <TableCell component="th" scope="row">cursor x coordinate:</TableCell>
             <TableCell align="right">{x}</TableCell>
           </TableRow>
           <TableRow>
             <TableCell component="th" scope="row">cursor y coordinate:</TableCell>
             <TableCell align="right">{y}</TableCell>
-          </TableRow>
+          </TableRow> */}
         </TableBody>
       </Table>
     </TableContainer>

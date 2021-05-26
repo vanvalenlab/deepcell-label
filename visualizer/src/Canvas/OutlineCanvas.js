@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useSelector } from '@xstate/react';
-import { useTool, useFeature, useLabeled } from '../ServiceContext';
+import { useToolbar, useFeature, useLabeled } from '../ServiceContext';
 import { highlightImageData, outlineAll, outlineSelected } from '../imageUtils';
 
 const white = [255, 255, 255, 255];
@@ -9,9 +9,9 @@ const red = [255, 0, 0, 255];
 
 const OutlineCanvas = ({ sx, sy, sw, sh, zoom, width, height, className }) => {
 
-  const tool = useTool();
-  const foreground = useSelector(tool, state => state.context.foreground);
-  const background = useSelector(tool, state => state.context.background);
+  const toolbar = useToolbar();
+  const foreground = useSelector(toolbar, state => state.context.foreground);
+  const background = useSelector(toolbar, state => state.context.background);
 
   const labeled = useLabeled();
   const featureIndex = useSelector(labeled, state => state.context.feature);

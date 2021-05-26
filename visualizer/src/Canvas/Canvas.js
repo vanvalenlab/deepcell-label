@@ -9,7 +9,7 @@ import OutlineCanvas from './OutlineCanvas';
 import BrushCanvas from './BrushCanvas';
 
 // import { canvasService } from '../statechart/service';
-import { useCanvas, useTool, useRaw, useLabeled } from '../ServiceContext';
+import { useCanvas, useTool, useToolbar, useRaw, useLabeled } from '../ServiceContext';
 
 const useStyles = makeStyles({
   canvasBox: {
@@ -40,9 +40,11 @@ export const Canvas = ({ height, width }) => {
   const scale = useSelector(canvas, state => state.context.scale);
   const canvasProps = { sx, sy, zoom, sw, sh };
 
-  const tool = useTool();
-  const usingBrush = useSelector(tool, state => state.matches('brush'));
+  const toolbar = useToolbar();
+  const usingBrush = useSelector(toolbar, state => state.context.tool === 'brush');
   // const usingThreshold = useSelector(tool, state => state.matches('threshold'));
+
+  const tool = useTool();
 
   const styles = useStyles();
 
@@ -84,7 +86,7 @@ export const Canvas = ({ height, width }) => {
   const handleMouseDown = (event) => {
     event.preventDefault();
     if (event.shiftKey) {
-      tool.send( {...event, type: 'SHIFTCLICK' });
+      toolbar.send( {...event, type: 'SHIFTCLICK' });
     } else {
       tool.send(event);
     }

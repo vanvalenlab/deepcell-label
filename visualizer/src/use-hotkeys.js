@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useSelector } from '@xstate/react';
 import Mousetrap, { bind, unbind } from 'mousetrap';
-import { useImage, useCanvas, useUndo, useTool, useFeature, useLabeled, useRaw } from './ServiceContext';
+import { useImage, useCanvas, useUndo, useToolbar, useFeature, useLabeled, useRaw } from './ServiceContext';
 
 // override stopCallback so keybinds work on radio buttons
 // modified from https://craig.is/killing/mice
@@ -139,10 +139,10 @@ export function useCanvasHotkeys() {
 }
 
 export function useSelectHotkeys() {
-  const tool = useTool();
-  const { send } = tool;
-  const foreground = useSelector(tool, state => state.context.foreground);
-  const background = useSelector(tool, state => state.context.background);
+  const toolbar = useToolbar();
+  const { send } = toolbar;
+  const foreground = useSelector(toolbar, state => state.context.foreground);
+  const background = useSelector(toolbar, state => state.context.background);
   
   const feature = useFeature();
   const labels = useSelector(feature, state => state.context.semanticInstanceLabels);
@@ -155,7 +155,7 @@ export function useSelectHotkeys() {
     });
     bind('n', () => send('SETFOREGROUND', { foreground: maxLabel + 1 }));
     bind('esc', () => send('SETBACKGROUND', { background: 0 }));
-    bind('esc', () => send('SETFOREGROUND', { background: 0 }));
+    // bind('esc', () => send('SETFOREGROUND', { background: 0 }));
     bind('[', () => send('SETFOREGROUND', { foreground: foreground <= 1 ? maxLabel : foreground - 1 }));
     bind(']', () => send('SETFOREGROUND', { foreground: foreground >= maxLabel ? 1 : foreground + 1 }));
     bind('{', () => send('SETBACKGROUND', { background: background <= 1 ? maxLabel : background - 1 }));

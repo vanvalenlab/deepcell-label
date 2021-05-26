@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useSelector } from '@xstate/react';
-import { useLabeled, useFeature, useTool } from '../ServiceContext';
+import { useLabeled, useFeature, useToolbar } from '../ServiceContext';
 import { highlightImageData, removeNoLabelImageData, opacityImageData } from '../imageUtils';
 
 
@@ -16,9 +16,9 @@ export const LabeledCanvas = ({ sx, sy, sw, sh, zoom, width, height, className }
   let labeledArray = useSelector(feature, state => state.context.labeledArray);
   if (!labeledArray) { labeledArray = Array(sh).fill(Array(sw).fill(0)) }
 
-  const tool = useTool();
-  const foreground = useSelector(tool, state => state.context.foreground);
-  const background = useSelector(tool, state => state.context.background);
+  const toolbar = useToolbar();
+  const foreground = useSelector(toolbar, state => state.context.foreground);
+  const background = useSelector(toolbar, state => state.context.background);
 
   const canvasRef = useRef();
   const ctx = useRef();

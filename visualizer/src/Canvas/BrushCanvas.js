@@ -84,11 +84,11 @@ const drawTrace = (ctx, x, y, brushSize) => {
 
 const BrushCanvas = ({ sx, sy, sw, sh, zoom, width, height, className }) => {
 
-  const tool = useTool();
-  const x = useSelector(tool, state => state.context.x);
-  const y = useSelector(tool, state => state.context.y);
-  const trace = useSelector(tool, state => state.context.trace);
-  const brushSize = useSelector(tool, state => state.context.brushSize);
+  const brush = useTool();
+  const x = useSelector(brush, state => state.context.x);
+  const y = useSelector(brush, state => state.context.y);
+  const trace = useSelector(brush, state => state.context.trace);
+  const brushSize = useSelector(brush, state => state.context.brushSize);
 
   const canvasRef = useRef();
   const ctx = useRef();

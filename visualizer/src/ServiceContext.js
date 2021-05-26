@@ -117,9 +117,16 @@ export function useCanvas() {
   return canvas;
 }
 
-export function useTool() {
+export function useToolbar() {
   const { service } = useLabelService();
   const { tool } = service.state.children;
+  return tool;
+}
+
+export function useTool() {
+  const { service } = useLabelService();
+  const { tool: toolbar } = service.state.children;
+  const tool = useSelector(toolbar, state => state.context.tools[state.context.tool]);
   return tool;
 }
 
