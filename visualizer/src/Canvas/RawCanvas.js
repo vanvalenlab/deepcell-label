@@ -42,7 +42,7 @@ export const RawCanvas = ({ sx, sy, sw, sh, zoom, width, height, className }) =>
       width={width}
       height={height}
     />
-    {Object.entries(channels).map(([index, channel]) => <ChannelCanvas
+    {Object.entries(channels).map(([index, channel]) => index < 6 && <ChannelCanvas
       key={index}
       channel={channel}
       setChannelCanvases={setChannelCanvases}/>)}

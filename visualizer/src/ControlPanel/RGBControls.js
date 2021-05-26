@@ -59,7 +59,7 @@ export const ChannelSliders = () => {
       </Tooltip>
     </Box>
     {Object.entries(channels).map(
-      ([index, channel]) => <ChannelSlider key={index} channel={channel} />
+      ([index, channel]) => index < 6 && <ChannelSlider key={index} channel={channel} />
     )}
   </>;
 }
