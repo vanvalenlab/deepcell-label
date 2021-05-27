@@ -44,12 +44,12 @@ const ImageControls = () => {
       </TableRow>
       <TableRow >
         <TableCell>
-          {raw && <RawController />}
+          {labeled && <LabeledController />}
         </TableCell>
       </TableRow>
       <TableRow >
         <TableCell>
-          {labeled && <LabeledController />}
+          {raw && <RawController />}
         </TableCell>
       </TableRow>
     </TableContainer>
