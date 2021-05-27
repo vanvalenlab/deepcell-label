@@ -1,56 +1,17 @@
-import React, { useEffect, useRef } from 'react';
-import { useSelector } from '@xstate/react';
-import { useRaw, useComposeLayers } from '../ServiceContext';
-import ChannelCanvas from './ChannelCanvas';
+import React from 'react';
+import { useActor } from '@xstate/react';
+import { useImage } from '../ServiceContext';
+import GrayscaleCanvas from './GrayscaleCanvas';
+import RGBCanvas from './RGBCanvas';
 
-export const RawCanvas = ({ sx, sy, sw, sh, zoom, width, height, className }) => {
-  const raw = useRaw();
-  const invert = useSelector(raw, state => state.context.invert);
-  const layers = useSelector(raw, state => state.context.layers);
-
-  const canvasRef = useRef();
-  const ctx = useRef();
-  const [composeCanvasRef, canvases, setCanvases] = useComposeLayers();
-
-  useEffect(() => {
-    ctx.current = canvasRef.current.getContext('2d');
-    ctx.current.imageSmoothingEnabled = false;
-  }, [height, width]);
-
-  useEffect(() => {
-    const composeCanvas = composeCanvasRef.current;
-    ctx.current.clearRect(0, 0, width, height);
-    ctx.current.drawImage(
-      composeCanvas,
-      sx, sy,
-      sw / zoom, sh / zoom,
-      0, 0,
-      width, height,
-    );
-  }, [composeCanvasRef, canvases, invert, sx, sy, zoom, sw, sh, width, height]);
+export const RawCanvas = (props) => {
+  const image = useImage();
+  const [current] = useActor(image);
 
   return <>
-    {/* hidden processing canvas */}
-    <canvas id='raw-processing'
-      hidden={true}
-      ref={composeCanvasRef}
-      width={sw}
-      height={sh}
-    />
-    {/* visible output canvas */}
-    <canvas id='raw-canvas'
-      className={className}
-      ref={canvasRef}
-      width={width}
-      height={height}
-    />
-    {layers
-      .map(layer => <ChannelCanvas
-        layer={layer}
-        setCanvases={setCanvases}
-      />)
-    }
+    {current.matches('color.color') && <RGBCanvas {...props} />}
+    {current.matches('color.grayscale') && <GrayscaleCanvas {...props} />}
   </>;
 };
 
-export default React.memo(RawCanvas);
+export default RawCanvas;
