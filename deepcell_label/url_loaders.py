@@ -242,7 +242,7 @@ def load_png(data):
     img = np.array(Image.open(io.BytesIO(data)))
     # Remove alpha channel
     if img.shape[-1] == 4:
-        img = img[...,:3]
+        img = img[..., :3]
     return img
 
 
