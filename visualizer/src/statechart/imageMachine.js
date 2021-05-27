@@ -4,7 +4,7 @@ import createLabeledMachine from './labeledMachine';
 
 const { pure } = actions;
 
-const frameState = {
+const loadFrameState = {
   entry: ['loadRaw', 'loadLabeled'],
   initial: 'loading',
   states: {
@@ -30,26 +30,64 @@ const frameState = {
   }
 };
 
-// const colorModeState = {
-//   initial: 'multiChannel',
-//   states: {
-//     multiChannel: {
-//       on: {
-//         'keydown.z': 'oneChannel',
-//       }
-//     },
-//     oneChannel: {
-//       on: {
-//         'keydown.z': 'labelsOnly',
-//       }
-//     },
-//     labelsOnly: {
-//       on: {
-//         'keydown.z': 'multiChannel',
-//       }
-//     },
-//   },
-// }
+
+const frameState = {
+  initial: 'waitForProject',
+  states: {
+    waitForProject: {
+      on: {
+        PROJECT: { target: 'setUpActors', actions: 'handleProject' },
+      },
+    },
+    setUpActors: {
+      always: { target: 'loadFrame', actions: 'spawnActors' },
+    },
+    loadFrame: loadFrameState,
+  },
+};
+
+
+const syncToolState = {
+  initial: 'waitForTool',
+  states: {
+    waitForTool: {
+      on: {
+        TOOLREF: { target: 'idle', actions: 'saveTool' },
+      }
+    },
+    idle: {
+      on: {
+        LABELEDARRAY: { actions: 'forwardToTool' },
+        FEATURE: { actions: ['setFeature', 'forwardToTool'] },
+        CHANNEL: { actions: ['setChannel', 'forwardToTool'] },
+      }
+    },
+  }
+};
+
+const colorState = {
+  initial: 'color',
+  invoke: {
+    src: 'listenForColorHotkey',
+  },
+  states: {
+    color: {
+      entry: send('COLOR', { to: ({ toolRef }) => toolRef }),
+      on: {
+        TOGGLE_COLOR: 'grayscale',
+      }
+    },
+    grayscale: {
+      entry: send('GRAYSCALE', { to: ({ toolRef }) => toolRef }),
+      // invoke: {
+      //   src: 'listenForChannelHotkey',
+      // },
+      on: {
+        TOGGLE_COLOR: 'color',
+      }
+    },
+  },
+}
 
 const createImageMachine = ({ projectId }) => Machine(
   {
@@ -64,32 +102,37 @@ const createImageMachine = ({ projectId }) => Machine(
       rawRef: null,
       labeledRef: null,
     },
-    initial: 'waitForProject',
+    type: 'parallel',
     states: {
-      waitForProject: {
-        on: {
-          PROJECT: { target: 'setUpActors', actions: 'handleProject' },
-        },
-      },
-      setUpActors: {
-        always: { target: 'idle', actions: 'spawnActors' },
-      },
-      idle: {
-        type: 'parallel',
-        states: {
-          frame: frameState,
-          // colorMode: colorModeState,
-        },
-      },
+      syncTool: syncToolState,
+      frame: frameState,
+      color: colorState,
     },
     on: {
       EDITED: { actions: forwardTo(({ labeledRef }) => labeledRef) },
-      LABELEDARRAY: { actions: forwardTo(({ toolRef }) => toolRef) },
-      TOOLREF: { actions: assign({ toolRef: (context, event) => event.toolRef }) },
-      // image adjustment
     },
   },
   {
+    services: {
+      listenForColorHotkey: () => (send) => {
+        const listener = (event) => {
+          if (event.key === 'z') { send('TOGGLE_COLOR'); }
+        }
+        window.addEventListener('keydown', listener);
+        return () => window.removeEventListener('keydown', listener);
+      },
+      // listenForChannelHotkey: (context) => (send) => {
+      //   const { rawRef } = context;
+      //   const listener = (event) => {
+      //     if (event.key === 'c') { 
+      //       const channelEvent = { type: 'LOADCHANNEL', }
+      //       rawRef
+      //     } else if (event.key === 'C') {
+
+      //     }
+      //   }
+      // }
+    },
     guards: {
       newLoadingFrame: (context, event) => context.loadingFrame !== event.frame,
       isLoaded: ({ rawLoaded, labeledLoaded }) => rawLoaded && labeledLoaded,
@@ -134,6 +177,10 @@ const createImageMachine = ({ projectId }) => Machine(
           send(frameEvent, { to: toolRef }),
         ];
       }),
+      saveTool: assign({ toolRef: (_, event) => event.toolRef }),
+      forwardToTool: forwardTo(({ toolRef }) => toolRef),
+      setFeature: assign({ feature: (_, { feature }) => ({ feature })}),
+      setChannel: assign({ channel: (_, { channel }) => ({ channel })})
     },
   }
 );
