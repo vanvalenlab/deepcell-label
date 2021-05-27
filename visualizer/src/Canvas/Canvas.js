@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useContext } from 'react';
 import { useSelector } from '@xstate/react';
 import { makeStyles } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 import RawCanvas from './RawCanvas';
 import LabeledCanvas from './LabeledCanvas';
@@ -10,6 +11,7 @@ import BrushCanvas from './BrushCanvas';
 
 // import { canvasService } from '../statechart/service';
 import { useCanvas, useTool, useChannel, useFeature } from '../ServiceContext';
+import { Typography } from '@material-ui/core';
 
 const useStyles = makeStyles({
   canvasBox: {
@@ -28,7 +30,6 @@ const useStyles = makeStyles({
 });
 
 export const Canvas = ({ height, width }) => {
-
   const channel = useChannel();
   const feature = useFeature();
 
@@ -104,6 +105,9 @@ export const Canvas = ({ height, width }) => {
       onMouseUp={tool.send}
       onClick={tool.send}
     >
+      { !channel && 
+        <CircularProgress style={{ margin: '25%', width:'50%', height:'50%'}} />
+      }
       {channel && <RawCanvas {...canvasProps} {...styleProps} />}
       {feature && <LabeledCanvas {...canvasProps} {...styleProps} />}
       {feature && <OutlineCanvas {...canvasProps} {...styleProps} />}
