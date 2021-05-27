@@ -1,4 +1,5 @@
 import { Machine, assign, sendParent } from 'xstate';
+import quickselect from 'quickselect';
 
 function fetchRaw(context) {
   const { projectId, channel, loadingFrame: frame } = context;
@@ -73,7 +74,7 @@ const createChannelMachine = (projectId, channel, numFrames) => Machine(
         target: 'checkLoaded',
         actions: assign({ loadingFrame: (_, { frame }) => frame }),
       },
-      FRAME: { actions: 'useFrame' },
+      FRAME: { actions: ['useFrame', 'setAutoRange'] },
       CHANNEL: { actions: 'useFrame' },
       // image settings
       SETBRIGHTNESS: { actions: 'setBrightness' },
@@ -86,6 +87,7 @@ const createChannelMachine = (projectId, channel, numFrames) => Machine(
       loadedFrame: ({ frames, loadingFrame }) => loadingFrame in frames,
       newFrame: (context, event) => context.frame !== event.frame,
       canPreload: ({ frames, numFrames }) => Object.keys(frames).length !== numFrames,
+      emptyFrame: ({ rawImage }) => rawImage.src === "",
     },
     actions: {
       // fetching
@@ -118,6 +120,30 @@ const createChannelMachine = (projectId, channel, numFrames) => Machine(
           Math.max(0, Math.min(255, range[1])),
         ]
       }),
+      setAutoRange: assign({ range: ({ rawImage: img }) => {
+        // modified from https://github.com/hms-dbmi/viv
+        // get ImageData from rawImage
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, img.width, img.height);
+        const array = imageData.data
+          .filter((v, i) => i % 4 === 1) // take only the first channel
+          .filter(v => v > 0); // ignore the background
+        const cutoffPercentile = 0.01;
+        const topCutoffLocation = Math.floor(
+          array.length * (1 - cutoffPercentile)
+        );
+        const bottomCutoffLocation = Math.floor(array.length * cutoffPercentile);
+        quickselect(array, topCutoffLocation);
+        quickselect(array, bottomCutoffLocation, 0, topCutoffLocation);
+        return [
+          array[bottomCutoffLocation] || 0,
+          array[topCutoffLocation] || 255
+        ];
+      }}),
     }
   }
 );
