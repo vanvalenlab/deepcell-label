@@ -43,12 +43,11 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
     if (on) {
       ctx.drawImage(rawImage, 0, 0);
       // adjust image data
-      let data = ctx.getImageData(0, 0, width, height).data;
-      data = adjustRangeImageData(data, min, max);
-      data = recolorImageData(data, hexToRGB(color));
+      const imageData = ctx.getImageData(0, 0, width, height);
+      adjustRangeImageData(imageData, min, max);
+      recolorImageData(imageData, hexToRGB(color));
       // redraw with adjusted data
-      const adjustedData = new ImageData(data, width, height);
-      ctx.putImageData(adjustedData, 0, 0);
+      ctx.putImageData(imageData, 0, 0);
     } else {
       ctx.clearRect(0, 0, width, height);
     }
