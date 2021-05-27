@@ -109,7 +109,8 @@ export function outlineAll(imageData, labeledArray, color) {
   }
 }
 
-export const adjustRangeImageData = (data, min, max) => {
+export const adjustRangeImageData = (imageData, min, max) => {
+  const { data } = imageData;
   const diff = (max - min);
   const scale = diff === 0 ? 255 : 255 / diff;
 
@@ -118,10 +119,10 @@ export const adjustRangeImageData = (data, min, max) => {
     data[i+1] = (data[i+1] - min) * scale; //g value
     data[i+2] = (data[i+2] - min) * scale; //b value
   }
-  return data;
 };
 
-export const recolorImageData = (data, color) => {
+export const recolorImageData = (imageData, color) => {
+  const { data } = imageData;
   const [red, green, blue] = color;
   for (let i = 0; i < data.length; i += 4) {
     data[i] *= red / 255;
@@ -129,4 +130,13 @@ export const recolorImageData = (data, color) => {
     data[i + 2] *= blue / 255;
   }
   return data;
+};
+
+export const invertImageData = (imageData) => {
+  const { data } = imageData;
+  for (let i = 0; i < data.length; i += 4) {  //pixel values in 4-byte blocks (r,g,b,a)
+    data[i] = 255 - data[i];
+    data[i+1] = 255 - data[i+1];
+    data[i+2] = 255 - data[i+2];
+  }
 };
