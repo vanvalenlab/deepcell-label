@@ -76,7 +76,7 @@
       // disable button and show loading bar
       document.getElementById('submit').classList.add('disabled');
       document.getElementById('loading-bar').classList.add('active');
-      const upload = fetch(`${document.location.origin}/upload_file/${outputBucket}/${projectID}`,
+      const upload = fetch(`${document.location.origin}/api/upload/${outputBucket}/${projectID}`,
         { method: 'POST' }
       );
       upload.then(() => {
