@@ -3,6 +3,7 @@ import { useInterpret, useSelector } from '@xstate/react';
 import { useLocation } from "react-router-dom";
 import createDeepcellLabelMachine from './statechart/deepcellLabelMachine';
 import Hotkeys from './Hotkeys';
+import { invertImageData } from './imageUtils';
 
 
 export const LabelContext = createContext();
@@ -64,16 +65,6 @@ export function useLayer(layer) {
   return layers[layer];
 }
 
-const invertImageData = (imageData) => {
-  const { data, width, height } = imageData;
-  for (let i = 0; i < data.length; i += 4) {  //pixel values in 4-byte blocks (r,g,b,a)
-    data[i] = 255 - data[i];
-    data[i+1] = 255 - data[i+1];
-    data[i+2] = 255 - data[i+2];
-  }
-  return new ImageData(data, width, height);
-}
-
 export function useComposeLayers() {
   const raw = useRaw();
   const invert = useSelector(raw, state => state.context.invert);
@@ -102,8 +93,9 @@ export function useComposeLayers() {
       canvas => ctx.drawImage(canvas, 0, 0)
     );
     if (invert) {
-      const data = ctx.getImageData(0, 0, width, height);
-      ctx.putImageData(invertImageData(data), 0, 0);
+      const imageData = ctx.getImageData(0, 0, width, height);
+      invertImageData(imageData);
+      ctx.putImageData(imageData, 0, 0);
     }
   });
 
