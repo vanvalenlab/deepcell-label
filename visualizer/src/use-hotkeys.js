@@ -150,16 +150,16 @@ export function useSelectHotkeys() {
 
   useEffect(() => {
     bind('x', () => {
-      send('SETFOREGROUND', { foreground: background });
-      send('SETBACKGROUND', { background: foreground });
+      send('FOREGROUND', { foreground: background });
+      send('BACKGROUND', { background: foreground });
     });
-    bind('n', () => send('SETFOREGROUND', { foreground: maxLabel + 1 }));
-    bind('esc', () => send('SETBACKGROUND', { background: 0 }));
-    // bind('esc', () => send('SETFOREGROUND', { background: 0 }));
-    bind('[', () => send('SETFOREGROUND', { foreground: foreground <= 1 ? maxLabel : foreground - 1 }));
-    bind(']', () => send('SETFOREGROUND', { foreground: foreground >= maxLabel ? 1 : foreground + 1 }));
-    bind('{', () => send('SETBACKGROUND', { background: background <= 1 ? maxLabel : background - 1 }));
-    bind('}', () => send('SETBACKGROUND', { background: background >= maxLabel ? 1 : background + 1 }));
+    bind('n', () => send('FOREGROUND', { foreground: maxLabel + 1 }));
+    bind('esc', () => send('BACKGROUND', { background: 0 }));
+    // bind('esc', () => send('FOREGROUND', { background: 0 }));
+    bind('[', () => send('FOREGROUND', { foreground: foreground <= 1 ? maxLabel : foreground - 1 }));
+    bind(']', () => send('FOREGROUND', { foreground: foreground >= maxLabel ? 1 : foreground + 1 }));
+    bind('{', () => send('BACKGROUND', { background: background <= 1 ? maxLabel : background - 1 }));
+    bind('}', () => send('BACKGROUND', { background: background >= maxLabel ? 1 : background + 1 }));
     return () => {
       unbind('x');
       unbind('n');
