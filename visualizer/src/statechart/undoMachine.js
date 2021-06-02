@@ -2,11 +2,11 @@ import { Machine, assign, forwardTo, send, spawn, actions, sendParent } from 'xs
 
 const { pure } = actions;
 
-const createHistoryMachine = (ref) => Machine(
+const createHistoryMachine = (actor) => Machine(
   {
     id: 'history',
     context: {
-      ref,
+      actor,
       past: [],
       future: [],
     },
@@ -29,7 +29,7 @@ const createHistoryMachine = (ref) => Machine(
         exit: sendParent('SAVED'),
       },
       restoringPast: {
-        entry: 'restorePast',
+        entry: ['restorePast', () => console.log('restoring past')],
         on: {
           SAMECONTEXT: { target: 'idle', actions: ['forwardToParent'] },
           RESTORED: { target: 'idle', actions: 'forwardToParent' },
@@ -47,18 +47,18 @@ const createHistoryMachine = (ref) => Machine(
   {
     actions: {
       forwardToParent: sendParent((context, event) => event),
-      saveContext: send('SAVE', { to: (context) => context.ref }),
+      saveContext: send('SAVE', { to: (context) => context.actor }),
       saveRestore: assign((context, event) => ({
         past: [...context.past, event],
         future: [],
       })),
       restorePast: send(
         (context) => context.past[context.past.length - 1],
-        { to: (context) => context.ref }
+        { to: (context) => context.actor }
       ),
       restoreFuture: send(
         (context) => context.future[context.future.length - 1],
-        { to: (context) => context.ref }
+        { to: (context) => context.actor }
       ),
       movePastToFuture: assign({
         past: (context) => context.past.slice(0, context.past.length - 1),
@@ -72,23 +72,21 @@ const createHistoryMachine = (ref) => Machine(
   }
 );
 
-const createUndoMachine = ({ canvasRef, imageRef }) => Machine(
+const undoMachine = Machine(
   {
     id: 'undo',
     context: {
-      undoableActors: [canvasRef, imageRef],
-      historyActors: null,
+      histories: [],
       count: 0,
-      numActors: 0,
+      numHistories: 0,
       action: 0,
       numActions: 0,
     },
-    initial: 'setUpHistories',
+    on: {
+      ADD_ACTOR: { actions: 'addActor' },
+    },
+    initial: 'idle',
     states: {
-      setUpHistories: {
-        entry: 'setUpHistories',
-        always: 'idle',
-      },
       idle: {
         on: {
           EDIT: { target: 'saving', actions: ['newAction', 'forwardToHistories'] },
@@ -130,24 +128,27 @@ const createUndoMachine = ({ canvasRef, imageRef }) => Machine(
   },
   {
     guards: {
-      allHistoriesResponded: (context) => context.count === context.numActors,
+      allHistoriesResponded: (context) => context.count === context.numHistories,
       canUndo: (context) => context.action > 0,
       canRedo: (context) => context.action < context.numActions,
     },
     actions: {
+      addActor: assign({
+        histories: ({ histories }, { actor }) => [...histories, spawn(createHistoryMachine(actor))],
+      }),
       setUpHistories: assign({
-        historyActors: (context) => context.undoableActors.map(
+        histories: (context) => context.actors.map(
           (actor) => spawn(createHistoryMachine(actor))
         ),
       }),
       forwardToHistories: pure((context) => {
-        return context.historyActors.map(
+        return context.histories.map(
           (actor) => forwardTo(actor)
         );
       }),
       resetCounts: assign({
         count: 0,
-        numActors: (context) => context.historyActors.length,
+        numHistories: (context) => context.histories.length,
       }),
       incrementCount: assign({
         count: (context) => context.count + 1,
@@ -166,4 +167,4 @@ const createUndoMachine = ({ canvasRef, imageRef }) => Machine(
   }
 );
 
-export default createUndoMachine;
+export default undoMachine;
