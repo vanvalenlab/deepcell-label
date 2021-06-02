@@ -2,7 +2,7 @@ import { Machine, assign, forwardTo, actions, spawn, send } from 'xstate';
 import createRawMachine from './rawMachine';
 import createLabeledMachine from './labeledMachine';
 
-const { pure } = actions;
+const { pure, respond } = actions;
 
 const loadFrameState = {
   entry: ['loadRaw', 'loadLabeled'],
@@ -87,7 +87,28 @@ const colorState = {
       }
     },
   },
-}
+};
+
+const restoreState = {
+  on: { 
+    RESTORE: [
+      { cond: 'sameContext', actions: respond('SAMECONTEXT') },
+      { actions: ['restore', respond('RESTORED')]  },
+    ],
+    SAVE: { actions: 'save' },
+  },
+};
+
+const restoreGuards = {
+  sameContext: (context, event) => context.frame === event.frame,
+  // restored: ({ restoredRawFrame: r, restoredLabeledFrame: l }) => r && l,
+}; 
+
+const restoreActions = {
+  save: respond(({ frame }) => ({ type: 'RESTORE', frame })),
+  restore: send((_, { frame }) => ({ type: 'LOADFRAME', frame })),
+};
+
 
 const createImageMachine = ({ projectId }) => Machine(
   {
@@ -107,6 +128,7 @@ const createImageMachine = ({ projectId }) => Machine(
       syncTool: syncToolState,
       frame: frameState,
       color: colorState,
+      restore: restoreState,
     },
     on: {
       EDITED: { actions: forwardTo(({ labeledRef }) => labeledRef) },
@@ -136,6 +158,7 @@ const createImageMachine = ({ projectId }) => Machine(
     guards: {
       newLoadingFrame: (context, event) => context.loadingFrame !== event.frame,
       isLoaded: ({ rawLoaded, labeledLoaded }) => rawLoaded && labeledLoaded,
+      ...restoreGuards,
     },
     actions: {
       handleProject: assign(
@@ -171,7 +194,6 @@ const createImageMachine = ({ projectId }) => Machine(
         const frameEvent = { type: 'FRAME', frame: loadingFrame };
         return [
           assign({ frame: loadingFrame }),
-          send(frameEvent),
           send(frameEvent, { to: rawRef }),
           send(frameEvent, { to: labeledRef }),
           send(frameEvent, { to: toolRef }),
@@ -180,7 +202,8 @@ const createImageMachine = ({ projectId }) => Machine(
       saveTool: assign({ toolRef: (_, event) => event.toolRef }),
       forwardToTool: forwardTo(({ toolRef }) => toolRef),
       setFeature: assign({ feature: (_, { feature }) => ({ feature })}),
-      setChannel: assign({ channel: (_, { channel }) => ({ channel })})
+      setChannel: assign({ channel: (_, { channel }) => ({ channel })}),
+      ...restoreActions,
     },
   }
 );
