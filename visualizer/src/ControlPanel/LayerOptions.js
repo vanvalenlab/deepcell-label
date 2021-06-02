@@ -33,7 +33,7 @@ const useStyles = makeStyles(() => ({
   }
 }));
 
-function ChannelOptions({ layer }) {
+function LayerOptions({ layer }) {
   const [open, toggle] = useReducer(v => !v, false);
   const anchorRef = useRef(null);
 
@@ -77,4 +77,4 @@ function ChannelOptions({ layer }) {
   );
 }
 
-export default ChannelOptions;
+export default LayerOptions;
