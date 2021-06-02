@@ -3,7 +3,6 @@ import { makeStyles } from "@material-ui/core/styles";
 
 import ImageControls from './ControlPanel/ImageControls';
 import LabeledController from './ControlPanel/LabeledController';
-import VisualizerControls from './ControlPanel/VisualizerControls';
 import UndoRedo from './ControlPanel/UndoRedo';
 import Navbar from './Navbar';
 import Canvas from './Canvas/Canvas';
@@ -13,6 +12,7 @@ import { useState, useRef, useEffect } from 'react';
 import { ResizeSensor } from 'css-element-queries';
 import debounce from 'lodash.debounce';
 import ToolControls from './ControlPanel/ToolControls';
+import LabelControls from './ControlPanel/LabelControls';
 
 const useStyles = makeStyles({
   root: {
@@ -68,9 +68,11 @@ function Label() {
         <Box className={styles.controlPanelBox}>
           {/* <UndoRedo /> */}
           {/* <ControlPanel /> */}
-          {/* <VisualizerControls /> */}
           <ImageControls />
+        </Box>
+        <Box className={styles.controlPanelBox}>
           <ToolControls />
+          <LabelControls />
         </Box>
         <Box ref={canvasBoxRef} className={styles.canvasBox}>
           <Canvas width={canvasBoxWidth} height={canvasBoxHeight} />
