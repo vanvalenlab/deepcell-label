@@ -16,11 +16,11 @@ import { useToolbar } from '../ServiceContext';
 
 export default function ToolControls() {
   const toolbar = useToolbar();
-  const [current, send] = useActor(toolbar);
-  const { tool } = current.context;
   // const brushSize = useSelector(tool, state => state.context.brushSize);
   // const trace = useSelector(tool, state => state.context.trace);
-  const isGrayscale = current.matches('grayscale');
+  const isGrayscale = useSelector(toolbar, state => state.matches('grayscale'));
+  const tool = useSelector(toolbar, state => state.context.tool);
+  const { send } = toolbar;
 
   const handleChange = (event, value) => {
     const lookup = {
@@ -48,9 +48,6 @@ export default function ToolControls() {
         <ToggleButton value="brush" selected={tool === 'brush'}>
           Brush
         </ToggleButton>
-        {current.matches('grayscale') && <ToggleButton value="threshold" selected={tool === 'threshold'}>
-          Threshold
-        </ToggleButton>}
         {/* <ToggleButton value="trim" selected={tool === 'trim'}>
           Trim
         </ToggleButton> */}
@@ -60,10 +57,22 @@ export default function ToolControls() {
         {/* <ToggleButton value="erodeDilate" selected={tool === 'erodeDilate'}>
           Grow/Shrink
         </ToggleButton> */}
-        {current.matches('grayscale') && <ToggleButton value="autofit" selected={tool === 'autofit'}>
+        <ToggleButton 
+          value="threshold" 
+          selected={tool === 'threshold'}
+          disabled={!isGrayscale}>
+          Threshold
+        </ToggleButton>
+        <ToggleButton 
+          value="autofit" 
+          selected={tool === 'autofit'}
+          disabled={!isGrayscale}>
           Autofit
-        </ToggleButton>}
-        {/* {current.matches('grayscale') && <ToggleButton value="watershed" selected={tool === 'watershed'}>
+        </ToggleButton>
+        {/* <ToggleButton 
+          value="watershed" 
+          selected={tool === 'watershed'}
+          disabled={!isGrayscale}>
           Watershed
         </ToggleButton> */}
       </ToggleButtonGroup>
