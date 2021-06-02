@@ -139,7 +139,7 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) => Machine(
       // useFrame: pure(({ features }) => features.map(feature => forwardTo(feature))),
       /** Switch to a new feature. */
       useFeature: pure(({ features }, { feature, frame }) => {
-        const featureEvent = { type: 'FEATURE', feature, frame };
+        const featureEvent = { type: 'FEATURE', feature };
         return [
           assign({ feature }),
           send(featureEvent),
