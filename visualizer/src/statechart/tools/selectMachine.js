@@ -1,12 +1,12 @@
 import { Machine, sendParent } from 'xstate';
 import { toolActions, toolGuards } from './toolUtils';
 
-const selectMachine = Machine(
+const createSelectMachine = ({label, foreground, background }) => Machine(
   {
     context: {
-      label: 0,
-      foreground: 1,
-      background: 0,
+      label,
+      foreground,
+      background,
     },
     on: {
       mousedown: [
@@ -30,4 +30,4 @@ const selectMachine = Machine(
   }
 );
 
-export default selectMachine;
+export default createSelectMachine;

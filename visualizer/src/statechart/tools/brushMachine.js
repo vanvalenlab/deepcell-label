@@ -1,17 +1,17 @@
-import { Machine, assign, sendParent, actions, spawn, send, forwardTo } from 'xstate';
+import { Machine, assign, sendParent } from 'xstate';
 import { toolActions, toolGuards } from './toolUtils';
 
-const brushMachine = Machine(
+const createBrushMachine = ({ x, y, foreground, background }) => Machine(
   {
     invoke: {
       src: 'listenForBrushHotkeys',
     },
     context: {
+      x,
+      y,
+      foreground,
+      background,
       trace: [],
-      x: 0,
-      y: 0,
-      foreground: 1,
-      background: 0,
       brushSize: 5,
     },
     initial: 'idle',
@@ -84,4 +84,4 @@ const brushMachine = Machine(
   }
 );
 
-export default brushMachine;
+export default createBrushMachine;

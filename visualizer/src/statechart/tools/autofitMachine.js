@@ -1,12 +1,12 @@
 import { Machine, sendParent } from 'xstate';
 import { toolActions, toolGuards } from './toolUtils';
 
-const autofitMachine = Machine(
+const createAutofitMachine = ({ label, foreground, background }) => Machine(
   {
     context: {
-      label: 0,
-      foreground: 1,
-      background: 0,
+      label,
+      foreground,
+      background,
     },
     on: {
       mousedown: [
@@ -29,8 +29,9 @@ const autofitMachine = Machine(
         action: 'active_contour',
         args: { label: label },
       })),
+      selectForeground: sendParent('SELECTFOREGROUND'),
     }
   }
 );
 
-export default autofitMachine;
+export default createAutofitMachine;

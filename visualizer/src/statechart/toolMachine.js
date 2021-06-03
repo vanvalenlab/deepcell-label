@@ -1,8 +1,8 @@
 import { Machine, assign, sendParent, actions, spawn, send, forwardTo } from 'xstate';
-import selectMachine from './tools/selectMachine';
-import brushMachine from './tools/brushMachine';
-import thresholdMachine from './tools/thresholdMachine';
-import autofitMachine from './tools/autofitMachine';
+import createSelectMachine from './tools/selectMachine';
+import createBrushMachine from './tools/brushMachine';
+import createThresholdMachine from './tools/thresholdMachine';
+import createAutofitMachine from './tools/autofitMachine';
 import { toolActions, toolGuards } from './tools/toolUtils';
 import { respond } from 'xstate/lib/actions';
 // select: selectState,
@@ -19,12 +19,17 @@ const { pure } = actions;
 // TODO: move to config file?
 const grayscaleTools = ['autofit', 'watershed', 'threshold'];
 
-const toolMachineLookup = {
-  brush: brushMachine,
-  select: selectMachine,
-  threshold: thresholdMachine,
-  autofit: autofitMachine,
+const createToolMachineLookup = {
+  brush: createBrushMachine,
+  select: createSelectMachine,
+  threshold: createThresholdMachine,
+  autofit: createAutofitMachine,
 };
+
+const createToolMachine = (context) => {
+  const { tool } = context;
+  return spawn(createToolMachineLookup[tool](context), 'tool');
+}
 
 const toolMachine = Machine(
   {
@@ -144,7 +149,7 @@ const toolMachine = Machine(
       ),
       restore: assign((_, { tool, foreground, background }) => ({ tool, foreground, background })),
       spawnTool: assign({
-        toolActor: ({ tool }) => spawn(toolMachineLookup[tool], 'tool'),
+        toolActor: createToolMachine,
       }),
       sendLabel: send(({ labeledArray: array, x, y}) => 
         ({ type: 'LABEL', label: array ? Math.abs(array[y][x]) : 0 })

@@ -1,14 +1,14 @@
 import { Machine, assign, sendParent, actions, spawn, send, forwardTo } from 'xstate';
 import { toolActions, toolGuards } from './toolUtils';
 
-const thresholdMachine = Machine(
+const createThresholdMachine = ({ x, y, foreground }) => Machine(
   {
     initial: 'idle',
     context: {
-      foreground: 1,
+      x,
+      y,
+      foreground,
       firstPoint: [0, 0],
-      x: 0,
-      y: 0,
     },
     states: {
       idle: {
@@ -53,4 +53,4 @@ const thresholdMachine = Machine(
   }
 );
 
-export default thresholdMachine;
+export default createThresholdMachine;
