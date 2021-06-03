@@ -98,7 +98,9 @@ const restoreState = {
     ],
     SAVE: { actions: 'save' },
   },
+  initial: 'idle',
   states: {
+    idle: {},
     restoring: {
       type: 'parallel',
       states: {
