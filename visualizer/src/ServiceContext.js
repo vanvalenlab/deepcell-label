@@ -118,7 +118,7 @@ export function useToolbar() {
 export function useTool() {
   const { service } = useLabelService();
   const { tool: toolbar } = service.state.children;
-  const tool = useSelector(toolbar, state => state.context.tools[state.context.tool]);
+  const tool = useSelector(toolbar, state => state.context.toolActor);
   return tool;
 }
 

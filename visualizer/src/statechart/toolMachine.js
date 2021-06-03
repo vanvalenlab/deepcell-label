@@ -4,6 +4,7 @@ import brushMachine from './tools/brushMachine';
 import thresholdMachine from './tools/thresholdMachine';
 import autofitMachine from './tools/autofitMachine';
 import { toolActions, toolGuards } from './tools/toolUtils';
+import { respond } from 'xstate/lib/actions';
 // select: selectState,
 // brush: brushState,
 // flood: floodState,
@@ -18,6 +19,13 @@ const { pure } = actions;
 // TODO: move to config file?
 const grayscaleTools = ['autofit', 'watershed', 'threshold'];
 
+const toolMachineLookup = {
+  brush: brushMachine,
+  select: selectMachine,
+  threshold: thresholdMachine,
+  autofit: autofitMachine,
+};
+
 const toolMachine = Machine(
   {
     id: 'tool',
@@ -30,10 +38,10 @@ const toolMachine = Machine(
       frame: 0,
       feature: 0,
       channel: 0,
-      tools: {},
-      tool: null,
+      tool: 'select',
+      toolActor: null,
     },
-    entry: 'spawnTools',
+    entry: 'spawnTool',
     invoke: {
       src: 'listenForToolHotkeys',
     },
@@ -58,11 +66,11 @@ const toolMachine = Machine(
     },
     on: {
       // switch tool
-      USE_BRUSH: { actions: assign({ tool: 'brush' }) },
-      USE_SELECT:  { actions: assign({ tool: 'select' }) },
-      // USE_FLOOD: { actions: assign({ tool: 'flood' }) },
-      // USE_TRIM: { actions: assign({ tool: 'trim' }) },
-      // USE_ERODE_DILATE: { actions: assign({ tool: 'erodeDilate' }) },
+      USE_BRUSH: { actions: [assign({ tool: 'brush' }), 'spawnTool'] },
+      USE_SELECT:  { actions: [assign({ tool: 'select' }), 'spawnTool'] },
+      // USE_FLOOD: { actions: [assign({ tool: 'flood' }), 'spawnTool'] },
+      // USE_TRIM: { actions: [assign({ tool: 'trim' }), 'spawnTool'] },
+      // USE_ERODE_DILATE: { [actions: assign({ tool: 'erodeDilate' }), 'spawnTool'] },
       
       // context not shared with tools
       FRAME: { actions: 'setFrame' },
@@ -71,10 +79,10 @@ const toolMachine = Machine(
       LABELEDARRAY: { actions: ['setLabeledArray', 'sendLabel'] },
 
       // context to sync with tools
-      COORDINATES: { actions: ['setCoordinates', 'sendLabel', 'forwardToTools'] },
-      LABEL: { actions: ['setLabel', 'forwardToTools'] },
-      FOREGROUND: { actions: ['setForeground', 'forwardToTools'] },
-      BACKGROUND: { actions: ['setBackground', 'forwardToTools'], },
+      COORDINATES: { actions: ['setCoordinates', 'sendLabel', 'forwardToTool'] },
+      LABEL: { actions: ['setLabel', 'forwardToTool'] },
+      FOREGROUND: { actions: ['setForeground', 'forwardToTool'] },
+      BACKGROUND: { actions: ['setBackground', 'forwardToTool'], },
 
       SELECTFOREGROUND: { actions: 'selectForeground' },
       SELECTBACKGROUND: { actions: 'selectBackground' },
@@ -87,6 +95,13 @@ const toolMachine = Machine(
       ],
       ///
       EDIT: { actions: 'sendEditWithExtraArgs' },
+
+      // undo/redo actions
+      SAVE: { actions: 'save' },
+      RESTORE: [
+        { cond: 'sameContext', actions: respond('SAMECONTEXT') },
+        { actions: ['restore', 'spawnTool', respond('RESTORED')] }
+      ],
     }
   },
   {
@@ -117,22 +132,21 @@ const toolMachine = Machine(
     guards: {
       ...toolGuards,
       grayscaleTool: ({ tool }) => grayscaleTools.includes(tool),
+      sameContext: (context, event) => 
+        context.tool === event.tool 
+        && context.foreground === event.foreground 
+        && context.background === event.background,
     },
     actions: {
       ...toolActions,
-      spawnTools: assign(() => {
-        return {
-          tool: 'select',
-          tools: {
-            select: spawn(selectMachine, 'select'),
-            brush: spawn(brushMachine, 'brush'),
-            threshold: spawn(thresholdMachine, 'threshold'),
-            autofit: spawn(autofitMachine, 'autofit'),
-          },
-        }
+      save: respond(({ tool, foreground, background }) => 
+        ({ type: 'RESTORE', tool, foreground, background })
+      ),
+      restore: assign((_, { tool, foreground, background }) => ({ tool, foreground, background })),
+      spawnTool: assign({
+        toolActor: ({ tool }) => spawn(toolMachineLookup[tool], 'tool'),
       }),
-      sendLabel: send(
-        ({ labeledArray: array, x, y}) => 
+      sendLabel: send(({ labeledArray: array, x, y}) => 
         ({ type: 'LABEL', label: array ? Math.abs(array[y][x]) : 0 })
       ),
       selectForeground: pure(({ label, foreground, background }) => {
@@ -154,8 +168,7 @@ const toolMachine = Machine(
         ({ frame, feature, channel }, e) => 
         ({...e, args: {...e.args, frame, feature, channel }})
       ),
-      forwardToTool: forwardTo(({ tool, tools}) => tools[tool]),
-      forwardToTools: pure(({ tools }) => Object.values(tools).map(tool => forwardTo(tool))),
+      forwardToTool: forwardTo(({ toolActor }) => toolActor),
     }
   }
 );
