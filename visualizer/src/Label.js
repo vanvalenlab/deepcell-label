@@ -66,11 +66,11 @@ function Label() {
       <Instructions />
       <Box className={styles.main}>
         <Box className={styles.controlPanelBox}>
-          {/* <UndoRedo /> */}
           {/* <ControlPanel /> */}
           <ImageControls />
         </Box>
         <Box className={styles.controlPanelBox}>
+          <UndoRedo />
           <ToolControls />
           <LabelControls />
         </Box>
