@@ -27,7 +27,7 @@ function LayerController({ layer }) {
   const classes = useStyles();
 
   const image = useImage();
-  const isRGB = useSelector(image, state => state.matches('color.color'));
+  const grayscale = useSelector(image, state => state.context.grayscale);
 
   return (
     <Grid
@@ -38,16 +38,16 @@ function LayerController({ layer }) {
       className={classes.root}
     >
       <Grid container direction="row" justify="space-between">
-        <Grid item xs={isRGB ? 10 : 8}>
+        <Grid item xs={grayscale ? 8 : 10}>
           <LayerSelector layer={layer} />
         </Grid>
         <Grid item>
-          {isRGB ? <LayerOptions layer={layer} /> : <InvertToggle />}
+          {!grayscale ? <LayerOptions layer={layer} /> : <InvertToggle />}
         </Grid>
       </Grid>
       <Grid container direction="row" justify="flex-start" alignItems="center">
         <Grid item xs={2}>
-          {isRGB && <LayerCheckbox layer={layer} />}
+          {!grayscale && <LayerCheckbox layer={layer} />}
         </Grid>
         <Grid item xs={10}>
           <LayerSlider layer={layer} />
@@ -103,7 +103,7 @@ const LayerSlider = ({ layer }) => {
   const color = useSelector(layer, state => state.context.color);
 
   const image = useImage();
-  const isRGB = useSelector(image, state => state.matches('color.color'));
+  const grayscale = useSelector(image, state => state.context.grayscale);
 
   const onChange = (event, newValue) => {
     layer.send({ type: 'SETRANGE', range: newValue });
@@ -118,7 +118,7 @@ const LayerSlider = ({ layer }) => {
     step={1}
     orientation="horizontal"
     style={{
-      color: isRGB ? color : 'primary',
+      color: grayscale ? 'primary' : color,
       marginTop: '7px'
     }}
   />;

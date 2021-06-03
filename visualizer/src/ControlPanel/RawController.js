@@ -21,7 +21,8 @@ import LayerController from './LayerController';
 
 const ColorModeToggle = () => {
   const image = useImage();
-  const [current, send] = useActor(image);
+  const grayscale = useSelector(image, state => state.context.grayscale);
+  const { send } = image;
 
   return (
     <Typography component="div">
@@ -30,7 +31,7 @@ const ColorModeToggle = () => {
           <Grid item>
             <Switch 
               color="default" 
-              checked={current.matches('color.grayscale')} 
+              checked={grayscale} 
               onChange={() => send('TOGGLE_COLOR')} 
             />
           </Grid>
@@ -79,7 +80,7 @@ const GrayscaleChannelController = () => {
 
 export const RawController = () => {
   const image = useImage();
-  const [current] = useActor(image);
+  const grayscale = useSelector(image, state => state.context.grayscale);
 
   return <>
     <Box display='flex' flexDirection='row' justifyContent='space-between'>
@@ -94,8 +95,7 @@ export const RawController = () => {
       </Tooltip>
     </Box>
     <ColorModeToggle />
-    { current.matches('color.color') && <RGBChannelController /> }
-    { current.matches('color.grayscale') && <GrayscaleChannelController />}
+    { grayscale ? <GrayscaleChannelController /> : <RGBChannelController /> }
   </>;
 };
 

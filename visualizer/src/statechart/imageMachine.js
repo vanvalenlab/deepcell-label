@@ -11,8 +11,14 @@ const loadFrameState = {
     idle: {},
     loading: {
       on: {
-        RAWLOADED: { target: 'checkLoaded', actions: assign({ rawLoaded: true }) },
-        LABELEDLOADED: { target: 'checkLoaded', actions: assign({ labeledLoaded: true }) },
+        RAWLOADED: { 
+          target: 'checkLoaded', 
+          actions: assign({ rawLoaded: true }) 
+        },
+        LABELEDLOADED: { 
+          target: 'checkLoaded', 
+          actions: assign({ labeledLoaded: true }) 
+        },
         // wait until the new channel or feature has loaded
         CHANNEL: { actions: assign({ rawLoaded: false }) },
         FEATURE: { actions: assign({ labeledLoaded: false }) },
@@ -26,7 +32,11 @@ const loadFrameState = {
     },
   },
   on: {
-    LOADFRAME: { target: '.loading', cond: 'newLoadingFrame', actions: ['assignLoadingFrame', 'loadRaw', 'loadLabeled'] },
+    LOADFRAME: { 
+      target: '.loading', 
+      cond: 'newLoadingFrame', 
+      actions: ['assignLoadingFrame', 'loadRaw', 'loadLabeled'] 
+    },
   }
 };
 
@@ -42,6 +52,9 @@ const frameState = {
     setUpActors: {
       always: { target: 'loadFrame', actions: 'spawnActors' },
     },
+    // setUpUndo: {
+    //   always: { target: 'loadFrame', actions: 'addActorsToUndo' },
+    // },
     loadFrame: loadFrameState,
   },
 };
@@ -66,26 +79,14 @@ const syncToolState = {
 };
 
 const colorState = {
-  initial: 'color',
   invoke: {
     src: 'listenForColorHotkey',
   },
-  states: {
-    color: {
-      entry: send('COLOR', { to: ({ toolRef }) => toolRef }),
-      on: {
-        TOGGLE_COLOR: 'grayscale',
-      }
-    },
-    grayscale: {
-      entry: send('GRAYSCALE', { to: ({ toolRef }) => toolRef }),
-      // invoke: {
-      //   src: 'listenForChannelHotkey',
-      // },
-      on: {
-        TOGGLE_COLOR: 'color',
-      }
-    },
+  on: {
+    TOGGLE_COLOR: { actions: [
+      assign({ grayscale: ({ grayscale }) => !grayscale }),
+      send(({ grayscale }) => grayscale ? 'GRAYSCALE' : 'COLOR', { to: ({ toolRef }) => toolRef }),
+    ]}
   },
 };
 
@@ -93,20 +94,37 @@ const restoreState = {
   on: { 
     RESTORE: [
       { cond: 'sameContext', actions: respond('SAMECONTEXT') },
-      { actions: ['restore', respond('RESTORED')]  },
+      { target: '.restoring', internal: false,  actions: respond('RESTORED')  },
     ],
     SAVE: { actions: 'save' },
   },
+  states: {
+    restoring: {
+      type: 'parallel',
+      states: {
+        restoreGrayscale: {
+          entry: pure((context, event) => {
+            if (context.grayscale !== event.grayscale) { 
+              return send('TOGGLE_COLOR');
+            }
+          })
+        },
+        restoreFrame: {
+          entry: send((_, { frame }) => ({ type: 'LOADFRAME', frame })),
+        },
+      }
+    },
+  }
 };
 
 const restoreGuards = {
-  sameContext: (context, event) => context.frame === event.frame,
-  // restored: ({ restoredRawFrame: r, restoredLabeledFrame: l }) => r && l,
+  sameContext: (context, event) => 
+    context.frame === event.frame 
+    && context.grayscale === event.grayscale,
 }; 
 
 const restoreActions = {
-  save: respond(({ frame }) => ({ type: 'RESTORE', frame })),
-  restore: send((_, { frame }) => ({ type: 'LOADFRAME', frame })),
+  save: respond(({ frame, grayscale }) => ({ type: 'RESTORE', frame, grayscale })),
 };
 
 
@@ -122,6 +140,7 @@ const createImageMachine = ({ projectId }) => Machine(
       numChannels: 1,
       rawRef: null,
       labeledRef: null,
+      grayscale: false,
     },
     type: 'parallel',
     states: {
@@ -131,6 +150,7 @@ const createImageMachine = ({ projectId }) => Machine(
       restore: restoreState,
     },
     on: {
+      UNDOREF: { actions: 'saveUndo' },
       EDITED: { actions: forwardTo(({ labeledRef }) => labeledRef) },
     },
   },
@@ -177,6 +197,13 @@ const createImageMachine = ({ projectId }) => Machine(
         labeledRef: ({ projectId, numFeatures, numFrames }) =>
           spawn(createLabeledMachine(projectId, numFeatures, numFrames), 'labeled'),
       }),
+      addActorsToUndo: pure((context) => {
+        const { undoRef, rawRef, labeledRef } = context;
+        return [
+          send({ type: 'ADD_ACTOR', actor: rawRef }, { to: undoRef }),
+          send({ type: 'ADD_ACTOR', actor: labeledRef }, { to: undoRef }),
+        ];
+      }),
       loadLabeled: send(
         ({ loadingFrame }) => ({ type: 'LOADFRAME', frame: loadingFrame }),
         { to: ({ labeledRef }) => labeledRef }
@@ -200,6 +227,7 @@ const createImageMachine = ({ projectId }) => Machine(
         ];
       }),
       saveTool: assign({ toolRef: (_, event) => event.toolRef }),
+      saveUndo: assign({ undoRef: (_, event) => event.undoRef }),
       forwardToTool: forwardTo(({ toolRef }) => toolRef),
       setFeature: assign({ feature: (_, { feature }) => ({ feature })}),
       setChannel: assign({ channel: (_, { channel }) => ({ channel })}),

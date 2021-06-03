@@ -85,6 +85,7 @@ const createDeepcellLabelMachine = (projectId) => Machine(
         return [
           send({ type: 'ADD_ACTOR', actor: canvasRef }, { to: 'undo' }),
           send({ type: 'ADD_ACTOR', actor: imageRef }, { to: 'undo' }),
+          send({ type: 'ADD_ACTOR', actor: toolRef }, { to: 'undo' }),
         ];
       }),
       sendProject: pure((context, event) => {

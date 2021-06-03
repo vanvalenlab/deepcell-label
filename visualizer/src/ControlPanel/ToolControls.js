@@ -18,7 +18,7 @@ export default function ToolControls() {
   const toolbar = useToolbar();
   // const brushSize = useSelector(tool, state => state.context.brushSize);
   // const trace = useSelector(tool, state => state.context.trace);
-  const isGrayscale = useSelector(toolbar, state => state.matches('grayscale'));
+  const grayscale = useSelector(toolbar, state => state.matches('grayscale'));
   const tool = useSelector(toolbar, state => state.context.tool);
   const { send } = toolbar;
 
@@ -60,13 +60,13 @@ export default function ToolControls() {
         <ToggleButton 
           value="threshold" 
           selected={tool === 'threshold'}
-          disabled={!isGrayscale}>
+          disabled={!grayscale}>
           Threshold
         </ToggleButton>
         <ToggleButton 
           value="autofit" 
           selected={tool === 'autofit'}
-          disabled={!isGrayscale}>
+          disabled={!grayscale}>
           Autofit
         </ToggleButton>
         {/* <ToggleButton 
