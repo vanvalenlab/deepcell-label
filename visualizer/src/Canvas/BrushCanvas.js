@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useSelector } from '@xstate/react';
-import { useTool } from '../ServiceContext';
+import { useCanvas, useTool } from '../ServiceContext';
 
 const distance = (x, y) => {
   return Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2));
@@ -82,7 +82,14 @@ const drawTrace = (ctx, x, y, brushSize) => {
   ctx.putImageData(imageData, sx, sy);
 };
 
-const BrushCanvas = ({ sx, sy, sw, sh, zoom, width, height, className }) => {
+const BrushCanvas = ({ width, height, className }) => {
+
+  const canvas = useCanvas();
+  const sx = useSelector(canvas, state => state.context.sx);
+  const sy = useSelector(canvas, state => state.context.sy);
+  const zoom = useSelector(canvas, state => state.context.zoom);
+  const sw = useSelector(canvas, state => state.context.width);
+  const sh = useSelector(canvas, state => state.context.height);
 
   const brush = useTool();
   const x = useSelector(brush, state => state.context.x);

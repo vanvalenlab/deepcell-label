@@ -1,10 +1,22 @@
 import React, { useEffect, useRef } from 'react';
 import { useSelector } from '@xstate/react';
-import { useLabeled, useFeature, useToolbar } from '../ServiceContext';
+import { useCanvas, useLabeled, useFeature, useToolbar } from '../ServiceContext';
 import { highlightImageData, removeNoLabelImageData, opacityImageData } from '../imageUtils';
 
 
-export const LabeledCanvas = ({ sx, sy, sw, sh, zoom, width, height, className }) => {
+export const LabeledCanvas = ({ className }) => {
+  
+  const canvas = useCanvas();
+  const sx = useSelector(canvas, state => state.context.sx);
+  const sy = useSelector(canvas, state => state.context.sy);
+  const zoom = useSelector(canvas, state => state.context.zoom);
+  const scale = useSelector(canvas, state => state.context.scale);
+  const sw = useSelector(canvas, state => state.context.width);
+  const sh = useSelector(canvas, state => state.context.height);
+  
+  const width = sw * scale * window.devicePixelRatio;
+  const height = sh * scale * window.devicePixelRatio;
+  
   const labeled = useLabeled();
   const featureIndex = useSelector(labeled, state => state.context.feature);
   const highlight = useSelector(labeled, state => state.context.highlight);

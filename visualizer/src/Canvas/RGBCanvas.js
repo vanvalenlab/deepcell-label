@@ -1,9 +1,21 @@
 import React, { useEffect, useRef } from 'react';
 import { useSelector } from '@xstate/react';
-import { useRaw, useComposeLayers } from '../ServiceContext';
+import { useCanvas, useRaw, useComposeLayers } from '../ServiceContext';
 import ChannelCanvas from './ChannelCanvas';
 
-export const RGBCanvas = ({ sx, sy, sw, sh, zoom, width, height, className }) => {
+export const RGBCanvas = ({ className }) => {
+  
+  const canvas = useCanvas();
+  const sx = useSelector(canvas, state => state.context.sx);
+  const sy = useSelector(canvas, state => state.context.sy);
+  const zoom = useSelector(canvas, state => state.context.zoom);
+  const scale = useSelector(canvas, state => state.context.scale);
+  const sw = useSelector(canvas, state => state.context.width);
+  const sh = useSelector(canvas, state => state.context.height);
+  
+  const width = sw * scale * window.devicePixelRatio;
+  const height = sh * scale * window.devicePixelRatio;
+  
   const raw = useRaw();
   const invert = useSelector(raw, state => state.context.invert);
   const layers = useSelector(raw, state => state.context.layers);

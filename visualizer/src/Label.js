@@ -1,5 +1,9 @@
+import { useState, useRef, useEffect } from 'react';
 import Box from '@material-ui/core/Box';
 import { makeStyles } from "@material-ui/core/styles";
+import { useSelector } from '@xstate/react';
+import { ResizeSensor } from 'css-element-queries';
+import debounce from 'lodash.debounce';
 
 import ImageControls from './ControlPanel/ImageControls';
 import LabeledController from './ControlPanel/LabeledController';
@@ -8,11 +12,10 @@ import Navbar from './Navbar';
 import Canvas from './Canvas/Canvas';
 import Instructions from './Instructions/Instructions';
 import Footer from './Footer/Footer';
-import { useState, useRef, useEffect } from 'react';
-import { ResizeSensor } from 'css-element-queries';
-import debounce from 'lodash.debounce';
 import ToolControls from './ControlPanel/ToolControls';
 import LabelControls from './ControlPanel/LabelControls';
+import { useCanvas } from './ServiceContext';
+
 
 const useStyles = makeStyles({
   root: {
@@ -50,6 +53,8 @@ function Label() {
   const [canvasBoxWidth, setCanvasBoxWidth] = useState(0);
   const [canvasBoxHeight, setCanvasBoxHeight] = useState(0);
 
+  const canvas = useCanvas();
+
   useEffect(() => {
     const setCanvasBoxDimensions = () => {
       setCanvasBoxWidth(canvasBoxRef.current.offsetWidth);
@@ -59,6 +64,11 @@ function Label() {
 
     new ResizeSensor(canvasBoxRef.current, debounce(setCanvasBoxDimensions, 20));
   }, [canvasBoxRef]);
+
+  useEffect(() => {
+    const padding = 5;
+    canvas.send({ type: 'RESIZE', width: canvasBoxWidth, height: canvasBoxHeight, padding });
+  }, [canvas, canvasBoxWidth, canvasBoxHeight]);
 
   return (
     <div className={styles.root}>
@@ -75,7 +85,7 @@ function Label() {
           <LabelControls />
         </Box>
         <Box ref={canvasBoxRef} className={styles.canvasBox}>
-          <Canvas width={canvasBoxWidth} height={canvasBoxHeight} />
+          <Canvas />
         </Box>
       </Box>
       <Footer />

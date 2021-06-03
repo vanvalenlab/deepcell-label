@@ -1,10 +1,21 @@
 import React, { useEffect, useRef } from 'react';
 import { useSelector } from '@xstate/react';
-import { useRaw, useChannel } from '../ServiceContext';
-import ChannelCanvas from './ChannelCanvas';
+import { useRaw, useChannel, useCanvas } from '../ServiceContext';
 import { adjustRangeImageData, invertImageData } from '../imageUtils';
 
-export const RawCanvas = ({ sx, sy, sw, sh, zoom, width, height, className }) => {
+export const GrayscaleCanvas = ({ className }) => {
+  
+  const canvas = useCanvas();
+  const sx = useSelector(canvas, state => state.context.sx);
+  const sy = useSelector(canvas, state => state.context.sy);
+  const zoom = useSelector(canvas, state => state.context.zoom);
+  const scale = useSelector(canvas, state => state.context.scale);
+  const sw = useSelector(canvas, state => state.context.width);
+  const sh = useSelector(canvas, state => state.context.height);
+  
+  const width = sw * scale * window.devicePixelRatio;
+  const height = sh * scale * window.devicePixelRatio;
+  
   const raw = useRaw();
   const invert = useSelector(raw, state => state.context.invert);
   const layer = useSelector(raw, state => state.context.layers[0]);
@@ -31,11 +42,10 @@ export const RawCanvas = ({ sx, sy, sw, sh, zoom, width, height, className }) =>
 
   useEffect(() => {
     // draw image onto canvas to get image data
-    const canvas = hiddenCanvasRef.current;
     const ctx = hiddenCtxRef.current;
     ctx.drawImage(rawImage, 0, 0);
-    // adjust image data
     const imageData = ctx.getImageData(0, 0, width, height);
+    // adjust image data
     adjustRangeImageData(imageData, min, max);
     if (invert) { invertImageData(imageData); }
     // redraw with adjusted data
@@ -73,4 +83,4 @@ export const RawCanvas = ({ sx, sy, sw, sh, zoom, width, height, className }) =>
   </>;
 };
 
-export default React.memo(RawCanvas);
+export default GrayscaleCanvas;

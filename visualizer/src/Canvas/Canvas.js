@@ -26,7 +26,7 @@ const useStyles = makeStyles({
   },
 });
 
-export const Canvas = ({ height, width }) => {
+export const Canvas = () => {
 
   const raw = useRaw();
   const labeled = useLabeled();
@@ -38,7 +38,6 @@ export const Canvas = ({ height, width }) => {
   const sw = useSelector(canvas, state => state.context.width);
   const sh = useSelector(canvas, state => state.context.height);
   const scale = useSelector(canvas, state => state.context.scale);
-  const canvasProps = { sx, sy, zoom, sw, sh };
 
   const toolbar = useToolbar();
   const usingBrush = useSelector(toolbar, state => state.context.tool === 'brush');
@@ -47,11 +46,6 @@ export const Canvas = ({ height, width }) => {
   const tool = useTool();
 
   const styles = useStyles();
-
-  useEffect(() => {
-    const padding = 5;
-    canvas.send({ type: 'RESIZE', width, height, padding });
-  }, [canvas, width, height, sh, sw]);
 
   // dynamic canvas border styling based on position
   const padding = 5;
@@ -68,8 +62,6 @@ export const Canvas = ({ height, width }) => {
 
   const styleProps = {
     className: styles.canvas,
-    width: sw * scale * window.devicePixelRatio,
-    height: sh * scale * window.devicePixelRatio,
   };
 
   // prevent scrolling page when over canvas
@@ -108,11 +100,11 @@ export const Canvas = ({ height, width }) => {
       onMouseUp={tool.send}
       onClick={tool.send}
     >
-      {raw && <RawCanvas {...canvasProps} {...styleProps} />}
-      {labeled && <LabeledCanvas {...canvasProps} {...styleProps} />}
-      {labeled && <OutlineCanvas {...canvasProps} {...styleProps} />}
-      {usingBrush && <BrushCanvas {...canvasProps} {...styleProps} />}
-      {/* {usingThreshold && <ThresholdCanvas {...canvasProps} { ..styleProps} />} */}
+      {raw && <RawCanvas {...styleProps} />}
+      {labeled && <LabeledCanvas {...styleProps} />}
+      {labeled && <OutlineCanvas {...styleProps} />}
+      {usingBrush && <BrushCanvas {...styleProps} />}
+      {/* {usingThreshold && <ThresholdCanvas { ..styleProps} />} */}
     </Box>
   )
 }
