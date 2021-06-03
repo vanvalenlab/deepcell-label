@@ -6,7 +6,7 @@ const thresholdMachine = Machine(
     initial: 'idle',
     context: {
       foreground: 1,
-      firstPoint: (0, 0),
+      firstPoint: [0, 0],
       x: 0,
       y: 0,
     },
@@ -24,7 +24,7 @@ const thresholdMachine = Machine(
     },
     on: {
       COORDINATES: { actions: 'setCoordinates' },
-      foreground: { actions: 'setForeground' },
+      FOREGROUND: { actions: 'setForeground' },
     }
   },
   {

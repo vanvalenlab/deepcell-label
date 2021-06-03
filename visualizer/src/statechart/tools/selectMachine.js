@@ -17,7 +17,6 @@ const selectMachine = Machine(
       FOREGROUND: { actions: 'setForeground' },
       BACKGROUND: { actions: 'setBackground' },
       LABEL: { actions: 'setLabel' },
-      
     },
   },
   {

@@ -7,9 +7,9 @@ import RawCanvas from './RawCanvas';
 import LabeledCanvas from './LabeledCanvas';
 import OutlineCanvas from './OutlineCanvas';
 import BrushCanvas from './BrushCanvas';
+import ThresholdCanvas from './ThresholdCanvas';
 
-// import { canvasService } from '../statechart/service';
-import { useCanvas, useTool, useToolbar, useRaw, useLabeled } from '../ServiceContext';
+import { useCanvas, useToolbar, useRaw, useLabeled } from '../ServiceContext';
 
 const useStyles = makeStyles({
   canvasBox: {
@@ -40,10 +40,8 @@ export const Canvas = () => {
   const scale = useSelector(canvas, state => state.context.scale);
 
   const toolbar = useToolbar();
-  const usingBrush = useSelector(toolbar, state => state.context.tool === 'brush');
-  // const usingThreshold = useSelector(tool, state => state.matches('threshold'));
-
-  const tool = useTool();
+  const tool = useSelector(toolbar, state => state.context.tool);
+  const toolActor = useSelector(toolbar, state => state.context.toolActor);
 
   const styles = useStyles();
 
@@ -58,10 +56,6 @@ export const Canvas = () => {
     borderBottom: `${padding}px solid ${bottomColor}`,
     borderLeft: `${padding}px solid ${leftColor}`,
     borderRight: `${padding}px solid ${rightColor}`,
-  };
-
-  const styleProps = {
-    className: styles.canvas,
   };
 
   // prevent scrolling page when over canvas
@@ -82,7 +76,7 @@ export const Canvas = () => {
     if (event.shiftKey) {
       toolbar.send( {...event, type: 'SHIFTCLICK' });
     } else {
-      tool.send(event);
+      toolActor.send(event);
     }
   };
 
@@ -97,14 +91,14 @@ export const Canvas = () => {
       onMouseMove={canvas.send}
       onWheel={canvas.send}
       onMouseDown={handleMouseDown}
-      onMouseUp={tool.send}
-      onClick={tool.send}
+      onMouseUp={toolActor.send}
+      onClick={toolActor.send}
     >
-      {raw && <RawCanvas {...styleProps} />}
-      {labeled && <LabeledCanvas {...styleProps} />}
-      {labeled && <OutlineCanvas {...styleProps} />}
-      {usingBrush && <BrushCanvas {...styleProps} />}
-      {/* {usingThreshold && <ThresholdCanvas { ..styleProps} />} */}
+      {raw && <RawCanvas className={styles.canvas} />}
+      {labeled && <LabeledCanvas className={styles.canvas} />}
+      {labeled && <OutlineCanvas className={styles.canvas} />}
+      { tool === 'brush' && <BrushCanvas className={styles.canvas} /> }
+      { tool === 'threshold' && <ThresholdCanvas className={styles.canvas} /> }
     </Box>
   )
 }

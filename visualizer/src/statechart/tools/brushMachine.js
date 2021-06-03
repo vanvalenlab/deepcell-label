@@ -26,7 +26,6 @@ const brushMachine = Machine(
         }
       },
       dragging: {
-        entry: () => console.log('dragging'),
         on: {
           COORDINATES: { actions: ['setCoordinates', 'addToTrace'] },
           mouseup: { target: 'done', actions: 'paint' }

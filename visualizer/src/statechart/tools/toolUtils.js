@@ -13,9 +13,9 @@ export const toolActions = {
 };
 
 export const toolGuards = {
-  shift: (context, event) => event.shiftKey,
-  doubleClick: (context, event) => event.detail === 2,
-  onBackground: (context) => context.label === context.background,
-  onForeground: (context) => context.label === context.foreground,
-  onNoLabel: (context) => context.label === 0,
+  shift: (_, event) => event.shiftKey,
+  doubleClick: (_, event) => event.detail === 2,
+  onBackground: ({ label, background }) => label === background,
+  onForeground: ({ label, foreground }) => label === foreground,
+  onNoLabel: ({ label }) => label === 0,
 };

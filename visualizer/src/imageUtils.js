@@ -190,6 +190,36 @@ export function drawTrace(ctx, x, y, brushSize) {
   ctx.putImageData(imageData, sx, sy);
 }
 
+/**
+ * Draws a bounding box between the two points.
+ * Has an opaque outline and a translucent interior.
+ * @param {*} ctx 
+ * @param {*} x1
+ * @param {*} y1
+ * @param {*} x2
+ * @param {*} y2
+ */
+export function drawBox(ctx, x1, y1, x2, y2) {
+  const [sx, sy] = [Math.min(x1, x2), Math.min(y1, y2)];
+  const [sw, sh] = [Math.abs(x1 - x2) + 1, Math.abs(y1 - y2) + 1];
+  const imageData = ctx.getImageData(sx, sy, sw, sh);
+  const { data, height, width } = imageData;
+  for (let j = 0; j < height; j += 1) {
+    for (let i = 0; i < width; i += 1) {
+      data[(j * width + i) * 4 + 0] = 255;
+      data[(j * width + i) * 4 + 1] = 255;
+      data[(j * width + i) * 4 + 2] = 255;
+      // solid outline
+      if (j === 0 || j === height - 1 || i === 0 || i === width - 1 ) {
+        data[(j * width + i) * 4 + 3] = 255;
+      } else { // translucent interior
+        data[(j * width + i) * 4 + 3] = 128;
+      }
+    }
+  }
+  ctx.putImageData(imageData, sx, sy);
+}
+
 
 // Internal helper functions
 

@@ -54,9 +54,9 @@ const toolMachine = Machine(
       },
       grayscale: {
         on: {
-          USE_AUTOFIT: { actions: assign({ tool: 'autofit' }) },
+          USE_AUTOFIT: { actions: [assign({ tool: 'autofit' }), 'spawnTool'] },
           // USE_WATERSHED: { actions: assign({ tool: 'watershed' }) },
-          USE_THRESHOLD: { actions: assign({ tool: 'threshold' }) },
+          USE_THRESHOLD: { actions: [assign({ tool: 'threshold' }), 'spawnTool'] },
           COLOR: [
             { target: 'color', cond: 'grayscaleTool', actions: assign({ tool: 'select' }) },
             { target: 'color' },
@@ -90,7 +90,7 @@ const toolMachine = Machine(
       // special shift click event 
       SHIFTCLICK: [
         { cond: 'doubleClick', actions: ['selectForeground', send({ type: 'BACKGROUND', background: 0 })] },
-        { cond: 'onBackground', actions: 'selectForeground', },
+        { cond: 'onBackground', actions: 'selectForeground' },
         { actions: 'selectBackground' },
       ],
       ///

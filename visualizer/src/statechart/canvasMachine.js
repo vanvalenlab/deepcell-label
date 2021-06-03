@@ -101,7 +101,7 @@ const canvasMachine = Machine({
         scale: (context, event) => {
           const scaleX = (event.width - 2 * event.padding) / context.width;
           const scaleY = (event.height - 2 * event.padding) / context.height;
-          // pick scale that accomodates both dimensions; can be less than 1
+          // pick scale that fits both dimensions; can be less than 1
           const scale = Math.min(scaleX, scaleY);
           return scale;
         },
