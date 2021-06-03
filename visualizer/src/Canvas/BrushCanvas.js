@@ -82,14 +82,18 @@ const drawTrace = (ctx, x, y, brushSize) => {
   ctx.putImageData(imageData, sx, sy);
 };
 
-const BrushCanvas = ({ width, height, className }) => {
+const BrushCanvas = ({ className }) => {
 
   const canvas = useCanvas();
   const sx = useSelector(canvas, state => state.context.sx);
   const sy = useSelector(canvas, state => state.context.sy);
   const zoom = useSelector(canvas, state => state.context.zoom);
+  const scale = useSelector(canvas, state => state.context.scale);
   const sw = useSelector(canvas, state => state.context.width);
   const sh = useSelector(canvas, state => state.context.height);
+  
+  const width = sw * scale * window.devicePixelRatio;
+  const height = sh * scale * window.devicePixelRatio;
 
   const brush = useTool();
   const x = useSelector(brush, state => state.context.x);
