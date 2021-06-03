@@ -74,12 +74,14 @@ export const Canvas = ({ height, width }) => {
 
   // prevent scrolling page when over canvas
   useEffect(() => {
-    const canvasBox = document.getElementById("canvasBox");
-    canvasBox.addEventListener("wheel", e => e.preventDefault());
-    document.addEventListener('keydown', e => { if (e.key === ' ') { e.preventDefault(); } })
+    const canvasBox = document.getElementById('canvasBox');
+    const wheelListener = e => e.preventDefault();
+    const spaceListener = e => { if (e.key === ' ') { e.preventDefault(); } };
+    canvasBox.addEventListener('wheel', wheelListener);
+    document.addEventListener('keydown', spaceListener);
     return () => {
-      canvasBox.removeEventListener("wheel", e => e.preventDefault());
-      document.removeEventListener('keydown', e => { if (e.key === ' ') { e.preventDefault(); } })
+      canvasBox.removeEventListener('wheel', wheelListener);
+      document.removeEventListener('keydown', spaceListener);
     }
   }, []);
 
