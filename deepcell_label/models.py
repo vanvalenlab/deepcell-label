@@ -493,7 +493,7 @@ class Labels(db.Model):
 
     def update(self):
         """
-        Update the label metatdata by explicitly copying the PickleType
+        Update the label metadata by explicitly copying the PickleType
         columns so the database knows to commit them.
         """
         # TODO: use Mutable mixin to avoid explicit copying
@@ -598,7 +598,7 @@ class RGBFrame(db.Model):
         raw current frame.
 
         Args:
-            frame (np.array): upto 6-channel image to reduce to 3-channel image
+            frame (np.array): up to 6-channel image to reduce to 3-channel image
 
         Returns:
             np.array: 3-channel image
