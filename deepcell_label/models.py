@@ -293,6 +293,16 @@ class Project(db.Model):
         action = self.action
         if self.action.prev_action is None:
             return
+        
+        # Compute which feature changed
+        # TODO: database migration to store in Action table
+        for prev_frame in action.before_frames:
+            current_frame = LabelFrame.get(self.id, prev_frame.frame_id)
+            diff = np.where(prev_frame.frame_array != current_frame.frame)
+            if len(diff[-1]) > 0:
+                feature = int(diff[-1][0])
+                break
+
         # Restore edited label frames
         for prev_frame in action.before_frames:
             current_frame = LabelFrame.get(self.id, prev_frame.frame_id)
@@ -303,6 +313,7 @@ class Project(db.Model):
             self.labels.cell_info = action.before_labels.cell_info
 
         payload = {
+            'feature': feature,
             # 'feature': action.feature,
             # 'channel': action.channel,
             'frames': [frame.frame_id for frame in action.frames]}
@@ -326,6 +337,16 @@ class Project(db.Model):
         if self.action.next_action is None:
             return
         next_action = self.action.next_action
+
+        # Compute which feature changed
+        # TODO: database migration to store in Action table
+        for after_frame in next_action.after_frames:
+            current_frame = LabelFrame.get(self.id, after_frame.frame_id)
+            diff = np.where(after_frame.frame_array != current_frame.frame)
+            if len(diff[-1]) > 0:
+                feature = int(diff[-1][0])
+                break
+
         # Restore edited label frames
         for after_frame in next_action.after_frames:
             current_frame = LabelFrame.get(self.id, after_frame.frame_id)
@@ -336,6 +357,7 @@ class Project(db.Model):
             self.labels.cell_info = next_action.after_labels.cell_info
 
         payload = {
+            'feature': feature,
             # 'feature': next_action.feature,
             # 'channel': next_action.channel,
             'frames': [frame.frame_id for frame in next_action.frames]}
