@@ -332,7 +332,7 @@ class BaseEdit(object):
         # triangle threshold picked after trying a few on one dataset
         # may not be the best threshold approach for other datasets!
         # pick two thresholds to use hysteresis thresholding strategy
-        threshold = filters.threshold_triangle(image=predict_area)
+        threshold = filters.threshold_triangle(image=predict_area.astype('float64'))
         threshold_stringent = 1.10 * threshold
 
         # try to keep stray pixels from appearing
