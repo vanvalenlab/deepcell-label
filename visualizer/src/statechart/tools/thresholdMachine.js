@@ -32,11 +32,6 @@ const createThresholdMachine = ({ x, y, foreground }) => Machine(
     actions: {
       ...toolActions,
       saveFirstPoint: assign({ firstPoint: ({ x, y }) => [x, y] }),
-      // 'sendThreshold': sendParent(({ firstPoint, x, y}) => ({
-      //   type: 'THRESHOLD',
-      //   firstPoint: firstPoint,
-      //   secondPoint: [x, y],
-      // })),
       threshold: sendParent(({ foreground, firstPoint, x, y}, event) => ({
         type: 'EDIT',
         action: 'threshold',
