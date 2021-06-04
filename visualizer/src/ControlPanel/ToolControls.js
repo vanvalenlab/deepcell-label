@@ -48,9 +48,9 @@ export default function ToolControls() {
         <ToggleButton value="brush" selected={tool === 'brush'}>
           Brush
         </ToggleButton>
-        {/* <ToggleButton value="trim" selected={tool === 'trim'}>
+        <ToggleButton value="trim" selected={tool === 'trim'}>
           Trim
-        </ToggleButton> */}
+        </ToggleButton>
         {/* <ToggleButton value="flood" selected={tool === 'flood'}>
           Flood
         </ToggleButton> */}
