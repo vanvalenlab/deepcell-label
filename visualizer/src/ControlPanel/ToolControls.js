@@ -1,17 +1,35 @@
 import React from 'react';
-import { useActor, useSelector } from '@xstate/react';
-import Typography from '@material-ui/core/Typography';
-import Slider from '@material-ui/core/Slider';
+import { useSelector } from '@xstate/react';
+import { withStyles } from "@material-ui/core/styles";
 import ToggleButtonGroup from '@material-ui/lab/ToggleButtonGroup';
-import ToggleButton from '@material-ui/lab/ToggleButton';
-import Radio from '@material-ui/core/Radio';
-import RadioGroup from '@material-ui/core/RadioGroup';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import FormControl from '@material-ui/core/FormControl';
-import FormLabel from '@material-ui/core/FormLabel';
+import MuiToggleButton from '@material-ui/lab/ToggleButton';
 import Box from '@material-ui/core/Box';
+import Tooltip from '@material-ui/core/Tooltip';
 
 import { useToolbar } from '../ServiceContext';
+
+// for adding tooltip to disabled buttons
+// from https://stackoverflow.com/questions/61115913
+const ToggleButton = withStyles({
+  root: {
+    "&.Mui-disabled": {
+      pointerEvents: "auto"
+    }
+  }
+})(MuiToggleButton);
+
+const ToggleButtonWithTooltip = ({ tooltipText, disabled, onClick, ...other }) => {
+  const adjustedButtonProps = {
+    disabled: disabled,
+    component: disabled ? "div" : undefined,
+    onClick: disabled ? undefined : onClick
+  };
+  return (
+    <Tooltip title={ tooltipText }>
+      <ToggleButton {...other} {...adjustedButtonProps} />
+    </Tooltip>
+  );
+};
 
 
 export default function ToolControls() {
@@ -54,27 +72,30 @@ export default function ToolControls() {
         {/* <ToggleButton value="flood" selected={tool === 'flood'}>
           Flood
         </ToggleButton> */}
-        {/* <ToggleButton value="erodeDilate" selected={tool === 'erodeDilate'}>
+        <ToggleButton value="erodeDilate" selected={tool === 'erodeDilate'}>
           Grow/Shrink
-        </ToggleButton> */}
-        <ToggleButton 
+        </ToggleButton>
+        <ToggleButtonWithTooltip 
+          tooltipText={ grayscale ? 'Press T' : 'Requires a single channel'}
           value="threshold" 
           selected={tool === 'threshold'}
           disabled={!grayscale}>
           Threshold
-        </ToggleButton>
-        <ToggleButton 
+        </ToggleButtonWithTooltip>
+        <ToggleButtonWithTooltip 
+          tooltipText={ grayscale ? 'Press M' : 'Requires a single channel'}
           value="autofit" 
           selected={tool === 'autofit'}
           disabled={!grayscale}>
           Autofit
-        </ToggleButton>
-        {/* <ToggleButton 
+        </ToggleButtonWithTooltip>
+        {/* <ToggleButtonWithTooltip 
+          tooltipText={ grayscale ? 'Press W' : 'Requires a single channel'}
           value="watershed" 
           selected={tool === 'watershed'}
           disabled={!isGrayscale}>
           Watershed
-        </ToggleButton> */}
+        </ToggleButtonWithTooltip> */}
       </ToggleButtonGroup>
     </Box>
   );
