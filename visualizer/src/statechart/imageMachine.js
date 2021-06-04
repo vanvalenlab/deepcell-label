@@ -1,4 +1,4 @@
-import { Machine, assign, forwardTo, actions, spawn, send } from 'xstate';
+import { Machine, assign, forwardTo, actions, spawn, send, sendParent } from 'xstate';
 import createRawMachine from './rawMachine';
 import createLabeledMachine from './labeledMachine';
 
@@ -50,11 +50,11 @@ const frameState = {
       },
     },
     setUpActors: {
-      always: { target: 'loadFrame', actions: 'spawnActors' },
+      always: { target: 'setUpUndo', actions: 'spawnActors' },
     },
-    // setUpUndo: {
-    //   always: { target: 'loadFrame', actions: 'addActorsToUndo' },
-    // },
+    setUpUndo: {
+      always: { target: 'loadFrame', actions: 'addActorsToUndo' },
+    },
     loadFrame: loadFrameState,
   },
 };
@@ -152,7 +152,6 @@ const createImageMachine = ({ projectId }) => Machine(
       restore: restoreState,
     },
     on: {
-      UNDOREF: { actions: 'saveUndo' },
       EDITED: { actions: forwardTo(({ labeledRef }) => labeledRef) },
     },
   },
@@ -200,10 +199,10 @@ const createImageMachine = ({ projectId }) => Machine(
           spawn(createLabeledMachine(projectId, numFeatures, numFrames), 'labeled'),
       }),
       addActorsToUndo: pure((context) => {
-        const { undoRef, rawRef, labeledRef } = context;
+        const { rawRef, labeledRef } = context;
         return [
-          send({ type: 'ADD_ACTOR', actor: rawRef }, { to: undoRef }),
-          send({ type: 'ADD_ACTOR', actor: labeledRef }, { to: undoRef }),
+          sendParent({ type: 'ADD_ACTOR', actor: labeledRef }),
+          // sendParent({ type: 'ADD_ACTOR', actor: rawRef }),
         ];
       }),
       loadLabeled: send(

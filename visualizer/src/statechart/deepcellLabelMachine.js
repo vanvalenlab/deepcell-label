@@ -56,6 +56,7 @@ const createDeepcellLabelMachine = (projectId) => Machine(
       BACKENDUNDO: { actions: forwardTo('api') },
       BACKENDREDO: { actions: forwardTo('api') },
       EDITED: { actions: forwardTo('image') },
+      ADD_ACTOR: { actions: send((_, { actor}) => ({ type: 'ADD_ACTOR', actor }), { to: 'undo' }) },
     }
   },
   {
@@ -66,14 +67,14 @@ const createDeepcellLabelMachine = (projectId) => Machine(
         toolRef: () => spawn(toolMachine, 'tool'),
         apiRef: (context) => spawn(createApiMachine(context), 'api'),
       }),
-      sendActorRefs: pure((context, event) => {
+      sendActorRefs: pure(({ toolRef, undoRef, imageRef, canvasRef }) => {
         const sendToolToImage = send(
-          { type: 'TOOLREF', toolRef: context.toolRef },
-          { to: context.imageRef }
+          { type: 'TOOLREF', toolRef },
+          { to: imageRef }
         );
         const sendToolToCanvas = send(
-          { type: 'TOOLREF', toolRef: context.toolRef },
-          { to: context.canvasRef }
+          { type: 'TOOLREF', toolRef },
+          { to: canvasRef }
         );
         return [sendToolToImage, sendToolToCanvas];
       }),

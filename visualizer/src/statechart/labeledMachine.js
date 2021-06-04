@@ -58,6 +58,30 @@ const featureState = {
   }
 };
 
+const restoreState = {
+  on: { 
+    RESTORE: [
+      { 
+        cond: (context, event) => context.feature === event.feature, 
+        actions: respond('SAMECONTEXT') ,
+      },
+      { 
+        target: '.restoring',
+        internal: false,
+        actions: respond('RESTORED'),
+      },
+    ],
+    SAVE: { actions: respond(({ feature }) => ({ type: 'RESTORE', feature })) },
+  },
+  initial: 'idle',
+  states: {
+    idle: {},
+    restoring: {
+      entry: send((_, { feature }) => ({ type: 'LOADFEATURE', feature })),
+    },
+  }
+};
+
 const createLabeledMachine = (projectId, numFeatures, numFrames) => Machine(
   {
     context: {
@@ -81,6 +105,7 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) => Machine(
     states: {
       frame: frameState,
       feature: featureState,
+      restore: restoreState,
     },
     on: {
       TOGGLEHIGHLIGHT: { actions: 'toggleHighlight' },
