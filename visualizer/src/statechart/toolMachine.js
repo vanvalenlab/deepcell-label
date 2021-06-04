@@ -3,16 +3,13 @@ import createSelectMachine from './tools/selectMachine';
 import createBrushMachine from './tools/brushMachine';
 import createThresholdMachine from './tools/thresholdMachine';
 import createAutofitMachine from './tools/autofitMachine';
+import createErodeDilateMachine from './tools/erodeDilateMachine';
+import createTrimMachine from './tools/trimMachine';
+// flood: floodState,
+// watershed: watershedState,
+
 import { toolActions, toolGuards } from './tools/toolUtils';
 import { respond } from 'xstate/lib/actions';
-// select: selectState,
-// brush: brushState,
-// flood: floodState,
-// trim: trimState,
-// erodeDilate: erodeDilateState,
-// autofit: autofitState,
-// threshold: thresholdState,
-// watershed: watershedState,
 
 const { pure } = actions;
 
@@ -24,6 +21,8 @@ const createToolMachineLookup = {
   select: createSelectMachine,
   threshold: createThresholdMachine,
   autofit: createAutofitMachine,
+  erodeDilate: createErodeDilateMachine,
+  trim: createTrimMachine,
 };
 
 const createToolMachine = (context) => {
@@ -74,8 +73,8 @@ const toolMachine = Machine(
       USE_BRUSH: { actions: [assign({ tool: 'brush' }), 'spawnTool'] },
       USE_SELECT:  { actions: [assign({ tool: 'select' }), 'spawnTool'] },
       // USE_FLOOD: { actions: [assign({ tool: 'flood' }), 'spawnTool'] },
-      // USE_TRIM: { actions: [assign({ tool: 'trim' }), 'spawnTool'] },
-      // USE_ERODE_DILATE: { [actions: assign({ tool: 'erodeDilate' }), 'spawnTool'] },
+      USE_TRIM: { actions: [assign({ tool: 'trim' }), 'spawnTool'] },
+      USE_ERODE_DILATE: { actions: [assign({ tool: 'erodeDilate' }), 'spawnTool'] },
       
       // context not shared with tools
       FRAME: { actions: 'setFrame' },
