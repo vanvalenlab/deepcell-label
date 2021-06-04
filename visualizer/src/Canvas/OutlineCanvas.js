@@ -56,11 +56,11 @@ const OutlineCanvas = ({ className }) => {
     const fColor = invert ? black : white;
     const bColor = red;
     const hColor = [255, 255, 255, 128];
+    highlightImageData(data, labeledArray, foreground, hColor);
     switch (outline) {
       case 'all':
         outlineAll(data, labeledArray, fColor);
       case 'selected':
-        highlightImageData(data, labeledArray, foreground, hColor);
         outlineSelected(data, labeledArray, foreground, background, fColor, bColor);
       default:
     }
