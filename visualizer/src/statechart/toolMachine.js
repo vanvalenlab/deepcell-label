@@ -7,7 +7,7 @@ import createAutofitMachine from './tools/autofitMachine';
 import createErodeDilateMachine from './tools/erodeDilateMachine';
 import createTrimMachine from './tools/trimMachine';
 import createFloodMachine from './tools/floodMachine';
-// watershed: watershedState,
+import createWatershedMachine from './tools/watershedMachine';
 
 const { pure, respond } = actions;
 
@@ -22,6 +22,7 @@ const createToolMachineLookup = {
   erodeDilate: createErodeDilateMachine,
   trim: createTrimMachine,
   flood: createFloodMachine,
+  watershed: createWatershedMachine,
 };
 
 const createToolMachine = (context) => {
@@ -58,7 +59,7 @@ const toolMachine = Machine(
       grayscale: {
         on: {
           USE_AUTOFIT: { actions: [assign({ tool: 'autofit' }), 'spawnTool'] },
-          // USE_WATERSHED: { actions: assign({ tool: 'watershed' }) },
+          USE_WATERSHED: { actions: [assign({ tool: 'watershed' }), 'spawnTool'] },
           USE_THRESHOLD: { actions: [assign({ tool: 'threshold' }), 'spawnTool'] },
           COLOR: [
             { target: 'color', cond: 'grayscaleTool', actions: assign({ tool: 'select' }) },

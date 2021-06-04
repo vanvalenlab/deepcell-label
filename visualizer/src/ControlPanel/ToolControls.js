@@ -111,14 +111,14 @@ export default function ToolControls() {
         >
           Autofit
         </ToggleButtonWithTooltip>
-        {/* <ToggleButtonWithTooltip 
+        <ToggleButtonWithTooltip 
           tooltipText={ grayscale ? 'Press W' : 'Requires a single channel'}
           value='watershed' 
           selected={tool === 'watershed'}
-          disabled={!isGrayscale}
+          disabled={!grayscale}
         >
           Watershed
-        </ToggleButtonWithTooltip> */}
+        </ToggleButtonWithTooltip>
       </ToggleButtonGroup>
     </Box>
   );
