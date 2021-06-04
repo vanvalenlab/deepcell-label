@@ -26,17 +26,31 @@ const ColorModeToggle = () => {
 
   return (
     <Typography component="div">
-        <Grid component="label" container alignItems="center" spacing={1}>
-          <Grid item align="right">Color <br /> (multi-channel)</Grid>
-          <Grid item>
+        <Box 
+          component="label" 
+          container 
+          display='flex'
+          justifyContent='center'
+          alignItems='center'
+        >
+          <Tooltip title='View multiple channels at once'>
+            <Grid item align="right" justifyContent="center" style={{flex: '1 1 auto'}}>
+              Color
+            </Grid>
+          </Tooltip>
+          <Grid item style={{flex: '0 1 auto'}}>
             <Switch 
               color="default" 
               checked={grayscale} 
               onChange={() => send('TOGGLE_COLOR')} 
             />
           </Grid>
-          <Grid item>Grayscale <br /> (one channel)</Grid>
-        </Grid>
+          <Tooltip title='View a single channel'>
+            <Grid item align="left" style={{flex: '1 1 auto'}}>
+            Grayscale
+            </Grid>
+          </Tooltip>
+        </Box>
       </Typography>
   );
 };
