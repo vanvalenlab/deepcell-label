@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSelector } from '@xstate/react';
-import { withStyles } from "@material-ui/core/styles";
+import { withStyles } from '@material-ui/core/styles';
 import ToggleButtonGroup from '@material-ui/lab/ToggleButtonGroup';
 import MuiToggleButton from '@material-ui/lab/ToggleButton';
 import Box from '@material-ui/core/Box';
@@ -12,8 +12,8 @@ import { useToolbar } from '../ServiceContext';
 // from https://stackoverflow.com/questions/61115913
 const ToggleButton = withStyles({
   root: {
-    "&.Mui-disabled": {
-      pointerEvents: "auto"
+    '&.Mui-disabled': {
+      pointerEvents: 'auto'
     }
   }
 })(MuiToggleButton);
@@ -21,7 +21,7 @@ const ToggleButton = withStyles({
 const ToggleButtonWithTooltip = ({ tooltipText, disabled, onClick, ...other }) => {
   const adjustedButtonProps = {
     disabled: disabled,
-    component: disabled ? "div" : undefined,
+    component: disabled ? 'div' : undefined,
     onClick: disabled ? undefined : onClick
   };
   return (
@@ -59,41 +59,64 @@ export default function ToolControls() {
 
   return (
     <Box display='flex' flexDirection='column'>
-      <ToggleButtonGroup orientation="vertical" exclusive onChange={handleChange}>
-        <ToggleButton value="select" selected={tool === 'select'}>
+      <ToggleButtonGroup orientation='vertical' exclusive onChange={handleChange}>
+        <ToggleButtonWithTooltip
+          tooltipText='Press V'
+          value='select'
+          selected={tool === 'select'}
+        >
           Select
-        </ToggleButton>
-        <ToggleButton value="brush" selected={tool === 'brush'}>
+        </ToggleButtonWithTooltip>
+        <ToggleButtonWithTooltip
+          tooltipText='Press B'
+          value='brush'
+          selected={tool === 'brush'}
+        >
           Brush
-        </ToggleButton>
-        <ToggleButton value="trim" selected={tool === 'trim'}>
+        </ToggleButtonWithTooltip>
+        <ToggleButtonWithTooltip
+          tooltipText='Press K'
+          value='trim' 
+          selected={tool === 'trim'}
+        >
           Trim
-        </ToggleButton>
-        <ToggleButton value="flood" selected={tool === 'flood'}>
+        </ToggleButtonWithTooltip>
+        <ToggleButtonWithTooltip
+          tooltipText='Press G'
+          value='flood' 
+          selected={tool === 'flood'}
+        >
           Flood
-        </ToggleButton>
-        <ToggleButton value="erodeDilate" selected={tool === 'erodeDilate'}>
+        </ToggleButtonWithTooltip>
+        <ToggleButtonWithTooltip
+          tooltipText='Press Q'
+          value='erodeDilate' 
+          selected={tool === 'erodeDilate'}
+        >
           Grow/Shrink
-        </ToggleButton>
+        </ToggleButtonWithTooltip>
         <ToggleButtonWithTooltip 
           tooltipText={ grayscale ? 'Press T' : 'Requires a single channel'}
-          value="threshold" 
+          value='threshold' 
           selected={tool === 'threshold'}
-          disabled={!grayscale}>
+          disabled={!grayscale}
+        >
           Threshold
         </ToggleButtonWithTooltip>
         <ToggleButtonWithTooltip 
           tooltipText={ grayscale ? 'Press M' : 'Requires a single channel'}
-          value="autofit" 
+          value='autofit' 
           selected={tool === 'autofit'}
-          disabled={!grayscale}>
+          disabled={!grayscale}
+        >
           Autofit
         </ToggleButtonWithTooltip>
         {/* <ToggleButtonWithTooltip 
           tooltipText={ grayscale ? 'Press W' : 'Requires a single channel'}
-          value="watershed" 
+          value='watershed' 
           selected={tool === 'watershed'}
-          disabled={!isGrayscale}>
+          disabled={!isGrayscale}
+        >
           Watershed
         </ToggleButtonWithTooltip> */}
       </ToggleButtonGroup>
