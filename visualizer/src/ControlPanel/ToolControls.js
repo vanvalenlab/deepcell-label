@@ -69,9 +69,9 @@ export default function ToolControls() {
         <ToggleButton value="trim" selected={tool === 'trim'}>
           Trim
         </ToggleButton>
-        {/* <ToggleButton value="flood" selected={tool === 'flood'}>
+        <ToggleButton value="flood" selected={tool === 'flood'}>
           Flood
-        </ToggleButton> */}
+        </ToggleButton>
         <ToggleButton value="erodeDilate" selected={tool === 'erodeDilate'}>
           Grow/Shrink
         </ToggleButton>

@@ -1,17 +1,15 @@
 import { Machine, assign, sendParent, actions, spawn, send, forwardTo } from 'xstate';
+import { toolActions, toolGuards } from './tools/toolUtils';
 import createSelectMachine from './tools/selectMachine';
 import createBrushMachine from './tools/brushMachine';
 import createThresholdMachine from './tools/thresholdMachine';
 import createAutofitMachine from './tools/autofitMachine';
 import createErodeDilateMachine from './tools/erodeDilateMachine';
 import createTrimMachine from './tools/trimMachine';
-// flood: floodState,
+import createFloodMachine from './tools/floodMachine';
 // watershed: watershedState,
 
-import { toolActions, toolGuards } from './tools/toolUtils';
-import { respond } from 'xstate/lib/actions';
-
-const { pure } = actions;
+const { pure, respond } = actions;
 
 // TODO: move to config file?
 const grayscaleTools = ['autofit', 'watershed', 'threshold'];
@@ -23,6 +21,7 @@ const createToolMachineLookup = {
   autofit: createAutofitMachine,
   erodeDilate: createErodeDilateMachine,
   trim: createTrimMachine,
+  flood: createFloodMachine,
 };
 
 const createToolMachine = (context) => {
@@ -72,7 +71,7 @@ const toolMachine = Machine(
       // switch tool
       USE_BRUSH: { actions: [assign({ tool: 'brush' }), 'spawnTool'] },
       USE_SELECT:  { actions: [assign({ tool: 'select' }), 'spawnTool'] },
-      // USE_FLOOD: { actions: [assign({ tool: 'flood' }), 'spawnTool'] },
+      USE_FLOOD: { actions: [assign({ tool: 'flood' }), 'spawnTool'] },
       USE_TRIM: { actions: [assign({ tool: 'trim' }), 'spawnTool'] },
       USE_ERODE_DILATE: { actions: [assign({ tool: 'erodeDilate' }), 'spawnTool'] },
       
