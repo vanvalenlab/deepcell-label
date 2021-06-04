@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useSelector } from '@xstate/react';
-import { useCanvas, useTool } from '../ServiceContext';
+import { useCanvas, useTool, useToolbar } from '../ServiceContext';
 import { drawTrace, drawBrush } from '../imageUtils';
 
 const BrushCanvas = ({ className }) => {
@@ -15,6 +15,12 @@ const BrushCanvas = ({ className }) => {
   
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
+
+  const toolbar = useToolbar();
+  const foreground = useSelector(toolbar, state => state.context.foreground);
+  const background = useSelector(toolbar, state => state.context.background);
+  const erasing = foreground === 0 && background !== 0;
+  const brushColor = erasing ? [255, 0, 0, 255] : [255, 255, 255, 255];
 
   const brush = useTool();
   const x = useSelector(brush, state => state.context.x);
@@ -42,8 +48,8 @@ const BrushCanvas = ({ className }) => {
   // draws the brush outline
   useEffect(() => {
     brushCtx.current.clearRect(0, 0, sw, sh);
-    drawBrush(brushCtx.current, x, y, brushSize);
-  }, [brushCtx, x, y, brushSize, sh, sw]);
+    drawBrush(brushCtx.current, x, y, brushSize, brushColor);
+  }, [brushCtx, x, y, brushSize, brushColor, sh, sw]);
 
   // draws the brush trace
   useEffect(() => {
@@ -80,7 +86,7 @@ const BrushCanvas = ({ className }) => {
       0, 0,
       width, height,
     );
-  }, [trace, brushSize, x, y, sx, sy, zoom, sw, sh, width, height]);
+  }, [trace, brushSize, brushColor, x, y, sx, sy, zoom, sw, sh, width, height]);
 
   return <>
     <canvas id='brush-processing'

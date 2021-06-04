@@ -147,18 +147,20 @@ export function invertImageData(imageData) {
  * @param {*} x 
  * @param {*} y 
  * @param {*} brushSize 
+ * @param {*} brushColor
  */
-export function drawBrush(ctx, x, y, brushSize) {
+export function drawBrush(ctx, x, y, brushSize, brushColor) {
+  const [r, g, b, a] = brushColor;
   const [sx, sy, sw, sh] = [x - brushSize + 1, y - brushSize + 1, 2 * brushSize - 1, 2 * brushSize - 1];
   const imageData = ctx.getImageData(sx, sy, sw, sh);
   const { data, height, width } = imageData;
   for (let j = 0; j < height; j += 1) { // y
     for (let i = 0; i < width; i += 1) { // x
       if (onBrush(i, j, brushSize)) {
-        data[(j * width + i) * 4 + 0] = 255;
-        data[(j * width + i) * 4 + 1] = 255;
-        data[(j * width + i) * 4 + 2] = 255;
-        data[(j * width + i) * 4 + 3] = 255;
+        data[(j * width + i) * 4 + 0] = r;
+        data[(j * width + i) * 4 + 1] = g;
+        data[(j * width + i) * 4 + 2] = b;
+        data[(j * width + i) * 4 + 3] = a;
       }
     }
   }
