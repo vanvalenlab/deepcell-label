@@ -36,8 +36,8 @@ const createFloodMachine = ({ x, y, label, foreground, background }) => Machine(
             { actions: 'updateMove' }
           ],
           mouseup: [
-            { cond: 'onBackground', actions: 'flood' },
-            { actions: 'selectBackground' },
+            { target: 'idle', cond: 'onBackground', actions: 'flood' },
+            { target: 'idle', actions: 'selectBackground' },
           ],
         }
       },

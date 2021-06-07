@@ -36,9 +36,9 @@ const createTrimMachine = ({ x, y, label, foreground, background }) => Machine(
             { actions: 'updateMove' }
           ],
           mouseup: [
-            { cond: 'onNoLabel' },
-            { cond: 'onBackground', actions: 'trim' },
-            { actions: 'selectBackground' },
+            { target: 'idle', cond: 'onNoLabel' },
+            { target: 'idle', cond: 'onBackground', actions: 'trim' },
+            { target: 'idle', actions: 'selectBackground' },
           ],
         }
       },

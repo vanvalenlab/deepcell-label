@@ -18,7 +18,7 @@ const idleState = {
           { actions: 'updateMove' }
         ],
         mouseup: [
-          { cond: 'onNoLabel' },
+          { target: 'idle', cond: 'onNoLabel' },
           { target: 'storeClick' }
         ]
       }
