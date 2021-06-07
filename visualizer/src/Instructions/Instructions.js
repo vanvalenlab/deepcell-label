@@ -12,7 +12,6 @@ import Typography from '@material-ui/core/Typography';
 import ImageControlInstructions from './ImageControlInstructions';
 import RawDisplayInstructions from './RawDisplayInstructions';
 import LabelDisplayInstructions from './LabelDisplayInstructions';
-import LabelInstructions from './LabelInstructions';
 import CanvasInstructions from './CanvasInstructions';
 
 
@@ -91,7 +90,6 @@ const ControlPanelInstructions = () => {
     <ImageControlInstructions />
     <RawDisplayInstructions />
     <LabelDisplayInstructions />
-    <LabelInstructions />
   </>;
 };
 
