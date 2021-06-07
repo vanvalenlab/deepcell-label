@@ -1,7 +1,7 @@
 import { Machine, sendParent } from 'xstate';
-import { toolServices, toolActions, toolGuards } from './toolUtils';
+import { toolActions, toolGuards, toolServices } from './toolUtils';
 
-const createAutofitMachine = ({ label, foreground, background }) => Machine(
+const createDeleteMachine = ({label, foreground, background }) => Machine(
   {
     context: {
       label,
@@ -11,9 +11,9 @@ const createAutofitMachine = ({ label, foreground, background }) => Machine(
       moveY: 0,
     },
     on: {
-      LABEL: { actions: 'setLabel' },
       FOREGROUND: { actions: 'setForeground' },
       BACKGROUND: { actions: 'setBackground' },
+      LABEL: { actions: 'setLabel' },
     },
     invoke: { 
       src: 'listenForMouseUp',
@@ -32,17 +32,14 @@ const createAutofitMachine = ({ label, foreground, background }) => Machine(
             { actions: 'updateMove' }
           ],
           mouseup: [
-            { target: 'idle', cond: 'shift' },
             { target: 'idle', cond: 'onNoLabel' },
-            { target: 'idle', cond: 'onForeground', actions: 'autofit' },
-            { target: 'idle', actions: 'selectForeground' },
+            { target: 'idle', cond: 'onBackground', actions: 'delete' },
+            { target: 'idle', actions: 'selectBackground' },
           ],
         }
       },
       dragged: {
-        on: { 
-          mouseup: 'idle',
-        },
+        on: { mouseup: 'idle' },
       },
     },
   },
@@ -51,14 +48,14 @@ const createAutofitMachine = ({ label, foreground, background }) => Machine(
     guards: toolGuards,
     actions: {
       ...toolActions,
-      autofit: sendParent(({ label }, event) => ({
+      selectBackground: sendParent('SELECTBACKGROUND'),
+      delete: sendParent(({ label }, event) => ({
         type: 'EDIT',
-        action: 'active_contour',
-        args: { label: label },
+        action: 'replace_single',
+        args: { label_1: 0, label_2: label },
       })),
-      selectForeground: sendParent('SELECTFOREGROUND'),
     }
   }
 );
 
-export default createAutofitMachine;
+export default createDeleteMachine;

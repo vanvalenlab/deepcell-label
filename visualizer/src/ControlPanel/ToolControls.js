@@ -42,18 +42,19 @@ export default function ToolControls() {
 
   const handleChange = (event, value) => {
     const lookup = {
-      brush: 'USE_BRUSH',
-      select: 'USE_SELECT',
-      threshold: 'USE_THRESHOLD',
-      trim: 'USE_TRIM',
-      flood: 'USE_FLOOD',
-      erodeDilate: 'USE_ERODE_DILATE',
-      autofit: 'USE_AUTOFIT',
-      watershed: 'USE_WATERSHED',
+      brush: 'brush',
+      select: 'select',
+      threshold: 'threshold',
+      trim: 'trim',
+      flood: 'flood',
+      erodeDilate: 'erodeDilate',
+      autofit: 'autofit',
+      watershed: 'watershed',
+      delete: 'delete',
     };
 
     if (value in lookup) {
-      send(lookup[value]);
+      send({ type: 'USE_TOOL', tool: lookup[value] });
     }
   };
 
@@ -94,6 +95,13 @@ export default function ToolControls() {
           selected={tool === 'erodeDilate'}
         >
           Grow/Shrink
+        </ToggleButtonWithTooltip>
+        <ToggleButtonWithTooltip
+          tooltipText='Press Delete'
+          value='delete' 
+          selected={tool === 'delete'}
+        >
+          Delete
         </ToggleButtonWithTooltip>
         <ToggleButtonWithTooltip 
           tooltipText={ grayscale ? 'Press T' : 'Requires a single channel'}

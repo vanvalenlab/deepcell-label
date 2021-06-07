@@ -1,6 +1,72 @@
 import { Machine, assign, sendParent } from 'xstate';
 import { toolActions, toolGuards } from './toolUtils';
 
+const idleState = {
+  initial: 'idle',
+  onDone: 'clicked',
+  states: {
+    idle: {
+      on: {
+        mousedown: 'pressed',
+      }
+    },
+    pressed: {
+      on: {
+        mousemove: [
+          { cond: 'moved', target: 'dragged'}, 
+          { actions: 'updateMove' }
+        ],
+        mouseup: [
+          { cond: 'onNoLabel' },
+          { target: 'storeClick' }
+        ]
+      }
+    },
+    dragged: {
+      on: { mouseup: 'idle' },
+    },
+    storeClick: {
+      entry: ['selectForeground', 'storeClick'],
+      always: { cond: ({ foreground, storedLabel }) => foreground === storedLabel, target: 'done' }
+    },
+    done: {
+      type: 'final',
+    }
+  },
+};
+
+const clickedState = {
+  initial: 'idle',
+  onDone: 'idle',
+  on: {
+    FOREGROUND: { actions: 'setForeground', target: 'idle' },
+  },
+  states: {
+    idle: {
+      on: {
+        mousedown: 'pressed',
+      }
+    },
+    pressed: {
+      on: {
+        mousemove: [
+          { cond: 'moved', target: 'dragged'}, 
+          { actions: 'updateMove' }
+        ],
+        mouseup: { cond: 'validSecondSeed', target: 'done' },
+      }
+    },
+    dragged: {
+      on: { mouseup: 'idle' },
+    },
+    done: {
+      entry: ['watershed', 'newBackground'],
+      type: 'final',
+    }
+  },
+};
+
+
 const createWatershedMachine = ({ x, y, label, foreground, background }) => Machine(
   {
     context: {
@@ -12,6 +78,8 @@ const createWatershedMachine = ({ x, y, label, foreground, background }) => Mach
       storedLabel: 0,
       storedX: 0,
       storedY: 0,
+      moveX: 0,
+      moveY: 0,
     },
     on: {
       COORDINATES: { actions: 'setCoordinates' },
@@ -21,24 +89,8 @@ const createWatershedMachine = ({ x, y, label, foreground, background }) => Mach
     },
     initial: 'idle',
     states: {
-      idle: {
-        entry: (context) => console.log(context),
-        on: {
-          mousedown: [
-            { cond: 'onNoLabel' },
-            { target: 'clicked', actions: ['selectForeground', 'storeClick'] }
-          ]
-        }
-      },
-      clicked: {
-        entry: (context) => console.log(context),
-        on: {
-          mousedown: [
-            { cond: 'validSecondSeed', target: 'idle', actions: ['watershed', 'newBackground'] },
-          ],
-          FOREGROUND: { cond: 'newForeground', target: 'idle' },
-        }
-      }
+      idle: idleState,
+      clicked: clickedState,
     },
   },
   {

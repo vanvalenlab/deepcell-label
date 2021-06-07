@@ -73,12 +73,23 @@ export const Canvas = () => {
 
   const handleMouseDown = (event) => {
     event.preventDefault();
+    canvas.send(event);
     if (event.shiftKey) {
       toolbar.send( {...event, type: 'SHIFTCLICK' });
     } else {
       toolActor.send(event);
     }
   };
+
+  const handleMouseUp = (e) => {
+    canvas.send(e);
+    toolActor.send(e);
+  };
+
+  const handleMouseMove = (e) => {
+    canvas.send(e);
+    toolActor.send(e);
+  }
 
   return (
     <Box
@@ -88,11 +99,10 @@ export const Canvas = () => {
       boxShadow={10}
       width={scale * sw}
       height={scale * sh}
-      onMouseMove={canvas.send}
+      onMouseMove={handleMouseMove}
       onWheel={canvas.send}
       onMouseDown={handleMouseDown}
-      onMouseUp={toolActor.send}
-      onClick={toolActor.send}
+      onMouseUp={handleMouseUp}
     >
       {raw && <RawCanvas className={styles.canvas} />}
       {labeled && <LabeledCanvas className={styles.canvas} />}

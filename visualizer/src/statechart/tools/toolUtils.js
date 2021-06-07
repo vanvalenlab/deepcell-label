@@ -10,12 +10,25 @@ export const toolActions = {
   setFrame: assign((_, { frame }) => ({ frame })),
   setFeature: assign((_, { feature }) => ({ feature })),
   setChannel: assign((_, { channel }) => ({ channel })),
+  updateMove: assign({
+    moveX: ({ moveX }, event) => moveX + event.movementX,
+    moveY: ({ moveY }, event) => moveY + event.movementY,
+  }),
 };
 
 export const toolGuards = {
+  moved: ({ moveX, moveY }) => Math.abs(moveX) > 5 || Math.abs(moveY) > 5,
   shift: (_, event) => event.shiftKey,
   doubleClick: (_, event) => event.detail === 2,
   onBackground: ({ label, background }) => label === background,
   onForeground: ({ label, foreground }) => label === foreground,
   onNoLabel: ({ label }) => label === 0,
+};
+
+export const toolServices = {
+  listenForMouseUp: () => (send) => {
+    const listener = (e) => send(e);
+    window.addEventListener('mouseup', listener);
+    return () => window.removeEventListener('mouseup', listener);
+  },
 };

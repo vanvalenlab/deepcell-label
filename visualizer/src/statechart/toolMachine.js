@@ -8,11 +8,14 @@ import createErodeDilateMachine from './tools/erodeDilateMachine';
 import createTrimMachine from './tools/trimMachine';
 import createFloodMachine from './tools/floodMachine';
 import createWatershedMachine from './tools/watershedMachine';
+import createDeleteMachine from './tools/deleteMachine';
 
 const { pure, respond } = actions;
 
 // TODO: move to config file?
-const grayscaleTools = ['autofit', 'watershed', 'threshold'];
+const colorTools = ['brush', 'select', 'erodeDilate', 'trim', 'flood', 'delete'];
+const grayscaleTools = ['brush', 'select', 'erodeDilate', 'trim', 'flood', 'delete',
+                        'autofit', 'watershed', 'threshold'];
 
 const createToolMachineLookup = {
   brush: createBrushMachine,
@@ -23,12 +26,13 @@ const createToolMachineLookup = {
   trim: createTrimMachine,
   flood: createFloodMachine,
   watershed: createWatershedMachine,
+  delete: createDeleteMachine,
 };
 
 const createToolMachine = (context) => {
   const { tool } = context;
   return spawn(createToolMachineLookup[tool](context), 'tool');
-}
+};
 
 const toolMachine = Machine(
   {
@@ -53,29 +57,21 @@ const toolMachine = Machine(
     states: {
       color: {
         on: {
-          GRAYSCALE: 'grayscale'
+          GRAYSCALE: 'grayscale',
+          USE_TOOL: { cond: 'colorTool', actions: ['useTool', 'spawnTool', sendParent((c, e) => e)] },
         }
       },
       grayscale: {
         on: {
-          USE_AUTOFIT: { actions: [assign({ tool: 'autofit' }), 'spawnTool'] },
-          USE_WATERSHED: { actions: [assign({ tool: 'watershed' }), 'spawnTool'] },
-          USE_THRESHOLD: { actions: [assign({ tool: 'threshold' }), 'spawnTool'] },
+          USE_TOOL: { cond: 'grayscaleTool', actions: ['useTool', 'spawnTool', sendParent((c, e) => e)] },
           COLOR: [
-            { target: 'color', cond: 'grayscaleTool', actions: assign({ tool: 'select' }) },
-            { target: 'color' },
+            { target: 'color', cond: 'colorTool' },
+            { target: 'color', actions: send({ type: 'USE_TOOL', tool: 'select' }) },
           ],
         }
       },
     },
     on: {
-      // switch tool
-      USE_BRUSH: { actions: [assign({ tool: 'brush' }), 'spawnTool'] },
-      USE_SELECT:  { actions: [assign({ tool: 'select' }), 'spawnTool'] },
-      USE_FLOOD: { actions: [assign({ tool: 'flood' }), 'spawnTool'] },
-      USE_TRIM: { actions: [assign({ tool: 'trim' }), 'spawnTool'] },
-      USE_ERODE_DILATE: { actions: [assign({ tool: 'erodeDilate' }), 'spawnTool'] },
-      
       // context not shared with tools
       FRAME: { actions: 'setFrame' },
       CHANNEL: { actions: 'setChannel' },
@@ -112,19 +108,20 @@ const toolMachine = Machine(
     services: {
       listenForToolHotkeys: () => (send) => {
         const lookup = {
-          b: 'USE_BRUSH',
-          v: 'USE_SELECT',
-          t: 'USE_THRESHOLD',
-          k: 'USE_TRIM',
-          g: 'USE_FLOOD',
-          q: 'USE_ERODE_DILATE',
-          m: 'USE_AUTOFIT',
-          w: 'USE_WATERSHED',
+          b: 'brush',
+          v: 'select',
+          t: 'threshold',
+          k: 'trim',
+          g: 'flood',
+          q: 'erodeDilate',
+          m: 'autofit',
+          w: 'watershed',
+          Backspace: 'delete',
         };
 
         const listener = (e) => {
           if (e.key in lookup) {
-            send(lookup[e.key]);
+            send({ type: 'USE_TOOL', tool: lookup[e.key] });
           }
         };
 
@@ -135,7 +132,9 @@ const toolMachine = Machine(
     },
     guards: {
       ...toolGuards,
-      grayscaleTool: ({ tool }) => grayscaleTools.includes(tool),
+      usingColorTool: ({ tool }) => colorTools.includes(tool),
+      colorTool: (_, { tool }) => colorTools.includes(tool),
+      grayscaleTool: (_, { tool }) => grayscaleTools.includes(tool),
       sameContext: (context, event) => 
         context.tool === event.tool 
         && context.foreground === event.foreground 
@@ -147,6 +146,7 @@ const toolMachine = Machine(
         ({ type: 'RESTORE', tool, foreground, background })
       ),
       restore: assign((_, { tool, foreground, background }) => ({ tool, foreground, background })),
+      useTool: assign({ tool: (_, { tool }) => tool }),
       spawnTool: assign({
         toolActor: createToolMachine,
       }),

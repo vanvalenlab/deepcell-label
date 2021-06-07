@@ -57,6 +57,7 @@ const createDeepcellLabelMachine = (projectId) => Machine(
       BACKENDREDO: { actions: forwardTo('api') },
       EDITED: { actions: forwardTo('image') },
       ADD_ACTOR: { actions: send((_, { actor}) => ({ type: 'ADD_ACTOR', actor }), { to: 'undo' }) },
+      USE_TOOL: { actions: forwardTo('canvas') },
     }
   },
   {

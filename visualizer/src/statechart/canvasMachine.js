@@ -5,60 +5,19 @@ const { respond } = actions;
 // NOTE: data coming from the browser needs to be normalized by both scale and zoom
 // data coming from the statechart needs to be normalized by zoom only
 
-const canvasMachine = Machine({
-  id: 'canvas',
-  context: {
-    // raw dimensions of image
-    width: 512,
-    height: 512,
-    scale: 1,  // how much the canvas is scaled to fill the available space
-    zoom: 1,   // how much the image is scaled within the canvas
-    // position of canvas within image
-    sx: 0,
-    sy: 0,
-    // position of cursor within image
-    x: 0,
-    y: 0,
+const spacePanState = {
+  invoke: { 
+    src: 'listenForSpace',
   },
   on: {
-    wheel: { actions: 'zoom' },
-    ZOOMIN: { actions: 'zoomIn' },
-    ZOOMOUT: { actions: 'zoomOut' },
-    RESIZE: { actions: 'resize' },
-    TOOLREF: { actions: assign({ toolRef: (context, event) => event.toolRef }) },
-    SAVE: {
-      actions: respond((context) => ({
-        type: 'RESTORE',
-        sx: context.sx,
-        sy: context.sy,
-        zoom: context.zoom,
-      }))
-    },
-    RESTORE: [
-      { cond: 'newContext', actions: ['restoreContext', respond('RESTORED')] },
-      { actions: respond('SAMECONTEXT') },
-    ],
-      
+    USE_TOOL: { cond: (_, { tool }) => tool !== 'brush' && tool !== 'threshold', target: 'dragToPan' },
   },
-  initial: 'waitForProject',
+  initial: 'idle',
   states: {
-    waitForProject: {
-      on: {
-        PROJECT: {
-          target: 'idle', actions: [
-            assign((context, event) => ({
-              height: event.height,
-              width: event.width,
-              // labeledArray: new Array(event.height).fill(new Array(event.width)),
-            })),
-          ]
-        },
-      },
-    },
     idle: {
       on: {
         'keydown.Space': { target: 'panning' },
-        mousemove: { actions: 'computeNewCoordinates', target: 'compareCoordinates' },
+        mousemove: { actions: 'coordinates' },
       }
     },
     panning: {
@@ -67,35 +26,134 @@ const canvasMachine = Machine({
         mousemove: { actions: 'pan' },
       }
     },
-    compareCoordinates: {
-      always: [
-        { cond: 'newCoordinates', actions: 'useNewCoordinates', target: 'sendCoordinates' },
-        { target: 'idle' }
-      ]
-    },
-    sendCoordinates: {
-      always: { actions: 'sendCoordinates', target: 'idle' }
-    }
   },
-},
+};
+
+const dragPanState = {
+  invoke: { 
+    src: 'listenForMouseUp',
+  },
+  initial: 'idle',
+  on: {
+    USE_TOOL: { cond: (_, { tool }) => tool === 'brush' || tool === 'threshold', target: 'spaceToPan' },
+  },
+  states: {
+    idle: {
+      on: {
+        mousedown: { target: 'panning' },
+        mousemove: { actions: 'coordinates' },
+      }
+    },
+    panning: {
+      on: {
+        mouseup: { target: 'idle' },
+        mousemove: { actions: 'pan' },
+      }
+    },
+  },
+};
+
+const panState = {
+  initial: 'dragToPan',
+  states: {
+    spaceToPan: spacePanState,
+    dragToPan: dragPanState,
+  },
+};
+
+const canvasMachine = Machine(
   {
+    id: 'canvas',
+    context: {
+      // raw dimensions of image
+      width: 512,
+      height: 512,
+      scale: 1,  // how much the canvas is scaled to fill the available space
+      zoom: 1,   // how much the image is scaled within the canvas
+      // position of canvas within image
+      sx: 0,
+      sy: 0,
+      // position of cursor within image
+      x: 0,
+      y: 0,
+    },
+    on: {
+      wheel: { actions: 'zoom' },
+      ZOOMIN: { actions: 'zoomIn' },
+      ZOOMOUT: { actions: 'zoomOut' },
+      RESIZE: { actions: 'resize' },
+      TOOLREF: { actions: assign({ toolRef: (context, event) => event.toolRef }) },
+      SAVE: {
+        actions: respond((context) => ({
+          type: 'RESTORE',
+          sx: context.sx,
+          sy: context.sy,
+          zoom: context.zoom,
+        }))
+      },
+      RESTORE: [
+        { cond: 'newContext', actions: ['restoreContext', respond('RESTORED')] },
+        { actions: respond('SAMECONTEXT') },
+      ],
+      COORDINATES: { cond: 'newCoordinates', actions: ['useCoordinates', 'sendCoordinates'] },
+    },
+    invoke: { 
+      src: 'listenForMouseUp',
+    },
+    initial: 'waitForProject',
+    states: {
+      waitForProject: {
+        on: {
+          PROJECT: {
+            target: 'pan', actions: [
+              assign((context, event) => ({
+                height: event.height,
+                width: event.width,
+                // labeledArray: new Array(event.height).fill(new Array(event.width)),
+              })),
+            ]
+          },
+        },
+      },
+      pan: panState,
+    },
+  },
+  {
+    services: {
+      listenForMouseUp: () => (send) => {
+        const listener = (e) => send(e);
+        window.addEventListener('mouseup', listener);
+        return () => window.removeEventListener('mouseup', listener);
+      },
+      listenForSpace: () =>  (send) => {
+        const downListener = e => { if (e.key === 'Space' && !e.repeat) { send('keydown.Space'); } };
+        const upListener = e => { if (e.key === 'Space') { send('keyup.Space'); } };
+        window.addEventListener('keydown', downListener);
+        window.addEventListener('keyup', upListener);
+        return () => {
+          window.removeEventListener('keydown', downListener);
+          window.removeEventListener('keyup', upListener);
+        }
+      }
+    },
     guards: {
-      newCoordinates: (context) => context.newX !== context.x || context.newY !== context.y,
+      newCoordinates: (context, event) => context.x !== event.y || context.y !== event.y,
       newContext: (context, event) => context.sx !== event.sx || context.sy !== event.sy || context.zoom !== event.zoom,
     },
     actions: {
       restoreContext: assign((context, { type, ...savedContext }) => savedContext),
-      useNewCoordinates: assign((context) => ({ x: context.newX, y: context.newY })),
-      sendCoordinates: send((context) => (
-        { type: 'COORDINATES', x: context.x, y: context.y }),
+      useCoordinates: assign((_, { x, y}) => ({ x, y })),
+      sendCoordinates: send(({ x, y }) => (
+        { type: 'COORDINATES', x, y }),
         {to: (context) => context.toolRef}
       ),
-      computeNewCoordinates: assign((context, event) => {
-        let newX = Math.floor((event.nativeEvent.offsetX / context.scale / context.zoom + context.sx));
-        let newY = Math.floor((event.nativeEvent.offsetY / context.scale / context.zoom + context.sy));
-        newX = Math.max(0, Math.min(newX, context.width - 1));
-        newY = Math.max(0, Math.min(newY, context.height - 1));
-        return { newX, newY };
+      coordinates: send((context, event) => {
+        const { scale, zoom, width, height, sx, sy } = context;
+        let x = Math.floor((event.nativeEvent.offsetX / scale / zoom + sx));
+        let y = Math.floor((event.nativeEvent.offsetY / scale / zoom + sy));
+        x = Math.max(0, Math.min(x, width - 1));
+        y = Math.max(0, Math.min(y, height - 1));
+        return { type: 'COORDINATES', x, y }
       }),
       resize: assign({
         scale: (context, event) => {
