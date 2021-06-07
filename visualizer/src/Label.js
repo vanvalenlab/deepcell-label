@@ -13,8 +13,9 @@ import Canvas from './Canvas/Canvas';
 import Instructions from './Instructions/Instructions';
 import Footer from './Footer/Footer';
 import ToolControls from './ControlPanel/ToolControls';
-import LabelControls from './ControlPanel/LabelControls';
 import { useCanvas } from './ServiceContext';
+import ActionButtons from './ControlPanel/ActionButtons';
+import SelectedPalette from './ControlPanel/SelectedPalette';
 
 
 const useStyles = makeStyles({
@@ -36,6 +37,9 @@ const useStyles = makeStyles({
   },
   controlPanelBox: {
     minWidth: '300px',
+    flex: '0 0 auto',
+  },
+  toolbarBox: {
     flex: '0 0 auto',
   },
   canvasBox: {
@@ -79,10 +83,11 @@ function Label() {
           {/* <ControlPanel /> */}
           <ImageControls />
         </Box>
-        <Box className={styles.controlPanelBox}>
+        <Box className={styles.toolbarBox}>
           <UndoRedo />
           <ToolControls />
-          <LabelControls />
+          <ActionButtons />
+          <SelectedPalette />
         </Box>
         <Box ref={canvasBoxRef} className={styles.canvasBox}>
           <Canvas />
