@@ -6,6 +6,7 @@ const idleState = {
   onDone: 'clicked',
   states: {
     idle: {
+      entry: 'resetMove',
       on: {
         mousedown: 'pressed',
       }
@@ -43,6 +44,7 @@ const clickedState = {
   },
   states: {
     idle: {
+      entry: 'resetMove',
       on: {
         mousedown: 'pressed',
       }

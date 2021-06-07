@@ -14,10 +14,14 @@ export const toolActions = {
     moveX: ({ moveX }, event) => moveX + event.movementX,
     moveY: ({ moveY }, event) => moveY + event.movementY,
   }),
+  resetMove: assign({ moveX: 0, moveY: 0}),
 };
 
 export const toolGuards = {
-  moved: ({ moveX, moveY }) => Math.abs(moveX) > 5 || Math.abs(moveY) > 5,
+  moved: ({ moveX, moveY }) => {
+    console.log(moveX, moveY);
+    return Math.abs(moveX) > 10 || Math.abs(moveY) > 10
+  },
   shift: (_, event) => event.shiftKey,
   doubleClick: (_, event) => event.detail === 2,
   onBackground: ({ label, background }) => label === background,

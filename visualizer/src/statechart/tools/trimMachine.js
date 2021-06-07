@@ -24,6 +24,7 @@ const createTrimMachine = ({ x, y, label, foreground, background }) => Machine(
     initial: 'idle',
     states: {
       idle: {
+        entry: 'resetMove',
         on: {
           mousedown: 'pressed',
         }

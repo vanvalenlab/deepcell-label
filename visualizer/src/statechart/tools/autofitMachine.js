@@ -1,4 +1,5 @@
 import { Machine, sendParent } from 'xstate';
+import { assign } from 'xstate/lib/actionTypes';
 import { toolServices, toolActions, toolGuards } from './toolUtils';
 
 const createAutofitMachine = ({ label, foreground, background }) => Machine(
@@ -21,6 +22,7 @@ const createAutofitMachine = ({ label, foreground, background }) => Machine(
     initial: 'idle',
     states: {
       idle: {
+        entry: 'resetMove',
         on: {
           mousedown: 'pressed',
         }
