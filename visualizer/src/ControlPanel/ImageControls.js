@@ -23,12 +23,16 @@ export const FrameSlider = () => {
   };
 
   return numFrames > 1 &&
-    <DiscreteSlider
-      label="Frame"
-      value={frame}
-      max={numFrames - 1}
-      onChange={handleFrameChange}
-    />;
+    <TableRow>
+      <TableCell>
+        <DiscreteSlider
+          label="Frame"
+          value={frame}
+          max={numFrames - 1}
+          onChange={handleFrameChange}
+        />
+      </TableCell>
+    </TableRow>;
 };
 
 const ImageControls = () => {
@@ -37,11 +41,7 @@ const ImageControls = () => {
 
   return (
     <TableContainer id='control-panel' style={{overflow: 'hidden'}}>
-      <TableRow>
-        <TableCell>
-          <FrameSlider />
-        </TableCell>
-      </TableRow>
+      <FrameSlider />
       <TableRow >
         <TableCell>
           {labeled && <LabeledController />}
