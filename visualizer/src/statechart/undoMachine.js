@@ -105,7 +105,7 @@ const undoMachine = Machine(
         entry: 'resetCounts',
         on: {
           SAMECONTEXT: { actions: 'incrementCount' },
-          RESTORED: { target: 'restored', actions: 'incrementCount' },
+          RESTORED: { actions: 'incrementCount' }, // target: 'restored', 
         },
         always: { cond: 'allHistoriesResponded', target: 'idle', actions: send('BACKENDUNDO') }
       },
@@ -113,17 +113,17 @@ const undoMachine = Machine(
         entry: 'resetCounts',
         on: {
           SAMECONTEXT: { actions: 'incrementCount' },
-          RESTORED: { target: 'restored', actions: 'incrementCount' },
+          RESTORED: { actions: 'incrementCount' }, // target: 'restored', 
         },
         always: { cond: 'allHistoriesResponded', target: 'idle', actions: send('BACKENDREDO') }
       },
-      restored: {
-        on: {
-          SAMECONTEXT: { actions: 'incrementCount' },
-          RESTORED: { actions: 'incrementCount' },
-        },
-        always: { cond: 'allHistoriesResponded', target: 'idle' }
-      }
+      // restored: {
+      //   on: {
+      //     SAMECONTEXT: { actions: 'incrementCount' },
+      //     RESTORED: { actions: 'incrementCount' },
+      //   },
+      //   always: { cond: 'allHistoriesResponded', target: 'idle' }
+      // }
     },
   },
   {
