@@ -1,4 +1,6 @@
 import { Machine, assign, forwardTo, actions, spawn, send, sendParent } from 'xstate';
+import { bind, unbind } from 'mousetrap';
+
 import createRawMachine from './rawMachine';
 import createLabeledMachine from './labeledMachine';
 
@@ -8,7 +10,11 @@ const loadFrameState = {
   entry: ['loadRaw', 'loadLabeled'],
   initial: 'loading',
   states: {
-    idle: {},
+    idle: {
+      invoke: {
+        src: 'listenForFrameHotkeys',
+      },
+    },
     loading: {
       on: {
         RAWLOADED: { 
@@ -71,6 +77,7 @@ const syncToolState = {
     idle: {
       on: {
         LABELEDARRAY: { actions: 'forwardToTool' },
+        LABELS: { actions: 'forwardToTool' },
         FEATURE: { actions: ['setFeature', 'forwardToTool'] },
         CHANNEL: { actions: ['setChannel', 'forwardToTool'] },
       }
@@ -158,11 +165,18 @@ const createImageMachine = ({ projectId }) => Machine(
   {
     services: {
       listenForColorHotkey: () => (send) => {
-        const listener = (event) => {
-          if (event.key === 'z') { send('TOGGLE_COLOR'); }
+        bind('z', () => send('TOGGLE_COLOR'));
+        return () => unbind('z');
+      },
+      listenForFrameHotkeys: ({ frame, numFrames}) => (send) => {
+        const prevFrame = (frame - 1 + numFrames) % numFrames;
+        const nextFrame = (frame + 1) % numFrames;
+        bind('a', () => send({ type: 'LOADFRAME', frame: prevFrame }));
+        bind('d', () => send({ type: 'LOADFRAME', frame: nextFrame }));
+        return () => {
+          unbind('a');
+          unbind('d');
         }
-        window.addEventListener('keydown', listener);
-        return () => window.removeEventListener('keydown', listener);
       },
       // listenForChannelHotkey: (context) => (send) => {
       //   const { rawRef } = context;

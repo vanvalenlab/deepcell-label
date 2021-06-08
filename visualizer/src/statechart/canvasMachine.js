@@ -2,9 +2,6 @@ import { Machine, actions, assign, forwardTo, send, sendParent } from 'xstate';
 
 const { respond } = actions;
 
-// NOTE: data coming from the browser needs to be normalized by both scale and zoom
-// data coming from the statechart needs to be normalized by zoom only
-
 const spacePanState = {
   invoke: { 
     src: 'listenForSpace',
@@ -77,6 +74,10 @@ const canvasMachine = Machine(
       x: 0,
       y: 0,
     },
+    invoke: [
+      { src: 'listenForMouseUp'}, 
+      { src: 'listenForZoomHotkeys'},
+    ],
     on: {
       wheel: { actions: 'zoom' },
       ZOOMIN: { actions: 'zoomIn' },
@@ -96,9 +97,6 @@ const canvasMachine = Machine(
         { actions: respond('SAMECONTEXT') },
       ],
       COORDINATES: { cond: 'newCoordinates', actions: ['useCoordinates', 'sendCoordinates'] },
-    },
-    invoke: { 
-      src: 'listenForMouseUp',
     },
     initial: 'waitForProject',
     states: {
@@ -126,15 +124,31 @@ const canvasMachine = Machine(
         return () => window.removeEventListener('mouseup', listener);
       },
       listenForSpace: () =>  (send) => {
-        const downListener = e => { if (e.key === 'Space' && !e.repeat) { send('keydown.Space'); } };
-        const upListener = e => { if (e.key === 'Space') { send('keyup.Space'); } };
+        const downListener = e => {
+          if (e.key === ' ' && !e.repeat) {
+            send('keydown.Space');
+          } 
+        };
+        const upListener = e => { 
+          if (e.key === ' ') {
+            send('keyup.Space');
+          }
+        };
         window.addEventListener('keydown', downListener);
         window.addEventListener('keyup', upListener);
         return () => {
           window.removeEventListener('keydown', downListener);
           window.removeEventListener('keyup', upListener);
         }
-      }
+      },
+      listenForZoomHotkeys: () => (send) => {
+        const listener = (e) => {
+          if (e.key === '=') { send('ZOOMIN'); }
+          if (e.key === '-') { send('ZOOMOUT'); }
+        };
+        window.addEventListener('keydown', listener);
+        return () => window.removeEventListener('keydown', listener);
+      },
     },
     guards: {
       newCoordinates: (context, event) => context.x !== event.y || context.y !== event.y,

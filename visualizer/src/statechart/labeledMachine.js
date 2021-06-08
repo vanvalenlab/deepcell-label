@@ -1,4 +1,5 @@
 import { Machine, assign, send, sendParent, spawn, forwardTo, actions } from 'xstate';
+import { bind, unbind } from 'mousetrap';
 import createFeatureMachine from './featureMachine';
 
 const { pure, respond } = actions;
@@ -41,7 +42,11 @@ const frameState = {
 const featureState = {
   initial: 'idle',
   states: {
-    idle: {},
+    idle: {
+      invoke: {
+        src: 'listenForFeatureHotkeys',
+      }
+    },
     loading: {
       on: {
         LABELEDLOADED: { target: 'idle', cond: 'loadedFeature', actions: 'useFeature' },
@@ -107,16 +112,36 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) => Machine(
       feature: featureState,
       restore: restoreState,
     },
+    invoke: {
+      src: 'listenForHighlightHotkey',
+    },
     on: {
       TOGGLEHIGHLIGHT: { actions: 'toggleHighlight' },
       SETOUTLINE: { actions: 'setOutline' },
       SETOPACITY: { actions: 'setOpacity' },
       TOGGLESHOWNOLABEL: { actions: 'toggleShowNoLabel' },
       LABELEDARRAY: { actions: sendParent((c, e) => e) },
+      LABELS: { actions: sendParent((c, e) => e) },
       EDITED: { actions: forwardTo(({ features }, event) => features[event.data.feature]) },
     }
   },
   {
+    services: {
+      listenForFeatureHotkeys: ({ feature, numFeatures }) => (send) => {
+        const prevFeature = (feature - 1 + numFeatures) % numFeatures;
+        const nextFeature = (feature + 1) % numFeatures;
+        bind('shift+f', () => send({ type: 'LOADFEATURE', feature: prevFeature }));
+        bind('f', () => send({ type: 'LOADFEATURE', feature: nextFeature }));
+        return () => {
+          unbind('shift+f');
+          unbind('f');
+        }
+      },
+      listenForHighlightHotkey: () => (send) => {
+        bind('h', () => send('TOGGLEHIGHLIGHT'));
+        return () => unbind('h');
+      },
+    },
     guards: {
       /** Check that the loaded event is for the loading frame. */
       loadedFrame: (context, event) =>

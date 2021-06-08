@@ -1,4 +1,5 @@
 import { Machine, assign, forwardTo, send, spawn, actions, sendParent } from 'xstate';
+import { bind, unbind } from 'mousetrap';
 
 const { pure } = actions;
 
@@ -82,6 +83,9 @@ const undoMachine = Machine(
       action: 0,
       numActions: 0,
     },
+    invoke: {
+      src: 'listenForUndoHotkeys',
+    },
     on: {
       ADD_ACTOR: { actions: 'addActor' },
     },
@@ -127,6 +131,16 @@ const undoMachine = Machine(
     },
   },
   {
+    services: {
+      listenForUndoHotkeys: () => (send) => {
+        bind('mod+z', () => send('UNDO'));
+        bind('mod+shift+z', () => send('REDO'));
+        return () => {
+          unbind('mod+z');
+          unbind('mod+shift+z');
+        };
+      },
+    },
     guards: {
       allHistoriesResponded: (context) => context.count === context.numHistories,
       canUndo: (context) => context.action > 0,

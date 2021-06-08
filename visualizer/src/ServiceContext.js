@@ -2,7 +2,6 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import { useInterpret, useSelector } from '@xstate/react';
 import { useLocation } from "react-router-dom";
 import createDeepcellLabelMachine from './statechart/deepcellLabelMachine';
-import Hotkeys from './Hotkeys';
 import { invertImageData } from './imageUtils';
 
 
@@ -133,7 +132,6 @@ const ServiceContext = (props) => {
   return (
     <LabelContext.Provider value={labelService}>
       {props.children}
-      <Hotkeys />
     </LabelContext.Provider>
   );
 };

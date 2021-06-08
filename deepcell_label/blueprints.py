@@ -130,7 +130,7 @@ def edit(token, action_type):
     project.update()
 
     changed_frames = [frame.frame_id for frame in project.action.frames]
-    payload = {'feature': project.feature, 'frames': changed_frames}
+    payload = {'feature': project.feature, 'frames': changed_frames, 'labels': edit.labels_changed}
 
     current_app.logger.debug('Finished action %s for project %s in %s s.',
                              action_type, token,
