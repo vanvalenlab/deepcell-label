@@ -1,5 +1,5 @@
 /** Modified from https://github.com/hms-dbmi/viv */
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useSelector } from '@xstate/react';
 import { makeStyles } from '@material-ui/core/styles';
 import Checkbox from '@material-ui/core/Checkbox';
@@ -127,6 +127,13 @@ const LayerSlider = ({ layer }) => {
 const InvertToggle = () => {
   const raw = useRaw();
   const invert = useSelector(raw, state => state.context.invert);
+
+  // Adds mousetrap class so hotkeys work after using switch
+  const inputRef = useRef();
+  useEffect(() => {
+    const input = inputRef.current;
+    input.className = input.className + ' mousetrap';
+  }, []);
   
   return (
     <FormGroup row>
@@ -134,7 +141,9 @@ const InvertToggle = () => {
       control={<Switch
         size='small' 
         checked={invert} 
-        onChange={() => raw.send('TOGGLE_INVERT')} />}
+        onChange={() => raw.send('TOGGLE_INVERT')} 
+        inputRef={inputRef}
+      />}
       label="Invert"
       labelPlacement="start"
     />

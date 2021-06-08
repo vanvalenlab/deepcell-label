@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useSelector, useActor } from '@xstate/react';
 import Tooltip from '@material-ui/core/Tooltip';
 import FormLabel from '@material-ui/core/FormLabel';
@@ -24,6 +24,13 @@ const ColorModeToggle = () => {
   const grayscale = useSelector(image, state => state.context.grayscale);
   const { send } = image;
 
+  // Adds mousetrap class so hotkeys work after using switch
+  const inputRef = useRef();
+  useEffect(() => {
+    const input = inputRef.current;
+    input.className = input.className + ' mousetrap';
+  }, []);
+
   return (
     <Typography component="div">
         <Box 
@@ -42,7 +49,8 @@ const ColorModeToggle = () => {
             <Switch 
               color="default" 
               checked={grayscale} 
-              onChange={() => send('TOGGLE_COLOR')} 
+              onChange={() => send('TOGGLE_COLOR')}
+              inputRef={inputRef}
             />
           </Grid>
           <Tooltip title='View a single channel'>
