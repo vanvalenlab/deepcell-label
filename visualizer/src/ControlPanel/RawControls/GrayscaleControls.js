@@ -50,17 +50,19 @@ const ChannelSelector = () => {
   };
 
   return (
-    <Select
-      native
-      value={channel}
-      onChange={onChange}
-    >
-      {names.map((opt, index) => (
-        <option key={index} value={index}>
-          {opt}
-        </option>
-      ))}
-    </Select>
+    <Tooltip title='Press C or Shift+C to cycle.'>
+      <Select
+        native
+        value={channel}
+        onChange={onChange}
+      >
+        {names.map((opt, index) => (
+          <option key={index} value={index}>
+            {opt}
+          </option>
+        ))}
+      </Select>
+    </Tooltip>
   );
 };
 
