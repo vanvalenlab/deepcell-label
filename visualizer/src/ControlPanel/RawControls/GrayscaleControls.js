@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { useSelector, useActor } from '@xstate/react';
+import { useSelector } from '@xstate/react';
+import { makeStyles } from '@material-ui/core';
 import Tooltip from '@material-ui/core/Tooltip';
 import Grid from '@material-ui/core/Grid';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
@@ -8,7 +9,14 @@ import Switch from '@material-ui/core/Switch';
 import Select from '@material-ui/core/Select';
 import Slider from '@material-ui/core/Slider';
 
-import { useRaw, useImage } from '../../ServiceContext';
+import { useRaw } from '../../ServiceContext';
+
+const useStyles = makeStyles(theme => ({
+  root: {
+    paddingTop: theme.spacing(1)
+  },
+}));
+
 
 const InvertToggle = ({ channel }) => {
   const invert = useSelector(channel, state => state.context.invert);
@@ -92,6 +100,8 @@ const RangeSlider = ({ channel }) => {
 const GrayscaleControls = () => {
   const raw = useRaw();
   const channel = useSelector(raw, state => state.context.channels[state.context.channel]);
+
+  const styles = useStyles();
   
   return <Grid style={{ width: '100%' }} item >
     <Grid
@@ -99,6 +109,7 @@ const GrayscaleControls = () => {
       direction="column"
       m={2}
       justify="center"
+      className={styles.root}
     >
       <Grid container direction="row" justify="space-between">
         <Grid item xs={8}>

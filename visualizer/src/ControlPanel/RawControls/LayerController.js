@@ -1,5 +1,4 @@
 /** Modified from https://github.com/hms-dbmi/viv */
-import React, { useRef, useEffect } from 'react';
 import { useSelector } from '@xstate/react';
 import { makeStyles } from '@material-ui/core/styles';
 import Checkbox from '@material-ui/core/Checkbox';
@@ -8,7 +7,7 @@ import Slider from '@material-ui/core/Slider';
 import Select from '@material-ui/core/Select';
 
 import LayerOptions from './LayerOptions';
-import { useRaw, useImage } from '../../ServiceContext';
+import { useRaw } from '../../ServiceContext';
 
 const useStyles = makeStyles(theme => ({
   root: {

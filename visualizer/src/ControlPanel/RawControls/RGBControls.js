@@ -1,24 +1,10 @@
-import React, { useEffect, useRef } from 'react';
-import { useSelector, useActor } from '@xstate/react';
-import Tooltip from '@material-ui/core/Tooltip';
-import FormLabel from '@material-ui/core/FormLabel';
-import HelpOutlineIcon from '@material-ui/icons/HelpOutline';
-import Box from '@material-ui/core/Box';
+import { useSelector } from '@xstate/react';
 import Grid from '@material-ui/core/Grid';
 import Button from '@material-ui/core/Button';
 import AddIcon from '@material-ui/icons/Add';
-import ToggleButton from '@material-ui/lab/ToggleButton';
-import Radio from '@material-ui/core/Radio';
-import RadioGroup from '@material-ui/core/RadioGroup';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import FormControl from '@material-ui/core/FormControl';
-import FormGroup from '@material-ui/core/FormGroup';
-import Switch from '@material-ui/core/Switch';
-import Typography from '@material-ui/core/Typography';
-import Select from '@material-ui/core/Select';
 
-import { useRaw, useImage } from '../../ServiceContext';
-import LayerController, { ChannelController } from './LayerController';
+import { useRaw } from '../../ServiceContext';
+import LayerController from './LayerController';
 
 function RGBControls() {
   const raw = useRaw();
