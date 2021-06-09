@@ -113,7 +113,7 @@ const toolMachine = Machine(
       },
     },
     on: {
-      SWAP: { actions: [(c, e) => console.log(e), 'swap'] },
+      SWAP: { actions: 'swap' },
       REPLACE: { actions: 'replace' },
 
       // context not shared with tools
