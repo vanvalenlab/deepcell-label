@@ -28,17 +28,19 @@ export const FeatureSelect = () => {
 
   return numFeatures > 1 &&
     <Grid style={{ width: '100%' }} item>
-      <Select
-        native
-        value={feature}
-        onChange={handleFeatureChange}
-      >
-        {featureNames.map((name, index) => (
-          <option key={index} value={index}>
-            {name}
-          </option>
-        ))}
-      </Select>
+      <Tooltip title={<span>Cycle with <kbd>F</kbd> or <kbd>Shift</kbd> + <kbd>F</kbd>.</span>}>
+        <Select
+          native
+          value={feature}
+          onChange={handleFeatureChange}
+        >
+          {featureNames.map((name, index) => (
+            <option key={index} value={index}>
+              {name}
+            </option>
+          ))}
+        </Select>
+      </Tooltip>
     </Grid>;
 };
 
@@ -107,9 +109,6 @@ const LabeledController = () => {
       <FormLabel component="legend">
         Segmentation Controls
       </FormLabel>
-      <Tooltip title={<span>Press <kbd>F</kbd> to cycle through segmentations.</span>}>
-        <HelpOutlineIcon color="action" fontSize="large" />
-      </Tooltip>
     </Box>
     {labeled && <>
       <FeatureSelect />
