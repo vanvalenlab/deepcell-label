@@ -19,10 +19,7 @@ export const RawControls = () => {
       <FormLabel component="legend">
         Channel Controls
       </FormLabel>
-      <Tooltip title={<div>
-        Move the sliders right for a darker image or left for a brighter image.
-        </div>}
-      >
+      <Tooltip title='Move sliders right to darken or left to brighten channels.'>
         <HelpOutlineIcon color="action" fontSize="large" />
       </Tooltip>
     </Box>
