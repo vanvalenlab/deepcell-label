@@ -65,7 +65,7 @@ const grayscaleState = {
       },
       on: {
         // restart channel hotkey
-        CHANNEL: { internal: false },
+        CHANNEL: { actions: 'setChannel', internal: false },
       }
     },
   },
@@ -198,6 +198,9 @@ const createRawMachine = (projectId, numChannels, numFrames) => Machine(
       channel: channelState,
       colorMode: colorModeState,
     },
+    on: {
+      TOGGLE_INVERT: { actions: forwardTo(({ channel, channels }) => channels[channel]) },
+    }
   },
   {
     services: {
