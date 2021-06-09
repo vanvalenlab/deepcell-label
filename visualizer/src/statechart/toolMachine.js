@@ -48,7 +48,7 @@ const selectActions = {
       send({ type: 'FOREGROUND', foreground: label === foreground ? background : foreground }),
     ];
   }),
-  swap: pure(({ foreground, background }) => {
+  switch: pure(({ foreground, background }) => {
     return [
       send({ type: 'FOREGROUND', foreground: background }),
       send({ type: 'BACKGROUND', background: foreground }),
@@ -114,6 +114,9 @@ const toolMachine = Machine(
       },
     },
     on: {
+      SWAP: { actions: [(c, e) => console.log(e), 'swap'] },
+      REPLACE: { actions: 'replace' },
+
       // context not shared with tools
       FRAME: { actions: 'setFrame' },
       CHANNEL: { actions: 'setChannel' },
@@ -129,7 +132,7 @@ const toolMachine = Machine(
 
       SELECTFOREGROUND: { actions: 'selectForeground' },
       SELECTBACKGROUND: { actions: 'selectBackground' },
-      SWAP: { actions: 'swap' },
+      SWITCH: { actions: 'switch' },
       NEW_FOREGROUND: { actions: 'newForeground' },
       RESET_BACKGROUND: { actions: 'resetBackground' },
       PREV_FOREGROUND: { actions: 'prevForeground' },
@@ -157,7 +160,7 @@ const toolMachine = Machine(
   {
     services: {
       listenForSelectHotkeys: () => (send) => {
-        bind('x', () => send('SWAP'));
+        bind('x', () => send('SWITCH'));
         bind('n', () => send('NEW_FOREGROUND'));
         bind('esc', () => send('RESET_BACKGROUND'));
         bind('[', () => send('PREV_FOREGROUND'));
@@ -233,6 +236,22 @@ const toolMachine = Machine(
       setMaxLabel: assign({
         maxLabel: (_, { labels }) => Math.max(...Object.keys(labels).map(Number)),
       }),
+      swap: send(({ foreground, background }) => ({
+        type: 'EDIT',
+        action: 'swap_single_frame',
+        args: {
+          label_1: foreground, 
+          label_2: background,
+        },
+      })),
+      replace: send(({ foreground, background }) => ({
+        type: 'EDIT',
+        action: 'replace_single',
+        args: {
+          label_1: foreground,
+          label_2: background,
+        },
+      })),
     }
   }
 );
