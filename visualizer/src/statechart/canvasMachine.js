@@ -65,6 +65,8 @@ const canvasMachine = Machine(
       // raw dimensions of image
       width: 512,
       height: 512,
+      availableWidth: 512,
+      availableHeight: 512,
       scale: 1,  // how much the canvas is scaled to fill the available space
       zoom: 1,   // how much the image is scaled within the canvas
       // position of canvas within image
@@ -82,7 +84,7 @@ const canvasMachine = Machine(
       wheel: { actions: 'zoom' },
       ZOOMIN: { actions: 'zoomIn' },
       ZOOMOUT: { actions: 'zoomOut' },
-      RESIZE: { actions: 'resize' },
+      DIMENSIONS: { actions: ['setDimensions', 'resize'] },
       TOOLREF: { actions: assign({ toolRef: (context, event) => event.toolRef }) },
       SAVE: {
         actions: respond((context) => ({
@@ -107,8 +109,8 @@ const canvasMachine = Machine(
               assign((context, event) => ({
                 height: event.height,
                 width: event.width,
-                // labeledArray: new Array(event.height).fill(new Array(event.width)),
               })),
+              'resize',
             ]
           },
         },
@@ -169,10 +171,16 @@ const canvasMachine = Machine(
         y = Math.max(0, Math.min(y, height - 1));
         return { type: 'COORDINATES', x, y }
       }),
+      setDimensions: assign({
+        availableWidth: (_, { width }) => width,
+        availableHeight: (_, { height }) => height,
+        padding: (_, { padding }) => padding,
+      }),
       resize: assign({
-        scale: (context, event) => {
-          const scaleX = (event.width - 2 * event.padding) / context.width;
-          const scaleY = (event.height - 2 * event.padding) / context.height;
+        scale: (context) => {
+          const { width, height, availableWidth, availableHeight, padding } = context;
+          const scaleX = (availableWidth - 2 * padding) / width;
+          const scaleY = (availableHeight - 2 * padding) / height;
           // pick scale that fits both dimensions; can be less than 1
           const scale = Math.min(scaleX, scaleY);
           return scale;

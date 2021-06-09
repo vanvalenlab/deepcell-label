@@ -71,7 +71,7 @@ function Label() {
 
   useEffect(() => {
     const padding = 5;
-    canvas.send({ type: 'RESIZE', width: canvasBoxWidth, height: canvasBoxHeight, padding });
+    canvas.send({ type: 'DIMENSIONS', width: canvasBoxWidth, height: canvasBoxHeight, padding });
   }, [canvas, canvasBoxWidth, canvasBoxHeight]);
 
   return (
