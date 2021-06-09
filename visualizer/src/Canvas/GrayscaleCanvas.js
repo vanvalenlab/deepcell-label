@@ -17,13 +17,12 @@ export const GrayscaleCanvas = ({ className }) => {
   const height = sh * scale * window.devicePixelRatio;
   
   const raw = useRaw();
-  const invert = useSelector(raw, state => state.context.invert);
-  const layer = useSelector(raw, state => state.context.layers[0]);
-
-  const channelIndex = useSelector(layer, state => state.context.channel);
-  const [min, max] = useSelector(layer, state => state.context.range);
-
+  const colorMode = useSelector(raw, state => state.context.colorMode);
+  const channelIndex = useSelector(colorMode, state => state.context.channel);
   const channel = useChannel(channelIndex);
+
+  const invert = useSelector(channel, state => state.context.invert);
+  const [min, max] = useSelector(channel, state => state.context.range);
   const rawImage = useSelector(channel, state => state.context.rawImage);
 
   const canvasRef = useRef();

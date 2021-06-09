@@ -41,6 +41,9 @@ const createChannelMachine = (projectId, channel, numFrames) => Machine(
       loadingFrame: null,
       frames: {},
       rawImage: new Image(),
+      // layer settings for grayscale mode
+      invert: false,
+      range: [0, 255],
     },
     initial: 'idle',
     states: {
@@ -70,7 +73,8 @@ const createChannelMachine = (projectId, channel, numFrames) => Machine(
         actions: assign({ loadingFrame: (_, { frame }) => frame }),
       },
       FRAME: { actions: 'useFrame' },
-      // CHANNEL: { actions: 'useFrame' },
+      TOGGLE_INVERT: { actions: 'toggleInvert' },
+      SETRANGE: { actions: 'setRange' },
     }
   },
   {
@@ -100,6 +104,13 @@ const createChannelMachine = (projectId, channel, numFrames) => Machine(
               Math.abs(curr - frame) < Math.abs(prev - frame) ? curr : prev
             );
         }
+      }),
+      toggleInvert: assign({ invert: ({ invert }) => !invert }),
+      setRange: assign({
+        range: (_, { range }) => [
+          Math.max(0, Math.min(255, range[0])),
+          Math.max(0, Math.min(255, range[1])),
+        ]
       }),
     }
   }

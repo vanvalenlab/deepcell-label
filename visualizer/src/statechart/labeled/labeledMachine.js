@@ -97,7 +97,6 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) => Machine(
       loadingFeature: 0,
       frame: 0, // needed ??
       loadingFrame: 0, // needed ??
-      loadedLayers: {},
       features: [], // all segmentations as featureMachines
       featureNames: [], // name of each segmentations
       opacity: 0,

@@ -17,8 +17,8 @@ export const RGBCanvas = ({ className }) => {
   const height = sh * scale * window.devicePixelRatio;
   
   const raw = useRaw();
-  const invert = useSelector(raw, state => state.context.invert);
-  const layers = useSelector(raw, state => state.context.layers);
+  const colorMode = useSelector(raw, state => state.context.colorMode);
+  const layers = useSelector(colorMode, state => state.context.layers);
 
   const canvasRef = useRef();
   const ctx = useRef();
@@ -39,7 +39,7 @@ export const RGBCanvas = ({ className }) => {
       0, 0,
       width, height,
     );
-  }, [composeCanvasRef, canvases, invert, sx, sy, zoom, sw, sh, width, height]);
+  }, [composeCanvasRef, canvases, sx, sy, zoom, sw, sh, width, height]);
 
   return <>
     {/* hidden processing canvas */}

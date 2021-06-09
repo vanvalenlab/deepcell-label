@@ -1,8 +1,8 @@
 import { Machine, assign, forwardTo, actions, spawn, send, sendParent } from 'xstate';
 import { bind, unbind } from 'mousetrap';
 
-import createRawMachine from './rawMachine';
-import createLabeledMachine from './labeledMachine';
+import createRawMachine from './raw/rawMachine';
+import createLabeledMachine from './labeled/labeledMachine';
 
 const { pure, respond } = actions;
 
@@ -80,21 +80,11 @@ const syncToolState = {
         LABELS: { actions: 'forwardToTool' },
         FEATURE: { actions: ['setFeature', 'forwardToTool'] },
         CHANNEL: { actions: ['setChannel', 'forwardToTool'] },
+        GRAYSCALE: { actions: [assign({ grayscale: true }), 'forwardToTool']},
+        COLOR: { actions: [assign({ grayscale: false }), 'forwardToTool']},
       }
     },
   }
-};
-
-const colorState = {
-  invoke: {
-    src: 'listenForColorHotkey',
-  },
-  on: {
-    TOGGLE_COLOR: { actions: [
-      assign({ grayscale: ({ grayscale }) => !grayscale }),
-      send(({ grayscale }) => grayscale ? 'GRAYSCALE' : 'COLOR', { to: ({ toolRef }) => toolRef }),
-    ]}
-  },
 };
 
 const restoreState = {
@@ -114,7 +104,7 @@ const restoreState = {
         restoreGrayscale: {
           entry: pure((context, event) => {
             if (context.grayscale !== event.grayscale) { 
-              return send('TOGGLE_COLOR');
+              return send('TOGGLE_COLOR_MODE');
             }
           })
         },
@@ -155,7 +145,6 @@ const createImageMachine = ({ projectId }) => Machine(
     states: {
       syncTool: syncToolState,
       frame: frameState,
-      color: colorState,
       restore: restoreState,
     },
     on: {
@@ -164,10 +153,6 @@ const createImageMachine = ({ projectId }) => Machine(
   },
   {
     services: {
-      listenForColorHotkey: () => (send) => {
-        bind('z', () => send('TOGGLE_COLOR'));
-        return () => unbind('z');
-      },
       listenForFrameHotkeys: ({ frame, numFrames}) => (send) => {
         const prevFrame = (frame - 1 + numFrames) % numFrames;
         const nextFrame = (frame + 1) % numFrames;
@@ -178,17 +163,6 @@ const createImageMachine = ({ projectId }) => Machine(
           unbind('d');
         }
       },
-      // listenForChannelHotkey: (context) => (send) => {
-      //   const { rawRef } = context;
-      //   const listener = (event) => {
-      //     if (event.key === 'c') { 
-      //       const channelEvent = { type: 'LOADCHANNEL', }
-      //       rawRef
-      //     } else if (event.key === 'C') {
-
-      //     }
-      //   }
-      // }
     },
     guards: {
       newLoadingFrame: (context, event) => context.loadingFrame !== event.frame,
