@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSelector } from '@xstate/react';
 import { makeStyles } from '@material-ui/core';
 import Box from '@material-ui/core/Box';
@@ -6,6 +6,8 @@ import Tooltip from '@material-ui/core/Tooltip';
 import IconButton from '@material-ui/core/IconButton';
 import SubdirectoryArrowLeftIcon from '@material-ui/icons/SubdirectoryArrowLeft';
 import SubdirectoryArrowRightIcon from '@material-ui/icons/SubdirectoryArrowRight';
+import HelpOutlineIcon from '@material-ui/icons/HelpOutline';
+import ArrowBackIosIcon from '@material-ui/icons/ArrowBackIos';
 
 import { useToolbar } from '../ServiceContext';
 
@@ -20,19 +22,23 @@ const useStyles = makeStyles(theme => ({
     zIndex: 1,
     top: '0px',
     left: '0px',
-    display: 'block',
     width: '60px',
     height: '60px',
     border: '5px solid #DDDDDD',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   background: {
     position: 'absolute',
     top: '30px',
     left: '30px',
-    display: 'block',
     width: '60px',
     height: '60px',
     border: '5px solid #DD0000',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
   },
   swap: {
     position: 'absolute',
@@ -48,6 +54,10 @@ const useStyles = makeStyles(theme => ({
     top: '8px',
     left: '8px',
   },
+  help: {
+    position: 'absolute',
+    right: '8px',
+  }
 }));
 
 export function SwapButton() {
@@ -78,26 +88,95 @@ export function SwapButton() {
 
 }
 
-export default function SelectedPalette() {
+function ForegroundBox() {
   const toolbar = useToolbar();
+  const { send } = toolbar;
   const foreground = useSelector(toolbar, state => state.context.foreground);
-  const background = useSelector(toolbar, state => state.context.background);
+  const noLabel = foreground === 0;
+  
+  const [showButtons, setShowButtons] = useState(false);
+  const buttonColor = noLabel ? 'secondary' : 'default';
 
   const styles = useStyles();
 
   return (
-    <Box className={styles.palette}>
+    <Tooltip title='Cycle with [ and ].'>
       <Box
         component='rect' 
         className={styles.foreground}
-        style={{ background: foreground === 0 ? 'black' : 'white' }}
-      />
+        style={{ background: noLabel ? 'black' : 'white' }}
+        onMouseEnter={() => setShowButtons(true)}
+        onMouseLeave={() => setShowButtons(false)}
+      >
+        {showButtons && 
+          <IconButton size='small' onClick={() => send('PREV_FOREGROUND')}>
+            <ArrowBackIosIcon color={buttonColor} />
+          </IconButton>
+        }
+        {showButtons && 
+          <IconButton size='small' onClick={() => send('NEXT_FOREGROUND')}>
+            <ArrowBackIosIcon color={buttonColor} style={{transform: 'rotate(180deg)'}} />
+          </IconButton>
+        }
+      </ Box>
+    </Tooltip>
+  );
+}
+
+function BackgroundBox() {
+  const toolbar = useToolbar();
+  const { send } = toolbar;
+  const background = useSelector(toolbar, state => state.context.background);
+  const noLabel = background === 0;
+  
+  const [showButtons, setShowButtons] = useState(false);
+  const buttonColor = noLabel ? 'secondary' : 'default';
+
+  const styles = useStyles();
+
+  return (
+    <Tooltip title='Cycle with { and }.'>
       <Box
         component='rect' 
         className={styles.background}
-        style={{ background: background === 0 ? 'black' : 'white' }}
-      />
+        style={{ background: noLabel ? 'black' : 'white' }}
+        onMouseEnter={() => setShowButtons(true)}
+        onMouseLeave={() => setShowButtons(false)}
+      >
+        {showButtons && 
+          <IconButton size='small' onClick={() => send('PREV_BACKGROUND')}>
+            <ArrowBackIosIcon color={buttonColor} />
+          </IconButton>
+        }
+        {showButtons && 
+          <IconButton size='small' onClick={() => send('NEXT_BACKGROUND')}>
+            <ArrowBackIosIcon color={buttonColor} style={{ transform: 'rotate(180deg)'}} />
+          </IconButton>
+        }
+      </ Box>
+    </Tooltip>
+  );
+}
+
+export default function SelectedPalette() {
+  const styles = useStyles();
+
+  const tooltipText = (<span>
+    When the foreground is no label,
+    the top box is black.
+    <br />
+    When the background is no label,
+    the bottom box is black.
+  </span>);
+
+  return (
+    <Box className={styles.palette}>
+      <ForegroundBox />
+      <BackgroundBox />
       <SwapButton />
+      <Tooltip title={tooltipText}>
+        <HelpOutlineIcon className={styles.help} color="action" fontSize="large" />
+      </Tooltip>
     </Box>
   );
 }
