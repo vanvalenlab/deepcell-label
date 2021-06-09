@@ -2,7 +2,6 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import { useInterpret, useSelector } from '@xstate/react';
 import { useLocation } from "react-router-dom";
 import createDeepcellLabelMachine from './statechart/deepcellLabelMachine';
-import { invertImageData } from './imageUtils';
 
 
 export const LabelContext = createContext();
@@ -65,9 +64,6 @@ export function useLayer(layer) {
 }
 
 export function useComposeLayers() {
-  const raw = useRaw();
-  const invert = useSelector(raw, state => state.context.invert);
-
   const canvas = useCanvas();
   const width = useSelector(canvas, state => state.context.width);
   const height = useSelector(canvas, state => state.context.height);
@@ -91,11 +87,6 @@ export function useComposeLayers() {
     Object.values(canvases).forEach(
       canvas => ctx.drawImage(canvas, 0, 0)
     );
-    if (invert) {
-      const imageData = ctx.getImageData(0, 0, width, height);
-      invertImageData(imageData);
-      ctx.putImageData(imageData, 0, 0);
-    }
   });
 
   return [canvasRef, canvases, setCanvases];
