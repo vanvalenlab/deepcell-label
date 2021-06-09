@@ -38,11 +38,13 @@ const InvertToggle = ({ channel }) => {
 
 const ChannelSelector = () => {
   const raw = useRaw();
-  const channel = useSelector(raw, state => state.context.channel);
   const names = useSelector(raw, state => state.context.channelNames);
 
+  const grayscale = useSelector(raw, state => state.context.colorMode);
+  const channel = useSelector(grayscale, state => state.context.channel);
+
   const onChange = e => {
-    raw.send({ type: 'LOADCHANNEL', channel: e.target.value });
+    raw.send({ type: 'LOADCHANNEL', channel: Number(e.target.value) });
   };
 
   return (
@@ -86,7 +88,6 @@ const RangeSlider = ({ channel }) => {
 const GrayscaleControls = () => {
   const raw = useRaw();
   const channel = useSelector(raw, state => state.context.channels[state.context.channel]);
-  console.log(channel);
   
   return <Grid style={{ width: '100%' }} item >
     <Grid

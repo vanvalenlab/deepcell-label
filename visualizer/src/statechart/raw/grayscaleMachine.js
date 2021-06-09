@@ -25,7 +25,7 @@ const frameState = {
     LOADFRAME: {
       target: '.loading',
       cond: 'diffLoadingFrame',
-      actions: ['assignLoadingFrame', 'loadFrame'],
+      actions: ['setLoadingFrame', 'loadFrame'],
     },
   }
 };
@@ -45,8 +45,8 @@ const channelState = {
   on: {
     LOADCHANNEL: {
       target: '.loading',
-      cond: 'newChannel', 
-      actions: 'loadChannel',
+      cond: 'diffLoadingChannel', 
+      actions: ['setLoadingChannel', 'loadChannel'],
     },
   }
 };
@@ -78,7 +78,8 @@ const createRawMachine = ({ channels }) => Machine( // projectId, numChannels, n
       diffLoadingChannel: ({ loadingChannel }, { channel }) => loadingChannel !== channel,
     },
     actions: {
-      assignLoadingFrame: assign({ loadingFrame: (_, { frame }) => frame }),
+      setLoadingFrame: assign({ loadingFrame: (_, { frame }) => frame }),
+      setLoadingChannel: assign({ loadingChannel: (_, { channel }) => channel }),
       /** Load frame for all the visible channels. */
       loadFrame: send(
         ({ loadingFrame }) => ({ type: 'LOADFRAME', frame: loadingFrame }),

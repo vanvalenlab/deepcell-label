@@ -53,7 +53,7 @@ const channelState = {
   on: {
     LOADCHANNEL: {
       target: '.loading',
-      cond: 'newChannel', 
+      cond: 'diffLoadingChannel', 
       actions: 'loadChannel',
     },
   }
@@ -88,21 +88,10 @@ const createRawMachine = ({ channels }) => Machine( // projectId, numChannels, n
       /** Check if the data is for the loading frame. */
       isLoadingFrame: ({ loadingFrame }, { frame }) => loadingFrame === frame,
       diffLoadingFrame: ({ loadingFrame }, { frame }) => loadingFrame !== frame,
-      newChannel: ({ loadedChannels, loadingChannels }, { channel }) => !loadedChannels.has(channel) && !loadingChannels.has(channel),
       isLoadingChannel: ({ loadingChannels }, { channel }) => loadingChannels.has(channel),
+      diffLoadingChannel: ({ loadedChannels, loadingChannels }, { channel }) => !loadedChannels.has(channel) && !loadingChannels.has(channel),
     },
     actions: {
-      // /** Create a channel actor for each channel */
-      // spawnChannels: assign({
-      //   channels: ({ projectId, numChannels, numFrames }) => {
-      //     return Array(numChannels)
-      //       .fill(0)
-      //       .map((val, index) => spawn(
-      //         createChannelMachine(projectId, index, numFrames), `channel${index}`
-      //       ));
-      //   },
-      //   channelNames: ({ numChannels }) => [...Array(numChannels).keys()].map(i => `channel ${i}`),
-      // }),
       spawnLayers: assign({
         layers: ({ numChannels }) => {
           const numLayers = Math.min(3, numChannels);
@@ -155,13 +144,6 @@ const createRawMachine = ({ channels }) => Machine( // projectId, numChannels, n
         const frameEvent = { type: 'LOADFRAME', frame };
         return [...loadingChannels].map(channel => send(frameEvent, channels[channel]));
       }),
-      // /** Start preloading in all channels. */
-      // startPreload: pure(
-      //   ({ channels }) => channels.map(channel => send('PRELOAD', { to: channel }))
-      // ),
-      // /** Preload another frame after a channel preloads the last one. */
-      // preload: respond('PRELOAD'),
-      /** Tell imageMachine that all channels in layers are loaded. */
       sendLoaded: sendParent('FRAMELOADED'),
       useFrame: assign((_, { frame }) => ({ frame })),
       useChannel: pure(({ loadingChannels, loadedChannels, channels }, { channel, frame }) => {
