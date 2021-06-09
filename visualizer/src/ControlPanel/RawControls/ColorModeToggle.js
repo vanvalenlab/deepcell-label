@@ -35,14 +35,16 @@ function ColorModeToggle() {
               Color
             </Grid>
           </Tooltip>
-          <Grid item style={{flex: '0 1 auto'}}>
-            <Switch 
-              color="default" 
-              checked={grayscale} 
-              onChange={() => send('TOGGLE_COLOR_MODE')}
-              inputRef={inputRef}
-            />
-          </Grid>
+          <Tooltip title='Press Z to toggle.'>
+            <Grid item style={{flex: '0 1 auto'}}>
+              <Switch 
+                color="default" 
+                checked={grayscale} 
+                onChange={() => send('TOGGLE_COLOR_MODE')}
+                inputRef={inputRef}
+              />
+            </Grid>
+          </Tooltip>
           <Tooltip title='View a single channel'>
             <Grid item align="left" style={{flex: '1 1 auto'}}>
             Grayscale
