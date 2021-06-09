@@ -7,7 +7,7 @@ import TableContainer from '@material-ui/core/TableContainer';
 import DiscreteSlider from './DiscreteSlider';
 import { useImage, useRaw, useLabeled } from '../ServiceContext';
 
-import RawController from './RawController';
+import RawControls from './RawControls/RawControls';
 import LabeledController from './LabeledController';
 
 
@@ -49,7 +49,7 @@ const ImageControls = () => {
       </TableRow>
       <TableRow >
         <TableCell>
-          {raw && <RawController />}
+          {raw && <RawControls />}
         </TableCell>
       </TableRow>
     </TableContainer>
