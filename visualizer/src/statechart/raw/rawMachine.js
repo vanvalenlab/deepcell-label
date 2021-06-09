@@ -65,7 +65,7 @@ const grayscaleState = {
       },
       on: {
         // restart channel hotkey
-        CHANNEL: { actions: 'setChannel', internal: false },
+        CHANNEL: { target: 'idle', actions: 'setChannel', internal: false },
       }
     },
   },
@@ -212,7 +212,7 @@ const createRawMachine = (projectId, numChannels, numFrames) => Machine(
         const prevChannel = (channel - 1 + numChannels) % numChannels;
         const nextChannel = (channel + 1) % numChannels;
         bind('shift+c', () => send({ type: 'LOADCHANNEL', channel: prevChannel }));
-        bind('C', () => send({ type: 'LOADCHANNEL', channel: nextChannel }));
+        bind('c', () => send({ type: 'LOADCHANNEL', channel: nextChannel }));
         return () => {
           unbind('shift+c');
           unbind('c');
