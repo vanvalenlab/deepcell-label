@@ -14,7 +14,6 @@ const preloadState = {
 };
 
 const frameState = {
-  entry: 'loadFrame',
   initial: 'loading',
   states: {
     idle: {},
