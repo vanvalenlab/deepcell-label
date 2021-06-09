@@ -56,7 +56,6 @@ const selectActions = {
   }),
   newForeground: send(({ maxLabel }) => ({ type: 'FOREGROUND', foreground: maxLabel + 1 })),
   resetBackground: send({ type: 'BACKGROUND', background: 0 }),
-  // bind('esc', () => send({ type: 'FOREGROUND', { background: 0 }));
   prevForeground: send(
     ({ foreground: fg, maxLabel: max }) => 
     ({ type: 'FOREGROUND', foreground: fg <= 1 ? max : fg - 1 })
@@ -107,7 +106,7 @@ const toolMachine = Machine(
         on: {
           USE_TOOL: { cond: 'grayscaleTool', actions: ['useTool', 'spawnTool', sendParent((c, e) => e)] },
           COLOR: [
-            { target: 'color', cond: 'colorTool' },
+            { target: 'color', cond: 'usingColorTool' },
             { target: 'color', actions: send({ type: 'USE_TOOL', tool: 'select' }) },
           ],
         }
