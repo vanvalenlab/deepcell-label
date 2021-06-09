@@ -149,6 +149,7 @@ const createImageMachine = ({ projectId }) => Machine(
     },
     on: {
       EDITED: { actions: forwardTo(({ labeledRef }) => labeledRef) },
+      TOGGLE_COLOR_MODE: { actions: forwardTo('raw') },
     },
   },
   {
