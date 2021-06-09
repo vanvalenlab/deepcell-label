@@ -21,18 +21,20 @@ const InvertToggle = ({ channel }) => {
   }, []);
   
   return (
-    <FormGroup row>
-      <FormControlLabel
-      control={<Switch
-        size='small' 
-        checked={invert} 
-        onChange={() => channel.send('TOGGLE_INVERT')} 
-        inputRef={inputRef}
-      />}
-      label="Invert"
-      labelPlacement="start"
-    />
-    </FormGroup>
+    <Tooltip title='Press I to toggle'>
+      <FormGroup row>
+        <FormControlLabel
+        control={<Switch
+          size='small' 
+          checked={invert} 
+          onChange={() => channel.send('TOGGLE_INVERT')} 
+          inputRef={inputRef}
+        />}
+        label="Invert"
+        labelPlacement="start"
+      />
+      </FormGroup>
+    </Tooltip>
   );
 };
 
