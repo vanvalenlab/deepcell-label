@@ -101,11 +101,7 @@ const createRawMachine = ({ channels }) => Machine( // projectId, numChannels, n
           send({ type: 'FRAME', frame }, { to: channels[channel] }),
         ];
       }),
-      forwardToLoadedChannels: pure(
-        ({ channels, loadedChannels }) => 
-          [...loadedChannels.keys()].map(channel => forwardTo(channels[channel]))
-      ),
-      forwardToChannel: forwardTo(({ features, feature }) => features[feature]),
+      forwardToChannel: forwardTo(({ channels, channel }) => channels[channel]),
     }
   }
 );
