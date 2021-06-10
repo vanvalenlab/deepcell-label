@@ -1,5 +1,5 @@
 import { Machine, sendParent } from 'xstate';
-import { toolActions, toolGuards, toolServices } from './toolUtils';
+import { toolActions, toolGuards } from './toolUtils';
 
 const createErodeDilateMachine = ({ label, foreground, background }) => Machine(
   {
@@ -7,47 +7,21 @@ const createErodeDilateMachine = ({ label, foreground, background }) => Machine(
       label,
       foreground,
       background,
-      moveX: 0,
-      moveY: 0,
     },
     on: {
       FOREGROUND: { actions: 'setForeground' },
       BACKGROUND: { actions: 'setBackground' },
       LABEL: { actions: 'setLabel' },
-    },
-    invoke: { 
-      src: 'listenForMouseUp',
-    },
-    initial: 'idle',
-    states: {
-      idle: {
-        entry: 'resetMove',
-        on: {
-          mousedown: 'pressed',
-        }
-      },
-      pressed: {
-        on: {
-          mousemove: [
-            { cond: 'moved', target: 'dragged'}, 
-            { actions: 'updateMove' }
-          ],
-          mouseup: [
-            { target: 'idle', cond: 'onNoLabel' },
-            { target: 'idle', cond: 'shift' },
-            { target: 'idle', cond: 'onBackground', actions: 'erode' },
-            { target: 'idle', cond: 'onForeground', actions: 'dilate' },
-            { target: 'idle', actions: 'selectForeground' },
-          ],
-        }
-      },
-      dragged: {
-        on: { mouseup: 'idle' },
-      },
+      mouseup: [
+        { cond: 'onNoLabel' },
+        { cond: 'shift' },
+        { cond: 'onBackground', actions: 'erode' },
+        { cond: 'onForeground', actions: 'dilate' },
+        { actions: 'selectForeground' },
+      ],
     },
   },
   {
-    services: toolServices,
     guards: toolGuards,
     actions: {
       ...toolActions,

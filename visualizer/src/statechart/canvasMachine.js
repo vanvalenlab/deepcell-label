@@ -1,62 +1,92 @@
-import { Machine, actions, assign, forwardTo, send, sendParent } from 'xstate';
+import { Machine, actions, assign, forwardTo, send } from 'xstate';
 
 const { respond } = actions;
 
-const spacePanState = {
-  invoke: { 
-    src: 'listenForSpace',
-  },
-  on: {
-    USE_TOOL: { cond: (_, { tool }) => tool !== 'brush' && tool !== 'threshold', target: 'dragToPan' },
-  },
+// Sends mouseup events to tools with clicking only
+const clickToolState = {
   initial: 'idle',
   states: {
     idle: {
+      entry: 'resetMove',
       on: {
-        'keydown.Space': { target: 'panning' },
+        mousedown: 'pressed',
         mousemove: { actions: 'coordinates' },
       }
     },
-    panning: {
+    pressed: {
       on: {
-        'keyup.Space': { target: 'idle' },
-        mousemove: { actions: 'pan' },
+        mousemove: [
+          { cond: 'moved', target: 'dragged', actions: 'pan' }, 
+          { actions: ['updateMove', 'pan'], }
+        ],
+        mouseup: { target: 'idle', actions: 'forwardToTool' },
       }
     },
-  },
+    dragged: {
+      on: { 
+        mouseup: 'idle',
+        mousemove: { actions: 'pan' }
+      },
+    },
+  }
 };
 
-const dragPanState = {
-  invoke: { 
-    src: 'listenForMouseUp',
-  },
-  initial: 'idle',
+// Sends both mousedown and mouseup events to tools with dragging
+const dragToolState = {
   on: {
-    USE_TOOL: { cond: (_, { tool }) => tool === 'brush' || tool === 'threshold', target: 'spaceToPan' },
+    mousedown: { actions: 'forwardToTool' },
+    mouseup: { actions: 'forwardToTool' },
+    mousemove: { actions: 'coordinates' },
+  }
+};
+
+const toolState = {
+  initial: 'checkTool',
+  on: {
+    USE_TOOL: { target: '.checkTool', actions: 'setTool' },
   },
+  states: {
+    checkTool: {
+      always: [
+        { cond: 'dragTool', target: 'dragTool' },
+        'clickTool',
+      ]
+    },
+    clickTool: clickToolState,
+    dragTool: dragToolState,
+  }
+};
+
+const grabState = {
+  initial: 'idle',
   states: {
     idle: {
       on: {
         mousedown: { target: 'panning' },
         mousemove: { actions: 'coordinates' },
-      }
+      },
     },
     panning: {
       on: {
-        mouseup: { target: 'idle' },
+        mouseup: 'idle',
         mousemove: { actions: 'pan' },
-      }
+      },
     },
-  },
+  }
 };
 
 const panState = {
-  initial: 'dragToPan',
+  initial: 'tool',
   states: {
-    spaceToPan: spacePanState,
-    dragToPan: dragPanState,
+    tool: toolState,
+    hand: grabState,
   },
-};
+  invoke: { src: 'listenForSpace' },
+  on: {
+    'keydown.Space': '.hand',
+    'keyup.Space': '.tool',
+  }
+}
 
 const canvasMachine = Machine(
   {
@@ -75,6 +105,9 @@ const canvasMachine = Machine(
       // position of cursor within image
       x: 0,
       y: 0,
+      // how much the canvas has moved in the current pan
+      dx: 0,
+      dy: 0,
     },
     invoke: [
       { src: 'listenForMouseUp'}, 
@@ -98,7 +131,7 @@ const canvasMachine = Machine(
         { cond: 'newContext', actions: ['restoreContext', respond('RESTORED')] },
         { actions: respond('SAMECONTEXT') },
       ],
-      COORDINATES: { cond: 'newCoordinates', actions: ['useCoordinates', 'sendCoordinates'] },
+      COORDINATES: { cond: 'newCoordinates', actions: ['useCoordinates', 'forwardToTool'] },
     },
     initial: 'waitForProject',
     states: {
@@ -155,8 +188,16 @@ const canvasMachine = Machine(
     guards: {
       newCoordinates: (context, event) => context.x !== event.y || context.y !== event.y,
       newContext: (context, event) => context.sx !== event.sx || context.sy !== event.sy || context.zoom !== event.zoom,
+      dragTool: ({ tool }) => tool === 'brush' || tool === 'threshold',
+      moved: ({ dx, dy }) => Math.abs(dx) > 10 || Math.abs(dy) > 10,
     },
     actions: {
+      updateMove: assign({
+        dx: ({ dx }, event) => dx + event.movementX,
+        dy: ({ dy }, event) => dy + event.movementY,
+      }),
+      resetMove: assign({ dx: 0, dy: 0}),
+      forwardToTool: forwardTo(({ toolRef }) => toolRef), 
       restoreContext: assign((context, { type, ...savedContext }) => savedContext),
       useCoordinates: assign((_, { x, y}) => ({ x, y })),
       sendCoordinates: send(({ x, y }) => (
@@ -238,6 +279,7 @@ const canvasMachine = Machine(
         newSy = Math.max(newSy, 0);
         return { zoom: newZoom, sx: newSx, sy: newSy };
       }),
+      setTool: assign({ tool: (_, { tool }) => tool }),
     }
   }
 );

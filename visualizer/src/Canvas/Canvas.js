@@ -15,7 +15,7 @@ const useStyles = makeStyles({
   canvasBox: {
     alignSelf: 'flex-start',
     position: 'absolute',
-    cursor: 'crosshair',
+    // cursor: 'crosshair',
   },
   canvas: {
     position: 'absolute',
@@ -38,10 +38,15 @@ export const Canvas = () => {
   const sw = useSelector(canvas, state => state.context.width);
   const sh = useSelector(canvas, state => state.context.height);
   const scale = useSelector(canvas, state => state.context.scale);
+  
+  const grab = useSelector(canvas, state => state.matches('pan.hand'));
+  const grabbing = useSelector(canvas, state => state.matches('pan.hand.panning'));
+  const dragged = useSelector(canvas, state => state.matches('pan.tool.clickTool.dragged'));
+
+  const cursor = grabbing || dragged ? 'grabbing' : grab ? 'grab' : 'crosshair';
 
   const toolbar = useToolbar();
   const tool = useSelector(toolbar, state => state.context.tool);
-  const toolActor = useSelector(toolbar, state => state.context.toolActor);
 
   const styles = useStyles();
 
@@ -56,6 +61,7 @@ export const Canvas = () => {
     borderBottom: `${padding}px solid ${bottomColor}`,
     borderLeft: `${padding}px solid ${leftColor}`,
     borderRight: `${padding}px solid ${rightColor}`,
+    cursor: cursor,
   };
 
   // prevent scrolling page when over canvas
@@ -77,18 +83,16 @@ export const Canvas = () => {
     if (event.shiftKey) {
       toolbar.send( {...event, type: 'SHIFTCLICK' });
     } else {
-      toolActor.send(event);
+      // toolbar.send(event);
     }
   };
 
   const handleMouseUp = (e) => {
     canvas.send(e);
-    toolActor.send(e);
   };
 
   const handleMouseMove = (e) => {
     canvas.send(e);
-    toolActor.send(e);
   }
 
   return (

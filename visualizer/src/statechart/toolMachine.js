@@ -74,6 +74,42 @@ const selectActions = {
   ),
 };
 
+const colorModeState = {
+  initial: 'color',
+  states: {
+    color: {
+      on: {
+        GRAYSCALE: 'grayscale',
+        USE_TOOL: { cond: 'colorTool', actions: ['useTool', 'spawnTool', sendParent((c, e) => e)] },
+      }
+    },
+    grayscale: {
+      on: {
+        USE_TOOL: { cond: 'grayscaleTool', actions: ['useTool', 'spawnTool', sendParent((c, e) => e)] },
+        COLOR: [
+          { target: 'color', cond: 'usingColorTool' },
+          { target: 'color', actions: send({ type: 'USE_TOOL', tool: 'select' }) },
+        ],
+      }
+    },
+  },
+};
+
+const selectState = {
+  invoke: { src: 'listenForSelectHotkeys' },
+  on: {
+    SELECTFOREGROUND: { actions: 'selectForeground' },
+    SELECTBACKGROUND: { actions: 'selectBackground' },
+    SWITCH: { actions: 'switch' },
+    NEW_FOREGROUND: { actions: 'newForeground' },
+    RESET_BACKGROUND: { actions: 'resetBackground' },
+    PREV_FOREGROUND: { actions: 'prevForeground' },
+    NEXT_FOREGROUND: { actions: 'nextForeground' },
+    PREV_BACKGROUND: { actions: 'prevBackground' },
+    NEXT_BACKGROUND: { actions: 'nextBackground' },
+  },
+};
+
 const toolMachine = Machine(
   {
     id: 'tool',
@@ -90,29 +126,16 @@ const toolMachine = Machine(
       toolActor: null,
     },
     entry: 'spawnTool',
-    invoke: [
-      { src: 'listenForToolHotkeys' },
-      { src: 'listenForSelectHotkeys' },
-    ],
-    initial: 'color',
+    invoke: { src: 'listenForToolHotkeys' },
+    type: 'parallel',
     states: {
-      color: {
-        on: {
-          GRAYSCALE: 'grayscale',
-          USE_TOOL: { cond: 'colorTool', actions: ['useTool', 'spawnTool', sendParent((c, e) => e)] },
-        }
-      },
-      grayscale: {
-        on: {
-          USE_TOOL: { cond: 'grayscaleTool', actions: ['useTool', 'spawnTool', sendParent((c, e) => e)] },
-          COLOR: [
-            { target: 'color', cond: 'usingColorTool' },
-            { target: 'color', actions: send({ type: 'USE_TOOL', tool: 'select' }) },
-          ],
-        }
-      },
+      colorMode: colorModeState,
+      select: selectState,
     },
     on: {
+      mousedown: { actions: 'forwardToTool' },
+      mouseup: { actions: 'forwardToTool' },
+
       SWAP: { actions: 'swap' },
       REPLACE: { actions: 'replace' },
 
@@ -128,16 +151,6 @@ const toolMachine = Machine(
       LABEL: { actions: ['setLabel', 'forwardToTool'] },
       FOREGROUND: { actions: ['setForeground', 'forwardToTool'] },
       BACKGROUND: { actions: ['setBackground', 'forwardToTool'], },
-
-      SELECTFOREGROUND: { actions: 'selectForeground' },
-      SELECTBACKGROUND: { actions: 'selectBackground' },
-      SWITCH: { actions: 'switch' },
-      NEW_FOREGROUND: { actions: 'newForeground' },
-      RESET_BACKGROUND: { actions: 'resetBackground' },
-      PREV_FOREGROUND: { actions: 'prevForeground' },
-      NEXT_FOREGROUND: { actions: 'nextForeground' },
-      PREV_BACKGROUND: { actions: 'prevBackground' },
-      NEXT_BACKGROUND: { actions: 'nextBackground' },
 
       // special shift click event 
       SHIFTCLICK: [

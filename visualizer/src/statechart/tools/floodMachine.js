@@ -1,5 +1,5 @@
 import { Machine, sendParent } from 'xstate';
-import { toolActions, toolGuards, toolServices } from './toolUtils';
+import { toolActions, toolGuards } from './toolUtils';
 
 const createFloodMachine = ({ x, y, label, foreground, background }) => Machine(
   {
@@ -9,45 +9,19 @@ const createFloodMachine = ({ x, y, label, foreground, background }) => Machine(
       label,
       foreground,
       background,
-      moveX: 0,
-      moveY: 0,
     },
     on: {
       COORDINATES: { actions: 'setCoordinates' },
       LABEL: { actions: 'setLabel' },
       FOREGROUND: { actions: 'setForeground' },
       BACKGROUND: { actions: 'setBackground' },
-    },
-    invoke: { 
-      src: 'listenForMouseUp',
-    },
-    initial: 'idle',
-    states: {
-      idle: {
-        entry: 'resetMove',
-        on: {
-          mousedown: 'pressed',
-        }
-      },
-      pressed: {
-        on: {
-          mousemove: [
-            { cond: 'moved', target: 'dragged'}, 
-            { actions: 'updateMove' }
-          ],
-          mouseup: [
-            { target: 'idle', cond: 'onBackground', actions: 'flood' },
-            { target: 'idle', actions: 'selectBackground' },
-          ],
-        }
-      },
-      dragged: {
-        on: { mouseup: 'idle' },
-      },
+      mouseup: [
+        { cond: 'onBackground', actions: 'flood' },
+        { actions: 'selectBackground' },
+      ],
     },
   },
   {
-    services: toolServices,
     guards: toolGuards,
     actions: {
       ...toolActions,

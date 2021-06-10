@@ -1,5 +1,5 @@
 import { Machine, sendParent } from 'xstate';
-import { toolActions, toolGuards, toolServices } from './toolUtils';
+import { toolActions, toolGuards } from './toolUtils';
 
 const createDeleteMachine = ({label, foreground, background }) => Machine(
   {
@@ -7,45 +7,19 @@ const createDeleteMachine = ({label, foreground, background }) => Machine(
       label,
       foreground,
       background,
-      moveX: 0,
-      moveY: 0,
     },
     on: {
       FOREGROUND: { actions: 'setForeground' },
       BACKGROUND: { actions: 'setBackground' },
       LABEL: { actions: 'setLabel' },
-    },
-    invoke: { 
-      src: 'listenForMouseUp',
-    },
-    initial: 'idle',
-    states: {
-      idle: {
-        entry: 'resetMove',
-        on: {
-          mousedown: 'pressed',
-        }
-      },
-      pressed: {
-        on: {
-          mousemove: [
-            { cond: 'moved', target: 'dragged'}, 
-            { actions: 'updateMove' }
-          ],
-          mouseup: [
-            { target: 'idle', cond: 'onNoLabel' },
-            { target: 'idle', cond: 'onBackground', actions: 'delete' },
-            { target: 'idle', actions: 'selectBackground' },
-          ],
-        }
-      },
-      dragged: {
-        on: { mouseup: 'idle' },
-      },
-    },
+      mouseup: [
+        { cond: 'onNoLabel' },
+        { cond: 'onBackground', actions: 'delete' },
+        { actions: 'selectBackground' },
+      ],
+    }
   },
   {
-    services: toolServices,
     guards: toolGuards,
     actions: {
       ...toolActions,
