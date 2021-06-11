@@ -18,7 +18,7 @@ import ActionButtons from './ControlPanel/ActionButtons';
 import SelectedPalette from './ControlPanel/SelectedPalette';
 
 
-const useStyles = makeStyles({
+const useStyles = makeStyles(theme => ({
   root: {
     boxSizing: 'border-box',
     display: 'flex',
@@ -29,7 +29,7 @@ const useStyles = makeStyles({
     boxSizing: 'border-box',
     display: "flex",
     flexGrow: 1,
-    padding: 16,
+    padding: theme.spacing(1),
     alignItems: "stretch",
     justifyContent: "space-evenly",
     minHeight: 'calc(100vh - 66px - 57px - 60px - 1px)',
@@ -41,6 +41,7 @@ const useStyles = makeStyles({
   },
   toolbarBox: {
     flex: '0 0 auto',
+    padding: theme.spacing(1),
   },
   canvasBox: {
     position: 'relative',
@@ -48,7 +49,7 @@ const useStyles = makeStyles({
     maxHeight: '100vh',
     maxWidth: '100vw',
   },
-});
+}));
 
 function Label() {
   const styles = useStyles();
@@ -80,7 +81,6 @@ function Label() {
       <Instructions />
       <Box className={styles.main}>
         <Box className={styles.controlPanelBox}>
-          {/* <ControlPanel /> */}
           <ImageControls />
         </Box>
         <Box className={styles.toolbarBox}>

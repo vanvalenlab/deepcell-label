@@ -9,15 +9,27 @@ import { useImage } from '../../ServiceContext';
 import ColorModeToggle from './ColorModeToggle';
 import GrayscaleControls from './GrayscaleControls';
 import RGBControls from './RGBControls';
+import { makeStyles } from '@material-ui/core';
 
+const useStyles = makeStyles(theme => ({
+  root: {
+    // paddingTop: theme.spacing(1),
+    display: 'flex', 
+    flexDirection: 'row', 
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+}));
 export const RawControls = () => {
   const image = useImage();
   const grayscale = useSelector(image, state => state.context.grayscale);
 
+  const styles = useStyles();
+
   return <>
-    <Box display='flex' flexDirection='row' justifyContent='space-between'>
+    <Box className={styles.root}>
       <FormLabel component="legend">
-        Channel Controls
+        Channels
       </FormLabel>
       <Tooltip title='Move sliders right to darken or left to brighten channels.'>
         <HelpOutlineIcon color="action" fontSize="large" />
