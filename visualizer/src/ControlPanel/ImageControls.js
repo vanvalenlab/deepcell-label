@@ -5,8 +5,10 @@ import { Box, Button, makeStyles } from '@material-ui/core';
 import SendIcon from '@material-ui/icons/Send';
 import { Slider } from "@material-ui/core";
 import Typography from '@material-ui/core/Typography';
+import { green } from '@material-ui/core/colors';
+import CircularProgress from '@material-ui/core/CircularProgress';
 
-import { useImage, useRaw, useLabeled } from '../ServiceContext';
+import { useImage, useRaw, useLabeled, useApi } from '../ServiceContext';
 
 import RawControls from './RawControls/RawControls';
 import LabeledController from './LabeledController';
@@ -21,18 +23,34 @@ const useStyles = makeStyles(theme => ({
   },
   title: {
     paddingTop: theme.spacing(2),
-  }
+  },
+  buttonProgress: {
+    color: green[500],
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    marginTop: -12,
+    marginLeft: -12,
+  },
 }));
 
 function SubmitButton() {
+  const api = useApi();
+  const { send } = api;
+  const uploading = useSelector(api, state => state.matches('uploading'));
+  
+  const styles = useStyles();
 
   return (
     <Button 
       variant='contained' 
       color='primary' 
       endIcon={<SendIcon />}
+      onClick={() => send('UPLOAD')}
+      disabled={uploading}
     >
       Submit
+      {uploading && <CircularProgress className={styles.buttonProgress} />}
     </Button>
   );
 }
