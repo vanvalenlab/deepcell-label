@@ -15,7 +15,6 @@ const useStyles = makeStyles({
   canvasBox: {
     alignSelf: 'flex-start',
     position: 'absolute',
-    // cursor: 'crosshair',
   },
   canvas: {
     position: 'absolute',
@@ -56,7 +55,7 @@ export const Canvas = () => {
   const bottomColor = (Math.ceil(sy + sh / zoom) === sw) ? 'white' : 'black';
   const rightColor = (Math.ceil(sx + sw / zoom) === sw) ? 'white' : 'black';
   const leftColor = (Math.floor(sx) === 0) ? 'white' : 'black';
-  const borderStyles = {
+  const canvasStyles = {
     borderTop: `${padding}px solid ${topColor}`,
     borderBottom: `${padding}px solid ${bottomColor}`,
     borderLeft: `${padding}px solid ${leftColor}`,
@@ -82,31 +81,21 @@ export const Canvas = () => {
     canvas.send(event);
     if (event.shiftKey) {
       toolbar.send( {...event, type: 'SHIFTCLICK' });
-    } else {
-      // toolbar.send(event);
     }
   };
-
-  const handleMouseUp = (e) => {
-    canvas.send(e);
-  };
-
-  const handleMouseMove = (e) => {
-    canvas.send(e);
-  }
 
   return (
     <Box
       id={"canvasBox"}
       className={styles.canvasBox}
-      style={borderStyles}
+      style={canvasStyles}
       boxShadow={10}
       width={scale * sw}
       height={scale * sh}
-      onMouseMove={handleMouseMove}
+      onMouseMove={canvas.send}
       onWheel={canvas.send}
       onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
+      onMouseUp={canvas.send}
     >
       {raw && <RawCanvas className={styles.canvas} />}
       {labeled && <LabeledCanvas className={styles.canvas} />}
