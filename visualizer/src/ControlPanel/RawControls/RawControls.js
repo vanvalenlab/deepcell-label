@@ -19,6 +19,10 @@ const useStyles = makeStyles(theme => ({
     justifyContent: 'space-between',
     width: '100%',
   },
+  title: {
+    paddingTop: theme.spacing(1),
+    paddingBottom: theme.spacing(1),
+  },
 }));
 export const RawControls = () => {
   const image = useImage();
@@ -28,7 +32,7 @@ export const RawControls = () => {
 
   return <>
     <Box className={styles.root}>
-      <FormLabel component="legend">
+      <FormLabel component="legend" className={styles.title}>
         Channels
       </FormLabel>
       <Tooltip title='Move sliders right to darken or left to brighten channels.'>
