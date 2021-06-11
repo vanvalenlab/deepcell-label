@@ -71,7 +71,7 @@ const syncToolState = {
   states: {
     waitForTool: {
       on: {
-        TOOLREF: { target: 'idle', actions: 'saveTool' },
+        TOOLREF: { target: 'idle', actions: 'setTool' },
       }
     },
     idle: {
@@ -216,8 +216,7 @@ const createImageMachine = ({ projectId }) => Machine(
           send(frameEvent, { to: toolRef }),
         ];
       }),
-      saveTool: assign({ toolRef: (_, event) => event.toolRef }),
-      saveUndo: assign({ undoRef: (_, event) => event.undoRef }),
+      setTool: assign({ toolRef: (_, event) => event.toolRef }),
       forwardToTool: forwardTo(({ toolRef }) => toolRef),
       setFeature: assign({ feature: (_, { feature }) => ({ feature })}),
       setChannel: assign({ channel: (_, { channel }) => ({ channel })}),
