@@ -81,9 +81,10 @@ export const Canvas = () => {
 
   const handleMouseDown = (event) => {
     event.preventDefault();
-    canvas.send(event);
     if (event.shiftKey) {
       toolbar.send( {...event, type: 'SHIFTCLICK' });
+    } else {
+      canvas.send(event);
     }
   };
 
