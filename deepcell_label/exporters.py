@@ -5,6 +5,7 @@ import pathlib
 import tempfile
 import tarfile
 import json
+from urllib.parse import urlparse
 
 import numpy as np
 
@@ -25,7 +26,9 @@ class Exporter():
         Converts the path to have a valid extension and
         adds the Project's token to create a unique filename.
         """
-        path = pathlib.Path(self.project.path)
+        path = urlparse(self.project.path).path
+        path = path.strip('/')
+        path = pathlib.Path(path)
         if self.project.is_track:
             path = path.with_suffix('.trk')
         else:
@@ -51,7 +54,7 @@ class Exporter():
         elif self.project.is_track:
             _export = self.export_trk
         else:
-            raise ValueError('Cannot export file: {}'.format(self.project.path))
+            raise ValueError('Cannot export file: {}'.format(self.path))
         return _export
 
     def export_npz(self):
