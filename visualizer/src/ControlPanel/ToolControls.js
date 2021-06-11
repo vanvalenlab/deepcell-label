@@ -36,7 +36,7 @@ export default function ToolControls() {
   const toolbar = useToolbar();
   // const brushSize = useSelector(tool, state => state.context.brushSize);
   // const trace = useSelector(tool, state => state.context.trace);
-  const grayscale = useSelector(toolbar, state => state.matches('grayscale'));
+  const grayscale = useSelector(toolbar, state => state.matches('colorMode.grayscale'));
   const tool = useSelector(toolbar, state => state.context.tool);
   const { send } = toolbar;
 
