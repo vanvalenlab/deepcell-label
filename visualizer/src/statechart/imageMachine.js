@@ -191,7 +191,7 @@ const createImageMachine = ({ projectId }) => Machine(
         const { rawRef, labeledRef } = context;
         return [
           sendParent({ type: 'ADD_ACTOR', actor: labeledRef }),
-          // sendParent({ type: 'ADD_ACTOR', actor: rawRef }),
+          sendParent({ type: 'ADD_ACTOR', actor: rawRef }),
         ];
       }),
       loadLabeled: send(

@@ -81,97 +81,28 @@ const colorModeState = {
   },
 };
 
-// const restoreState = {
-//   on: { 
-//     RESTORE: [
-//       { 
-//         cond: (context, event) => context.channel === event.channel, 
-//         actions: respond('SAMECONTEXT') ,
-//       },
-//       { 
-//         target: '.restoring',
-//         internal: false,
-//         actions: respond('RESTORED'),
-//       },
-//     ],
-//     SAVE: { actions: respond(({ feature }) => ({ type: 'RESTORE', feature })) },
-//   },
-//   initial: 'idle',
-//   states: {
-//     idle: {},
-//     restoring: {
-//       entry: send((_, { feature }) => ({ type: 'LOADFEATURE', feature })),
-//     },
-//   }
-// };
-
 const restoreState = {
+  on: { 
+    RESTORE: [
+      { 
+        cond: (context, event) => context.channel === event.channel, 
+        actions: respond('SAMECONTEXT') ,
+      },
+      { 
+        target: '.restoring',
+        internal: false,
+        actions: respond('RESTORED'),
+      },
+    ],
+    SAVE: { actions: respond(({ channel }) => ({ type: 'RESTORE', channel })) },
+  },
   initial: 'idle',
   states: {
-    idle: {
-      on: {
-        RESTORE: [
-          { cond: 'sameContext', actions: respond('SAME_CONTEXT') },
-          { target: 'restoring', actions: 'restore' },
-        ]
-      }
-    },
+    idle: {},
     restoring: {
-      on: {
-        RAW_LOADED: { cond: 'restoring', target: 'restored', actions: 'updateRestored' },
-      },
-    },
-    checkRestored: {
-      always: [
-        { cond: 'restored', target: 'restored', actions: 'sendRestored' },
-        'restoring',
-      ]
-    },
-    restored: {
-      on: {
-        USE_RESTORED: { actions: 'useRestored', target: 'idle' },
-      },
+      entry: send((_, { channel }) => ({ type: 'LOADCHANNEL', channel })),
     },
   }
-};
-
-const restoreGuards = {
-  sameContext: (context, event) => 
-    context.frame === event.frame,
-  restoring: ({ restoringFrame }, { frame }) =>
-    restoringFrame === frame,
-  restored: ({ restoredChannels }) =>
-    [...restoredChannels.values()].every(v => v),
-};
-
-const restoreActions = {
-  save: respond(({ frame }) => ({ type: 'RESTORE', frame })),
-  restore: pure(({ channels, loadedChannels }, { frame }, { _event: { origin } }) => {
-    return [
-      assign({ 
-        restoringFrame: frame, 
-        restoreResponse: origin,
-        restoredChannels: new Map(loadedChannels.map(channel => [channel, false])),
-      }),
-      ...loadedChannels.map(channel => 
-        send({ type: 'LOADFRAME', frame }, { to: channels[channel] })
-      ),
-    ];
-  }),
-  updateRestored: assign({ 
-    restoredChannels: ({ restoredChannels }, { channel }) => 
-      restoredChannels.set(channel, true) 
-  }),
-  sendRestored: send('RESTORED', { to: ({ restoreResponse: ref }) => ref }),
-  useRestored: pure((context) => {
-    const { channels, loadedChannels, restoringFrame: frame } = context;
-    return [
-      assign({ frame }),
-      ...loadedChannels.map(channel =>
-        send({ type: 'FRAME', frame }, { to: channels[channel] })
-      ),
-    ];
-  }),
 };
 
 const createRawMachine = (projectId, numChannels, numFrames) => Machine(
@@ -196,6 +127,7 @@ const createRawMachine = (projectId, numChannels, numFrames) => Machine(
       frame: frameState,
       channel: channelState,
       colorMode: colorModeState,
+      restore: restoreState,
     },
     on: {
       TOGGLE_INVERT: { actions: forwardTo(({ channel, channels }) => channels[channel]) },
