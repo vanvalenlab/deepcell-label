@@ -111,9 +111,10 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) => Machine(
       feature: featureState,
       restore: restoreState,
     },
-    invoke: {
-      src: 'listenForHighlightHotkey',
-    },
+    invoke: [
+      { src: 'listenForHighlightHotkey' },
+      { src: 'listenForOutlineHotkey' },
+    ],
     on: {
       TOGGLEHIGHLIGHT: { actions: 'toggleHighlight' },
       TOGGLE_OUTLINE: { actions: 'toggleOutline' },
