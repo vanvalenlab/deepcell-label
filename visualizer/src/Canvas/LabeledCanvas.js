@@ -76,9 +76,6 @@ export const LabeledCanvas = ({ className }) => {
   }, [labeledImage, labeledArray, foreground, highlight, showNoLabel, opacity, sw, sh, sx, sy, zoom, width, height]);
 
   return <>
-    { labeledImage.src === '' && 
-      <CircularProgress style={{ margin: '25%', width:'50%', height:'50%'}} />
-    }
     {/* hidden processing canvas */}
     <canvas id='labeled-processing'
       hidden={true}
