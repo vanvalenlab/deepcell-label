@@ -4,7 +4,7 @@ import Tooltip from '@material-ui/core/Tooltip';
 import { Box, Button, makeStyles } from '@material-ui/core';
 import SendIcon from '@material-ui/icons/Send';
 import { Slider } from "@material-ui/core";
-import Typography from '@material-ui/core/Typography';
+import FormLabel from '@material-ui/core/FormLabel';
 import { green } from '@material-ui/core/colors';
 import CircularProgress from '@material-ui/core/CircularProgress';
 
@@ -22,7 +22,8 @@ const useStyles = makeStyles(theme => ({
     padding: theme.spacing(1),
   },
   title: {
-    paddingTop: theme.spacing(2),
+    paddingTop: theme.spacing(1),
+    paddingBottom: theme.spacing(1),
   },
   buttonProgress: {
     color: green[500],
@@ -80,9 +81,12 @@ export const FrameSlider = () => {
   }, [frame]);
 
   return numFrames > 1 && <>
-    <Typography className={styles.title}>
+    {/* <Typography className={styles.title}>
       Frame
-    </Typography>
+    </Typography> */}
+    <FormLabel component="legend" className={styles.title}>
+      Frame
+    </FormLabel>
     <Tooltip title={tooltipText}>
       <Slider
         value={frame}
