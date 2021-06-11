@@ -32,7 +32,7 @@ const useStyles = makeStyles(theme => ({
     padding: theme.spacing(1),
     alignItems: "stretch",
     justifyContent: "space-evenly",
-    minHeight: 'calc(100vh - 66px - 57px - 60px - 1px)',
+    minHeight: 'calc(100vh - 66px - 57px - 74px - 1px)',
     // height: 'calc(100vh - 66px - 57px - 60px - 80px - 1px)'
   },
   controlPanelBox: {

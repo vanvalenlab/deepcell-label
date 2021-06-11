@@ -1,4 +1,6 @@
 import React, { useEffect, useRef } from 'react';
+import Box from '@material-ui/core/Box';
+import CircularProgress from '@material-ui/core/CircularProgress';
 import { useSelector } from '@xstate/react';
 import { useCanvas, useLabeled, useFeature, useToolbar } from '../ServiceContext';
 import { highlightImageData, removeNoLabelImageData, opacityImageData } from '../imageUtils';
@@ -74,6 +76,9 @@ export const LabeledCanvas = ({ className }) => {
   }, [labeledImage, labeledArray, foreground, highlight, showNoLabel, opacity, sw, sh, sx, sy, zoom, width, height]);
 
   return <>
+    { labeledImage.src === '' && 
+      <CircularProgress style={{ margin: '25%', width:'50%', height:'50%'}} />
+    }
     {/* hidden processing canvas */}
     <canvas id='labeled-processing'
       hidden={true}

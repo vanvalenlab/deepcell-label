@@ -239,7 +239,11 @@ def load_lineage_trk(data):
 
 def load_png(data):
     """Returns image array from a PNG file."""
-    return np.array(Image.open(io.BytesIO(data)))
+    img = np.array(Image.open(io.BytesIO(data)))
+    # Remove alpha channel
+    if img.shape[-1] == 4:
+        img = img[..., :3]
+    return img
 
 
 def load_tiff(data):

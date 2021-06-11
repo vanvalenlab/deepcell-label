@@ -2,12 +2,15 @@ import React, { useEffect } from 'react';
 import { useSelector } from '@xstate/react';
 import { makeStyles } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 import RawCanvas from './RawCanvas';
 import LabeledCanvas from './LabeledCanvas';
 import OutlineCanvas from './OutlineCanvas';
 import BrushCanvas from './BrushCanvas';
 import ThresholdCanvas from './ThresholdCanvas';
+import Typography from '@material-ui/core/Typography';
+
 
 import { useCanvas, useToolbar, useRaw, useLabeled } from '../ServiceContext';
 
@@ -97,6 +100,9 @@ export const Canvas = () => {
       onMouseDown={handleMouseDown}
       onMouseUp={canvas.send}
     >
+      { !raw && 
+        <CircularProgress style={{ margin: '25%', width:'50%', height:'50%'}} />
+      }
       {raw && <RawCanvas className={styles.canvas} />}
       {labeled && <LabeledCanvas className={styles.canvas} />}
       {labeled && <OutlineCanvas className={styles.canvas} />}
