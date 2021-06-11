@@ -52,6 +52,7 @@ const reloadFrameState = {
       ]
     },
     reloading: {
+      entry: assign({ loadingFrame: ({ frame }) => frame }),
       invoke: {
         src: fetchLabeledFrame,
         onDone: { target: 'reloaded', actions: 'saveFrame' },
