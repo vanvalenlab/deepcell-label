@@ -57,13 +57,8 @@ const OutlineCanvas = ({ className }) => {
     const bColor = red;
     const hColor = [255, 255, 255, 128];
     highlightImageData(data, labeledArray, foreground, hColor);
-    switch (outline) {
-      case 'all':
-        outlineAll(data, labeledArray, fColor);
-      case 'selected':
-        outlineSelected(data, labeledArray, foreground, background, fColor, bColor);
-      default:
-    }
+    if (outline) { outlineAll(data, labeledArray, fColor); }
+    outlineSelected(data, labeledArray, foreground, background, fColor, bColor);
     hiddenCtx.current.putImageData(data, 0, 0);
   }, [labeledArray, foreground, background, outline, invert, sw, sh]);
 

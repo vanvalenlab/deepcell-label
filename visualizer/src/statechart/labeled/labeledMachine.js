@@ -102,7 +102,7 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) => Machine(
       opacity: 0,
       highlight: true,
       showNoLabel: true,
-      outline: 'all',
+      outline: true,
     },
     entry: 'spawnFeatures',
     type: 'parallel',
@@ -116,7 +116,7 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) => Machine(
     },
     on: {
       TOGGLEHIGHLIGHT: { actions: 'toggleHighlight' },
-      SETOUTLINE: { actions: 'setOutline' },
+      TOGGLE_OUTLINE: { actions: 'toggleOutline' },
       SETOPACITY: { actions: 'setOpacity' },
       TOGGLESHOWNOLABEL: { actions: 'toggleShowNoLabel' },
       LABELEDARRAY: { actions: sendParent((c, e) => e) },
@@ -140,6 +140,10 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) => Machine(
         bind('h', () => send('TOGGLEHIGHLIGHT'));
         return () => unbind('h');
       },
+      listenForOutlineHotkey: () => (send) => {
+        bind('o', () => send('TOGGLE_OUTLINE'));
+        return () => unbind('o');
+      }
     },
     guards: {
       /** Check that the loaded event is for the loading frame. */
@@ -206,7 +210,7 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) => Machine(
       toggleHighlight: assign({ highlight: ({ highlight }) => !highlight }),
       toggleShowNoLabel: assign({ showNoLabel: ({ showNoLabel }) => !showNoLabel }),
       setOpacity: assign({ opacity: (_, { opacity }) => Math.min(1, Math.max(0, opacity)) }),
-      setOutline: assign({ outline: (_, { outline }) => outline }),
+      toggleOutline: assign({ outline: ({ outline }) => !outline }),
     },
   }
 );

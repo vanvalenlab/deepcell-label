@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useSelector } from '@xstate/react';
+import { makeStyles } from '@material-ui/core';
 import Select from '@material-ui/core/Select';
 import Tooltip from '@material-ui/core/Tooltip';
 import FormLabel from '@material-ui/core/FormLabel';
@@ -9,12 +10,27 @@ import Grid from '@material-ui/core/Grid';
 import Radio from '@material-ui/core/Radio';
 import RadioGroup from '@material-ui/core/RadioGroup';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
+import FormGroup from '@material-ui/core/FormGroup';
+import Switch from '@material-ui/core/Switch';
 import FormControl from '@material-ui/core/FormControl';
 import Typography from '@material-ui/core/Typography';
 import Slider from '@material-ui/core/Slider';
 
 import { useLabeled } from '../ServiceContext';
 
+const useStyles = makeStyles(theme => ({
+  title: {
+    paddingTop: theme.spacing(1),
+    paddingBottom: theme.spacing(1),
+  },
+  opacity: {
+    display: 'flex', 
+    flexDirection: 'row', 
+    justifyContent: 'space-between',
+    gap: '20px',
+    paddingTop: theme.spacing(1),
+  }
+}));
 
 export const FeatureSelect = () => {
   const labeled = useLabeled();
@@ -27,7 +43,7 @@ export const FeatureSelect = () => {
   };
 
   return numFeatures > 1 &&
-    <Grid style={{ width: '100%' }} item>
+    <Grid item>
       <Tooltip title={<span>Cycle with <kbd>F</kbd> or <kbd>Shift</kbd> + <kbd>F</kbd>.</span>}>
         <Select
           native
@@ -57,7 +73,9 @@ export const OpacitySlider = () => {
     labeled.send({ type: 'SETOPACITY', opacity: newOpacity });
   }
 
-  return <Grid style={{ width: '100%' }} item>
+  const styles = useStyles();
+
+  return <Box className={styles.opacity}>
     <Typography gutterBottom>
       Opacity
     </Typography>
@@ -70,52 +88,67 @@ export const OpacitySlider = () => {
       onChange={handleOpacityChange}
       onDoubleClick={handleDoubleClick}
     />
-  </Grid>;
+  </Box>;
 }
 
-export const OutlineRadioButtons = () => {
+function OutlineToggle() {
   const labeled = useLabeled();
   const outline = useSelector(labeled, state => state.context.outline);
+  const { send } = labeled;
 
-  const handleOutlineChange = (event, newValue) => {
-    labeled.send({ type: 'SETOUTLINE', outline: newValue });
-  };
+  // Adds mousetrap class so hotkeys work after using switch
+  const inputRef = useRef();
+  useEffect(() => {
+    const input = inputRef.current;
+    input.className = input.className + ' mousetrap';
+  }, []);
 
-  return <Grid style={{ width: '100%' }} item>
-    <FormControl component="fieldset">
-      <FormLabel component="legend">Outline</FormLabel>
-      <RadioGroup row aria-label="outline" name="outline" value={outline} onChange={handleOutlineChange}>
-        <Tooltip title='Show border around all cells'>
-          <FormControlLabel value="all" control={<Radio />} label="All" />
-        </Tooltip>
-        <Tooltip title={<div>Show border around one cell. <br /> Click on a cell to outline it.</div>}>
-          <FormControlLabel value="selected" control={<Radio />} label="Selected" />
-        </Tooltip>
-        <Tooltip title='Hide borders.'>
-          <FormControlLabel value="none" control={<Radio />} label="None" />
-        </Tooltip>
-      </RadioGroup>
-    </FormControl>
-    {/* <Tooltip title="Press I to toggle the outline color as black or white.">
-        <HelpOutlineIcon color="action" fontSize="large" />
-    </Tooltip> */}
-  </Grid>;
-};
+  return (
+    <Tooltip title='Press O to toggle'>
+      <FormGroup row>
+        <FormControlLabel
+        control={<Switch
+          size='small' 
+          checked={outline} 
+          onChange={() => send('TOGGLE_OUTLINE')} 
+          inputRef={inputRef}
+        />}
+        label="Outline"
+        labelPlacement="start"
+      />
+      </FormGroup>
+    </Tooltip>
+  );
+
+}
 
 const LabeledController = () => {
-  const labeled = useLabeled();
+  const styles = useStyles();
+
   return <>
-    <Box display='flex' flexDirection='row' justifyContent='space-between'>
-      <FormLabel component="legend">
-        Segmentation Controls
-      </FormLabel>
-    </Box>
-    {labeled && <>
-      <FeatureSelect />
-      <OpacitySlider />
-      <OutlineRadioButtons />
-    </>}
+    <Grid
+      container
+      direction="column"
+      className={styles.root}
+    >
+      <Grid item>
+        <FormLabel component="legend" className={styles.title}>
+          Segmentations
+        </FormLabel>
+      </Grid>
+      <Grid item>
+        <Box display='flex' flexDirection='row' justifyContent='space-between'>
+          <FeatureSelect />
+          <OutlineToggle />
+        </ Box>
+      </Grid>
+      <Grid item>
+        <OpacitySlider />
+      </Grid>
+    </Grid>
   </>;
 }
+
+//         {/* <Grid container direction="row" justify="flex-start" alignItems="center"> */}
 
 export default LabeledController;
