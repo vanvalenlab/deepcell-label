@@ -33,17 +33,26 @@ function redo(context, event) {
     .then(checkResponseCode);
 }
 
+function upload(context, event) {
+  const { bucket, projectId } = context;
+  const uploadRoute = `${document.location.origin}/api/upload/${bucket}/${projectId}`;
+  const options = { method: 'POST' };
+  return fetch(uploadRoute, options)
+    .then(checkResponseCode);
+}
+
 function checkResponseCode(response) {
   return response.json().then(json => {
     return response.ok ? json : Promise.reject(json);
   });
 }
 
-const createApiMachine = ({ projectId }) => Machine(
+const createApiMachine = ({ projectId, bucket }) => Machine(
   {
     id: 'api',
     context: {
       projectId,
+      bucket,
     },
     initial: 'idle',
     states: {
@@ -52,6 +61,7 @@ const createApiMachine = ({ projectId }) => Machine(
           EDIT: 'loading',
           BACKENDUNDO: 'loading',
           BACKENDREDO: 'loading',
+          UPLOAD: 'uploading',
         },
       },
       loading: {
@@ -68,6 +78,16 @@ const createApiMachine = ({ projectId }) => Machine(
           },
         }
       },
+      uploading: {
+        invoke: {
+          src: upload,
+          onDone: 'idle',
+          onError: {
+            target: 'idle',
+            actions: 'sendError',
+          },
+        }
+      }
     }
   },
   {

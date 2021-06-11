@@ -1,5 +1,5 @@
 /**
- * Defines the statechart for Label in XState.
+ * Root statechart for DeepCell Label in XState.
  */
 
 import { Machine, actions, assign, forwardTo, send, spawn } from 'xstate';
@@ -17,11 +17,12 @@ function fetchProject(context) {
     .then(response => response.json());
 }
 
-const createDeepcellLabelMachine = (projectId) => Machine(
+const createDeepcellLabelMachine = (projectId, bucket) => Machine(
   {
     id: 'deepcellLabel',
     context: {
       projectId,
+      bucket,
     },
     initial: 'setUpActors',
     states: {
@@ -58,6 +59,7 @@ const createDeepcellLabelMachine = (projectId) => Machine(
       EDITED: { actions: forwardTo('image') },
       ADD_ACTOR: { actions: send((_, { actor}) => ({ type: 'ADD_ACTOR', actor }), { to: 'undo' }) },
       USE_TOOL: { actions: forwardTo('canvas') },
+      UPLOAD: { actions: 'upload' },
     }
   },
   {
@@ -93,9 +95,9 @@ const createDeepcellLabelMachine = (projectId) => Machine(
       sendProject: pure((context, event) => {
         const sendToCanvas = send((context, event) => ({ type: 'PROJECT', ...event.data }), { to: 'canvas' });
         const sendToImage = send((context, event) => ({ type: 'PROJECT', ...event.data }), { to: 'image' });
-        // const sendToSelect = send((context, event) => ({ type: 'PROJECT', ...event.data }), { to: 'select' });
         return [sendToCanvas, sendToImage];
-      })
+      }),
+      upload: send('UPLOAD', { to: 'api' }),
       // edit: forwardTo('api'),
       // saveTool: assign({ tool: (context, event) => event.tool }),
       // recordContext: send('STORE', { to: 'undo' } ),
