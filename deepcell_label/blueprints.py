@@ -267,7 +267,7 @@ def upload_project_to_s3(bucket, token):
     current_app.logger.debug('Uploaded %s to S3 bucket %s from project %s in %s s.',
                              project.path, bucket, token,
                              timeit.default_timer() - start)
-    return redirect('/')
+    return {}
 
 
 def get_edit(project):
