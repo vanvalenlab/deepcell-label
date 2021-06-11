@@ -6,10 +6,8 @@ import createDeepcellLabelMachine from './statechart/deepcellLabelMachine';
 
 export const LabelContext = createContext();
 
-export const useLabelService = () => {
-  return {
-    service: useReturnContext(LabelContext),
-  };
+export const useDeepCellLabel = () => {
+  return useReturnContext(LabelContext);
 };
 
 function useReturnContext(contextType) {
@@ -20,15 +18,21 @@ function useReturnContext(contextType) {
     return context;
 }
 
+export function useApi() {
+  const deepCellLabel = useDeepCellLabel();
+  const { api } = deepCellLabel.state.children;
+  return api;
+}
+
 export function useUndo() {
-  const { service } = useLabelService();
-  const { undo } = service.state.children;
+  const deepCellLabel = useDeepCellLabel();
+  const { undo } = deepCellLabel.state.children;
   return undo;
 }
 
 export function useImage() {
-  const { service } = useLabelService();
-  const { image } = service.state.children;
+  const deepCellLabel= useDeepCellLabel();
+  const { image } = deepCellLabel.state.children;
   return image;
 }
 
@@ -94,29 +98,31 @@ export function useComposeLayers() {
 }
 
 export function useCanvas() {
-  const { service } = useLabelService();
-  const { canvas } = service.state.children;
+  const deepCellLabel = useDeepCellLabel();
+  const { canvas } = deepCellLabel.state.children;
   return canvas;
 }
 
 export function useToolbar() {
-  const { service } = useLabelService();
-  const { tool } = service.state.children;
+  const deepCellLabel = useDeepCellLabel();
+  const { tool } = deepCellLabel.state.children;
   return tool;
 }
 
 export function useTool() {
-  const { service } = useLabelService();
-  const { tool: toolbar } = service.state.children;
+  const deepCellLabel = useDeepCellLabel();
+  const { tool: toolbar } = deepCellLabel.state.children;
   const tool = useSelector(toolbar, state => state.context.toolActor);
   return tool;
 }
 
 const ServiceContext = (props) => {
   const location = useLocation();
-  const projectId = new URLSearchParams(location.search).get('projectId');
-  const labelMachine = createDeepcellLabelMachine(projectId);
-  const labelService = useInterpret(labelMachine); // , { devTools: true });
+  const search = new URLSearchParams(location.search);
+  const projectId = search.get('projectId');
+  const bucket = search.has('bucket') ? search.has('bucket') : 'caliban-output';
+  const labelMachine = createDeepcellLabelMachine(projectId, bucket);
+  const labelService = useInterpret(labelMachine, { devTools: true });
   labelService.start();
   window.dcl = labelService;
 
