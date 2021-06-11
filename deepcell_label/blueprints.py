@@ -262,7 +262,7 @@ def upload_project_to_s3(bucket, token):
     exporter = exporters.S3Exporter(project)
     exporter.export(bucket)
     # add "finished" timestamp and null out PickleType columns
-    project.finish()
+    # project.finish()
 
     current_app.logger.debug('Uploaded %s to S3 bucket %s from project %s in %s s.',
                              project.path, bucket, token,
