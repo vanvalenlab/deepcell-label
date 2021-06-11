@@ -20,9 +20,6 @@ const ThresholdCanvas = ({ className }) => {
   const x1 = useSelector(threshold, state => state.context.x);
   const y1 = useSelector(threshold, state => state.context.y);
   const [x2, y2] = useSelector(threshold, state => state.context.firstPoint);
-  console.log(x2, y2);
-  
-  // const [x2, y2] = useSelector(threshold, state => state.context.firstPoint);
   const show = useSelector(threshold, state => state.matches('dragging'));
 
   const canvasRef = useRef();
