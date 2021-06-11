@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { useInterpret, useSelector } from '@xstate/react';
-import { useLocation } from "react-router-dom";
-import createDeepcellLabelMachine from './statechart/deepcellLabelMachine';
+import service from './service';
 
 
 export const LabelContext = createContext();
@@ -117,17 +116,8 @@ export function useTool() {
 }
 
 const ServiceContext = (props) => {
-  const location = useLocation();
-  const search = new URLSearchParams(location.search);
-  const projectId = search.get('projectId');
-  const bucket = search.has('bucket') ? search.has('bucket') : 'caliban-output';
-  const labelMachine = createDeepcellLabelMachine(projectId, bucket);
-  const labelService = useInterpret(labelMachine, { devTools: true });
-  labelService.start();
-  window.dcl = labelService;
-
   return (
-    <LabelContext.Provider value={labelService}>
+    <LabelContext.Provider value={service}>
       {props.children}
     </LabelContext.Provider>
   );
