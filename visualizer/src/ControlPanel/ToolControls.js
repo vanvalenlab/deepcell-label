@@ -12,6 +12,7 @@ import { useToolbar } from '../ServiceContext';
 // from https://stackoverflow.com/questions/61115913
 const ToggleButton = withStyles({
   root: {
+    padding: 4,
     '&.Mui-disabled': {
       pointerEvents: 'auto'
     }
