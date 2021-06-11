@@ -22,7 +22,7 @@ export default function Footer() {
         (Caltech). All rights reserved.
       </Typography>
       <Typography variant='subtitle2' align='center' color='textSecondary' component='p'>
-        For any questions or collaborations request, please reach out to <Link href="mailto:info@deepcell.org">info@deepcell.org</Link>.
+        For any questions or issues, please post on our <Link href="https://github.com/vanvalenlab/deepcell-label/issues">GitHub Issues</Link> page.
       </Typography>
     </footer>
   );
