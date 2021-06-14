@@ -25,20 +25,20 @@ function ColorModeToggle() {
     <Typography component="div">
         <Box 
           component="label" 
-          container 
+          // container
           display='flex'
           justifyContent='center'
           alignItems='center'
         >
           <Tooltip title='View multiple channels at once'>
-            <Grid item align="right" justifyContent="center" style={{flex: '1 1 auto'}}>
+            <Grid item align="right" style={{flex: '1 1 auto'}}>
               Color
             </Grid>
           </Tooltip>
           <Tooltip title='Press Z to toggle.'>
             <Grid item style={{flex: '0 1 auto'}}>
               <Switch 
-                color="default" 
+                // color="default" 
                 checked={grayscale} 
                 onChange={() => send('TOGGLE_COLOR_MODE')}
                 inputRef={inputRef}
