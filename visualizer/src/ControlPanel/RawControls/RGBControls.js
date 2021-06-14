@@ -23,7 +23,7 @@ function RGBControls() {
         </Grid>
     )}
     <Button
-      onClick={() => raw.send('ADD_LAYER')}
+      onClick={() => colorMode.send('ADD_LAYER')}
       fullWidth
       variant="outlined"
       style={{ borderStyle: 'dashed' }}

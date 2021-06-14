@@ -1,5 +1,6 @@
 /** Modified from https://github.com/hms-dbmi/viv */
 import React, { useReducer, useRef } from 'react';
+import { useSelector } from '@xstate/react';
 import IconButton from '@material-ui/core/IconButton';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import ClickAwayListener from '@material-ui/core/ClickAwayListener';
@@ -38,6 +39,7 @@ function LayerOptions({ layer }) {
   const anchorRef = useRef(null);
 
   const raw = useRaw();
+  const colorMode = useSelector(raw, state => state.context.colorMode);
 
   const handleColorSelect = color => {
     layer.send({ type: 'SETCOLOR', color });
@@ -45,7 +47,7 @@ function LayerOptions({ layer }) {
 
   const handleRemove = () => {
     toggle();
-    raw.send({ type: 'REMOVE_LAYER', layer });
+    colorMode.send({ type: 'REMOVE_LAYER', layer });
   };
 
   const classes = useStyles();
