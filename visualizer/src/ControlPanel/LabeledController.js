@@ -132,15 +132,15 @@ const LabeledController = () => {
       className={styles.root}
     >
       <Grid item>
-        <FormLabel component="legend" className={styles.title}>
-          Segmentations
-        </FormLabel>
-      </Grid>
-      <Grid item>
         <Box display='flex' flexDirection='row' justifyContent='space-between'>
-          <FeatureSelect />
+          <FormLabel component="legend" className={styles.title}>
+            Segmentations
+          </FormLabel>
           <OutlineToggle />
         </ Box>
+      </Grid>
+      <Grid item>
+        <FeatureSelect />
       </Grid>
       <Grid item>
         <OpacitySlider />
