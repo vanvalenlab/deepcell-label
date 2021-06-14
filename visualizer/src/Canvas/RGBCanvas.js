@@ -60,6 +60,7 @@ export const RGBCanvas = ({ className }) => {
       .map(layer => <ChannelCanvas
         layer={layer}
         setCanvases={setCanvases}
+        key={layer.sessionId}
       />)
     }
   </>;

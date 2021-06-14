@@ -15,7 +15,7 @@ function RGBControls() {
   {layers.map(
       (layer, index) =>
         <Grid
-          // key={`channel-controller-${name}-${id}`}
+          key={layer.sessionId}
           style={{ width: '100%' }}
           item
         >
