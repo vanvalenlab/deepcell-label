@@ -55,7 +55,7 @@ export const Canvas = () => {
   // dynamic canvas border styling based on position
   const padding = 5;
   const topColor = (Math.floor(sy) === 0) ? 'white' : 'black';
-  const bottomColor = (Math.ceil(sy + sh / zoom) === sw) ? 'white' : 'black';
+  const bottomColor = (Math.ceil(sy + sh / zoom) === sh) ? 'white' : 'black';
   const rightColor = (Math.ceil(sx + sw / zoom) === sw) ? 'white' : 'black';
   const leftColor = (Math.floor(sx) === 0) ? 'white' : 'black';
   const canvasStyles = {
