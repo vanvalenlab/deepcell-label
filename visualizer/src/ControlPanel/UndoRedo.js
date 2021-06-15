@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { makeStyles } from '@material-ui/core/styles';
-import Button from '@material-ui/core/Button';
+import { makeStyles, withStyles } from '@material-ui/core/styles';
+import MuiButton from '@material-ui/core/Button';
+import Tooltip from '@material-ui/core/Tooltip';
 import UndoIcon from '@material-ui/icons/Undo';
 import RedoIcon from '@material-ui/icons/Redo';
 
@@ -14,6 +15,30 @@ const useStyles = makeStyles({
   },
 });
 
+// for adding tooltip to disabled buttons
+// from https://stackoverflow.com/questions/61115913
+const Button = withStyles({
+  root: {
+    padding: 4,
+    '&.Mui-disabled': {
+      pointerEvents: 'auto'
+    }
+  }
+})(MuiButton);
+
+const ButtonWithTooltip = ({ tooltipText, disabled, onClick, ...other }) => {
+  const adjustedButtonProps = {
+    disabled: disabled,
+    component: disabled ? 'div' : undefined,
+    onClick: disabled ? undefined : onClick
+  };
+  return (
+    <Tooltip title={ tooltipText }>
+      <Button {...other} {...adjustedButtonProps} />
+    </Tooltip>
+  );
+};
+
 export default function UndoRedo() {
   const undo = useUndo();
   const action = useSelector(undo, state => state.context.action);
@@ -23,9 +48,13 @@ export default function UndoRedo() {
 
   const styles = useStyles();
 
+  const undoTooltip = <><kbd>Ctrl</kbd>+<kbd>Z</kbd></>;
+  const redoTooltip = <><kbd>Shift</kbd>+<kbd>Ctrl</kbd>+<kbd>Z</kbd></>;
+
   return <>
-    <Button
+    <ButtonWithTooltip
       className={styles.button}
+      tooltipText={undoTooltip}
       variant="contained"
       color="primary"
       disabled={cannotUndo}
@@ -33,8 +62,9 @@ export default function UndoRedo() {
     >
       Undo
       <UndoIcon/>
-    </Button >
-    <Button
+    </ButtonWithTooltip >
+    <ButtonWithTooltip
+      tooltipText={redoTooltip}
       className={styles.button}
       variant="contained"
       color="primary"
@@ -43,6 +73,6 @@ export default function UndoRedo() {
     >
       Redo
       <RedoIcon/>
-    </Button>
+    </ButtonWithTooltip>
   </>;
 }
