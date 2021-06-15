@@ -13,6 +13,9 @@ import ImageControlInstructions from './ImageControlInstructions';
 import RawDisplayInstructions from './RawDisplayInstructions';
 import LabelDisplayInstructions from './LabelDisplayInstructions';
 import CanvasInstructions from './CanvasInstructions';
+import ToolInstructions from './ToolInstructions';
+import SelectInstructions from './SelectInstructions';
+
 
 
 function TabPanel(props) {
@@ -79,19 +82,11 @@ const AccordionSummary = withStyles({
 
 const AccordionDetails = withStyles((theme) => ({
   root: {
-    padding: theme.spacing(2),
+    padding: 0,
     display: 'flex',
     flexDirection: 'column',
   },
 }))(MuiAccordionDetails);
-
-const ControlPanelInstructions = () => {
-  return <>
-    <ImageControlInstructions />
-    <RawDisplayInstructions />
-    <LabelDisplayInstructions />
-  </>;
-};
 
 export default function Instructions() {
   const [expanded, setExpanded] = React.useState(false);
@@ -126,25 +121,20 @@ export default function Instructions() {
           <Typography>Instructions (Click to expand/collapse)</Typography>
         </AccordionSummary>
         <AccordionDetails>
-          {/* <Tabs
-            value={value}
-            onChange={handleTabChange}
-            indicatorColor="primary"
-            textColor="primary"
-            variant="fullWidth"
-          >
-            <Tab label="Controls" />
+          <Tabs value={value} onChange={handleTabChange}>
             <Tab label="Canvas" />
-            <Tab label="Tools" />
-            <Tab label="Actions" />
             <Tab label="Select Labels" />
-          </Tabs> */}
-          {/* <TabPanel value={value} index={0}>
-            <ControlPanelInstructions />
-          </TabPanel> */}
-          {/* <TabPanel value={value} index={1}> */}
+            <Tab label="Tools" />
+          </Tabs>
+          <TabPanel value={value} index={0}>
             <CanvasInstructions />
-          {/* </TabPanel> */}
+          </TabPanel>
+          <TabPanel value={value} index={1}>
+            <SelectInstructions />
+          </TabPanel>
+          <TabPanel value={value} index={2}>
+            <ToolInstructions />
+          </TabPanel>
         </AccordionDetails>
       </Accordion>
     </div>
