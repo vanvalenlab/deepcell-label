@@ -22,7 +22,7 @@ function LayerSelector({ layer }) {
   const names = useSelector(raw, state => state.context.channelNames);
 
   const onChange = e => {
-    layer.send({ type: 'CHANGE_CHANNEL', channel: e.target.value });
+    layer.send({ type: 'CHANGE_CHANNEL', channel: Number(e.target.value) });
   };
   
   return (

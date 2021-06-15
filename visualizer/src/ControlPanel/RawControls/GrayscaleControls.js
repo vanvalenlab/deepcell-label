@@ -54,7 +54,7 @@ const ChannelSelector = () => {
   const channel = useSelector(grayscale, state => state.context.channel);
 
   const onChange = e => {
-    raw.send({ type: 'LOADCHANNEL', channel: Number(e.target.value) });
+    grayscale.send({ type: 'LOADCHANNEL', channel: Number(e.target.value) });
   };
 
   return (
