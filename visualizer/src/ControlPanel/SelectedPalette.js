@@ -16,6 +16,8 @@ const useStyles = makeStyles(theme => ({
   palette: {
     position: 'relative',
     margin: theme.spacing(1),
+    height: '100px',
+    width: '150px',
   },
   foreground: {
     position: 'absolute',
@@ -40,7 +42,7 @@ const useStyles = makeStyles(theme => ({
     justifyContent: 'space-between',
     alignItems: 'flex-end',
   },
-  swap: {
+  swapBox: {
     position: 'absolute',
     left: '60px',
     top: '-5px',
@@ -60,8 +62,16 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-export function SwapButton() {
+function SwapIcon() {
   const styles = useStyles();
+
+  return <>
+    <SubdirectoryArrowLeftIcon className={styles.leftArrow} />
+    <SubdirectoryArrowRightIcon className={styles.rightArrow} />
+  </>;
+}
+
+export function SwapButton() {
 
   const toolbar = useToolbar();
   const { send } = toolbar;
@@ -76,12 +86,10 @@ export function SwapButton() {
   return (
     <Tooltip title='Press X to swap.'>
       <IconButton
-        className={styles.swap}
         color="primary"
         onClick={handleClick}
       >
-        <SubdirectoryArrowLeftIcon className={styles.leftArrow} />
-        <SubdirectoryArrowRightIcon className={styles.rightArrow} />
+        <SwapIcon />
       </IconButton>
     </Tooltip>
   );
@@ -102,7 +110,6 @@ function ForegroundBox() {
   return (
     <Tooltip title='Cycle with [ and ].'>
       <Box
-        component='rect' 
         className={styles.foreground}
         style={{ background: noLabel ? 'black' : 'white' }}
         onMouseEnter={() => setShowButtons(true)}
@@ -137,7 +144,6 @@ function BackgroundBox() {
   return (
     <Tooltip title='Cycle with { and }.'>
       <Box
-        component='rect' 
         className={styles.background}
         style={{ background: noLabel ? 'black' : 'white' }}
         onMouseEnter={() => setShowButtons(true)}
@@ -173,7 +179,9 @@ export default function SelectedPalette() {
     <Box className={styles.palette}>
       <ForegroundBox />
       <BackgroundBox />
-      <SwapButton />
+      <Box className={styles.swapBox}>
+        <SwapButton />
+      </Box>
       <Tooltip title={tooltipText}>
         <HelpOutlineIcon className={styles.help} color="action" fontSize="large" />
       </Tooltip>
