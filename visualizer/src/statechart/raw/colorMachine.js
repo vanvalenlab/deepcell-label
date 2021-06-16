@@ -10,7 +10,7 @@ const frameState = {
     idle: {},
     loading: {
       on: {
-        RAWLOADED: { target: 'checkLoaded', cond: 'isLoadingFrame', actions: 'updateLoaded' },
+        RAW_LOADED: { target: 'checkLoaded', cond: 'isLoadingFrame', actions: 'updateLoaded' },
         // when the channel changes before the frame does, 
         // we need to load the frame for the new channel
         // CHANNEL: { actions: 'addChannelToLoading' },
@@ -30,7 +30,7 @@ const frameState = {
     }
   },
   on: {
-    LOADFRAME: {
+    LOAD_FRAME: {
       target: '.loading',
       cond: 'diffLoadingFrame',
       actions: ['assignLoadingFrame', 'loadFrame']
@@ -44,14 +44,14 @@ const channelState = {
     idle: {},
     loading: {
       on: {
-        RAWLOADED: { target: 'idle', cond: 'isLoadingChannel', actions: 'useChannel' },
+        RAW_LOADED: { target: 'idle', cond: 'isLoadingChannel', actions: 'useChannel' },
          // when frame changes, load that frame instead
         FRAME: { actions: 'reloadLoadingChannels' },
       }
     },
   },
   on: {
-    LOADCHANNEL: {
+    LOAD_CHANNEL: {
       target: '.loading',
       cond: 'diffLoadingChannel', 
       actions: 'loadChannel',
@@ -126,7 +126,7 @@ const createRawMachine = ({ channels }) => Machine( // projectId, numChannels, n
           ...channels
           .filter((channel, index) => loadedChannels.has(index))
           .map(channel => send(
-            { type: 'LOADFRAME', frame: loadingFrame },
+            { type: 'LOAD_FRAME', frame: loadingFrame },
             { to: channel }
           ))
         ];
@@ -136,15 +136,15 @@ const createRawMachine = ({ channels }) => Machine( // projectId, numChannels, n
           assign({
             loadingChannels: ({ loadingChannels }) => loadingChannels.add(channel)
           }),
-          send({ type: 'LOADFRAME', frame }, { to: channels[channel] })
+          send({ type: 'LOAD_FRAME', frame }, { to: channels[channel] })
         ];
       }),
       /** Load a different frame in the loading channels. */
       reloadLoadingChannels: pure(({ frame, channels, loadingChannels }) => {
-        const frameEvent = { type: 'LOADFRAME', frame };
+        const frameEvent = { type: 'LOAD_FRAME', frame };
         return [...loadingChannels].map(channel => send(frameEvent, channels[channel]));
       }),
-      sendLoaded: sendParent('FRAMELOADED'),
+      sendLoaded: sendParent('FRAME_LOADED'),
       useFrame: assign((_, { frame }) => ({ frame })),
       useChannel: pure(({ loadingChannels, loadedChannels, channels }, { channel, frame }) => {
         const channelEvent = { type: 'CHANNEL', channel };

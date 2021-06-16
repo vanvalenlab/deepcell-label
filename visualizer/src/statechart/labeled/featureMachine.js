@@ -154,7 +154,7 @@ const createFeatureMachine = (projectId, feature, numFrames) => Machine(
       reload: reloadState,
     },
     on: {
-      LOADFRAME: {
+      LOAD_FRAME: {
         target: 'load',
         actions: assign({ loadingFrame: (context, event) => event.frame }),
       },
@@ -192,11 +192,11 @@ const createFeatureMachine = (projectId, feature, numFrames) => Machine(
         };
       }),
       sendLabeledLoaded: sendParent(({ loadingFrame, feature }) => (
-        { type: 'LABELEDLOADED', frame: loadingFrame, feature }
+        { type: 'LABELED_LOADED', frame: loadingFrame, feature }
       )),
       sendLabelData: pure(({ labeledArray, labels }) => {
         return [
-          sendParent({ type: 'LABELEDARRAY', labeledArray }),
+          sendParent({ type: 'LABELED_ARRAY', labeledArray }),
           sendParent({ type: 'LABELS', labels }),
         ];
       }),
@@ -228,9 +228,9 @@ const createFeatureMachine = (projectId, feature, numFrames) => Machine(
         const closestFrame = unloadedFrames.reduce((prev, curr) =>
           Math.abs(curr - frame) < Math.abs(prev - frame) ? curr : prev
         );
-        return { type: 'LOADFRAME', frame: closestFrame };
+        return { type: 'LOAD_FRAME', frame: closestFrame };
       }),
-      //   ({ type: 'LOADFRAME', })
+      //   ({ type: 'LOAD_FRAME', })
       //   loadingFrame: ({ numFrames, frame, frames }) => {
       //     const allFrames = [...Array(numFrames).keys()];
       //     return allFrames

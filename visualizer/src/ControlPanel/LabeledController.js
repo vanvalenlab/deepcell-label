@@ -39,7 +39,7 @@ export const FeatureSelect = () => {
   const featureNames = useSelector(labeled, state => state.context.featureNames);
 
   const handleFeatureChange = (event) => {
-    labeled.send({ type: 'LOADFEATURE', feature: Number(event.target.value) });
+    labeled.send({ type: 'LOAD_FEATURE', feature: Number(event.target.value) });
   };
 
   return numFeatures > 1 &&
@@ -66,11 +66,11 @@ export const OpacitySlider = () => {
   const opacity = useSelector(labeled, state => state.context.opacity);
 
   const handleOpacityChange = (event, newValue) => {
-    labeled.send({ type: 'SETOPACITY', opacity: newValue });
+    labeled.send({ type: 'SET_OPACITY', opacity: newValue });
   };
   const handleDoubleClick = (event) => {
     const newOpacity = opacity === 0 ? 1 : opacity === 1 ? 0.3 : 0;
-    labeled.send({ type: 'SETOPACITY', opacity: newOpacity });
+    labeled.send({ type: 'SET_OPACITY', opacity: newOpacity });
   }
 
   const styles = useStyles();

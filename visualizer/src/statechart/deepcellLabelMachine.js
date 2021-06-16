@@ -72,11 +72,11 @@ const createDeepcellLabelMachine = (projectId, bucket) => Machine(
       }),
       sendActorRefs: pure(({ toolRef, undoRef, imageRef, canvasRef }) => {
         const sendToolToImage = send(
-          { type: 'TOOLREF', toolRef },
+          { type: 'TOOL_REF', toolRef },
           { to: imageRef }
         );
         const sendToolToCanvas = send(
-          { type: 'TOOLREF', toolRef },
+          { type: 'TOOL_REF', toolRef },
           { to: canvasRef }
         );
         return [sendToolToImage, sendToolToCanvas];

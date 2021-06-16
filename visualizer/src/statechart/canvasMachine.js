@@ -118,7 +118,7 @@ const canvasMachine = Machine(
       ZOOMIN: { actions: 'zoomIn' },
       ZOOMOUT: { actions: 'zoomOut' },
       DIMENSIONS: { actions: ['setDimensions', 'resize'] },
-      TOOLREF: { actions: assign({ toolRef: (context, event) => event.toolRef }) },
+      TOOL_REF: { actions: assign({ toolRef: (context, event) => event.toolRef }) },
       SAVE: {
         actions: respond((context) => ({
           type: 'RESTORE',
@@ -129,7 +129,7 @@ const canvasMachine = Machine(
       },
       RESTORE: [
         { cond: 'newContext', actions: ['restoreContext', respond('RESTORED')] },
-        { actions: respond('SAMECONTEXT') },
+        { actions: respond('SAME_CONTEXT') },
       ],
       COORDINATES: { cond: 'newCoordinates', actions: ['useCoordinates', 'forwardToTool'] },
     },

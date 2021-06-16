@@ -54,7 +54,7 @@ const ChannelSelector = () => {
   const channel = useSelector(grayscale, state => state.context.channel);
 
   const onChange = e => {
-    grayscale.send({ type: 'LOADCHANNEL', channel: Number(e.target.value) });
+    grayscale.send({ type: 'LOAD_CHANNEL', channel: Number(e.target.value) });
   };
 
   return (
@@ -78,7 +78,7 @@ const RangeSlider = ({ channel }) => {
   const range = useSelector(channel, state => state.context.range);
 
   const onChange = (event, newValue) => {
-    channel.send({ type: 'SETRANGE', range: newValue });
+    channel.send({ type: 'SET_RANGE', range: newValue });
   };
 
   return <Slider

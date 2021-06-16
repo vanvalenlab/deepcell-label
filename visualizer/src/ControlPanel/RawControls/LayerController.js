@@ -61,7 +61,7 @@ function LayerSlider({ layer }) {
   const color = useSelector(layer, state => state.context.color);
 
   const onChange = (event, newValue) => {
-    layer.send({ type: 'SETRANGE', range: newValue });
+    layer.send({ type: 'SET_RANGE', range: newValue });
   };
 
   return <Slider

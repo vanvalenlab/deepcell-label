@@ -12,12 +12,12 @@ const frameState = {
     idle: {
       entry: 'startPreload',
       on: {
-        LABELEDLOADED: { actions: 'preload' },
+        LABELED_LOADED: { actions: 'preload' },
       },
     },
     loading: {
       on: {
-        LABELEDLOADED: { target: 'loaded', cond: 'loadedFrame', actions: 'sendLoaded' },
+        LABELED_LOADED: { target: 'loaded', cond: 'loadedFrame', actions: 'sendLoaded' },
         // when the feature changes before the frame does, 
         // we need to load the frame for the new feature
         FEATURE: { actions: 'loadFrame' },
@@ -31,7 +31,7 @@ const frameState = {
     },
   },
   on: {
-    LOADFRAME: {
+    LOAD_FRAME: {
       target: '.loading',
       cond: 'newLoadingFrame',
       actions: ['assignLoadingFrame', 'loadFrame'],
@@ -49,13 +49,13 @@ const featureState = {
     },
     loading: {
       on: {
-        LABELEDLOADED: { target: 'idle', cond: 'loadedFeature', actions: 'useFeature' },
+        LABELED_LOADED: { target: 'idle', cond: 'loadedFeature', actions: 'useFeature' },
         FRAME: { actions: 'loadFeature' }, // when frame changes, load that frame instead
       }
     },
   },
   on: {
-    LOADFEATURE: {
+    LOAD_FEATURE: {
       target: '.loading',
       cond: 'newLoadingFeature',
       actions: ['assignLoadingFeature', 'loadFeature'],
@@ -68,7 +68,7 @@ const restoreState = {
     RESTORE: [
       { 
         cond: (context, event) => context.feature === event.feature, 
-        actions: respond('SAMECONTEXT') ,
+        actions: respond('SAME_CONTEXT') ,
       },
       { 
         target: '.restoring',
@@ -82,7 +82,7 @@ const restoreState = {
   states: {
     idle: {},
     restoring: {
-      entry: send((_, { feature }) => ({ type: 'LOADFEATURE', feature })),
+      entry: send((_, { feature }) => ({ type: 'LOAD_FEATURE', feature })),
     },
   }
 };
@@ -116,11 +116,11 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) => Machine(
       { src: 'listenForOutlineHotkey' },
     ],
     on: {
-      TOGGLEHIGHLIGHT: { actions: 'toggleHighlight' },
+      TOGGLE_HIGHLIGHT: { actions: 'toggleHighlight' },
       TOGGLE_OUTLINE: { actions: 'toggleOutline' },
-      SETOPACITY: { actions: 'setOpacity' },
-      TOGGLESHOWNOLABEL: { actions: 'toggleShowNoLabel' },
-      LABELEDARRAY: { actions: sendParent((c, e) => e) },
+      SET_OPACITY: { actions: 'setOpacity' },
+      TOGGLE_SHOW_NO_LABEL: { actions: 'toggleShowNoLabel' },
+      LABELED_ARRAY: { actions: sendParent((c, e) => e) },
       LABELS: { actions: sendParent((c, e) => e) },
       EDITED: { actions: forwardTo(({ features }, event) => features[event.data.feature]) },
     }
@@ -130,15 +130,15 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) => Machine(
       listenForFeatureHotkeys: ({ feature, numFeatures }) => (send) => {
         const prevFeature = (feature - 1 + numFeatures) % numFeatures;
         const nextFeature = (feature + 1) % numFeatures;
-        bind('shift+f', () => send({ type: 'LOADFEATURE', feature: prevFeature }));
-        bind('f', () => send({ type: 'LOADFEATURE', feature: nextFeature }));
+        bind('shift+f', () => send({ type: 'LOAD_FEATURE', feature: prevFeature }));
+        bind('f', () => send({ type: 'LOAD_FEATURE', feature: nextFeature }));
         return () => {
           unbind('shift+f');
           unbind('f');
         }
       },
       listenForHighlightHotkey: () => (send) => {
-        bind('h', () => send('TOGGLEHIGHLIGHT'));
+        bind('h', () => send('TOGGLE_HIGHLIGHT'));
         return () => unbind('h');
       },
       listenForOutlineHotkey: () => (send) => {
@@ -182,12 +182,12 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) => Machine(
       preload: respond('PRELOAD'),
       /** Load a new frame for the current feature. */
       loadFrame: send(
-        ({ loadingFrame }) => ({ type: 'LOADFRAME', frame: loadingFrame }),
+        ({ loadingFrame }) => ({ type: 'LOAD_FRAME', frame: loadingFrame }),
         { to: ({ features, feature }) => features[feature] }
       ),
       /** Load the current frame for a new feature.  */
       loadFeature: send(
-        ({ frame }) => ({ type: 'LOADFRAME', frame }),
+        ({ frame }) => ({ type: 'LOAD_FRAME', frame }),
         { to: ({ features, loadingFeature }) => features[loadingFeature] },
       ),
       // useFrame: pure(({ features }) => features.map(feature => forwardTo(feature))),
@@ -207,7 +207,7 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) => Machine(
       forwardToFeatures: pure(({ features }) => features.map(feature => forwardTo(feature))),
       forwardToFeature: forwardTo(({ features, feature }) => features[feature]),
       /** Tell imageMachine that the labeled data is loaded. */
-      sendLoaded: sendParent('LABELEDLOADED'),
+      sendLoaded: sendParent('LABELED_LOADED'),
       toggleHighlight: assign({ highlight: ({ highlight }) => !highlight }),
       toggleShowNoLabel: assign({ showNoLabel: ({ showNoLabel }) => !showNoLabel }),
       setOpacity: assign({ opacity: (_, { opacity }) => Math.min(1, Math.max(0, opacity)) }),

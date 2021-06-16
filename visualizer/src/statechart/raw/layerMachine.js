@@ -15,12 +15,12 @@ const createLayerMachine = (layer, channel) => Machine(
       CHANGE_CHANNEL: { actions: ['changeChannel', 'loadChannel'] },
       SETCOLOR: { actions: 'setColor' },
       TOGGLE_ON: { actions: 'toggleOn' },
-      SETRANGE: { actions: 'setRange' },
+      SET_RANGE: { actions: 'setRange' },
     }
   },
   {
     actions: {
-      loadChannel: sendParent(({ channel }) => ({ type: 'LOADCHANNEL', channel })),
+      loadChannel: sendParent(({ channel }) => ({ type: 'LOAD_CHANNEL', channel })),
       changeChannel: assign({ channel: (_, { channel }) => channel }),
       setColor: assign({ color: (_, { color }) => color }),
       toggleOn: assign({ on: ({ on }) => !on }),

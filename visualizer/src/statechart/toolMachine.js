@@ -143,7 +143,7 @@ const toolMachine = Machine(
       FRAME: { actions: 'setFrame' },
       CHANNEL: { actions: 'setChannel' },
       FEATURE: { actions: 'setFeature' },
-      LABELEDARRAY: { actions: ['setLabeledArray', 'sendLabel'] },
+      LABELED_ARRAY: { actions: ['setLabeledArray', 'sendLabel'] },
       LABELS: { actions: 'setMaxLabel' },
 
       // context to sync with tools
@@ -164,7 +164,7 @@ const toolMachine = Machine(
       // undo/redo actions
       SAVE: { actions: 'save' },
       RESTORE: [
-        { cond: 'sameContext', actions: respond('SAMECONTEXT') },
+        { cond: 'sameContext', actions: respond('SAME_CONTEXT') },
         { actions: ['restore', 'spawnTool', respond('RESTORED')] }
       ],
     }

@@ -9,7 +9,7 @@ const frameState = {
     idle: {},
     loading: {
       on: {
-        RAWLOADED: { target: 'loaded', cond: 'isLoadingFrame', actions: 'sendLoaded' },
+        RAW_LOADED: { target: 'loaded', cond: 'isLoadingFrame', actions: 'sendLoaded' },
         // when the channel changes, load the frame for the new channel
         CHANNEL: { actions: 'loadFrame' },
       },
@@ -22,7 +22,7 @@ const frameState = {
     }
   },
   on: {
-    LOADFRAME: {
+    LOAD_FRAME: {
       target: '.loading',
       cond: 'diffLoadingFrame',
       actions: ['setLoadingFrame', 'loadFrame'],
@@ -36,14 +36,14 @@ const channelState = {
     idle: {},
     loading: {
       on: {
-        RAWLOADED: { target: 'idle', cond: 'isLoadingChannel', actions: 'useChannel' },
+        RAW_LOADED: { target: 'idle', cond: 'isLoadingChannel', actions: 'useChannel' },
          // when frame changes, load that frame instead
         FRAME: { actions: 'loadChannel' },
       }
     },
   },
   on: {
-    LOADCHANNEL: {
+    LOAD_CHANNEL: {
       target: '.loading',
       cond: 'diffLoadingChannel', 
       actions: ['setLoadingChannel', 'loadChannel'],
@@ -82,14 +82,14 @@ const createRawMachine = ({ channels }) => Machine( // projectId, numChannels, n
       setLoadingChannel: assign({ loadingChannel: (_, { channel }) => channel }),
       /** Load frame for all the visible channels. */
       loadFrame: send(
-        ({ loadingFrame }) => ({ type: 'LOADFRAME', frame: loadingFrame }),
+        ({ loadingFrame }) => ({ type: 'LOAD_FRAME', frame: loadingFrame }),
         { to: ({ channels, channel }) => channels[channel] }
       ),
       loadChannel: send(
-        ({ frame }) => ({ type: 'LOADFRAME', frame }),
+        ({ frame }) => ({ type: 'LOAD_FRAME', frame }),
         { to: ({ channels, loadingChannel }) => channels[loadingChannel] },
       ),
-      sendLoaded: sendParent('FRAMELOADED'),
+      sendLoaded: sendParent('FRAME_LOADED'),
       useFrame: assign((_, { frame }) => ({ frame })),
       /** Switch to a new channel. */
       useChannel: pure(({ channels }, { channel, frame }) => {

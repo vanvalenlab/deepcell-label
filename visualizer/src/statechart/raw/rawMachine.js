@@ -9,7 +9,7 @@ const { pure, respond } = actions;
 const preloadState = {
   entry: 'startPreload',
   on: {
-    RAWLOADED: { actions: 'preload' },
+    RAW_LOADED: { actions: 'preload' },
   }
 };
 
@@ -19,8 +19,8 @@ const frameState = {
     idle: {},
     loading: {
       on: {
-        RAWLOADED: { cond: 'isLoadingFrame', actions: 'forwardToColorMode' },
-        FRAMELOADED: { target: 'loaded', actions: 'sendLoaded' },
+        RAW_LOADED: { cond: 'isLoadingFrame', actions: 'forwardToColorMode' },
+        FRAME_LOADED: { target: 'loaded', actions: 'sendLoaded' },
       },
     },
     loaded: {
@@ -31,7 +31,7 @@ const frameState = {
     }
   },
   on: {
-    LOADFRAME: {
+    LOAD_FRAME: {
       target: '.loading',
       cond: 'diffLoadingFrame',
       actions: ['setLoadingFrame', 'forwardToColorMode'],
@@ -42,8 +42,8 @@ const frameState = {
 const channelState = {
   on: {
     CHANNEL: { actions: sendParent((c, e) => e) },
-    LOADCHANNEL: { actions: 'forwardToColorMode', },
-    RAWLOADED: { actions: 'forwardToColorMode' },
+    LOAD_CHANNEL: { actions: 'forwardToColorMode', },
+    RAW_LOADED: { actions: 'forwardToColorMode' },
   }
 };
 
@@ -86,7 +86,7 @@ const restoreState = {
     RESTORE: [
       { 
         cond: (context, event) => context.channel === event.channel, 
-        actions: respond('SAMECONTEXT') ,
+        actions: respond('SAME_CONTEXT') ,
       },
       { 
         target: '.restoring',
@@ -100,7 +100,7 @@ const restoreState = {
   states: {
     idle: {},
     restoring: {
-      entry: send((_, { channel }) => ({ type: 'LOADCHANNEL', channel })),
+      entry: send((_, { channel }) => ({ type: 'LOAD_CHANNEL', channel })),
     },
   }
 };
@@ -142,8 +142,8 @@ const createRawMachine = (projectId, numChannels, numFrames) => Machine(
       listenForChannelHotkeys: ({ channel, numChannels }) => (send) => {
         const prevChannel = (channel - 1 + numChannels) % numChannels;
         const nextChannel = (channel + 1) % numChannels;
-        bind('shift+c', () => send({ type: 'LOADCHANNEL', channel: prevChannel }));
-        bind('c', () => send({ type: 'LOADCHANNEL', channel: nextChannel }));
+        bind('shift+c', () => send({ type: 'LOAD_CHANNEL', channel: prevChannel }));
+        bind('c', () => send({ type: 'LOAD_CHANNEL', channel: nextChannel }));
         return () => {
           unbind('shift+c');
           unbind('c');
@@ -176,7 +176,7 @@ const createRawMachine = (projectId, numChannels, numFrames) => Machine(
       }),
       startPreload: pure(({ channels }) => channels.map(channel => send('PRELOAD', { to: channel }))),
       preload: respond('PRELOAD'),
-      sendLoaded: sendParent('RAWLOADED'),
+      sendLoaded: sendParent('RAW_LOADED'),
       setLoadingFrame: assign({ loadingFrame: (_, { frame }) => frame }),
       setFrame: assign((_, { frame }) => ({ frame })),
       setChannel: assign((_, { channel }) => ({ channel })),

@@ -63,7 +63,7 @@ export const FrameSlider = () => {
 
   const handleFrameChange = (event, newValue) => {
     if (newValue !== frame) {
-      image.send({ type: 'LOADFRAME', frame: newValue });
+      image.send({ type: 'LOAD_FRAME', frame: newValue });
     }
   };
 

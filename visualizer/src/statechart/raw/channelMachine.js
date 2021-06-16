@@ -67,13 +67,13 @@ const createChannelMachine = (projectId, channel, numFrames) => Machine(
     },
     on: {
       // fetching
-      LOADFRAME: {
+      LOAD_FRAME: {
         target: 'checkLoaded',
         actions: assign({ loadingFrame: (_, { frame }) => frame }),
       },
       FRAME: { actions: 'useFrame' },
       TOGGLE_INVERT: { actions: 'toggleInvert' },
-      SETRANGE: { actions: 'setRange' },
+      SET_RANGE: { actions: 'setRange' },
     }
   },
   {
@@ -85,7 +85,7 @@ const createChannelMachine = (projectId, channel, numFrames) => Machine(
     },
     actions: {
       // fetching
-      sendRawLoaded: sendParent(({ loadingFrame, channel }) => ({ type: 'RAWLOADED', frame: loadingFrame, channel })), 
+      sendRawLoaded: sendParent(({ loadingFrame, channel }) => ({ type: 'RAW_LOADED', frame: loadingFrame, channel })), 
       saveFrame: assign({
         frames: ({ frames , loadingFrame }, { data }) => ({...frames, [loadingFrame]: data}),
       }),
