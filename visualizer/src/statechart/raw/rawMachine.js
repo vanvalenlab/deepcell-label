@@ -26,7 +26,7 @@ const frameState = {
     loaded: {
       on: {
         FRAME: { target: 'idle', actions: ['setFrame', 'forwardToColorMode'] },
-        // CHANNEL: { target: 'loading', actions: 'addChannelToLoading' },
+        CHANNEL: { target: 'loading' },
       }
     }
   },
@@ -42,8 +42,8 @@ const frameState = {
 const channelState = {
   on: {
     CHANNEL: { actions: sendParent((c, e) => e) },
-    LOADCHANNEL: { actions: ['setLoadingChannel', 'forwardToColorMode'], },
-    RAWLOADED: { cond: 'isLoadingChannel', actions: 'forwardToColorMode' },
+    LOADCHANNEL: { actions: 'forwardToColorMode', },
+    RAWLOADED: { actions: 'forwardToColorMode' },
   }
 };
 
@@ -157,8 +157,6 @@ const createRawMachine = (projectId, numChannels, numFrames) => Machine(
     guards: {
       isLoadingFrame: ({ loadingFrame }, { frame }) => loadingFrame === frame,
       diffLoadingFrame: ({ loadingFrame }, { frame }) => loadingFrame !== frame,
-      isLoadingChannel: ({ loadingChannel }, { channel }) => loadingChannel === channel,
-      diffLoadingChannel: ({ loadingChannel }, { channel }) => loadingChannel !== channel,
     },
     actions: {
       /** Create a channel actor for each channel */
@@ -182,8 +180,7 @@ const createRawMachine = (projectId, numChannels, numFrames) => Machine(
       setLoadingFrame: assign({ loadingFrame: (_, { frame }) => frame }),
       setFrame: assign((_, { frame }) => ({ frame })),
       setChannel: assign((_, { channel }) => ({ channel })),
-      setLoadingChannel: assign({ loadingChannel: (_, { channel }) => channel }),
-      forwardToColorMode: forwardTo(({ colorMode}) => colorMode ),
+      forwardToColorMode: forwardTo(({ colorMode }) => colorMode),
     }
   }
 );
