@@ -96,7 +96,7 @@ const createRawMachine = ({ channels }) => Machine( // projectId, numChannels, n
         layers: ({ numChannels }) => {
           const numLayers = Math.min(3, numChannels);
           return [...Array(numLayers).keys()]
-            .map(index => spawn(createLayerMachine(index, index)))
+            .map(index => spawn(createLayerMachine(index, index), `layer ${index}`));
         },
         loadedChannels: ({ numChannels }) => {
           const numLayers = Math.min(3, numChannels);
@@ -161,7 +161,7 @@ const createRawMachine = ({ channels }) => Machine( // projectId, numChannels, n
         ({ channels, loadedChannels }) => 
           [...loadedChannels.keys()].map(channel => forwardTo(channels[channel]))
       ),
-      addLayer: assign({ layers: ({ layers }) => [...layers, spawn(createLayerMachine(layers.length))] }),
+      addLayer: assign({ layers: ({ layers }) => [...layers, spawn(createLayerMachine(layers.length), `layer ${layers.length}`)] }),
       removeLayer: assign({ layers: ({ layers }, { layer }) => [...layers.filter(val => val !== layer )] }),
     }
   }
