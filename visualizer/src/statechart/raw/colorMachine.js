@@ -73,7 +73,7 @@ const createRawMachine = ({ channels }) => Machine( // projectId, numChannels, n
     type: 'parallel',
     states: {
       frame: frameState,
-      // channel: channelState,
+      channel: channelState,
     },
     on: {
       ADD_LAYER: { actions: 'addLayer' },
@@ -104,7 +104,7 @@ const createRawMachine = ({ channels }) => Machine( // projectId, numChannels, n
               map.set(channel, false);
               return map;
           }, new Map());
-        }
+        },
       }),
       /** Record that a channel is loaded. */
       updateLoaded: assign({
