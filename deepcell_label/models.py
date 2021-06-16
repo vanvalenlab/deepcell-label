@@ -293,9 +293,10 @@ class Project(db.Model):
         action = self.action
         if self.action.prev_action is None:
             return
-        
+
         # Compute which feature changed
         # TODO: database migration to store in Action table
+        feature = self.feature
         for prev_frame in action.before_frames:
             current_frame = LabelFrame.get(self.id, prev_frame.frame_id)
             diff = np.where(prev_frame.frame_array != current_frame.frame)
@@ -338,6 +339,7 @@ class Project(db.Model):
             return
         next_action = self.action.next_action
 
+        feature = self.feature
         # Compute which feature changed
         # TODO: database migration to store in Action table
         for after_frame in next_action.after_frames:
