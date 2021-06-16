@@ -1,7 +1,7 @@
 import { Machine, assign, send, sendParent, spawn, actions, forwardTo } from 'xstate';
 import createLayerMachine from './layerMachine';
 
-const { pure, respond } = actions;
+const { pure } = actions;
 
 const frameState = {
   entry: 'loadFrame',

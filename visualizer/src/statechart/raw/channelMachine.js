@@ -29,8 +29,6 @@ function showImage(imgUrl) {
   });
 }
 
-const CHANNEL_COLORS = ['#FF0000', '#00FF00', '#0000FF', '#00FFFF', '#FF00FF', '#FFFF00'];
-
 const createChannelMachine = (projectId, channel, numFrames) => Machine(
   {
     id: `channel${channel}`,
