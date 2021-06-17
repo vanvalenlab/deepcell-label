@@ -17,9 +17,8 @@ const BrushCanvas = ({ className }) => {
   const height = sh * scale * window.devicePixelRatio;
 
   const toolbar = useToolbar();
-  const foreground = useSelector(toolbar, state => state.context.foreground);
   const background = useSelector(toolbar, state => state.context.background);
-  const erasing = foreground === 0 && background !== 0;
+  const erasing = background !== 0;
   const brushColor = erasing ? [255, 0, 0, 255] : [255, 255, 255, 255];
 
   const brush = useTool();
