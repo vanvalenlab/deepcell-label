@@ -29,7 +29,7 @@ const createAutofitMachine = ({ label, foreground, background }) => Machine(
         action: 'active_contour',
         args: { label: label },
       })),
-      selectForeground: sendParent('SELECTFOREGROUND'),
+      selectForeground: sendParent('SELECT_FOREGROUND'),
     }
   }
 );

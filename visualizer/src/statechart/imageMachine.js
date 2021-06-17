@@ -17,11 +17,11 @@ const loadFrameState = {
     },
     loading: {
       on: {
-        RAWLOADED: { 
+        RAW_LOADED: { 
           target: 'checkLoaded', 
           actions: assign({ rawLoaded: true }) 
         },
-        LABELEDLOADED: { 
+        LABELED_LOADED: { 
           target: 'checkLoaded', 
           actions: assign({ labeledLoaded: true }) 
         },
@@ -38,7 +38,7 @@ const loadFrameState = {
     },
   },
   on: {
-    LOADFRAME: { 
+    LOAD_FRAME: { 
       target: '.loading', 
       cond: 'newLoadingFrame', 
       actions: ['assignLoadingFrame', 'loadRaw', 'loadLabeled'] 
@@ -71,12 +71,12 @@ const syncToolState = {
   states: {
     waitForTool: {
       on: {
-        TOOLREF: { target: 'idle', actions: 'setTool' },
+        TOOL_REF: { target: 'idle', actions: 'setTool' },
       }
     },
     idle: {
       on: {
-        LABELEDARRAY: { actions: 'forwardToTool' },
+        LABELED_ARRAY: { actions: 'forwardToTool' },
         LABELS: { actions: 'forwardToTool' },
         FEATURE: { actions: ['setFeature', 'forwardToTool'] },
         CHANNEL: { actions: ['setChannel', 'forwardToTool'] },
@@ -90,7 +90,7 @@ const syncToolState = {
 const restoreState = {
   on: { 
     RESTORE: [
-      { cond: 'sameContext', actions: respond('SAMECONTEXT') },
+      { cond: 'sameContext', actions: respond('SAME_CONTEXT') },
       { target: '.restoring', internal: false,  actions: respond('RESTORED')  },
     ],
     SAVE: { actions: 'save' },
@@ -109,7 +109,7 @@ const restoreState = {
           })
         },
         restoreFrame: {
-          entry: send((_, { frame }) => ({ type: 'LOADFRAME', frame })),
+          entry: send((_, { frame }) => ({ type: 'LOAD_FRAME', frame })),
         },
       }
     },
@@ -157,8 +157,8 @@ const createImageMachine = ({ projectId }) => Machine(
       listenForFrameHotkeys: ({ frame, numFrames}) => (send) => {
         const prevFrame = (frame - 1 + numFrames) % numFrames;
         const nextFrame = (frame + 1) % numFrames;
-        bind('a', () => send({ type: 'LOADFRAME', frame: prevFrame }));
-        bind('d', () => send({ type: 'LOADFRAME', frame: nextFrame }));
+        bind('a', () => send({ type: 'LOAD_FRAME', frame: prevFrame }));
+        bind('d', () => send({ type: 'LOAD_FRAME', frame: nextFrame }));
         return () => {
           unbind('a');
           unbind('d');
@@ -195,11 +195,11 @@ const createImageMachine = ({ projectId }) => Machine(
         ];
       }),
       loadLabeled: send(
-        ({ loadingFrame }) => ({ type: 'LOADFRAME', frame: loadingFrame }),
+        ({ loadingFrame }) => ({ type: 'LOAD_FRAME', frame: loadingFrame }),
         { to: ({ labeledRef }) => labeledRef }
       ),
       loadRaw: send(
-        ({ loadingFrame }) => ({ type: 'LOADFRAME', frame: loadingFrame }),
+        ({ loadingFrame }) => ({ type: 'LOAD_FRAME', frame: loadingFrame }),
         { to: ({ rawRef }) => rawRef }
       ),
       assignLoadingFrame: assign({

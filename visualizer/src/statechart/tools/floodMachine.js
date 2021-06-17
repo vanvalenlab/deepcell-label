@@ -25,7 +25,7 @@ const createFloodMachine = ({ x, y, label, foreground, background }) => Machine(
     guards: toolGuards,
     actions: {
       ...toolActions,
-      selectBackground: sendParent('SELECTBACKGROUND'),
+      selectBackground: sendParent('SELECT_BACKGROUND'),
       flood: sendParent(({ foreground, x, y}, event) => ({
         type: 'EDIT',
         action: 'flood',

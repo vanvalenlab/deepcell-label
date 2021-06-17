@@ -35,7 +35,7 @@ const createErodeDilateMachine = ({ label, foreground, background }) => Machine(
         action: 'dilate',
         args: { label },
       })),
-      selectForeground: sendParent('SELECTFOREGROUND'),
+      selectForeground: sendParent('SELECT_FOREGROUND'),
     }
   }
 );

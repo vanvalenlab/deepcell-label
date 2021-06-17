@@ -98,8 +98,8 @@ const colorModeState = {
 const selectState = {
   invoke: { src: 'listenForSelectHotkeys' },
   on: {
-    SELECTFOREGROUND: { actions: 'selectForeground' },
-    SELECTBACKGROUND: { actions: 'selectBackground' },
+    SELECT_FOREGROUND: { actions: 'selectForeground' },
+    SELECT_BACKGROUND: { actions: 'selectBackground' },
     SWITCH: { actions: 'switch' },
     NEW_FOREGROUND: { actions: 'newForeground' },
     RESET_BACKGROUND: { actions: 'resetBackground' },
@@ -143,7 +143,7 @@ const toolMachine = Machine(
       FRAME: { actions: 'setFrame' },
       CHANNEL: { actions: 'setChannel' },
       FEATURE: { actions: 'setFeature' },
-      LABELED_ARRAY: { actions: ['setLabeledArray', 'sendLabel'] },
+      LABELED_ARRAY: { actions: [(c, e) => console.log(e), 'setLabeledArray', 'sendLabel'] },
       LABELS: { actions: 'setMaxLabel' },
 
       // context to sync with tools
@@ -153,7 +153,7 @@ const toolMachine = Machine(
       BACKGROUND: { actions: ['setBackground', 'forwardToTool'], },
 
       // special shift click event 
-      SHIFTCLICK: [
+      SHIFT_CLICK: [
         { cond: 'doubleClick', actions: ['selectForeground', send({ type: 'BACKGROUND', background: 0 })] },
         { cond: 'onBackground', actions: 'selectForeground' },
         { actions: 'selectBackground' },
@@ -234,8 +234,10 @@ const toolMachine = Machine(
       spawnTool: assign({
         toolActor: createToolMachine,
       }),
-      sendLabel: send(({ labeledArray: array, x, y}) => 
-        ({ type: 'LABEL', label: array ? Math.abs(array[y][x]) : 0 })
+      sendLabel: send(({ labeledArray: array, x, y}) => {
+        console.log(array);
+        return { type: 'LABEL', label: array ? Math.abs(array[y][x]) : 0 };
+      }
       ),
       changeGrayscaleTools: assign({
         tool: ({ tool }) => grayscaleTools.includes(tool) ? 'select' : tool

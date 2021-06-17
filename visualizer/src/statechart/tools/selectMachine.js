@@ -23,8 +23,8 @@ const createSelectMachine = ({label, foreground, background }) => Machine(
     guards: toolGuards,
     actions: {
       ...toolActions,
-      selectForeground: sendParent('SELECTFOREGROUND'),
-      selectBackground: sendParent('SELECTBACKGROUND'),
+      selectForeground: sendParent('SELECT_FOREGROUND'),
+      selectBackground: sendParent('SELECT_BACKGROUND'),
       resetForeground: sendParent({ type: 'FOREGROUND', foreground: 0 }),
     }
   }

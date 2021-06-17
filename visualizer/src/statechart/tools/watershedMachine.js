@@ -54,7 +54,7 @@ const createWatershedMachine = ({ x, y, label, foreground, background }) => Mach
         storedX: ({ x }) => x,
         storedY: ({ y }) => y,
       }),
-      selectForeground: sendParent('SELECTFOREGROUND'),
+      selectForeground: sendParent('SELECT_FOREGROUND'),
       newBackground: sendParent({ type: 'BACKGROUND', background: 0 }),
       watershed: sendParent(({ storedLabel, storedX, storedY, x, y }) => ({
         type: 'EDIT',

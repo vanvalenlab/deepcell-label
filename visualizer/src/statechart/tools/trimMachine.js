@@ -26,7 +26,7 @@ const createTrimMachine = ({ x, y, label, foreground, background }) => Machine(
     guards: toolGuards,
     actions: {
       ...toolActions,
-      selectBackground: sendParent('SELECTBACKGROUND'),
+      selectBackground: sendParent('SELECT_BACKGROUND'),
       trim: sendParent(({ label, x, y}, event) => ({
         type: 'EDIT',
         action: 'trim_pixels',

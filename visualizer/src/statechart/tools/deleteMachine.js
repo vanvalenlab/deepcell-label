@@ -23,7 +23,7 @@ const createDeleteMachine = ({label, foreground, background }) => Machine(
     guards: toolGuards,
     actions: {
       ...toolActions,
-      selectBackground: sendParent('SELECTBACKGROUND'),
+      selectBackground: sendParent('SELECT_BACKGROUND'),
       delete: sendParent(({ label }, event) => ({
         type: 'EDIT',
         action: 'replace_single',
