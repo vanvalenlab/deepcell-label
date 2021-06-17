@@ -143,7 +143,7 @@ const toolMachine = Machine(
       FRAME: { actions: 'setFrame' },
       CHANNEL: { actions: 'setChannel' },
       FEATURE: { actions: 'setFeature' },
-      LABELED_ARRAY: { actions: [(c, e) => console.log(e), 'setLabeledArray', 'sendLabel'] },
+      LABELED_ARRAY: { actions: ['setLabeledArray', 'sendLabel'] },
       LABELS: { actions: 'setMaxLabel' },
 
       // context to sync with tools
@@ -234,10 +234,8 @@ const toolMachine = Machine(
       spawnTool: assign({
         toolActor: createToolMachine,
       }),
-      sendLabel: send(({ labeledArray: array, x, y}) => {
-        console.log(array);
-        return { type: 'LABEL', label: array ? Math.abs(array[y][x]) : 0 };
-      }
+      sendLabel: send(({ labeledArray: array, x, y}) => 
+        ({ type: 'LABEL', label: array ? Math.abs(array[y][x]) : 0 })
       ),
       changeGrayscaleTools: assign({
         tool: ({ tool }) => grayscaleTools.includes(tool) ? 'select' : tool
