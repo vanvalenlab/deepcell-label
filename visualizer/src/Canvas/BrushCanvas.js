@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useSelector } from '@xstate/react';
 import { useCanvas, useTool, useToolbar } from '../ServiceContext';
 import { drawTrace, drawBrush } from '../imageUtils';
@@ -19,7 +19,9 @@ const BrushCanvas = ({ className }) => {
   const toolbar = useToolbar();
   const background = useSelector(toolbar, state => state.context.background);
   const erasing = background !== 0;
-  const brushColor = erasing ? [255, 0, 0, 255] : [255, 255, 255, 255];
+  const brushColor = useMemo(
+    () => erasing ? [255, 0, 0, 255] : [255, 255, 255, 255], 
+    [erasing]);
 
   const brush = useTool();
   const x = useSelector(brush, state => state.context.x);
@@ -66,7 +68,7 @@ const BrushCanvas = ({ className }) => {
     for (const [tx, ty] of trace) {
       drawTrace(traceCtx.current, tx, ty, brushSize);
     }
-  }, [traceCtx, brushSize]);
+  }, [brushSize]);
 
   // draws the brush outline and trace onto the visible canvas
   useEffect(() => {
