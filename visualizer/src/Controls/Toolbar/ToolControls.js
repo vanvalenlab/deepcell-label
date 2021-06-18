@@ -6,7 +6,7 @@ import ToggleButtonGroup from '@material-ui/lab/ToggleButtonGroup';
 import { useSelector } from '@xstate/react';
 import React from 'react';
 
-import { useToolbar } from '../ServiceContext';
+import { useToolbar } from '../../ServiceContext';
 
 // for adding tooltip to disabled buttons
 // from https://stackoverflow.com/questions/61115913

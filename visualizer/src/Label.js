@@ -6,12 +6,12 @@ import debounce from 'lodash.debounce';
 import { useState, useRef, useEffect } from 'react';
 
 import Canvas from './Canvas/Canvas';
-import ActionButtons from './ControlPanel/ActionButtons';
-import ImageControls from './ControlPanel/ImageControls/ImageControls';
-import LabeledControls from './ControlPanel/ImageControls/LabeledControls';
-import SelectedPalette from './ControlPanel/SelectedPalette';
-import ToolControls from './ControlPanel/ToolControls';
-import UndoRedo from './ControlPanel/UndoRedo';
+import ImageControls from './Controls/ImageControls/ImageControls';
+import LabeledControls from './Controls/ImageControls/LabeledControls';
+import ActionButtons from './Controls/Toolbar/ActionButtons';
+import SelectedPalette from './Controls/Toolbar/SelectedPalette';
+import ToolControls from './Controls/Toolbar/ToolControls';
+import UndoRedo from './Controls/Toolbar/UndoRedo';
 import Footer from './Footer/Footer';
 import Instructions from './Instructions/Instructions';
 import Navbar from './Navbar';

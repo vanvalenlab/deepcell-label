@@ -6,7 +6,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import { useSelector } from '@xstate/react';
 import React from 'react';
 
-import { useToolbar } from '../ServiceContext';
+import { useToolbar } from '../../ServiceContext';
 
 const useStyles = makeStyles(theme => ({
   button: {

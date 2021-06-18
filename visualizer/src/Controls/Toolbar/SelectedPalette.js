@@ -9,7 +9,7 @@ import SubdirectoryArrowRightIcon from '@material-ui/icons/SubdirectoryArrowRigh
 import { useSelector } from '@xstate/react';
 import React, { useState } from 'react';
 
-import { useToolbar } from '../ServiceContext';
+import { useToolbar } from '../../ServiceContext';
 
 const useStyles = makeStyles(theme => ({
   palette: {
