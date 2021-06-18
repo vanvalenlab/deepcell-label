@@ -8,7 +8,7 @@ import {
   useLabeled,
   useFeature,
   useToolbar,
-} from '../ServiceContext';
+} from '../../ServiceContext';
 import {
   highlightImageData,
   removeNoLabelImageData,

@@ -6,11 +6,11 @@ import { useSelector } from '@xstate/react';
 import React, { useEffect } from 'react';
 
 import { useCanvas, useToolbar, useRaw, useLabeled } from '../ServiceContext';
-import BrushCanvas from './BrushCanvas';
-import LabeledCanvas from './LabeledCanvas';
-import OutlineCanvas from './OutlineCanvas';
-import RawCanvas from './RawCanvas';
-import ThresholdCanvas from './ThresholdCanvas';
+import LabeledCanvas from './Labeled/LabeledCanvas';
+import OutlineCanvas from './Labeled/OutlineCanvas';
+import RawCanvas from './Raw/RawCanvas';
+import BrushCanvas from './Tool/BrushCanvas';
+import ThresholdCanvas from './Tool/ThresholdCanvas';
 
 const useStyles = makeStyles({
   canvasBox: {

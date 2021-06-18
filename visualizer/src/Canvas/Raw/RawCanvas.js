@@ -1,7 +1,7 @@
 import { useSelector } from '@xstate/react';
 import React from 'react';
 
-import { useImage } from '../ServiceContext';
+import { useImage } from '../../ServiceContext';
 import GrayscaleCanvas from './GrayscaleCanvas';
 import RGBCanvas from './RGBCanvas';
 

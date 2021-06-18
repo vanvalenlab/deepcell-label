@@ -6,7 +6,7 @@ import {
   useToolbar,
   useFeature,
   useLabeled,
-} from '../ServiceContext';
+} from '../../ServiceContext';
 import { highlightImageData, outlineAll, outlineSelected } from '../imageUtils';
 
 const white = [255, 255, 255, 255];

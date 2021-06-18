@@ -1,7 +1,7 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useMemo, useRef } from 'react';
 
-import { useCanvas, useTool, useToolbar } from '../ServiceContext';
+import { useCanvas, useTool, useToolbar } from '../../ServiceContext';
 import { drawTrace, drawBrush } from '../imageUtils';
 
 const BrushCanvas = ({ className }) => {
