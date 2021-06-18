@@ -1,14 +1,13 @@
 import { bind, unbind } from 'mousetrap';
 import {
-  Machine,
+  actions,
   assign,
   forwardTo,
-  actions,
-  spawn,
+  Machine,
   send,
   sendParent,
+  spawn,
 } from 'xstate';
-
 import createLabeledMachine from './labeled/labeledMachine';
 import createRawMachine from './raw/rawMachine';
 

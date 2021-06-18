@@ -2,7 +2,6 @@ import Button from '@material-ui/core/Button';
 import Grid from '@material-ui/core/Grid';
 import AddIcon from '@material-ui/icons/Add';
 import { useSelector } from '@xstate/react';
-
 import { useRaw } from '../../../ServiceContext';
 import LayerController from './LayerController';
 

@@ -1,4 +1,4 @@
-import { Machine, assign, sendParent } from 'xstate';
+import { assign, Machine, sendParent } from 'xstate';
 
 const CHANNEL_COLORS = [
   '#FF0000',

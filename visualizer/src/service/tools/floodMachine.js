@@ -1,5 +1,4 @@
 import { Machine, sendParent } from 'xstate';
-
 import { toolActions, toolGuards } from './toolUtils';
 
 const createFloodMachine = ({ x, y, label, foreground, background }) =>

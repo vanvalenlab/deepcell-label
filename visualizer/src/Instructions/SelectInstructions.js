@@ -1,6 +1,5 @@
 import Typography from '@material-ui/core/Typography';
 import React from 'react';
-
 import SelectedPalette, {
   SwapButton,
 } from '../Controls/Toolbar/SelectedPalette';

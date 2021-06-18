@@ -1,13 +1,12 @@
 import {
-  Machine,
+  actions,
   assign,
+  forwardTo,
+  Machine,
   send,
   sendParent,
   spawn,
-  actions,
-  forwardTo,
 } from 'xstate';
-
 import createLayerMachine from './layerMachine';
 
 const { pure } = actions;

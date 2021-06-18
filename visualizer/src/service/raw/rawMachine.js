@@ -1,14 +1,13 @@
 import { bind, unbind } from 'mousetrap';
 import {
-  Machine,
+  actions,
   assign,
+  forwardTo,
+  Machine,
   send,
   sendParent,
   spawn,
-  actions,
-  forwardTo,
 } from 'xstate';
-
 import createChannelMachine from './channelMachine';
 import createColorMachine from './colorMachine';
 import createGrayscaleMachine from './grayscaleMachine';

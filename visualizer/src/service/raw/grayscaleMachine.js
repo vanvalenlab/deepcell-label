@@ -1,12 +1,4 @@
-import {
-  Machine,
-  assign,
-  send,
-  sendParent,
-  spawn,
-  actions,
-  forwardTo,
-} from 'xstate';
+import { actions, assign, forwardTo, Machine, send, sendParent } from 'xstate';
 
 const { pure, respond } = actions;
 

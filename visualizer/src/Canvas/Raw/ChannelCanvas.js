@@ -1,6 +1,5 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-
 import { useCanvas, useChannel } from '../../ServiceContext';
 import { adjustRangeImageData, recolorImageData } from '../canvasUtils';
 

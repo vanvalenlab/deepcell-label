@@ -1,11 +1,10 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-
 import {
   useCanvas,
-  useToolbar,
   useFeature,
   useLabeled,
+  useToolbar,
 } from '../../ServiceContext';
 import {
   highlightImageData,

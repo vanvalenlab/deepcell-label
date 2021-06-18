@@ -8,7 +8,6 @@ import Switch from '@material-ui/core/Switch';
 import Tooltip from '@material-ui/core/Tooltip';
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-
 import { useRaw } from '../../../ServiceContext';
 
 const useStyles = makeStyles(theme => ({

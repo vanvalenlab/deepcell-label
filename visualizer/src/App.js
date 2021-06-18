@@ -1,6 +1,4 @@
-import { inspect } from '@xstate/inspect';
-import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
-
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import Label from './Label';
 import ServiceContext from './ServiceContext';
 

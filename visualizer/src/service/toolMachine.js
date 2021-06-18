@@ -1,14 +1,13 @@
 import { bind, unbind } from 'mousetrap';
 import {
-  Machine,
-  assign,
-  sendParent,
   actions,
-  spawn,
-  send,
+  assign,
   forwardTo,
+  Machine,
+  send,
+  sendParent,
+  spawn,
 } from 'xstate';
-
 import createAutofitMachine from './tools/autofitMachine';
 import createBrushMachine from './tools/brushMachine';
 import createDeleteMachine from './tools/deleteMachine';

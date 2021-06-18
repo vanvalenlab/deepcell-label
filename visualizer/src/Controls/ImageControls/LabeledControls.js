@@ -1,21 +1,16 @@
 import { makeStyles } from '@material-ui/core';
 import Box from '@material-ui/core/Box';
-import FormControl from '@material-ui/core/FormControl';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import FormGroup from '@material-ui/core/FormGroup';
 import FormLabel from '@material-ui/core/FormLabel';
 import Grid from '@material-ui/core/Grid';
-import Radio from '@material-ui/core/Radio';
-import RadioGroup from '@material-ui/core/RadioGroup';
 import Select from '@material-ui/core/Select';
 import Slider from '@material-ui/core/Slider';
 import Switch from '@material-ui/core/Switch';
 import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
-import HelpOutlineIcon from '@material-ui/icons/HelpOutline';
 import { useSelector } from '@xstate/react';
-import React, { useRef, useEffect } from 'react';
-
+import React, { useEffect, useRef } from 'react';
 import { useLabeled } from '../../ServiceContext';
 
 const useStyles = makeStyles(theme => ({

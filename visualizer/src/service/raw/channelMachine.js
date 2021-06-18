@@ -1,5 +1,5 @@
 import quickselect from 'quickselect';
-import { Machine, assign, sendParent } from 'xstate';
+import { assign, Machine, sendParent } from 'xstate';
 
 function fetchRaw(context) {
   const { projectId, channel, loadingFrame: frame } = context;

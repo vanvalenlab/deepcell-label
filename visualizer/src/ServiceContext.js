@@ -1,4 +1,4 @@
-import { useInterpret, useSelector } from '@xstate/react';
+import { useSelector } from '@xstate/react';
 import React, {
   createContext,
   useContext,
@@ -6,7 +6,6 @@ import React, {
   useRef,
   useState,
 } from 'react';
-
 import service from './service/service';
 
 export const LabelContext = createContext();

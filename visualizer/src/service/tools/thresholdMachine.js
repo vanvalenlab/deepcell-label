@@ -1,13 +1,4 @@
-import {
-  Machine,
-  assign,
-  sendParent,
-  actions,
-  spawn,
-  send,
-  forwardTo,
-} from 'xstate';
-
+import { assign, Machine, sendParent } from 'xstate';
 import { toolActions, toolGuards } from './toolUtils';
 
 const createThresholdMachine = ({ x, y, foreground }) =>

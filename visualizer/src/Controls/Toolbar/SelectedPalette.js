@@ -8,7 +8,6 @@ import SubdirectoryArrowLeftIcon from '@material-ui/icons/SubdirectoryArrowLeft'
 import SubdirectoryArrowRightIcon from '@material-ui/icons/SubdirectoryArrowRight';
 import { useSelector } from '@xstate/react';
 import React, { useState } from 'react';
-
 import { useToolbar } from '../../ServiceContext';
 
 const useStyles = makeStyles(theme => ({

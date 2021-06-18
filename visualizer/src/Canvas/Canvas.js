@@ -1,11 +1,9 @@
 import Box from '@material-ui/core/Box';
 import CircularProgress from '@material-ui/core/CircularProgress';
-import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
 import { useSelector } from '@xstate/react';
 import React, { useEffect } from 'react';
-
-import { useCanvas, useToolbar, useRaw, useLabeled } from '../ServiceContext';
+import { useCanvas, useLabeled, useRaw, useToolbar } from '../ServiceContext';
 import LabeledCanvas from './Labeled/LabeledCanvas';
 import OutlineCanvas from './Labeled/OutlineCanvas';
 import RawCanvas from './Raw/RawCanvas';

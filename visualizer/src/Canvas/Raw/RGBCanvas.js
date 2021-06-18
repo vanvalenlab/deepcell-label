@@ -1,7 +1,6 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-
-import { useCanvas, useRaw, useComposeLayers } from '../../ServiceContext';
+import { useCanvas, useComposeLayers, useRaw } from '../../ServiceContext';
 import ChannelCanvas from './ChannelCanvas';
 
 export const RGBCanvas = ({ className }) => {

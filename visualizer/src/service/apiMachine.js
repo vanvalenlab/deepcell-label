@@ -1,4 +1,4 @@
-import { Machine, assign, sendParent } from 'xstate';
+import { Machine, sendParent } from 'xstate';
 
 /** Returns a Promise for a DeepCell Label API call based on the event. */
 function getApiService(context, event) {

@@ -1,14 +1,13 @@
 import { bind, unbind } from 'mousetrap';
 import {
-  Machine,
+  actions,
   assign,
+  forwardTo,
+  Machine,
   send,
   sendParent,
   spawn,
-  forwardTo,
-  actions,
 } from 'xstate';
-
 import createFeatureMachine from './featureMachine';
 
 const { pure, respond } = actions;

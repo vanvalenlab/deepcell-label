@@ -1,5 +1,4 @@
 import { interpret } from 'xstate';
-
 import createDeepcellLabelMachine from './deepcellLabelMachine';
 
 const location = window.location;

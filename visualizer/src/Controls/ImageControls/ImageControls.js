@@ -1,14 +1,12 @@
-import { Box, Button, makeStyles } from '@material-ui/core';
-import { Slider } from '@material-ui/core';
+import { Box, Button, makeStyles, Slider } from '@material-ui/core';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import { green } from '@material-ui/core/colors';
 import FormLabel from '@material-ui/core/FormLabel';
 import Tooltip from '@material-ui/core/Tooltip';
-import { green } from '@material-ui/core/colors';
 import SendIcon from '@material-ui/icons/Send';
 import { useSelector } from '@xstate/react';
-import React, { useState, useEffect } from 'react';
-
-import { useImage, useRaw, useLabeled, useApi } from '../../ServiceContext';
+import React, { useEffect, useState } from 'react';
+import { useApi, useImage, useLabeled, useRaw } from '../../ServiceContext';
 import LabeledControls from './LabeledControls';
 import RawControls from './RawControls/RawControls';
 

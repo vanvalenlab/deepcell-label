@@ -1,5 +1,4 @@
-import { Machine, assign, sendParent } from 'xstate';
-
+import { assign, Machine, sendParent } from 'xstate';
 import { toolActions, toolGuards } from './toolUtils';
 
 const createWatershedMachine = ({ x, y, label, foreground, background }) =>

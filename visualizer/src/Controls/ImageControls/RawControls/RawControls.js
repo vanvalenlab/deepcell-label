@@ -5,7 +5,6 @@ import Tooltip from '@material-ui/core/Tooltip';
 import HelpOutlineIcon from '@material-ui/icons/HelpOutline';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-
 import { useImage } from '../../../ServiceContext';
 import ColorModeToggle from './ColorModeToggle';
 import GrayscaleControls from './GrayscaleControls';

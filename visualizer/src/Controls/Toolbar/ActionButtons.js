@@ -1,11 +1,8 @@
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 import ButtonGroup from '@material-ui/core/ButtonGroup';
-import Tooltip from '@material-ui/core/Tooltip';
 import { makeStyles } from '@material-ui/core/styles';
-import { useSelector } from '@xstate/react';
 import React from 'react';
-
 import { useToolbar } from '../../ServiceContext';
 
 const useStyles = makeStyles(theme => ({

@@ -1,11 +1,10 @@
 import Box from '@material-ui/core/Box';
-import Tooltip from '@material-ui/core/Tooltip';
 import { withStyles } from '@material-ui/core/styles';
+import Tooltip from '@material-ui/core/Tooltip';
 import MuiToggleButton from '@material-ui/lab/ToggleButton';
 import ToggleButtonGroup from '@material-ui/lab/ToggleButtonGroup';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-
 import { useToolbar } from '../../ServiceContext';
 
 // for adding tooltip to disabled buttons

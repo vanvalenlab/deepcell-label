@@ -1,18 +1,15 @@
-import Box from '@material-ui/core/Box';
-import CircularProgress from '@material-ui/core/CircularProgress';
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-
 import {
   useCanvas,
-  useLabeled,
   useFeature,
+  useLabeled,
   useToolbar,
 } from '../../ServiceContext';
 import {
   highlightImageData,
-  removeNoLabelImageData,
   opacityImageData,
+  removeNoLabelImageData,
 } from '../canvasUtils';
 
 export const LabeledCanvas = ({ className }) => {

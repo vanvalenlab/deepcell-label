@@ -1,13 +1,10 @@
 import Box from '@material-ui/core/Box';
 import { makeStyles } from '@material-ui/core/styles';
-import { useSelector } from '@xstate/react';
 import { ResizeSensor } from 'css-element-queries';
 import debounce from 'lodash.debounce';
-import { useState, useRef, useEffect } from 'react';
-
+import { useEffect, useRef, useState } from 'react';
 import Canvas from './Canvas/Canvas';
 import ImageControls from './Controls/ImageControls/ImageControls';
-import LabeledControls from './Controls/ImageControls/LabeledControls';
 import ActionButtons from './Controls/Toolbar/ActionButtons';
 import SelectedPalette from './Controls/Toolbar/SelectedPalette';
 import ToolControls from './Controls/Toolbar/ToolControls';

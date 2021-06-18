@@ -1,4 +1,4 @@
-import { Machine, actions, assign, forwardTo, send } from 'xstate';
+import { actions, assign, forwardTo, Machine, send } from 'xstate';
 
 const { respond } = actions;
 

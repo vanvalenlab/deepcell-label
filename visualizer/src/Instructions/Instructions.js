@@ -2,13 +2,12 @@ import MuiAccordion from '@material-ui/core/Accordion';
 import MuiAccordionDetails from '@material-ui/core/AccordionDetails';
 import MuiAccordionSummary from '@material-ui/core/AccordionSummary';
 import Box from '@material-ui/core/Box';
+import { withStyles } from '@material-ui/core/styles';
 import Tab from '@material-ui/core/Tab';
 import Tabs from '@material-ui/core/Tabs';
 import Typography from '@material-ui/core/Typography';
-import { withStyles } from '@material-ui/core/styles';
 import PropTypes from 'prop-types';
 import React from 'react';
-
 import CanvasInstructions from './CanvasInstructions';
 import SelectInstructions from './SelectInstructions';
 import ToolInstructions from './ToolInstructions';

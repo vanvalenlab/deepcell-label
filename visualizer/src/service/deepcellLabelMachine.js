@@ -1,9 +1,8 @@
 /**
  * Root statechart for DeepCell Label in XState.
  */
-import { Machine, actions, assign, forwardTo, send, spawn } from 'xstate';
+import { assign, forwardTo, Machine, send, spawn } from 'xstate';
 import { pure } from 'xstate/lib/actions';
-
 import createApiMachine from './apiMachine';
 import canvasMachine from './canvasMachine';
 import createImageMachine from './imageMachine';

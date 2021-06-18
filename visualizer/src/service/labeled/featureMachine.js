@@ -1,4 +1,4 @@
-import { Machine, assign, sendParent, send } from 'xstate';
+import { assign, Machine, send, sendParent } from 'xstate';
 import { pure } from 'xstate/lib/actions';
 
 function fetchLabels(context) {

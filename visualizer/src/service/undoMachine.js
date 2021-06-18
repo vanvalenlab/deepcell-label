@@ -1,12 +1,12 @@
 import { bind, unbind } from 'mousetrap';
 import {
-  Machine,
+  actions,
   assign,
   forwardTo,
+  Machine,
   send,
-  spawn,
-  actions,
   sendParent,
+  spawn,
 } from 'xstate';
 
 const { pure } = actions;

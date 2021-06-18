@@ -1,11 +1,10 @@
 import MuiButton from '@material-ui/core/Button';
-import Tooltip from '@material-ui/core/Tooltip';
 import { makeStyles, withStyles } from '@material-ui/core/styles';
+import Tooltip from '@material-ui/core/Tooltip';
 import RedoIcon from '@material-ui/icons/Redo';
 import UndoIcon from '@material-ui/icons/Undo';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-
 import { useUndo } from '../../ServiceContext';
 
 const useStyles = makeStyles({
