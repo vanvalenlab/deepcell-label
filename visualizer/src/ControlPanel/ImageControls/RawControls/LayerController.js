@@ -6,7 +6,7 @@ import Slider from '@material-ui/core/Slider';
 import { makeStyles } from '@material-ui/core/styles';
 import { useSelector } from '@xstate/react';
 
-import { useRaw } from '../../ServiceContext';
+import { useRaw } from '../../../ServiceContext';
 import LayerOptions from './LayerOptions';
 
 const useStyles = makeStyles(theme => ({

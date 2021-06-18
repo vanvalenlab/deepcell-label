@@ -8,7 +8,7 @@ import SendIcon from '@material-ui/icons/Send';
 import { useSelector } from '@xstate/react';
 import React, { useState, useEffect } from 'react';
 
-import { useImage, useRaw, useLabeled, useApi } from '../ServiceContext';
+import { useImage, useRaw, useLabeled, useApi } from '../../ServiceContext';
 import LabeledControls from './LabeledControls';
 import RawControls from './RawControls/RawControls';
 

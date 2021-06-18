@@ -10,7 +10,7 @@ import MoreVertIcon from '@material-ui/icons/MoreVert';
 import { useSelector } from '@xstate/react';
 import React, { useReducer, useRef } from 'react';
 
-import { useRaw } from '../../ServiceContext';
+import { useRaw } from '../../../ServiceContext';
 import ColorPalette from './ColorPalette';
 
 const useStyles = makeStyles(() => ({

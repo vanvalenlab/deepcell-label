@@ -6,7 +6,7 @@ import HelpOutlineIcon from '@material-ui/icons/HelpOutline';
 import { useSelector } from '@xstate/react';
 import React from 'react';
 
-import { useImage } from '../../ServiceContext';
+import { useImage } from '../../../ServiceContext';
 import ColorModeToggle from './ColorModeToggle';
 import GrayscaleControls from './GrayscaleControls';
 import RGBControls from './RGBControls';
@@ -19,10 +19,7 @@ const useStyles = makeStyles(theme => ({
     justifyContent: 'space-between',
     width: '100%',
   },
-  title: {
-    paddingTop: theme.spacing(1),
-    paddingBottom: theme.spacing(1),
-  },
+  title: {},
 }));
 export const RawControls = () => {
   const image = useImage();

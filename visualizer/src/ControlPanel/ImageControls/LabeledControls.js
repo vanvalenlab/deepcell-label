@@ -16,7 +16,7 @@ import HelpOutlineIcon from '@material-ui/icons/HelpOutline';
 import { useSelector } from '@xstate/react';
 import React, { useRef, useEffect } from 'react';
 
-import { useLabeled } from '../ServiceContext';
+import { useLabeled } from '../../ServiceContext';
 
 const useStyles = makeStyles(theme => ({
   title: {

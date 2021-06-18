@@ -6,7 +6,7 @@ import Typography from '@material-ui/core/Typography';
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
 
-import { useImage, useRaw } from '../../ServiceContext';
+import { useImage, useRaw } from '../../../ServiceContext';
 
 function ColorModeToggle() {
   const image = useImage();
