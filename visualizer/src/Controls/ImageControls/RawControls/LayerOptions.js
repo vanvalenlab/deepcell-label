@@ -40,7 +40,7 @@ function LayerOptions({ layer }) {
   const colorMode = useSelector(raw, state => state.context.colorMode);
 
   const handleColorSelect = color => {
-    layer.send({ type: 'SETCOLOR', color });
+    layer.send({ type: 'SET_COLOR', color });
   };
 
   const handleRemove = () => {
