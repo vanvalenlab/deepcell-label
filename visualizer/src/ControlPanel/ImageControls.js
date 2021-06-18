@@ -9,7 +9,7 @@ import { useSelector } from '@xstate/react';
 import React, { useState, useEffect } from 'react';
 
 import { useImage, useRaw, useLabeled, useApi } from '../ServiceContext';
-import LabeledController from './LabeledController';
+import LabeledControls from './LabeledControls';
 import RawControls from './RawControls/RawControls';
 
 const useStyles = makeStyles(theme => ({
@@ -118,7 +118,7 @@ const ImageControls = () => {
     <Box id='image-controls' className={styles.root}>
       <SubmitButton />
       <FrameSlider />
-      {labeled && <LabeledController />}
+      {labeled && <LabeledControls />}
       {raw && <RawControls />}
     </Box>
   );

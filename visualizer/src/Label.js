@@ -8,7 +8,7 @@ import { useState, useRef, useEffect } from 'react';
 import Canvas from './Canvas/Canvas';
 import ActionButtons from './ControlPanel/ActionButtons';
 import ImageControls from './ControlPanel/ImageControls';
-import LabeledController from './ControlPanel/LabeledController';
+import LabeledControls from './ControlPanel/LabeledControls';
 import SelectedPalette from './ControlPanel/SelectedPalette';
 import ToolControls from './ControlPanel/ToolControls';
 import UndoRedo from './ControlPanel/UndoRedo';

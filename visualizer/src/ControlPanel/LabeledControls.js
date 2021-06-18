@@ -130,7 +130,7 @@ function OutlineToggle() {
   );
 }
 
-const LabeledController = () => {
+const LabeledControls = () => {
   const styles = useStyles();
 
   return (
@@ -161,4 +161,4 @@ const LabeledController = () => {
 
 //         {/* <Grid container direction="row" justify="flex-start" alignItems="center"> */}
 
-export default LabeledController;
+export default LabeledControls;
