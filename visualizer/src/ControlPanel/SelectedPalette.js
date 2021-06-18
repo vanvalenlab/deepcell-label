@@ -1,16 +1,15 @@
-import React, { useState } from 'react';
-import { useSelector } from '@xstate/react';
 import { makeStyles } from '@material-ui/core';
 import Box from '@material-ui/core/Box';
-import Tooltip from '@material-ui/core/Tooltip';
 import IconButton from '@material-ui/core/IconButton';
+import Tooltip from '@material-ui/core/Tooltip';
+import ArrowBackIosIcon from '@material-ui/icons/ArrowBackIos';
+import HelpOutlineIcon from '@material-ui/icons/HelpOutline';
 import SubdirectoryArrowLeftIcon from '@material-ui/icons/SubdirectoryArrowLeft';
 import SubdirectoryArrowRightIcon from '@material-ui/icons/SubdirectoryArrowRight';
-import HelpOutlineIcon from '@material-ui/icons/HelpOutline';
-import ArrowBackIosIcon from '@material-ui/icons/ArrowBackIos';
+import { useSelector } from '@xstate/react';
+import React, { useState } from 'react';
 
 import { useToolbar } from '../ServiceContext';
-
 
 const useStyles = makeStyles(theme => ({
   palette: {
@@ -59,20 +58,21 @@ const useStyles = makeStyles(theme => ({
   help: {
     position: 'absolute',
     right: '8px',
-  }
+  },
 }));
 
 function SwapIcon() {
   const styles = useStyles();
 
-  return <>
-    <SubdirectoryArrowLeftIcon className={styles.leftArrow} />
-    <SubdirectoryArrowRightIcon className={styles.rightArrow} />
-  </>;
+  return (
+    <>
+      <SubdirectoryArrowLeftIcon className={styles.leftArrow} />
+      <SubdirectoryArrowRightIcon className={styles.rightArrow} />
+    </>
+  );
 }
 
 export function SwapButton() {
-
   const toolbar = useToolbar();
   const { send } = toolbar;
   const foreground = useSelector(toolbar, state => state.context.foreground);
@@ -85,15 +85,11 @@ export function SwapButton() {
 
   return (
     <Tooltip title='Press X to swap.'>
-      <IconButton
-        color="primary"
-        onClick={handleClick}
-      >
+      <IconButton color='primary' onClick={handleClick}>
         <SwapIcon />
       </IconButton>
     </Tooltip>
   );
-
 }
 
 function ForegroundBox() {
@@ -101,7 +97,7 @@ function ForegroundBox() {
   const { send } = toolbar;
   const foreground = useSelector(toolbar, state => state.context.foreground);
   const noLabel = foreground === 0;
-  
+
   const [showButtons, setShowButtons] = useState(false);
   const buttonColor = noLabel ? 'secondary' : 'default';
 
@@ -115,17 +111,20 @@ function ForegroundBox() {
         onMouseEnter={() => setShowButtons(true)}
         onMouseLeave={() => setShowButtons(false)}
       >
-        {showButtons && 
+        {showButtons && (
           <IconButton size='small' onClick={() => send('PREV_FOREGROUND')}>
             <ArrowBackIosIcon color={buttonColor} />
           </IconButton>
-        }
-        {showButtons && 
+        )}
+        {showButtons && (
           <IconButton size='small' onClick={() => send('NEXT_FOREGROUND')}>
-            <ArrowBackIosIcon color={buttonColor} style={{transform: 'rotate(180deg)'}} />
+            <ArrowBackIosIcon
+              color={buttonColor}
+              style={{ transform: 'rotate(180deg)' }}
+            />
           </IconButton>
-        }
-      </ Box>
+        )}
+      </Box>
     </Tooltip>
   );
 }
@@ -135,7 +134,7 @@ function BackgroundBox() {
   const { send } = toolbar;
   const background = useSelector(toolbar, state => state.context.background);
   const noLabel = background === 0;
-  
+
   const [showButtons, setShowButtons] = useState(false);
   const buttonColor = noLabel ? 'secondary' : 'default';
 
@@ -149,17 +148,20 @@ function BackgroundBox() {
         onMouseEnter={() => setShowButtons(true)}
         onMouseLeave={() => setShowButtons(false)}
       >
-        {showButtons && 
+        {showButtons && (
           <IconButton size='small' onClick={() => send('PREV_BACKGROUND')}>
             <ArrowBackIosIcon color={buttonColor} />
           </IconButton>
-        }
-        {showButtons && 
+        )}
+        {showButtons && (
           <IconButton size='small' onClick={() => send('NEXT_BACKGROUND')}>
-            <ArrowBackIosIcon color={buttonColor} style={{ transform: 'rotate(180deg)'}} />
+            <ArrowBackIosIcon
+              color={buttonColor}
+              style={{ transform: 'rotate(180deg)' }}
+            />
           </IconButton>
-        }
-      </ Box>
+        )}
+      </Box>
     </Tooltip>
   );
 }
@@ -167,13 +169,13 @@ function BackgroundBox() {
 export default function SelectedPalette() {
   const styles = useStyles();
 
-  const tooltipText = (<span>
-    When the foreground is no label,
-    the top box is black.
-    <br />
-    When the background is no label,
-    the bottom box is black.
-  </span>);
+  const tooltipText = (
+    <span>
+      When the foreground is no label, the top box is black.
+      <br />
+      When the background is no label, the bottom box is black.
+    </span>
+  );
 
   return (
     <Box className={styles.palette}>
@@ -183,7 +185,11 @@ export default function SelectedPalette() {
         <SwapButton />
       </Box>
       <Tooltip title={tooltipText}>
-        <HelpOutlineIcon className={styles.help} color="action" fontSize="large" />
+        <HelpOutlineIcon
+          className={styles.help}
+          color='action'
+          fontSize='large'
+        />
       </Tooltip>
     </Box>
   );

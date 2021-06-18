@@ -1,6 +1,12 @@
-import React, { useEffect, useRef } from 'react';
 import { useSelector } from '@xstate/react';
-import { useCanvas, useToolbar, useFeature, useLabeled } from '../ServiceContext';
+import React, { useEffect, useRef } from 'react';
+
+import {
+  useCanvas,
+  useToolbar,
+  useFeature,
+  useLabeled,
+} from '../ServiceContext';
 import { highlightImageData, outlineAll, outlineSelected } from '../imageUtils';
 
 const white = [255, 255, 255, 255];
@@ -8,7 +14,6 @@ const black = [0, 0, 0, 255];
 const red = [255, 0, 0, 255];
 
 const OutlineCanvas = ({ className }) => {
-
   const canvas = useCanvas();
   const sx = useSelector(canvas, state => state.context.sx);
   const sy = useSelector(canvas, state => state.context.sy);
@@ -16,7 +21,7 @@ const OutlineCanvas = ({ className }) => {
   const scale = useSelector(canvas, state => state.context.scale);
   const sw = useSelector(canvas, state => state.context.width);
   const sh = useSelector(canvas, state => state.context.height);
-  
+
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
 
@@ -32,7 +37,9 @@ const OutlineCanvas = ({ className }) => {
 
   const feature = useFeature(featureIndex);
   let labeledArray = useSelector(feature, state => state.context.labeledArray);
-  if (!labeledArray) { labeledArray = Array(sh).fill(Array(sw).fill(0)); }
+  if (!labeledArray) {
+    labeledArray = Array(sh).fill(Array(sw).fill(0));
+  }
 
   const canvasRef = useRef();
   const ctx = useRef();
@@ -57,7 +64,9 @@ const OutlineCanvas = ({ className }) => {
     const bColor = red;
     const hColor = [255, 255, 255, 128];
     highlightImageData(data, labeledArray, foreground, hColor);
-    if (outline) { outlineAll(data, labeledArray, fColor); }
+    if (outline) {
+      outlineAll(data, labeledArray, fColor);
+    }
     outlineSelected(data, labeledArray, foreground, background, fColor, bColor);
     hiddenCtx.current.putImageData(data, 0, 0);
   }, [labeledArray, foreground, background, outline, invert, sw, sh]);
@@ -67,29 +76,50 @@ const OutlineCanvas = ({ className }) => {
     ctx.current.clearRect(0, 0, width, height);
     ctx.current.drawImage(
       hiddenCanvasRef.current,
-      sx, sy,
-      sw / zoom, sh / zoom,
-      0, 0,
-      width, height,
+      sx,
+      sy,
+      sw / zoom,
+      sh / zoom,
+      0,
+      0,
+      width,
+      height
     );
     ctx.current.restore();
-  }, [labeledArray, foreground, background, outline, invert, sw, sh, sx, sy, zoom, width, height]);
+  }, [
+    labeledArray,
+    foreground,
+    background,
+    outline,
+    invert,
+    sw,
+    sh,
+    sx,
+    sy,
+    zoom,
+    width,
+    height,
+  ]);
 
-  return <>
-    {/* hidden processing canvas */}
-    <canvas id='outline-processing'
-      hidden={true}
-      ref={hiddenCanvasRef}
-      width={sw}
-      height={sh}
-    />
-    <canvas id='outline-canvas'
-      ref={canvasRef}
-      width={width}
-      height={height}
-      className={className}
-    />
-  </>;
+  return (
+    <>
+      {/* hidden processing canvas */}
+      <canvas
+        id='outline-processing'
+        hidden={true}
+        ref={hiddenCanvasRef}
+        width={sw}
+        height={sh}
+      />
+      <canvas
+        id='outline-canvas'
+        ref={canvasRef}
+        width={width}
+        height={height}
+        className={className}
+      />
+    </>
+  );
 };
 
 export default React.memo(OutlineCanvas);

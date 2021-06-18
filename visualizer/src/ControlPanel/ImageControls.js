@@ -1,17 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { useSelector } from '@xstate/react';
-import Tooltip from '@material-ui/core/Tooltip';
 import { Box, Button, makeStyles } from '@material-ui/core';
-import SendIcon from '@material-ui/icons/Send';
-import { Slider } from "@material-ui/core";
-import FormLabel from '@material-ui/core/FormLabel';
-import { green } from '@material-ui/core/colors';
+import { Slider } from '@material-ui/core';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import FormLabel from '@material-ui/core/FormLabel';
+import Tooltip from '@material-ui/core/Tooltip';
+import { green } from '@material-ui/core/colors';
+import SendIcon from '@material-ui/icons/Send';
+import { useSelector } from '@xstate/react';
+import React, { useState, useEffect } from 'react';
 
 import { useImage, useRaw, useLabeled, useApi } from '../ServiceContext';
-
-import RawControls from './RawControls/RawControls';
 import LabeledController from './LabeledController';
+import RawControls from './RawControls/RawControls';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -39,13 +38,13 @@ function SubmitButton() {
   const api = useApi();
   const { send } = api;
   const uploading = useSelector(api, state => state.matches('uploading'));
-  
+
   const styles = useStyles();
 
   return (
-    <Button 
-      variant='contained' 
-      color='primary' 
+    <Button
+      variant='contained'
+      color='primary'
       endIcon={<SendIcon />}
       onClick={() => send('UPLOAD')}
       disabled={uploading}
@@ -67,38 +66,46 @@ export const FrameSlider = () => {
     }
   };
 
-  const tooltipText = <span>Cycle with <kbd>A</kbd> and <kbd>D</kbd>.</span>;
+  const tooltipText = (
+    <span>
+      Cycle with <kbd>A</kbd> and <kbd>D</kbd>.
+    </span>
+  );
 
   const styles = useStyles();
 
-  const [display, setDisplay] = useState("on");
+  const [display, setDisplay] = useState('on');
 
   // Display label for a second after the label changes
   useEffect(() => {
-    setDisplay("on");
-    const displayTimeout = setTimeout(() => setDisplay("auto"), 1000);
+    setDisplay('on');
+    const displayTimeout = setTimeout(() => setDisplay('auto'), 1000);
     return () => clearTimeout(displayTimeout);
   }, [frame]);
 
-  return numFrames > 1 && <>
-    {/* <Typography className={styles.title}>
+  return (
+    numFrames > 1 && (
+      <>
+        {/* <Typography className={styles.title}>
       Frame
     </Typography> */}
-    <FormLabel component="legend" className={styles.title}>
-      Frame
-    </FormLabel>
-    <Tooltip title={tooltipText}>
-      <Slider
-        value={frame}
-        valueLabelDisplay={display}
-        step={1}
-        marks
-        min={0}
-        max={numFrames - 1}
-        onChange={handleFrameChange}
-      />
-    </Tooltip>
-  </>;
+        <FormLabel component='legend' className={styles.title}>
+          Frame
+        </FormLabel>
+        <Tooltip title={tooltipText}>
+          <Slider
+            value={frame}
+            valueLabelDisplay={display}
+            step={1}
+            marks
+            min={0}
+            max={numFrames - 1}
+            onChange={handleFrameChange}
+          />
+        </Tooltip>
+      </>
+    )
+  );
 };
 
 const ImageControls = () => {

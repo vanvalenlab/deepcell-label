@@ -1,22 +1,21 @@
-import React, { useEffect, useRef } from 'react';
-import { useSelector } from '@xstate/react';
 import { makeStyles } from '@material-ui/core';
-import Tooltip from '@material-ui/core/Tooltip';
-import Grid from '@material-ui/core/Grid';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import FormGroup from '@material-ui/core/FormGroup';
-import Switch from '@material-ui/core/Switch';
+import Grid from '@material-ui/core/Grid';
 import Select from '@material-ui/core/Select';
 import Slider from '@material-ui/core/Slider';
+import Switch from '@material-ui/core/Switch';
+import Tooltip from '@material-ui/core/Tooltip';
+import { useSelector } from '@xstate/react';
+import React, { useEffect, useRef } from 'react';
 
 import { useRaw } from '../../ServiceContext';
 
 const useStyles = makeStyles(theme => ({
   root: {
-    paddingTop: theme.spacing(1)
+    paddingTop: theme.spacing(1),
   },
 }));
-
 
 const InvertToggle = ({ channel }) => {
   const invert = useSelector(channel, state => state.context.invert);
@@ -27,20 +26,22 @@ const InvertToggle = ({ channel }) => {
     const input = inputRef.current;
     input.className = input.className + ' mousetrap';
   }, []);
-  
+
   return (
     <Tooltip title='Press I to toggle'>
       <FormGroup row>
         <FormControlLabel
-        control={<Switch
-          size='small' 
-          checked={invert} 
-          onChange={() => channel.send('TOGGLE_INVERT')} 
-          inputRef={inputRef}
-        />}
-        label="Invert"
-        labelPlacement="start"
-      />
+          control={
+            <Switch
+              size='small'
+              checked={invert}
+              onChange={() => channel.send('TOGGLE_INVERT')}
+              inputRef={inputRef}
+            />
+          }
+          label='Invert'
+          labelPlacement='start'
+        />
       </FormGroup>
     </Tooltip>
   );
@@ -59,11 +60,7 @@ const ChannelSelector = () => {
 
   return (
     <Tooltip title='Press C or Shift+C to cycle.'>
-      <Select
-        native
-        value={channel}
-        onChange={onChange}
-      >
+      <Select native value={channel} onChange={onChange}>
         {names.map((opt, index) => (
           <option key={index} value={index}>
             {opt}
@@ -81,51 +78,62 @@ const RangeSlider = ({ channel }) => {
     channel.send({ type: 'SET_RANGE', range: newValue });
   };
 
-  return <Slider
-    value={range}
-    onChange={onChange}
-    valueLabelDisplay="off"
-    min={0}
-    max={255}
-    step={1}
-    orientation="horizontal"
-    style={{
-      color: 'primary',
-      marginTop: '7px'
-    }}
-  />;
+  return (
+    <Slider
+      value={range}
+      onChange={onChange}
+      valueLabelDisplay='off'
+      min={0}
+      max={255}
+      step={1}
+      orientation='horizontal'
+      style={{
+        color: 'primary',
+        marginTop: '7px',
+      }}
+    />
+  );
 };
-
 
 const GrayscaleControls = () => {
   const raw = useRaw();
-  const channel = useSelector(raw, state => state.context.channels[state.context.channel]);
+  const channel = useSelector(
+    raw,
+    state => state.context.channels[state.context.channel]
+  );
 
   const styles = useStyles();
-  
-  return <Grid style={{ width: '100%' }} item >
-    <Grid
-      container
-      direction="column"
-      m={2}
-      justify="center"
-      className={styles.root}
-    >
-      <Grid container direction="row" justify="space-between">
-        <Grid item xs={8}>
-          <ChannelSelector />
+
+  return (
+    <Grid style={{ width: '100%' }} item>
+      <Grid
+        container
+        direction='column'
+        m={2}
+        justify='center'
+        className={styles.root}
+      >
+        <Grid container direction='row' justify='space-between'>
+          <Grid item xs={8}>
+            <ChannelSelector />
+          </Grid>
+          <Grid item xs={4}>
+            <InvertToggle channel={channel} />
+          </Grid>
         </Grid>
-        <Grid item xs={4}>
-          <InvertToggle channel={channel} />
-        </Grid>
-      </Grid>
-      <Grid container direction="row" justify="flex-start" alignItems="center">
-        <Grid item xs={12}>
-          <RangeSlider channel={channel} />
+        <Grid
+          container
+          direction='row'
+          justify='flex-start'
+          alignItems='center'
+        >
+          <Grid item xs={12}>
+            <RangeSlider channel={channel} />
+          </Grid>
         </Grid>
       </Grid>
     </Grid>
-  </Grid>;
-}
+  );
+};
 
 export default GrayscaleControls;

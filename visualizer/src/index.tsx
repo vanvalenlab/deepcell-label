@@ -1,11 +1,11 @@
+import { grey } from '@material-ui/core/colors';
+import { ThemeProvider, createMuiTheme } from '@material-ui/core/styles';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
 
-import { ThemeProvider, createMuiTheme } from '@material-ui/core/styles';
-import { grey } from '@material-ui/core/colors';
+import App from './App';
+import './index.css';
+import reportWebVitals from './reportWebVitals';
 
 const darkTheme = createMuiTheme({
   palette: {
@@ -15,15 +15,15 @@ const darkTheme = createMuiTheme({
   },
   props: {
     MuiButtonBase: {
-      disableRipple: true
-    }
-  }
+      disableRipple: true,
+    },
+  },
 });
 
 ReactDOM.render(
   <React.StrictMode>
     {/* <ThemeProvider theme={darkTheme}> */}
-      <App />
+    <App />
     {/* </ThemeProvider> */}
   </React.StrictMode>,
   document.getElementById('root')

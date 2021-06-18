@@ -1,22 +1,21 @@
 /** Modified from https://github.com/hms-dbmi/viv */
-import React, { useReducer, useRef } from 'react';
-import { useSelector } from '@xstate/react';
-import IconButton from '@material-ui/core/IconButton';
-import MoreVertIcon from '@material-ui/icons/MoreVert';
 import ClickAwayListener from '@material-ui/core/ClickAwayListener';
-import Paper from '@material-ui/core/Paper';
-import Popper from '@material-ui/core/Popper';
+import IconButton from '@material-ui/core/IconButton';
 import MenuItem from '@material-ui/core/MenuItem';
 import MenuList from '@material-ui/core/MenuList';
-
+import Paper from '@material-ui/core/Paper';
+import Popper from '@material-ui/core/Popper';
 import { makeStyles } from '@material-ui/core/styles';
+import MoreVertIcon from '@material-ui/icons/MoreVert';
+import { useSelector } from '@xstate/react';
+import React, { useReducer, useRef } from 'react';
 
-import ColorPalette from './ColorPalette';
 import { useRaw } from '../../ServiceContext';
+import ColorPalette from './ColorPalette';
 
 const useStyles = makeStyles(() => ({
   paper: {
-    backgroundColor: 'rgba(0, 0, 0, 0.75)'
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
   },
   span: {
     width: '70px',
@@ -27,11 +26,11 @@ const useStyles = makeStyles(() => ({
   },
   colors: {
     '&:hover': {
-      backgroundColor: 'transparent'
+      backgroundColor: 'transparent',
     },
     paddingLeft: '2px',
-    paddingRight: '2px'
-  }
+    paddingRight: '2px',
+  },
 }));
 
 function LayerOptions({ layer }) {
@@ -54,17 +53,17 @@ function LayerOptions({ layer }) {
   return (
     <>
       <IconButton
-        aria-label="Remove channel"
-        size="small"
+        aria-label='Remove channel'
+        size='small'
         onClick={toggle}
         ref={anchorRef}
       >
-        <MoreVertIcon fontSize="small" />
+        <MoreVertIcon fontSize='small' />
       </IconButton>
-      <Popper open={open} anchorEl={anchorRef.current} placement="bottom-end">
+      <Popper open={open} anchorEl={anchorRef.current} placement='bottom-end'>
         <Paper className={classes.paper}>
           <ClickAwayListener onClickAway={toggle}>
-            <MenuList id="channel-options">
+            <MenuList id='channel-options'>
               <MenuItem dense disableGutters onClick={handleRemove}>
                 <span className={classes.span}>Remove</span>
               </MenuItem>

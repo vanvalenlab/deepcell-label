@@ -1,22 +1,47 @@
-import { Machine, assign, sendParent, actions, spawn, send, forwardTo } from 'xstate';
 import { bind, unbind } from 'mousetrap';
-import { toolActions, toolGuards } from './tools/toolUtils';
-import createSelectMachine from './tools/selectMachine';
-import createBrushMachine from './tools/brushMachine';
-import createThresholdMachine from './tools/thresholdMachine';
+import {
+  Machine,
+  assign,
+  sendParent,
+  actions,
+  spawn,
+  send,
+  forwardTo,
+} from 'xstate';
+
 import createAutofitMachine from './tools/autofitMachine';
-import createErodeDilateMachine from './tools/erodeDilateMachine';
-import createTrimMachine from './tools/trimMachine';
-import createFloodMachine from './tools/floodMachine';
-import createWatershedMachine from './tools/watershedMachine';
+import createBrushMachine from './tools/brushMachine';
 import createDeleteMachine from './tools/deleteMachine';
+import createErodeDilateMachine from './tools/erodeDilateMachine';
+import createFloodMachine from './tools/floodMachine';
+import createSelectMachine from './tools/selectMachine';
+import createThresholdMachine from './tools/thresholdMachine';
+import { toolActions, toolGuards } from './tools/toolUtils';
+import createTrimMachine from './tools/trimMachine';
+import createWatershedMachine from './tools/watershedMachine';
 
 const { pure, respond } = actions;
 
 // TODO: move to config file?
-const colorTools = ['brush', 'select', 'erodeDilate', 'trim', 'flood', 'delete'];
-const grayscaleTools = ['brush', 'select', 'erodeDilate', 'trim', 'flood', 'delete',
-                        'autofit', 'watershed', 'threshold'];
+const colorTools = [
+  'brush',
+  'select',
+  'erodeDilate',
+  'trim',
+  'flood',
+  'delete',
+];
+const grayscaleTools = [
+  'brush',
+  'select',
+  'erodeDilate',
+  'trim',
+  'flood',
+  'delete',
+  'autofit',
+  'watershed',
+  'threshold',
+];
 
 const createToolMachineLookup = {
   brush: createBrushMachine,
@@ -30,7 +55,7 @@ const createToolMachineLookup = {
   delete: createDeleteMachine,
 };
 
-const createToolMachine = (context) => {
+const createToolMachine = context => {
   const { tool } = context;
   return spawn(createToolMachineLookup[tool](context), 'tool');
 };
@@ -39,13 +64,19 @@ const selectActions = {
   selectForeground: pure(({ label, foreground, background }) => {
     return [
       send({ type: 'FOREGROUND', foreground: label }),
-      send({ type: 'BACKGROUND', background: label === background ? foreground : background }),
+      send({
+        type: 'BACKGROUND',
+        background: label === background ? foreground : background,
+      }),
     ];
   }),
   selectBackground: pure(({ label, foreground, background }) => {
     return [
       send({ type: 'BACKGROUND', background: label }),
-      send({ type: 'FOREGROUND', foreground: label === foreground ? background : foreground }),
+      send({
+        type: 'FOREGROUND',
+        foreground: label === foreground ? background : foreground,
+      }),
     ];
   }),
   switch: pure(({ foreground, background }) => {
@@ -54,24 +85,27 @@ const selectActions = {
       send({ type: 'BACKGROUND', background: foreground }),
     ];
   }),
-  newForeground: send(({ maxLabel }) => ({ type: 'FOREGROUND', foreground: maxLabel + 1 })),
+  newForeground: send(({ maxLabel }) => ({
+    type: 'FOREGROUND',
+    foreground: maxLabel + 1,
+  })),
   resetBackground: send({ type: 'BACKGROUND', background: 0 }),
-  prevForeground: send(
-    ({ foreground: fg, maxLabel: max }) => 
-    ({ type: 'FOREGROUND', foreground: fg <= 1 ? max : fg - 1 })
-  ),
-  nextForeground: send(
-    ({ foreground: fg, maxLabel: max }) => 
-    ({ type: 'FOREGROUND', foreground: fg >= max ? 1 : fg + 1 })
-  ),
-  prevBackground: send(
-    ({ background: bg, maxLabel: max }) => 
-    ({ type: 'BACKGROUND', background: bg <= 1 ? max : bg - 1 })
-  ),
-  nextBackground: send(
-    ({ background: bg, maxLabel: max }) => 
-    ({ type: 'BACKGROUND', background: bg >= max ? 1 : bg + 1 })
-  ),
+  prevForeground: send(({ foreground: fg, maxLabel: max }) => ({
+    type: 'FOREGROUND',
+    foreground: fg <= 1 ? max : fg - 1,
+  })),
+  nextForeground: send(({ foreground: fg, maxLabel: max }) => ({
+    type: 'FOREGROUND',
+    foreground: fg >= max ? 1 : fg + 1,
+  })),
+  prevBackground: send(({ background: bg, maxLabel: max }) => ({
+    type: 'BACKGROUND',
+    background: bg <= 1 ? max : bg - 1,
+  })),
+  nextBackground: send(({ background: bg, maxLabel: max }) => ({
+    type: 'BACKGROUND',
+    background: bg >= max ? 1 : bg + 1,
+  })),
 };
 
 const colorModeState = {
@@ -80,17 +114,26 @@ const colorModeState = {
     color: {
       on: {
         GRAYSCALE: 'grayscale',
-        USE_TOOL: { cond: 'colorTool', actions: ['useTool', 'spawnTool', sendParent((c, e) => e)] },
-      }
+        USE_TOOL: {
+          cond: 'colorTool',
+          actions: ['useTool', 'spawnTool', sendParent((c, e) => e)],
+        },
+      },
     },
     grayscale: {
       on: {
-        USE_TOOL: { cond: 'grayscaleTool', actions: ['useTool', 'spawnTool', sendParent((c, e) => e)] },
+        USE_TOOL: {
+          cond: 'grayscaleTool',
+          actions: ['useTool', 'spawnTool', sendParent((c, e) => e)],
+        },
         COLOR: [
           { target: 'color', cond: 'usingColorTool' },
-          { target: 'color', actions: send({ type: 'USE_TOOL', tool: 'select' }) },
+          {
+            target: 'color',
+            actions: send({ type: 'USE_TOOL', tool: 'select' }),
+          },
         ],
-      }
+      },
     },
   },
 };
@@ -147,14 +190,22 @@ const toolMachine = Machine(
       LABELS: { actions: 'setMaxLabel' },
 
       // context to sync with tools
-      COORDINATES: { actions: ['setCoordinates', 'sendLabel', 'forwardToTool'] },
+      COORDINATES: {
+        actions: ['setCoordinates', 'sendLabel', 'forwardToTool'],
+      },
       LABEL: { actions: ['setLabel', 'forwardToTool'] },
       FOREGROUND: { actions: ['setForeground', 'forwardToTool'] },
-      BACKGROUND: { actions: ['setBackground', 'forwardToTool'], },
+      BACKGROUND: { actions: ['setBackground', 'forwardToTool'] },
 
-      // special shift click event 
+      // special shift click event
       SHIFT_CLICK: [
-        { cond: 'doubleClick', actions: ['selectForeground', send({ type: 'BACKGROUND', background: 0 })] },
+        {
+          cond: 'doubleClick',
+          actions: [
+            'selectForeground',
+            send({ type: 'BACKGROUND', background: 0 }),
+          ],
+        },
         { cond: 'onBackground', actions: 'selectForeground' },
         { actions: 'selectBackground' },
       ],
@@ -165,13 +216,13 @@ const toolMachine = Machine(
       SAVE: { actions: 'save' },
       RESTORE: [
         { cond: 'sameContext', actions: respond('SAME_CONTEXT') },
-        { actions: ['restore', 'spawnTool', respond('RESTORED')] }
+        { actions: ['restore', 'spawnTool', respond('RESTORED')] },
       ],
-    }
+    },
   },
   {
     services: {
-      listenForSelectHotkeys: () => (send) => {
+      listenForSelectHotkeys: () => send => {
         bind('x', () => send('SWITCH'));
         bind('n', () => send('NEW_FOREGROUND'));
         bind('esc', () => send('RESET_BACKGROUND'));
@@ -187,9 +238,9 @@ const toolMachine = Machine(
           unbind(']');
           unbind('{');
           unbind('}');
-        }
+        };
       },
-      listenForToolHotkeys: () => (send) => {
+      listenForToolHotkeys: () => send => {
         const lookup = {
           b: 'brush',
           v: 'select',
@@ -202,7 +253,7 @@ const toolMachine = Machine(
           Backspace: 'delete',
         };
 
-        const listener = (e) => {
+        const listener = e => {
           if (e.key in lookup) {
             send({ type: 'USE_TOOL', tool: lookup[e.key] });
           }
@@ -211,48 +262,56 @@ const toolMachine = Machine(
         window.addEventListener('keydown', listener);
         return () => window.removeEventListener('keydown', listener);
       },
-      
     },
     guards: {
       ...toolGuards,
       usingColorTool: ({ tool }) => colorTools.includes(tool),
       colorTool: (_, { tool }) => colorTools.includes(tool),
       grayscaleTool: (_, { tool }) => grayscaleTools.includes(tool),
-      sameContext: (context, event) => 
-        context.tool === event.tool 
-        && context.foreground === event.foreground 
-        && context.background === event.background,
+      sameContext: (context, event) =>
+        context.tool === event.tool &&
+        context.foreground === event.foreground &&
+        context.background === event.background,
     },
     actions: {
       ...toolActions,
       ...selectActions,
-      save: respond(({ tool, foreground, background }) => 
-        ({ type: 'RESTORE', tool, foreground, background })
-      ),
-      restore: assign((_, { tool, foreground, background }) => ({ tool, foreground, background })),
+      save: respond(({ tool, foreground, background }) => ({
+        type: 'RESTORE',
+        tool,
+        foreground,
+        background,
+      })),
+      restore: assign((_, { tool, foreground, background }) => ({
+        tool,
+        foreground,
+        background,
+      })),
       useTool: assign({ tool: (_, { tool }) => tool }),
       spawnTool: assign({
         toolActor: createToolMachine,
       }),
-      sendLabel: send(({ labeledArray: array, x, y}) => 
-        ({ type: 'LABEL', label: array ? Math.abs(array[y][x]) : 0 })
-      ),
+      sendLabel: send(({ labeledArray: array, x, y }) => ({
+        type: 'LABEL',
+        label: array ? Math.abs(array[y][x]) : 0,
+      })),
       changeGrayscaleTools: assign({
-        tool: ({ tool }) => grayscaleTools.includes(tool) ? 'select' : tool
+        tool: ({ tool }) => (grayscaleTools.includes(tool) ? 'select' : tool),
       }),
-      sendEditWithExtraArgs: sendParent(
-        ({ frame, feature, channel }, e) => 
-        ({...e, args: {...e.args, frame, feature, channel }})
-      ),
+      sendEditWithExtraArgs: sendParent(({ frame, feature, channel }, e) => ({
+        ...e,
+        args: { ...e.args, frame, feature, channel },
+      })),
       forwardToTool: forwardTo(({ toolActor }) => toolActor),
       setMaxLabel: assign({
-        maxLabel: (_, { labels }) => Math.max(...Object.keys(labels).map(Number)),
+        maxLabel: (_, { labels }) =>
+          Math.max(...Object.keys(labels).map(Number)),
       }),
       swap: send(({ foreground, background }) => ({
         type: 'EDIT',
         action: 'swap_single_frame',
         args: {
-          label_1: foreground, 
+          label_1: foreground,
           label_2: background,
         },
       })),
@@ -264,7 +323,7 @@ const toolMachine = Machine(
           label_2: background,
         },
       })),
-    }
+    },
   }
 );
 

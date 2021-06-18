@@ -1,17 +1,17 @@
 /** Modified from https://github.com/hms-dbmi/viv */
-import { useSelector } from '@xstate/react';
-import { makeStyles } from '@material-ui/core/styles';
 import Checkbox from '@material-ui/core/Checkbox';
 import Grid from '@material-ui/core/Grid';
-import Slider from '@material-ui/core/Slider';
 import Select from '@material-ui/core/Select';
+import Slider from '@material-ui/core/Slider';
+import { makeStyles } from '@material-ui/core/styles';
+import { useSelector } from '@xstate/react';
 
-import LayerOptions from './LayerOptions';
 import { useRaw } from '../../ServiceContext';
+import LayerOptions from './LayerOptions';
 
 const useStyles = makeStyles(theme => ({
   root: {
-    paddingTop: theme.spacing(1)
+    paddingTop: theme.spacing(1),
   },
 }));
 
@@ -24,13 +24,9 @@ function LayerSelector({ layer }) {
   const onChange = e => {
     layer.send({ type: 'CHANGE_CHANNEL', channel: Number(e.target.value) });
   };
-  
+
   return (
-    <Select
-      native
-      value={channel}
-      onChange={onChange}
-    >
+    <Select native value={channel} onChange={onChange}>
       {names.map((opt, index) => (
         <option key={index} value={index}>
           {opt}
@@ -44,16 +40,18 @@ function LayerCheckbox({ layer }) {
   const color = useSelector(layer, state => state.context.color);
   const isOn = useSelector(layer, state => state.context.on);
 
-  return <Checkbox
-    onChange={() => layer.send('TOGGLE_ON')}
-    checked={isOn}
-    style={{
-      color: color,
-      '&$checked': {
-        color: color
-      }
-    }}
-  />;
+  return (
+    <Checkbox
+      onChange={() => layer.send('TOGGLE_ON')}
+      checked={isOn}
+      style={{
+        color: color,
+        '&$checked': {
+          color: color,
+        },
+      }}
+    />
+  );
 }
 
 function LayerSlider({ layer }) {
@@ -64,19 +62,21 @@ function LayerSlider({ layer }) {
     layer.send({ type: 'SET_RANGE', range: newValue });
   };
 
-  return <Slider
-    value={range}
-    onChange={onChange}
-    valueLabelDisplay="off"
-    min={0}
-    max={255}
-    step={1}
-    orientation="horizontal"
-    style={{
-      color: color,
-      marginTop: '7px'
-    }}
-  />;
+  return (
+    <Slider
+      value={range}
+      onChange={onChange}
+      valueLabelDisplay='off'
+      min={0}
+      max={255}
+      step={1}
+      orientation='horizontal'
+      style={{
+        color: color,
+        marginTop: '7px',
+      }}
+    />
+  );
 }
 
 function LayerController({ layer }) {
@@ -85,12 +85,12 @@ function LayerController({ layer }) {
   return (
     <Grid
       container
-      direction="column"
+      direction='column'
       m={2}
-      justify="center"
+      justify='center'
       className={classes.root}
     >
-      <Grid container direction="row" justify="space-between">
+      <Grid container direction='row' justify='space-between'>
         <Grid item xs={10}>
           <LayerSelector layer={layer} />
         </Grid>
@@ -98,7 +98,7 @@ function LayerController({ layer }) {
           <LayerOptions layer={layer} />
         </Grid>
       </Grid>
-      <Grid container direction="row" justify="flex-start" alignItems="center">
+      <Grid container direction='row' justify='flex-start' alignItems='center'>
         <Grid item xs={2}>
           <LayerCheckbox layer={layer} />
         </Grid>

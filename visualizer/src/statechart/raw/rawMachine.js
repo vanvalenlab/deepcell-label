@@ -1,5 +1,14 @@
-import { Machine, assign, send, sendParent, spawn, actions, forwardTo } from 'xstate';
 import { bind, unbind } from 'mousetrap';
+import {
+  Machine,
+  assign,
+  send,
+  sendParent,
+  spawn,
+  actions,
+  forwardTo,
+} from 'xstate';
+
 import createChannelMachine from './channelMachine';
 import createColorMachine from './colorMachine';
 import createGrayscaleMachine from './grayscaleMachine';
@@ -10,7 +19,7 @@ const preloadState = {
   entry: 'startPreload',
   on: {
     RAW_LOADED: { actions: 'preload' },
-  }
+  },
 };
 
 const frameState = {
@@ -27,8 +36,8 @@ const frameState = {
       on: {
         FRAME: { target: 'idle', actions: ['setFrame', 'forwardToColorMode'] },
         CHANNEL: { target: 'loading' },
-      }
-    }
+      },
+    },
   },
   on: {
     LOAD_FRAME: {
@@ -36,15 +45,15 @@ const frameState = {
       cond: 'diffLoadingFrame',
       actions: ['setLoadingFrame', 'forwardToColorMode'],
     },
-  }
+  },
 };
 
 const channelState = {
   on: {
     CHANNEL: { actions: sendParent((c, e) => e) },
-    LOAD_CHANNEL: { actions: 'forwardToColorMode', },
+    LOAD_CHANNEL: { actions: 'forwardToColorMode' },
     RAW_LOADED: { actions: 'forwardToColorMode' },
-  }
+  },
 };
 
 const colorState = {
@@ -53,7 +62,10 @@ const colorState = {
 };
 
 const grayscaleState = {
-  entry: [sendParent('GRAYSCALE'), assign({ colorMode: ({ grayscale }) => grayscale })],
+  entry: [
+    sendParent('GRAYSCALE'),
+    assign({ colorMode: ({ grayscale }) => grayscale }),
+  ],
   invoke: { src: 'listenForInvertHotkey' },
   on: { TOGGLE_COLOR_MODE: 'color' },
   initial: 'idle',
@@ -65,7 +77,7 @@ const grayscaleState = {
       on: {
         // restart channel hotkey
         CHANNEL: { target: 'idle', actions: 'setChannel', internal: false },
-      }
+      },
     },
   },
 };
@@ -82,13 +94,13 @@ const colorModeState = {
 };
 
 const restoreState = {
-  on: { 
+  on: {
     RESTORE: [
-      { 
-        cond: (context, event) => context.channel === event.channel, 
-        actions: respond('SAME_CONTEXT') ,
+      {
+        cond: (context, event) => context.channel === event.channel,
+        actions: respond('SAME_CONTEXT'),
       },
-      { 
+      {
         target: '.restoring',
         internal: false,
         actions: respond('RESTORED'),
@@ -102,87 +114,104 @@ const restoreState = {
     restoring: {
       entry: send((_, { channel }) => ({ type: 'LOAD_CHANNEL', channel })),
     },
-  }
+  },
 };
 
-const createRawMachine = (projectId, numChannels, numFrames) => Machine(
-  {
-    context: {
-      projectId,
-      numChannels,
-      numFrames,
-      channels: [], // all channels that can be used in layers
-      channelNames: [], // names of all channels
-      frame: 0, // needed?
-      loadingFrame: 0, // needed?
-      channel: 0,
-      colorMode: null,
-      color: null,
-      grayscale: null,
-    },
-    entry: ['spawnChannels', 'spawnColorModes'],
-    type: 'parallel',
-    states: {
-      preload: preloadState,
-      frame: frameState,
-      channel: channelState,
-      colorMode: colorModeState,
-      restore: restoreState,
-    },
-    on: {
-      TOGGLE_INVERT: { actions: forwardTo(({ channel, channels }) => channels[channel]) },
-    }
-  },
-  {
-    services: {
-      listenForColorModeHotkey: () => (send) => {
-        bind('z', () => send('TOGGLE_COLOR_MODE'));
-        return () => unbind('z');
+const createRawMachine = (projectId, numChannels, numFrames) =>
+  Machine(
+    {
+      context: {
+        projectId,
+        numChannels,
+        numFrames,
+        channels: [], // all channels that can be used in layers
+        channelNames: [], // names of all channels
+        frame: 0, // needed?
+        loadingFrame: 0, // needed?
+        channel: 0,
+        colorMode: null,
+        color: null,
+        grayscale: null,
       },
-      listenForChannelHotkeys: ({ channel, numChannels }) => (send) => {
-        const prevChannel = (channel - 1 + numChannels) % numChannels;
-        const nextChannel = (channel + 1) % numChannels;
-        bind('shift+c', () => send({ type: 'LOAD_CHANNEL', channel: prevChannel }));
-        bind('c', () => send({ type: 'LOAD_CHANNEL', channel: nextChannel }));
-        return () => {
-          unbind('shift+c');
-          unbind('c');
-        }
+      entry: ['spawnChannels', 'spawnColorModes'],
+      type: 'parallel',
+      states: {
+        preload: preloadState,
+        frame: frameState,
+        channel: channelState,
+        colorMode: colorModeState,
+        restore: restoreState,
       },
-      listenForInvertHotkey: () => (send) => {
-        bind('i', () => send('TOGGLE_INVERT'));
-        return () => unbind('i');
-      }
-    },
-    guards: {
-      isLoadingFrame: ({ loadingFrame }, { frame }) => loadingFrame === frame,
-      diffLoadingFrame: ({ loadingFrame }, { frame }) => loadingFrame !== frame,
-    },
-    actions: {
-      /** Create a channel actor for each channel */
-      spawnChannels: assign({
-        channels: ({ projectId, numChannels, numFrames }) => {
-          return Array(numChannels).fill(0)
-            .map((val, index) => spawn(
-              createChannelMachine(projectId, index, numFrames),
-              `channel${index}`
-            ));
+      on: {
+        TOGGLE_INVERT: {
+          actions: forwardTo(({ channel, channels }) => channels[channel]),
         },
-        channelNames: ({ numChannels }) => [...Array(numChannels).keys()].map(i => `channel ${i}`),
-      }),
-      spawnColorModes: assign({
-        grayscale: (context) => spawn(createGrayscaleMachine(context), 'grayscale'),
-        color: (context) => spawn(createColorMachine(context), 'color'),
-      }),
-      startPreload: pure(({ channels }) => channels.map(channel => send('PRELOAD', { to: channel }))),
-      preload: respond('PRELOAD'),
-      sendLoaded: sendParent('RAW_LOADED'),
-      setLoadingFrame: assign({ loadingFrame: (_, { frame }) => frame }),
-      setFrame: assign((_, { frame }) => ({ frame })),
-      setChannel: assign((_, { channel }) => ({ channel })),
-      forwardToColorMode: forwardTo(({ colorMode }) => colorMode),
+      },
+    },
+    {
+      services: {
+        listenForColorModeHotkey: () => send => {
+          bind('z', () => send('TOGGLE_COLOR_MODE'));
+          return () => unbind('z');
+        },
+        listenForChannelHotkeys:
+          ({ channel, numChannels }) =>
+          send => {
+            const prevChannel = (channel - 1 + numChannels) % numChannels;
+            const nextChannel = (channel + 1) % numChannels;
+            bind('shift+c', () =>
+              send({ type: 'LOAD_CHANNEL', channel: prevChannel })
+            );
+            bind('c', () =>
+              send({ type: 'LOAD_CHANNEL', channel: nextChannel })
+            );
+            return () => {
+              unbind('shift+c');
+              unbind('c');
+            };
+          },
+        listenForInvertHotkey: () => send => {
+          bind('i', () => send('TOGGLE_INVERT'));
+          return () => unbind('i');
+        },
+      },
+      guards: {
+        isLoadingFrame: ({ loadingFrame }, { frame }) => loadingFrame === frame,
+        diffLoadingFrame: ({ loadingFrame }, { frame }) =>
+          loadingFrame !== frame,
+      },
+      actions: {
+        /** Create a channel actor for each channel */
+        spawnChannels: assign({
+          channels: ({ projectId, numChannels, numFrames }) => {
+            return Array(numChannels)
+              .fill(0)
+              .map((val, index) =>
+                spawn(
+                  createChannelMachine(projectId, index, numFrames),
+                  `channel${index}`
+                )
+              );
+          },
+          channelNames: ({ numChannels }) =>
+            [...Array(numChannels).keys()].map(i => `channel ${i}`),
+        }),
+        spawnColorModes: assign({
+          grayscale: context =>
+            spawn(createGrayscaleMachine(context), 'grayscale'),
+          color: context => spawn(createColorMachine(context), 'color'),
+        }),
+        startPreload: pure(({ channels }) =>
+          channels.map(channel => send('PRELOAD', { to: channel }))
+        ),
+        preload: respond('PRELOAD'),
+        sendLoaded: sendParent('RAW_LOADED'),
+        setLoadingFrame: assign({ loadingFrame: (_, { frame }) => frame }),
+        setFrame: assign((_, { frame }) => ({ frame })),
+        setChannel: assign((_, { channel }) => ({ channel })),
+        forwardToColorMode: forwardTo(({ colorMode }) => colorMode),
+      },
     }
-  }
-);
+  );
 
 export default createRawMachine;

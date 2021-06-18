@@ -1,13 +1,12 @@
-
-import React from 'react';
-import { makeStyles, withStyles } from '@material-ui/core/styles';
 import MuiButton from '@material-ui/core/Button';
 import Tooltip from '@material-ui/core/Tooltip';
-import UndoIcon from '@material-ui/icons/Undo';
+import { makeStyles, withStyles } from '@material-ui/core/styles';
 import RedoIcon from '@material-ui/icons/Redo';
+import UndoIcon from '@material-ui/icons/Undo';
+import { useSelector } from '@xstate/react';
+import React from 'react';
 
 import { useUndo } from '../ServiceContext';
-import { useSelector } from '@xstate/react';
 
 const useStyles = makeStyles({
   button: {
@@ -21,19 +20,19 @@ const Button = withStyles({
   root: {
     padding: 4,
     '&.Mui-disabled': {
-      pointerEvents: 'auto'
-    }
-  }
+      pointerEvents: 'auto',
+    },
+  },
 })(MuiButton);
 
 const ButtonWithTooltip = ({ tooltipText, disabled, onClick, ...other }) => {
   const adjustedButtonProps = {
     disabled: disabled,
     component: disabled ? 'div' : undefined,
-    onClick: disabled ? undefined : onClick
+    onClick: disabled ? undefined : onClick,
   };
   return (
-    <Tooltip title={ tooltipText }>
+    <Tooltip title={tooltipText}>
       <Button {...other} {...adjustedButtonProps} />
     </Tooltip>
   );
@@ -48,31 +47,41 @@ export default function UndoRedo() {
 
   const styles = useStyles();
 
-  const undoTooltip = <><kbd>Ctrl</kbd>+<kbd>Z</kbd></>;
-  const redoTooltip = <><kbd>Shift</kbd>+<kbd>Ctrl</kbd>+<kbd>Z</kbd></>;
+  const undoTooltip = (
+    <>
+      <kbd>Ctrl</kbd>+<kbd>Z</kbd>
+    </>
+  );
+  const redoTooltip = (
+    <>
+      <kbd>Shift</kbd>+<kbd>Ctrl</kbd>+<kbd>Z</kbd>
+    </>
+  );
 
-  return <>
-    <ButtonWithTooltip
-      className={styles.button}
-      tooltipText={undoTooltip}
-      variant="contained"
-      color="primary"
-      disabled={cannotUndo}
-      onClick={() => undo.send('UNDO')}
-    >
-      Undo
-      <UndoIcon/>
-    </ButtonWithTooltip >
-    <ButtonWithTooltip
-      tooltipText={redoTooltip}
-      className={styles.button}
-      variant="contained"
-      color="primary"
-      disabled={cannotRedo}
-      onClick={() => undo.send('REDO')}
-    >
-      Redo
-      <RedoIcon/>
-    </ButtonWithTooltip>
-  </>;
+  return (
+    <>
+      <ButtonWithTooltip
+        className={styles.button}
+        tooltipText={undoTooltip}
+        variant='contained'
+        color='primary'
+        disabled={cannotUndo}
+        onClick={() => undo.send('UNDO')}
+      >
+        Undo
+        <UndoIcon />
+      </ButtonWithTooltip>
+      <ButtonWithTooltip
+        tooltipText={redoTooltip}
+        className={styles.button}
+        variant='contained'
+        color='primary'
+        disabled={cannotRedo}
+        onClick={() => undo.send('REDO')}
+      >
+        Redo
+        <RedoIcon />
+      </ButtonWithTooltip>
+    </>
+  );
 }

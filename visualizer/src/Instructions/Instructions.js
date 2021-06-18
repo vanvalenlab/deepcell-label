@@ -1,29 +1,27 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import { withStyles } from '@material-ui/core/styles';
 import MuiAccordion from '@material-ui/core/Accordion';
-import MuiAccordionSummary from '@material-ui/core/AccordionSummary';
 import MuiAccordionDetails from '@material-ui/core/AccordionDetails';
-import Tabs from '@material-ui/core/Tabs';
-import Tab from '@material-ui/core/Tab';
+import MuiAccordionSummary from '@material-ui/core/AccordionSummary';
 import Box from '@material-ui/core/Box';
+import Tab from '@material-ui/core/Tab';
+import Tabs from '@material-ui/core/Tabs';
 import Typography from '@material-ui/core/Typography';
+import { withStyles } from '@material-ui/core/styles';
+import PropTypes from 'prop-types';
+import React from 'react';
 
-import ImageControlInstructions from './ImageControlInstructions';
-import RawDisplayInstructions from './RawDisplayInstructions';
-import LabelDisplayInstructions from './LabelDisplayInstructions';
 import CanvasInstructions from './CanvasInstructions';
-import ToolInstructions from './ToolInstructions';
+import ImageControlInstructions from './ImageControlInstructions';
+import LabelDisplayInstructions from './LabelDisplayInstructions';
+import RawDisplayInstructions from './RawDisplayInstructions';
 import SelectInstructions from './SelectInstructions';
-
-
+import ToolInstructions from './ToolInstructions';
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
 
   return (
     <div
-      role="tabpanel"
+      role='tabpanel'
       hidden={value !== index}
       id={`simple-tabpanel-${index}`}
       aria-labelledby={`simple-tab-${index}`}
@@ -43,7 +41,6 @@ TabPanel.propTypes = {
   index: PropTypes.any.isRequired,
   value: PropTypes.any.isRequired,
 };
-
 
 const Accordion = withStyles({
   root: {
@@ -80,7 +77,7 @@ const AccordionSummary = withStyles({
   expanded: {},
 })(MuiAccordionSummary);
 
-const AccordionDetails = withStyles((theme) => ({
+const AccordionDetails = withStyles(theme => ({
   root: {
     padding: 0,
     display: 'flex',
@@ -101,9 +98,11 @@ export default function Instructions() {
     setExpanded(!expanded);
   };
 
-  const stopExpansion = (event) => {
-    if (event.key === ' ') { event.preventDefault();}
-  }
+  const stopExpansion = event => {
+    if (event.key === ' ') {
+      event.preventDefault();
+    }
+  };
 
   return (
     <div>
@@ -114,17 +113,17 @@ export default function Instructions() {
         TransitionProps={{ unmountOnExit: true }}
       >
         <AccordionSummary
-          aria-controls="panel1d-content"
-          id="panel1d-header"
+          aria-controls='panel1d-content'
+          id='panel1d-header'
           onKeyUp={stopExpansion}
         >
           <Typography>Instructions (Click to expand/collapse)</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Tabs value={value} onChange={handleTabChange}>
-            <Tab label="Canvas" />
-            <Tab label="Select Labels" />
-            <Tab label="Tools" />
+            <Tab label='Canvas' />
+            <Tab label='Select Labels' />
+            <Tab label='Tools' />
           </Tabs>
           <TabPanel value={value} index={0}>
             <CanvasInstructions />

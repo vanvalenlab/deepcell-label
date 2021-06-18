@@ -1,22 +1,21 @@
-import { useState, useRef, useEffect } from 'react';
 import Box from '@material-ui/core/Box';
-import { makeStyles } from "@material-ui/core/styles";
+import { makeStyles } from '@material-ui/core/styles';
 import { useSelector } from '@xstate/react';
 import { ResizeSensor } from 'css-element-queries';
 import debounce from 'lodash.debounce';
+import { useState, useRef, useEffect } from 'react';
 
+import Canvas from './Canvas/Canvas';
+import ActionButtons from './ControlPanel/ActionButtons';
 import ImageControls from './ControlPanel/ImageControls';
 import LabeledController from './ControlPanel/LabeledController';
-import UndoRedo from './ControlPanel/UndoRedo';
-import Navbar from './Navbar';
-import Canvas from './Canvas/Canvas';
-import Instructions from './Instructions/Instructions';
-import Footer from './Footer/Footer';
-import ToolControls from './ControlPanel/ToolControls';
-import { useCanvas } from './ServiceContext';
-import ActionButtons from './ControlPanel/ActionButtons';
 import SelectedPalette from './ControlPanel/SelectedPalette';
-
+import ToolControls from './ControlPanel/ToolControls';
+import UndoRedo from './ControlPanel/UndoRedo';
+import Footer from './Footer/Footer';
+import Instructions from './Instructions/Instructions';
+import Navbar from './Navbar';
+import { useCanvas } from './ServiceContext';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -27,11 +26,11 @@ const useStyles = makeStyles(theme => ({
   },
   main: {
     boxSizing: 'border-box',
-    display: "flex",
+    display: 'flex',
     flexGrow: 1,
     padding: theme.spacing(1),
-    alignItems: "stretch",
-    justifyContent: "space-evenly",
+    alignItems: 'stretch',
+    justifyContent: 'space-evenly',
     minHeight: 'calc(100vh - 66px - 57px - 74px - 1px)',
     // height: 'calc(100vh - 66px - 57px - 60px - 80px - 1px)'
   },
@@ -67,12 +66,20 @@ function Label() {
     };
     setCanvasBoxDimensions();
 
-    new ResizeSensor(canvasBoxRef.current, debounce(setCanvasBoxDimensions, 20));
+    new ResizeSensor(
+      canvasBoxRef.current,
+      debounce(setCanvasBoxDimensions, 20)
+    );
   }, [canvasBoxRef]);
 
   useEffect(() => {
     const padding = 5;
-    canvas.send({ type: 'DIMENSIONS', width: canvasBoxWidth, height: canvasBoxHeight, padding });
+    canvas.send({
+      type: 'DIMENSIONS',
+      width: canvasBoxWidth,
+      height: canvasBoxHeight,
+      padding,
+    });
   }, [canvas, canvasBoxWidth, canvasBoxHeight]);
 
   return (

@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
-import { makeStyles } from '@material-ui/core/styles';
+import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 import Container from '@material-ui/core/Container';
 import Grid from '@material-ui/core/Grid';
-import Box from '@material-ui/core/Box';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
+import { makeStyles } from '@material-ui/core/styles';
 import axios from 'axios';
 import queryString from 'query-string';
+import React, { useState } from 'react';
+
 import ModelDropdown from './ModelDropdown';
 import ScaleForm from './ScaleForm';
-
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -50,26 +50,28 @@ export default function Predict() {
 
   const classes = useStyles();
 
-  const showErrorMessage = (errText) => {
+  const showErrorMessage = errText => {
     setErrorText(errText);
     setShowError(true);
   };
-  
+
   const expireRedisHash = (redisHash, expireIn) => {
     axios({
       method: 'post',
       url: 'https://deepcell.org/api/redis/expire',
       data: {
         hash: redisHash,
-        expireIn: expireIn
-      }
-    }).then((response) => {
-      if (parseInt(response.data.value) !== 1) {
-        showErrorMessage('Hash not expired');
-      }
-    }).catch(error => {
-      showErrorMessage(`Failed to expire redis hash due to error: ${error}`);
-    });
+        expireIn: expireIn,
+      },
+    })
+      .then(response => {
+        if (parseInt(response.data.value) !== 1) {
+          showErrorMessage('Hash not expired');
+        }
+      })
+      .catch(error => {
+        showErrorMessage(`Failed to expire redis hash due to error: ${error}`);
+      });
   };
 
   const checkJobStatus = (redisHash, interval) => {
@@ -78,39 +80,41 @@ export default function Predict() {
         method: 'post',
         url: 'https://deepcell.org/api/redis',
         data: {
-          'hash': redisHash,
-          'key': ['status', 'progress', 'output_url', 'reason', 'failures']
-        }
-      }).then((response) => {
-        if (response.data.value[0] === 'failed') {
-          clearInterval(statusCheck);
-          showErrorMessage(`Job Failed: ${response.data.value[3]}`);
-          expireRedisHash(redisHash, 3600);
-        } else if (response.data.value[0] === 'done') {
-          clearInterval(statusCheck);
-          setDownloadURL(response.data.value[2]);
-          expireRedisHash(redisHash, 3600);
-          // This is only used during zip uploads.
-          // Some jobs may fail while other jobs can succeed.
-          const failures = response.data.value[4];
-          if (failures != null && failures.length > 0) {
-            const parsed = queryString.parse(failures);
-            let errText = 'Not all jobs completed!\n\n';
-            for (const key in parsed) {
-              errText += `Job Failed: ${key}: ${parsed[key]}\n\n`;
+          hash: redisHash,
+          key: ['status', 'progress', 'output_url', 'reason', 'failures'],
+        },
+      })
+        .then(response => {
+          if (response.data.value[0] === 'failed') {
+            clearInterval(statusCheck);
+            showErrorMessage(`Job Failed: ${response.data.value[3]}`);
+            expireRedisHash(redisHash, 3600);
+          } else if (response.data.value[0] === 'done') {
+            clearInterval(statusCheck);
+            setDownloadURL(response.data.value[2]);
+            expireRedisHash(redisHash, 3600);
+            // This is only used during zip uploads.
+            // Some jobs may fail while other jobs can succeed.
+            const failures = response.data.value[4];
+            if (failures != null && failures.length > 0) {
+              const parsed = queryString.parse(failures);
+              let errText = 'Not all jobs completed!\n\n';
+              for (const key in parsed) {
+                errText += `Job Failed: ${key}: ${parsed[key]}\n\n`;
+              }
+              showErrorMessage(errText);
             }
-            showErrorMessage(errText);
+          } else {
+            let maybeNum = parseInt(response.data.value[1], 10);
+            if (!isNaN(maybeNum)) {
+              setProgress(maybeNum);
+            }
           }
-        } else {
-          let maybeNum = parseInt(response.data.value[1], 10);
-          if (!isNaN(maybeNum)) {
-            setProgress(maybeNum);
-          }
-        }
-      }).catch(error => {
-        let errMsg = `Trouble communicating with Redis due to error: ${error}`;
-        showErrorMessage(errMsg);
-      });
+        })
+        .catch(error => {
+          let errMsg = `Trouble communicating with Redis due to error: ${error}`;
+          showErrorMessage(errMsg);
+        });
     }, interval);
   };
 
@@ -123,19 +127,20 @@ export default function Predict() {
         imageName: fileName,
         uploadedName: uploadedFileName,
         imageUrl: imageUrl,
-        jobType : selectedJobType,
-        dataRescale: isAutoRescaleEnabled ? '' : scale
-      }
-    }).then((response) => {
-      checkJobStatus(response.data.hash, 3000);
-    }).catch(error => {
-      let errMsg = `Failed to create job due to error: ${error}.`;
-      showErrorMessage(errMsg);
-    });
+        jobType: selectedJobType,
+        dataRescale: isAutoRescaleEnabled ? '' : scale,
+      },
+    })
+      .then(response => {
+        checkJobStatus(response.data.hash, 3000);
+      })
+      .catch(error => {
+        let errMsg = `Failed to create job due to error: ${error}.`;
+        showErrorMessage(errMsg);
+      });
   };
 
-
-  const handleSubmit = (event) => {
+  const handleSubmit = event => {
     setSubmitted(true);
     predict();
   };
@@ -143,9 +148,7 @@ export default function Predict() {
   return (
     <div className={classes.root}>
       <Box display='flex' flexDirection='column'>
-        <Typography>
-          Prediction Type
-        </Typography>
+        <Typography>Prediction Type</Typography>
         <ModelDropdown
           value={selectedJobType}
           onChange={setSelectedJobType}
@@ -154,43 +157,47 @@ export default function Predict() {
         <ScaleForm
           checked={isAutoRescaleEnabled}
           scale={scale}
-          onCheckboxChange={e => setIsAutoRescaleEnabled(Boolean(e.target.checked))}
+          onCheckboxChange={e =>
+            setIsAutoRescaleEnabled(Boolean(e.target.checked))
+          }
           onScaleChange={e => setScale(Number(e.target.value))}
         />
-        {!submitted && <Button
-          id='submitButton'
-          variant='contained'
-          onClick={handleSubmit}
-          size='large'
-          fullWidth
-          color='primary'>
-          Predict
-        </Button>}
+        {!submitted && (
+          <Button
+            id='submitButton'
+            variant='contained'
+            onClick={handleSubmit}
+            size='large'
+            fullWidth
+            color='primary'
+          >
+            Predict
+          </Button>
+        )}
         {/* Progress bar for submitted jobs */}
-        { submitted && !showError && downloadURL === null ?
-          progress === 0 || progress === null ?
+        {submitted && !showError && downloadURL === null ? (
+          progress === 0 || progress === null ? (
             <Grid item lg className={classes.paddedTop}>
               <LinearProgress
-                variant="buffer"
+                variant='buffer'
                 value={0}
                 valueBuffer={0}
                 className={classes.progress}
               />
             </Grid>
-            :
+          ) : (
             <Grid item lg className={classes.paddedTop}>
               <LinearProgress
-                variant="determinate"
+                variant='determinate'
                 value={progress}
                 className={classes.progress}
               />
             </Grid>
-          : null }
+          )
+        ) : null}
       </Box>
-      
-
     </div>
-    
+
     // <div className={classes.root}>
 
     //   <Container maxWidth="md" className={classes.paddedTop}>

@@ -1,10 +1,10 @@
-import React from 'react';
-import { PropTypes } from 'prop-types';
 import Checkbox from '@material-ui/core/Checkbox';
 import FormControl from '@material-ui/core/FormControl';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import FormGroup from '@material-ui/core/FormGroup';
 import TextField from '@material-ui/core/TextField';
+import { PropTypes } from 'prop-types';
+import React from 'react';
 
 export default function ScaleForm({
   checked = true,
@@ -12,11 +12,9 @@ export default function ScaleForm({
   onCheckboxChange = () => {},
   onScaleChange = () => {},
 }) {
-
   return (
     <FormGroup row>
       <FormControl>
-
         <FormControlLabel
           control={
             <Checkbox
@@ -25,18 +23,18 @@ export default function ScaleForm({
               value={checked}
             />
           }
-          label="Rescale Automatically"
+          label='Rescale Automatically'
         />
 
         <TextField
-          id="outlined-number"
-          label="Rescaling Value"
+          id='outlined-number'
+          label='Rescaling Value'
           disabled={checked}
           value={scale}
           onChange={onScaleChange}
-          type="number"
-          margin="dense"
-          variant="standard"
+          type='number'
+          margin='dense'
+          variant='standard'
         />
       </FormControl>
     </FormGroup>

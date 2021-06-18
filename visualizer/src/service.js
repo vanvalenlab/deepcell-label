@@ -1,4 +1,5 @@
 import { interpret } from 'xstate';
+
 import createDeepcellLabelMachine from './statechart/deepcellLabelMachine';
 
 const location = window.location;

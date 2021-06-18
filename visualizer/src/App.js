@@ -1,12 +1,8 @@
-import {
-  BrowserRouter as Router,
-  Switch,
-  Route,
-} from "react-router-dom";
-import ServiceContext from './ServiceContext';
-import Label from './Label';
 import { inspect } from '@xstate/inspect';
+import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 
+import Label from './Label';
+import ServiceContext from './ServiceContext';
 
 // inspect({
 //   // options
@@ -18,7 +14,7 @@ function App() {
   return (
     <Router>
       <Switch>
-        <Route exact path="/">
+        <Route exact path='/'>
           <ServiceContext>
             <Label />
           </ServiceContext>

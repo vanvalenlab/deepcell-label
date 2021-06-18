@@ -1,10 +1,10 @@
-import React, { useEffect, useRef } from 'react';
 import { useSelector } from '@xstate/react';
+import React, { useEffect, useRef } from 'react';
+
 import { useRaw, useChannel, useCanvas } from '../ServiceContext';
 import { adjustRangeImageData, invertImageData } from '../imageUtils';
 
 export const GrayscaleCanvas = ({ className }) => {
-  
   const canvas = useCanvas();
   const sx = useSelector(canvas, state => state.context.sx);
   const sy = useSelector(canvas, state => state.context.sy);
@@ -12,10 +12,10 @@ export const GrayscaleCanvas = ({ className }) => {
   const scale = useSelector(canvas, state => state.context.scale);
   const sw = useSelector(canvas, state => state.context.width);
   const sh = useSelector(canvas, state => state.context.height);
-  
+
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
-  
+
   const raw = useRaw();
   const colorMode = useSelector(raw, state => state.context.colorMode);
   const channelIndex = useSelector(colorMode, state => state.context.channel);
@@ -46,7 +46,9 @@ export const GrayscaleCanvas = ({ className }) => {
     const imageData = ctx.getImageData(0, 0, width, height);
     // adjust image data
     adjustRangeImageData(imageData, min, max);
-    if (invert) { invertImageData(imageData); }
+    if (invert) {
+      invertImageData(imageData);
+    }
     // redraw with adjusted data
     ctx.putImageData(imageData, 0, 0);
   }, [rawImage, min, max, invert, width, height]);
@@ -57,29 +59,37 @@ export const GrayscaleCanvas = ({ className }) => {
     ctx.clearRect(0, 0, width, height);
     ctx.drawImage(
       hiddenCanvas,
-      sx, sy,
-      sw / zoom, sh / zoom,
-      0, 0,
-      width, height,
+      sx,
+      sy,
+      sw / zoom,
+      sh / zoom,
+      0,
+      0,
+      width,
+      height
     );
   }, [rawImage, min, max, invert, sx, sy, zoom, sw, sh, width, height]);
 
-  return <>
-    {/* hidden processing canvas */}
-    <canvas id='raw-processing'
-      hidden={true}
-      ref={hiddenCanvasRef}
-      width={sw}
-      height={sh}
-    />
-    {/* visible output canvas */}
-    <canvas id='raw-canvas'
-      className={className}
-      ref={canvasRef}
-      width={width}
-      height={height}
-    />
-  </>;
+  return (
+    <>
+      {/* hidden processing canvas */}
+      <canvas
+        id='raw-processing'
+        hidden={true}
+        ref={hiddenCanvasRef}
+        width={sw}
+        height={sh}
+      />
+      {/* visible output canvas */}
+      <canvas
+        id='raw-canvas'
+        className={className}
+        ref={canvasRef}
+        width={width}
+        height={height}
+      />
+    </>
+  );
 };
 
 export default GrayscaleCanvas;

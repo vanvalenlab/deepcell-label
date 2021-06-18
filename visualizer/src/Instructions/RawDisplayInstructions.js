@@ -1,18 +1,19 @@
-import React from 'react';
-import Typography from '@material-ui/core/Typography';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableRow from '@material-ui/core/TableRow';
-// import { useChannel } from '../ServiceContext';
+import Typography from '@material-ui/core/Typography';
+import React from 'react';
 
+// import { useChannel } from '../ServiceContext';
 
 const RawDisplayInstructions = () => {
   // const channel = useChannel();
 
-  return <>
-    {/* <Typography variant='h5'>
+  return (
+    <>
+      {/* <Typography variant='h5'>
       Raw Display
     </Typography>
     <TableContainer>
@@ -37,7 +38,7 @@ const RawDisplayInstructions = () => {
               </Typography>
             </TableCell>
           </TableRow> */}
-          {/* <TableRow>
+      {/* <TableRow>
             <TableCell>{channel && <BrightnessSlider />}</TableCell>
             <TableCell>
               <Typography>
@@ -58,10 +59,11 @@ const RawDisplayInstructions = () => {
               </Typography>
             </TableCell>
           </TableRow> */}
-        {/* </TableBody>
+      {/* </TableBody>
       </Table>
     </TableContainer> */}
-  </>;
+    </>
+  );
 };
 
 export default RawDisplayInstructions;

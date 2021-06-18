@@ -11,24 +11,24 @@ const clickToolState = {
       on: {
         mousedown: 'pressed',
         mousemove: { actions: 'coordinates' },
-      }
+      },
     },
     pressed: {
       on: {
         mousemove: [
-          { cond: 'moved', target: 'dragged', actions: 'pan' }, 
-          { actions: ['updateMove', 'pan'], }
+          { cond: 'moved', target: 'dragged', actions: 'pan' },
+          { actions: ['updateMove', 'pan'] },
         ],
         mouseup: { target: 'idle', actions: 'forwardToTool' },
-      }
-    },
-    dragged: {
-      on: { 
-        mouseup: 'idle',
-        mousemove: { actions: 'pan' }
       },
     },
-  }
+    dragged: {
+      on: {
+        mouseup: 'idle',
+        mousemove: { actions: 'pan' },
+      },
+    },
+  },
 };
 
 // Sends both mousedown and mouseup events to tools with dragging
@@ -37,7 +37,7 @@ const dragToolState = {
     mousedown: { actions: 'forwardToTool' },
     mouseup: { actions: 'forwardToTool' },
     mousemove: { actions: 'coordinates' },
-  }
+  },
 };
 
 const toolState = {
@@ -47,14 +47,11 @@ const toolState = {
   },
   states: {
     checkTool: {
-      always: [
-        { cond: 'dragTool', target: 'dragTool' },
-        'clickTool',
-      ]
+      always: [{ cond: 'dragTool', target: 'dragTool' }, 'clickTool'],
     },
     clickTool: clickToolState,
     dragTool: dragToolState,
-  }
+  },
 };
 
 const grabState = {
@@ -72,7 +69,7 @@ const grabState = {
         mousemove: { actions: 'pan' },
       },
     },
-  }
+  },
 };
 
 const panState = {
@@ -85,8 +82,8 @@ const panState = {
   on: {
     'keydown.Space': '.hand',
     'keyup.Space': '.tool',
-  }
-}
+  },
+};
 
 const canvasMachine = Machine(
   {
@@ -97,8 +94,8 @@ const canvasMachine = Machine(
       height: 512,
       availableWidth: 512,
       availableHeight: 512,
-      scale: 1,  // how much the canvas is scaled to fill the available space
-      zoom: 1,   // how much the image is scaled within the canvas
+      scale: 1, // how much the canvas is scaled to fill the available space
+      zoom: 1, // how much the image is scaled within the canvas
       // position of canvas within image
       sx: 0,
       sy: 0,
@@ -109,42 +106,48 @@ const canvasMachine = Machine(
       dx: 0,
       dy: 0,
     },
-    invoke: [
-      { src: 'listenForMouseUp'}, 
-      { src: 'listenForZoomHotkeys'},
-    ],
+    invoke: [{ src: 'listenForMouseUp' }, { src: 'listenForZoomHotkeys' }],
     on: {
       wheel: { actions: 'zoom' },
       ZOOMIN: { actions: 'zoomIn' },
       ZOOMOUT: { actions: 'zoomOut' },
       DIMENSIONS: { actions: ['setDimensions', 'resize'] },
-      TOOL_REF: { actions: assign({ toolRef: (context, event) => event.toolRef }) },
+      TOOL_REF: {
+        actions: assign({ toolRef: (context, event) => event.toolRef }),
+      },
       SAVE: {
-        actions: respond((context) => ({
+        actions: respond(context => ({
           type: 'RESTORE',
           sx: context.sx,
           sy: context.sy,
           zoom: context.zoom,
-        }))
+        })),
       },
       RESTORE: [
-        { cond: 'newContext', actions: ['restoreContext', respond('RESTORED')] },
+        {
+          cond: 'newContext',
+          actions: ['restoreContext', respond('RESTORED')],
+        },
         { actions: respond('SAME_CONTEXT') },
       ],
-      COORDINATES: { cond: 'newCoordinates', actions: ['useCoordinates', 'forwardToTool'] },
+      COORDINATES: {
+        cond: 'newCoordinates',
+        actions: ['useCoordinates', 'forwardToTool'],
+      },
     },
     initial: 'waitForProject',
     states: {
       waitForProject: {
         on: {
           PROJECT: {
-            target: 'pan', actions: [
+            target: 'pan',
+            actions: [
               assign((context, event) => ({
                 height: event.height,
                 width: event.width,
               })),
               'resize',
-            ]
+            ],
           },
         },
       },
@@ -153,18 +156,18 @@ const canvasMachine = Machine(
   },
   {
     services: {
-      listenForMouseUp: () => (send) => {
-        const listener = (e) => send(e);
+      listenForMouseUp: () => send => {
+        const listener = e => send(e);
         window.addEventListener('mouseup', listener);
         return () => window.removeEventListener('mouseup', listener);
       },
-      listenForSpace: () =>  (send) => {
+      listenForSpace: () => send => {
         const downListener = e => {
           if (e.key === ' ' && !e.repeat) {
             send('keydown.Space');
-          } 
+          }
         };
-        const upListener = e => { 
+        const upListener = e => {
           if (e.key === ' ') {
             send('keyup.Space');
           }
@@ -174,20 +177,28 @@ const canvasMachine = Machine(
         return () => {
           window.removeEventListener('keydown', downListener);
           window.removeEventListener('keyup', upListener);
-        }
+        };
       },
-      listenForZoomHotkeys: () => (send) => {
-        const listener = (e) => {
-          if (e.key === '=') { send('ZOOMIN'); }
-          if (e.key === '-') { send('ZOOMOUT'); }
+      listenForZoomHotkeys: () => send => {
+        const listener = e => {
+          if (e.key === '=') {
+            send('ZOOMIN');
+          }
+          if (e.key === '-') {
+            send('ZOOMOUT');
+          }
         };
         window.addEventListener('keydown', listener);
         return () => window.removeEventListener('keydown', listener);
       },
     },
     guards: {
-      newCoordinates: (context, event) => context.x !== event.y || context.y !== event.y,
-      newContext: (context, event) => context.sx !== event.sx || context.sy !== event.sy || context.zoom !== event.zoom,
+      newCoordinates: (context, event) =>
+        context.x !== event.y || context.y !== event.y,
+      newContext: (context, event) =>
+        context.sx !== event.sx ||
+        context.sy !== event.sy ||
+        context.zoom !== event.zoom,
       dragTool: ({ tool }) => tool === 'brush' || tool === 'threshold',
       moved: ({ dx, dy }) => Math.abs(dx) > 10 || Math.abs(dy) > 10,
     },
@@ -196,21 +207,22 @@ const canvasMachine = Machine(
         dx: ({ dx }, event) => dx + event.movementX,
         dy: ({ dy }, event) => dy + event.movementY,
       }),
-      resetMove: assign({ dx: 0, dy: 0}),
-      forwardToTool: forwardTo(({ toolRef }) => toolRef), 
-      restoreContext: assign((context, { type, ...savedContext }) => savedContext),
-      useCoordinates: assign((_, { x, y}) => ({ x, y })),
-      sendCoordinates: send(({ x, y }) => (
-        { type: 'COORDINATES', x, y }),
-        {to: (context) => context.toolRef}
+      resetMove: assign({ dx: 0, dy: 0 }),
+      forwardToTool: forwardTo(({ toolRef }) => toolRef),
+      restoreContext: assign(
+        (context, { type, ...savedContext }) => savedContext
       ),
+      useCoordinates: assign((_, { x, y }) => ({ x, y })),
+      sendCoordinates: send(({ x, y }) => ({ type: 'COORDINATES', x, y }), {
+        to: context => context.toolRef,
+      }),
       coordinates: send((context, event) => {
         const { scale, zoom, width, height, sx, sy } = context;
-        let x = Math.floor((event.nativeEvent.offsetX / scale / zoom + sx));
-        let y = Math.floor((event.nativeEvent.offsetY / scale / zoom + sy));
+        let x = Math.floor(event.nativeEvent.offsetX / scale / zoom + sx);
+        let y = Math.floor(event.nativeEvent.offsetY / scale / zoom + sy);
         x = Math.max(0, Math.min(x, width - 1));
         y = Math.max(0, Math.min(y, height - 1));
-        return { type: 'COORDINATES', x, y }
+        return { type: 'COORDINATES', x, y };
       }),
       setDimensions: assign({
         availableWidth: (_, { width }) => width,
@@ -218,8 +230,9 @@ const canvasMachine = Machine(
         padding: (_, { padding }) => padding,
       }),
       resize: assign({
-        scale: (context) => {
-          const { width, height, availableWidth, availableHeight, padding } = context;
+        scale: context => {
+          const { width, height, availableWidth, availableHeight, padding } =
+            context;
           const scaleX = (availableWidth - 2 * padding) / width;
           const scaleY = (availableHeight - 2 * padding) / height;
           // pick scale that fits both dimensions; can be less than 1
@@ -229,14 +242,14 @@ const canvasMachine = Machine(
       }),
       pan: assign({
         sx: (context, event) => {
-          const dx = -1 * event.movementX / context.zoom / context.scale;
+          const dx = (-1 * event.movementX) / context.zoom / context.scale;
           let newSx = context.sx + dx;
           newSx = Math.min(newSx, context.width * (1 - 1 / context.zoom));
           newSx = Math.max(newSx, 0);
           return newSx;
         },
         sy: (context, event) => {
-          const dy = -1 * event.movementY / context.zoom / context.scale;
+          const dy = (-1 * event.movementY) / context.zoom / context.scale;
           let newSy = context.sy + dy;
           newSy = Math.min(newSy, context.height * (1 - 1 / context.zoom));
           newSy = Math.max(newSy, 0);
@@ -248,7 +261,7 @@ const canvasMachine = Machine(
         const newZoom = Math.max(context.zoom * zoomFactor, 1);
         const propX = event.nativeEvent.offsetX / context.scale;
         const propY = event.nativeEvent.offsetY / context.scale;
-          
+
         let newSx = context.sx + propX * (1 / context.zoom - 1 / newZoom);
         newSx = Math.min(newSx, context.width * (1 - 1 / newZoom));
         newSx = Math.max(newSx, 0);
@@ -280,7 +293,7 @@ const canvasMachine = Machine(
         return { zoom: newZoom, sx: newSx, sy: newSy };
       }),
       setTool: assign({ tool: (_, { tool }) => tool }),
-    }
+    },
   }
 );
 

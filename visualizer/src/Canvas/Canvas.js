@@ -1,18 +1,16 @@
-import React, { useEffect } from 'react';
-import { useSelector } from '@xstate/react';
-import { makeStyles } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
 import CircularProgress from '@material-ui/core/CircularProgress';
-
-import RawCanvas from './RawCanvas';
-import LabeledCanvas from './LabeledCanvas';
-import OutlineCanvas from './OutlineCanvas';
-import BrushCanvas from './BrushCanvas';
-import ThresholdCanvas from './ThresholdCanvas';
 import Typography from '@material-ui/core/Typography';
-
+import { makeStyles } from '@material-ui/core/styles';
+import { useSelector } from '@xstate/react';
+import React, { useEffect } from 'react';
 
 import { useCanvas, useToolbar, useRaw, useLabeled } from '../ServiceContext';
+import BrushCanvas from './BrushCanvas';
+import LabeledCanvas from './LabeledCanvas';
+import OutlineCanvas from './OutlineCanvas';
+import RawCanvas from './RawCanvas';
+import ThresholdCanvas from './ThresholdCanvas';
 
 const useStyles = makeStyles({
   canvasBox: {
@@ -29,7 +27,6 @@ const useStyles = makeStyles({
 });
 
 export const Canvas = () => {
-
   const raw = useRaw();
   const labeled = useLabeled();
 
@@ -40,10 +37,14 @@ export const Canvas = () => {
   const sw = useSelector(canvas, state => state.context.width);
   const sh = useSelector(canvas, state => state.context.height);
   const scale = useSelector(canvas, state => state.context.scale);
-  
+
   const grab = useSelector(canvas, state => state.matches('pan.hand'));
-  const grabbing = useSelector(canvas, state => state.matches('pan.hand.panning'));
-  const dragged = useSelector(canvas, state => state.matches('pan.tool.clickTool.dragged'));
+  const grabbing = useSelector(canvas, state =>
+    state.matches('pan.hand.panning')
+  );
+  const dragged = useSelector(canvas, state =>
+    state.matches('pan.tool.clickTool.dragged')
+  );
 
   const cursor = grabbing || dragged ? 'grabbing' : grab ? 'grab' : 'crosshair';
 
@@ -54,10 +55,10 @@ export const Canvas = () => {
 
   // dynamic canvas border styling based on position
   const padding = 5;
-  const topColor = (Math.floor(sy) === 0) ? 'white' : 'black';
-  const bottomColor = (Math.ceil(sy + sh / zoom) === sh) ? 'white' : 'black';
-  const rightColor = (Math.ceil(sx + sw / zoom) === sw) ? 'white' : 'black';
-  const leftColor = (Math.floor(sx) === 0) ? 'white' : 'black';
+  const topColor = Math.floor(sy) === 0 ? 'white' : 'black';
+  const bottomColor = Math.ceil(sy + sh / zoom) === sh ? 'white' : 'black';
+  const rightColor = Math.ceil(sx + sw / zoom) === sw ? 'white' : 'black';
+  const leftColor = Math.floor(sx) === 0 ? 'white' : 'black';
   const canvasStyles = {
     borderTop: `${padding}px solid ${topColor}`,
     borderBottom: `${padding}px solid ${bottomColor}`,
@@ -70,19 +71,23 @@ export const Canvas = () => {
   useEffect(() => {
     const canvasBox = document.getElementById('canvasBox');
     const wheelListener = e => e.preventDefault();
-    const spaceListener = e => { if (e.key === ' ') { e.preventDefault(); } };
+    const spaceListener = e => {
+      if (e.key === ' ') {
+        e.preventDefault();
+      }
+    };
     canvasBox.addEventListener('wheel', wheelListener);
     document.addEventListener('keydown', spaceListener);
     return () => {
       canvasBox.removeEventListener('wheel', wheelListener);
       document.removeEventListener('keydown', spaceListener);
-    }
+    };
   }, []);
 
-  const handleMouseDown = (event) => {
+  const handleMouseDown = event => {
     event.preventDefault();
     if (event.shiftKey) {
-      toolbar.send( {...event, type: 'SHIFT_CLICK' });
+      toolbar.send({ ...event, type: 'SHIFT_CLICK' });
     } else {
       canvas.send(event);
     }
@@ -90,7 +95,7 @@ export const Canvas = () => {
 
   return (
     <Box
-      id={"canvasBox"}
+      id={'canvasBox'}
       className={styles.canvasBox}
       style={canvasStyles}
       boxShadow={10}
@@ -101,16 +106,18 @@ export const Canvas = () => {
       onMouseDown={handleMouseDown}
       onMouseUp={canvas.send}
     >
-      { !raw && 
-        <CircularProgress style={{ margin: '25%', width:'50%', height:'50%'}} />
-      }
+      {!raw && (
+        <CircularProgress
+          style={{ margin: '25%', width: '50%', height: '50%' }}
+        />
+      )}
       {raw && <RawCanvas className={styles.canvas} />}
       {labeled && <LabeledCanvas className={styles.canvas} />}
       {labeled && <OutlineCanvas className={styles.canvas} />}
-      { tool === 'brush' && <BrushCanvas className={styles.canvas} /> }
-      { tool === 'threshold' && <ThresholdCanvas className={styles.canvas} /> }
+      {tool === 'brush' && <BrushCanvas className={styles.canvas} />}
+      {tool === 'threshold' && <ThresholdCanvas className={styles.canvas} />}
     </Box>
-  )
-}
+  );
+};
 
 export default Canvas;

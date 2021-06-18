@@ -1,7 +1,13 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { useInterpret, useSelector } from '@xstate/react';
-import service from './service';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
+import service from './service';
 
 export const LabelContext = createContext();
 
@@ -10,11 +16,13 @@ export const useDeepCellLabel = () => {
 };
 
 function useReturnContext(contextType) {
-    const context = useContext(contextType);
-    if (context === undefined) {
-        throw new Error(`${contextType} must be used within its appropriate parent provider`);
-    }
-    return context;
+  const context = useContext(contextType);
+  if (context === undefined) {
+    throw new Error(
+      `${contextType} must be used within its appropriate parent provider`
+    );
+  }
+  return context;
 }
 
 export function useApi() {
@@ -30,7 +38,7 @@ export function useUndo() {
 }
 
 export function useImage() {
-  const deepCellLabel= useDeepCellLabel();
+  const deepCellLabel = useDeepCellLabel();
   const { image } = deepCellLabel.state.children;
   return image;
 }
@@ -87,13 +95,10 @@ export function useComposeLayers() {
   useEffect(() => {
     const ctx = ctxRef.current;
     ctx.clearRect(0, 0, width, height);
-    Object.values(canvases).forEach(
-      canvas => ctx.drawImage(canvas, 0, 0)
-    );
+    Object.values(canvases).forEach(canvas => ctx.drawImage(canvas, 0, 0));
   });
 
   return [canvasRef, canvases, setCanvases];
-
 }
 
 export function useCanvas() {
@@ -115,7 +120,7 @@ export function useTool() {
   return tool;
 }
 
-const ServiceContext = (props) => {
+const ServiceContext = props => {
   return (
     <LabelContext.Provider value={service}>
       {props.children}

@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo, useRef } from 'react';
 import { useSelector } from '@xstate/react';
+import React, { useEffect, useMemo, useRef } from 'react';
+
 import { useCanvas, useTool, useToolbar } from '../ServiceContext';
 import { drawTrace, drawBrush } from '../imageUtils';
 
 const BrushCanvas = ({ className }) => {
-
   const canvas = useCanvas();
   const sx = useSelector(canvas, state => state.context.sx);
   const sy = useSelector(canvas, state => state.context.sy);
@@ -12,7 +12,7 @@ const BrushCanvas = ({ className }) => {
   const scale = useSelector(canvas, state => state.context.scale);
   const sw = useSelector(canvas, state => state.context.width);
   const sh = useSelector(canvas, state => state.context.height);
-  
+
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
 
@@ -20,8 +20,9 @@ const BrushCanvas = ({ className }) => {
   const background = useSelector(toolbar, state => state.context.background);
   const erasing = background !== 0;
   const brushColor = useMemo(
-    () => erasing ? [255, 0, 0, 255] : [255, 255, 255, 255], 
-    [erasing]);
+    () => (erasing ? [255, 0, 0, 255] : [255, 255, 255, 255]),
+    [erasing]
+  );
 
   const brush = useTool();
   const x = useSelector(brush, state => state.context.x);
@@ -54,9 +55,9 @@ const BrushCanvas = ({ className }) => {
 
   // draws the brush trace
   useEffect(() => {
-    if (trace.length === 0) { // clear the trace canvas
+    if (trace.length === 0) {
       traceCtx.current.clearRect(0, 0, sw, sh);
-    } else { // add to trace
+    } else {
       const [tx, ty] = trace[trace.length - 1];
       drawTrace(traceCtx.current, tx, ty, brushSize);
     }
@@ -75,40 +76,53 @@ const BrushCanvas = ({ className }) => {
     ctx.current.clearRect(0, 0, width, height);
     ctx.current.drawImage(
       traceCanvas.current,
-      sx, sy,
-      sw / zoom, sh / zoom,
-      0, 0,
-      width, height,
+      sx,
+      sy,
+      sw / zoom,
+      sh / zoom,
+      0,
+      0,
+      width,
+      height
     );
     ctx.current.drawImage(
       brushCanvas.current,
-      sx, sy,
-      sw / zoom, sh / zoom,
-      0, 0,
-      width, height,
+      sx,
+      sy,
+      sw / zoom,
+      sh / zoom,
+      0,
+      0,
+      width,
+      height
     );
   }, [trace, brushSize, brushColor, x, y, sx, sy, zoom, sw, sh, width, height]);
 
-  return <>
-    <canvas id='brush-processing'
-      hidden={true}
-      ref={brushCanvas}
-      width={sw}
-      height={sh}
-    />
-    <canvas id='trace-processing'
-      hidden={true}
-      ref={traceCanvas}
-      width={sw}
-      height={sh}
-    />
-    <canvas id='brush-canvas'
-      ref={canvasRef}
-      width={width}
-      height={height}
-      className={className}
-    />
-  </>;
+  return (
+    <>
+      <canvas
+        id='brush-processing'
+        hidden={true}
+        ref={brushCanvas}
+        width={sw}
+        height={sh}
+      />
+      <canvas
+        id='trace-processing'
+        hidden={true}
+        ref={traceCanvas}
+        width={sw}
+        height={sh}
+      />
+      <canvas
+        id='brush-canvas'
+        ref={canvasRef}
+        width={width}
+        height={height}
+        className={className}
+      />
+    </>
+  );
 };
 
 export default React.memo(BrushCanvas);

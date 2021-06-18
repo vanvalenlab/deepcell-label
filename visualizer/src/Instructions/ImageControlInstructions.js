@@ -1,14 +1,15 @@
-import React from 'react';
-import Typography from '@material-ui/core/Typography';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableRow from '@material-ui/core/TableRow';
-import { useImage } from '../ServiceContext';
+import Typography from '@material-ui/core/Typography';
 import { useSelector } from '@xstate/react';
-// import { ChannelSlider, FeatureSlider, FrameSlider } from '../ControlPanel/ImageControls';
+import React from 'react';
 
+import { useImage } from '../ServiceContext';
+
+// import { ChannelSlider, FeatureSlider, FrameSlider } from '../ControlPanel/ImageControls';
 
 // const FrameInstructions = () => {
 //   return <TableRow>
@@ -58,7 +59,6 @@ const ImageControlInstructions = () => {
   // const numFrames = useSelector(image, state => state.context.numFrames);
   // const numChannels = useSelector(image, state => state.context.numChannels);
   // const numFeatures = useSelector(image, state => state.context.numFeatures);
-  
   // return <>
   //   <Typography variant='h5'>
   //     Image
