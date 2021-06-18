@@ -2,7 +2,7 @@ import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
 
 import { useCanvas, useChannel } from '../../ServiceContext';
-import { adjustRangeImageData, recolorImageData } from '../imageUtils';
+import { adjustRangeImageData, recolorImageData } from '../canvasUtils';
 
 /** Converts a hex string like #FF0000 to three element array for the RGB values. */
 const hexToRGB = hex => {

@@ -2,7 +2,7 @@ import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
 
 import { useRaw, useChannel, useCanvas } from '../../ServiceContext';
-import { adjustRangeImageData, invertImageData } from '../imageUtils';
+import { adjustRangeImageData, invertImageData } from '../canvasUtils';
 
 export const GrayscaleCanvas = ({ className }) => {
   const canvas = useCanvas();

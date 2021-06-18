@@ -13,7 +13,7 @@ import {
   highlightImageData,
   removeNoLabelImageData,
   opacityImageData,
-} from '../imageUtils';
+} from '../canvasUtils';
 
 export const LabeledCanvas = ({ className }) => {
   const canvas = useCanvas();

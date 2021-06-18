@@ -7,7 +7,11 @@ import {
   useFeature,
   useLabeled,
 } from '../../ServiceContext';
-import { highlightImageData, outlineAll, outlineSelected } from '../imageUtils';
+import {
+  highlightImageData,
+  outlineAll,
+  outlineSelected,
+} from '../canvasUtils';
 
 const white = [255, 255, 255, 255];
 const black = [0, 0, 0, 255];

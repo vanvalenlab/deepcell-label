@@ -2,7 +2,7 @@ import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
 
 import { useCanvas, useTool } from '../../ServiceContext';
-import { drawBox } from '../imageUtils';
+import { drawBox } from '../canvasUtils';
 
 const ThresholdCanvas = ({ className }) => {
   const canvas = useCanvas();
