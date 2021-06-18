@@ -24,6 +24,8 @@
     "axios": "^0.21.1",
     "css-element-queries": "^1.2.3",
     "dropzone": "^5.9.2",
+    "husky": "^6.0.0",
+    "lint-staged": "^11.0.0",
     "lodash.debounce": "^4.0.8",
     "mousetrap": "^1.6.5",
     "quickselect": "^2.0.0",
@@ -64,7 +66,18 @@
   "proxy": "http://localhost:5000",
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^2.0.2",
+    "eslint": "^7.29.0",
     "eslint-config-prettier": "^8.3.0",
-    "prettier": "2.3.1"
-  }
+    "prettier": "^2.3.1"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "src/**/*.{js,jsx,ts,tsx,json,css,scss,md}": [
+      "prettier --write"
+    ]
+  },
 }
