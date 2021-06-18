@@ -1,3 +1,9 @@
 {
-  "singleQuote": true
+  "semi": true,
+  "arrowParens": "avoid",
+  "singleQuote": true,
+  "jsxSingleQuote": true,
+  "experimentalBabelParserPluginsList": ["jsx"],
+  "importOrder": ["^[./]"],
+  "importOrderSeparation": true
 }

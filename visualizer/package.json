@@ -63,6 +63,7 @@
   },
   "proxy": "http://localhost:5000",
   "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^2.0.2",
     "eslint-config-prettier": "^8.3.0",
     "prettier": "2.3.1"
   }
