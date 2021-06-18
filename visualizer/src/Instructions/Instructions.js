@@ -10,9 +10,6 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 import CanvasInstructions from './CanvasInstructions';
-import ImageControlInstructions from './ImageControlInstructions';
-import LabelDisplayInstructions from './LabelDisplayInstructions';
-import RawDisplayInstructions from './RawDisplayInstructions';
 import SelectInstructions from './SelectInstructions';
 import ToolInstructions from './ToolInstructions';
 
