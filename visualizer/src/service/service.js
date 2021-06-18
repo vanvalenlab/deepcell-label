@@ -1,6 +1,6 @@
 import { interpret } from 'xstate';
 
-import createDeepcellLabelMachine from './statechart/deepcellLabelMachine';
+import createDeepcellLabelMachine from './deepcellLabelMachine';
 
 const location = window.location;
 const search = new URLSearchParams(location.search);

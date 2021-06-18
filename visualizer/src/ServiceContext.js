@@ -7,7 +7,7 @@ import React, {
   useState,
 } from 'react';
 
-import service from './service';
+import service from './service/service';
 
 export const LabelContext = createContext();
 
