@@ -17,5 +17,8 @@
     "space-before-function-paren": "off",
     "comma-dangle": "off"
   },
+  "extends": [
+    "prettier"
+  ],
   "parser": "babel-eslint"
 }
