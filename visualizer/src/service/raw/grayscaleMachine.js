@@ -59,7 +59,7 @@ const channelState = {
   },
 };
 
-const createRawMachine = ({ channels }) =>
+const createGrayscaleMachine = ({ channels }) =>
   Machine(
     // projectId, numChannels, numFrames
     {
@@ -122,4 +122,4 @@ const createRawMachine = ({ channels }) =>
     }
   );
 
-export default createRawMachine;
+export default createGrayscaleMachine;
