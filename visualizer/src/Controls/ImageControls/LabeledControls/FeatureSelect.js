@@ -1,0 +1,44 @@
+import Grid from '@material-ui/core/Grid';
+import Select from '@material-ui/core/Select';
+import Tooltip from '@material-ui/core/Tooltip';
+import { useSelector } from '@xstate/react';
+import React from 'react';
+import { useLabeled } from '../../../ServiceContext';
+
+function FeatureSelect() {
+  const labeled = useLabeled();
+  const feature = useSelector(labeled, state => state.context.feature);
+  const numFeatures = useSelector(labeled, state => state.context.numFeatures);
+  const featureNames = useSelector(
+    labeled,
+    state => state.context.featureNames
+  );
+
+  const handleFeatureChange = event => {
+    labeled.send({ type: 'LOAD_FEATURE', feature: Number(event.target.value) });
+  };
+
+  return (
+    numFeatures > 1 && (
+      <Grid item>
+        <Tooltip
+          title={
+            <span>
+              Cycle with <kbd>F</kbd> or <kbd>Shift</kbd> + <kbd>F</kbd>.
+            </span>
+          }
+        >
+          <Select native value={feature} onChange={handleFeatureChange}>
+            {featureNames.map((name, index) => (
+              <option key={index} value={index}>
+                {name}
+              </option>
+            ))}
+          </Select>
+        </Tooltip>
+      </Grid>
+    )
+  );
+}
+
+export default FeatureSelect;
