@@ -213,10 +213,7 @@ const toolMachine = Machine(
 
       // undo/redo actions
       SAVE: { actions: 'save' },
-      RESTORE: [
-        { cond: 'sameContext', actions: respond('SAME_CONTEXT') },
-        { actions: ['restore', 'spawnTool', respond('RESTORED')] },
-      ],
+      RESTORE: { actions: ['restore', 'spawnTool', respond('RESTORED')] },
     },
   },
   {
@@ -267,10 +264,6 @@ const toolMachine = Machine(
       usingColorTool: ({ tool }) => colorTools.includes(tool),
       colorTool: (_, { tool }) => colorTools.includes(tool),
       grayscaleTool: (_, { tool }) => grayscaleTools.includes(tool),
-      sameContext: (context, event) =>
-        context.tool === event.tool &&
-        context.foreground === event.foreground &&
-        context.background === event.background,
     },
     actions: {
       ...toolActions,

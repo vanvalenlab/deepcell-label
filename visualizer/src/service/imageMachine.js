@@ -94,10 +94,11 @@ const syncToolState = {
 
 const restoreState = {
   on: {
-    RESTORE: [
-      { cond: 'sameContext', actions: respond('SAME_CONTEXT') },
-      { target: '.restoring', internal: false, actions: respond('RESTORED') },
-    ],
+    RESTORE: {
+      target: '.restoring',
+      internal: false,
+      actions: respond('RESTORED'),
+    },
     SAVE: { actions: 'save' },
   },
   initial: 'idle',
@@ -119,11 +120,6 @@ const restoreState = {
       },
     },
   },
-};
-
-const restoreGuards = {
-  sameContext: (context, event) =>
-    context.frame === event.frame && context.grayscale === event.grayscale,
 };
 
 const restoreActions = {
@@ -179,7 +175,6 @@ const createImageMachine = ({ projectId }) =>
         newLoadingFrame: (context, event) =>
           context.loadingFrame !== event.frame,
         isLoaded: ({ rawLoaded, labeledLoaded }) => rawLoaded && labeledLoaded,
-        ...restoreGuards,
       },
       actions: {
         handleProject: assign(

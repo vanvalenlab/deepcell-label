@@ -41,14 +41,12 @@ const createHistoryMachine = actor =>
         restoringPast: {
           entry: ['restorePast', () => console.log('restoring past')],
           on: {
-            SAME_CONTEXT: { target: 'idle', actions: ['forwardToParent'] },
             RESTORED: { target: 'idle', actions: 'forwardToParent' },
           },
         },
         restoringFuture: {
           entry: 'restoreFuture',
           on: {
-            SAME_CONTEXT: { target: 'idle', actions: 'forwardToParent' },
             RESTORED: { target: 'idle', actions: 'forwardToParent' },
           },
         },
@@ -145,8 +143,7 @@ const undoMachine = Machine(
       undoing: {
         entry: 'resetCounts',
         on: {
-          SAME_CONTEXT: { actions: 'incrementCount' },
-          RESTORED: { actions: 'incrementCount' }, // target: 'restored',
+          RESTORED: { actions: 'incrementCount' },
         },
         always: {
           cond: 'allHistoriesResponded',
@@ -157,8 +154,7 @@ const undoMachine = Machine(
       redoing: {
         entry: 'resetCounts',
         on: {
-          SAME_CONTEXT: { actions: 'incrementCount' },
-          RESTORED: { actions: 'incrementCount' }, // target: 'restored',
+          RESTORED: { actions: 'incrementCount' },
         },
         always: {
           cond: 'allHistoriesResponded',
@@ -166,13 +162,6 @@ const undoMachine = Machine(
           actions: send('BACKENDREDO'),
         },
       },
-      // restored: {
-      //   on: {
-      //     SAME_CONTEXT: { actions: 'incrementCount' },
-      //     RESTORED: { actions: 'incrementCount' },
-      //   },
-      //   always: { cond: 'allHistoriesResponded', target: 'idle' }
-      // }
     },
   },
   {

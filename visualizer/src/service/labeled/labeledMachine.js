@@ -80,25 +80,10 @@ const featureState = {
 
 const restoreState = {
   on: {
-    RESTORE: [
-      {
-        cond: (context, event) => context.feature === event.feature,
-        actions: respond('SAME_CONTEXT'),
-      },
-      {
-        target: '.restoring',
-        internal: false,
-        actions: respond('RESTORED'),
-      },
-    ],
-    SAVE: { actions: respond(({ feature }) => ({ type: 'RESTORE', feature })) },
-  },
-  initial: 'idle',
-  states: {
-    idle: {},
-    restoring: {
-      entry: send((_, { feature }) => ({ type: 'LOAD_FEATURE', feature })),
+    RESTORE: {
+      actions: ['restore', respond('RESTORED')],
     },
+    SAVE: { actions: 'save' },
   },
 };
 
@@ -255,6 +240,8 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) =>
           opacity: (_, { opacity }) => Math.min(1, Math.max(0, opacity)),
         }),
         toggleOutline: assign({ outline: ({ outline }) => !outline }),
+        save: respond(({ feature }) => ({ type: 'RESTORE', feature })),
+        restore: send((_, { feature }) => ({ type: 'LOAD_FEATURE', feature })),
       },
     }
   );

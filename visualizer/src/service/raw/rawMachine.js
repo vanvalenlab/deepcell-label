@@ -94,25 +94,10 @@ const colorModeState = {
 
 const restoreState = {
   on: {
-    RESTORE: [
-      {
-        cond: (context, event) => context.channel === event.channel,
-        actions: respond('SAME_CONTEXT'),
-      },
-      {
-        target: '.restoring',
-        internal: false,
-        actions: respond('RESTORED'),
-      },
-    ],
-    SAVE: { actions: respond(({ channel }) => ({ type: 'RESTORE', channel })) },
-  },
-  initial: 'idle',
-  states: {
-    idle: {},
-    restoring: {
-      entry: send((_, { channel }) => ({ type: 'LOAD_CHANNEL', channel })),
+    RESTORE: {
+      actions: ['restore', respond('RESTORED')],
     },
+    SAVE: { actions: 'save' },
   },
 };
 
@@ -209,6 +194,8 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
         setFrame: assign((_, { frame }) => ({ frame })),
         setChannel: assign((_, { channel }) => ({ channel })),
         forwardToColorMode: forwardTo(({ colorMode }) => colorMode),
+        save: respond(({ channel }) => ({ type: 'RESTORE', channel })),
+        restore: send((_, { channel }) => ({ type: 'LOAD_CHANNEL', channel })),
       },
     }
   );

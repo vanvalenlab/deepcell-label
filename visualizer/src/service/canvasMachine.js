@@ -123,13 +123,7 @@ const canvasMachine = Machine(
           zoom: context.zoom,
         })),
       },
-      RESTORE: [
-        {
-          cond: 'newContext',
-          actions: ['restoreContext', respond('RESTORED')],
-        },
-        { actions: respond('SAME_CONTEXT') },
-      ],
+      RESTORE: { actions: ['restore', respond('RESTORED')] },
       COORDINATES: {
         cond: 'newCoordinates',
         actions: ['useCoordinates', 'forwardToTool'],
@@ -195,10 +189,6 @@ const canvasMachine = Machine(
     guards: {
       newCoordinates: (context, event) =>
         context.x !== event.y || context.y !== event.y,
-      newContext: (context, event) =>
-        context.sx !== event.sx ||
-        context.sy !== event.sy ||
-        context.zoom !== event.zoom,
       dragTool: ({ tool }) => tool === 'brush' || tool === 'threshold',
       moved: ({ dx, dy }) => Math.abs(dx) > 10 || Math.abs(dy) > 10,
     },
@@ -209,9 +199,7 @@ const canvasMachine = Machine(
       }),
       resetMove: assign({ dx: 0, dy: 0 }),
       forwardToTool: forwardTo(({ toolRef }) => toolRef),
-      restoreContext: assign(
-        (context, { type, ...savedContext }) => savedContext
-      ),
+      restore: assign((_, { type, ...savedContext }) => savedContext),
       useCoordinates: assign((_, { x, y }) => ({ x, y })),
       sendCoordinates: send(({ x, y }) => ({ type: 'COORDINATES', x, y }), {
         to: context => context.toolRef,
