@@ -124,4 +124,4 @@ const BrushCanvas = ({ className }) => {
   );
 };
 
-export default React.memo(BrushCanvas);
+export default BrushCanvas;

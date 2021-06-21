@@ -133,4 +133,4 @@ export const LabeledCanvas = ({ className }) => {
   );
 };
 
-export default React.memo(LabeledCanvas);
+export default LabeledCanvas;

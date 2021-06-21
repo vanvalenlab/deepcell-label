@@ -125,4 +125,4 @@ const OutlineCanvas = ({ className }) => {
   );
 };
 
-export default React.memo(OutlineCanvas);
+export default OutlineCanvas;
