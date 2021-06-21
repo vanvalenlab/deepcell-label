@@ -1,4 +1,3 @@
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import Label from './Label';
 import ServiceContext from './ServiceContext';
 
@@ -10,15 +9,9 @@ import ServiceContext from './ServiceContext';
 
 function App() {
   return (
-    <Router>
-      <Switch>
-        <Route exact path='/'>
-          <ServiceContext>
-            <Label />
-          </ServiceContext>
-        </Route>
-      </Switch>
-    </Router>
+    <ServiceContext>
+      <Label />
+    </ServiceContext>
   );
 }
 
