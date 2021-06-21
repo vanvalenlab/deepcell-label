@@ -37,7 +37,7 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
             src: fetchProject,
             onDone: {
               target: 'idle',
-              actions: ['sendProject', assign((context, event) => event.data)],
+              actions: 'sendProject',
             },
             onError: {
               target: 'idle',
@@ -49,8 +49,8 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
       },
       on: {
         EDIT: { actions: [forwardTo('api'), forwardTo('undo')] },
-        BACKENDUNDO: { actions: forwardTo('api') },
-        BACKENDREDO: { actions: forwardTo('api') },
+        BACKEND_UNDO: { actions: forwardTo('api') },
+        BACKEND_REDO: { actions: forwardTo('api') },
         EDITED: { actions: forwardTo('image') },
         ADD_ACTOR: {
           actions: send((_, { actor }) => ({ type: 'ADD_ACTOR', actor }), {
@@ -58,7 +58,6 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
           }),
         },
         USE_TOOL: { actions: forwardTo('canvas') },
-        UPLOAD: { actions: 'upload' },
       },
     },
     {
@@ -69,19 +68,14 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
           toolRef: () => spawn(toolMachine, 'tool'),
           apiRef: context => spawn(createApiMachine(context), 'api'),
         }),
-        sendActorRefs: pure(({ toolRef, undoRef, imageRef, canvasRef }) => {
-          const sendToolToImage = send(
-            { type: 'TOOL_REF', toolRef },
-            { to: imageRef }
-          );
-          const sendToolToCanvas = send(
-            { type: 'TOOL_REF', toolRef },
-            { to: canvasRef }
-          );
-          return [sendToolToImage, sendToolToCanvas];
+        sendActorRefs: pure(({ toolRef }) => {
+          return [
+            send({ type: 'TOOL_REF', toolRef }, { to: 'image' }),
+            send({ type: 'TOOL_REF', toolRef }, { to: 'canvas' }),
+          ];
         }),
         spawnUndo: assign({
-          undoRef: context => spawn(undoMachine, 'undo'),
+          undoRef: () => spawn(undoMachine, 'undo'),
         }),
         addActorsToUndo: pure(context => {
           const { canvasRef, toolRef, imageRef } = context;
@@ -92,21 +86,12 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
           ];
         }),
         sendProject: pure((context, event) => {
-          const sendToCanvas = send(
-            (context, event) => ({ type: 'PROJECT', ...event.data }),
-            { to: 'canvas' }
-          );
-          const sendToImage = send(
-            (context, event) => ({ type: 'PROJECT', ...event.data }),
-            { to: 'image' }
-          );
-          return [sendToCanvas, sendToImage];
+          const projectEvent = { type: 'PROJECT', ...event.data };
+          return [
+            send(projectEvent, { to: 'canvas' }),
+            send(projectEvent, { to: 'image' }),
+          ];
         }),
-        upload: send('UPLOAD', { to: 'api' }),
-        // edit: forwardTo('api'),
-        // saveTool: assign({ tool: (context, event) => event.tool }),
-        // recordContext: send('STORE', { to: 'undo' } ),
-        // forwardToTool: forwardTo('tool'),
       },
     }
   );

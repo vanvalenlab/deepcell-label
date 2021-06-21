@@ -16,7 +16,7 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-export const OpacitySlider = () => {
+function OpacitySlider() {
   const labeled = useLabeled();
   const opacity = useSelector(labeled, state => state.context.opacity);
 
@@ -42,4 +42,6 @@ export const OpacitySlider = () => {
       />
     </Box>
   );
-};
+}
+
+export default OpacitySlider;

@@ -5,9 +5,9 @@ function getApiService(context, event) {
   switch (event.type) {
     case 'EDIT':
       return edit(context, event);
-    case 'BACKENDUNDO':
+    case 'BACKEND_UNDO':
       return undo(context, event);
-    case 'BACKENDREDO':
+    case 'BACKEND_REDO':
       return redo(context, event);
   }
 }
@@ -56,8 +56,8 @@ const createApiMachine = ({ projectId, bucket }) =>
         idle: {
           on: {
             EDIT: 'loading',
-            BACKENDUNDO: 'loading',
-            BACKENDREDO: 'loading',
+            BACKEND_UNDO: 'loading',
+            BACKEND_REDO: 'loading',
             UPLOAD: 'uploading',
           },
         },

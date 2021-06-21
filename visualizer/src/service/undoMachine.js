@@ -27,8 +27,8 @@ const createHistoryMachine = actor =>
             EDIT: 'saving',
             UNDO: 'restoringPast',
             REDO: 'restoringFuture',
-            BACKENDUNDO: { actions: 'movePastToFuture' },
-            BACKENDREDO: { actions: 'moveFutureToPast' },
+            BACKEND_UNDO: { actions: 'movePastToFuture' },
+            BACKEND_REDO: { actions: 'moveFutureToPast' },
           },
         },
         saving: {
@@ -119,17 +119,17 @@ const undoMachine = Machine(
             cond: 'canRedo',
             actions: 'forwardToHistories',
           },
-          BACKENDUNDO: {
+          BACKEND_UNDO: {
             actions: [
               'decrementAction',
-              sendParent('BACKENDUNDO'),
+              sendParent('BACKEND_UNDO'),
               'forwardToHistories',
             ],
           },
-          BACKENDREDO: {
+          BACKEND_REDO: {
             actions: [
               'incrementAction',
-              sendParent('BACKENDREDO'),
+              sendParent('BACKEND_REDO'),
               'forwardToHistories',
             ],
           },
@@ -148,7 +148,7 @@ const undoMachine = Machine(
         always: {
           cond: 'allHistoriesResponded',
           target: 'idle',
-          actions: send('BACKENDUNDO'),
+          actions: send('BACKEND_UNDO'),
         },
       },
       redoing: {
@@ -159,7 +159,7 @@ const undoMachine = Machine(
         always: {
           cond: 'allHistoriesResponded',
           target: 'idle',
-          actions: send('BACKENDREDO'),
+          actions: send('BACKEND_REDO'),
         },
       },
     },
