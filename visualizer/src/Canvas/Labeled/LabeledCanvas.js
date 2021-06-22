@@ -6,11 +6,7 @@ import {
   useLabeled,
   useToolbar,
 } from '../../ServiceContext';
-import {
-  highlightImageData,
-  opacityImageData,
-  removeNoLabelImageData,
-} from '../canvasUtils';
+import { highlightImageData, opacityImageData } from '../canvasUtils';
 
 export const LabeledCanvas = ({ className }) => {
   const canvas = useCanvas();
@@ -27,7 +23,6 @@ export const LabeledCanvas = ({ className }) => {
   const labeled = useLabeled();
   const featureIndex = useSelector(labeled, state => state.context.feature);
   const highlight = useSelector(labeled, state => state.context.highlight);
-  const showNoLabel = useSelector(labeled, state => state.context.showNoLabel);
   const opacity = useSelector(labeled, state => state.context.opacity);
 
   const feature = useFeature(featureIndex);
@@ -65,21 +60,9 @@ export const LabeledCanvas = ({ className }) => {
       const red = [255, 0, 0, 255];
       highlightImageData(data, labeledArray, foreground, red);
     }
-    if (!showNoLabel) {
-      removeNoLabelImageData(data, labeledArray);
-    }
     opacityImageData(data, opacity);
     hiddenCtx.current.putImageData(data, 0, 0);
-  }, [
-    labeledImage,
-    labeledArray,
-    foreground,
-    highlight,
-    showNoLabel,
-    opacity,
-    sh,
-    sw,
-  ]);
+  }, [labeledImage, labeledArray, foreground, highlight, opacity, sh, sw]);
 
   useEffect(() => {
     ctx.current.save();
@@ -101,7 +84,6 @@ export const LabeledCanvas = ({ className }) => {
     labeledArray,
     foreground,
     highlight,
-    showNoLabel,
     opacity,
     sw,
     sh,

@@ -102,7 +102,6 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) =>
         featureNames: [], // name of each segmentations
         opacity: 0,
         highlight: true,
-        showNoLabel: true,
         outline: true,
       },
       entry: 'spawnFeatures',
@@ -120,7 +119,6 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) =>
         TOGGLE_HIGHLIGHT: { actions: 'toggleHighlight' },
         TOGGLE_OUTLINE: { actions: 'toggleOutline' },
         SET_OPACITY: { actions: 'setOpacity' },
-        TOGGLE_SHOW_NO_LABEL: { actions: 'toggleShowNoLabel' },
         LABELED_ARRAY: { actions: sendParent((c, e) => e) },
         LABELS: { actions: sendParent((c, e) => e) },
         EDITED: {
@@ -233,9 +231,6 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) =>
         /** Tell imageMachine that the labeled data is loaded. */
         sendLoaded: sendParent('LABELED_LOADED'),
         toggleHighlight: assign({ highlight: ({ highlight }) => !highlight }),
-        toggleShowNoLabel: assign({
-          showNoLabel: ({ showNoLabel }) => !showNoLabel,
-        }),
         setOpacity: assign({
           opacity: (_, { opacity }) => Math.min(1, Math.max(0, opacity)),
         }),

@@ -27,25 +27,6 @@ export function highlightImageData(imageData, labeledArray, label, color) {
 }
 
 /**
- * Makes the areas without a label (i.e. label is 0) transparent.
- * @param {ImageData} imageData where we draw the transparent changes
- * @param {Array} labeledArray describes label at each pixel; has negative label values on label border
- */
-export function removeNoLabelImageData(imageData, labeledArray) {
-  const { data, height, width } = imageData;
-  for (let j = 0; j < height; j += 1) {
-    for (let i = 0; i < width; i += 1) {
-      if (labeledArray[j][i] === 0) {
-        data[(j * width + i) * 4 + 0] = 0;
-        data[(j * width + i) * 4 + 1] = 0;
-        data[(j * width + i) * 4 + 2] = 0;
-        data[(j * width + i) * 4 + 3] = 0;
-      }
-    }
-  }
-}
-
-/**
  * Changes the opacity of the image.
  * @param {ImageData} imageData
  * @param {float} opacity between 0 and 1; 0 makes the image transparent, and 1 does nothing
