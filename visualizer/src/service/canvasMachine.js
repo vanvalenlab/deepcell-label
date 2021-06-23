@@ -1,4 +1,4 @@
-import { actions, assign, forwardTo, Machine, send } from 'xstate';
+import { actions, assign, Machine, send, sendParent } from 'xstate';
 
 const { respond } = actions;
 
@@ -19,7 +19,7 @@ const clickToolState = {
           { cond: 'moved', target: 'dragged', actions: 'pan' },
           { actions: ['updateMove', 'pan'] },
         ],
-        mouseup: { target: 'idle', actions: 'forwardToTool' },
+        mouseup: { target: 'idle', actions: sendParent((c, e) => e) },
       },
     },
     dragged: {
@@ -34,8 +34,8 @@ const clickToolState = {
 // Sends both mousedown and mouseup events to tools with dragging
 const dragToolState = {
   on: {
-    mousedown: { actions: 'forwardToTool' },
-    mouseup: { actions: 'forwardToTool' },
+    mousedown: { actions: sendParent((c, e) => e) },
+    mouseup: { actions: sendParent((c, e) => e) },
     mousemove: { actions: 'coordinates' },
   },
 };
@@ -112,9 +112,6 @@ const canvasMachine = Machine(
       ZOOMIN: { actions: 'zoomIn' },
       ZOOMOUT: { actions: 'zoomOut' },
       DIMENSIONS: { actions: ['setDimensions', 'resize'] },
-      TOOL_REF: {
-        actions: assign({ toolRef: (context, event) => event.toolRef }),
-      },
       SAVE: {
         actions: respond(context => ({
           type: 'RESTORE',
@@ -126,7 +123,7 @@ const canvasMachine = Machine(
       RESTORE: { actions: ['restore', respond('RESTORED')] },
       COORDINATES: {
         cond: 'newCoordinates',
-        actions: ['useCoordinates', 'forwardToTool'],
+        actions: ['useCoordinates', sendParent((c, e) => e)],
       },
     },
     initial: 'waitForProject',
@@ -198,7 +195,6 @@ const canvasMachine = Machine(
         dy: ({ dy }, event) => dy + event.movementY,
       }),
       resetMove: assign({ dx: 0, dy: 0 }),
-      forwardToTool: forwardTo(({ toolRef }) => toolRef),
       restore: assign((_, { type, ...savedContext }) => savedContext),
       useCoordinates: assign((_, { x, y }) => ({ x, y })),
       sendCoordinates: send(({ x, y }) => ({ type: 'COORDINATES', x, y }), {

@@ -25,7 +25,7 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
       initial: 'setUpActors',
       states: {
         setUpActors: {
-          entry: ['spawnActors', 'sendActorRefs'],
+          entry: 'spawnActors',
           always: 'setUpUndo',
         },
         setUpUndo: {
@@ -52,12 +52,18 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
         BACKEND_UNDO: { actions: forwardTo('api') },
         BACKEND_REDO: { actions: forwardTo('api') },
         EDITED: { actions: forwardTo('image') },
-        ADD_ACTOR: {
-          actions: send((_, { actor }) => ({ type: 'ADD_ACTOR', actor }), {
-            to: 'undo',
-          }),
-        },
+        ADD_ACTOR: { actions: forwardTo('undo') },
         USE_TOOL: { actions: forwardTo('canvas') },
+        COORDINATES: { actions: forwardTo('tool') },
+        mouseup: { actions: forwardTo('tool') },
+        mousedown: { actions: forwardTo('tool') },
+        mousemove: { actions: forwardTo('tool') },
+        LABELED_ARRAY: { actions: forwardTo('tool') },
+        LABELS: { actions: forwardTo('tool') },
+        FEATURE: { actions: forwardTo('tool') },
+        CHANNEL: { actions: forwardTo('tool') },
+        GRAYSCALE: { actions: forwardTo('tool') },
+        COLOR: { actions: forwardTo('tool') },
       },
     },
     {
@@ -67,12 +73,6 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
           imageRef: context => spawn(createImageMachine(context), 'image'),
           toolRef: () => spawn(toolMachine, 'tool'),
           apiRef: context => spawn(createApiMachine(context), 'api'),
-        }),
-        sendActorRefs: pure(({ toolRef }) => {
-          return [
-            send({ type: 'TOOL_REF', toolRef }, { to: 'image' }),
-            send({ type: 'TOOL_REF', toolRef }, { to: 'canvas' }),
-          ];
         }),
         spawnUndo: assign({
           undoRef: () => spawn(undoMachine, 'undo'),

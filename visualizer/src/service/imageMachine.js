@@ -71,27 +71,6 @@ const frameState = {
   },
 };
 
-const syncToolState = {
-  initial: 'waitForTool',
-  states: {
-    waitForTool: {
-      on: {
-        TOOL_REF: { target: 'idle', actions: 'setTool' },
-      },
-    },
-    idle: {
-      on: {
-        LABELED_ARRAY: { actions: 'forwardToTool' },
-        LABELS: { actions: 'forwardToTool' },
-        FEATURE: { actions: ['setFeature', 'forwardToTool'] },
-        CHANNEL: { actions: ['setChannel', 'forwardToTool'] },
-        GRAYSCALE: { actions: [assign({ grayscale: true }), 'forwardToTool'] },
-        COLOR: { actions: [assign({ grayscale: false }), 'forwardToTool'] },
-      },
-    },
-  },
-};
-
 const restoreState = {
   on: {
     RESTORE: {
@@ -147,13 +126,24 @@ const createImageMachine = ({ projectId }) =>
       },
       type: 'parallel',
       states: {
-        syncTool: syncToolState,
         frame: frameState,
         restore: restoreState,
       },
       on: {
-        EDITED: { actions: forwardTo(({ labeledRef }) => labeledRef) },
+        // send events to children
+        EDITED: { actions: forwardTo('labeled') },
         TOGGLE_COLOR_MODE: { actions: forwardTo('raw') },
+        // send events to parent
+        LABELED_ARRAY: { actions: 'forwardToParent' },
+        LABELS: { actions: 'forwardToParent' },
+        FEATURE: { actions: ['setFeature', 'forwardToParent'] },
+        CHANNEL: { actions: ['setChannel', 'forwardToParent'] },
+        GRAYSCALE: {
+          actions: [assign({ grayscale: true }), 'forwardToParent'],
+        },
+        COLOR: {
+          actions: [assign({ grayscale: false }), 'forwardToParent'],
+        },
       },
     },
     {
@@ -177,6 +167,7 @@ const createImageMachine = ({ projectId }) =>
         isLoaded: ({ rawLoaded, labeledLoaded }) => rawLoaded && labeledLoaded,
       },
       actions: {
+        forwardToParent: sendParent((_, event) => event),
         handleProject: assign(
           (
             _,
@@ -212,28 +203,26 @@ const createImageMachine = ({ projectId }) =>
         }),
         loadLabeled: send(
           ({ loadingFrame }) => ({ type: 'LOAD_FRAME', frame: loadingFrame }),
-          { to: ({ labeledRef }) => labeledRef }
+          { to: 'labeled' }
         ),
         loadRaw: send(
           ({ loadingFrame }) => ({ type: 'LOAD_FRAME', frame: loadingFrame }),
-          { to: ({ rawRef }) => rawRef }
+          { to: 'raw' }
         ),
         assignLoadingFrame: assign({
           loadingFrame: (_, { frame }) => frame,
           rawLoaded: false,
           labeledLoaded: false,
         }),
-        useFrame: pure(({ rawRef, labeledRef, toolRef, loadingFrame }) => {
+        useFrame: pure(({ loadingFrame }) => {
           const frameEvent = { type: 'FRAME', frame: loadingFrame };
           return [
             assign({ frame: loadingFrame }),
-            send(frameEvent, { to: rawRef }),
-            send(frameEvent, { to: labeledRef }),
-            send(frameEvent, { to: toolRef }),
+            send(frameEvent, { to: 'raw' }),
+            send(frameEvent, { to: 'labeled' }),
+            sendParent(frameEvent),
           ];
         }),
-        setTool: assign({ toolRef: (_, event) => event.toolRef }),
-        forwardToTool: forwardTo(({ toolRef }) => toolRef),
         setFeature: assign({ feature: (_, { feature }) => ({ feature }) }),
         setChannel: assign({ channel: (_, { channel }) => ({ channel }) }),
         ...restoreActions,
