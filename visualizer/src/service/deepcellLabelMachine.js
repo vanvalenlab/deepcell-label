@@ -7,6 +7,7 @@ import createApiMachine from './apiMachine';
 import canvasMachine from './canvasMachine';
 import createImageMachine from './imageMachine';
 import toolMachine from './toolMachine';
+import trackingMachine from './trackingMachine';
 import undoMachine from './undoMachine';
 
 function fetchProject(context) {
@@ -59,11 +60,12 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
         mousedown: { actions: forwardTo('tool') },
         mousemove: { actions: forwardTo('tool') },
         LABELED_ARRAY: { actions: forwardTo('tool') },
-        LABELS: { actions: forwardTo('tool') },
+        LABELS: { actions: [forwardTo('tool'), forwardTo('tracking')] },
         FEATURE: { actions: forwardTo('tool') },
         CHANNEL: { actions: forwardTo('tool') },
         GRAYSCALE: { actions: forwardTo('tool') },
         COLOR: { actions: forwardTo('tool') },
+        FOREGROUND: { actions: forwardTo('tracking') },
       },
     },
     {
@@ -73,6 +75,7 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
           imageRef: context => spawn(createImageMachine(context), 'image'),
           toolRef: () => spawn(toolMachine, 'tool'),
           apiRef: context => spawn(createApiMachine(context), 'api'),
+          trackingRef: () => spawn(trackingMachine, 'tracking'),
         }),
         spawnUndo: assign({
           undoRef: () => spawn(undoMachine, 'undo'),

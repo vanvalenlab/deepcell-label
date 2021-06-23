@@ -193,7 +193,9 @@ const toolMachine = Machine(
         actions: ['setCoordinates', 'sendLabel', 'forwardToTool'],
       },
       LABEL: { actions: ['setLabel', 'forwardToTool'] },
-      FOREGROUND: { actions: ['setForeground', 'forwardToTool'] },
+      FOREGROUND: {
+        actions: ['setForeground', 'forwardToTool', sendParent((c, e) => e)],
+      },
       BACKGROUND: { actions: ['setBackground', 'forwardToTool'] },
 
       // special shift click event
