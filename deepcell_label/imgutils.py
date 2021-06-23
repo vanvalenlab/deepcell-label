@@ -27,6 +27,7 @@ def pngify(imgarr, vmin, vmax, cmap=None):
 def grayscale_pngify(imgarr):
     out = io.BytesIO()
     imgarr = Normalize(vmin=0)(imgarr)
+    imgarr = np.clip(imgarr, 0, 1)
     imgarr = (imgarr * 255).astype('uint8')
     img = Image.fromarray(imgarr)
     img.save(out, format="png")
