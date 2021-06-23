@@ -192,7 +192,7 @@ def load_labeled_npz(data):
 def load_raw_trk(data):
     """Load a raw image data from a .trk file."""
     with tempfile.NamedTemporaryFile() as temp:
-        temp.write(data.read())
+        temp.write(data)
         with tarfile.open(temp.name, 'r') as trks:
             with io.BytesIO() as array_file:
                 array_file.write(trks.extractfile('raw.npy').read())
@@ -203,7 +203,7 @@ def load_raw_trk(data):
 def load_labeled_trk(data):
     """Load a labeled image data from a .trk file."""
     with tempfile.NamedTemporaryFile() as temp:
-        temp.write(data.read())
+        temp.write(data)
         with tarfile.open(temp.name, 'r') as trks:
             with io.BytesIO() as array_file:
                 array_file.write(trks.extractfile('tracked.npy').read())
@@ -214,7 +214,7 @@ def load_labeled_trk(data):
 def load_lineage_trk(data):
     """Loads a lineage JSON from a .trk file."""
     with tempfile.NamedTemporaryFile() as temp:
-        temp.write(data.read())
+        temp.write(data)
         with tarfile.open(temp.name, 'r') as trks:
             try:
                 trk_data = trks.getmember('lineages.json')
