@@ -24,6 +24,12 @@ function useReturnContext(contextType) {
   return context;
 }
 
+export function useTracking() {
+  const deepCellLabel = useDeepCellLabel();
+  const { tracking } = deepCellLabel.state.children;
+  return tracking;
+}
+
 export function useApi() {
   const deepCellLabel = useDeepCellLabel();
   const { api } = deepCellLabel.state.children;
