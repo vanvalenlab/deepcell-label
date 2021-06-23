@@ -35,98 +35,119 @@ class Loader():
 
     def __init__(self, url_form):
         self.url = url_form['url']
-        self.labeled_url = url_form['labeled_url'] if 'labeled_url' in url_form else None
+        self.data = requests.get(self.url).content
+
+        if 'labeled_url' in url_form:
+            self.labeled_url = url_form['labeled_url']
+            self.labeled_data = requests.get(self.labeled_url).content 
+        else:
+            self.labeled_url = None
+            self.labeled_data = None
+
         self.input_axes = url_form['axes'] if 'axes' in url_form else DCL_AXES
         self.output_axes = DCL_AXES
+        self.load()
 
-        if self.labeled_url is None:
-            self.load()
-            tracking = is_trk(self.url)
+    @property
+    def is_tracking(self):
+        """Tracking project when either the labels or raw are .trk."""
+        return (self.labeled_url and is_trk(self.labeled_url)) or is_trk(self.url)
+
+    @property
+    def tracking_data(self):
+        """Returns the .trk file that we should load a lineage from."""
+        if not self.is_tracking:
+            return None
+        if self.labeled_url and is_trk(self.labeled_url):
+            return self.labeled_data
+        else:
+            return self.data
+
+    def load(self):
+        if self.labeled_data is None:
+            self.load_combined()
         else:
             self.load_raw()
             self.load_labeled()
-            tracking = is_trk(self.labeled_url)
+        self.load_labels()
 
-        label_maker = LabelInfoMaker(self.label_array, tracking)
+    def load_labels(self):
+        label_maker = LabelInfoMaker(self.label_array, self.is_tracking)
         self.cell_ids = label_maker.cell_ids
-        self.cell_info = label_maker.cell_info
+        if self.is_tracking:
+            self.cell_info = load_lineage_trk(self.tracking_data)
+        else:
+            self.cell_info = label_maker.cell_info
 
-    def load(self):
+    def load_combined(self):
         """
         Loads image data into the Loader based on the file extension.
         """
-        url = self.url
-        r = requests.get(url)
-        data = r.content
-        # if r.status_code !== 200:
-        #     raise ValueError(r.status_code)
-        if is_npz(url):
-            raw_array = load_raw_npz(data)
-            label_array = load_labeled_npz(data)
-        elif is_trk(url):
-            raw_array = load_raw_trk(data)
-            label_array = load_labeled_trk(data)
-            self._cell_info = load_lineage_trk(data)
-        elif is_png(url):
-            raw_array = load_png(data)
-            label_array = np.zeros(raw_array.shape)
-        elif is_tiff(url):
-            raw_array = load_tiff(data)
-            label_array = np.zeros(raw_array.shape)
-        elif is_zip(url):
-            raw_array = load_zip(data)
-            label_array = np.zeros(raw_array.shape)
+        label_array = None
+        # Load arrays
+        if is_npz(self.url):
+            raw_array = load_raw_npz(self.data)
+            label_array = load_labeled_npz(self.data)
+        elif is_trk(self.url):
+            raw_array = load_raw_trk(self.data)
+            label_array = load_labeled_trk(self.data)
+        elif is_png(self.url):
+            raw_array = load_png(self.data)
+        elif is_tiff(self.url):
+            raw_array = load_tiff(self.data)
+        elif is_zip(self.url):
+            raw_array = load_zip(self.data)
         else:
-            ext = pathlib.Path(url).suffix
+            ext = pathlib.Path(self.url).suffix
             raise InvalidExtension('invalid file extension: {}'.format(ext))
-
+        
+        # Reshape or create arrays
+        raw_array = reshape(raw_array, self.input_axes, self.output_axes)
         if label_array is None:
-            label_array = np.zeros(raw_array.shape)
+            # Substitute channels dimension with one feature
+            shape = (*self.raw_array[:-1], 1)
+            label_array = np.zeros(shape)
+        else:
+            label_array = reshape(label_array, self.input_axes, self.output_axes)
 
-        self.raw_array = reshape(raw_array, self.input_axes, self.output_axes)
-        self.label_array = reshape(label_array, self.input_axes, self.output_axes)
+        self.raw_array = raw_array
+        self.label_array = label_array
+
 
     def load_raw(self):
-        url = self.url
-        r = requests.get(url)
-        data = r.content
-        # if r.status_code !== 200:
-        #     raise ValueError(r.status_code)
-        if is_npz(url):
-            raw_array = load_raw_npz(data)
-        elif is_trk(url):
-            raw_array = load_raw_trk(data)
-        elif is_png(url):
-            raw_array = load_png(data)
-        elif is_tiff(url):
-            raw_array = load_tiff(data)
-        elif is_zip(url):
-            raw_array = load_zip(data)
+        if is_npz(self.url):
+            raw_array = load_raw_npz(self.data)
+        elif is_trk(self.url):
+            raw_array = load_raw_trk(self.data)
+        elif is_png(self.url):
+            raw_array = load_png(self.data)
+        elif is_tiff(self.url):
+            raw_array = load_tiff(self.data)
+        elif is_zip(self.url):
+            raw_array = load_zip(self.data)
         else:
-            ext = pathlib.Path(url).suffix
+            ext = pathlib.Path(self.url).suffix
             raise InvalidExtension('invalid file extension: {}'.format(ext))
+        
         self.raw_array = reshape(raw_array, self.input_axes, self.output_axes)
 
     def load_labeled(self):
-        url = self.labeled_url
-        r = requests.get(url)
-        data = r.content
-        if is_npz(url):
-            label_array = load_labeled_npz(data)
+        if is_npz(self.url):
+            label_array = load_labeled_npz(self.labeled_data)
             if label_array is None:
-                label_array = load_npz(data)
-        elif is_trk(url):
-            label_array = load_labeled_trk(data)
-            # self._cell_info = load_lineage_trk(data)
-        elif is_png(url):
-            label_array = load_png(data)
-        elif is_tiff(url):
-            label_array = load_tiff(data)
-        elif is_zip(url):
-            label_array = load_zip(data)
+                label_array = load_npz(self.labeled_data)
+        elif is_trk(self.url):
+            label_array = load_labeled_trk(self.labeled_data)
+        elif is_png(self.url):
+            label_array = load_png(self.labeled_data)
+        elif is_tiff(self.url):
+            label_array = load_tiff(self.labeled_data)
+        elif is_zip(self.url):
+            label_array = load_zip(self.labeled_data)
         else:
-            ext = pathlib.Path(url).suffix
+            ext = pathlib.Path(self.url).suffix
             raise InvalidExtension('invalid file extension: {}'.format(ext))
+        
         self.label_array = reshape(label_array, 'CZYX', self.output_axes)
 
 
