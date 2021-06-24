@@ -1,5 +1,6 @@
+import { FormLabel } from '@material-ui/core';
 import Box from '@material-ui/core/Box';
-import { withStyles } from '@material-ui/core/styles';
+import { makeStyles, withStyles } from '@material-ui/core/styles';
 import Tooltip from '@material-ui/core/Tooltip';
 import MuiToggleButton from '@material-ui/lab/ToggleButton';
 import ToggleButtonGroup from '@material-ui/lab/ToggleButtonGroup';
@@ -36,36 +37,42 @@ const ToggleButtonWithTooltip = ({
   );
 };
 
+const useStyles = makeStyles(theme => ({
+  title: {
+    margin: theme.spacing(1),
+  },
+}));
+
 export default function ToolControls() {
+  const styles = useStyles();
+
   const toolbar = useToolbar();
-  // const brushSize = useSelector(tool, state => state.context.brushSize);
-  // const trace = useSelector(tool, state => state.context.trace);
   const grayscale = useSelector(toolbar, state =>
     state.matches('colorMode.grayscale')
   );
   const tool = useSelector(toolbar, state => state.context.tool);
+  const eraser = useSelector(toolbar, state => state.context.foreground === 0);
   const { send } = toolbar;
 
   const handleChange = (event, value) => {
     const lookup = {
-      brush: 'brush',
-      select: 'select',
-      threshold: 'threshold',
-      trim: 'trim',
-      flood: 'flood',
-      erodeDilate: 'erodeDilate',
-      autofit: 'autofit',
-      watershed: 'watershed',
-      delete: 'delete',
+      brush: 'USE_BRUSH',
+      eraser: 'USE_ERASER',
+      select: 'USE_SELECT',
+      threshold: 'USE_THRESHOLD',
+      trim: 'USE_TRIM',
+      flood: 'USE_FLOOD',
+      watershed: 'USE_WATERSHED',
     };
 
     if (value in lookup) {
-      send({ type: 'USE_TOOL', tool: lookup[value] });
+      send({ type: lookup[value] });
     }
   };
 
   return (
     <Box display='flex' flexDirection='column'>
+      <FormLabel className={styles.title}>Tools</FormLabel>
       <ToggleButtonGroup
         orientation='vertical'
         exclusive
@@ -81,9 +88,16 @@ export default function ToolControls() {
         <ToggleButtonWithTooltip
           tooltipText='Press B'
           value='brush'
-          selected={tool === 'brush'}
+          selected={tool === 'brush' && !eraser}
         >
           Brush
+        </ToggleButtonWithTooltip>
+        <ToggleButtonWithTooltip
+          tooltipText='Press E'
+          value='eraser'
+          selected={tool === 'brush' && eraser}
+        >
+          Eraser
         </ToggleButtonWithTooltip>
         <ToggleButtonWithTooltip
           tooltipText='Press K'
@@ -100,34 +114,12 @@ export default function ToolControls() {
           Flood
         </ToggleButtonWithTooltip>
         <ToggleButtonWithTooltip
-          tooltipText='Press Q'
-          value='erodeDilate'
-          selected={tool === 'erodeDilate'}
-        >
-          Grow/Shrink
-        </ToggleButtonWithTooltip>
-        <ToggleButtonWithTooltip
-          tooltipText='Press Delete'
-          value='delete'
-          selected={tool === 'delete'}
-        >
-          Delete
-        </ToggleButtonWithTooltip>
-        <ToggleButtonWithTooltip
           tooltipText={grayscale ? 'Press T' : 'Requires a single channel'}
           value='threshold'
           selected={tool === 'threshold'}
           disabled={!grayscale}
         >
           Threshold
-        </ToggleButtonWithTooltip>
-        <ToggleButtonWithTooltip
-          tooltipText={grayscale ? 'Press M' : 'Requires a single channel'}
-          value='autofit'
-          selected={tool === 'autofit'}
-          disabled={!grayscale}
-        >
-          Autofit
         </ToggleButtonWithTooltip>
         <ToggleButtonWithTooltip
           tooltipText={grayscale ? 'Press W' : 'Requires a single channel'}

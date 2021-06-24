@@ -57,7 +57,7 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
             to: 'undo',
           }),
         },
-        USE_TOOL: { actions: forwardTo('canvas') },
+        TOOL: { actions: forwardTo('canvas') },
       },
     },
     {

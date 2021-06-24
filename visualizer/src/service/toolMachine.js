@@ -8,10 +8,7 @@ import {
   sendParent,
   spawn,
 } from 'xstate';
-import createAutofitMachine from './tools/autofitMachine';
 import createBrushMachine from './tools/brushMachine';
-import createDeleteMachine from './tools/deleteMachine';
-import createErodeDilateMachine from './tools/erodeDilateMachine';
 import createFloodMachine from './tools/floodMachine';
 import createSelectMachine from './tools/selectMachine';
 import createThresholdMachine from './tools/thresholdMachine';
@@ -22,22 +19,12 @@ import createWatershedMachine from './tools/watershedMachine';
 const { pure, respond } = actions;
 
 // TODO: move to config file?
-const colorTools = [
-  'brush',
-  'select',
-  'erodeDilate',
-  'trim',
-  'flood',
-  'delete',
-];
+const colorTools = ['brush', 'select', 'trim', 'flood'];
 const grayscaleTools = [
   'brush',
   'select',
-  'erodeDilate',
   'trim',
   'flood',
-  'delete',
-  'autofit',
   'watershed',
   'threshold',
 ];
@@ -46,12 +33,9 @@ const createToolMachineLookup = {
   brush: createBrushMachine,
   select: createSelectMachine,
   threshold: createThresholdMachine,
-  autofit: createAutofitMachine,
-  erodeDilate: createErodeDilateMachine,
   trim: createTrimMachine,
   flood: createFloodMachine,
   watershed: createWatershedMachine,
-  delete: createDeleteMachine,
 };
 
 const createToolMachine = context => {
@@ -113,28 +97,83 @@ const colorModeState = {
     color: {
       on: {
         GRAYSCALE: 'grayscale',
-        USE_TOOL: {
-          cond: 'colorTool',
-          actions: ['useTool', 'spawnTool', sendParent((c, e) => e)],
-        },
       },
     },
     grayscale: {
       on: {
-        USE_TOOL: {
-          cond: 'grayscaleTool',
-          actions: ['useTool', 'spawnTool', sendParent((c, e) => e)],
-        },
         COLOR: [
           { target: 'color', cond: 'usingColorTool' },
-          {
-            target: 'color',
-            actions: send({ type: 'USE_TOOL', tool: 'select' }),
-          },
+          { target: 'color', actions: 'useSelect' },
         ],
+        USE_WATERSHED: { actions: 'useWatershed' },
+        USE_THRESHOLD: { actions: 'useThreshold' },
+        AUTOFIT: { actions: 'autofit' },
       },
     },
   },
+  on: {
+    USE_BRUSH: { actions: 'useBrush' },
+    USE_ERASER: { actions: 'useEraser' },
+    USE_SELECT: { actions: 'useSelect' },
+    USE_TRIM: { actions: 'useTrim' },
+    USE_FLOOD: { actions: 'useFlood' },
+  },
+};
+
+const useToolActions = {
+  useBrush: pure(({ foreground: fg, background: bg }) => [
+    send({ type: 'FOREGROUND', foreground: fg === 0 ? bg : fg }),
+    send({ type: 'BACKGROUND', background: 0 }),
+    assign({
+      tool: 'brush',
+      toolActor: context => spawn(createBrushMachine(context), 'tool'),
+    }),
+    sendParent({ type: 'TOOL', tool: 'brush' }),
+  ]),
+  useEraser: pure(({ foreground: fg, background: bg }) => [
+    send({ type: 'FOREGROUND', foreground: 0 }),
+    send({ type: 'BACKGROUND', background: bg === 0 ? fg : bg }),
+    assign({
+      tool: 'brush',
+      toolActor: context => spawn(createBrushMachine(context), 'tool'),
+    }),
+    sendParent({ type: 'TOOL', tool: 'brush' }),
+  ]),
+  useSelect: pure(() => [
+    assign({
+      tool: 'select',
+      toolActor: context => spawn(createSelectMachine(context), 'tool'),
+    }),
+    sendParent({ type: 'TOOL', tool: 'select' }),
+  ]),
+  useTrim: pure(() => [
+    assign({
+      tool: 'trim',
+      toolActor: context => spawn(createTrimMachine(context), 'tool'),
+    }),
+    sendParent({ type: 'TOOL', tool: 'trim' }),
+  ]),
+  useFlood: pure(() => [
+    assign({
+      tool: 'flood',
+      toolActor: context => spawn(createFloodMachine(context), 'tool'),
+    }),
+    sendParent({ type: 'TOOL', tool: 'flood' }),
+  ]),
+  useWatershed: pure(() => [
+    assign({
+      tool: 'watershed',
+      toolActor: context => spawn(createWatershedMachine(context), 'tool'),
+    }),
+    sendParent({ type: 'TOOL', tool: 'watershed' }),
+  ]),
+  useThreshold: pure(() => [
+    assign({
+      tool: 'threshold',
+      toolActor: context => spawn(createThresholdMachine(context), 'tool'),
+    }),
+    sendParent({ type: 'TOOL', tool: 'threshold' }),
+  ]),
 };
 
 const selectState = {
@@ -150,6 +189,45 @@ const selectState = {
     PREV_BACKGROUND: { actions: 'prevBackground' },
     NEXT_BACKGROUND: { actions: 'nextBackground' },
   },
+};
+
+const editActions = {
+  swap: send(({ foreground, background }) => ({
+    type: 'EDIT',
+    action: 'swap_single_frame',
+    args: {
+      label_1: foreground,
+      label_2: background,
+    },
+  })),
+  replace: send(({ foreground, background }) => ({
+    type: 'EDIT',
+    action: 'replace_single',
+    args: {
+      label_1: foreground,
+      label_2: background,
+    },
+  })),
+  erode: send(({ foreground }) => ({
+    type: 'EDIT',
+    action: 'erode',
+    args: { label: foreground },
+  })),
+  dilate: send(({ foreground }) => ({
+    type: 'EDIT',
+    action: 'dilate',
+    args: { label: foreground },
+  })),
+  delete: send(({ foreground }) => ({
+    type: 'EDIT',
+    action: 'replace_single',
+    args: { label_1: 0, label_2: foreground },
+  })),
+  autofit: send(({ foreground }) => ({
+    type: 'EDIT',
+    action: 'active_contour',
+    args: { label: foreground },
+  })),
 };
 
 const toolMachine = Machine(
@@ -168,7 +246,10 @@ const toolMachine = Machine(
       toolActor: null,
     },
     entry: 'spawnTool',
-    invoke: { src: 'listenForToolHotkeys' },
+    invoke: [
+      { src: 'listenForToolHotkeys' },
+      { src: 'listenForActionHotkeys' },
+    ],
     type: 'parallel',
     states: {
       colorMode: colorModeState,
@@ -180,6 +261,9 @@ const toolMachine = Machine(
 
       SWAP: { actions: 'swap' },
       REPLACE: { actions: 'replace' },
+      DELETE: { actions: 'delete' },
+      ERODE: { actions: 'erode' },
+      DILATE: { actions: 'dilate' },
 
       // context not shared with tools
       FRAME: { actions: 'setFrame' },
@@ -236,27 +320,37 @@ const toolMachine = Machine(
           unbind('}');
         };
       },
+      listenForActionHotkeys: () => send => {
+        bind('s', () => send('SWAP'));
+        bind('r', () => send('REPLACE'));
+        bind('q', () => send('ERODE'));
+        bind('shift+q', () => send('DILATE'));
+        bind(['del', 'backspace'], () => send('DELETE'));
+        return () => {
+          unbind('s');
+          unbind('r');
+          unbind('q');
+          unbind('shift+q');
+          unbind(['del', 'backspace']);
+        };
+      },
       listenForToolHotkeys: () => send => {
-        const lookup = {
-          b: 'brush',
-          v: 'select',
-          t: 'threshold',
-          k: 'trim',
-          g: 'flood',
-          q: 'erodeDilate',
-          m: 'autofit',
-          w: 'watershed',
-          Backspace: 'delete',
+        bind('b', () => send('USE_BRUSH'));
+        bind('e', () => send('USE_ERASER'));
+        bind('v', () => send('USE_SELECT'));
+        bind('t', () => send('USE_THRESHOLD'));
+        bind('k', () => send('USE_TRIM'));
+        bind('g', () => send('USE_FLOOD'));
+        bind('w', () => send('USE_WATERSHED'));
+        return () => {
+          unbind('b');
+          unbind('e');
+          unbind('v');
+          unbind('t');
+          unbind('k');
+          unbind('g');
+          unbind('w');
         };
-
-        const listener = e => {
-          if (e.key in lookup) {
-            send({ type: 'USE_TOOL', tool: lookup[e.key] });
-          }
-        };
-
-        window.addEventListener('keydown', listener);
-        return () => window.removeEventListener('keydown', listener);
       },
     },
     guards: {
@@ -268,6 +362,8 @@ const toolMachine = Machine(
     actions: {
       ...toolActions,
       ...selectActions,
+      ...editActions,
+      ...useToolActions,
       save: respond(({ tool, foreground, background }) => ({
         type: 'RESTORE',
         tool,
@@ -279,7 +375,9 @@ const toolMachine = Machine(
         foreground,
         background,
       })),
-      useTool: assign({ tool: (_, { tool }) => tool }),
+      useTool: assign({
+        tool: (_, { tool }) => tool,
+      }),
       spawnTool: assign({
         toolActor: createToolMachine,
       }),
@@ -299,22 +397,6 @@ const toolMachine = Machine(
         maxLabel: (_, { labels }) =>
           Math.max(...Object.keys(labels).map(Number)),
       }),
-      swap: send(({ foreground, background }) => ({
-        type: 'EDIT',
-        action: 'swap_single_frame',
-        args: {
-          label_1: foreground,
-          label_2: background,
-        },
-      })),
-      replace: send(({ foreground, background }) => ({
-        type: 'EDIT',
-        action: 'replace_single',
-        args: {
-          label_1: foreground,
-          label_2: background,
-        },
-      })),
     },
   }
 );
