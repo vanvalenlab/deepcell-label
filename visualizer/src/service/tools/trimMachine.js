@@ -18,8 +18,7 @@ const createTrimMachine = ({ x, y, label, foreground, background }) =>
         BACKGROUND: { actions: 'setBackground' },
         mouseup: [
           { cond: 'onNoLabel' },
-          { cond: 'onForeground', actions: 'trim' },
-          { actions: 'selectForeground' },
+          { actions: ['selectForeground', 'trim'] },
         ],
       },
     },
