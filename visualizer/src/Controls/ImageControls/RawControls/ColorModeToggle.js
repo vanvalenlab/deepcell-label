@@ -34,7 +34,7 @@ function ColorModeToggle() {
             Color
           </Grid>
         </Tooltip>
-        <Tooltip title='Press Z to toggle.'>
+        <Tooltip title='Press S to toggle.'>
           <Grid item style={{ flex: '0 1 auto' }}>
             <Switch
               // color="default"

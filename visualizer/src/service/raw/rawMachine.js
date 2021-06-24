@@ -135,8 +135,8 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
     {
       services: {
         listenForColorModeHotkey: () => send => {
-          bind('z', () => send('TOGGLE_COLOR_MODE'));
-          return () => unbind('z');
+          bind('s', () => send('TOGGLE_COLOR_MODE'));
+          return () => unbind('s');
         },
         listenForChannelHotkeys:
           ({ channel, numChannels }) =>
