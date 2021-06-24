@@ -46,6 +46,8 @@ const createChannelMachine = (projectId, channel, numFrames) =>
         // layer settings for grayscale mode
         invert: false,
         range: [0, 255],
+        brightness: 0,
+        contrast: 0,
       },
       initial: 'idle',
       states: {
@@ -84,6 +86,8 @@ const createChannelMachine = (projectId, channel, numFrames) =>
         FRAME: { actions: 'useFrame' },
         TOGGLE_INVERT: { actions: 'toggleInvert' },
         SET_RANGE: { actions: 'setRange' },
+        SET_BRIGHTNESS: { actions: 'setBrightness' },
+        SET_CONTRAST: { actions: 'setContrast' },
       },
     },
     {
@@ -131,6 +135,13 @@ const createChannelMachine = (projectId, channel, numFrames) =>
             Math.max(0, Math.min(255, range[0])),
             Math.max(0, Math.min(255, range[1])),
           ],
+        }),
+        setBrightness: assign({
+          brightness: (_, { brightness }) =>
+            Math.max(-1, Math.min(1, brightness)),
+        }),
+        setContrast: assign({
+          contrast: (_, { contrast }) => Math.max(-1, Math.min(1, contrast)),
         }),
         setAutoRange: assign({
           range: ({ rawImage: img }) => {
