@@ -72,6 +72,7 @@ const selectActions = {
     type: 'FOREGROUND',
     foreground: maxLabel + 1,
   })),
+  resetForeground: send({ type: 'FOREGROUND', foreground: 0 }),
   resetBackground: send({ type: 'BACKGROUND', background: 0 }),
   prevForeground: send(({ foreground: fg, maxLabel: max }) => ({
     type: 'FOREGROUND',
@@ -183,6 +184,7 @@ const selectState = {
     SELECT_BACKGROUND: { actions: 'selectBackground' },
     SWITCH: { actions: 'switch' },
     NEW_FOREGROUND: { actions: 'newForeground' },
+    RESET_FOREGROUND: { actions: 'resetForeground' },
     RESET_BACKGROUND: { actions: 'resetBackground' },
     PREV_FOREGROUND: { actions: 'prevForeground' },
     NEXT_FOREGROUND: { actions: 'nextForeground' },
@@ -305,7 +307,10 @@ const toolMachine = Machine(
       listenForSelectHotkeys: () => send => {
         bind('x', () => send('SWITCH'));
         bind('n', () => send('NEW_FOREGROUND'));
-        bind('esc', () => send('RESET_BACKGROUND'));
+        bind('esc', () => {
+          send('RESET_FOREGROUND');
+          send('RESET_BACKGROUND');
+        });
         bind('[', () => send('PREV_FOREGROUND'));
         bind(']', () => send('NEXT_FOREGROUND'));
         bind('{', () => send('PREV_BACKGROUND'));
