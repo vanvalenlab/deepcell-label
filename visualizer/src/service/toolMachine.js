@@ -210,25 +210,25 @@ const editActions = {
       label_2: background,
     },
   })),
-  erode: send(({ foreground }) => ({
+  erode: send(({ selected }) => ({
     type: 'EDIT',
     action: 'erode',
-    args: { label: foreground },
+    args: { label: selected },
   })),
-  dilate: send(({ foreground }) => ({
+  dilate: send(({ selected }) => ({
     type: 'EDIT',
     action: 'dilate',
-    args: { label: foreground },
+    args: { label: selected },
   })),
-  delete: send(({ foreground, background }) => ({
+  delete: send(({ selected }) => ({
     type: 'EDIT',
     action: 'replace_single',
-    args: { label_1: 0, label_2: foreground === 0 ? background : foreground },
+    args: { label_1: 0, label_2: selected },
   })),
-  autofit: send(({ foreground }) => ({
+  autofit: send(({ selected }) => ({
     type: 'EDIT',
     action: 'active_contour',
-    args: { label: foreground },
+    args: { label: selected },
   })),
 };
 
@@ -236,6 +236,7 @@ const toolMachine = Machine(
   {
     id: 'tool',
     context: {
+      selected: 1,
       foreground: 1,
       background: 0,
       x: 0,
