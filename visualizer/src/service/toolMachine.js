@@ -220,10 +220,10 @@ const editActions = {
     action: 'dilate',
     args: { label: foreground },
   })),
-  delete: send(({ foreground }) => ({
+  delete: send(({ foreground, background }) => ({
     type: 'EDIT',
     action: 'replace_single',
-    args: { label_1: 0, label_2: foreground },
+    args: { label_1: 0, label_2: foreground === 0 ? background : foreground },
   })),
   autofit: send(({ foreground }) => ({
     type: 'EDIT',
