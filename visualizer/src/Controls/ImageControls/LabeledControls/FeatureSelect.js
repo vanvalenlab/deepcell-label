@@ -18,16 +18,16 @@ function FeatureSelect() {
     labeled.send({ type: 'LOAD_FEATURE', feature: Number(event.target.value) });
   };
 
+  const tooltipText = (
+    <span>
+      Cycle with <kbd>F</kbd> or <kbd>Shift</kbd> + <kbd>F</kbd>
+    </span>
+  );
+
   return (
     numFeatures > 1 && (
       <Grid item>
-        <Tooltip
-          title={
-            <span>
-              Cycle with <kbd>F</kbd> or <kbd>Shift</kbd> + <kbd>F</kbd>.
-            </span>
-          }
-        >
+        <Tooltip title={tooltipText}>
           <Select native value={feature} onChange={handleFeatureChange}>
             {featureNames.map((name, index) => (
               <option key={index} value={index}>

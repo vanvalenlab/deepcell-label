@@ -29,8 +29,14 @@ function OpacitySlider() {
 
   const styles = useStyles();
 
+  const tooltipText = (
+    <span>
+      Cycle between raw, overlay, and labels with <kbd>Z</kbd>
+    </span>
+  );
+
   return (
-    <Tooltip title='Press Z to cycle'>
+    <Tooltip title={tooltipText}>
       <Box className={styles.opacity}>
         <Typography gutterBottom>Opacity</Typography>
 

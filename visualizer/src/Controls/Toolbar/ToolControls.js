@@ -43,6 +43,46 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
+const tooltips = {
+  select: (
+    <span>
+      Click to pick the foreground.
+      <br />
+      Click the foreground to make it the background. (<kbd>V</kbd>)
+    </span>
+  ),
+  brush: (
+    <span>
+      Click and drag to paint a label (<kbd>B</kbd>)
+    </span>
+  ),
+  eraser: (
+    <span>
+      Click and drag to erase a label (<kbd>E</kbd>)
+    </span>
+  ),
+  trim: (
+    <span>
+      Click a label to remove unconnected parts (<kbd>K</kbd>)
+    </span>
+  ),
+  flood: (
+    <span>
+      Click a region to fill it with a label (<kbd>G</kbd>)
+    </span>
+  ),
+  threshold: (
+    <span>
+      Click and drag to fill in the brightest pixels in a box (<kbd>T</kbd>)
+    </span>
+  ),
+  watershed: (
+    <span>
+      Click on two spots in the same label to split it (<kbd>W</kbd>)
+    </span>
+  ),
+};
+
 export default function ToolControls() {
   const styles = useStyles();
 
@@ -51,7 +91,7 @@ export default function ToolControls() {
     state.matches('colorMode.grayscale')
   );
   const tool = useSelector(toolbar, state => state.context.tool);
-  const eraser = useSelector(toolbar, state => state.context.foreground === 0);
+  const erasing = useSelector(toolbar, state => state.context.foreground === 0);
   const { send } = toolbar;
 
   const handleChange = (event, value) => {
@@ -79,42 +119,44 @@ export default function ToolControls() {
         onChange={handleChange}
       >
         <ToggleButtonWithTooltip
-          tooltipText='Press V'
+          tooltipText={tooltips.select}
           value='select'
           selected={tool === 'select'}
         >
           Select
         </ToggleButtonWithTooltip>
         <ToggleButtonWithTooltip
-          tooltipText='Press B'
+          tooltipText={tooltips.brush}
           value='brush'
-          selected={tool === 'brush' && !eraser}
+          selected={tool === 'brush' && !erasing}
         >
           Brush
         </ToggleButtonWithTooltip>
         <ToggleButtonWithTooltip
-          tooltipText='Press E'
+          tooltipText={tooltips.eraser}
           value='eraser'
-          selected={tool === 'brush' && eraser}
+          selected={tool === 'brush' && erasing}
         >
           Eraser
         </ToggleButtonWithTooltip>
         <ToggleButtonWithTooltip
-          tooltipText='Press K'
+          tooltipText={tooltips.trim}
           value='trim'
           selected={tool === 'trim'}
         >
           Trim
         </ToggleButtonWithTooltip>
         <ToggleButtonWithTooltip
-          tooltipText='Press G'
+          tooltipText={tooltips.flood}
           value='flood'
           selected={tool === 'flood'}
         >
           Flood
         </ToggleButtonWithTooltip>
         <ToggleButtonWithTooltip
-          tooltipText={grayscale ? 'Press T' : 'Requires a single channel'}
+          tooltipText={
+            grayscale ? tooltips.threshold : 'Requires a single channel'
+          }
           value='threshold'
           selected={tool === 'threshold'}
           disabled={!grayscale}
@@ -122,7 +164,9 @@ export default function ToolControls() {
           Threshold
         </ToggleButtonWithTooltip>
         <ToggleButtonWithTooltip
-          tooltipText={grayscale ? 'Press W' : 'Requires a single channel'}
+          tooltipText={
+            grayscale ? tooltips.watershed : 'Requires a single channel'
+          }
           value='watershed'
           selected={tool === 'watershed'}
           disabled={!grayscale}

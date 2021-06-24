@@ -26,8 +26,14 @@ const InvertToggle = ({ channel }) => {
     input.className = input.className + ' mousetrap';
   }, []);
 
+  const tooltip = (
+    <span>
+      Toggle with <kbd>I</kbd>
+    </span>
+  );
+
   return (
-    <Tooltip title='Press I to toggle'>
+    <Tooltip title={tooltip}>
       <FormGroup row>
         <FormControlLabel
           control={
@@ -57,8 +63,14 @@ const ChannelSelector = () => {
     grayscale.send({ type: 'LOAD_CHANNEL', channel: Number(e.target.value) });
   };
 
+  const tooltip = (
+    <span>
+      Cycle with <kbd>C</kbd> or <kbd>Shift</kbd> + <kbd>C</kbd>
+    </span>
+  );
+
   return (
-    <Tooltip title='Press C or Shift+C to cycle.'>
+    <Tooltip title={tooltip}>
       <Select native value={channel} onChange={onChange}>
         {names.map((opt, index) => (
           <option key={index} value={index}>

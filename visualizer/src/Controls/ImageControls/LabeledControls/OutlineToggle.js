@@ -18,8 +18,14 @@ function OutlineToggle() {
     input.className = input.className + ' mousetrap';
   }, []);
 
+  const tooltipText = (
+    <span>
+      Toggle with <kbd>O</kbd>
+    </span>
+  );
+
   return (
-    <Tooltip title='Press O to toggle'>
+    <Tooltip title={tooltipText}>
       <FormGroup row>
         <FormControlLabel
           control={

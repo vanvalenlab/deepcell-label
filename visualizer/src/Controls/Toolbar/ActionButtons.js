@@ -50,6 +50,141 @@ const actionEvents = [
   'DELETE',
 ];
 
+function DeleteButton() {
+  const styles = useStyles();
+  const toolbar = useToolbar();
+  const { send } = toolbar;
+
+  const tooltipText = (
+    <span>
+      Removes a label (<kbd>Del</kbd>)
+    </span>
+  );
+
+  return (
+    <ButtonWithTooltip
+      tooltipText={tooltipText}
+      onClick={() => send('DELETE')}
+      className={styles.button}
+    >
+      Delete
+    </ButtonWithTooltip>
+  );
+}
+
+function AutofitButton() {
+  const styles = useStyles();
+  const toolbar = useToolbar();
+  const { send } = toolbar;
+  const grayscale = useSelector(toolbar, state =>
+    state.matches('colorMode.grayscale')
+  );
+
+  const tooltipText = (
+    <span>
+      Fits a label's shape to the channel (<kbd>M</kbd>)
+    </span>
+  );
+
+  return (
+    <ButtonWithTooltip
+      tooltipText={grayscale ? tooltipText : 'Requires a single channel'}
+      disabled={!grayscale}
+      onClick={() => send('AUTOFIT')}
+      className={styles.button}
+    >
+      Autofit
+    </ButtonWithTooltip>
+  );
+}
+
+function ShrinkButton() {
+  const styles = useStyles();
+  const toolbar = useToolbar();
+  const { send } = toolbar;
+
+  const tooltipText = (
+    <span>
+      Contracts a label by one pixel (<kbd>Q</kbd>)
+    </span>
+  );
+
+  return (
+    <ButtonWithTooltip
+      tooltipText={tooltipText}
+      onClick={() => send('ERODE')}
+      className={styles.button}
+    >
+      Shrink
+    </ButtonWithTooltip>
+  );
+}
+
+function GrowButton() {
+  const styles = useStyles();
+  const toolbar = useToolbar();
+  const { send } = toolbar;
+
+  const tooltipText = (
+    <span>
+      Expands a label by one pixel (<kbd>Shift</kbd> + <kbd>Q</kbd>)
+    </span>
+  );
+
+  return (
+    <ButtonWithTooltip
+      tooltipText={tooltipText}
+      onClick={() => send('DILATE')}
+      className={styles.button}
+    >
+      Grow
+    </ButtonWithTooltip>
+  );
+}
+function SwapButton() {
+  const styles = useStyles();
+  const toolbar = useToolbar();
+  const { send } = toolbar;
+
+  const tooltipText = (
+    <span>
+      Switches the position of two labels (<kbd>S</kbd>)
+    </span>
+  );
+
+  return (
+    <ButtonWithTooltip
+      tooltipText={tooltipText}
+      onClick={() => send('SWAP')}
+      className={styles.button}
+    >
+      Swap
+    </ButtonWithTooltip>
+  );
+}
+
+function ReplaceButton() {
+  const styles = useStyles();
+  const toolbar = useToolbar();
+  const { send } = toolbar;
+
+  const tooltipText = (
+    <span>
+      Combines two labels (<kbd>R</kbd>)
+    </span>
+  );
+
+  return (
+    <ButtonWithTooltip
+      tooltipText={tooltipText}
+      onClick={() => send('REPLACE')}
+      className={styles.button}
+    >
+      Replace
+    </ButtonWithTooltip>
+  );
+}
+
 export default function ActionButtons() {
   const toolbar = useToolbar();
   const { send } = toolbar;
@@ -64,49 +199,12 @@ export default function ActionButtons() {
     <Box display='flex' flexDirection='column'>
       <FormLabel className={styles.title}>Actions</FormLabel>
       <ButtonGroup orientation='vertical'>
-        <ButtonWithTooltip
-          tooltipText={'Press Delete'}
-          onClick={() => send('DELETE')}
-          className={styles.button}
-        >
-          Delete
-        </ButtonWithTooltip>
-        <ButtonWithTooltip
-          tooltipText={grayscale ? 'Press T' : 'Requires a single channel'}
-          disabled={!grayscale}
-          onClick={() => send('AUTOFIT')}
-          className={styles.button}
-        >
-          Autofit
-        </ButtonWithTooltip>
-        <ButtonWithTooltip
-          tooltipText={'Press Q'}
-          onClick={() => send('ERODE')}
-          className={styles.button}
-        >
-          Shrink
-        </ButtonWithTooltip>
-        <ButtonWithTooltip
-          tooltipText={'Press Shift + Q'}
-          onClick={() => send('DILATE')}
-          className={styles.button}
-        >
-          Grow
-        </ButtonWithTooltip>
-        <ButtonWithTooltip
-          tooltipText={'Press S'}
-          onClick={() => send('SWAP')}
-          className={styles.button}
-        >
-          Swap
-        </ButtonWithTooltip>
-        <ButtonWithTooltip
-          tooltipText={'Press R'}
-          onClick={() => send('REPLACE')}
-          className={styles.button}
-        >
-          Replace
-        </ButtonWithTooltip>
+        <DeleteButton />
+        <AutofitButton />
+        <ShrinkButton />
+        <GrowButton />
+        <SwapButton />
+        <ReplaceButton />
       </ButtonGroup>
     </Box>
   );
