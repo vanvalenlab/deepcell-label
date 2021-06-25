@@ -19,6 +19,7 @@ from flask import current_app
 from flask import send_file
 from flask import make_response
 from werkzeug.exceptions import HTTPException
+import matplotlib
 
 from deepcell_label.label import TrackEdit, ZStackEdit
 from deepcell_label.models import Project
@@ -100,6 +101,21 @@ def semantic_instance_labels(project_id, feature):
     if not project:
         return jsonify({'error': f'project {project_id} not found'}), 404
     return project.labels.cell_info[feature]
+
+@bp.route('/api/colormap/<project_id>/<int:feature>')
+def colormap(project_id, feature):
+    project = Project.get(project_id)
+    if not project:
+        return jsonify({'error': f'project {project_id} not found'}), 404
+    max_label = project.get_max_label(feature)
+    colormap = matplotlib.pyplot.get_cmap('viridis', max_label)
+    colors = map(matplotlib.colors.rgb2hex, colormap.colors)
+    # Add no label and new label colors
+    colors = ['#000000'] + list(colors) + ['#FFFFFF']
+    response = make_response({ 'colors': colors })
+    response.headers['Cache-Control'] = 'max-age=0'
+
+    return response
 
 
 @bp.route('/api/edit/<token>/<action_type>', methods=['POST'])

@@ -7,6 +7,12 @@ function fetchLabels(context) {
   return fetch(pathToInstances).then(res => res.json());
 }
 
+function fetchColors(context) {
+  const { projectId, feature } = context;
+  const pathToColors = `/api/colormap/${projectId}/${feature}`;
+  return fetch(pathToColors).then(res => res.json());
+}
+
 function fetchLabeledFrame(context) {
   const { projectId, feature, loadingFrame: frame } = context;
   const pathToLabeled = `/api/labeled/${projectId}/${feature}/${frame}`;
@@ -78,10 +84,30 @@ const reloadLabelsState = {
       invoke: {
         src: fetchLabels,
         onDone: { target: 'reloaded', actions: 'saveLabels' },
-        onError: {
-          target: 'reloaded',
-          actions: (context, event) => console.log(event),
-        },
+        onError: 'reloaded',
+      },
+    },
+    reloaded: {
+      type: 'final',
+    },
+  },
+};
+
+const reloadColorsState = {
+  entry: assign({ reloadColors: (_, { data: { labels } }) => labels }),
+  initial: 'checkReload',
+  states: {
+    checkReload: {
+      always: [
+        { cond: ({ reloadColors }) => reloadColors, target: 'reloading' },
+        'reloaded',
+      ],
+    },
+    reloading: {
+      invoke: {
+        src: fetchColors,
+        onDone: { target: 'reloaded', actions: 'saveColors' },
+        onError: 'reloaded',
       },
     },
     reloaded: {
@@ -95,6 +121,7 @@ const reloadState = {
   states: {
     frame: reloadFrameState,
     labels: reloadLabelsState,
+    colors: reloadColorsState,
   },
   onDone: {
     target: 'idle',
@@ -141,17 +168,23 @@ const createFeatureMachine = (projectId, feature, numFrames) =>
         loadingFrame: null,
         frames: {},
         arrays: {},
+        colors: {},
         labeledImage: new Image(),
         labeledArray: null,
         labels: null,
         reloadLabels: false,
       },
       initial: 'idle',
-      invoke: {
-        src: fetchLabels,
-        onDone: { actions: 'saveLabels' },
-        onError: { actions: (context, event) => console.log(event) },
-      },
+      invoke: [
+        {
+          src: fetchLabels,
+          onDone: { actions: 'saveLabels' },
+        },
+        {
+          src: fetchColors,
+          onDone: { actions: 'saveColors' },
+        },
+      ],
       states: {
         idle: {
           on: {
@@ -229,6 +262,7 @@ const createFeatureMachine = (projectId, feature, numFrames) =>
           })
         ),
         saveLabels: assign({ labels: (_, event) => event.data }),
+        saveColors: assign({ colors: (_, event) => event.data.colors }),
         loadNextFrame: assign({
           loadingFrame: ({ numFrames, frame, frames }) => {
             const allFrames = [...Array(numFrames).keys()];
@@ -251,18 +285,6 @@ const createFeatureMachine = (projectId, feature, numFrames) =>
           );
           return { type: 'LOAD_FRAME', frame: closestFrame };
         }),
-        //   ({ type: 'LOAD_FRAME', })
-        //   loadingFrame: ({ numFrames, frame, frames }) => {
-        //     const allFrames = [...Array(numFrames).keys()];
-        //     return allFrames
-        //       // remove loaded frames
-        //       .filter((frame) => !(frame in frames))
-        //       // load the closest unloaded frame to the current frame
-        //       .reduce((prev, curr) =>
-        //         Math.abs(curr - frame) < Math.abs(prev - frame) ? curr : prev
-        //       );
-        //   }
-        // }),
       },
     }
   );

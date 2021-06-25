@@ -12,7 +12,7 @@ import UndoRedo from './Controls/Toolbar/UndoRedo';
 import Footer from './Footer/Footer';
 import Instructions from './Instructions/Instructions';
 import Navbar from './Navbar';
-import { useCanvas } from './ServiceContext';
+import { useCanvas, useLabeled } from './ServiceContext';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -55,6 +55,7 @@ function Label() {
   const [canvasBoxHeight, setCanvasBoxHeight] = useState(0);
 
   const canvas = useCanvas();
+  const labeled = useLabeled();
 
   useEffect(() => {
     const setCanvasBoxDimensions = () => {
@@ -91,7 +92,7 @@ function Label() {
           <UndoRedo />
           <ToolControls />
           <ActionButtons />
-          <SelectedPalette />
+          {labeled && <SelectedPalette />}
         </Box>
         <Box ref={canvasBoxRef} className={styles.canvasBox}>
           <Canvas />

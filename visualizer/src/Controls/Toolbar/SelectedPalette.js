@@ -10,7 +10,7 @@ import SubdirectoryArrowLeftIcon from '@material-ui/icons/SubdirectoryArrowLeft'
 import SubdirectoryArrowRightIcon from '@material-ui/icons/SubdirectoryArrowRight';
 import { useSelector } from '@xstate/react';
 import React, { useState } from 'react';
-import { useToolbar } from '../../ServiceContext';
+import { useFeature, useLabeled, useToolbar } from '../../ServiceContext';
 
 const useStyles = makeStyles(theme => ({
   palette: {
@@ -117,12 +117,17 @@ function ForegroundBox() {
   const toolbar = useToolbar();
   const { send } = toolbar;
   const foreground = useSelector(toolbar, state => state.context.foreground);
-  const noLabel = foreground === 0;
 
   const [showButtons, setShowButtons] = useState(false);
-  const buttonColor = noLabel ? 'secondary' : 'default';
+  const buttonColor = foreground === 0 ? 'secondary' : 'default';
 
   const styles = useStyles();
+
+  const labeled = useLabeled();
+  const featureIndex = useSelector(labeled, state => state.context.feature);
+  const feature = useFeature(featureIndex);
+  const colors = useSelector(feature, state => state.context.colors);
+  const color = colors[foreground];
 
   const newTooltip = (
     <span>
@@ -151,7 +156,7 @@ function ForegroundBox() {
   return (
     <Box
       className={styles.foreground}
-      style={{ background: noLabel ? 'black' : 'white' }}
+      style={{ background: color }}
       onMouseEnter={() => setShowButtons(true)}
       onMouseLeave={() => setShowButtons(false)}
     >
@@ -210,12 +215,17 @@ function BackgroundBox() {
   const toolbar = useToolbar();
   const { send } = toolbar;
   const background = useSelector(toolbar, state => state.context.background);
-  const noLabel = background === 0;
 
   const [showButtons, setShowButtons] = useState(false);
-  const buttonColor = noLabel ? 'secondary' : 'default';
+  const buttonColor = background === 0 ? 'secondary' : 'default';
 
   const styles = useStyles();
+
+  const labeled = useLabeled();
+  const featureIndex = useSelector(labeled, state => state.context.feature);
+  const feature = useFeature(featureIndex);
+  const colors = useSelector(feature, state => state.context.colors);
+  const color = colors[background];
 
   const resetTooltip = (
     <span>
@@ -238,7 +248,7 @@ function BackgroundBox() {
   return (
     <Box
       className={styles.background}
-      style={{ background: noLabel ? 'black' : 'white' }}
+      style={{ background: color }}
       onMouseEnter={() => setShowButtons(true)}
       onMouseLeave={() => setShowButtons(false)}
     >
