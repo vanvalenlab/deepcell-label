@@ -11,7 +11,10 @@ const trackingMachine = Machine(
       parent: null,
     },
     on: {
-      FOREGROUND: { actions: ['setForeground', 'updateDivision'] },
+      FOREGROUND: {
+        cond: (_, { foreground }) => foreground !== 0,
+        actions: ['setForeground', 'updateDivision'],
+      },
       LABELS: { actions: ['setLabels', 'updateDivision'] },
     },
   },
