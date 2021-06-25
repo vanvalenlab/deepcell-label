@@ -102,6 +102,7 @@ def semantic_instance_labels(project_id, feature):
         return jsonify({'error': f'project {project_id} not found'}), 404
     return project.labels.cell_info[feature]
 
+
 @bp.route('/api/colormap/<project_id>/<int:feature>')
 def colormap(project_id, feature):
     project = Project.get(project_id)
@@ -112,7 +113,7 @@ def colormap(project_id, feature):
     colors = map(matplotlib.colors.rgb2hex, colormap.colors)
     # Add no label and new label colors
     colors = ['#000000'] + list(colors) + ['#FFFFFF']
-    response = make_response({ 'colors': colors })
+    response = make_response({'colors': colors})
     response.headers['Cache-Control'] = 'max-age=0'
 
     return response
