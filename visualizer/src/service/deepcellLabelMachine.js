@@ -54,7 +54,7 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
         BACKEND_REDO: { actions: forwardTo('api') },
         EDITED: { actions: forwardTo('image') },
         ADD_ACTOR: { actions: forwardTo('undo') },
-        USE_TOOL: { actions: forwardTo('canvas') },
+        TOOL: { actions: forwardTo('canvas') },
         COORDINATES: { actions: forwardTo('tool') },
         mouseup: { actions: forwardTo('tool') },
         mousedown: { actions: forwardTo('tool') },

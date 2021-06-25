@@ -99,6 +99,29 @@ export function outlineAll(imageData, labeledArray, color) {
   }
 }
 
+// contrast between 0 and 1
+export function contrastImageData(imageData, contrast) {
+  const { data } = imageData;
+  contrast *= 255; // scale fraction to full range of pixel values
+  const factor = (255 + contrast) / (255.01 - contrast); // add .1 to avoid /0 error
+  for (let i = 0; i < data.length; i += 4) {
+    data[i] = factor * (data[i] - 128) + 128;
+    data[i + 1] = factor * (data[i + 1] - 128) + 128;
+    data[i + 2] = factor * (data[i + 2] - 128) + 128;
+  }
+}
+
+// brightness between -1 and 1
+export function brightnessImageData(imageData, brightness) {
+  const { data } = imageData;
+  brightness *= 255; // scale fraction to full range of pixel values
+  for (let i = 0; i < data.length; i += 4) {
+    data[i] = data[i] + brightness;
+    data[i + 1] = data[i + 1] + brightness;
+    data[i + 2] = data[i + 2] + brightness;
+  }
+}
+
 export function adjustRangeImageData(imageData, min, max) {
   const { data } = imageData;
   const diff = max - min;

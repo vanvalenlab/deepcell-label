@@ -1,4 +1,4 @@
-import { makeStyles } from '@material-ui/core';
+import { FormLabel, makeStyles } from '@material-ui/core';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import FormGroup from '@material-ui/core/FormGroup';
 import Grid from '@material-ui/core/Grid';
@@ -26,8 +26,14 @@ const InvertToggle = ({ channel }) => {
     input.className = input.className + ' mousetrap';
   }, []);
 
+  const tooltip = (
+    <span>
+      Toggle with <kbd>I</kbd>
+    </span>
+  );
+
   return (
-    <Tooltip title='Press I to toggle'>
+    <Tooltip title={tooltip}>
       <FormGroup row>
         <FormControlLabel
           control={
@@ -57,8 +63,14 @@ const ChannelSelector = () => {
     grayscale.send({ type: 'LOAD_CHANNEL', channel: Number(e.target.value) });
   };
 
+  const tooltip = (
+    <span>
+      Cycle with <kbd>C</kbd> or <kbd>Shift</kbd> + <kbd>C</kbd>
+    </span>
+  );
+
   return (
-    <Tooltip title='Press C or Shift+C to cycle.'>
+    <Tooltip title={tooltip}>
       <Select native value={channel} onChange={onChange}>
         {names.map((opt, index) => (
           <option key={index} value={index}>
@@ -70,6 +82,66 @@ const ChannelSelector = () => {
   );
 };
 
+const BrightnessSlider = ({ channel }) => {
+  const brightness = useSelector(channel, state => state.context.brightness);
+
+  const { send } = channel;
+
+  const onChange = (event, newValue) =>
+    send({ type: 'SET_BRIGHTNESS', brightness: Number(newValue) });
+
+  const onDoubleClick = () => send({ type: 'SET_BRIGHTNESS', brightness: 0 });
+
+  return (
+    <>
+      <FormLabel>Brightness</FormLabel>
+      <Slider
+        value={brightness}
+        onChange={onChange}
+        onDoubleClick={onDoubleClick}
+        valueLabelDisplay='off'
+        min={-1}
+        max={1}
+        step={0.01}
+        orientation='horizontal'
+        style={{
+          color: 'primary',
+          marginTop: '7px',
+        }}
+      />
+    </>
+  );
+};
+
+const ContrastSlider = ({ channel }) => {
+  const contrast = useSelector(channel, state => state.context.contrast);
+  const { send } = channel;
+
+  const onChange = (event, newValue) =>
+    send({ type: 'SET_CONTRAST', contrast: Number(newValue) });
+
+  const onDoubleClick = () => send({ type: 'SET_CONTRAST', contrast: 0 });
+
+  return (
+    <>
+      <FormLabel>Contrast</FormLabel>
+      <Slider
+        value={contrast}
+        onChange={onChange}
+        onDoubleClick={onDoubleClick}
+        valueLabelDisplay='off'
+        min={-1}
+        max={1}
+        step={0.01}
+        orientation='horizontal'
+        style={{
+          color: 'primary',
+          marginTop: '7px',
+        }}
+      />
+    </>
+  );
+};
 const RangeSlider = ({ channel }) => {
   const range = useSelector(channel, state => state.context.range);
 
@@ -78,19 +150,22 @@ const RangeSlider = ({ channel }) => {
   };
 
   return (
-    <Slider
-      value={range}
-      onChange={onChange}
-      valueLabelDisplay='off'
-      min={0}
-      max={255}
-      step={1}
-      orientation='horizontal'
-      style={{
-        color: 'primary',
-        marginTop: '7px',
-      }}
-    />
+    <>
+      <FormLabel>Dynamic Range</FormLabel>
+      <Slider
+        value={range}
+        onChange={onChange}
+        valueLabelDisplay='off'
+        min={0}
+        max={255}
+        step={1}
+        orientation='horizontal'
+        style={{
+          color: 'primary',
+          marginTop: '7px',
+        }}
+      />
+    </>
   );
 };
 
@@ -128,6 +203,8 @@ const GrayscaleControls = () => {
         >
           <Grid item xs={12}>
             <RangeSlider channel={channel} />
+            <BrightnessSlider channel={channel} />
+            <ContrastSlider channel={channel} />
           </Grid>
         </Grid>
       </Grid>

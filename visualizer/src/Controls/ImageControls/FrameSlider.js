@@ -23,7 +23,7 @@ function FrameSlider() {
 
   const tooltipText = (
     <span>
-      Cycle with <kbd>A</kbd> and <kbd>D</kbd>.
+      Cycle with <kbd>A</kbd> and <kbd>D</kbd>
     </span>
   );
 

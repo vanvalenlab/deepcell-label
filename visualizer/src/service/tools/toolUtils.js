@@ -5,8 +5,16 @@ export const toolActions = {
   setLabeledArray: assign((_, { labeledArray }) => ({ labeledArray })),
   setCoordinates: assign((_, { x, y }) => ({ x, y })),
   setLabel: assign((_, { label }) => ({ label })),
-  setForeground: assign((_, { foreground }) => ({ foreground })),
-  setBackground: assign((_, { background }) => ({ background })),
+  setForeground: assign({
+    foreground: (_, { foreground }) => foreground,
+    selected: ({ background }, { foreground }) =>
+      foreground === 0 ? background : foreground,
+  }),
+  setBackground: assign({
+    background: (_, { background }) => background,
+    selected: ({ foreground }, { background }) =>
+      foreground === 0 ? background : foreground,
+  }),
   setFrame: assign((_, { frame }) => ({ frame })),
   setFeature: assign((_, { feature }) => ({ feature })),
   setChannel: assign((_, { channel }) => ({ channel })),

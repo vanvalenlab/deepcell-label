@@ -20,6 +20,12 @@ function ColorModeToggle() {
     input.className = input.className + ' mousetrap';
   }, []);
 
+  const toggleTooltip = (
+    <span>
+      Toggle with <kbd>Y</kbd>
+    </span>
+  );
+
   return (
     <Typography component='div'>
       <Box
@@ -29,12 +35,12 @@ function ColorModeToggle() {
         justifyContent='center'
         alignItems='center'
       >
-        <Tooltip title='View multiple channels at once'>
-          <Grid item align='right' style={{ flex: '1 1 auto' }}>
-            Color
-          </Grid>
-        </Tooltip>
-        <Tooltip title='Press Z to toggle.'>
+        <Grid item align='right' style={{ flex: '1 1 auto' }}>
+          <Tooltip title='Shows multiple channels'>
+            <span>Color</span>
+          </Tooltip>
+        </Grid>
+        <Tooltip title={toggleTooltip}>
           <Grid item style={{ flex: '0 1 auto' }}>
             <Switch
               // color="default"
@@ -44,11 +50,11 @@ function ColorModeToggle() {
             />
           </Grid>
         </Tooltip>
-        <Tooltip title='View a single channel'>
-          <Grid item align='left' style={{ flex: '1 1 auto' }}>
-            Grayscale
-          </Grid>
-        </Tooltip>
+        <Grid item align='left' style={{ flex: '1 1 auto' }}>
+          <Tooltip title='Shows a single channel'>
+            <span>Grayscale</span>
+          </Tooltip>
+        </Grid>
       </Box>
     </Typography>
   );

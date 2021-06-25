@@ -18,8 +18,7 @@ const createTrimMachine = ({ x, y, label, foreground, background }) =>
         BACKGROUND: { actions: 'setBackground' },
         mouseup: [
           { cond: 'onNoLabel' },
-          { cond: 'onBackground', actions: 'trim' },
-          { actions: 'selectBackground' },
+          { actions: ['selectForeground', 'trim'] },
         ],
       },
     },
@@ -27,7 +26,7 @@ const createTrimMachine = ({ x, y, label, foreground, background }) =>
       guards: toolGuards,
       actions: {
         ...toolActions,
-        selectBackground: sendParent('SELECT_BACKGROUND'),
+        selectForeground: sendParent('SELECT_FOREGROUND'),
         trim: sendParent(({ label, x, y }, event) => ({
           type: 'EDIT',
           action: 'trim_pixels',

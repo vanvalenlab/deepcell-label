@@ -1,6 +1,7 @@
 import { makeStyles } from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import Slider from '@material-ui/core/Slider';
+import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
 import { useSelector } from '@xstate/react';
 import React from 'react';
@@ -21,26 +22,35 @@ function OpacitySlider() {
   const opacity = useSelector(labeled, state => state.context.opacity);
 
   const handleOpacityChange = (event, newValue) =>
-    labeled.send({ type: 'SET_OPACITY', opacity: newValue });
+    labeled.send({ type: 'SET_OPACITY', opacity: Number(newValue) });
 
   const handleDoubleClick = event =>
-    labeled.send({ type: 'SET_OPACITY', opacity: 0 });
+    labeled.send({ type: 'SET_OPACITY', opacity: 0.3 });
 
   const styles = useStyles();
 
+  const tooltipText = (
+    <span>
+      Cycle between raw, overlay, and labels with <kbd>Z</kbd>
+    </span>
+  );
+
   return (
-    <Box className={styles.opacity}>
-      <Typography gutterBottom>Opacity</Typography>
-      <Slider
-        value={opacity}
-        valueLabelDisplay='auto'
-        min={0}
-        max={1}
-        step={0.01}
-        onChange={handleOpacityChange}
-        onDoubleClick={handleDoubleClick}
-      />
-    </Box>
+    <Tooltip title={tooltipText}>
+      <Box className={styles.opacity}>
+        <Typography gutterBottom>Opacity</Typography>
+
+        <Slider
+          value={opacity}
+          valueLabelDisplay='auto'
+          min={0}
+          max={1}
+          step={0.01}
+          onChange={handleOpacityChange}
+          onDoubleClick={handleDoubleClick}
+        />
+      </Box>
+    </Tooltip>
   );
 }
 

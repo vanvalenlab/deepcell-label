@@ -16,7 +16,7 @@ const createSelectMachine = ({ label, foreground, background }) =>
         mouseup: [
           {
             cond: 'doubleClick',
-            actions: ['selectBackground', 'resetForeground'],
+            actions: ['resetForeground', 'selectBackground'],
           },
           { cond: 'onForeground', actions: 'selectBackground' },
           { actions: 'selectForeground' },
@@ -29,6 +29,7 @@ const createSelectMachine = ({ label, foreground, background }) =>
         ...toolActions,
         selectForeground: sendParent('SELECT_FOREGROUND'),
         selectBackground: sendParent('SELECT_BACKGROUND'),
+        test: sendParent({ type: 'BACKGROUND', background: label }),
         resetForeground: sendParent({ type: 'FOREGROUND', foreground: 0 }),
       },
     }

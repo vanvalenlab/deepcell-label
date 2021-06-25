@@ -43,7 +43,7 @@ const dragToolState = {
 const toolState = {
   initial: 'checkTool',
   on: {
-    USE_TOOL: { target: '.checkTool', actions: 'setTool' },
+    TOOL: { target: '.checkTool', actions: 'setTool' },
   },
   states: {
     checkTool: {

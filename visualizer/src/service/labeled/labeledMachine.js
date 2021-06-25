@@ -101,6 +101,7 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) =>
         features: [], // all segmentations as featureMachines
         featureNames: [], // name of each segmentations
         opacity: 0,
+        lastOpacity: 0.3,
         highlight: true,
         outline: true,
       },
@@ -114,11 +115,13 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) =>
       invoke: [
         { src: 'listenForHighlightHotkey' },
         { src: 'listenForOutlineHotkey' },
+        { src: 'listenForOpacityHotkey' },
       ],
       on: {
         TOGGLE_HIGHLIGHT: { actions: 'toggleHighlight' },
         TOGGLE_OUTLINE: { actions: 'toggleOutline' },
         SET_OPACITY: { actions: 'setOpacity' },
+        CYCLE_OPACITY: { actions: 'cycleOpacity' },
         LABELED_ARRAY: { actions: sendParent((c, e) => e) },
         LABELS: { actions: sendParent((c, e) => e) },
         EDITED: {
@@ -153,6 +156,10 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) =>
         listenForOutlineHotkey: () => send => {
           bind('o', () => send('TOGGLE_OUTLINE'));
           return () => unbind('o');
+        },
+        listenForOpacityHotkey: () => send => {
+          bind('z', () => send('CYCLE_OPACITY'));
+          return () => unbind('z');
         },
       },
       guards: {
@@ -233,6 +240,12 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) =>
         toggleHighlight: assign({ highlight: ({ highlight }) => !highlight }),
         setOpacity: assign({
           opacity: (_, { opacity }) => Math.min(1, Math.max(0, opacity)),
+          lastOpacity: ({ lastOpacity }, { opacity }) =>
+            opacity === 1 || opacity === 0 ? 0.3 : opacity,
+        }),
+        cycleOpacity: assign({
+          opacity: ({ opacity, lastOpacity }) =>
+            opacity === 0 ? lastOpacity : opacity === 1 ? 0 : 1,
         }),
         toggleOutline: assign({ outline: ({ outline }) => !outline }),
         save: respond(({ feature }) => ({ type: 'RESTORE', feature })),
