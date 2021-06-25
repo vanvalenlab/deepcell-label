@@ -54,17 +54,18 @@ function LayerCheckbox({ layer }) {
 }
 
 function LayerSlider({ layer }) {
+  const { send } = layer;
   const range = useSelector(layer, state => state.context.range);
   const color = useSelector(layer, state => state.context.color);
 
-  const onChange = (event, newValue) => {
-    layer.send({ type: 'SET_RANGE', range: newValue });
-  };
+  const onChange = (_, value) => send({ type: 'SET_RANGE', range: value });
+  const onDoubleClick = () => send({ type: 'SET_RANGE', range: [0, 255] });
 
   return (
     <Slider
       value={range}
       onChange={onChange}
+      onDoubleClick={onDoubleClick}
       valueLabelDisplay='off'
       min={0}
       max={255}
