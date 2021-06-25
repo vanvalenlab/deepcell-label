@@ -88,7 +88,7 @@ function Label() {
       <Box className={styles.main}>
         <Box className={styles.controlPanelBox}>
           <ImageControls />
-          <Division />
+          {labeled && <Division />}
         </Box>
         <Box className={styles.toolbarBox}>
           <UndoRedo />

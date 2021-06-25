@@ -7,12 +7,11 @@ import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
 import { useSelector } from '@xstate/react';
 import React from 'react';
 import { ArcherContainer, ArcherElement } from 'react-archer';
-import { useTracking } from '../../ServiceContext';
+import { useFeature, useLabeled, useTracking } from '../../ServiceContext';
 
 function useDaughters() {
   const tracking = useTracking();
   const daughters = useSelector(tracking, state => state.context.daughters);
-  console.log(daughters);
   return daughters;
 }
 
@@ -34,25 +33,37 @@ function Parent() {
   const tracking = useTracking();
   const foreground = useSelector(tracking, state => state.context.foreground);
 
+  const labeled = useLabeled();
+  const featureIndex = useSelector(labeled, state => state.context.feature);
+  const feature = useFeature(featureIndex);
+  const color = useSelector(feature, state => state.context.colors[foreground]);
+
   const styles = useStyles();
   const theme = useTheme();
-  const color = theme.palette.secondary.main;
+  const strokeColor = theme.palette.secondary.main;
   const daughters = useDaughters();
   const relations = daughters.map(label => ({
     targetId: `daughter${label}`,
     targetAnchor: 'left',
     sourceAnchor: 'right',
-    style: { strokeColor: color, strokeWidth: 1, noCurves: true },
+    style: { strokeColor, strokeWidth: 1, noCurves: true },
   }));
   return (
     <ArcherElement id='parent' relations={relations}>
-      <Avatar className={styles.cell}>{foreground}</Avatar>
+      <Avatar className={styles.cell} style={{ backgroundColor: color }}>
+        {foreground}
+      </Avatar>
     </ArcherElement>
   );
 }
 
 function Daughter({ label }) {
   const styles = useStyles();
+
+  const labeled = useLabeled();
+  const featureIndex = useSelector(labeled, state => state.context.feature);
+  const feature = useFeature(featureIndex);
+  const color = useSelector(feature, state => state.context.colors[label]);
 
   const [anchorEl, setAnchorEl] = React.useState(null);
   const handleClick = event => setAnchorEl(event.currentTarget);
@@ -61,7 +72,11 @@ function Daughter({ label }) {
   return (
     <>
       <ArcherElement id={`daughter${label}`}>
-        <Avatar className={styles.cell} onClick={handleClick}>
+        <Avatar
+          className={styles.cell}
+          onClick={handleClick}
+          style={{ backgroundColor: color }}
+        >
           {label}
         </Avatar>
       </ArcherElement>
@@ -105,6 +120,7 @@ function Daughters() {
 
 function Division() {
   const styles = useStyles();
+
   return (
     <ArcherContainer>
       <Box className={styles.division}>
