@@ -88,6 +88,7 @@ const createChannelMachine = (projectId, channel, numFrames) =>
         SET_RANGE: { actions: 'setRange' },
         SET_BRIGHTNESS: { actions: 'setBrightness' },
         SET_CONTRAST: { actions: 'setContrast' },
+        RESET: { actions: 'reset' },
       },
     },
     {
@@ -142,6 +143,11 @@ const createChannelMachine = (projectId, channel, numFrames) =>
         }),
         setContrast: assign({
           contrast: (_, { contrast }) => Math.max(-1, Math.min(1, contrast)),
+        }),
+        reset: assign({
+          range: [0, 255],
+          brightness: 0,
+          contrast: 0,
         }),
         setAutoRange: assign({
           range: ({ rawImage: img }) => {

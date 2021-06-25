@@ -65,8 +65,11 @@ const grayscaleState = {
     sendParent('GRAYSCALE'),
     assign({ colorMode: ({ grayscale }) => grayscale }),
   ],
-  invoke: { src: 'listenForInvertHotkey' },
-  on: { TOGGLE_COLOR_MODE: 'color' },
+  invoke: [{ src: 'listenForInvertHotkey' }, { src: 'listenForResetHotkey' }],
+  on: {
+    TOGGLE_COLOR_MODE: 'color',
+    RESET: { actions: 'forwardToChannel' },
+  },
   initial: 'idle',
   states: {
     idle: {
@@ -127,9 +130,7 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
         restore: restoreState,
       },
       on: {
-        TOGGLE_INVERT: {
-          actions: forwardTo(({ channel, channels }) => channels[channel]),
-        },
+        TOGGLE_INVERT: { actions: 'forwardToChannel' },
       },
     },
     {
@@ -157,6 +158,10 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
         listenForInvertHotkey: () => send => {
           bind('i', () => send('TOGGLE_INVERT'));
           return () => unbind('i');
+        },
+        listenForResetHotkey: () => send => {
+          bind('0', () => send('RESET'));
+          return () => unbind('0');
         },
       },
       guards: {
@@ -194,6 +199,9 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
         setFrame: assign((_, { frame }) => ({ frame })),
         setChannel: assign((_, { channel }) => ({ channel })),
         forwardToColorMode: forwardTo(({ colorMode }) => colorMode),
+        forwardToChannel: forwardTo(
+          ({ channel, channels }) => channels[channel]
+        ),
         save: respond(({ channel }) => ({ type: 'RESTORE', channel })),
         restore: send((_, { channel }) => ({ type: 'LOAD_CHANNEL', channel })),
       },
