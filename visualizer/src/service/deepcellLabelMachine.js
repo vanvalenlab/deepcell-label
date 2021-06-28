@@ -49,7 +49,7 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
         idle: {},
       },
       on: {
-        EDIT: { actions: [forwardTo('api'), forwardTo('undo')] },
+        EDIT: { actions: ['dispatchEdit', forwardTo('undo')] },
         BACKEND_UNDO: { actions: forwardTo('api') },
         BACKEND_REDO: { actions: forwardTo('api') },
         EDITED: { actions: forwardTo('image') },
@@ -61,8 +61,9 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
         mousemove: { actions: forwardTo('tool') },
         LABELED_ARRAY: { actions: forwardTo('tool') },
         LABELS: { actions: [forwardTo('tool'), forwardTo('tracking')] },
-        FEATURE: { actions: forwardTo('tool') },
-        CHANNEL: { actions: forwardTo('tool') },
+        FRAME: { actions: 'setFrame' },
+        CHANNEL: { actions: 'setChannel' },
+        FEATURE: { actions: 'setFeature' },
         GRAYSCALE: { actions: forwardTo('tool') },
         COLOR: { actions: forwardTo('tool') },
         FOREGROUND: { actions: forwardTo('tracking') },
@@ -95,6 +96,16 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
             send(projectEvent, { to: 'image' }),
           ];
         }),
+        dispatchEdit: send(
+          ({ frame, feature, channel }, e) => ({
+            ...e,
+            args: { ...e.args, frame, feature, channel },
+          }),
+          { to: 'api' }
+        ),
+        setFrame: assign((_, { frame }) => ({ frame })),
+        setFeature: assign((_, { feature }) => ({ feature })),
+        setChannel: assign((_, { channel }) => ({ channel })),
       },
     }
   );

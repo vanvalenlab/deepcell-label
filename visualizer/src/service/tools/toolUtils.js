@@ -15,9 +15,6 @@ export const toolActions = {
     selected: ({ foreground }, { background }) =>
       foreground === 0 ? background : foreground,
   }),
-  setFrame: assign((_, { frame }) => ({ frame })),
-  setFeature: assign((_, { feature }) => ({ feature })),
-  setChannel: assign((_, { channel }) => ({ channel })),
 };
 
 export const toolGuards = {

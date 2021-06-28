@@ -269,9 +269,6 @@ const toolMachine = Machine(
       DILATE: { actions: 'dilate' },
 
       // context not shared with tools
-      FRAME: { actions: 'setFrame' },
-      CHANNEL: { actions: 'setChannel' },
-      FEATURE: { actions: 'setFeature' },
       LABELED_ARRAY: { actions: ['setLabeledArray', 'sendLabel'] },
       LABELS: { actions: 'setMaxLabel' },
 
@@ -297,8 +294,7 @@ const toolMachine = Machine(
         { cond: 'onBackground', actions: 'selectForeground' },
         { actions: 'selectBackground' },
       ],
-      ///
-      EDIT: { actions: 'sendEditWithExtraArgs' },
+      EDIT: { actions: sendParent((_, e) => e) },
 
       // undo/redo actions
       SAVE: { actions: 'save' },
@@ -396,10 +392,6 @@ const toolMachine = Machine(
       changeGrayscaleTools: assign({
         tool: ({ tool }) => (grayscaleTools.includes(tool) ? 'select' : tool),
       }),
-      sendEditWithExtraArgs: sendParent(({ frame, feature, channel }, e) => ({
-        ...e,
-        args: { ...e.args, frame, feature, channel },
-      })),
       forwardToTool: forwardTo(({ toolActor }) => toolActor),
       setMaxLabel: assign({
         maxLabel: (_, { labels }) =>
