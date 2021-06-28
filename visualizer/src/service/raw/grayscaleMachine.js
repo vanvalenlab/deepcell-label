@@ -35,7 +35,7 @@ const frameState = {
 };
 
 const channelState = {
-  initial: 'idle',
+  initial: 'loading',
   states: {
     idle: {},
     loading: {
