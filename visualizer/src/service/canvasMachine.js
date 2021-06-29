@@ -121,9 +121,14 @@ const canvasMachine = Machine(
         })),
       },
       RESTORE: { actions: ['restore', respond('RESTORED')] },
+      LABELED_ARRAY: { actions: ['setLabeledArray', 'sendLabel'] },
       COORDINATES: {
         cond: 'newCoordinates',
-        actions: ['useCoordinates', sendParent((c, e) => e)],
+        actions: ['setCoordinates', 'sendLabel', sendParent((c, e) => e)],
+      },
+      LABEL: {
+        cond: 'newLabel',
+        actions: ['setLabel', sendParent((c, e) => e)],
       },
     },
     initial: 'waitForProject',
@@ -186,6 +191,7 @@ const canvasMachine = Machine(
     guards: {
       newCoordinates: (context, event) =>
         context.x !== event.y || context.y !== event.y,
+      newLabel: (context, event) => context.label !== event.label,
       dragTool: ({ tool }) => tool === 'brush' || tool === 'threshold',
       moved: ({ dx, dy }) => Math.abs(dx) > 10 || Math.abs(dy) > 10,
     },
@@ -196,7 +202,7 @@ const canvasMachine = Machine(
       }),
       resetMove: assign({ dx: 0, dy: 0 }),
       restore: assign((_, { type, ...savedContext }) => savedContext),
-      useCoordinates: assign((_, { x, y }) => ({ x, y })),
+      setCoordinates: assign((_, { x, y }) => ({ x, y })),
       sendCoordinates: send(({ x, y }) => ({ type: 'COORDINATES', x, y }), {
         to: context => context.toolRef,
       }),
@@ -208,6 +214,11 @@ const canvasMachine = Machine(
         y = Math.max(0, Math.min(y, height - 1));
         return { type: 'COORDINATES', x, y };
       }),
+      setLabel: assign((_, { label }) => ({ label })),
+      sendLabel: send(({ labeledArray: array, x, y }) => ({
+        type: 'LABEL',
+        label: array ? Math.abs(array[y][x]) : 0,
+      })),
       setDimensions: assign({
         availableWidth: (_, { width }) => width,
         availableHeight: (_, { height }) => height,
@@ -277,6 +288,7 @@ const canvasMachine = Machine(
         return { zoom: newZoom, sx: newSx, sy: newSy };
       }),
       setTool: assign({ tool: (_, { tool }) => tool }),
+      setLabeledArray: assign((_, { labeledArray }) => ({ labeledArray })),
     },
   }
 );

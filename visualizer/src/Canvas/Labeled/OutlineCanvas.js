@@ -4,7 +4,7 @@ import {
   useCanvas,
   useFeature,
   useLabeled,
-  useToolbar,
+  useSelect,
 } from '../../ServiceContext';
 import {
   highlightImageData,
@@ -28,9 +28,9 @@ const OutlineCanvas = ({ className }) => {
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
 
-  const toolbar = useToolbar();
-  const foreground = useSelector(toolbar, state => state.context.foreground);
-  const background = useSelector(toolbar, state => state.context.background);
+  const select = useSelect();
+  const foreground = useSelector(select, state => state.context.foreground);
+  const background = useSelector(select, state => state.context.background);
 
   const labeled = useLabeled();
   const featureIndex = useSelector(labeled, state => state.context.feature);
