@@ -17,7 +17,7 @@ describe('test apiMachine event handling', () => {
   ];
 
   backendEvents.forEach((event) => {
-    it(`${event} events call API successfully and return to idle`, (done) => {
+    it(`${event} event -> call API successfully -> "idle" state`, (done) => {
       let edited = false;
       let transitioned = false;
       const apiMachine = createApiMachine({
@@ -55,7 +55,7 @@ describe('test apiMachine event handling', () => {
       apiService.send({ type: event, args: [], action: 'test' });
     });
 
-    it(`${event} events call API unsuccessfully and return to idle`, (done) => {
+    it(`${event} event -> call API unsuccessfully -> "idle" state`, (done) => {
       let failed = false;
       let transitioned = false;
       const apiMachine = createApiMachine({
@@ -89,7 +89,7 @@ describe('test apiMachine event handling', () => {
     });
   });
 
-  it('UPLOAD events call API successfully and return to idle', (done) => {
+  it('UPLOAD event -> call API successfully -> "idle" state', (done) => {
     let transitioned = false;
     const apiMachine = createApiMachine({
       projectId: 'testProjectId',
@@ -113,7 +113,7 @@ describe('test apiMachine event handling', () => {
     apiService.send({ type: 'UPLOAD', args: [], action: 'test' });
   });
 
-  it(`UPLOAD events call API unsuccessfully and return to idle`, (done) => {
+  it(`UPLOAD event -> call API unsuccessfully -> "idle" state`, (done) => {
     let failed = false;
     let transitioned = false;
     const apiMachine = createApiMachine({
