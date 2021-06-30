@@ -616,6 +616,46 @@ class TrackEdit(BaseEdit):
     def __init__(self, project):
         super(TrackEdit, self).__init__(project)
 
+    def action_add_daughter(self, parent, daughter):
+        """
+        Adds a daughter to a division event.
+
+        Args:
+            parent (int): parent label in division
+            daughter (int): daughter label in division
+        """
+        daughter_track = self.labels.tracks[daughter]
+        parent_track = self.labels.tracks[parent]
+
+        if daughter_track['parent'] is not None:
+            raise ValueError(f'Daughter {daughter} already has parent {daughter_track["parent"]}')
+
+        daughter_track['parent'] = parent
+        if daughter not in parent_track['daughters']:
+            parent_track['daughters'] += [daughter]
+
+        self.labels_changed = True
+
+
+    def action_remove_daughter(self, daughter):
+        """
+        Removes a daughter from the division event that spawns it.
+        Does not edit the segmentation .
+
+        Args:
+            daughter (int): daughter label to remove from division event
+        """
+        print(daughter)
+        daughter_track = self.labels.tracks[daughter]
+        parent = daughter_track['parent']
+        parent_track = self.labels.tracks[parent]
+
+        daughter_track['parent'] = None
+        parent_track['daughters'] = [label for label in parent_track['daughters'] if label != daughter]
+        
+        self.labels_changed = True
+
+
     def action_new_track(self, label):
         """
         Replaces label with a new label in all subsequent frames after self.frame_id
