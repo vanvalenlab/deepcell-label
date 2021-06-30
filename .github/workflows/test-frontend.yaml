@@ -46,10 +46,12 @@ jobs:
 
     - name: Coveralls Parallel
       uses: coverallsapp/github-action@master
+      env:
+        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
       with:
         path-to-lcov: visualizer/coverage/lcov.info
         github-token: ${{ secrets.github_token }}
-        flag-name: run-${{ matrix.test_number }}
+        flag-name: node-${{ matrix.node-version }}
         parallel: true
 
   coveralls:
