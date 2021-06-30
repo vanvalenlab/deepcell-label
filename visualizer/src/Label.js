@@ -9,7 +9,7 @@ import ActionButtons from './Controls/Toolbar/ActionButtons';
 import SelectedPalette from './Controls/Toolbar/SelectedPalette';
 import ToolControls from './Controls/Toolbar/ToolControls';
 import UndoRedo from './Controls/Toolbar/UndoRedo';
-import Division from './Controls/Tracking/Division';
+import Timeline from './Controls/Tracking/Timeline';
 import Footer from './Footer/Footer';
 import Instructions from './Instructions/Instructions';
 import Navbar from './Navbar';
@@ -88,7 +88,7 @@ function Label() {
       <Box className={styles.main}>
         <Box className={styles.controlPanelBox}>
           <ImageControls />
-          {labeled && <Division />}
+          {labeled && <Timeline />}
         </Box>
         <Box className={styles.toolbarBox}>
           <UndoRedo />
