@@ -157,7 +157,7 @@ function Daughters({ label, daughters, colors }) {
           label={label}
           daughter={daughter}
           color={colors[daughter]}
-          key={label}
+          key={daughter}
         />
       ))}
       <AddDaughter label={label} />
