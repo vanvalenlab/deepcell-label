@@ -11,14 +11,20 @@
     "ecmaVersion": 2018,
     "sourceType": "module"
   },
+  "plugins": [
+    "jest",
+    "prettier"
+  ],
   "rules": {
     "semi": "off",
     "js-doc": "off",
     "space-before-function-paren": "off",
-    "comma-dangle": "off"
+    "comma-dangle": "off",
+    "jest/no-conditional-expect": "off"
   },
   "extends": [
-    "prettier"
-  ],
-  "parser": "babel-eslint"
+    "react-app",
+    "react-app/jest",
+    "plugin:jest/recommended"
+  ]
 }
