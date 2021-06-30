@@ -95,8 +95,8 @@ def array(token, feature, frame):
     # return send_file(seg_array, attachment_filename=filename, cache_timeout=0)
 
 
-@bp.route('/api/instances/<project_id>/<int:feature>')
-def semantic_instance_labels(project_id, feature):
+@bp.route('/api/semantic-labels/<project_id>/<int:feature>')
+def semantic_labels(project_id, feature):
     project = Project.get(project_id)
     if not project:
         return jsonify({'error': f'project {project_id} not found'}), 404

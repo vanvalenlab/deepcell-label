@@ -1,10 +1,10 @@
 import { assign, Machine, send, sendParent } from 'xstate';
 import { pure } from 'xstate/lib/actions';
 
-function fetchLabels(context) {
+function fetchSemanticLabels(context) {
   const { projectId, feature } = context;
-  const pathToInstances = `/api/instances/${projectId}/${feature}`;
-  return fetch(pathToInstances).then(res => res.json());
+  const pathToSemanticLabels = `/api/semantic-labels/${projectId}/${feature}`;
+  return fetch(pathToSemanticLabels).then(res => res.json());
 }
 
 function fetchColors(context) {
@@ -82,7 +82,7 @@ const reloadLabelsState = {
     },
     reloading: {
       invoke: {
-        src: fetchLabels,
+        src: fetchSemanticLabels,
         onDone: { target: 'reloaded', actions: 'saveLabels' },
         onError: 'reloaded',
       },
@@ -177,7 +177,7 @@ const createFeatureMachine = (projectId, feature, numFrames) =>
       initial: 'idle',
       invoke: [
         {
-          src: fetchLabels,
+          src: fetchSemanticLabels,
           onDone: { actions: 'saveLabels' },
         },
         {
