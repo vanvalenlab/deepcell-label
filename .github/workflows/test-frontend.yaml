@@ -58,6 +58,7 @@ jobs:
     
     - name: Coveralls Parallel
       uses: coverallsapp/github-action@master
+      working-directory: visualizer
       with:
         github-token: ${{ secrets.github_token }}
         flag-name: run-${{ matrix.test_number }}
