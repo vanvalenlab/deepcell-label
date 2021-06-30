@@ -1,5 +1,5 @@
 import { interpret } from 'xstate';
-import fetchMock from "jest-fetch-mock";
+import fetchMock from 'jest-fetch-mock';
 import createApiMachine from './apiMachine';
 
 fetchMock.enableMocks();
