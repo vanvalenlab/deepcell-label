@@ -9,6 +9,20 @@ import React from 'react';
 import { ArcherContainer, ArcherElement } from 'react-archer';
 import { useFeature, useLabeled, useTracking } from '../../ServiceContext';
 
+function useColors() {
+  const labeled = useLabeled();
+  const featureIndex = useSelector(labeled, state => state.context.feature);
+  const feature = useFeature(featureIndex);
+  const colors = useSelector(feature, state => state.context.colors);
+  return colors;
+}
+
+function useDivision(label) {
+  const tracking = useTracking();
+  const divisions = useSelector(tracking, state => state.context.labels);
+  return divisions[label] || { parent: null, daughters: [], frame_div: null };
+}
+
 function useDaughters() {
   const tracking = useTracking();
   const daughters = useSelector(tracking, state => state.context.daughters);
@@ -26,58 +40,78 @@ const useStyles = makeStyles(theme => ({
   },
   cell: {
     margin: theme.spacing(1),
+    height: '40px',
+    width: '40px',
+  },
+  addButton: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    height: '100%',
+    width: '100%',
   },
 }));
 
-function Parent() {
-  const tracking = useTracking();
-  const foreground = useSelector(tracking, state => state.context.foreground);
-
-  const labeled = useLabeled();
-  const featureIndex = useSelector(labeled, state => state.context.feature);
-  const feature = useFeature(featureIndex);
-  const color = useSelector(feature, state => state.context.colors[foreground]);
-
+function Parent({ label, daughters, color }) {
   const styles = useStyles();
   const theme = useTheme();
+
   const strokeColor = theme.palette.secondary.main;
-  const daughters = useDaughters();
   const relations = daughters.map(label => ({
     targetId: `daughter${label}`,
     targetAnchor: 'left',
     sourceAnchor: 'right',
     style: { strokeColor, strokeWidth: 1, noCurves: true },
   }));
+  relations.push({
+    targetId: 'addDaughter',
+    targetAnchor: 'left',
+    sourceAnchor: 'right',
+    style: { strokeColor, strokeWidth: 1, noCurves: true },
+  });
   return (
     <ArcherElement id='parent' relations={relations}>
       <Avatar className={styles.cell} style={{ backgroundColor: color }}>
-        {foreground}
+        {label}
       </Avatar>
     </ArcherElement>
   );
 }
 
-function Daughter({ label }) {
+function Daughter({ label, daughter, color }) {
   const styles = useStyles();
 
-  const labeled = useLabeled();
-  const featureIndex = useSelector(labeled, state => state.context.feature);
-  const feature = useFeature(featureIndex);
-  const color = useSelector(feature, state => state.context.colors[label]);
+  const tracking = useTracking();
+  const { send } = tracking;
 
   const [anchorEl, setAnchorEl] = React.useState(null);
   const handleClick = event => setAnchorEl(event.currentTarget);
   const handleClose = () => setAnchorEl(null);
 
+  const handleRemove = () => {
+    send({ type: 'REMOVE', daughter: daughter });
+    handleClose();
+  };
+
+  const handleNewCell = () => {
+    send({ type: 'REPLACE_WITH_NEW_CELL', daughter: daughter });
+    handleClose();
+  };
+
+  const handleParent = () => {
+    send({ type: 'REPLACE_WITH_PARENT', parent: label, daughter: daughter });
+    handleClose();
+  };
+
   return (
     <>
-      <ArcherElement id={`daughter${label}`}>
+      <ArcherElement id={`daughter${daughter}`}>
         <Avatar
           className={styles.cell}
           onClick={handleClick}
           style={{ backgroundColor: color }}
         >
-          {label}
+          {daughter}
         </Avatar>
       </ArcherElement>
       <Menu
@@ -87,45 +121,62 @@ function Daughter({ label }) {
         open={Boolean(anchorEl)}
         onClose={handleClose}
       >
-        <MenuItem onClick={handleClose}>Remove</MenuItem>
-        <MenuItem onClick={handleClose}>New Cell</MenuItem>
-        <MenuItem onClick={handleClose}>Parent</MenuItem>
+        <MenuItem onClick={handleRemove}>Remove from Division</MenuItem>
+        <MenuItem onClick={handleNewCell}>Replace with New Cell</MenuItem>
+        <MenuItem onClick={handleParent}>Replace with Parent</MenuItem>
       </Menu>
     </>
   );
 }
 
-function AddDaughter() {
-  return (
-    <IconButton size='small'>
-      <AddCircleOutlineIcon />
-    </IconButton>
-  );
-}
-
-function Daughters() {
-  const daughters = useDaughters();
-
+function AddDaughter({ label }) {
   const styles = useStyles();
 
+  const tracking = useTracking();
+  const onClick = () => tracking.send({ type: 'ADD', parent: label });
+
   return (
-    <Box className={styles.daughters}>
-      {daughters.map(label => (
-        <Daughter label={label} key={label} />
-      ))}
-      <AddDaughter />
+    <Box style={{ position: 'relative' }}>
+      <ArcherElement id='addDaughter'>
+        <Avatar className={styles.cell} style={{ visibility: 'hidden' }} />
+      </ArcherElement>
+      <IconButton className={styles.addButton} onClick={onClick}>
+        <AddCircleOutlineIcon />
+      </IconButton>
     </Box>
   );
 }
 
-function Division() {
+function Daughters({ label, daughters, colors }) {
   const styles = useStyles();
+
+  return (
+    <Box className={styles.daughters}>
+      {daughters.map(daughter => (
+        <Daughter
+          label={label}
+          daughter={daughter}
+          color={colors[daughter]}
+          key={label}
+        />
+      ))}
+      <AddDaughter label={label} />
+    </Box>
+  );
+}
+
+function Division({ label }) {
+  const styles = useStyles();
+
+  const division = useDivision(label);
+  const { daughters } = division;
+  const colors = useColors();
 
   return (
     <ArcherContainer>
       <Box className={styles.division}>
-        <Parent />
-        <Daughters />
+        <Parent label={label} daughters={daughters} color={colors[label]} />
+        <Daughters label={label} daughters={daughters} colors={colors} />
       </Box>
     </ArcherContainer>
   );
