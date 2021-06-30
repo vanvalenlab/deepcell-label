@@ -54,14 +54,16 @@ jobs:
         flag-name: node-${{ matrix.node-version }}
         parallel: true
 
-  coveralls:
-    name: Finish Coveralls
-    needs: tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Coveralls Finished
-        uses: coverallsapp/github-action@master
-        with:
-          base-path: visualizer
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          parallel-finished: true
+  # TODO: how to combine frontend/backend coverage
+  # or separate into 2 different reports.
+  # coveralls:
+  #   name: Finish Coveralls
+  #   needs: tests
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Coveralls Finished
+  #       uses: coverallsapp/github-action@master
+  #       with:
+  #         base-path: visualizer
+  #         github-token: ${{ secrets.GITHUB_TOKEN }}
+  #         parallel-finished: true
