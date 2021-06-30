@@ -5,40 +5,50 @@ const trackingMachine = Machine(
     id: 'tracking',
     context: {
       foreground: 1,
+      background: 0,
+      selected: 1,
+      label: null,
       labels: {},
-      daughters: [],
-      frames: [],
-      parent: null,
     },
     on: {
       FOREGROUND: {
         cond: (_, { foreground }) => foreground !== 0,
-        actions: ['setForeground', 'updateDivision'],
+        actions: 'setForeground',
       },
-      LABELS: {
-        actions: ['setLabels', 'updateDivision'],
-      },
+      LABEL: { actions: 'setLabel' },
+      LABELS: { actions: 'setLabels' },
       REMOVE: { actions: 'remove' },
       REPLACE_WITH_NEW_CELL: { actions: 'replaceWithNewCell' },
       REPLACE_WITH_PARENT: { actions: 'replaceWithParent' },
-      ADD: { actions: 'add' },
+    },
+    initial: 'idle',
+    states: {
+      idle: {
+        on: {
+          ADD: { target: 'addingDaughter', actions: 'recordParent' },
+        },
+      },
+      addingDaughter: {
+        on: {
+          mouseup: [
+            { cond: 'onNoLabel' },
+            {
+              target: 'idle',
+              actions: 'add',
+            },
+          ],
+        },
+      },
     },
   },
   {
     services: {},
     guards: {},
     actions: {
-      setForeground: assign({
-        foreground: (_, { foreground }) => foreground,
-      }),
-      setLabels: assign({
-        labels: (_, { labels }) => labels,
-      }),
-      updateDivision: assign({
-        daughters: ({ labels, foreground }) => labels[foreground]['daughters'],
-        parent: ({ labels, foreground }) => labels[foreground]['parent'],
-        frames: ({ labels, foreground }) => labels[foreground]['frames'],
-      }),
+      setForeground: assign({ foreground: (_, { foreground }) => foreground }),
+      setLabel: assign({ label: (_, { label }) => label }),
+      setLabels: assign({ labels: (_, { labels }) => labels }),
+      recordParent: assign({ parent: (_, { parent }) => parent }),
       remove: sendParent((_, { daughter }) => ({
         type: 'EDIT',
         action: 'remove_daughter',
@@ -46,12 +56,12 @@ const trackingMachine = Machine(
           daughter,
         },
       })),
-      add: sendParent((_, { parent, daughter }) => ({
+      add: sendParent(({ parent, label }) => ({
         type: 'EDIT',
         action: 'add_daughter',
         args: {
-          parent,
-          daughter,
+          parent: parent,
+          daughter: label,
         },
       })),
       replaceWithParent: sendParent((_, { parent, daughter }) => ({
