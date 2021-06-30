@@ -34,20 +34,20 @@ jobs:
       working-directory: visualizer
       run: yarn
 
+    - name: Lint
+      working-directory: visualizer
+      run: yarn lint
+
     - name: Unit Tests
       working-directory: visualizer
       run: yarn test -- --coverage
       env:
         CI: true
 
-    - name: Lint
-      working-directory: visualizer
-      run: yarn lint
-
     - name: Coveralls Parallel
       uses: coverallsapp/github-action@master
       with:
-        path-to-lcov: visualizer/.coverage/lcov.info
+        path-to-lcov: visualizer/coverage/lcov.info
         github-token: ${{ secrets.github_token }}
         flag-name: run-${{ matrix.test_number }}
         parallel: true
