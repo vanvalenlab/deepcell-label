@@ -72,7 +72,7 @@ class Loader():
         self.load_labels()
 
     def load_labels(self):
-        label_maker = LabelInfoMaker(self.label_array, self.is_tracking)
+        label_maker = LabelInfoMaker(self.label_array, True)
         self.cell_ids = label_maker.cell_ids
         if self.is_tracking:
             self.cell_info = load_lineage_trk(self.tracking_data)
