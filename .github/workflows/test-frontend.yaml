@@ -16,22 +16,13 @@ jobs:
     steps:
     - uses: actions/checkout@v1
 
-    - uses: dorny/paths-filter@v2
-      id: changes
-      with:
-        filters: |
-          frontend:
-            - 'visualizer/**'
-
     - name: Use Node.js ${{ matrix.node-version }}
-      if: steps.changes.outputs.frontend == 'true'
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
 
     - name: Cache node_modules
       uses: actions/cache@v2
-      if: steps.changes.outputs.frontend == 'true'
       with:
         path: 'visualizer/**/node_modules'
         key: ${{ runner.os }}-modules-${{ hashFiles('visualizer/**/yarn.lock') }}
@@ -40,19 +31,16 @@ jobs:
           ${{ runner.os }}-
 
     - name: Yarn Install
-      if: steps.changes.outputs.frontend == 'true'
       working-directory: visualizer
       run: yarn
 
     - name: Unit Tests
-      if: steps.changes.outputs.frontend == 'true'
       working-directory: visualizer
       run: yarn test -- --coverage
       env:
         CI: true
 
     - name: Lint
-      if: steps.changes.outputs.frontend == 'true'
       working-directory: visualizer
       run: yarn lint
     
