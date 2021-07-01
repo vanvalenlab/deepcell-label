@@ -19,6 +19,7 @@ from skimage.draw import circle
 from skimage.exposure import rescale_intensity
 from skimage.measure import regionprops
 from skimage.segmentation import morphological_chan_vese
+from scipy.ndimage import find_objects
 
 from deepcell_label.labelmaker import LabelInfoMaker
 
@@ -624,13 +625,22 @@ class TrackEdit(BaseEdit):
             parent (int): parent label in division
             daughter (int): daughter label in division
         """
+        # Get tracks
         daughter_track = self.labels.tracks[daughter]
         parent_track = self.labels.tracks[parent]
-
+        # Update daughter track
         if daughter_track['parent'] is not None:
             raise ValueError(f'Daughter {daughter} already has parent {daughter_track["parent"]}')
-
         daughter_track['parent'] = parent
+        # Update parent track
+        if not parent_track['capped']:
+            assert parent_track['daughters'] == []
+            assert parent_track['frame_div'] == None
+            # Division occurs on frame after parent disappears
+            parent_box = find_objects(self.project.label_array == parent)
+            frame_div = parent_box[0][0].stop
+            parent_track['frame_div'] = frame_div
+            parent_track['capped'] = True
         if daughter not in parent_track['daughters']:
             parent_track['daughters'] += [daughter]
 
@@ -645,14 +655,19 @@ class TrackEdit(BaseEdit):
         Args:
             daughter (int): daughter label to remove from division event
         """
-        print(daughter)
+        # Get daughter and parent tracks
         daughter_track = self.labels.tracks[daughter]
         parent = daughter_track['parent']
         parent_track = self.labels.tracks[parent]
-
+        # Compute new daughters
+        daughters = [label for label in parent_track['daughters'] if label != daughter]
+        # Update tracks
+        if daughters == []:
+            parent_track['capped'] = False
+            parent_track['frame_div'] = None
+        parent_track['daughters'] = daughters
         daughter_track['parent'] = None
-        parent_track['daughters'] = [label for label in parent_track['daughters'] if label != daughter]
-        
+
         self.labels_changed = True
 
 
