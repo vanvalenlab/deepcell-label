@@ -103,7 +103,14 @@ def semantic_labels(project_id, feature):
         return jsonify({'error': f'project {project_id} not found'}), 404
     return project.labels.cell_info[feature]
 
+@bp.route('/api/validate/<project_id>/<int:feature>')
+def validate(project_id, feature):
     project = Project.get(project_id)
+    if not project:
+        return jsonify({'error': f'project {project_id} not found'}), 404
+    validator = Validator(project, feature)
+    return {'warnings': validator.warnings}
+
 @bp.route('/api/colormap/<project_id>/<int:feature>')
 def colormap(project_id, feature):
     project = Project.get(project_id)
@@ -247,6 +254,7 @@ def create_project_from_url():
     start = timeit.default_timer()
     url_form = request.form
     loader = url_loaders.Loader(url_form)
+    loader.load()
     project = Project.create(loader)
     current_app.logger.info('Created project from %s in %s s.',
                             loader.url, timeit.default_timer() - start)

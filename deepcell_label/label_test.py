@@ -362,6 +362,110 @@ class TestZStackEdit():
 
 class TestTrackEdit():
 
+    def test_add_daughter_new_division(self, app):
+        # two 2 x 1 frames
+        # one label in the first frame and two in the second frame
+        labels = np.reshape([0, 1, 2, 3], (2, 2, 1, 1))
+        project = models.Project.create(DummyLoader(labels=labels, url='test.trk'))
+        edit = label.TrackEdit(project)
+        
+        parent = 1
+        daughter = 2
+
+        with app.app_context():
+            edit.action_add_daughter(parent, daughter)
+            tracks = edit.labels.tracks
+            parent_track = tracks[parent]
+            daughter_track = tracks[daughter]
+            assert parent_track['capped']
+            assert daughter in parent_track['daughters']
+            assert parent_track['frame_div'] == 1
+            assert daughter_track['parent'] == parent
+
+    def test_add_daughter_existing_division(self, app):
+        # two 2 x 1 frames
+        # one label in the first frame and two in the second frame
+        labels = np.reshape([0, 1, 2, 3], (2, 2, 1, 1))
+        cell_info = {0: {
+            1: { 'capped': True, 'frame_div': 1, 'daughters': [2], 'parent': None },
+            2: { 'capped': False, 'frame_div': None, 'daughters': [], 'parent': 1 },
+            3: { 'capped': False, 'frame_div': None, 'daughters': [], 'parent': None },
+        }}
+        project = models.Project.create(DummyLoader(labels=labels, cell_info=cell_info, url='test.trk'))
+        edit = label.TrackEdit(project)
+        
+        parent = 1
+        daughter = 2
+        other_daughter = 3
+        frame_div = 1
+
+        with app.app_context():
+            edit.action_add_daughter(parent, other_daughter)
+            tracks = edit.labels.tracks
+            parent_track = tracks[parent]
+            daughter_track = tracks[daughter]
+            other_daughter_track = tracks[other_daughter]
+            assert parent_track['capped']
+            assert daughter in parent_track['daughters']
+            assert other_daughter in parent_track['daughters']
+            assert parent_track['frame_div'] == frame_div
+            assert daughter_track['parent'] == parent
+            assert other_daughter_track['parent'] == parent
+    
+    def test_remove_daughter_multiple_daughters(self, app):
+        # two 2 x 1 frames
+        # one label in the first frame and two in the second frame
+        labels = np.reshape([0, 1, 2, 3], (2, 2, 1, 1))
+        cell_info = {0: {
+            1: { 'capped': True, 'frame_div': 1, 'daughters': [2, 3], 'parent': None },
+            2: { 'capped': False, 'frame_div': None, 'daughters': [], 'parent': 1 },
+            3: { 'capped': False, 'frame_div': None, 'daughters': [], 'parent': 1 },
+        }}
+        project = models.Project.create(DummyLoader(labels=labels, cell_info=cell_info, url='test.trk'))
+        edit = label.TrackEdit(project)
+        
+        parent = 1
+        daughter = 2
+        other_daughter = 3
+
+        with app.app_context():
+            edit.action_remove_daughter(daughter)
+            tracks = edit.labels.tracks
+            parent_track = tracks[parent]
+            daughter_track = tracks[daughter]
+            other_daughter_track = tracks[other_daughter]
+            assert parent_track['capped']
+            assert parent_track['daughters'] == [other_daughter]
+            assert parent_track['frame_div'] == 1
+            assert daughter_track['parent'] == None
+            assert other_daughter_track['parent'] == parent
+
+    def test_remove_daughter_only_daughter(self, app):
+                # two 2 x 1 frames
+        # one label in the first frame and two in the second frame
+        labels = np.reshape([0, 1, 2, 3], (2, 2, 1, 1))
+        cell_info = {0: {
+            1: { 'capped': True, 'frame_div': 1, 'daughters': [2], 'parent': None },
+            2: { 'capped': False, 'frame_div': None, 'daughters': [], 'parent': 1 },
+            3: { 'capped': False, 'frame_div': None, 'daughters': [], 'parent': None },
+        }}
+        project = models.Project.create(DummyLoader(labels=labels, cell_info=cell_info, url='test.trk'))
+        edit = label.TrackEdit(project)
+        
+        parent = 1
+        daughter = 2
+
+        with app.app_context():
+            edit.action_remove_daughter(daughter)
+            tracks = edit.labels.tracks
+            parent_track = tracks[parent]
+            daughter_track = tracks[daughter]
+            assert not parent_track['capped']
+            assert parent_track['daughters'] == []
+            assert parent_track['frame_div'] is None
+            assert daughter_track['parent'] is None
+
+
     def test_track_add_cell_info(self):
         labels = np.zeros((1, 1, 1, 1))
         project = models.Project.create(DummyLoader(labels=labels, url='test.trk'))
