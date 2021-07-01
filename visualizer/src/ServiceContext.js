@@ -124,6 +124,12 @@ export function useToolbar() {
   return tool;
 }
 
+export function useValidate() {
+  const deepCellLabel = useDeepCellLabel();
+  const { validate } = deepCellLabel.state.children;
+  return validate;
+}
+
 export function useTool() {
   const deepCellLabel = useDeepCellLabel();
   const { tool: toolbar } = deepCellLabel.state.children;
