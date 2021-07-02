@@ -259,8 +259,8 @@ def load_zip(data):
     """
     zip_file = zipfile.ZipFile(io.BytesIO(data), 'r')
     channels = [
-        load_tiff(zip_file.open(item).read()) 
-        for item in zip_file.filelist 
+        load_tiff(zip_file.open(item).read())
+        for item in zip_file.filelist
         if not str(item.filename).startswith('__MACOSX/') and is_tiff(str(item.filename))
     ]
     return np.array(channels)
