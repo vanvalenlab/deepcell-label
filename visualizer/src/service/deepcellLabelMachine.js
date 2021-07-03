@@ -98,6 +98,7 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
 
         // from tool
         TOOL: { actions: forwardTo('canvas') },
+        SET_FOREGROUND: { actions: forwardTo('select') },
         SELECT_FOREGROUND: { actions: forwardTo('select') },
         SELECT_BACKGROUND: { actions: forwardTo('select') },
         RESET_FOREGROUND: { actions: forwardTo('select') },

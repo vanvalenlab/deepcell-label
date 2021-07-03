@@ -125,6 +125,12 @@ const selectMachine = Machine(
       BACKGROUND: {
         actions: ['setBackground', 'sendSelected', sendParent((c, e) => e)],
       },
+      SET_FOREGROUND: {
+        actions: send((_, { foreground }) => ({
+          type: 'FOREGROUND',
+          foreground,
+        })),
+      },
       SELECT_FOREGROUND: { actions: 'selectForeground' },
       SELECT_BACKGROUND: { actions: 'selectBackground' },
       SWITCH: { actions: 'switch' },
