@@ -43,7 +43,9 @@ const trackingMachine = Machine(
   },
   {
     services: {},
-    guards: {},
+    guards: {
+      onNoLabel: ({ label }) => label === 0,
+    },
     actions: {
       setForeground: assign({ foreground: (_, { foreground }) => foreground }),
       setLabel: assign({ label: (_, { label }) => label }),
