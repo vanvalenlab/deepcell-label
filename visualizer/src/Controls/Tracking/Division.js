@@ -1,13 +1,23 @@
 import { Box, IconButton, makeStyles } from '@material-ui/core';
 import Avatar from '@material-ui/core/Avatar';
-import Menu from '@material-ui/core/Menu';
+import ClickAwayListener from '@material-ui/core/ClickAwayListener';
 import MenuItem from '@material-ui/core/MenuItem';
+import MenuList from '@material-ui/core/MenuList';
+import Paper from '@material-ui/core/Paper';
+import Popper from '@material-ui/core/Popper';
 import { useTheme } from '@material-ui/core/styles';
 import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
+import MoreVertIcon from '@material-ui/icons/MoreVert';
 import { useSelector } from '@xstate/react';
-import React from 'react';
+import React, { useReducer, useRef } from 'react';
 import { ArcherContainer, ArcherElement } from 'react-archer';
-import { useFeature, useLabeled, useTracking } from '../../ServiceContext';
+import {
+  useFeature,
+  useImage,
+  useLabeled,
+  useSelect,
+  useTracking,
+} from '../../ServiceContext';
 
 function useColors() {
   const labeled = useLabeled();
@@ -19,6 +29,10 @@ function useColors() {
 
 const useStyles = makeStyles(theme => ({
   division: {
+    display: 'flex',
+    alignItems: 'center',
+  },
+  daughter: {
     display: 'flex',
     alignItems: 'center',
   },
@@ -63,9 +77,22 @@ function Parent({ label }) {
     sourceAnchor: 'right',
     style: { strokeColor, strokeWidth: 1, noCurves: true },
   });
+
+  const select = useSelect();
+  const image = useImage();
+
+  const onClick = e => {
+    select.send({ type: 'SET_FOREGROUND', foreground: label });
+    image.send({ type: 'LOAD_FRAME', frame: frame_div - 1 });
+  };
+
   return (
     <ArcherElement id='parent' relations={relations}>
-      <Avatar className={styles.cell} style={{ backgroundColor: color }}>
+      <Avatar
+        className={styles.cell}
+        style={{ backgroundColor: color }}
+        onClick={onClick}
+      >
         {label}
       </Avatar>
     </ArcherElement>
@@ -75,51 +102,29 @@ function Parent({ label }) {
 function Daughter({ label, daughter, frame_div }) {
   const styles = useStyles();
 
-  const tracking = useTracking();
-  const { send } = tracking;
+  const select = useSelect();
+  const image = useImage();
 
-  const [anchorEl, setAnchorEl] = React.useState(null);
-  const handleClick = event => setAnchorEl(event.currentTarget);
-  const handleClose = () => setAnchorEl(null);
+  const colors = useColors();
 
-  const handleRemove = () => {
-    send({ type: 'REMOVE', daughter: daughter });
-    handleClose();
-  };
-
-  const handleNewCell = () => {
-    send({ type: 'REPLACE_WITH_NEW_CELL', daughter: daughter });
-    handleClose();
-  };
-
-  const handleParent = () => {
-    send({ type: 'REPLACE_WITH_PARENT', parent: label, daughter: daughter });
-    handleClose();
+  const onClick = () => {
+    select.send({ type: 'SET_FOREGROUND', foreground: daughter });
+    image.send({ type: 'LOAD_FRAME', frame: frame_div });
   };
 
   return (
-    <>
+    <Box className={styles.daughter}>
       <ArcherElement id={`daughter${daughter}`}>
         <Avatar
           className={styles.cell}
-          onClick={handleClick}
-          style={{ backgroundColor: color }}
+          onClick={onClick}
+          style={{ backgroundColor: colors[daughter] }}
         >
           {daughter}
         </Avatar>
       </ArcherElement>
-      <Menu
-        id='simple-menu'
-        anchorEl={anchorEl}
-        keepMounted
-        open={Boolean(anchorEl)}
-        onClose={handleClose}
-      >
-        <MenuItem onClick={handleRemove}>Remove from Division</MenuItem>
-        <MenuItem onClick={handleNewCell}>Replace with New Cell</MenuItem>
-        <MenuItem onClick={handleParent}>Replace with Parent</MenuItem>
-      </Menu>
-    </>
+      <DaughterMenu parent={label} daughter={daughter} />
+    </Box>
   );
 }
 
@@ -131,6 +136,7 @@ function AddDaughter({ label }) {
 
   return (
     <Box style={{ position: 'relative' }}>
+      {/* point arrow to hidden Avatar so arrows look aligned */}
       <ArcherElement id='addDaughter'>
         <Avatar className={styles.cell} style={{ visibility: 'hidden' }} />
       </ArcherElement>
@@ -138,6 +144,54 @@ function AddDaughter({ label }) {
         <AddCircleOutlineIcon />
       </IconButton>
     </Box>
+  );
+}
+
+function DaughterMenu({ parent, daughter }) {
+  const tracking = useTracking();
+  const { send } = tracking;
+
+  const [open, toggle] = useReducer(v => !v, false);
+  const anchorRef = useRef(null);
+
+  const handleRemove = () => {
+    send({ type: 'REMOVE', daughter: daughter });
+    toggle();
+  };
+
+  const handleNewCell = () => {
+    send({ type: 'REPLACE_WITH_NEW_CELL', daughter: daughter });
+    toggle();
+  };
+
+  const handleParent = () => {
+    send({ type: 'REPLACE_WITH_PARENT', parent: parent, daughter: daughter });
+    toggle();
+  };
+
+  const styles = useStyles();
+  return (
+    <>
+      <IconButton
+        aria-label='Edit daughter'
+        size='small'
+        onClick={toggle}
+        ref={anchorRef}
+      >
+        <MoreVertIcon fontSize='small' />
+      </IconButton>
+      <Popper open={open} anchorEl={anchorRef.current} placement='bottom-end'>
+        <Paper>
+          <ClickAwayListener onClickAway={toggle}>
+            <MenuList id='channel-options'>
+              <MenuItem onClick={handleRemove}>Remove from Division</MenuItem>
+              <MenuItem onClick={handleNewCell}>Replace with New Cell</MenuItem>
+              <MenuItem onClick={handleParent}>Replace with Parent</MenuItem>
+            </MenuList>
+          </ClickAwayListener>
+        </Paper>
+      </Popper>
+    </>
   );
 }
 
