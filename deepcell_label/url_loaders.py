@@ -126,17 +126,17 @@ class Loader():
         self.raw_array = reshape(raw_array, self.input_axes, self.output_axes)
 
     def load_labeled(self, data):
-        if is_npz(self.url):
+        if is_npz(self.labeled_url):
             label_array = load_labeled_npz(data)
             if label_array is None:
                 label_array = load_npz(data)
-        elif is_trk(self.url):
+        elif is_trk(self.labeled_url):
             label_array = load_labeled_trk(data)
-        elif is_png(self.url):
+        elif is_png(self.labeled_url):
             label_array = load_png(data)
-        elif is_tiff(self.url):
+        elif is_tiff(self.labeled_url):
             label_array = load_tiff(data)
-        elif is_zip(self.url):
+        elif is_zip(self.labeled_url):
             label_array = load_zip(data)
         else:
             ext = pathlib.Path(self.url).suffix
