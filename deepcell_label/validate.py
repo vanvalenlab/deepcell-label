@@ -9,7 +9,6 @@ class Validator():
         self.semantic_labels = project.labels.cell_info[feature]
         self.instance_labels = project.label_array[...,feature]
         self.warnings = []
-        import pdb; pdb.set_trace()
 
         self.validate_divisions()
 
