@@ -17,18 +17,6 @@ function useColors() {
   return colors;
 }
 
-function useDivision(label) {
-  const tracking = useTracking();
-  const divisions = useSelector(tracking, state => state.context.labels);
-  return divisions[label] || { parent: null, daughters: [], frame_div: null };
-}
-
-function useDaughters() {
-  const tracking = useTracking();
-  const daughters = useSelector(tracking, state => state.context.daughters);
-  return daughters;
-}
-
 const useStyles = makeStyles(theme => ({
   division: {
     display: 'flex',
@@ -52,7 +40,13 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-function Parent({ label, daughters, color }) {
+function Parent({ label }) {
+  const tracking = useTracking();
+  const division = useSelector(tracking, state => state.context.labels[label]);
+  const { daughters, frame_div } = division;
+  const colors = useColors();
+  const color = colors[label];
+
   const styles = useStyles();
   const theme = useTheme();
 
@@ -78,7 +72,7 @@ function Parent({ label, daughters, color }) {
   );
 }
 
-function Daughter({ label, daughter, color }) {
+function Daughter({ label, daughter, frame_div }) {
   const styles = useStyles();
 
   const tracking = useTracking();
@@ -147,8 +141,12 @@ function AddDaughter({ label }) {
   );
 }
 
-function Daughters({ label, daughters, colors }) {
+function Daughters({ label }) {
   const styles = useStyles();
+
+  const tracking = useTracking();
+  const division = useSelector(tracking, state => state.context.labels[label]);
+  const { daughters, frame_div } = division;
 
   return (
     <Box className={styles.daughters}>
@@ -156,7 +154,7 @@ function Daughters({ label, daughters, colors }) {
         <Daughter
           label={label}
           daughter={daughter}
-          color={colors[daughter]}
+          frame_div={frame_div}
           key={daughter}
         />
       ))}
@@ -168,15 +166,14 @@ function Daughters({ label, daughters, colors }) {
 function Division({ label }) {
   const styles = useStyles();
 
-  const division = useDivision(label);
-  const { daughters } = division;
-  const colors = useColors();
+  const tracking = useTracking();
+  const division = useSelector(tracking, state => state.context.labels[label]);
 
   return (
     <ArcherContainer>
       <Box className={styles.division}>
-        <Parent label={label} daughters={daughters} color={colors[label]} />
-        <Daughters label={label} daughters={daughters} colors={colors} />
+        {division && <Parent label={label} />}
+        {division && <Daughters label={label} />}
       </Box>
     </ArcherContainer>
   );
