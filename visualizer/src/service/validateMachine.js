@@ -45,7 +45,7 @@ function createValidateMachine({ projectId, feature }) {
       guards: {},
       actions: {
         setWarnings: assign({
-          warnings: (_, { data }) => data,
+          warnings: (_, { data }) => data.warnings,
         }),
       },
     }
