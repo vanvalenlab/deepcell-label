@@ -30,6 +30,7 @@
     "mousetrap": "^1.6.5",
     "quickselect": "^2.0.0",
     "react": "^17.0.1",
+    "react-archer": "^3.2.2",
     "react-dom": "^17.0.1",
     "react-dropzone": "^11.3.2",
     "react-icons": "^4.2.0",
