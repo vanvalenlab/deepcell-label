@@ -3,7 +3,6 @@ import { green } from '@material-ui/core/colors';
 import React from 'react';
 import { useLabeled, useRaw } from '../../ServiceContext';
 import CheckButton from './CheckButton';
-import FrameSlider from './FrameSlider';
 import LabeledControls from './LabeledControls/LabeledControls';
 import RawControls from './RawControls/RawControls';
 import SubmitButton from './SubmitButton';
@@ -46,7 +45,7 @@ const ImageControls = () => {
         <SubmitButton />
         <CheckButton />
       </Box>
-      <FrameSlider />
+      {/* <FrameSlider /> */}
       {labeled && <LabeledControls />}
       {raw && <RawControls />}
     </Box>
