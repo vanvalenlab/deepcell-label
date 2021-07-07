@@ -15,7 +15,8 @@ function useDivision(label) {
     division[label] || {
       parent: null,
       daughters: [],
-      frame_div: null,
+      divisionFrame: null,
+      parentDivisionFrame: null,
       frames: [],
     }
   );
@@ -87,11 +88,11 @@ function FrameSlider({ label }) {
 
   const colors = useColors();
   const division = useDivision(label);
-  const { parent, frame_div, frames } = division;
+  const { parent, divisionFrame, frames } = division;
   const parentDivision = useDivision(parent);
 
-  const startFrame = parentDivision ? parentDivision.frame_div : 0;
-  const endFrame = frame_div ? frame_div : numFrames;
+  const startFrame = parentDivision ? parentDivision.divisionFrame : 0;
+  const endFrame = divisionFrame ? divisionFrame : numFrames;
   const color = colors[label];
 
   const boxStyle = {

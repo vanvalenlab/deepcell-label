@@ -8,7 +8,15 @@ import FrameSlider from './FrameSlider';
 function useDivision(label) {
   const tracking = useTracking();
   const division = useSelector(tracking, state => state.context.labels);
-  return division[label] || { parent: null, daughters: [], frame_div: null };
+  return (
+    division[label] || {
+      frames: [],
+      parent: null,
+      daughters: [],
+      divisionFrame: null,
+      parentDivisionFrame: null,
+    }
+  );
 }
 
 function Timeline() {

@@ -20,6 +20,7 @@ from flask import send_file
 from flask import make_response
 from werkzeug.exceptions import HTTPException
 import matplotlib
+import pandas as pd
 
 from deepcell_label.label import TrackEdit, ZStackEdit
 from deepcell_label.models import Project
@@ -101,7 +102,13 @@ def semantic_labels(project_id, feature):
     project = Project.get(project_id)
     if not project:
         return jsonify({'error': f'project {project_id} not found'}), 404
-    return project.labels.cell_info[feature]
+    cell_info = project.labels.cell_info[feature]
+    df = pd.DataFrame(cell_info).T
+    df = (df
+        .join(df[['frame_div']], rsuffix='_parent', how='left', on='parent')
+        .rename(columns={'frame_div_parent': 'parentDivisionFrame', 'frame_div': 'divisionFrame'})
+    )
+    return df.to_json(orient='index')
 
 @bp.route('/api/validate/<project_id>/<int:feature>')
 def validate(project_id, feature):
