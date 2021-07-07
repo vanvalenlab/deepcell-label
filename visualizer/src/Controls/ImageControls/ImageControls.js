@@ -2,7 +2,6 @@ import { Box, makeStyles } from '@material-ui/core';
 import { green } from '@material-ui/core/colors';
 import React from 'react';
 import { useLabeled, useRaw } from '../../ServiceContext';
-import CheckButton from './CheckButton';
 import LabeledControls from './LabeledControls/LabeledControls';
 import RawControls from './RawControls/RawControls';
 import SubmitButton from './SubmitButton';
@@ -16,7 +15,6 @@ const useStyles = makeStyles(theme => ({
     padding: theme.spacing(1),
   },
   buttons: {
-    display: 'flex',
     width: '100%',
   },
   title: {
@@ -41,10 +39,7 @@ const ImageControls = () => {
 
   return (
     <Box id='image-controls' className={styles.root}>
-      <Box className={styles.buttons}>
-        <SubmitButton />
-        <CheckButton />
-      </Box>
+      <SubmitButton className={styles.buttons} />
       {/* <FrameSlider /> */}
       {labeled && <LabeledControls />}
       {raw && <RawControls />}

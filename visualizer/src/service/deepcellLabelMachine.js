@@ -10,7 +10,6 @@ import selectMachine from './selectMachine';
 import toolMachine from './toolMachine';
 import trackingMachine from './tracking/trackingMachine';
 import undoMachine from './undoMachine';
-import createValidateMachine from './validateMachine';
 
 function fetchProject(context) {
   const { projectId } = context;
@@ -113,8 +112,6 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
           apiRef: context => spawn(createApiMachine(context), 'api'),
           trackingRef: () => spawn(trackingMachine, 'tracking'),
           selectRef: () => spawn(selectMachine, 'select'),
-          validateRef: context =>
-            spawn(createValidateMachine(context), 'validate'),
         }),
         spawnUndo: assign({
           undoRef: () => spawn(undoMachine, 'undo'),

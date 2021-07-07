@@ -28,7 +28,6 @@ from deepcell_label.models import Project
 from deepcell_label import url_loaders
 from deepcell_label import exporters
 from deepcell_label.config import S3_INPUT_BUCKET, S3_OUTPUT_BUCKET
-from deepcell_label.validate import Validator
 
 bp = Blueprint('label', __name__)  # pylint: disable=C0103
 
@@ -109,14 +108,6 @@ def semantic_labels(project_id, feature):
         .rename(columns={'frame_div_parent': 'parentDivisionFrame', 'frame_div': 'divisionFrame'})
     )
     return df.to_json(orient='index')
-
-@bp.route('/api/validate/<project_id>/<int:feature>')
-def validate(project_id, feature):
-    project = Project.get(project_id)
-    if not project:
-        return jsonify({'error': f'project {project_id} not found'}), 404
-    validator = Validator(project, feature)
-    return {'warnings': validator.warnings}
 
 @bp.route('/api/colormap/<project_id>/<int:feature>')
 def colormap(project_id, feature):
