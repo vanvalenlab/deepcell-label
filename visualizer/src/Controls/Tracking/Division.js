@@ -57,7 +57,7 @@ const useStyles = makeStyles(theme => ({
 function Parent({ label }) {
   const tracking = useTracking();
   const division = useSelector(tracking, state => state.context.labels[label]);
-  const { daughters, divisionFrame } = division;
+  const { daughters, divisionFrame, frames } = division;
   const colors = useColors();
   const color = colors[label];
 
@@ -83,9 +83,10 @@ function Parent({ label }) {
 
   const onClick = e => {
     select.send({ type: 'SET_FOREGROUND', foreground: label });
-    if (divisionFrame) {
-      image.send({ type: 'LOAD_FRAME', frame: divisionFrame - 1 });
-    }
+    image.send({
+      type: 'LOAD_FRAME',
+      frame: divisionFrame ? divisionFrame - 1 : frames[frames.length - 1],
+    });
   };
 
   return (
@@ -171,7 +172,6 @@ function DaughterMenu({ parent, daughter }) {
     toggle();
   };
 
-  const styles = useStyles();
   return (
     <>
       <IconButton
