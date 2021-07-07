@@ -9,7 +9,7 @@ import ActionButtons from './Controls/Toolbar/ActionButtons';
 import SelectedPalette from './Controls/Toolbar/SelectedPalette';
 import ToolControls from './Controls/Toolbar/ToolControls';
 import UndoRedo from './Controls/Toolbar/UndoRedo';
-import DivisionAlerts from './Controls/Tracking/DivisionAlerts';
+import DivisionAlerts from './Controls/Tracking/Alerts/DivisionAlerts';
 import Timeline from './Controls/Tracking/Timeline';
 import Footer from './Footer/Footer';
 import Instructions from './Instructions/Instructions';
