@@ -721,30 +721,6 @@ class TrackEdit(BaseEdit):
 
         self.y_changed = self.labels_changed = True
 
-    def action_set_parent(self, label_1, label_2):
-        """
-        label_1 gave birth to label_2
-        """
-        track_1 = self.labels.tracks[label_1]
-        track_2 = self.labels.tracks[label_2]
-
-        last_frame_parent = max(track_1['frames'])
-        first_frame_daughter = min(track_2['frames'])
-
-        if last_frame_parent < first_frame_daughter:
-            track_1['daughters'].append(label_2)
-            daughters = np.unique(track_1['daughters']).tolist()
-            track_1['daughters'] = daughters
-
-            track_2['parent'] = label_1
-
-            if track_1['frame_div'] is None:
-                track_1['frame_div'] = first_frame_daughter
-            else:
-                track_1['frame_div'] = min(track_1['frame_div'], first_frame_daughter)
-
-            self.labels_changed = True
-
     def action_replace(self, label_1, label_2):
         """
         Replacing label_2 with label_1 in all frames.
