@@ -646,7 +646,6 @@ class TrackEdit(BaseEdit):
 
         self.labels_changed = True
 
-
     def action_remove_daughter(self, daughter):
         """
         Removes a daughter from the division event that spawns it.
@@ -669,7 +668,6 @@ class TrackEdit(BaseEdit):
         daughter_track['parent'] = None
 
         self.labels_changed = True
-
 
     def action_new_track(self, label):
         """
