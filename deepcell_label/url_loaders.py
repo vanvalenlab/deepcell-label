@@ -99,7 +99,7 @@ class Loader():
         raw_array = reshape(raw_array, self.input_axes, self.output_axes)
         if label_array is None:
             # Substitute channels dimension with one feature
-            shape = (*self.raw_array[:-1], 1)
+            shape = (*raw_array.shape[:-1], 1)
             label_array = np.zeros(shape)
         else:
             label_array = reshape(label_array, self.input_axes, self.output_axes)
