@@ -43,7 +43,7 @@ function OneDaughterAlert({ label }) {
 
   return (
     <Alert className={styles.alert} severity='warning' onClick={onClick}>
-      Cell {label} has only daughter {daughters[0]}
+      Parent {label} has only daughter {daughters[0]}
     </Alert>
   );
 }
@@ -55,10 +55,15 @@ function OneDaughterAlerts() {
   const oneDaughterAlerts = Object.values(divisions)
     .filter(division => oneDaughter(division))
     .map(division => division.label);
+  const count = oneDaughterAlerts.length;
 
-  const header = `${oneDaughterAlerts.length} divisions with one daughter`;
+  const header =
+    count === 1
+      ? `1 division with one daughter`
+      : `${count} divisions with one daughter`;
+
   return (
-    oneDaughterAlerts.length > 0 && (
+    count > 0 && (
       <AlertGroup header={header} severity={'warning'}>
         {oneDaughterAlerts.map(label => (
           <OneDaughterAlert label={label} />

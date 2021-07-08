@@ -50,10 +50,15 @@ function ParentAfterDivisionAlerts() {
   const parentAfterDivisionAlerts = Object.values(divisions)
     .filter(division => parentAfterDivision(division))
     .map(division => division.label);
+  const count = parentAfterDivisionAlerts.length;
 
-  const header = `${parentAfterDivisionAlerts.length} parents present after division`;
+  const header =
+    count === 1
+      ? `1 parent present after division`
+      : `${count} parents present after division`;
+
   return (
-    parentAfterDivisionAlerts.length > 0 && (
+    count > 0 && (
       <AlertGroup header={header} severity={'error'}>
         {parentAfterDivisionAlerts.map(label => (
           <ParentAfterDivisionAlert label={label} />

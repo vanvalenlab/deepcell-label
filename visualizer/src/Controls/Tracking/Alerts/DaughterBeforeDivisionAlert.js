@@ -50,10 +50,14 @@ function DaughterBeforeDivisionAlerts() {
   const daughterBeforeDivisionAlerts = Object.values(divisions)
     .filter(division => daughterBeforeDivision(division, divisions))
     .map(division => division.label);
+  const count = daughterBeforeDivisionAlerts.length;
 
-  const header = `${daughterBeforeDivisionAlerts.length} daughters present before division`;
+  const header =
+    count === 1
+      ? `1 daughter present before division`
+      : `${count} daughters present before division`;
   return (
-    daughterBeforeDivisionAlerts.length > 0 && (
+    count > 0 && (
       <AlertGroup header={header} severity={'error'}>
         {daughterBeforeDivisionAlerts.map(label => (
           <DaughterBeforeDivisionAlert label={label} />
