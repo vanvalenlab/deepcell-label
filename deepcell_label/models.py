@@ -475,7 +475,7 @@ class Labels(db.Model):
     @property
     def tracks(self):
         """Alias for .trk for backward compatibility"""
-        return self.cell_info[0]
+        return self.cell_info[self.project.feature]
 
     @property
     def readable_tracks(self):

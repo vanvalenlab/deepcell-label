@@ -23,9 +23,6 @@ class LabelInfoMaker():
         self._cell_info = None
         self._tracking = tracking
 
-        if self._tracking and self.num_features != 1:
-            raise ValueError('Labels for tracking projects must have one feature.')
-
     @property
     def cell_ids(self):
         if self._cell_ids is None:
@@ -36,7 +33,7 @@ class LabelInfoMaker():
     def cell_info(self):
         if self._cell_info is None:
             if self._tracking:
-                self.compute_tracks()
+                self.compute_lineages()
             else:
                 self.compute_info()
         return self._cell_info
@@ -63,12 +60,16 @@ class LabelInfoMaker():
         self.cell_ids[feature] = feature_cells
 
     def compute_info(self):
-        """
-        Make the cell_info dict.
-        """
+        """Create the cell_info dict."""
         self._cell_info = {}
         for feature in range(self.num_features):
             self.compute_feature_info(feature)
+
+    def compute_lineages(self):
+        """Make the cell_info dict."""
+        self._cell_info = {}
+        for feature in range(self.num_features):
+            self.compute_feature_lineage(feature)
 
     def compute_feature_info(self, feature):
         """
@@ -77,30 +78,31 @@ class LabelInfoMaker():
         """
         feature = int(feature)
         # Find the labels in the feature
-        feature_labels = self.labels[..., feature]
-        feature_cells = np.unique(feature_labels)[np.nonzero(np.unique(feature_labels))]
+        labels = self.labels[..., feature]
+        cells = np.unique(labels)[np.nonzero(np.unique(labels))]
         # Compute the label metadata for the feature
-        feature_info = {}
-        for cell in feature_cells:
+        info = {}
+        for cell in cells:
             cell = int(cell)
-            feature_info[cell] = {'label': str(cell),
+            info[cell] = {'label': str(cell),
                                   'frames': [],
                                   'slices': ''}
             for frame in range(self.num_frames):
-                if cell in feature_labels[frame, ...]:
-                    feature_info[cell]['frames'].append(int(frame))
-        self.cell_ids[feature] = feature_cells
-        self.cell_info[feature] = feature_info
+                if cell in labels[frame, ...]:
+                    info[cell]['frames'].append(int(frame))
+        self.cell_ids[feature] = cells
+        self.cell_info[feature] = info
 
-    def compute_tracks(self):
+    def compute_feature_lineage(self, feature):
         """
-        Create an tracks dictionary from a labels array.
+        Create tracks dictionary from a labels array.
         Includes no relationships, only placeholders to build a lineage,
         like frame_div, daughters, capped, parent.
         """
-        assert self.num_features == 1
+        feature = int(feature)
+        labels = self.labels[..., feature]
+        cells = np.unique(labels)[np.nonzero(np.unique(labels))]
 
-        cells = np.unique(self.labels)[np.nonzero(np.unique(self.labels))]
         tracks = {}
         for cell in cells:
             cell = int(cell)
@@ -110,8 +112,9 @@ class LabelInfoMaker():
                             'daughters': [],
                             'capped': False,
                             'parent': None}
-            for frame in range(self.labels.shape[0]):
-                if cell in self.labels[frame, ...]:
+            for frame in range(labels.shape[0]):
+                if cell in labels[frame, ...]:
                     tracks[cell]['frames'].append(int(frame))
-        self._cell_ids = {0: cells}
-        self._cell_info = {0: tracks}
+
+        self.cell_ids[feature] = cells
+        self.cell_info[feature] = tracks
