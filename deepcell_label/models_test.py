@@ -359,18 +359,17 @@ def test_get_max_label_all_ones():
     assert max_label == 1
 
 
-def test_get_max_label_two_features():
+def test_get_max_label_first_features():
     labels = np.array([[[[1, 2]]]])
     project = models.Project.create(DummyLoader(labels=labels))
-    feature = 0
-    project.feature = feature
-    project.update()
-    max_label = project.get_max_label(feature)
+    max_label = project.get_max_label(0)
     assert max_label == 1
-    feature = 1
-    project.feature = feature
-    project.update()
-    max_label = project.get_max_label(feature)
+
+
+def test_get_max_label_second_feature():
+    labels = np.array([[[[1, 2]]]])
+    project = models.Project.create(DummyLoader(labels=labels))
+    max_label = project.get_max_label(1)
     assert max_label == 2
 
 
