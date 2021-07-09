@@ -362,11 +362,102 @@ class TestZStackEdit():
 
 class TestTrackEdit():
 
+    def test_add_self_as_daughter(self, app):
+        """
+        Add parent as a daughter of itself, creating a new label
+        """
+        labels = np.reshape([1, 1], (2, 1, 1, 1))
+        cell_info = {0: {
+            1: { 'capped': False, 'frame_div': None, 'daughters': [], 'parent': None, 'frames': [0, 1], },
+        }}
+        expected_labels = np.reshape([1, 2], (2, 1, 1, 1))
+
+        project = models.Project.create(DummyLoader(labels=labels, cell_info=cell_info, url='test.trk'))
+        project.frame = 1
+        edit = label.TrackEdit(project)
+
+        parent = 1
+        daughter = 1
+
+        with app.app_context():
+            edit.action_add_daughter(parent, daughter)
+            tracks = edit.labels.tracks
+            np.testing.assert_equal(project.label_array, expected_labels)
+            assert tracks[1]['capped']
+            assert tracks[1]['daughters'] == [2]
+            assert tracks[1]['frame_div'] == 1
+            assert tracks[1]['parent'] is None
+            assert not tracks[2]['capped']
+            assert tracks[2]['frame_div'] is None
+            assert tracks[2]['daughters'] == []
+            assert tracks[2]['parent'] == 1
+
+    def test_add_self_as_daughter_with_future_division(self, app):
+        """
+        Add parent as a daughter of itself when parent has a division in the future.
+        """
+        labels = np.reshape([0, 1, 0, 1, 2, 3], (3, 2, 1, 1))
+        cell_info = {0: {
+            1: { 'label': '1', 'capped': True, 'frame_div': 2, 'daughters': [2, 3], 'parent': None, 'frames': [0, 1], },
+            2: { 'label': '2', 'capped': False, 'frame_div': None, 'daughters': [], 'parent': 1, 'frames': [2], },
+            3: { 'label': '3', 'capped': False, 'frame_div': None, 'daughters': [], 'parent': 1, 'frames': [2], },
+        }}
+        expected_labels = np.reshape([0, 1, 0, 4, 2, 3], (3, 2, 1, 1))
+        expected_lineage = {
+            1: { 'label': '1', 'capped': True, 'frame_div': 1, 'daughters': [4], 'parent': None, 'frames': [0], },
+            2: { 'label': '2', 'capped': False, 'frame_div': None, 'daughters': [], 'parent': 4, 'frames': [2], },
+            3: { 'label': '3', 'capped': False, 'frame_div': None, 'daughters': [], 'parent': 4, 'frames': [2], },
+            4: { 'label': '4', 'capped': True, 'frame_div': 2, 'daughters': [2, 3], 'parent': 1, 'frames': [1] },
+        }
+
+        project = models.Project.create(DummyLoader(labels=labels, cell_info=cell_info, url='test.trk'))
+        project.frame = 1
+        edit = label.TrackEdit(project)
+
+        parent = 1
+        daughter = 1
+
+        with app.app_context():
+            edit.action_add_daughter(parent, daughter)
+            tracks = edit.labels.tracks
+            np.testing.assert_equal(project.label_array, expected_labels)
+            assert tracks == expected_lineage
+
+    def test_add_self_as_daughter_to_existing_division(self, app):
+        """
+        Add parent as a daughter of itself when parent has a division in the future.
+        """
+        labels = np.reshape([0, 1, 2, 1], (2, 2, 1, 1))
+        cell_info = {0: {
+            1: { 'label': '1', 'capped': True, 'frame_div': 1, 'daughters': [2], 'parent': None, 'frames': [0, 1], },
+            2: { 'label': '2', 'capped': False, 'frame_div': None, 'daughters': [], 'parent': 1, 'frames': [1], },
+        }}
+        expected_labels = np.reshape([0, 1, 2, 3], (2, 2, 1, 1))
+        expected_lineage = {
+            1: { 'label': '1', 'capped': True, 'frame_div': 1, 'daughters': [2, 3], 'parent': None, 'frames': [0], },
+            2: { 'label': '2', 'capped': False, 'frame_div': None, 'daughters': [], 'parent': 1, 'frames': [1], },
+            3: { 'label': '3', 'capped': False, 'frame_div': None, 'daughters': [], 'parent': 1, 'frames': [1], },
+        }
+
+        project = models.Project.create(DummyLoader(labels=labels, cell_info=cell_info, url='test.trk'))
+        project.frame = 1
+        edit = label.TrackEdit(project)
+
+        parent = 1
+        daughter = 1
+
+        with app.app_context():
+            edit.action_add_daughter(parent, daughter)
+            tracks = edit.labels.tracks
+            np.testing.assert_equal(project.label_array, expected_labels)
+            assert tracks == expected_lineage
+
     def test_add_daughter_new_division(self, app):
         # two 2 x 1 frames
         # one label in the first frame and two in the second frame
         labels = np.reshape([0, 1, 2, 3], (2, 2, 1, 1))
         project = models.Project.create(DummyLoader(labels=labels, url='test.trk'))
+        project.frame = 1
         edit = label.TrackEdit(project)
         
         parent = 1

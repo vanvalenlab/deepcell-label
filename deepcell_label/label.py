@@ -625,24 +625,70 @@ class TrackEdit(BaseEdit):
             parent (int): parent label in division
             daughter (int): daughter label in division
         """
-        # Get tracks
-        daughter_track = self.labels.tracks[daughter]
         parent_track = self.labels.tracks[parent]
-        # Update daughter track
-        if daughter_track['parent'] is not None:
-            raise ValueError(f'Daughter {daughter} already has parent {daughter_track["parent"]}')
-        daughter_track['parent'] = parent
-        # Update parent track
-        if not parent_track['capped']:
-            assert parent_track['daughters'] == []
-            assert parent_track['frame_div'] == None
-            # Division occurs on frame after parent disappears
-            parent_box = find_objects(self.project.label_array == parent)
-            frame_div = parent_box[0][0].stop
-            parent_track['frame_div'] = frame_div
-            parent_track['capped'] = True
+        daughter_track = self.labels.tracks[daughter]
+
+        # Add new daughter
+        if parent == daughter:
+            # Don't create a new daughter on the first frame of the parent
+            if self.frame_id == parent_track['frames'][0]:
+                return
+
+            # Replace parent with new label for rest of movie
+            daughter = self.project.get_max_label(self.feature) + 1
+
+            for label_frame in self.project.label_frames[self.frame_id:]:
+                img = label_frame.frame
+                img[img == parent] = daughter
+                label_frame.frame = img
+
+            # Split parent frames between parent and daughter
+            frames_before = [frame for frame in parent_track['frames'] if frame < self.frame_id]
+            frames_after = [frame for frame in parent_track['frames'] if frame >= self.frame_id]
+
+            parent_track['frames'] = frames_before
+            daughter_track = {
+                'frames': frames_after, 
+                'label': str(daughter),
+                'daughters': [],
+                'frame_div': None,
+                'capped': False,
+                'parent': parent,
+            }
+
+            # Move divisions after current frame from parent to daughter
+            if parent_track['frame_div'] and parent_track['frame_div'] > self.frame_id:
+                future_daughters = [d for d in parent_track['daughters']
+                    if min(self.labels.tracks[d]['frames']) > self.frame_id]
+                past_daughters = [d for d in parent_track['daughters'] 
+                    if d not in future_daughters]
+
+                for d in future_daughters:
+                    self.labels.tracks[d]['parent'] = daughter
+                
+                daughter_track['capped'] = True
+                daughter_track['frame_div'] = parent_track['frame_div']
+                daughter_track['daughters'] = future_daughters
+                parent_track['frame_div'] = self.frame_id
+                parent_track['daughters'] = past_daughters
+
+            self.labels.tracks[daughter] = daughter_track
+            
+            self.labels.cell_ids[self.feature] = np.append(self.labels.cell_ids[self.feature], daughter)
+            self.y_changed = True
+        # Add existing daughter
+        else:
+            if daughter_track['parent'] is not None:
+                raise ValueError(f'Daughter {daughter} already has parent {daughter_track["parent"]}')
+            daughter_track['parent'] = parent
+
+        # Add daughter
         if daughter not in parent_track['daughters']:
             parent_track['daughters'] += [daughter]
+        # Add new division info to parent
+        if not parent_track['capped']:
+            parent_track['frame_div'] = self.frame_id
+            parent_track['capped'] = True
 
         self.labels_changed = True
 
