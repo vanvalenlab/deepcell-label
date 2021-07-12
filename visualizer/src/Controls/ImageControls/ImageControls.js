@@ -47,9 +47,4 @@ const ImageControls = () => {
   );
 };
 
-// {/* <TableRow className={styles.row}> */}
-// {/* <TableCell className={styles.cell}> */}
-// </TableCell>
-// </TableRow>
-
 export default ImageControls;
