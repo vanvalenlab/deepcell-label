@@ -54,10 +54,8 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-function Parent({ label }) {
-  const tracking = useTracking();
-  const division = useSelector(tracking, state => state.context.labels[label]);
-  const { daughters, divisionFrame, frames } = division;
+function Parent({ division }) {
+  const { label, daughters, divisionFrame, frames } = division;
   const colors = useColors();
   const color = colors[label];
 
@@ -192,12 +190,10 @@ function DaughterMenu({ parent, daughter }) {
   );
 }
 
-function Daughters({ label }) {
+function Daughters({ division }) {
   const styles = useStyles();
 
-  const tracking = useTracking();
-  const division = useSelector(tracking, state => state.context.labels[label]);
-  const { daughters, divisionFrame } = division;
+  const { label, daughters, divisionFrame } = division;
 
   return (
     <Box className={styles.daughters}>
@@ -223,8 +219,8 @@ function Division({ label }) {
   return (
     <ArcherContainer>
       <Box className={styles.division}>
-        {division && <Parent label={label} />}
-        {division && <Daughters label={label} />}
+        {division && <Parent division={division} />}
+        {division && <Daughters division={division} />}
       </Box>
     </ArcherContainer>
   );
