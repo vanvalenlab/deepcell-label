@@ -617,6 +617,10 @@ class TrackEdit(BaseEdit):
     def __init__(self, project):
         super(TrackEdit, self).__init__(project)
 
+    @property
+    def tracks(self):
+        return self.labels.cell_info[self.feature]
+
     def action_add_daughter(self, parent, daughter):
         """
         Adds a daughter to a division event.
@@ -625,8 +629,8 @@ class TrackEdit(BaseEdit):
             parent (int): parent label in division
             daughter (int): daughter label in division
         """
-        parent_track = self.labels.tracks[parent]
-        daughter_track = self.labels.tracks[daughter]
+        parent_track = self.tracks[parent]
+        daughter_track = self.tracks[daughter]
 
         # Add new daughter
         if parent == daughter:
@@ -649,7 +653,7 @@ class TrackEdit(BaseEdit):
             parent_track['frames'] = frames_before
             daughter_track = {
                 'frames': frames_after, 
-                'label': str(daughter),
+                'label': daughter,
                 'daughters': [],
                 'frame_div': None,
                 'capped': False,
@@ -659,12 +663,12 @@ class TrackEdit(BaseEdit):
             # Move divisions after current frame from parent to daughter
             if parent_track['frame_div'] and parent_track['frame_div'] > self.frame_id:
                 future_daughters = [d for d in parent_track['daughters']
-                    if min(self.labels.tracks[d]['frames']) > self.frame_id]
+                    if min(self.tracks[d]['frames']) > self.frame_id]
                 past_daughters = [d for d in parent_track['daughters'] 
                     if d not in future_daughters]
 
                 for d in future_daughters:
-                    self.labels.tracks[d]['parent'] = daughter
+                    self.tracks[d]['parent'] = daughter
                 
                 daughter_track['capped'] = True
                 daughter_track['frame_div'] = parent_track['frame_div']
@@ -672,7 +676,7 @@ class TrackEdit(BaseEdit):
                 parent_track['frame_div'] = self.frame_id
                 parent_track['daughters'] = past_daughters
 
-            self.labels.tracks[daughter] = daughter_track
+            self.tracks[daughter] = daughter_track
             
             self.labels.cell_ids[self.feature] = np.append(self.labels.cell_ids[self.feature], daughter)
             self.y_changed = True
@@ -701,9 +705,9 @@ class TrackEdit(BaseEdit):
             daughter (int): daughter label to remove from division event
         """
         # Get daughter and parent tracks
-        daughter_track = self.labels.tracks[daughter]
+        daughter_track = self.tracks[daughter]
         parent = daughter_track['parent']
-        parent_track = self.labels.tracks[parent]
+        parent_track = self.tracks[parent]
         # Compute new daughters
         daughters = [label for label in parent_track['daughters'] if label != daughter]
         # Update tracks
@@ -723,7 +727,7 @@ class TrackEdit(BaseEdit):
             label (int): label to replace in subsequent frames
         """
         new_label = self.project.get_max_label(self.feature) + 1
-        track = self.labels.tracks[label]
+        track = self.tracks[label]
 
         # Don't create a new track on the first frame of a track
         if self.frame_id == track['frames'][0]:
@@ -736,7 +740,7 @@ class TrackEdit(BaseEdit):
             label_frame.frame = img
 
         # replace fields
-        track_new = self.labels.tracks[new_label] = {}
+        track_new = self.tracks[new_label] = {}
 
         idx = track['frames'].index(self.frame_id)
 
@@ -750,7 +754,7 @@ class TrackEdit(BaseEdit):
         # only add daughters if they aren't in the same frame as the new track
         track_new['daughters'] = []
         for d in track['daughters']:
-            if self.frame_id not in self.labels.tracks[d]['frames']:
+            if self.frame_id not in self.tracks[d]['frames']:
                 track_new['daughters'].append(d)
 
         track_new['frame_div'] = track['frame_div']
@@ -777,11 +781,11 @@ class TrackEdit(BaseEdit):
 
         # TODO: is this the same as add/remove?
         # replace fields
-        track_1 = self.labels.tracks[label_1]
-        track_2 = self.labels.tracks[label_2]
+        track_1 = self.tracks[label_1]
+        track_2 = self.tracks[label_2]
 
         for d in track_1['daughters']:
-            self.labels.tracks[d]['parent'] = None
+            self.tracks[d]['parent'] = None
 
         track_1['frames'].extend(track_2['frames'])
         track_1['frames'] = sorted(set(track_1['frames']))
@@ -789,8 +793,8 @@ class TrackEdit(BaseEdit):
         track_1['frame_div'] = track_2['frame_div']
         track_1['capped'] = track_2['capped']
 
-        del self.labels.tracks[label_2]
-        for _, track in self.labels.tracks.items():
+        del self.tracks[label_2]
+        for _, track in self.tracks.items():
             try:
                 track['daughters'].remove(label_2)
             except ValueError:
@@ -809,15 +813,15 @@ class TrackEdit(BaseEdit):
                 label_frame.frame = img
 
             # replace fields
-            track_new = self.labels.tracks[new_label] = self.labels.tracks[old_label]
+            track_new = self.tracks[new_label] = self.tracks[old_label]
             track_new['label'] = new_label
-            del self.labels.tracks[old_label]
+            del self.tracks[old_label]
 
             for d in track_new['daughters']:
-                self.labels.tracks[d]['parent'] = new_label
+                self.tracks[d]['parent'] = new_label
 
             if track_new['parent'] is not None:
-                parent_track = self.labels.tracks[track_new['parent']]
+                parent_track = self.tracks[track_new['parent']]
                 parent_track['daughters'].remove(old_label)
                 parent_track['daughters'].append(new_label)
 
@@ -830,18 +834,18 @@ class TrackEdit(BaseEdit):
     def action_save_track(self, bucket):
         # clear any empty tracks before saving file
         empty_tracks = []
-        for key in self.labels.tracks:
-            if not self.labels.tracks[key]['frames']:
-                empty_tracks.append(self.labels.tracks[key]['label'])
+        for key in self.tracks:
+            if not self.tracks[key]['frames']:
+                empty_tracks.append(self.tracks[key]['label'])
         for track in empty_tracks:
-            del self.labels.tracks[track]
+            del self.tracks[track]
 
         # create file object in memory instead of writing to disk
         trk_file_obj = io.BytesIO()
 
         with tarfile.open(fileobj=trk_file_obj, mode='w') as trks:
             with tempfile.NamedTemporaryFile('w') as lineage_file:
-                json.dump(self.labels.tracks, lineage_file, indent=1)
+                json.dump(self.tracks, lineage_file, indent=1)
                 lineage_file.flush()
                 trks.add(lineage_file.name, 'lineage.json')
 
@@ -869,12 +873,13 @@ class TrackEdit(BaseEdit):
         # if cell already exists elsewhere in trk:
         add_label = int(add_label)
         try:
-            old_frames = self.labels.tracks[add_label]['frames']
+            old_frames = self.tracks[add_label]['frames']
             updated_frames = np.append(old_frames, frame)
             updated_frames = np.unique(updated_frames).tolist()
-            self.labels.tracks[add_label]['frames'] = updated_frames
+            self.tracks[add_label]['frames'] = updated_frames
         # cell does not exist anywhere in trk:
         except KeyError:
+            self.tracks[add_label] = {
                 'label': add_label,
                 'frames': [frame],
                 'daughters': [],
@@ -890,13 +895,12 @@ class TrackEdit(BaseEdit):
     def del_cell_info(self, del_label, frame):
         """Remove a cell from the trk"""
         # remove cell from frame
-        old_frames = self.labels.tracks[del_label]['frames']
-        updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame))).tolist()
-        self.labels.tracks[del_label]['frames'] = updated_frames
+        track = self.tracks[del_label]
+        track['frames'] = [i for i in track['frames'] if i != frame]
 
         # if that was the last frame, delete the entry for that cell
-        if self.labels.tracks[del_label]['frames'] == []:
-            del self.labels.tracks[del_label]
+        if track['frames'] == []:
+            del self.tracks[del_label]
 
             # also remove from list of cell_ids
             ids = self.labels.cell_ids[self.feature]
@@ -905,9 +909,12 @@ class TrackEdit(BaseEdit):
             )
 
             # If deleting lineage data, remove parent/daughter entries
-            for _, track in self.labels.tracks.items():
+            for _, track in self.tracks.items():
                 try:
                     track['daughters'].remove(del_label)
+                    if track['daughters'] == []:
+                        track['frame_div'] = None
+                        track['capped'] = False
                 except ValueError:
                     pass
                 if track['parent'] == del_label:

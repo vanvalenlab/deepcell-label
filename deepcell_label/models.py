@@ -476,29 +476,6 @@ class Labels(db.Model):
         self.cell_ids = {}
         self.cell_info = {}
 
-    @property
-    def tracks(self):
-        """Alias for .trk for backward compatibility"""
-        return self.cell_info[0]
-
-    @property
-    def readable_tracks(self):
-        """
-        Preprocesses tracks for presentation on browser. For example,
-        simplifying track['frames'] into something like [0-29] instead of
-        [0,1,2,3,...].
-        """
-        cell_info = copy.deepcopy(self.cell_info)
-        for _, feature in cell_info.items():
-            for _, label in feature.items():
-                slices = list(map(list, consecutive(label['frames'])))
-                slices = '[' + ', '.join(["{}".format(a[0])
-                                          if len(a) == 1 else "{}-{}".format(a[0], a[-1])
-                                          for a in slices]) + ']'
-                label['slices'] = str(slices)
-
-        return cell_info
-
     def update(self):
         """
         Update the label metadata by explicitly copying the PickleType
