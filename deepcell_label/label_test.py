@@ -127,6 +127,20 @@ class TestBaseEdit():
             assert cell2 in edit.tracks
             assert not cell1 in edit.tracks
 
+    def test_action_replace_single(self, app):
+        # single 2 x 2 frame with two labels: 1s in top row, 2s in bottom
+        labels = np.reshape([1, 2], (1, 2, 1, 1))
+        project = models.Project.create(DummyLoader(labels=labels))
+        edit = label.TrackEdit(project)
+        expected_labels = np.reshape([1, 1], (1, 2, 1, 1))
+
+        cell1 = 1
+        cell2 = 2
+        with app.app_context():
+            edit.action_replace_single(cell1, cell2)
+            np.testing.assert_array_equal(project.label_array, expected_labels)
+            assert 2 not in edit.tracks
+
     def test_action_flood_background(self, app):
         """Flooding background does NOT spread to diagonal areas."""
         # 3 x 3 frame with label in diamond shape

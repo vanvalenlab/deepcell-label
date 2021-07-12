@@ -146,6 +146,25 @@ class BaseEdit(object):
         self.y_changed = self.labels_changed = True
         self.frame[..., self.feature] = img
 
+    def action_replace_single(self, label_1, label_2):
+        """
+        Replaces label_2 with label_1 in the current frame.
+        """
+        img = self.frame[..., self.feature]
+        label_2_present = np.any(np.isin(label_2, img))
+
+        img = np.where(img == label_2, label_1, img)
+
+        # Img only changes when label_2 is in the frame
+        if label_2_present:
+            if label_1 != 0:
+                self.add_cell_info(add_label=label_1, frame=self.frame_id)
+            if label_2 != 0:
+                self.del_cell_info(del_label=label_2, frame=self.frame_id)
+            self.y_changed = True
+
+        self.frame[..., self.feature] = img
+
     def action_handle_draw(self, trace, foreground, background, brush_size):
         """
         Use a "brush" to draw in the brush value along trace locations of
@@ -490,27 +509,6 @@ class ZStackEdit(BaseEdit):
                 self.del_cell_info(del_label=label, frame=label_frame.frame_id)
                 self.add_cell_info(add_label=new_label, frame=label_frame.frame_id)
             label_frame.frame[..., self.feature] = img
-
-    def action_replace_single(self, label_1, label_2):
-        """
-        replaces label_2 with label_1, but only in one frame. Frontend checks
-        to make sure labels are different and were selected within same frames
-        before sending action
-        """
-        img = self.frame[..., self.feature]
-        label_2_present = np.any(np.isin(label_2, img))
-
-        img = np.where(img == label_2, label_1, img)
-
-        # Img only changes when label_2 is in the frame
-        if label_2_present:
-            if label_1 != 0:
-                self.add_cell_info(add_label=label_1, frame=self.frame_id)
-            if label_2 != 0:
-                self.del_cell_info(del_label=label_2, frame=self.frame_id)
-            self.y_changed = True
-
-        self.frame[..., self.feature] = img
 
     def action_replace(self, label_1, label_2):
         """
