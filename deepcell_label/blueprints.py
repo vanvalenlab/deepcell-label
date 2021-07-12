@@ -161,28 +161,6 @@ def edit(token, action_type):
     return jsonify(payload)
 
 
-@bp.route('/api/rgb/<token>/<rgb_value>', methods=['POST'])
-def rgb(token, rgb_value):
-    """
-
-    Returns:
-        json with raw image data
-    """
-    start = timeit.default_timer()
-
-    project = Project.get(token)
-    if not project:
-        return abort(404, description=f'project {token} not found')
-
-    rgb = bool(distutils.util.strtobool(rgb_value))
-    project.rgb = rgb
-    project.update()
-    payload = project.make_payload(x=True)
-    current_app.logger.debug('Set RGB to %s for project %s in %s s.',
-                             rgb, token, timeit.default_timer() - start)
-    return jsonify(payload)
-
-
 @bp.route('/api/undo/<token>', methods=['POST'])
 def undo(token):
     start = timeit.default_timer()
@@ -220,11 +198,6 @@ def get_project(token):
     project = Project.get(token)
     if not project:
         return abort(404, description=f'project {token} not found')
-    # arg is 'false' which gets parsed to True if casting to bool
-    rgb = request.args.get('rgb', default='false', type=str)
-    rgb = bool(distutils.util.strtobool(rgb))
-    project.rgb = rgb
-    project.update()
     payload = project.make_first_payload()
     current_app.logger.debug('Loaded project %s in %s s.',
                              project.token, timeit.default_timer() - start)
