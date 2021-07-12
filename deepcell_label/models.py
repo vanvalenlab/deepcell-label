@@ -319,7 +319,9 @@ class Project(db.Model):
             'feature': feature,
             # 'feature': action.feature,
             # 'channel': action.channel,
-            'frames': [frame.frame_id for frame in action.frames]}
+            'frames': [frame.frame_id for frame in action.frames],
+            'labels': action.labels_changed,
+        }
 
         action.done = False
         self.action = action.prev_action
@@ -364,7 +366,9 @@ class Project(db.Model):
             'feature': feature,
             # 'feature': next_action.feature,
             # 'channel': next_action.channel,
-            'frames': [frame.frame_id for frame in next_action.frames]}
+            'frames': [frame.frame_id for frame in next_action.frames],
+            'labels': next_action.labels_changed,
+        }
 
         self.action = self.action.next_action
         next_action.done = True
