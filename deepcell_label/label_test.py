@@ -126,6 +126,7 @@ class TestBaseEdit():
             assert edit.labels_changed
             assert cell2 in edit.tracks
             assert not cell1 in edit.tracks
+
     def test_action_flood_background(self, app):
         """Flooding background does NOT spread to diagonal areas."""
         # 3 x 3 frame with label in diamond shape
@@ -398,7 +399,7 @@ class TestTrackEdit():
 
         with app.app_context():
             edit.action_add_daughter(parent, daughter)
-            tracks = edit.labels.tracks
+            tracks = edit.tracks
             np.testing.assert_equal(project.label_array, expected_labels)
             assert tracks[1]['capped']
             assert tracks[1]['daughters'] == [2]
@@ -436,7 +437,7 @@ class TestTrackEdit():
 
         with app.app_context():
             edit.action_add_daughter(parent, daughter)
-            tracks = edit.labels.tracks
+            tracks = edit.tracks
             np.testing.assert_equal(project.label_array, expected_labels)
             assert tracks == expected_lineage
 
@@ -465,7 +466,7 @@ class TestTrackEdit():
 
         with app.app_context():
             edit.action_add_daughter(parent, daughter)
-            tracks = edit.labels.tracks
+            tracks = edit.tracks
             np.testing.assert_equal(project.label_array, expected_labels)
             assert tracks == expected_lineage
 
@@ -482,7 +483,7 @@ class TestTrackEdit():
 
         with app.app_context():
             edit.action_add_daughter(parent, daughter)
-            tracks = edit.labels.tracks
+            tracks = edit.tracks
             parent_track = tracks[parent]
             daughter_track = tracks[daughter]
             assert parent_track['capped']
@@ -509,7 +510,7 @@ class TestTrackEdit():
 
         with app.app_context():
             edit.action_add_daughter(parent, other_daughter)
-            tracks = edit.labels.tracks
+            tracks = edit.tracks
             parent_track = tracks[parent]
             daughter_track = tracks[daughter]
             other_daughter_track = tracks[other_daughter]
@@ -538,7 +539,7 @@ class TestTrackEdit():
 
         with app.app_context():
             edit.action_remove_daughter(daughter)
-            tracks = edit.labels.tracks
+            tracks = edit.tracks
             parent_track = tracks[parent]
             daughter_track = tracks[daughter]
             other_daughter_track = tracks[other_daughter]
@@ -565,7 +566,7 @@ class TestTrackEdit():
 
         with app.app_context():
             edit.action_remove_daughter(daughter)
-            tracks = edit.labels.tracks
+            tracks = edit.tracks
             parent_track = tracks[parent]
             daughter_track = tracks[daughter]
             assert not parent_track['capped']
@@ -578,7 +579,7 @@ class TestTrackEdit():
         labels = np.zeros((1, 1, 1, 1))
         project = models.Project.create(DummyLoader(labels=labels, url='test.trk'))
         edit = label.TrackEdit(project)
-        tracks = edit.labels.tracks
+        tracks = edit.tracks
 
         cell = 1
         frame = 0
@@ -601,7 +602,7 @@ class TestTrackEdit():
         labels = np.zeros((num_frames, 1, 1, 1))
         project = models.Project.create(DummyLoader(labels=labels, url='test.trk'))
         edit = label.TrackEdit(project)
-        tracks = edit.labels.tracks
+        tracks = edit.tracks
 
         cell = 1
 
@@ -630,7 +631,7 @@ class TestTrackEdit():
         project.frame = frame
         project.feature = feature
         edit = label.TrackEdit(project)
-        tracks = edit.labels.tracks
+        tracks = edit.tracks
 
         prev_track = tracks[cell].copy()
         with app.app_context():
@@ -649,7 +650,7 @@ class TestTrackEdit():
         expected_new_cell = 2
         project.frame = frame
         edit = label.TrackEdit(project)
-        tracks = edit.labels.tracks
+        tracks = edit.tracks
         prev_track = tracks[cell].copy()
 
         with app.app_context():
