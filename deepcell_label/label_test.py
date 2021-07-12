@@ -109,6 +109,23 @@ class TestBaseEdit():
             assert edit.y_changed
             assert edit.labels_changed
 
+    def test_action_swap_single_frame_with_label_not_in_frame(self, app):
+        """Tests that swapping with a cell not in frame updates the cell info."""
+        labels = np.reshape([1], (1, 1, 1, 1))
+        project = models.Project.create(DummyLoader(labels=labels))
+        edit = label.TrackEdit(project)
+
+        cell1 = 1
+        cell2 = 2
+        expected_labels = np.reshape([2], (1, 1, 1, 1))
+
+        with app.app_context():
+            edit.action_swap_single_frame(cell1, cell2)
+            np.testing.assert_array_equal(project.label_array, expected_labels)
+            assert edit.y_changed
+            assert edit.labels_changed
+            assert cell2 in edit.tracks
+            assert not cell1 in edit.tracks
     def test_action_flood_background(self, app):
         """Flooding background does NOT spread to diagonal areas."""
         # 3 x 3 frame with label in diamond shape

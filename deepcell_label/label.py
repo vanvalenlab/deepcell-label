@@ -121,16 +121,27 @@ class BaseEdit(object):
     def action_swap_single_frame(self, label_1, label_2):
         """
         Swap labels of two objects in one frame.
-        Does not update cell info as the frames for the labels do not change.
 
         Args:
             label_1 (int): first label to swap
             label_2 (int): second label to swap
         """
         img = self.frame[..., self.feature]
+        label_1_present = label_1 in img
+        label_2_present = label_2 in img
+
         img = np.where(img == label_1, -1, img)
         img = np.where(img == label_2, label_1, img)
         img = np.where(img == -1, label_2, img)
+
+        if label_1_present != label_2_present:
+            if label_1_present:
+                self.add_cell_info(label_2, self.frame_id)
+                self.del_cell_info(label_1, self.frame_id)
+            else:
+                self.add_cell_info(label_1, self.frame_id)
+                self.del_cell_info(label_2, self.frame_id)
+
         # TODO: does info change?
         self.y_changed = self.labels_changed = True
         self.frame[..., self.feature] = img
