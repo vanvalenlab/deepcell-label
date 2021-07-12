@@ -47,6 +47,12 @@ def test_array(client):
     assert response.status_code == 200
 
 
+def test_colormap(client):
+    project = models.Project.create(DummyLoader())
+    response = client.get(f'/api/colormap/{project.token}/0')
+    assert response.status_code == 200
+
+
 def test_edit(client):
     pass
 

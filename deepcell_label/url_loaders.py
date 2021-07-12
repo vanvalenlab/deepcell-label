@@ -271,7 +271,11 @@ def load_zip(data):
     Treats separate TIFFs as channels.
     """
     zip_file = zipfile.ZipFile(io.BytesIO(data), 'r')
-    channels = [load_tiff(zip_file.open(info).read()) for info in zip_file.filelist]
+    channels = [
+        load_tiff(zip_file.open(item).read())
+        for item in zip_file.filelist
+        if not str(item.filename).startswith('__MACOSX/') and is_tiff(str(item.filename))
+    ]
     return np.array(channels)
 
 

@@ -143,18 +143,19 @@ const ContrastSlider = ({ channel }) => {
   );
 };
 const RangeSlider = ({ channel }) => {
+  const { send } = channel;
   const range = useSelector(channel, state => state.context.range);
 
-  const onChange = (event, newValue) => {
-    channel.send({ type: 'SET_RANGE', range: newValue });
-  };
+  const onChange = (_, value) => send({ type: 'SET_RANGE', range: value });
+  const onDoubleClick = () => send({ type: 'SET_RANGE', range: [0, 255] });
 
   return (
     <>
-      <FormLabel>Dynamic Range</FormLabel>
+      <FormLabel>Range</FormLabel>
       <Slider
         value={range}
         onChange={onChange}
+        onDoubleClick={onDoubleClick}
         valueLabelDisplay='off'
         min={0}
         max={255}
