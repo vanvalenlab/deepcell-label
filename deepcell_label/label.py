@@ -576,7 +576,7 @@ class ZStackEdit(BaseEdit):
         # cell does not exist anywhere in npz
         except KeyError:
             self.labels.cell_info[self.feature][add_label] = {
-                'label': str(add_label),
+                'label': add_label,
                 'frames': [frame],
                 'slices': ''
             }
@@ -875,8 +875,7 @@ class TrackEdit(BaseEdit):
             self.labels.tracks[add_label]['frames'] = updated_frames
         # cell does not exist anywhere in trk:
         except KeyError:
-            self.labels.tracks[add_label] = {
-                'label': str(add_label),
+                'label': add_label,
                 'frames': [frame],
                 'daughters': [],
                 'frame_div': None,

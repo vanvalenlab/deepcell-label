@@ -84,9 +84,9 @@ class LabelInfoMaker():
         info = {}
         for cell in cells:
             cell = int(cell)
-            info[cell] = {'label': str(cell),
-                                  'frames': [],
-                                  'slices': ''}
+            info[cell] = {'label': cell,
+                          'frames': [],
+                          'slices': ''}
             for frame in range(self.num_frames):
                 if cell in labels[frame, ...]:
                     info[cell]['frames'].append(int(frame))
@@ -106,7 +106,7 @@ class LabelInfoMaker():
         tracks = {}
         for cell in cells:
             cell = int(cell)
-            tracks[cell] = {'label': str(cell),
+            tracks[cell] = {'label': cell,
                             'frames': [],
                             'frame_div': None,
                             'daughters': [],

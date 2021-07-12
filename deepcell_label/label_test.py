@@ -193,7 +193,7 @@ class TestZStackEdit():
         # Add new label to first frame
         edit.add_cell_info(cell, frame)
         assert cell in cell_ids[feature]
-        assert cell_info[feature][cell] == {'label': '1',
+        assert cell_info[feature][cell] == {'label': 1,
                                             'frames': [frame],
                                             'slices': ''}
         assert edit.y_changed
@@ -214,7 +214,7 @@ class TestZStackEdit():
         for frame in range(num_frames):
             edit.add_cell_info(cell, frame)
             assert cell in cell_ids[feature]
-            assert cell_info[feature][cell] == {'label': '1',
+            assert cell_info[feature][cell] == {'label': 1,
                                                 'frames': list(range(frame + 1)),
                                                 'slices': ''}
             assert edit.y_changed
@@ -398,16 +398,16 @@ class TestTrackEdit():
         """
         labels = np.reshape([0, 1, 0, 1, 2, 3], (3, 2, 1, 1))
         cell_info = {0: {
-            1: { 'label': '1', 'capped': True, 'frame_div': 2, 'daughters': [2, 3], 'parent': None, 'frames': [0, 1], },
-            2: { 'label': '2', 'capped': False, 'frame_div': None, 'daughters': [], 'parent': 1, 'frames': [2], },
-            3: { 'label': '3', 'capped': False, 'frame_div': None, 'daughters': [], 'parent': 1, 'frames': [2], },
+            1: { 'label': 1, 'capped': True, 'frame_div': 2, 'daughters': [2, 3], 'parent': None, 'frames': [0, 1], },
+            2: { 'label': 2, 'capped': False, 'frame_div': None, 'daughters': [], 'parent': 1, 'frames': [2], },
+            3: { 'label': 3, 'capped': False, 'frame_div': None, 'daughters': [], 'parent': 1, 'frames': [2], },
         }}
         expected_labels = np.reshape([0, 1, 0, 4, 2, 3], (3, 2, 1, 1))
         expected_lineage = {
-            1: { 'label': '1', 'capped': True, 'frame_div': 1, 'daughters': [4], 'parent': None, 'frames': [0], },
-            2: { 'label': '2', 'capped': False, 'frame_div': None, 'daughters': [], 'parent': 4, 'frames': [2], },
-            3: { 'label': '3', 'capped': False, 'frame_div': None, 'daughters': [], 'parent': 4, 'frames': [2], },
-            4: { 'label': '4', 'capped': True, 'frame_div': 2, 'daughters': [2, 3], 'parent': 1, 'frames': [1] },
+            1: { 'label': 1, 'capped': True, 'frame_div': 1, 'daughters': [4], 'parent': None, 'frames': [0], },
+            2: { 'label': 2, 'capped': False, 'frame_div': None, 'daughters': [], 'parent': 4, 'frames': [2], },
+            3: { 'label': 3, 'capped': False, 'frame_div': None, 'daughters': [], 'parent': 4, 'frames': [2], },
+            4: { 'label': 4, 'capped': True, 'frame_div': 2, 'daughters': [2, 3], 'parent': 1, 'frames': [1] },
         }
 
         project = models.Project.create(DummyLoader(labels=labels, cell_info=cell_info, url='test.trk'))
@@ -429,14 +429,14 @@ class TestTrackEdit():
         """
         labels = np.reshape([0, 1, 2, 1], (2, 2, 1, 1))
         cell_info = {0: {
-            1: { 'label': '1', 'capped': True, 'frame_div': 1, 'daughters': [2], 'parent': None, 'frames': [0, 1], },
-            2: { 'label': '2', 'capped': False, 'frame_div': None, 'daughters': [], 'parent': 1, 'frames': [1], },
+            1: { 'label': 1, 'capped': True, 'frame_div': 1, 'daughters': [2], 'parent': None, 'frames': [0, 1], },
+            2: { 'label': 2, 'capped': False, 'frame_div': None, 'daughters': [], 'parent': 1, 'frames': [1], },
         }}
         expected_labels = np.reshape([0, 1, 2, 3], (2, 2, 1, 1))
         expected_lineage = {
-            1: { 'label': '1', 'capped': True, 'frame_div': 1, 'daughters': [2, 3], 'parent': None, 'frames': [0], },
-            2: { 'label': '2', 'capped': False, 'frame_div': None, 'daughters': [], 'parent': 1, 'frames': [1], },
-            3: { 'label': '3', 'capped': False, 'frame_div': None, 'daughters': [], 'parent': 1, 'frames': [1], },
+            1: { 'label': 1, 'capped': True, 'frame_div': 1, 'daughters': [2, 3], 'parent': None, 'frames': [0], },
+            2: { 'label': 2, 'capped': False, 'frame_div': None, 'daughters': [], 'parent': 1, 'frames': [1], },
+            3: { 'label': 3, 'capped': False, 'frame_div': None, 'daughters': [], 'parent': 1, 'frames': [1], },
         }
 
         project = models.Project.create(DummyLoader(labels=labels, cell_info=cell_info, url='test.trk'))
@@ -569,7 +569,7 @@ class TestTrackEdit():
         # Add new label to first frame
         edit.add_cell_info(cell, frame)
         assert tracks[cell] == {
-            'label': '1',
+            'label': 1,
             'frames': [frame],
             'daughters': [],
             'frame_div': None,
@@ -592,7 +592,7 @@ class TestTrackEdit():
         for frame in range(num_frames):
             edit.add_cell_info(cell, frame)
             assert tracks[cell] == {
-                'label': '1',
+                'label': 1,
                 'frames': list(range(frame + 1)),
                 'daughters': [],
                 'frame_div': None,
