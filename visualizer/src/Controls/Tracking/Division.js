@@ -7,7 +7,7 @@ import Paper from '@material-ui/core/Paper';
 import Popper from '@material-ui/core/Popper';
 import { useTheme } from '@material-ui/core/styles';
 import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
-import MoreVertIcon from '@material-ui/icons/MoreVert';
+import CloseIcon from '@material-ui/icons/Close';
 import { useSelector } from '@xstate/react';
 import React, { useReducer, useRef } from 'react';
 import { ArcherContainer, ArcherElement } from 'react-archer';
@@ -162,11 +162,6 @@ function DaughterMenu({ parent, daughter }) {
     toggle();
   };
 
-  const handleNewCell = () => {
-    send({ type: 'REPLACE_WITH_NEW_CELL', daughter: daughter });
-    toggle();
-  };
-
   const handleParent = () => {
     send({ type: 'REPLACE_WITH_PARENT', parent: parent, daughter: daughter });
     toggle();
@@ -180,14 +175,14 @@ function DaughterMenu({ parent, daughter }) {
         onClick={toggle}
         ref={anchorRef}
       >
-        <MoreVertIcon fontSize='small' />
+        <CloseIcon fontSize='small' />
       </IconButton>
       <Popper open={open} anchorEl={anchorRef.current} placement='bottom-end'>
         <Paper>
           <ClickAwayListener onClickAway={toggle}>
             <MenuList id='channel-options'>
               <MenuItem onClick={handleRemove}>Remove from Division</MenuItem>
-              <MenuItem onClick={handleNewCell}>Replace with New Cell</MenuItem>
+              {/* <MenuItem onClick={handleNewCell}>Replace with New Cell</MenuItem> */}
               <MenuItem onClick={handleParent}>Replace with Parent</MenuItem>
             </MenuList>
           </ClickAwayListener>
