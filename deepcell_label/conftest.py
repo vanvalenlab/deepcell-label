@@ -14,7 +14,6 @@ from deepcell_label.url_loaders import Loader
 from deepcell_label.labelmaker import LabelInfoMaker
 
 
-
 # flask-sqlalchemy fixtures from http://alexmic.net/flask-sqlalchemy-pytest/
 
 
@@ -27,7 +26,7 @@ class DummyLoader(Loader):
     def __init__(self, raw=None, labels=None, cell_info=None, url='test.npz'):
         DummyLoader.load = MagicMock()  # monkeypatch to avoid network requests
         super().__init__(url_form={'url': url})
-        
+
         if raw is None:
             raw = np.zeros((1, 1, 1, 1))
 
@@ -38,7 +37,7 @@ class DummyLoader(Loader):
 
         self.raw_array = raw
         self.label_array = labels
-        self.add_semantic_labels() # computes cell_ids 
+        self.add_semantic_labels()  # computes cell_ids
         if cell_info is not None:
             self.cell_info = cell_info
 

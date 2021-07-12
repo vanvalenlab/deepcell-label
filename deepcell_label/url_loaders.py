@@ -38,7 +38,7 @@ class Loader():
         self.labeled_url = url_form['labeled_url'] if 'labeled_url' in url_form else None
         self.input_axes = url_form['axes'] if 'axes' in url_form else DCL_AXES
         self.output_axes = DCL_AXES
-        
+
         self.raw_array = None
         self.label_array = None
         self.cell_info = None
@@ -72,7 +72,6 @@ class Loader():
         if self.cell_info is None:
             self.cell_info = label_maker.cell_info
 
-
     def load_combined(self, data):
         """
         Loads image data into the Loader based on the file extension.
@@ -94,7 +93,7 @@ class Loader():
         else:
             ext = pathlib.Path(self.url).suffix
             raise InvalidExtension('invalid file extension: {}'.format(ext))
-        
+
         # Reshape or create arrays
         raw_array = reshape(raw_array, self.input_axes, self.output_axes)
         if label_array is None:
@@ -106,7 +105,6 @@ class Loader():
 
         self.raw_array = raw_array
         self.label_array = label_array
-
 
     def load_raw(self, data):
         if is_npz(self.url):
@@ -122,7 +120,7 @@ class Loader():
         else:
             ext = pathlib.Path(self.url).suffix
             raise InvalidExtension('invalid file extension: {}'.format(ext))
-        
+
         self.raw_array = reshape(raw_array, self.input_axes, self.output_axes)
 
     def load_labeled(self, data):
@@ -141,7 +139,7 @@ class Loader():
         else:
             ext = pathlib.Path(self.url).suffix
             raise InvalidExtension('invalid file extension: {}'.format(ext))
-        
+
         self.label_array = reshape(label_array, 'CZYX', self.output_axes)
 
 

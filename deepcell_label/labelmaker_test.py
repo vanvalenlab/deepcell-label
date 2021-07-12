@@ -97,14 +97,16 @@ class TestLabelInfoMaker():
     def test_tracking_two_features_one_label(self):
         labels = np.ones((1, 1, 1, 2))
         labeler = LabelInfoMaker(labels, tracking=True)
-        expected_track = {'label': 1,
+        expected_track = {
+            'label': 1,
             'frames': [0],
             'frame_div': None,
             'daughters': [],
             'capped': False,
-            'parent': None}
+            'parent': None,
+        }
         expected_ids = {0: np.array([1]), 1: np.array([1])}
-        expected_info = {0: { 1: expected_track }, 1: { 1: expected_track }}
+        expected_info = {0: {1: expected_track}, 1: {1: expected_track}}
 
         assert self.compare_cell_ids(labeler.cell_ids, expected_ids)
         assert labeler.cell_info == expected_info

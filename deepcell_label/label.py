@@ -661,7 +661,7 @@ class TrackEdit(BaseEdit):
 
             parent_track['frames'] = frames_before
             daughter_track = {
-                'frames': frames_after, 
+                'frames': frames_after,
                 'label': daughter,
                 'daughters': [],
                 'frame_div': None,
@@ -672,13 +672,13 @@ class TrackEdit(BaseEdit):
             # Move divisions after current frame from parent to daughter
             if parent_track['frame_div'] and parent_track['frame_div'] > self.frame_id:
                 future_daughters = [d for d in parent_track['daughters']
-                    if min(self.tracks[d]['frames']) > self.frame_id]
-                past_daughters = [d for d in parent_track['daughters'] 
-                    if d not in future_daughters]
+                                    if min(self.tracks[d]['frames']) > self.frame_id]
+                past_daughters = [d for d in parent_track['daughters']
+                                  if d not in future_daughters]
 
                 for d in future_daughters:
                     self.tracks[d]['parent'] = daughter
-                
+
                 daughter_track['capped'] = True
                 daughter_track['frame_div'] = parent_track['frame_div']
                 daughter_track['daughters'] = future_daughters
@@ -686,13 +686,16 @@ class TrackEdit(BaseEdit):
                 parent_track['daughters'] = past_daughters
 
             self.tracks[daughter] = daughter_track
-            
-            self.labels.cell_ids[self.feature] = np.append(self.labels.cell_ids[self.feature], daughter)
+
+            self.labels.cell_ids[self.feature] = np.append(
+                self.labels.cell_ids[self.feature],
+                daughter)
             self.y_changed = True
         # Add existing daughter
         else:
             if daughter_track['parent'] is not None:
-                raise ValueError(f'Daughter {daughter} already has parent {daughter_track["parent"]}')
+                raise ValueError(
+                    f'Daughter {daughter} already has parent {daughter_track["parent"]}')
             daughter_track['parent'] = parent
 
         # Add daughter

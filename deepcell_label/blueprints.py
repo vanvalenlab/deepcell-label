@@ -103,11 +103,11 @@ def semantic_labels(project_id, feature):
         return jsonify({'error': f'project {project_id} not found'}), 404
     cell_info = project.labels.cell_info[feature]
     df = pd.DataFrame(cell_info).T
-    df = (df
-        .join(df[['frame_div']], rsuffix='_parent', how='left', on='parent')
-        .rename(columns={'frame_div_parent': 'parentDivisionFrame', 'frame_div': 'divisionFrame'})
-    )
+    df = (df.join(df[['frame_div']], rsuffix='_parent', how='left', on='parent')
+            .rename(columns={'frame_div_parent': 'parentDivisionFrame',
+                             'frame_div': 'divisionFrame'}))
     return df.to_json(orient='index')
+
 
 @bp.route('/api/colormap/<project_id>/<int:feature>')
 def colormap(project_id, feature):
@@ -119,7 +119,7 @@ def colormap(project_id, feature):
     colors = map(matplotlib.colors.rgb2hex, colormap.colors)
     # Add no label and new label colors
     colors = ['#000000'] + list(colors) + ['#FFFFFF']
-    response = make_response({ 'colors': colors })
+    response = make_response({'colors': colors})
     response.headers['Cache-Control'] = 'max-age=0'
 
     return response
