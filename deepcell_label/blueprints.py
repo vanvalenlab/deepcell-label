@@ -116,9 +116,9 @@ def colormap(project_id, feature):
         return jsonify({'error': f'project {project_id} not found'}), 404
     max_label = project.get_max_label(feature)
     colormap = matplotlib.pyplot.get_cmap('viridis', max_label)
-    colors = map(matplotlib.colors.rgb2hex, colormap.colors)
-    # Add no label and new label colors
-    colors = ['#000000'] + list(colors) + ['#FFFFFF']
+    colors = list(map(matplotlib.colors.rgb2hex, colormap.colors))
+    colors.insert(0, '#000000') # No label (label 0) is black
+    colors.append('#FFFFFF') # New label (last label) is white
     response = make_response({'colors': colors})
     response.headers['Cache-Control'] = 'max-age=0'
 
