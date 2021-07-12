@@ -23,7 +23,7 @@ const InvertToggle = ({ channel }) => {
   const inputRef = useRef();
   useEffect(() => {
     const input = inputRef.current;
-    input.className = input.className + ' mousetrap';
+    input.className = `${input.className}  mousetrap`;
   }, []);
 
   const tooltip = (
