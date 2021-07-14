@@ -25,7 +25,7 @@ const frameState = {
         },
         // when the channel changes before the frame does,
         // we need to load the frame for the new channel
-        // CHANNEL: { actions: 'addChannelToLoading' },
+        CHANNEL: { actions: 'addChannelToLoading' },
       },
     },
     checkLoaded: {
@@ -38,9 +38,9 @@ const frameState = {
       on: {
         FRAME: {
           target: 'idle',
-          actions: ['useFrame', 'forwardToLoadedChannels'],
+          actions: ['setFrame', 'forwardToLoadedChannels'],
         },
-        // CHANNEL: { target: 'loading', actions: 'addChannelToLoading' },
+        CHANNEL: { target: 'loading', actions: 'addChannelToLoading' },
       },
     },
   },
@@ -48,7 +48,7 @@ const frameState = {
     LOAD_FRAME: {
       target: '.loading',
       cond: 'diffLoadingFrame',
-      actions: ['assignLoadingFrame', 'loadFrame'],
+      actions: ['setLoadingFrame', 'loadFrame'],
     },
   },
 };
@@ -72,13 +72,13 @@ const channelState = {
   on: {
     LOAD_CHANNEL: {
       target: '.loading',
-      cond: 'diffLoadingChannel',
-      actions: 'loadChannel',
+      cond: 'newChannel',
+      actions: ['loadChannel', 'addChannelToLoading'],
     },
   },
 };
 
-const createRawMachine = ({ channels }) =>
+const createColorMachine = ({ channels }) =>
   Machine(
     // projectId, numChannels, numFrames
     {
@@ -87,8 +87,10 @@ const createRawMachine = ({ channels }) =>
         numChannels: channels.length,
         layers: [], // channels displayed in the controller
         // loadingLayers: [], // layers requested by user that we are loading data for
-        frame: 0, // needed ??
-        loadingFrame: 0, // needed ??
+        frame: 0,
+        loadingFrame: 0,
+        loadedChannels: new Map(),
+        loadingChannels: new Set(),
       },
       entry: 'spawnLayers',
       type: 'parallel',
@@ -113,10 +115,8 @@ const createRawMachine = ({ channels }) =>
           loadingFrame !== frame,
         isLoadingChannel: ({ loadingChannels }, { channel }) =>
           loadingChannels.has(channel),
-        diffLoadingChannel: (
-          { loadedChannels, loadingChannels },
-          { channel }
-        ) => !loadedChannels.has(channel) && !loadingChannels.has(channel),
+        newChannel: ({ loadedChannels, loadingChannels }, { channel }) =>
+          !loadedChannels.has(channel) && !loadingChannels.has(channel),
       },
       actions: {
         spawnLayers: assign({
@@ -126,22 +126,21 @@ const createRawMachine = ({ channels }) =>
               spawn(createLayerMachine(index, index), `layer ${index}`)
             );
           },
-          loadedChannels: ({ numChannels }) => {
+          loadedChannels: ({ numChannels, loadedChannels }) => {
             const numLayers = Math.min(3, numChannels);
-            return [...Array(numLayers).keys()].reduce(function (map, channel) {
-              map.set(channel, false);
-              return map;
-            }, new Map());
+            return [...Array(numLayers).keys()].reduce(
+              (loadedChannels, channel) => loadedChannels.set(channel, false),
+              loadedChannels
+            );
           },
         }),
         /** Record that a channel is loaded. */
         updateLoaded: assign({
-          loadedChannels: ({ loadedChannels }, { channel }) => {
-            return loadedChannels.set(channel, true);
-          },
+          loadedChannels: ({ loadedChannels }, { channel }) =>
+            loadedChannels.set(channel, true),
         }),
-        assignLoadingFrame: assign({ loadingFrame: (_, { frame }) => frame }),
-        /** Load frame for all the visible channels. */
+        setLoadingFrame: assign({ loadingFrame: (_, { frame }) => frame }),
+        /** Load frame for all the loaded channels. */
         loadFrame: pure(({ loadingFrame, channels, loadedChannels }) => {
           return [
             assign({
@@ -150,7 +149,7 @@ const createRawMachine = ({ channels }) =>
                 return loadedChannels;
               },
             }),
-            // load frame in each visible
+            // load frame in each loaded channel
             ...channels
               .filter((channel, index) => loadedChannels.has(index))
               .map(channel =>
@@ -161,14 +160,12 @@ const createRawMachine = ({ channels }) =>
               ),
           ];
         }),
-        loadChannel: pure(({ frame, channels }, { channel }) => {
-          return [
-            assign({
-              loadingChannels: ({ loadingChannels }) =>
-                loadingChannels.add(channel),
-            }),
-            send({ type: 'LOAD_FRAME', frame }, { to: channels[channel] }),
-          ];
+        loadChannel: send(({ frame }) => ({ type: 'LOAD_FRAME', frame }), {
+          to: ({ channels }, { channel }) => channels[channel],
+        }),
+        addChannelToLoading: assign({
+          loadingChannels: ({ loadingChannels }, { channel }) =>
+            loadingChannels.add(channel),
         }),
         /** Load a different frame in the loading channels. */
         reloadLoadingChannels: pure(({ frame, channels, loadingChannels }) => {
@@ -178,7 +175,7 @@ const createRawMachine = ({ channels }) =>
           );
         }),
         sendLoaded: sendParent('FRAME_LOADED'),
-        useFrame: assign((_, { frame }) => ({ frame })),
+        setFrame: assign((_, { frame }) => ({ frame })),
         useChannel: pure(
           (
             { loadingChannels, loadedChannels, channels },
@@ -187,7 +184,10 @@ const createRawMachine = ({ channels }) =>
             const channelEvent = { type: 'CHANNEL', channel };
             return [
               assign({
-                loadingChannels: loadingChannels.delete(channel),
+                loadingChannels: () => {
+                  loadingChannels.delete(channel);
+                  return loadingChannels;
+                },
                 loadedChannels: loadedChannels.set(channel, true),
               }),
               send(channelEvent),
@@ -215,4 +215,4 @@ const createRawMachine = ({ channels }) =>
     }
   );
 
-export default createRawMachine;
+export default createColorMachine;
