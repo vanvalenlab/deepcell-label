@@ -117,8 +117,8 @@ def colormap(project_id, feature):
     max_label = project.get_max_label(feature)
     colormap = matplotlib.pyplot.get_cmap('viridis', max_label)
     colors = list(map(matplotlib.colors.rgb2hex, colormap.colors))
-    colors.insert(0, '#000000') # No label (label 0) is black
-    colors.append('#FFFFFF') # New label (last label) is white
+    colors.insert(0, '#000000')  # No label (label 0) is black
+    colors.append('#FFFFFF')  # New label (last label) is white
     response = make_response({'colors': colors})
     response.headers['Cache-Control'] = 'max-age=0'
 
