@@ -102,7 +102,7 @@ const createChannelMachine = (projectId, channel, numFrames) =>
       actions: {
         // fetching
         sendRawLoaded: sendParent(({ loadingFrame, channel }) => ({
-          type: 'RAW_LOADED',
+          type: 'CHANNEL_LOADED',
           frame: loadingFrame,
           channel,
         })),
