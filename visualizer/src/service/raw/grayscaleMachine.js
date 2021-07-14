@@ -9,7 +9,7 @@ const frameState = {
     idle: {},
     loading: {
       on: {
-        RAW_LOADED: {
+        CHANNEL_LOADED: {
           target: 'loaded',
           cond: 'isLoadingFrame',
           actions: 'sendLoaded',
@@ -40,7 +40,7 @@ const channelState = {
     idle: {},
     loading: {
       on: {
-        RAW_LOADED: {
+        CHANNEL_LOADED: {
           target: 'idle',
           cond: 'isLoadingChannel',
           actions: 'useChannel',

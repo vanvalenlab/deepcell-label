@@ -17,7 +17,7 @@ const { pure, respond } = actions;
 const preloadState = {
   entry: 'startPreload',
   on: {
-    RAW_LOADED: { actions: 'preload' },
+    CHANNEL_LOADED: { actions: 'preload' },
   },
 };
 
@@ -27,7 +27,10 @@ const frameState = {
     idle: {},
     loading: {
       on: {
-        RAW_LOADED: { cond: 'isLoadingFrame', actions: 'forwardToColorMode' },
+        CHANNEL_LOADED: {
+          cond: 'isLoadingFrame',
+          actions: 'forwardToColorMode',
+        },
         FRAME_LOADED: { target: 'loaded', actions: 'sendLoaded' },
       },
     },
@@ -51,7 +54,7 @@ const channelState = {
   on: {
     CHANNEL: { actions: sendParent((c, e) => e) },
     LOAD_CHANNEL: { actions: 'forwardToColorMode' },
-    RAW_LOADED: { actions: 'forwardToColorMode' },
+    CHANNEL_LOADED: { actions: 'forwardToColorMode' },
   },
 };
 
