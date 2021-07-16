@@ -49,21 +49,21 @@ jobs:
       env:
         COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
       with:
-        path-to-lcov: visualizer/coverage/lcov.info
+        base-path: visualizer
         github-token: ${{ secrets.github_token }}
         flag-name: node-${{ matrix.node-version }}
         parallel: true
 
   # TODO: how to combine frontend/backend coverage
   # or separate into 2 different reports.
-  # coveralls:
-  #   name: Finish Coveralls
-  #   needs: tests
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Coveralls Finished
-  #       uses: coverallsapp/github-action@master
-  #       with:
-  #         base-path: visualizer
-  #         github-token: ${{ secrets.GITHUB_TOKEN }}
-  #         parallel-finished: true
+  coveralls:
+    name: Finish Coveralls
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Coveralls Finished
+        uses: coverallsapp/github-action@master
+        with:
+          base-path: visualizer
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          parallel-finished: true
