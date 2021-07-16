@@ -1,5 +1,6 @@
 # DeepCell Label: A Web Application for Data Curation
 
+[![Build Status](https://github.com/vanvalenlab/deepcell-label/workflows/build/badge.svg)](https://github.com/vanvalenlab/deepcell-label/actions)
 [![Coverage Status](https://coveralls.io/repos/github/vanvalenlab/deepcell-label/badge.svg?branch=master)](https://coveralls.io/github/vanvalenlab/deepcell-label?branch=master)
 
 DeepCell Label is a web-based data annotation tool based on Flask and can be run locally or deployed to the cloud (e.g. AWS Elastic Beanstalk).
