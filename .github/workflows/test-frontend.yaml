@@ -40,7 +40,7 @@ jobs:
 
     - name: Unit Tests
       working-directory: visualizer
-      run: yarn test -- --coverage
+      run: yarn test --coverage
       env:
         CI: true
 
