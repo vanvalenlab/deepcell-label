@@ -50,6 +50,7 @@ jobs:
       env:
         COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
       with:
+        base-path: visualizer
         path-to-lcov: visualizer/coverage/lcov.info
         github-token: ${{ secrets.github_token }}
         flag-name: node-${{ matrix.node-version }}
