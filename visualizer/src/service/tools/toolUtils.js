@@ -2,22 +2,11 @@ import { assign } from 'xstate';
 
 // actions to save data from events in context
 export const toolActions = {
-  setLabeledArray: assign((_, { labeledArray }) => ({ labeledArray })),
   setCoordinates: assign((_, { x, y }) => ({ x, y })),
   setLabel: assign((_, { label }) => ({ label })),
-  setForeground: assign({
-    foreground: (_, { foreground }) => foreground,
-    selected: ({ background }, { foreground }) =>
-      foreground === 0 ? background : foreground,
-  }),
-  setBackground: assign({
-    background: (_, { background }) => background,
-    selected: ({ foreground }, { background }) =>
-      foreground === 0 ? background : foreground,
-  }),
-  setFrame: assign((_, { frame }) => ({ frame })),
-  setFeature: assign((_, { feature }) => ({ feature })),
-  setChannel: assign((_, { channel }) => ({ channel })),
+  setForeground: assign({ foreground: (_, { foreground }) => foreground }),
+  setBackground: assign({ background: (_, { background }) => background }),
+  setSelected: assign({ selected: (_, { selected }) => selected }),
 };
 
 export const toolGuards = {

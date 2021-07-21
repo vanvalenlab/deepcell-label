@@ -3,9 +3,15 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import { makeStyles } from '@material-ui/core/styles';
 import { useSelector } from '@xstate/react';
 import React, { useEffect } from 'react';
-import { useCanvas, useLabeled, useRaw, useToolbar } from '../ServiceContext';
 import LabeledCanvas from './Labeled/LabeledCanvas';
 import OutlineCanvas from './Labeled/OutlineCanvas';
+import {
+  useCanvas,
+  useLabeled,
+  useRaw,
+  useSelect,
+  useToolbar,
+} from '../ServiceContext';
 import RawCanvas from './Raw/RawCanvas';
 import BrushCanvas from './Tool/BrushCanvas';
 import ThresholdCanvas from './Tool/ThresholdCanvas';
@@ -27,6 +33,7 @@ const useStyles = makeStyles({
 export const Canvas = () => {
   const raw = useRaw();
   const labeled = useLabeled();
+  const select = useSelect();
 
   const canvas = useCanvas();
   const sx = useSelector(canvas, state => state.context.sx);
@@ -85,7 +92,7 @@ export const Canvas = () => {
   const handleMouseDown = event => {
     event.preventDefault();
     if (event.shiftKey) {
-      toolbar.send({ ...event, type: 'SHIFT_CLICK' });
+      select.send({ ...event, type: 'SHIFT_CLICK' });
     } else {
       canvas.send(event);
     }

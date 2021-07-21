@@ -43,55 +43,6 @@ const createToolMachine = context => {
   return spawn(createToolMachineLookup[tool](context), 'tool');
 };
 
-const selectActions = {
-  selectForeground: pure(({ label, foreground, background }) => {
-    return [
-      send({ type: 'FOREGROUND', foreground: label }),
-      send({
-        type: 'BACKGROUND',
-        background: label === background ? foreground : background,
-      }),
-    ];
-  }),
-  selectBackground: pure(({ label, foreground, background }) => {
-    return [
-      send({ type: 'BACKGROUND', background: label }),
-      send({
-        type: 'FOREGROUND',
-        foreground: label === foreground ? background : foreground,
-      }),
-    ];
-  }),
-  switch: pure(({ foreground, background }) => {
-    return [
-      send({ type: 'FOREGROUND', foreground: background }),
-      send({ type: 'BACKGROUND', background: foreground }),
-    ];
-  }),
-  newForeground: send(({ maxLabel }) => ({
-    type: 'FOREGROUND',
-    foreground: maxLabel + 1,
-  })),
-  resetForeground: send({ type: 'FOREGROUND', foreground: 0 }),
-  resetBackground: send({ type: 'BACKGROUND', background: 0 }),
-  prevForeground: send(({ foreground: fg, maxLabel: max }) => ({
-    type: 'FOREGROUND',
-    foreground: fg <= 1 ? max : fg - 1,
-  })),
-  nextForeground: send(({ foreground: fg, maxLabel: max }) => ({
-    type: 'FOREGROUND',
-    foreground: fg >= max ? 1 : fg + 1,
-  })),
-  prevBackground: send(({ background: bg, maxLabel: max }) => ({
-    type: 'BACKGROUND',
-    background: bg <= 1 ? max : bg - 1,
-  })),
-  nextBackground: send(({ background: bg, maxLabel: max }) => ({
-    type: 'BACKGROUND',
-    background: bg >= max ? 1 : bg + 1,
-  })),
-};
-
 const colorModeState = {
   initial: 'color',
   states: {
@@ -177,22 +128,6 @@ const useToolActions = {
   ]),
 };
 
-const selectState = {
-  invoke: { src: 'listenForSelectHotkeys' },
-  on: {
-    SELECT_FOREGROUND: { actions: 'selectForeground' },
-    SELECT_BACKGROUND: { actions: 'selectBackground' },
-    SWITCH: { actions: 'switch' },
-    NEW_FOREGROUND: { actions: 'newForeground' },
-    RESET_FOREGROUND: { actions: 'resetForeground' },
-    RESET_BACKGROUND: { actions: 'resetBackground' },
-    PREV_FOREGROUND: { actions: 'prevForeground' },
-    NEXT_FOREGROUND: { actions: 'nextForeground' },
-    PREV_BACKGROUND: { actions: 'prevBackground' },
-    NEXT_BACKGROUND: { actions: 'nextBackground' },
-  },
-};
-
 const editActions = {
   swap: send(({ foreground, background }) => ({
     type: 'EDIT',
@@ -236,15 +171,12 @@ const toolMachine = Machine(
   {
     id: 'tool',
     context: {
+      label: 0,
       selected: 1,
       foreground: 1,
       background: 0,
       x: 0,
       y: 0,
-      label: 0,
-      frame: 0,
-      feature: 0,
-      channel: 0,
       tool: 'select',
       toolActor: null,
     },
@@ -256,9 +188,10 @@ const toolMachine = Machine(
     type: 'parallel',
     states: {
       colorMode: colorModeState,
-      select: selectState,
     },
     on: {
+      EDIT: { actions: sendParent((_, e) => e) },
+
       mousedown: { actions: 'forwardToTool' },
       mouseup: { actions: 'forwardToTool' },
 
@@ -268,64 +201,27 @@ const toolMachine = Machine(
       ERODE: { actions: 'erode' },
       DILATE: { actions: 'dilate' },
 
-      // context not shared with tools
-      FRAME: { actions: 'setFrame' },
-      CHANNEL: { actions: 'setChannel' },
-      FEATURE: { actions: 'setFeature' },
-      LABELED_ARRAY: { actions: ['setLabeledArray', 'sendLabel'] },
-      LABELS: { actions: 'setMaxLabel' },
-
-      // context to sync with tools
+      // sync context with tools
       COORDINATES: {
-        actions: ['setCoordinates', 'sendLabel', 'forwardToTool'],
+        actions: ['setCoordinates', 'forwardToTool'],
       },
       LABEL: { actions: ['setLabel', 'forwardToTool'] },
       FOREGROUND: { actions: ['setForeground', 'forwardToTool'] },
       BACKGROUND: { actions: ['setBackground', 'forwardToTool'] },
-
-      // special shift click event
-      SHIFT_CLICK: [
-        {
-          cond: 'doubleClick',
-          actions: [
-            'selectForeground',
-            send({ type: 'BACKGROUND', background: 0 }),
-          ],
-        },
-        { cond: 'onBackground', actions: 'selectForeground' },
-        { actions: 'selectBackground' },
-      ],
-      ///
-      EDIT: { actions: 'sendEditWithExtraArgs' },
+      SELECTED: { actions: ['setSelected', 'forwardToTool'] },
 
       // undo/redo actions
       SAVE: { actions: 'save' },
       RESTORE: { actions: ['restore', 'spawnTool', respond('RESTORED')] },
+
+      // select events (from select tool)
+      SELECT_FOREGROUND: { actions: sendParent((c, e) => e) },
+      SELECT_BACKGROUND: { actions: sendParent((c, e) => e) },
+      RESET_FOREGROUND: { actions: sendParent((c, e) => e) },
     },
   },
   {
     services: {
-      listenForSelectHotkeys: () => send => {
-        bind('x', () => send('SWITCH'));
-        bind('n', () => send('NEW_FOREGROUND'));
-        bind('esc', () => {
-          send('RESET_FOREGROUND');
-          send('RESET_BACKGROUND');
-        });
-        bind('[', () => send('PREV_FOREGROUND'));
-        bind(']', () => send('NEXT_FOREGROUND'));
-        bind('{', () => send('PREV_BACKGROUND'));
-        bind('}', () => send('NEXT_BACKGROUND'));
-        return () => {
-          unbind('x');
-          unbind('n');
-          unbind('esc');
-          unbind('[');
-          unbind(']');
-          unbind('{');
-          unbind('}');
-        };
-      },
       listenForActionHotkeys: () => send => {
         bind('s', () => send('SWAP'));
         bind('r', () => send('REPLACE'));
@@ -367,7 +263,6 @@ const toolMachine = Machine(
     },
     actions: {
       ...toolActions,
-      ...selectActions,
       ...editActions,
       ...useToolActions,
       save: respond(({ tool, foreground, background }) => ({
@@ -381,28 +276,13 @@ const toolMachine = Machine(
         foreground,
         background,
       })),
-      useTool: assign({
-        tool: (_, { tool }) => tool,
-      }),
-      spawnTool: assign({
-        toolActor: createToolMachine,
-      }),
-      sendLabel: send(({ labeledArray: array, x, y }) => ({
-        type: 'LABEL',
-        label: array ? Math.abs(array[y][x]) : 0,
-      })),
+      useTool: assign({ tool: (_, { tool }) => tool }),
+      spawnTool: assign({ toolActor: createToolMachine }),
       changeGrayscaleTools: assign({
         tool: ({ tool }) => (grayscaleTools.includes(tool) ? 'select' : tool),
       }),
-      sendEditWithExtraArgs: sendParent(({ frame, feature, channel }, e) => ({
-        ...e,
-        args: { ...e.args, frame, feature, channel },
-      })),
       forwardToTool: forwardTo(({ toolActor }) => toolActor),
-      setMaxLabel: assign({
-        maxLabel: (_, { labels }) =>
-          Math.max(0, ...Object.keys(labels).map(Number)),
-      }),
+      setLabels: assign({ labels: (_, { labels }) => labels }),
     },
   }
 );

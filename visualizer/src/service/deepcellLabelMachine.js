@@ -6,6 +6,7 @@ import { pure } from 'xstate/lib/actions';
 import createApiMachine from './apiMachine';
 import canvasMachine from './canvasMachine';
 import createImageMachine from './imageMachine';
+import selectMachine from './selectMachine';
 import toolMachine from './toolMachine';
 import undoMachine from './undoMachine';
 
@@ -21,11 +22,14 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
       context: {
         projectId,
         bucket,
+        frame: 0,
+        feature: 0,
+        channel: 0,
       },
       initial: 'setUpActors',
       states: {
         setUpActors: {
-          entry: ['spawnActors', 'sendActorRefs'],
+          entry: 'spawnActors',
           always: 'setUpUndo',
         },
         setUpUndo: {
@@ -48,16 +52,46 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
         idle: {},
       },
       on: {
-        EDIT: { actions: [forwardTo('api'), forwardTo('undo')] },
+        // from various
+        ADD_ACTOR: { actions: forwardTo('undo') },
+        EDIT: { actions: ['dispatchEdit', forwardTo('undo')] },
+
+        // from image
+        FRAME: { actions: 'setFrame' },
+        CHANNEL: { actions: 'setChannel' },
+        FEATURE: { actions: 'setFeature' },
+        GRAYSCALE: { actions: forwardTo('tool') },
+        COLOR: { actions: forwardTo('tool') },
+        LABELED_ARRAY: { actions: forwardTo('canvas') },
+        LABELS: {
+          actions: [forwardTo('tool'), forwardTo('select')],
+        },
+
+        // from canvas
+        LABEL: {
+          actions: [forwardTo('tool'), forwardTo('select')],
+        },
+        COORDINATES: { actions: forwardTo('tool') },
+        FOREGROUND: { actions: forwardTo('tool') },
+        BACKGROUND: { actions: forwardTo('tool') },
+        SELECTED: { actions: forwardTo('tool') },
+        mouseup: { actions: forwardTo('tool') },
+        mousedown: { actions: forwardTo('tool') },
+        mousemove: { actions: forwardTo('tool') },
+
+        // from undo
         BACKEND_UNDO: { actions: forwardTo('api') },
         BACKEND_REDO: { actions: forwardTo('api') },
+
+        // from api
         EDITED: { actions: forwardTo('image') },
-        ADD_ACTOR: {
-          actions: send((_, { actor }) => ({ type: 'ADD_ACTOR', actor }), {
-            to: 'undo',
-          }),
-        },
+
+        // from tool
         TOOL: { actions: forwardTo('canvas') },
+        SET_FOREGROUND: { actions: forwardTo('select') },
+        SELECT_FOREGROUND: { actions: forwardTo('select') },
+        SELECT_BACKGROUND: { actions: forwardTo('select') },
+        RESET_FOREGROUND: { actions: forwardTo('select') },
       },
     },
     {
@@ -67,12 +101,7 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
           imageRef: context => spawn(createImageMachine(context), 'image'),
           toolRef: () => spawn(toolMachine, 'tool'),
           apiRef: context => spawn(createApiMachine(context), 'api'),
-        }),
-        sendActorRefs: pure(({ toolRef }) => {
-          return [
-            send({ type: 'TOOL_REF', toolRef }, { to: 'image' }),
-            send({ type: 'TOOL_REF', toolRef }, { to: 'canvas' }),
-          ];
+          selectRef: () => spawn(selectMachine, 'select'),
         }),
         spawnUndo: assign({
           undoRef: () => spawn(undoMachine, 'undo'),
@@ -92,6 +121,16 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
             send(projectEvent, { to: 'image' }),
           ];
         }),
+        dispatchEdit: send(
+          ({ frame, feature, channel }, e) => ({
+            ...e,
+            args: { ...e.args, frame, feature, channel },
+          }),
+          { to: 'api' }
+        ),
+        setFrame: assign((_, { frame }) => ({ frame })),
+        setFeature: assign((_, { feature }) => ({ feature })),
+        setChannel: assign((_, { channel }) => ({ channel })),
       },
     }
   );

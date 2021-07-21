@@ -51,7 +51,7 @@ const frameState = {
 };
 
 const featureState = {
-  initial: 'idle',
+  initial: 'loading',
   states: {
     idle: {
       invoke: {

@@ -1,8 +1,7 @@
-import Box from '@material-ui/core/Box';
-import Grid from '@material-ui/core/Grid';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import FormGroup from '@material-ui/core/FormGroup';
 import Switch from '@material-ui/core/Switch';
 import Tooltip from '@material-ui/core/Tooltip';
-import Typography from '@material-ui/core/Typography';
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
 import { useImage, useRaw } from '../../../ServiceContext';
@@ -27,36 +26,46 @@ function ColorModeToggle() {
   );
 
   return (
-    <Typography component='div'>
-      <Box
-        component='label'
-        // container
-        display='flex'
-        justifyContent='center'
-        alignItems='center'
-      >
-        <Grid item align='right' style={{ flex: '1 1 auto' }}>
-          <Tooltip title='Shows multiple channels'>
-            <span>Color</span>
-          </Tooltip>
-        </Grid>
-        <Tooltip title={toggleTooltip}>
-          <Grid item style={{ flex: '0 1 auto' }}>
+    <Tooltip title={toggleTooltip}>
+      <FormGroup row>
+        <FormControlLabel
+          control={
             <Switch
-              // color="default"
-              checked={grayscale}
+              size='small'
+              checked={!grayscale}
               onChange={() => send('TOGGLE_COLOR_MODE')}
               inputRef={inputRef}
             />
-          </Grid>
-        </Tooltip>
-        <Grid item align='left' style={{ flex: '1 1 auto' }}>
-          <Tooltip title='Shows a single channel'>
-            <span>Grayscale</span>
-          </Tooltip>
-        </Grid>
-      </Box>
-    </Typography>
+          }
+          label='Multi-channel'
+          labelPlacement='start'
+        />
+      </FormGroup>
+    </Tooltip>
+    // <Box
+    //   component='label'
+    //   // container
+    //   display='flex'
+    //   justifyContent='center'
+    //   alignItems='center'
+    // >
+    //   <Grid item align='right' style={{ flex: '1 1 auto' }}>
+    //     <Tooltip title='Shows a single channel'>
+    //       <span>Multi-channel</span>
+    //     </Tooltip>
+    //   </Grid>
+    //   <Tooltip title={toggleTooltip}>
+    //     <Grid item style={{ flex: '0 1 auto' }}>
+    //       <Switch
+    //         // color="default"
+    //         checked={!grayscale}
+    //         onChange={() => send('TOGGLE_COLOR_MODE')}
+    //         inputRef={inputRef}
+    //         size='small'
+    //       />
+    //     </Grid>
+    //   </Tooltip>
+    // </Box>
   );
 }
 

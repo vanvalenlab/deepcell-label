@@ -24,6 +24,12 @@ function useReturnContext(contextType) {
   return context;
 }
 
+export function useSelect() {
+  const deepCellLabel = useDeepCellLabel();
+  const { select } = deepCellLabel.state.children;
+  return select;
+}
+
 export function useApi() {
   const deepCellLabel = useDeepCellLabel();
   const { api } = deepCellLabel.state.children;

@@ -1,6 +1,6 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useMemo, useRef } from 'react';
-import { useCanvas, useTool, useToolbar } from '../../ServiceContext';
+import { useCanvas, useSelect, useTool } from '../../ServiceContext';
 import { drawBrush, drawTrace } from '../canvasUtils';
 
 const BrushCanvas = ({ className }) => {
@@ -15,8 +15,8 @@ const BrushCanvas = ({ className }) => {
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
 
-  const toolbar = useToolbar();
-  const background = useSelector(toolbar, state => state.context.background);
+  const select = useSelect();
+  const background = useSelector(select, state => state.context.background);
   const erasing = background !== 0;
   const brushColor = useMemo(
     () => (erasing ? [255, 0, 0, 255] : [255, 255, 255, 255]),

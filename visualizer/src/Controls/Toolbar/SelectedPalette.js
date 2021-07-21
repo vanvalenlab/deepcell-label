@@ -10,7 +10,7 @@ import SubdirectoryArrowLeftIcon from '@material-ui/icons/SubdirectoryArrowLeft'
 import SubdirectoryArrowRightIcon from '@material-ui/icons/SubdirectoryArrowRight';
 import { useSelector } from '@xstate/react';
 import React, { useState } from 'react';
-import { useFeature, useLabeled, useToolbar } from '../../ServiceContext';
+import { useFeature, useLabeled, useSelect } from '../../ServiceContext';
 
 const useStyles = makeStyles(theme => ({
   palette: {
@@ -88,10 +88,10 @@ function SwapIcon() {
 }
 
 export function SwapButton() {
-  const toolbar = useToolbar();
-  const { send } = toolbar;
-  const foreground = useSelector(toolbar, state => state.context.foreground);
-  const background = useSelector(toolbar, state => state.context.background);
+  const select = useSelect();
+  const { send } = select;
+  const foreground = useSelector(select, state => state.context.foreground);
+  const background = useSelector(select, state => state.context.background);
 
   const handleClick = () => {
     send('FOREGROUND', { foreground: background });
@@ -114,9 +114,9 @@ export function SwapButton() {
 }
 
 function ForegroundBox() {
-  const toolbar = useToolbar();
-  const { send } = toolbar;
-  const foreground = useSelector(toolbar, state => state.context.foreground);
+  const select = useSelect();
+  const { send } = select;
+  const foreground = useSelector(select, state => state.context.foreground);
 
   const [showButtons, setShowButtons] = useState(false);
   const buttonColor = foreground === 0 ? 'secondary' : 'default';
@@ -212,9 +212,9 @@ function ForegroundBox() {
 }
 
 function BackgroundBox() {
-  const toolbar = useToolbar();
-  const { send } = toolbar;
-  const background = useSelector(toolbar, state => state.context.background);
+  const select = useSelect();
+  const { send } = select;
+  const background = useSelector(select, state => state.context.background);
 
   const [showButtons, setShowButtons] = useState(false);
   const buttonColor = background === 0 ? 'secondary' : 'default';
