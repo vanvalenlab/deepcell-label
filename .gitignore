@@ -145,6 +145,7 @@ fmd_config.cfg
 
 # testing
 /coverage
+**/coverage
 
 # production
 /build
