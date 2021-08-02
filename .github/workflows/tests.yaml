@@ -1,12 +1,62 @@
 # This workflow will install Python dependencies, run tests and lint with a single version of Python
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: browser
+name: tests
 
 on: [push, pull_request]
 
 jobs:
-  tests:
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [10.x, 12.x, 14.x]
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Cache node_modules
+      uses: actions/cache@v2
+      with:
+        path: 'visualizer/**/node_modules'
+        key: ${{ runner.os }}-modules-${{ hashFiles('visualizer/**/yarn.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-yarn-
+          ${{ runner.os }}-
+
+    - name: Yarn Install
+      working-directory: visualizer
+      run: yarn
+
+    - name: Lint
+      working-directory: visualizer
+      run: yarn lint
+
+    - name: Unit Tests
+      working-directory: visualizer
+      run: yarn test --coverage
+      env:
+        CI: true
+
+    - name: Coveralls Parallel
+      uses: coverallsapp/github-action@master
+      env:
+        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+      with:
+        base-path: visualizer
+        path-to-lcov: visualizer/coverage/lcov.info
+        github-token: ${{ secrets.github_token }}
+        flag-name: node-${{ matrix.node-version }}
+        parallel: true
+
+  backend-tests:
     runs-on: ubuntu-latest
 
     strategy:
@@ -38,18 +88,22 @@ jobs:
         pip install -r requirements.txt
         pip install -r requirements-test.txt
 
-    - name: Run PyTest and Coveralls
-      env:
-        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-        COVERALLS_FLAG_NAME: ${{ matrix.python-version }}
-        COVERALLS_PARALLEL: true
+    - name: Run PyTest
       run: |
         pytest deepcell_label --cov deepcell_label --pep8
+
+    - name: Coveralls
+      if: env.COVERALLS_REPO_TOKEN != null
+      env:
+        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+        COVERALLS_FLAG_NAME: python-${{ matrix.python-version }}
+        COVERALLS_PARALLEL: true
+      run: |
         coveralls
 
   coveralls:
     name: Finish Coveralls
-    needs: tests
+    needs: [frontend-tests, backend-tests]
     runs-on: ubuntu-latest
     steps:
       - name: Coveralls Finished
