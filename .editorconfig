@@ -1,0 +1,33 @@
+# EditorConfig is awesome: https://editorconfig.org/
+
+# top-most EditorConfig file
+root = true
+
+[*.md]
+trim_trailing_whitespace = true
+
+[*.js]
+trim_trailing_whitespace = true
+
+# Unix-style newlines with a newline ending every file
+[*]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+charset = utf-8
+insert_final_newline = true
+max_line_length = 100
+
+# 4 space indentation for Python
+[*.py]
+indent_style = space
+indent_size = 4
+
+# Tab indentation (no size specified)
+[Makefile]
+indent_style = tab
+
+# Matches the exact files either package.json or .travis.yml
+[{package.json,.github/**/*.yaml}]
+indent_style = space
+indent_size = 2
