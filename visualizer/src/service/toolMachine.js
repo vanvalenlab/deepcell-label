@@ -401,7 +401,7 @@ const toolMachine = Machine(
       forwardToTool: forwardTo(({ toolActor }) => toolActor),
       setMaxLabel: assign({
         maxLabel: (_, { labels }) =>
-          Math.max(...Object.keys(labels).map(Number)),
+          Math.max(0, ...Object.keys(labels).map(Number)),
       }),
     },
   }
