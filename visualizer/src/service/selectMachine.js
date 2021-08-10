@@ -59,7 +59,7 @@ const selectShortcutActions = {
   }),
   newForeground: send(({ labels }) => ({
     type: 'FOREGROUND',
-    foreground: Math.max(...Object.keys(labels).map(Number)) + 1,
+    foreground: Math.max(0, ...Object.keys(labels).map(Number)) + 1,
   })),
   resetForeground: send({ type: 'FOREGROUND', foreground: 0 }),
   resetBackground: send({ type: 'BACKGROUND', background: 0 }),
