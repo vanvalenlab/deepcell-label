@@ -7,7 +7,7 @@ import Canvas from './Canvas/Canvas';
 import ImageControls from './Controls/ImageControls/ImageControls';
 import ActionButtons from './Controls/Toolbar/ActionButtons';
 import SelectedPalette from './Controls/Toolbar/SelectedPalette';
-import ToolControls from './Controls/Toolbar/ToolControls';
+import ToolButtons from './Controls/Toolbar/ToolButtons';
 import UndoRedo from './Controls/Toolbar/UndoRedo';
 import Footer from './Footer/Footer';
 import Instructions from './Instructions/Instructions';
@@ -64,10 +64,7 @@ function Label() {
     };
     setCanvasBoxDimensions();
 
-    new ResizeSensor(
-      canvasBoxRef.current,
-      debounce(setCanvasBoxDimensions, 20)
-    );
+    new ResizeSensor(canvasBoxRef.current, debounce(setCanvasBoxDimensions, 20));
   }, [canvasBoxRef]);
 
   useEffect(() => {
@@ -90,7 +87,7 @@ function Label() {
         </Box>
         <Box className={styles.toolbarBox}>
           <UndoRedo />
-          <ToolControls />
+          <ToolButtons />
           <ActionButtons />
           {labeled && <SelectedPalette />}
         </Box>
