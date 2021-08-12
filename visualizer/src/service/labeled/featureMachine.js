@@ -75,10 +75,7 @@ const reloadLabelsState = {
   initial: 'checkReload',
   states: {
     checkReload: {
-      always: [
-        { cond: ({ reloadLabels }) => reloadLabels, target: 'reloading' },
-        'reloaded',
-      ],
+      always: [{ cond: ({ reloadLabels }) => reloadLabels, target: 'reloading' }, 'reloaded'],
     },
     reloading: {
       invoke: {
@@ -98,10 +95,7 @@ const reloadColorsState = {
   initial: 'checkReload',
   states: {
     checkReload: {
-      always: [
-        { cond: ({ reloadColors }) => reloadColors, target: 'reloading' },
-        'reloaded',
-      ],
+      always: [{ cond: ({ reloadColors }) => reloadColors, target: 'reloading' }, 'reloaded'],
     },
     reloading: {
       invoke: {
@@ -131,22 +125,26 @@ const reloadState = {
 
 const loadState = {
   initial: 'checkLoaded',
+  invoke: {
+    src: fetchSemanticLabels,
+    onDone: { actions: 'saveLabels' },
+  },
   states: {
     checkLoaded: {
-      always: [
-        { cond: 'loadedFrame', target: 'loaded' },
-        { target: 'loading' },
-      ],
+      always: [{ cond: 'loadedFrame', target: 'frameLoaded' }, { target: 'loadingFrame' }],
     },
-    loading: {
+    loadingFrame: {
       invoke: {
         src: fetchLabeledFrame,
-        onDone: { target: 'loaded', actions: 'saveFrame' },
+        onDone: { target: 'frameLoaded', actions: 'saveFrame' },
         onError: {
-          target: 'loaded',
+          target: 'frameLoaded',
           actions: (context, event) => console.log(event),
         },
       },
+    },
+    frameLoaded: {
+      always: { cond: 'loadedLabels', target: 'loaded' },
     },
     loaded: {
       entry: 'sendLabeledLoaded',
@@ -176,10 +174,6 @@ const createFeatureMachine = (projectId, feature, numFrames) =>
       },
       initial: 'idle',
       invoke: [
-        {
-          src: fetchSemanticLabels,
-          onDone: { actions: 'saveLabels' },
-        },
         {
           src: fetchColors,
           onDone: { actions: 'saveColors' },
@@ -216,11 +210,11 @@ const createFeatureMachine = (projectId, feature, numFrames) =>
     },
     {
       guards: {
+        loadedLabels: ({ labels }) => labels !== null,
         loadedFrame: ({ loadingFrame, frames }) => loadingFrame in frames,
         newFrame: (context, event) => context.frame !== event.frame,
         frameChanged: ({ frame, newFrames }) => newFrames.includes(frame),
-        canPreload: ({ frames, numFrames }) =>
-          Object.keys(frames).length !== numFrames,
+        canPreload: ({ frames, numFrames }) => Object.keys(frames).length !== numFrames,
       },
       actions: {
         clearChangedFrames: assign((context, event) => {
@@ -255,12 +249,10 @@ const createFeatureMachine = (projectId, feature, numFrames) =>
           labeledImage: frames[frame],
           labeledArray: arrays[frame],
         })),
-        saveFrame: assign(
-          ({ frames, arrays, loadingFrame }, { data: [image, array] }) => ({
-            frames: { ...frames, [loadingFrame]: image },
-            arrays: { ...arrays, [loadingFrame]: array },
-          })
-        ),
+        saveFrame: assign(({ frames, arrays, loadingFrame }, { data: [image, array] }) => ({
+          frames: { ...frames, [loadingFrame]: image },
+          arrays: { ...arrays, [loadingFrame]: array },
+        })),
         saveLabels: assign({ labels: (_, event) => event.data }),
         saveColors: assign({ colors: (_, event) => event.data.colors }),
         loadNextFrame: assign({
