@@ -103,9 +103,12 @@ def semantic_labels(project_id, feature):
         return jsonify({'error': f'project {project_id} not found'}), 404
     cell_info = project.labels.cell_info[feature]
     df = pd.DataFrame(cell_info).T
-    df = (df.join(df[['frame_div']], rsuffix='_parent', how='left', on='parent')
-            .rename(columns={'frame_div_parent': 'parentDivisionFrame',
-                             'frame_div': 'divisionFrame'}))
+    if df.parent.isnull().all():
+        df['frame_div_parent'] = None
+    else:
+        df = df.join(df[['frame_div']], rsuffix='_parent', how='left', on='parent')
+    df = df.rename(columns={'frame_div_parent': 'parentDivisionFrame',
+                            'frame_div': 'divisionFrame'})
     return df.to_json(orient='index')
 
 
