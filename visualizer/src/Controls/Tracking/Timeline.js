@@ -1,4 +1,4 @@
-import { Box } from '@material-ui/core';
+import { Box, Typography } from '@material-ui/core';
 import { useSelector } from '@xstate/react';
 import { default as React } from 'react';
 import { useSelect, useTracking } from '../../ServiceContext';
@@ -25,21 +25,24 @@ function Timeline() {
   const background = useSelector(select, state => state.context.background);
   const label = foreground ? foreground : background;
 
-  const { parent } = useDivision(label);
+  const tracking = useTracking();
+  const addingDaughter = useSelector(tracking, state => state.matches('addingDaughter'));
+  const division = useSelector(tracking, state => state.context.labels[label]);
 
   return (
-    label !== 0 && (
-      <Box>
-        <FrameSlider label={label} />
+    <Box>
+      <FrameSlider label={label} />
+      {label !== 0 && (
         <Box style={{ display: 'flex', justifyContent: 'space-between' }}>
-          {parent && <Division label={parent} />}
+          {division?.parent && <Division label={division.parent} />}
           {/* Empty middle element keeps the second division on 
             the right side when the first is not present */}
           <Box></Box>
           <Division label={label} />
         </Box>
-      </Box>
-    )
+      )}
+      {addingDaughter && <Typography>Click on a label to add it as a daughter.</Typography>}
+    </Box>
   );
 }
 
