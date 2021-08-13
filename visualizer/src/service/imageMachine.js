@@ -1,13 +1,5 @@
 import { bind, unbind } from 'mousetrap';
-import {
-  actions,
-  assign,
-  forwardTo,
-  Machine,
-  send,
-  sendParent,
-  spawn,
-} from 'xstate';
+import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
 import createLabeledMachine from './labeled/labeledMachine';
 import createRawMachine from './raw/rawMachine';
 
@@ -38,10 +30,7 @@ const loadFrameState = {
       },
     },
     checkLoaded: {
-      always: [
-        { cond: 'isLoaded', target: 'idle', actions: 'useFrame' },
-        { target: 'loading' },
-      ],
+      always: [{ cond: 'isLoaded', target: 'idle', actions: 'useFrame' }, { target: 'loading' }],
     },
   },
   on: {
@@ -151,8 +140,8 @@ const createImageMachine = ({ projectId }) =>
         listenForFrameHotkeys:
           ({ frame, numFrames }) =>
           send => {
-            const prevFrame = (frame - 1 + numFrames) % numFrames;
-            const nextFrame = (frame + 1) % numFrames;
+            const prevFrame = Math.max(0, frame - 1);
+            const nextFrame = Math.min(frame + 1, numFrames - 1);
             bind('a', () => send({ type: 'LOAD_FRAME', frame: prevFrame }));
             bind('d', () => send({ type: 'LOAD_FRAME', frame: nextFrame }));
             return () => {
@@ -162,17 +151,13 @@ const createImageMachine = ({ projectId }) =>
           },
       },
       guards: {
-        newLoadingFrame: (context, event) =>
-          context.loadingFrame !== event.frame,
+        newLoadingFrame: (context, event) => context.loadingFrame !== event.frame,
         isLoaded: ({ rawLoaded, labeledLoaded }) => rawLoaded && labeledLoaded,
       },
       actions: {
         forwardToParent: sendParent((_, event) => event),
         handleProject: assign(
-          (
-            _,
-            { frame, feature, channel, numFrames, numFeatures, numChannels }
-          ) => {
+          (_, { frame, feature, channel, numFrames, numFeatures, numChannels }) => {
             return {
               frame,
               feature,
@@ -189,10 +174,7 @@ const createImageMachine = ({ projectId }) =>
           rawRef: ({ projectId, numChannels, numFrames }) =>
             spawn(createRawMachine(projectId, numChannels, numFrames), 'raw'),
           labeledRef: ({ projectId, numFeatures, numFrames }) =>
-            spawn(
-              createLabeledMachine(projectId, numFeatures, numFrames),
-              'labeled'
-            ),
+            spawn(createLabeledMachine(projectId, numFeatures, numFrames), 'labeled'),
         }),
         addActorsToUndo: pure(context => {
           const { rawRef, labeledRef } = context;
@@ -201,14 +183,12 @@ const createImageMachine = ({ projectId }) =>
             sendParent({ type: 'ADD_ACTOR', actor: rawRef }),
           ];
         }),
-        loadLabeled: send(
-          ({ loadingFrame }) => ({ type: 'LOAD_FRAME', frame: loadingFrame }),
-          { to: 'labeled' }
-        ),
-        loadRaw: send(
-          ({ loadingFrame }) => ({ type: 'LOAD_FRAME', frame: loadingFrame }),
-          { to: 'raw' }
-        ),
+        loadLabeled: send(({ loadingFrame }) => ({ type: 'LOAD_FRAME', frame: loadingFrame }), {
+          to: 'labeled',
+        }),
+        loadRaw: send(({ loadingFrame }) => ({ type: 'LOAD_FRAME', frame: loadingFrame }), {
+          to: 'raw',
+        }),
         assignLoadingFrame: assign({
           loadingFrame: (_, { frame }) => frame,
           rawLoaded: false,
