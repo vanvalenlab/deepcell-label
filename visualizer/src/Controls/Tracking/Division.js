@@ -11,13 +11,7 @@ import CloseIcon from '@material-ui/icons/Close';
 import { useSelector } from '@xstate/react';
 import React, { useReducer, useRef } from 'react';
 import { ArcherContainer, ArcherElement } from 'react-archer';
-import {
-  useFeature,
-  useImage,
-  useLabeled,
-  useSelect,
-  useTracking,
-} from '../../ServiceContext';
+import { useFeature, useImage, useLabeled, useSelect, useTracking } from '../../ServiceContext';
 
 function useColors() {
   const labeled = useLabeled();
@@ -89,11 +83,7 @@ function Parent({ division }) {
 
   return (
     <ArcherElement id='parent' relations={relations}>
-      <Avatar
-        className={styles.cell}
-        style={{ backgroundColor: color }}
-        onClick={onClick}
-      >
+      <Avatar className={styles.cell} style={{ backgroundColor: color }} onClick={onClick}>
         {label}
       </Avatar>
     </ArcherElement>
@@ -167,12 +157,7 @@ function DaughterMenu({ parent, daughter }) {
 
   return (
     <>
-      <IconButton
-        aria-label='Edit daughter'
-        size='small'
-        onClick={toggle}
-        ref={anchorRef}
-      >
+      <IconButton aria-label='Edit daughter' size='small' onClick={toggle} ref={anchorRef}>
         <CloseIcon fontSize='small' />
       </IconButton>
       <Popper open={open} anchorEl={anchorRef.current} placement='bottom-end'>
@@ -198,12 +183,7 @@ function Daughters({ division }) {
   return (
     <Box className={styles.daughters}>
       {daughters.map(daughter => (
-        <Daughter
-          label={label}
-          daughter={daughter}
-          divisionFrame={divisionFrame}
-          key={daughter}
-        />
+        <Daughter label={label} daughter={daughter} divisionFrame={divisionFrame} key={daughter} />
       ))}
       <AddDaughter label={label} />
     </Box>
