@@ -9,6 +9,7 @@ const trackingMachine = Machine(
       selected: 1,
       label: null,
       labels: {},
+      parent: null,
     },
     on: {
       FOREGROUND: {
