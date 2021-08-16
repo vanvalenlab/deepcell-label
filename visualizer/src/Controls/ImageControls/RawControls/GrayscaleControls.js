@@ -1,4 +1,4 @@
-import { FormLabel, makeStyles } from '@material-ui/core';
+import { Box, FormLabel, makeStyles } from '@material-ui/core';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import FormGroup from '@material-ui/core/FormGroup';
 import Grid from '@material-ui/core/Grid';
@@ -93,23 +93,20 @@ const BrightnessSlider = ({ channel }) => {
   const onDoubleClick = () => send({ type: 'SET_BRIGHTNESS', brightness: 0 });
 
   return (
-    <>
-      <FormLabel>Brightness</FormLabel>
-      <Slider
-        value={brightness}
-        onChange={onChange}
-        onDoubleClick={onDoubleClick}
-        valueLabelDisplay='off'
-        min={-1}
-        max={1}
-        step={0.01}
-        orientation='horizontal'
-        style={{
-          color: 'primary',
-          marginTop: '7px',
-        }}
-      />
-    </>
+    <Slider
+      value={brightness}
+      onChange={onChange}
+      onDoubleClick={onDoubleClick}
+      valueLabelDisplay='off'
+      min={-1}
+      max={1}
+      step={0.01}
+      orientation='horizontal'
+      style={{
+        color: 'primary',
+        marginTop: '7px',
+      }}
+    />
   );
 };
 
@@ -117,29 +114,25 @@ const ContrastSlider = ({ channel }) => {
   const contrast = useSelector(channel, state => state.context.contrast);
   const { send } = channel;
 
-  const onChange = (event, newValue) =>
-    send({ type: 'SET_CONTRAST', contrast: Number(newValue) });
+  const onChange = (event, newValue) => send({ type: 'SET_CONTRAST', contrast: Number(newValue) });
 
   const onDoubleClick = () => send({ type: 'SET_CONTRAST', contrast: 0 });
 
   return (
-    <>
-      <FormLabel>Contrast</FormLabel>
-      <Slider
-        value={contrast}
-        onChange={onChange}
-        onDoubleClick={onDoubleClick}
-        valueLabelDisplay='off'
-        min={-1}
-        max={1}
-        step={0.01}
-        orientation='horizontal'
-        style={{
-          color: 'primary',
-          marginTop: '7px',
-        }}
-      />
-    </>
+    <Slider
+      value={contrast}
+      onChange={onChange}
+      onDoubleClick={onDoubleClick}
+      valueLabelDisplay='off'
+      min={-1}
+      max={1}
+      step={0.01}
+      orientation='horizontal'
+      style={{
+        color: 'primary',
+        marginTop: '7px',
+      }}
+    />
   );
 };
 const RangeSlider = ({ channel }) => {
@@ -150,45 +143,33 @@ const RangeSlider = ({ channel }) => {
   const onDoubleClick = () => send({ type: 'SET_RANGE', range: [0, 255] });
 
   return (
-    <>
-      <FormLabel>Range</FormLabel>
-      <Slider
-        value={range}
-        onChange={onChange}
-        onDoubleClick={onDoubleClick}
-        valueLabelDisplay='off'
-        min={0}
-        max={255}
-        step={1}
-        orientation='horizontal'
-        style={{
-          color: 'primary',
-          marginTop: '7px',
-        }}
-      />
-    </>
+    <Slider
+      value={range}
+      onChange={onChange}
+      onDoubleClick={onDoubleClick}
+      valueLabelDisplay='off'
+      min={0}
+      max={255}
+      step={1}
+      orientation='horizontal'
+      style={{
+        color: 'primary',
+        marginTop: '7px',
+      }}
+    />
   );
 };
 
 const GrayscaleControls = () => {
   const raw = useRaw();
-  const channel = useSelector(
-    raw,
-    state => state.context.channels[state.context.channel]
-  );
+  const channel = useSelector(raw, state => state.context.channels[state.context.channel]);
 
   const styles = useStyles();
 
   return (
     <Grid style={{ width: '100%' }} item>
-      <Grid
-        container
-        direction='column'
-        m={2}
-        justify='center'
-        className={styles.root}
-      >
-        <Grid container direction='row' justify='space-between'>
+      <Grid container direction='column' m={1} className={styles.root}>
+        <Grid item xs={12} container direction='row'>
           <Grid item xs={8}>
             <ChannelSelector />
           </Grid>
@@ -196,16 +177,23 @@ const GrayscaleControls = () => {
             <InvertToggle channel={channel} />
           </Grid>
         </Grid>
-        <Grid
-          container
-          direction='row'
-          justify='flex-start'
-          alignItems='center'
-        >
-          <Grid item xs={12}>
-            <RangeSlider channel={channel} />
-            <BrightnessSlider channel={channel} />
-            <ContrastSlider channel={channel} />
+        <Grid item xs={12} container direction='column'>
+          <Grid item xs={12} container direction='row'>
+            <Box
+              display='flex'
+              flexDirection='column'
+              justifyContent='space-around'
+              alignItems='flex-start'
+            >
+              <FormLabel>Range</FormLabel>
+              <FormLabel>Brightness</FormLabel>
+              <FormLabel>Contrast</FormLabel>
+            </Box>
+            <Box display='flex' flexDirection='column' justifyContent='space-around' flex='1'>
+              <RangeSlider channel={channel} />
+              <BrightnessSlider channel={channel} />
+              <ContrastSlider channel={channel} />
+            </Box>
           </Grid>
         </Grid>
       </Grid>
