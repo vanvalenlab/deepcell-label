@@ -42,62 +42,6 @@ const loadFrameState = {
   },
 };
 
-const frameState = {
-  initial: 'waitForProject',
-  states: {
-    waitForProject: {
-      on: {
-        PROJECT: { target: 'setUpActors', actions: 'handleProject' },
-      },
-    },
-    setUpActors: {
-      always: { target: 'setUpUndo', actions: 'spawnActors' },
-    },
-    setUpUndo: {
-      always: { target: 'loadFrame', actions: 'addActorsToUndo' },
-    },
-    loadFrame: loadFrameState,
-  },
-};
-
-const restoreState = {
-  on: {
-    RESTORE: {
-      target: '.restoring',
-      internal: false,
-      actions: respond('RESTORED'),
-    },
-    SAVE: { actions: 'save' },
-  },
-  initial: 'idle',
-  states: {
-    idle: {},
-    restoring: {
-      type: 'parallel',
-      states: {
-        restoreGrayscale: {
-          entry: pure((context, event) => {
-            if (context.grayscale !== event.grayscale) {
-              return send('TOGGLE_COLOR_MODE');
-            }
-          }),
-        },
-        restoreFrame: {
-          entry: send((_, { frame }) => ({ type: 'LOAD_FRAME', frame })),
-        },
-      },
-    },
-  },
-};
-
-const restoreActions = {
-  save: respond(({ frame, grayscale }) => ({
-    type: 'RESTORE',
-    frame,
-    grayscale,
-  })),
-};
-
 const createImageMachine = ({ projectId }) =>
   Machine(
     {
@@ -111,12 +55,21 @@ const createImageMachine = ({ projectId }) =>
         numChannels: 1,
         rawRef: null,
         labeledRef: null,
-        grayscale: false,
       },
-      type: 'parallel',
+      initial: 'waitForProject',
       states: {
-        frame: frameState,
-        restore: restoreState,
+        waitForProject: {
+          on: {
+            PROJECT: { target: 'setUpActors', actions: 'handleProject' },
+          },
+        },
+        setUpActors: {
+          always: { target: 'setUpUndo', actions: 'spawnActors' },
+        },
+        setUpUndo: {
+          always: { target: 'loadFrame', actions: 'addActorsToUndo' },
+        },
+        loadFrame: loadFrameState,
       },
       on: {
         // send events to children
@@ -127,12 +80,10 @@ const createImageMachine = ({ projectId }) =>
         LABELS: { actions: 'forwardToParent' },
         FEATURE: { actions: ['setFeature', 'forwardToParent'] },
         CHANNEL: { actions: ['setChannel', 'forwardToParent'] },
-        GRAYSCALE: {
-          actions: [assign({ grayscale: true }), 'forwardToParent'],
-        },
-        COLOR: {
-          actions: [assign({ grayscale: false }), 'forwardToParent'],
-        },
+        GRAYSCALE: { actions: 'forwardToParent' },
+        COLOR: { actions: 'forwardToParent' },
+        SAVE: { actions: 'save' },
+        RESTORE: { actions: 'restore' },
       },
     },
     {
@@ -205,7 +156,10 @@ const createImageMachine = ({ projectId }) =>
         }),
         setFeature: assign({ feature: (_, { feature }) => ({ feature }) }),
         setChannel: assign({ channel: (_, { channel }) => ({ channel }) }),
-        ...restoreActions,
+        save: respond(({ frame }) => ({ type: 'RESTORE', frame })),
+        restore: pure((_, { frame }) => {
+          return [send({ type: 'LOAD_FRAME', frame }), respond('RESTORED')];
+        }),
       },
     }
   );

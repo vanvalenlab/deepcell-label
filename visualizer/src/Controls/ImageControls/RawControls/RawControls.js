@@ -3,7 +3,7 @@ import Box from '@material-ui/core/Box';
 import FormLabel from '@material-ui/core/FormLabel';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useImage } from '../../../ServiceContext';
+import { useRaw } from '../../../ServiceContext';
 import ColorModeToggle from './ColorModeToggle';
 import GrayscaleControls from './GrayscaleControls';
 import RGBControls from './RGBControls';
@@ -19,8 +19,8 @@ const useStyles = makeStyles(theme => ({
   title: {},
 }));
 export const RawControls = () => {
-  const image = useImage();
-  const grayscale = useSelector(image, state => state.context.grayscale);
+  const raw = useRaw();
+  const isGrayscale = useSelector(raw, state => state.context.isGrayscale);
 
   const styles = useStyles();
 
@@ -32,7 +32,7 @@ export const RawControls = () => {
         </FormLabel>
         <ColorModeToggle />
       </Box>
-      {grayscale ? <GrayscaleControls /> : <RGBControls />}
+      {isGrayscale ? <GrayscaleControls /> : <RGBControls />}
     </>
   );
 };
