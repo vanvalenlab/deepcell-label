@@ -49,7 +49,16 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
             },
           },
         },
-        idle: {},
+        idle: {
+          on: {
+            SET_PROJECT: {
+              target: 'setUpActors',
+              actions: assign({
+                projectId: (_, { projectId }) => projectId,
+              }),
+            },
+          },
+        },
       },
       on: {
         // from various
@@ -116,10 +125,7 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
         }),
         sendProject: pure((context, event) => {
           const projectEvent = { type: 'PROJECT', ...event.data };
-          return [
-            send(projectEvent, { to: 'canvas' }),
-            send(projectEvent, { to: 'image' }),
-          ];
+          return [send(projectEvent, { to: 'canvas' }), send(projectEvent, { to: 'image' })];
         }),
         dispatchEdit: send(
           ({ frame, feature, channel }, e) => ({
