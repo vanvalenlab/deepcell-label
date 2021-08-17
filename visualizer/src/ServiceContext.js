@@ -1,11 +1,5 @@
 import { useSelector } from '@xstate/react';
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import service from './service/service';
 
 export const LabelContext = createContext();
@@ -17,9 +11,7 @@ export const useDeepCellLabel = () => {
 function useReturnContext(contextType) {
   const context = useContext(contextType);
   if (context === undefined) {
-    throw new Error(
-      `${contextType} must be used within its appropriate parent provider`
-    );
+    throw new Error(`${contextType} must be used within its appropriate parent provider`);
   }
   return context;
 }
@@ -132,11 +124,7 @@ export function useTool() {
 }
 
 const ServiceContext = props => {
-  return (
-    <LabelContext.Provider value={service}>
-      {props.children}
-    </LabelContext.Provider>
-  );
+  return <LabelContext.Provider value={service}>{props.children}</LabelContext.Provider>;
 };
 
 export default ServiceContext;

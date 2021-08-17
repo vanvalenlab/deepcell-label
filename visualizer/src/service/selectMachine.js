@@ -59,7 +59,7 @@ const selectShortcutActions = {
   }),
   newForeground: send(({ labels }) => ({
     type: 'FOREGROUND',
-    foreground: Math.max(...Object.keys(labels).map(Number)) + 1,
+    foreground: Math.max(0, ...Object.keys(labels).map(Number)) + 1,
   })),
   resetForeground: send({ type: 'FOREGROUND', foreground: 0 }),
   resetBackground: send({ type: 'BACKGROUND', background: 0 }),
@@ -107,10 +107,7 @@ const selectMachine = Machine(
       SHIFT_CLICK: [
         {
           cond: 'doubleClick',
-          actions: [
-            'selectForeground',
-            send({ type: 'BACKGROUND', background: 0 }),
-          ],
+          actions: ['selectForeground', send({ type: 'BACKGROUND', background: 0 })],
         },
         { cond: 'onBackground', actions: 'selectForeground' },
         { actions: 'selectBackground' },

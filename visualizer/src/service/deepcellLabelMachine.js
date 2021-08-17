@@ -65,20 +65,12 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
         COLOR: { actions: forwardTo('tool') },
         LABELED_ARRAY: { actions: forwardTo('canvas') },
         LABELS: {
-          actions: [
-            forwardTo('tool'),
-            forwardTo('tracking'),
-            forwardTo('select'),
-          ],
+          actions: [forwardTo('tool'), forwardTo('tracking'), forwardTo('select')],
         },
 
         // from canvas
         LABEL: {
-          actions: [
-            forwardTo('tool'),
-            forwardTo('tracking'),
-            forwardTo('select'),
-          ],
+          actions: [forwardTo('tool'), forwardTo('tracking'), forwardTo('select')],
         },
         COORDINATES: { actions: forwardTo('tool') },
         FOREGROUND: { actions: [forwardTo('tool'), forwardTo('tracking')] },
@@ -126,10 +118,7 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
         }),
         sendProject: pure((context, event) => {
           const projectEvent = { type: 'PROJECT', ...event.data };
-          return [
-            send(projectEvent, { to: 'canvas' }),
-            send(projectEvent, { to: 'image' }),
-          ];
+          return [send(projectEvent, { to: 'canvas' }), send(projectEvent, { to: 'image' })];
         }),
         dispatchEdit: send(
           ({ frame, feature, channel }, e) => ({

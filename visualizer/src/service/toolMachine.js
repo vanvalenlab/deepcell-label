@@ -1,13 +1,4 @@
-import { bind, unbind } from 'mousetrap';
-import {
-  actions,
-  assign,
-  forwardTo,
-  Machine,
-  send,
-  sendParent,
-  spawn,
-} from 'xstate';
+import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
 import createBrushMachine from './tools/brushMachine';
 import createFloodMachine from './tools/floodMachine';
 import createSelectMachine from './tools/selectMachine';
@@ -20,14 +11,7 @@ const { pure, respond } = actions;
 
 // TODO: move to config file?
 const colorTools = ['brush', 'select', 'trim', 'flood'];
-const grayscaleTools = [
-  'brush',
-  'select',
-  'trim',
-  'flood',
-  'watershed',
-  'threshold',
-];
+const grayscaleTools = ['brush', 'select', 'trim', 'flood', 'watershed', 'threshold'];
 
 const createToolMachineLookup = {
   brush: createBrushMachine,
@@ -181,10 +165,6 @@ const toolMachine = Machine(
       toolActor: null,
     },
     entry: 'spawnTool',
-    invoke: [
-      { src: 'listenForToolHotkeys' },
-      { src: 'listenForActionHotkeys' },
-    ],
     type: 'parallel',
     states: {
       colorMode: colorModeState,
@@ -221,40 +201,6 @@ const toolMachine = Machine(
     },
   },
   {
-    services: {
-      listenForActionHotkeys: () => send => {
-        bind('s', () => send('SWAP'));
-        bind('r', () => send('REPLACE'));
-        bind('q', () => send('ERODE'));
-        bind('shift+q', () => send('DILATE'));
-        bind(['del', 'backspace'], () => send('DELETE'));
-        return () => {
-          unbind('s');
-          unbind('r');
-          unbind('q');
-          unbind('shift+q');
-          unbind(['del', 'backspace']);
-        };
-      },
-      listenForToolHotkeys: () => send => {
-        bind('b', () => send('USE_BRUSH'));
-        bind('e', () => send('USE_ERASER'));
-        bind('v', () => send('USE_SELECT'));
-        bind('t', () => send('USE_THRESHOLD'));
-        bind('k', () => send('USE_TRIM'));
-        bind('g', () => send('USE_FLOOD'));
-        bind('w', () => send('USE_WATERSHED'));
-        return () => {
-          unbind('b');
-          unbind('e');
-          unbind('v');
-          unbind('t');
-          unbind('k');
-          unbind('g');
-          unbind('w');
-        };
-      },
-    },
     guards: {
       ...toolGuards,
       usingColorTool: ({ tool }) => colorTools.includes(tool),

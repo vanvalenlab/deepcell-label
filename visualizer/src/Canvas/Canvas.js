@@ -3,13 +3,7 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import { makeStyles } from '@material-ui/core/styles';
 import { useSelector } from '@xstate/react';
 import React, { useEffect } from 'react';
-import {
-  useCanvas,
-  useLabeled,
-  useRaw,
-  useSelect,
-  useToolbar,
-} from '../ServiceContext';
+import { useCanvas, useLabeled, useRaw, useSelect, useToolbar } from '../ServiceContext';
 import LabeledCanvas from './Labeled/LabeledCanvas';
 import OutlineCanvas from './Labeled/OutlineCanvas';
 import RawCanvas from './Raw/RawCanvas';
@@ -44,12 +38,8 @@ export const Canvas = () => {
   const scale = useSelector(canvas, state => state.context.scale);
 
   const grab = useSelector(canvas, state => state.matches('pan.hand'));
-  const grabbing = useSelector(canvas, state =>
-    state.matches('pan.hand.panning')
-  );
-  const dragged = useSelector(canvas, state =>
-    state.matches('pan.tool.clickTool.dragged')
-  );
+  const grabbing = useSelector(canvas, state => state.matches('pan.hand.panning'));
+  const dragged = useSelector(canvas, state => state.matches('pan.tool.clickTool.dragged'));
 
   const cursor = grabbing || dragged ? 'grabbing' : grab ? 'grab' : 'crosshair';
 
@@ -111,11 +101,7 @@ export const Canvas = () => {
       onMouseDown={handleMouseDown}
       onMouseUp={canvas.send}
     >
-      {!raw && (
-        <CircularProgress
-          style={{ margin: '25%', width: '50%', height: '50%' }}
-        />
-      )}
+      {!raw && <CircularProgress style={{ margin: '25%', width: '50%', height: '50%' }} />}
       {raw && <RawCanvas className={styles.canvas} />}
       {labeled && <LabeledCanvas className={styles.canvas} />}
       {labeled && <OutlineCanvas className={styles.canvas} />}
