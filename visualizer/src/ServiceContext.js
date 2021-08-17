@@ -1,11 +1,5 @@
 import { useSelector } from '@xstate/react';
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import service from './service/service';
 
 export const LabelContext = createContext();
@@ -17,34 +11,32 @@ export const useDeepCellLabel = () => {
 function useReturnContext(contextType) {
   const context = useContext(contextType);
   if (context === undefined) {
-    throw new Error(
-      `${contextType} must be used within its appropriate parent provider`
-    );
+    throw new Error(`${contextType} must be used within its appropriate parent provider`);
   }
   return context;
 }
 
 export function useSelect() {
   const deepCellLabel = useDeepCellLabel();
-  const { select } = deepCellLabel.state.children;
+  const select = useSelector(deepCellLabel, state => state.context.selectRef);
   return select;
 }
 
 export function useApi() {
   const deepCellLabel = useDeepCellLabel();
-  const { api } = deepCellLabel.state.children;
+  const api = useSelector(deepCellLabel, state => state.context.apiRef);
   return api;
 }
 
 export function useUndo() {
   const deepCellLabel = useDeepCellLabel();
-  const { undo } = deepCellLabel.state.children;
+  const undo = useSelector(deepCellLabel, state => state.context.undoRef);
   return undo;
 }
 
 export function useImage() {
   const deepCellLabel = useDeepCellLabel();
-  const { image } = deepCellLabel.state.children;
+  const image = useSelector(deepCellLabel, state => state.context.imageRef);
   return image;
 }
 
@@ -108,29 +100,25 @@ export function useComposeLayers() {
 
 export function useCanvas() {
   const deepCellLabel = useDeepCellLabel();
-  const { canvas } = deepCellLabel.state.children;
+  const canvas = useSelector(deepCellLabel, state => state.context.canvasRef);
   return canvas;
 }
 
 export function useToolbar() {
   const deepCellLabel = useDeepCellLabel();
-  const { tool } = deepCellLabel.state.children;
-  return tool;
+  const toolbar = useSelector(deepCellLabel, state => state.context.toolRef);
+  return toolbar;
 }
 
 export function useTool() {
   const deepCellLabel = useDeepCellLabel();
-  const { tool: toolbar } = deepCellLabel.state.children;
+  const toolbar = useSelector(deepCellLabel, state => state.context.toolRef);
   const tool = useSelector(toolbar, state => state.context.toolActor);
   return tool;
 }
 
 const ServiceContext = props => {
-  return (
-    <LabelContext.Provider value={service}>
-      {props.children}
-    </LabelContext.Provider>
-  );
+  return <LabelContext.Provider value={service}>{props.children}</LabelContext.Provider>;
 };
 
 export default ServiceContext;
