@@ -21,14 +21,14 @@ const frameState = {
       on: {
         CHANNEL_LOADED: {
           cond: 'isLoadingFrame',
-          actions: 'forwardToColorMode',
+          actions: 'forwardToDisplay',
         },
         FRAME_LOADED: { target: 'loaded', actions: 'sendLoaded' },
       },
     },
     loaded: {
       on: {
-        FRAME: { target: 'idle', actions: ['setFrame', 'forwardToColorMode'] },
+        FRAME: { target: 'idle', actions: ['setFrame', 'forwardToDisplay'] },
         CHANNEL: { target: 'loading' },
       },
     },
@@ -37,7 +37,7 @@ const frameState = {
     LOAD_FRAME: {
       target: '.loading',
       cond: 'diffLoadingFrame',
-      actions: ['setLoadingFrame', 'forwardToColorMode'],
+      actions: ['setLoadingFrame', 'forwardToDisplay'],
     },
   },
 };
@@ -45,21 +45,18 @@ const frameState = {
 const channelState = {
   on: {
     CHANNEL: { actions: sendParent((c, e) => e) },
-    LOAD_CHANNEL: { actions: 'forwardToColorMode' },
-    CHANNEL_LOADED: { actions: 'forwardToColorMode' },
+    LOAD_CHANNEL: { actions: 'forwardToDisplay' },
+    CHANNEL_LOADED: { actions: 'forwardToDisplay' },
   },
 };
 
 const colorState = {
-  entry: [sendParent('COLOR'), assign({ colorMode: ({ color }) => color, isGrayscale: false })],
+  entry: [sendParent('COLOR'), assign({ isGrayscale: false })],
   on: { TOGGLE_COLOR_MODE: 'grayscale' },
 };
 
 const grayscaleState = {
-  entry: [
-    sendParent('GRAYSCALE'),
-    assign({ colorMode: ({ grayscale }) => grayscale, isGrayscale: true }),
-  ],
+  entry: [sendParent('GRAYSCALE'), assign({ isGrayscale: true })],
   invoke: [{ src: 'listenForInvertHotkey' }, { src: 'listenForResetHotkey' }],
   on: {
     TOGGLE_COLOR_MODE: 'color',
@@ -79,10 +76,7 @@ const grayscaleState = {
   },
 };
 
-const colorModeState = {
-  invoke: {
-    src: 'listenForColorModeHotkey',
-  },
+const displayState = {
   initial: 'initial',
   states: {
     initial: {
@@ -118,8 +112,7 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
         loadingFrame: 0, // needed?
         channel: 0,
         colorMode: null,
-        color: null,
-        grayscale: null,
+        grayscaleMode: null,
         isGrayscale: Number(numChannels) === 1,
       },
       entry: ['spawnChannels', 'spawnColorModes'],
@@ -128,7 +121,7 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
         preload: preloadState,
         frame: frameState,
         channel: channelState,
-        colorMode: colorModeState,
+        display: displayState,
         restore: restoreState,
       },
       on: {
@@ -137,10 +130,6 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
     },
     {
       services: {
-        listenForColorModeHotkey: () => send => {
-          bind('y', () => send('TOGGLE_COLOR_MODE'));
-          return () => unbind('y');
-        },
         listenForChannelHotkeys:
           ({ channel, numChannels }) =>
           send => {
@@ -180,8 +169,8 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
             [...Array(numChannels).keys()].map(i => `channel ${i}`),
         }),
         spawnColorModes: assign({
-          grayscale: context => spawn(createGrayscaleMachine(context), 'grayscale'),
-          color: context => spawn(createColorMachine(context), 'color'),
+          grayscaleMode: context => spawn(createGrayscaleMachine(context), 'grayscaleMode'),
+          colorMode: context => spawn(createColorMachine(context), 'colorMode'),
         }),
         startPreload: pure(({ channels }) =>
           channels.map(channel => send('PRELOAD', { to: channel }))
@@ -191,7 +180,9 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
         setLoadingFrame: assign({ loadingFrame: (_, { frame }) => frame }),
         setFrame: assign((_, { frame }) => ({ frame })),
         setChannel: assign((_, { channel }) => ({ channel })),
-        forwardToColorMode: forwardTo(({ colorMode }) => colorMode),
+        forwardToDisplay: forwardTo(({ isGrayscale }) =>
+          isGrayscale ? 'grayscaleMode' : 'colorMode'
+        ),
         forwardToChannel: forwardTo(({ channel, channels }) => channels[channel]),
         save: respond(({ channel, isGrayscale }) => ({ type: 'RESTORE', channel, isGrayscale })),
         restore: pure((context, event) => {

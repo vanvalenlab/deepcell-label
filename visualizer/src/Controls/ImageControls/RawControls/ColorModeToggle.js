@@ -3,7 +3,8 @@ import FormGroup from '@material-ui/core/FormGroup';
 import Switch from '@material-ui/core/Switch';
 import Tooltip from '@material-ui/core/Tooltip';
 import { useSelector } from '@xstate/react';
-import React, { useEffect, useRef } from 'react';
+import { bind, unbind } from 'mousetrap';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { useRaw } from '../../../ServiceContext';
 
 function ColorModeToggle() {
@@ -17,6 +18,13 @@ function ColorModeToggle() {
     input.className = `${input.className}  mousetrap`;
   }, []);
 
+  const onClick = useCallback(() => raw.send('TOGGLE_COLOR_MODE'), [raw]);
+
+  useEffect(() => {
+    bind('y', onClick);
+    return () => unbind('y');
+  }, [onClick]);
+
   const toggleTooltip = (
     <span>
       Toggle with <kbd>Y</kbd>
@@ -28,12 +36,7 @@ function ColorModeToggle() {
       <FormGroup row>
         <FormControlLabel
           control={
-            <Switch
-              size='small'
-              checked={!grayscale}
-              onChange={() => raw.send('TOGGLE_COLOR_MODE')}
-              inputRef={inputRef}
-            />
+            <Switch size='small' checked={!grayscale} onChange={onClick} inputRef={inputRef} />
           }
           label='Multi-channel'
           labelPlacement='start'

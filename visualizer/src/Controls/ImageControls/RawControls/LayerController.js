@@ -87,18 +87,10 @@ function LayerController({ layer }) {
 
   const raw = useRaw();
   const colorMode = useSelector(raw, state => state.context.colorMode);
-  const loading = useSelector(colorMode, state =>
-    state.context.loadingChannels.has(channel)
-  );
+  const loading = useSelector(colorMode, state => state.context.loadingChannels.has(channel));
 
   return (
-    <Grid
-      container
-      direction='column'
-      m={2}
-      justify='center'
-      className={classes.root}
-    >
+    <Grid container direction='column' m={2} justify='center' className={classes.root}>
       <Grid container direction='row' justify='space-between'>
         <Grid item xs={10}>
           <LayerSelector layer={layer} />

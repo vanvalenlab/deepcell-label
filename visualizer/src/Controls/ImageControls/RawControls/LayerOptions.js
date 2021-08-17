@@ -51,12 +51,7 @@ function LayerOptions({ layer }) {
   const classes = useStyles();
   return (
     <>
-      <IconButton
-        aria-label='Remove channel'
-        size='small'
-        onClick={toggle}
-        ref={anchorRef}
-      >
+      <IconButton aria-label='Remove channel' size='small' onClick={toggle} ref={anchorRef}>
         <MoreVertIcon fontSize='small' />
       </IconButton>
       <Popper open={open} anchorEl={anchorRef.current} placement='bottom-end'>

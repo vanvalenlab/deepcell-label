@@ -56,11 +56,12 @@ const ChannelSelector = () => {
   const raw = useRaw();
   const names = useSelector(raw, state => state.context.channelNames);
 
-  const grayscale = useSelector(raw, state => state.context.colorMode);
-  const channel = useSelector(grayscale, state => state.context.channel);
+  const grayscaleMode = useSelector(raw, state => state.context.grayscaleMode);
+  console.log(grayscaleMode);
+  const channel = useSelector(grayscaleMode, state => state.context.channel);
 
   const onChange = e => {
-    grayscale.send({ type: 'LOAD_CHANNEL', channel: Number(e.target.value) });
+    grayscaleMode.send({ type: 'LOAD_CHANNEL', channel: Number(e.target.value) });
   };
 
   const tooltip = (
