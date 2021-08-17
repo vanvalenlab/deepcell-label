@@ -4,13 +4,11 @@ import Switch from '@material-ui/core/Switch';
 import Tooltip from '@material-ui/core/Tooltip';
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-import { useImage, useRaw } from '../../../ServiceContext';
+import { useRaw } from '../../../ServiceContext';
 
 function ColorModeToggle() {
-  const image = useImage();
-  const grayscale = useSelector(image, state => state.context.grayscale);
   const raw = useRaw();
-  const { send } = raw;
+  const grayscale = useSelector(raw, state => state.context.isGrayscale);
 
   // Adds mousetrap class so hotkeys work after using switch
   const inputRef = useRef();
@@ -33,7 +31,7 @@ function ColorModeToggle() {
             <Switch
               size='small'
               checked={!grayscale}
-              onChange={() => send('TOGGLE_COLOR_MODE')}
+              onChange={() => raw.send('TOGGLE_COLOR_MODE')}
               inputRef={inputRef}
             />
           }
@@ -42,30 +40,6 @@ function ColorModeToggle() {
         />
       </FormGroup>
     </Tooltip>
-    // <Box
-    //   component='label'
-    //   // container
-    //   display='flex'
-    //   justifyContent='center'
-    //   alignItems='center'
-    // >
-    //   <Grid item align='right' style={{ flex: '1 1 auto' }}>
-    //     <Tooltip title='Shows a single channel'>
-    //       <span>Multi-channel</span>
-    //     </Tooltip>
-    //   </Grid>
-    //   <Tooltip title={toggleTooltip}>
-    //     <Grid item style={{ flex: '0 1 auto' }}>
-    //       <Switch
-    //         // color="default"
-    //         checked={!grayscale}
-    //         onChange={() => send('TOGGLE_COLOR_MODE')}
-    //         inputRef={inputRef}
-    //         size='small'
-    //       />
-    //     </Grid>
-    //   </Tooltip>
-    // </Box>
   );
 }
 
