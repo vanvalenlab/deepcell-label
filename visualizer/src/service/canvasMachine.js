@@ -131,9 +131,9 @@ const canvasMachine = Machine(
         actions: ['setLabel', sendParent((c, e) => e)],
       },
     },
-    initial: 'waitForProject',
+    initial: 'idle',
     states: {
-      waitForProject: {
+      idle: {
         on: {
           PROJECT: {
             target: 'pan',
@@ -189,8 +189,7 @@ const canvasMachine = Machine(
       },
     },
     guards: {
-      newCoordinates: (context, event) =>
-        context.x !== event.y || context.y !== event.y,
+      newCoordinates: (context, event) => context.x !== event.y || context.y !== event.y,
       newLabel: (context, event) => context.label !== event.label,
       dragTool: ({ tool }) => tool === 'brush' || tool === 'threshold',
       moved: ({ dx, dy }) => Math.abs(dx) > 10 || Math.abs(dy) > 10,
@@ -226,8 +225,7 @@ const canvasMachine = Machine(
       }),
       resize: assign({
         scale: context => {
-          const { width, height, availableWidth, availableHeight, padding } =
-            context;
+          const { width, height, availableWidth, availableHeight, padding } = context;
           const scaleX = (availableWidth - 2 * padding) / width;
           const scaleY = (availableHeight - 2 * padding) / height;
           // pick scale that fits both dimensions; can be less than 1
