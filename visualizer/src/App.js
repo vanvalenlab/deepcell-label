@@ -1,5 +1,6 @@
 import Label from './Label';
 import ProjectContext from './ProjectContext';
+import service from './service/service';
 
 // inspect({
 //   // options
@@ -9,7 +10,7 @@ import ProjectContext from './ProjectContext';
 
 function App() {
   return (
-    <ProjectContext>
+    <ProjectContext project={service}>
       <Label />
     </ProjectContext>
   );

@@ -1,6 +1,5 @@
 import { useSelector } from '@xstate/react';
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import service from './service/service';
 
 export const Context = createContext();
 
@@ -118,7 +117,7 @@ export function useTool() {
 }
 
 const ProjectContext = props => {
-  return <Context.Provider value={service}>{props.children}</Context.Provider>;
+  return <Context.Provider value={props.project}>{props.children}</Context.Provider>;
 };
 
 export default ProjectContext;
