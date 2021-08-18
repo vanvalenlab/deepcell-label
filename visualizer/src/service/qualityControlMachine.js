@@ -21,7 +21,11 @@ function createQualityControlMachine(projectIds, bucket) {
       states: {
         idle: {},
       },
-      on: {},
+      on: {
+        SET_PROJECT: { actions: 'setProject' },
+        ACCEPT: { actions: 'accept' },
+        REJECT: { actions: 'reject' },
+      },
     },
     {
       actions: {
@@ -34,6 +38,21 @@ function createQualityControlMachine(projectIds, bucket) {
                 spawn(createProjectMachine(projectId, bucket)),
               ])
             ),
+        }),
+        setProject: assign({
+          projectId: (_, { projectId }) => projectId,
+        }),
+        accept: assign({
+          judgments: ({ judgments, projectId }) => {
+            judgments[projectId] = true;
+            return judgments;
+          },
+        }),
+        reject: assign({
+          judgments: ({ judgments, projectId }) => {
+            judgments[projectId] = false;
+            return judgments;
+          },
         }),
       },
     }
