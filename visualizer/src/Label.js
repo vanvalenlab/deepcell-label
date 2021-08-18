@@ -13,7 +13,7 @@ import UndoRedo from './Controls/Toolbar/UndoRedo';
 import Footer from './Footer/Footer';
 import Instructions from './Instructions/Instructions';
 import Navbar from './Navbar';
-import { useCanvas, useLabeled } from './ServiceContext';
+import { useCanvas, useLabeled } from './ProjectContext';
 
 const useStyles = makeStyles(theme => ({
   root: {

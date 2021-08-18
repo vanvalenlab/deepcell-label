@@ -4,7 +4,7 @@ import Switch from '@material-ui/core/Switch';
 import Tooltip from '@material-ui/core/Tooltip';
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-import { useImage, useRaw } from '../../../ServiceContext';
+import { useImage, useRaw } from '../../../ProjectContext';
 
 function ColorModeToggle() {
   const image = useImage();

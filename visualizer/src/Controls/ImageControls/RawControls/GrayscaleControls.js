@@ -8,7 +8,7 @@ import Switch from '@material-ui/core/Switch';
 import Tooltip from '@material-ui/core/Tooltip';
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-import { useRaw } from '../../../ServiceContext';
+import { useRaw } from '../../../ProjectContext';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -117,8 +117,7 @@ const ContrastSlider = ({ channel }) => {
   const contrast = useSelector(channel, state => state.context.contrast);
   const { send } = channel;
 
-  const onChange = (event, newValue) =>
-    send({ type: 'SET_CONTRAST', contrast: Number(newValue) });
+  const onChange = (event, newValue) => send({ type: 'SET_CONTRAST', contrast: Number(newValue) });
 
   const onDoubleClick = () => send({ type: 'SET_CONTRAST', contrast: 0 });
 
@@ -172,22 +171,13 @@ const RangeSlider = ({ channel }) => {
 
 const GrayscaleControls = () => {
   const raw = useRaw();
-  const channel = useSelector(
-    raw,
-    state => state.context.channels[state.context.channel]
-  );
+  const channel = useSelector(raw, state => state.context.channels[state.context.channel]);
 
   const styles = useStyles();
 
   return (
     <Grid style={{ width: '100%' }} item>
-      <Grid
-        container
-        direction='column'
-        m={2}
-        justify='center'
-        className={styles.root}
-      >
+      <Grid container direction='column' m={2} justify='center' className={styles.root}>
         <Grid container direction='row' justify='space-between'>
           <Grid item xs={8}>
             <ChannelSelector />
@@ -196,12 +186,7 @@ const GrayscaleControls = () => {
             <InvertToggle channel={channel} />
           </Grid>
         </Grid>
-        <Grid
-          container
-          direction='row'
-          justify='flex-start'
-          alignItems='center'
-        >
+        <Grid container direction='row' justify='flex-start' alignItems='center'>
           <Grid item xs={12}>
             <RangeSlider channel={channel} />
             <BrightnessSlider channel={channel} />

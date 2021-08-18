@@ -5,7 +5,7 @@ import RedoIcon from '@material-ui/icons/Redo';
 import UndoIcon from '@material-ui/icons/Undo';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useUndo } from '../../ServiceContext';
+import { useUndo } from '../../ProjectContext';
 
 const useStyles = makeStyles({
   button: {

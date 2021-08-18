@@ -2,10 +2,10 @@ import { useSelector } from '@xstate/react';
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import service from './service/service';
 
-export const LabelContext = createContext();
+export const Context = createContext();
 
 export const useProject = () => {
-  return useReturnContext(LabelContext);
+  return useReturnContext(Context);
 };
 
 function useReturnContext(contextType) {
@@ -117,8 +117,8 @@ export function useTool() {
   return tool;
 }
 
-const ServiceContext = props => {
-  return <LabelContext.Provider value={service}>{props.children}</LabelContext.Provider>;
+const ProjectContext = props => {
+  return <Context.Provider value={service}>{props.children}</Context.Provider>;
 };
 
-export default ServiceContext;
+export default ProjectContext;

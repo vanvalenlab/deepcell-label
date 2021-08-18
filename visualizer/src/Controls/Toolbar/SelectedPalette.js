@@ -10,7 +10,7 @@ import SubdirectoryArrowLeftIcon from '@material-ui/icons/SubdirectoryArrowLeft'
 import SubdirectoryArrowRightIcon from '@material-ui/icons/SubdirectoryArrowRight';
 import { useSelector } from '@xstate/react';
 import React, { useState } from 'react';
-import { useFeature, useLabeled, useSelect } from '../../ServiceContext';
+import { useFeature, useLabeled, useSelect } from '../../ProjectContext';
 
 const useStyles = makeStyles(theme => ({
   palette: {
@@ -200,10 +200,7 @@ function ForegroundBox() {
             size='small'
             onClick={() => send('NEXT_FOREGROUND')}
           >
-            <ArrowBackIosIcon
-              color={buttonColor}
-              style={{ transform: 'rotate(180deg)' }}
-            />
+            <ArrowBackIosIcon color={buttonColor} style={{ transform: 'rotate(180deg)' }} />
           </IconButton>
         </Tooltip>
       )}
@@ -281,10 +278,7 @@ function BackgroundBox() {
             size='small'
             onClick={() => send('NEXT_BACKGROUND')}
           >
-            <ArrowBackIosIcon
-              color={buttonColor}
-              style={{ transform: 'rotate(180deg)' }}
-            />
+            <ArrowBackIosIcon color={buttonColor} style={{ transform: 'rotate(180deg)' }} />
           </IconButton>
         </Tooltip>
       )}
@@ -311,11 +305,7 @@ export default function SelectedPalette() {
         <SwapButton />
       </Box>
       <Tooltip title={tooltipText}>
-        <HelpOutlineIcon
-          className={styles.help}
-          color='action'
-          fontSize='large'
-        />
+        <HelpOutlineIcon className={styles.help} color='action' fontSize='large' />
       </Tooltip>
     </Box>
   );

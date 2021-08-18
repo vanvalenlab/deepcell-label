@@ -1,6 +1,6 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-import { useCanvas, useFeature, useLabeled, useSelect } from '../../ServiceContext';
+import { useCanvas, useFeature, useLabeled, useSelect } from '../../ProjectContext';
 import { highlightImageData, opacityImageData } from '../canvasUtils';
 
 export const LabeledCanvas = ({ className }) => {

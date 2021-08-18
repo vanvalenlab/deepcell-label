@@ -2,7 +2,7 @@ import { IconButton, TextField } from '@material-ui/core';
 import RefreshIcon from '@material-ui/icons/Refresh';
 import { useSelector } from '@xstate/react';
 import * as React from 'react';
-import { useProject } from '../ServiceContext';
+import { useProject } from '../ProjectContext';
 
 function FetchProject() {
   return (

@@ -9,7 +9,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import { useSelector } from '@xstate/react';
 import React, { useReducer, useRef } from 'react';
-import { useRaw } from '../../../ServiceContext';
+import { useRaw } from '../../../ProjectContext';
 import ColorPalette from './ColorPalette';
 
 const useStyles = makeStyles(() => ({
@@ -51,12 +51,7 @@ function LayerOptions({ layer }) {
   const classes = useStyles();
   return (
     <>
-      <IconButton
-        aria-label='Remove channel'
-        size='small'
-        onClick={toggle}
-        ref={anchorRef}
-      >
+      <IconButton aria-label='Remove channel' size='small' onClick={toggle} ref={anchorRef}>
         <MoreVertIcon fontSize='small' />
       </IconButton>
       <Popper open={open} anchorEl={anchorRef.current} placement='bottom-end'>
