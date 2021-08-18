@@ -2,7 +2,7 @@ import { IconButton, TextField } from '@material-ui/core';
 import RefreshIcon from '@material-ui/icons/Refresh';
 import { useSelector } from '@xstate/react';
 import * as React from 'react';
-import { useDeepCellLabel } from '../ServiceContext';
+import { useProject } from '../ServiceContext';
 
 function FetchProject() {
   return (
@@ -13,13 +13,13 @@ function FetchProject() {
 }
 
 function ProjectForm() {
-  const deepCellLabel = useDeepCellLabel();
-  const currentId = useSelector(deepCellLabel, state => state.context.projectId);
+  const project = useProject();
+  const currentId = useSelector(project, state => state.context.projectId);
   const [id, setId] = React.useState(currentId);
 
   const handleSubmit = e => {
     e.preventDefault();
-    deepCellLabel.send({
+    project.send({
       type: 'SET_PROJECT',
       projectId: id,
     });
