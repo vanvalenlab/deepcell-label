@@ -141,4 +141,4 @@ const createProjectMachine = (projectId, bucket) =>
     }
   );
 
-export default createDeepcellLabelMachine;
+export default createProjectMachine;
