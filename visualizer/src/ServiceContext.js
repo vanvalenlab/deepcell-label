@@ -4,7 +4,7 @@ import service from './service/service';
 
 export const LabelContext = createContext();
 
-export const useDeepCellLabel = () => {
+export const useProject = () => {
   return useReturnContext(LabelContext);
 };
 
@@ -17,26 +17,26 @@ function useReturnContext(contextType) {
 }
 
 export function useSelect() {
-  const deepCellLabel = useDeepCellLabel();
-  const select = useSelector(deepCellLabel, state => state.context.selectRef);
+  const project = useProject();
+  const select = useSelector(project, state => state.context.selectRef);
   return select;
 }
 
 export function useApi() {
-  const deepCellLabel = useDeepCellLabel();
-  const api = useSelector(deepCellLabel, state => state.context.apiRef);
+  const project = useProject();
+  const api = useSelector(project, state => state.context.apiRef);
   return api;
 }
 
 export function useUndo() {
-  const deepCellLabel = useDeepCellLabel();
-  const undo = useSelector(deepCellLabel, state => state.context.undoRef);
+  const project = useProject();
+  const undo = useSelector(project, state => state.context.undoRef);
   return undo;
 }
 
 export function useImage() {
-  const deepCellLabel = useDeepCellLabel();
-  const image = useSelector(deepCellLabel, state => state.context.imageRef);
+  const project = useProject();
+  const image = useSelector(project, state => state.context.imageRef);
   return image;
 }
 
@@ -99,20 +99,20 @@ export function useComposeLayers() {
 }
 
 export function useCanvas() {
-  const deepCellLabel = useDeepCellLabel();
-  const canvas = useSelector(deepCellLabel, state => state.context.canvasRef);
+  const project = useProject();
+  const canvas = useSelector(project, state => state.context.canvasRef);
   return canvas;
 }
 
 export function useToolbar() {
-  const deepCellLabel = useDeepCellLabel();
-  const toolbar = useSelector(deepCellLabel, state => state.context.toolRef);
+  const project = useProject();
+  const toolbar = useSelector(project, state => state.context.toolRef);
   return toolbar;
 }
 
 export function useTool() {
-  const deepCellLabel = useDeepCellLabel();
-  const toolbar = useSelector(deepCellLabel, state => state.context.toolRef);
+  const project = useProject();
+  const toolbar = useSelector(project, state => state.context.toolRef);
   const tool = useSelector(toolbar, state => state.context.toolActor);
   return tool;
 }
