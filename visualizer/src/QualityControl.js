@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { interpret } from 'xstate';
 import Canvas from './Canvas/Canvas';
 import ImageControls from './Controls/ImageControls/ImageControls';
-import ProjectForm from './Controls/ProjectForm';
+import QCControls from './Controls/ImageControls/QCControls';
 import ActionButtons from './Controls/Toolbar/ActionButtons';
 import SelectedPalette from './Controls/Toolbar/SelectedPalette';
 import ToolButtons from './Controls/Toolbar/ToolButtons';
@@ -60,11 +60,17 @@ const qualityControl = interpret(machine); // , { devTools: true });
 qualityControl.start();
 window.qc = qualityControl;
 
+export function useQualityControl() {
+  return qualityControl;
+}
+
 function QualityControlWrapper() {
+  const qualityControl = useQualityControl();
   const project = useSelector(qualityControl, state => {
     const { projectId, projects } = state.context;
     return projects[projectId];
   });
+  console.log(project);
 
   return (
     <ProjectContext project={project}>
@@ -109,7 +115,7 @@ function QualityControl() {
       <Instructions />
       <Box className={styles.main}>
         <Box className={styles.controlPanelBox}>
-          <ProjectForm />
+          <QCControls />
           <ImageControls />
         </Box>
         <Box className={styles.toolbarBox}>
