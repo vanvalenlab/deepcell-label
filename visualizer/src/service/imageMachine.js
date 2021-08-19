@@ -1,4 +1,3 @@
-import { bind, unbind } from 'mousetrap';
 import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
 import createLabeledMachine from './labeled/labeledMachine';
 import createRawMachine from './raw/rawMachine';
@@ -9,11 +8,7 @@ const loadFrameState = {
   entry: ['loadRaw', 'loadLabeled'],
   initial: 'loading',
   states: {
-    idle: {
-      invoke: {
-        src: 'listenForFrameHotkeys',
-      },
-    },
+    idle: {},
     loading: {
       on: {
         RAW_LOADED: {
@@ -136,20 +131,6 @@ const createImageMachine = ({ projectId }) =>
       },
     },
     {
-      services: {
-        listenForFrameHotkeys:
-          ({ frame, numFrames }) =>
-          send => {
-            const prevFrame = (frame - 1 + numFrames) % numFrames;
-            const nextFrame = (frame + 1) % numFrames;
-            bind('a', () => send({ type: 'LOAD_FRAME', frame: prevFrame }));
-            bind('d', () => send({ type: 'LOAD_FRAME', frame: nextFrame }));
-            return () => {
-              unbind('a');
-              unbind('d');
-            };
-          },
-      },
       guards: {
         newLoadingFrame: (context, event) => context.loadingFrame !== event.frame,
         isLoaded: ({ rawLoaded, labeledLoaded }) => rawLoaded && labeledLoaded,
