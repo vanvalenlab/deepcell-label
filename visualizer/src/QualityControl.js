@@ -70,7 +70,6 @@ function QualityControlWrapper() {
     const { projectId, projects } = state.context;
     return projects[projectId];
   });
-  console.log(project);
 
   return (
     <ProjectContext project={project}>
