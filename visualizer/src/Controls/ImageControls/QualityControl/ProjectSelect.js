@@ -1,5 +1,6 @@
 import { Select, Tooltip } from '@material-ui/core';
 import { useSelector } from '@xstate/react';
+import { useEffect, useRef } from 'react';
 import { useQualityControl } from '../../../QualityControl';
 
 function ProjectSelect() {
@@ -8,8 +9,14 @@ function ProjectSelect() {
   const projectId = useSelector(qualityControl, state => state.context.projectId);
   const projectIds = useSelector(qualityControl, state => state.context.projectIds);
 
+  // Adds mousetrap class so hotkeys work after using switch
+  const inputRef = useRef();
+  useEffect(() => {
+    const select = inputRef.current;
+    select.className = `${select.className}  mousetrap`;
+  }, []);
+
   const onChange = e => {
-    console.log(e.target.value, typeof e.target.value);
     qualityControl.send({ type: 'SET_PROJECT', projectId: e.target.value });
   };
 
@@ -21,7 +28,7 @@ function ProjectSelect() {
 
   return (
     <Tooltip title={tooltip}>
-      <Select native value={projectId} onChange={onChange}>
+      <Select native value={projectId} onChange={onChange} inputRef={inputRef}>
         {projectIds.map(projectId => (
           <option key={projectId} value={projectId}>
             {projectId}
