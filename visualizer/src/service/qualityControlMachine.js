@@ -23,8 +23,8 @@ function createQualityControlMachine(projectIds, bucket) {
       },
       on: {
         SET_PROJECT: { actions: 'setProject' },
-        ACCEPT: { actions: 'accept' },
-        REJECT: { actions: 'reject' },
+        ACCEPT: { actions: ['accept', 'nextProject'] },
+        REJECT: { actions: ['reject', 'nextProject'] },
       },
     },
     {
@@ -52,6 +52,13 @@ function createQualityControlMachine(projectIds, bucket) {
           judgments: ({ judgments, projectId }) => {
             judgments[projectId] = false;
             return judgments;
+          },
+        }),
+        nextProject: assign({
+          projectId: ({ judgments, projectIds, projectId }) => {
+            const index = projectIds.indexOf(projectId);
+            const reordered = projectIds.slice(-index).concat(projectIds.slice(0, index));
+            return reordered.find(id => !(id in judgments)) || projectId;
           },
         }),
       },
