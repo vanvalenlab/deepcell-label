@@ -40,34 +40,58 @@ export function useImage() {
 }
 
 export function useRaw() {
-  const image = useImage();
-  const raw = useSelector(image, state => state.context.rawRef);
+  const project = useProject();
+  const raw = useSelector(project, state => {
+    const image = state.context.imageRef;
+    const raw = image.state.context.rawRef;
+    return raw;
+  });
   return raw;
 }
 
 export function useLabeled() {
-  const image = useImage();
-  const labeled = useSelector(image, state => state.context.labeledRef);
+  const project = useProject();
+  const labeled = useSelector(project, state => {
+    const image = state.context.imageRef;
+    const labeled = image.state.context.labeledRef;
+    return labeled;
+  });
   return labeled;
 }
 
 export function useFeature() {
-  const labeled = useLabeled();
-  const features = useSelector(labeled, state => state.context.features);
-  const feature = useSelector(labeled, state => state.context.feature);
-  return features[feature];
+  const project = useProject();
+  const feature = useSelector(project, state => {
+    const image = state.context.imageRef;
+    const labeled = image.state.context.labeledRef;
+    const features = labeled.state.context.features;
+    const feature = labeled.state.context.feature;
+    return features[feature];
+  });
+  return feature;
 }
 
-export function useChannel(channel) {
-  const raw = useRaw();
-  const channels = useSelector(raw, state => state.context.channels);
-  return channels[channel];
+export function useChannel(channelId) {
+  const project = useProject();
+  const channel = useSelector(project, state => {
+    const image = state.context.imageRef;
+    const raw = image.state.context.rawRef;
+    const channels = raw.state.context.channels;
+    return channels[channelId];
+  });
+  return channel;
 }
 
-export function useLayer(layer) {
-  const raw = useRaw();
-  const layers = useSelector(raw, state => state.context.layers);
-  return layers[layer];
+export function useLayers() {
+  const project = useProject();
+  const layers = useSelector(project, state => {
+    const image = state.context.imageRef;
+    const raw = image.state.context.rawRef;
+    const color = raw.state.context.color;
+    const layers = color.state.context.layers;
+    return layers;
+  });
+  return layers;
 }
 
 export function useComposeLayers() {
@@ -111,8 +135,11 @@ export function useToolbar() {
 
 export function useTool() {
   const project = useProject();
-  const toolbar = useSelector(project, state => state.context.toolRef);
-  const tool = useSelector(toolbar, state => state.context.toolActor);
+  const tool = useSelector(project, state => {
+    const toolbar = state.context.toolRef;
+    const tool = toolbar.state.context.toolActor;
+    return tool;
+  });
   return tool;
 }
 
