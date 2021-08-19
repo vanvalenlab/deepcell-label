@@ -31,7 +31,7 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
   useEffect(() => {
     const channelCanvas = canvasRef.current;
     ctxRef.current = channelCanvas.getContext('2d');
-  }, [canvasRef]);
+  }, []);
 
   useEffect(() => {
     // draw image onto canvas to get image data
