@@ -5,14 +5,15 @@ import ThumbUpIcon from '@material-ui/icons/ThumbUp';
 import React from 'react';
 import { useQualityControl } from '../../../QualityControl';
 
-const useStyles = makeStyles({
+const useStyles = makeStyles(theme => ({
   box: {
     display: 'flex',
   },
   button: {
     width: '50%',
+    margin: theme.spacing(1),
   },
-});
+}));
 
 function ReviewButtons() {
   const styles = useStyles();
@@ -25,6 +26,7 @@ function ReviewButtons() {
         variant='contained'
         color='primary'
         onClick={() => qualityControl.send('ACCEPT')}
+        style={{ marginLeft: 0 }}
       >
         Accept
         <ThumbUpIcon />
@@ -34,6 +36,7 @@ function ReviewButtons() {
         variant='contained'
         color='secondary'
         onClick={() => qualityControl.send('REJECT')}
+        style={{ marginRight: 0 }}
       >
         Reject
         <ThumbDownIcon />
