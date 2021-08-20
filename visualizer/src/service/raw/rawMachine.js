@@ -57,7 +57,6 @@ const colorState = {
 
 const grayscaleState = {
   entry: [sendParent('GRAYSCALE'), assign({ colorMode: ({ grayscale }) => grayscale })],
-  invoke: [{ src: 'listenForResetHotkey' }],
   on: {
     TOGGLE_COLOR_MODE: 'color',
     RESET: { actions: 'forwardToChannel' },
@@ -143,10 +142,6 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
               unbind('c');
             };
           },
-        listenForResetHotkey: () => send => {
-          bind('0', () => send('RESET'));
-          return () => unbind('0');
-        },
       },
       guards: {
         isLoadingFrame: ({ loadingFrame }, { frame }) => loadingFrame === frame,

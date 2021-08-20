@@ -181,6 +181,11 @@ const GrayscaleControls = () => {
 
   const styles = useStyles();
 
+  useEffect(() => {
+    bind('0', () => raw.send('RESET'));
+    return () => unbind('0');
+  }, [raw]);
+
   return (
     <Grid style={{ width: '100%' }} item>
       <Grid container direction='column' m={2} justify='center' className={styles.root}>
