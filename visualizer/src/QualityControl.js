@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { interpret } from 'xstate';
 import Canvas from './Canvas/Canvas';
 import ImageControls from './Controls/ImageControls/ImageControls';
-import QCControls from './Controls/ImageControls/QCControls';
+import QCControls from './Controls/QCControls';
 import ActionButtons from './Controls/Toolbar/ActionButtons';
 import SelectedPalette from './Controls/Toolbar/SelectedPalette';
 import ToolButtons from './Controls/Toolbar/ToolButtons';
