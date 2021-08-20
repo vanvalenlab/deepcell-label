@@ -61,12 +61,11 @@ const InvertToggle = ({ channel }) => {
 const ChannelSelector = () => {
   const raw = useRaw();
   const names = useSelector(raw, state => state.context.channelNames);
-
-  const grayscale = useSelector(raw, state => state.context.colorMode);
-  const channel = useSelector(grayscale, state => state.context.channel);
+  const channel = useSelector(raw, state => state.context.channel);
+  const numChannels = useSelector(raw, state => state.context.numChannels);
 
   const onChange = e => {
-    grayscale.send({ type: 'LOAD_CHANNEL', channel: Number(e.target.value) });
+    raw.send({ type: 'LOAD_CHANNEL', channel: Number(e.target.value) });
   };
 
   const tooltip = (
@@ -74,6 +73,17 @@ const ChannelSelector = () => {
       Cycle with <kbd>C</kbd> or <kbd>Shift</kbd> + <kbd>C</kbd>
     </span>
   );
+
+  useEffect(() => {
+    const prevChannel = (channel - 1 + numChannels) % numChannels;
+    const nextChannel = (channel + 1) % numChannels;
+    bind('shift+c', () => raw.send({ type: 'LOAD_CHANNEL', channel: prevChannel }));
+    bind('c', () => raw.send({ type: 'LOAD_CHANNEL', channel: nextChannel }));
+    return () => {
+      unbind('shift+c');
+      unbind('c');
+    };
+  }, [raw, channel, numChannels]);
 
   return (
     <Tooltip title={tooltip}>
