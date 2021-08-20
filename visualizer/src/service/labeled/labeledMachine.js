@@ -45,11 +45,7 @@ const frameState = {
 const featureState = {
   initial: 'loading',
   states: {
-    idle: {
-      invoke: {
-        src: 'listenForFeatureHotkeys',
-      },
-    },
+    idle: {},
     loading: {
       on: {
         LABELED_LOADED: {
@@ -119,18 +115,6 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) =>
     },
     {
       services: {
-        listenForFeatureHotkeys:
-          ({ feature, numFeatures }) =>
-          send => {
-            const prevFeature = (feature - 1 + numFeatures) % numFeatures;
-            const nextFeature = (feature + 1) % numFeatures;
-            bind('shift+f', () => send({ type: 'LOAD_FEATURE', feature: prevFeature }));
-            bind('f', () => send({ type: 'LOAD_FEATURE', feature: nextFeature }));
-            return () => {
-              unbind('shift+f');
-              unbind('f');
-            };
-          },
         listenForHighlightHotkey: () => send => {
           bind('h', () => send('TOGGLE_HIGHLIGHT'));
           return () => unbind('h');
