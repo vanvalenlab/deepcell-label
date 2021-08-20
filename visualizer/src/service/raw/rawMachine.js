@@ -76,9 +76,6 @@ const grayscaleState = {
 };
 
 const colorModeState = {
-  invoke: {
-    src: 'listenForColorModeHotkey',
-  },
   initial: 'color',
   states: {
     grayscale: grayscaleState,
@@ -126,10 +123,6 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
     },
     {
       services: {
-        listenForColorModeHotkey: () => send => {
-          bind('y', () => send('TOGGLE_COLOR_MODE'));
-          return () => unbind('y');
-        },
         listenForChannelHotkeys:
           ({ channel, numChannels }) =>
           send => {

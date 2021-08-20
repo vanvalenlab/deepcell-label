@@ -3,6 +3,7 @@ import FormGroup from '@material-ui/core/FormGroup';
 import Switch from '@material-ui/core/Switch';
 import Tooltip from '@material-ui/core/Tooltip';
 import { useSelector } from '@xstate/react';
+import { bind, unbind } from 'mousetrap';
 import React, { useEffect, useRef } from 'react';
 import { useImage, useRaw } from '../../../ProjectContext';
 
@@ -10,7 +11,6 @@ function ColorModeToggle() {
   const image = useImage();
   const grayscale = useSelector(image, state => state.context.grayscale);
   const raw = useRaw();
-  const { send } = raw;
 
   // Adds mousetrap class so hotkeys work after using switch
   const inputRef = useRef();
@@ -25,6 +25,11 @@ function ColorModeToggle() {
     </span>
   );
 
+  useEffect(() => {
+    bind('y', () => raw.send('TOGGLE_COLOR_MODE'));
+    return () => unbind('y');
+  }, [raw]);
+
   return (
     <Tooltip title={toggleTooltip}>
       <FormGroup row>
@@ -33,7 +38,7 @@ function ColorModeToggle() {
             <Switch
               size='small'
               checked={!grayscale}
-              onChange={() => send('TOGGLE_COLOR_MODE')}
+              onChange={() => raw.send('TOGGLE_COLOR_MODE')}
               inputRef={inputRef}
             />
           }
