@@ -1,13 +1,5 @@
 import { bind, unbind } from 'mousetrap';
-import {
-  actions,
-  assign,
-  forwardTo,
-  Machine,
-  send,
-  sendParent,
-  spawn,
-} from 'xstate';
+import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
 import createChannelMachine from './channelMachine';
 import createColorMachine from './colorMachine';
 import createGrayscaleMachine from './grayscaleMachine';
@@ -64,11 +56,8 @@ const colorState = {
 };
 
 const grayscaleState = {
-  entry: [
-    sendParent('GRAYSCALE'),
-    assign({ colorMode: ({ grayscale }) => grayscale }),
-  ],
-  invoke: [{ src: 'listenForInvertHotkey' }, { src: 'listenForResetHotkey' }],
+  entry: [sendParent('GRAYSCALE'), assign({ colorMode: ({ grayscale }) => grayscale })],
+  invoke: [{ src: 'listenForResetHotkey' }],
   on: {
     TOGGLE_COLOR_MODE: 'color',
     RESET: { actions: 'forwardToChannel' },
@@ -147,21 +136,13 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
           send => {
             const prevChannel = (channel - 1 + numChannels) % numChannels;
             const nextChannel = (channel + 1) % numChannels;
-            bind('shift+c', () =>
-              send({ type: 'LOAD_CHANNEL', channel: prevChannel })
-            );
-            bind('c', () =>
-              send({ type: 'LOAD_CHANNEL', channel: nextChannel })
-            );
+            bind('shift+c', () => send({ type: 'LOAD_CHANNEL', channel: prevChannel }));
+            bind('c', () => send({ type: 'LOAD_CHANNEL', channel: nextChannel }));
             return () => {
               unbind('shift+c');
               unbind('c');
             };
           },
-        listenForInvertHotkey: () => send => {
-          bind('i', () => send('TOGGLE_INVERT'));
-          return () => unbind('i');
-        },
         listenForResetHotkey: () => send => {
           bind('0', () => send('RESET'));
           return () => unbind('0');
@@ -169,8 +150,7 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
       },
       guards: {
         isLoadingFrame: ({ loadingFrame }, { frame }) => loadingFrame === frame,
-        diffLoadingFrame: ({ loadingFrame }, { frame }) =>
-          loadingFrame !== frame,
+        diffLoadingFrame: ({ loadingFrame }, { frame }) => loadingFrame !== frame,
       },
       actions: {
         /** Create a channel actor for each channel */
@@ -179,18 +159,14 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
             return Array(numChannels)
               .fill(0)
               .map((val, index) =>
-                spawn(
-                  createChannelMachine(projectId, index, numFrames),
-                  `channel${index}`
-                )
+                spawn(createChannelMachine(projectId, index, numFrames), `channel${index}`)
               );
           },
           channelNames: ({ numChannels }) =>
             [...Array(numChannels).keys()].map(i => `channel ${i}`),
         }),
         spawnColorModes: assign({
-          grayscale: context =>
-            spawn(createGrayscaleMachine(context), 'grayscale'),
+          grayscale: context => spawn(createGrayscaleMachine(context), 'grayscale'),
           color: context => spawn(createColorMachine(context), 'color'),
         }),
         startPreload: pure(({ channels }) =>
@@ -202,9 +178,7 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
         setFrame: assign((_, { frame }) => ({ frame })),
         setChannel: assign((_, { channel }) => ({ channel })),
         forwardToColorMode: forwardTo(({ colorMode }) => colorMode),
-        forwardToChannel: forwardTo(
-          ({ channel, channels }) => channels[channel]
-        ),
+        forwardToChannel: forwardTo(({ channel, channels }) => channels[channel]),
         save: respond(({ channel }) => ({ type: 'RESTORE', channel })),
         restore: send((_, { channel }) => ({ type: 'LOAD_CHANNEL', channel })),
       },

@@ -7,6 +7,7 @@ import Slider from '@material-ui/core/Slider';
 import Switch from '@material-ui/core/Switch';
 import Tooltip from '@material-ui/core/Tooltip';
 import { useSelector } from '@xstate/react';
+import { bind, unbind } from 'mousetrap';
 import React, { useEffect, useRef } from 'react';
 import { useRaw } from '../../../ProjectContext';
 
@@ -31,6 +32,11 @@ const InvertToggle = ({ channel }) => {
       Toggle with <kbd>I</kbd>
     </span>
   );
+
+  useEffect(() => {
+    bind('i', () => channel.send('TOGGLE_INVERT'));
+    return () => unbind('i');
+  }, [channel]);
 
   return (
     <Tooltip title={tooltip}>
