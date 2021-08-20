@@ -104,7 +104,7 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) =>
         feature: featureState,
         restore: restoreState,
       },
-      invoke: [{ src: 'listenForHighlightHotkey' }, { src: 'listenForOpacityHotkey' }],
+      invoke: [{ src: 'listenForHighlightHotkey' }],
       on: {
         TOGGLE_HIGHLIGHT: { actions: 'toggleHighlight' },
         TOGGLE_OUTLINE: { actions: 'toggleOutline' },
@@ -134,10 +134,6 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) =>
         listenForHighlightHotkey: () => send => {
           bind('h', () => send('TOGGLE_HIGHLIGHT'));
           return () => unbind('h');
-        },
-        listenForOpacityHotkey: () => send => {
-          bind('z', () => send('CYCLE_OPACITY'));
-          return () => unbind('z');
         },
       },
       guards: {
