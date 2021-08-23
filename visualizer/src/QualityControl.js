@@ -12,6 +12,8 @@ import ActionButtons from './Controls/Toolbar/ActionButtons';
 import SelectedPalette from './Controls/Toolbar/SelectedPalette';
 import ToolButtons from './Controls/Toolbar/ToolButtons';
 import UndoRedo from './Controls/Toolbar/UndoRedo';
+import DivisionAlerts from './Controls/Tracking/Alerts/DivisionAlerts';
+import Timeline from './Controls/Tracking/Timeline';
 import Footer from './Footer/Footer';
 import Instructions from './Instructions/Instructions';
 import Navbar from './Navbar';
@@ -116,6 +118,8 @@ function QualityControl() {
         <Box className={styles.controlPanelBox}>
           <QCControls />
           <ImageControls />
+          {labeled && <Timeline />}
+          <DivisionAlerts />
         </Box>
         <Box className={styles.toolbarBox}>
           <UndoRedo />
