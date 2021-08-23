@@ -58,8 +58,6 @@ const colorModeState = {
 
 const useToolActions = {
   useBrush: pure(({ foreground: fg, background: bg }) => [
-    send({ type: 'FOREGROUND', foreground: fg === 0 ? bg : fg }),
-    send({ type: 'BACKGROUND', background: 0 }),
     assign({
       tool: 'brush',
       toolActor: context => spawn(createBrushMachine(context), 'tool'),
@@ -67,8 +65,6 @@ const useToolActions = {
     sendParent({ type: 'TOOL', tool: 'brush' }),
   ]),
   useEraser: pure(({ foreground: fg, background: bg }) => [
-    send({ type: 'FOREGROUND', foreground: 0 }),
-    send({ type: 'BACKGROUND', background: bg === 0 ? fg : bg }),
     assign({
       tool: 'brush',
       toolActor: context => spawn(createBrushMachine(context), 'tool'),
