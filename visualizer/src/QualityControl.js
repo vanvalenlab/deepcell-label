@@ -53,7 +53,7 @@ const useStyles = makeStyles(theme => ({
 
 const location = window.location;
 const search = new URLSearchParams(location.search);
-const projectIds = search.get('projectIds').split(',');
+const projectIds = search.get('projectIds')?.split(',') || [];
 const bucket = search.has('bucket') ? search.get('bucket') : 'caliban-output';
 const machine = createQualityControlMachine(projectIds, bucket);
 const qualityControl = interpret(machine); // , { devTools: true });
