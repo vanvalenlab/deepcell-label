@@ -9,7 +9,8 @@ import HelpOutlineIcon from '@material-ui/icons/HelpOutline';
 import SubdirectoryArrowLeftIcon from '@material-ui/icons/SubdirectoryArrowLeft';
 import SubdirectoryArrowRightIcon from '@material-ui/icons/SubdirectoryArrowRight';
 import { useSelector } from '@xstate/react';
-import React, { useState } from 'react';
+import { bind, unbind } from 'mousetrap';
+import React, { useEffect, useState } from 'react';
 import { useFeature, useLabeled, useSelect } from '../../ProjectContext';
 
 const useStyles = makeStyles(theme => ({
@@ -89,14 +90,6 @@ function SwapIcon() {
 
 export function SwapButton() {
   const select = useSelect();
-  const { send } = select;
-  const foreground = useSelector(select, state => state.context.foreground);
-  const background = useSelector(select, state => state.context.background);
-
-  const handleClick = () => {
-    send('FOREGROUND', { foreground: background });
-    send('BACKGROUND', { background: foreground });
-  };
 
   const tooltipText = (
     <span>
@@ -104,9 +97,14 @@ export function SwapButton() {
     </span>
   );
 
+  useEffect(() => {
+    bind('x', () => select.send('SWITCH'));
+    return () => unbind('x');
+  }, [select]);
+
   return (
     <Tooltip title={tooltipText}>
-      <IconButton color='primary' onClick={handleClick}>
+      <IconButton color='primary' onClick={() => select.send('SWITCH')}>
         <SwapIcon />
       </IconButton>
     </Tooltip>
@@ -128,6 +126,19 @@ function ForegroundBox() {
   const feature = useFeature(featureIndex);
   const colors = useSelector(feature, state => state.context.colors);
   const color = colors[foreground];
+
+  useEffect(() => {
+    bind('n', () => select.send('NEW_FOREGROUND'));
+    bind('esc', () => select.send('RESET_FOREGROUND'));
+    bind('[', () => select.send('PREV_FOREGROUND'));
+    bind(']', () => select.send('NEXT_FOREGROUND'));
+    return () => {
+      unbind('n');
+      unbind('esc');
+      unbind('[');
+      unbind(']');
+    };
+  }, [select]);
 
   const newTooltip = (
     <span>
@@ -210,7 +221,6 @@ function ForegroundBox() {
 
 function BackgroundBox() {
   const select = useSelect();
-  const { send } = select;
   const background = useSelector(select, state => state.context.background);
 
   const [showButtons, setShowButtons] = useState(false);
@@ -223,6 +233,17 @@ function BackgroundBox() {
   const feature = useFeature(featureIndex);
   const colors = useSelector(feature, state => state.context.colors);
   const color = colors[background];
+
+  useEffect(() => {
+    bind('esc', () => select.send('RESET_BACKGROUND'));
+    bind('{', () => select.send('PREV_BACKGROUND'));
+    bind('}', () => select.send('NEXT_BACKGROUND'));
+    return () => {
+      unbind('esc');
+      unbind('{');
+      unbind('}');
+    };
+  }, [select]);
 
   const resetTooltip = (
     <span>
@@ -254,7 +275,7 @@ function BackgroundBox() {
           <IconButton
             className={styles.topRight}
             size='small'
-            onClick={() => send('RESET_BACKGROUND')}
+            onClick={() => select.send('RESET_BACKGROUND')}
           >
             <ClearIcon color={buttonColor} />
           </IconButton>
@@ -265,7 +286,7 @@ function BackgroundBox() {
           <IconButton
             className={styles.bottomLeft}
             size='small'
-            onClick={() => send('PREV_BACKGROUND')}
+            onClick={() => select.send('PREV_BACKGROUND')}
           >
             <ArrowBackIosIcon color={buttonColor} />
           </IconButton>
@@ -276,7 +297,7 @@ function BackgroundBox() {
           <IconButton
             className={styles.bottomRight}
             size='small'
-            onClick={() => send('NEXT_BACKGROUND')}
+            onClick={() => select.send('NEXT_BACKGROUND')}
           >
             <ArrowBackIosIcon color={buttonColor} style={{ transform: 'rotate(180deg)' }} />
           </IconButton>
