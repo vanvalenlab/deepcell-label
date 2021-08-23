@@ -1,12 +1,7 @@
 import { Box, makeStyles, Slider } from '@material-ui/core';
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useState } from 'react';
-import {
-  useFeature,
-  useImage,
-  useLabeled,
-  useTracking,
-} from '../../ServiceContext';
+import { useFeature, useImage, useLabeled, useTracking } from '../../ProjectContext';
 
 function useDivision(label) {
   const tracking = useTracking();
@@ -125,12 +120,7 @@ function FrameSlider({ label }) {
             }}
           >
             {frames.map(frame => (
-              <FrameBox
-                frame={frame}
-                numFrames={numFrames}
-                color={color}
-                key={frame}
-              />
+              <FrameBox frame={frame} numFrames={numFrames} color={color} key={frame} />
             ))}
           </Box>
         </Box>

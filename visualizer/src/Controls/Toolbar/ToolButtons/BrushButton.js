@@ -1,6 +1,6 @@
 import { useSelector } from '@xstate/react';
 import React, { useCallback } from 'react';
-import { useSelect, useToolbar } from '../../../ServiceContext';
+import { useSelect, useToolbar } from '../../../ProjectContext';
 import ToolButton from './ToolButton';
 
 function BrushButton(props) {

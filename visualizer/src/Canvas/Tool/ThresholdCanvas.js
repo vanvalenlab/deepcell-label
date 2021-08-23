@@ -1,6 +1,6 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-import { useCanvas, useTool } from '../../ServiceContext';
+import { useCanvas, useTool } from '../../ProjectContext';
 import { drawBox } from '../canvasUtils';
 
 const ThresholdCanvas = ({ className }) => {
@@ -54,13 +54,7 @@ const ThresholdCanvas = ({ className }) => {
 
   return (
     <>
-      <canvas
-        id='threshold-processing'
-        hidden={true}
-        ref={boxCanvasRef}
-        width={sw}
-        height={sh}
-      />
+      <canvas id='threshold-processing' hidden={true} ref={boxCanvasRef} width={sw} height={sh} />
       <canvas
         id='threshold-canvas'
         ref={canvasRef}

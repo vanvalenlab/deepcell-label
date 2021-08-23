@@ -1,4 +1,3 @@
-import { bind, unbind } from 'mousetrap';
 import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
 import createChannelMachine from './channelMachine';
 import createColorMachine from './colorMachine';
@@ -57,7 +56,6 @@ const colorState = {
 
 const grayscaleState = {
   entry: [sendParent('GRAYSCALE'), assign({ isGrayscale: true })],
-  invoke: [{ src: 'listenForInvertHotkey' }, { src: 'listenForResetHotkey' }],
   on: {
     TOGGLE_COLOR_MODE: 'color',
     RESET: { actions: 'forwardToChannel' },
@@ -65,9 +63,6 @@ const grayscaleState = {
   initial: 'idle',
   states: {
     idle: {
-      invoke: {
-        src: 'listenForChannelHotkeys',
-      },
       on: {
         // restart channel hotkey
         CHANNEL: { target: 'idle', actions: 'setChannel', internal: false },
@@ -129,28 +124,6 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
       },
     },
     {
-      services: {
-        listenForChannelHotkeys:
-          ({ channel, numChannels }) =>
-          send => {
-            const prevChannel = (channel - 1 + numChannels) % numChannels;
-            const nextChannel = (channel + 1) % numChannels;
-            bind('shift+c', () => send({ type: 'LOAD_CHANNEL', channel: prevChannel }));
-            bind('c', () => send({ type: 'LOAD_CHANNEL', channel: nextChannel }));
-            return () => {
-              unbind('shift+c');
-              unbind('c');
-            };
-          },
-        listenForInvertHotkey: () => send => {
-          bind('i', () => send('TOGGLE_INVERT'));
-          return () => unbind('i');
-        },
-        listenForResetHotkey: () => send => {
-          bind('0', () => send('RESET'));
-          return () => unbind('0');
-        },
-      },
       guards: {
         isLoadingFrame: ({ loadingFrame }, { frame }) => loadingFrame === frame,
         diffLoadingFrame: ({ loadingFrame }, { frame }) => loadingFrame !== frame,

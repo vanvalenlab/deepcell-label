@@ -1,21 +1,22 @@
 import Box from '@material-ui/core/Box';
 import { makeStyles } from '@material-ui/core/styles';
+import { useSelector } from '@xstate/react';
 import { ResizeSensor } from 'css-element-queries';
 import debounce from 'lodash.debounce';
 import { useEffect, useRef, useState } from 'react';
+import { interpret } from 'xstate';
 import Canvas from './Canvas/Canvas';
 import ImageControls from './Controls/ImageControls/ImageControls';
-import ProjectForm from './Controls/ProjectForm';
+import QCControls from './Controls/QCControls';
 import ActionButtons from './Controls/Toolbar/ActionButtons';
 import SelectedPalette from './Controls/Toolbar/SelectedPalette';
 import ToolButtons from './Controls/Toolbar/ToolButtons';
 import UndoRedo from './Controls/Toolbar/UndoRedo';
-import DivisionAlerts from './Controls/Tracking/Alerts/DivisionAlerts';
-import Timeline from './Controls/Tracking/Timeline';
 import Footer from './Footer/Footer';
 import Instructions from './Instructions/Instructions';
 import Navbar from './Navbar';
-import { useCanvas, useLabeled } from './ProjectContext';
+import ProjectContext, { useCanvas, useLabeled } from './ProjectContext';
+import createQualityControlMachine from './service/qualityControlMachine';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -50,7 +51,34 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-function Label() {
+const location = window.location;
+const search = new URLSearchParams(location.search);
+const projectIds = search.get('projectIds').split(',');
+const bucket = search.has('bucket') ? search.get('bucket') : 'caliban-output';
+const machine = createQualityControlMachine(projectIds, bucket);
+const qualityControl = interpret(machine); // , { devTools: true });
+qualityControl.start();
+window.qc = qualityControl;
+
+export function useQualityControl() {
+  return qualityControl;
+}
+
+function QualityControlWrapper() {
+  const qualityControl = useQualityControl();
+  const project = useSelector(qualityControl, state => {
+    const { projectId, projects } = state.context;
+    return projects[projectId];
+  });
+
+  return (
+    <ProjectContext project={project}>
+      <QualityControl />
+    </ProjectContext>
+  );
+}
+
+function QualityControl() {
   const styles = useStyles();
 
   const canvasBoxRef = useRef({ offsetWidth: 0, offsetHeight: 0 });
@@ -86,10 +114,8 @@ function Label() {
       <Instructions />
       <Box className={styles.main}>
         <Box className={styles.controlPanelBox}>
-          <ProjectForm />
+          <QCControls />
           <ImageControls />
-          {labeled && <Timeline />}
-          <DivisionAlerts />
         </Box>
         <Box className={styles.toolbarBox}>
           <UndoRedo />
@@ -106,4 +132,4 @@ function Label() {
   );
 }
 
-export default Label;
+export default QualityControlWrapper;

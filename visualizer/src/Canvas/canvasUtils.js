@@ -47,14 +47,7 @@ export function opacityImageData(imageData, opacity) {
  * @param {Array} fColor RGBA color
  * @param {Array} bColor RGBA color
  */
-export function outlineSelected(
-  imageData,
-  labeledArray,
-  foreground,
-  background,
-  fColor,
-  bColor
-) {
+export function outlineSelected(imageData, labeledArray, foreground, background, fColor, bColor) {
   const [fr, fg, fb, fa] = fColor;
   const [br, bg, bb, ba] = bColor;
   const { data, width, height } = imageData;

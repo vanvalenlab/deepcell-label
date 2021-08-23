@@ -2,7 +2,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import Alert from '@material-ui/lab/Alert';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useTracking } from '../../../ServiceContext';
+import { useTracking } from '../../../ProjectContext';
 import { daughterBeforeDivision, formatFrames } from '../trackingUtils';
 import AlertGroup from './AlertGroup';
 

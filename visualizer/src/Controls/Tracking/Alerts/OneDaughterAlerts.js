@@ -2,7 +2,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import Alert from '@material-ui/lab/Alert';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useImage, useSelect, useTracking } from '../../../ServiceContext';
+import { useImage, useSelect, useTracking } from '../../../ProjectContext';
 import { oneDaughter } from '../trackingUtils';
 import AlertGroup from './AlertGroup';
 
@@ -58,9 +58,7 @@ function OneDaughterAlerts() {
   const count = oneDaughterAlerts.length;
 
   const header =
-    count === 1
-      ? `1 division with one daughter`
-      : `${count} divisions with one daughter`;
+    count === 1 ? `1 division with one daughter` : `${count} divisions with one daughter`;
 
   return (
     count > 0 && (

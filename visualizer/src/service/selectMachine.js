@@ -1,4 +1,3 @@
-import { bind, unbind } from 'mousetrap';
 import { actions, assign, Machine, send, sendParent } from 'xstate';
 
 const { pure } = actions;
@@ -95,7 +94,6 @@ const setActions = {
 const selectMachine = Machine(
   {
     id: 'select',
-    invoke: { src: 'listenForSelectHotkeys' },
     context: {
       selected: 1,
       foreground: 1,
@@ -141,29 +139,6 @@ const selectMachine = Machine(
     },
   },
   {
-    services: {
-      listenForSelectHotkeys: () => send => {
-        bind('x', () => send('SWITCH'));
-        bind('n', () => send('NEW_FOREGROUND'));
-        bind('esc', () => {
-          send('RESET_FOREGROUND');
-          send('RESET_BACKGROUND');
-        });
-        bind('[', () => send('PREV_FOREGROUND'));
-        bind(']', () => send('NEXT_FOREGROUND'));
-        bind('{', () => send('PREV_BACKGROUND'));
-        bind('}', () => send('NEXT_BACKGROUND'));
-        return () => {
-          unbind('x');
-          unbind('n');
-          unbind('esc');
-          unbind('[');
-          unbind(']');
-          unbind('{');
-          unbind('}');
-        };
-      },
-    },
     guards: {
       shift: (_, event) => event.shiftKey,
       doubleClick: (_, event) => event.detail === 2,
