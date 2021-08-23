@@ -49,16 +49,7 @@ const createProjectMachine = (projectId, bucket) =>
             },
           },
         },
-        idle: {
-          on: {
-            SET_PROJECT: {
-              target: 'setUpActors',
-              actions: assign({
-                projectId: (_, { projectId }) => projectId,
-              }),
-            },
-          },
-        },
+        idle: {},
       },
       on: {
         // from various
