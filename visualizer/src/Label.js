@@ -5,7 +5,6 @@ import debounce from 'lodash.debounce';
 import { useEffect, useRef, useState } from 'react';
 import Canvas from './Canvas/Canvas';
 import ImageControls from './Controls/ImageControls/ImageControls';
-import ProjectForm from './Controls/ProjectForm';
 import ActionButtons from './Controls/Toolbar/ActionButtons';
 import SelectedPalette from './Controls/Toolbar/SelectedPalette';
 import ToolButtons from './Controls/Toolbar/ToolButtons';
@@ -84,7 +83,6 @@ function Label() {
       <Instructions />
       <Box className={styles.main}>
         <Box className={styles.controlPanelBox}>
-          <ProjectForm />
           <ImageControls />
         </Box>
         <Box className={styles.toolbarBox}>
