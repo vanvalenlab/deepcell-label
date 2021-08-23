@@ -18,8 +18,8 @@ function App() {
           <QualityControl />
         </Route>
         <Route path='/'>
-          <ProjectContext>
-            <Label project={service} />
+          <ProjectContext project={service}>
+            <Label />
           </ProjectContext>
         </Route>
       </Switch>
