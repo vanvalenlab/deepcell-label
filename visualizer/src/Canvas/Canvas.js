@@ -37,9 +37,9 @@ export const Canvas = () => {
   const sh = useSelector(canvas, state => state.context.height);
   const scale = useSelector(canvas, state => state.context.scale);
 
-  const grab = useSelector(canvas, state => state.matches('pan.hand'));
-  const grabbing = useSelector(canvas, state => state.matches('pan.hand.panning'));
-  const dragged = useSelector(canvas, state => state.matches('pan.tool.clickTool.dragged'));
+  const grab = useSelector(canvas, state => state.matches('pan.grab'));
+  const grabbing = useSelector(canvas, state => state.matches('pan.grab.panning'));
+  const dragged = useSelector(canvas, state => state.matches('pan.interactive.panOnDrag.dragged'));
 
   const cursor = grabbing || dragged ? 'grabbing' : grab ? 'grab' : 'crosshair';
 
