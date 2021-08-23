@@ -1,25 +1,38 @@
+// Manages zooming, panning, and interacting with the canvas
+// Interactions sent as LABEL, COORDINATES, and mouseup events to parent
+// LABEL event sent when the label below the cursor changes
+// COORDINATES event sent when the pixel below the cursor changes
+// mouseup event sent when not panning
+
+// Panning interface:
+// Hold space always enables click & drag to pan
+// SET_PAN_ON_DRAG event configures whether click & drag alone pans the canvas
+// Features that need dragging interactions,
+// like drawing or creating a bounding box, should set panOnDrag to false
+
 import { actions, assign, Machine, send, sendParent } from 'xstate';
 
 const { respond } = actions;
 
-// Sends mouseup events to tools with clicking only
-const clickToolState = {
+// Pans when dragging
+const panOnDragState = {
   initial: 'idle',
   states: {
     idle: {
       entry: 'resetMove',
       on: {
         mousedown: 'pressed',
-        mousemove: { actions: 'coordinates' },
+        mousemove: { actions: 'computeCoordinates' },
       },
     },
+    // Sends mouseup events when panning < 10 pixels
     pressed: {
       on: {
         mousemove: [
           { cond: 'moved', target: 'dragged', actions: 'pan' },
           { actions: ['updateMove', 'pan'] },
         ],
-        mouseup: { target: 'idle', actions: sendParent((c, e) => e) },
+        mouseup: { target: 'idle', actions: 'sendParent' },
       },
     },
     dragged: {
@@ -31,26 +44,25 @@ const clickToolState = {
   },
 };
 
-// Sends both mousedown and mouseup events to tools with dragging
-const dragToolState = {
+const noPanState = {
   on: {
-    mousedown: { actions: sendParent((c, e) => e) },
-    mouseup: { actions: sendParent((c, e) => e) },
-    mousemove: { actions: 'coordinates' },
+    mousedown: { actions: 'sendParent' },
+    mouseup: { actions: 'sendParent' },
+    mousemove: { actions: 'computeCoordinates' },
   },
 };
 
-const toolState = {
-  initial: 'checkTool',
-  on: {
-    TOOL: { target: '.checkTool', actions: 'setTool' },
-  },
+const interactiveState = {
+  initial: 'checkDrag',
   states: {
-    checkTool: {
-      always: [{ cond: 'dragTool', target: 'dragTool' }, 'clickTool'],
+    checkDrag: {
+      always: [{ cond: 'panOnDrag', target: 'panOnDrag' }, 'noPan'],
     },
-    clickTool: clickToolState,
-    dragTool: dragToolState,
+    panOnDrag: panOnDragState,
+    noPan: noPanState,
+  },
+  on: {
+    SET_PAN_ON_DRAG: { target: '.checkDrag', actions: 'setPanOnDrag' },
   },
 };
 
@@ -60,7 +72,7 @@ const grabState = {
     idle: {
       on: {
         mousedown: { target: 'panning' },
-        mousemove: { actions: 'coordinates' },
+        mousemove: { actions: 'computeCoordinates' },
       },
     },
     panning: {
@@ -73,15 +85,15 @@ const grabState = {
 };
 
 const panState = {
-  initial: 'tool',
+  initial: 'interactive',
   states: {
-    tool: toolState,
-    hand: grabState,
+    interactive: interactiveState,
+    grab: grabState,
   },
   invoke: { src: 'listenForSpace' },
   on: {
-    'keydown.Space': '.hand',
-    'keyup.Space': '.tool',
+    'keydown.Space': '.grab',
+    'keyup.Space': '.interactive',
   },
 };
 
@@ -105,6 +117,10 @@ const canvasMachine = Machine(
       // how much the canvas has moved in the current pan
       dx: 0,
       dy: 0,
+      // label data
+      labeledArray: null,
+      label: null,
+      panOnDrag: true,
     },
     invoke: [{ src: 'listenForMouseUp' }, { src: 'listenForZoomHotkeys' }],
     on: {
@@ -124,11 +140,11 @@ const canvasMachine = Machine(
       LABELED_ARRAY: { actions: ['setLabeledArray', 'sendLabel'] },
       COORDINATES: {
         cond: 'newCoordinates',
-        actions: ['setCoordinates', 'sendLabel', sendParent((c, e) => e)],
+        actions: ['setCoordinates', 'sendLabel', 'sendParent'],
       },
       LABEL: {
         cond: 'newLabel',
-        actions: ['setLabel', sendParent((c, e) => e)],
+        actions: ['setLabel', 'sendParent'],
       },
     },
     initial: 'waitForProject',
@@ -189,11 +205,10 @@ const canvasMachine = Machine(
       },
     },
     guards: {
-      newCoordinates: (context, event) =>
-        context.x !== event.y || context.y !== event.y,
+      newCoordinates: (context, event) => context.x !== event.y || context.y !== event.y,
       newLabel: (context, event) => context.label !== event.label,
-      dragTool: ({ tool }) => tool === 'brush' || tool === 'threshold',
       moved: ({ dx, dy }) => Math.abs(dx) > 10 || Math.abs(dy) > 10,
+      panOnDrag: ({ panOnDrag }) => panOnDrag,
     },
     actions: {
       updateMove: assign({
@@ -203,10 +218,7 @@ const canvasMachine = Machine(
       resetMove: assign({ dx: 0, dy: 0 }),
       restore: assign((_, { type, ...savedContext }) => savedContext),
       setCoordinates: assign((_, { x, y }) => ({ x, y })),
-      sendCoordinates: send(({ x, y }) => ({ type: 'COORDINATES', x, y }), {
-        to: context => context.toolRef,
-      }),
-      coordinates: send((context, event) => {
+      computeCoordinates: send((context, event) => {
         const { scale, zoom, width, height, sx, sy } = context;
         let x = Math.floor(event.nativeEvent.offsetX / scale / zoom + sx);
         let y = Math.floor(event.nativeEvent.offsetY / scale / zoom + sy);
@@ -226,8 +238,7 @@ const canvasMachine = Machine(
       }),
       resize: assign({
         scale: context => {
-          const { width, height, availableWidth, availableHeight, padding } =
-            context;
+          const { width, height, availableWidth, availableHeight, padding } = context;
           const scaleX = (availableWidth - 2 * padding) / width;
           const scaleY = (availableHeight - 2 * padding) / height;
           // pick scale that fits both dimensions; can be less than 1
@@ -287,8 +298,9 @@ const canvasMachine = Machine(
         newSy = Math.max(newSy, 0);
         return { zoom: newZoom, sx: newSx, sy: newSy };
       }),
-      setTool: assign({ tool: (_, { tool }) => tool }),
+      setPanOnDrag: assign((_, { panOnDrag }) => ({ panOnDrag })),
       setLabeledArray: assign((_, { labeledArray }) => ({ labeledArray })),
+      sendParent: sendParent((c, e) => e),
     },
   }
 );

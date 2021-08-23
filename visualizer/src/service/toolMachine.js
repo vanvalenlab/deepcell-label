@@ -64,7 +64,7 @@ const useToolActions = {
       tool: 'brush',
       toolActor: context => spawn(createBrushMachine(context), 'tool'),
     }),
-    sendParent({ type: 'TOOL', tool: 'brush' }),
+    sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: false }),
   ]),
   useEraser: pure(({ foreground: fg, background: bg }) => [
     send({ type: 'FOREGROUND', foreground: 0 }),
@@ -73,42 +73,42 @@ const useToolActions = {
       tool: 'brush',
       toolActor: context => spawn(createBrushMachine(context), 'tool'),
     }),
-    sendParent({ type: 'TOOL', tool: 'brush' }),
+    sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: false }),
   ]),
   useSelect: pure(() => [
     assign({
       tool: 'select',
       toolActor: context => spawn(createSelectMachine(context), 'tool'),
     }),
-    sendParent({ type: 'TOOL', tool: 'select' }),
+    sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
   ]),
   useTrim: pure(() => [
     assign({
       tool: 'trim',
       toolActor: context => spawn(createTrimMachine(context), 'tool'),
     }),
-    sendParent({ type: 'TOOL', tool: 'trim' }),
+    sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
   ]),
   useFlood: pure(() => [
     assign({
       tool: 'flood',
       toolActor: context => spawn(createFloodMachine(context), 'tool'),
     }),
-    sendParent({ type: 'TOOL', tool: 'flood' }),
+    sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
   ]),
   useWatershed: pure(() => [
     assign({
       tool: 'watershed',
       toolActor: context => spawn(createWatershedMachine(context), 'tool'),
     }),
-    sendParent({ type: 'TOOL', tool: 'watershed' }),
+    sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
   ]),
   useThreshold: pure(() => [
     assign({
       tool: 'threshold',
       toolActor: context => spawn(createThresholdMachine(context), 'tool'),
     }),
-    sendParent({ type: 'TOOL', tool: 'threshold' }),
+    sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: false }),
   ]),
 };
 
