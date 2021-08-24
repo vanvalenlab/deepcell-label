@@ -1,8 +1,7 @@
 // Manages zooming, panning, and interacting with the canvas
-// Interactions sent as LABEL, COORDINATES, and mouseup events to parent
+// Interactions sent as LABEL, COORDINATES, mousedown, and mouseup events to parent
 // LABEL event sent when the label below the cursor changes
 // COORDINATES event sent when the pixel below the cursor changes
-// mouseup event sent when not panning
 
 // Panning interface:
 // Hold space always enables click & drag to pan
