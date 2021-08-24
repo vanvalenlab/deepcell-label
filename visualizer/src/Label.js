@@ -1,5 +1,7 @@
+import { Paper, Tab, Tabs } from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import { makeStyles } from '@material-ui/core/styles';
+import { useSelector } from '@xstate/react';
 import { ResizeSensor } from 'css-element-queries';
 import debounce from 'lodash.debounce';
 import { useEffect, useRef, useState } from 'react';
@@ -14,7 +16,7 @@ import Timeline from './Controls/Tracking/Timeline';
 import Footer from './Footer/Footer';
 import Instructions from './Instructions/Instructions';
 import Navbar from './Navbar';
-import { useCanvas, useLabeled } from './ServiceContext';
+import { useCanvas, useDeepCellLabel, useLabeled } from './ServiceContext';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -34,7 +36,7 @@ const useStyles = makeStyles(theme => ({
     // height: 'calc(100vh - 66px - 57px - 60px - 80px - 1px)'
   },
   controlPanelBox: {
-    minWidth: '300px',
+    minWidth: '200px',
     flex: '0 0 auto',
   },
   toolbarBox: {
@@ -49,6 +51,22 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
+function TabPanel(props) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role='tabpanel'
+      hidden={value !== index}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+    >
+      {value === index && children}
+    </div>
+  );
+}
+
 function Label() {
   const styles = useStyles();
 
@@ -56,8 +74,27 @@ function Label() {
   const [canvasBoxWidth, setCanvasBoxWidth] = useState(0);
   const [canvasBoxHeight, setCanvasBoxHeight] = useState(0);
 
+  const project = useDeepCellLabel();
   const canvas = useCanvas();
   const labeled = useLabeled();
+
+  const value = useSelector(project, state => {
+    return state.matches('idle.segment') ? 0 : state.matches('idle.track') ? 1 : false;
+  });
+
+  const handleChange = (event, newValue) => {
+    console.log(newValue);
+    switch (newValue) {
+      case 0:
+        project.send('SEGMENT');
+        break;
+      case 1:
+        project.send('TRACK');
+        break;
+      default:
+        break;
+    }
+  };
 
   useEffect(() => {
     const setCanvasBoxDimensions = () => {
@@ -86,14 +123,30 @@ function Label() {
       <Box className={styles.main}>
         <Box className={styles.controlPanelBox}>
           <ImageControls />
-          {labeled && <Timeline />}
-          <DivisionAlerts />
+          {labeled && <SelectedPalette />}
         </Box>
         <Box className={styles.toolbarBox}>
-          <UndoRedo />
-          <ToolButtons />
-          <ActionButtons />
-          {labeled && <SelectedPalette />}
+          <Paper square>
+            <Tabs
+              value={value}
+              indicatorColor='primary'
+              textColor='primary'
+              onChange={handleChange}
+            >
+              <Tab label='Segment' />
+              <Tab label='Track' />
+            </Tabs>
+          </Paper>
+          <TabPanel value={value} index={0}>
+            <UndoRedo />
+            <ToolButtons />
+            <ActionButtons />
+          </TabPanel>
+          <TabPanel value={value} index={1}>
+            <UndoRedo />
+            {labeled && <Timeline />}
+            <DivisionAlerts />
+          </TabPanel>
         </Box>
         <Box ref={canvasBoxRef} className={styles.canvasBox}>
           <Canvas />

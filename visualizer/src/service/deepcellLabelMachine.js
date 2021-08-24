@@ -50,7 +50,29 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
             },
           },
         },
-        idle: {},
+        idle: {
+          initial: 'track',
+          states: {
+            segment: {
+              on: {
+                mouseup: { actions: forwardTo('tool') },
+                mousedown: { actions: forwardTo('tool') },
+                mousemove: { actions: forwardTo('tool') },
+              },
+            },
+            track: {
+              on: {
+                mouseup: { actions: forwardTo('tracking') },
+                mousedown: { actions: forwardTo('tracking') },
+                mousemove: { actions: forwardTo('tracking') },
+              },
+            },
+          },
+          on: {
+            SEGMENT: '.segment',
+            TRACK: '.track',
+          },
+        },
       },
       on: {
         // from various
@@ -76,9 +98,6 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
         FOREGROUND: { actions: [forwardTo('tool'), forwardTo('tracking')] },
         BACKGROUND: { actions: [forwardTo('tool'), forwardTo('tracking')] },
         SELECTED: { actions: [forwardTo('tool'), forwardTo('tracking')] },
-        mouseup: { actions: [forwardTo('tool'), forwardTo('tracking')] },
-        mousedown: { actions: [forwardTo('tool'), forwardTo('tracking')] },
-        mousemove: { actions: [forwardTo('tool'), forwardTo('tracking')] },
 
         // from undo
         BACKEND_UNDO: { actions: forwardTo('api') },
