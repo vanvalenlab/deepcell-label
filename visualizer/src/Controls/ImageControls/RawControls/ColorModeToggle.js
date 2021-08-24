@@ -1,5 +1,5 @@
+import { FormGroup } from '@material-ui/core';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
-import FormGroup from '@material-ui/core/FormGroup';
 import Switch from '@material-ui/core/Switch';
 import Tooltip from '@material-ui/core/Tooltip';
 import { useSelector } from '@xstate/react';
@@ -15,7 +15,7 @@ function ColorModeToggle() {
   const inputRef = useRef();
   useEffect(() => {
     const input = inputRef.current;
-    input.className = `${input.className}  mousetrap`;
+    input.className = `${input.className} mousetrap`;
   }, []);
 
   const onClick = useCallback(() => raw.send('TOGGLE_COLOR_MODE'), [raw]);
