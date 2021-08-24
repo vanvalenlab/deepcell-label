@@ -19,10 +19,12 @@ const useStyles = makeStyles(theme => ({
 function download(judgments) {
   const a = document.createElement('a');
   const csvContent =
-    'data:text/csv;charset=utf-8,' +
-    Object.entries(judgments)
-      .map(e => e.join(','))
-      .join('\n');
+    'data:text/csv,' +
+    encodeURI(
+      Object.entries(judgments)
+        .map(e => e.join(','))
+        .join('\n')
+    );
   a.href = csvContent;
   a.setAttribute('download', 'qualityControl.csv');
   a.click();
