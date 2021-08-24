@@ -57,7 +57,7 @@ function createQualityControlMachine(projectIds, bucket) {
         nextProject: assign({
           projectId: ({ judgments, projectIds, projectId }) => {
             const index = projectIds.indexOf(projectId);
-            const reordered = projectIds.slice(-index).concat(projectIds.slice(0, index));
+            const reordered = projectIds.slice(index + 1).concat(projectIds.slice(0, index));
             return reordered.find(id => !(id in judgments)) || projectId;
           },
         }),
