@@ -93,8 +93,8 @@ export function useLayers() {
   const layers = useSelector(project, state => {
     const image = state.context.imageRef;
     const raw = image.state.context.rawRef;
-    const color = raw.state.context.color;
-    const layers = color.state.context.layers;
+    const colorMode = raw.state.context.colorMode;
+    const layers = colorMode.state.context.layers;
     return layers;
   });
   return layers;
