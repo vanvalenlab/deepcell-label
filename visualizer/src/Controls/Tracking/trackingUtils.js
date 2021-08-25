@@ -1,6 +1,6 @@
 export function oneDaughter(cellInfo) {
   const { daughters } = cellInfo;
-  return daughters.length === 1;
+  return daughters?.length === 1;
 }
 
 export function parentAfterDivision(cellInfo) {
@@ -8,16 +8,14 @@ export function parentAfterDivision(cellInfo) {
   if (!divisionFrame) {
     return false;
   }
-  const framesAfterDivision = frames.filter(frame => frame >= divisionFrame);
-  return framesAfterDivision.length > 0;
+  const framesAfterDivision = frames?.filter(frame => frame >= divisionFrame);
+  return framesAfterDivision?.length > 0;
 }
 
 export function daughterBeforeDivision(cellInfo) {
   const { frames, parentDivisionFrame } = cellInfo;
-  const framesBeforeDivision = frames.filter(
-    frame => frame < parentDivisionFrame
-  );
-  return framesBeforeDivision.length > 0;
+  const framesBeforeDivision = frames?.filter(frame => frame < parentDivisionFrame);
+  return framesBeforeDivision?.length > 0;
 }
 
 /** Returns the ranges of consecutive integers in an array. */
@@ -45,10 +43,5 @@ export function formatFrames(frames) {
   if (ranges.length === 1) {
     return `frames ${ranges[0]}`;
   }
-  return (
-    'frames ' +
-    ranges.slice(0, -1).join(', ') +
-    ' and ' +
-    ranges[ranges.length - 1]
-  );
+  return 'frames ' + ranges.slice(0, -1).join(', ') + ' and ' + ranges[ranges.length - 1];
 }
