@@ -362,19 +362,18 @@ export default function SelectedPalette() {
   );
 
   return (
-    <Box className={styles.palette}>
-      <ForegroundBox />
-      <BackgroundBox />
-      <Box className={styles.swapBox}>
-        <SwapButton />
+    <Box display='flex' flexDirection='column'>
+      <FormLabel className={styles.title}>Selected Labels</FormLabel>
+      <Box className={styles.palette}>
+        <ForegroundBox />
+        <BackgroundBox />
+        <Box className={styles.swapBox}>
+          <SwapButton />
+        </Box>
+        <Tooltip title={tooltipText}>
+          <HelpOutlineIcon className={styles.help} color='action' fontSize='large' />
+        </Tooltip>
       </Box>
-      <Tooltip title={tooltipText}>
-        <HelpOutlineIcon
-          className={styles.help}
-          color='action'
-          fontSize='large'
-        />
-      </Tooltip>
     </Box>
   );
 }
