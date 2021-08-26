@@ -26,6 +26,7 @@ const trackingMachine = Machine(
     states: {
       idle: {
         on: {
+          mouseup: { actions: 'selectForeground' },
           ADD: { target: 'addingDaughter', actions: 'recordParent' },
         },
       },
@@ -48,6 +49,7 @@ const trackingMachine = Machine(
       onNoLabel: ({ label }) => label === 0,
     },
     actions: {
+      selectForeground: sendParent('SELECT_FOREGROUND'),
       setForeground: assign({ foreground: (_, { foreground }) => foreground }),
       setLabel: assign({ label: (_, { label }) => label }),
       setLabels: assign({ labels: (_, { labels }) => labels }),
