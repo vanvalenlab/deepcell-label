@@ -122,12 +122,9 @@ function Label() {
       <Instructions />
       <Box className={styles.main}>
         <Box className={styles.controlPanelBox}>
-          <ImageControls />
-          {labeled && <SelectedPalette />}
-        </Box>
-        <Box className={styles.toolbarBox}>
           <Paper square>
             <Tabs
+              orientation='vertical'
               value={value}
               indicatorColor='primary'
               textColor='primary'
@@ -137,6 +134,9 @@ function Label() {
               <Tab label='Track' />
             </Tabs>
           </Paper>
+          <ImageControls />
+        </Box>
+        <Box className={styles.toolbarBox}>
           <TabPanel value={value} index={0}>
             <UndoRedo />
             <Box display='flex' flexDirection='row'>
