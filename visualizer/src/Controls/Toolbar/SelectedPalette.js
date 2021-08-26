@@ -155,6 +155,37 @@ export function SwapButton() {
   );
 }
 
+function HoveringBox() {
+  const select = useSelect();
+  const label = useSelector(select, state => state.context.label);
+
+  const styles = useStyles();
+
+  const labeled = useLabeled();
+  const featureIndex = useSelector(labeled, state => state.context.feature);
+  const feature = useFeature(featureIndex);
+  const colors = useSelector(feature, state => state.context.colors);
+  const color = colors[label];
+
+  const buttonColor =
+    contrast(color, '#000000') > contrast(color, '#FFFFFF') ? '#000000' : '#FFFFFF';
+
+  return (
+    <Box className={styles.hovering} style={{ background: color }}>
+      <Typography
+        style={{
+          color: buttonColor,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        {label}
+      </Typography>
+    </Box>
+  );
+}
+
 function ForegroundBox() {
   const select = useSelect();
   const { send } = select;
@@ -374,6 +405,8 @@ export default function SelectedPalette() {
           <HelpOutlineIcon className={styles.help} color='action' fontSize='large' />
         </Tooltip>
       </Box>
+      <FormLabel className={styles.title}>Hovering over Label</FormLabel>
+      <HoveringBox />
     </Box>
   );
 }
