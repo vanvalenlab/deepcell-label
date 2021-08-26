@@ -139,8 +139,13 @@ function Label() {
           </Paper>
           <TabPanel value={value} index={0}>
             <UndoRedo />
-            <ToolButtons />
-            <ActionButtons />
+            <Box display='flex' flexDirection='row'>
+              <Box display='flex' flexDirection='column'>
+                <ToolButtons />
+                <ActionButtons />
+              </Box>
+              {labeled && <SelectedPalette />}
+            </Box>
           </TabPanel>
           <TabPanel value={value} index={1}>
             <UndoRedo />
