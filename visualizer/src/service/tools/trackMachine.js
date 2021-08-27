@@ -1,8 +1,8 @@
 import { assign, Machine, sendParent } from 'xstate';
 
-const trackingMachine = Machine(
+const trackMachine = Machine(
   {
-    id: 'tracking',
+    id: 'track',
     context: {
       foreground: 1,
       background: 0,
@@ -88,4 +88,4 @@ const trackingMachine = Machine(
   }
 );
 
-export default trackingMachine;
+export default trackMachine;
