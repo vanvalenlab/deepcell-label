@@ -57,7 +57,6 @@ const ChannelSelector = () => {
   const names = useSelector(raw, state => state.context.channelNames);
 
   const grayscaleMode = useSelector(raw, state => state.context.grayscaleMode);
-  console.log(grayscaleMode);
   const channel = useSelector(grayscaleMode, state => state.context.channel);
 
   const onChange = e => {

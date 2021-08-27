@@ -83,7 +83,6 @@ function Label() {
   });
 
   const handleChange = (event, newValue) => {
-    console.log(newValue);
     switch (newValue) {
       case 0:
         project.send('SEGMENT');
