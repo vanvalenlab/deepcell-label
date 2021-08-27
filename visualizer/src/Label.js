@@ -36,8 +36,8 @@ const useStyles = makeStyles(theme => ({
     // height: 'calc(100vh - 66px - 57px - 60px - 80px - 1px)'
   },
   controlPanelBox: {
-    minWidth: '200px',
     flex: '0 0 auto',
+    padding: theme.spacing(1),
   },
   toolbarBox: {
     flex: '0 0 auto',
@@ -148,8 +148,8 @@ function Label() {
           </TabPanel>
           <TabPanel value={value} index={1}>
             <UndoRedo />
-            {labeled && <Timeline />}
             <DivisionAlerts />
+            {labeled && <Timeline />}
           </TabPanel>
         </Box>
         <Box ref={canvasBoxRef} className={styles.canvasBox}>

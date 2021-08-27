@@ -1,12 +1,7 @@
-import { Box, makeStyles, Slider } from '@material-ui/core';
+import { makeStyles, Slider, Tooltip } from '@material-ui/core';
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useState } from 'react';
-import {
-  useFeature,
-  useImage,
-  useLabeled,
-  useTracking,
-} from '../../ServiceContext';
+import { useFeature, useImage, useLabeled, useTracking } from '../../ServiceContext';
 
 function useDivision(label) {
   const tracking = useTracking();
@@ -37,28 +32,7 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-function FrameBox({ frame, numFrames, color }) {
-  const image = useImage();
-
-  const boxStyle = {
-    position: 'absolute',
-    backgroundColor: color,
-    height: '10px',
-    width: `${(1 / numFrames) * 100}%`,
-    left: `${(frame / numFrames) * 100}%`,
-    pointerEvents: 'none',
-  };
-
-  const onClick = (event, newValue) => {
-    if (newValue !== frame) {
-      image.send({ type: 'LOAD_FRAME', frame: newValue });
-    }
-  };
-
-  return <Box style={boxStyle} onClick={onClick}></Box>;
-}
-
-function FrameSlider({ label }) {
+function FrameSlider() {
   const image = useImage();
   const frame = useSelector(image, state => state.context.frame);
   const numFrames = useSelector(image, state => state.context.numFrames);
@@ -86,55 +60,19 @@ function FrameSlider({ label }) {
     return () => clearTimeout(displayTimeout);
   }, [frame]);
 
-  const colors = useColors();
-  const division = useDivision(label);
-  const { parent, divisionFrame, frames } = division;
-  const parentDivision = useDivision(parent);
-
-  const startFrame = parentDivision ? parentDivision.divisionFrame : 0;
-  const endFrame = divisionFrame ? divisionFrame : numFrames;
-  const color = colors[label];
-
-  const boxStyle = {
-    position: 'relative',
-    backgroundColor: colors[label],
-    height: '10px',
-    width: `${((endFrame - startFrame) / numFrames) * 100}%`,
-    left: `${(startFrame / numFrames) * 100}%`,
-  };
-
   return (
     numFrames > 1 && (
-      <>
-        <Box>
-          <Slider
-            value={frame}
-            valueLabelDisplay={display}
-            step={1}
-            marks
-            min={0}
-            max={numFrames - 1}
-            onChange={handleFrameChange}
-          />
-          <Box
-            style={{
-              position: 'relative',
-              display: 'flex',
-              height: '10px',
-              width: '100%',
-            }}
-          >
-            {frames.map(frame => (
-              <FrameBox
-                frame={frame}
-                numFrames={numFrames}
-                color={color}
-                key={frame}
-              />
-            ))}
-          </Box>
-        </Box>
-      </>
+      <Tooltip title={tooltipText}>
+        <Slider
+          value={frame}
+          valueLabelDisplay={display}
+          step={1}
+          marks
+          min={0}
+          max={numFrames - 1}
+          onChange={handleFrameChange}
+        />
+      </Tooltip>
     )
   );
 }
