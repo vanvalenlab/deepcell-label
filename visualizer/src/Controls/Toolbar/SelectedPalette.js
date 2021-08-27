@@ -5,7 +5,6 @@ import Tooltip from '@material-ui/core/Tooltip';
 import AddIcon from '@material-ui/icons/Add';
 import ArrowBackIosIcon from '@material-ui/icons/ArrowBackIos';
 import ClearIcon from '@material-ui/icons/Clear';
-import HelpOutlineIcon from '@material-ui/icons/HelpOutline';
 import SubdirectoryArrowLeftIcon from '@material-ui/icons/SubdirectoryArrowLeft';
 import SubdirectoryArrowRightIcon from '@material-ui/icons/SubdirectoryArrowRight';
 import { useSelector } from '@xstate/react';
@@ -43,13 +42,13 @@ const useStyles = makeStyles(theme => ({
   palette: {
     position: 'relative',
     margin: theme.spacing(1),
-    height: '100px',
-    width: '150px',
+    height: '6.5rem',
+    width: '6.5rem',
   },
   hovering: {
-    border: '5px solid #DDDDDD',
-    width: '60px',
-    height: '60px',
+    border: '0.25rem solid #DDDDDD',
+    width: '4rem',
+    height: '4rem',
     display: 'flex',
     alignContent: 'center',
     justifyContent: 'center',
@@ -58,30 +57,30 @@ const useStyles = makeStyles(theme => ({
   foreground: {
     position: 'absolute',
     zIndex: 1,
-    top: '0px',
-    left: '0px',
-    width: '60px',
-    height: '60px',
-    border: '5px solid #DDDDDD',
+    top: '0',
+    left: '0',
+    width: '4rem',
+    height: '4rem',
+    border: '0.25rem solid #DDDDDD',
     display: 'flex',
     alignContent: 'center',
     justifyContent: 'center',
   },
   background: {
     position: 'absolute',
-    top: '30px',
-    left: '30px',
-    width: '60px',
-    height: '60px',
-    border: '5px solid #DD0000',
+    top: '2rem',
+    left: '2rem',
+    width: '4rem',
+    height: '4rem',
+    border: '0.25rem solid #DD0000',
     display: 'flex',
     alignContent: 'center',
     justifyContent: 'center',
   },
   swapBox: {
     position: 'absolute',
-    left: '60px',
-    top: '-5px',
+    left: '4rem',
+    top: '-0.25rem',
   },
   leftArrow: {
     transform: 'rotate(-90deg)',
@@ -89,12 +88,8 @@ const useStyles = makeStyles(theme => ({
   rightArrow: {
     position: 'absolute',
     transform: 'rotate(180deg)',
-    top: '8px',
-    left: '8px',
-  },
-  help: {
-    position: 'absolute',
-    right: '8px',
+    top: '0.5rem',
+    left: '0.5rem',
   },
   topLeft: {
     position: 'absolute',
@@ -384,29 +379,23 @@ function BackgroundBox() {
 export default function SelectedPalette() {
   const styles = useStyles();
 
-  const tooltipText = (
-    <span>
-      When the foreground is no label, the top box is black.
-      <br />
-      When the background is no label, the bottom box is black.
-    </span>
-  );
-
   return (
     <Box display='flex' flexDirection='column'>
-      <FormLabel className={styles.title}>Selected Labels</FormLabel>
+      <FormLabel className={styles.title}>Selected</FormLabel>
+
       <Box className={styles.palette}>
-        <ForegroundBox />
-        <BackgroundBox />
-        <Box className={styles.swapBox}>
-          <SwapButton />
+        <Box display='flex' justifyContent='center'>
+          <ForegroundBox />
+          <BackgroundBox />
+          <Box className={styles.swapBox}>
+            <SwapButton />
+          </Box>
         </Box>
-        <Tooltip title={tooltipText}>
-          <HelpOutlineIcon className={styles.help} color='action' fontSize='large' />
-        </Tooltip>
       </Box>
-      <FormLabel className={styles.title}>Hovering over Label</FormLabel>
-      <HoveringBox />
+      <FormLabel className={styles.title}>Hovering over</FormLabel>
+      <Box display='flex' justifyContent='center'>
+        <HoveringBox />
+      </Box>
     </Box>
   );
 }
