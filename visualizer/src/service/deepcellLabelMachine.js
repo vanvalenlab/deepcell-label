@@ -6,9 +6,9 @@ import { pure } from 'xstate/lib/actions';
 import createApiMachine from './apiMachine';
 import canvasMachine from './canvasMachine';
 import createImageMachine from './imageMachine';
-import segmentMachine from './segmentMachine';
 import selectMachine from './selectMachine';
-import trackingMachine from './tracking/trackingMachine';
+import segmentMachine from './tools/segmentMachine';
+import trackingMachine from './tools/trackingMachine';
 import undoMachine from './undoMachine';
 
 function fetchProject(context) {
