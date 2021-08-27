@@ -3,7 +3,7 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import { makeStyles } from '@material-ui/core/styles';
 import { useSelector } from '@xstate/react';
 import React, { useEffect } from 'react';
-import { useCanvas, useLabeled, useRaw, useSelect, useToolbar } from '../ServiceContext';
+import { useCanvas, useLabeled, useRaw, useSegment, useSelect } from '../ServiceContext';
 import LabeledCanvas from './Labeled/LabeledCanvas';
 import OutlineCanvas from './Labeled/OutlineCanvas';
 import RawCanvas from './Raw/RawCanvas';
@@ -43,8 +43,8 @@ export const Canvas = () => {
 
   const cursor = grabbing || dragged ? 'grabbing' : grab ? 'grab' : 'crosshair';
 
-  const toolbar = useToolbar();
-  const tool = useSelector(toolbar, state => state.context.tool);
+  const segment = useSegment();
+  const tool = useSelector(segment, state => state.context.tool);
 
   const styles = useStyles();
 

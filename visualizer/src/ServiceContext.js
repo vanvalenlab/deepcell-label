@@ -110,16 +110,16 @@ export function useCanvas() {
   return canvas;
 }
 
-export function useToolbar() {
+export function useSegment() {
   const deepCellLabel = useDeepCellLabel();
-  const { tool } = deepCellLabel.state.children;
-  return tool;
+  const { segment } = deepCellLabel.state.children;
+  return segment;
 }
 
 export function useTool() {
   const deepCellLabel = useDeepCellLabel();
-  const { tool: toolbar } = deepCellLabel.state.children;
-  const tool = useSelector(toolbar, state => state.context.toolActor);
+  const { segment } = deepCellLabel.state.children;
+  const tool = useSelector(segment, state => state.context.toolActor);
   return tool;
 }
 

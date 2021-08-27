@@ -1,15 +1,15 @@
 import { useSelector } from '@xstate/react';
 import React, { useCallback } from 'react';
-import { useToolbar } from '../../../ServiceContext';
+import { useSegment } from '../../../ServiceContext';
 import ActionButton, { useStyles } from './ActionButton';
 
 function AutofitButton(props) {
   const { className, ...rest } = props;
   const styles = useStyles();
-  const toolbar = useToolbar();
-  const grayscale = useSelector(toolbar, state => state.matches('colorMode.grayscale'));
+  const segment = useSegment();
+  const grayscale = useSelector(segment, state => state.matches('colorMode.grayscale'));
 
-  const onClick = useCallback(() => toolbar.send('AUTOFIT'), [toolbar]);
+  const onClick = useCallback(() => segment.send('AUTOFIT'), [segment]);
 
   const tooltipText = (
     <span>

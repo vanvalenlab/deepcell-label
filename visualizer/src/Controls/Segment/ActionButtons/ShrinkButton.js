@@ -1,17 +1,17 @@
 import React, { useCallback } from 'react';
-import { useToolbar } from '../../../ServiceContext';
+import { useSegment } from '../../../ServiceContext';
 import ActionButton, { useStyles } from './ActionButton';
 
-function DeleteButton(props) {
+function ShrinkButton(props) {
   const { className, ...rest } = props;
   const styles = useStyles();
-  const toolbar = useToolbar();
+  const segment = useSegment();
 
-  const onClick = useCallback(() => toolbar.send('DELETE'), [toolbar]);
+  const onClick = useCallback(() => segment.send('ERODE'), [segment]);
 
   const tooltipText = (
     <span>
-      Removes a label (<kbd>Del</kbd>)
+      Contracts a label by one pixel (<kbd>Q</kbd>)
     </span>
   );
 
@@ -20,12 +20,12 @@ function DeleteButton(props) {
       {...rest}
       tooltipText={tooltipText}
       onClick={onClick}
-      hotkey={['del', 'backspace']}
+      hotkey='q'
       className={`${className} ${styles.button}`}
     >
-      Delete
+      Shrink
     </ActionButton>
   );
 }
 
-export default DeleteButton;
+export default ShrinkButton;

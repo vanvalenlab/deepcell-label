@@ -1,17 +1,17 @@
 import React, { useCallback } from 'react';
-import { useToolbar } from '../../../ServiceContext';
+import { useSegment } from '../../../ServiceContext';
 import ActionButton, { useStyles } from './ActionButton';
 
-function GrowButton(props) {
+function ReplaceButton(props) {
   const { className, ...rest } = props;
   const styles = useStyles();
-  const toolbar = useToolbar();
+  const segment = useSegment();
 
-  const onClick = useCallback(() => toolbar.send('DILATE'), [toolbar]);
+  const onClick = useCallback(() => segment.send('REPLACE'), [segment]);
 
   const tooltipText = (
     <span>
-      Expands a label by one pixel (<kbd>Shift</kbd> + <kbd>Q</kbd>)
+      Combines two labels (<kbd>R</kbd>)
     </span>
   );
 
@@ -20,12 +20,12 @@ function GrowButton(props) {
       {...rest}
       tooltipText={tooltipText}
       onClick={onClick}
-      hotkey='shift+q'
+      hotkey='r'
       className={`${className} ${styles.button}`}
     >
-      Grow
+      Replace
     </ActionButton>
   );
 }
 
-export default GrowButton;
+export default ReplaceButton;

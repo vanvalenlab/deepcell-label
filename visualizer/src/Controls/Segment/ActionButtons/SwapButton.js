@@ -1,17 +1,17 @@
 import React, { useCallback } from 'react';
-import { useToolbar } from '../../../ServiceContext';
+import { useSegment } from '../../../ServiceContext';
 import ActionButton, { useStyles } from './ActionButton';
 
-function ReplaceButton(props) {
+function SwapButton(props) {
   const { className, ...rest } = props;
   const styles = useStyles();
-  const toolbar = useToolbar();
+  const segment = useSegment();
 
-  const onClick = useCallback(() => toolbar.send('REPLACE'), [toolbar]);
+  const onClick = useCallback(() => segment.send('SWAP'), [segment]);
 
   const tooltipText = (
     <span>
-      Combines two labels (<kbd>R</kbd>)
+      Switches the position of two labels (<kbd>S</kbd>)
     </span>
   );
 
@@ -20,12 +20,12 @@ function ReplaceButton(props) {
       {...rest}
       tooltipText={tooltipText}
       onClick={onClick}
-      hotkey='r'
+      hotkey='s'
       className={`${className} ${styles.button}`}
     >
-      Replace
+      Swap
     </ActionButton>
   );
 }
 
-export default ReplaceButton;
+export default SwapButton;

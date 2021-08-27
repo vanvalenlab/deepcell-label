@@ -147,9 +147,9 @@ const editActions = {
   })),
 };
 
-const toolMachine = Machine(
+const segmentMachine = Machine(
   {
-    id: 'tool',
+    id: 'segment',
     context: {
       label: 0,
       selected: 1,
@@ -229,4 +229,4 @@ const toolMachine = Machine(
   }
 );
 
-export default toolMachine;
+export default segmentMachine;

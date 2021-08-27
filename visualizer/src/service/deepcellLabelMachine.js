@@ -6,8 +6,8 @@ import { pure } from 'xstate/lib/actions';
 import createApiMachine from './apiMachine';
 import canvasMachine from './canvasMachine';
 import createImageMachine from './imageMachine';
+import segmentMachine from './segmentMachine';
 import selectMachine from './selectMachine';
-import toolMachine from './toolMachine';
 import trackingMachine from './tracking/trackingMachine';
 import undoMachine from './undoMachine';
 
@@ -55,12 +55,13 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
           states: {
             segment: {
               on: {
-                mouseup: { actions: forwardTo('tool') },
-                mousedown: { actions: forwardTo('tool') },
-                mousemove: { actions: forwardTo('tool') },
+                mouseup: { actions: forwardTo('segment') },
+                mousedown: { actions: forwardTo('segment') },
+                mousemove: { actions: forwardTo('segment') },
               },
             },
             track: {
+              entry: send({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }, { to: 'canvas' }),
               on: {
                 mouseup: { actions: forwardTo('tracking') },
                 mousedown: { actions: forwardTo('tracking') },
@@ -83,21 +84,21 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
         FRAME: { actions: 'setFrame' },
         CHANNEL: { actions: 'setChannel' },
         FEATURE: { actions: 'setFeature' },
-        GRAYSCALE: { actions: forwardTo('tool') },
-        COLOR: { actions: forwardTo('tool') },
+        GRAYSCALE: { actions: forwardTo('segment') },
+        COLOR: { actions: forwardTo('segment') },
         LABELED_ARRAY: { actions: forwardTo('canvas') },
         LABELS: {
-          actions: [forwardTo('tool'), forwardTo('tracking'), forwardTo('select')],
+          actions: [forwardTo('segment'), forwardTo('tracking'), forwardTo('select')],
         },
 
         // from canvas
         LABEL: {
-          actions: [forwardTo('tool'), forwardTo('tracking'), forwardTo('select')],
+          actions: [forwardTo('segment'), forwardTo('tracking'), forwardTo('select')],
         },
-        COORDINATES: { actions: forwardTo('tool') },
-        FOREGROUND: { actions: [forwardTo('tool'), forwardTo('tracking')] },
-        BACKGROUND: { actions: [forwardTo('tool'), forwardTo('tracking')] },
-        SELECTED: { actions: [forwardTo('tool'), forwardTo('tracking')] },
+        COORDINATES: { actions: forwardTo('segment') },
+        FOREGROUND: { actions: [forwardTo('segment'), forwardTo('tracking')] },
+        BACKGROUND: { actions: [forwardTo('segment'), forwardTo('tracking')] },
+        SELECTED: { actions: [forwardTo('segment'), forwardTo('tracking')] },
 
         // from undo
         BACKEND_UNDO: { actions: forwardTo('api') },
@@ -119,7 +120,7 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
         spawnActors: assign({
           canvasRef: () => spawn(canvasMachine, 'canvas'),
           imageRef: context => spawn(createImageMachine(context), 'image'),
-          toolRef: () => spawn(toolMachine, 'tool'),
+          segmentRef: () => spawn(segmentMachine, 'segment'),
           apiRef: context => spawn(createApiMachine(context), 'api'),
           trackingRef: () => spawn(trackingMachine, 'tracking'),
           selectRef: () => spawn(selectMachine, 'select'),
@@ -128,11 +129,11 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
           undoRef: () => spawn(undoMachine, 'undo'),
         }),
         addActorsToUndo: pure(context => {
-          const { canvasRef, toolRef, imageRef } = context;
+          const { canvasRef, segmentRef, imageRef } = context;
           return [
             send({ type: 'ADD_ACTOR', actor: canvasRef }, { to: 'undo' }),
             send({ type: 'ADD_ACTOR', actor: imageRef }, { to: 'undo' }),
-            send({ type: 'ADD_ACTOR', actor: toolRef }, { to: 'undo' }),
+            send({ type: 'ADD_ACTOR', actor: segmentRef }, { to: 'undo' }),
           ];
         }),
         sendProject: pure((context, event) => {

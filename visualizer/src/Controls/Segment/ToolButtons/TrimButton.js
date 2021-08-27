@@ -1,13 +1,13 @@
 import { useSelector } from '@xstate/react';
 import React, { useCallback } from 'react';
-import { useToolbar } from '../../../ServiceContext';
+import { useSegment } from '../../../ServiceContext';
 import ToolButton from './ToolButton';
 
 function TrimButton(props) {
-  const toolbar = useToolbar();
-  const tool = useSelector(toolbar, state => state.context.tool);
+  const segment = useSegment();
+  const tool = useSelector(segment, state => state.context.tool);
 
-  const onClick = useCallback(() => toolbar.send('USE_TRIM'), [toolbar]);
+  const onClick = useCallback(() => segment.send('USE_TRIM'), [segment]);
 
   const tooltipText = (
     <span>

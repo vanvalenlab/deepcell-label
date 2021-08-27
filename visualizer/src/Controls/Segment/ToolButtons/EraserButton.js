@@ -1,21 +1,21 @@
 import { useSelector } from '@xstate/react';
 import React, { useCallback } from 'react';
-import { useSelect, useToolbar } from '../../../ServiceContext';
+import { useSegment, useSelect } from '../../../ServiceContext';
 import ToolButton from './ToolButton';
 
 function EraserButton(props) {
-  const toolbar = useToolbar();
-  const tool = useSelector(toolbar, state => state.context.tool);
+  const segment = useSegment();
+  const tool = useSelector(segment, state => state.context.tool);
 
   const select = useSelect();
   const selected = useSelector(select, state => state.context.selected);
   const background = useSelector(select, state => state.context.background);
 
   const onClick = useCallback(() => {
-    toolbar.send('USE_BRUSH');
+    segment.send('USE_BRUSH');
     select.send({ type: 'FOREGROUND', foreground: 0 });
     select.send({ type: 'BACKGROUND', background: selected });
-  }, [toolbar, select, selected]);
+  }, [segment, select, selected]);
 
   const tooltipText = (
     <span>
