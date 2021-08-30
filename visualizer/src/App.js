@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import Label from './Label';
 import ProjectContext from './ProjectContext';
-import QualityControl from './QualityControl';
 import service from './service/service';
 
 // inspect({
@@ -14,9 +13,6 @@ function App() {
   return (
     <Router>
       <Switch>
-        <Route path='/review'>
-          <QualityControl />
-        </Route>
         <Route path='/'>
           <ProjectContext project={service}>
             <Label />
