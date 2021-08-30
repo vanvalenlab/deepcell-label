@@ -98,7 +98,7 @@ const selectMachine = Machine(
       selected: 1,
       foreground: 1,
       background: 0,
-      label: null,
+      hovering: 0,
       labels: {},
     },
     on: {

@@ -150,7 +150,7 @@ export function SwapButton() {
 
 function HoveringBox() {
   const select = useSelect();
-  const label = useSelector(select, state => state.context.label);
+  const hovering = useSelector(select, state => state.context.hovering);
 
   const styles = useStyles();
 
@@ -158,7 +158,7 @@ function HoveringBox() {
   const featureIndex = useSelector(labeled, state => state.context.feature);
   const feature = useFeature(featureIndex);
   const colors = useSelector(feature, state => state.context.colors);
-  const color = colors[label];
+  const color = colors[hovering];
 
   const buttonColor =
     contrast(color, '#000000') > contrast(color, '#FFFFFF') ? '#000000' : '#FFFFFF';
@@ -173,7 +173,7 @@ function HoveringBox() {
           alignItems: 'center',
         }}
       >
-        {label}
+        {hovering}
       </Typography>
     </Box>
   );
