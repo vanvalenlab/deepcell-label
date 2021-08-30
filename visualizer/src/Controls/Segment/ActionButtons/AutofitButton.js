@@ -1,6 +1,6 @@
 import { useSelector } from '@xstate/react';
 import React, { useCallback } from 'react';
-import { useSegment } from '../../../ServiceContext';
+import { useSegment } from '../../../ProjectContext';
 import ActionButton, { useStyles } from './ActionButton';
 
 function AutofitButton(props) {

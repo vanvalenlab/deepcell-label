@@ -4,8 +4,9 @@ import Slider from '@material-ui/core/Slider';
 import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
 import { useSelector } from '@xstate/react';
-import React from 'react';
-import { useLabeled } from '../../../ServiceContext';
+import { bind, unbind } from 'mousetrap';
+import React, { useEffect } from 'react';
+import { useLabeled } from '../../../ProjectContext';
 
 const useStyles = makeStyles(theme => ({
   opacity: {
@@ -24,8 +25,7 @@ function OpacitySlider() {
   const handleOpacityChange = (event, newValue) =>
     labeled.send({ type: 'SET_OPACITY', opacity: Number(newValue) });
 
-  const handleDoubleClick = event =>
-    labeled.send({ type: 'SET_OPACITY', opacity: 0.3 });
+  const handleDoubleClick = event => labeled.send({ type: 'SET_OPACITY', opacity: 0.3 });
 
   const styles = useStyles();
 
@@ -34,6 +34,11 @@ function OpacitySlider() {
       Cycle between raw, overlay, and labels with <kbd>Z</kbd>
     </span>
   );
+
+  useEffect(() => {
+    bind('z', () => labeled.send('CYCLE_OPACITY'));
+    return () => unbind('z');
+  }, [labeled]);
 
   return (
     <Tooltip title={tooltipText}>

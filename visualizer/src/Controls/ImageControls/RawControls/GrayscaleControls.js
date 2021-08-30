@@ -7,8 +7,9 @@ import Slider from '@material-ui/core/Slider';
 import Switch from '@material-ui/core/Switch';
 import Tooltip from '@material-ui/core/Tooltip';
 import { useSelector } from '@xstate/react';
+import { bind, unbind } from 'mousetrap';
 import React, { useEffect, useRef } from 'react';
-import { useRaw } from '../../../ServiceContext';
+import { useRaw } from '../../../ProjectContext';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -31,6 +32,11 @@ const InvertToggle = ({ channel }) => {
       Toggle with <kbd>I</kbd>
     </span>
   );
+
+  useEffect(() => {
+    bind('i', () => channel.send('TOGGLE_INVERT'));
+    return () => unbind('i');
+  }, [channel]);
 
   return (
     <Tooltip title={tooltip}>
@@ -55,12 +61,11 @@ const InvertToggle = ({ channel }) => {
 const ChannelSelector = () => {
   const raw = useRaw();
   const names = useSelector(raw, state => state.context.channelNames);
-
-  const grayscaleMode = useSelector(raw, state => state.context.grayscaleMode);
-  const channel = useSelector(grayscaleMode, state => state.context.channel);
+  const channel = useSelector(raw, state => state.context.channel);
+  const numChannels = useSelector(raw, state => state.context.numChannels);
 
   const onChange = e => {
-    grayscaleMode.send({ type: 'LOAD_CHANNEL', channel: Number(e.target.value) });
+    raw.send({ type: 'LOAD_CHANNEL', channel: Number(e.target.value) });
   };
 
   const tooltip = (
@@ -68,6 +73,17 @@ const ChannelSelector = () => {
       Cycle with <kbd>C</kbd> or <kbd>Shift</kbd> + <kbd>C</kbd>
     </span>
   );
+
+  useEffect(() => {
+    const prevChannel = (channel - 1 + numChannels) % numChannels;
+    const nextChannel = (channel + 1) % numChannels;
+    bind('shift+c', () => raw.send({ type: 'LOAD_CHANNEL', channel: prevChannel }));
+    bind('c', () => raw.send({ type: 'LOAD_CHANNEL', channel: nextChannel }));
+    return () => {
+      unbind('shift+c');
+      unbind('c');
+    };
+  }, [raw, channel, numChannels]);
 
   return (
     <Tooltip title={tooltip}>
@@ -165,6 +181,11 @@ const GrayscaleControls = () => {
   const channel = useSelector(raw, state => state.context.channels[state.context.channel]);
 
   const styles = useStyles();
+
+  useEffect(() => {
+    bind('0', () => raw.send('RESET'));
+    return () => unbind('0');
+  }, [raw]);
 
   return (
     <Grid style={{ width: '100%' }} item>

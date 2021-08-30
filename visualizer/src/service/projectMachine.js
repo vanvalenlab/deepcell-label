@@ -15,10 +15,10 @@ function fetchProject(context) {
   return fetch(`/api/project/${projectId}`).then(response => response.json());
 }
 
-const createDeepcellLabelMachine = (projectId, bucket) =>
+const createProjectMachine = (projectId, bucket) =>
   Machine(
     {
-      id: 'deepcellLabel',
+      id: `${projectId}`,
       context: {
         projectId,
         bucket,
@@ -140,4 +140,4 @@ const createDeepcellLabelMachine = (projectId, bucket) =>
     }
   );
 
-export default createDeepcellLabelMachine;
+export default createProjectMachine;

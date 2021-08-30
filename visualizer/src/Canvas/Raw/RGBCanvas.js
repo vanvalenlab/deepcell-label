@@ -1,6 +1,6 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-import { useCanvas, useComposeLayers, useRaw } from '../../ServiceContext';
+import { useCanvas, useComposeLayers, useLayers } from '../../ProjectContext';
 import ChannelCanvas from './ChannelCanvas';
 
 export const RGBCanvas = ({ className }) => {
@@ -15,9 +15,7 @@ export const RGBCanvas = ({ className }) => {
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
 
-  const raw = useRaw();
-  const colorMode = useSelector(raw, state => state.context.colorMode);
-  const layers = useSelector(colorMode, state => state.context.layers);
+  const layers = useLayers();
 
   const canvasRef = useRef();
   const ctx = useRef();

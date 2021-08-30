@@ -5,7 +5,7 @@ import Tooltip from '@material-ui/core/Tooltip';
 import { useSelector } from '@xstate/react';
 import { bind, unbind } from 'mousetrap';
 import React, { useCallback, useEffect, useRef } from 'react';
-import { useRaw } from '../../../ServiceContext';
+import { useRaw } from '../../../ProjectContext';
 
 function ColorModeToggle() {
   const raw = useRaw();
@@ -36,7 +36,12 @@ function ColorModeToggle() {
       <FormGroup row>
         <FormControlLabel
           control={
-            <Switch size='small' checked={!grayscale} onChange={onClick} inputRef={inputRef} />
+            <Switch
+              size='small'
+              checked={!grayscale}
+              onChange={() => raw.send('TOGGLE_COLOR_MODE')}
+              inputRef={inputRef}
+            />
           }
           label='Multi-channel'
           labelPlacement='start'

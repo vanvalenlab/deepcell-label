@@ -146,9 +146,9 @@ const canvasMachine = Machine(
         actions: ['setLabel', 'sendParent'],
       },
     },
-    initial: 'waitForProject',
+    initial: 'idle',
     states: {
-      waitForProject: {
+      idle: {
         on: {
           PROJECT: {
             target: 'pan',
