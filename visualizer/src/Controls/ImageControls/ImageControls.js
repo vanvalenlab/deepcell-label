@@ -2,6 +2,7 @@ import { Box, makeStyles } from '@material-ui/core';
 import { green } from '@material-ui/core/colors';
 import React from 'react';
 import { useLabeled, useRaw } from '../../ServiceContext';
+import FrameSlider from './FrameSlider';
 import LabeledControls from './LabeledControls/LabeledControls';
 import RawControls from './RawControls/RawControls';
 import SubmitButton from './SubmitButton';
@@ -40,7 +41,7 @@ const ImageControls = () => {
   return (
     <Box id='image-controls' className={styles.root}>
       <SubmitButton className={styles.buttons} />
-      {/* <FrameSlider /> */}
+      <FrameSlider />
       {labeled && <LabeledControls />}
       {raw && <RawControls />}
     </Box>
