@@ -1,14 +1,14 @@
 import { useSelector } from '@xstate/react';
 import React, { useCallback } from 'react';
-import { useToolbar } from '../../../ProjectContext';
+import { useSegment } from '../../../ProjectContext';
 import ToolButton from './ToolButton';
 
 function ThresholdButton(props) {
-  const toolbar = useToolbar();
-  const tool = useSelector(toolbar, state => state.context.tool);
-  const grayscale = useSelector(toolbar, state => state.matches('colorMode.grayscale'));
+  const segment = useSegment();
+  const tool = useSelector(segment, state => state.context.tool);
+  const grayscale = useSelector(segment, state => state.matches('colorMode.grayscale'));
 
-  const onClick = useCallback(() => toolbar.send('USE_THRESHOLD'), [toolbar]);
+  const onClick = useCallback(() => segment.send('USE_THRESHOLD'), [segment]);
 
   const tooltipText = grayscale ? (
     <span>

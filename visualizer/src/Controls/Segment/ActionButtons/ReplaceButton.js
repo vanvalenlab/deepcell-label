@@ -1,17 +1,17 @@
 import React, { useCallback } from 'react';
-import { useToolbar } from '../../../ProjectContext';
+import { useSegment } from '../../../ProjectContext';
 import ActionButton, { useStyles } from './ActionButton';
 
-function SwapButton(props) {
+function ReplaceButton(props) {
   const { className, ...rest } = props;
   const styles = useStyles();
-  const toolbar = useToolbar();
+  const segment = useSegment();
 
-  const onClick = useCallback(() => toolbar.send('SWAP'), [toolbar]);
+  const onClick = useCallback(() => segment.send('REPLACE'), [segment]);
 
   const tooltipText = (
     <span>
-      Switches the position of two labels (<kbd>S</kbd>)
+      Combines two labels (<kbd>R</kbd>)
     </span>
   );
 
@@ -20,12 +20,12 @@ function SwapButton(props) {
       {...rest}
       tooltipText={tooltipText}
       onClick={onClick}
-      hotkey='s'
+      hotkey='r'
       className={`${className} ${styles.button}`}
     >
-      Swap
+      Replace
     </ActionButton>
   );
 }
 
-export default SwapButton;
+export default ReplaceButton;

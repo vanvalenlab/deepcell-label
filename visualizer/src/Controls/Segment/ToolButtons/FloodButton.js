@@ -1,13 +1,13 @@
 import { useSelector } from '@xstate/react';
 import React, { useCallback } from 'react';
-import { useToolbar } from '../../../ProjectContext';
+import { useSegment } from '../../../ProjectContext';
 import ToolButton from './ToolButton';
 
 function FloodButton(props) {
-  const toolbar = useToolbar();
-  const tool = useSelector(toolbar, state => state.context.tool);
+  const segment = useSegment();
+  const tool = useSelector(segment, state => state.context.tool);
 
-  const onClick = useCallback(() => toolbar.send('USE_FLOOD'), [toolbar]);
+  const onClick = useCallback(() => segment.send('USE_FLOOD'), [segment]);
 
   const tooltipText = (
     <span>

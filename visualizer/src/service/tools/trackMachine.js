@@ -1,8 +1,8 @@
 import { assign, Machine, sendParent } from 'xstate';
 
-const trackingMachine = Machine(
+const trackMachine = Machine(
   {
-    id: 'tracking',
+    id: 'track',
     context: {
       foreground: 1,
       background: 0,
@@ -26,6 +26,7 @@ const trackingMachine = Machine(
     states: {
       idle: {
         on: {
+          mouseup: { actions: 'selectForeground' },
           ADD: { target: 'addingDaughter', actions: 'recordParent' },
         },
       },
@@ -48,6 +49,7 @@ const trackingMachine = Machine(
       onNoLabel: ({ label }) => label === 0,
     },
     actions: {
+      selectForeground: sendParent('SELECT_FOREGROUND'),
       setForeground: assign({ foreground: (_, { foreground }) => foreground }),
       setLabel: assign({ label: (_, { label }) => label }),
       setLabels: assign({ labels: (_, { labels }) => labels }),
@@ -86,4 +88,4 @@ const trackingMachine = Machine(
   }
 );
 
-export default trackingMachine;
+export default trackMachine;

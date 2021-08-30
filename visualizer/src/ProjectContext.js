@@ -23,7 +23,7 @@ export function useSelect() {
 
 export function useTracking() {
   const project = useProject();
-  const tracking = useSelector(project, state => state.context.trackingRef);
+  const tracking = useSelector(project, state => state.context.trackRef);
   return tracking;
 }
 
@@ -133,17 +133,17 @@ export function useCanvas() {
   return canvas;
 }
 
-export function useToolbar() {
+export function useSegment() {
   const project = useProject();
-  const toolbar = useSelector(project, state => state.context.toolRef);
-  return toolbar;
+  const segment = useSelector(project, state => state.context.segmentRef);
+  return segment;
 }
 
 export function useTool() {
   const project = useProject();
   const tool = useSelector(project, state => {
-    const toolbar = state.context.toolRef;
-    const tool = toolbar.state.context.toolActor;
+    const segment = state.context.segmentRef;
+    const tool = segment.state.context.toolActor;
     return tool;
   });
   return tool;

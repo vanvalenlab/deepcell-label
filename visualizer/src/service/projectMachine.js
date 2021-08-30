@@ -7,8 +7,8 @@ import createApiMachine from './apiMachine';
 import canvasMachine from './canvasMachine';
 import createImageMachine from './imageMachine';
 import selectMachine from './selectMachine';
-import toolMachine from './toolMachine';
-import trackingMachine from './tracking/trackingMachine';
+import segmentMachine from './tools/segmentMachine';
+import trackMachine from './tools/trackMachine';
 import undoMachine from './undoMachine';
 
 function fetchProject(context) {
@@ -50,7 +50,30 @@ const createProjectMachine = (projectId, bucket) =>
             },
           },
         },
-        idle: {},
+        idle: {
+          initial: 'track',
+          states: {
+            segment: {
+              on: {
+                mouseup: { actions: forwardTo('segment') },
+                mousedown: { actions: forwardTo('segment') },
+                mousemove: { actions: forwardTo('segment') },
+              },
+            },
+            track: {
+              entry: send({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }, { to: 'canvas' }),
+              on: {
+                mouseup: { actions: forwardTo('track') },
+                mousedown: { actions: forwardTo('track') },
+                mousemove: { actions: forwardTo('track') },
+              },
+            },
+          },
+          on: {
+            SEGMENT: '.segment',
+            TRACK: '.track',
+          },
+        },
       },
       on: {
         // from various
@@ -61,24 +84,21 @@ const createProjectMachine = (projectId, bucket) =>
         FRAME: { actions: 'setFrame' },
         CHANNEL: { actions: 'setChannel' },
         FEATURE: { actions: 'setFeature' },
-        GRAYSCALE: { actions: forwardTo('tool') },
-        COLOR: { actions: forwardTo('tool') },
+        GRAYSCALE: { actions: forwardTo('segment') },
+        COLOR: { actions: forwardTo('segment') },
         LABELED_ARRAY: { actions: forwardTo('canvas') },
         LABELS: {
-          actions: [forwardTo('tool'), forwardTo('tracking'), forwardTo('select')],
+          actions: [forwardTo('segment'), forwardTo('track'), forwardTo('select')],
         },
 
         // from canvas
         LABEL: {
-          actions: [forwardTo('tool'), forwardTo('tracking'), forwardTo('select')],
+          actions: [forwardTo('segment'), forwardTo('track'), forwardTo('select')],
         },
-        COORDINATES: { actions: forwardTo('tool') },
-        FOREGROUND: { actions: [forwardTo('tool'), forwardTo('tracking')] },
-        BACKGROUND: { actions: [forwardTo('tool'), forwardTo('tracking')] },
-        SELECTED: { actions: [forwardTo('tool'), forwardTo('tracking')] },
-        mouseup: { actions: [forwardTo('tool'), forwardTo('tracking')] },
-        mousedown: { actions: [forwardTo('tool'), forwardTo('tracking')] },
-        mousemove: { actions: [forwardTo('tool'), forwardTo('tracking')] },
+        COORDINATES: { actions: forwardTo('segment') },
+        FOREGROUND: { actions: [forwardTo('segment'), forwardTo('track')] },
+        BACKGROUND: { actions: [forwardTo('segment'), forwardTo('track')] },
+        SELECTED: { actions: [forwardTo('segment'), forwardTo('track')] },
 
         // from undo
         BACKEND_UNDO: { actions: forwardTo('api') },
@@ -88,7 +108,7 @@ const createProjectMachine = (projectId, bucket) =>
         EDITED: { actions: forwardTo('image') },
 
         // from tool
-        TOOL: { actions: forwardTo('canvas') },
+        SET_PAN_ON_DRAG: { actions: forwardTo('canvas') },
         SET_FOREGROUND: { actions: forwardTo('select') },
         SELECT_FOREGROUND: { actions: forwardTo('select') },
         SELECT_BACKGROUND: { actions: forwardTo('select') },
@@ -100,20 +120,20 @@ const createProjectMachine = (projectId, bucket) =>
         spawnActors: assign({
           canvasRef: () => spawn(canvasMachine, 'canvas'),
           imageRef: context => spawn(createImageMachine(context), 'image'),
-          toolRef: () => spawn(toolMachine, 'tool'),
+          segmentRef: () => spawn(segmentMachine, 'segment'),
           apiRef: context => spawn(createApiMachine(context), 'api'),
-          trackingRef: () => spawn(trackingMachine, 'tracking'),
+          trackRef: () => spawn(trackMachine, 'track'),
           selectRef: () => spawn(selectMachine, 'select'),
         }),
         spawnUndo: assign({
           undoRef: () => spawn(undoMachine, 'undo'),
         }),
         addActorsToUndo: pure(context => {
-          const { canvasRef, toolRef, imageRef } = context;
+          const { canvasRef, segmentRef, imageRef } = context;
           return [
             send({ type: 'ADD_ACTOR', actor: canvasRef }, { to: 'undo' }),
             send({ type: 'ADD_ACTOR', actor: imageRef }, { to: 'undo' }),
-            send({ type: 'ADD_ACTOR', actor: toolRef }, { to: 'undo' }),
+            send({ type: 'ADD_ACTOR', actor: segmentRef }, { to: 'undo' }),
           ];
         }),
         sendProject: pure((context, event) => {

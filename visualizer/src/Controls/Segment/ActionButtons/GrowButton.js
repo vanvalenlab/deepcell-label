@@ -1,13 +1,13 @@
 import React, { useCallback } from 'react';
-import { useToolbar } from '../../../ProjectContext';
+import { useSegment } from '../../../ProjectContext';
 import ActionButton, { useStyles } from './ActionButton';
 
 function GrowButton(props) {
   const { className, ...rest } = props;
   const styles = useStyles();
-  const toolbar = useToolbar();
+  const segment = useSegment();
 
-  const onClick = useCallback(() => toolbar.send('DILATE'), [toolbar]);
+  const onClick = useCallback(() => segment.send('DILATE'), [segment]);
 
   const tooltipText = (
     <span>

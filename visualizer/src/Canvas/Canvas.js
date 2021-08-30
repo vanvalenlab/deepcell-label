@@ -3,7 +3,7 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import { makeStyles } from '@material-ui/core/styles';
 import { useSelector } from '@xstate/react';
 import React, { useEffect } from 'react';
-import { useCanvas, useLabeled, useRaw, useSelect, useToolbar } from '../ProjectContext';
+import { useCanvas, useLabeled, useRaw, useSegment, useSelect } from '../ProjectContext';
 import LabeledCanvas from './Labeled/LabeledCanvas';
 import OutlineCanvas from './Labeled/OutlineCanvas';
 import RawCanvas from './Raw/RawCanvas';
@@ -37,14 +37,14 @@ export const Canvas = () => {
   const sh = useSelector(canvas, state => state.context.height);
   const scale = useSelector(canvas, state => state.context.scale);
 
-  const grab = useSelector(canvas, state => state.matches('pan.hand'));
-  const grabbing = useSelector(canvas, state => state.matches('pan.hand.panning'));
-  const dragged = useSelector(canvas, state => state.matches('pan.tool.clickTool.dragged'));
+  const grab = useSelector(canvas, state => state.matches('pan.grab'));
+  const grabbing = useSelector(canvas, state => state.matches('pan.grab.panning'));
+  const dragged = useSelector(canvas, state => state.matches('pan.interactive.panOnDrag.dragged'));
 
   const cursor = grabbing || dragged ? 'grabbing' : grab ? 'grab' : 'crosshair';
 
-  const toolbar = useToolbar();
-  const tool = useSelector(toolbar, state => state.context.tool);
+  const segment = useSegment();
+  const tool = useSelector(segment, state => state.context.tool);
 
   const styles = useStyles();
 

@@ -1,17 +1,17 @@
 import React, { useCallback } from 'react';
-import { useToolbar } from '../../../ProjectContext';
+import { useSegment } from '../../../ProjectContext';
 import ActionButton, { useStyles } from './ActionButton';
 
-function ReplaceButton(props) {
+function DeleteButton(props) {
   const { className, ...rest } = props;
   const styles = useStyles();
-  const toolbar = useToolbar();
+  const segment = useSegment();
 
-  const onClick = useCallback(() => toolbar.send('REPLACE'), [toolbar]);
+  const onClick = useCallback(() => segment.send('DELETE'), [segment]);
 
   const tooltipText = (
     <span>
-      Combines two labels (<kbd>R</kbd>)
+      Removes a label (<kbd>Del</kbd>)
     </span>
   );
 
@@ -20,12 +20,12 @@ function ReplaceButton(props) {
       {...rest}
       tooltipText={tooltipText}
       onClick={onClick}
-      hotkey='r'
+      hotkey={['del', 'backspace']}
       className={`${className} ${styles.button}`}
     >
-      Replace
+      Delete
     </ActionButton>
   );
 }
 
-export default ReplaceButton;
+export default DeleteButton;

@@ -1,17 +1,17 @@
 import React, { useCallback } from 'react';
-import { useToolbar } from '../../../ProjectContext';
+import { useSegment } from '../../../ProjectContext';
 import ActionButton, { useStyles } from './ActionButton';
 
-function DeleteButton(props) {
+function SwapButton(props) {
   const { className, ...rest } = props;
   const styles = useStyles();
-  const toolbar = useToolbar();
+  const segment = useSegment();
 
-  const onClick = useCallback(() => toolbar.send('DELETE'), [toolbar]);
+  const onClick = useCallback(() => segment.send('SWAP'), [segment]);
 
   const tooltipText = (
     <span>
-      Removes a label (<kbd>Del</kbd>)
+      Switches the position of two labels (<kbd>S</kbd>)
     </span>
   );
 
@@ -20,12 +20,12 @@ function DeleteButton(props) {
       {...rest}
       tooltipText={tooltipText}
       onClick={onClick}
-      hotkey={['del', 'backspace']}
+      hotkey='s'
       className={`${className} ${styles.button}`}
     >
-      Delete
+      Swap
     </ActionButton>
   );
 }
 
-export default DeleteButton;
+export default SwapButton;
