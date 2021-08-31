@@ -39,7 +39,6 @@ const useStyles = makeStyles(theme => ({
     // height: 'calc(100vh - 66px - 57px - 60px - 80px - 1px)'
   },
   controlPanelBox: {
-    minWidth: '300px',
     flex: '0 0 auto',
   },
   toolbarBox: {
