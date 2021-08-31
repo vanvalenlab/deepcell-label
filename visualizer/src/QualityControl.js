@@ -1,3 +1,4 @@
+import { Paper, Tab, Tabs } from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import { makeStyles } from '@material-ui/core/styles';
 import { useSelector } from '@xstate/react';
@@ -17,7 +18,7 @@ import Timeline from './Controls/Tracking/Timeline';
 import Footer from './Footer/Footer';
 import Instructions from './Instructions/Instructions';
 import Navbar from './Navbar';
-import ProjectContext, { useCanvas, useLabeled } from './ProjectContext';
+import ProjectContext, { useCanvas, useLabeled, useProject } from './ProjectContext';
 import createQualityControlMachine from './service/qualityControlMachine';
 
 const useStyles = makeStyles(theme => ({
@@ -66,6 +67,22 @@ export function useQualityControl() {
   return qualityControl;
 }
 
+function TabPanel(props) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role='tabpanel'
+      hidden={value !== index}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+    >
+      {value === index && children}
+    </div>
+  );
+}
+
 function QualityControlWrapper() {
   const qualityControl = useQualityControl();
   const project = useSelector(qualityControl, state => {
@@ -87,8 +104,33 @@ function QualityControl() {
   const [canvasBoxWidth, setCanvasBoxWidth] = useState(0);
   const [canvasBoxHeight, setCanvasBoxHeight] = useState(0);
 
+  const project = useProject();
   const canvas = useCanvas();
   const labeled = useLabeled();
+
+  const [review, setReview] = useState(true);
+
+  const value = useSelector(project, state => {
+    return review ? 0 : state.matches('idle.segment') ? 1 : state.matches('idle.track') ? 2 : false;
+  });
+
+  const handleChange = (event, newValue) => {
+    switch (newValue) {
+      case 0:
+        setReview(true);
+        break;
+      case 1:
+        setReview(false);
+        project.send('SEGMENT');
+        break;
+      case 2:
+        setReview(false);
+        project.send('TRACK');
+        break;
+      default:
+        break;
+    }
+  };
 
   useEffect(() => {
     const setCanvasBoxDimensions = () => {
@@ -116,16 +158,40 @@ function QualityControl() {
       <Instructions />
       <Box className={styles.main}>
         <Box className={styles.controlPanelBox}>
-          <QCControls />
+          <Paper square>
+            <Tabs
+              orientation='vertical'
+              value={value}
+              indicatorColor='primary'
+              textColor='primary'
+              onChange={handleChange}
+            >
+              <Tab label='Review' />
+              <Tab label='Segment' />
+              <Tab label='Track' />
+            </Tabs>
+          </Paper>
           <ImageControls />
-          {labeled && <Timeline />}
-          <DivisionAlerts />
         </Box>
         <Box className={styles.toolbarBox}>
-          <UndoRedo />
-          <ToolButtons />
-          <ActionButtons />
-          {labeled && <SelectedPalette />}
+          <TabPanel value={value} index={0}>
+            <QCControls />
+          </TabPanel>
+          <TabPanel value={value} index={1}>
+            <UndoRedo />
+            <Box display='flex' flexDirection='row'>
+              <Box display='flex' flexDirection='column'>
+                <ToolButtons />
+                <ActionButtons />
+              </Box>
+              {labeled && <SelectedPalette />}
+            </Box>
+          </TabPanel>
+          <TabPanel value={value} index={2}>
+            <UndoRedo />
+            <DivisionAlerts />
+            {labeled && <Timeline />}
+          </TabPanel>
         </Box>
         <Box ref={canvasBoxRef} className={styles.canvasBox}>
           <Canvas />
