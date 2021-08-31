@@ -51,7 +51,7 @@ const useStyles = makeStyles(theme => ({
 function Parent({ division }) {
   const { label, daughters, divisionFrame, frames } = division;
   const colors = useColors();
-  const color = colors[label];
+  const color = colors[label] ?? '#000000';
 
   const styles = useStyles();
   const theme = useTheme();
@@ -97,6 +97,7 @@ function Daughter({ label, daughter, divisionFrame }) {
   const image = useImage();
 
   const colors = useColors();
+  const color = colors[daughter] ?? '#000000';
 
   const onClick = () => {
     select.send({ type: 'SET_FOREGROUND', foreground: daughter });
@@ -106,11 +107,7 @@ function Daughter({ label, daughter, divisionFrame }) {
   return (
     <Box className={styles.daughter}>
       <ArcherElement id={`daughter${daughter}`}>
-        <Avatar
-          className={styles.cell}
-          onClick={onClick}
-          style={{ backgroundColor: colors[daughter] }}
-        >
+        <Avatar className={styles.cell} onClick={onClick} style={{ backgroundColor: color }}>
           {daughter}
         </Avatar>
       </ArcherElement>

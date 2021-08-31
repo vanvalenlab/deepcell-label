@@ -53,7 +53,7 @@ function LabelTimeline({ label }) {
   const colors = useColors();
   const division = useDivision(label);
   const { frames } = division;
-  const color = colors[label];
+  const color = colors[label] ?? '#000000';
 
   return (
     <Box

@@ -158,7 +158,7 @@ function HoveringBox() {
   const featureIndex = useSelector(labeled, state => state.context.feature);
   const feature = useFeature(featureIndex);
   const colors = useSelector(feature, state => state.context.colors);
-  const color = colors[hovering];
+  const color = colors[hovering] ?? '#000000';
 
   const buttonColor =
     contrast(color, '#000000') > contrast(color, '#FFFFFF') ? '#000000' : '#FFFFFF';
@@ -190,7 +190,7 @@ function ForegroundBox() {
   const featureIndex = useSelector(labeled, state => state.context.feature);
   const feature = useFeature(featureIndex);
   const colors = useSelector(feature, state => state.context.colors);
-  const color = colors[foreground];
+  const color = colors[foreground] ?? '#000000';
 
   useEffect(() => {
     bind('n', () => select.send('NEW_FOREGROUND'));
@@ -308,7 +308,7 @@ function BackgroundBox() {
   const featureIndex = useSelector(labeled, state => state.context.feature);
   const feature = useFeature(featureIndex);
   const colors = useSelector(feature, state => state.context.colors);
-  const color = colors[background];
+  const color = colors[background] ?? '#000000';
 
   useEffect(() => {
     bind('esc', () => select.send('RESET_BACKGROUND'));
