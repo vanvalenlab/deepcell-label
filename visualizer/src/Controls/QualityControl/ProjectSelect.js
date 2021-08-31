@@ -1,4 +1,4 @@
-import { Select, Tooltip } from '@material-ui/core';
+import { FormLabel, Select, Tooltip } from '@material-ui/core';
 import { useSelector } from '@xstate/react';
 import { useEffect, useRef } from 'react';
 import { useQualityControl } from '../../QualityControl';
@@ -27,15 +27,18 @@ function ProjectSelect() {
   );
 
   return (
-    <Tooltip title={tooltip}>
-      <Select native value={projectId} onChange={onChange} inputRef={inputRef}>
-        {projectIds.map(projectId => (
-          <option key={projectId} value={projectId}>
-            {projectId}
-          </option>
-        ))}
-      </Select>
-    </Tooltip>
+    <>
+      <FormLabel>Project</FormLabel>
+      <Tooltip title={tooltip}>
+        <Select native value={projectId} onChange={onChange} inputRef={inputRef}>
+          {projectIds.map(projectId => (
+            <option key={projectId} value={projectId}>
+              {projectId}
+            </option>
+          ))}
+        </Select>
+      </Tooltip>
+    </>
   );
 }
 
