@@ -68,7 +68,8 @@ def raw(token, channel, frame):
     if not project:
         return abort(404, description=f'project {token} not found')
     png = project.get_raw_png(channel, frame)
-    return send_file(png, mimetype='image/png')
+    etag = hashlib.md5(png.getbuffer()).hexdigest()
+    return send_file(png, mimetype='image/png', etag=etag)
 
 
 @bp.route('/api/labeled/<token>/<int:feature>/<int:frame>')
