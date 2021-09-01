@@ -94,10 +94,11 @@ def array(token, feature, frame):
     response = make_response(content)
     response.headers['Content-length'] = len(content)
     response.headers['Content-Encoding'] = 'gzip'
-    return response
-    # seg_array = project.get_labeled_array(feature, frame)
-    # filename = f'{token}_array_feature{feature}_frame{frame}.npy'
-    # return send_file(seg_array, attachment_filename=filename, cache_timeout=0)
+    # gzip includes a timestamp that changes the md5 hash
+    # TODO: in Python >= 3.8, add mtime=0 to create stable md5 and use add_etag instead
+    etag = hashlib.md5(labeled_array).hexdigest()
+    response.set_etag(etag)
+    return response.make_conditional(request)
 
 
 @bp.route('/api/semantic-labels/<project_id>/<int:feature>')
