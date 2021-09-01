@@ -793,17 +793,17 @@ class TrackEdit(BaseEdit):
 
         # TODO: is this the same as add/remove?
         # replace fields
-        track_1 = self.tracks[label_1]
-        track_2 = self.tracks[label_2]
+        keep_track = self.tracks[label_1]
+        remove_track = self.tracks[label_2]
 
-        for d in track_1['daughters']:
-            self.tracks[d]['parent'] = None
+        for d in remove_track['daughters']:
+            self.tracks[d]['parent'] = label_1
 
-        track_1['frames'].extend(track_2['frames'])
-        track_1['frames'] = sorted(set(track_1['frames']))
-        track_1['daughters'] = track_2['daughters']
-        track_1['frame_div'] = track_2['frame_div']
-        track_1['capped'] = track_2['capped']
+        keep_track['frames'].extend(remove_track['frames'])
+        keep_track['frames'] = sorted(set(keep_track['frames']))
+        keep_track['daughters'] = remove_track['daughters']
+        keep_track['frame_div'] = remove_track['frame_div']
+        keep_track['capped'] = remove_track['capped']
 
         del self.tracks[label_2]
         for _, track in self.tracks.items():
