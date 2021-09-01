@@ -114,7 +114,9 @@ def semantic_labels(project_id, feature):
         df = df.join(df[['frame_div']], rsuffix='_parent', how='left', on='parent')
     df = df.rename(columns={'frame_div_parent': 'parentDivisionFrame',
                             'frame_div': 'divisionFrame'})
-    return df.to_json(orient='index')
+    response = make_response(df.to_json(orient='index'))
+    response.add_etag()
+    return response.make_conditional(request)
 
 
 @bp.route('/api/colormap/<project_id>/<int:feature>')
