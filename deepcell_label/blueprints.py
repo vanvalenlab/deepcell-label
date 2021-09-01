@@ -129,8 +129,8 @@ def colormap(project_id, feature):
     colors.append('#FFFFFF')  # New label (last label) is white
     response = make_response({'colors': colors})
     response.headers['Cache-Control'] = 'max-age=0'
-
-    return response
+    response.add_etag()
+    return response.make_conditional(request)
 
 
 @bp.route('/api/edit/<token>/<action_type>', methods=['POST'])
