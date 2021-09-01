@@ -9,6 +9,8 @@ import gzip
 import json
 import timeit
 import traceback
+import hashlib
+
 
 from flask import abort
 from flask import Blueprint
@@ -75,7 +77,9 @@ def labeled(token, feature, frame):
     if not project:
         return abort(404, description=f'project {token} not found')
     png = project.get_labeled_png(feature, frame)
-    return send_file(png, mimetype='image/png', cache_timeout=0)
+    etag = hashlib.md5(png.getbuffer()).hexdigest()
+    response = send_file(png, mimetype='image/png', cache_timeout=0, etag=etag)
+    return response
 
 
 @bp.route('/api/array/<token>/<int:feature>/<int:frame>')
