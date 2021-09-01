@@ -24,8 +24,8 @@ export function useSelect() {
 
 export function useTracking() {
   const deepCellLabel = useDeepCellLabel();
-  const { tracking } = deepCellLabel.state.children;
-  return tracking;
+  const { track } = deepCellLabel.state.children;
+  return track;
 }
 
 export function useApi() {
