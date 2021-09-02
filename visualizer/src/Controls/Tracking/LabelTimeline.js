@@ -68,7 +68,7 @@ function LabelTimeline({ label }) {
         <FrameBox
           frame={frame}
           numFrames={numFrames}
-          color={frame in frames ? color : '#FFFFFF'}
+          color={frames.includes(frame) ? color : '#FFFFFF'}
           key={frame}
         />
       ))}
