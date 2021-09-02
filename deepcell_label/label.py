@@ -787,9 +787,10 @@ class TrackEdit(BaseEdit):
         """
         # replace arrays
         for label_frame in self.project.label_frames:
-            img = label_frame.frame
-            img = np.where(img == label_2, label_1, img)
-            label_frame.frame = img
+            frame = label_frame.frame
+            if label_2 in frame:
+                replaced = np.where(frame == label_2, label_1, frame)
+                label_frame.frame = replaced
 
         # TODO: is this the same as add/remove?
         # replace fields
