@@ -580,7 +580,7 @@ class TestTrackEdit():
             assert other_daughter_track['parent'] == parent
 
     def test_remove_daughter_only_daughter(self, app):
-                # two 2 x 1 frames
+        # two 2 x 1 frames
         # one label in the first frame and two in the second frame
         labels = np.reshape([0, 1, 2, 3], (2, 2, 1, 1))
         cell_info = {0: {
@@ -606,27 +606,88 @@ class TestTrackEdit():
             assert parent_track['frame_div'] is None
             assert daughter_track['parent'] is None
 
-    def test_track_add_cell_info(self):
-        labels = np.zeros((1, 1, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, url='test.trk'))
+    def test_remove_daughter_only_daughter(self, app):
+        # two 2 x 1 frames
+        # one label in the first frame and two in the second frame
+        labels = np.reshape([0, 1, 2, 3], (2, 2, 1, 1))
+        cell_info = {0: {
+            1: {'capped': True, 'frame_div': 1, 'daughters': [2], 'parent': None},
+            2: {'capped': False, 'frame_div': None, 'daughters': [], 'parent': 1},
+            3: {'capped': False, 'frame_div': None, 'daughters': [], 'parent': None},
+        }}
+        project = models.Project.create(
+            DummyLoader(labels=labels, cell_info=cell_info, url='test.trk')
+        )
         edit = label.TrackEdit(project)
-        tracks = edit.tracks
 
-        cell = 1
-        frame = 0
+        parent = 1
+        daughter = 2
 
-        # Add new label to first frame
-        edit.add_cell_info(cell, frame)
-        assert tracks[cell] == {
-            'label': 1,
-            'frames': [frame],
-            'daughters': [],
-            'frame_div': None,
-            'parent': None,
-            'capped': False,
-        }
-        assert edit.y_changed
-        assert edit.labels_changed
+        with app.app_context():
+            edit.action_remove_daughter(daughter)
+            tracks = edit.tracks
+            parent_track = tracks[parent]
+            daughter_track = tracks[daughter]
+            assert not parent_track['capped']
+            assert parent_track['daughters'] == []
+            assert parent_track['frame_div'] is None
+            assert daughter_track['parent'] is None
+
+    def test_track_replace_daughter_with_parent(self, app):
+        labels = np.reshape([1, 2], (2, 1, 1, 1))
+        cell_info = {0: {
+            1: {'capped': True, 'frame_div': 1, 'daughters': [2], 'parent': None, 'frames': [0]},
+            2: {'capped': False, 'frame_div': None, 'daughters': [], 'parent': 1, 'frames': [1]},
+        }}
+        project = models.Project.create(
+            DummyLoader(labels=labels, cell_info=cell_info, url='test.trk')
+        )
+        edit = label.TrackEdit(project)
+        expected_labels = np.reshape([1, 1], (2, 1, 1, 1))
+
+        parent = 1
+        daughter = 2
+
+        with app.app_context():
+            edit.action_replace(parent, daughter)
+            tracks = edit.tracks
+            parent_track = tracks[parent]
+            assert daughter not in tracks
+            assert not parent_track['capped']
+            assert parent_track['daughters'] == []
+            assert parent_track['frame_div'] is None
+            assert parent_track['frames'] == [0, 1]
+            np.testing.assert_array_equal(edit.project.label_array, expected_labels)
+
+    def test_track_replace_daughter_that_divides_with_parent(self, app):
+        labels = np.reshape([1, 2, 3], (3, 1, 1, 1))
+        cell_info = {0: {
+            1: {'capped': True, 'frame_div': 1, 'daughters': [2], 'parent': None, 'frames': [0]},
+            2: {'capped': True, 'frame_div': 2, 'daughters': [3], 'parent': 1, 'frames': [1]},
+            3: {'capped': False, 'frame_div': None, 'daughters': [], 'parent': 2, 'frames': [2]},
+        }}
+        project = models.Project.create(
+            DummyLoader(labels=labels, cell_info=cell_info, url='test.trk')
+        )
+        edit = label.TrackEdit(project)
+        expected_labels = np.reshape([1, 1, 3], (3, 1, 1, 1))
+
+        parent = 1
+        daughter = 2
+        granddaughter = 3
+
+        with app.app_context():
+            edit.action_replace(parent, daughter)
+            tracks = edit.tracks
+            parent_track = tracks[parent]
+            granddaughter_track = tracks[granddaughter]
+            assert daughter not in tracks
+            assert parent_track['capped']
+            assert parent_track['daughters'] == [3]
+            assert parent_track['frame_div'] == 2
+            assert parent_track['frames'] == [0, 1]
+            assert granddaughter_track['parent'] == 1
+            np.testing.assert_array_equal(edit.project.label_array, expected_labels)
 
     def test_add_cell_info_multiple_frames(self):
         num_frames = 5
