@@ -133,7 +133,7 @@ function AddDaughter({ label }) {
     toggle();
   };
   const handleNewCell = () => {
-    tracking.send({ type: 'CREATE_NEW_CELL', parent: label });
+    tracking.send({ type: 'CREATE_NEW_CELL', label });
     toggle();
   };
 
