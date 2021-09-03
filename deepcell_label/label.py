@@ -731,15 +731,32 @@ class TrackEdit(BaseEdit):
 
         self.labels_changed = True
 
+    def action_replace_with_parent(self, daughter):
+        """
+        Replaces daughter with its parent after the division.
+        """
+        daughter_division = self.tracks[daughter]
+        parent = daughter_division['parent']
+        parent_division = self.tracks[parent]
+        frame = parent_division['frame_div']
+
+        for label_frame in self.project.label_frames[frame:]:
+            img = label_frame.frame[..., self.feature]
+            if np.any(np.isin(img, daughter)):
+                img = np.where(img == daughter, parent, img)
+                self.add_cell_info(add_label=parent, frame=self.frame_id)
+                self.del_cell_info(del_label=daughter, frame=self.frame_id)
+                label_frame.frame[..., self.feature] = img
+
     def action_new_track(self, label):
         """
-        Replaces label with a new label in all subsequent frames after self.frame_id
+        Replaces label with a new label in all frames after the current frame
 
         Args:
-            label (int): label to replace in subsequent frames
+            label (int): label to replace with a new label
         """
-        new_label = self.project.get_max_label(self.feature) + 1
         track = self.tracks[label]
+        new_label = self.project.get_max_label(self.feature) + 1
 
         # Don't create a new track on the first frame of a track
         if self.frame_id == track['frames'][0]:
@@ -748,11 +765,12 @@ class TrackEdit(BaseEdit):
         # replace frame labels
         for label_frame in self.project.label_frames[self.frame_id:]:
             img = label_frame.frame
-            img[img == label] = new_label
-            label_frame.frame = img
+            if np.isin(label, img):
+                img[img == label] = new_label
+                label_frame.frame = img
 
         # replace fields
-        track_new = self.tracks[new_label] = {}
+        new_track = self.tracks[new_label] = {}
 
         idx = track['frames'].index(self.frame_id)
 
@@ -760,22 +778,22 @@ class TrackEdit(BaseEdit):
         frames_after = track['frames'][idx:]
 
         track['frames'] = frames_before
-        track_new['frames'] = frames_after
-        track_new['label'] = new_label
+        new_track['frames'] = frames_after
+        new_track['label'] = new_label
 
         # only add daughters if they aren't in the same frame as the new track
-        track_new['daughters'] = []
+        new_track['daughters'] = []
         for d in track['daughters']:
             if self.frame_id not in self.tracks[d]['frames']:
-                track_new['daughters'].append(d)
+                new_track['daughters'].append(d)
 
-        track_new['frame_div'] = track['frame_div']
-        track_new['capped'] = track['capped']
-        track_new['parent'] = None
+        new_track['frame_div'] = track['frame_div']
+        new_track['capped'] = track['capped']
+        new_track['parent'] = None
 
         track['daughters'] = []
         track['frame_div'] = None
-        track['capped'] = True
+        track['capped'] = False
 
         self.labels.cell_ids[0] = np.append(self.labels.cell_ids[0], new_label)
 
