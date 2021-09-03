@@ -1,15 +1,7 @@
 import { makeStyles, Slider, Tooltip } from '@material-ui/core';
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useState } from 'react';
-import { useFeature, useImage, useLabeled } from '../../ProjectContext';
-
-function useColors() {
-  const labeled = useLabeled();
-  const featureIndex = useSelector(labeled, state => state.context.feature);
-  const feature = useFeature(featureIndex);
-  const colors = useSelector(feature, state => state.context.colors);
-  return colors;
-}
+import { useImage } from '../../ProjectContext';
 
 const useStyles = makeStyles(theme => ({
   title: {
