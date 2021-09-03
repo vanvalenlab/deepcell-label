@@ -9,7 +9,8 @@ import { useTheme } from '@material-ui/core/styles';
 import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
 import CloseIcon from '@material-ui/icons/Close';
 import { useSelector } from '@xstate/react';
-import React, { useReducer, useRef } from 'react';
+import { bind, unbind } from 'mousetrap';
+import React, { useEffect, useReducer, useRef } from 'react';
 import { ArcherContainer, ArcherElement } from 'react-archer';
 import { useFeature, useImage, useLabeled, useSelect, useTracking } from '../../ProjectContext';
 
@@ -123,7 +124,18 @@ function AddDaughter({ label }) {
   const styles = useStyles();
 
   const tracking = useTracking();
-  const onClick = () => tracking.send({ type: 'ADD', parent: label });
+
+  const [open, toggle] = useReducer(v => !v, false);
+  const anchorRef = useRef(null);
+
+  const handleAddDaughter = () => {
+    tracking.send({ type: 'ADD_DAUGHTER', parent: label });
+    toggle();
+  };
+  const handleNewCell = () => {
+    tracking.send({ type: 'CREATE_NEW_CELL', parent: label });
+    toggle();
+  };
 
   return (
     <Box style={{ position: 'relative' }}>
@@ -131,9 +143,19 @@ function AddDaughter({ label }) {
       <ArcherElement id='addDaughter'>
         <Avatar className={styles.cell} style={{ visibility: 'hidden' }} />
       </ArcherElement>
-      <IconButton className={styles.addButton} onClick={onClick}>
+      <IconButton className={styles.addButton} onClick={toggle} ref={anchorRef}>
         <AddCircleOutlineIcon />
       </IconButton>
+      <Popper open={open} anchorEl={anchorRef.current} placement='bottom-end'>
+        <Paper>
+          <ClickAwayListener onClickAway={toggle}>
+            <MenuList id='add-daughter-menu'>
+              <MenuItem onClick={handleAddDaughter}>Add Daughter</MenuItem>
+              <MenuItem onClick={handleNewCell}>Create New Cell</MenuItem>
+            </MenuList>
+          </ClickAwayListener>
+        </Paper>
+      </Popper>
     </Box>
   );
 }
@@ -163,7 +185,7 @@ function DaughterMenu({ parent, daughter }) {
       <Popper open={open} anchorEl={anchorRef.current} placement='bottom-end'>
         <Paper>
           <ClickAwayListener onClickAway={toggle}>
-            <MenuList id='channel-options'>
+            <MenuList id='remove-daughter-menu'>
               <MenuItem onClick={handleRemove}>Remove from Division</MenuItem>
               {/* <MenuItem onClick={handleNewCell}>Replace with New Cell</MenuItem> */}
               <MenuItem onClick={handleParent}>Replace with Parent</MenuItem>
@@ -195,6 +217,11 @@ function Division({ label }) {
 
   const tracking = useTracking();
   const division = useSelector(tracking, state => state.context.labels[label]);
+
+  useEffect(() => {
+    bind('esc', () => tracking.send('RESET'));
+    return () => unbind('esc');
+  }, [tracking]);
 
   return (
     <ArcherContainer>

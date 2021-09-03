@@ -27,7 +27,8 @@ const trackMachine = Machine(
       idle: {
         on: {
           mouseup: { actions: 'selectForeground' },
-          ADD: { target: 'addingDaughter', actions: 'recordParent' },
+          ADD_DAUGHTER: { target: 'addingDaughter', actions: 'recordParent' },
+          CREATE_NEW_CELL: { actions: 'createNewCell' },
         },
       },
       addingDaughter: {
@@ -36,9 +37,10 @@ const trackMachine = Machine(
             { cond: 'onNoLabel' },
             {
               target: 'idle',
-              actions: 'add',
+              actions: 'addDaughter',
             },
           ],
+          RESET: { target: 'idle' },
         },
       },
     },
@@ -61,13 +63,18 @@ const trackMachine = Machine(
           daughter,
         },
       })),
-      add: sendParent(({ parent, label }) => ({
+      addDaughter: sendParent(({ parent, label }) => ({
         type: 'EDIT',
         action: 'add_daughter',
         args: {
           parent: parent,
           daughter: label,
         },
+      })),
+      createNewCell: sendParent(() => ({
+        type: 'EDIT',
+        action: '',
+        args: {},
       })),
       replaceWithParent: sendParent((_, { parent, daughter }) => ({
         type: 'EDIT',
