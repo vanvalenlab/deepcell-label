@@ -1,7 +1,7 @@
 import { FormLabel, makeStyles, Slider, Tooltip } from '@material-ui/core';
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useState } from 'react';
-import { useImage } from '../../ServiceContext';
+import { useImage } from '../../ProjectContext';
 
 const useStyles = makeStyles(theme => ({
   title: {

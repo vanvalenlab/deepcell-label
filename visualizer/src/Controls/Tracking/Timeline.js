@@ -1,7 +1,7 @@
 import { Box, FormLabel, Typography } from '@material-ui/core';
 import { useSelector } from '@xstate/react';
 import { default as React } from 'react';
-import { useSelect, useTracking } from '../../ServiceContext';
+import { useSelect, useTracking } from '../../ProjectContext';
 import Division from './Division';
 import FrameSlider from './FrameSlider';
 import LabelTimeline from './LabelTimeline';

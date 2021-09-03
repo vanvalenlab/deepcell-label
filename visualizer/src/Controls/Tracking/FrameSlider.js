@@ -1,7 +1,7 @@
 import { makeStyles, Slider, Tooltip } from '@material-ui/core';
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useState } from 'react';
-import { useFeature, useImage, useLabeled, useTracking } from '../../ServiceContext';
+import { useFeature, useImage, useLabeled, useTracking } from '../../ProjectContext';
 
 function useDivision(label) {
   const tracking = useTracking();

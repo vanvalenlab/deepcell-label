@@ -1,6 +1,6 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-import { useCanvas, useChannel } from '../../ServiceContext';
+import { useCanvas, useChannel } from '../../ProjectContext';
 import { adjustRangeImageData, recolorImageData } from '../canvasUtils';
 
 /** Converts a hex string like #FF0000 to three element array for the RGB values. */
@@ -50,18 +50,7 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
     }
     // assign to channelCanvases to rerender
     setCanvases(prevCanvases => ({ ...prevCanvases, [layerIndex]: canvas }));
-  }, [
-    canvasRef,
-    setCanvases,
-    on,
-    layerIndex,
-    rawImage,
-    color,
-    min,
-    max,
-    width,
-    height,
-  ]);
+  }, [canvasRef, setCanvases, on, layerIndex, rawImage, color, min, max, width, height]);
 
   useEffect(() => {
     return () =>

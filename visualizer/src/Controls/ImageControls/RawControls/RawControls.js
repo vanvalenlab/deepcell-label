@@ -2,7 +2,7 @@ import { Box, makeStyles } from '@material-ui/core';
 import FormLabel from '@material-ui/core/FormLabel';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useRaw } from '../../../ServiceContext';
+import { useRaw } from '../../../ProjectContext';
 import ColorModeToggle from './ColorModeToggle';
 import GrayscaleControls from './GrayscaleControls';
 import RGBControls from './RGBControls';

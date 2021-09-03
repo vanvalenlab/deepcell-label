@@ -11,7 +11,7 @@ import CloseIcon from '@material-ui/icons/Close';
 import { useSelector } from '@xstate/react';
 import React, { useReducer, useRef } from 'react';
 import { ArcherContainer, ArcherElement } from 'react-archer';
-import { useFeature, useImage, useLabeled, useSelect, useTracking } from '../../ServiceContext';
+import { useFeature, useImage, useLabeled, useSelect, useTracking } from '../../ProjectContext';
 
 function useColors() {
   const labeled = useLabeled();

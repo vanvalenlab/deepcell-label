@@ -16,7 +16,7 @@ import Timeline from './Controls/Tracking/Timeline';
 import Footer from './Footer/Footer';
 import Instructions from './Instructions/Instructions';
 import Navbar from './Navbar';
-import { useCanvas, useDeepCellLabel, useLabeled } from './ServiceContext';
+import { useCanvas, useLabeled, useProject } from './ProjectContext';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -74,7 +74,7 @@ function Label() {
   const [canvasBoxWidth, setCanvasBoxWidth] = useState(0);
   const [canvasBoxHeight, setCanvasBoxHeight] = useState(0);
 
-  const project = useDeepCellLabel();
+  const project = useProject();
   const canvas = useCanvas();
   const labeled = useLabeled();
 

@@ -1,6 +1,6 @@
 import { useSelector } from '@xstate/react';
 import React, { useCallback } from 'react';
-import { useSegment, useSelect } from '../../../ServiceContext';
+import { useSegment, useSelect } from '../../../ProjectContext';
 import ToolButton from './ToolButton';
 
 function EraserButton(props) {

@@ -9,7 +9,7 @@ import SubdirectoryArrowLeftIcon from '@material-ui/icons/SubdirectoryArrowLeft'
 import SubdirectoryArrowRightIcon from '@material-ui/icons/SubdirectoryArrowRight';
 import { useSelector } from '@xstate/react';
 import React, { useState } from 'react';
-import { useFeature, useLabeled, useSelect } from '../../ServiceContext';
+import { useFeature, useLabeled, useSelect } from '../../ProjectContext';
 
 // adapted from https://stackoverflow.com/questions/9733288/how-to-programmatically-calculate-the-contrast-ratio-between-two-colors
 

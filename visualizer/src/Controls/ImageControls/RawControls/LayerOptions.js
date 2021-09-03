@@ -9,7 +9,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import { useSelector } from '@xstate/react';
 import React, { useReducer, useRef } from 'react';
-import { useRaw } from '../../../ServiceContext';
+import { useRaw } from '../../../ProjectContext';
 import ColorPalette from './ColorPalette';
 
 const useStyles = makeStyles(() => ({

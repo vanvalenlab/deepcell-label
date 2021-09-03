@@ -1,7 +1,7 @@
 import { Box, makeStyles } from '@material-ui/core';
 import { green } from '@material-ui/core/colors';
 import React from 'react';
-import { useLabeled, useRaw } from '../../ServiceContext';
+import { useLabeled, useRaw } from '../../ProjectContext';
 import LabeledControls from './LabeledControls/LabeledControls';
 import RawControls from './RawControls/RawControls';
 import SubmitButton from './SubmitButton';

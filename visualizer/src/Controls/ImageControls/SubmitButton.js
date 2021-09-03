@@ -3,7 +3,7 @@ import { green } from '@material-ui/core/colors';
 import SendIcon from '@material-ui/icons/Send';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useApi } from '../../ServiceContext';
+import { useApi } from '../../ProjectContext';
 
 const useStyles = makeStyles(theme => ({
   buttonProgress: {

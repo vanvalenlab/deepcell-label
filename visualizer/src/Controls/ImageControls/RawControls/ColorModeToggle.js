@@ -5,7 +5,7 @@ import Tooltip from '@material-ui/core/Tooltip';
 import { useSelector } from '@xstate/react';
 import { bind, unbind } from 'mousetrap';
 import React, { useCallback, useEffect, useRef } from 'react';
-import { useRaw } from '../../../ServiceContext';
+import { useRaw } from '../../../ProjectContext';
 
 function ColorModeToggle() {
   const raw = useRaw();

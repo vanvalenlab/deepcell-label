@@ -1,6 +1,6 @@
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useRaw } from '../../ServiceContext';
+import { useRaw } from '../../ProjectContext';
 import GrayscaleCanvas from './GrayscaleCanvas';
 import RGBCanvas from './RGBCanvas';
 

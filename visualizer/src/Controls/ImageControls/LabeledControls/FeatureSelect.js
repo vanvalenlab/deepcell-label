@@ -3,16 +3,13 @@ import Select from '@material-ui/core/Select';
 import Tooltip from '@material-ui/core/Tooltip';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useLabeled } from '../../../ServiceContext';
+import { useLabeled } from '../../../ProjectContext';
 
 function FeatureSelect() {
   const labeled = useLabeled();
   const feature = useSelector(labeled, state => state.context.feature);
   const numFeatures = useSelector(labeled, state => state.context.numFeatures);
-  const featureNames = useSelector(
-    labeled,
-    state => state.context.featureNames
-  );
+  const featureNames = useSelector(labeled, state => state.context.featureNames);
 
   const handleFeatureChange = event => {
     labeled.send({ type: 'LOAD_FEATURE', feature: Number(event.target.value) });

@@ -2,7 +2,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import Alert from '@material-ui/lab/Alert';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useTracking } from '../../../ServiceContext';
+import { useTracking } from '../../../ProjectContext';
 import { formatFrames, parentAfterDivision } from '../trackingUtils';
 import AlertGroup from './AlertGroup';
 
@@ -53,9 +53,7 @@ function ParentAfterDivisionAlerts() {
   const count = parentAfterDivisionAlerts.length;
 
   const header =
-    count === 1
-      ? `1 parent present after division`
-      : `${count} parents present after division`;
+    count === 1 ? `1 parent present after division` : `${count} parents present after division`;
 
   return (
     count > 0 && (
