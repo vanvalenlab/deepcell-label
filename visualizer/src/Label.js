@@ -16,7 +16,7 @@ import Timeline from './Controls/Tracking/Timeline';
 import Footer from './Footer/Footer';
 import Instructions from './Instructions/Instructions';
 import Navbar from './Navbar';
-import { useCanvas, useLabeled, useProject } from './ProjectContext';
+import { useCanvas, useLabeled, useLabelMode } from './ProjectContext';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -74,21 +74,21 @@ function Label() {
   const [canvasBoxWidth, setCanvasBoxWidth] = useState(0);
   const [canvasBoxHeight, setCanvasBoxHeight] = useState(0);
 
-  const project = useProject();
+  const labelMode = useLabelMode();
   const canvas = useCanvas();
   const labeled = useLabeled();
 
-  const value = useSelector(project, state => {
-    return state.matches('idle.segment') ? 0 : state.matches('idle.track') ? 1 : false;
+  const value = useSelector(labelMode, state => {
+    return state.matches('segment') ? 0 : state.matches('track') ? 1 : false;
   });
 
   const handleChange = (event, newValue) => {
     switch (newValue) {
       case 0:
-        project.send('SEGMENT');
+        labelMode.send('SEGMENT');
         break;
       case 1:
-        project.send('TRACK');
+        labelMode.send('TRACK');
         break;
       default:
         break;
