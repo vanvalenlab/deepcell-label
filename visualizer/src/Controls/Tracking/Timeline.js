@@ -34,6 +34,11 @@ function Timeline() {
 
   return (
     <Box m={1}>
+      {addingDaughter && (
+        <Typography style={{ maxWidth: '100%' }}>
+          Click a label to add a daughter to label {parent}.
+        </Typography>
+      )}
       <FormLabel>Selected Label</FormLabel>
       <Divisions label={selected} />
       <LabelTimeline label={selected} />
@@ -41,9 +46,6 @@ function Timeline() {
       <LabelTimeline label={hovering} />
       <FormLabel>Hovering over Label</FormLabel>
       <Divisions label={hovering} />
-      {addingDaughter && (
-        <Typography>Click on a label to add a daughter to label {parent}.</Typography>
-      )}
     </Box>
   );
 }

@@ -6,12 +6,8 @@ import ParentAfterDivisionAlerts from './ParentAfterDivisionAlert';
 
 const useStyles = makeStyles(theme => ({
   root: {
-    // width: '100%',
     maxHeight: '200px',
     overflow: 'auto',
-    // '& > * + *': {
-    //   marginTop: theme.spacing(2),
-    // },
   },
 }));
 
