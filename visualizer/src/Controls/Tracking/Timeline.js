@@ -1,19 +1,18 @@
 import { Box, FormLabel, Typography } from '@material-ui/core';
 import { useSelector } from '@xstate/react';
 import { default as React } from 'react';
-import { useSelect, useTracking } from '../../ProjectContext';
+import { useDivision, useSelect, useTracking } from '../../ProjectContext';
 import Division from './Division';
 import FrameSlider from './FrameSlider';
 import LabelTimeline from './LabelTimeline';
 
 function Divisions({ label }) {
-  const tracking = useTracking();
-  const division = useSelector(tracking, state => state.context.labels[label]);
+  const division = useDivision(label);
 
   return (
     label !== 0 && (
       <Box style={{ display: 'flex', justifyContent: 'space-between' }}>
-        {division?.parent && <Division label={division.parent} />}
+        {division.parent && <Division label={division.parent} />}
         {/* Empty middle element keeps the second division on 
             the right side when the first is not present */}
         <Box></Box>

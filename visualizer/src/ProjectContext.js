@@ -27,6 +27,25 @@ export function useTracking() {
   return tracking;
 }
 
+export function useDivision(label) {
+  const project = useProject();
+  const division = useSelector(project, state => {
+    const track = state.context.trackRef;
+    const labels = track.state.context.labels;
+    const division = labels[label];
+    return (
+      division || {
+        parent: null,
+        daughters: [],
+        divisionFrame: null,
+        parentDivisionFrame: null,
+        frames: [],
+      }
+    );
+  });
+  return division;
+}
+
 export function useApi() {
   const project = useProject();
   const api = useSelector(project, state => state.context.apiRef);
