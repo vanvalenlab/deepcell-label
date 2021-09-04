@@ -10,7 +10,7 @@ scikit-image>=0.15.0,<0.17.0
 pandas>=1.0.0
 python-decouple==3.1
 python-dotenv==0.16.0
-pillow>=7.1.0
+pillow>=7.1.0,<8.3.2
 flask-compress>=1.5.0
 git+git://github.com/flask-dashboard/Flask-MonitoringDashboard@development#egg=flask_monitoringdashboard
 flask-dropzone==1.5.4
