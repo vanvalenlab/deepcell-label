@@ -19,7 +19,6 @@ const trackMachine = Machine(
       LABEL: { actions: 'setLabel' },
       LABELS: { actions: 'setLabels' },
       REMOVE: { actions: 'remove' },
-      REPLACE_WITH_NEW_CELL: { actions: 'replaceWithNewCell' },
       REPLACE_WITH_PARENT: { actions: 'replaceWithParent' },
     },
     initial: 'idle',
@@ -71,24 +70,19 @@ const trackMachine = Machine(
           daughter: label,
         },
       })),
-      createNewCell: sendParent(() => ({
-        type: 'EDIT',
-        action: '',
-        args: {},
-      })),
       replaceWithParent: sendParent((_, { parent, daughter }) => ({
         type: 'EDIT',
-        action: 'replace',
+        action: 'replace_with_parent',
         args: {
           label_1: parent,
           label_2: daughter,
         },
       })),
-      replaceWithNewCell: sendParent((_, { daughter }) => ({
+      createNewCell: sendParent((_, { label }) => ({
         type: 'EDIT',
         action: 'new_track',
         args: {
-          label: daughter,
+          label: label,
         },
       })),
     },
