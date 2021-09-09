@@ -1,8 +1,9 @@
 import { Box, FormLabel, Typography } from '@material-ui/core';
 import { useSelector } from '@xstate/react';
-import { default as React } from 'react';
+import { bind, unbind } from 'mousetrap';
+import { default as React, useEffect } from 'react';
 import { useDivision, useSelect, useTracking } from '../../ProjectContext';
-import Division from './Division';
+import Division, { Cell } from './Division';
 import FrameSlider from './FrameSlider';
 import LabelTimeline from './LabelTimeline';
 
@@ -31,6 +32,22 @@ function Timeline() {
   const addingDaughter = useSelector(tracking, state => state.matches('addingDaughter'));
   const parent = useSelector(tracking, state => state.context.parent);
 
+  useEffect(() => {
+    bind('n', () => select.send('NEW_FOREGROUND'));
+    bind('esc', () => {
+      select.send('RESET_FOREGROUND');
+      select.send('RESET_BACKGROUND');
+    });
+    bind('[', () => select.send('PREV_FOREGROUND'));
+    bind(']', () => select.send('NEXT_FOREGROUND'));
+    return () => {
+      unbind('n');
+      unbind('esc');
+      unbind('[');
+      unbind(']');
+    };
+  }, [select]);
+
   return (
     <Box m={1}>
       {addingDaughter && (
@@ -44,7 +61,7 @@ function Timeline() {
       <FrameSlider topLabel={selected} bottomLabel={hovering} />
       <LabelTimeline label={hovering} />
       <FormLabel>Hovering over Label</FormLabel>
-      <Divisions label={hovering} />
+      {hovering !== 0 && <Cell label={hovering} />}
     </Box>
   );
 }

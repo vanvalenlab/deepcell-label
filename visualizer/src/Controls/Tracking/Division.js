@@ -49,6 +49,19 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
+export function Cell({ label, onClick }) {
+  const colors = useColors();
+  const color = colors[label];
+
+  const styles = useStyles();
+
+  return (
+    <Avatar className={styles.cell} style={{ backgroundColor: color }} onClick={onClick}>
+      {label}
+    </Avatar>
+  );
+}
+
 function Parent({ division }) {
   const { label, daughters, divisionFrame, frames } = division;
   const colors = useColors();
@@ -84,9 +97,7 @@ function Parent({ division }) {
 
   return (
     <ArcherElement id='parent' relations={relations}>
-      <Avatar className={styles.cell} style={{ backgroundColor: color }} onClick={onClick}>
-        {label}
-      </Avatar>
+      <Cell label={label} onClick={onClick} />
     </ArcherElement>
   );
 }
@@ -107,13 +118,7 @@ function Daughter({ label, daughter, divisionFrame }) {
   return (
     <Box className={styles.daughter}>
       <ArcherElement id={`daughter${daughter}`}>
-        <Avatar
-          className={styles.cell}
-          onClick={onClick}
-          style={{ backgroundColor: colors[daughter] }}
-        >
-          {daughter}
-        </Avatar>
+        <Cell label={label} onClick={onClick} />
       </ArcherElement>
       <DaughterMenu parent={label} daughter={daughter} />
     </Box>
