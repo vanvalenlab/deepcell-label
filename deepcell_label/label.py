@@ -733,19 +733,38 @@ class TrackEdit(BaseEdit):
 
     def action_replace_with_parent(self, daughter):
         """
-        Replaces daughter with its parent after the division.
+        Replaces daughter with its parent after the division
+        and removes the division.
+        Future divisions with the daughter become part of the parent's lineage.
         """
-        daughter_division = self.tracks[daughter]
-        parent = daughter_division['parent']
-        parent_division = self.tracks[parent]
-        frame = parent_division['frame_div']
+        daughter_track = self.tracks[daughter]
+        parent = daughter_track['parent']
+        parent_track = self.tracks[parent]
+        frame = parent_track['frame_div']
 
+        # Remove division
+        for d in parent_track['daughters']:
+            self.tracks[d]['parent'] = None
+        # Link future division to parent
+        if daughter_track['frame_div'] is None or parent_track['frame_div'] < daughter_track['frame_div']:
+            for d in daughter_track['daughters']:
+                self.tracks[d]['parent'] = parent
+            parent_track['daughters'] = daughter_track['daughters']
+            parent_track['frame_div'] = daughter_track['frame_div']
+            parent_track['capped'] = daughter_track['capped']
+        # Past divisions remain with daughter
+        else:
+            parent_track['daughters'] = []
+            parent_track['frame_div'] = None
+            parent_track['capped'] = False
+
+        # Replace daughter with parent after division frame
         for label_frame in self.project.label_frames[frame:]:
             img = label_frame.frame[..., self.feature]
             if np.any(np.isin(img, daughter)):
                 img = np.where(img == daughter, parent, img)
-                self.add_cell_info(add_label=parent, frame=self.frame_id)
-                self.del_cell_info(del_label=daughter, frame=self.frame_id)
+                self.add_cell_info(add_label=parent, frame=label_frame.frame_id)
+                self.del_cell_info(del_label=daughter, frame=label_frame.frame_id)
                 label_frame.frame[..., self.feature] = img
 
     def action_new_track(self, label):
