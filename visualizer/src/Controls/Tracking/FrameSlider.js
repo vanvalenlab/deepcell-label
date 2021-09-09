@@ -1,5 +1,6 @@
 import { makeStyles, Slider, Tooltip } from '@material-ui/core';
 import { useSelector } from '@xstate/react';
+import { bind, unbind } from 'mousetrap';
 import React, { useEffect, useState } from 'react';
 import { useImage } from '../../ProjectContext';
 
@@ -14,6 +15,17 @@ function FrameSlider() {
   const image = useImage();
   const frame = useSelector(image, state => state.context.frame);
   const numFrames = useSelector(image, state => state.context.numFrames);
+
+  useEffect(() => {
+    const prevFrame = Math.max(0, frame - 1);
+    const nextFrame = Math.min(frame + 1, numFrames - 1);
+    bind('a', () => image.send({ type: 'LOAD_FRAME', frame: prevFrame }));
+    bind('d', () => image.send({ type: 'LOAD_FRAME', frame: nextFrame }));
+    return () => {
+      unbind('a');
+      unbind('d');
+    };
+  }, [frame, image, numFrames]);
 
   const handleFrameChange = (event, newValue) => {
     if (newValue !== frame) {

@@ -1,13 +1,5 @@
 import { bind, unbind } from 'mousetrap';
-import {
-  actions,
-  assign,
-  forwardTo,
-  Machine,
-  send,
-  sendParent,
-  spawn,
-} from 'xstate';
+import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
 import createFeatureMachine from './featureMachine';
 
 const { pure, respond } = actions;
@@ -53,11 +45,7 @@ const frameState = {
 const featureState = {
   initial: 'loading',
   states: {
-    idle: {
-      invoke: {
-        src: 'listenForFeatureHotkeys',
-      },
-    },
+    idle: {},
     loading: {
       on: {
         LABELED_LOADED: {
@@ -112,11 +100,7 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) =>
         feature: featureState,
         restore: restoreState,
       },
-      invoke: [
-        { src: 'listenForHighlightHotkey' },
-        { src: 'listenForOutlineHotkey' },
-        { src: 'listenForOpacityHotkey' },
-      ],
+      invoke: [{ src: 'listenForHighlightHotkey' }],
       on: {
         TOGGLE_HIGHLIGHT: { actions: 'toggleHighlight' },
         TOGGLE_OUTLINE: { actions: 'toggleOutline' },
@@ -125,58 +109,28 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) =>
         LABELED_ARRAY: { actions: sendParent((c, e) => e) },
         LABELS: { actions: sendParent((c, e) => e) },
         EDITED: {
-          actions: forwardTo(
-            ({ features }, event) => features[event.data.feature]
-          ),
+          actions: forwardTo(({ features }, event) => features[event.data.feature]),
         },
       },
     },
     {
       services: {
-        listenForFeatureHotkeys:
-          ({ feature, numFeatures }) =>
-          send => {
-            const prevFeature = (feature - 1 + numFeatures) % numFeatures;
-            const nextFeature = (feature + 1) % numFeatures;
-            bind('shift+f', () =>
-              send({ type: 'LOAD_FEATURE', feature: prevFeature })
-            );
-            bind('f', () =>
-              send({ type: 'LOAD_FEATURE', feature: nextFeature })
-            );
-            return () => {
-              unbind('shift+f');
-              unbind('f');
-            };
-          },
         listenForHighlightHotkey: () => send => {
           bind('h', () => send('TOGGLE_HIGHLIGHT'));
           return () => unbind('h');
-        },
-        listenForOutlineHotkey: () => send => {
-          bind('o', () => send('TOGGLE_OUTLINE'));
-          return () => unbind('o');
-        },
-        listenForOpacityHotkey: () => send => {
-          bind('z', () => send('CYCLE_OPACITY'));
-          return () => unbind('z');
         },
       },
       guards: {
         /** Check that the loaded event is for the loading frame. */
         loadedFrame: (context, event) =>
-          context.loadingFrame === event.frame &&
-          context.feature === event.feature,
+          context.loadingFrame === event.frame && context.feature === event.feature,
         /** Check that the loaded event is for the loading feature. */
         loadedFeature: (context, event) =>
-          context.frame === event.frame &&
-          context.loadingFeature === event.feature,
+          context.frame === event.frame && context.loadingFeature === event.feature,
         /** Check that requested frame is different from the loading frame. */
-        newLoadingFrame: ({ loadingFrame }, { frame }) =>
-          loadingFrame !== frame,
+        newLoadingFrame: ({ loadingFrame }, { frame }) => loadingFrame !== frame,
         /** Check that requested feature is different from the loading feature. */
-        newLoadingFeature: ({ loadingFeature }, { feature }) =>
-          loadingFeature !== feature,
+        newLoadingFeature: ({ loadingFeature }, { feature }) => loadingFeature !== feature,
       },
       actions: {
         /** Create an actor for each feature. */
@@ -185,10 +139,7 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) =>
             return Array(numFeatures)
               .fill(0)
               .map((val, index) =>
-                spawn(
-                  createFeatureMachine(projectId, index, numFrames),
-                  `feature${index}`
-                )
+                spawn(createFeatureMachine(projectId, index, numFrames), `feature${index}`)
               );
           },
           featureNames: ({ numFeatures }) =>
@@ -207,10 +158,9 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) =>
         /** Preload another frame after the last one is loaded. */
         preload: respond('PRELOAD'),
         /** Load a new frame for the current feature. */
-        loadFrame: send(
-          ({ loadingFrame }) => ({ type: 'LOAD_FRAME', frame: loadingFrame }),
-          { to: ({ features, feature }) => features[feature] }
-        ),
+        loadFrame: send(({ loadingFrame }) => ({ type: 'LOAD_FRAME', frame: loadingFrame }), {
+          to: ({ features, feature }) => features[feature],
+        }),
         /** Load the current frame for a new feature.  */
         loadFeature: send(({ frame }) => ({ type: 'LOAD_FRAME', frame }), {
           to: ({ features, loadingFeature }) => features[loadingFeature],
@@ -229,12 +179,8 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) =>
         /** Update the index to a new frame. */
         useFrame: assign((_, { frame }) => ({ frame })),
         /** Send event to all features. */
-        forwardToFeatures: pure(({ features }) =>
-          features.map(feature => forwardTo(feature))
-        ),
-        forwardToFeature: forwardTo(
-          ({ features, feature }) => features[feature]
-        ),
+        forwardToFeatures: pure(({ features }) => features.map(feature => forwardTo(feature))),
+        forwardToFeature: forwardTo(({ features, feature }) => features[feature]),
         /** Tell imageMachine that the labeled data is loaded. */
         sendLoaded: sendParent('LABELED_LOADED'),
         toggleHighlight: assign({ highlight: ({ highlight }) => !highlight }),

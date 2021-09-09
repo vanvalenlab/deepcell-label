@@ -4,7 +4,8 @@ import Tooltip from '@material-ui/core/Tooltip';
 import RedoIcon from '@material-ui/icons/Redo';
 import UndoIcon from '@material-ui/icons/Undo';
 import { useSelector } from '@xstate/react';
-import React from 'react';
+import { bind, unbind } from 'mousetrap';
+import React, { useEffect } from 'react';
 import { useUndo } from '../../ProjectContext';
 
 const useStyles = makeStyles({
@@ -56,6 +57,15 @@ export default function UndoRedo() {
       <kbd>Shift</kbd>+<kbd>Ctrl</kbd>+<kbd>Z</kbd>
     </>
   );
+
+  useEffect(() => {
+    bind('mod+z', () => undo.send('UNDO'));
+    bind('mod+shift+z', () => undo.send('REDO'));
+    return () => {
+      unbind('mod+z');
+      unbind('mod+shift+z');
+    };
+  }, []);
 
   return (
     <>
