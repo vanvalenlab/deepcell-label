@@ -36,7 +36,7 @@ const toolMachine = Machine(
     },
     on: {
       SAVE: { actions: 'save' },
-      RESTORE: { target: '.checkTool', actions: 'restore' },
+      RESTORE: { target: '.checkTool', actions: ['restore', respond('RESTORED')] },
 
       SEGMENT: { target: '.checkTool', actions: assign({ tool: 'segment' }) },
       TRACK: { target: '.checkTool', actions: assign({ tool: 'track' }) },
