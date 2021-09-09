@@ -49,28 +49,24 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-export function Cell({ label, onClick }) {
+export const Cell = React.forwardRef(({ label, onClick }, ref) => {
   const colors = useColors();
   const color = colors[label];
 
   const styles = useStyles();
 
   return (
-    <Avatar className={styles.cell} style={{ backgroundColor: color }} onClick={onClick}>
+    <Avatar ref={ref} className={styles.cell} style={{ backgroundColor: color }} onClick={onClick}>
       {label}
     </Avatar>
   );
-}
+});
 
 function Parent({ division }) {
   const { label, daughters, divisionFrame, frames } = division;
-  const colors = useColors();
-  const color = colors[label];
-
-  const styles = useStyles();
   const theme = useTheme();
-
   const strokeColor = theme.palette.secondary.main;
+
   const relations = daughters.map(label => ({
     targetId: `daughter${label}`,
     targetAnchor: 'left',
@@ -108,8 +104,6 @@ function Daughter({ label, daughter, divisionFrame }) {
   const select = useSelect();
   const image = useImage();
 
-  const colors = useColors();
-
   const onClick = () => {
     select.send({ type: 'SET_FOREGROUND', foreground: daughter });
     image.send({ type: 'LOAD_FRAME', frame: divisionFrame });
@@ -118,7 +112,7 @@ function Daughter({ label, daughter, divisionFrame }) {
   return (
     <Box className={styles.daughter}>
       <ArcherElement id={`daughter${daughter}`}>
-        <Cell label={label} onClick={onClick} />
+        <Cell label={daughter} onClick={onClick} />
       </ArcherElement>
       <DaughterMenu parent={label} daughter={daughter} />
     </Box>
