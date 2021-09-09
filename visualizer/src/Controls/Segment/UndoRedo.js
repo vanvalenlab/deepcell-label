@@ -1,3 +1,4 @@
+import { Box } from '@material-ui/core';
 import MuiButton from '@material-ui/core/Button';
 import { makeStyles, withStyles } from '@material-ui/core/styles';
 import Tooltip from '@material-ui/core/Tooltip';
@@ -68,7 +69,7 @@ export default function UndoRedo() {
   }, []);
 
   return (
-    <>
+    <Box display='flex' flexDirection='row'>
       <ButtonWithTooltip
         className={styles.button}
         tooltipText={undoTooltip}
@@ -91,6 +92,6 @@ export default function UndoRedo() {
         Redo
         <RedoIcon />
       </ButtonWithTooltip>
-    </>
+    </Box>
   );
 }

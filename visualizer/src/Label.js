@@ -1,4 +1,4 @@
-import { Paper, Tab, Tabs } from '@material-ui/core';
+import { FormLabel, Paper, Tab, Tabs } from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import { makeStyles } from '@material-ui/core/styles';
 import { useSelector } from '@xstate/react';
@@ -12,6 +12,7 @@ import SelectedPalette from './Controls/Segment/SelectedPalette';
 import ToolButtons from './Controls/Segment/ToolButtons';
 import UndoRedo from './Controls/Segment/UndoRedo';
 import DivisionAlerts from './Controls/Tracking/Alerts/DivisionAlerts';
+import FrameSlider from './Controls/Tracking/FrameSlider';
 import Timeline from './Controls/Tracking/Timeline';
 import Footer from './Footer/Footer';
 import Instructions from './Instructions/Instructions';
@@ -137,13 +138,17 @@ function Label() {
         </Box>
         <Box className={styles.toolbarBox}>
           <TabPanel value={value} index={0}>
-            <UndoRedo />
-            <Box display='flex' flexDirection='row'>
-              <Box display='flex' flexDirection='column'>
-                <ToolButtons />
-                <ActionButtons />
+            <Box display='flex' flexDirection='column'>
+              <UndoRedo />
+              <FormLabel>Frame</FormLabel>
+              <FrameSlider />
+              <Box display='flex' flexDirection='row'>
+                <Box display='flex' flexDirection='column'>
+                  <ToolButtons />
+                  <ActionButtons />
+                </Box>
+                {labeled && <SelectedPalette />}
               </Box>
-              {labeled && <SelectedPalette />}
             </Box>
           </TabPanel>
           <TabPanel value={value} index={1}>
