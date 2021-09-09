@@ -50,7 +50,7 @@ const trackMachine = Machine(
       onNoLabel: ({ label }) => label === 0,
     },
     actions: {
-      selectForeground: sendParent('SELECT_FOREGROUND'),
+      selectForeground: sendParent(({ label }) => ({ type: 'SET_FOREGROUND', foreground: label })),
       setForeground: assign({ foreground: (_, { foreground }) => foreground }),
       setLabel: assign({ label: (_, { label }) => label }),
       setLabels: assign({ labels: (_, { labels }) => labels }),
