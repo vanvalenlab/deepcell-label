@@ -9,8 +9,7 @@ import { useTheme } from '@material-ui/core/styles';
 import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
 import CloseIcon from '@material-ui/icons/Close';
 import { useSelector } from '@xstate/react';
-import { bind, unbind } from 'mousetrap';
-import React, { useEffect, useReducer, useRef } from 'react';
+import React, { useReducer, useRef } from 'react';
 import { ArcherContainer, ArcherElement } from 'react-archer';
 import { useFeature, useImage, useLabeled, useSelect, useTracking } from '../../ProjectContext';
 
@@ -213,14 +212,8 @@ function Daughters({ division }) {
 
 function Division({ label }) {
   const styles = useStyles();
-
   const tracking = useTracking();
   const division = useSelector(tracking, state => state.context.labels[label]);
-
-  useEffect(() => {
-    bind('esc', () => tracking.send('RESET'));
-    return () => unbind('esc');
-  }, [tracking]);
 
   return (
     <ArcherContainer>

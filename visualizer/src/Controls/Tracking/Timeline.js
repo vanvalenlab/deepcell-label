@@ -35,6 +35,7 @@ function Timeline() {
   useEffect(() => {
     bind('n', () => select.send('NEW_FOREGROUND'));
     bind('esc', () => {
+      tracking.send('RESET');
       select.send('RESET_FOREGROUND');
       select.send('RESET_BACKGROUND');
     });
