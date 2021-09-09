@@ -74,8 +74,7 @@ const trackMachine = Machine(
         type: 'EDIT',
         action: 'replace_with_parent',
         args: {
-          label_1: parent,
-          label_2: daughter,
+          daughter: daughter,
         },
       })),
       createNewCell: sendParent((_, { label }) => ({

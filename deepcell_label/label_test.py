@@ -394,6 +394,130 @@ class TestZStackEdit():
 
 class TestTrackEdit():
 
+    def test_replace_with_parent_with_overlap(self, app):
+        """
+        Replaces daughter with parent when the daughter exists before the division.
+        """
+        labels = np.reshape([1, 2, 1, 2], (2, 2, 1, 1))
+        cell_info = {0: {
+            1: {'capped': True, 'frame_div': 1,
+                'daughters': [2], 'parent': None, 'frames': [0, 1]},
+            2: {'capped': False, 'frame_div': None,
+                'daughters': [], 'parent': 1, 'frames': [0, 1]}}}
+        loader = DummyLoader(labels=labels, cell_info=cell_info, url='test.trk')
+        project = models.Project.create(loader)
+        edit = label.TrackEdit(project)
+
+        daughter = 2
+        expected_labels = np.reshape([1, 2, 1, 1], (2, 2, 1, 1))
+        expected_cell_info = {0: {
+            1: {'capped': False, 'frame_div': None,
+                'daughters': [], 'parent': None, 'frames': [0, 1]},
+            2: {'capped': False, 'frame_div': None,
+                'daughters': [], 'parent': None, 'frames': [0]}}}
+
+        with app.app_context():
+            edit.action_replace_with_parent(daughter)
+            np.testing.assert_equal(project.label_array, expected_labels)
+            assert edit.tracks == expected_cell_info[0]
+
+    def test_replace_with_parent(self, app):
+        """
+        Replaces daughter with parent.
+        """
+        labels = np.reshape([1, 2], (2, 1, 1, 1))
+        cell_info = {0: {
+            1: {'capped': True, 'frame_div': 1,
+                'daughters': [2], 'parent': None, 'frames': [0]},
+            2: {'capped': False, 'frame_div': None,
+                'daughters': [], 'parent': 1, 'frames': [1]}}}
+        loader = DummyLoader(labels=labels, cell_info=cell_info, url='test.trk')
+        project = models.Project.create(loader)
+        edit = label.TrackEdit(project)
+
+        daughter = 2
+        expected_labels = np.reshape([1, 1], (2, 1, 1, 1))
+        expected_cell_info = {0: {
+            1: {'capped': False, 'frame_div': None,
+                'daughters': [], 'parent': None, 'frames': [0, 1]}}}
+
+        with app.app_context():
+            edit.action_replace_with_parent(daughter)
+            np.testing.assert_equal(project.label_array, expected_labels)
+            assert edit.tracks == expected_cell_info[0]
+
+    def test_replace_with_parent_daughter_divides_in_future(self, app):
+        """
+        Replaces daughter with parent when the daughter divides after the parent.
+        """
+        labels = np.reshape([1, 0, 0, 2, 3, 0, 4, 5, 3], (3, 3, 1, 1))
+        cell_info = {0: {
+            1: {'capped': True, 'frame_div': 1,
+                'daughters': [2, 3], 'parent': None, 'frames': [0]},
+            2: {'capped': True, 'frame_div': 2,
+                'daughters': [4, 5], 'parent': 1, 'frames': [1]},
+            3: {'capped': False, 'frame_div': None,
+                'daughters': [], 'parent': 1, 'frames': [1]},
+            4: {'capped': False, 'frame_div': None,
+                'daughters': [], 'parent': 2, 'frames': [2]},
+            5: {'capped': False, 'frame_div': None,
+                'daughters': [], 'parent': 2, 'frames': [2]}}}
+        loader = DummyLoader(labels=labels, cell_info=cell_info, url='test.trk')
+        project = models.Project.create(loader)
+        edit = label.TrackEdit(project)
+
+        daughter = 2
+        expected_labels = np.reshape([1, 0, 0, 1, 3, 0, 4, 5, 3], (3, 3, 1, 1))
+        expected_cell_info = {0: {
+            1: {'capped': True, 'frame_div': 2,
+                'daughters': [4, 5], 'parent': None, 'frames': [0, 1]},
+            3: {'capped': False, 'frame_div': None,
+                'daughters': [], 'parent': None, 'frames': [1]},
+            4: {'capped': False, 'frame_div': None,
+                'daughters': [], 'parent': 1, 'frames': [2]},
+            5: {'capped': False, 'frame_div': None,
+                'daughters': [], 'parent': 1, 'frames': [2]}}}
+
+        with app.app_context():
+            edit.action_replace_with_parent(daughter)
+            np.testing.assert_equal(project.label_array, expected_labels)
+            assert edit.tracks == expected_cell_info[0]
+
+    def test_replace_with_parent_daughter_divides_in_past(self, app):
+        """
+        Replaces daughter with parent when the daughter
+        """
+        labels = np.reshape([2, 0, 3, 4, 1, 0, 1, 2], (4, 2, 1, 1))
+        cell_info = {0: {
+            1: {'capped': True, 'frame_div': 3,
+                'daughters': [2], 'parent': None, 'frames': [2, 3]},
+            2: {'capped': True, 'frame_div': 1,
+                'daughters': [3, 4], 'parent': 1, 'frames': [0, 3]},
+            3: {'capped': False, 'frame_div': None,
+                'daughters': [], 'parent': 2, 'frames': [1]},
+            4: {'capped': False, 'frame_div': None,
+                'daughters': [], 'parent': 2, 'frames': [1]}}}
+        loader = DummyLoader(labels=labels, cell_info=cell_info, url='test.trk')
+        project = models.Project.create(loader)
+        edit = label.TrackEdit(project)
+
+        daughter = 2
+        expected_labels = np.reshape([2, 0, 3, 4, 1, 0, 1, 1], (4, 2, 1, 1))
+        expected_cell_info = {0: {
+            1: {'capped': False, 'frame_div': None,
+                'daughters': [], 'parent': None, 'frames': [2, 3]},
+            2: {'capped': True, 'frame_div': 1,
+                'daughters': [3, 4], 'parent': None, 'frames': [0]},
+            3: {'capped': False, 'frame_div': None,
+                'daughters': [], 'parent': 2, 'frames': [1]},
+            4: {'capped': False, 'frame_div': None,
+                'daughters': [], 'parent': 2, 'frames': [1]}}}
+
+        with app.app_context():
+            edit.action_replace_with_parent(daughter)
+            np.testing.assert_equal(project.label_array, expected_labels)
+            assert edit.tracks == expected_cell_info[0]
+
     def test_add_self_as_daughter(self, app):
         """
         Add parent as a daughter of itself, creating a new label
