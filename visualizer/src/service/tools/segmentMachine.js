@@ -207,17 +207,8 @@ const segmentMachine = Machine(
       ...toolActions,
       ...editActions,
       ...useToolActions,
-      save: respond(({ tool, foreground, background }) => ({
-        type: 'RESTORE',
-        tool,
-        foreground,
-        background,
-      })),
-      restore: assign((_, { tool, foreground, background }) => ({
-        tool,
-        foreground,
-        background,
-      })),
+      save: respond(({ tool }) => ({ type: 'RESTORE', tool })),
+      restore: assign((_, { tool }) => ({ tool })),
       useTool: assign({ tool: (_, { tool }) => tool }),
       spawnTool: assign({ toolActor: createToolMachine }),
       changeGrayscaleTools: assign({
