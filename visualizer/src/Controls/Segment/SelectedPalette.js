@@ -14,7 +14,10 @@ import { useFeature, useLabeled, useSelect } from '../../ProjectContext';
 
 // adapted from https://stackoverflow.com/questions/9733288/how-to-programmatically-calculate-the-contrast-ratio-between-two-colors
 
-/** Computes the luminance of a hex color like #000000. */
+/**
+ * Computes the luminance of a hex color like #000000.
+ * Luminance is the perceived brightness of a color.
+ * */
 function luminance(hex) {
   const [r, g, b] = hex
     .substr(1)
@@ -78,7 +81,7 @@ const useStyles = makeStyles(theme => ({
     alignContent: 'center',
     justifyContent: 'center',
   },
-  swapBox: {
+  switchBox: {
     position: 'absolute',
     left: '4rem',
     top: '-0.25rem',
@@ -114,7 +117,7 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-function SwapIcon() {
+function SwitchIcon() {
   const styles = useStyles();
 
   return (
@@ -125,7 +128,7 @@ function SwapIcon() {
   );
 }
 
-export function SwapButton() {
+export function SwitchButton() {
   const select = useSelect();
 
   const tooltipText = (
@@ -142,7 +145,7 @@ export function SwapButton() {
   return (
     <Tooltip title={tooltipText}>
       <IconButton color='primary' onClick={() => select.send('SWITCH')}>
-        <SwapIcon />
+        <SwitchIcon />
       </IconButton>
     </Tooltip>
   );
@@ -407,8 +410,8 @@ export default function SelectedPalette() {
         <Box display='flex' justifyContent='center'>
           <ForegroundBox />
           <BackgroundBox />
-          <Box className={styles.swapBox}>
-            <SwapButton />
+          <Box className={styles.switchBox}>
+            <SwitchButton />
           </Box>
         </Box>
       </Box>
