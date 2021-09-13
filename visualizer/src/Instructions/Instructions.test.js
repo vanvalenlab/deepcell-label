@@ -3,12 +3,12 @@ import { fireEvent, render } from '@testing-library/react';
 import React from 'react';
 import Instructions from './Instructions';
 
-// mock the SwapButton component used in SelectedPalette
+// mock the SwitchButton component used in SelectedPalette
 // to avoid using any xstate hooks
 jest.mock('../Controls/Segment/SelectedPalette', () => {
   return {
     __esModule: true,
-    SwapButton: 'button',
+    SwitchButton: 'button',
     default: () => {
       return <div></div>;
     },
