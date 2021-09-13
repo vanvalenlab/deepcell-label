@@ -140,11 +140,8 @@ const selectMachine = Machine(
   },
   {
     guards: {
-      shift: (_, event) => event.shiftKey,
       doubleClick: (_, event) => event.detail === 2,
       onBackground: ({ label, background }) => label === background,
-      onForeground: ({ label, foreground }) => label === foreground,
-      onNoLabel: ({ label }) => label === 0,
     },
     actions: {
       ...selectActions,

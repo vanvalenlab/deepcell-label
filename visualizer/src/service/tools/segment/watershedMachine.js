@@ -51,8 +51,6 @@ const createWatershedMachine = ({ x, y, label, foreground, background }) =>
         validSecondSeed: ({ label, foreground, x, y, storedX, storedY }) =>
           label === foreground && // same label
           (x !== storedX || y !== storedY), // different point
-        newForeground: (context, event) =>
-          context.foreground !== event.foreground,
       },
       actions: {
         ...toolActions,

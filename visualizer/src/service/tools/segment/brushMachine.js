@@ -20,10 +20,7 @@ const createBrushMachine = ({ x, y, foreground, background }) =>
         idle: {
           entry: assign({ trace: [] }),
           on: {
-            mousedown: [
-              { cond: 'shift' },
-              { target: 'dragging', actions: 'addToTrace' },
-            ],
+            mousedown: [{ cond: 'shift' }, { target: 'dragging', actions: 'addToTrace' }],
           },
         },
         dragging: {

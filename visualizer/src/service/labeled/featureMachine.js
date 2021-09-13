@@ -212,7 +212,6 @@ const createFeatureMachine = (projectId, feature, numFrames) =>
       guards: {
         loadedLabels: ({ labels }) => labels !== null,
         loadedFrame: ({ loadingFrame, frames }) => loadingFrame in frames,
-        newFrame: (context, event) => context.frame !== event.frame,
         frameChanged: ({ frame, newFrames }) => newFrames.includes(frame),
         canPreload: ({ frames, numFrames }) => Object.keys(frames).length !== numFrames,
       },
@@ -268,14 +267,6 @@ const createFeatureMachine = (projectId, feature, numFrames) =>
                 )
             );
           },
-        }),
-        preloadNextFrame: send(({ numFrames, frame, frames }) => {
-          const allFrames = [...Array(numFrames).keys()];
-          const unloadedFrames = allFrames.filter(frame => !(frame in frames));
-          const closestFrame = unloadedFrames.reduce((prev, curr) =>
-            Math.abs(curr - frame) < Math.abs(prev - frame) ? curr : prev
-          );
-          return { type: 'LOAD_FRAME', frame: closestFrame };
         }),
       },
     }

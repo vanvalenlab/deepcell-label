@@ -16,10 +16,7 @@ const createFloodMachine = ({ x, y, label, foreground, background }) =>
         LABEL: { actions: 'setLabel' },
         FOREGROUND: { actions: 'setForeground' },
         BACKGROUND: { actions: 'setBackground' },
-        mouseup: [
-          { cond: 'onBackground', actions: 'flood' },
-          { actions: 'selectBackground' },
-        ],
+        mouseup: [{ cond: 'onBackground', actions: 'flood' }, { actions: 'selectBackground' }],
       },
     },
     {

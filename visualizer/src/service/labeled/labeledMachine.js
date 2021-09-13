@@ -170,8 +170,6 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) =>
         }),
         /** Update the index to a new frame. */
         useFrame: assign((_, { frame }) => ({ frame })),
-        /** Send event to all features. */
-        forwardToFeatures: pure(({ features }) => features.map(feature => forwardTo(feature))),
         forwardToFeature: forwardTo(({ features, feature }) => features[feature]),
         /** Tell imageMachine that the labeled data is loaded. */
         sendLoaded: sendParent('LABELED_LOADED'),
