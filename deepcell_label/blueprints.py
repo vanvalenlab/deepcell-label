@@ -221,7 +221,6 @@ def create_project_from_url():
     start = timeit.default_timer()
     url_form = request.form
     loader = url_loaders.Loader(url_form)
-    loader.load()
     project = Project.create(loader)
     current_app.logger.info('Created project from %s in %s s.',
                             loader.url, timeit.default_timer() - start)
