@@ -137,7 +137,7 @@ class Loader():
         elif is_zip(self.labeled_url):
             label_array = load_zip(data)
         else:
-            ext = pathlib.Path(self.url).suffix
+            ext = pathlib.Path(self.labeled_url).suffix
             raise InvalidExtension('invalid file extension: {}'.format(ext))
 
         self.label_array = reshape(label_array, 'CZYX', self.output_axes)
