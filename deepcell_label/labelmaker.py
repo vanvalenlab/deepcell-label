@@ -57,7 +57,7 @@ class LabelInfoMaker():
         # Find the labels in the feature
         feature_labels = self.labels[..., feature]
         feature_cells = np.unique(feature_labels)[np.nonzero(np.unique(feature_labels))]
-        self.cell_ids[feature] = feature_cells
+        self._cell_ids[feature] = feature_cells
 
     def compute_info(self):
         """Create the cell_info dict."""
@@ -90,8 +90,8 @@ class LabelInfoMaker():
             for frame in range(self.num_frames):
                 if cell in labels[frame, ...]:
                     info[cell]['frames'].append(int(frame))
-        self.cell_ids[feature] = cells
-        self.cell_info[feature] = info
+        self._cell_ids[feature] = cells
+        self._cell_info[feature] = info
 
     def compute_feature_lineage(self, feature):
         """
@@ -116,5 +116,5 @@ class LabelInfoMaker():
                 if cell in labels[frame, ...]:
                     tracks[cell]['frames'].append(int(frame))
 
-        self.cell_ids[feature] = cells
-        self.cell_info[feature] = tracks
+        self._cell_ids[feature] = cells
+        self._cell_info[feature] = tracks
