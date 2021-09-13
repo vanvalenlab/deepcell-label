@@ -110,3 +110,30 @@ class TestLabelInfoMaker():
 
         assert self.compare_cell_ids(labeler.cell_ids, expected_ids)
         assert labeler.cell_info == expected_info
+
+    def test_tracking_two_features_two_labels(self):
+        labels = np.reshape([1, 2], (1, 1, 1, 2))
+        labeler = LabelInfoMaker(labels, tracking=True)
+        expected_ids = {0: np.array([1]), 1: np.array([2])}
+        expected_info = {
+            0: {
+                1: {
+                    'label': 1,
+                    'frames': [0],
+                    'frame_div': None,
+                    'daughters': [],
+                    'capped': False,
+                    'parent': None,
+                }},
+            1: {
+                2: {
+                    'label': 2,
+                    'frames': [0],
+                    'frame_div': None,
+                    'daughters': [],
+                    'capped': False,
+                    'parent': None,
+                }}}
+
+        assert self.compare_cell_ids(labeler.cell_ids, expected_ids)
+        assert labeler.cell_info == expected_info
