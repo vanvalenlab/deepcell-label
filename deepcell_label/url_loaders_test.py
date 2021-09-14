@@ -143,7 +143,7 @@ def test_load_raw_png():
 def test_load_raw_zip():
     """Load raw array from zip of tiff files."""
     expected_raw = np.array([1, 2]).reshape((1, 1, 1, 2))
-    expected_labeled = np.array([0, 0]).reshape((1, 1, 1, 2))
+    expected_labeled = np.array([0]).reshape((1, 1, 1, 1))
     raw = io.BytesIO()
 
     def make_tiff(array):

@@ -5,14 +5,14 @@ import debounce from 'lodash.debounce';
 import { useEffect, useRef, useState } from 'react';
 import Canvas from './Canvas/Canvas';
 import ImageControls from './Controls/ImageControls/ImageControls';
-import ActionButtons from './Controls/Toolbar/ActionButtons';
-import SelectedPalette from './Controls/Toolbar/SelectedPalette';
-import ToolControls from './Controls/Toolbar/ToolControls';
-import UndoRedo from './Controls/Toolbar/UndoRedo';
+import ActionButtons from './Controls/Segment/ActionButtons';
+import SelectedPalette from './Controls/Segment/SelectedPalette';
+import ToolButtons from './Controls/Segment/ToolButtons';
+import UndoRedo from './Controls/Segment/UndoRedo';
 import Footer from './Footer/Footer';
 import Instructions from './Instructions/Instructions';
 import Navbar from './Navbar';
-import { useCanvas, useLabeled } from './ServiceContext';
+import { useCanvas, useLabeled } from './ProjectContext';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -32,8 +32,8 @@ const useStyles = makeStyles(theme => ({
     // height: 'calc(100vh - 66px - 57px - 60px - 80px - 1px)'
   },
   controlPanelBox: {
-    minWidth: '300px',
     flex: '0 0 auto',
+    padding: theme.spacing(1),
   },
   toolbarBox: {
     flex: '0 0 auto',
@@ -64,10 +64,7 @@ function Label() {
     };
     setCanvasBoxDimensions();
 
-    new ResizeSensor(
-      canvasBoxRef.current,
-      debounce(setCanvasBoxDimensions, 20)
-    );
+    new ResizeSensor(canvasBoxRef.current, debounce(setCanvasBoxDimensions, 20));
   }, [canvasBoxRef]);
 
   useEffect(() => {
@@ -90,9 +87,13 @@ function Label() {
         </Box>
         <Box className={styles.toolbarBox}>
           <UndoRedo />
-          <ToolControls />
-          <ActionButtons />
-          {labeled && <SelectedPalette />}
+          <Box display='flex' flexDirection='row'>
+            <Box display='flex' flexDirection='column'>
+              <ToolButtons />
+              <ActionButtons />
+            </Box>
+            {labeled && <SelectedPalette />}
+          </Box>
         </Box>
         <Box ref={canvasBoxRef} className={styles.canvasBox}>
           <Canvas />

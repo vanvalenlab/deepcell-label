@@ -109,6 +109,38 @@ class TestBaseEdit():
             assert edit.y_changed
             assert edit.labels_changed
 
+    def test_action_swap_single_frame_with_label_not_in_frame(self, app):
+        """Tests that swapping with a cell not in frame updates the cell info."""
+        labels = np.reshape([1], (1, 1, 1, 1))
+        project = models.Project.create(DummyLoader(labels=labels))
+        edit = label.TrackEdit(project)
+
+        cell1 = 1
+        cell2 = 2
+        expected_labels = np.reshape([2], (1, 1, 1, 1))
+
+        with app.app_context():
+            edit.action_swap_single_frame(cell1, cell2)
+            np.testing.assert_array_equal(project.label_array, expected_labels)
+            assert edit.y_changed
+            assert edit.labels_changed
+            assert cell2 in edit.tracks
+            assert cell1 not in edit.tracks
+
+    def test_action_replace_single(self, app):
+        # single 2 x 2 frame with two labels: 1s in top row, 2s in bottom
+        labels = np.reshape([1, 2], (1, 2, 1, 1))
+        project = models.Project.create(DummyLoader(labels=labels))
+        edit = label.TrackEdit(project)
+        expected_labels = np.reshape([1, 1], (1, 2, 1, 1))
+
+        cell1 = 1
+        cell2 = 2
+        with app.app_context():
+            edit.action_replace_single(cell1, cell2)
+            np.testing.assert_array_equal(project.label_array, expected_labels)
+            assert 2 not in edit.tracks
+
     def test_action_flood_background(self, app):
         """Flooding background does NOT spread to diagonal areas."""
         # 3 x 3 frame with label in diamond shape
@@ -193,7 +225,7 @@ class TestZStackEdit():
         # Add new label to first frame
         edit.add_cell_info(cell, frame)
         assert cell in cell_ids[feature]
-        assert cell_info[feature][cell] == {'label': '1',
+        assert cell_info[feature][cell] == {'label': 1,
                                             'frames': [frame],
                                             'slices': ''}
         assert edit.y_changed
@@ -214,7 +246,7 @@ class TestZStackEdit():
         for frame in range(num_frames):
             edit.add_cell_info(cell, frame)
             assert cell in cell_ids[feature]
-            assert cell_info[feature][cell] == {'label': '1',
+            assert cell_info[feature][cell] == {'label': 1,
                                                 'frames': list(range(frame + 1)),
                                                 'slices': ''}
             assert edit.y_changed
@@ -366,7 +398,7 @@ class TestTrackEdit():
         labels = np.zeros((1, 1, 1, 1))
         project = models.Project.create(DummyLoader(labels=labels, url='test.trk'))
         edit = label.TrackEdit(project)
-        tracks = edit.labels.tracks
+        tracks = edit.tracks
 
         cell = 1
         frame = 0
@@ -374,7 +406,7 @@ class TestTrackEdit():
         # Add new label to first frame
         edit.add_cell_info(cell, frame)
         assert tracks[cell] == {
-            'label': '1',
+            'label': 1,
             'frames': [frame],
             'daughters': [],
             'frame_div': None,
@@ -389,7 +421,7 @@ class TestTrackEdit():
         labels = np.zeros((num_frames, 1, 1, 1))
         project = models.Project.create(DummyLoader(labels=labels, url='test.trk'))
         edit = label.TrackEdit(project)
-        tracks = edit.labels.tracks
+        tracks = edit.tracks
 
         cell = 1
 
@@ -397,7 +429,7 @@ class TestTrackEdit():
         for frame in range(num_frames):
             edit.add_cell_info(cell, frame)
             assert tracks[cell] == {
-                'label': '1',
+                'label': 1,
                 'frames': list(range(frame + 1)),
                 'daughters': [],
                 'frame_div': None,
@@ -418,7 +450,7 @@ class TestTrackEdit():
         project.frame = frame
         project.feature = feature
         edit = label.TrackEdit(project)
-        tracks = edit.labels.tracks
+        tracks = edit.tracks
 
         prev_track = tracks[cell].copy()
         with app.app_context():
@@ -437,7 +469,7 @@ class TestTrackEdit():
         expected_new_cell = 2
         project.frame = frame
         edit = label.TrackEdit(project)
-        tracks = edit.labels.tracks
+        tracks = edit.tracks
         prev_track = tracks[cell].copy()
 
         with app.app_context():

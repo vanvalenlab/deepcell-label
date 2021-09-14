@@ -1,16 +1,7 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-import {
-  useCanvas,
-  useFeature,
-  useLabeled,
-  useToolbar,
-} from '../../ServiceContext';
-import {
-  highlightImageData,
-  outlineAll,
-  outlineSelected,
-} from '../canvasUtils';
+import { useCanvas, useFeature, useLabeled, useSelect } from '../../ProjectContext';
+import { highlightImageData, outlineAll, outlineSelected } from '../canvasUtils';
 
 const white = [255, 255, 255, 255];
 const black = [0, 0, 0, 255];
@@ -28,9 +19,9 @@ const OutlineCanvas = ({ className }) => {
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
 
-  const toolbar = useToolbar();
-  const foreground = useSelector(toolbar, state => state.context.foreground);
-  const background = useSelector(toolbar, state => state.context.background);
+  const select = useSelect();
+  const foreground = useSelector(select, state => state.context.foreground);
+  const background = useSelector(select, state => state.context.background);
 
   const labeled = useLabeled();
   const featureIndex = useSelector(labeled, state => state.context.feature);
@@ -89,31 +80,12 @@ const OutlineCanvas = ({ className }) => {
       height
     );
     ctx.current.restore();
-  }, [
-    labeledArray,
-    foreground,
-    background,
-    outline,
-    invert,
-    sw,
-    sh,
-    sx,
-    sy,
-    zoom,
-    width,
-    height,
-  ]);
+  }, [labeledArray, foreground, background, outline, invert, sw, sh, sx, sy, zoom, width, height]);
 
   return (
     <>
       {/* hidden processing canvas */}
-      <canvas
-        id='outline-processing'
-        hidden={true}
-        ref={hiddenCanvasRef}
-        width={sw}
-        height={sh}
-      />
+      <canvas id='outline-processing' hidden={true} ref={hiddenCanvasRef} width={sw} height={sh} />
       <canvas
         id='outline-canvas'
         ref={canvasRef}

@@ -39,94 +39,107 @@ class Loader():
         self.input_axes = url_form['axes'] if 'axes' in url_form else DCL_AXES
         self.output_axes = DCL_AXES
 
-        if self.labeled_url is None:
-            self.load()
-            tracking = is_trk(self.url)
-        else:
-            self.load_raw()
-            self.load_labeled()
-            tracking = is_trk(self.labeled_url)
+        self.raw_array = None
+        self.label_array = None
+        self.cell_info = None
+        self.cell_ids = None
 
-        label_maker = LabelInfoMaker(self.label_array, tracking)
-        self.cell_ids = label_maker.cell_ids
-        self.cell_info = label_maker.cell_info
+        self.load()
+
+    @property
+    def is_tracking(self):
+        """Tracking project when either the labels or raw are .trk."""
+        return (self.labeled_url and is_trk(self.labeled_url)) or is_trk(self.url)
 
     def load(self):
+        data = requests.get(self.url).content
+        if self.labeled_url is None:
+            self.load_combined(data)
+            if is_trk(self.url):
+                self.cell_info = load_lineage_trk(data)
+        else:
+            labeled_data = requests.get(self.labeled_url).content
+            self.load_raw(data)
+            self.load_labeled(labeled_data)
+            if is_trk(self.labeled_url):
+                self.cell_info = load_lineage_trk(labeled_data)
+
+        self.add_semantic_labels()
+
+    def add_semantic_labels(self):
+        label_maker = LabelInfoMaker(self.label_array, tracking=True)
+        self.cell_ids = label_maker.cell_ids
+        if self.cell_info is None:
+            self.cell_info = label_maker.cell_info
+
+    def load_combined(self, data):
         """
         Loads image data into the Loader based on the file extension.
         """
-        url = self.url
-        r = requests.get(url)
-        data = r.content
-        # if r.status_code !== 200:
-        #     raise ValueError(r.status_code)
-        if is_npz(url):
+        label_array = None
+        # Load arrays
+        if is_npz(self.url):
             raw_array = load_raw_npz(data)
             label_array = load_labeled_npz(data)
-        elif is_trk(url):
+        elif is_trk(self.url):
             raw_array = load_raw_trk(data)
             label_array = load_labeled_trk(data)
-            self._cell_info = load_lineage_trk(data)
-        elif is_png(url):
+        elif is_png(self.url):
             raw_array = load_png(data)
-            label_array = np.zeros(raw_array.shape)
-        elif is_tiff(url):
+        elif is_tiff(self.url):
             raw_array = load_tiff(data)
-            label_array = np.zeros(raw_array.shape)
-        elif is_zip(url):
+        elif is_zip(self.url):
             raw_array = load_zip(data)
-            label_array = np.zeros(raw_array.shape)
         else:
-            ext = pathlib.Path(url).suffix
+            ext = pathlib.Path(self.url).suffix
             raise InvalidExtension('invalid file extension: {}'.format(ext))
 
+        # Reshape or create arrays
+        raw_array = reshape(raw_array, self.input_axes, self.output_axes)
         if label_array is None:
-            label_array = np.zeros(raw_array.shape)
+            # Substitute channels dimension with one feature
+            shape = (*raw_array.shape[:-1], 1)
+            label_array = np.zeros(shape)
+        else:
+            label_array = reshape(label_array, self.input_axes, self.output_axes)
 
-        self.raw_array = reshape(raw_array, self.input_axes, self.output_axes)
-        self.label_array = reshape(label_array, self.input_axes, self.output_axes)
+        self.raw_array = raw_array
+        self.label_array = label_array
 
-    def load_raw(self):
-        url = self.url
-        r = requests.get(url)
-        data = r.content
-        # if r.status_code !== 200:
-        #     raise ValueError(r.status_code)
-        if is_npz(url):
+    def load_raw(self, data):
+        if is_npz(self.url):
             raw_array = load_raw_npz(data)
-        elif is_trk(url):
+        elif is_trk(self.url):
             raw_array = load_raw_trk(data)
-        elif is_png(url):
+        elif is_png(self.url):
             raw_array = load_png(data)
-        elif is_tiff(url):
+        elif is_tiff(self.url):
             raw_array = load_tiff(data)
-        elif is_zip(url):
+        elif is_zip(self.url):
             raw_array = load_zip(data)
         else:
-            ext = pathlib.Path(url).suffix
+            ext = pathlib.Path(self.url).suffix
             raise InvalidExtension('invalid file extension: {}'.format(ext))
+
         self.raw_array = reshape(raw_array, self.input_axes, self.output_axes)
 
-    def load_labeled(self):
-        url = self.labeled_url
-        r = requests.get(url)
-        data = r.content
-        if is_npz(url):
+    def load_labeled(self, data):
+        if is_npz(self.labeled_url):
             label_array = load_labeled_npz(data)
             if label_array is None:
                 label_array = load_npz(data)
-        elif is_trk(url):
+        elif is_trk(self.labeled_url):
             label_array = load_labeled_trk(data)
-            # self._cell_info = load_lineage_trk(data)
-        elif is_png(url):
+        elif is_png(self.labeled_url):
             label_array = load_png(data)
-        elif is_tiff(url):
+        elif is_tiff(self.labeled_url):
             label_array = load_tiff(data)
-        elif is_zip(url):
+        elif is_zip(self.labeled_url):
             label_array = load_zip(data)
         else:
-            ext = pathlib.Path(url).suffix
+            ext = pathlib.Path(self.labeled_url).suffix
             raise InvalidExtension('invalid file extension: {}'.format(ext))
+
         self.label_array = reshape(label_array, 'CZYX', self.output_axes)
 
 
@@ -192,7 +205,7 @@ def load_labeled_npz(data):
 def load_raw_trk(data):
     """Load a raw image data from a .trk file."""
     with tempfile.NamedTemporaryFile() as temp:
-        temp.write(data.read())
+        temp.write(data)
         with tarfile.open(temp.name, 'r') as trks:
             with io.BytesIO() as array_file:
                 array_file.write(trks.extractfile('raw.npy').read())
@@ -203,7 +216,7 @@ def load_raw_trk(data):
 def load_labeled_trk(data):
     """Load a labeled image data from a .trk file."""
     with tempfile.NamedTemporaryFile() as temp:
-        temp.write(data.read())
+        temp.write(data)
         with tarfile.open(temp.name, 'r') as trks:
             with io.BytesIO() as array_file:
                 array_file.write(trks.extractfile('tracked.npy').read())
@@ -214,7 +227,7 @@ def load_labeled_trk(data):
 def load_lineage_trk(data):
     """Loads a lineage JSON from a .trk file."""
     with tempfile.NamedTemporaryFile() as temp:
-        temp.write(data.read())
+        temp.write(data)
         with tarfile.open(temp.name, 'r') as trks:
             try:
                 trk_data = trks.getmember('lineages.json')

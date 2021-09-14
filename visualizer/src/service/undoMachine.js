@@ -1,13 +1,4 @@
-import { bind, unbind } from 'mousetrap';
-import {
-  actions,
-  assign,
-  forwardTo,
-  Machine,
-  send,
-  sendParent,
-  spawn,
-} from 'xstate';
+import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
 
 const { pure } = actions;
 
@@ -39,7 +30,7 @@ const createHistoryMachine = actor =>
           exit: sendParent('SAVED'),
         },
         restoringPast: {
-          entry: ['restorePast', () => console.log('restoring past')],
+          entry: 'restorePast',
           on: {
             RESTORED: { target: 'idle', actions: 'forwardToParent' },
           },
@@ -63,22 +54,15 @@ const createHistoryMachine = actor =>
         restorePast: send(context => context.past[context.past.length - 1], {
           to: context => context.actor,
         }),
-        restoreFuture: send(
-          context => context.future[context.future.length - 1],
-          { to: context => context.actor }
-        ),
+        restoreFuture: send(context => context.future[context.future.length - 1], {
+          to: context => context.actor,
+        }),
         movePastToFuture: assign({
           past: context => context.past.slice(0, context.past.length - 1),
-          future: context => [
-            ...context.future,
-            context.past[context.past.length - 1],
-          ],
+          future: context => [...context.future, context.past[context.past.length - 1]],
         }),
         moveFutureToPast: assign({
-          past: context => [
-            ...context.past,
-            context.future[context.future.length - 1],
-          ],
+          past: context => [...context.past, context.future[context.future.length - 1]],
           future: context => context.future.slice(0, context.future.length - 1),
         }),
       },
@@ -94,9 +78,6 @@ const undoMachine = Machine(
       numHistories: 0,
       action: 0,
       numActions: 0,
-    },
-    invoke: {
-      src: 'listenForUndoHotkeys',
     },
     on: {
       ADD_ACTOR: { actions: 'addActor' },
@@ -120,18 +101,10 @@ const undoMachine = Machine(
             actions: 'forwardToHistories',
           },
           BACKEND_UNDO: {
-            actions: [
-              'decrementAction',
-              sendParent('BACKEND_UNDO'),
-              'forwardToHistories',
-            ],
+            actions: ['decrementAction', sendParent('BACKEND_UNDO'), 'forwardToHistories'],
           },
           BACKEND_REDO: {
-            actions: [
-              'incrementAction',
-              sendParent('BACKEND_REDO'),
-              'forwardToHistories',
-            ],
+            actions: ['incrementAction', sendParent('BACKEND_REDO'), 'forwardToHistories'],
           },
         },
       },
@@ -165,16 +138,6 @@ const undoMachine = Machine(
     },
   },
   {
-    services: {
-      listenForUndoHotkeys: () => send => {
-        bind('mod+z', () => send('UNDO'));
-        bind('mod+shift+z', () => send('REDO'));
-        return () => {
-          unbind('mod+z');
-          unbind('mod+shift+z');
-        };
-      },
-    },
     guards: {
       allHistoriesResponded: context => context.count === context.numHistories,
       canUndo: context => context.action > 0,
@@ -182,14 +145,7 @@ const undoMachine = Machine(
     },
     actions: {
       addActor: assign({
-        histories: ({ histories }, { actor }) => [
-          ...histories,
-          spawn(createHistoryMachine(actor)),
-        ],
-      }),
-      setUpHistories: assign({
-        histories: context =>
-          context.actors.map(actor => spawn(createHistoryMachine(actor))),
+        histories: ({ histories }, { actor }) => [...histories, spawn(createHistoryMachine(actor))],
       }),
       forwardToHistories: pure(context => {
         return context.histories.map(actor => forwardTo(actor));

@@ -1,24 +1,29 @@
-import Box from '@material-ui/core/Box';
-import Grid from '@material-ui/core/Grid';
+import { FormGroup } from '@material-ui/core';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Switch from '@material-ui/core/Switch';
 import Tooltip from '@material-ui/core/Tooltip';
-import Typography from '@material-ui/core/Typography';
 import { useSelector } from '@xstate/react';
-import React, { useEffect, useRef } from 'react';
-import { useImage, useRaw } from '../../../ServiceContext';
+import { bind, unbind } from 'mousetrap';
+import React, { useCallback, useEffect, useRef } from 'react';
+import { useRaw } from '../../../ProjectContext';
 
 function ColorModeToggle() {
-  const image = useImage();
-  const grayscale = useSelector(image, state => state.context.grayscale);
   const raw = useRaw();
-  const { send } = raw;
+  const grayscale = useSelector(raw, state => state.context.isGrayscale);
 
   // Adds mousetrap class so hotkeys work after using switch
   const inputRef = useRef();
   useEffect(() => {
     const input = inputRef.current;
-    input.className = `${input.className}  mousetrap`;
+    input.className = `${input.className} mousetrap`;
   }, []);
+
+  const onClick = useCallback(() => raw.send('TOGGLE_COLOR_MODE'), [raw]);
+
+  useEffect(() => {
+    bind('y', onClick);
+    return () => unbind('y');
+  }, [onClick]);
 
   const toggleTooltip = (
     <span>
@@ -27,36 +32,22 @@ function ColorModeToggle() {
   );
 
   return (
-    <Typography component='div'>
-      <Box
-        component='label'
-        // container
-        display='flex'
-        justifyContent='center'
-        alignItems='center'
-      >
-        <Grid item align='right' style={{ flex: '1 1 auto' }}>
-          <Tooltip title='Shows multiple channels'>
-            <span>Color</span>
-          </Tooltip>
-        </Grid>
-        <Tooltip title={toggleTooltip}>
-          <Grid item style={{ flex: '0 1 auto' }}>
+    <Tooltip title={toggleTooltip}>
+      <FormGroup row>
+        <FormControlLabel
+          control={
             <Switch
-              // color="default"
-              checked={grayscale}
-              onChange={() => send('TOGGLE_COLOR_MODE')}
+              size='small'
+              checked={!grayscale}
+              onChange={() => raw.send('TOGGLE_COLOR_MODE')}
               inputRef={inputRef}
             />
-          </Grid>
-        </Tooltip>
-        <Grid item align='left' style={{ flex: '1 1 auto' }}>
-          <Tooltip title='Shows a single channel'>
-            <span>Grayscale</span>
-          </Tooltip>
-        </Grid>
-      </Box>
-    </Typography>
+          }
+          label='Multi-channel'
+          labelPlacement='start'
+        />
+      </FormGroup>
+    </Tooltip>
   );
 }
 

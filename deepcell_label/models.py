@@ -319,7 +319,9 @@ class Project(db.Model):
             'feature': feature,
             # 'feature': action.feature,
             # 'channel': action.channel,
-            'frames': [frame.frame_id for frame in action.frames]}
+            'frames': [frame.frame_id for frame in action.frames],
+            'labels': action.labels_changed,
+        }
 
         action.done = False
         self.action = action.prev_action
@@ -364,7 +366,9 @@ class Project(db.Model):
             'feature': feature,
             # 'feature': next_action.feature,
             # 'channel': next_action.channel,
-            'frames': [frame.frame_id for frame in next_action.frames]}
+            'frames': [frame.frame_id for frame in next_action.frames],
+            'labels': next_action.labels_changed,
+        }
 
         self.action = self.action.next_action
         next_action.done = True
@@ -471,29 +475,6 @@ class Labels(db.Model):
     def __init__(self):
         self.cell_ids = {}
         self.cell_info = {}
-
-    @property
-    def tracks(self):
-        """Alias for .trk for backward compatibility"""
-        return self.cell_info[0]
-
-    @property
-    def readable_tracks(self):
-        """
-        Preprocesses tracks for presentation on browser. For example,
-        simplifying track['frames'] into something like [0-29] instead of
-        [0,1,2,3,...].
-        """
-        cell_info = copy.deepcopy(self.cell_info)
-        for _, feature in cell_info.items():
-            for _, label in feature.items():
-                slices = list(map(list, consecutive(label['frames'])))
-                slices = '[' + ', '.join(["{}".format(a[0])
-                                          if len(a) == 1 else "{}-{}".format(a[0], a[-1])
-                                          for a in slices]) + ']'
-                label['slices'] = str(slices)
-
-        return cell_info
 
     def update(self):
         """

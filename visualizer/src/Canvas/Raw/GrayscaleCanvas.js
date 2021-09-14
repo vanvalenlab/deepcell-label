@@ -1,6 +1,6 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-import { useCanvas, useChannel, useRaw } from '../../ServiceContext';
+import { useCanvas, useChannel, useRaw } from '../../ProjectContext';
 import {
   adjustRangeImageData,
   brightnessImageData,
@@ -21,8 +21,8 @@ export const GrayscaleCanvas = ({ className }) => {
   const height = sh * scale * window.devicePixelRatio;
 
   const raw = useRaw();
-  const colorMode = useSelector(raw, state => state.context.colorMode);
-  const channelIndex = useSelector(colorMode, state => state.context.channel);
+  const grayscaleMode = useSelector(raw, state => state.context.grayscaleMode);
+  const channelIndex = useSelector(grayscaleMode, state => state.context.channel);
   const channel = useChannel(channelIndex);
 
   const invert = useSelector(channel, state => state.context.invert);
@@ -65,51 +65,15 @@ export const GrayscaleCanvas = ({ className }) => {
     const hiddenCanvas = hiddenCanvasRef.current;
     const ctx = ctxRef.current;
     ctx.clearRect(0, 0, width, height);
-    ctx.drawImage(
-      hiddenCanvas,
-      sx,
-      sy,
-      sw / zoom,
-      sh / zoom,
-      0,
-      0,
-      width,
-      height
-    );
-  }, [
-    rawImage,
-    min,
-    max,
-    invert,
-    brightness,
-    contrast,
-    sx,
-    sy,
-    zoom,
-    sw,
-    sh,
-    width,
-    height,
-  ]);
+    ctx.drawImage(hiddenCanvas, sx, sy, sw / zoom, sh / zoom, 0, 0, width, height);
+  }, [rawImage, min, max, invert, brightness, contrast, sx, sy, zoom, sw, sh, width, height]);
 
   return (
     <>
       {/* hidden processing canvas */}
-      <canvas
-        id='raw-processing'
-        hidden={true}
-        ref={hiddenCanvasRef}
-        width={sw}
-        height={sh}
-      />
+      <canvas id='raw-processing' hidden={true} ref={hiddenCanvasRef} width={sw} height={sh} />
       {/* visible output canvas */}
-      <canvas
-        id='raw-canvas'
-        className={className}
-        ref={canvasRef}
-        width={width}
-        height={height}
-      />
+      <canvas id='raw-canvas' className={className} ref={canvasRef} width={width} height={height} />
     </>
   );
 };

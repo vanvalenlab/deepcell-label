@@ -1,11 +1,8 @@
-import { makeStyles } from '@material-ui/core';
-import Box from '@material-ui/core/Box';
+import { Box, makeStyles } from '@material-ui/core';
 import FormLabel from '@material-ui/core/FormLabel';
-import Tooltip from '@material-ui/core/Tooltip';
-import HelpOutlineIcon from '@material-ui/icons/HelpOutline';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useImage } from '../../../ServiceContext';
+import { useRaw } from '../../../ProjectContext';
 import ColorModeToggle from './ColorModeToggle';
 import GrayscaleControls from './GrayscaleControls';
 import RGBControls from './RGBControls';
@@ -21,8 +18,8 @@ const useStyles = makeStyles(theme => ({
   title: {},
 }));
 export const RawControls = () => {
-  const image = useImage();
-  const grayscale = useSelector(image, state => state.context.grayscale);
+  const raw = useRaw();
+  const isGrayscale = useSelector(raw, state => state.context.isGrayscale);
 
   const styles = useStyles();
 
@@ -32,12 +29,9 @@ export const RawControls = () => {
         <FormLabel component='legend' className={styles.title}>
           Channels
         </FormLabel>
-        <Tooltip title='Move sliders right to darken or left to brighten channels.'>
-          <HelpOutlineIcon color='action' fontSize='large' />
-        </Tooltip>
+        <ColorModeToggle />
       </Box>
-      <ColorModeToggle />
-      {grayscale ? <GrayscaleControls /> : <RGBControls />}
+      {isGrayscale ? <GrayscaleControls /> : <RGBControls />}
     </>
   );
 };

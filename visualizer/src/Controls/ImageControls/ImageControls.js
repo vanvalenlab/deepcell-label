@@ -1,7 +1,7 @@
 import { Box, makeStyles } from '@material-ui/core';
 import { green } from '@material-ui/core/colors';
 import React from 'react';
-import { useLabeled, useRaw } from '../../ServiceContext';
+import { useLabeled, useRaw } from '../../ProjectContext';
 import FrameSlider from './FrameSlider';
 import LabeledControls from './LabeledControls/LabeledControls';
 import RawControls from './RawControls/RawControls';
@@ -14,6 +14,9 @@ const useStyles = makeStyles(theme => ({
     overflow: 'hidden',
     // width: '100%',
     padding: theme.spacing(1),
+  },
+  buttons: {
+    width: '100%',
   },
   title: {
     paddingTop: theme.spacing(1),
@@ -37,7 +40,7 @@ const ImageControls = () => {
 
   return (
     <Box id='image-controls' className={styles.root}>
-      <SubmitButton />
+      <SubmitButton className={styles.buttons} />
       <FrameSlider />
       {labeled && <LabeledControls />}
       {raw && <RawControls />}

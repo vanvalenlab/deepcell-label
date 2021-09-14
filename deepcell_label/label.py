@@ -19,6 +19,7 @@ from skimage.draw import circle
 from skimage.exposure import rescale_intensity
 from skimage.measure import regionprops
 from skimage.segmentation import morphological_chan_vese
+from scipy.ndimage import find_objects
 
 from deepcell_label.labelmaker import LabelInfoMaker
 
@@ -120,18 +121,48 @@ class BaseEdit(object):
     def action_swap_single_frame(self, label_1, label_2):
         """
         Swap labels of two objects in one frame.
-        Does not update cell info as the frames for the labels do not change.
 
         Args:
             label_1 (int): first label to swap
             label_2 (int): second label to swap
         """
         img = self.frame[..., self.feature]
+        label_1_present = label_1 in img
+        label_2_present = label_2 in img
+
         img = np.where(img == label_1, -1, img)
         img = np.where(img == label_2, label_1, img)
         img = np.where(img == -1, label_2, img)
+
+        if label_1_present != label_2_present:
+            if label_1_present:
+                self.add_cell_info(label_2, self.frame_id)
+                self.del_cell_info(label_1, self.frame_id)
+            else:
+                self.add_cell_info(label_1, self.frame_id)
+                self.del_cell_info(label_2, self.frame_id)
+
         # TODO: does info change?
         self.y_changed = self.labels_changed = True
+        self.frame[..., self.feature] = img
+
+    def action_replace_single(self, label_1, label_2):
+        """
+        Replaces label_2 with label_1 in the current frame.
+        """
+        img = self.frame[..., self.feature]
+        label_2_present = np.any(np.isin(label_2, img))
+
+        img = np.where(img == label_2, label_1, img)
+
+        # Img only changes when label_2 is in the frame
+        if label_2_present:
+            if label_1 != 0:
+                self.add_cell_info(add_label=label_1, frame=self.frame_id)
+            if label_2 != 0:
+                self.del_cell_info(del_label=label_2, frame=self.frame_id)
+            self.y_changed = True
+
         self.frame[..., self.feature] = img
 
     def action_handle_draw(self, trace, foreground, background, brush_size):
@@ -479,27 +510,6 @@ class ZStackEdit(BaseEdit):
                 self.add_cell_info(add_label=new_label, frame=label_frame.frame_id)
             label_frame.frame[..., self.feature] = img
 
-    def action_replace_single(self, label_1, label_2):
-        """
-        replaces label_2 with label_1, but only in one frame. Frontend checks
-        to make sure labels are different and were selected within same frames
-        before sending action
-        """
-        img = self.frame[..., self.feature]
-        label_2_present = np.any(np.isin(label_2, img))
-
-        img = np.where(img == label_2, label_1, img)
-
-        # Img only changes when label_2 is in the frame
-        if label_2_present:
-            if label_1 != 0:
-                self.add_cell_info(add_label=label_1, frame=self.frame_id)
-            if label_2 != 0:
-                self.del_cell_info(del_label=label_2, frame=self.frame_id)
-            self.y_changed = True
-
-        self.frame[..., self.feature] = img
-
     def action_replace(self, label_1, label_2):
         """
         Replacing label_2 with label_1. Frontend checks to make sure these labels
@@ -575,7 +585,7 @@ class ZStackEdit(BaseEdit):
         # cell does not exist anywhere in npz
         except KeyError:
             self.labels.cell_info[self.feature][add_label] = {
-                'label': str(add_label),
+                'label': add_label,
                 'frames': [frame],
                 'slices': ''
             }
@@ -616,6 +626,10 @@ class TrackEdit(BaseEdit):
     def __init__(self, project):
         super(TrackEdit, self).__init__(project)
 
+    @property
+    def tracks(self):
+        return self.labels.cell_info[self.feature]
+
     def action_new_track(self, label):
         """
         Replaces label with a new label in all subsequent frames after self.frame_id
@@ -624,7 +638,7 @@ class TrackEdit(BaseEdit):
             label (int): label to replace in subsequent frames
         """
         new_label = self.project.get_max_label(self.feature) + 1
-        track = self.labels.tracks[label]
+        track = self.tracks[label]
 
         # Don't create a new track on the first frame of a track
         if self.frame_id == track['frames'][0]:
@@ -637,7 +651,7 @@ class TrackEdit(BaseEdit):
             label_frame.frame = img
 
         # replace fields
-        track_new = self.labels.tracks[new_label] = {}
+        track_new = self.tracks[new_label] = {}
 
         idx = track['frames'].index(self.frame_id)
 
@@ -651,7 +665,7 @@ class TrackEdit(BaseEdit):
         # only add daughters if they aren't in the same frame as the new track
         track_new['daughters'] = []
         for d in track['daughters']:
-            if self.frame_id not in self.labels.tracks[d]['frames']:
+            if self.frame_id not in self.tracks[d]['frames']:
                 track_new['daughters'].append(d)
 
         track_new['frame_div'] = track['frame_div']
@@ -666,30 +680,6 @@ class TrackEdit(BaseEdit):
 
         self.y_changed = self.labels_changed = True
 
-    def action_set_parent(self, label_1, label_2):
-        """
-        label_1 gave birth to label_2
-        """
-        track_1 = self.labels.tracks[label_1]
-        track_2 = self.labels.tracks[label_2]
-
-        last_frame_parent = max(track_1['frames'])
-        first_frame_daughter = min(track_2['frames'])
-
-        if last_frame_parent < first_frame_daughter:
-            track_1['daughters'].append(label_2)
-            daughters = np.unique(track_1['daughters']).tolist()
-            track_1['daughters'] = daughters
-
-            track_2['parent'] = label_1
-
-            if track_1['frame_div'] is None:
-                track_1['frame_div'] = first_frame_daughter
-            else:
-                track_1['frame_div'] = min(track_1['frame_div'], first_frame_daughter)
-
-            self.labels_changed = True
-
     def action_replace(self, label_1, label_2):
         """
         Replacing label_2 with label_1 in all frames.
@@ -702,11 +692,11 @@ class TrackEdit(BaseEdit):
 
         # TODO: is this the same as add/remove?
         # replace fields
-        track_1 = self.labels.tracks[label_1]
-        track_2 = self.labels.tracks[label_2]
+        track_1 = self.tracks[label_1]
+        track_2 = self.tracks[label_2]
 
         for d in track_1['daughters']:
-            self.labels.tracks[d]['parent'] = None
+            self.tracks[d]['parent'] = None
 
         track_1['frames'].extend(track_2['frames'])
         track_1['frames'] = sorted(set(track_1['frames']))
@@ -714,8 +704,8 @@ class TrackEdit(BaseEdit):
         track_1['frame_div'] = track_2['frame_div']
         track_1['capped'] = track_2['capped']
 
-        del self.labels.tracks[label_2]
-        for _, track in self.labels.tracks.items():
+        del self.tracks[label_2]
+        for _, track in self.tracks.items():
             try:
                 track['daughters'].remove(label_2)
             except ValueError:
@@ -734,15 +724,15 @@ class TrackEdit(BaseEdit):
                 label_frame.frame = img
 
             # replace fields
-            track_new = self.labels.tracks[new_label] = self.labels.tracks[old_label]
+            track_new = self.tracks[new_label] = self.tracks[old_label]
             track_new['label'] = new_label
-            del self.labels.tracks[old_label]
+            del self.tracks[old_label]
 
             for d in track_new['daughters']:
-                self.labels.tracks[d]['parent'] = new_label
+                self.tracks[d]['parent'] = new_label
 
             if track_new['parent'] is not None:
-                parent_track = self.labels.tracks[track_new['parent']]
+                parent_track = self.tracks[track_new['parent']]
                 parent_track['daughters'].remove(old_label)
                 parent_track['daughters'].append(new_label)
 
@@ -755,18 +745,18 @@ class TrackEdit(BaseEdit):
     def action_save_track(self, bucket):
         # clear any empty tracks before saving file
         empty_tracks = []
-        for key in self.labels.tracks:
-            if not self.labels.tracks[key]['frames']:
-                empty_tracks.append(self.labels.tracks[key]['label'])
+        for key in self.tracks:
+            if not self.tracks[key]['frames']:
+                empty_tracks.append(self.tracks[key]['label'])
         for track in empty_tracks:
-            del self.labels.tracks[track]
+            del self.tracks[track]
 
         # create file object in memory instead of writing to disk
         trk_file_obj = io.BytesIO()
 
         with tarfile.open(fileobj=trk_file_obj, mode='w') as trks:
             with tempfile.NamedTemporaryFile('w') as lineage_file:
-                json.dump(self.labels.tracks, lineage_file, indent=1)
+                json.dump(self.tracks, lineage_file, indent=1)
                 lineage_file.flush()
                 trks.add(lineage_file.name, 'lineage.json')
 
@@ -794,14 +784,14 @@ class TrackEdit(BaseEdit):
         # if cell already exists elsewhere in trk:
         add_label = int(add_label)
         try:
-            old_frames = self.labels.tracks[add_label]['frames']
+            old_frames = self.tracks[add_label]['frames']
             updated_frames = np.append(old_frames, frame)
             updated_frames = np.unique(updated_frames).tolist()
-            self.labels.tracks[add_label]['frames'] = updated_frames
+            self.tracks[add_label]['frames'] = updated_frames
         # cell does not exist anywhere in trk:
         except KeyError:
-            self.labels.tracks[add_label] = {
-                'label': str(add_label),
+            self.tracks[add_label] = {
+                'label': add_label,
                 'frames': [frame],
                 'daughters': [],
                 'frame_div': None,
@@ -816,13 +806,12 @@ class TrackEdit(BaseEdit):
     def del_cell_info(self, del_label, frame):
         """Remove a cell from the trk"""
         # remove cell from frame
-        old_frames = self.labels.tracks[del_label]['frames']
-        updated_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame))).tolist()
-        self.labels.tracks[del_label]['frames'] = updated_frames
+        track = self.tracks[del_label]
+        track['frames'] = [i for i in track['frames'] if i != frame]
 
         # if that was the last frame, delete the entry for that cell
-        if self.labels.tracks[del_label]['frames'] == []:
-            del self.labels.tracks[del_label]
+        if track['frames'] == []:
+            del self.tracks[del_label]
 
             # also remove from list of cell_ids
             ids = self.labels.cell_ids[self.feature]
@@ -831,9 +820,12 @@ class TrackEdit(BaseEdit):
             )
 
             # If deleting lineage data, remove parent/daughter entries
-            for _, track in self.labels.tracks.items():
+            for _, track in self.tracks.items():
                 try:
                     track['daughters'].remove(del_label)
+                    if track['daughters'] == []:
+                        track['frame_div'] = None
+                        track['capped'] = False
                 except ValueError:
                     pass
                 if track['parent'] == del_label:

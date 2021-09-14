@@ -1,5 +1,7 @@
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import Label from './Label';
-import ServiceContext from './ServiceContext';
+import ProjectContext from './ProjectContext';
+import service from './service/service';
 
 // inspect({
 //   // options
@@ -9,9 +11,15 @@ import ServiceContext from './ServiceContext';
 
 function App() {
   return (
-    <ServiceContext>
-      <Label />
-    </ServiceContext>
+    <Router>
+      <Switch>
+        <Route path='/'>
+          <ProjectContext project={service}>
+            <Label />
+          </ProjectContext>
+        </Route>
+      </Switch>
+    </Router>
   );
 }
 

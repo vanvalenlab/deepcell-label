@@ -1,6 +1,6 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useMemo, useRef } from 'react';
-import { useCanvas, useTool, useToolbar } from '../../ServiceContext';
+import { useCanvas, useSelect, useTool } from '../../ProjectContext';
 import { drawBrush, drawTrace } from '../canvasUtils';
 
 const BrushCanvas = ({ className }) => {
@@ -15,13 +15,10 @@ const BrushCanvas = ({ className }) => {
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
 
-  const toolbar = useToolbar();
-  const background = useSelector(toolbar, state => state.context.background);
+  const select = useSelect();
+  const background = useSelector(select, state => state.context.background);
   const erasing = background !== 0;
-  const brushColor = useMemo(
-    () => (erasing ? [255, 0, 0, 255] : [255, 255, 255, 255]),
-    [erasing]
-  );
+  const brushColor = useMemo(() => (erasing ? [255, 0, 0, 255] : [255, 255, 255, 255]), [erasing]);
 
   const brush = useTool();
   const x = useSelector(brush, state => state.context.x);
@@ -73,46 +70,14 @@ const BrushCanvas = ({ className }) => {
   // draws the brush outline and trace onto the visible canvas
   useEffect(() => {
     ctx.current.clearRect(0, 0, width, height);
-    ctx.current.drawImage(
-      traceCanvas.current,
-      sx,
-      sy,
-      sw / zoom,
-      sh / zoom,
-      0,
-      0,
-      width,
-      height
-    );
-    ctx.current.drawImage(
-      brushCanvas.current,
-      sx,
-      sy,
-      sw / zoom,
-      sh / zoom,
-      0,
-      0,
-      width,
-      height
-    );
+    ctx.current.drawImage(traceCanvas.current, sx, sy, sw / zoom, sh / zoom, 0, 0, width, height);
+    ctx.current.drawImage(brushCanvas.current, sx, sy, sw / zoom, sh / zoom, 0, 0, width, height);
   }, [trace, brushSize, brushColor, x, y, sx, sy, zoom, sw, sh, width, height]);
 
   return (
     <>
-      <canvas
-        id='brush-processing'
-        hidden={true}
-        ref={brushCanvas}
-        width={sw}
-        height={sh}
-      />
-      <canvas
-        id='trace-processing'
-        hidden={true}
-        ref={traceCanvas}
-        width={sw}
-        height={sh}
-      />
+      <canvas id='brush-processing' hidden={true} ref={brushCanvas} width={sw} height={sh} />
+      <canvas id='trace-processing' hidden={true} ref={traceCanvas} width={sw} height={sh} />
       <canvas
         id='brush-canvas'
         ref={canvasRef}

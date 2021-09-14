@@ -3,13 +3,13 @@ import FormGroup from '@material-ui/core/FormGroup';
 import Switch from '@material-ui/core/Switch';
 import Tooltip from '@material-ui/core/Tooltip';
 import { useSelector } from '@xstate/react';
+import { bind, unbind } from 'mousetrap';
 import React, { useEffect, useRef } from 'react';
-import { useLabeled } from '../../../ServiceContext';
+import { useLabeled } from '../../../ProjectContext';
 
 function OutlineToggle() {
   const labeled = useLabeled();
   const outline = useSelector(labeled, state => state.context.outline);
-  const { send } = labeled;
 
   // Adds mousetrap class so hotkeys work after using switch
   const inputRef = useRef();
@@ -24,6 +24,11 @@ function OutlineToggle() {
     </span>
   );
 
+  useEffect(() => {
+    bind('o', () => labeled.send('TOGGLE_OUTLINE'));
+    return () => unbind('o');
+  }, [labeled]);
+
   return (
     <Tooltip title={tooltipText}>
       <FormGroup row>
@@ -32,7 +37,7 @@ function OutlineToggle() {
             <Switch
               size='small'
               checked={outline}
-              onChange={() => send('TOGGLE_OUTLINE')}
+              onChange={() => labeled.send('TOGGLE_OUTLINE')}
               inputRef={inputRef}
             />
           }

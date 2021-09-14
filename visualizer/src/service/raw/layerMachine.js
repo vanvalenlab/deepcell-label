@@ -1,13 +1,6 @@
 import { assign, Machine, sendParent } from 'xstate';
 
-const CHANNEL_COLORS = [
-  '#FF0000',
-  '#00FF00',
-  '#0000FF',
-  '#00FFFF',
-  '#FF00FF',
-  '#FFFF00',
-];
+const CHANNEL_COLORS = ['#FF0000', '#00FF00', '#0000FF', '#00FFFF', '#FF00FF', '#FFFF00'];
 
 const createLayerMachine = (layer, channel) =>
   Machine(

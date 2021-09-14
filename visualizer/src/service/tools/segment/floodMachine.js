@@ -1,7 +1,7 @@
 import { Machine, sendParent } from 'xstate';
 import { toolActions, toolGuards } from './toolUtils';
 
-const createTrimMachine = ({ x, y, label, foreground, background }) =>
+const createFloodMachine = ({ x, y, label, foreground, background }) =>
   Machine(
     {
       context: {
@@ -16,22 +16,19 @@ const createTrimMachine = ({ x, y, label, foreground, background }) =>
         LABEL: { actions: 'setLabel' },
         FOREGROUND: { actions: 'setForeground' },
         BACKGROUND: { actions: 'setBackground' },
-        mouseup: [
-          { cond: 'onNoLabel' },
-          { actions: ['selectForeground', 'trim'] },
-        ],
+        mouseup: [{ cond: 'onBackground', actions: 'flood' }, { actions: 'selectBackground' }],
       },
     },
     {
       guards: toolGuards,
       actions: {
         ...toolActions,
-        selectForeground: sendParent('SELECT_FOREGROUND'),
-        trim: sendParent(({ label, x, y }, event) => ({
+        selectBackground: sendParent('SELECT_BACKGROUND'),
+        flood: sendParent(({ foreground, x, y }, event) => ({
           type: 'EDIT',
-          action: 'trim_pixels',
+          action: 'flood',
           args: {
-            label: label,
+            label: foreground,
             x_location: x,
             y_location: y,
           },
@@ -40,4 +37,4 @@ const createTrimMachine = ({ x, y, label, foreground, background }) =>
     }
   );
 
-export default createTrimMachine;
+export default createFloodMachine;

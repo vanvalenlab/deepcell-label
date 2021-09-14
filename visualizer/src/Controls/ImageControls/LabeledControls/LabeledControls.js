@@ -4,6 +4,7 @@ import FormLabel from '@material-ui/core/FormLabel';
 import Grid from '@material-ui/core/Grid';
 import React from 'react';
 import FeatureSelect from './FeatureSelect';
+import HighlightToggle from './HighlightToggle';
 import OpacitySlider from './OpacitySlider';
 import OutlineToggle from './OutlineToggle';
 
@@ -21,11 +22,7 @@ const LabeledControls = () => {
     <>
       <Grid container direction='column' className={styles.root}>
         <Grid item>
-          <Box
-            display='flex'
-            flexDirection='row'
-            justifyContent='space-between'
-          >
+          <Box display='flex' flexDirection='row' justifyContent='space-between'>
             <FormLabel component='legend' className={styles.title}>
               Segmentations
             </FormLabel>
@@ -33,7 +30,10 @@ const LabeledControls = () => {
           </Box>
         </Grid>
         <Grid item>
-          <FeatureSelect />
+          <Box display='flex' flexDirection='row' justifyContent='space-between'>
+            <FeatureSelect />
+            <HighlightToggle />
+          </Box>
         </Grid>
         <Grid item>
           <OpacitySlider />

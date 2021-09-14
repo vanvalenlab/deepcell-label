@@ -1,11 +1,6 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-import {
-  useCanvas,
-  useFeature,
-  useLabeled,
-  useToolbar,
-} from '../../ServiceContext';
+import { useCanvas, useFeature, useLabeled, useSelect } from '../../ProjectContext';
 import { highlightImageData, opacityImageData } from '../canvasUtils';
 
 export const LabeledCanvas = ({ className }) => {
@@ -26,18 +21,15 @@ export const LabeledCanvas = ({ className }) => {
   const opacity = useSelector(labeled, state => state.context.opacity);
 
   const feature = useFeature(featureIndex);
-  const labeledImage = useSelector(
-    feature,
-    state => state.context.labeledImage
-  );
+  const labeledImage = useSelector(feature, state => state.context.labeledImage);
   let labeledArray = useSelector(feature, state => state.context.labeledArray);
   if (!labeledArray) {
     labeledArray = Array(sh).fill(Array(sw).fill(0));
   }
 
-  const toolbar = useToolbar();
-  const foreground = useSelector(toolbar, state => state.context.foreground);
-  const background = useSelector(toolbar, state => state.context.background);
+  const select = useSelect();
+  const foreground = useSelector(select, state => state.context.foreground);
+  const background = useSelector(select, state => state.context.background);
 
   const canvasRef = useRef();
   const ctx = useRef();
@@ -97,13 +89,7 @@ export const LabeledCanvas = ({ className }) => {
   return (
     <>
       {/* hidden processing canvas */}
-      <canvas
-        id='labeled-processing'
-        hidden={true}
-        ref={hiddenCanvasRef}
-        width={sw}
-        height={sh}
-      />
+      <canvas id='labeled-processing' hidden={true} ref={hiddenCanvasRef} width={sw} height={sh} />
       <canvas
         id='labeled-canvas'
         ref={canvasRef}

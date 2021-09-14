@@ -1,14 +1,14 @@
 import '@testing-library/jest-dom';
-import { render, fireEvent } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 import React from 'react';
 import Instructions from './Instructions';
 
-// mock the SwapButton component used in SelectedPalette
+// mock the SwitchButton component used in SelectedPalette
 // to avoid using any xstate hooks
-jest.mock('../Controls/Toolbar/SelectedPalette', () => {
+jest.mock('../Controls/Segment/SelectedPalette', () => {
   return {
     __esModule: true,
-    SwapButton: 'button',
+    SwitchButton: 'button',
     default: () => {
       return <div></div>;
     },
@@ -22,9 +22,9 @@ describe('<Instructions/> component tests', () => {
     const instructionsBar = getByRole('button', { expanded: false });
     expect(instructionsBar).toBeInTheDocument();
     fireEvent.click(instructionsBar);
-    expect(instructionsBar).toHaveAttribute('aria-expanded', "true");
+    expect(instructionsBar).toHaveAttribute('aria-expanded', 'true');
     fireEvent.click(instructionsBar);
-    expect(instructionsBar).toHaveAttribute('aria-expanded', "false");
+    expect(instructionsBar).toHaveAttribute('aria-expanded', 'false');
   });
 
   it('<Instructions/> has clickable tabs', () => {
@@ -41,7 +41,7 @@ describe('<Instructions/> component tests', () => {
 
       // clicking the tab shows the corresponding tab panel
       fireEvent.click(tab);
-      expect(tab).toHaveAttribute('aria-selected', "true");
+      expect(tab).toHaveAttribute('aria-selected', 'true');
       const tabPanel = getByRole('tabpanel');
       expect(tabPanel).toBeInTheDocument();
       expect(tabPanel).not.toHaveAttribute('hidden');
