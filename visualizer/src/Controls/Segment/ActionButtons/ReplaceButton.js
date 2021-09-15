@@ -11,7 +11,7 @@ function ReplaceButton(props) {
 
   const tooltipText = (
     <span>
-      Combines two labels (<kbd>R</kbd>)
+      Combines two labels (<kbd>Shift</kbd> + <kbd>R</kbd>)
     </span>
   );
 
@@ -20,7 +20,7 @@ function ReplaceButton(props) {
       {...rest}
       tooltipText={tooltipText}
       onClick={onClick}
-      hotkey='r'
+      hotkey='shift+r'
       className={`${className} ${styles.button}`}
     >
       Replace

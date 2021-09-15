@@ -19,7 +19,6 @@ const trackMachine = Machine(
       LABEL: { actions: 'setLabel' },
       LABELS: { actions: 'setLabels' },
       REMOVE: { actions: 'remove' },
-      REPLACE_WITH_NEW_CELL: { actions: 'replaceWithNewCell' },
       REPLACE_WITH_PARENT: { actions: 'replaceWithParent' },
     },
     initial: 'idle',
@@ -27,7 +26,8 @@ const trackMachine = Machine(
       idle: {
         on: {
           mouseup: { actions: 'selectForeground' },
-          ADD: { target: 'addingDaughter', actions: 'recordParent' },
+          ADD_DAUGHTER: { target: 'addingDaughter', actions: 'recordParent' },
+          CREATE_NEW_CELL: { actions: 'createNewCell' },
         },
       },
       addingDaughter: {
@@ -36,9 +36,10 @@ const trackMachine = Machine(
             { cond: 'onNoLabel' },
             {
               target: 'idle',
-              actions: 'add',
+              actions: 'addDaughter',
             },
           ],
+          RESET: { target: 'idle' },
         },
       },
     },
@@ -49,7 +50,7 @@ const trackMachine = Machine(
       onNoLabel: ({ label }) => label === 0,
     },
     actions: {
-      selectForeground: sendParent('SELECT_FOREGROUND'),
+      selectForeground: sendParent(({ label }) => ({ type: 'SET_FOREGROUND', foreground: label })),
       setForeground: assign({ foreground: (_, { foreground }) => foreground }),
       setLabel: assign({ label: (_, { label }) => label }),
       setLabels: assign({ labels: (_, { labels }) => labels }),
@@ -61,7 +62,7 @@ const trackMachine = Machine(
           daughter,
         },
       })),
-      add: sendParent(({ parent, label }) => ({
+      addDaughter: sendParent(({ parent, label }) => ({
         type: 'EDIT',
         action: 'add_daughter',
         args: {
@@ -71,17 +72,16 @@ const trackMachine = Machine(
       })),
       replaceWithParent: sendParent((_, { parent, daughter }) => ({
         type: 'EDIT',
-        action: 'replace',
+        action: 'replace_with_parent',
         args: {
-          label_1: parent,
-          label_2: daughter,
+          daughter: daughter,
         },
       })),
-      replaceWithNewCell: sendParent((_, { daughter }) => ({
+      createNewCell: sendParent((_, { label }) => ({
         type: 'EDIT',
         action: 'new_track',
         args: {
-          label: daughter,
+          label: label,
         },
       })),
     },

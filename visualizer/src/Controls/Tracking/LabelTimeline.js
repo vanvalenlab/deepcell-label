@@ -1,21 +1,7 @@
 import { Box } from '@material-ui/core';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useFeature, useImage, useLabeled, useTracking } from '../../ProjectContext';
-
-function useDivision(label) {
-  const tracking = useTracking();
-  const division = useSelector(tracking, state => state.context.labels);
-  return (
-    division[label] || {
-      parent: null,
-      daughters: [],
-      divisionFrame: null,
-      parentDivisionFrame: null,
-      frames: [],
-    }
-  );
-}
+import { useDivision, useFeature, useImage, useLabeled } from '../../ProjectContext';
 
 function useColors() {
   const labeled = useLabeled();

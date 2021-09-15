@@ -731,15 +731,51 @@ class TrackEdit(BaseEdit):
 
         self.labels_changed = True
 
+    def action_replace_with_parent(self, daughter):
+        """
+        Replaces daughter with its parent after the division
+        and removes the division.
+        Future divisions with the daughter become part of the parent's lineage.
+        """
+        daughter_track = self.tracks[daughter]
+        parent = daughter_track['parent']
+        parent_track = self.tracks[parent]
+        frame = parent_track['frame_div']
+
+        # Remove division
+        for d in parent_track['daughters']:
+            self.tracks[d]['parent'] = None
+        # Link future division to parent
+        if daughter_track['frame_div'] is None or parent_track['frame_div'] < daughter_track['frame_div']:
+            for d in daughter_track['daughters']:
+                self.tracks[d]['parent'] = parent
+            parent_track['daughters'] = daughter_track['daughters']
+            parent_track['frame_div'] = daughter_track['frame_div']
+            parent_track['capped'] = daughter_track['capped']
+        # Past divisions remain with daughter
+        else:
+            parent_track['daughters'] = []
+            parent_track['frame_div'] = None
+            parent_track['capped'] = False
+
+        # Replace daughter with parent after division frame
+        for label_frame in self.project.label_frames[frame:]:
+            img = label_frame.frame[..., self.feature]
+            if np.any(np.isin(img, daughter)):
+                img = np.where(img == daughter, parent, img)
+                self.add_cell_info(add_label=parent, frame=label_frame.frame_id)
+                self.del_cell_info(del_label=daughter, frame=label_frame.frame_id)
+                label_frame.frame[..., self.feature] = img
+
     def action_new_track(self, label):
         """
-        Replaces label with a new label in all subsequent frames after self.frame_id
+        Replaces label with a new label in all frames after the current frame
 
         Args:
-            label (int): label to replace in subsequent frames
+            label (int): label to replace with a new label
         """
-        new_label = self.project.get_max_label(self.feature) + 1
         track = self.tracks[label]
+        new_label = self.project.get_max_label(self.feature) + 1
 
         # Don't create a new track on the first frame of a track
         if self.frame_id == track['frames'][0]:
@@ -748,11 +784,12 @@ class TrackEdit(BaseEdit):
         # replace frame labels
         for label_frame in self.project.label_frames[self.frame_id:]:
             img = label_frame.frame
-            img[img == label] = new_label
-            label_frame.frame = img
+            if np.isin(label, img):
+                img[img == label] = new_label
+                label_frame.frame = img
 
         # replace fields
-        track_new = self.tracks[new_label] = {}
+        new_track = self.tracks[new_label] = {}
 
         idx = track['frames'].index(self.frame_id)
 
@@ -760,22 +797,22 @@ class TrackEdit(BaseEdit):
         frames_after = track['frames'][idx:]
 
         track['frames'] = frames_before
-        track_new['frames'] = frames_after
-        track_new['label'] = new_label
+        new_track['frames'] = frames_after
+        new_track['label'] = new_label
 
         # only add daughters if they aren't in the same frame as the new track
-        track_new['daughters'] = []
+        new_track['daughters'] = []
         for d in track['daughters']:
             if self.frame_id not in self.tracks[d]['frames']:
-                track_new['daughters'].append(d)
+                new_track['daughters'].append(d)
 
-        track_new['frame_div'] = track['frame_div']
-        track_new['capped'] = track['capped']
-        track_new['parent'] = None
+        new_track['frame_div'] = track['frame_div']
+        new_track['capped'] = track['capped']
+        new_track['parent'] = None
 
         track['daughters'] = []
         track['frame_div'] = None
-        track['capped'] = True
+        track['capped'] = False
 
         self.labels.cell_ids[0] = np.append(self.labels.cell_ids[0], new_label)
 

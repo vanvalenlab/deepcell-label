@@ -48,15 +48,24 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-function Parent({ division }) {
-  const { label, daughters, divisionFrame, frames } = division;
+export const Cell = React.forwardRef(({ label, onClick }, ref) => {
   const colors = useColors();
   const color = colors[label] ?? '#000000';
 
   const styles = useStyles();
-  const theme = useTheme();
 
+  return (
+    <Avatar ref={ref} className={styles.cell} style={{ backgroundColor: color }} onClick={onClick}>
+      {label}
+    </Avatar>
+  );
+});
+
+function Parent({ division }) {
+  const { label, daughters, divisionFrame, frames } = division;
+  const theme = useTheme();
   const strokeColor = theme.palette.secondary.main;
+
   const relations = daughters.map(label => ({
     targetId: `daughter${label}`,
     targetAnchor: 'left',
@@ -83,9 +92,7 @@ function Parent({ division }) {
 
   return (
     <ArcherElement id='parent' relations={relations}>
-      <Avatar className={styles.cell} style={{ backgroundColor: color }} onClick={onClick}>
-        {label}
-      </Avatar>
+      <Cell label={label} onClick={onClick} />
     </ArcherElement>
   );
 }
@@ -96,9 +103,6 @@ function Daughter({ label, daughter, divisionFrame }) {
   const select = useSelect();
   const image = useImage();
 
-  const colors = useColors();
-  const color = colors[daughter] ?? '#000000';
-
   const onClick = () => {
     select.send({ type: 'SET_FOREGROUND', foreground: daughter });
     image.send({ type: 'LOAD_FRAME', frame: divisionFrame });
@@ -107,9 +111,7 @@ function Daughter({ label, daughter, divisionFrame }) {
   return (
     <Box className={styles.daughter}>
       <ArcherElement id={`daughter${daughter}`}>
-        <Avatar className={styles.cell} onClick={onClick} style={{ backgroundColor: color }}>
-          {daughter}
-        </Avatar>
+        <Cell label={daughter} onClick={onClick} />
       </ArcherElement>
       <DaughterMenu parent={label} daughter={daughter} />
     </Box>
@@ -120,7 +122,18 @@ function AddDaughter({ label }) {
   const styles = useStyles();
 
   const tracking = useTracking();
-  const onClick = () => tracking.send({ type: 'ADD', parent: label });
+
+  const [open, toggle] = useReducer(v => !v, false);
+  const anchorRef = useRef(null);
+
+  const handleAddDaughter = () => {
+    tracking.send({ type: 'ADD_DAUGHTER', parent: label });
+    toggle();
+  };
+  const handleNewCell = () => {
+    tracking.send({ type: 'CREATE_NEW_CELL', label });
+    toggle();
+  };
 
   return (
     <Box style={{ position: 'relative' }}>
@@ -128,9 +141,19 @@ function AddDaughter({ label }) {
       <ArcherElement id='addDaughter'>
         <Avatar className={styles.cell} style={{ visibility: 'hidden' }} />
       </ArcherElement>
-      <IconButton className={styles.addButton} onClick={onClick}>
+      <IconButton className={styles.addButton} onClick={toggle} ref={anchorRef}>
         <AddCircleOutlineIcon />
       </IconButton>
+      <Popper open={open} anchorEl={anchorRef.current} placement='bottom-end'>
+        <Paper>
+          <ClickAwayListener onClickAway={toggle}>
+            <MenuList id='add-daughter-menu'>
+              <MenuItem onClick={handleAddDaughter}>Add Daughter</MenuItem>
+              <MenuItem onClick={handleNewCell}>Create New Cell</MenuItem>
+            </MenuList>
+          </ClickAwayListener>
+        </Paper>
+      </Popper>
     </Box>
   );
 }
@@ -160,7 +183,7 @@ function DaughterMenu({ parent, daughter }) {
       <Popper open={open} anchorEl={anchorRef.current} placement='bottom-end'>
         <Paper>
           <ClickAwayListener onClickAway={toggle}>
-            <MenuList id='channel-options'>
+            <MenuList id='remove-daughter-menu'>
               <MenuItem onClick={handleRemove}>Remove from Division</MenuItem>
               {/* <MenuItem onClick={handleNewCell}>Replace with New Cell</MenuItem> */}
               <MenuItem onClick={handleParent}>Replace with Parent</MenuItem>
@@ -189,7 +212,6 @@ function Daughters({ division }) {
 
 function Division({ label }) {
   const styles = useStyles();
-
   const tracking = useTracking();
   const division = useSelector(tracking, state => state.context.labels[label]);
 

@@ -2,29 +2,7 @@ import { makeStyles, Slider, Tooltip } from '@material-ui/core';
 import { useSelector } from '@xstate/react';
 import { bind, unbind } from 'mousetrap';
 import React, { useEffect, useState } from 'react';
-import { useFeature, useImage, useLabeled, useTracking } from '../../ProjectContext';
-
-function useDivision(label) {
-  const tracking = useTracking();
-  const division = useSelector(tracking, state => state.context.labels);
-  return (
-    division[label] || {
-      parent: null,
-      daughters: [],
-      divisionFrame: null,
-      parentDivisionFrame: null,
-      frames: [],
-    }
-  );
-}
-
-function useColors() {
-  const labeled = useLabeled();
-  const featureIndex = useSelector(labeled, state => state.context.feature);
-  const feature = useFeature(featureIndex);
-  const colors = useSelector(feature, state => state.context.colors);
-  return colors;
-}
+import { useImage } from '../../ProjectContext';
 
 const useStyles = makeStyles(theme => ({
   title: {
@@ -39,8 +17,8 @@ function FrameSlider() {
   const numFrames = useSelector(image, state => state.context.numFrames);
 
   useEffect(() => {
-    const prevFrame = (frame - 1 + numFrames) % numFrames;
-    const nextFrame = (frame + 1) % numFrames;
+    const prevFrame = Math.max(0, frame - 1);
+    const nextFrame = Math.min(frame + 1, numFrames - 1);
     bind('a', () => image.send({ type: 'LOAD_FRAME', frame: prevFrame }));
     bind('d', () => image.send({ type: 'LOAD_FRAME', frame: nextFrame }));
     return () => {

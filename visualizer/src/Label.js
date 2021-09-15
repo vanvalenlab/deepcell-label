@@ -1,4 +1,4 @@
-import { Paper, Tab, Tabs } from '@material-ui/core';
+import { FormLabel, Paper, Tab, Tabs } from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import { makeStyles } from '@material-ui/core/styles';
 import { useSelector } from '@xstate/react';
@@ -12,11 +12,12 @@ import SelectedPalette from './Controls/Segment/SelectedPalette';
 import ToolButtons from './Controls/Segment/ToolButtons';
 import UndoRedo from './Controls/Segment/UndoRedo';
 import DivisionAlerts from './Controls/Tracking/Alerts/DivisionAlerts';
+import FrameSlider from './Controls/Tracking/FrameSlider';
 import Timeline from './Controls/Tracking/Timeline';
 import Footer from './Footer/Footer';
 import Instructions from './Instructions/Instructions';
 import Navbar from './Navbar';
-import { useCanvas, useLabeled, useProject } from './ProjectContext';
+import { useCanvas, useLabeled, useLabelMode } from './ProjectContext';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -74,21 +75,21 @@ function Label() {
   const [canvasBoxWidth, setCanvasBoxWidth] = useState(0);
   const [canvasBoxHeight, setCanvasBoxHeight] = useState(0);
 
-  const project = useProject();
+  const labelMode = useLabelMode();
   const canvas = useCanvas();
   const labeled = useLabeled();
 
-  const value = useSelector(project, state => {
-    return state.matches('idle.segment') ? 0 : state.matches('idle.track') ? 1 : false;
+  const value = useSelector(labelMode, state => {
+    return state.matches('segment') ? 0 : state.matches('track') ? 1 : false;
   });
 
   const handleChange = (event, newValue) => {
     switch (newValue) {
       case 0:
-        project.send('SEGMENT');
+        labelMode.send('SEGMENT');
         break;
       case 1:
-        project.send('TRACK');
+        labelMode.send('TRACK');
         break;
       default:
         break;
@@ -137,13 +138,17 @@ function Label() {
         </Box>
         <Box className={styles.toolbarBox}>
           <TabPanel value={value} index={0}>
-            <UndoRedo />
-            <Box display='flex' flexDirection='row'>
-              <Box display='flex' flexDirection='column'>
-                <ToolButtons />
-                <ActionButtons />
+            <Box display='flex' flexDirection='column'>
+              <UndoRedo />
+              <FormLabel>Frame</FormLabel>
+              <FrameSlider />
+              <Box display='flex' flexDirection='row'>
+                <Box display='flex' flexDirection='column'>
+                  <ToolButtons />
+                  <ActionButtons />
+                </Box>
+                {labeled && <SelectedPalette />}
               </Box>
-              {labeled && <SelectedPalette />}
             </Box>
           </TabPanel>
           <TabPanel value={value} index={1}>

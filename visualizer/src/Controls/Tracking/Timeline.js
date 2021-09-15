@@ -1,19 +1,19 @@
 import { Box, FormLabel, Typography } from '@material-ui/core';
 import { useSelector } from '@xstate/react';
-import { default as React } from 'react';
-import { useSelect, useTracking } from '../../ProjectContext';
-import Division from './Division';
+import { bind, unbind } from 'mousetrap';
+import { default as React, useEffect } from 'react';
+import { useDivision, useSelect, useTracking } from '../../ProjectContext';
+import Division, { Cell } from './Division';
 import FrameSlider from './FrameSlider';
 import LabelTimeline from './LabelTimeline';
 
 function Divisions({ label }) {
-  const tracking = useTracking();
-  const division = useSelector(tracking, state => state.context.labels[label]);
+  const division = useDivision(label);
 
   return (
     label !== 0 && (
       <Box style={{ display: 'flex', justifyContent: 'space-between' }}>
-        {division?.parent && <Division label={division.parent} />}
+        {division.parent && <Division label={division.parent} />}
         {/* Empty middle element keeps the second division on 
             the right side when the first is not present */}
         <Box></Box>
@@ -32,18 +32,37 @@ function Timeline() {
   const addingDaughter = useSelector(tracking, state => state.matches('addingDaughter'));
   const parent = useSelector(tracking, state => state.context.parent);
 
+  useEffect(() => {
+    bind('n', () => select.send('NEW_FOREGROUND'));
+    bind('esc', () => {
+      tracking.send('RESET');
+      select.send('RESET_FOREGROUND');
+      select.send('RESET_BACKGROUND');
+    });
+    bind('[', () => select.send('PREV_FOREGROUND'));
+    bind(']', () => select.send('NEXT_FOREGROUND'));
+    return () => {
+      unbind('n');
+      unbind('esc');
+      unbind('[');
+      unbind(']');
+    };
+  }, [select]);
+
   return (
     <Box m={1}>
+      {addingDaughter && (
+        <Typography style={{ maxWidth: '100%' }}>
+          Click a label to add a daughter to label {parent}.
+        </Typography>
+      )}
       <FormLabel>Selected Label</FormLabel>
       <Divisions label={selected} />
       <LabelTimeline label={selected} />
       <FrameSlider topLabel={selected} bottomLabel={hovering} />
       <LabelTimeline label={hovering} />
       <FormLabel>Hovering over Label</FormLabel>
-      <Divisions label={hovering} />
-      {addingDaughter && (
-        <Typography>Click on a label to add a daughter to label {parent}.</Typography>
-      )}
+      {hovering !== 0 && <Cell label={hovering} />}
     </Box>
   );
 }

@@ -2,7 +2,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import Alert from '@material-ui/lab/Alert';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useTracking } from '../../../ProjectContext';
+import { useDivision, useTracking } from '../../../ProjectContext';
 import { daughterBeforeDivision, formatFrames } from '../trackingUtils';
 import AlertGroup from './AlertGroup';
 
@@ -27,8 +27,7 @@ const useStyles = makeStyles(theme => ({
 }));
 
 function DaughterBeforeDivisionAlert({ label }) {
-  const tracking = useTracking();
-  const division = useSelector(tracking, state => state.context.labels[label]);
+  const division = useDivision(label);
   const { frames, parentDivisionFrame: divisionFrame } = division;
 
   const framesBeforeDivision = frames.filter(frame => frame < divisionFrame);
