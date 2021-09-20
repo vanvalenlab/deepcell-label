@@ -9,6 +9,7 @@ import gzip
 import json
 import timeit
 import traceback
+import io
 
 from flask import abort
 from flask import Blueprint
@@ -21,6 +22,7 @@ from flask import make_response
 from werkzeug.exceptions import HTTPException
 import matplotlib
 import pandas as pd
+import numpy as np
 
 from deepcell_label.label import TrackEdit, ZStackEdit
 from deepcell_label.models import Project
@@ -58,6 +60,43 @@ def handle_exception(error):
     traceback.print_exc()
     # now you're handling non-HTTP exceptions only
     return jsonify({'error': str(error)}), 500
+
+
+# TODO: send compressed data instead of octet-stream
+@bp.route('/dev/raw/<project_id>')
+def dev_raw(project_id):
+    project = Project.get(project_id)
+    if not project:
+        return abort(404, description=f'project {project_id} not found')
+    # send binary data for raw image array (float32? float64?)
+    raw = project.raw_array
+    # Reshape (frames, height, width, channels) to (channels, frames, height, width)
+    raw = np.moveaxis(raw, -1, 0)
+    raw = raw.astype('float32')
+    return send_file(io.BytesIO(raw.tobytes()), mimetype='application/octet-stream')
+
+
+@bp.route('/dev/labeled/<project_id>')
+def dev_labeled(project_id):
+    project = Project.get(project_id)
+    if not project:
+        return abort(404, description=f'project {project_id} not found')
+    # send binary data for label array (int16? int32?)
+    labeled = project.label_array
+    # Reshape (frames, height, width, features) to (features, frames, height, width)
+    labeled = np.moveaxis(labeled, -1, 0)
+    labeled = labeled.astype('int32')
+    return send_file(io.BytesIO(labeled.tobytes()), mimetype='application/octet-stream')
+
+
+@bp.route('/dev/semantic-labels/<project_id>')
+def dev_semantic_labels(project_id):
+    project = Project.get(project_id)
+    if not project:
+        return abort(404, description=f'project {project_id} not found')
+    # send JSON data
+    semantic_labels = project.labels.cell_info
+    return semantic_labels
 
 
 @bp.route('/api/raw/<token>/<int:channel>/<int:frame>')
