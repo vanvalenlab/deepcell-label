@@ -1,5 +1,6 @@
 import Box from '@material-ui/core/Box';
 import { makeStyles } from '@material-ui/core/styles';
+import { useSelector } from '@xstate/react';
 import { ResizeSensor } from 'css-element-queries';
 import debounce from 'lodash.debounce';
 import { useEffect, useRef, useState } from 'react';
@@ -12,7 +13,7 @@ import UndoRedo from './Controls/Segment/UndoRedo';
 import Footer from './Footer/Footer';
 import Instructions from './Instructions/Instructions';
 import Navbar from './Navbar';
-import { useCanvas, useLabeled } from './ProjectContext';
+import { useCanvas, useImage } from './ProjectContext';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -55,7 +56,9 @@ function Label() {
   const [canvasBoxHeight, setCanvasBoxHeight] = useState(0);
 
   const canvas = useCanvas();
-  const labeled = useLabeled();
+  const image = useImage();
+
+  const loading = useSelector(image, state => state.matches('loading'));
 
   useEffect(() => {
     const setCanvasBoxDimensions = () => {
@@ -92,11 +95,11 @@ function Label() {
               <ToolButtons />
               <ActionButtons />
             </Box>
-            {labeled && <SelectedPalette />}
+            {!loading && <SelectedPalette />}
           </Box>
         </Box>
         <Box ref={canvasBoxRef} className={styles.canvasBox}>
-          <Canvas />
+          {!loading && <Canvas />}
         </Box>
       </Box>
       <Footer />

@@ -29,6 +29,10 @@ export const Canvas = () => {
   const labeled = useLabeled();
   const select = useSelect();
 
+  const rawLoading = useSelector(raw, state => state.matches('loading'));
+  const labeledLoading = useSelector(labeled, state => state.matches('loading'));
+  const loading = rawLoading || labeledLoading;
+
   const canvas = useCanvas();
   const sx = useSelector(canvas, state => state.context.sx);
   const sy = useSelector(canvas, state => state.context.sy);
@@ -101,10 +105,10 @@ export const Canvas = () => {
       onMouseDown={handleMouseDown}
       onMouseUp={canvas.send}
     >
-      {!raw && <CircularProgress style={{ margin: '25%', width: '50%', height: '50%' }} />}
-      {raw && <RawCanvas className={styles.canvas} />}
-      {labeled && <LabeledCanvas className={styles.canvas} />}
-      {labeled && <OutlineCanvas className={styles.canvas} />}
+      {loading && <CircularProgress style={{ margin: '25%', width: '50%', height: '50%' }} />}
+      {!loading && <RawCanvas className={styles.canvas} />}
+      {!loading && <LabeledCanvas className={styles.canvas} />}
+      {!loading && <OutlineCanvas className={styles.canvas} />}
       {tool === 'brush' && <BrushCanvas className={styles.canvas} />}
       {tool === 'threshold' && <ThresholdCanvas className={styles.canvas} />}
     </Box>

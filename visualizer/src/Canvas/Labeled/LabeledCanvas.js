@@ -1,7 +1,7 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-import { useCanvas, useFeature, useLabeled, useSelect } from '../../ProjectContext';
-import { highlightImageData, opacityImageData } from '../canvasUtils';
+import { useCanvas, useFeature, useImage, useLabeled, useSelect } from '../../ProjectContext';
+import { createImageData, highlightImageData, opacityImageData } from '../canvasUtils';
 
 export const LabeledCanvas = ({ className }) => {
   const canvas = useCanvas();
@@ -15,17 +15,16 @@ export const LabeledCanvas = ({ className }) => {
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
 
+  const image = useImage();
+  const frame = useSelector(image, state => state.context.frame);
+
   const labeled = useLabeled();
   const featureIndex = useSelector(labeled, state => state.context.feature);
   const highlight = useSelector(labeled, state => state.context.highlight);
   const opacity = useSelector(labeled, state => state.context.opacity);
 
   const feature = useFeature(featureIndex);
-  const labeledImage = useSelector(feature, state => state.context.labeledImage);
-  let labeledArray = useSelector(feature, state => state.context.labeledArray);
-  if (!labeledArray) {
-    labeledArray = Array(sh).fill(Array(sw).fill(0));
-  }
+  const array = useSelector(feature, state => state.context.frames[frame]);
 
   const select = useSelect();
   const foreground = useSelector(select, state => state.context.foreground);
@@ -46,15 +45,14 @@ export const LabeledCanvas = ({ className }) => {
   }, [sw, sh]);
 
   useEffect(() => {
-    hiddenCtx.current.drawImage(labeledImage, 0, 0);
-    let data = hiddenCtx.current.getImageData(0, 0, sw, sh);
+    const data = createImageData(array, sw, sh);
     if (highlight && foreground !== 0) {
       const red = [255, 0, 0, 255];
-      highlightImageData(data, labeledArray, foreground, red);
+      highlightImageData(data, array, foreground, red);
     }
     opacityImageData(data, opacity);
     hiddenCtx.current.putImageData(data, 0, 0);
-  }, [labeledImage, labeledArray, foreground, highlight, opacity, sh, sw]);
+  }, [array, foreground, highlight, opacity, sh, sw]);
 
   useEffect(() => {
     ctx.current.save();
@@ -71,20 +69,7 @@ export const LabeledCanvas = ({ className }) => {
       height
     );
     ctx.current.restore();
-  }, [
-    labeledImage,
-    labeledArray,
-    foreground,
-    highlight,
-    opacity,
-    sw,
-    sh,
-    sx,
-    sy,
-    zoom,
-    width,
-    height,
-  ]);
+  }, [array, foreground, highlight, opacity, sw, sh, sx, sy, zoom, width, height]);
 
   return (
     <>

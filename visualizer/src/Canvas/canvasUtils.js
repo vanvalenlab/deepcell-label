@@ -1,5 +1,18 @@
 /** Helper functions to manipulate ImageData. */
 
+export function createImageData(typedArray, width, height) {
+  const max = Math.max.apply(null, typedArray);
+  const rescaled = Uint8ClampedArray.from(typedArray.map(i => (i / max) * 255));
+  const data = new Uint8ClampedArray(typedArray.length * 4);
+  for (let i = 0; i < rescaled.length; i++) {
+    data[4 * i] = rescaled[i];
+    data[4 * i + 1] = rescaled[i];
+    data[4 * i + 2] = rescaled[i];
+    data[4 * i + 3] = 255;
+  }
+  return new ImageData(data, width, height);
+}
+
 /**
  * Highlights a label with color.
  * @param {ImageData} imageData where we draw the highlight

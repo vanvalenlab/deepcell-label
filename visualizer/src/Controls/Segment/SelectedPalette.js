@@ -401,24 +401,28 @@ function BackgroundBox() {
 
 export default function SelectedPalette() {
   const styles = useStyles();
+  const labeled = useLabeled();
+  const loading = useSelector(labeled, state => state.matches('loading'));
 
   return (
-    <Box display='flex' flexDirection='column'>
-      <FormLabel className={styles.title}>Selected</FormLabel>
+    !loading && (
+      <Box display='flex' flexDirection='column'>
+        <FormLabel className={styles.title}>Selected</FormLabel>
 
-      <Box className={styles.palette}>
-        <Box display='flex' justifyContent='center'>
-          <ForegroundBox />
-          <BackgroundBox />
-          <Box className={styles.switchBox}>
-            <SwitchButton />
+        <Box className={styles.palette}>
+          <Box display='flex' justifyContent='center'>
+            <ForegroundBox />
+            <BackgroundBox />
+            <Box className={styles.switchBox}>
+              <SwitchButton />
+            </Box>
           </Box>
         </Box>
+        <FormLabel className={styles.title}>Hovering over</FormLabel>
+        <Box display='flex' justifyContent='center'>
+          <HoveringBox />
+        </Box>
       </Box>
-      <FormLabel className={styles.title}>Hovering over</FormLabel>
-      <Box display='flex' justifyContent='center'>
-        <HoveringBox />
-      </Box>
-    </Box>
+    )
   );
 }

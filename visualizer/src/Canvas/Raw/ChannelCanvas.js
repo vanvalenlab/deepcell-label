@@ -1,7 +1,7 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-import { useCanvas, useChannel } from '../../ProjectContext';
-import { adjustRangeImageData, recolorImageData } from '../canvasUtils';
+import { useCanvas, useChannel, useImage } from '../../ProjectContext';
+import { adjustRangeImageData, createImageData, recolorImageData } from '../canvasUtils';
 
 /** Converts a hex string like #FF0000 to three element array for the RGB values. */
 const hexToRGB = hex => {
@@ -11,7 +11,7 @@ const hexToRGB = hex => {
   return [r, g, b];
 };
 
-export const ChannelCanvas = ({ layer, setCanvases }) => {
+const ChannelCanvas = ({ layer, setCanvases }) => {
   const canvas = useCanvas();
   const width = useSelector(canvas, state => state.context.width);
   const height = useSelector(canvas, state => state.context.height);
@@ -19,14 +19,17 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
   const canvasRef = useRef();
   const ctxRef = useRef();
 
+  const image = useImage();
+  const frameId = useSelector(image, state => state.context.frame);
+
   const layerIndex = useSelector(layer, state => state.context.layer);
-  const channelIndex = useSelector(layer, state => state.context.channel);
+  const channelId = useSelector(layer, state => state.context.channel);
   const color = useSelector(layer, state => state.context.color);
   const [min, max] = useSelector(layer, state => state.context.range);
   const on = useSelector(layer, state => state.context.on);
 
-  const channel = useChannel(channelIndex);
-  const rawImage = useSelector(channel, state => state.context.rawImage);
+  const channel = useChannel(channelId);
+  const array = useSelector(channel, state => state.context.frames[frameId]);
 
   useEffect(() => {
     const channelCanvas = canvasRef.current;
@@ -38,9 +41,7 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
     const canvas = canvasRef.current;
     const ctx = ctxRef.current;
     if (on) {
-      ctx.drawImage(rawImage, 0, 0);
-      // adjust image data
-      const imageData = ctx.getImageData(0, 0, width, height);
+      const imageData = createImageData(array, width, height);
       adjustRangeImageData(imageData, min, max);
       recolorImageData(imageData, hexToRGB(color));
       // redraw with adjusted data
@@ -50,7 +51,7 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
     }
     // assign to channelCanvases to rerender
     setCanvases(prevCanvases => ({ ...prevCanvases, [layerIndex]: canvas }));
-  }, [canvasRef, setCanvases, on, layerIndex, rawImage, color, min, max, width, height]);
+  }, [canvasRef, setCanvases, on, layerIndex, array, color, min, max, width, height]);
 
   useEffect(() => {
     return () =>

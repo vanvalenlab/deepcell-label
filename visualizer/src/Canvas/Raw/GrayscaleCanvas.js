@@ -1,10 +1,11 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-import { useCanvas, useChannel, useRaw } from '../../ProjectContext';
+import { useCanvas, useChannel, useImage, useRaw } from '../../ProjectContext';
 import {
   adjustRangeImageData,
   brightnessImageData,
   contrastImageData,
+  createImageData,
   invertImageData,
 } from '../canvasUtils';
 
@@ -20,16 +21,19 @@ export const GrayscaleCanvas = ({ className }) => {
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
 
+  const image = useImage();
+  const frame = useSelector(image, state => state.context.frame);
+
   const raw = useRaw();
   const grayscaleMode = useSelector(raw, state => state.context.grayscaleMode);
-  const channelIndex = useSelector(grayscaleMode, state => state.context.channel);
-  const channel = useChannel(channelIndex);
+  const channelId = useSelector(grayscaleMode, state => state.context.channel);
+  const channel = useChannel(channelId);
 
   const invert = useSelector(channel, state => state.context.invert);
   const [min, max] = useSelector(channel, state => state.context.range);
   const brightness = useSelector(channel, state => state.context.brightness);
   const contrast = useSelector(channel, state => state.context.contrast);
-  const rawImage = useSelector(channel, state => state.context.rawImage);
+  const array = useSelector(channel, state => state.context.frames[frame]);
 
   const canvasRef = useRef();
   const ctxRef = useRef();
@@ -48,8 +52,7 @@ export const GrayscaleCanvas = ({ className }) => {
   useEffect(() => {
     // draw image onto canvas to get image data
     const ctx = hiddenCtxRef.current;
-    ctx.drawImage(rawImage, 0, 0);
-    const imageData = ctx.getImageData(0, 0, width, height);
+    const imageData = createImageData(array, width, height);
     // adjust image data
     adjustRangeImageData(imageData, min, max);
     brightnessImageData(imageData, brightness);
@@ -59,14 +62,14 @@ export const GrayscaleCanvas = ({ className }) => {
     }
     // redraw with adjusted data
     ctx.putImageData(imageData, 0, 0);
-  }, [rawImage, min, max, invert, brightness, contrast, width, height]);
+  }, [array, min, max, invert, brightness, contrast, width, height]);
 
   useEffect(() => {
     const hiddenCanvas = hiddenCanvasRef.current;
     const ctx = ctxRef.current;
     ctx.clearRect(0, 0, width, height);
     ctx.drawImage(hiddenCanvas, sx, sy, sw / zoom, sh / zoom, 0, 0, width, height);
-  }, [rawImage, min, max, invert, brightness, contrast, sx, sy, zoom, sw, sh, width, height]);
+  }, [array, min, max, invert, brightness, contrast, sx, sy, zoom, sw, sh, width, height]);
 
   return (
     <>

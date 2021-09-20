@@ -1,7 +1,6 @@
 /** Modified from https://github.com/hms-dbmi/viv */
 import Checkbox from '@material-ui/core/Checkbox';
 import Grid from '@material-ui/core/Grid';
-import LinearProgress from '@material-ui/core/LinearProgress';
 import Select from '@material-ui/core/Select';
 import Slider from '@material-ui/core/Slider';
 import { makeStyles } from '@material-ui/core/styles';
@@ -22,7 +21,7 @@ function LayerSelector({ layer }) {
   const names = useSelector(raw, state => state.context.channelNames);
 
   const onChange = e => {
-    layer.send({ type: 'CHANGE_CHANNEL', channel: Number(e.target.value) });
+    layer.send({ type: 'SET_CHANNEL', channel: Number(e.target.value) });
   };
 
   return (
@@ -87,7 +86,6 @@ function LayerController({ layer }) {
 
   const raw = useRaw();
   const colorMode = useSelector(raw, state => state.context.colorMode);
-  const loading = useSelector(colorMode, state => state.context.loadingChannels.has(channel));
 
   return (
     <Grid container direction='column' m={2} justify='center' className={classes.root}>
@@ -97,11 +95,6 @@ function LayerController({ layer }) {
         </Grid>
         <Grid item>
           <LayerOptions layer={layer} />
-        </Grid>
-      </Grid>
-      <Grid container direction='row'>
-        <Grid item xs={12}>
-          {loading && <LinearProgress />}
         </Grid>
       </Grid>
       <Grid container direction='row' justify='flex-start' alignItems='center'>
