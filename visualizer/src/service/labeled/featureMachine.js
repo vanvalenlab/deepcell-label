@@ -1,4 +1,5 @@
-import { assign, Machine, send, sendParent } from 'xstate';
+import colormap from 'colormap';
+import { assign, Machine, sendParent } from 'xstate';
 import { pure } from 'xstate/lib/actions';
 
 function fetchSemanticLabels(context) {
@@ -13,194 +14,138 @@ function fetchColors(context) {
   return fetch(pathToColors).then(res => res.json());
 }
 
-function fetchLabeledFrame(context) {
-  const { projectId, feature, loadingFrame: frame } = context;
-  const pathToLabeled = `/api/labeled/${projectId}/${feature}/${frame}`;
-  const pathToArray = `/api/array/${projectId}/${feature}/${frame}`;
+// const reloadFrameState = {
+//   entry: 'clearChangedFrames',
+//   initial: 'checkReload',
+//   states: {
+//     checkReload: {
+//       always: [{ cond: 'frameChanged', target: 'reloading' }, 'reloaded'],
+//     },
+//     reloading: {
+//       entry: assign({ loadingFrame: ({ frame }) => frame }),
+//       invoke: {
+//         src: fetchLabeledFrame,
+//         onDone: { target: 'reloaded', actions: 'saveFrame' },
+//         onError: {
+//           target: 'reloaded',
+//           actions: (context, event) => console.log(event),
+//         },
+//       },
+//     },
+//     reloaded: {
+//       type: 'final',
+//     },
+//   },
+// };
 
-  const fetchImage = fetch(pathToLabeled)
-    // .then(validateResponse)
-    .then(readResponseAsBlob)
-    .then(makeImageURL)
-    .then(showImage);
-  // .catch(logError);
+// const reloadLabelsState = {
+//   entry: assign({ reloadLabels: (_, { data: { labels } }) => labels }),
+//   initial: 'checkReload',
+//   states: {
+//     checkReload: {
+//       always: [{ cond: ({ reloadLabels }) => reloadLabels, target: 'reloading' }, 'reloaded'],
+//     },
+//     reloading: {
+//       invoke: {
+//         src: fetchSemanticLabels,
+//         onDone: { target: 'reloaded', actions: 'saveLabels' },
+//         onError: 'reloaded',
+//       },
+//     },
+//     reloaded: {
+//       type: 'final',
+//     },
+//   },
+// };
 
-  const fetchArray = fetch(pathToArray).then(res => res.json());
+// const reloadColorsState = {
+//   entry: assign({ reloadColors: (_, { data: { labels } }) => labels }),
+//   initial: 'checkReload',
+//   states: {
+//     checkReload: {
+//       always: [{ cond: ({ reloadColors }) => reloadColors, target: 'reloading' }, 'reloaded'],
+//     },
+//     reloading: {
+//       invoke: {
+//         src: fetchColors,
+//         onDone: { target: 'reloaded', actions: 'saveColors' },
+//         onError: 'reloaded',
+//       },
+//     },
+//     reloaded: {
+//       type: 'final',
+//     },
+//   },
+// };
 
-  return Promise.all([fetchImage, fetchArray]);
-}
+// const reloadState = {
+//   type: 'parallel',
+//   states: {
+//     frame: reloadFrameState,
+//     labels: reloadLabelsState,
+//     colors: reloadColorsState,
+//   },
+//   onDone: {
+//     target: 'idle',
+//     actions: send(({ frame }) => ({ type: 'FRAME', frame })),
+//   },
+// };
 
-function readResponseAsBlob(response) {
-  return response.blob();
-}
+// const loadState = {
+//   initial: 'checkLoaded',
+//   invoke: {
+//     src: fetchSemanticLabels,
+//     onDone: { actions: 'saveLabels' },
+//   },
+//   states: {
+//     checkLoaded: {
+//       always: [{ cond: 'loadedFrame', target: 'frameLoaded' }, { target: 'loadingFrame' }],
+//     },
+//     loadingFrame: {
+//       invoke: {
+//         src: fetchLabeledFrame,
+//         onDone: { target: 'frameLoaded', actions: 'saveFrame' },
+//         onError: {
+//           target: 'frameLoaded',
+//           actions: (context, event) => console.log(event),
+//         },
+//       },
+//     },
+//     frameLoaded: {
+//       always: { cond: 'loadedLabels', target: 'loaded' },
+//     },
+//     loaded: {
+//       entry: 'sendLabeledLoaded',
+//       type: 'final',
+//     },
+//   },
+//   onDone: 'idle',
+// };
 
-function makeImageURL(responseAsBlob) {
-  return URL.createObjectURL(responseAsBlob);
-}
+let colors = colormap({
+  colormap: 'jet',
+  nshades: 10,
+  format: 'hex',
+  alpha: 1,
+});
 
-function showImage(imgUrl) {
-  return new Promise(resolve => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.src = imgUrl;
-  });
-}
-
-const reloadFrameState = {
-  entry: 'clearChangedFrames',
-  initial: 'checkReload',
-  states: {
-    checkReload: {
-      always: [{ cond: 'frameChanged', target: 'reloading' }, 'reloaded'],
-    },
-    reloading: {
-      entry: assign({ loadingFrame: ({ frame }) => frame }),
-      invoke: {
-        src: fetchLabeledFrame,
-        onDone: { target: 'reloaded', actions: 'saveFrame' },
-        onError: {
-          target: 'reloaded',
-          actions: (context, event) => console.log(event),
-        },
-      },
-    },
-    reloaded: {
-      type: 'final',
-    },
-  },
-};
-
-const reloadLabelsState = {
-  entry: assign({ reloadLabels: (_, { data: { labels } }) => labels }),
-  initial: 'checkReload',
-  states: {
-    checkReload: {
-      always: [{ cond: ({ reloadLabels }) => reloadLabels, target: 'reloading' }, 'reloaded'],
-    },
-    reloading: {
-      invoke: {
-        src: fetchSemanticLabels,
-        onDone: { target: 'reloaded', actions: 'saveLabels' },
-        onError: 'reloaded',
-      },
-    },
-    reloaded: {
-      type: 'final',
-    },
-  },
-};
-
-const reloadColorsState = {
-  entry: assign({ reloadColors: (_, { data: { labels } }) => labels }),
-  initial: 'checkReload',
-  states: {
-    checkReload: {
-      always: [{ cond: ({ reloadColors }) => reloadColors, target: 'reloading' }, 'reloaded'],
-    },
-    reloading: {
-      invoke: {
-        src: fetchColors,
-        onDone: { target: 'reloaded', actions: 'saveColors' },
-        onError: 'reloaded',
-      },
-    },
-    reloaded: {
-      type: 'final',
-    },
-  },
-};
-
-const reloadState = {
-  type: 'parallel',
-  states: {
-    frame: reloadFrameState,
-    labels: reloadLabelsState,
-    colors: reloadColorsState,
-  },
-  onDone: {
-    target: 'idle',
-    actions: send(({ frame }) => ({ type: 'FRAME', frame })),
-  },
-};
-
-const loadState = {
-  initial: 'checkLoaded',
-  invoke: {
-    src: fetchSemanticLabels,
-    onDone: { actions: 'saveLabels' },
-  },
-  states: {
-    checkLoaded: {
-      always: [{ cond: 'loadedFrame', target: 'frameLoaded' }, { target: 'loadingFrame' }],
-    },
-    loadingFrame: {
-      invoke: {
-        src: fetchLabeledFrame,
-        onDone: { target: 'frameLoaded', actions: 'saveFrame' },
-        onError: {
-          target: 'frameLoaded',
-          actions: (context, event) => console.log(event),
-        },
-      },
-    },
-    frameLoaded: {
-      always: { cond: 'loadedLabels', target: 'loaded' },
-    },
-    loaded: {
-      entry: 'sendLabeledLoaded',
-      type: 'final',
-    },
-  },
-  onDone: 'idle',
-};
-
-const createFeatureMachine = (projectId, feature, numFrames) =>
+const createFeatureMachine = (feature, frames, semanticLabels) =>
   Machine(
     {
       id: `labeled_feature${feature}`,
       context: {
-        projectId,
-        feature,
-        numFrames,
-        frame: null,
-        loadingFrame: null,
-        frames: {},
-        arrays: {},
-        colors: {},
-        labeledImage: new Image(),
-        labeledArray: null,
+        frames,
+        colors: colormap({
+          colormap: 'viridis',
+          // nshades: Math.max(semanticLabels.keys()),
+          format: 'hex',
+        }),
         labels: null,
-        reloadLabels: false,
-      },
-      initial: 'idle',
-      invoke: [
-        {
-          src: fetchColors,
-          onDone: { actions: 'saveColors' },
-        },
-      ],
-      states: {
-        idle: {
-          on: {
-            PRELOAD: {
-              cond: 'canPreload',
-              target: 'load',
-              actions: 'loadNextFrame',
-            },
-          },
-        },
-        load: loadState,
-        reload: reloadState,
+        // maxLabel
       },
       on: {
-        LOAD_FRAME: {
-          target: 'load',
-          actions: assign({ loadingFrame: (context, event) => event.frame }),
-        },
-        FRAME: { actions: ['useFrame', 'sendLabelData'] },
         // FEATURE: { actions: ['useFrame', 'sendLabelData'], },
         EDITED: {
-          target: 'reload',
           actions: assign({
             newFrames: (_, { data: { frames } }) => frames,
             reloadLabels: (_, { data: { labels } }) => labels,
@@ -213,30 +158,30 @@ const createFeatureMachine = (projectId, feature, numFrames) =>
         loadedLabels: ({ labels }) => labels !== null,
         loadedFrame: ({ loadingFrame, frames }) => loadingFrame in frames,
         frameChanged: ({ frame, newFrames }) => newFrames.includes(frame),
-        canPreload: ({ frames, numFrames }) => Object.keys(frames).length !== numFrames,
       },
       actions: {
-        clearChangedFrames: assign((context, event) => {
-          const newFrames = event.data.frames;
-          const inNew = ([key, value]) => newFrames.includes(Number(key));
-          const notInNew = ([key, value]) => !newFrames.includes(Number(key));
-          const frames = Object.entries(context.frames);
-          const arrays = Object.entries(context.arrays);
-          const filteredFrames = frames.filter(notInNew);
-          const filteredArrays = arrays.filter(notInNew);
-          for (const [frame, image] of frames.filter(inNew)) {
-            URL.revokeObjectURL(image.src);
-          }
-          return {
-            frames: Object.fromEntries(filteredFrames),
-            arrays: Object.fromEntries(filteredArrays),
-          };
-        }),
-        sendLabeledLoaded: sendParent(({ loadingFrame, feature }) => ({
-          type: 'LABELED_LOADED',
-          frame: loadingFrame,
-          feature,
-        })),
+        // clearChangedFrames: assign((context, event) => {
+        //   const newFrames = event.data.frames;
+        //   const inNew = ([key, value]) => newFrames.includes(Number(key));
+        //   const notInNew = ([key, value]) => !newFrames.includes(Number(key));
+        //   const frames = Object.entries(context.frames);
+        //   const arrays = Object.entries(context.arrays);
+        //   const filteredFrames = frames.filter(notInNew);
+        //   const filteredArrays = arrays.filter(notInNew);
+        //   for (const [frame, image] of frames.filter(inNew)) {
+        //     URL.revokeObjectURL(image.src);
+        //   }
+        //   return {
+        //     frames: Object.fromEntries(filteredFrames),
+        //     arrays: Object.fromEntries(filteredArrays),
+        //   };
+        // }),
+        // sendLabeledLoaded: sendParent(({ loadingFrame, feature }) => ({
+        //   type: 'LABELED_LOADED',
+        //   frame: loadingFrame,
+        //   feature,
+        // })),
+        setFrame: assign({ frame: (_, { frame }) => frame }),
         sendLabelData: pure(({ labeledArray, labels }) => {
           return [
             sendParent({ type: 'LABELED_ARRAY', labeledArray }),

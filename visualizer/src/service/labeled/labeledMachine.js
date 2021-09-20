@@ -1,78 +1,32 @@
-import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
+import { actions, assign, forwardTo, Machine, send, spawn } from 'xstate';
 import createFeatureMachine from './featureMachine';
 
 const { pure, respond } = actions;
 
-const frameState = {
-  entry: 'loadFrame',
-  initial: 'loading',
-  states: {
-    idle: {
-      entry: 'startPreload',
-      on: {
-        LABELED_LOADED: { actions: 'preload' },
-      },
-    },
-    loading: {
-      on: {
-        LABELED_LOADED: {
-          target: 'loaded',
-          cond: 'loadedFrame',
-          actions: 'sendLoaded',
-        },
-        // when the feature changes before the frame does,
-        // we need to load the frame for the new feature
-        FEATURE: { actions: 'loadFrame' },
-      },
-    },
-    loaded: {
-      on: {
-        FEATURE: { target: 'loading', actions: 'loadFrame' },
-        FRAME: { target: 'idle', actions: ['useFrame', 'forwardToFeature'] },
-      },
-    },
-  },
-  on: {
-    LOAD_FRAME: {
-      target: '.loading',
-      cond: 'newLoadingFrame',
-      actions: ['assignLoadingFrame', 'loadFrame'],
-    },
-  },
-};
+function fetchLabeled(context) {
+  const { projectId, numFeatures, numFrames } = context;
+  const pathToLabeled = `/dev/labeled/${projectId}`;
 
-const featureState = {
-  initial: 'loading',
-  states: {
-    idle: {},
-    loading: {
-      on: {
-        LABELED_LOADED: {
-          target: 'idle',
-          cond: 'loadedFeature',
-          actions: 'useFeature',
-        },
-        FRAME: { actions: 'loadFeature' }, // when frame changes, load that frame instead
-      },
-    },
-  },
-  on: {
-    LOAD_FEATURE: {
-      target: '.loading',
-      cond: 'newLoadingFeature',
-      actions: ['assignLoadingFeature', 'loadFeature'],
-    },
-  },
-};
+  const splitBuffer = buffer => {
+    const length = buffer.byteLength / numFeatures / numFrames / 4; // 4 bytes for int32
+    const features = [];
+    for (let i = 0; i < numFeatures; i++) {
+      const frames = [];
+      for (let j = 0; j < numFrames; j++) {
+        const array = new Int32Array(buffer, (i * numFrames + j) * length * 4, length);
+        // const blob = new Blob([array], {type: 'application/octet-stream'});
+        frames.push(array);
+      }
+      features.push(frames);
+    }
 
-const restoreState = {
-  on: {
-    RESTORE: {
-      actions: ['restore', respond('RESTORED')],
-    },
-    SAVE: { actions: 'save' },
-  },
-};
+    return features;
+  };
+
+  return fetch(pathToLabeled)
+    .then(response => response.arrayBuffer())
+    .then(splitBuffer);
+}
 
 const createLabeledMachine = (projectId, numFeatures, numFrames) =>
   Machine(
@@ -82,102 +36,63 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) =>
         numFeatures,
         numFrames,
         feature: 0,
-        loadingFeature: 0,
-        frame: 0, // needed ??
-        loadingFrame: 0, // needed ??
-        features: [], // all segmentations as featureMachines
-        featureNames: [], // name of each segmentations
+        features: [], // feature machines
+        featureNames: [],
         opacity: 0,
         lastOpacity: 0.3,
         highlight: true,
         outline: true,
       },
-      entry: 'spawnFeatures',
-      type: 'parallel',
+      initial: 'loading',
       states: {
-        frame: frameState,
-        feature: featureState,
-        restore: restoreState,
+        loading: {
+          invoke: {
+            src: fetchLabeled,
+            onDone: { target: 'idle', actions: 'spawnFeatures' },
+          },
+        },
+        idle: {},
       },
       on: {
+        SET_FRAME: { actions: 'forwardToFeatures' },
+        SET_FEATURE: { cond: 'newFeature', actions: 'setFeature' },
         TOGGLE_HIGHLIGHT: { actions: 'toggleHighlight' },
         TOGGLE_OUTLINE: { actions: 'toggleOutline' },
         SET_OPACITY: { actions: 'setOpacity' },
         CYCLE_OPACITY: { actions: 'cycleOpacity' },
-        LABELED_ARRAY: { actions: sendParent((c, e) => e) },
-        LABELS: { actions: sendParent((c, e) => e) },
+        // LABELED_ARRAY: { actions: sendParent((c, e) => e) },
+        // LABELS: { actions: sendParent((c, e) => e) },
         EDITED: {
           actions: forwardTo(({ features }, event) => features[event.data.feature]),
         },
+        SAVE: { actions: 'save' },
+        RESTORE: { actions: ['restore', respond('RESTORED')] },
       },
     },
     {
       guards: {
-        /** Check that the loaded event is for the loading frame. */
-        loadedFrame: (context, event) =>
-          context.loadingFrame === event.frame && context.feature === event.feature,
-        /** Check that the loaded event is for the loading feature. */
-        loadedFeature: (context, event) =>
-          context.frame === event.frame && context.loadingFeature === event.feature,
-        /** Check that requested frame is different from the loading frame. */
-        newLoadingFrame: ({ loadingFrame }, { frame }) => loadingFrame !== frame,
-        /** Check that requested feature is different from the loading feature. */
-        newLoadingFeature: ({ loadingFeature }, { feature }) => loadingFeature !== feature,
+        newFeature: (context, event) => context.feature !== event.feature,
       },
       actions: {
-        /** Create an actor for each feature. */
+        /** Create feature machines and names. */
         spawnFeatures: assign({
-          features: ({ projectId, numFeatures, numFrames }) => {
-            return Array(numFeatures)
-              .fill(0)
-              .map((val, index) =>
-                spawn(createFeatureMachine(projectId, index, numFrames), `feature${index}`)
-              );
+          features: ({ numFeatures }, { data }) => {
+            const features = [];
+            for (let i = 0; i < numFeatures; i++) {
+              const frames = data[i];
+              const feature = spawn(createFeatureMachine(i, frames), `feature${i}`);
+              features.push(feature);
+            }
+            return features;
           },
           featureNames: ({ numFeatures }) =>
             [...Array(numFeatures).keys()].map(i => `feature ${i}`),
         }),
-        /** Record which frame we are loading. */
-        assignLoadingFrame: assign({ loadingFrame: (_, { frame }) => frame }),
-        /** Record which feature we are loading. */
-        assignLoadingFeature: assign({
-          loadingFeature: (_, { feature }) => feature,
-        }),
-        /** Start preloading frames in all features. */
-        startPreload: pure(({ features }) =>
-          features.map(feature => send('PRELOAD', { to: feature }))
-        ),
-        /** Preload another frame after the last one is loaded. */
-        preload: respond('PRELOAD'),
-        /** Load a new frame for the current feature. */
-        loadFrame: send(({ loadingFrame }) => ({ type: 'LOAD_FRAME', frame: loadingFrame }), {
-          to: ({ features, feature }) => features[feature],
-        }),
-        /** Load the current frame for a new feature.  */
-        loadFeature: send(({ frame }) => ({ type: 'LOAD_FRAME', frame }), {
-          to: ({ features, loadingFeature }) => features[loadingFeature],
-        }),
-        // useFrame: pure(({ features }) => features.map(feature => forwardTo(feature))),
-        /** Switch to a new feature. */
-        useFeature: pure(({ features }, { feature, frame }) => {
-          const featureEvent = { type: 'FEATURE', feature };
-          return [
-            assign({ feature }),
-            send(featureEvent),
-            sendParent(featureEvent),
-            send({ type: 'FRAME', frame }, { to: features[feature] }),
-          ];
-        }),
-        /** Update the index to a new frame. */
-        useFrame: assign((_, { frame }) => ({ frame })),
-        forwardToFeature: forwardTo(({ features, feature }) => features[feature]),
-        /** Tell imageMachine that the labeled data is loaded. */
-        sendLoaded: sendParent('LABELED_LOADED'),
+        forwardToFeatures: pure(({ features }) => features.map(f => forwardTo(f))),
         toggleHighlight: assign({ highlight: ({ highlight }) => !highlight }),
         setOpacity: assign({
           opacity: (_, { opacity }) => Math.min(1, Math.max(0, opacity)),
-          lastOpacity: ({ lastOpacity }, { opacity }) =>
-            opacity === 1 || opacity === 0 ? 0.3 : opacity,
+          lastOpacity: (_, { opacity }) => (opacity === 1 || opacity === 0 ? 0.3 : opacity),
         }),
         cycleOpacity: assign({
           opacity: ({ opacity, lastOpacity }) =>
@@ -185,7 +100,7 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) =>
         }),
         toggleOutline: assign({ outline: ({ outline }) => !outline }),
         save: respond(({ feature }) => ({ type: 'RESTORE', feature })),
-        restore: send((_, { feature }) => ({ type: 'LOAD_FEATURE', feature })),
+        restore: send((_, { feature }) => ({ type: 'SET_FEATURE', feature })),
       },
     }
   );

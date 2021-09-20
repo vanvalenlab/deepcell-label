@@ -5,49 +5,30 @@ import createGrayscaleMachine from './grayscaleMachine';
 
 const { pure, respond } = actions;
 
-const preloadState = {
-  entry: 'startPreload',
-  on: {
-    CHANNEL_LOADED: { actions: 'preload' },
-  },
-};
+function fetchRaw(context) {
+  const { projectId, numChannels, numFrames } = context;
+  const pathToRaw = `/dev/raw/${projectId}`;
 
-const frameState = {
-  initial: 'loading',
-  states: {
-    idle: {},
-    loading: {
-      on: {
-        CHANNEL_LOADED: {
-          cond: 'isLoadingFrame',
-          actions: 'forwardToDisplay',
-        },
-        FRAME_LOADED: { target: 'loaded', actions: 'sendLoaded' },
-      },
-    },
-    loaded: {
-      on: {
-        FRAME: { target: 'idle', actions: ['setFrame', 'forwardToDisplay'] },
-        CHANNEL: { target: 'loading' },
-      },
-    },
-  },
-  on: {
-    LOAD_FRAME: {
-      target: '.loading',
-      cond: 'diffLoadingFrame',
-      actions: ['setLoadingFrame', 'forwardToDisplay'],
-    },
-  },
-};
+  const splitBuffer = buffer => {
+    const length = buffer.byteLength / numChannels / numFrames / 4; // 4 bytes per element in Float32Array
+    const channels = [];
+    for (let i = 0; i < numChannels; i++) {
+      const frames = [];
+      for (let j = 0; j < numFrames; j++) {
+        const array = new Float32Array(buffer, (i * numFrames + j) * length * 4, length);
+        // const blob = new Blob([array], {type: 'application/octet-stream'});
+        frames.push(array);
+      }
+      channels.push(frames);
+    }
 
-const channelState = {
-  on: {
-    CHANNEL: { actions: sendParent((c, e) => e) },
-    LOAD_CHANNEL: { actions: 'forwardToDisplay' },
-    CHANNEL_LOADED: { actions: 'forwardToDisplay' },
-  },
-};
+    return channels;
+  };
+
+  return fetch(pathToRaw)
+    .then(response => response.arrayBuffer())
+    .then(splitBuffer);
+}
 
 const colorState = {
   entry: [sendParent('COLOR'), assign({ isGrayscale: false })],
@@ -59,15 +40,7 @@ const grayscaleState = {
   on: {
     TOGGLE_COLOR_MODE: 'color',
     RESET: { actions: 'forwardToChannel' },
-  },
-  initial: 'idle',
-  states: {
-    idle: {
-      on: {
-        // restart channel hotkey
-        CHANNEL: { target: 'idle', actions: 'setChannel', internal: false },
-      },
-    },
+    CHANNEL: { actions: 'setChannel' },
   },
 };
 
@@ -85,15 +58,6 @@ const displayState = {
   },
 };
 
-const restoreState = {
-  on: {
-    RESTORE: {
-      actions: ['restore', respond('RESTORED')],
-    },
-    SAVE: { actions: 'save' },
-  },
-};
-
 const createRawMachine = (projectId, numChannels, numFrames) =>
   Machine(
     {
@@ -101,71 +65,65 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
         projectId,
         numChannels,
         numFrames,
-        channels: [], // all channels that can be used in layers
-        channelNames: [], // names of all channels
-        frame: 0, // needed?
-        loadingFrame: 0, // needed?
-        channel: 0,
+        channels: [], // channel machines
+        channelNames: [],
         colorMode: null,
         grayscaleMode: null,
         isGrayscale: Number(numChannels) === 1,
       },
-      entry: ['spawnChannels', 'spawnColorModes'],
-      type: 'parallel',
+      entry: 'spawnColorModes',
+      initial: 'loading',
       states: {
-        preload: preloadState,
-        frame: frameState,
-        channel: channelState,
-        display: displayState,
-        restore: restoreState,
+        loading: {
+          invoke: {
+            src: fetchRaw,
+            onDone: { target: 'idle', actions: 'spawnChannels' },
+          },
+        },
+        idle: displayState,
       },
       on: {
         TOGGLE_INVERT: { actions: 'forwardToChannel' },
+        SAVE: { actions: 'save' },
+        RESTORE: { actions: ['restore', respond('RESTORED')] },
+        SET_FRAME: { actions: 'forwardToChannels' },
+        // CHANNEL: { actions: sendParent((c, e) => e) },
+        SET_CHANNEL: { actions: 'forwardToDisplay' },
       },
     },
     {
-      guards: {
-        isLoadingFrame: ({ loadingFrame }, { frame }) => loadingFrame === frame,
-        diffLoadingFrame: ({ loadingFrame }, { frame }) => loadingFrame !== frame,
-      },
       actions: {
-        /** Create a channel actor for each channel */
+        /** Creates a channel machines and names */
         spawnChannels: assign({
-          channels: ({ projectId, numChannels, numFrames }) => {
-            return Array(numChannels)
-              .fill(0)
-              .map((val, index) =>
-                spawn(createChannelMachine(projectId, index, numFrames), `channel${index}`)
-              );
+          channels: ({ numChannels }, event) => {
+            const channels = [];
+            for (let i = 0; i < numChannels; i++) {
+              const frames = event.data[i];
+              const channel = spawn(createChannelMachine(i, frames), `channel${i}`);
+              channels.push(channel);
+            }
+            return channels;
           },
-          channelNames: ({ numChannels }) =>
-            [...Array(numChannels).keys()].map(i => `channel ${i}`),
+          channelNames: ({ numChannels }) => {
+            const names = [];
+            for (let i = 0; i < numChannels; i++) {
+              names.push(`channel ${i}`);
+            }
+            return names;
+          },
         }),
         spawnColorModes: assign({
           grayscaleMode: context => spawn(createGrayscaleMachine(context), 'grayscaleMode'),
           colorMode: context => spawn(createColorMachine(context), 'colorMode'),
         }),
-        startPreload: pure(({ channels }) =>
-          channels.map(channel => send('PRELOAD', { to: channel }))
-        ),
-        preload: respond('PRELOAD'),
-        sendLoaded: sendParent('RAW_LOADED'),
-        setLoadingFrame: assign({ loadingFrame: (_, { frame }) => frame }),
-        setFrame: assign((_, { frame }) => ({ frame })),
-        setChannel: assign((_, { channel }) => ({ channel })),
         forwardToDisplay: forwardTo(({ isGrayscale }) =>
           isGrayscale ? 'grayscaleMode' : 'colorMode'
         ),
-        forwardToChannel: forwardTo(({ channel, channels }) => channels[channel]),
-        save: respond(({ channel, isGrayscale }) => ({ type: 'RESTORE', channel, isGrayscale })),
-        restore: pure((context, event) => {
-          const actions = [];
-          actions.push(send({ type: 'LOAD_CHANNEL', channel: event.channel }));
-          if (context.isGrayscale !== event.isGrayscale) {
-            actions.push(send({ type: 'TOGGLE_COLOR_MODE' }));
-          }
-          return actions;
-        }),
+        forwardToChannels: pure(({ channels }) => channels.map(channel => forwardTo(channel))),
+        save: respond(({ channel, isGrayscale }) => ({ type: 'RESTORE', isGrayscale })),
+        restore: pure((context, event) =>
+          context.isGrayscale === event.isGrayscale ? [] : [send({ type: 'TOGGLE_COLOR_MODE' })]
+        ),
       },
     }
   );
