@@ -8,11 +8,15 @@ import LayerController from './LayerController';
 function RGBControls() {
   const raw = useRaw();
   const colorMode = useSelector(raw, state => state.context.colorMode);
-  const layers = useSelector(colorMode, state => state.context.layers);
+  const layers = useSelector(raw, state => {
+    const colorMode = state.context.colorMode;
+    const layers = colorMode.state.context.layers;
+    return layers;
+  });
 
   return (
     <>
-      {layers.map((layer, index) => (
+      {layers.map(layer => (
         <Grid key={layer.sessionId} style={{ width: '100%' }} item>
           <LayerController layer={layer} />
         </Grid>

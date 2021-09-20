@@ -177,7 +177,10 @@ const RangeSlider = ({ channel }) => {
 
 const GrayscaleControls = () => {
   const raw = useRaw();
-  const channel = useSelector(raw, state => state.context.channels[state.context.channel]);
+  const channel = useSelector(raw, state => {
+    const { channels, channel } = state.context;
+    return channels[channel];
+  });
 
   const styles = useStyles();
 

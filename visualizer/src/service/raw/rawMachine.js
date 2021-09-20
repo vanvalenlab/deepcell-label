@@ -1,7 +1,6 @@
 import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
 import createChannelMachine from './channelMachine';
 import createColorMachine from './colorMachine';
-import createGrayscaleMachine from './grayscaleMachine';
 
 const { pure, respond } = actions;
 
@@ -65,10 +64,10 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
         projectId,
         numChannels,
         numFrames,
+        channel: 0,
         channels: [], // channel machines
         channelNames: [],
         colorMode: null,
-        grayscaleMode: null,
         isGrayscale: Number(numChannels) === 1,
       },
       entry: 'spawnColorModes',
@@ -87,12 +86,15 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
         SAVE: { actions: 'save' },
         RESTORE: { actions: ['restore', respond('RESTORED')] },
         SET_FRAME: { actions: 'forwardToChannels' },
-        // CHANNEL: { actions: sendParent((c, e) => e) },
-        SET_CHANNEL: { actions: 'forwardToDisplay' },
+        SET_CHANNEL: { cond: 'differentChannel', actions: 'setChannel' },
       },
     },
     {
+      guards: {
+        differentChannel: (context, event) => context.channel !== event.channel,
+      },
       actions: {
+        setChannel: assign({ channel: (_, { channel }) => channel }),
         /** Creates a channel machines and names */
         spawnChannels: assign({
           channels: ({ numChannels }, event) => {
@@ -113,16 +115,17 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
           },
         }),
         spawnColorModes: assign({
-          grayscaleMode: context => spawn(createGrayscaleMachine(context), 'grayscaleMode'),
           colorMode: context => spawn(createColorMachine(context), 'colorMode'),
         }),
-        forwardToDisplay: forwardTo(({ isGrayscale }) =>
-          isGrayscale ? 'grayscaleMode' : 'colorMode'
-        ),
         forwardToChannels: pure(({ channels }) => channels.map(channel => forwardTo(channel))),
-        save: respond(({ channel, isGrayscale }) => ({ type: 'RESTORE', isGrayscale })),
+        save: respond(({ channel, isGrayscale }) => ({ type: 'RESTORE', isGrayscale, channel })),
         restore: pure((context, event) =>
-          context.isGrayscale === event.isGrayscale ? [] : [send({ type: 'TOGGLE_COLOR_MODE' })]
+          context.isGrayscale === event.isGrayscale
+            ? [send({ type: 'SET_CHANNEL', channel: event.channel })]
+            : [
+                send({ type: 'SET_CHANNEL', channel: event.channel }),
+                send({ type: 'TOGGLE_COLOR_MODE' }),
+              ]
         ),
       },
     }
