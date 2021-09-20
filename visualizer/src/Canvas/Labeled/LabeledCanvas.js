@@ -1,7 +1,7 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-import { useCanvas, useFeature, useImage, useLabeled, useSelect } from '../../ProjectContext';
-import { createImageData, highlightImageData, opacityImageData } from '../canvasUtils';
+import { useCanvas, useImage, useLabeled, useSelect } from '../../ProjectContext';
+import { createSegmentationImageData, highlightImageData, opacityImageData } from '../canvasUtils';
 
 export const LabeledCanvas = ({ className }) => {
   const canvas = useCanvas();
@@ -19,12 +19,15 @@ export const LabeledCanvas = ({ className }) => {
   const frame = useSelector(image, state => state.context.frame);
 
   const labeled = useLabeled();
-  const featureIndex = useSelector(labeled, state => state.context.feature);
   const highlight = useSelector(labeled, state => state.context.highlight);
   const opacity = useSelector(labeled, state => state.context.opacity);
+  const feature = useSelector(labeled, state => {
+    const { features, feature } = state.context;
+    return features[feature];
+  });
 
-  const feature = useFeature(featureIndex);
   const array = useSelector(feature, state => state.context.frames[frame]);
+  const colormap = useSelector(feature, state => state.context.colors2);
 
   const select = useSelect();
   const foreground = useSelector(select, state => state.context.foreground);
@@ -45,14 +48,14 @@ export const LabeledCanvas = ({ className }) => {
   }, [sw, sh]);
 
   useEffect(() => {
-    const data = createImageData(array, sw, sh);
+    const data = createSegmentationImageData(array, colormap, sw, sh);
     if (highlight && foreground !== 0) {
       const red = [255, 0, 0, 255];
       highlightImageData(data, array, foreground, red);
     }
     opacityImageData(data, opacity);
     hiddenCtx.current.putImageData(data, 0, 0);
-  }, [array, foreground, highlight, opacity, sh, sw]);
+  }, [array, colormap, foreground, highlight, opacity, sh, sw]);
 
   useEffect(() => {
     ctx.current.save();

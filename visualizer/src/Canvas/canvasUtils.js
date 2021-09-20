@@ -13,6 +13,19 @@ export function createImageData(typedArray, width, height) {
   return new ImageData(data, width, height);
 }
 
+export function createSegmentationImageData(typedArray, colormap, width, height) {
+  const data = new Uint8ClampedArray(typedArray.length * 4);
+  for (let i = 0; i < typedArray.length; i++) {
+    const label = typedArray[i];
+    const color = colormap[label];
+    data[4 * i] = color[0];
+    data[4 * i + 1] = color[1];
+    data[4 * i + 2] = color[2];
+    data[4 * i + 3] = 255;
+  }
+  return new ImageData(data, width, height);
+}
+
 /**
  * Highlights a label with color.
  * @param {ImageData} imageData where we draw the highlight

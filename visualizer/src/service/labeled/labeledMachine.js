@@ -28,6 +28,13 @@ function fetchLabeled(context) {
     .then(splitBuffer);
 }
 
+function fetchSemanticLabels(context) {
+  const { projectId } = context;
+  const pathToLabeled = `/dev/semantic-labels/${projectId}`;
+
+  return fetch(pathToLabeled).then(res => res.json());
+}
+
 const createLabeledMachine = (projectId, numFeatures, numFrames) =>
   Machine(
     {
@@ -35,6 +42,7 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) =>
         projectId,
         numFeatures,
         numFrames,
+        semanticLabels: {},
         feature: 0,
         features: [], // feature machines
         featureNames: [],
@@ -43,8 +51,14 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) =>
         highlight: true,
         outline: true,
       },
-      initial: 'loading',
+      initial: 'loadingSemanticLabels',
       states: {
+        loadingSemanticLabels: {
+          invoke: {
+            src: fetchSemanticLabels,
+            onDone: { target: 'loading', actions: 'saveSemanticLabels' },
+          },
+        },
         loading: {
           invoke: {
             src: fetchLabeled,
@@ -74,13 +88,18 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) =>
         newFeature: (context, event) => context.feature !== event.feature,
       },
       actions: {
+        setFeature: assign({ feature: (_, { feature }) => feature }),
+        saveSemanticLabels: assign({ semanticLabels: (_, { data }) => data }),
         /** Create feature machines and names. */
         spawnFeatures: assign({
-          features: ({ numFeatures }, { data }) => {
+          features: ({ numFeatures, semanticLabels }, { data }) => {
             const features = [];
             for (let i = 0; i < numFeatures; i++) {
               const frames = data[i];
-              const feature = spawn(createFeatureMachine(i, frames), `feature${i}`);
+              const feature = spawn(
+                createFeatureMachine(i, frames, semanticLabels[i]),
+                `feature${i}`
+              );
               features.push(feature);
             }
             return features;

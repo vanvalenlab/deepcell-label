@@ -402,7 +402,7 @@ function BackgroundBox() {
 export default function SelectedPalette() {
   const styles = useStyles();
   const labeled = useLabeled();
-  const loading = useSelector(labeled, state => state.matches('loading'));
+  const loading = useSelector(labeled, state => !state.matches('idle'));
 
   return (
     !loading && (

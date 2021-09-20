@@ -30,7 +30,7 @@ export const Canvas = () => {
   const select = useSelect();
 
   const rawLoading = useSelector(raw, state => state.matches('loading'));
-  const labeledLoading = useSelector(labeled, state => state.matches('loading'));
+  const labeledLoading = useSelector(labeled, state => !state.matches('idle'));
   const loading = rawLoading || labeledLoading;
 
   const canvas = useCanvas();
