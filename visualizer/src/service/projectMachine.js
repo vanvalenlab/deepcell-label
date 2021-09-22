@@ -6,6 +6,7 @@ import { pure } from 'xstate/lib/actions';
 import createApiMachine from './apiMachine';
 import canvasMachine from './canvasMachine';
 import createImageMachine from './imageMachine';
+import pyodideMachine from './pyodideMachine';
 import selectMachine from './selectMachine';
 import segmentMachine from './tools/segmentMachine';
 import undoMachine from './undoMachine';
@@ -65,7 +66,7 @@ const createProjectMachine = (projectId, bucket) =>
       on: {
         // from various
         ADD_ACTOR: { actions: forwardTo('undo') },
-        EDIT: { actions: ['dispatchEdit', forwardTo('undo')] },
+        EDIT: { actions: [forwardTo('pyodide'), forwardTo('undo')] },
 
         // from image
         FRAME: { actions: 'setFrame' },
@@ -110,6 +111,7 @@ const createProjectMachine = (projectId, bucket) =>
           segmentRef: () => spawn(segmentMachine, 'segment'),
           apiRef: context => spawn(createApiMachine(context), 'api'),
           selectRef: () => spawn(selectMachine, 'select'),
+          pyodideRef: () => spawn(pyodideMachine, 'pyodide'),
         }),
         spawnUndo: assign({
           undoRef: () => spawn(undoMachine, 'undo'),
@@ -126,13 +128,6 @@ const createProjectMachine = (projectId, bucket) =>
           const projectEvent = { type: 'PROJECT', ...event.data };
           return [send(projectEvent, { to: 'canvas' }), send(projectEvent, { to: 'image' })];
         }),
-        dispatchEdit: send(
-          ({ frame, feature, channel }, e) => ({
-            ...e,
-            args: { ...e.args, frame, feature, channel },
-          }),
-          { to: 'api' }
-        ),
         setFrame: assign((_, { frame }) => ({ frame })),
         setFeature: assign((_, { feature }) => ({ feature })),
         setChannel: assign((_, { channel }) => ({ channel })),
