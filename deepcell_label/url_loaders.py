@@ -128,13 +128,13 @@ class FileLoader(Loader):
     Loader implementation for files sent in a request, like a drag-and-dropped file.
     """
 
-    def __init__(self, data):
+    def __init__(self, request):
         super(FileLoader, self).__init__()
-
+        file_ = request.files.get('file')
         self.input_axes = DCL_AXES
         self.output_axes = DCL_AXES
-        self.data = data
-        self.path = data.filename
+        self.data = file_.stream.read()
+        self.path = file_.filename
         self.source = 'dropped'
         self.load()
 
