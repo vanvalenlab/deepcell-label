@@ -1,23 +1,8 @@
-import { grey } from '@material-ui/core/colors';
-import { createMuiTheme } from '@material-ui/core/styles';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import App from './App';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
-
-const darkTheme = createMuiTheme({
-  palette: {
-    type: 'dark',
-    primary: grey,
-    secondary: grey,
-  },
-  props: {
-    MuiButtonBase: {
-      disableRipple: true,
-    },
-  },
-});
 
 ReactDOM.render(
   <React.StrictMode>
