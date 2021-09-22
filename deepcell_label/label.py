@@ -6,6 +6,7 @@ from __future__ import print_function
 import base64
 import io
 import json
+from math import inf
 import sys
 import tarfile
 import tempfile
@@ -126,6 +127,11 @@ class BaseEdit(object):
             label_1 (int): first label to swap
             label_2 (int): second label to swap
         """
+        if label_1 is -inf:
+            label_1 = 0
+        if label_2 is -inf:
+            label_2 = 0
+
         img = self.frame[..., self.feature]
         label_1_present = label_1 in img
         label_2_present = label_2 in img
@@ -150,6 +156,9 @@ class BaseEdit(object):
         """
         Replaces label_2 with label_1 in the current frame.
         """
+        if label_1 is -inf:
+            label_1 = 0
+
         img = self.frame[..., self.feature]
         label_2_present = np.any(np.isin(label_2, img))
 
@@ -177,6 +186,9 @@ class BaseEdit(object):
             background (int): label overwritten by the brush
             brush_size (int): radius of the brush in pixels
         """
+        if foreground is -inf:
+            foreground = 0
+
         img = np.copy(self.frame[..., self.feature])
         foreground_in_before = np.any(np.isin(img, foreground))
         background_in_before = np.any(np.isin(img, background))
@@ -244,6 +256,9 @@ class BaseEdit(object):
             x_location (int): x coordinate of region to flood
             y_location (int): y coordinate of region to flood
         """
+        if label is -inf:
+            label = 0
+
         img = self.frame[..., self.feature]
         # Rescale click location to corresponding location in label array
         hole_fill_seed = (int(y_location),
@@ -351,6 +366,9 @@ class BaseEdit(object):
             x2 (int): second x coordinate to bound threshold area
             label (int): label drawn in threshold area
         """
+        if label is -inf:
+            label = 0
+
         top_edge = min(y1, y2)
         bottom_edge = max(y1, y2) + 1
         left_edge = min(x1, x2)
@@ -512,9 +530,11 @@ class ZStackEdit(BaseEdit):
 
     def action_replace(self, label_1, label_2):
         """
-        Replacing label_2 with label_1. Frontend checks to make sure these labels
-        are different before sending action
+        Replacing label_2 with label_1.
         """
+        if label_1 is -inf:
+            label_1 = 0
+
         # TODO: check on backend that labels are different?
         # Check each frame for label_2
         for label_frame in self.project.label_frames:
@@ -822,6 +842,8 @@ class TrackEdit(BaseEdit):
         """
         Replacing label_2 with label_1 in all frames.
         """
+        if label_1 is -inf:
+            label_1 = 0
         # replace arrays
         for label_frame in self.project.label_frames:
             frame = label_frame.frame
@@ -856,6 +878,11 @@ class TrackEdit(BaseEdit):
         """
         Replace label_1 with label_2 on all frames and vice versa.
         """
+        if label_1 is -inf:
+            label_1 = 0
+        if label_2 is -inf:
+            label_2 = 0
+
         def relabel(old_label, new_label):
             for label_frame in self.project.label_frames:
                 img = label_frame.frame
