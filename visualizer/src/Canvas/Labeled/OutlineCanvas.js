@@ -27,7 +27,7 @@ const OutlineCanvas = ({ className }) => {
   const featureIndex = useSelector(labeled, state => state.context.feature);
   const outline = useSelector(labeled, state => state.context.outline);
   const invert = useSelector(labeled, state => state.context.invert);
-  const opacity = useSelector(labeled, state => state.context.opacity);
+  // const opacity = useSelector(labeled, state => state.context.opacity);
 
   const feature = useFeature(featureIndex);
   let labeledArray = useSelector(feature, state => state.context.labeledArray);

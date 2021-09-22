@@ -82,14 +82,9 @@ function LayerSlider({ layer }) {
 function LayerController({ layer }) {
   const classes = useStyles();
 
-  const channel = useSelector(layer, state => state.context.channel);
-
-  const raw = useRaw();
-  const colorMode = useSelector(raw, state => state.context.colorMode);
-
   return (
-    <Grid container direction='column' m={2} justify='center' className={classes.root}>
-      <Grid container direction='row' justify='space-between'>
+    <Grid container direction='column' m={2} justifyContent='center' className={classes.root}>
+      <Grid container direction='row' justifyContent='space-between'>
         <Grid item xs={10}>
           <LayerSelector layer={layer} />
         </Grid>
@@ -97,7 +92,7 @@ function LayerController({ layer }) {
           <LayerOptions layer={layer} />
         </Grid>
       </Grid>
-      <Grid container direction='row' justify='flex-start' alignItems='center'>
+      <Grid container direction='row' justifyContent='flex-start' alignItems='center'>
         <Grid item xs={2}>
           <LayerCheckbox layer={layer} />
         </Grid>
