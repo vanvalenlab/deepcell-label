@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import Label from './Label';
+import Load from './Load';
 import ProjectContext from './ProjectContext';
 import service from './service/service';
 
@@ -13,10 +14,13 @@ function App() {
   return (
     <Router>
       <Switch>
-        <Route path='/'>
+        <Route path='/project'>
           <ProjectContext project={service}>
             <Label />
           </ProjectContext>
+        </Route>
+        <Route path='/'>
+          <Load />
         </Route>
       </Switch>
     </Router>
