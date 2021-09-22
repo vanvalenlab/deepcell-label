@@ -65,7 +65,7 @@ export default function UndoRedo() {
       unbind('mod+z');
       unbind('mod+shift+z');
     };
-  }, []);
+  }, [undo]);
 
   return (
     <>
