@@ -84,7 +84,7 @@ def test_redo(client):
 
 
 def test_create_project(client, mocker):
-    mocker.patch('deepcell_label.blueprints.url_loaders.Loader', lambda *args: DummyLoader())
+    mocker.patch('deepcell_label.blueprints.url_loaders.URLLoader', lambda *args: DummyLoader())
     response = client.post(f'/api/project')
     assert response.status_code == 200
 
