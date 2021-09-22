@@ -1,14 +1,8 @@
-import { makeStyles, withStyles } from '@material-ui/core/styles';
+import { withStyles } from '@material-ui/core/styles';
 import Tooltip from '@material-ui/core/Tooltip';
 import MuiToggleButton from '@material-ui/lab/ToggleButton';
 import { bind, unbind } from 'mousetrap';
 import React, { useEffect } from 'react';
-
-const useStyles = makeStyles(theme => ({
-  title: {
-    margin: theme.spacing(1),
-  },
-}));
 
 // for adding tooltip to disabled buttons
 // from https://stackoverflow.com/questions/61115913
