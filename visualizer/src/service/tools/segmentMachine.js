@@ -158,6 +158,7 @@ const segmentMachine = Machine(
       y: 0,
       tool: 'select',
       toolActor: null,
+      array: null,
     },
     entry: 'spawnTool',
     type: 'parallel',
@@ -165,7 +166,8 @@ const segmentMachine = Machine(
       colorMode: colorModeState,
     },
     on: {
-      EDIT: { actions: sendParent((_, e) => e) },
+      ARRAY: { actions: assign({ array: (_, { array }) => array }) },
+      EDIT: { actions: sendParent(({ array }, e) => ({ ...e, buffer: array.buffer })) },
 
       mousedown: { actions: 'forwardToTool' },
       mouseup: { actions: 'forwardToTool' },

@@ -1,6 +1,6 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-import { useCanvas, useImage, useLabeled, useSelect } from '../../ProjectContext';
+import { useCanvas, useImage, useLabeled, useSegment, useSelect } from '../../ProjectContext';
 import { createSegmentationImageData, highlightImageData, opacityImageData } from '../canvasUtils';
 
 export const LabeledCanvas = ({ className }) => {
@@ -31,12 +31,18 @@ export const LabeledCanvas = ({ className }) => {
 
   const select = useSelect();
   const foreground = useSelector(select, state => state.context.foreground);
-  const background = useSelector(select, state => state.context.background);
+
+  const segment = useSegment();
 
   const canvasRef = useRef();
   const ctx = useRef();
   const hiddenCanvasRef = useRef();
   const hiddenCtx = useRef();
+
+  // sync segment machine with array
+  useEffect(() => {
+    segment.send({ type: 'ARRAY', array });
+  }, [segment, array]);
 
   useEffect(() => {
     ctx.current = canvasRef.current.getContext('2d');
