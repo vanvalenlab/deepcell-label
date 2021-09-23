@@ -92,8 +92,9 @@ function Timeline() {
       )}
       <FormLabel>Selected Label</FormLabel>
       <Divisions label={selected} />
+      <FormLabel>Frames</FormLabel>
       <LabelTimeline label={selected} />
-      <FrameSlider topLabel={selected} bottomLabel={hovering} />
+      <FrameSlider />
       <LabelTimeline label={hovering} />
       <FormLabel>Hovering over Label</FormLabel>
       {hovering !== 0 && <Cell label={hovering} />}
