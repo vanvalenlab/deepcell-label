@@ -81,7 +81,7 @@ function Timeline() {
       unbind('[');
       unbind(']');
     };
-  }, [select]);
+  }, [select, tracking]);
 
   return (
     <Box m={1}>
