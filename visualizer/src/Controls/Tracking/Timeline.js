@@ -1,4 +1,4 @@
-import { Box, FormLabel, Typography } from '@material-ui/core';
+import { Box, FormLabel, makeStyles, Typography } from '@material-ui/core';
 import { useSelector } from '@xstate/react';
 import { bind, unbind } from 'mousetrap';
 import { default as React, useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -7,30 +7,38 @@ import Division, { Cell, DivisionFootprint } from './Division';
 import FrameSlider from './FrameSlider';
 import LabelTimeline from './LabelTimeline';
 
-// approach
-// introduce dummy division component that helps with sizing
-// visibility hidden so it affects layout but can't be interacted with
-// place real divisions inside the
+const useStyles = makeStyles({
+  divisions: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  division: {
+    display: 'flex',
+    justifyContent: 'left',
+    alignItems: 'center',
+    width: '50%',
+  },
+});
 
 // Renders a hidden division timeline to size the real divisions
 function DivisionsFootprint({ footprintRef }) {
   return (
     <Box ref={footprintRef} style={{ display: 'flex', visibility: 'hidden', position: 'absolute' }}>
-      <>
-        <DivisionFootprint />
-        <DivisionFootprint />
-      </>
+      <DivisionFootprint />
+      <DivisionFootprint />
     </Box>
   );
 }
 
 function Divisions({ label }) {
+  const styles = useStyles();
+
   const division = useDivision(label);
   const [minWidth, setMinWidth] = useState(0);
   const [minHeight, setMinHeight] = useState(0);
 
   const footprintRef = useRef();
-  console.log(footprintRef);
 
   useLayoutEffect(() => {
     if (footprintRef.current) {
@@ -39,18 +47,23 @@ function Divisions({ label }) {
     }
   }, []);
 
-  useEffect(() => {});
-
   return (
     label !== 0 && (
       <>
         <DivisionsFootprint footprintRef={footprintRef} />
-        <Box style={{ display: 'flex', justifyContent: 'space-between', minWidth, minHeight }}>
-          {division.parent && <Division label={division.parent} />}
-          {/* Empty middle element keeps the second division on 
-            the right side when the first is not present */}
-          <Box></Box>
-          <Division label={label} />
+        <Box
+          className={styles.divisions}
+          style={{
+            minWidth,
+            minHeight,
+          }}
+        >
+          <Box className={styles.division}>
+            {division.parent && <Division label={division.parent} />}
+          </Box>
+          <Box className={styles.division}>
+            <Division label={label} />
+          </Box>
         </Box>
       </>
     )
