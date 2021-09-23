@@ -210,6 +210,29 @@ function Daughters({ division }) {
   );
 }
 
+const dummyDivision = {
+  label: 1,
+  parent: 2,
+  daughters: [3, 4],
+  frames: [0],
+  capped: true,
+  divisionFrame: 0,
+  parentDivisionFrame: 0,
+};
+
+export function DivisionFootprint() {
+  const styles = useStyles();
+
+  return (
+    <ArcherContainer>
+      <Box className={styles.division}>
+        <Parent division={dummyDivision} />
+        <Daughters division={dummyDivision} />
+      </Box>
+    </ArcherContainer>
+  );
+}
+
 function Division({ label }) {
   const styles = useStyles();
   const tracking = useTracking();
