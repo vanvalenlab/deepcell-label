@@ -3,7 +3,7 @@ import { green } from '@material-ui/core/colors';
 import GetAppIcon from '@material-ui/icons/GetApp';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useQualityControl } from '../../QualityControl';
+import { useQualityControl } from '../../QualityControlContext';
 
 const useStyles = makeStyles(theme => ({
   buttonProgress: {

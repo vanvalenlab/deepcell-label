@@ -1,8 +1,10 @@
+import { useSelector } from '@xstate/react';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import Label from './Label';
 import ProjectContext from './ProjectContext';
-import QualityControl from './QualityControl';
-import service from './service/service';
+import QualityControlContext from './QualityControlContext';
+import { project, qualityControl } from './service/service';
+// import service from './service/service';
 
 // inspect({
 //   // options
@@ -10,17 +12,40 @@ import service from './service/service';
 //   iframe: false // open in new window
 // });
 
+function Review() {
+  const project = useSelector(qualityControl, state => {
+    const { projectId, projects } = state.context;
+    return projects[projectId];
+  });
+
+  return (
+    <QualityControlContext qualityControl={qualityControl}>
+      <ProjectContext project={project}>
+        <Label review={true} />
+      </ProjectContext>
+    </QualityControlContext>
+  );
+}
+
+function LabelProject() {
+  return (
+    <ProjectContext project={project}>
+      <Label review={false} />
+    </ProjectContext>
+  );
+}
+
 function App() {
+  const review = !!new URLSearchParams(window.location.search).get('projectIds');
+
   return (
     <Router>
       <Switch>
-        <Route path='/review'>
-          <QualityControl />
-        </Route>
         <Route path='/'>
-          <ProjectContext project={service}>
+          {review ? <Review /> : <LabelProject />}
+          {/* <ProjectContext project={service}>
             <Label />
-          </ProjectContext>
+          </ProjectContext> */}
         </Route>
       </Switch>
     </Router>

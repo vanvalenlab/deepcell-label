@@ -3,7 +3,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import ThumbDownIcon from '@material-ui/icons/ThumbDown';
 import ThumbUpIcon from '@material-ui/icons/ThumbUp';
 import React from 'react';
-import { useQualityControl } from '../../QualityControl';
+import { useQualityControl } from '../../QualityControlContext';
 
 const useStyles = makeStyles(theme => ({
   box: {

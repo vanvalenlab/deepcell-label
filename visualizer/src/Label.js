@@ -7,6 +7,7 @@ import debounce from 'lodash.debounce';
 import { useEffect, useRef, useState } from 'react';
 import Canvas from './Canvas/Canvas';
 import ImageControls from './Controls/ImageControls/ImageControls';
+import QCControls from './Controls/QCControls';
 import ActionButtons from './Controls/Segment/ActionButtons';
 import SelectedPalette from './Controls/Segment/SelectedPalette';
 import ToolButtons from './Controls/Segment/ToolButtons';
@@ -68,7 +69,7 @@ function TabPanel(props) {
   );
 }
 
-function Label() {
+function Label({ review }) {
   const styles = useStyles();
 
   const canvasBoxRef = useRef({ offsetWidth: 0, offsetHeight: 0 });
@@ -134,6 +135,7 @@ function Label() {
               <Tab label='Track' />
             </Tabs>
           </Paper>
+          {review && <QCControls />}
           <ImageControls />
         </Box>
         <Box className={styles.toolbarBox}>

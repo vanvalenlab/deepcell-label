@@ -1,7 +1,7 @@
 import { FormLabel, Select, Tooltip } from '@material-ui/core';
 import { useSelector } from '@xstate/react';
 import { useEffect, useRef } from 'react';
-import { useQualityControl } from '../../QualityControl';
+import { useQualityControl } from '../../QualityControlContext';
 
 function ProjectSelect() {
   const qualityControl = useQualityControl();

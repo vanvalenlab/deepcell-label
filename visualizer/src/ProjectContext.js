@@ -194,8 +194,8 @@ export function useTool() {
   return tool;
 }
 
-const ProjectContext = props => {
-  return <Context.Provider value={props.project}>{props.children}</Context.Provider>;
-};
+function ProjectContext({ project, children }) {
+  return <Context.Provider value={project}>{children}</Context.Provider>;
+}
 
 export default ProjectContext;
