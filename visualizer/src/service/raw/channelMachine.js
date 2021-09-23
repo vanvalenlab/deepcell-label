@@ -95,8 +95,7 @@ const createChannelMachine = (projectId, channel, numFrames) =>
       guards: {
         loadedFrame: ({ frames, loadingFrame }) => loadingFrame in frames,
         newFrame: (context, event) => context.frame !== event.frame,
-        canPreload: ({ frames, numFrames }) =>
-          Object.keys(frames).length !== numFrames,
+        canPreload: ({ frames, numFrames }) => Object.keys(frames).length !== numFrames,
         emptyFrame: ({ rawImage }) => rawImage.src === '',
       },
       actions: {
@@ -138,8 +137,7 @@ const createChannelMachine = (projectId, channel, numFrames) =>
           ],
         }),
         setBrightness: assign({
-          brightness: (_, { brightness }) =>
-            Math.max(-1, Math.min(1, brightness)),
+          brightness: (_, { brightness }) => Math.max(-1, Math.min(1, brightness)),
         }),
         setContrast: assign({
           contrast: (_, { contrast }) => Math.max(-1, Math.min(1, contrast)),
@@ -163,18 +161,11 @@ const createChannelMachine = (projectId, channel, numFrames) =>
               .filter((v, i) => i % 4 === 1) // take only the first channel
               .filter(v => v > 0); // ignore the background
             const cutoffPercentile = 0.01;
-            const topCutoffLocation = Math.floor(
-              array.length * (1 - cutoffPercentile)
-            );
-            const bottomCutoffLocation = Math.floor(
-              array.length * cutoffPercentile
-            );
+            const topCutoffLocation = Math.floor(array.length * (1 - cutoffPercentile));
+            const bottomCutoffLocation = Math.floor(array.length * cutoffPercentile);
             quickselect(array, topCutoffLocation);
             quickselect(array, bottomCutoffLocation, 0, topCutoffLocation);
-            return [
-              array[bottomCutoffLocation] || 0,
-              array[topCutoffLocation] || 255,
-            ];
+            return [array[bottomCutoffLocation] || 0, array[topCutoffLocation] || 255];
           },
         }),
       },
