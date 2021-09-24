@@ -396,7 +396,7 @@ class TestTrackEdit():
 
     def test_track_add_cell_info(self):
         labels = np.zeros((1, 1, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, url='test.trk'))
+        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
         edit = label.TrackEdit(project)
         tracks = edit.tracks
 
@@ -419,7 +419,7 @@ class TestTrackEdit():
     def test_add_cell_info_multiple_frames(self):
         num_frames = 5
         labels = np.zeros((num_frames, 1, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, url='test.trk'))
+        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
         edit = label.TrackEdit(project)
         tracks = edit.tracks
 
