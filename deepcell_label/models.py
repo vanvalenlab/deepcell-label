@@ -6,6 +6,7 @@ from __future__ import print_function
 import base64
 import copy
 import enum
+import io
 import logging
 import os
 import timeit
@@ -22,9 +23,9 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy.schema import PrimaryKeyConstraint, ForeignKeyConstraint
-from sqlalchemy import types
+import sqlalchemy.types as types
 
-from deepcell_label.imgutils import pngify, add_outlines
+from deepcell_label.imgutils import grayscale_pngify, pngify, add_outlines
 
 
 logger = logging.getLogger('models.Project')  # pylint: disable=C0103
@@ -34,7 +35,8 @@ db = SQLAlchemy(session_options={'autoflush': False})  # pylint: disable=C0103
 
 
 class Npz(types.TypeDecorator):
-    """Marshals a pickles already in the database to npz if not already npz"""
+    """Marshals a numpy array to and from a compressed npz"""
+
     impl = types.LargeBinary
 
     def process_bind_param(self, value, dialect):
@@ -140,8 +142,8 @@ class Project(db.Model):
         label = loader.label_array
 
         # Record static project attributes
-        self.path = str(loader.path)
-        self.source = loader.source
+        self.path = loader.url
+        self.source = 's3'
         self.num_frames = raw.shape[0]
         self.height = raw.shape[1]
         self.width = raw.shape[2]
@@ -150,10 +152,6 @@ class Project(db.Model):
         cmap = plt.get_cmap('viridis')
         cmap.set_bad('black')
         self.colormap = cmap
-
-        if self.is_track:
-            # Track files require a different scale factor
-            self.scale_factor = 2
 
         # Create frames from raw, RGB, and labeled images
         self.raw_frames = [RawFrame(i, frame)
@@ -278,6 +276,8 @@ class Project(db.Model):
             if frame in session.dirty or all_frames:
                 session.add(FrameMemento(action=action, frame=frame))
         action.labels = self.labels
+        # action.feature = self.feature
+        # action.channel = self.channel
         if self.action is not None:
             self.action.next_action = action
         # Move the Project to the new action
@@ -295,18 +295,34 @@ class Project(db.Model):
         action = self.action
         if self.action.prev_action is None:
             return
+
+        # Compute which feature changed
+        # TODO: database migration to store in Action table
+        feature = self.feature
+        for prev_frame in action.before_frames:
+            current_frame = LabelFrame.get(self.id, prev_frame.frame_id)
+            diff = np.where(prev_frame.frame_array != current_frame.frame)
+            if len(diff[-1]) > 0:
+                feature = int(diff[-1][0])
+                break
+
         # Restore edited label frames
         for prev_frame in action.before_frames:
-            frame_id = prev_frame.frame_id
-            frame = prev_frame.frame_array
-            self.label_frames[frame_id].frame = frame
+            current_frame = LabelFrame.get(self.id, prev_frame.frame_id)
+            current_frame.frame = prev_frame.frame_array
         # Restore edited label info
         if action.before_labels is not None:
             self.labels.cell_ids = action.before_labels.cell_ids
             self.labels.cell_info = action.before_labels.cell_info
 
-        payload = self.make_payload(y=action.y_changed,
-                                    labels=action.labels_changed)
+        payload = {
+            'feature': feature,
+            # 'feature': action.feature,
+            # 'channel': action.channel,
+            'frames': [frame.frame_id for frame in action.frames],
+            'labels': action.labels_changed,
+        }
+
         action.done = False
         self.action = action.prev_action
 
@@ -327,18 +343,33 @@ class Project(db.Model):
             return
         next_action = self.action.next_action
 
+        feature = self.feature
+        # Compute which feature changed
+        # TODO: database migration to store in Action table
+        for after_frame in next_action.after_frames:
+            current_frame = LabelFrame.get(self.id, after_frame.frame_id)
+            diff = np.where(after_frame.frame_array != current_frame.frame)
+            if len(diff[-1]) > 0:
+                feature = int(diff[-1][0])
+                break
+
         # Restore edited label frames
         for after_frame in next_action.after_frames:
-            frame_id = after_frame.frame_id
-            frame = after_frame.frame_array
-            self.label_frames[frame_id].frame = frame
+            current_frame = LabelFrame.get(self.id, after_frame.frame_id)
+            current_frame.frame = after_frame.frame_array
         # Restore edited label info
         if next_action.after_labels is not None:
             self.labels.cell_ids = next_action.after_labels.cell_ids
             self.labels.cell_info = next_action.after_labels.cell_info
 
-        payload = self.make_payload(y=next_action.y_changed,
-                                    labels=next_action.labels_changed)
+        payload = {
+            'feature': feature,
+            # 'feature': next_action.feature,
+            # 'channel': next_action.channel,
+            'frames': [frame.frame_id for frame in next_action.frames],
+            'labels': next_action.labels_changed,
+        }
+
         self.action = self.action.next_action
         next_action.done = True
 
@@ -347,7 +378,7 @@ class Project(db.Model):
                      next_action.action_id, self.id, timeit.default_timer() - start)
         return payload
 
-    def get_max_label(self):
+    def get_max_label(self, feature):
         """
         Get the highest label in use in currently-viewed feature.
         If feature is empty, returns 0 to prevent other functions from crashing.
@@ -356,11 +387,11 @@ class Project(db.Model):
             int: highest label in the current feature
         """
         # check this first, np.max of empty array will crash
-        if len(self.labels.cell_ids[self.feature]) == 0:
+        if len(self.labels.cell_ids[feature]) == 0:
             max_label = 0
         # if any labels exist in feature, find the max label
         else:
-            max_label = int(np.max(self.labels.cell_ids[self.feature]))
+            max_label = int(np.max(self.labels.cell_ids[feature]))
         return max_label
 
     def make_first_payload(self):
@@ -373,116 +404,59 @@ class Project(db.Model):
         """
         payload = {}
 
-        img_payload = {}
-        raw_png = self._get_raw_png()
-        img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
-        label_png = self._get_label_png()
-        img_payload['segmented'] = f'data:image/png;base64,{encode(label_png)}'
-        img_payload['seg_arr'] = self._get_label_arr()
-        payload['imgs'] = img_payload
-
-        payload['tracks'] = self.labels.readable_tracks
-
-        # Other Project attributes to initialize frontend variables
+        # Project attributes to initialize frontend variables
         payload['frame'] = self.frame
-        payload['numFrames'] = self.num_frames
-        payload['project_id'] = self.token
-        payload['dimensions'] = (self.width, self.height)
-        # Attributes specific to filetype
-        if self.is_track:
-            payload['screen_scale'] = self.scale_factor
-        if self.is_zstack:
-            payload['channel'] = self.channel
-            payload['numChannels'] = self.num_channels
-            payload['feature'] = self.feature
-            payload['numFeatures'] = self.num_features
+        payload['channel'] = self.channel
+        payload['feature'] = self.feature
 
-        # First frame edited by each action
-        # Excludes the first action, which loads the project
-        payload['actionFrames'] = [action.frames[0].frame_id
-                                   for action in self.actions[1:] if action.done]
+        payload['numFrames'] = self.num_frames
+        payload['numChannels'] = self.num_channels
+        payload['numFeatures'] = self.num_features
+
+        payload['width'] = self.width
+        payload['height'] = self.height
+
+        # # First frame edited by each action
+        # # Excludes the first action, which loads the project
+        # payload['actionFrames'] = [action.frames[0].frame_id
+        #                            for action in self.actions[1:] if action.done]
 
         return payload
 
-    def make_payload(self, x=False, y=False, labels=False):
-        """
-        Creates a payload to send to the front-end after completing an action.
-
-        Args:
-            x (bool): when True, payload includes raw image PNG
-            y (bool): when True, payload includes labeled image data
-                           sends both a PNG and an array of where each label is
-            labels (bool): when True, payload includes the label "tracks",
-                           or the frames that each label appears in (e.g. [0-10, 15-20])
-
-        Returns:
-            dict: payload with image data and label tracks
-        """
-        if x or y:
-            img_payload = {}
-            if x:
-                raw_png = self._get_raw_png()
-                img_payload['raw'] = f'data:image/png;base64,{encode(raw_png)}'
-            if y:
-                label_png = self._get_label_png()
-                img_payload['segmented'] = f'data:image/png;base64,{encode(label_png)}'
-                img_payload['seg_arr'] = self._get_label_arr()
-        else:
-            img_payload = False
-
-        if labels:
-            tracks = self.labels.readable_tracks
-        else:
-            tracks = False
-
-        return {'imgs': img_payload, 'tracks': tracks}
-
-    def _get_label_arr(self):
+    def get_raw_png(self, channel, frame):
         """
         Returns:
-            list: nested list of labels at each positions, with negative label outlines.
+            BytesIO: contains the raw frame as a .png
         """
-        # Create label array
-        label_frame = self.label_frames[self.frame]
-        label_arr = label_frame.frame[..., self.feature]
-        return add_outlines(label_arr).tolist()
+        # Raw png
 
-    def _get_label_png(self):
+        raw_frame = RawFrame.get(self.id, frame)
+        raw_arr = raw_frame.frame[..., channel]
+        raw_png = grayscale_pngify(raw_arr)
+        return raw_png
+
+    def get_labeled_png(self, feature, frame):
         """
         Returns:
-            BytesIO: returns the current label frame as a .png
+            BytesIO: contains the labeled frame as a .png
         """
         # Create label png
-        label_frame = self.label_frames[self.frame]
-        label_arr = label_frame.frame[..., self.feature]
+        label_frame = LabelFrame.get(self.id, frame)
+        label_arr = label_frame.frame[..., feature]
         label_png = pngify(imgarr=np.ma.masked_equal(label_arr, 0),
                            vmin=0,
-                           vmax=self.get_max_label(),
+                           vmax=self.get_max_label(feature),
                            cmap=self.colormap)
         return label_png
 
-    def _get_raw_png(self):
+    def get_labeled_array(self, feature, frame):
         """
         Returns:
-            BytesIO: contains the current raw frame as a .png
+            ndarray: numpy array of labels
         """
-        # RGB png
-        if self.rgb:
-            raw_frame = self.rgb_frames[self.frame]
-            raw_arr = raw_frame.frame
-            raw_png = pngify(imgarr=raw_arr,
-                             vmin=None,
-                             vmax=None,
-                             cmap=None)
-            return raw_png
-        # Raw png
-        raw_frame = self.raw_frames[self.frame]
-        raw_arr = raw_frame.frame[..., self.channel]
-        raw_png = pngify(imgarr=raw_arr,
-                         vmin=0,
-                         vmax=None,
-                         cmap='cubehelix')
-        return raw_png
+        label_frame = LabelFrame.get(self.id, frame)
+        label_arr = label_frame.frame[..., feature]
+        return add_outlines(label_arr)
 
 
 class Labels(db.Model):
@@ -502,32 +476,9 @@ class Labels(db.Model):
         self.cell_ids = {}
         self.cell_info = {}
 
-    @property
-    def tracks(self):
-        """Alias for .trk for backward compatibility"""
-        return self.cell_info[0]
-
-    @property
-    def readable_tracks(self):
-        """
-        Preprocesses tracks for presentation on browser. For example,
-        simplifying track['frames'] into something like [0-29] instead of
-        [0,1,2,3,...].
-        """
-        cell_info = copy.deepcopy(self.cell_info)
-        for _, feature in cell_info.items():
-            for _, label in feature.items():
-                slices = list(map(list, consecutive(label['frames'])))
-                slices = '[' + ', '.join(["{}".format(a[0])
-                                          if len(a) == 1 else "{}-{}".format(a[0], a[-1])
-                                          for a in slices]) + ']'
-                label['slices'] = str(slices)
-
-        return cell_info
-
     def update(self):
         """
-        Update the label metatdata by explicitly copying the PickleType
+        Update the label metadata by explicitly copying the PickleType
         columns so the database knows to commit them.
         """
         # TODO: use Mutable mixin to avoid explicit copying
@@ -554,6 +505,13 @@ class RawFrame(db.Model):
     def __init__(self, frame_id, frame):
         self.frame_id = frame_id
         self.frame = frame
+
+    @staticmethod
+    def get(project_id, frame_id):
+        return (db.session
+                .query(RawFrame)
+                .filter_by(project_id=project_id, frame_id=frame_id)
+                .first())
 
     def finish(self):
         """
@@ -625,7 +583,7 @@ class RGBFrame(db.Model):
         raw current frame.
 
         Args:
-            frame (np.array): upto 6-channel image to reduce to 3-channel image
+            frame (np.array): up to 6-channel image to reduce to 3-channel image
 
         Returns:
             np.array: 3-channel image
@@ -677,6 +635,13 @@ class LabelFrame(db.Model):
         self.frame_id = frame_id
         self.frame = frame
 
+    @staticmethod
+    def get(project_id, frame_id):
+        return (db.session
+                .query(LabelFrame)
+                .filter_by(project_id=project_id, frame_id=frame_id)
+                .first())
+
     def finish(self):
         """Finish a frame by setting its frame to null."""
         self.frame = None
@@ -710,6 +675,9 @@ class Action(db.Model):
     # Records label info after an action (whether or not its changed)
     # Pickles an ORM row from the Labels table
     labels = db.Column(db.PickleType)
+
+    # feature = db.Column(db.Integer, nullable=False)
+    # channel = db.Column(db.Integer, nullable=False)
 
     frames = association_proxy('action_frames', 'frame')
 

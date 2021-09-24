@@ -121,13 +121,47 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+node_modules
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+
 # VS Code
+settings.json
 .vscode
 
-# JavaScript Dependencies
-node_modules/
-package-lock.json
+# Environments with sensitive info
+.env
+fmd_config.cfg
+
+# from create-react-app
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+**/coverage
+
+# production
+/build
+
+# misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 yarn.lock
+package-lock.json
 
 # Webpack builds javascript files into deepcell_label/static
 deepcell_label/static/js/*

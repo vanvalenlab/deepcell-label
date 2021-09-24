@@ -8,3 +8,4 @@ pytest-lazy-fixture
 fakeredis
 six>=1.12
 coveralls
+responses

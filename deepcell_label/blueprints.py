@@ -5,25 +5,27 @@ from __future__ import print_function
 
 import distutils
 import distutils.util
+import gzip
 import json
-import os
-import re
 import timeit
 import traceback
 
 from flask import abort
 from flask import Blueprint
 from flask import jsonify
-from flask import render_template
 from flask import request
 from flask import redirect
 from flask import current_app
 from flask import send_file
+from flask import make_response
 from werkzeug.exceptions import HTTPException
+import matplotlib
+import pandas as pd
 
-from deepcell_label.label import TrackEdit, ZStackEdit, BaseEdit, ChangeDisplay
+from deepcell_label.label import TrackEdit, ZStackEdit
 from deepcell_label.models import Project
-from deepcell_label import loaders
+# from deepcell_label import loaders
+from deepcell_label import url_loaders
 from deepcell_label import exporters
 from deepcell_label.config import S3_INPUT_BUCKET, S3_OUTPUT_BUCKET
 
@@ -36,12 +38,7 @@ def health():
     return jsonify({'message': 'success'}), 200
 
 
-@bp.errorhandler(404)
-def handle_404(error):
-    return render_template('404.html'), 404
-
-
-@bp.errorhandler(loaders.InvalidExtension)
+@bp.errorhandler(url_loaders.InvalidExtension)
 def handle_invalid_extension(error):
     response = jsonify(error.to_dict())
     response.status_code = error.status_code
@@ -63,6 +60,67 @@ def handle_exception(error):
     return jsonify({'error': str(error)}), 500
 
 
+@bp.route('/api/raw/<token>/<int:channel>/<int:frame>')
+def raw(token, channel, frame):
+    project = Project.get(token)
+    if not project:
+        return abort(404, description=f'project {token} not found')
+    png = project.get_raw_png(channel, frame)
+    return send_file(png, mimetype='image/png')
+
+
+@bp.route('/api/labeled/<token>/<int:feature>/<int:frame>')
+def labeled(token, feature, frame):
+    project = Project.get(token)
+    if not project:
+        return abort(404, description=f'project {token} not found')
+    png = project.get_labeled_png(feature, frame)
+    return send_file(png, mimetype='image/png', cache_timeout=0)
+
+
+@bp.route('/api/array/<token>/<int:feature>/<int:frame>')
+def array(token, feature, frame):
+    """
+    """
+    project = Project.get(token)
+    if not project:
+        return jsonify({'error': f'project {token} not found'}), 404
+    labeled_array = project.get_labeled_array(feature, frame)
+    content = gzip.compress(json.dumps(labeled_array.tolist()).encode('utf8'), 5)
+    response = make_response(content)
+    response.headers['Content-length'] = len(content)
+    response.headers['Content-Encoding'] = 'gzip'
+    return response
+    # seg_array = project.get_labeled_array(feature, frame)
+    # filename = f'{token}_array_feature{feature}_frame{frame}.npy'
+    # return send_file(seg_array, attachment_filename=filename, cache_timeout=0)
+
+
+@bp.route('/api/semantic-labels/<project_id>/<int:feature>')
+def semantic_labels(project_id, feature):
+    project = Project.get(project_id)
+    if not project:
+        return jsonify({'error': f'project {project_id} not found'}), 404
+    cell_info = project.labels.cell_info[feature]
+    return cell_info
+
+
+@bp.route('/api/colormap/<project_id>/<int:feature>')
+def colormap(project_id, feature):
+    project = Project.get(project_id)
+    if not project:
+        return jsonify({'error': f'project {project_id} not found'}), 404
+    max_label = project.get_max_label(feature)
+    colormap = matplotlib.pyplot.get_cmap('viridis', max_label)
+    colors = list(map(matplotlib.colors.rgb2hex, colormap.colors))
+    colors.insert(0, '#000000')  # No label (label 0) is black
+    colors.append('#FFFFFF')  # New label (last label) is white
+    response = make_response({'colors': colors})
+    response.headers['Cache-Control'] = 'max-age=0'
+
+    return response
+
+
 @bp.route('/api/edit/<token>/<action_type>', methods=['POST'])
 def edit(token, action_type):
     """
@@ -73,74 +131,29 @@ def edit(token, action_type):
     # obtain 'info' parameter data sent by .js script
     info = {k: json.loads(v) for k, v in request.values.to_dict().items()}
 
-    # TODO: remove frame from request values in front-end
-    # Frame is instead tracked by the frame column in the State column
-    if 'frame' in info:
-        del info['frame']
-
     project = Project.get(token)
     if not project:
         return abort(404, description=f'project {token} not found')
+    # TODO: remove frame/feature/channel columns from db schema? or keep them around
+    # to load projects on the last edited frame
+    project.frame = info['frame']
+    project.feature = info['feature']
+    project.channel = info['channel']
+    del info['frame']
+    del info['feature']
+    del info['channel']
+
     edit = get_edit(project)
-    payload = edit.dispatch_action(action_type, info)
+    edit.dispatch_action(action_type, info)
     project.create_memento(action_type)
     project.update()
+
+    changed_frames = [frame.frame_id for frame in project.action.frames]
+    payload = {'feature': project.feature, 'frames': changed_frames, 'labels': edit.labels_changed}
 
     current_app.logger.debug('Finished action %s for project %s in %s s.',
                              action_type, token,
                              timeit.default_timer() - start)
-
-    return jsonify(payload)
-
-
-@bp.route('/api/changedisplay/<token>/<display_attribute>/<int:value>', methods=['POST'])
-def change_display(token, display_attribute, value):
-    """
-    Change the displayed frame, feature, or channel
-    and send back the changed image data.
-
-    Args:
-        token (str): base64 ID of project
-        display_attribute (str): choice between 'frame', 'feature', or 'channel'
-        value (int): index of frame, feature, or channel to display
-
-    Returns:
-        dict: contains the raw and/or labeled image data
-    """
-    start = timeit.default_timer()
-
-    project = Project.get(token)
-    if not project:
-        return abort(404, description=f'project {token} not found')
-    change = ChangeDisplay(project)
-    payload = change.change(display_attribute, value)
-    project.update()
-
-    current_app.logger.debug('Changed to %s %s for project %s in %s s.',
-                             display_attribute, value, token,
-                             timeit.default_timer() - start)
-    return jsonify(payload)
-
-
-@bp.route('/api/rgb/<token>/<rgb_value>', methods=['POST'])
-def rgb(token, rgb_value):
-    """
-
-    Returns:
-        json with raw image data
-    """
-    start = timeit.default_timer()
-
-    project = Project.get(token)
-    if not project:
-        return abort(404, description=f'project {token} not found')
-
-    rgb = bool(distutils.util.strtobool(rgb_value))
-    project.rgb = rgb
-    project.update()
-    payload = project.make_payload(x=True)
-    current_app.logger.debug('Set RGB to %s for project %s in %s s.',
-                             rgb, token, timeit.default_timer() - start)
     return jsonify(payload)
 
 
@@ -172,58 +185,6 @@ def redo(token):
     return jsonify(payload)
 
 
-@bp.route('/', methods=['GET', 'POST'])
-def form():
-    """Request HTML landing page to be rendered."""
-    return render_template('index.html')
-
-
-@bp.route('/tool', methods=['GET', 'POST'])
-def tool():
-    """
-    Request HTML DeepCell Label tool page to be rendered after user inputs
-    filename in the landing page.
-    """
-    if 'filename' not in request.form:
-        return redirect('/')
-
-    filename = request.form['filename']
-    current_app.logger.info('%s is filename', filename)
-    path = 'test__{}'.format(filename)
-
-    return render_template(
-        'loading.html',
-        input_bucket='caliban-input',
-        output_bucket='caliban-output',
-        path=path)
-
-
-@bp.route('/<filename>', methods=['GET', 'POST'])
-def shortcut(filename):
-    """
-    Request HTML DeepCell Label tool page to be rendered if user makes a URL
-    request to access a specific data file that has been preloaded to the
-    input S3 bucket (ex. http://127.0.0.1:5000/test.npz).
-    """
-
-    folders = re.split('__', filename)
-    # TODO: better parsing when buckets are not present
-    input_bucket = folders[0] if len(folders) > 1 else S3_INPUT_BUCKET
-    output_bucket = folders[1] if len(folders) > 2 else S3_OUTPUT_BUCKET
-    start_of_path = min(len(folders) - 1, 2)
-    path = '__'.join(folders[start_of_path:])
-
-    # TODO: uncomment to use URL parameters instead of rigid bucket formatting within filename
-    # input_bucket = request.args.get('input_bucket', default=S3_INPUT_BUCKET, type=str)
-    # output_bucket = request.args.get('output_bucket', default=S3_OUTPUT_BUCKET, type=str)
-
-    return render_template(
-        'loading.html',
-        input_bucket=input_bucket,
-        output_bucket=output_bucket,
-        path=path)
-
-
 @bp.route('/api/project/<token>', methods=['GET'])
 def get_project(token):
     """
@@ -233,52 +194,37 @@ def get_project(token):
     project = Project.get(token)
     if not project:
         return abort(404, description=f'project {token} not found')
-    # arg is 'false' which gets parsed to True if casting to bool
-    rgb = request.args.get('rgb', default='false', type=str)
-    rgb = bool(distutils.util.strtobool(rgb))
-    project.rgb = rgb
-    project.update()
     payload = project.make_first_payload()
     current_app.logger.debug('Loaded project %s in %s s.',
                              project.token, timeit.default_timer() - start)
     return jsonify(payload)
 
 
+# @bp.route('/api/project', methods=['POST'])
+# def create_project():
+#     """
+#     Create a new Project.
+#     """
+#     start = timeit.default_timer()
+#     loader = loaders.get_loader(request)
+#     project = Project.create(loader)
+#     current_app.logger.info('Created project from %s in %s s.',
+#                             loader.path, timeit.default_timer() - start)
+#     return jsonify({'projectId': project.token})
+
+
 @bp.route('/api/project', methods=['POST'])
-def create_project():
+def create_project_from_url():
     """
-    Create a new Project.
+    Create a new Project from URL.
     """
     start = timeit.default_timer()
-    loader = loaders.get_loader(request)
+    url_form = request.form
+    loader = url_loaders.Loader(url_form)
     project = Project.create(loader)
     current_app.logger.info('Created project from %s in %s s.',
-                            loader.path, timeit.default_timer() - start)
+                            loader.url, timeit.default_timer() - start)
     return jsonify({'projectId': project.token})
-
-
-@bp.route('/project/<token>')
-def project(token):
-    """
-    Display a project in the Project database.
-    """
-    rgb = request.args.get('rgb', default='false', type=str)
-
-    settings = {
-        'rgb': bool(distutils.util.strtobool(rgb)),
-    }
-
-    project = Project.get(token)
-    if not project:
-        return abort(404, description=f'project {token} not found')
-    if project.finished is not None:
-        return abort(410, description=f'project {token} already submitted')
-
-    settings = make_settings(project)
-
-    return render_template(
-        'tool.html',
-        settings=settings)
 
 
 @bp.route('/downloadproject/<token>', methods=['GET'])
@@ -311,9 +257,9 @@ def upload_project_to_s3(bucket, token):
     # project.finish()
 
     current_app.logger.debug('Uploaded %s to S3 bucket %s from project %s in %s s.',
-                             project.path, bucket, token,
+                             exporter.path, bucket, token,
                              timeit.default_timer() - start)
-    return redirect('/')
+    return {}
 
 
 def get_edit(project):
@@ -322,28 +268,3 @@ def get_edit(project):
         return TrackEdit(project)
     else:
         return ZStackEdit(project)
-
-
-def make_settings(project):
-    """Returns a dictionary of settings to send to the front-end."""
-    if project.is_track:
-        filetype = 'track'
-        title = 'Tracking Tool'
-    else:
-        filetype = 'zstack'
-        title = 'Z-Stack Tool'
-
-    rgb = request.args.get('rgb', default='false', type=str)
-    rgb = bool(distutils.util.strtobool(rgb))
-    output_bucket = request.args.get('output_bucket', default=S3_OUTPUT_BUCKET, type=str)
-
-    settings = {
-        'filetype': filetype,
-        'title': title,
-        'rgb': rgb,
-        'output_bucket': output_bucket,
-        'token': project.token,
-        'source': str(project.source)
-    }
-
-    return settings
