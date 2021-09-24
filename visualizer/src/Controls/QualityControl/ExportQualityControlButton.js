@@ -46,7 +46,7 @@ function ExportQualityControlButton() {
       endIcon={<GetAppIcon />}
       onClick={() => download(judgments)}
     >
-      Download
+      Download QC
     </Button>
   );
 }
