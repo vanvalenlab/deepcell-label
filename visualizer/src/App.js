@@ -85,7 +85,7 @@ function App() {
           <Route path='/'>
             {isProjectId(id) ? (
               <LabelProject />
-            ) : id.split(',').every(isProjectId) ? (
+            ) : id?.split(',')?.every(isProjectId) ? (
               <Review />
             ) : (
               <InvalidProjectId />
