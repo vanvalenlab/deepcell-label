@@ -35,11 +35,10 @@ function Divisions({ label }) {
   const styles = useStyles();
 
   const division = useDivision(label);
-  const [minWidth, setMinWidth] = useState(0);
-  const [minHeight, setMinHeight] = useState(0);
 
   const footprintRef = useRef();
-
+  const [minWidth, setMinWidth] = useState(0);
+  const [minHeight, setMinHeight] = useState(0);
   useLayoutEffect(() => {
     if (footprintRef.current) {
       setMinWidth(footprintRef.current.offsetWidth);
@@ -48,25 +47,21 @@ function Divisions({ label }) {
   }, []);
 
   return (
-    label !== 0 && (
-      <>
-        <DivisionsFootprint footprintRef={footprintRef} />
-        <Box
-          className={styles.divisions}
-          style={{
-            minWidth,
-            minHeight,
-          }}
-        >
-          <Box className={styles.division}>
-            {division.parent && <Division label={division.parent} />}
-          </Box>
-          <Box className={styles.division}>
-            <Division label={label} />
-          </Box>
-        </Box>
-      </>
-    )
+    <>
+      <DivisionsFootprint footprintRef={footprintRef} />
+      <Box className={styles.divisions} style={{ minWidth, minHeight }}>
+        {label !== 0 && (
+          <>
+            <Box className={styles.division}>
+              {division.parent && <Division label={division.parent} />}
+            </Box>
+            <Box className={styles.division}>
+              <Division label={label} />
+            </Box>
+          </>
+        )}
+      </Box>
+    </>
   );
 }
 
