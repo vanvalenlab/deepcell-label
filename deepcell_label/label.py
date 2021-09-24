@@ -766,8 +766,8 @@ class TrackEdit(BaseEdit):
         for d in parent_track['daughters']:
             self.tracks[d]['parent'] = None
         # Link future division to parent
-        if (daughter_track['frame_div'] is None
-                or parent_track['frame_div'] < daughter_track['frame_div']):
+        if (daughter_track['frame_div'] is None or
+                parent_track['frame_div'] < daughter_track['frame_div']):
             for d in daughter_track['daughters']:
                 self.tracks[d]['parent'] = parent
             parent_track['daughters'] = daughter_track['daughters']
