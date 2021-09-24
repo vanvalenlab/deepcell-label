@@ -11,8 +11,6 @@ from unittest.mock import MagicMock
 from deepcell_label import create_app  # pylint: disable=C0413
 from deepcell_label.url_loaders import Loader
 
-from deepcell_label.labelmaker import LabelInfoMaker
-
 
 # flask-sqlalchemy fixtures from http://alexmic.net/flask-sqlalchemy-pytest/
 

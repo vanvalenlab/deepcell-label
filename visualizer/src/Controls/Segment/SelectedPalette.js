@@ -201,10 +201,6 @@ function ForegroundBox() {
     bind(']', () => select.send('NEXT_FOREGROUND'));
     return () => {
       unbind('n');
-      unbind('[');
-      unbind(']');
-    };
-  }, [select]);
 
   const [showButtons, setShowButtons] = useState(false);
   const buttonColor =
