@@ -1,9 +1,13 @@
+import { Box, makeStyles, Typography } from '@material-ui/core';
 import { useSelector } from '@xstate/react';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import Footer from './Footer/Footer';
 import Label from './Label';
+import Navbar from './Navbar';
 import ProjectContext from './ProjectContext';
 import QualityControlContext from './QualityControlContext';
-import { project, qualityControl } from './service/service';
+import { isProjectId, project, qualityControl } from './service/service';
+
 // import service from './service/service';
 
 // inspect({
@@ -11,6 +15,23 @@ import { project, qualityControl } from './service/service';
 //   // url: 'https://statecharts.io/inspect', // (default)
 //   iframe: false // open in new window
 // });
+
+const useStyles = makeStyles(theme => ({
+  root: {
+    boxSizing: 'border-box',
+    display: 'flex',
+    minHeight: '100vh',
+    flexDirection: 'column',
+  },
+  main: {
+    boxSizing: 'border-box',
+    display: 'flex',
+    flexGrow: 1,
+    flexDirection: 'column',
+    padding: theme.spacing(2),
+    alignItems: 'center',
+  },
+}));
 
 function Review() {
   const project = useSelector(qualityControl, state => {
@@ -35,18 +56,43 @@ function LabelProject() {
   );
 }
 
+function InvalidProjectId() {
+  const styles = useStyles();
+  const id = new URLSearchParams(window.location.search).get('projectId');
+
+  return (
+    <Box className={styles.main}>
+      <Typography>
+        <tt>{id}</tt> is not a valid project ID.
+      </Typography>
+      <Typography>
+        Use a 12 character ID in your URL with only <tt>_</tt>, <tt>-</tt>, letters or numbers like{' '}
+        <tt>projectId=abc-ABC_1234</tt>.
+      </Typography>
+    </Box>
+  );
+}
+
 function App() {
-  const review = !!new URLSearchParams(window.location.search).get('projectIds');
+  const styles = useStyles();
+  const id = new URLSearchParams(window.location.search).get('projectId');
 
   return (
     <Router>
       <Switch>
-        <Route path='/'>
-          {review ? <Review /> : <LabelProject />}
-          {/* <ProjectContext project={service}>
-            <Label />
-          </ProjectContext> */}
-        </Route>
+        <div className={styles.root}>
+          <Navbar />
+          <Route path='/'>
+            {isProjectId(id) ? (
+              <LabelProject />
+            ) : id.split(',').every(isProjectId) ? (
+              <Review />
+            ) : (
+              <InvalidProjectId />
+            )}
+          </Route>
+          <Footer />
+        </div>
       </Switch>
     </Router>
   );

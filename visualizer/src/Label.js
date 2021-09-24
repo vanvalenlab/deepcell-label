@@ -15,18 +15,10 @@ import UndoRedo from './Controls/Segment/UndoRedo';
 import DivisionAlerts from './Controls/Tracking/Alerts/DivisionAlerts';
 import FrameSlider from './Controls/Tracking/FrameSlider';
 import Timeline from './Controls/Tracking/Timeline';
-import Footer from './Footer/Footer';
 import Instructions from './Instructions/Instructions';
-import Navbar from './Navbar';
 import { useCanvas, useLabeled, useLabelMode } from './ProjectContext';
 
 const useStyles = makeStyles(theme => ({
-  root: {
-    boxSizing: 'border-box',
-    display: 'flex',
-    minHeight: '100vh',
-    flexDirection: 'column',
-  },
   main: {
     boxSizing: 'border-box',
     display: 'flex',
@@ -118,8 +110,7 @@ function Label({ review }) {
   }, [canvas, canvasBoxWidth, canvasBoxHeight]);
 
   return (
-    <div className={styles.root}>
-      <Navbar />
+    <>
       <Instructions />
       <Box className={styles.main}>
         <Box className={styles.controlPanelBox}>
@@ -163,8 +154,7 @@ function Label({ review }) {
           <Canvas />
         </Box>
       </Box>
-      <Footer />
-    </div>
+    </>
   );
 }
 
