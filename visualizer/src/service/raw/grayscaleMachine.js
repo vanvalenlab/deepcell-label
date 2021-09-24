@@ -1,6 +1,6 @@
 import { actions, assign, forwardTo, Machine, send, sendParent } from 'xstate';
 
-const { pure, respond } = actions;
+const { pure } = actions;
 
 const frameState = {
   entry: 'loadFrame',
@@ -83,12 +83,9 @@ const createGrayscaleMachine = ({ channels }) =>
     {
       guards: {
         isLoadingFrame: ({ loadingFrame }, { frame }) => loadingFrame === frame,
-        diffLoadingFrame: ({ loadingFrame }, { frame }) =>
-          loadingFrame !== frame,
-        isLoadingChannel: ({ loadingChannel }, { channel }) =>
-          loadingChannel === channel,
-        diffLoadingChannel: ({ loadingChannel }, { channel }) =>
-          loadingChannel !== channel,
+        diffLoadingFrame: ({ loadingFrame }, { frame }) => loadingFrame !== frame,
+        isLoadingChannel: ({ loadingChannel }, { channel }) => loadingChannel === channel,
+        diffLoadingChannel: ({ loadingChannel }, { channel }) => loadingChannel !== channel,
       },
       actions: {
         setLoadingFrame: assign({ loadingFrame: (_, { frame }) => frame }),
@@ -96,10 +93,9 @@ const createGrayscaleMachine = ({ channels }) =>
           loadingChannel: (_, { channel }) => channel,
         }),
         /** Load frame for all the visible channels. */
-        loadFrame: send(
-          ({ loadingFrame }) => ({ type: 'LOAD_FRAME', frame: loadingFrame }),
-          { to: ({ channels, channel }) => channels[channel] }
-        ),
+        loadFrame: send(({ loadingFrame }) => ({ type: 'LOAD_FRAME', frame: loadingFrame }), {
+          to: ({ channels, channel }) => channels[channel],
+        }),
         loadChannel: send(({ frame }) => ({ type: 'LOAD_FRAME', frame }), {
           to: ({ channels, loadingChannel }) => channels[loadingChannel],
         }),
@@ -115,9 +111,7 @@ const createGrayscaleMachine = ({ channels }) =>
             send({ type: 'FRAME', frame }, { to: channels[channel] }),
           ];
         }),
-        forwardToChannel: forwardTo(
-          ({ channels, channel }) => channels[channel]
-        ),
+        forwardToChannel: forwardTo(({ channels, channel }) => channels[channel]),
       },
     }
   );

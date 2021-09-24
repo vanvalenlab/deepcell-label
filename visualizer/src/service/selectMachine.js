@@ -25,21 +25,21 @@ function nextLabel(label, labels) {
 }
 
 const selectActions = {
-  selectForeground: pure(({ label, foreground, background }) => {
+  selectForeground: pure(({ hovering, foreground, background }) => {
     return [
-      send({ type: 'FOREGROUND', foreground: label }),
+      send({ type: 'FOREGROUND', foreground: hovering }),
       send({
         type: 'BACKGROUND',
-        background: label === background ? foreground : background,
+        background: hovering === background ? foreground : background,
       }),
     ];
   }),
-  selectBackground: pure(({ label, foreground, background }) => {
+  selectBackground: pure(({ hovering, foreground, background }) => {
     return [
-      send({ type: 'BACKGROUND', background: label }),
+      send({ type: 'BACKGROUND', background: hovering }),
       send({
         type: 'FOREGROUND',
-        foreground: label === foreground ? background : foreground,
+        foreground: hovering === foreground ? background : foreground,
       }),
     ];
   }),
@@ -84,7 +84,7 @@ const cycleActions = {
 };
 
 const setActions = {
-  setLabel: assign({ label: (_, { label }) => label }),
+  setHovering: assign({ hovering: (_, { label }) => label }),
   setLabels: assign({ labels: (_, { labels }) => labels }),
   setForeground: assign({ foreground: (_, { foreground }) => foreground }),
   setBackground: assign({ background: (_, { background }) => background }),
@@ -111,7 +111,7 @@ const selectMachine = Machine(
         { actions: 'selectBackground' },
       ],
 
-      LABEL: { actions: 'setLabel' },
+      LABEL: { actions: 'setHovering' },
       LABELS: { actions: 'setLabels' },
       SELECTED: { actions: ['setSelected', sendParent((c, e) => e)] },
       FOREGROUND: {
@@ -140,11 +140,8 @@ const selectMachine = Machine(
   },
   {
     guards: {
-      shift: (_, event) => event.shiftKey,
       doubleClick: (_, event) => event.detail === 2,
-      onBackground: ({ label, background }) => label === background,
-      onForeground: ({ label, foreground }) => label === foreground,
-      onNoLabel: ({ label }) => label === 0,
+      onBackground: ({ hovering, background }) => hovering === background,
     },
     actions: {
       ...selectActions,

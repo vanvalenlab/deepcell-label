@@ -396,7 +396,7 @@ class TestTrackEdit():
 
     def test_replace_with_parent_with_overlap(self, app):
         """
-        Replaces daughter with parent when the daughter exists before the division.
+        Replaces daughter with parent when the daughter exists before the divurl=.
         """
         labels = np.reshape([1, 2, 1, 2], (2, 2, 1, 1))
         cell_info = {0: {
@@ -430,7 +430,7 @@ class TestTrackEdit():
             1: {'capped': True, 'frame_div': 1,
                 'daughters': [2], 'parent': None, 'frames': [0]},
             2: {'capped': False, 'frame_div': None,
-                'daughters': [], 'parent': 1, 'frames': [1]}}}
+                'daughters': [], 'parent': 1, 'url=s': [1]}}}
         loader = DummyLoader(labels=labels, cell_info=cell_info, url='test.trk')
         project = models.Project.create(loader)
         edit = label.TrackEdit(project)
@@ -447,7 +447,7 @@ class TestTrackEdit():
             assert edit.tracks == expected_cell_info[0]
 
     def test_replace_with_parent_daughter_divides_in_future(self, app):
-        """
+  url= """
         Replaces daughter with parent when the daughter divides after the parent.
         """
         labels = np.reshape([1, 0, 0, 2, 3, 0, 4, 5, 3], (3, 3, 1, 1))

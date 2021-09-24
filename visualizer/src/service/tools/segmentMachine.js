@@ -11,7 +11,6 @@ const { pure, respond } = actions;
 
 // TODO: move to config file?
 const colorTools = ['brush', 'select', 'trim', 'flood'];
-const grayscaleTools = ['brush', 'select', 'trim', 'flood', 'watershed', 'threshold'];
 
 const createToolMachineLookup = {
   brush: createBrushMachine,
@@ -200,31 +199,15 @@ const segmentMachine = Machine(
     guards: {
       ...toolGuards,
       usingColorTool: ({ tool }) => colorTools.includes(tool),
-      colorTool: (_, { tool }) => colorTools.includes(tool),
-      grayscaleTool: (_, { tool }) => grayscaleTools.includes(tool),
     },
     actions: {
       ...toolActions,
       ...editActions,
       ...useToolActions,
-      save: respond(({ tool, foreground, background }) => ({
-        type: 'RESTORE',
-        tool,
-        foreground,
-        background,
-      })),
-      restore: assign((_, { tool, foreground, background }) => ({
-        tool,
-        foreground,
-        background,
-      })),
-      useTool: assign({ tool: (_, { tool }) => tool }),
+      save: respond(({ tool }) => ({ type: 'RESTORE', tool })),
+      restore: assign((_, { tool }) => ({ tool })),
       spawnTool: assign({ toolActor: createToolMachine }),
-      changeGrayscaleTools: assign({
-        tool: ({ tool }) => (grayscaleTools.includes(tool) ? 'select' : tool),
-      }),
       forwardToTool: forwardTo(({ toolActor }) => toolActor),
-      setLabels: assign({ labels: (_, { labels }) => labels }),
     },
   }
 );

@@ -15,6 +15,10 @@ const useStyles = makeStyles(theme => ({
   root: {
     paddingTop: theme.spacing(1),
   },
+  slider: {
+    color: 'primary',
+    marginTop: theme.spacing(1),
+  },
 }));
 
 const InvertToggle = ({ channel }) => {
@@ -99,6 +103,7 @@ const ChannelSelector = () => {
 };
 
 const BrightnessSlider = ({ channel }) => {
+  const styles = useStyles();
   const brightness = useSelector(channel, state => state.context.brightness);
 
   const { send } = channel;
@@ -110,6 +115,7 @@ const BrightnessSlider = ({ channel }) => {
 
   return (
     <Slider
+      className={styles.slider}
       value={brightness}
       onChange={onChange}
       onDoubleClick={onDoubleClick}
@@ -118,15 +124,12 @@ const BrightnessSlider = ({ channel }) => {
       max={1}
       step={0.01}
       orientation='horizontal'
-      style={{
-        color: 'primary',
-        marginTop: '7px',
-      }}
     />
   );
 };
 
 const ContrastSlider = ({ channel }) => {
+  const styles = useStyles();
   const contrast = useSelector(channel, state => state.context.contrast);
   const { send } = channel;
 
@@ -136,6 +139,7 @@ const ContrastSlider = ({ channel }) => {
 
   return (
     <Slider
+      className={styles.slider}
       value={contrast}
       onChange={onChange}
       onDoubleClick={onDoubleClick}
@@ -144,14 +148,12 @@ const ContrastSlider = ({ channel }) => {
       max={1}
       step={0.01}
       orientation='horizontal'
-      style={{
-        color: 'primary',
-        marginTop: '7px',
-      }}
     />
   );
 };
+
 const RangeSlider = ({ channel }) => {
+  const styles = useStyles();
   const { send } = channel;
   const range = useSelector(channel, state => state.context.range);
 
@@ -160,6 +162,7 @@ const RangeSlider = ({ channel }) => {
 
   return (
     <Slider
+      className={styles.slider}
       value={range}
       onChange={onChange}
       onDoubleClick={onDoubleClick}
@@ -168,10 +171,6 @@ const RangeSlider = ({ channel }) => {
       max={255}
       step={1}
       orientation='horizontal'
-      style={{
-        color: 'primary',
-        marginTop: '7px',
-      }}
     />
   );
 };

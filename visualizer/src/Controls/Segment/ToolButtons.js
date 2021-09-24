@@ -23,7 +23,7 @@ function ToolButtons() {
   return (
     <Box display='flex' flexDirection='column'>
       <FormLabel className={styles.title}>Tools</FormLabel>
-      <ToggleButtonGroup orientation='vertical' exclusive>
+      <ToggleButtonGroup orientation='vertical'>
         <SelectButton />
         <BrushButton />
         <EraserButton />

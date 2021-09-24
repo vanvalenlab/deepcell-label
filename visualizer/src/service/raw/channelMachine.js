@@ -94,9 +94,7 @@ const createChannelMachine = (projectId, channel, numFrames) =>
     {
       guards: {
         loadedFrame: ({ frames, loadingFrame }) => loadingFrame in frames,
-        newFrame: (context, event) => context.frame !== event.frame,
         canPreload: ({ frames, numFrames }) => Object.keys(frames).length !== numFrames,
-        emptyFrame: ({ rawImage }) => rawImage.src === '',
       },
       actions: {
         // fetching

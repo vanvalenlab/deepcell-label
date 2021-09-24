@@ -11,7 +11,7 @@ function DeleteButton(props) {
 
   const tooltipText = (
     <span>
-      Removes a label (<kbd>Del</kbd>)
+      Removes a label (<kbd>Del</kbd> or <kbd>Backspace</kbd>)
     </span>
   );
 

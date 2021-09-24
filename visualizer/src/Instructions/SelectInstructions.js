@@ -1,6 +1,6 @@
 import Typography from '@material-ui/core/Typography';
 import React from 'react';
-import SelectedPalette, { SwapButton } from '../Controls/Segment/SelectedPalette';
+import SelectedPalette, { SwitchButton } from '../Controls/Segment/SelectedPalette';
 
 function SelectInstructions() {
   return (
@@ -27,7 +27,7 @@ function SelectInstructions() {
         labeled area over unlabeled area.
         <br />
         We can switch the selected foreground and background by pressing <kbd>X</kbd> or by pressing
-        the swap button <SwapButton />.
+        the swap button <SwitchButton />.
         <br />
         The foreground and background squares also have arrows to cycle between all the labels.
       </Typography>

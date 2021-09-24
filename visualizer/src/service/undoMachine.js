@@ -147,9 +147,6 @@ const undoMachine = Machine(
       addActor: assign({
         histories: ({ histories }, { actor }) => [...histories, spawn(createHistoryMachine(actor))],
       }),
-      setUpHistories: assign({
-        histories: context => context.actors.map(actor => spawn(createHistoryMachine(actor))),
-      }),
       forwardToHistories: pure(context => {
         return context.histories.map(actor => forwardTo(actor));
       }),
