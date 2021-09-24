@@ -201,6 +201,10 @@ function ForegroundBox() {
     bind(']', () => select.send('NEXT_FOREGROUND'));
     return () => {
       unbind('n');
+      unbind('[');
+      unbind(']');
+    };
+  }, [select]);
 
   const [showButtons, setShowButtons] = useState(false);
   const buttonColor =
@@ -391,7 +395,7 @@ function BackgroundBox() {
   );
 }
 
-export default function SelectedPalette() {
+function SelectedPalette() {
   const styles = useStyles();
 
   const select = useSelect();
@@ -424,3 +428,5 @@ export default function SelectedPalette() {
     </Box>
   );
 }
+
+export default SelectedPalette;
