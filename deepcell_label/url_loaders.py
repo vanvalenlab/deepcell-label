@@ -131,7 +131,7 @@ class FileLoader(Loader):
     def __init__(self, request):
         super(FileLoader, self).__init__()
         file_ = request.files.get('file')
-        self.input_axes = DCL_AXES
+        self.input_axes = request.form['axes'] if 'axes' in request.form else DCL_AXES
         self.output_axes = DCL_AXES
         self.data = file_.stream.read()
         self.path = file_.filename
