@@ -1,6 +1,14 @@
 import { makeStyles } from '@material-ui/core/styles';
-import Typography from '@material-ui/core/Typography';
 import CloudUpload from '@material-ui/icons/CloudUpload';
+// import HelpIcon from '@material-ui/icons/Help';
+import Container from '@material-ui/core/Container';
+import FormControl from '@material-ui/core/FormControl';
+// import IconButton from '@material-ui/core/IconButton';
+import InputLabel from '@material-ui/core/InputLabel';
+import MenuItem from '@material-ui/core/MenuItem';
+import Select from '@material-ui/core/Select';
+// import Tooltip from '@material-ui/core/Tooltip';
+import Typography from '@material-ui/core/Typography';
 import axios from 'axios';
 import { PropTypes } from 'prop-types';
 import React, { useCallback, useState } from 'react';
@@ -26,9 +34,47 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
+
+function ImageAxesDropDown(props) {
+  const { axes, onChange } = props;
+
+  const allAxes = [
+    'YXC',
+    'ZYXC',
+    'CYX',
+    'CZYX',
+  ];
+
+  return (
+    <FormControl fullWidth>
+      <InputLabel id="image-axes-input-label">Image Axes</InputLabel>
+      {/* TODO: use a tooltip to add more information. Can't get it to align */}
+      {/* <Tooltip title="What are the dimensions of the image?" placement='right'>
+        <IconButton>
+          <HelpIcon />
+        </IconButton>
+      </Tooltip> */}
+      <Select
+        labelId="image-axes-select-label"
+        id="image-axes-select"
+        value={axes}
+        label="Axes"
+        onChange={onChange}
+        autoWidth
+      >
+        {allAxes.map((ax, i) => (
+          <MenuItem value={ax} key={i}>{ax}</MenuItem>
+        ))}
+      </Select>
+    </FormControl>
+  );
+}
+
 export default function FileUpload(props) {
   const [showError, setShowError] = useState(false);
   const [errorText, setErrorText] = useState('');
+
+  const [imageAxes, setImageAxes] = useState('YXC');
 
   const { infoText, onDroppedFile } = props;
 
@@ -43,6 +89,7 @@ export default function FileUpload(props) {
       droppedFiles.map(f => {
         let formData = new FormData();
         formData.append('file', f);
+        formData.append('axes', imageAxes);
         axios
           .post('/api/project/dropped', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
@@ -57,66 +104,71 @@ export default function FileUpload(props) {
           });
       });
     }
-  }, []);
+  }, [imageAxes]);
 
   // const { getRootProps, getInputProps, isDragActive } = useDropzone({onDrop});
 
   return (
-    <Dropzone name='imageUploadInput' onDrop={onDrop}>
-      {({ getRootProps, getInputProps }) => (
-        <section>
-          <div {...getRootProps()}>
-            <input {...getInputProps()} />
+    <>
+      <Dropzone name='imageUploadInput' onDrop={onDrop}>
+        {({ getRootProps, getInputProps }) => (
+          <section>
+            <div {...getRootProps()}>
+              <input {...getInputProps()} />
 
-            <Typography
-              variant='subtitle1'
-              display='block'
-              align='center'
-              color='textPrimary'
-              paragraph
-            >
-              {infoText}
-            </Typography>
-            <Typography
-              variant='caption'
-              display='block'
-              align='center'
-              color='textSecondary'
-              gutterBottom
-            >
-              Drag and drop your files here or click to browse
-            </Typography>
-
-            <Typography
-              variant='caption'
-              display='block'
-              align='center'
-              color='textSecondary'
-              gutterBottom
-            >
-              Supported files: .tiff, .png, and .npz
-            </Typography>
-
-            {/* Display error to user */}
-            {showError && (
               <Typography
-                className={classes.paddedTop}
+                variant='subtitle1'
+                display='block'
+                align='center'
+                color='textPrimary'
+                paragraph
+              >
+                {infoText}
+              </Typography>
+              <Typography
                 variant='caption'
                 display='block'
                 align='center'
-                color='error'
+                color='textSecondary'
+                gutterBottom
               >
-                {errorText}
+                Drag and drop your files here or click to browse
               </Typography>
-            )}
 
-            <div align='center' display='block'>
-              <CloudUpload color='disabled' fontSize='large' className={classes.uploadIcon} />
+              <Typography
+                variant='caption'
+                display='block'
+                align='center'
+                color='textSecondary'
+                gutterBottom
+              >
+                Supported files: .tiff, .png, and .npz
+              </Typography>
+
+              {/* Display error to user */}
+              {showError && (
+                <Typography
+                  className={classes.paddedTop}
+                  variant='caption'
+                  display='block'
+                  align='center'
+                  color='error'
+                >
+                  {errorText}
+                </Typography>
+              )}
+
+              <div align='center' display='block'>
+                <CloudUpload color='disabled' fontSize='large' className={classes.uploadIcon} />
+              </div>
             </div>
-          </div>
-        </section>
-      )}
-    </Dropzone>
+          </section>
+        )}
+      </Dropzone>
+      <Container maxWidth={'xs'}>
+        <ImageAxesDropDown axes={imageAxes} onChange={e => setImageAxes(e.target.value)} />
+      </Container>
+    </>
   );
 }
 
