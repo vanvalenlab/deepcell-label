@@ -1,4 +1,4 @@
-import { Box, Paper } from '@material-ui/core';
+import { Box, Paper, Typography } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import ExampleFileSelect from './ExampleFileSelect';
 import FileUpload from './FileUpload';
@@ -20,13 +20,27 @@ const useStyles = makeStyles(theme => ({
     width: '100%',
     boxSizing: 'border-box',
   },
+  introBox: {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: `calc(100% - ${theme.spacing(4)})`,
+    margin: theme.spacing(4),
+    boxSizing: 'border-box',
+  },
+  introText: {
+    width: '80%',
+    margin: theme.spacing(1),
+    boxSizing: 'border-box',
+  },
   uploadBox: {
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
-    width: '100%',
-    padding: theme.spacing(4),
+    width: `calc(100% - ${theme.spacing(4)})`,
+    margin: theme.spacing(4),
     boxSizing: 'border-box',
   },
 }));
@@ -38,6 +52,22 @@ function Load() {
     <div className={styles.root}>
       <Navbar />
       <main className={styles.main}>
+        <Box className={styles.introBox}>
+          <Typography variant='h2' align='center'>
+            Welcome to DeepCell Label
+          </Typography>
+          <Typography variant='body1' className={styles.introText}>
+            DeepCell Label is a data labeling tool to segment images into instance labels, mapping
+            each pixel to an object in the image.
+          </Typography>
+          <Typography variant='body1' className={styles.introText}>
+            Label can work with 2D images, 3D images, and timelapses. 4D images, or 3D timelapse
+            images, are not yet supported. Label expects input images to have frames first and
+            channels last, or a ZYXC (TYXC for timelapses) dimension order. When loading images with
+            a different dimension order, update the dimensions dropdown in the drag-and-drop box
+            below.
+          </Typography>
+        </Box>
         <Box className={styles.uploadBox}>
           <Paper className={styles.paper}>
             <FileUpload
