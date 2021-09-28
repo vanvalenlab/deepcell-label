@@ -27,7 +27,6 @@ const useStyles = makeStyles(theme => ({
 }));
 
 export default function FileUpload(props) {
-  const [uploadedFileLocation, setUploadedFileLocation] = useState(null);
   const [showError, setShowError] = useState(false);
   const [errorText, setErrorText] = useState('');
 
@@ -50,7 +49,7 @@ export default function FileUpload(props) {
           })
           .then(response => {
             const { projectId } = response.data;
-            window.location.href = `${DCL_DOMAIN}/?projectId=${projectId}`;
+            window.location.href = `${DCL_DOMAIN}/project?projectId=${projectId}`;
           })
           .catch(error => {
             setShowError(true);
@@ -58,7 +57,7 @@ export default function FileUpload(props) {
           });
       });
     }
-  });
+  }, []);
 
   // const { getRootProps, getInputProps, isDragActive } = useDropzone({onDrop});
 
@@ -78,30 +77,25 @@ export default function FileUpload(props) {
             >
               {infoText}
             </Typography>
+            <Typography
+              variant='caption'
+              display='block'
+              align='center'
+              color='textSecondary'
+              gutterBottom
+            >
+              Drag and drop your files here or click to browse
+            </Typography>
 
-            {uploadedFileLocation === null ? (
-              <>
-                <Typography
-                  variant='caption'
-                  display='block'
-                  align='center'
-                  color='textSecondary'
-                  gutterBottom
-                >
-                  Drag and drop your files here or click to browse
-                </Typography>
-
-                <Typography
-                  variant='caption'
-                  display='block'
-                  align='center'
-                  color='textSecondary'
-                  gutterBottom
-                >
-                  Supported files: .tiff, .png, and .npz
-                </Typography>
-              </>
-            ) : null}
+            <Typography
+              variant='caption'
+              display='block'
+              align='center'
+              color='textSecondary'
+              gutterBottom
+            >
+              Supported files: .tiff, .png, and .npz
+            </Typography>
 
             {/* Display error to user */}
             {showError && (
@@ -116,19 +110,9 @@ export default function FileUpload(props) {
               </Typography>
             )}
 
-            {/* Display preview of uploaded image */}
-            {uploadedFileLocation !== null ? (
-              <div align='center' display='block'>
-                <Typography variant='caption' align='center' color='textSecondary' paragraph={true}>
-                  Successfully uploaded file!
-                </Typography>
-                <img className={classes.preview} src={uploadedFileLocation} />
-              </div>
-            ) : (
-              <div align='center' display='block'>
-                <CloudUpload color='disabled' fontSize='large' className={classes.uploadIcon} />
-              </div>
-            )}
+            <div align='center' display='block'>
+              <CloudUpload color='disabled' fontSize='large' className={classes.uploadIcon} />
+            </div>
           </div>
         </section>
       )}
