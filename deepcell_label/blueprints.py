@@ -221,7 +221,7 @@ def create_project_from_dropped_file():
     loader = url_loaders.FileLoader(request)
     project = Project.create(loader)
     current_app.logger.info('Created project from %s in %s s.',
-                            loader.url, timeit.default_timer() - start)
+                            loader.path, timeit.default_timer() - start)
     return jsonify({'projectId': project.token})
 
 
