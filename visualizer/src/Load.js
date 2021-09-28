@@ -1,4 +1,4 @@
-import { Box, Paper } from '@material-ui/core';
+import { Box, Container, Paper } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import ExampleFileSelect from './ExampleFileSelect';
 import FileUpload from './FileUpload';
@@ -38,15 +38,17 @@ function Load() {
     <div className={styles.root}>
       <Navbar />
       <main className={styles.main}>
-        <Box className={styles.uploadBox}>
-          <Paper className={styles.paper}>
-            <FileUpload
-              infoText='Upload file to create a DeepCell Label project'
-              onDroppedFile={() => {}}
-            />
-          </Paper>
-          <ExampleFileSelect />
-        </Box>
+        <Container maxWidth={'lg'}>
+          <Box className={styles.uploadBox}>
+            <Paper className={styles.paper}>
+              <FileUpload
+                infoText='Upload file to create a DeepCell Label project'
+                onDroppedFile={() => {}}
+              />
+            </Paper>
+            <ExampleFileSelect />
+          </Box>
+        </Container>
       </main>
       <Footer />
     </div>
