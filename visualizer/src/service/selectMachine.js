@@ -1,4 +1,5 @@
 import { actions, assign, Machine, send, sendParent } from 'xstate';
+import { respond } from 'xstate/lib/actions';
 
 const { pure } = actions;
 
@@ -136,6 +137,8 @@ const selectMachine = Machine(
       NEXT_FOREGROUND: { actions: 'nextForeground' },
       PREV_BACKGROUND: { actions: 'prevBackground' },
       NEXT_BACKGROUND: { actions: 'nextBackground' },
+      SAVE: { actions: 'save' },
+      RESTORE: { actions: 'restore' },
     },
   },
   {
@@ -148,6 +151,12 @@ const selectMachine = Machine(
       ...selectShortcutActions,
       ...cycleActions,
       ...setActions,
+      save: respond(({ foreground, background }) => ({ type: 'RESTORE', foreground, background })),
+      restore: pure((_, { foreground, background }) => [
+        respond('RESTORED'),
+        send({ type: 'FOREGROUND', foreground }),
+        send({ type: 'BACKGROUND', background }),
+      ]),
     },
   }
 );
