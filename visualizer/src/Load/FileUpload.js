@@ -60,7 +60,7 @@ function ImageAxesDropDown({ loadService }) {
           id='image-axes-select'
           value={axes}
           label='Axes'
-          onChange={e => loadService.send({ type: 'SET_AXES', axes: allAxes[e.target.value] })}
+          onChange={e => loadService.send({ type: 'SET_AXES', axes: e.target.value })}
           autoWidth
         >
           {allAxes.map((ax, i) => (
