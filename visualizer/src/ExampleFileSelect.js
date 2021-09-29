@@ -17,24 +17,21 @@ const useStyles = makeStyles(theme => ({
 
 const exampleFiles = [
   {
+    // TODO: create mesmer predictions and add errors
     path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/test.npz',
-    name: '3D organoid annotation',
+    name: '2D tissue segmentation',
   },
   {
-    path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/mouse_s1_uncorrected_fullsize_all_channels_x_05_y_03_save_version_0.npz',
-    name: '3D nuclei in tissue',
+    path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/test.npz',
+    name: '3D organoid segmentation',
   },
   {
-    path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/HeLa_movie_s0_uncorrected_fullsize_all_channels_x_00_y_01_frames_5-9.npz',
-    name: 'HeLa cytoplasm timelapse with errors',
+    path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/example_corrected.trk',
+    name: 'corrected tracking timelapse',
   },
   {
-    path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/fov_4b55271de34c40fcba5ec13fac73f57b_crop_0_crop_0_slice_0_fake_cyto.npz',
-    name: 'large field of view',
-  },
-  {
-    path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/fov_4b55271de34c40fcba5ec13fac73f57b_crop_0_crop_0_slice_0.npz',
-    name: 'multi-channel large field of view',
+    path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/example_uncorrected.trk',
+    name: 'uncorrected tracking timelapse',
   },
 ];
 
