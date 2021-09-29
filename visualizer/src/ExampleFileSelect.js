@@ -1,4 +1,4 @@
-import { Box, Button, makeStyles } from '@material-ui/core';
+import { Box, Button, LinearProgress, makeStyles } from '@material-ui/core';
 import Select from '@material-ui/core/Select';
 import SendIcon from '@material-ui/icons/Send';
 import axios from 'axios';
@@ -7,12 +7,23 @@ import React, { useCallback, useState } from 'react';
 const DCL_DOMAIN = 'http://localhost:3000';
 
 const useStyles = makeStyles(theme => ({
-  box: {},
+  examplesBox: {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   select: {
     margin: theme.spacing(3),
     padding: theme.spacing(1),
   },
-  submit: {},
+  submit: {
+    width: '100%',
+  },
+  progress: {
+    margin: theme.spacing(1),
+    width: '100%',
+  },
 }));
 
 const exampleFiles = [
@@ -37,11 +48,13 @@ const exampleFiles = [
 
 function ExampleFileSelect() {
   const [value, setValue] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const styles = useStyles();
 
   const onClick = useCallback(
     e => {
+      setLoading(true);
       const formData = new FormData();
       formData.append('url', exampleFiles[value].path);
       axios
@@ -57,12 +70,13 @@ function ExampleFileSelect() {
   );
 
   return (
-    <Box display='flex' flexDirection='column'>
+    <Box className={styles.examplesBox}>
       <Select
         className={styles.select}
         native
         value={value}
         onChange={e => setValue(e.target.value)}
+        disabled={loading}
       >
         <option disabled value={false} style={{ display: 'none' }}>
           Or select an example file and press Submit
@@ -74,14 +88,16 @@ function ExampleFileSelect() {
         ))}
       </Select>
       <Button
+        className={styles.submit}
         variant='contained'
         color='primary'
         endIcon={<SendIcon />}
         onClick={onClick}
-        disabled={value === 0}
+        disabled={value === 0 || loading}
       >
         Submit
       </Button>
+      {loading && <LinearProgress className={styles.progress} />}
     </Box>
   );
 }
