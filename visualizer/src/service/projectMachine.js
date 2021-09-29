@@ -115,11 +115,12 @@ const createProjectMachine = (projectId, bucket) =>
           undoRef: () => spawn(undoMachine, 'undo'),
         }),
         addActorsToUndo: pure(context => {
-          const { canvasRef, segmentRef, imageRef } = context;
+          const { canvasRef, segmentRef, imageRef, selectRef } = context;
           return [
             send({ type: 'ADD_ACTOR', actor: canvasRef }, { to: 'undo' }),
             send({ type: 'ADD_ACTOR', actor: imageRef }, { to: 'undo' }),
             send({ type: 'ADD_ACTOR', actor: segmentRef }, { to: 'undo' }),
+            send({ type: 'ADD_ACTOR', actor: selectRef }, { to: 'undo' }),
           ];
         }),
         sendProject: pure((context, event) => {
