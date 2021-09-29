@@ -311,11 +311,17 @@ def load_lineage_trk(data):
 
 def load_png(data):
     """Returns image array from a PNG file."""
-    img = np.array(Image.open(io.BytesIO(data)))
-    # Remove alpha channel
-    if img.shape[-1] == 4:
-        img = img[..., :3]
-    return img
+    image = Image.open(io.BytesIO(data), formats=['PNG'])
+    # Luminance should add channel dimension at end
+    if image.mode == 'L':
+        array = np.array(image)
+        array = np.expand_dims(array, -1)
+    else:
+        # Create three RGB channels
+        array = np.array(image.convert('RGB'))
+    # Add frame dimension at start
+    array = np.expand_dims(array, 0)
+    return array
 
 
 def load_tiff(data):
