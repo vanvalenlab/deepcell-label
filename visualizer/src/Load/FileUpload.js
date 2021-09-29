@@ -159,7 +159,7 @@ export default function FileUpload({ loadService }) {
               <Container maxWidth='xs' className={classes.uploadForm}>
                 <img className={classes.preview} src={file.preview} />
                 <Typography>{file.path}</Typography>
-                <ImageAxesDropDown loadService={loadService} />
+                {file.type !== 'image/png' && <ImageAxesDropDown loadService={loadService} />}
                 <Button
                   className={classes.submit}
                   variant='contained'
@@ -167,7 +167,7 @@ export default function FileUpload({ loadService }) {
                   endIcon={<SendIcon />}
                   onClick={() => loadService.send({ type: 'SUBMIT_UPLOAD' })}
                 >
-                  Upload
+                  Upload {console.log(file)}
                 </Button>
                 {state.matches('submittingUpload') && (
                   <LinearProgress className={classes.progress} />
