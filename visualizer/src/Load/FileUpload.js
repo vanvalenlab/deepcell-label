@@ -1,4 +1,4 @@
-import { Box, Button } from '@material-ui/core';
+import { Box, Button, LinearProgress } from '@material-ui/core';
 import Container from '@material-ui/core/Container';
 import FormControl from '@material-ui/core/FormControl';
 import IconButton from '@material-ui/core/IconButton';
@@ -43,6 +43,10 @@ const useStyles = makeStyles(theme => ({
   submit: {
     width: '100%',
     margin: theme.spacing(1),
+  },
+  progress: {
+    margin: theme.spacing(1),
+    width: '100%',
   },
 }));
 
@@ -165,6 +169,9 @@ export default function FileUpload({ loadService }) {
                 >
                   Upload
                 </Button>
+                {state.matches('submittingUpload') && (
+                  <LinearProgress className={classes.progress} />
+                )}
               </Container>
             )}
           </section>
