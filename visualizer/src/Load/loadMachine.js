@@ -27,7 +27,7 @@ const loadMachine = Machine(
     context: {
       exampleFile: null,
       uploadFile: null,
-      axes: 'YXC',
+      axes: 'ZYXC',
       errorText: '',
     },
     initial: 'idle',
