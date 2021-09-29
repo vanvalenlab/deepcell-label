@@ -148,6 +148,10 @@ class FileLoader(Loader):
             raw_array = load_png(self.data)
         elif is_tiff(self.path):
             raw_array = load_tiff(self.data)
+        elif is_trk(self.path):
+            raw_array = load_raw_trk(self.data)
+            label_array = load_labeled_trk(self.data)
+            self.cell_info = load_lineage_trk(self.data)
         else:
             ext = pathlib.Path(self.path).suffix
             raise InvalidExtension('Invalid file extension: {}'.format(ext))
