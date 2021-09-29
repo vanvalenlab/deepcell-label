@@ -62,16 +62,14 @@ function ExampleFileSelect({ loadService }) {
         className={styles.select}
         native
         value={file ? file.path : false}
-        onChange={e =>
-          loadService.send({ type: 'SET_EXAMPLE_FILE', file: exampleFiles[e.target.value] })
-        }
+        onChange={e => loadService.send({ type: 'SET_EXAMPLE_FILE', file: e.target.value })}
         disabled={loading}
       >
         <option disabled value={false} style={{ display: 'none' }}>
           Or select an example file and press Submit
         </option>
         {exampleFiles.map(file => (
-          <option key={file.path} value={file.path}>
+          <option key={file.path} value={file}>
             {file.name}
           </option>
         ))}
