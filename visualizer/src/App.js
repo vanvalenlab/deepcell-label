@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import Label from './Label';
-import Load from './Load';
+import Load from './Load/Load';
 import ProjectContext from './ProjectContext';
 import service from './service/service';
 

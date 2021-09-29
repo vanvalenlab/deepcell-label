@@ -1,8 +1,8 @@
 import { Box, Button, LinearProgress, makeStyles } from '@material-ui/core';
 import Select from '@material-ui/core/Select';
 import SendIcon from '@material-ui/icons/Send';
-import axios from 'axios';
-import React, { useCallback, useState } from 'react';
+import { useSelector } from '@xstate/react';
+import React from 'react';
 
 const DCL_DOMAIN = 'http://localhost:3000';
 
@@ -28,61 +28,50 @@ const useStyles = makeStyles(theme => ({
 
 const exampleFiles = [
   {
+    value: 0,
     // TODO: create mesmer predictions and add errors
     path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/test.npz',
     name: '2D tissue segmentation',
   },
   {
+    value: 1,
     path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/test.npz',
     name: '3D organoid segmentation',
   },
   {
+    value: 2,
     path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/example_corrected.trk',
     name: 'corrected tracking timelapse',
   },
   {
+    value: 3,
     path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/example_uncorrected.trk',
     name: 'uncorrected tracking timelapse',
   },
 ];
 
-function ExampleFileSelect() {
-  const [value, setValue] = useState(false);
-  const [loading, setLoading] = useState(false);
+function ExampleFileSelect({ loadService }) {
+  const file = useSelector(loadService, state => state.context.exampleFile);
+  const loading = useSelector(loadService, state => state.matches('submittingExample'));
 
   const styles = useStyles();
-
-  const onClick = useCallback(
-    e => {
-      setLoading(true);
-      const formData = new FormData();
-      formData.append('url', exampleFiles[value].path);
-      axios
-        .post('/api/project', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        })
-        .then(response => {
-          const { projectId } = response.data;
-          window.location.href = `${DCL_DOMAIN}/project?projectId=${projectId}`;
-        });
-    },
-    [value]
-  );
 
   return (
     <Box className={styles.examplesBox}>
       <Select
         className={styles.select}
         native
-        value={value}
-        onChange={e => setValue(e.target.value)}
+        value={file ? file.path : false}
+        onChange={e =>
+          loadService.send({ type: 'SET_EXAMPLE_FILE', file: exampleFiles[e.target.value] })
+        }
         disabled={loading}
       >
         <option disabled value={false} style={{ display: 'none' }}>
           Or select an example file and press Submit
         </option>
-        {exampleFiles.map((file, index) => (
-          <option key={file.path} value={index}>
+        {exampleFiles.map(file => (
+          <option key={file.path} value={file.path}>
             {file.name}
           </option>
         ))}
@@ -92,8 +81,8 @@ function ExampleFileSelect() {
         variant='contained'
         color='primary'
         endIcon={<SendIcon />}
-        onClick={onClick}
-        disabled={value === 0 || loading}
+        onClick={() => loadService.send({ type: 'SUBMIT_EXAMPLE' })}
+        disabled={!file || loading}
       >
         Submit
       </Button>
