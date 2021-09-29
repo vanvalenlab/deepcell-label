@@ -17,7 +17,7 @@ function submitUpload(context) {
   const formData = new FormData();
   formData.append('file', uploadFile);
   formData.append('axes', axes);
-  axios.post('/api/project/dropped', formData, {
+  return axios.post('/api/project/dropped', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 }
@@ -56,9 +56,11 @@ const loadMachine = Machine(
         },
       },
       submittingUpload: {
-        src: submitUpload,
-        onDone: { actions: 'redirectToProject' },
-        onError: { target: 'error', actions: [(c, e) => console.log(e), 'setErrorText'] },
+        invoke: {
+          src: submitUpload,
+          onDone: { actions: 'redirectToProject' },
+          onError: { target: 'error', actions: [(c, e) => console.log(e), 'setErrorText'] },
+        },
       },
       error: {
         on: {
@@ -94,7 +96,7 @@ const loadMachine = Machine(
       setErrorText: assign({ errorText: (_, event) => `${event.error}` }),
       setSingleFileError: assign({ errorText: 'Please upload a single file.' }),
       redirectToProject: (_, event) => {
-        const { projectId } = event.data;
+        const { projectId } = event.data.data;
         window.location.href = `${DCL_DOMAIN}/project?projectId=${projectId}&download=true`;
       },
     },
