@@ -62,8 +62,8 @@ export default function FileUpload(props) {
   // const { getRootProps, getInputProps, isDragActive } = useDropzone({onDrop});
 
   return (
-    <Dropzone name='imageUploadInput' onDrop={onDrop}>
-      {({ getRootProps, getInputProps }) => (
+    <Dropzone name='imageUploadInput' onDrop={onDrop} accept='image/png, image/tiff, .npz'>
+      {({ getRootProps, getInputProps, fileRejections }) => (
         <section>
           <div {...getRootProps()}>
             <input {...getInputProps()} />
@@ -87,15 +87,18 @@ export default function FileUpload(props) {
               Drag and drop your files here or click to browse
             </Typography>
 
-            <Typography
-              variant='caption'
-              display='block'
-              align='center'
-              color='textSecondary'
-              gutterBottom
-            >
-              Supported files: .tiff, .png, and .npz
-            </Typography>
+            {fileRejections.map(({ file, errors }) => (
+              <Typography
+                className={classes.paddedTop}
+                variant='caption'
+                display='block'
+                align='center'
+                color='error'
+                key={file.path}
+              >
+                {file.path} is not a valid file. Please upload a .tiff, .png, or .npz.
+              </Typography>
+            ))}
 
             {/* Display error to user */}
             {showError && (
