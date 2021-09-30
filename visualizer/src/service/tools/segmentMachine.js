@@ -15,13 +15,13 @@ const panState = {
     pan: {
       entry: sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
       on: {
-        SET_TOOL: { cond: 'noPanTool', target: 'noPan' },
+        SET_TOOL: { cond: 'isNoPanTool', target: 'noPan' },
       },
     },
     noPan: {
       entry: sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: false }),
       on: {
-        SET_TOOL: { cond: 'panTool', target: 'pan' },
+        SET_TOOL: { cond: 'isPanTool', target: 'pan' },
       },
     },
   },
@@ -146,9 +146,15 @@ const segmentMachine = Machine(
         ['brush', 'select', 'trim', 'flood', 'threshold', 'watershed'].includes(tool),
       isGrayscaleTool: (_, { tool }) =>
         ['brush', 'select', 'trim', 'flood', 'threshold', 'watershed'].includes(tool),
+      isNoPanTool: (_, { tool }) => ['brush', 'threshold'].includes(tool),
+      isPanTool: (_, { tool }) => ['select', 'trim', 'flood', 'watershed'].includes(tool),
     },
     actions: {
       ...editActions,
+      setTool: pure((context, event) => [
+        send('EXIT', { to: context.tool }),
+        assign({ tool: event.tool }),
+      ]),
       save: respond(({ tool }) => ({ type: 'RESTORE', tool })),
       restore: assign((_, { tool }) => ({ tool })),
       spawnTools: assign({
@@ -162,7 +168,7 @@ const segmentMachine = Machine(
         }),
       }),
       forwardToTool: forwardTo(({ tool }) => tool),
-      forwardToTools: pure(({ tools }) => tools.map(tool => forwardTo(tool))),
+      forwardToTools: pure(({ tools }) => Object.values(tools).map(tool => forwardTo(tool))),
     },
   }
 );
