@@ -228,7 +228,7 @@ const canvasMachine = Machine(
       setLabel: assign((_, { label }) => ({ label })),
       sendLabel: send(({ labeledArray: array, x, y }) => ({
         type: 'LABEL',
-        label: array ? Math.abs(array[y][x]) : 0,
+        label: array && x !== null && y !== null ? Math.abs(array[y][x]) : null,
       })),
       setDimensions: assign({
         availableWidth: (_, { width }) => width,
