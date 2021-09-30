@@ -24,6 +24,7 @@ const createThresholdMachine = ({ x, y, foreground }) =>
         },
       },
       on: {
+        EXIT: '.idle',
         COORDINATES: { actions: 'setCoordinates' },
         FOREGROUND: { actions: 'setForeground' },
       },
