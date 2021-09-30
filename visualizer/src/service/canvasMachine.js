@@ -136,7 +136,7 @@ const canvasMachine = Machine(
         })),
       },
       RESTORE: { actions: ['restore', respond('RESTORED')] },
-      LABELED_ARRAY: { actions: ['setLabeledArray', 'sendLabel'] },
+      LABELED_ARRAY: { actions: ['setLabeledArray', 'sendHovering'] },
       COORDINATES: {
         cond: 'newCoordinates',
         actions: ['setCoordinates', 'sendHovering', 'sendParent'],
