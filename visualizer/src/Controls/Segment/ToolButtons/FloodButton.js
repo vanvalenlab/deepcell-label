@@ -7,7 +7,7 @@ function FloodButton(props) {
   const segment = useSegment();
   const tool = useSelector(segment, state => state.context.tool);
 
-  const onClick = useCallback(() => segment.send('USE_FLOOD'), [segment]);
+  const onClick = useCallback(() => segment.send({ type: 'SET_TOOL', tool: 'flood' }), [segment]);
 
   const tooltipText = (
     <span>

@@ -8,7 +8,10 @@ function ThresholdButton(props) {
   const tool = useSelector(segment, state => state.context.tool);
   const grayscale = useSelector(segment, state => state.matches('colorMode.grayscale'));
 
-  const onClick = useCallback(() => segment.send('USE_THRESHOLD'), [segment]);
+  const onClick = useCallback(
+    () => segment.send({ type: 'SET_TOOL', tool: 'threshold' }),
+    [segment]
+  );
 
   const tooltipText = grayscale ? (
     <span>
