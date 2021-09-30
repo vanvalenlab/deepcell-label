@@ -12,7 +12,7 @@ function EraserButton(props) {
   const background = useSelector(select, state => state.context.background);
 
   const onClick = useCallback(() => {
-    segment.send('USE_BRUSH');
+    segment.send({ type: 'SET_TOOL', tool: 'brush' });
     select.send({ type: 'FOREGROUND', foreground: 0 });
     select.send({ type: 'BACKGROUND', background: selected });
   }, [segment, select, selected]);
