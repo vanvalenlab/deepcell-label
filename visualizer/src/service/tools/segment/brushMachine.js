@@ -35,6 +35,7 @@ const createBrushMachine = ({ x, y, foreground, background }) =>
         },
       },
       on: {
+        EXIT: '.idle',
         INCREASE_BRUSH_SIZE: { actions: 'increaseBrushSize' },
         DECREASE_BRUSH_SIZE: { actions: 'decreaseBrushSize' },
         COORDINATES: { actions: 'setCoordinates' },
@@ -77,9 +78,6 @@ const createBrushMachine = ({ x, y, foreground, background }) =>
             foreground: context.foreground,
             background: context.background,
             brush_size: context.brushSize,
-            // frame: context.frame,
-            // feature: context.feature,
-            // channel: context.channel,
           },
         })),
       },
