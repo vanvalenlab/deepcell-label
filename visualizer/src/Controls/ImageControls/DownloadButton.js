@@ -19,16 +19,6 @@ const useStyles = makeStyles(theme => ({
 function DownloadButton() {
   const styles = useStyles();
   const api = useApi();
-  const projectId = useSelector(api, state => state.context.projectId);
-
-  const onDownload = () => {
-    // api.send('DOWNLOAD');
-    const link = document.createElement('a');
-    link.download = '';
-    link.href = `${document.location.origin}/api/download/${projectId}`;
-    console.log(link);
-    link.click();
-  };
   const downloading = useSelector(api, state => state.matches('downloading'));
 
   return (
@@ -36,7 +26,7 @@ function DownloadButton() {
       variant='contained'
       color='primary'
       endIcon={<GetAppIcon />}
-      onClick={onDownload}
+      onClick={() => api.send('DOWNLOAD')}
       disabled={downloading}
     >
       Download

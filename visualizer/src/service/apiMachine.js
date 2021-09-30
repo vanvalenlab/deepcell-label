@@ -42,7 +42,14 @@ function download(context, event) {
   console.log('downloading');
   const downloadRoute = `${document.location.origin}/api/download/${projectId}`;
   const options = { method: 'GET' };
-  return fetch(downloadRoute, options).then(response => response.blob());
+  const promise = fetch(downloadRoute, options);
+  const filename = promise.then(response => {
+    const regex = /(?<=filename=).*(?=$)/;
+    const header = response.headers.get('content-disposition');
+    return header.match(regex)[0] ?? `${projectId}.npz`;
+  });
+  const url = promise.then(response => response.blob()).then(blob => URL.createObjectURL(blob));
+  return Promise.all([filename, url]);
 }
 
 function checkResponseCode(response) {
@@ -67,9 +74,6 @@ const createApiMachine = ({ projectId, bucket }) =>
             BACKEND_UNDO: 'loading',
             BACKEND_REDO: 'loading',
             UPLOAD: 'uploading',
-            // DOWNLOAD: {
-            //   actions: ({ projectId }) => (window.location = `/api/download/${projectId}`),
-            // },
             DOWNLOAD: 'downloading',
           },
         },
@@ -98,10 +102,9 @@ const createApiMachine = ({ projectId, bucket }) =>
           },
         },
         downloading: {
-          entry: () => console.log('downloading'),
           invoke: {
             src: download,
-            onDone: { target: 'idle', actions: [(c, e) => console.log(e), 'download'] },
+            onDone: { target: 'idle', actions: 'download' },
             onError: {
               target: 'idle',
               actions: [(c, e) => console.log(e), 'sendError'],
@@ -112,13 +115,11 @@ const createApiMachine = ({ projectId, bucket }) =>
     },
     {
       actions: {
-        download: (c, event) => {
-          console.log(event);
-          const blob = event.data;
+        download: (_, event) => {
+          const [filename, url] = event.data;
           const link = document.createElement('a');
-          link.href = blob;
-          console.log(blob);
-          link.download = 'test.npz';
+          link.href = url;
+          link.download = filename;
           link.click();
         },
         sendEdited: sendParent((_, event) => ({
