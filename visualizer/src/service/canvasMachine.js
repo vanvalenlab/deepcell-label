@@ -111,8 +111,8 @@ const canvasMachine = Machine(
       sx: 0,
       sy: 0,
       // position of cursor within image
-      x: 0,
-      y: 0,
+      x: null,
+      y: null,
       // how much the canvas has moved in the current pan
       dx: 0,
       dy: 0,
