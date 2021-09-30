@@ -1,15 +1,15 @@
 import { assign, Machine, sendParent } from 'xstate';
 import { toolActions, toolGuards } from './toolUtils';
 
-const createThresholdMachine = ({ x, y, foreground }) =>
+const createThresholdMachine = () =>
   Machine(
     {
       initial: 'idle',
       context: {
-        x,
-        y,
-        foreground,
-        firstPoint: [0, 0],
+        x: null,
+        y: null,
+        foreground: null,
+        firstPoint: null,
       },
       states: {
         idle: {

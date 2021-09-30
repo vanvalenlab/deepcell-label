@@ -1,18 +1,18 @@
 import { Machine, sendParent } from 'xstate';
 import { toolActions, toolGuards } from './toolUtils';
 
-const createSelectMachine = ({ label, foreground, background }) =>
+const createSelectMachine = () =>
   Machine(
     {
       context: {
-        label,
-        foreground,
-        background,
+        hovering: null,
+        foreground: null,
+        background: null,
       },
       on: {
         FOREGROUND: { actions: 'setForeground' },
         BACKGROUND: { actions: 'setBackground' },
-        LABEL: { actions: 'setLabel' },
+        HOVERING: { actions: 'setHovering' },
         mouseup: [
           {
             cond: 'doubleClick',

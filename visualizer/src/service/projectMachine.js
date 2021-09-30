@@ -79,9 +79,7 @@ const createProjectMachine = (projectId, bucket) =>
         },
 
         // from canvas
-        LABEL: {
-          actions: [forwardTo('segment'), forwardTo('select')],
-        },
+        HOVERING: { actions: [forwardTo('segment'), forwardTo('select')] },
         COORDINATES: { actions: forwardTo('segment') },
         FOREGROUND: { actions: [forwardTo('segment')] },
         BACKGROUND: { actions: [forwardTo('segment')] },
