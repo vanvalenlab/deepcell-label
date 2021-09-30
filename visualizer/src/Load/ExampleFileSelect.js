@@ -4,8 +4,6 @@ import SendIcon from '@material-ui/icons/Send';
 import { useSelector } from '@xstate/react';
 import React from 'react';
 
-const DCL_DOMAIN = 'http://localhost:3000';
-
 const useStyles = makeStyles(theme => ({
   examplesBox: {
     display: 'flex',
@@ -68,8 +66,8 @@ function ExampleFileSelect({ loadService }) {
         <option disabled value={false} style={{ display: 'none' }}>
           Or select an example file and press Submit
         </option>
-        {exampleFiles.map(file => (
-          <option key={file.path} value={file}>
+        {exampleFiles.map((file, i) => (
+          <option key={file.path} value={file.path}>
             {file.name}
           </option>
         ))}

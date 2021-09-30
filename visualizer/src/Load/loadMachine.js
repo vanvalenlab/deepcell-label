@@ -4,7 +4,7 @@ import { assign, Machine } from 'xstate';
 function submitExample(context) {
   const { exampleFile } = context;
   const formData = new FormData();
-  formData.append('url', exampleFile.path);
+  formData.append('url', exampleFile);
   return axios.post('/api/project', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
