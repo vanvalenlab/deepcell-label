@@ -85,7 +85,7 @@ const cycleActions = {
 };
 
 const setActions = {
-  setHovering: assign({ hovering: (_, { label }) => label }),
+  setHovering: assign({ hovering: (_, { hovering }) => hovering }),
   setLabels: assign({ labels: (_, { labels }) => labels }),
   setForeground: assign({ foreground: (_, { foreground }) => foreground }),
   setBackground: assign({ background: (_, { background }) => background }),
@@ -116,7 +116,7 @@ const selectMachine = Machine(
         { actions: 'selectBackground' },
       ],
 
-      LABEL: { actions: 'setHovering' },
+      HOVERING: { actions: 'setHovering' },
       LABELS: { actions: 'setLabels' },
       SELECTED: { actions: ['setSelected', sendParent((c, e) => e)] },
       FOREGROUND: {
