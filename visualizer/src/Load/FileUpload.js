@@ -16,8 +16,6 @@ import { PropTypes } from 'prop-types';
 import React from 'react';
 import Dropzone from 'react-dropzone';
 
-const DCL_DOMAIN = 'http://localhost:3000';
-
 const useStyles = makeStyles(theme => ({
   root: {
     flexGrow: 1,

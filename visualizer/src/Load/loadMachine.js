@@ -1,8 +1,6 @@
 import axios from 'axios';
 import { assign, Machine } from 'xstate';
 
-const DCL_DOMAIN = 'http://localhost:3000';
-
 function submitExample(context) {
   const { exampleFile } = context;
   const formData = new FormData();
@@ -97,7 +95,7 @@ const loadMachine = Machine(
       setSingleFileError: assign({ errorText: 'Please upload a single file.' }),
       redirectToProject: (_, event) => {
         const { projectId } = event.data.data;
-        window.location.href = `${DCL_DOMAIN}/project?projectId=${projectId}&download=true`;
+        window.location.href = `${document.location.origin}/project?projectId=${projectId}&download=true`;
       },
     },
   }
