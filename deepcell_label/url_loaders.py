@@ -318,6 +318,7 @@ def load_png(data):
         array = np.expand_dims(array, -1)
     else:
         # Create three RGB channels
+        # Handles RGB, RGBA, P modes
         array = np.array(image.convert('RGB'))
     # Add frame dimension at start
     array = np.expand_dims(array, 0)
