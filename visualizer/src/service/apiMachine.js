@@ -37,6 +37,14 @@ function upload(context, event) {
   return fetch(uploadRoute, options).then(checkResponseCode);
 }
 
+function download(context, event) {
+  const { projectId } = context;
+  console.log('downloading');
+  const downloadRoute = `${document.location.origin}/api/download/${projectId}`;
+  const options = { method: 'GET' };
+  return fetch(downloadRoute, options).then(response => response.blob());
+}
+
 function checkResponseCode(response) {
   return response.json().then(json => {
     return response.ok ? json : Promise.reject(json);
@@ -59,6 +67,10 @@ const createApiMachine = ({ projectId, bucket }) =>
             BACKEND_UNDO: 'loading',
             BACKEND_REDO: 'loading',
             UPLOAD: 'uploading',
+            // DOWNLOAD: {
+            //   actions: ({ projectId }) => (window.location = `/api/download/${projectId}`),
+            // },
+            DOWNLOAD: 'downloading',
           },
         },
         loading: {
@@ -85,10 +97,30 @@ const createApiMachine = ({ projectId, bucket }) =>
             },
           },
         },
+        downloading: {
+          entry: () => console.log('downloading'),
+          invoke: {
+            src: download,
+            onDone: { target: 'idle', actions: [(c, e) => console.log(e), 'download'] },
+            onError: {
+              target: 'idle',
+              actions: [(c, e) => console.log(e), 'sendError'],
+            },
+          },
+        },
       },
     },
     {
       actions: {
+        download: (c, event) => {
+          console.log(event);
+          const blob = event.data;
+          const link = document.createElement('a');
+          link.href = blob;
+          console.log(blob);
+          link.download = 'test.npz';
+          link.click();
+        },
         sendEdited: sendParent((_, event) => ({
           type: 'EDITED',
           data: event.data,
