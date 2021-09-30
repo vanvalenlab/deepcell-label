@@ -1,11 +1,11 @@
 import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
-import createBrushMachine from './segment/brushMachine';
-import createFloodMachine from './segment/floodMachine';
-import createSelectMachine from './segment/selectMachine';
-import createThresholdMachine from './segment/thresholdMachine';
+import brushMachine from './segment/brushMachine';
+import floodMachine from './segment/floodMachine';
+import selectMachine from './segment/selectMachine';
+import thresholdMachine from './segment/thresholdMachine';
 import { toolGuards } from './segment/toolUtils';
-import createTrimMachine from './segment/trimMachine';
-import createWatershedMachine from './segment/watershedMachine';
+import trimMachine from './segment/trimMachine';
+import watershedMachine from './segment/watershedMachine';
 
 const { pure, respond } = actions;
 
@@ -64,7 +64,7 @@ const syncState = {
     mouseup: { actions: 'forwardToTool' },
     // send to all tools
     COORDINATES: { actions: 'forwardToTools' },
-    LABEL: { actions: 'forwardToTools' },
+    HOVERING: { actions: 'forwardToTools' },
     FOREGROUND: { actions: 'forwardToTools' },
     BACKGROUND: { actions: 'forwardToTools' },
     SELECTED: { actions: 'forwardToTools' },
@@ -159,12 +159,12 @@ const segmentMachine = Machine(
       restore: assign((_, { tool }) => ({ tool })),
       spawnTools: assign({
         tools: context => ({
-          brush: spawn(createBrushMachine(context), 'brush'),
-          select: spawn(createSelectMachine(context), 'select'),
-          threshold: spawn(createThresholdMachine(context), 'threshold'),
-          trim: spawn(createTrimMachine(context), 'trim'),
-          flood: spawn(createFloodMachine(context), 'flood'),
-          watershed: spawn(createWatershedMachine(context), 'watershed'),
+          brush: spawn(brushMachine, 'brush'),
+          select: spawn(selectMachine, 'select'),
+          threshold: spawn(thresholdMachine, 'threshold'),
+          trim: spawn(trimMachine, 'trim'),
+          flood: spawn(floodMachine, 'flood'),
+          watershed: spawn(watershedMachine, 'watershed'),
         }),
       }),
       forwardToTool: forwardTo(({ tool }) => tool),
