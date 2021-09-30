@@ -95,11 +95,15 @@ const setActions = {
 const selectMachine = Machine(
   {
     id: 'select',
+    entry: [
+      send({ type: 'FOREGROUND', foreground: 1 }),
+      send({ type: 'BACKGROUND', background: 0 }),
+    ],
     context: {
-      selected: 1,
-      foreground: 1,
-      background: 0,
-      hovering: 0,
+      selected: null,
+      foreground: null,
+      background: null,
+      hovering: null,
       labels: {},
     },
     on: {
