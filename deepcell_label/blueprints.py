@@ -239,10 +239,10 @@ def create_project_from_url():
     return jsonify({'projectId': project.token})
 
 
-@bp.route('/downloadproject/<token>', methods=['GET'])
+@bp.route('/api/download/<token>', methods=['GET'])
 def download_project(token):
     """
-    Download a .trk/.npz file from a DeepCell Label project.
+    Download a DeepCell Label project as a .npz file
     """
     project = Project.get(token)
     if not project:
