@@ -8,7 +8,7 @@ const thresholdMachine = Machine(
       x: null,
       y: null,
       foreground: null,
-      firstPoint: null,
+      firstPoint: [null, null],
     },
     states: {
       idle: {
