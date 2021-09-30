@@ -1,6 +1,6 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-import { useCanvas, useTool } from '../../ProjectContext';
+import { useCanvas, useThreshold } from '../../ProjectContext';
 import { drawBox } from '../canvasUtils';
 
 const ThresholdCanvas = ({ className }) => {
@@ -15,7 +15,7 @@ const ThresholdCanvas = ({ className }) => {
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
 
-  const threshold = useTool();
+  const threshold = useThreshold();
   const x1 = useSelector(threshold, state => state.context.x);
   const y1 = useSelector(threshold, state => state.context.y);
   const [x2, y2] = useSelector(threshold, state => state.context.firstPoint);

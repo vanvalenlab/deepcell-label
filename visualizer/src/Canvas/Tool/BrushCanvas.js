@@ -1,6 +1,6 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useMemo, useRef } from 'react';
-import { useCanvas, useSelect, useTool } from '../../ProjectContext';
+import { useBrush, useCanvas, useSelect } from '../../ProjectContext';
 import { drawBrush, drawTrace } from '../canvasUtils';
 
 const BrushCanvas = ({ className }) => {
@@ -20,7 +20,7 @@ const BrushCanvas = ({ className }) => {
   const erasing = background !== 0;
   const brushColor = useMemo(() => (erasing ? [255, 0, 0, 255] : [255, 255, 255, 255]), [erasing]);
 
-  const brush = useTool();
+  const brush = useBrush();
   const x = useSelector(brush, state => state.context.x);
   const y = useSelector(brush, state => state.context.y);
   const trace = useSelector(brush, state => state.context.trace);
