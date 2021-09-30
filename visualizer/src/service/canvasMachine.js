@@ -1,6 +1,6 @@
 // Manages zooming, panning, and interacting with the canvas
-// Interactions sent as LABEL, COORDINATES, mousedown, and mouseup events to parent
-// LABEL event sent when the label below the cursor changes
+// Interactions sent as HOVERING, COORDINATES, mousedown, and mouseup events to parent
+// HOVERING event sent when the label below the cursor changes
 // COORDINATES event sent when the pixel below the cursor changes
 
 // Panning interface:
@@ -118,7 +118,7 @@ const canvasMachine = Machine(
       dy: 0,
       // label data
       labeledArray: null,
-      label: null,
+      hovering: null,
       panOnDrag: true,
     },
     invoke: [{ src: 'listenForMouseUp' }, { src: 'listenForZoomHotkeys' }],
@@ -139,11 +139,11 @@ const canvasMachine = Machine(
       LABELED_ARRAY: { actions: ['setLabeledArray', 'sendLabel'] },
       COORDINATES: {
         cond: 'newCoordinates',
-        actions: ['setCoordinates', 'sendLabel', 'sendParent'],
+        actions: ['setCoordinates', 'sendHovering', 'sendParent'],
       },
-      LABEL: {
-        cond: 'newLabel',
-        actions: ['setLabel', 'sendParent'],
+      HOVERING: {
+        cond: 'newHovering',
+        actions: ['setHovering', 'sendParent'],
       },
     },
     initial: 'idle',
@@ -205,7 +205,7 @@ const canvasMachine = Machine(
     },
     guards: {
       newCoordinates: (context, event) => context.x !== event.y || context.y !== event.y,
-      newLabel: (context, event) => context.label !== event.label,
+      newHovering: (context, event) => context.hovering !== event.hovering,
       moved: ({ dx, dy }) => Math.abs(dx) > 10 || Math.abs(dy) > 10,
       panOnDrag: ({ panOnDrag }) => panOnDrag,
     },
@@ -225,10 +225,10 @@ const canvasMachine = Machine(
         y = Math.max(0, Math.min(y, height - 1));
         return { type: 'COORDINATES', x, y };
       }),
-      setLabel: assign((_, { label }) => ({ label })),
-      sendLabel: send(({ labeledArray: array, x, y }) => ({
-        type: 'LABEL',
-        label: array && x !== null && y !== null ? Math.abs(array[y][x]) : null,
+      setHovering: assign((_, { hovering }) => ({ hovering })),
+      sendHovering: send(({ labeledArray: array, x, y }) => ({
+        type: 'HOVERING',
+        hovering: array && x !== null && y !== null ? Math.abs(array[y][x]) : null,
       })),
       setDimensions: assign({
         availableWidth: (_, { width }) => width,

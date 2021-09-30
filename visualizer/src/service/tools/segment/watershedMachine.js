@@ -1,22 +1,22 @@
 import { assign, Machine, sendParent } from 'xstate';
 import { toolActions, toolGuards } from './toolUtils';
 
-const createWatershedMachine = ({ x, y, label, foreground, background }) =>
+const createWatershedMachine = () =>
   Machine(
     {
       context: {
-        x,
-        y,
-        label,
-        foreground,
-        background,
-        storedLabel: 0,
-        storedX: 0,
-        storedY: 0,
+        x: null,
+        y: null,
+        hovering: null,
+        foreground: null,
+        background: null,
+        storedLabel: null,
+        storedX: null,
+        storedY: null,
       },
       on: {
         COORDINATES: { actions: 'setCoordinates' },
-        LABEL: { actions: 'setLabel' },
+        HOVERING: { actions: 'setHovering' },
         FOREGROUND: { actions: 'setForeground' },
         BACKGROUND: { actions: 'setBackground' },
       },
@@ -48,14 +48,14 @@ const createWatershedMachine = ({ x, y, label, foreground, background }) =>
     {
       guards: {
         ...toolGuards,
-        validSecondSeed: ({ label, foreground, x, y, storedX, storedY }) =>
-          label === foreground && // same label
+        validSecondSeed: ({ hovering, foreground, x, y, storedX, storedY }) =>
+          hovering === foreground && // same label
           (x !== storedX || y !== storedY), // different point
       },
       actions: {
         ...toolActions,
         storeClick: assign({
-          storedLabel: ({ label }) => label,
+          storedLabel: ({ hovering }) => hovering,
           storedX: ({ x }) => x,
           storedY: ({ y }) => y,
         }),

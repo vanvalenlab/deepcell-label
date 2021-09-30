@@ -1,22 +1,22 @@
 import { Machine, sendParent } from 'xstate';
 import { toolActions, toolGuards } from './toolUtils';
 
-const createFloodMachine = ({ x, y, label, foreground, background }) =>
+const createFloodMachine = () =>
   Machine(
     {
       context: {
-        x,
-        y,
-        label,
-        foreground,
-        background,
+        x: null,
+        y: null,
+        label: null,
+        foreground: null,
+        background: null,
       },
       on: {
         COORDINATES: { actions: 'setCoordinates' },
-        LABEL: { actions: 'setLabel' },
+        HOVERING: { actions: 'setHovering' },
         FOREGROUND: { actions: 'setForeground' },
         BACKGROUND: { actions: 'setBackground' },
-        mouseup: [{ cond: 'onBackground', actions: 'flood' }, { actions: 'selectBackground' }],
+        mouseup: { actions: ['flood', 'selectBackground'] },
       },
     },
     {

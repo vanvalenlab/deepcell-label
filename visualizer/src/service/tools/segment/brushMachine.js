@@ -1,17 +1,17 @@
 import { assign, Machine, sendParent } from 'xstate';
 import { toolActions, toolGuards } from './toolUtils';
 
-const createBrushMachine = ({ x, y, foreground, background }) =>
+const createBrushMachine = () =>
   Machine(
     {
       invoke: {
         src: 'listenForBrushHotkeys',
       },
       context: {
-        x,
-        y,
-        foreground,
-        background,
+        x: null,
+        y: null,
+        foreground: null,
+        background: null,
         trace: [],
         brushSize: 5,
       },
