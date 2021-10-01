@@ -150,7 +150,7 @@ class Project(db.Model):
         label = loader.label_array
 
         # Record static project attributes
-        self.path = loader.url
+        self.path = loader.path
         self.source = 's3'
         self.num_frames = raw.shape[0]
         self.height = raw.shape[1]

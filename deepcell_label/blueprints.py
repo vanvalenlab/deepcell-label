@@ -227,6 +227,18 @@ def get_project(token):
 #                             loader.path, timeit.default_timer() - start)
 #     return jsonify({'projectId': project.token})
 
+@bp.route('/api/project/dropped', methods=['POST'])
+def create_project_from_dropped_file():
+    """
+    Create a new Project from drag & dropped file.
+    """
+    start = timeit.default_timer()
+    loader = url_loaders.FileLoader(request)
+    project = Project.create(loader)
+    current_app.logger.info('Created project from %s in %s s.',
+                            loader.path, timeit.default_timer() - start)
+    return jsonify({'projectId': project.token})
+
 
 @bp.route('/api/project', methods=['POST'])
 def create_project_from_url():
@@ -235,17 +247,17 @@ def create_project_from_url():
     """
     start = timeit.default_timer()
     url_form = request.form
-    loader = url_loaders.Loader(url_form)
+    loader = url_loaders.URLLoader(url_form)
     project = Project.create(loader)
     current_app.logger.info('Created project from %s in %s s.',
-                            loader.url, timeit.default_timer() - start)
+                            loader.path, timeit.default_timer() - start)
     return jsonify({'projectId': project.token})
 
 
-@bp.route('/downloadproject/<token>', methods=['GET'])
+@bp.route('/api/download/<token>', methods=['GET'])
 def download_project(token):
     """
-    Download a .trk/.npz file from a DeepCell Label project.
+    Download a DeepCell Label project as a .npz file
     """
     project = Project.get(token)
     if not project:

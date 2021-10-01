@@ -396,7 +396,7 @@ class TestTrackEdit():
 
     def test_replace_with_parent_with_overlap(self, app):
         """
-        Replaces daughter with parent when the daughter exists before the divurl=.
+        Replaces daughter with parent when the daughter exists before the div.
         """
         labels = np.reshape([1, 2, 1, 2], (2, 2, 1, 1))
         cell_info = {0: {
@@ -404,7 +404,7 @@ class TestTrackEdit():
                 'daughters': [2], 'parent': None, 'frames': [0, 1]},
             2: {'capped': False, 'frame_div': None,
                 'daughters': [], 'parent': 1, 'frames': [0, 1]}}}
-        loader = DummyLoader(labels=labels, cell_info=cell_info, url='test.trk')
+        loader = DummyLoader(labels=labels, cell_info=cell_info, path='test.trk')
         project = models.Project.create(loader)
         edit = label.TrackEdit(project)
 
@@ -431,7 +431,7 @@ class TestTrackEdit():
                 'daughters': [2], 'parent': None, 'frames': [0]},
             2: {'capped': False, 'frame_div': None,
                 'daughters': [], 'parent': 1, 'frames': [1]}}}
-        loader = DummyLoader(labels=labels, cell_info=cell_info, url='test.trk')
+        loader = DummyLoader(labels=labels, cell_info=cell_info, path='test.trk')
         project = models.Project.create(loader)
         edit = label.TrackEdit(project)
 
@@ -462,7 +462,7 @@ class TestTrackEdit():
                 'daughters': [], 'parent': 2, 'frames': [2]},
             5: {'capped': False, 'frame_div': None,
                 'daughters': [], 'parent': 2, 'frames': [2]}}}
-        loader = DummyLoader(labels=labels, cell_info=cell_info, url='test.trk')
+        loader = DummyLoader(labels=labels, cell_info=cell_info, path='test.trk')
         project = models.Project.create(loader)
         edit = label.TrackEdit(project)
 
@@ -497,7 +497,7 @@ class TestTrackEdit():
                 'daughters': [], 'parent': 2, 'frames': [1]},
             4: {'capped': False, 'frame_div': None,
                 'daughters': [], 'parent': 2, 'frames': [1]}}}
-        loader = DummyLoader(labels=labels, cell_info=cell_info, url='test.trk')
+        loader = DummyLoader(labels=labels, cell_info=cell_info, path='test.trk')
         project = models.Project.create(loader)
         edit = label.TrackEdit(project)
 
@@ -527,7 +527,7 @@ class TestTrackEdit():
             1: {'capped': False, 'frame_div': None,
                 'daughters': [], 'parent': None, 'frames': [0, 1]}}}
         expected_labels = np.reshape([1, 2], (2, 1, 1, 1))
-        loader = DummyLoader(labels=labels, cell_info=cell_info, url='test.trk')
+        loader = DummyLoader(labels=labels, cell_info=cell_info, path='test.trk')
         project = models.Project.create(loader)
         project.frame = 1
         edit = label.TrackEdit(project)
@@ -572,7 +572,7 @@ class TestTrackEdit():
             4: {'label': 4, 'capped': True, 'frame_div': 2,
                 'daughters': [2, 3], 'parent': 1, 'frames': [1]},
         }
-        loader = DummyLoader(labels=labels, cell_info=cell_info, url='test.trk')
+        loader = DummyLoader(labels=labels, cell_info=cell_info, path='test.trk')
         project = models.Project.create(loader)
         project.frame = 1
         edit = label.TrackEdit(project)
@@ -606,7 +606,7 @@ class TestTrackEdit():
             3: {'label': 3, 'capped': False, 'frame_div': None,
                 'daughters': [], 'parent': 1, 'frames': [1]},
         }
-        loader = DummyLoader(labels=labels, cell_info=cell_info, url='test.trk')
+        loader = DummyLoader(labels=labels, cell_info=cell_info, path='test.trk')
         project = models.Project.create(loader)
         project.frame = 1
         edit = label.TrackEdit(project)
@@ -624,7 +624,7 @@ class TestTrackEdit():
         # two 2 x 1 frames
         # one label in the first frame and two in the second frame
         labels = np.reshape([0, 1, 2, 3], (2, 2, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, url='test.trk'))
+        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
         project.frame = 1
         edit = label.TrackEdit(project)
 
@@ -651,7 +651,7 @@ class TestTrackEdit():
             3: {'capped': False, 'frame_div': None, 'daughters': [], 'parent': None},
         }}
         project = models.Project.create(
-            DummyLoader(labels=labels, cell_info=cell_info, url='test.trk')
+            DummyLoader(labels=labels, cell_info=cell_info, path='test.trk')
         )
         edit = label.TrackEdit(project)
 
@@ -683,7 +683,7 @@ class TestTrackEdit():
             3: {'capped': False, 'frame_div': None, 'daughters': [], 'parent': 1},
         }}
         project = models.Project.create(
-            DummyLoader(labels=labels, cell_info=cell_info, url='test.trk')
+            DummyLoader(labels=labels, cell_info=cell_info, path='test.trk')
         )
         edit = label.TrackEdit(project)
 
@@ -713,7 +713,7 @@ class TestTrackEdit():
             3: {'capped': False, 'frame_div': None, 'daughters': [], 'parent': None},
         }}
         project = models.Project.create(
-            DummyLoader(labels=labels, cell_info=cell_info, url='test.trk')
+            DummyLoader(labels=labels, cell_info=cell_info, path='test.trk')
         )
         edit = label.TrackEdit(project)
 
@@ -740,7 +740,7 @@ class TestTrackEdit():
             3: {'capped': False, 'frame_div': None, 'daughters': [], 'parent': None},
         }}
         project = models.Project.create(
-            DummyLoader(labels=labels, cell_info=cell_info, url='test.trk')
+            DummyLoader(labels=labels, cell_info=cell_info, path='test.trk')
         )
         edit = label.TrackEdit(project)
 
@@ -764,7 +764,7 @@ class TestTrackEdit():
             2: {'capped': False, 'frame_div': None, 'daughters': [], 'parent': 1, 'frames': [1]},
         }}
         project = models.Project.create(
-            DummyLoader(labels=labels, cell_info=cell_info, url='test.trk')
+            DummyLoader(labels=labels, cell_info=cell_info, path='test.trk')
         )
         edit = label.TrackEdit(project)
         expected_labels = np.reshape([1, 1], (2, 1, 1, 1))
@@ -791,7 +791,7 @@ class TestTrackEdit():
             3: {'capped': False, 'frame_div': None, 'daughters': [], 'parent': 2, 'frames': [2]},
         }}
         project = models.Project.create(
-            DummyLoader(labels=labels, cell_info=cell_info, url='test.trk')
+            DummyLoader(labels=labels, cell_info=cell_info, path='test.trk')
         )
         edit = label.TrackEdit(project)
         expected_labels = np.reshape([1, 1, 3], (3, 1, 1, 1))
@@ -816,7 +816,7 @@ class TestTrackEdit():
     def test_add_cell_info_multiple_frames(self):
         num_frames = 5
         labels = np.zeros((num_frames, 1, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, url='test.trk'))
+        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
         edit = label.TrackEdit(project)
         tracks = edit.tracks
 
@@ -840,7 +840,7 @@ class TestTrackEdit():
         """A new track on the first frame a label appears does nothing."""
         # two 1x1 frames with one feature; cell starts on second frame
         labels = np.reshape([0, 1], (2, 1, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, url='test.trk'))
+        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
         cell = 1
         frame = 1
         feature = 0
@@ -859,7 +859,7 @@ class TestTrackEdit():
         """Create a new track on the second frame of a label."""
         # two 1x1 frames with one feature; cell appears in both frames
         labels = np.reshape([1, 1], (2, 1, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, url='test.trk'))
+        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
         cell = 1
         frame = 1
         feature = 0

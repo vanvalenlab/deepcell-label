@@ -2,6 +2,7 @@ import { Box, makeStyles } from '@material-ui/core';
 import { green } from '@material-ui/core/colors';
 import React from 'react';
 import { useLabeled, useRaw } from '../../ProjectContext';
+import DownloadButton from './DownloadButton';
 import LabeledControls from './LabeledControls/LabeledControls';
 import RawControls from './RawControls/RawControls';
 import SubmitButton from './SubmitButton';
@@ -32,14 +33,21 @@ const useStyles = makeStyles(theme => ({
 }));
 
 const ImageControls = () => {
+  const styles = useStyles();
+
   const raw = useRaw();
   const labeled = useLabeled();
 
-  const styles = useStyles();
+  const search = new URLSearchParams(window.location.search);
+  const download = search.get('download');
 
   return (
     <Box id='image-controls' className={styles.root}>
-      <SubmitButton className={styles.buttons} />
+      {download ? (
+        <DownloadButton className={styles.buttons} />
+      ) : (
+        <SubmitButton className={styles.buttons} />
+      )}
       {labeled && <LabeledControls />}
       {raw && <RawControls />}
     </Box>

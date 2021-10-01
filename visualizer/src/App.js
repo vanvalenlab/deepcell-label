@@ -3,6 +3,7 @@ import { useSelector } from '@xstate/react';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import Footer from './Footer/Footer';
 import Label from './Label';
+import Load from './Load/Load';
 import Navbar from './Navbar';
 import ProjectContext from './ProjectContext';
 import QualityControlContext from './QualityControlContext';
@@ -79,10 +80,10 @@ function App() {
 
   return (
     <Router>
-      <Switch>
-        <div className={styles.root}>
-          <Navbar />
-          <Route path='/'>
+      <div className={styles.root}>
+        <Navbar />
+        <Switch>
+          <Route path='/project'>
             {isProjectId(id) ? (
               <LabelProject />
             ) : id?.split(',')?.every(isProjectId) ? (
@@ -91,9 +92,12 @@ function App() {
               <InvalidProjectId />
             )}
           </Route>
-          <Footer />
-        </div>
-      </Switch>
+          <Route path='/'>
+            <Load />
+          </Route>
+        </Switch>
+        <Footer />
+      </div>
     </Router>
   );
 }

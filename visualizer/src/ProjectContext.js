@@ -186,7 +186,8 @@ export function useTrack() {
 export function useBrush() {
   const project = useProject();
   const tool = useSelector(project, state => {
-    const segment = state.context.segmentRef;
+    const labelMode = state.context.toolRef;
+    const segment = labelMode.state.context.segmentRef;
     const tools = segment.state.context.tools;
     return tools.brush;
   });
