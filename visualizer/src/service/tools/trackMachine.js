@@ -4,10 +4,10 @@ const trackMachine = Machine(
   {
     id: 'track',
     context: {
-      foreground: 1,
-      background: 0,
-      selected: 1,
-      label: null,
+      foreground: null,
+      background: null,
+      selected: null,
+      hovering: null,
       labels: {},
       parent: null,
     },
@@ -16,7 +16,7 @@ const trackMachine = Machine(
         cond: (_, { foreground }) => foreground !== 0,
         actions: 'setForeground',
       },
-      LABEL: { actions: 'setLabel' },
+      HOVERING: { actions: 'setHovering' },
       LABELS: { actions: 'setLabels' },
       REMOVE: { actions: 'remove' },
       REPLACE_WITH_PARENT: { actions: 'replaceWithParent' },
@@ -47,12 +47,15 @@ const trackMachine = Machine(
   {
     services: {},
     guards: {
-      onNoLabel: ({ label }) => label === 0,
+      onNoLabel: ({ hovering }) => hovering === 0,
     },
     actions: {
-      selectForeground: sendParent(({ label }) => ({ type: 'SET_FOREGROUND', foreground: label })),
+      selectForeground: sendParent(({ hovering }) => ({
+        type: 'SET_FOREGROUND',
+        foreground: hovering,
+      })),
       setForeground: assign({ foreground: (_, { foreground }) => foreground }),
-      setLabel: assign({ label: (_, { label }) => label }),
+      setHovering: assign({ hovering: (_, { hovering }) => hovering }),
       setLabels: assign({ labels: (_, { labels }) => labels }),
       recordParent: assign({ parent: (_, { parent }) => parent }),
       remove: sendParent((_, { daughter }) => ({
@@ -62,12 +65,12 @@ const trackMachine = Machine(
           daughter,
         },
       })),
-      addDaughter: sendParent(({ parent, label }) => ({
+      addDaughter: sendParent(({ parent, hovering }) => ({
         type: 'EDIT',
         action: 'add_daughter',
         args: {
           parent: parent,
-          daughter: label,
+          daughter: hovering,
         },
       })),
       replaceWithParent: sendParent((_, { parent, daughter }) => ({

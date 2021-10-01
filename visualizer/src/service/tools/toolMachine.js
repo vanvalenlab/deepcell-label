@@ -45,7 +45,7 @@ const toolMachine = Machine(
       COLOR: { actions: forwardTo('segment') },
       COORDINATES: { actions: forwardTo('segment') },
       LABELS: { actions: [forwardTo('segment'), forwardTo('track')] },
-      LABEL: { actions: [forwardTo('segment'), forwardTo('track')] },
+      HOVERING: { actions: [forwardTo('segment'), forwardTo('track')] },
       FOREGROUND: { actions: [forwardTo('segment'), forwardTo('track')] },
       BACKGROUND: { actions: [forwardTo('segment'), forwardTo('track')] },
       SELECTED: { actions: [forwardTo('segment'), forwardTo('track')] },

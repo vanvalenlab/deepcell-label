@@ -183,13 +183,23 @@ export function useTrack() {
   return track;
 }
 
-export function useTool() {
+export function useBrush() {
+  const project = useProject();
+  const tool = useSelector(project, state => {
+    const segment = state.context.segmentRef;
+    const tools = segment.state.context.tools;
+    return tools.brush;
+  });
+  return tool;
+}
+
+export function useThreshold() {
   const project = useProject();
   const tool = useSelector(project, state => {
     const labelMode = state.context.toolRef;
     const segment = labelMode.state.context.segmentRef;
-    const tool = segment.state.context.toolActor;
-    return tool;
+    const tools = segment.state.context.tools;
+    return tools.threshold;
   });
   return tool;
 }

@@ -66,9 +66,7 @@ const createProjectMachine = (projectId, bucket) =>
         LABELS: { actions: [forwardTo('tool'), forwardTo('select')] },
 
         // from canvas
-        LABEL: {
-          actions: [forwardTo('tool'), forwardTo('select')],
-        },
+        HOVERING: { actions: [forwardTo('tool'), forwardTo('select')] },
         COORDINATES: { actions: forwardTo('tool') },
         FOREGROUND: { actions: forwardTo('tool') },
         BACKGROUND: { actions: forwardTo('tool') },
@@ -105,11 +103,12 @@ const createProjectMachine = (projectId, bucket) =>
           undoRef: () => spawn(undoMachine, 'undo'),
         }),
         addActorsToUndo: pure(context => {
-          const { canvasRef, toolRef, imageRef } = context;
+          const { canvasRef, toolRef, imageRef, selectRef } = context;
           return [
             send({ type: 'ADD_ACTOR', actor: canvasRef }, { to: 'undo' }),
             send({ type: 'ADD_ACTOR', actor: imageRef }, { to: 'undo' }),
             send({ type: 'ADD_ACTOR', actor: toolRef }, { to: 'undo' }),
+            send({ type: 'ADD_ACTOR', actor: selectRef }, { to: 'undo' }),
           ];
         }),
         sendProject: pure((context, event) => {

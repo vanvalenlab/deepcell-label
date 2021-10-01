@@ -7,7 +7,7 @@ function AutofitButton(props) {
   const { className, ...rest } = props;
   const styles = useStyles();
   const segment = useSegment();
-  const grayscale = useSelector(segment, state => state.matches('colorMode.grayscale'));
+  const grayscale = useSelector(segment, state => state.matches('display.grayscale'));
 
   const onClick = useCallback(() => segment.send('AUTOFIT'), [segment]);
 
@@ -20,6 +20,7 @@ function AutofitButton(props) {
   return (
     <ActionButton
       {...rest}
+      disabled={!grayscale}
       tooltipText={grayscale ? tooltipText : 'Requires a single channel'}
       onClick={onClick}
       hotkey='m'

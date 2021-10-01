@@ -1,4 +1,5 @@
 import { actions, assign, Machine, send, sendParent } from 'xstate';
+import { respond } from 'xstate/lib/actions';
 
 const { pure } = actions;
 
@@ -84,7 +85,7 @@ const cycleActions = {
 };
 
 const setActions = {
-  setHovering: assign({ hovering: (_, { label }) => label }),
+  setHovering: assign({ hovering: (_, { hovering }) => hovering }),
   setLabels: assign({ labels: (_, { labels }) => labels }),
   setForeground: assign({ foreground: (_, { foreground }) => foreground }),
   setBackground: assign({ background: (_, { background }) => background }),
@@ -94,11 +95,15 @@ const setActions = {
 const selectMachine = Machine(
   {
     id: 'select',
+    entry: [
+      send({ type: 'FOREGROUND', foreground: 1 }),
+      send({ type: 'BACKGROUND', background: 0 }),
+    ],
     context: {
-      selected: 1,
-      foreground: 1,
-      background: 0,
-      hovering: 0,
+      selected: null,
+      foreground: null,
+      background: null,
+      hovering: null,
       labels: {},
     },
     on: {
@@ -111,7 +116,7 @@ const selectMachine = Machine(
         { actions: 'selectBackground' },
       ],
 
-      LABEL: { actions: 'setHovering' },
+      HOVERING: { actions: 'setHovering' },
       LABELS: { actions: 'setLabels' },
       SELECTED: { actions: ['setSelected', sendParent((c, e) => e)] },
       FOREGROUND: {
@@ -136,6 +141,8 @@ const selectMachine = Machine(
       NEXT_FOREGROUND: { actions: 'nextForeground' },
       PREV_BACKGROUND: { actions: 'prevBackground' },
       NEXT_BACKGROUND: { actions: 'nextBackground' },
+      SAVE: { actions: 'save' },
+      RESTORE: { actions: 'restore' },
     },
   },
   {
@@ -148,6 +155,12 @@ const selectMachine = Machine(
       ...selectShortcutActions,
       ...cycleActions,
       ...setActions,
+      save: respond(({ foreground, background }) => ({ type: 'RESTORE', foreground, background })),
+      restore: pure((_, { foreground, background }) => [
+        respond('RESTORED'),
+        send({ type: 'FOREGROUND', foreground }),
+        send({ type: 'BACKGROUND', background }),
+      ]),
     },
   }
 );

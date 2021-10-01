@@ -1,37 +1,44 @@
 import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
-import createBrushMachine from './segment/brushMachine';
-import createFloodMachine from './segment/floodMachine';
-import createSelectMachine from './segment/selectMachine';
-import createThresholdMachine from './segment/thresholdMachine';
+import brushMachine from './segment/brushMachine';
+import floodMachine from './segment/floodMachine';
+import selectMachine from './segment/selectMachine';
+import thresholdMachine from './segment/thresholdMachine';
 import { toolActions, toolGuards } from './segment/toolUtils';
-import createTrimMachine from './segment/trimMachine';
-import createWatershedMachine from './segment/watershedMachine';
+import trimMachine from './segment/trimMachine';
+import watershedMachine from './segment/watershedMachine';
 
 const { pure, respond } = actions;
 
-// TODO: move to config file?
 const colorTools = ['brush', 'select', 'trim', 'flood'];
+const grayscaleTools = ['brush', 'select', 'trim', 'flood', 'threshold', 'watershed'];
+const panTools = ['select', 'trim', 'flood', 'watershed'];
+const noPanTools = ['brush', 'threshold'];
 
-const createToolMachineLookup = {
-  brush: createBrushMachine,
-  select: createSelectMachine,
-  threshold: createThresholdMachine,
-  trim: createTrimMachine,
-  flood: createFloodMachine,
-  watershed: createWatershedMachine,
+const panState = {
+  initial: 'pan',
+  states: {
+    pan: {
+      entry: sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
+      on: {
+        SET_TOOL: { cond: 'isNoPanTool', target: 'noPan' },
+      },
+    },
+    noPan: {
+      entry: sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: false }),
+      on: {
+        SET_TOOL: { cond: 'isPanTool', target: 'pan' },
+      },
+    },
+  },
 };
 
-const createToolMachine = context => {
-  const { tool } = context;
-  return spawn(createToolMachineLookup[tool](context), 'tool');
-};
-
-const colorModeState = {
+const displayState = {
   initial: 'color',
   states: {
     color: {
       on: {
         GRAYSCALE: 'grayscale',
+        SET_TOOL: { cond: 'isColorTool', actions: 'setTool' },
       },
     },
     grayscale: {
@@ -40,71 +47,33 @@ const colorModeState = {
           { target: 'color', cond: 'usingColorTool' },
           { target: 'color', actions: 'useSelect' },
         ],
-        USE_WATERSHED: { actions: 'useWatershed' },
-        USE_THRESHOLD: { actions: 'useThreshold' },
+        SET_TOOL: { cond: 'isGrayscaleTool', actions: 'setTool' },
         AUTOFIT: { actions: 'autofit' },
       },
     },
   },
   on: {
-    USE_BRUSH: { actions: 'useBrush' },
-    USE_ERASER: { actions: 'useEraser' },
-    USE_SELECT: { actions: 'useSelect' },
-    USE_TRIM: { actions: 'useTrim' },
-    USE_FLOOD: { actions: 'useFlood' },
+    // available in all display states
+    SWAP: { actions: 'swap' },
+    REPLACE: { actions: 'replace' },
+    DELETE: { actions: 'delete' },
+    ERODE: { actions: 'erode' },
+    DILATE: { actions: 'dilate' },
   },
 };
 
-const useToolActions = {
-  useBrush: pure(({ foreground: fg, background: bg }) => [
-    assign({
-      tool: 'brush',
-      toolActor: context => spawn(createBrushMachine(context), 'tool'),
-    }),
-    sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: false }),
-  ]),
-  useEraser: pure(({ foreground: fg, background: bg }) => [
-    assign({
-      tool: 'brush',
-      toolActor: context => spawn(createBrushMachine(context), 'tool'),
-    }),
-    sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: false }),
-  ]),
-  useSelect: pure(() => [
-    assign({
-      tool: 'select',
-      toolActor: context => spawn(createSelectMachine(context), 'tool'),
-    }),
-    sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
-  ]),
-  useTrim: pure(() => [
-    assign({
-      tool: 'trim',
-      toolActor: context => spawn(createTrimMachine(context), 'tool'),
-    }),
-    sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
-  ]),
-  useFlood: pure(() => [
-    assign({
-      tool: 'flood',
-      toolActor: context => spawn(createFloodMachine(context), 'tool'),
-    }),
-    sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
-  ]),
-  useWatershed: pure(() => [
-    assign({
-      tool: 'watershed',
-      toolActor: context => spawn(createWatershedMachine(context), 'tool'),
-    }),
-    sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
-  ]),
-  useThreshold: pure(() => [
-    assign({
-      tool: 'threshold',
-      toolActor: context => spawn(createThresholdMachine(context), 'tool'),
-    }),
-    sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: false }),
-  ]),
+const syncState = {
+  on: {
+    // only send to tool in use
+    mousedown: { actions: 'forwardToTool' },
+    mouseup: { actions: 'forwardToTool' },
+    // send to all tools
+    COORDINATES: { actions: 'forwardToTools' },
+    HOVERING: { actions: 'forwardToTools' },
+    FOREGROUND: { actions: ['forwardToTools', 'setForeground'] },
+    BACKGROUND: { actions: ['forwardToTools', 'setBackground'] },
+    SELECTED: { actions: ['forwardToTools', 'setSelected'] },
+  },
 };
 
 const editActions = {
@@ -150,44 +119,25 @@ const segmentMachine = Machine(
   {
     id: 'segment',
     context: {
-      label: 0,
-      selected: 1,
-      foreground: 1,
-      background: 0,
-      x: 0,
-      y: 0,
+      foreground: null,
+      background: null,
+      selected: null,
       tool: 'select',
-      toolActor: null,
+      tools: null,
     },
-    entry: 'spawnTool',
+    entry: 'spawnTools',
     type: 'parallel',
     states: {
-      colorMode: colorModeState,
+      display: displayState,
+      pan: panState,
+      sync: syncState,
     },
     on: {
       EDIT: { actions: sendParent((_, e) => e) },
 
-      mousedown: { actions: 'forwardToTool' },
-      mouseup: { actions: 'forwardToTool' },
-
-      SWAP: { actions: 'swap' },
-      REPLACE: { actions: 'replace' },
-      DELETE: { actions: 'delete' },
-      ERODE: { actions: 'erode' },
-      DILATE: { actions: 'dilate' },
-
-      // sync context with tools
-      COORDINATES: {
-        actions: ['setCoordinates', 'forwardToTool'],
-      },
-      LABEL: { actions: ['setLabel', 'forwardToTool'] },
-      FOREGROUND: { actions: ['setForeground', 'forwardToTool'] },
-      BACKGROUND: { actions: ['setBackground', 'forwardToTool'] },
-      SELECTED: { actions: ['setSelected', 'forwardToTool'] },
-
       // undo/redo actions
       SAVE: { actions: 'save' },
-      RESTORE: { actions: ['restore', 'spawnTool', respond('RESTORED')] },
+      RESTORE: { actions: ['restore', respond('RESTORED')] },
 
       // select events (from select tool)
       SELECT_FOREGROUND: { actions: sendParent((c, e) => e) },
@@ -199,15 +149,33 @@ const segmentMachine = Machine(
     guards: {
       ...toolGuards,
       usingColorTool: ({ tool }) => colorTools.includes(tool),
+      isColorTool: (_, { tool }) => colorTools.includes(tool),
+      usingGrayscaleTool: ({ tool }) => grayscaleTools.includes(tool),
+      isGrayscaleTool: (_, { tool }) => grayscaleTools.includes(tool),
+      isNoPanTool: (_, { tool }) => noPanTools.includes(tool),
+      isPanTool: (_, { tool }) => panTools.includes(tool),
     },
     actions: {
       ...toolActions,
       ...editActions,
-      ...useToolActions,
+      setTool: pure((context, event) => [
+        send('EXIT', { to: context.tool }),
+        assign({ tool: event.tool }),
+      ]),
       save: respond(({ tool }) => ({ type: 'RESTORE', tool })),
       restore: assign((_, { tool }) => ({ tool })),
-      spawnTool: assign({ toolActor: createToolMachine }),
-      forwardToTool: forwardTo(({ toolActor }) => toolActor),
+      spawnTools: assign({
+        tools: context => ({
+          brush: spawn(brushMachine, 'brush'),
+          select: spawn(selectMachine, 'select'),
+          threshold: spawn(thresholdMachine, 'threshold'),
+          trim: spawn(trimMachine, 'trim'),
+          flood: spawn(floodMachine, 'flood'),
+          watershed: spawn(watershedMachine, 'watershed'),
+        }),
+      }),
+      forwardToTool: forwardTo(({ tool }) => tool),
+      forwardToTools: pure(({ tools }) => Object.values(tools).map(tool => forwardTo(tool))),
     },
   }
 );
