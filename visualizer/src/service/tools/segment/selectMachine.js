@@ -18,7 +18,7 @@ const selectMachine = Machine(
           actions: ['resetForeground', 'selectBackground'],
         },
         { cond: 'onForeground', actions: 'selectBackground' },
-        { actions: [(c, e) => console.log(c), 'selectForeground'] },
+        { actions: 'selectForeground' },
       ],
     },
   },

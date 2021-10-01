@@ -24,6 +24,7 @@ const brushMachine = Machine(
       },
       dragging: {
         on: {
+          EXIT: 'idle',
           COORDINATES: { actions: ['setCoordinates', 'addToTrace'] },
           mouseup: { target: 'done', actions: 'paint' },
         },
@@ -34,7 +35,6 @@ const brushMachine = Machine(
       },
     },
     on: {
-      EXIT: '.idle',
       INCREASE_BRUSH_SIZE: { actions: 'increaseBrushSize' },
       DECREASE_BRUSH_SIZE: { actions: 'decreaseBrushSize' },
       COORDINATES: { actions: 'setCoordinates' },
