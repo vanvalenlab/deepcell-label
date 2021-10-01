@@ -12,7 +12,7 @@ function BrushButton(props) {
   const foreground = useSelector(select, state => state.context.foreground);
 
   const onClick = useCallback(() => {
-    segment.send('USE_BRUSH');
+    segment.send({ type: 'SET_TOOL', tool: 'brush' });
     selected
       ? select.send({ type: 'FOREGROUND', foreground: selected })
       : select.send({ type: 'NEW_FOREGROUND' });

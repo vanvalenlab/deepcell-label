@@ -6,9 +6,12 @@ import ToolButton from './ToolButton';
 function WatershedButton(props) {
   const segment = useSegment();
   const tool = useSelector(segment, state => state.context.tool);
-  const grayscale = useSelector(segment, state => state.matches('colorMode.grayscale'));
+  const grayscale = useSelector(segment, state => state.matches('display.grayscale'));
 
-  const onClick = useCallback(() => segment.send('USE_WATERSHED'), [segment]);
+  const onClick = useCallback(
+    () => segment.send({ type: 'SET_TOOL', tool: 'watershed' }),
+    [segment]
+  );
 
   const tooltipText = grayscale ? (
     <span>
