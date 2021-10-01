@@ -46,7 +46,14 @@ function download(context, event) {
   const filename = promise.then(response => {
     const regex = /(?<=filename=).*(?=$)/;
     const header = response.headers.get('content-disposition');
-    return header.match(regex)[0] ?? `${projectId}.npz`;
+    let filename = header.match(regex)[0] ?? `${projectId}.npz`;
+    // Strip quotes
+    filename = filename.replaceAll('"', '');
+    // Remove leading folders
+    if (filename.includes('/')) {
+      filename = filename.slice(filename.lastIndexOf('/') + 1);
+    }
+    return filename;
   });
   const url = promise.then(response => response.blob()).then(blob => URL.createObjectURL(blob));
   return Promise.all([filename, url]);
