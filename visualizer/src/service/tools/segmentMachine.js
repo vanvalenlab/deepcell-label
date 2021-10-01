@@ -9,6 +9,11 @@ import watershedMachine from './segment/watershedMachine';
 
 const { pure, respond } = actions;
 
+const colorTools = ['brush', 'select', 'trim', 'flood'];
+const grayscaleTools = ['brush', 'select', 'trim', 'flood', 'threshold', 'watershed'];
+const panTools = ['select', 'trim', 'flood', 'watershed'];
+const noPanTools = ['brush', 'threshold'];
+
 const panState = {
   initial: 'pan',
   states: {
@@ -143,14 +148,12 @@ const segmentMachine = Machine(
   {
     guards: {
       ...toolGuards,
-      usingColorTool: ({ tool }) => ['brush', 'select', 'trim', 'flood'].includes(tool),
-      isColorTool: (_, { tool }) => ['brush', 'select', 'trim', 'flood'].includes(tool),
-      usingGrayscaleTool: ({ tool }) =>
-        ['brush', 'select', 'trim', 'flood', 'threshold', 'watershed'].includes(tool),
-      isGrayscaleTool: (_, { tool }) =>
-        ['brush', 'select', 'trim', 'flood', 'threshold', 'watershed'].includes(tool),
-      isNoPanTool: (_, { tool }) => ['brush', 'threshold'].includes(tool),
-      isPanTool: (_, { tool }) => ['select', 'trim', 'flood', 'watershed'].includes(tool),
+      usingColorTool: ({ tool }) => colorTools.includes(tool),
+      isColorTool: (_, { tool }) => colorTools.includes(tool),
+      usingGrayscaleTool: ({ tool }) => grayscaleTools.includes(tool),
+      isGrayscaleTool: (_, { tool }) => grayscaleTools.includes(tool),
+      isNoPanTool: (_, { tool }) => noPanTools.includes(tool),
+      isPanTool: (_, { tool }) => panTools.includes(tool),
     },
     actions: {
       ...toolActions,
