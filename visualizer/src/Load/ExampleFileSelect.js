@@ -27,8 +27,7 @@ const useStyles = makeStyles(theme => ({
 const exampleFiles = [
   {
     value: 0,
-    // TODO: create mesmer predictions and add errors
-    path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/test.npz',
+    path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/vectra_breast_cancer.npz',
     name: '2D tissue segmentation',
   },
   {
