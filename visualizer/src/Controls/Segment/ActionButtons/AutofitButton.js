@@ -20,6 +20,7 @@ function AutofitButton(props) {
   return (
     <ActionButton
       {...rest}
+      disabled={!grayscale}
       tooltipText={grayscale ? tooltipText : 'Requires a single channel'}
       onClick={onClick}
       hotkey='m'
