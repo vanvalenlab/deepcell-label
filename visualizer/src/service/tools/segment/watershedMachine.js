@@ -34,6 +34,7 @@ const watershedMachine = Machine(
       },
       clicked: {
         on: {
+          EXIT: 'idle',
           FOREGROUND: { actions: 'setForeground', target: 'idle' },
           mouseup: {
             cond: 'validSecondSeed',

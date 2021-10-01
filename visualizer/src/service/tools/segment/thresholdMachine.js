@@ -13,6 +13,7 @@ const thresholdMachine = Machine(
     states: {
       idle: {
         on: {
+          EXIT: 'idle',
           mousedown: { target: 'dragging', actions: 'saveFirstPoint' },
         },
       },
@@ -23,7 +24,6 @@ const thresholdMachine = Machine(
       },
     },
     on: {
-      EXIT: '.idle',
       COORDINATES: { actions: 'setCoordinates' },
       FOREGROUND: { actions: 'setForeground' },
     },
