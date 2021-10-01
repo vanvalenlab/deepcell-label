@@ -3,7 +3,7 @@ import brushMachine from './segment/brushMachine';
 import floodMachine from './segment/floodMachine';
 import selectMachine from './segment/selectMachine';
 import thresholdMachine from './segment/thresholdMachine';
-import { toolGuards } from './segment/toolUtils';
+import { toolActions, toolGuards } from './segment/toolUtils';
 import trimMachine from './segment/trimMachine';
 import watershedMachine from './segment/watershedMachine';
 
@@ -65,9 +65,9 @@ const syncState = {
     // send to all tools
     COORDINATES: { actions: 'forwardToTools' },
     HOVERING: { actions: 'forwardToTools' },
-    FOREGROUND: { actions: 'forwardToTools' },
-    BACKGROUND: { actions: 'forwardToTools' },
-    SELECTED: { actions: 'forwardToTools' },
+    FOREGROUND: { actions: ['forwardToTools', 'setForeground'] },
+    BACKGROUND: { actions: ['forwardToTools', 'setBackground'] },
+    SELECTED: { actions: ['forwardToTools', 'setSelected'] },
   },
 };
 
@@ -114,6 +114,9 @@ const segmentMachine = Machine(
   {
     id: 'segment',
     context: {
+      foreground: null,
+      background: null,
+      selected: null,
       tool: 'select',
       tools: null,
     },
@@ -150,6 +153,7 @@ const segmentMachine = Machine(
       isPanTool: (_, { tool }) => ['select', 'trim', 'flood', 'watershed'].includes(tool),
     },
     actions: {
+      ...toolActions,
       ...editActions,
       setTool: pure((context, event) => [
         send('EXIT', { to: context.tool }),
