@@ -10,10 +10,10 @@ const toolMachine = Machine(
   {
     id: 'tool',
     context: {
-      tool: 'track',
+      tool: 'segment',
     },
     initial: 'checkTool',
-    entry: ['spawnTools', 'addToolsToUndo', () => console.log('test')],
+    entry: ['spawnTools', 'addToolsToUndo', 'checkTrack'],
     states: {
       checkTool: {
         always: [{ cond: ({ tool }) => tool === 'track', target: 'track' }, { target: 'segment' }],
@@ -66,6 +66,11 @@ const toolMachine = Machine(
       spawnTools: assign({
         segmentRef: () => spawn(segmentMachine, 'segment'),
         trackRef: () => spawn(trackMachine, 'track'),
+      }),
+      checkTrack: send(() => {
+        const search = new URLSearchParams(window.location.search);
+        const track = search.get('track');
+        return track ? { type: 'TRACK' } : { type: 'SEGMENT' };
       }),
       addToolsToUndo: pure(({ segmentRef }) => {
         return [sendParent({ type: 'ADD_ACTOR', actor: segmentRef }, { to: 'undo' })];

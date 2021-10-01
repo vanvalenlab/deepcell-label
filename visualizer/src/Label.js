@@ -64,6 +64,9 @@ function TabPanel(props) {
 function Label({ review }) {
   const styles = useStyles();
 
+  const search = new URLSearchParams(window.location.search);
+  const track = search.get('track');
+
   const canvasBoxRef = useRef({ offsetWidth: 0, offsetHeight: 0 });
   const [canvasBoxWidth, setCanvasBoxWidth] = useState(0);
   const [canvasBoxHeight, setCanvasBoxHeight] = useState(0);
@@ -114,18 +117,20 @@ function Label({ review }) {
       <Instructions />
       <Box className={styles.main}>
         <Box className={styles.controlPanelBox}>
-          <Paper square>
-            <Tabs
-              orientation='vertical'
-              value={value}
-              indicatorColor='primary'
-              textColor='primary'
-              onChange={handleChange}
-            >
-              <Tab label='Segment' />
-              <Tab label='Track' />
-            </Tabs>
-          </Paper>
+          {track && (
+            <Paper square>
+              <Tabs
+                orientation='vertical'
+                value={value}
+                indicatorColor='primary'
+                textColor='primary'
+                onChange={handleChange}
+              >
+                <Tab label='Segment' />
+                <Tab label='Track' />
+              </Tabs>
+            </Paper>
+          )}
           {review && <QCControls />}
           <ImageControls />
         </Box>
