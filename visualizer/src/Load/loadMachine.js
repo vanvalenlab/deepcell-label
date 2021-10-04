@@ -98,9 +98,9 @@ const loadMachine = Machine(
       setSingleFileError: assign({ errorText: 'Please upload a single file.' }),
       redirectToProject: ({ track }, event) => {
         const { projectId } = event.data.data;
-        const url = `${document.location.origin}/project?projectId=${projectId}&download=true`;
+        let url = `${document.location.origin}/project?projectId=${projectId}&download=true`;
         if (track) {
-          url.append('&track=true');
+          url = url.concat('&track=true');
         }
         window.location.href = url;
       },
