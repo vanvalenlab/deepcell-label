@@ -35,7 +35,7 @@ const watershedMachine = Machine(
       clicked: {
         on: {
           EXIT: 'idle',
-          FOREGROUND: { actions: 'setForeground', target: 'idle' },
+          FOREGROUND: { cond: 'differentForeground', actions: 'setForeground', target: 'idle' },
           mouseup: {
             cond: 'validSecondSeed',
             target: 'idle',
@@ -51,6 +51,7 @@ const watershedMachine = Machine(
       validSecondSeed: ({ hovering, foreground, x, y, storedX, storedY }) =>
         hovering === foreground && // same label
         (x !== storedX || y !== storedY), // different point
+      differentForeground: (context, event) => context.foreground !== event.foreground,
     },
     actions: {
       ...toolActions,
