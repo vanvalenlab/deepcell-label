@@ -105,7 +105,7 @@ function Timeline() {
       <FrameSlider />
       <LabelTimeline label={hovering} />
       <FormLabel>Hovering over Label</FormLabel>
-      {hovering !== 0 && <Cell label={hovering} />}
+      {hovering !== null && <Cell label={hovering} />}
     </Box>
   );
 }
