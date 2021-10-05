@@ -9,7 +9,7 @@ DeepCell Label is a web-based data labeling tool based on [React](https://reactj
 
 _Instructions for controls are also available in the dropdown "Instructions" pane while using DeepCell Label._
 
-![DeepCell Label User Interface](/screenshots/deepCellLabelUI.png)
+![DeepCell Label User Interface](/screenshots/deepcellLabelUI.png)
 
 DeepCell Label has three main sections:
 
