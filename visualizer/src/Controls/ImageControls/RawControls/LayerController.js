@@ -37,7 +37,10 @@ function LayerSelector({ layer }) {
 }
 
 function LayerCheckbox({ layer }) {
-  const color = useSelector(layer, state => state.context.color);
+  const color = useSelector(layer, state => {
+    const { color } = state.context;
+    return color === '#FFFFFF' ? '#000000' : color;
+  });
   const isOn = useSelector(layer, state => state.context.on);
 
   return (
@@ -57,7 +60,10 @@ function LayerCheckbox({ layer }) {
 function LayerSlider({ layer }) {
   const { send } = layer;
   const range = useSelector(layer, state => state.context.range);
-  const color = useSelector(layer, state => state.context.color);
+  const color = useSelector(layer, state => {
+    const { color } = state.context;
+    return color === '#FFFFFF' ? '#000000' : color;
+  });
 
   const onChange = (_, value) => send({ type: 'SET_RANGE', range: value });
   const onDoubleClick = () => send({ type: 'SET_RANGE', range: [0, 255] });
