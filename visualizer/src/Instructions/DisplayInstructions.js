@@ -45,7 +45,7 @@ const DisplayInstructions = () => {
       <ColorModeToggle />
       <Typography>
         The multi-channel toggle controls whether to view a single channel in grayscale or multiple
-        channels each with different colors.
+        channels in color. Press <kbd>Y</kbd> to toggle between the channel display modes.
       </Typography>
       <Typography variant='h6'> Multi-channel mode </Typography>
       <RGBControls />
@@ -54,7 +54,7 @@ const DisplayInstructions = () => {
         These controllers let you change which channel is display, toggle it on and off, and adjust
         the channels dynamic range. At the bottom, there is a button to display more channels. Each
         channel also has a pop-up options menu on its right side where you can remove the channel
-        and change its color.{' '}
+        and change its color.
       </Typography>
       <Typography variant='h6'>Single-channel mode </Typography>
       <GrayscaleControls />

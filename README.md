@@ -35,7 +35,7 @@ If a project has multiple segmentation features, like a whole-cell segmentation 
 
 ### Channels
 
-The multi-channel toggle controls whether to view a single channel in grayscale or multiple channels each with different colors.
+The multi-channel toggle controls whether to view a single channel in grayscale or multiple channels in color. Press <kbd>Y</kbd> to toggle between the channel display modes.
 
 #### Multi-channel mode
 
