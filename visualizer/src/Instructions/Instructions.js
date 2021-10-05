@@ -8,7 +8,9 @@ import Tabs from '@material-ui/core/Tabs';
 import Typography from '@material-ui/core/Typography';
 import PropTypes from 'prop-types';
 import React from 'react';
+import ActionInstructions from './ActionInstructions';
 import CanvasInstructions from './CanvasInstructions';
+import DisplayInstructions from './DisplayInstructions';
 import SelectInstructions from './SelectInstructions';
 import ToolInstructions from './ToolInstructions';
 
@@ -117,18 +119,26 @@ export default function Instructions() {
         </AccordionSummary>
         <AccordionDetails>
           <Tabs value={value} onChange={handleTabChange}>
+            <Tab label='Display Controls' />
             <Tab label='Canvas' />
             <Tab label='Select Labels' />
             <Tab label='Tools' />
+            <Tab label='Actions' />
           </Tabs>
           <TabPanel value={value} index={0}>
-            <CanvasInstructions />
+            <DisplayInstructions />
           </TabPanel>
           <TabPanel value={value} index={1}>
-            <SelectInstructions />
+            <CanvasInstructions />
           </TabPanel>
           <TabPanel value={value} index={2}>
+            <SelectInstructions />
+          </TabPanel>
+          <TabPanel value={value} index={3}>
             <ToolInstructions />
+          </TabPanel>
+          <TabPanel value={value} index={4}>
+            <ActionInstructions />
           </TabPanel>
         </AccordionDetails>
       </Accordion>
