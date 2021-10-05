@@ -27,7 +27,7 @@ const useStyles = makeStyles(theme => ({
 const exampleFiles = [
   {
     value: 0,
-    path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/vectra_breast_cancer.npz',
+    path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/vectra_breast_cancer_with_errors.npz',
     name: '2D tissue segmentation',
   },
   {
