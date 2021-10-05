@@ -416,7 +416,7 @@ function SelectedPalette() {
         <Box display='flex' justifyContent='center'>
           <ForegroundBox />
           <BackgroundBox />
-          <Box className={styles.swapBox}>
+          <Box className={styles.switchBox}>
             <SwitchButton />
           </Box>
         </Box>
