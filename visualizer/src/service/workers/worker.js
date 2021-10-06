@@ -13,23 +13,19 @@ async function setupPyodide() {
   importScripts(indexURL + 'pyodide.js');
   console.timeEnd('importScripts pyodide');
 
-  console.log('loading pyodide');
-  console.log(loadPyodide);
   console.time('loadPyodide');
   pyodide = await loadPyodide({ indexURL });
   console.timeEnd('loadPyodide');
 
-  console.log('loading packages');
   console.time('loadPackage');
   await pyodide.loadPackage(['numpy', 'matplotlib', 'scikit-image']);
   console.timeEnd('loadPackage');
 
-  console.log('loading segment.py');
   console.time('runPython');
   pyFuncs = pyodide.runPython(segment);
   console.timeEnd('runPython');
   service.send('PYTHON_READY');
-  console.log('Python Ready');
+  self.pyFuncs = pyFuncs;
   return pyFuncs;
 }
 
@@ -72,4 +68,4 @@ const pyodideMachine = createMachine(
 
 const service = interpretInWebWorker(pyodideMachine);
 service.start();
-console.log(service);
+self.pyodideService = service;
