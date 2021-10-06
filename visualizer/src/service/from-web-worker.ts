@@ -62,7 +62,7 @@ export function interpretInWebWorker<
     deferEvents: true,
     parent: {
       send: ({ _transfer, ...event }) => {
-        _self.postMessage(event, _transfer);
+        _transfer ? _self.postMessage(event, _transfer) : _self.postMessage(event);
       },
     } as AnyInterpreter, // should probably be a different type
   });
@@ -72,7 +72,9 @@ export function interpretInWebWorker<
       // Will error out if the data is not a valid event
       getEventType(event.data);
       service.send(event.data);
-    } catch {}
+    } catch (error) {
+      console.log(error);
+    }
   });
 
   return service;
