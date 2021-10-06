@@ -17,13 +17,32 @@ const pyodideMachine = Machine(
         on: {
           EDIT: {
             target: 'editing',
-            actions: ['sendToWorker', (c, e) => console.log('edit sent by main', e)],
+            actions: [
+              'sendToWorker',
+              (c, e) => console.log('edit sent by main', e),
+              () => console.time('edit'),
+            ],
+          },
+          EDITED: {
+            actions: [(c, e) => console.log('EDITED received in idle state', e)],
           },
         },
       },
       editing: {
+        after: {
+          1000: {
+            target: 'idle',
+            actions: (c, e) => console.log('returning to idle after 1 second'),
+          },
+        },
         on: {
-          EDITED: { target: 'idle', actions: (c, e) => console.log('edited received by main', e) },
+          EDITED: {
+            target: 'idle',
+            actions: [
+              (c, e) => console.log('EDITED received by main', e),
+              () => console.timeEnd('edit'),
+            ],
+          },
         },
       },
     },
