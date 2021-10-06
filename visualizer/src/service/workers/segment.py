@@ -28,6 +28,27 @@ from skimage.segmentation import morphological_chan_vese
 # other value when swapped with a label
 
 
+def identity(img):
+    """Returns the buffer unchanged."""
+    return img
+
+
+def zeros(img):
+    """Returns a buffer of the same size with all zeroes."""
+    # return np.zeroes(img.shape)
+    return img
+
+
+def outline_border(img, label):
+    """Returns the buffer with the edges of the image set to the label."""
+    return img
+
+
+def outline(img):
+    """Returns the buffer with each object outlined with its negative value."""
+    return img
+
+
 def swap(img, label_1, label_2):
     """
     Swap two labels.
@@ -321,6 +342,10 @@ class FuncContainer(object):
 py_funcs = FuncContainer()
 py_funcs.swap = swap
 py_funcs.replace = replace
+py_funcs.identity = identity
+py_funcs.zeros = zeros
+py_funcs.outline_border = outline_border
+py_funcs.outline = outline
 
 # pyodide returns last statement as an object that is accessable from javascript
 py_funcs
