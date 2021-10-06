@@ -28,6 +28,7 @@ async function setupPyodide() {
   console.time('runPython');
   pyFuncs = pyodide.runPython(segment);
   console.timeEnd('runPython');
+  service.send('PYTHON_READY');
   console.log('Python Ready');
   return pyFuncs;
 }
@@ -40,17 +41,15 @@ const pyodideMachine = createMachine(
     context: {
       pyFuncs: null,
     },
-    entry: () => console.log('pyodide machine in worker started'),
-    initial: 'idle',
+    initial: 'setUp',
     states: {
-      // setUp: {
-      //   invoke: {
-      //     src: setupPyodide,
-      //     onDone: { target: 'idle' },
-      //     onError: { target: 'idle' },
-      //   },
-      // },
+      setUp: {
+        on: {
+          PYTHON_READY: 'idle',
+        },
+      },
       idle: {
+        entry: () => console.log('pyodide set up in worker'),
         // entry: () => console.log('pyodide set up in worker'),
         EDIT: {
           actions: [sendParent('EDITED'), (c, e) => console.log('EDIT received', e)],
