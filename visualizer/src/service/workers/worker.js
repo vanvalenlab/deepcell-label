@@ -46,9 +46,10 @@ const pyodideMachine = createMachine(
       },
       idle: {
         entry: () => console.log('pyodide set up in worker'),
-        // entry: () => console.log('pyodide set up in worker'),
-        EDIT: {
-          actions: [sendParent('EDITED'), (c, e) => console.log('EDIT received', e)],
+        on: {
+          EDIT: {
+            actions: [sendParent('EDITED'), (c, e) => console.log('EDIT received', e)],
+          },
         },
       },
     },
