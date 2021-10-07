@@ -10,7 +10,7 @@ import SubdirectoryArrowRightIcon from '@material-ui/icons/SubdirectoryArrowRigh
 import { useSelector } from '@xstate/react';
 import { bind, unbind } from 'mousetrap';
 import React, { useEffect, useState } from 'react';
-import { useColormap, useLabeled, useSelect } from '../../ProjectContext';
+import { useColormap, useLabeled, useProject, useSelect } from '../../ProjectContext';
 
 // adapted from https://stackoverflow.com/questions/9733288/how-to-programmatically-calculate-the-contrast-ratio-between-two-colors
 
@@ -398,11 +398,14 @@ function BackgroundBox() {
 
 export default function SelectedPalette() {
   const styles = useStyles();
-  const labeled = useLabeled();
-  const loading = useSelector(labeled, state => !state.matches('idle'));
+  const project = useProject();
+  const loaded = useSelector(project, state => {
+    const pyodide = state.context.pyodideRef;
+    return pyodide.state.matches('idle');
+  });
 
   return (
-    !loading && (
+    loaded && (
       <Box display='flex' flexDirection='column'>
         <FormLabel className={styles.title}>Selected</FormLabel>
 
