@@ -1,4 +1,5 @@
 import { useSelector } from '@xstate/react';
+import colormap from 'colormap';
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 
 export const Context = createContext();
@@ -13,6 +14,26 @@ function useReturnContext(contextType) {
     throw new Error(`${contextType} must be used within its appropriate parent provider`);
   }
   return context;
+}
+
+export function useRawArray(channel, frame) {
+  const project = useProject();
+  const buffer = useSelector(project, state => {
+    const pyodide = state.context.pyodideRef;
+    const { channels } = pyodide.state.context;
+    return channels[channel][frame];
+  });
+  return buffer;
+}
+
+export function useLabelArray(feature, frame) {
+  const project = useProject();
+  const buffer = useSelector(project, state => {
+    const pyodide = state.context.pyodideRef;
+    const { features } = pyodide.state.context;
+    return features[feature][frame];
+  });
+  return buffer;
 }
 
 export function useSelect() {
@@ -59,18 +80,6 @@ export function useLabeled() {
   return labeled;
 }
 
-export function useFeature() {
-  const project = useProject();
-  const feature = useSelector(project, state => {
-    const image = state.context.imageRef;
-    const labeled = image.state.context.labeledRef;
-    const features = labeled.state.context.features;
-    const feature = labeled.state.context.feature;
-    return features[feature];
-  });
-  return feature;
-}
-
 export function useChannel(channelId) {
   const project = useProject();
   const channel = useSelector(project, state => {
@@ -80,6 +89,25 @@ export function useChannel(channelId) {
     return channels[channelId];
   });
   return channel;
+}
+
+export function useColormap(feature) {
+  const project = useProject();
+  const maxLabel = useSelector(project, state => {
+    const pyodide = state.context.pyodideRef;
+    const { semanticLabels } = pyodide.state.context;
+    const maxLabel = Math.max(...Object.keys(semanticLabels[feature]));
+    return maxLabel;
+  });
+  let colors = colormap({
+    colormap: 'viridis',
+    nshades: Math.max(9, maxLabel),
+    format: 'rgba',
+  });
+  colors = colors.slice(0, maxLabel);
+  colors.unshift([0, 0, 0, 1]); // Label 0 is black
+  colors.push([255, 255, 255, 1]); // New label (maxLabel + 1) is white
+  return colors;
 }
 
 export function useLayers() {

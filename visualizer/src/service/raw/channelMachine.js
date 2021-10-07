@@ -1,12 +1,11 @@
 import quickselect from 'quickselect';
 import { assign, Machine } from 'xstate';
 
-const createChannelMachine = (channel, frames) =>
+const createChannelMachine = channel =>
   Machine(
     {
       id: `channel${channel}`,
       context: {
-        frames,
         // layer settings for grayscale mode
         invert: false,
         range: [0, 255],

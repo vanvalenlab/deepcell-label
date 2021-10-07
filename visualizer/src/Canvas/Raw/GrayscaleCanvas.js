@@ -1,6 +1,6 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-import { useCanvas, useImage, useRaw } from '../../ProjectContext';
+import { useCanvas, useImage, useRaw, useRawArray } from '../../ProjectContext';
 import {
   adjustRangeImageData,
   brightnessImageData,
@@ -22,9 +22,10 @@ export const GrayscaleCanvas = ({ className }) => {
   const height = sh * scale * window.devicePixelRatio;
 
   const image = useImage();
-  const frame = useSelector(image, state => state.context.frame);
+  const frameId = useSelector(image, state => state.context.frame);
 
   const raw = useRaw();
+  const channelId = useSelector(raw, state => state.context.channel);
   const channel = useSelector(raw, state => {
     const { channels, channel } = state.context;
     return channels[channel];
@@ -34,7 +35,8 @@ export const GrayscaleCanvas = ({ className }) => {
   const [min, max] = useSelector(channel, state => state.context.range);
   const brightness = useSelector(channel, state => state.context.brightness);
   const contrast = useSelector(channel, state => state.context.contrast);
-  const array = useSelector(channel, state => state.context.frames[frame]);
+
+  const array = useRawArray(channelId, frameId);
 
   const canvasRef = useRef();
   const ctxRef = useRef();

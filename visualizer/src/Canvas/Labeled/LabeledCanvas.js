@@ -1,48 +1,48 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-import { useCanvas, useImage, useLabeled, useSegment, useSelect } from '../../ProjectContext';
+import {
+  useCanvas,
+  useColormap,
+  useImage,
+  useLabelArray,
+  useLabeled,
+  useSelect,
+} from '../../ProjectContext';
 import { createSegmentationImageData, highlightImageData, opacityImageData } from '../canvasUtils';
 
 export const LabeledCanvas = ({ className }) => {
   const canvas = useCanvas();
-  const sx = useSelector(canvas, state => state.context.sx);
-  const sy = useSelector(canvas, state => state.context.sy);
-  const zoom = useSelector(canvas, state => state.context.zoom);
-  const scale = useSelector(canvas, state => state.context.scale);
-  const sw = useSelector(canvas, state => state.context.width);
-  const sh = useSelector(canvas, state => state.context.height);
-
-  const width = sw * scale * window.devicePixelRatio;
-  const height = sh * scale * window.devicePixelRatio;
-
   const image = useImage();
-  const frame = useSelector(image, state => state.context.frame);
-
   const labeled = useLabeled();
-  const highlight = useSelector(labeled, state => state.context.highlight);
-  const opacity = useSelector(labeled, state => state.context.opacity);
-  const feature = useSelector(labeled, state => {
-    const { features, feature } = state.context;
-    return features[feature];
-  });
-
-  const array = useSelector(feature, state => state.context.frames[frame]);
-  const colormap = useSelector(feature, state => state.context.colors2);
-
   const select = useSelect();
-  const foreground = useSelector(select, state => state.context.foreground);
-
-  const segment = useSegment();
+  // const segment = useSegment();
 
   const canvasRef = useRef();
   const ctx = useRef();
   const hiddenCanvasRef = useRef();
   const hiddenCtx = useRef();
 
-  // sync segment machine with array
-  useEffect(() => {
-    segment.send({ type: 'ARRAY', array });
-  }, [segment, array]);
+  const sx = useSelector(canvas, state => state.context.sx);
+  const sy = useSelector(canvas, state => state.context.sy);
+  const zoom = useSelector(canvas, state => state.context.zoom);
+  const scale = useSelector(canvas, state => state.context.scale);
+  const sw = useSelector(canvas, state => state.context.width);
+  const sh = useSelector(canvas, state => state.context.height);
+  const frameId = useSelector(image, state => state.context.frame);
+  const highlight = useSelector(labeled, state => state.context.highlight);
+  const opacity = useSelector(labeled, state => state.context.opacity);
+  const featureId = useSelector(labeled, state => state.context.feature);
+  const foreground = useSelector(select, state => state.context.foreground);
+
+  const width = sw * scale * window.devicePixelRatio;
+  const height = sh * scale * window.devicePixelRatio;
+  const array = useLabelArray(featureId, frameId);
+  const colormap = useColormap(featureId);
+
+  // // sync segment machine with array
+  // useEffect(() => {
+  //   segment.send({ type: 'ARRAY', array });
+  // }, [segment, array]);
 
   useEffect(() => {
     ctx.current = canvasRef.current.getContext('2d');

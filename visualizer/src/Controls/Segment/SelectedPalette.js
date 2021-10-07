@@ -10,7 +10,7 @@ import SubdirectoryArrowRightIcon from '@material-ui/icons/SubdirectoryArrowRigh
 import { useSelector } from '@xstate/react';
 import { bind, unbind } from 'mousetrap';
 import React, { useEffect, useState } from 'react';
-import { useFeature, useLabeled, useSelect } from '../../ProjectContext';
+import { useColormap, useLabeled, useSelect } from '../../ProjectContext';
 
 // adapted from https://stackoverflow.com/questions/9733288/how-to-programmatically-calculate-the-contrast-ratio-between-two-colors
 
@@ -158,9 +158,8 @@ function HoveringBox() {
   const styles = useStyles();
 
   const labeled = useLabeled();
-  const featureIndex = useSelector(labeled, state => state.context.feature);
-  const feature = useFeature(featureIndex);
-  const colors = useSelector(feature, state => state.context.colors);
+  const feature = useSelector(labeled, state => state.context.feature);
+  const colors = useColormap(feature);
   const color = colors[hovering] ?? '#000000';
 
   const buttonColor =
@@ -190,9 +189,8 @@ function ForegroundBox() {
   const styles = useStyles();
 
   const labeled = useLabeled();
-  const featureIndex = useSelector(labeled, state => state.context.feature);
-  const feature = useFeature(featureIndex);
-  const colors = useSelector(feature, state => state.context.colors);
+  const feature = useSelector(labeled, state => state.context.feature);
+  const colors = useColormap(feature);
   const color = colors[foreground] ?? '#000000';
 
   useEffect(() => {
@@ -308,9 +306,8 @@ function BackgroundBox() {
   const styles = useStyles();
 
   const labeled = useLabeled();
-  const featureIndex = useSelector(labeled, state => state.context.feature);
-  const feature = useFeature(featureIndex);
-  const colors = useSelector(feature, state => state.context.colors);
+  const feature = useSelector(labeled, state => state.context.feature);
+  const colors = useColormap(feature);
   const color = colors[background] ?? '#000000';
 
   useEffect(() => {

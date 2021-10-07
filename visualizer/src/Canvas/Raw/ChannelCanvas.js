@@ -1,6 +1,6 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-import { useCanvas, useChannel, useImage } from '../../ProjectContext';
+import { useCanvas, useImage, useRawArray } from '../../ProjectContext';
 import { adjustRangeImageData, createImageData, recolorImageData } from '../canvasUtils';
 
 /** Converts a hex string like #FF0000 to three element array for the RGB values. */
@@ -20,16 +20,15 @@ const ChannelCanvas = ({ layer, setCanvases }) => {
   const ctxRef = useRef();
 
   const image = useImage();
-  const frameId = useSelector(image, state => state.context.frame);
+  const frame = useSelector(image, state => state.context.frame);
 
   const layerIndex = useSelector(layer, state => state.context.layer);
-  const channelId = useSelector(layer, state => state.context.channel);
+  const channel = useSelector(layer, state => state.context.channel);
   const color = useSelector(layer, state => state.context.color);
   const [min, max] = useSelector(layer, state => state.context.range);
   const on = useSelector(layer, state => state.context.on);
 
-  const channel = useChannel(channelId);
-  const array = useSelector(channel, state => state.context.frames[frameId]);
+  const array = useRawArray(channel, frame);
 
   useEffect(() => {
     const channelCanvas = canvasRef.current;

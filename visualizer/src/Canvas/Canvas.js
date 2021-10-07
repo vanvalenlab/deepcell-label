@@ -3,9 +3,8 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import { makeStyles } from '@material-ui/core/styles';
 import { useSelector } from '@xstate/react';
 import React, { useEffect } from 'react';
-import { useCanvas, useLabeled, useRaw, useSegment, useSelect } from '../ProjectContext';
+import { useCanvas, useProject, useSegment, useSelect } from '../ProjectContext';
 import LabeledCanvas from './Labeled/LabeledCanvas';
-import OutlineCanvas from './Labeled/OutlineCanvas';
 import RawCanvas from './Raw/RawCanvas';
 import BrushCanvas from './Tool/BrushCanvas';
 import ThresholdCanvas from './Tool/ThresholdCanvas';
@@ -25,13 +24,13 @@ const useStyles = makeStyles({
 });
 
 export const Canvas = () => {
-  const raw = useRaw();
-  const labeled = useLabeled();
+  const project = useProject();
   const select = useSelect();
 
-  const rawLoading = useSelector(raw, state => state.matches('loading'));
-  const labeledLoading = useSelector(labeled, state => !state.matches('idle'));
-  const loading = rawLoading || labeledLoading;
+  const loaded = useSelector(project, state => {
+    const pyodide = state.context.pyodideRef;
+    return pyodide.state.matches('idle');
+  });
 
   const canvas = useCanvas();
   const sx = useSelector(canvas, state => state.context.sx);
@@ -105,10 +104,10 @@ export const Canvas = () => {
       onMouseDown={handleMouseDown}
       onMouseUp={canvas.send}
     >
-      {loading && <CircularProgress style={{ margin: '25%', width: '50%', height: '50%' }} />}
-      {!loading && <RawCanvas className={styles.canvas} />}
-      {!loading && <LabeledCanvas className={styles.canvas} />}
-      {!loading && <OutlineCanvas className={styles.canvas} />}
+      {!loaded && <CircularProgress style={{ margin: '25%', width: '50%', height: '50%' }} />}
+      {loaded && <RawCanvas className={styles.canvas} />}
+      {loaded && <LabeledCanvas className={styles.canvas} />}
+      {/* {loaded && <OutlineCanvas className={styles.canvas} />} */}
       {tool === 'brush' && <BrushCanvas className={styles.canvas} />}
       {tool === 'threshold' && <ThresholdCanvas className={styles.canvas} />}
     </Box>

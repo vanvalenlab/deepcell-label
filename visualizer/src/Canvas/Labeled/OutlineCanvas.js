@@ -1,6 +1,6 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-import { useCanvas, useFeature, useLabeled, useSelect } from '../../ProjectContext';
+import { useCanvas, useLabeled, useSelect } from '../../ProjectContext';
 import { highlightImageData, outlineAll, outlineSelected } from '../canvasUtils';
 
 const white = [255, 255, 255, 255];
@@ -24,16 +24,12 @@ const OutlineCanvas = ({ className }) => {
   const background = useSelector(select, state => state.context.background);
 
   const labeled = useLabeled();
-  const featureIndex = useSelector(labeled, state => state.context.feature);
+  const feature = useSelector(labeled, state => state.context.feature);
   const outline = useSelector(labeled, state => state.context.outline);
   const invert = useSelector(labeled, state => state.context.invert);
   // const opacity = useSelector(labeled, state => state.context.opacity);
 
-  const feature = useFeature(featureIndex);
-  let labeledArray = useSelector(feature, state => state.context.labeledArray);
-  if (!labeledArray) {
-    labeledArray = Array(sh).fill(Array(sw).fill(0));
-  }
+  let labeledArray = Array(sh).fill(Array(sw).fill(0));
 
   const canvasRef = useRef();
   const ctx = useRef();
