@@ -91,7 +91,7 @@ export function useChannel(channelId) {
   return channel;
 }
 
-export function useColormap(feature) {
+export function useColormap(feature, format = 'rgba') {
   const project = useProject();
   const maxLabel = useSelector(project, state => {
     const pyodide = state.context.pyodideRef;
@@ -102,11 +102,13 @@ export function useColormap(feature) {
   let colors = colormap({
     colormap: 'viridis',
     nshades: Math.max(9, maxLabel),
-    format: 'rgba',
+    format,
   });
   colors = colors.slice(0, maxLabel);
-  colors.unshift([0, 0, 0, 1]); // Label 0 is black
-  colors.push([255, 255, 255, 1]); // New label (maxLabel + 1) is white
+  const backgroundColor = format === 'hex' ? '#000000' : [0, 0, 0, 1];
+  const newColor = format === 'hex' ? '#FFFFFF' : [255, 255, 255, 1];
+  colors.unshift(backgroundColor); // Label 0 is black
+  colors.push(newColor); // New label (maxLabel + 1) is white
   return colors;
 }
 
@@ -115,8 +117,7 @@ export function useLayers() {
   const layers = useSelector(project, state => {
     const image = state.context.imageRef;
     const raw = image.state.context.rawRef;
-    const colorMode = raw.state.context.colorMode;
-    const layers = colorMode.state.context.layers;
+    const layers = raw.state.context.layers;
     return layers;
   });
   return layers;

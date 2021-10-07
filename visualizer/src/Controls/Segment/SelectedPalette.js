@@ -159,7 +159,7 @@ function HoveringBox() {
 
   const labeled = useLabeled();
   const feature = useSelector(labeled, state => state.context.feature);
-  const colors = useColormap(feature);
+  const colors = useColormap(feature, 'hex');
   const color = colors[hovering] ?? '#000000';
 
   const buttonColor =
@@ -190,7 +190,7 @@ function ForegroundBox() {
 
   const labeled = useLabeled();
   const feature = useSelector(labeled, state => state.context.feature);
-  const colors = useColormap(feature);
+  const colors = useColormap(feature, 'hex');
   const color = colors[foreground] ?? '#000000';
 
   useEffect(() => {
@@ -307,7 +307,7 @@ function BackgroundBox() {
 
   const labeled = useLabeled();
   const feature = useSelector(labeled, state => state.context.feature);
-  const colors = useColormap(feature);
+  const colors = useColormap(feature, 'hex');
   const color = colors[background] ?? '#000000';
 
   useEffect(() => {
