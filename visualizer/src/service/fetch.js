@@ -15,7 +15,6 @@ export function fetchRaw(context) {
       }
       channels.push(frames);
     }
-    console.log(channels);
     return channels;
   };
 
