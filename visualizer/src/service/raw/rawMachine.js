@@ -1,6 +1,6 @@
-import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
+import { actions, assign, Machine, send, sendParent, spawn } from 'xstate';
 import createChannelMachine from './channelMachine';
-import createColorMachine from './colorMachine';
+import createLayerMachine from './layerMachine';
 
 const { pure, respond } = actions;
 
@@ -10,7 +10,11 @@ const checkDisplay = {
 
 const color = {
   entry: [sendParent('COLOR'), assign({ isGrayscale: false })],
-  on: { TOGGLE_COLOR_MODE: 'grayscale' },
+  on: {
+    TOGGLE_COLOR_MODE: 'grayscale',
+    ADD_LAYER: { actions: 'addLayer' },
+    REMOVE_LAYER: { actions: 'removeLayer' },
+  },
 };
 
 const grayscale = {
@@ -18,7 +22,7 @@ const grayscale = {
   on: {
     TOGGLE_COLOR_MODE: 'color',
     RESET: { actions: 'forwardToChannel' },
-    CHANNEL: { actions: 'setChannel' },
+    SET_CHANNEL: { cond: 'differentChannel', actions: 'setChannel' },
   },
 };
 
@@ -32,10 +36,10 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
         channel: 0,
         channels: [], // channel machines
         channelNames: [],
-        colorMode: null,
+        layers: [],
         isGrayscale: Number(numChannels) === 1,
       },
-      entry: ['spawnColorModes', 'spawnChannels'],
+      entry: ['spawnLayers', 'spawnChannels'],
       initial: 'checkDisplay',
       states: {
         checkDisplay,
@@ -46,8 +50,6 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
         TOGGLE_INVERT: { actions: 'forwardToChannel' },
         SAVE: { actions: 'save' },
         RESTORE: { actions: ['restore', respond('RESTORED')] },
-        SET_FRAME: { actions: 'forwardToChannels' },
-        SET_CHANNEL: { cond: 'differentChannel', actions: 'setChannel' },
       },
     },
     {
@@ -74,10 +76,25 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
             return names;
           },
         }),
-        spawnColorModes: assign({
-          colorMode: context => spawn(createColorMachine(context), 'colorMode'),
+        spawnLayers: assign({
+          layers: ({ numChannels }) => {
+            const layers = [];
+            for (let i = 0; i < Math.min(6, numChannels); i++) {
+              const layer = spawn(createLayerMachine(i, numChannels), `layer ${i}`);
+              layers.push(layer);
+            }
+            return layers;
+          },
         }),
-        forwardToChannels: pure(({ channels }) => channels.map(channel => forwardTo(channel))),
+        addLayer: assign({
+          layers: ({ layers, numChannels }) => [
+            ...layers,
+            spawn(createLayerMachine(layers.length, numChannels), `layer ${layers.length}`),
+          ],
+        }),
+        removeLayer: assign({
+          layers: ({ layers }, { layer }) => [...layers.filter(val => val !== layer)],
+        }),
         save: respond(({ channel, isGrayscale }) => ({ type: 'RESTORE', isGrayscale, channel })),
         restore: pure((context, event) =>
           context.isGrayscale === event.isGrayscale
