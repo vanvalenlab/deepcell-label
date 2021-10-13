@@ -166,8 +166,7 @@ const segmentMachine = Machine(
       colorMode: colorModeState,
     },
     on: {
-      ARRAY: { actions: assign({ array: (_, { array }) => array }) },
-      EDIT: { actions: sendParent(({ array }, e) => ({ ...e, buffer: array.buffer })) },
+      EDIT: { actions: sendParent((_, e) => e) },
 
       mousedown: { actions: 'forwardToTool' },
       mouseup: { actions: 'forwardToTool' },
