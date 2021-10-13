@@ -3,6 +3,7 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import { makeStyles } from '@material-ui/core/styles';
 import { useSelector } from '@xstate/react';
 import React, { useEffect } from 'react';
+import EventBus from '../EventBus';
 import { useCanvas, useProject, useSegment, useSelect } from '../ProjectContext';
 import LabeledCanvas from './Labeled/LabeledCanvas';
 import RawCanvas from './Raw/RawCanvas';
@@ -105,6 +106,7 @@ export const Canvas = () => {
       onMouseUp={canvas.send}
     >
       {!loaded && <CircularProgress style={{ margin: '25%', width: '50%', height: '50%' }} />}
+      {loaded && <EventBus />}
       {loaded && <RawCanvas className={styles.canvas} />}
       {loaded && <LabeledCanvas className={styles.canvas} />}
       {/* {loaded && <OutlineCanvas className={styles.canvas} />} */}

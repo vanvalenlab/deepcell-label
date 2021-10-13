@@ -16,6 +16,12 @@ function useReturnContext(contextType) {
   return context;
 }
 
+export function usePyodide() {
+  const project = useProject();
+  const pyodide = useSelector(project, state => state.context.pyodideRef);
+  return pyodide;
+}
+
 export function useRawArray(channel, frame) {
   const project = useProject();
   const buffer = useSelector(project, state => {
