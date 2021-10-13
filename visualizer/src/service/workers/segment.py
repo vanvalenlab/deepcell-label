@@ -27,6 +27,26 @@ from skimage.segmentation import morphological_chan_vese
 # false when label is removed
 # other value when swapped with a label
 
+from js import console
+
+
+def edit(context, event):
+    console.log(context, event)
+    height = context.height
+    width = context.width
+
+    img = np.array(event.buffer).reshape((width, height))
+    return img
+
+    args = event.args
+    action = event.action
+
+    try:
+        action_function = getattr(sys.modules[__name__], action)
+        return action_function(img, **args)
+    except AttributeError:
+        raise ValueError('Invalid action "{}"'.format(action))
+
 
 def identity(img):
     """Returns the buffer unchanged."""
@@ -340,6 +360,7 @@ class FuncContainer(object):
 
 
 py_funcs = FuncContainer()
+py_funcs.edit = edit
 py_funcs.swap = swap
 py_funcs.replace = replace
 py_funcs.identity = identity
