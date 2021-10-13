@@ -1,6 +1,6 @@
 /* eslint-disable import/no-webpack-loader-syntax */
 import PyodideWorker from 'worker-loader!./workers/worker';
-import { assign, Machine, send, sendParent } from 'xstate';
+import { assign, forwardTo, Machine, send, sendParent } from 'xstate';
 import { fetchLabeled, fetchRaw, fetchSemanticLabels } from './fetch';
 import { fromWebWorker } from './from-web-worker';
 
@@ -57,10 +57,21 @@ const createPyodideMachine = ({ projectId }) =>
         projectId,
         numChannels: null,
         numFeatures: null,
+        channel: null,
+        frame: null,
+        feature: null,
+        channels: null,
+        features: null,
+        semanticLabels: null,
       },
       invoke: {
         id: 'worker',
         src: fromWebWorker(() => new PyodideWorker()),
+      },
+      on: {
+        CHANNEL: { actions: assign({ channel: (_, event) => event.channel }) },
+        FRAME: { actions: assign({ frame: (_, event) => event.frame }) },
+        FEATURE: { actions: assign({ feature: (_, event) => event.feature }) },
       },
       initial: 'waiting',
       states: {
@@ -68,11 +79,14 @@ const createPyodideMachine = ({ projectId }) =>
           on: {
             PROJECT: {
               target: 'loading',
-              actions: assign((_, { numChannels, numFeatures, numFrames }) => ({
-                numChannels,
-                numFeatures,
-                numFrames,
-              })),
+              actions: [
+                forwardTo('worker'),
+                assign((_, { numChannels, numFeatures, numFrames }) => ({
+                  numChannels,
+                  numFeatures,
+                  numFrames,
+                })),
+              ],
             },
           },
         },
@@ -122,8 +136,12 @@ const createPyodideMachine = ({ projectId }) =>
     {
       actions: {
         sendToWorker: send(
-          (_, { buffer, ...event }) =>
-            buffer !== undefined ? { ...event, buffer, _transfer: [buffer] } : event,
+          ({ frame, feature, features }, event) => ({
+            ...event,
+            feature,
+            frame,
+            buffer: features[feature][frame],
+          }),
           { to: 'worker' }
         ),
         sendEdited: sendParent((_, event) => ({

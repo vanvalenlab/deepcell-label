@@ -1,8 +1,10 @@
 /* eslint-disable */
 // import pyodide from 'pyodide';
 import segment from '!!raw-loader!./segment.py';
-import { createMachine, sendParent } from 'xstate';
+import { actions, assign, createMachine, sendParent } from 'xstate';
 import { interpretInWebWorker } from '../from-web-worker';
+
+const { respond } = actions;
 
 let pyodide;
 let pyFuncs;
@@ -29,15 +31,17 @@ async function setupPyodide() {
   return pyFuncs;
 }
 
-setupPyodide();
-
 const pyodideMachine = createMachine(
   {
     id: 'pyodideWorker',
     context: {
-      pyFuncs: null,
+      height: null,
+      width: null,
     },
     initial: 'setUp',
+    on: {
+      PROJECT: { actions: assign((_, { height, width }) => ({ height, width })) },
+    },
     states: {
       setUp: {
         on: {
@@ -48,7 +52,10 @@ const pyodideMachine = createMachine(
         entry: () => console.log('pyodide set up in worker'),
         on: {
           EDIT: {
-            actions: [sendParent('EDITED'), (c, e) => console.log('EDIT received', e)],
+            actions: [
+              (c, e) => console.log('EDIT received', e, pyFuncs.edit(c, e)),
+              sendParent({ type: 'EDITED' }),
+            ],
           },
         },
       },
@@ -56,12 +63,11 @@ const pyodideMachine = createMachine(
   },
   {
     actions: {
-      // setPyFuncs: assign({ pyFuncs: (_, { data }) => data }),
-      // edit:
-      sendEdited: sendParent((_, e) => ({
+      edit: sendParent((context, event) => ({
         type: 'EDITED',
-        buffer: e?.buffer,
-        // _transfer: [e?.buffer],
+        buffer: pyFuncs.edit(context, event),
+        frame: event.frame,
+        feature: event.feature,
       })),
     },
   }
@@ -70,3 +76,4 @@ const pyodideMachine = createMachine(
 const service = interpretInWebWorker(pyodideMachine);
 service.start();
 self.pyodideService = service;
+setupPyodide();
