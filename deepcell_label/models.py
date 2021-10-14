@@ -405,6 +405,7 @@ class Project(db.Model):
         payload = {}
 
         # Project attributes to initialize frontend variables
+        payload['projectId'] = self.token
         payload['frame'] = self.frame
         payload['channel'] = self.channel
         payload['feature'] = self.feature

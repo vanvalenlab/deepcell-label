@@ -40,7 +40,7 @@ const pyodideMachine = createMachine(
     },
     initial: 'setUp',
     on: {
-      PROJECT: { actions: assign((_, { height, width }) => ({ height, width })) },
+      DIMENSIONS: { actions: assign((_, { height, width }) => ({ height, width })) },
     },
     states: {
       setUp: {

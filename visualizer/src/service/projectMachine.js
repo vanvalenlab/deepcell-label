@@ -5,6 +5,7 @@ import { assign, forwardTo, Machine, send, spawn } from 'xstate';
 import { pure } from 'xstate/lib/actions';
 import createApiMachine from './apiMachine';
 import canvasMachine from './canvasMachine';
+import createDatabaseMachine from './databaseMachine';
 import createImageMachine from './imageMachine';
 import createPyodideMachine from './pyodideMachine';
 import selectMachine from './selectMachine';
@@ -35,19 +36,11 @@ const createProjectMachine = (projectId, bucket) =>
         },
         setUpUndo: {
           entry: ['spawnUndo', 'addActorsToUndo'],
-          always: 'loading',
+          always: 'loadingProject',
         },
-        loading: {
-          invoke: {
-            src: fetchProject,
-            onDone: {
-              target: 'idle',
-              actions: 'sendProject',
-            },
-            onError: {
-              target: 'idle',
-              actions: (context, event) => console.log(event),
-            },
+        loadingProject: {
+          on: {
+            PROJECT: { target: 'idle', actions: [(c, e) => console.log(e), 'forwardProject'] },
           },
         },
         idle: {
@@ -112,6 +105,7 @@ const createProjectMachine = (projectId, bucket) =>
           apiRef: context => spawn(createApiMachine(context), 'api'),
           selectRef: () => spawn(selectMachine, 'select'),
           pyodideRef: context => spawn(createPyodideMachine(context), 'pyodide'),
+          databaseRef: context => spawn(createDatabaseMachine(context), 'database'),
         }),
         spawnUndo: assign({
           undoRef: () => spawn(undoMachine, 'undo'),
@@ -124,14 +118,7 @@ const createProjectMachine = (projectId, bucket) =>
             send({ type: 'ADD_ACTOR', actor: segmentRef }, { to: 'undo' }),
           ];
         }),
-        sendProject: pure((context, event) => {
-          const projectEvent = { type: 'PROJECT', ...event.data };
-          return [
-            send(projectEvent, { to: 'canvas' }),
-            send(projectEvent, { to: 'image' }),
-            send(projectEvent, { to: 'pyodide' }),
-          ];
-        }),
+        forwardProject: pure(() => [forwardTo('canvas'), forwardTo('image'), forwardTo('pyodide')]),
         setFrame: assign((_, { frame }) => ({ frame })),
         setFeature: assign((_, { feature }) => ({ feature })),
         setChannel: assign((_, { channel }) => ({ channel })),

@@ -154,8 +154,8 @@ const canvasMachine = Machine(
             target: 'pan',
             actions: [
               assign((context, event) => ({
-                height: event.height,
-                width: event.width,
+                height: event.project.height,
+                width: event.project.width,
               })),
               'resize',
             ],

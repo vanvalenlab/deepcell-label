@@ -1,6 +1,6 @@
 /* eslint-disable import/no-webpack-loader-syntax */
 import PyodideWorker from 'worker-loader!./workers/worker';
-import { assign, forwardTo, Machine, send, sendParent } from 'xstate';
+import { assign, Machine, send, sendParent } from 'xstate';
 import { fetchLabeled, fetchRaw, fetchSemanticLabels } from './fetch';
 import { fromWebWorker } from './from-web-worker';
 
@@ -80,11 +80,21 @@ const createPyodideMachine = ({ projectId }) =>
             PROJECT: {
               target: 'loading',
               actions: [
-                forwardTo('worker'),
-                assign((_, { numChannels, numFeatures, numFrames }) => ({
-                  numChannels,
-                  numFeatures,
-                  numFrames,
+                (c, e) => console.log(c, e),
+                send(
+                  (c, e) => ({
+                    type: 'DIMENSIONS',
+                    height: e.project.height,
+                    width: e.project.width,
+                  }),
+                  { to: 'worker' }
+                ),
+                assign((_, { project, raw, labeled }) => ({
+                  numChannels: project.numChannels,
+                  numFeatures: project.numFeatures,
+                  numFrames: project.numFrames,
+                  channels: raw,
+                  features: labeled,
                 })),
               ],
             },
@@ -94,8 +104,6 @@ const createPyodideMachine = ({ projectId }) =>
           type: 'parallel',
           onDone: 'idle',
           states: {
-            loadRaw,
-            loadLabeled,
             loadSemanticLabels,
           },
         },

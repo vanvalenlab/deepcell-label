@@ -61,10 +61,10 @@ const createImageMachine = ({ projectId }) =>
         forwardToParent: sendParent((_, event) => event),
         // create child actors to fetch raw & labeled data
         spawnActors: assign({
-          numFrames: (_, { numFrames }) => numFrames,
-          rawRef: ({ projectId }, { numFrames, numChannels }) =>
+          numFrames: (_, { project: { numFrames } }) => numFrames,
+          rawRef: (_, { project: { projectId, numFrames, numChannels } }) =>
             spawn(createRawMachine(projectId, numChannels, numFrames), 'raw'),
-          labeledRef: ({ projectId }, { numFrames, numFeatures }) =>
+          labeledRef: (_, { project: { projectId, numFrames, numFeatures } }) =>
             spawn(createLabeledMachine(projectId, numFeatures, numFrames), 'labeled'),
         }),
         addActorsToUndo: pure(context => {
