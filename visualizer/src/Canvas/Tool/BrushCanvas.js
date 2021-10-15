@@ -65,6 +65,7 @@ const BrushCanvas = ({ className }) => {
     for (const [tx, ty] of trace) {
       drawTrace(traceCtx.current, tx, ty, brushSize);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [brushSize]);
 
   // draws the brush outline and trace onto the visible canvas
