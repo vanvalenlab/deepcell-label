@@ -15,7 +15,6 @@ function EventBus() {
 
   const labeled = useLabeled();
   const feature = useSelector(labeled, state => state.context.feature);
-  console.log(channel, frame, feature);
 
   useEffect(() => pyodide.send({ type: 'FRAME', frame }), [pyodide, frame]);
   useEffect(() => pyodide.send({ type: 'CHANNEL', channel }), [pyodide, channel]);

@@ -7,9 +7,8 @@
 
 import { openDB } from 'idb';
 import _ from 'lodash';
-import { actions, assign, Machine, send, sendParent } from 'xstate';
+import { assign, Machine, send, sendParent } from 'xstate';
 
-const { pure } = actions;
 // import { Project, RawArray, LabelArray } from "./types";
 
 // https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API/Using_IndexedDB
@@ -75,28 +74,21 @@ function nest(buffers, level1, level2) {
 }
 
 function upgrade(db) {
-  console.log('upgrading database');
-  console.log(db, db.objectStoreNames, db.objectStoreNames.contains('projects'));
   if (!db.objectStoreNames.contains('projects')) {
-    console.log('making projects store');
     db.createObjectStore('projects', { keyPath: 'projectId' });
   }
 
   if (!db.objectStoreNames.contains('raw')) {
-    console.log('making raw store');
     const rawStore = db.createObjectStore('raw', {
       keyPath: ['project', 'channel', 'frame'],
     });
-    // TODO: check if this index is needed
     rawStore.createIndex('project', 'project', { unique: false });
   }
 
   if (!db.objectStoreNames.contains('labeled')) {
-    console.log('making labeled store');
     const labeledStore = db.createObjectStore('labeled', {
       keyPath: ['project', 'feature', 'frame'],
     });
-    // TODO: check if this index is needed
     labeledStore.createIndex('project', 'project', { unique: false });
   }
 }
@@ -115,30 +107,19 @@ const createDatabaseMachine = ({ projectId }) =>
             src: () => openDB('dcl', 1, { upgrade }),
             onDone: {
               target: 'idle',
-              actions: [
-                assign({ db: (_, event) => event.data }),
-                send(({ projectId }) => ({ type: 'GET', projectId })),
-              ],
+              actions: [assign({ db: (_, event) => event.data }), send('GET')],
             },
           },
         },
         idle: {
-          entry: (context, event) => console.log(event, 'entering idle'),
           on: {
-            GET: {
-              target: 'getting',
-              actions: [
-                assign({ projectId: (_, { projectId }) => projectId }),
-                (c, e) => console.log(e),
-              ],
-            },
+            GET: 'getting',
             UPDATE: 'updating',
             // UNDO: {},
             // REDO: {},
           },
         },
         getting: {
-          entry: (context, event) => console.log(event, 'getting project from database'),
           invoke: {
             src: 'getProject',
             onDone: [
@@ -149,7 +130,6 @@ const createDatabaseMachine = ({ projectId }) =>
           },
         },
         fetching: {
-          entry: (context, event) => console.log(event, 'fetching project from server'),
           invoke: {
             src: 'fetchProject',
             onDone: { target: 'creating', actions: 'log' },
@@ -157,7 +137,6 @@ const createDatabaseMachine = ({ projectId }) =>
           },
         },
         creating: {
-          entry: (context, event) => console.log(event, 'creating project in database'),
           invoke: {
             src: 'createProject',
             onDone: { target: 'getting', actions: 'log' },
@@ -181,9 +160,8 @@ const createDatabaseMachine = ({ projectId }) =>
       },
       services: {
         // return an IDB promise with project data in database
-        getProject: (context, event) => {
-          const { db } = context;
-          const { projectId } = event;
+        getProject: context => {
+          const { db, projectId } = context;
           const tx = db.transaction(['projects', 'raw', 'labeled']);
           const projectStore = tx.objectStore('projects');
           const rawStore = tx.objectStore('raw');
@@ -198,7 +176,7 @@ const createDatabaseMachine = ({ projectId }) =>
           ]);
         },
         // return a promise with project data
-        fetchProject: (context, event) => {
+        fetchProject: context => {
           const { projectId } = context;
           const project = fetch(`/api/project/${projectId}`).then(response => response.json());
           const raw = fetch(`/dev/raw/${projectId}`).then(response => response.arrayBuffer());
@@ -207,7 +185,6 @@ const createDatabaseMachine = ({ projectId }) =>
           );
 
           const splitBuffers = ([project, raw, labeled]) => {
-            console.log(project, raw, labeled);
             const { numChannels, numFeatures, numFrames } = project;
             return [
               project,

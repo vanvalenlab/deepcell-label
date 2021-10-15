@@ -12,7 +12,6 @@ function RGBControls() {
     <>
       {layers.map(layer => (
         <Grid key={layer.sessionId} style={{ width: '100%' }} item>
-          {console.log(layers, layer.sessionId)}
           <LayerController layer={layer} />
         </Grid>
       ))}
