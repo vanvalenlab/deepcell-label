@@ -1,38 +1,8 @@
 /* eslint-disable import/no-webpack-loader-syntax */
 import PyodideWorker from 'worker-loader!./workers/worker';
 import { assign, Machine, send, sendParent } from 'xstate';
-import { fetchLabeled, fetchRaw, fetchSemanticLabels } from './fetch';
+import { fetchSemanticLabels } from './fetch';
 import { fromWebWorker } from './from-web-worker';
-
-const loadRaw = {
-  initial: 'loading',
-  states: {
-    loading: {
-      invoke: {
-        src: fetchRaw,
-        onDone: { target: 'done', actions: assign({ channels: (_, e) => e.data }) },
-      },
-    },
-    done: {
-      type: 'final',
-    },
-  },
-};
-
-const loadLabeled = {
-  initial: 'loading',
-  states: {
-    loading: {
-      invoke: {
-        src: fetchLabeled,
-        onDone: { target: 'done', actions: assign({ features: (_, e) => e.data }) },
-      },
-    },
-    done: {
-      type: 'final',
-    },
-  },
-};
 
 const loadSemanticLabels = {
   initial: 'loading',

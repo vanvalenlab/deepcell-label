@@ -12,11 +12,6 @@ import selectMachine from './selectMachine';
 import segmentMachine from './tools/segmentMachine';
 import undoMachine from './undoMachine';
 
-function fetchProject(context) {
-  const { projectId } = context;
-  return fetch(`/api/project/${projectId}`).then(response => response.json());
-}
-
 const createProjectMachine = (projectId, bucket) =>
   Machine(
     {
@@ -40,7 +35,7 @@ const createProjectMachine = (projectId, bucket) =>
         },
         loadingProject: {
           on: {
-            PROJECT: { target: 'idle', actions: [(c, e) => console.log(e), 'forwardProject'] },
+            PROJECT: { target: 'idle', actions: 'forwardProject' },
           },
         },
         idle: {
