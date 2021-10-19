@@ -105,6 +105,7 @@ const createPyodideMachine = ({ projectId }) =>
               actions: [
                 (c, e) => console.log('EDITED received by main', e),
                 () => console.timeEnd('edit'),
+                'update',
               ],
             },
           },
@@ -122,6 +123,12 @@ const createPyodideMachine = ({ projectId }) =>
           }),
           { to: 'worker' }
         ),
+        update: assign({
+          features: ({ features }, { frame, feature, buffer }) => {
+            features[feature][frame] = buffer;
+            return features;
+          },
+        }),
         sendEdited: sendParent((_, event) => ({
           type: 'EDITED',
           data: event.data,

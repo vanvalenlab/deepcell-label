@@ -25,25 +25,106 @@ from skimage.segmentation import morphological_chan_vese
 # values are boolean OR other label values
 # true when label is added for the first time
 # false when label is removed
-# other value when swapped with a label
+# other value when label is swapped/replaced with another label
+# examples:
+# { 1: 2 } means give the semantic labels for label 2 to label 1
+# { 1: false } means delete semantic labels for label 1
+# { 1: true } means create in semantic labels for label 1 (i.e. make default/empty semantic labels)
+
+# examples:
+# maintaining frames for labels
+# {
+#   1: [0, 1, 2, 3],
+#   2: [1],
+# }
+# message: { type: 'UPDATE', frame: 1, 1: false },
+# {
+#   1: [0, 2, 3],
+#   2: [1],
+# }
+# message: { type: 'UPDATE', frame: 1, 1: true },
+# {
+#   1: [0, 1, 2, 3],
+#   2: [1],
+# }
+# message: { type: 'UPDATE', frame: 0, 2: 1, 1: 2 },
+# {
+#   1: [1, 2, 3],
+#   2: [0, 1],
+# }
+
+# bounding boxes for labels
+# {
+#   1: [[12, 34], [56, 78]],
+#   2: [[11, 22], [33, 44]],
+# }
+
+# cell type labels
+# swapping two labels (everywhere... ?)
+# initial: {
+#   1: { class: 'CD4' },
+#   2: { class: 'CD8' },
+# }
+# message: { type: 'UPDATE', 1: 2, 2: 1 }
+# after: {
+#   1: { class: 'CD8' },
+#   2: { class: 'CD4' },
+# }
+
+# tracking labels
+# replace with parent...
+# replace cell 2 with cell 1
+# initial: {
+#   1: { daughters: [2], divisionFrame: 1 },
+#   2: { daughters: [3], divisionFrame: 2 },
+#   3: { daughters: [], divisionFrame: null },
+# }
+# message: { type: 'UPDATE', 1: 2, 2: false }
+# after: {
+#   1: { daughters: [3], divisionFrame: 2 },
+#   3: { daughters: [], divisionFrame: null },
+# }
 
 from js import console
 
 
+# class Edit(object):
+
+#     def __init__(self, context, event):
+#         width = context.width
+#         height = context.height
+
+#         args = event.args.to_py()
+#         action = event.action
+#         buffer = event.buffer.to_py()
+#         img = np.asarray(buffer).reshape((width, height))
+#         action_function = getattr(sys.modules['__main__'], 'swap')
+#         result = action_function(img, **args)
+#         result = result.flatten()
+
+#         self.added_cells = []
+#         self.removed_cells = []
+
+#     def add_cell(self, cell):
+#         pass
+
+#     def remove_cell(self, cell):
+#         pass
+
+
 def edit(context, event):
-    console.log(context, event)
     height = context.height
     width = context.width
 
-    img = np.array(event.buffer).reshape((width, height))
-    return img
-
-    args = event.args
+    args = event.args.to_py()
     action = event.action
+    buffer = event.buffer.to_py()
+    img = np.asarray(buffer).reshape((width, height))
 
     try:
-        action_function = getattr(sys.modules[__name__], action)
-        return action_function(img, **args)
+        action_function = getattr(sys.modules['__main__'], action)
+        result = action_function(img, **args)
+        return result.flatten()
     except AttributeError:
         raise ValueError('Invalid action "{}"'.format(action))
 

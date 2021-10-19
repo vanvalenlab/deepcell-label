@@ -52,10 +52,7 @@ const pyodideMachine = createMachine(
         entry: () => console.log('pyodide set up in worker'),
         on: {
           EDIT: {
-            actions: [
-              (c, e) => console.log('EDIT received', e, pyFuncs.edit(c, e)),
-              sendParent({ type: 'EDITED' }),
-            ],
+            actions: 'edit',
           },
         },
       },
@@ -63,12 +60,16 @@ const pyodideMachine = createMachine(
   },
   {
     actions: {
-      edit: sendParent((context, event) => ({
-        type: 'EDITED',
-        buffer: pyFuncs.edit(context, event),
-        frame: event.frame,
-        feature: event.feature,
-      })),
+      edit: sendParent((context, event) => {
+        const result = pyFuncs.edit(context, event);
+        const array = new Int32Array(result.getBuffer().data);
+        return {
+          type: 'EDITED',
+          buffer: array,
+          frame: event.frame,
+          feature: event.feature,
+        };
+      }),
     },
   }
 );

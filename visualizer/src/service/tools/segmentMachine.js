@@ -110,7 +110,7 @@ const useToolActions = {
 const editActions = {
   swap: send(({ foreground, background }) => ({
     type: 'EDIT',
-    action: 'swap_single_frame',
+    action: 'swap',
     args: {
       label_1: foreground,
       label_2: background,
