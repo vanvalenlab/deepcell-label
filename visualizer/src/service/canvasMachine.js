@@ -117,7 +117,7 @@ const canvasMachine = Machine(
       dx: 0,
       dy: 0,
       // label data
-      labeledArray: null,
+      array: null,
       label: null,
       panOnDrag: true,
     },
@@ -136,7 +136,7 @@ const canvasMachine = Machine(
         })),
       },
       RESTORE: { actions: ['restore', respond('RESTORED')] },
-      LABELED_ARRAY: { actions: ['setLabeledArray', 'sendLabel'] },
+      ARRAY: { actions: ['setArray', 'sendLabel'] },
       COORDINATES: {
         cond: 'newCoordinates',
         actions: ['setCoordinates', 'sendLabel', 'sendParent'],
@@ -226,9 +226,9 @@ const canvasMachine = Machine(
         return { type: 'COORDINATES', x, y };
       }),
       setLabel: assign((_, { label }) => ({ label })),
-      sendLabel: send(({ labeledArray: array, x, y }) => ({
+      sendLabel: send(({ array, x, y, width }) => ({
         type: 'LABEL',
-        label: array ? Math.abs(array[y][x]) : 0,
+        label: array ? Math.abs(array[y * width + x]) : 0,
       })),
       setDimensions: assign({
         availableWidth: (_, { width }) => width,
@@ -298,7 +298,7 @@ const canvasMachine = Machine(
         return { zoom: newZoom, sx: newSx, sy: newSy };
       }),
       setPanOnDrag: assign((_, { panOnDrag }) => ({ panOnDrag })),
-      setLabeledArray: assign((_, { labeledArray }) => ({ labeledArray })),
+      setArray: assign((_, { array }) => ({ array })),
       sendParent: sendParent((c, e) => e),
     },
   }

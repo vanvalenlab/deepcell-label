@@ -45,6 +45,10 @@ export const LabeledCanvas = ({ className }) => {
   // }, [segment, array]);
 
   useEffect(() => {
+    canvas.send({ type: 'ARRAY', array });
+  }, [canvas, array]);
+
+  useEffect(() => {
     ctx.current = canvasRef.current.getContext('2d');
     ctx.current.imageSmoothingEnabled = false;
   }, [width, height]);
