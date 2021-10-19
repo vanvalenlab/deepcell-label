@@ -7,7 +7,7 @@ import { interpretInWebWorker } from '../from-web-worker';
 const { respond } = actions;
 
 let pyodide;
-let pyFuncs;
+let edit;
 
 async function setupPyodide() {
   console.time('importScripts pyodide');
@@ -24,11 +24,11 @@ async function setupPyodide() {
   console.timeEnd('loadPackage');
 
   console.time('runPython');
-  pyFuncs = pyodide.runPython(segment);
+  edit = pyodide.runPython(segment);
   console.timeEnd('runPython');
   service.send('PYTHON_READY');
-  self.pyFuncs = pyFuncs;
-  return pyFuncs;
+  self.edit = edit;
+  return edit;
 }
 
 const pyodideMachine = createMachine(
@@ -61,8 +61,8 @@ const pyodideMachine = createMachine(
   {
     actions: {
       edit: sendParent((context, event) => {
-        const result = pyFuncs.edit(context, event);
-        const array = new Int32Array(result.getBuffer().data);
+        const img = edit(context, event);
+        const array = new Int32Array(img.getBuffer().data);
         return {
           type: 'EDITED',
           buffer: array,

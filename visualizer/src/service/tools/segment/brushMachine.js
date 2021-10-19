@@ -73,7 +73,7 @@ const createBrushMachine = ({ x, y, foreground, background }) =>
           type: 'EDIT',
           action: 'handle_draw',
           args: {
-            trace: JSON.stringify(context.trace),
+            trace: context.trace,
             foreground: context.foreground,
             background: context.background,
             brush_size: context.brushSize,

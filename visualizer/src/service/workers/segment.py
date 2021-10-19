@@ -88,45 +88,82 @@ from skimage.segmentation import morphological_chan_vese
 from js import console
 
 
-# class Edit(object):
+class Edit(object):
 
-#     def __init__(self, context, event):
-#         width = context.width
-#         height = context.height
+    def __init__(self, context, event):
+        self.width = context.width
+        self.height = context.height
 
-#         args = event.args.to_py()
-#         action = event.action
-#         buffer = event.buffer.to_py()
-#         img = np.asarray(buffer).reshape((width, height))
-#         action_function = getattr(sys.modules['__main__'], 'swap')
+        args = event.args.to_py()
+        action = event.action
+        buffer = event.buffer.to_py()
+        self.img = np.asarray(buffer).reshape((self.width, self.height))
+
+        self.added_cells = []
+        self.removed_cells = []
+
+        try:
+            action_function = getattr(self, action)
+            action_function(**args)
+            self.img = self.img.flatten()
+        except AttributeError:
+            raise ValueError('Invalid action "{}"'.format(action))
+
+    def add_cell(self, cell):
+        pass
+
+    def remove_cell(self, cell):
+        pass
+
+    def swap(self, label_1, label_2):
+        """
+        Swap two labels.
+
+        Args:
+            label_1 (int): first label to swap
+            label_2 (int): second label to swap
+        """
+        self.img = np.where(self.img == label_1, -1, self.img)
+        self.img = np.where(self.img == label_2, label_1, self.img)
+        self.img = np.where(self.img == -1, label_2, self.img)
+
+    def handle_draw(self, trace, foreground, background, brush_size):
+        """
+        Use a "brush" to draw in the brush value along trace locations of
+        the annotated data.
+
+        Args:
+            trace (list): list of (x, y) coordinates where the brush has painted
+            foreground (int): label written by the bush
+            background (int): label overwritten by the brush
+            brush_size (int): radius of the brush in pixels
+        """
+        console.log(trace, foreground, background, brush_size)
+        # Only overwrites the background label
+        img_replaced = np.where(self.img == background, foreground, self.img)
+
+        for coordinates in trace:
+            x = coordinates[0]
+            y = coordinates[1]
+            brush_area = circle(y, x, brush_size, (self.height, self.width))
+            self.img[brush_area] = img_replaced[brush_area]
+
+
+# def edit(context, event):
+#     height = context.height
+#     width = context.width
+
+#     args = event.args.to_py()
+#     action = event.action
+#     buffer = event.buffer.to_py()
+#     img = np.asarray(buffer).reshape((width, height))
+
+#     try:
+#         action_function = getattr(sys.modules['__main__'], action)
 #         result = action_function(img, **args)
-#         result = result.flatten()
-
-#         self.added_cells = []
-#         self.removed_cells = []
-
-#     def add_cell(self, cell):
-#         pass
-
-#     def remove_cell(self, cell):
-#         pass
-
-
-def edit(context, event):
-    height = context.height
-    width = context.width
-
-    args = event.args.to_py()
-    action = event.action
-    buffer = event.buffer.to_py()
-    img = np.asarray(buffer).reshape((width, height))
-
-    try:
-        action_function = getattr(sys.modules['__main__'], action)
-        result = action_function(img, **args)
-        return result.flatten()
-    except AttributeError:
-        raise ValueError('Invalid action "{}"'.format(action))
+#         return result.flatten()
+#     except AttributeError:
+#         raise ValueError('Invalid action "{}"'.format(action))
 
 
 def identity(img):
@@ -150,20 +187,6 @@ def outline(img):
     return img
 
 
-def swap(img, label_1, label_2):
-    """
-    Swap two labels.
-
-    Args:
-        label_1 (int): first label to swap
-        label_2 (int): second label to swap
-    """
-    img = np.where(img == label_1, -1, img)
-    img = np.where(img == label_2, label_1, img)
-    img = np.where(img == -1, label_2, img)
-    return img
-
-
 def replace(img, label_1, label_2):
     """
     Replaces label_2 with label_1.
@@ -172,26 +195,26 @@ def replace(img, label_1, label_2):
     return img
 
 
-# def action_handle_draw(img, trace, foreground, background, brush_size, height, width):
-#     """
-#     Use a "brush" to draw in the brush value along trace locations of
-#     the annotated data.
+def action_handle_draw(img, trace, foreground, background, brush_size, height, width):
+    """
+    Use a "brush" to draw in the brush value along trace locations of
+    the annotated data.
 
-#     Args:
-#         trace (list): list of (x, y) coordinates where the brush has painted
-#         foreground (int): label written by the bush
-#         background (int): label overwritten by the brush
-#         brush_size (int): radius of the brush in pixels
-#     """
-#     # Only overwrites the background label
-#     img_replaced = np.where(img == background, foreground, img)
+    Args:
+        trace (list): list of (x, y) coordinates where the brush has painted
+        foreground (int): label written by the bush
+        background (int): label overwritten by the brush
+        brush_size (int): radius of the brush in pixels
+    """
+    # Only overwrites the background label
+    img_replaced = np.where(img == background, foreground, img)
 
-#     for coordinates in trace:
-#         x = coordinates[0]
-#         y = coordinates[1]
-#         brush_area = circle(y, x, brush_size, (height, width))
-#         img[brush_area] = img_replaced[brush_area]
-#     return img
+    for coordinates in trace:
+        x = coordinates[0]
+        y = coordinates[1]
+        brush_area = circle(y, x, brush_size, (height, width))
+        img[brush_area] = img_replaced[brush_area]
+    return img
 
 
 # def action_trim_pixels(img, label, x, y):
@@ -436,18 +459,24 @@ def replace(img, label_1, label_2):
 #     self.frame[..., self.feature] = img_ann
 #     self.y_changed = True
 
-class FuncContainer(object):
-    pass
+# class FuncContainer(object):
+#     pass
 
 
-py_funcs = FuncContainer()
-py_funcs.edit = edit
-py_funcs.swap = swap
-py_funcs.replace = replace
-py_funcs.identity = identity
-py_funcs.zeros = zeros
-py_funcs.outline_border = outline_border
-py_funcs.outline = outline
+# py_funcs = FuncContainer()
+# py_funcs.edit = edit
+# py_funcs.swap = swap
+# py_funcs.replace = replace
+# py_funcs.identity = identity
+# py_funcs.zeros = zeros
+# py_funcs.outline_border = outline_border
+# py_funcs.outline = outline
 
-# pyodide returns last statement as an object that is accessable from javascript
-py_funcs
+# # pyodide returns last statement as an object that is accessable from javascript
+# py_funcs
+def edit(context, event):
+    edit = Edit(context, event)
+    return edit.img
+
+
+edit
