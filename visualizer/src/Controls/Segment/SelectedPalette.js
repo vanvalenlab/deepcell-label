@@ -401,7 +401,7 @@ export default function SelectedPalette() {
   const project = useProject();
   const loaded = useSelector(project, state => {
     const pyodide = state.context.pyodideRef;
-    return pyodide.state.matches('idle');
+    return pyodide.state.matches('idle') || pyodide.state.matches('editing');
   });
 
   return (
