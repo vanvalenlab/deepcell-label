@@ -133,7 +133,7 @@ export function SwitchButton() {
 
   const tooltipText = (
     <span>
-      Switch (<kbd>X</kbd>)
+      Switch <kbd>X</kbd>
     </span>
   );
 
@@ -214,25 +214,25 @@ function ForegroundBox() {
 
   const newTooltip = (
     <span>
-      New (<kbd>N</kbd>)
+      New <kbd>N</kbd>
     </span>
   );
 
   const resetTooltip = (
     <span>
-      Reset (<kbd>Esc</kbd>)
+      Reset <kbd>Esc</kbd>
     </span>
   );
 
   const prevTooltip = (
     <span>
-      Previous (<kbd>[</kbd>)
+      Previous <kbd>[</kbd>
     </span>
   );
 
   const nextTooltip = (
     <span>
-      Next (<kbd>]</kbd>)
+      Next <kbd>]</kbd>
     </span>
   );
 
@@ -329,19 +329,19 @@ function BackgroundBox() {
 
   const resetTooltip = (
     <span>
-      Reset (<kbd>Esc</kbd>)
+      Reset <kbd>Esc</kbd>
     </span>
   );
 
   const prevTooltip = (
     <span>
-      Previous (<kbd>Shift</kbd> + <kbd>[</kbd>)
+      Previous <kbd>Shift</kbd> + <kbd>[</kbd>
     </span>
   );
 
   const nextTooltip = (
     <span>
-      Next (<kbd>Shift</kbd> + <kbd>]</kbd>)
+      Next <kbd>Shift</kbd> + <kbd>]</kbd>
     </span>
   );
 

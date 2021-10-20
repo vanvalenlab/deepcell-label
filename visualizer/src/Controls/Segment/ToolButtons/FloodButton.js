@@ -11,7 +11,7 @@ function FloodButton(props) {
 
   const tooltipText = (
     <span>
-      Click a region to fill it with a label (<kbd>G</kbd>)
+      Click a region to fill it with a label <kbd>G</kbd>
     </span>
   );
 

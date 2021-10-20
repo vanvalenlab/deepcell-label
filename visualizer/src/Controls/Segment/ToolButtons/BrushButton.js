@@ -21,7 +21,7 @@ function BrushButton(props) {
 
   const tooltipText = (
     <span>
-      Click and drag to paint a label (<kbd>B</kbd>)
+      Click and drag to paint a label <kbd>B</kbd>
     </span>
   );
 
