@@ -50,14 +50,14 @@ const loadMachine = Machine(
         invoke: {
           src: submitExample,
           onDone: { actions: 'redirectToProject' },
-          onError: { target: 'error', actions: [(c, e) => console.log(e), 'setErrorText'] },
+          onError: { target: 'error', actions: 'setErrorText' },
         },
       },
       submittingUpload: {
         invoke: {
           src: submitUpload,
           onDone: { actions: 'redirectToProject' },
-          onError: { target: 'error', actions: [(c, e) => console.log(e), 'setErrorText'] },
+          onError: { target: 'error', actions: 'setErrorText' },
         },
       },
       error: {
