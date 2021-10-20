@@ -44,9 +44,9 @@ function download(context, event) {
   const options = { method: 'GET' };
   const promise = fetch(downloadRoute, options);
   const filename = promise.then(response => {
-    const regex = /(?<=filename=).*(?=$)/;
+    const regex = /filename=(.*)$/;
     const header = response.headers.get('content-disposition');
-    let filename = header.match(regex)[0] ?? `${projectId}.npz`;
+    let filename = header.match(regex)[1] ?? `${projectId}.npz`;
     // Strip quotes
     filename = filename.replaceAll('"', '');
     // Remove leading folders
