@@ -35,16 +35,16 @@ const exampleFiles = [
     path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/test.npz',
     name: '3D organoid segmentation',
   },
-  {
-    value: 2,
-    path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/example_corrected.trk',
-    name: 'corrected tracking timelapse',
-  },
-  {
-    value: 3,
-    path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/example_uncorrected.trk',
-    name: 'uncorrected tracking timelapse',
-  },
+  // {
+  //   value: 2,
+  //   path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/example_corrected.trk',
+  //   name: 'corrected tracking timelapse',
+  // },
+  // {
+  //   value: 3,
+  //   path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/example_uncorrected.trk',
+  //   name: 'uncorrected tracking timelapse',
+  // },
 ];
 
 function ExampleFileSelect({ loadService }) {
