@@ -24,17 +24,17 @@ const CanvasInstructions = () => {
           <br />
           Click and drag to pan around the canvas.
           <br />
-          Hold <kbd>Space</kbd> and click and drag to pan around the canvas when using a tool that
-          uses dragging (e.g. Brush or Threshold).
+          Hold <kbd>Space</kbd> and click and drag to pan when using a tool that uses dragging (e.g.
+          Brush or Threshold).
         </Typography>
         <Typography variant='h5'>Canvas Borders</Typography>
         <Typography>
-          The borders of the canvas help show where we are within an image.
+          Canvas borders help show the canvas position in the image.
           <br />
-          If a border is white, we are along an edge of the image.
+          White border means the canvas is along the image edge.
           <br />
-          If a border is black, the image extends off-canvas in that direction and we can pan or
-          zoom out to view it.
+          Black border means the image extends off-canvas and the canvas can pan or zoom out in that
+          direction.
         </Typography>
       </div>
       <CanvasShortcuts />

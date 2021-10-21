@@ -37,10 +37,10 @@ function SelectInstructions() {
           </Grid>
           <Grid item xs={9}>
             <Typography>
-              This palette shows the selected labels, with the foreground in the gray-outlined box
-              on top and the background label in the red-outlined box underneath.
+              This palette shows the selected labels, with the foreground above and the background
+              below.
               <br />
-              Hover over either box to reveal buttons that change the selected labels. Keyboards
+              Hover over the boxes to see buttons that change the selected labels. Keyboards
               shortcuts for these buttons are shown on the right.
             </Typography>
           </Grid>
@@ -48,15 +48,9 @@ function SelectInstructions() {
 
         <Typography variant='h5'>Selecting Labels</Typography>
         <Typography>
-          There are four ways to select labels:
-          <ul>
-            <li>use the buttons on the Palette</li>
-            <li>use keyboard shortcuts for the buttons on the Palette</li>
-            <li>click the canvas while using the Select Tool</li>
-            <li>
-              hold <kbd>Shift</kbd> and click on the canvas while using any tool
-            </li>
-          </ul>
+          As well as the buttons on the palette, we can select labels by clicking them on the
+          canvas.
+          <br />
           While using the Select tool,
           <ul>
             <li>click to select the foreground</li>
