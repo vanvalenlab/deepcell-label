@@ -23,18 +23,18 @@ function ToolInstructions() {
     <Box display='flex' justifyContent='space-between'>
       <div>
         <Typography>
-          Tools change what happening when clicking on the canvas.
+          Tool are used by clicking on the canvas.
           <br />
-          Switch between tools by clicking on a button in the Tool menu or using its keybind.
+          To switch between tools, click on the Tools menu or use the shortcuts on the right.
         </Typography>
         <Typography variant='h5'>Select</Typography>
         <Typography>
-          Select picks labels for the foreground and background.
+          Select changes the foreground and background labels.
           <br />
-          Click on a label to select it as the foreground, or double click on a label to select it
-          as the background.
+          Click on a label to select the foreground, or double click on a label to select the
+          background.
           <br />
-          Double clicking also deselects other labels.
+          Double clicking also deselects other selected labels.
         </Typography>
         <Typography variant='h5'>Brush and Erase</Typography>
         <Typography>
@@ -71,7 +71,13 @@ function ToolInstructions() {
           Click and drag to draw the bounding box.
         </Typography>
         <Typography variant='h5'>Watershed</Typography>
-        <Typography></Typography>
+        <Typography>
+          Watershed splits labels with multiple cells along cells' contours with the{' '}
+          <a href={'wikipedia.org/wiki/Watershed_(image_processing)'}>watershed transform</a>.
+          <br />
+          Click on the center of one cell, then click on the center of another cell with the same
+          label to split them into two labels.
+        </Typography>
       </div>
       <ToolShortcuts />
     </Box>
