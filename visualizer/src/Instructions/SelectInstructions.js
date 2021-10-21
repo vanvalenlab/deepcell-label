@@ -1,7 +1,7 @@
-import { Box } from '@material-ui/core';
+import { Box, Grid } from '@material-ui/core';
 import Typography from '@material-ui/core/Typography';
 import React from 'react';
-import SelectedPalette from '../Controls/Segment/SelectedPalette';
+import { Selected } from '../Controls/Segment/SelectedPalette';
 import { Shortcut, Shortcuts } from './Shortcuts';
 
 function SelectShortcuts() {
@@ -23,36 +23,52 @@ function SelectInstructions() {
       <div>
         <Typography variant='h5'>Foreground and Background</Typography>
         <Typography>
-          The foreground is the label that we are adding the canvas. The foreground is highlighted
-          with a translucent white. Tools that add to the labeling, like the brush or threshold,
-          will add the foreground label. The background label is outlined in red.
-        </Typography>
-        <Typography variant='h5'>Foreground/Background Palette</Typography>
-        <SelectedPalette />
-        <Typography>
-          This palette shows the selected foreground and background labels.
+          We can select up to two labels to edit, first a foreground label and second a background
+          label. Edits will add the foreground label and remove the background label.
           <br />
-          The white-outlined box outlined shows the foreground, and the red-outlined square shows
-          the background.
+          The foreground label is filled with translucent white.
           <br />
-          Hover over either box to reveal buttons to change the selected labels. The shortcuts on
-          the right are another option to change selected labels.
+          The background label is outlined in red.
         </Typography>
-        <Typography variant='h5'>Select Tool</Typography>
+        <Typography variant='h5'>Foreground and Background Palette</Typography>
+        <Grid container spacing={3}>
+          <Grid item xs={3}>
+            <Selected />
+          </Grid>
+          <Grid item xs={9}>
+            <Typography>
+              This palette shows the selected labels, with the foreground in the gray-outlined box
+              on top and the background label in the red-outlined box underneath.
+              <br />
+              Hover over either box to reveal buttons that change the selected labels. Keyboards
+              shortcuts for these buttons are shown on the right.
+            </Typography>
+          </Grid>
+        </Grid>
+
+        <Typography variant='h5'>Selecting Labels</Typography>
         <Typography>
-          While using the Select tool, click on any label to select it as the foreground. Click on
-          the foreground label to select it as the background. If you double click on a label, it
-          also resets the foreground to no label.
-          <br />
-        </Typography>
-        <Typography variant='h5'>
-          Select with <kbd>Shift</kbd>
-        </Typography>
-        <Typography>
-          While using any tool, you can select labels by holding <kbd>Shift</kbd> and clicking on
-          it. Shift clicking on any label first selects it as the background, and shift clicking on
-          the background makes it the foreground. Shift with a double click also resets the
-          background to no label.
+          There are four ways to select labels:
+          <ul>
+            <li>use the buttons on the Palette</li>
+            <li>use keyboard shortcuts for the buttons on the Palette</li>
+            <li>click the canvas while using the Select Tool</li>
+            <li>
+              hold <kbd>Shift</kbd> and click on the canvas while using any tool
+            </li>
+          </ul>
+          While using the Select tool,
+          <ul>
+            <li>click to select the foreground</li>
+            <li>double click to select the background</li>
+            <li>click on a selected label to swap the foreground and background</li>
+          </ul>
+          While using any tool, hold <kbd>Shift</kbd> and
+          <ul>
+            <li>click to select the background</li>
+            <li>double click to select the foreground</li>
+            <li>click on a select label to swap the foreground and background</li>
+          </ul>
         </Typography>
       </div>
       <SelectShortcuts />
