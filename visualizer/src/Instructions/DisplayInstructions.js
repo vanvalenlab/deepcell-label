@@ -1,4 +1,4 @@
-import { Box } from '@material-ui/core';
+import { Box, Grid } from '@material-ui/core';
 import Typography from '@material-ui/core/Typography';
 import React from 'react';
 import FeatureSelect from '../Controls/ImageControls/LabeledControls/FeatureSelect';
@@ -7,6 +7,7 @@ import OpacitySlider from '../Controls/ImageControls/LabeledControls/OpacitySlid
 import OutlineToggle from '../Controls/ImageControls/LabeledControls/OutlineToggle';
 import ColorModeToggle from '../Controls/ImageControls/RawControls/ColorModeToggle';
 import GrayscaleControls from '../Controls/ImageControls/RawControls/GrayscaleControls';
+import RGBControls from '../Controls/ImageControls/RawControls/RGBControls';
 import { Shortcut, Shortcuts } from './Shortcuts';
 
 function DisplayShortcuts() {
@@ -42,44 +43,85 @@ const DisplayInstructions = () => {
           there are channels controls to change how to show the image.
         </Typography>
         <Typography variant='h5'>Segmentations</Typography>
-        <FeatureSelect />
-        <Typography>
-          If a project has multiple segmentation features, like a whole-cell segmentation and a
-          nuclear segmentation, you can select which feature to view in the feature drop-down.
-        </Typography>
-        <OutlineToggle />
-        <Typography>
-          The outline toggle controls where to outline all labels or only the selected labels.
-        </Typography>
-        <OpacitySlider />
-        <Typography>
-          The opacity slider controls the transparency of the segmentation over of the raw image.
-        </Typography>
-        <HighlightToggle />
-        <Typography>
-          The highlight toggle controls whether the selected label is colored red in the labels
-          overlay.
-        </Typography>
+        <Grid container spacing={3}>
+          <Grid item xs={3}>
+            <FeatureSelect />
+          </Grid>
+          <Grid item xs={9}>
+            <Typography>
+              switches between segmentations, like whole-cell and nuclear segmentations
+            </Typography>
+          </Grid>
+          <Grid item xs={3}>
+            <OutlineToggle />
+          </Grid>
+          <Grid item xs={9}>
+            <Typography>
+              outlines all labels when on, or only the selected labels when off
+            </Typography>
+          </Grid>
+          <Grid item xs={3}>
+            <OpacitySlider />
+          </Grid>
+          <Grid item xs={9}>
+            <Typography>overlays the labels on the channels</Typography>
+          </Grid>
+          <Grid item xs={3}>
+            <HighlightToggle />
+          </Grid>
+          <Grid item xs={9}>
+            <Typography>
+              Highlights the foreground label in red when viewing the labels overlay
+            </Typography>
+          </Grid>
+        </Grid>
         <Typography variant='h5'>Channels </Typography>
-        <ColorModeToggle />
-        <Typography>
-          The multi-channel toggle controls whether to view a single channel in grayscale or
-          multiple channels in color.
-        </Typography>
+        <Grid container spacing={3}>
+          <Grid item xs={3}>
+            <ColorModeToggle />
+          </Grid>
+          <Grid item xs={9}>
+            <Typography>
+              Switches between displaying single channel in grayscale and multiple channels in color
+            </Typography>
+          </Grid>
+        </Grid>
         <Typography variant='h6'> Multi-channel mode </Typography>
-        {/* <RGBControls /> */}
-        <Typography>
-          When the multi-channel toggle in on, you'll see a controller for each displayed channel.
-          These controllers let you change the channel, toggle it on and off, and adjust its dynamic
-          range. Double click on the slider to reset it. Each channel also has a pop-up options menu
-          on its right side where you can remove the channel and change its color.
-        </Typography>
+        <Grid container spacing={3}>
+          <Grid item xs={4}>
+            <RGBControls />
+          </Grid>
+          <Grid item xs={8}>
+            <Typography>
+              In multi-channel mode,
+              <ul>
+                <li>switch channels with the dropdown,</li>
+                <li>adjust the dynamic range with the slider,</li>
+                <li>double click the slider to reset the range,</li>
+                <li>toggle the channel with the checkbox, and</li>
+                <li>change colors and remove channels with the popup menu.</li>
+              </ul>
+            </Typography>
+          </Grid>
+        </Grid>
+
         <Typography variant='h6'>Single-channel mode </Typography>
-        <GrayscaleControls />
-        <Typography>
-          When viewing a single channel, you can instead change which channel to display and adjust
-          its dynamic range, brightness and contrast. Double click on a slider to reset it.
-        </Typography>
+        <Grid container spacing={3}>
+          <Grid item xs={4}>
+            <GrayscaleControls />
+          </Grid>
+          <Grid item xs={8}>
+            <Typography>
+              In single channel mode,
+              <ul>
+                <li>switch channels with the dropdown,</li>
+                <li>adjust range, brightness and contrast with the sliders, </li>
+                <li>double click a slider to reset it, and </li>
+                <li>invert the channel with the toggle.</li>
+              </ul>
+            </Typography>
+          </Grid>
+        </Grid>
       </div>
       <DisplayShortcuts />
     </Box>
