@@ -35,7 +35,7 @@ If a project has multiple segmentation features, like a whole-cell segmentation 
 
 ### Channels
 
-The multi-channel toggle controls whether to view a single channel in grayscale or multiple channels each with different colors.
+The multi-channel toggle controls whether to view a single channel in grayscale or multiple channels in color. Press <kbd>Y</kbd> to toggle between the channel display modes.
 
 #### Multi-channel mode
 
@@ -137,7 +137,7 @@ Both the brush and eraser allow for pixel-level changes to labels. The brush add
 
 Press <kbd>B</kbd> to use the Brush and press <kbd>E</kbd> to use the Eraser. Adjust the brush size with <kbd>&uarr;</kbd> to increase the size and <kbd>&darr;</kbd> to decrease the size.
 
-When two labels are selected, you can use both the Brush and Eraser at the same time to replace one label with another. Pressing the Brush or Eraser buttons or hotkeys will unselect one of the labels so that you are only painting or erasing one label again.
+When two labels are selected, you can use both the Brush and Eraser at the same time to replace one label with another. Pressing the Brush or Eraser buttons or hotkeys will unselect one of the labels to paint or erase a single label again.
 
 #### Threshold
 
