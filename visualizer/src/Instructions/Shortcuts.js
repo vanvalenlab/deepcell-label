@@ -9,6 +9,7 @@ const useStyles = makeStyles(theme => ({
     display: 'flex',
     height: 'fit-content',
     flexDirection: 'column',
+    marginLeft: theme.spacing(2),
   },
   shortcut: {
     width: 'auto',
