@@ -72,6 +72,7 @@ function ExampleFileSelect({ loadService }) {
         ))}
       </Select>
       <Button
+        id='submitExample'
         className={styles.submit}
         variant='contained'
         color='primary'

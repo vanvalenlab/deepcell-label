@@ -98,7 +98,7 @@ export default function FileUpload({ loadService }) {
         {({ getRootProps, getInputProps, fileRejections }) => (
           <section>
             <div {...getRootProps()}>
-              <input {...getInputProps()} />
+              <input data-testid='image-input' {...getInputProps()} />
 
               <Typography
                 variant='subtitle1'
