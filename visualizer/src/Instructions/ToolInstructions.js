@@ -23,7 +23,7 @@ function ToolInstructions() {
     <Box display='flex' justifyContent='space-between'>
       <div>
         <Typography>
-          Tool are used by clicking on the canvas.
+          Tools are used by clicking on the canvas.
           <br />
           To switch between tools, click on the Tools menu or use the shortcuts on the right.
         </Typography>
