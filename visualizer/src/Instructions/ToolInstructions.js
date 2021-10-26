@@ -1,4 +1,4 @@
-import { Box } from '@material-ui/core';
+import { Box, Link } from '@material-ui/core';
 import Typography from '@material-ui/core/Typography';
 import React from 'react';
 import { Shortcut, Shortcuts } from './Shortcuts';
@@ -73,7 +73,7 @@ function ToolInstructions() {
         <Typography variant='h5'>Watershed</Typography>
         <Typography>
           Watershed splits labels with multiple cells along cells' contours with the{' '}
-          <a href={'wikipedia.org/wiki/Watershed_(image_processing)'}>watershed transform</a>.
+          <Link href={'wikipedia.org/wiki/Watershed_(image_processing)'}>watershed transform</Link>.
           <br />
           Click on the center of one cell, then click on the center of another cell with the same
           label to split them into two labels.
