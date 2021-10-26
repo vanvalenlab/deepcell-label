@@ -40,8 +40,7 @@ function SelectInstructions() {
               This palette shows the selected labels, with the foreground above and the background
               below.
               <br />
-              Hover over the boxes to see buttons that change the selected labels. Keyboards
-              shortcuts for these buttons are shown on the right.
+              Hover over the boxes to see buttons that change the selected labels.
             </Typography>
           </Grid>
         </Grid>
