@@ -64,7 +64,8 @@ const DisplayInstructions = () => {
           </Grid>
           <Grid item xs={9}>
             <Typography>
-              switches between displaying single channel in grayscale and multiple channels in color
+              The multi-channel switch toggles showing a single channel in grayscale or multiple
+              channels in color.
             </Typography>
           </Grid>
         </Grid>
