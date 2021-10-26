@@ -42,6 +42,7 @@ const DisplayInstructions = () => {
           top, you'll see segmentation controls to change how to show the labels, and on bottom,
           there are channels controls to change how to show the image.
         </Typography>
+        <br />
         <Typography variant='h5'>Segmentations</Typography>
         <Grid container spacing={3}>
           <Grid item xs={3}>
@@ -71,10 +72,11 @@ const DisplayInstructions = () => {
           </Grid>
           <Grid item xs={9}>
             <Typography>
-              Highlights the foreground label in red when viewing the labels overlay
+              highlights the foreground label in red when viewing the labels overlay
             </Typography>
           </Grid>
         </Grid>
+        <br />
         <Typography variant='h5'>Channels </Typography>
         <Grid container spacing={3}>
           <Grid item xs={3}>
@@ -82,10 +84,11 @@ const DisplayInstructions = () => {
           </Grid>
           <Grid item xs={9}>
             <Typography>
-              Switches between displaying single channel in grayscale and multiple channels in color
+              switches between displaying single channel in grayscale and multiple channels in color
             </Typography>
           </Grid>
         </Grid>
+        <br />
         <Typography variant='h6'> Multi-channel mode </Typography>
         <Grid container spacing={3}>
           <Grid item xs={4}>
@@ -99,12 +102,12 @@ const DisplayInstructions = () => {
                 <li>adjust the dynamic range with the slider,</li>
                 <li>double click the slider to reset the range,</li>
                 <li>toggle the channel with the checkbox, and</li>
-                <li>change colors and remove channels with the popup menu.</li>
+                <li>change colors and remove channels with the pop-up menu.</li>
               </ul>
             </Typography>
           </Grid>
         </Grid>
-
+        <br />
         <Typography variant='h6'>Single-channel mode </Typography>
         <Grid container spacing={3}>
           <Grid item xs={4}>
