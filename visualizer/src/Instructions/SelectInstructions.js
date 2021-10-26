@@ -23,32 +23,31 @@ function SelectInstructions() {
       <div>
         <Typography variant='h5'>Foreground and Background</Typography>
         <Typography>
-          We can select up to two labels to edit, first a foreground label and second a background
-          label. Edits will add the foreground label and remove the background label.
+          We can select up to two labels to edit, a foreground label and a background label.
           <br />
-          The foreground label is filled with translucent white.
+          Edits add the foreground label and remove the background label.
           <br />
-          The background label is outlined in red.
+          The canvas shows the foreground label in translucent white.
+          <br />
+          The canvas outlines the background label in red.
         </Typography>
         <Typography variant='h5'>Foreground and Background Palette</Typography>
         <Grid container spacing={3}>
-          <Grid item xs={3}>
+          <Grid item xs={2}>
             <Selected />
           </Grid>
-          <Grid item xs={9}>
+          <Grid item xs={10}>
             <Typography>
-              This palette shows the selected labels, with the foreground above and the background
-              below.
+              Here are the selected labels, with the foreground above and the background below.
               <br />
-              Hover over the boxes to see buttons that change the selected labels.
+              Use the buttons within the boxes to cycle, reset, or select a new label.
             </Typography>
           </Grid>
         </Grid>
 
         <Typography variant='h5'>Selecting Labels</Typography>
         <Typography>
-          As well as the buttons on the palette, we can select labels by clicking them on the
-          canvas.
+          Click on labels on the canvas to select them.
           <br />
           While using the Select tool,
           <ul>
