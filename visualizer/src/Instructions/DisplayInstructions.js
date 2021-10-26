@@ -1,10 +1,7 @@
 import { Box, Grid } from '@material-ui/core';
 import Typography from '@material-ui/core/Typography';
 import React from 'react';
-import FeatureSelect from '../Controls/ImageControls/LabeledControls/FeatureSelect';
-import HighlightToggle from '../Controls/ImageControls/LabeledControls/HighlightToggle';
-import OpacitySlider from '../Controls/ImageControls/LabeledControls/OpacitySlider';
-import OutlineToggle from '../Controls/ImageControls/LabeledControls/OutlineToggle';
+import LabeledControls from '../Controls/ImageControls/LabeledControls/LabeledControls';
 import ColorModeToggle from '../Controls/ImageControls/RawControls/ColorModeToggle';
 import GrayscaleControls from '../Controls/ImageControls/RawControls/GrayscaleControls';
 import RGBControls from '../Controls/ImageControls/RawControls/RGBControls';
@@ -45,38 +42,21 @@ const DisplayInstructions = () => {
         <br />
         <Typography variant='h5'>Segmentations</Typography>
         <Grid container spacing={3}>
-          <Grid item xs={3}>
-            <FeatureSelect />
+          <Grid item xs={4}>
+            <LabeledControls />
+            <br />
           </Grid>
-          <Grid item xs={9}>
+          <Grid item xs={8}>
             <Typography>
-              switches between segmentations, like whole-cell and nuclear segmentations
-            </Typography>
-          </Grid>
-          <Grid item xs={3}>
-            <OutlineToggle />
-          </Grid>
-          <Grid item xs={9}>
-            <Typography>
-              outlines all labels when on, or only the selected labels when off
-            </Typography>
-          </Grid>
-          <Grid item xs={3}>
-            <OpacitySlider />
-          </Grid>
-          <Grid item xs={9}>
-            <Typography>overlays the labels on the channels</Typography>
-          </Grid>
-          <Grid item xs={3}>
-            <HighlightToggle />
-          </Grid>
-          <Grid item xs={9}>
-            <Typography>
-              highlights the foreground label in red when viewing the labels overlay
+              <ul style={{ margin: 0 }}>
+                <li>Feature switches segmentations, like whole-cell and nuclear</li>
+                <li>Outline toggles outlining all labels or only selected labels</li>
+                <li>Opacity overlays the labels on the channels</li>
+                <li>Highlight colors the foreground label red</li>
+              </ul>
             </Typography>
           </Grid>
         </Grid>
-        <br />
         <Typography variant='h5'>Channels </Typography>
         <Grid container spacing={3}>
           <Grid item xs={3}>
