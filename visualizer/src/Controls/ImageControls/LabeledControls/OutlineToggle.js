@@ -3,7 +3,7 @@ import FormGroup from '@material-ui/core/FormGroup';
 import Switch from '@material-ui/core/Switch';
 import Tooltip from '@material-ui/core/Tooltip';
 import { useSelector } from '@xstate/react';
-import { bind, unbind } from 'mousetrap';
+import { bind } from 'mousetrap';
 import React, { useEffect, useRef } from 'react';
 import { useLabeled } from '../../../ProjectContext';
 
@@ -26,7 +26,6 @@ function OutlineToggle() {
 
   useEffect(() => {
     bind('o', () => labeled.send('TOGGLE_OUTLINE'));
-    return () => unbind('o');
   }, [labeled]);
 
   return (

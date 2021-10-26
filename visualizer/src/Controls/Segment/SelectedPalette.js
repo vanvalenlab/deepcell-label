@@ -8,7 +8,7 @@ import ClearIcon from '@material-ui/icons/Clear';
 import SubdirectoryArrowLeftIcon from '@material-ui/icons/SubdirectoryArrowLeft';
 import SubdirectoryArrowRightIcon from '@material-ui/icons/SubdirectoryArrowRight';
 import { useSelector } from '@xstate/react';
-import { bind, unbind } from 'mousetrap';
+import { bind } from 'mousetrap';
 import React, { useEffect, useState } from 'react';
 import { useFeature, useLabeled, useSelect } from '../../ProjectContext';
 
@@ -139,7 +139,6 @@ export function SwitchButton() {
 
   useEffect(() => {
     bind('x', () => select.send('SWITCH'));
-    return () => unbind('x');
   }, [select]);
 
   return (
@@ -200,12 +199,6 @@ function ForegroundBox() {
     bind('esc', () => select.send('RESET_FOREGROUND'));
     bind('[', () => select.send('PREV_FOREGROUND'));
     bind(']', () => select.send('NEXT_FOREGROUND'));
-    return () => {
-      unbind('n');
-      unbind('esc');
-      unbind('[');
-      unbind(']');
-    };
   }, [select]);
 
   const [showButtons, setShowButtons] = useState(false);
@@ -317,11 +310,6 @@ function BackgroundBox() {
     bind('esc', () => select.send('RESET_BACKGROUND'));
     bind('{', () => select.send('PREV_BACKGROUND'));
     bind('}', () => select.send('NEXT_BACKGROUND'));
-    return () => {
-      unbind('esc');
-      unbind('{');
-      unbind('}');
-    };
   }, [select]);
   const [showButtons, setShowButtons] = useState(false);
   const buttonColor =
