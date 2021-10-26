@@ -75,7 +75,7 @@ Press <kbd>A</kbd> to view the previous frame.
 
 ## Editing Labels
 
-![Editing controls](/screenshots/segmentControls.png?s=100)
+<img src="screenshots/segmentControls.png" alt="Editing controls" height="300"/>
 
 In the center editing controls, there is a [toolbar](#tools) on the upper left, an [actions palette](#actions) on the lower left, the [selected labels](#Selecting-Labels) on the right, and [undo and redo buttons](#undo-and-redo) at the top.
 
