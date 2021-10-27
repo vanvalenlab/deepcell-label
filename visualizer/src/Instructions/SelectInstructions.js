@@ -33,10 +33,10 @@ function SelectInstructions() {
         </Typography>
         <Typography variant='h5'>Foreground and Background Palette</Typography>
         <Grid container spacing={3}>
-          <Grid item xs={2}>
+          <Grid item xs={6} sm={4} md={2}>
             <Selected />
           </Grid>
-          <Grid item xs={10}>
+          <Grid item xs={6} sm={8} md={10}>
             <Typography>
               Here are the selected labels, with the foreground above and the background below.
               <br />
@@ -44,7 +44,6 @@ function SelectInstructions() {
             </Typography>
           </Grid>
         </Grid>
-
         <Typography variant='h5'>Selecting Labels</Typography>
         <Typography>
           Click on labels on the canvas to select them.
