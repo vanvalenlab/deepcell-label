@@ -3,12 +3,48 @@ import { fireEvent, render } from '@testing-library/react';
 import React from 'react';
 import Instructions from './Instructions';
 
-// mock the SwitchButton component used in SelectedPalette
+// mock the controls shown in instructions
 // to avoid using any xstate hooks
+jest.mock('../Controls/ImageControls/RawControls/RGBControls', () => {
+  return {
+    __esModule: true,
+    default: () => {
+      return <div></div>;
+    },
+  };
+});
+
+jest.mock('../Controls/ImageControls/RawControls/GrayscaleControls', () => {
+  return {
+    __esModule: true,
+    default: () => {
+      return <div></div>;
+    },
+  };
+});
+
+jest.mock('../Controls/ImageControls/LabeledControls/LabeledControls', () => {
+  return {
+    __esModule: true,
+    default: () => {
+      return <div></div>;
+    },
+  };
+});
+
+jest.mock('../Controls/ImageControls/RawControls/ColorModeToggle', () => {
+  return {
+    __esModule: true,
+    default: () => {
+      return <div></div>;
+    },
+  };
+});
+
 jest.mock('../Controls/Segment/SelectedPalette', () => {
   return {
     __esModule: true,
-    SwitchButton: 'button',
+    Selected: 'div',
     default: () => {
       return <div></div>;
     },

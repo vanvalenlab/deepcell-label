@@ -19,7 +19,7 @@ function EraserButton(props) {
 
   const tooltipText = (
     <span>
-      Click and drag to erase a label (<kbd>E</kbd>)
+      Click and drag to erase a label <kbd>E</kbd>
     </span>
   );
 

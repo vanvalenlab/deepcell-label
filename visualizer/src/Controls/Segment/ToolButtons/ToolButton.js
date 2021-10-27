@@ -1,7 +1,7 @@
 import { makeStyles, withStyles } from '@material-ui/core/styles';
 import Tooltip from '@material-ui/core/Tooltip';
 import MuiToggleButton from '@material-ui/lab/ToggleButton';
-import { bind, unbind } from 'mousetrap';
+import { bind } from 'mousetrap';
 import React, { useEffect } from 'react';
 
 const useStyles = makeStyles(theme => ({
@@ -32,7 +32,6 @@ function ToolButton(props) {
 
   useEffect(() => {
     bind(hotkey, onClick);
-    return () => unbind(hotkey);
   }, [hotkey, onClick]);
 
   return (

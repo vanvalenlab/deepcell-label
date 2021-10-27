@@ -13,7 +13,7 @@ function SelectButton(props) {
     <span>
       Click to pick the foreground.
       <br />
-      Click the foreground to make it the background. (<kbd>V</kbd>)
+      Click the foreground to make it the background. <kbd>V</kbd>
     </span>
   );
 

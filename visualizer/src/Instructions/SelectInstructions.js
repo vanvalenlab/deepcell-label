@@ -1,53 +1,69 @@
+import { Box, Grid } from '@material-ui/core';
 import Typography from '@material-ui/core/Typography';
 import React from 'react';
-import SelectedPalette, { SwitchButton } from '../Controls/Segment/SelectedPalette';
+import { Selected } from '../Controls/Segment/SelectedPalette';
+import { Shortcut, Shortcuts } from './Shortcuts';
+
+function SelectShortcuts() {
+  return (
+    <Shortcuts>
+      <Shortcut text='New label' shortcut='N' />
+      <Shortcut text='Unselect ' shortcut='Esc' />
+      <Shortcut text='Previous foreground' shortcut='[' />
+      <Shortcut text='Next foreground' shortcut=']' />
+      <Shortcut text='Previous background' shortcut='Shift+[' />
+      <Shortcut text='Next background' shortcut='Shift+]' />
+    </Shortcuts>
+  );
+}
 
 function SelectInstructions() {
   return (
-    <>
-      <Typography variant='h5'>Foreground and Background</Typography>
-      <Typography>
-        The foreground is the label that we are adding the canvas. The foreground is highlighted
-        with a translucent white. Tools that add to the labeling, like the brush or threshold, will
-        add the foreground label. The background label is outlined in red. Tools that remove labeled
-        areas, like trim or delete, selects a label as the background when clicking on it, and
-        clicking on label selected as the background does the action that removes it.
-      </Typography>
-      <Typography variant='h5'>Foreground/Background Palette</Typography>
-      <SelectedPalette />
-      <Typography>
-        Below the tool bar is a palette widget that shows the current foreground and background. The
-        square outlined in white on top shows the foreground, and the square outline in red on
-        bottom shows the background.
-        <br />
-        When the top square is black, the foregorund is no label. Tools will generally replace
-        labeled area with unlabeled area.
-        <br />
-        When the bottom square is black, the background is no label. Tools will generally add new
-        labeled area over unlabeled area.
-        <br />
-        We can switch the selected foreground and background by pressing <kbd>X</kbd> or by pressing
-        the swap button <SwitchButton />.
-        <br />
-        The foreground and background squares also have arrows to cycle between all the labels.
-      </Typography>
-      <Typography variant='h5'>Select Tool</Typography>
-      <Typography>
-        While using the Select tool, click on any label to select it as the foreground. Click on the
-        foreground label to select it as the background. If you double click on a label, it also
-        resets the foreground to no label.
-        <br />
-      </Typography>
-      <Typography variant='h5'>
-        Select with <kbd>Shift</kbd>
-      </Typography>
-      <Typography>
-        While using any tool, you can select labels by holding <kbd>Shift</kbd> and clicking on it.
-        Shift clicking on any label first selects it as the background, and shift clicking on the
-        background makes it the foreground. Shift with a double click also resets the background to
-        no label.
-      </Typography>
-    </>
+    <Box display='flex' justifyContent='space-between'>
+      <div>
+        <Typography variant='h5'>Foreground and Background</Typography>
+        <Typography>
+          We can select up to two labels to edit, a foreground label and a background label.
+          <br />
+          Edits add the foreground label and remove the background label.
+          <br />
+          The canvas shows the foreground label in translucent white.
+          <br />
+          The canvas outlines the background label in red.
+        </Typography>
+        <Typography variant='h5'>Foreground and Background Palette</Typography>
+        <Grid container spacing={3}>
+          <Grid item xs={6} sm={4} md={2}>
+            <Selected />
+          </Grid>
+          <Grid item xs={6} sm={8} md={10}>
+            <Typography>
+              Here are the selected labels, with the foreground above and the background below.
+              <br />
+              Use the buttons within the boxes to cycle, reset, or select a new label.
+            </Typography>
+          </Grid>
+        </Grid>
+        <Typography variant='h5'>Selecting Labels</Typography>
+        <Typography>
+          Click on labels on the canvas to select them.
+          <br />
+          While using the Select tool,
+          <ul>
+            <li>click to select the foreground</li>
+            <li>double click to select the background</li>
+            <li>click on a selected label to swap the foreground and background</li>
+          </ul>
+          While using any tool, hold <kbd>Shift</kbd> and
+          <ul>
+            <li>click to select the background</li>
+            <li>double click to select the foreground</li>
+            <li>click on a select label to swap the foreground and background</li>
+          </ul>
+        </Typography>
+      </div>
+      <SelectShortcuts />
+    </Box>
   );
 }
 
