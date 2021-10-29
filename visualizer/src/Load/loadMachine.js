@@ -86,7 +86,6 @@ const loadMachine = Machine(
           }
           const file = files[0];
           Object.assign(file, { preview: URL.createObjectURL(file) });
-          console.log(file);
           return file;
         },
       }),

@@ -39,7 +39,6 @@ function upload(context, event) {
 
 function download(context, event) {
   const { projectId } = context;
-  console.log('downloading');
   const downloadRoute = `${document.location.origin}/api/download/${projectId}`;
   const options = { method: 'GET' };
   const promise = fetch(downloadRoute, options);
@@ -114,7 +113,7 @@ const createApiMachine = ({ projectId, bucket }) =>
             onDone: { target: 'idle', actions: 'download' },
             onError: {
               target: 'idle',
-              actions: [(c, e) => console.log(e), 'sendError'],
+              actions: 'sendError',
             },
           },
         },

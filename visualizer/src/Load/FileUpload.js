@@ -165,7 +165,7 @@ export default function FileUpload({ loadService }) {
                   endIcon={<SendIcon />}
                   onClick={() => loadService.send({ type: 'SUBMIT_UPLOAD' })}
                 >
-                  Upload {console.log(file)}
+                  Upload
                 </Button>
                 {state.matches('submittingUpload') && (
                   <LinearProgress className={classes.progress} />
