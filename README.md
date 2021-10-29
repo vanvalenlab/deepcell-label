@@ -2,55 +2,65 @@
 
 [![Build Status](https://github.com/vanvalenlab/deepcell-label/workflows/tests/badge.svg)](https://github.com/vanvalenlab/deepcell-label/actions)
 [![Coverage Status](https://coveralls.io/repos/github/vanvalenlab/deepcell-label/badge.svg?branch=master)](https://coveralls.io/github/vanvalenlab/deepcell-label?branch=master)
+[![Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/vanvalenlab/deepcell-label/blob/master/LICENSE)
 
-Label is effective for crowdsourced data labeling, as it distributes images and the tools to label them through a browser.
+DeepCell Label is a web-based tool to flexibly visualize and label cells in biological images, and is tailored for cell segmentation. Label works with multiplexed images, 3D image stacks, and time-lapse movies. The tool can label images from scratch, or review and correct labels from model predictions or existing datasets.
 
-Label is targeted toward cell segmentation, and flexibly displays bioimages so that single cells can be labels. The application works multiplexed images from , 3D images, and timelapse movies, and can label images from scratch or review and correct labels from model predictions or existing datasets.
+DeepCell Label distributes images and labeling tools through a browser, providing easy access to crowdsource data labeling and to review, correct, and curate labels as a domain expert.
 
-DeepCell Label is built with [React](https://reactjs.org/), [XState](https://xstate.js.org/docs/), and [Flask](https://flask.palletsprojects.com/en/2.0.x/) and can be used locally or deployed on the cloud (e.g. with [AWS Elastic Beanstalk](https://aws.amazon.com/elasticbeanstalk/)).
+DeepCell Label is built with [React](https://reactjs.org/), [XState](https://xstate.js.org/docs/), and [Flask](https://flask.palletsprojects.com/en/2.0.x/) and [runs locally](#local-use) or [on the cloud](#cloud-deployment) (e.g. with [AWS Elastic Beanstalk](https://aws.amazon.com/elasticbeanstalk/)).
 
-Visit [label.deepcell.org](https://label.deepcell.org) and create a project from one of our example files or from your own .tiff, .png, or .npz. Detailed instructions about the user interface are available in the dropdown instructions on the
-
-## Architecture
+Visit [label.deepcell.org](https://label.deepcell.org) and create a project from one of our example files or from your own .tiff, .png, or .npz files. Detailed instructions are available in the dropdown instructions tab when working in DeepCell Label.
 
 ## Local use
 
-Clone the repository
+To run DeepCell Label locally, you will set up the client and the server from your computer.
+
+To begin, clone the repository with the following command:
 
 ```
 git clone https://github.com/vanvalenlab/deepcell-label.git
+cd deepcell-label
 ```
 
-You use [AWS Identity and Access Management (IAM)](https://docs.aws.amazon.com/IAM/latest/UserGuide/) to manage permissions.
+### Set up Flask server
 
-### Set up Flask backend
+The backend will store and update project data.
 
-Install the Python dependencies
+Install the Python dependencies with:
 
 ```
 pip install -r requirements.txt
 ```
 
-Start the
-runs the Flask backend on
-
-Note that by default the database is made in `/tmp` and is erased on restart. To keep a persistent database, change `SQLALCHEMY_DATABASE_URI` in `.env` to another value like `sqlite:///~/Documents/deepcell_label.db`.
+Then, start the server with:
 
 ```
 flask run
 ```
 
+When starting the application, Flask will create the database and tables if they do not exist. By default, the app makes a database in `/tmp` and erases on restart. To make a persistent database, change `SQLALCHEMY_DATABASE_URI` in `.env` to create the database in another folder like `SQLALCHEMY_DATABASE_URI=sqlite:///~/Documents/deepcell_label.db`.
+
+### Set up React client
+
+Once the server is running, we need to set up the frontend to interact with it. Install the dependencies for the frontend with:
+
 ```
 cd visualizer
 yarn
+```
+
+Then, start the frontend with:
+
+```
 yarn start
 ```
 
-runs a lo
+Visit [localhost:3000](http://localhost:3000) to see the DeepCell Label homepage.
 
 ## Cloud deployment
 
-DeepCell Label can be deployed on the web, as we have done with [label.deepcell.org](https://label.deepcell.org). Here, we'll walk you through our deploymenet process on AWS, but your own servers or any other cloud provider will also work.
+For longer term use, deploy DeepCell Label on the cloud. For example, [label.deepcell.org](https://label.deepcell.org) is deployed on AWS. We'll walk you through our deployment process on AWS, but any cloud provider or your own servers will work.
 
 Before we begin, install the AWS Command Line Interface from [aws.amazon.com/cli](https://aws.amazon.com/cli/). You can instead use the AWS Management Console if you'd prefer not to use the command line.
 
@@ -74,18 +84,10 @@ To update the environment, `eb deploy` to deploy the latest version of the code.
 
 The Flask backend uses SQLAlchemy to connect to a database on [Amazon Relational Database Service](https://aws.amazon.com/rds/).
 
-The specific instance used for [label.deepcell.org](https://label.deepcell.org) is a MySQL db.m5.xlarge instance with 200 GiB of storage. The database is created with the following command:
-
-```
-create-db-instance
---db-instance-identifier deepcell-label-db-1
---allocated-storage 200
---db-instance-class db.m5.xlarge
---engine mysql
-```
+The specific instance used for [label.deepcell.org](https://label.deepcell.org) is a MySQL db.m5.xlarge instance with 200 GiB of storage.
 
 Before deploying, make sure to update the `.env` file with the correct `SQLALCHEMY_DATABASE_URI` to point to the remote database on RDS.
-For example, for the `deepcell_label` database on RDS, we set
+For example, for the `deepcell_label` database on RDS, change this line in `.env` to:
 
 ```
 SQLALCHEMY_DATABASE_URI=mysql://username:password@deepcell-label-db-1.cbwvcgkyjfot.us-east-2.rds.amazonaws.com/deepcell_label
@@ -112,7 +114,5 @@ Once both the frontend and backend are deployed, create a CloudFront distributio
 - create two origins for the frontend and backend
 - define behaviors to direct traffic to the appropriate origin and cache the results appropriately
 - create a distribution with the above origins and behaviors
-
-If using an alternate domain name, use the `--domain-name` option to specify it.
 
 When updating the frontend, make sure to invalidate the cached `/` and `/index.html` URL in the CloudFront distribution. Other assets will have a different file name and do not need to be invalidated.
