@@ -1,5 +1,5 @@
 """
-Tests for loading files in url_loaders.
+Tests for loading files in loaders.
 """
 
 import io
@@ -7,10 +7,10 @@ import pytest
 import numpy as np
 import responses
 from PIL import Image
-from skimage.external.tifffile import TiffWriter
+from tifffile import TiffWriter
 import zipfile
 
-from deepcell_label import url_loaders
+from deepcell_label.loaders import URLLoader, FileLoader
 
 
 @responses.activate
@@ -23,7 +23,7 @@ def test_load_raw_npz():
     url = 'http://example.com/mocked/raw.npz'
     responses.add(responses.GET, url, body=io.BufferedReader(npz))
 
-    loader = url_loaders.Loader({'url': url})
+    loader = URLLoader({'url': url})
 
     np.testing.assert_array_equal(loader.raw_array, expected)
     np.testing.assert_array_equal(loader.label_array, expected)
@@ -42,7 +42,7 @@ def test_load_raw_and_labeled_npz():
     url = 'http://example.com/mocked/raw_and_labeled.npz'
     responses.add(responses.GET, url, body=io.BufferedReader(npz))
 
-    loader = url_loaders.Loader({'url': url})
+    loader = URLLoader({'url': url})
 
     np.testing.assert_array_equal(loader.raw_array, expected_raw)
     np.testing.assert_array_equal(loader.label_array, expected_labeled)
@@ -67,7 +67,7 @@ def test_load_separate_url_npz():
     responses.add(responses.GET, url, body=create_npz())
     responses.add(responses.GET, labeled_url, body=create_npz())
 
-    loader = url_loaders.Loader({'url': url, 'labeled_url': labeled_url})
+    loader = URLLoader({'url': url, 'labeled_url': labeled_url})
 
     np.testing.assert_array_equal(loader.raw_array, expected_raw)
     np.testing.assert_array_equal(loader.label_array, expected_labeled)
@@ -86,7 +86,7 @@ def test_load_raw_tiff():
     url = 'http://example.com/mocked/raw.tiff'
     responses.add(responses.GET, url, body=io.BufferedReader(tifffile))
 
-    loader = url_loaders.Loader({'url': url})
+    loader = URLLoader({'url': url})
 
     np.testing.assert_array_equal(loader.raw_array, expected)
     np.testing.assert_array_equal(loader.label_array, expected)
@@ -112,7 +112,7 @@ def test_load_raw_and_labeled_tiff():
     responses.add(responses.GET, url, body=io.BufferedReader(raw))
     responses.add(responses.GET, labeled_url, body=io.BufferedReader(labeled))
 
-    loader = url_loaders.Loader({'url': url, 'labeled_url': labeled_url})
+    loader = URLLoader({'url': url, 'labeled_url': labeled_url})
 
     np.testing.assert_array_equal(loader.raw_array, expected_raw)
     np.testing.assert_array_equal(loader.label_array, expected_labeled)
@@ -131,7 +131,7 @@ def test_load_raw_png():
     url = 'http://example.com/mocked/raw.png'
     responses.add(responses.GET, url, body=io.BufferedReader(raw))
 
-    loader = url_loaders.Loader({'url': url})
+    loader = URLLoader({'url': url})
 
     np.testing.assert_array_equal(loader.raw_array, expected)
     np.testing.assert_array_equal(loader.label_array, expected)
@@ -165,7 +165,7 @@ def test_load_raw_zip():
     url = 'http://example.com/mocked/raw.zip'
     responses.add(responses.GET, url, body=io.BufferedReader(raw))
 
-    loader = url_loaders.Loader({'url': url, 'axes': 'CYX'})
+    loader = URLLoader({'url': url, 'axes': 'CYX'})
 
     np.testing.assert_array_equal(loader.raw_array, expected_raw)
     np.testing.assert_array_equal(loader.label_array, expected_labeled)
@@ -211,7 +211,7 @@ def test_load_labeled_zip():
     responses.add(responses.GET, url, body=io.BufferedReader(raw))
     responses.add(responses.GET, labeled_url, body=io.BufferedReader(labeled))
 
-    loader = url_loaders.Loader({'url': url, 'labeled_url': labeled_url, 'axes': 'CYX'})
+    loader = URLLoader({'url': url, 'labeled_url': labeled_url, 'axes': 'CYX'})
 
     np.testing.assert_array_equal(loader.raw_array, expected_raw)
     np.testing.assert_array_equal(loader.label_array, expected_labeled)

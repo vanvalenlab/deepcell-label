@@ -396,7 +396,7 @@ class TestTrackEdit():
 
     def test_track_add_cell_info(self):
         labels = np.zeros((1, 1, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, url='test.trk'))
+        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
         edit = label.TrackEdit(project)
         tracks = edit.tracks
 
@@ -419,7 +419,7 @@ class TestTrackEdit():
     def test_add_cell_info_multiple_frames(self):
         num_frames = 5
         labels = np.zeros((num_frames, 1, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, url='test.trk'))
+        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
         edit = label.TrackEdit(project)
         tracks = edit.tracks
 
@@ -443,7 +443,7 @@ class TestTrackEdit():
         """A new track on the first frame a label appears does nothing."""
         # two 1x1 frames with one feature; cell starts on second frame
         labels = np.reshape([0, 1], (2, 1, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, url='test.trk'))
+        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
         cell = 1
         frame = 1
         feature = 0
@@ -462,7 +462,7 @@ class TestTrackEdit():
         """Create a new track on the second frame of a label."""
         # two 1x1 frames with one feature; cell appears in both frames
         labels = np.reshape([1, 1], (2, 1, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, url='test.trk'))
+        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
         cell = 1
         frame = 1
         feature = 0

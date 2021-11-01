@@ -9,7 +9,7 @@ from pytest_lazyfixture import lazy_fixture
 from unittest.mock import MagicMock
 
 from deepcell_label import create_app  # pylint: disable=C0413
-from deepcell_label.url_loaders import Loader
+from deepcell_label.loaders import Loader
 
 
 # flask-sqlalchemy fixtures from http://alexmic.net/flask-sqlalchemy-pytest/
@@ -21,9 +21,8 @@ TEST_DATABASE_URI = 'sqlite:///{}'.format(TESTDB_PATH)
 
 # TODO: Could this become a fixture?
 class DummyLoader(Loader):
-    def __init__(self, raw=None, labels=None, cell_info=None, url='test.npz'):
-        DummyLoader.load = MagicMock()  # monkeypatch to avoid network requests
-        super().__init__(url_form={'url': url})
+    def __init__(self, raw=None, labels=None, cell_info=None, path='test.npz'):
+        super().__init__()
 
         if raw is None:
             raw = np.zeros((1, 1, 1, 1))
@@ -33,6 +32,7 @@ class DummyLoader(Loader):
         elif labels.shape != raw.shape:
             raw = np.zeros(labels.shape)
 
+        self.path = path
         self.raw_array = raw
         self.label_array = labels
         self.add_semantic_labels()  # computes cell_ids
