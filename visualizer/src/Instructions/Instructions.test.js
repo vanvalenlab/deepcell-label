@@ -5,6 +5,22 @@ import Instructions from './Instructions';
 
 // mock the controls shown in instructions
 // to avoid using any xstate hooks
+jest.mock('./DisplayInstructions', () => {
+  return {
+    __esModule: true,
+    default: () => {
+      return <div></div>;
+    },
+  };
+});
+jest.mock('./SelectInstructions', () => {
+  return {
+    __esModule: true,
+    default: () => {
+      return <div></div>;
+    },
+  };
+});
 jest.mock('../Controls/ImageControls/RawControls/RGBControls', () => {
   return {
     __esModule: true,
