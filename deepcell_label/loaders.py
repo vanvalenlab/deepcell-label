@@ -1,5 +1,4 @@
 """
-TEST MODULE; exploring loading only from URLs instead of file input & paths to S3 buckets
 Classes to load external data from URLs into a DeepCell Label Project.
 Loads or creates raw_array, label_array, cell_ids, and cell_info.
 """
