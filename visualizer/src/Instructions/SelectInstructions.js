@@ -2,6 +2,7 @@ import { Box, Grid } from '@material-ui/core';
 import Typography from '@material-ui/core/Typography';
 import React from 'react';
 import { Selected } from '../Controls/Segment/SelectedPalette';
+import { useLabeled } from '../ProjectContext';
 import { Shortcut, Shortcuts } from './Shortcuts';
 
 function SelectShortcuts() {
@@ -18,6 +19,7 @@ function SelectShortcuts() {
 }
 
 function SelectInstructions() {
+  const labeled = useLabeled();
   return (
     <Box display='flex' justifyContent='space-between'>
       <div>
@@ -34,7 +36,7 @@ function SelectInstructions() {
         <Typography variant='h5'>Foreground and Background Palette</Typography>
         <Grid container spacing={3}>
           <Grid item xs={6} sm={4} md={2}>
-            <Selected />
+            {labeled && <Selected />}
           </Grid>
           <Grid item xs={6} sm={8} md={10}>
             <Typography>
