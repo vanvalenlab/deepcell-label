@@ -3,7 +3,7 @@ import { fireEvent, render } from '@testing-library/react';
 import React from 'react';
 import Instructions from './Instructions';
 
-// mock the controls shown in instructions
+// mock instructions tabs with controls
 // to avoid using any xstate hooks
 jest.mock('./DisplayInstructions', () => {
   return {
@@ -16,51 +16,6 @@ jest.mock('./DisplayInstructions', () => {
 jest.mock('./SelectInstructions', () => {
   return {
     __esModule: true,
-    default: () => {
-      return <div></div>;
-    },
-  };
-});
-jest.mock('../Controls/ImageControls/RawControls/RGBControls', () => {
-  return {
-    __esModule: true,
-    default: () => {
-      return <div></div>;
-    },
-  };
-});
-
-jest.mock('../Controls/ImageControls/RawControls/GrayscaleControls', () => {
-  return {
-    __esModule: true,
-    default: () => {
-      return <div></div>;
-    },
-  };
-});
-
-jest.mock('../Controls/ImageControls/LabeledControls/LabeledControls', () => {
-  return {
-    __esModule: true,
-    default: () => {
-      return <div></div>;
-    },
-  };
-});
-
-jest.mock('../Controls/ImageControls/RawControls/ColorModeToggle', () => {
-  return {
-    __esModule: true,
-    default: () => {
-      return <div></div>;
-    },
-  };
-});
-
-jest.mock('../Controls/Segment/SelectedPalette', () => {
-  return {
-    __esModule: true,
-    Selected: 'div',
     default: () => {
       return <div></div>;
     },
