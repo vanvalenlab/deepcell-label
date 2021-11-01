@@ -4,7 +4,7 @@ import io
 
 import pytest
 import numpy as np
-from skimage.external.tifffile import TiffWriter
+from tifffile import TiffWriter
 from PIL import Image
 
 

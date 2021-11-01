@@ -7,7 +7,7 @@ import pytest
 import numpy as np
 import responses
 from PIL import Image
-from skimage.external.tifffile import TiffWriter
+from tifffile import TiffWriter
 import zipfile
 
 from deepcell_label.loaders import URLLoader, FileLoader

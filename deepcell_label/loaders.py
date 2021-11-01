@@ -19,7 +19,7 @@ import boto3
 import imageio
 import numpy as np
 from PIL import Image
-from skimage.external.tifffile import TiffFile
+from tifffile import TiffFile
 
 from deepcell_label.imgutils import reshape
 from deepcell_label.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_INPUT_BUCKET
