@@ -3,6 +3,6 @@ import App from './App';
 
 test('renders DeepCell Label', () => {
   render(<App />);
-  const linkElement = screen.getByText(/DeepCell Label/i);
-  expect(linkElement).toBeInTheDocument();
+  const linkElements = screen.getAllByText(/DeepCell Label/i);
+  linkElements.map(el => expect(el).toBeInTheDocument());
 });

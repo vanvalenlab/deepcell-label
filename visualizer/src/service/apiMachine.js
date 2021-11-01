@@ -37,6 +37,27 @@ function upload(context, event) {
   return fetch(uploadRoute, options).then(checkResponseCode);
 }
 
+function download(context, event) {
+  const { projectId } = context;
+  const downloadRoute = `${document.location.origin}/api/download/${projectId}`;
+  const options = { method: 'GET' };
+  const promise = fetch(downloadRoute, options);
+  const filename = promise.then(response => {
+    const regex = /filename=(.*)$/;
+    const header = response.headers.get('content-disposition');
+    let filename = header.match(regex)[1] ?? `${projectId}.npz`;
+    // Strip quotes
+    filename = filename.replaceAll('"', '');
+    // Remove leading folders
+    if (filename.includes('/')) {
+      filename = filename.slice(filename.lastIndexOf('/') + 1);
+    }
+    return filename;
+  });
+  const url = promise.then(response => response.blob()).then(blob => URL.createObjectURL(blob));
+  return Promise.all([filename, url]);
+}
+
 function checkResponseCode(response) {
   return response.json().then(json => {
     return response.ok ? json : Promise.reject(json);
@@ -59,6 +80,7 @@ const createApiMachine = ({ projectId, bucket }) =>
             BACKEND_UNDO: 'loading',
             BACKEND_REDO: 'loading',
             UPLOAD: 'uploading',
+            DOWNLOAD: 'downloading',
           },
         },
         loading: {
@@ -85,10 +107,27 @@ const createApiMachine = ({ projectId, bucket }) =>
             },
           },
         },
+        downloading: {
+          invoke: {
+            src: download,
+            onDone: { target: 'idle', actions: 'download' },
+            onError: {
+              target: 'idle',
+              actions: 'sendError',
+            },
+          },
+        },
       },
     },
     {
       actions: {
+        download: (_, event) => {
+          const [filename, url] = event.data;
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = filename;
+          link.click();
+        },
         sendEdited: sendParent((_, event) => ({
           type: 'EDITED',
           data: event.data,
