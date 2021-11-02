@@ -11,7 +11,7 @@ function TrimButton(props) {
 
   const tooltipText = (
     <span>
-      Click a label to remove unconnected parts (<kbd>K</kbd>)
+      Click a label to remove unconnected parts <kbd>K</kbd>
     </span>
   );
 

@@ -3,12 +3,19 @@ import { fireEvent, render } from '@testing-library/react';
 import React from 'react';
 import Instructions from './Instructions';
 
-// mock the SwitchButton component used in SelectedPalette
+// mock instructions tabs with controls
 // to avoid using any xstate hooks
-jest.mock('../Controls/Segment/SelectedPalette', () => {
+jest.mock('./DisplayInstructions', () => {
   return {
     __esModule: true,
-    SwitchButton: 'button',
+    default: () => {
+      return <div></div>;
+    },
+  };
+});
+jest.mock('./SelectInstructions', () => {
+  return {
+    __esModule: true,
     default: () => {
       return <div></div>;
     },

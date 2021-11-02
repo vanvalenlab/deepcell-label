@@ -11,7 +11,7 @@ function ReplaceButton(props) {
 
   const tooltipText = (
     <span>
-      Combines two labels (<kbd>Shift</kbd> + <kbd>R</kbd>)
+      Combines two labels <kbd>Shift</kbd> + <kbd>R</kbd>
     </span>
   );
 

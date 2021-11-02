@@ -11,7 +11,7 @@ function GrowButton(props) {
 
   const tooltipText = (
     <span>
-      Expands a label by one pixel (<kbd>Shift</kbd> + <kbd>Q</kbd>)
+      Expands a label by one pixel <kbd>Shift</kbd> + <kbd>Q</kbd>
     </span>
   );
 

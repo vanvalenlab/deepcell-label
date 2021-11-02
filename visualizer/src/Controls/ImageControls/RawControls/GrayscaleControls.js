@@ -7,7 +7,7 @@ import Slider from '@material-ui/core/Slider';
 import Switch from '@material-ui/core/Switch';
 import Tooltip from '@material-ui/core/Tooltip';
 import { useSelector } from '@xstate/react';
-import { bind, unbind } from 'mousetrap';
+import { bind } from 'mousetrap';
 import React, { useEffect, useRef } from 'react';
 import { useRaw } from '../../../ProjectContext';
 
@@ -39,7 +39,6 @@ const InvertToggle = ({ channel }) => {
 
   useEffect(() => {
     bind('i', () => channel.send('TOGGLE_INVERT'));
-    return () => unbind('i');
   }, [channel]);
 
   return (
@@ -83,10 +82,6 @@ const ChannelSelector = () => {
     const nextChannel = (channel + 1) % numChannels;
     bind('shift+c', () => raw.send({ type: 'LOAD_CHANNEL', channel: prevChannel }));
     bind('c', () => raw.send({ type: 'LOAD_CHANNEL', channel: nextChannel }));
-    return () => {
-      unbind('shift+c');
-      unbind('c');
-    };
   }, [raw, channel, numChannels]);
 
   return (
@@ -183,7 +178,6 @@ const GrayscaleControls = () => {
 
   useEffect(() => {
     bind('0', () => raw.send('RESET'));
-    return () => unbind('0');
   }, [raw]);
 
   return (

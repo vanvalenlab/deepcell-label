@@ -3,7 +3,7 @@ import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Switch from '@material-ui/core/Switch';
 import Tooltip from '@material-ui/core/Tooltip';
 import { useSelector } from '@xstate/react';
-import { bind, unbind } from 'mousetrap';
+import { bind } from 'mousetrap';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { useRaw } from '../../../ProjectContext';
 
@@ -22,7 +22,6 @@ function ColorModeToggle() {
 
   useEffect(() => {
     bind('y', onClick);
-    return () => unbind('y');
   }, [onClick]);
 
   const toggleTooltip = (
