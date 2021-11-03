@@ -212,6 +212,16 @@ def get_project(token):
 #                             loader.path, timeit.default_timer() - start)
 #     return jsonify({'projectId': project.token})
 
+@bp.route('/api/registry-files')
+def get_files_in_registry():
+    files = listdir(current_app.config['REGISTRY_PATH'])
+
+    def is_valid(f):
+        return is_zip(f) or is_npz(f) or is_trk(f) or is_png(f) or is_tiff(f)
+    files = [f for f in files if is_valid(f)]
+    return jsonify({'files': files})
+
+
 @bp.route('/api/project/dropped', methods=['POST'])
 def create_project_from_dropped_file():
     """
