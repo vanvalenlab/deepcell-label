@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+import os
 
 from decouple import config
 
@@ -37,3 +38,6 @@ COMPRESS_MIMETYPES = ['text/html', 'text/css', 'text/xml',
 COMPRESS_LEVEL = 6
 COMPRESS_MIN_SIZE = 500
 COMPRESS_ALGORITHM = 'gzip'
+
+# Registry viewer settings
+REGISTRY_PATH = os.path.expanduser(config('REGISTRY_PATH', default='~'))
