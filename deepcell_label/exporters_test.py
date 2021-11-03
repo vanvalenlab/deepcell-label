@@ -8,33 +8,23 @@ from deepcell_label import exporters
 from deepcell_label.conftest import DummyLoader
 
 
-@pytest.fixture
-def npz_exporter(app, db_session):
-    with app.app_context():
-        db_session.autoflush = False
-        project = models.Project.create(DummyLoader(path='test.npz'))
-        exporter = exporters.Exporter(project)
-        return exporter
-
-
-@pytest.fixture
-def trk_exporter(app, db_session):
-    with app.app_context():
-        db_session.autoflush = False
-        project = models.Project.create(DummyLoader(path='test.trk'))
-        exporter = exporters.Exporter(project)
-        return exporter
-
-
 class TestExporter():
 
-    def test_export_npz(self, npz_exporter):
-        file_ = npz_exporter.export()
-        assert isinstance(file_, io.BytesIO)
+    def test_export_npz(self, app, db_session):
+        with app.app_context():
+            db_session.autoflush = False
+            project = models.Project.create(DummyLoader(path='test.npz'))
+            exporter = exporters.Exporter(project)
+            file_ = exporter.export()
+            assert isinstance(file_, io.BytesIO)
 
-    def test_export_trk(self, trk_exporter):
-        file_ = trk_exporter.export()
-        assert isinstance(file_, io.BytesIO)
+    def test_export_trk(self, app, db_session):
+        with app.app_context():
+            db_session.autoflush = False
+            project = models.Project.create(DummyLoader(path='test.trk'))
+            exporter = exporters.Exporter(project)
+            file_ = exporter.export()
+            assert isinstance(file_, io.BytesIO)
 
 
 class TestS3Exporter():
