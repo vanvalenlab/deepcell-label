@@ -13,6 +13,7 @@ import Footer from './Footer/Footer';
 import Instructions from './Instructions/Instructions';
 import Navbar from './Navbar';
 import { useCanvas, useLabeled } from './ProjectContext';
+import SelectRegistryFile from './SelectRegistryFile';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -83,6 +84,7 @@ function Label() {
       <Instructions />
       <Box className={styles.main}>
         <Box className={styles.controlPanelBox}>
+          <SelectRegistryFile />
           <ImageControls />
         </Box>
         <Box className={styles.toolbarBox}>
