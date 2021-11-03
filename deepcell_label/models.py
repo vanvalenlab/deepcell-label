@@ -416,6 +416,8 @@ class Project(db.Model):
         payload['width'] = self.width
         payload['height'] = self.height
 
+        payload['path'] = self.path
+
         # # First frame edited by each action
         # # Excludes the first action, which loads the project
         # payload['actionFrames'] = [action.frames[0].frame_id
