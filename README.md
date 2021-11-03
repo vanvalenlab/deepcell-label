@@ -37,7 +37,7 @@ pip install -r requirements.txt
 Then, start the server with:
 
 ```bash
-FLASK_APP='deepcell_label.wsgi:application' flask run
+flask run
 ```
 
 When starting the application, Flask will create the database and tables if they do not exist. By default, the app makes a database in `/tmp` and erases on restart. To make a persistent database, change `SQLALCHEMY_DATABASE_URI` in `.env` to create the database in another folder like `SQLALCHEMY_DATABASE_URI=sqlite:///~/Documents/deepcell_label.db`.

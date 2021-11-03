@@ -23,7 +23,8 @@ WORKDIR /usr/src/app
 COPY --from=builder /install /usr/local
 
 COPY deepcell_label ./deepcell_label
+COPY application.py .
 
 ENV PORT "5000"
 
-CMD gunicorn --bind 0.0.0.0:$PORT deepcell_label.wsgi:application
+CMD gunicorn --bind 0.0.0.0:$PORT application
