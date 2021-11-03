@@ -18,7 +18,7 @@ To run DeepCell Label locally, you will set up the client and the server from yo
 
 To begin, clone the repository with the following command:
 
-```
+```bash
 git clone https://github.com/vanvalenlab/deepcell-label.git
 cd deepcell-label
 ```
@@ -30,12 +30,13 @@ The backend will store and update project data.
 It's recommended to set up a virtual environment with [conda](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) or [venv](https://docs.python.org/3/library/venv.html).
 Install the Python dependencies with:
 
-```
+```bash
 pip install -r requirements.txt
 ```
 
 Then, start the server with:
 
+```bash
 FLASK_APP='deepcell_label.wsgi:application' flask run
 ```
 
@@ -45,14 +46,14 @@ When starting the application, Flask will create the database and tables if they
 
 Once the server is running, we need to set up the frontend to interact with it. Install the dependencies for the frontend with:
 
-```
+```bash
 cd visualizer
 yarn
 ```
 
 Then, start the frontend with:
 
-```
+```bash
 yarn start
 ```
 
