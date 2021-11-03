@@ -9,6 +9,7 @@ import gzip
 import json
 import timeit
 import traceback
+from os import listdir
 
 from flask import abort
 from flask import Blueprint
@@ -23,11 +24,11 @@ import matplotlib
 import pandas as pd
 
 from deepcell_label.label import TrackEdit, ZStackEdit
+from deepcell_label.load_utils import is_zip, is_npz, is_trk, is_png, is_tiff
 from deepcell_label.models import Project
 # from deepcell_label import loaders
 from deepcell_label import loaders
 from deepcell_label import exporters
-from deepcell_label.config import S3_INPUT_BUCKET, S3_OUTPUT_BUCKET
 
 bp = Blueprint('label', __name__)  # pylint: disable=C0103
 
@@ -220,6 +221,19 @@ def get_files_in_registry():
         return is_zip(f) or is_npz(f) or is_trk(f) or is_png(f) or is_tiff(f)
     files = [f for f in files if is_valid(f)]
     return jsonify({'files': files})
+
+
+@bp.route('/api/project-from-registry', methods=['POST'])
+def create_project_from_path():
+    """
+    Create a new Project from a path on the server.
+    """
+    start = timeit.default_timer()
+    loader = loaders.PathLoader(request)
+    project = Project.create(loader)
+    current_app.logger.info('Created project from %s in %s s.',
+                            loader.path, timeit.default_timer() - start)
+    return jsonify({'projectId': project.token})
 
 
 @bp.route('/api/project/dropped', methods=['POST'])
