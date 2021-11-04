@@ -25,7 +25,9 @@ cd deepcell-label
 
 ### Set up Flask server
 
-The backend will store and update project data.
+The backend is a Flask HTTP API that will store and update project data.
+
+#### Run Python locally
 
 It's recommended to set up a virtual environment with [conda](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) or [venv](https://docs.python.org/3/library/venv.html).
 Install the Python dependencies with:
@@ -41,6 +43,22 @@ flask run
 ```
 
 When starting the application, Flask will create the database and tables if they do not exist. By default, the app makes a database in `/tmp` and erases on restart. To make a persistent database, change `SQLALCHEMY_DATABASE_URI` in `.env` to create the database in another folder like `SQLALCHEMY_DATABASE_URI=sqlite:///~/Documents/deepcell_label.db`.
+
+#### Run with Docker
+
+The backend can also be containerized with [Docker](https://www.docker.com). To build a production-ready Docker image:
+
+```bash
+docker build -t vanvalenlab/deepcell-label:$USER
+```
+
+The built image can be used to run the backend on port 5000 with:
+
+```bash
+docker run -p 5000:5000 -it vanvalenlab/deepcell-label:$USER
+```
+
+The `SQLALCHEMY_DATABASE_URI` can be passed to the run command using the [environment variable flags](https://docs.docker.com/engine/reference/commandline/run/#set-environment-variables--e---env---env-file): `-e` and `--env`.
 
 ### Set up React client
 
