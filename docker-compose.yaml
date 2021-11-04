@@ -6,7 +6,7 @@ services:
       dockerfile: Dockerfile.api
     image: dcl:api
     volumes:
-      - ./../data-registry/data/labels/dynamic/2d/MDA-MB-231/2021_kinase_inhibitors:/data
+      - $DATA_DIR:/data
   client:
     build:
       context: .
