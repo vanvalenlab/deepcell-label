@@ -1,0 +1,17 @@
+FROM python:3.7
+WORKDIR /app
+
+COPY requirements.txt ./
+RUN pip install -r ./requirements.txt gunicorn
+ENV FLASK_ENV development
+
+# Copy code and config
+COPY deepcell_label ./deepcell_label
+COPY application.py .env fmd_config.cfg.example ./
+
+# Make directory for mounting data
+# RUN mkdir /data
+VOLUME ["/data"]
+
+EXPOSE 5000
+CMD ["gunicorn", "-b", ":5000", "application"]
