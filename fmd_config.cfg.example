@@ -16,7 +16,7 @@ SECURITY_TOKEN=
 [database]
 TABLE_PREFIX=fmd
 # When empty, dashboard uses default SQLite database flask_monitoring_dashboard.db in repo folder
-DATABASE=
+# DATABASE=
 
 [visualization]
 TIMEZONE=US/Pacific

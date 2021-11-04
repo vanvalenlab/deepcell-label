@@ -10,8 +10,7 @@ COPY deepcell_label ./deepcell_label
 COPY application.py .env fmd_config.cfg.example ./
 
 # Make directory for mounting data
-# RUN mkdir /data
-VOLUME ["/data"]
+RUN mkdir /data
 
 EXPOSE 5000
 CMD ["gunicorn", "-b", ":5000", "application"]

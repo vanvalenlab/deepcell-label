@@ -14,5 +14,3 @@ services:
     image: dcl:client
     ports:
       - "3000:80"
-# volumes:
-#   - ./../data-registry/data/labels/dynamic/2d/MDA-MB-231/2021_kinase_inhibitors:/data
