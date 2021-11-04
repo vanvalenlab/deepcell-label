@@ -128,6 +128,7 @@ class PathLoader(Loader):
         form = request.form
         self.source = 'lfs'
         self.path = form['file']
+        self.input_axes = 'BZYXC'
         with open(pathlib.Path(REGISTRY_PATH, self.path), 'rb') as f:
             self.data = f.read()
         self.load()
