@@ -60,6 +60,19 @@ sudo docker-compose down
 sudo docker system prune --volumes
 ```
 
+## Docker Compose for Local Data Viewing
+
+DCL now supports a local deployment which can be used to browse data available locally on a remote server. To setup a local deployment:
+
+1. Modify the `.env` file and add `REGISTRY_PATH=/data`
+2. Comment out lines in `.env` and `fmd_config.cfg.example` that refer to sql databases
+
+The local deployment currently can select files from one data folder at a time. The location of the data folder is specified with the env variable `DATA_DIR`.
+
+3. Launch the deployment by running `DATA_DIR=path/to/data/for/viewing docker-compose -f docker-compose-viewer.yaml -d up`
+
+The system can be accessed at `<your ip address>:3000/project` and finally shut down with `docker-compose down`.
+
 ## Structure of Browser Version
 
 Flask is used as an HTTP server that serves the frames as pngs and metadata as JSON. The .js files in the `deepcell_label/template` folder are what makes the requests to the Flask server.
