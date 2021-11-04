@@ -21,6 +21,10 @@ FROM base
 
 WORKDIR /usr/src/app
 
+RUN apt-get update && apt-get install -y \
+  libmariadb-dev-compat && \
+  rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /install /usr/local
 
 COPY deepcell_label ./deepcell_label
