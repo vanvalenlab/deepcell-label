@@ -33,6 +33,7 @@ function SelectRegistryFile() {
     const projectId = search.get('projectId');
     axios.get(`/api/project/${projectId}`).then(res => {
       setFile(res.data.path);
+      document.title = res.data.path;
     });
   }, []);
 
