@@ -1,9 +1,11 @@
 .git
+.github
 Dockerfile
 .DS_Store
 .vscode
 .gitignore
 .dockerignore
+visualizer
 
 /credentials
 /cache
@@ -88,6 +90,7 @@ nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
+.pytest_cache
 
 # Translations
 *.mo
