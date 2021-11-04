@@ -1,0 +1,16 @@
+version: "2"
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    image: dcl:api
+    volumes:
+      - $DATA_DIR:/data
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    image: dcl:client
+    ports:
+      - "3000:80"
