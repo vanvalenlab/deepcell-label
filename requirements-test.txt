@@ -7,5 +7,5 @@ pytest-flask-sqlalchemy
 pytest-lazy-fixture
 fakeredis
 six>=1.12
-coveralls
+coveralls>3,<3.3.0
 responses
