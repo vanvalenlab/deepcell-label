@@ -4,7 +4,6 @@ import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import Footer from './Footer/Footer';
 import Label from './Label';
 import Load from './Load/Load';
-import Navbar from './Navbar';
 import ProjectContext from './ProjectContext';
 import QualityControlContext from './QualityControlContext';
 import { isProjectId, project, qualityControl } from './service/service';
@@ -80,8 +79,6 @@ function App() {
 
   return (
     <Router>
-      <div className={styles.root}>
-        <Navbar />
         <Switch>
           <Route path='/project'>
             {isProjectId(id) ? (
@@ -96,8 +93,6 @@ function App() {
             <Load />
           </Route>
         </Switch>
-        <Footer />
-      </div>
     </Router>
   );
 }

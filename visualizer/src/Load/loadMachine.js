@@ -1,25 +1,6 @@
 import axios from 'axios';
 import { assign, Machine } from 'xstate';
 
-function submitExample(context) {
-  const { exampleFile } = context;
-  const formData = new FormData();
-  formData.append('url', exampleFile);
-  return axios.post('/api/project', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
-}
-
-function submitUpload(context) {
-  const { uploadFile, axes } = context;
-  const formData = new FormData();
-  formData.append('file', uploadFile);
-  formData.append('axes', axes);
-  return axios.post('/api/project/dropped', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
-}
-
 const loadMachine = Machine(
   {
     context: {
@@ -49,16 +30,16 @@ const loadMachine = Machine(
       },
       submittingExample: {
         invoke: {
-          src: submitExample,
+          src: 'submitExample',
           onDone: { actions: 'redirectToProject' },
-          onError: { target: 'error', actions: [(c, e) => console.log(e), 'setErrorText'] },
+          onError: { target: 'error', actions: 'setErrorText' },
         },
       },
       submittingUpload: {
         invoke: {
-          src: submitUpload,
+          src: 'submitUpload',
           onDone: { actions: 'redirectToProject' },
-          onError: { target: 'error', actions: [(c, e) => console.log(e), 'setErrorText'] },
+          onError: { target: 'error', actions: 'setErrorText' },
         },
       },
       error: {
@@ -76,6 +57,25 @@ const loadMachine = Machine(
   {
     guards: {
       isSingleFile: (_, { files }) => files.length === 1,
+    },
+    services: {
+      submitExample: context => {
+        const { exampleFile } = context;
+        const formData = new FormData();
+        formData.append('url', exampleFile);
+        return axios.post('/api/project', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      },
+      submitUpload: context => {
+        const { uploadFile, axes } = context;
+        const formData = new FormData();
+        formData.append('file', uploadFile);
+        formData.append('axes', axes);
+        return axios.post('/api/project/dropped', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      },
     },
     actions: {
       setExampleFile: assign({

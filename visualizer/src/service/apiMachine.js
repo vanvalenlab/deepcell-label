@@ -39,14 +39,13 @@ function upload(context, event) {
 
 function download(context, event) {
   const { projectId } = context;
-  console.log('downloading');
   const downloadRoute = `${document.location.origin}/api/download/${projectId}`;
   const options = { method: 'GET' };
   const promise = fetch(downloadRoute, options);
   const filename = promise.then(response => {
-    const regex = /(?<=filename=).*(?=$)/;
+    const regex = /filename=(.*)$/;
     const header = response.headers.get('content-disposition');
-    let filename = header.match(regex)[0] ?? `${projectId}.npz`;
+    let filename = header.match(regex)[1] ?? `${projectId}.npz`;
     // Strip quotes
     filename = filename.replaceAll('"', '');
     // Remove leading folders
@@ -114,7 +113,7 @@ const createApiMachine = ({ projectId, bucket }) =>
             onDone: { target: 'idle', actions: 'download' },
             onError: {
               target: 'idle',
-              actions: [(c, e) => console.log(e), 'sendError'],
+              actions: 'sendError',
             },
           },
         },

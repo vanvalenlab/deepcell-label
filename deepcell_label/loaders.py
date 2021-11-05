@@ -1,5 +1,4 @@
 """
-TEST MODULE; exploring loading only from URLs instead of file input & paths to S3 buckets
 Classes to load external data from URLs into a DeepCell Label Project.
 Loads or creates raw_array, label_array, cell_ids, and cell_info.
 """
@@ -7,22 +6,16 @@ Loads or creates raw_array, label_array, cell_ids, and cell_info.
 import io
 import json
 import pathlib
-from sys import path
-from flask.globals import request
-import requests
-import timeit
 import tempfile
 import tarfile
 import zipfile
 
-import boto3
-import imageio
+import requests
 import numpy as np
 from PIL import Image
-from skimage.external.tifffile import TiffFile
+from tifffile import TiffFile
 
 from deepcell_label.imgutils import reshape
-from deepcell_label.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_INPUT_BUCKET
 from deepcell_label.labelmaker import LabelInfoMaker
 
 DCL_AXES = 'ZYXC'

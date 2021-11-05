@@ -1,7 +1,7 @@
 import MuiButton from '@material-ui/core/Button';
 import { makeStyles, withStyles } from '@material-ui/core/styles';
 import Tooltip from '@material-ui/core/Tooltip';
-import { bind, unbind } from 'mousetrap';
+import { bind } from 'mousetrap';
 import React, { useEffect } from 'react';
 
 export const useStyles = makeStyles(theme => ({
@@ -30,7 +30,6 @@ const ActionButton = ({ tooltipText, disabled, onClick, hotkey, ...other }) => {
 
   useEffect(() => {
     bind(hotkey, onClick);
-    return () => unbind(hotkey);
   }, [hotkey, onClick]);
 
   return (

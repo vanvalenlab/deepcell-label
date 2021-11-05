@@ -15,7 +15,7 @@ function ThresholdButton(props) {
 
   const tooltipText = grayscale ? (
     <span>
-      Click and drag to fill in the brightest pixels in a box (<kbd>T</kbd>)
+      Click and drag to fill in the brightest pixels in a box <kbd>T</kbd>
     </span>
   ) : (
     'Requires a single channel'

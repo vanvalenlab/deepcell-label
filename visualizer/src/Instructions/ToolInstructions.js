@@ -1,91 +1,86 @@
+import { Box, Link } from '@material-ui/core';
 import Typography from '@material-ui/core/Typography';
 import React from 'react';
-import BrushButton from '../Controls/Segment/ToolButtons/BrushButton';
-import EraserButton from '../Controls/Segment/ToolButtons/EraserButton';
-import FloodButton from '../Controls/Segment/ToolButtons/FloodButton';
-import SelectButton from '../Controls/Segment/ToolButtons/SelectButton';
-import ThresholdButton from '../Controls/Segment/ToolButtons/ThresholdButton';
-import TrimButton from '../Controls/Segment/ToolButtons/TrimButton';
-import WatershedButton from '../Controls/Segment/ToolButtons/WatershedButton';
+import { Shortcut, Shortcuts } from './Shortcuts';
+
+function ToolShortcuts() {
+  return (
+    <Shortcuts>
+      <Shortcut text='Select' shortcut='V' />
+      <Shortcut text='Brush' shortcut='B' />
+      <Shortcut text='Erase' shortcut='E' />
+      <Shortcut text='Increase brush size' shortcut='&uarr;' />
+      <Shortcut text='Decrease brush size' shortcut='&darr;' />
+      <Shortcut text='Trim' shortcut='K' />
+      <Shortcut text='Flood' shortcut='G' />
+      <Shortcut text='Watershed' shortcut='W' />
+    </Shortcuts>
+  );
+}
 
 function ToolInstructions() {
   return (
-    <>
-      <Typography variant='h5'>
-        <SelectButton />
-      </Typography>
-      <Typography>
-        Press <kbd>V</kbd> to use the Select tool.
-        <br />
-        Select picks labels for the foreground and background.
-        <br />
-        Click on a label to select it as the foreground, or double click on a label to select it as
-        the background.
-        <br />
-        Double clicking also deselects other labels..
-      </Typography>
-      <Typography variant='h5'>
-        <BrushButton /> and <EraserButton />
-      </Typography>
-      <Typography>
-        Press <kbd>B</kbd> to use the Brush and press <kbd>E</kbd> to use the Eraser.
-        <br />
-        Click and drag to create a brush stroke, and release to paint or erase the label under the
-        brush stroke.
-        <br />
-        The brush and eraser allow for flexible pixel-level changes to labels, but they requires
-        more work to get high-quality labels. The brush adds the selected label, and the eraser
-        remove it. They can correct label borders, or draw labels from scratch, or remove them
-        entirely.
-        <br />
-        Adjust the brush size with <kbd>&uarr;</kbd> to increase the size and <kbd>&darr;</kbd> to
-        decrease the size.
-        <br />
-        When two labels are selected, you can use both the Brush and Eraser at the same time to
-        replace one label with another. Pressing the Brush or Eraser buttons or hotkeys will
-        unselect one of the labels to paint or erase a single label again.
-      </Typography>
-      <Typography variant='h5'>
-        <TrimButton />
-      </Typography>
-      <Typography>
-        Press <kbd>K</kbd> to use the Trim tool.
-        <br />
-        Trim removes disconnected parts of a label, leaving behind only the area connected to where
-        you click.
-        <br />
-        Click on any label to select it to trim, then click again to trim it.
-      </Typography>
-      <Typography variant='h5'>
-        <FloodButton />
-      </Typography>
-      <Typography>
-        Press <kbd>G</kbd> to use the Flood tool.
-        <br />
-        Flood fills a labeled region with another label.
-        <br />
-        Click on any label to select it to flood, then click again to flood it with the foreground
-        label.
-      </Typography>
-      <Typography variant='h5'>
-        <ThresholdButton />
-      </Typography>
-      <Typography>
-        Press <kbd>T</kbd> to use the Threshold tool.
-        <br />
-        Threshold fills the brightest pixels within a label.
-        <br />
-        Threshold adds the foreground label only to unlabeled areas.
-        <br />
-        Click and drag to draw a bounding box for thresholding.
-      </Typography>
-      <Typography variant='h5'>
-        <WatershedButton />
-      </Typography>
-      <Typography>
-        Press <kbd>W</kbd> to use the Watershed tool.
-      </Typography>
-    </>
+    <Box display='flex' justifyContent='space-between'>
+      <div>
+        <Typography>
+          Tools are used by clicking on the canvas.
+          <br />
+          To switch between tools, click on the Tools menu or use the shortcuts on the right.
+        </Typography>
+        <Typography variant='h5'>Select</Typography>
+        <Typography>
+          Select changes the foreground and background labels.
+          <br />
+          Click on a label to select the foreground, or double click on a label to select the
+          background.
+          <br />
+          Double clicking also deselects other selected labels.
+        </Typography>
+        <Typography variant='h5'>Brush and Erase</Typography>
+        <Typography>
+          Brush and Erase can make detailed pixel-level changes to labels.
+          <br />
+          Use them to correct label borders, draw labels from scratch, or remove labels entirely.
+          <br />
+          Brush adds the selected label and Erase removes it.
+          <br />
+          With two labels selected, both Brush and Erase are on, replacing one label with another.
+          <br />
+          To edit a single label again, press the Brush or Eraser button.
+          <br />
+          Click and drag to make a brush stroke, and release to paint the selected labels within the
+          stroke.
+        </Typography>
+        <Typography variant='h5'>Trim</Typography>
+        <Typography>
+          Trim removes disconnected parts of a label.
+          <br />
+          Click on label to trim the pixels not connected to the clicked area.
+        </Typography>
+        <Typography variant='h5'>Flood</Typography>
+        <Typography>
+          Flood fills a labeled region with another label.
+          <br />
+          Click on any label to select it to flood, then click again to flood it with the foreground
+          label.
+        </Typography>
+        <Typography variant='h5'>Threshold</Typography>
+        <Typography>
+          Threshold fills the brightest unlabeled pixels within a box with the selected label.
+          <br />
+          Click and drag to draw the bounding box.
+        </Typography>
+        <Typography variant='h5'>Watershed</Typography>
+        <Typography>
+          Watershed splits labels with multiple cells along cells' contours with the{' '}
+          <Link href={'wikipedia.org/wiki/Watershed_(image_processing)'}>watershed transform</Link>.
+          <br />
+          Click on the center of one cell, then click on the center of another cell with the same
+          label to split them into two labels.
+        </Typography>
+      </div>
+      <ToolShortcuts />
+    </Box>
   );
 }
 

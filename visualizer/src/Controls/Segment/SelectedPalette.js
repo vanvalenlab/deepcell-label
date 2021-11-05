@@ -8,7 +8,7 @@ import ClearIcon from '@material-ui/icons/Clear';
 import SubdirectoryArrowLeftIcon from '@material-ui/icons/SubdirectoryArrowLeft';
 import SubdirectoryArrowRightIcon from '@material-ui/icons/SubdirectoryArrowRight';
 import { useSelector } from '@xstate/react';
-import { bind, unbind } from 'mousetrap';
+import { bind } from 'mousetrap';
 import React, { useEffect, useState } from 'react';
 import { useFeature, useLabeled, useSelect } from '../../ProjectContext';
 
@@ -46,13 +46,13 @@ const useStyles = makeStyles(theme => ({
   palette: {
     position: 'relative',
     margin: theme.spacing(1),
-    height: '6.5rem',
-    width: '6.5rem',
+    height: theme.spacing(13),
+    width: theme.spacing(13),
   },
   hovering: {
     border: '0.25rem solid #DDDDDD',
-    width: '4rem',
-    height: '4rem',
+    width: theme.spacing(8),
+    height: theme.spacing(8),
     display: 'flex',
     alignContent: 'center',
     justifyContent: 'center',
@@ -63,28 +63,28 @@ const useStyles = makeStyles(theme => ({
     zIndex: 1,
     top: '0',
     left: '0',
-    width: '4rem',
-    height: '4rem',
-    border: '0.25rem solid #DDDDDD',
+    width: theme.spacing(8),
+    height: theme.spacing(8),
+    border: `${theme.spacing(0.5)}px solid #DDDDDD`,
     display: 'flex',
     alignContent: 'center',
     justifyContent: 'center',
   },
   background: {
     position: 'absolute',
-    top: '2rem',
-    left: '2rem',
-    width: '4rem',
-    height: '4rem',
-    border: '0.25rem solid #DD0000',
+    top: theme.spacing(4),
+    left: theme.spacing(4),
+    width: theme.spacing(8),
+    height: theme.spacing(8),
+    border: `${theme.spacing(0.5)}px solid #DD0000`,
     display: 'flex',
     alignContent: 'center',
     justifyContent: 'center',
   },
   switchBox: {
     position: 'absolute',
-    left: '4rem',
-    top: '-0.25rem',
+    left: theme.spacing(8),
+    top: -theme.spacing(0.5),
   },
   leftArrow: {
     transform: 'rotate(-90deg)',
@@ -133,13 +133,12 @@ export function SwitchButton() {
 
   const tooltipText = (
     <span>
-      Switch (<kbd>X</kbd>)
+      Switch <kbd>X</kbd>
     </span>
   );
 
   useEffect(() => {
     bind('x', () => select.send('SWITCH'));
-    return () => unbind('x');
   }, [select]);
 
   return (
@@ -199,11 +198,6 @@ function ForegroundBox() {
     bind('n', () => select.send('NEW_FOREGROUND'));
     bind('[', () => select.send('PREV_FOREGROUND'));
     bind(']', () => select.send('NEXT_FOREGROUND'));
-    return () => {
-      unbind('n');
-      unbind('[');
-      unbind(']');
-    };
   }, [select]);
 
   const [showButtons, setShowButtons] = useState(false);
@@ -212,25 +206,25 @@ function ForegroundBox() {
 
   const newTooltip = (
     <span>
-      New (<kbd>N</kbd>)
+      New <kbd>N</kbd>
     </span>
   );
 
   const resetTooltip = (
     <span>
-      Reset (<kbd>Esc</kbd>)
+      Reset <kbd>Esc</kbd>
     </span>
   );
 
   const prevTooltip = (
     <span>
-      Previous (<kbd>[</kbd>)
+      Previous <kbd>[</kbd>
     </span>
   );
 
   const nextTooltip = (
     <span>
-      Next (<kbd>]</kbd>)
+      Next <kbd>]</kbd>
     </span>
   );
 
@@ -314,10 +308,6 @@ function BackgroundBox() {
   useEffect(() => {
     bind('{', () => select.send('PREV_BACKGROUND'));
     bind('}', () => select.send('NEXT_BACKGROUND'));
-    return () => {
-      unbind('{');
-      unbind('}');
-    };
   }, [select]);
   const [showButtons, setShowButtons] = useState(false);
   const buttonColor =
@@ -325,19 +315,19 @@ function BackgroundBox() {
 
   const resetTooltip = (
     <span>
-      Reset (<kbd>Esc</kbd>)
+      Reset <kbd>Esc</kbd>
     </span>
   );
 
   const prevTooltip = (
     <span>
-      Previous (<kbd>Shift</kbd> + <kbd>[</kbd>)
+      Previous <kbd>Shift</kbd> + <kbd>[</kbd>
     </span>
   );
 
   const nextTooltip = (
     <span>
-      Next (<kbd>Shift</kbd> + <kbd>]</kbd>)
+      Next <kbd>Shift</kbd> + <kbd>]</kbd>
     </span>
   );
 
@@ -395,7 +385,30 @@ function BackgroundBox() {
   );
 }
 
-function SelectedPalette() {
+export function Selected() {
+  const styles = useStyles();
+  return (
+    <Box className={styles.palette}>
+      <Box display='flex' justifyContent='center'>
+        <ForegroundBox />
+        <BackgroundBox />
+        <Box className={styles.switchBox}>
+          <SwitchButton />
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+function Hovering() {
+  return (
+    <Box display='flex' justifyContent='center'>
+      <HoveringBox />
+    </Box>
+  );
+}
+
+export default function SelectedPalette() {
   const styles = useStyles();
 
   const select = useSelect();
@@ -411,20 +424,9 @@ function SelectedPalette() {
   return (
     <Box display='flex' flexDirection='column'>
       <FormLabel className={styles.title}>Selected</FormLabel>
-
-      <Box className={styles.palette}>
-        <Box display='flex' justifyContent='center'>
-          <ForegroundBox />
-          <BackgroundBox />
-          <Box className={styles.switchBox}>
-            <SwitchButton />
-          </Box>
-        </Box>
-      </Box>
+      <Selected />
       <FormLabel className={styles.title}>Hovering over</FormLabel>
-      <Box display='flex' justifyContent='center'>
-        <HoveringBox />
-      </Box>
+      <Hovering />
     </Box>
   );
 }

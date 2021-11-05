@@ -2,7 +2,7 @@ import Grid from '@material-ui/core/Grid';
 import Select from '@material-ui/core/Select';
 import Tooltip from '@material-ui/core/Tooltip';
 import { useSelector } from '@xstate/react';
-import { bind, unbind } from 'mousetrap';
+import { bind } from 'mousetrap';
 import React, { useEffect } from 'react';
 import { useLabeled } from '../../../ProjectContext';
 
@@ -27,10 +27,6 @@ function FeatureSelect() {
     const nextFeature = (feature + 1) % numFeatures;
     bind('shift+f', () => labeled.send({ type: 'LOAD_FEATURE', feature: prevFeature }));
     bind('f', () => labeled.send({ type: 'LOAD_FEATURE', feature: nextFeature }));
-    return () => {
-      unbind('shift+f');
-      unbind('f');
-    };
   }, [labeled, feature, numFeatures]);
 
   return (

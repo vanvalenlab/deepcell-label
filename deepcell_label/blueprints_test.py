@@ -4,8 +4,9 @@ import io
 
 import pytest
 import numpy as np
+from tifffile import TiffWriter
+from PIL import Image
 
-# from flask_sqlalchemy import SQLAlchemy
 
 from deepcell_label import models
 from deepcell_label.conftest import DummyLoader
@@ -84,8 +85,37 @@ def test_redo(client):
 
 
 def test_create_project(client, mocker):
-    mocker.patch('deepcell_label.blueprints.url_loaders.URLLoader', lambda *args: DummyLoader())
+    mocker.patch('deepcell_label.blueprints.loaders.URLLoader', lambda *args: DummyLoader())
     response = client.post(f'/api/project')
+    assert response.status_code == 200
+
+
+def test_create_project_dropped_npz(client):
+    npz = io.BytesIO()
+    np.savez(npz, X=np.zeros((1, 1, 1, 1)), y=np.ones((1, 1, 1, 1)))
+    npz.seek(0)
+    data = {'file': (npz, 'test.npz')}
+    response = client.post(f'/api/project/dropped', data=data, content_type='multipart/form-data')
+    assert response.status_code == 200
+
+
+def test_create_project_dropped_tiff(client):
+    tifffile = io.BytesIO()
+    with TiffWriter(tifffile) as writer:
+        writer.save(np.zeros((1, 1, 1, 1)))
+        tifffile.seek(0)
+    data = {'file': (tifffile, 'test.tiff')}
+    response = client.post(f'/api/project/dropped', data=data, content_type='multipart/form-data')
+    assert response.status_code == 200
+
+
+def test_create_project_dropped_png(client):
+    png = io.BytesIO()
+    img = Image.fromarray(np.zeros((1, 1)), mode='L')
+    img.save(png, format="png")
+    png.seek(0)
+    data = {'file': (png, 'test.png')}
+    response = client.post(f'/api/project/dropped', data=data, content_type='multipart/form-data')
     assert response.status_code == 200
 
 

@@ -1,5 +1,5 @@
 """
-Tests for loading files in url_loaders.
+Tests for loading files in loaders.
 """
 
 import io
@@ -7,10 +7,10 @@ import pytest
 import numpy as np
 import responses
 from PIL import Image
-from skimage.external.tifffile import TiffWriter
+from tifffile import TiffWriter
 import zipfile
 
-from deepcell_label.url_loaders import URLLoader, FileLoader
+from deepcell_label.loaders import URLLoader, FileLoader
 
 
 @responses.activate

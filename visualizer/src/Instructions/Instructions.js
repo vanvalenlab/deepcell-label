@@ -119,7 +119,7 @@ export default function Instructions() {
         </AccordionSummary>
         <AccordionDetails>
           <Tabs value={value} onChange={handleTabChange}>
-            <Tab label='Display Controls' />
+            <Tab label='Display' />
             <Tab label='Canvas' />
             <Tab label='Select Labels' />
             <Tab label='Tools' />
