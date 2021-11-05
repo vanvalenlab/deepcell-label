@@ -408,7 +408,7 @@ function Hovering() {
   );
 }
 
-export default function SelectedPalette() {
+function SelectedPalette() {
   const styles = useStyles();
 
   const select = useSelect();
