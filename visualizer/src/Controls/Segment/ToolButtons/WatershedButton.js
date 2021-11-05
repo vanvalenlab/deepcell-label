@@ -15,7 +15,7 @@ function WatershedButton(props) {
 
   const tooltipText = grayscale ? (
     <span>
-      Click on two spots in the same label to split it (<kbd>W</kbd>)
+      Click on two spots in the same label to split it <kbd>W</kbd>
     </span>
   ) : (
     'Requires a single channel'

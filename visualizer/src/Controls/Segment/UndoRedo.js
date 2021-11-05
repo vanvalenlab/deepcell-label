@@ -4,7 +4,7 @@ import Tooltip from '@material-ui/core/Tooltip';
 import RedoIcon from '@material-ui/icons/Redo';
 import UndoIcon from '@material-ui/icons/Undo';
 import { useSelector } from '@xstate/react';
-import { bind, unbind } from 'mousetrap';
+import { bind } from 'mousetrap';
 import React, { useEffect } from 'react';
 import { useUndo } from '../../ProjectContext';
 
@@ -61,10 +61,6 @@ export default function UndoRedo() {
   useEffect(() => {
     bind('mod+z', () => undo.send('UNDO'));
     bind('mod+shift+z', () => undo.send('REDO'));
-    return () => {
-      unbind('mod+z');
-      unbind('mod+shift+z');
-    };
   }, []);
 
   return (

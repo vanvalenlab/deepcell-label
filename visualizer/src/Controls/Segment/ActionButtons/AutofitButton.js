@@ -13,7 +13,7 @@ function AutofitButton(props) {
 
   const tooltipText = (
     <span>
-      Fits a label to a channel (<kbd>M</kbd>)
+      Fits a label to a channel <kbd>M</kbd>
     </span>
   );
 

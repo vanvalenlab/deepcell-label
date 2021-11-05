@@ -11,7 +11,7 @@ function ShrinkButton(props) {
 
   const tooltipText = (
     <span>
-      Contracts a label by one pixel (<kbd>Q</kbd>)
+      Contracts a label by one pixel <kbd>Q</kbd>
     </span>
   );
 

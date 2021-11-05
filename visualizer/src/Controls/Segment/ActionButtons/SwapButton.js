@@ -11,7 +11,7 @@ function SwapButton(props) {
 
   const tooltipText = (
     <span>
-      Switches the position of two labels (<kbd>Shift</kbd> + <kbd>S</kbd>)
+      Switches the position of two labels <kbd>Shift</kbd> + <kbd>S</kbd>
     </span>
   );
 
