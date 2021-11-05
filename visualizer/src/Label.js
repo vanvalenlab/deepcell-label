@@ -1,27 +1,25 @@
+import { FormLabel, Paper, Tab, Tabs } from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import { makeStyles } from '@material-ui/core/styles';
+import { useSelector } from '@xstate/react';
 import { ResizeSensor } from 'css-element-queries';
 import debounce from 'lodash.debounce';
 import { useEffect, useRef, useState } from 'react';
 import Canvas from './Canvas/Canvas';
 import ImageControls from './Controls/ImageControls/ImageControls';
+import QCControls from './Controls/QCControls';
 import ActionButtons from './Controls/Segment/ActionButtons';
 import SelectedPalette from './Controls/Segment/SelectedPalette';
 import ToolButtons from './Controls/Segment/ToolButtons';
 import UndoRedo from './Controls/Segment/UndoRedo';
-import Footer from './Footer/Footer';
+import DivisionAlerts from './Controls/Tracking/Alerts/DivisionAlerts';
+import FrameSlider from './Controls/Tracking/FrameSlider';
+import Timeline from './Controls/Tracking/Timeline';
 import Instructions from './Instructions/Instructions';
-import Navbar from './Navbar';
-import { useCanvas, useLabeled } from './ProjectContext';
+import { useCanvas, useLabeled, useLabelMode } from './ProjectContext';
 import SelectRegistryFile from './SelectRegistryFile';
 
 const useStyles = makeStyles(theme => ({
-  root: {
-    boxSizing: 'border-box',
-    display: 'flex',
-    minHeight: '100vh',
-    flexDirection: 'column',
-  },
   main: {
     boxSizing: 'border-box',
     display: 'flex',
@@ -48,15 +46,52 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-function Label() {
+function TabPanel(props) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role='tabpanel'
+      hidden={value !== index}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+    >
+      {value === index && children}
+    </div>
+  );
+}
+
+function Label({ review }) {
   const styles = useStyles();
+
+  const search = new URLSearchParams(window.location.search);
+  const track = search.get('track');
 
   const canvasBoxRef = useRef({ offsetWidth: 0, offsetHeight: 0 });
   const [canvasBoxWidth, setCanvasBoxWidth] = useState(0);
   const [canvasBoxHeight, setCanvasBoxHeight] = useState(0);
 
+  const labelMode = useLabelMode();
   const canvas = useCanvas();
   const labeled = useLabeled();
+
+  const value = useSelector(labelMode, state => {
+    return state.matches('segment') ? 0 : state.matches('track') ? 1 : false;
+  });
+
+  const handleChange = (event, newValue) => {
+    switch (newValue) {
+      case 0:
+        labelMode.send('SEGMENT');
+        break;
+      case 1:
+        labelMode.send('TRACK');
+        break;
+      default:
+        break;
+    }
+  };
 
   useEffect(() => {
     const setCanvasBoxDimensions = () => {
@@ -79,30 +114,54 @@ function Label() {
   }, [canvas, canvasBoxWidth, canvasBoxHeight]);
 
   return (
-    <div className={styles.root}>
-      <Navbar />
+    <>
       <Instructions />
       <Box className={styles.main}>
         <Box className={styles.controlPanelBox}>
           <SelectRegistryFile />
+          {track && (
+            <Paper square>
+              <Tabs
+                orientation='vertical'
+                value={value}
+                indicatorColor='primary'
+                textColor='primary'
+                onChange={handleChange}
+              >
+                <Tab label='Segment' />
+                <Tab label='Track' />
+              </Tabs>
+            </Paper>
+          )}
+          {review && <QCControls />}
           <ImageControls />
         </Box>
         <Box className={styles.toolbarBox}>
-          <UndoRedo />
-          <Box display='flex' flexDirection='row'>
+          <TabPanel value={value} index={0}>
             <Box display='flex' flexDirection='column'>
-              <ToolButtons />
-              <ActionButtons />
+              <UndoRedo />
+              <FormLabel>Frame</FormLabel>
+              <FrameSlider />
+              <Box display='flex' flexDirection='row'>
+                <Box display='flex' flexDirection='column'>
+                  <ToolButtons />
+                  <ActionButtons />
+                </Box>
+                {labeled && <SelectedPalette />}
+              </Box>
             </Box>
-            {labeled && <SelectedPalette />}
-          </Box>
+          </TabPanel>
+          <TabPanel value={value} index={1}>
+            <UndoRedo />
+            <DivisionAlerts />
+            {labeled && <Timeline />}
+          </TabPanel>
         </Box>
         <Box ref={canvasBoxRef} className={styles.canvasBox}>
           <Canvas />
         </Box>
       </Box>
-      <Footer />
-    </div>
+    </>
   );
 }
 

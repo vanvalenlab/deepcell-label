@@ -7,7 +7,7 @@ import createApiMachine from './apiMachine';
 import canvasMachine from './canvasMachine';
 import createImageMachine from './imageMachine';
 import selectMachine from './selectMachine';
-import segmentMachine from './tools/segmentMachine';
+import toolMachine from './tools/toolMachine';
 import undoMachine from './undoMachine';
 
 function fetchProject(context) {
@@ -49,18 +49,7 @@ const createProjectMachine = (projectId, bucket) =>
             },
           },
         },
-        idle: {
-          initial: 'segment',
-          states: {
-            segment: {
-              on: {
-                mouseup: { actions: forwardTo('segment') },
-                mousedown: { actions: forwardTo('segment') },
-                mousemove: { actions: forwardTo('segment') },
-              },
-            },
-          },
-        },
+        idle: {},
       },
       on: {
         // from various
@@ -71,19 +60,20 @@ const createProjectMachine = (projectId, bucket) =>
         FRAME: { actions: 'setFrame' },
         CHANNEL: { actions: 'setChannel' },
         FEATURE: { actions: 'setFeature' },
-        GRAYSCALE: { actions: forwardTo('segment') },
-        COLOR: { actions: forwardTo('segment') },
+        GRAYSCALE: { actions: forwardTo('tool') },
+        COLOR: { actions: forwardTo('tool') },
         LABELED_ARRAY: { actions: forwardTo('canvas') },
-        LABELS: {
-          actions: [forwardTo('segment'), forwardTo('select')],
-        },
+        LABELS: { actions: [forwardTo('tool'), forwardTo('select')] },
 
         // from canvas
-        HOVERING: { actions: [forwardTo('segment'), forwardTo('select')] },
-        COORDINATES: { actions: forwardTo('segment') },
-        FOREGROUND: { actions: [forwardTo('segment')] },
-        BACKGROUND: { actions: [forwardTo('segment')] },
-        SELECTED: { actions: [forwardTo('segment')] },
+        HOVERING: { actions: [forwardTo('tool'), forwardTo('select')] },
+        COORDINATES: { actions: forwardTo('tool') },
+        FOREGROUND: { actions: forwardTo('tool') },
+        BACKGROUND: { actions: forwardTo('tool') },
+        SELECTED: { actions: forwardTo('tool') },
+        mouseup: { actions: forwardTo('tool') },
+        mousedown: { actions: forwardTo('tool') },
+        mousemove: { actions: forwardTo('tool') },
 
         // from undo
         BACKEND_UNDO: { actions: forwardTo('api') },
@@ -105,19 +95,19 @@ const createProjectMachine = (projectId, bucket) =>
         spawnActors: assign({
           canvasRef: () => spawn(canvasMachine, 'canvas'),
           imageRef: context => spawn(createImageMachine(context), 'image'),
-          segmentRef: () => spawn(segmentMachine, 'segment'),
           apiRef: context => spawn(createApiMachine(context), 'api'),
           selectRef: () => spawn(selectMachine, 'select'),
+          toolRef: () => spawn(toolMachine, 'tool'),
         }),
         spawnUndo: assign({
           undoRef: () => spawn(undoMachine, 'undo'),
         }),
         addActorsToUndo: pure(context => {
-          const { canvasRef, segmentRef, imageRef, selectRef } = context;
+          const { canvasRef, toolRef, imageRef, selectRef } = context;
           return [
             send({ type: 'ADD_ACTOR', actor: canvasRef }, { to: 'undo' }),
             send({ type: 'ADD_ACTOR', actor: imageRef }, { to: 'undo' }),
-            send({ type: 'ADD_ACTOR', actor: segmentRef }, { to: 'undo' }),
+            send({ type: 'ADD_ACTOR', actor: toolRef }, { to: 'undo' }),
             send({ type: 'ADD_ACTOR', actor: selectRef }, { to: 'undo' }),
           ];
         }),

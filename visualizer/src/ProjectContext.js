@@ -21,6 +21,36 @@ export function useSelect() {
   return select;
 }
 
+export function useTracking(label) {
+  const project = useProject();
+  const tracking = useSelector(project, state => {
+    const labelMode = state.context.toolRef;
+    const track = labelMode.state.context.trackRef;
+    return track;
+  });
+  return tracking;
+}
+
+const emptyDivision = {
+  parent: null,
+  daughters: [],
+  divisionFrame: null,
+  parentDivisionFrame: null,
+  frames: [],
+};
+
+export function useDivision(label) {
+  const project = useProject();
+  const division = useSelector(project, state => {
+    const labelMode = state.context.toolRef;
+    const track = labelMode.state.context.trackRef;
+    const labels = track.state.context.labels;
+    const division = labels[label];
+    return division || emptyDivision;
+  });
+  return division;
+}
+
 export function useApi() {
   const project = useProject();
   const api = useSelector(project, state => state.context.apiRef);
@@ -127,16 +157,37 @@ export function useCanvas() {
   return canvas;
 }
 
+export function useLabelMode() {
+  const project = useProject();
+  const labelMode = useSelector(project, state => state.context.toolRef);
+  return labelMode;
+}
+
 export function useSegment() {
   const project = useProject();
-  const segment = useSelector(project, state => state.context.segmentRef);
+  const segment = useSelector(project, state => {
+    const tool = state.context.toolRef;
+    const segment = tool.state.context.segmentRef;
+    return segment;
+  });
   return segment;
+}
+
+export function useTrack() {
+  const project = useProject();
+  const track = useSelector(project, state => {
+    const tool = state.context.toolRef;
+    const track = tool.state.context.trackRef;
+    return track;
+  });
+  return track;
 }
 
 export function useBrush() {
   const project = useProject();
   const tool = useSelector(project, state => {
-    const segment = state.context.segmentRef;
+    const labelMode = state.context.toolRef;
+    const segment = labelMode.state.context.segmentRef;
     const tools = segment.state.context.tools;
     return tools.brush;
   });
@@ -146,15 +197,16 @@ export function useBrush() {
 export function useThreshold() {
   const project = useProject();
   const tool = useSelector(project, state => {
-    const segment = state.context.segmentRef;
+    const labelMode = state.context.toolRef;
+    const segment = labelMode.state.context.segmentRef;
     const tools = segment.state.context.tools;
     return tools.threshold;
   });
   return tool;
 }
 
-const ProjectContext = props => {
-  return <Context.Provider value={props.project}>{props.children}</Context.Provider>;
-};
+function ProjectContext({ project, children }) {
+  return <Context.Provider value={project}>{children}</Context.Provider>;
+}
 
 export default ProjectContext;

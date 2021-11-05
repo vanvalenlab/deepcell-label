@@ -6,6 +6,7 @@ from __future__ import print_function
 import base64
 import io
 import json
+from math import inf
 import sys
 import tarfile
 import tempfile
@@ -126,6 +127,11 @@ class BaseEdit(object):
             label_1 (int): first label to swap
             label_2 (int): second label to swap
         """
+        if label_1 is -inf:
+            label_1 = 0
+        if label_2 is -inf:
+            label_2 = 0
+
         img = self.frame[..., self.feature]
         label_1_present = label_1 in img
         label_2_present = label_2 in img
@@ -150,6 +156,9 @@ class BaseEdit(object):
         """
         Replaces label_2 with label_1 in the current frame.
         """
+        if label_1 is -inf:
+            label_1 = 0
+
         img = self.frame[..., self.feature]
         label_2_present = np.any(np.isin(label_2, img))
 
@@ -177,6 +186,9 @@ class BaseEdit(object):
             background (int): label overwritten by the brush
             brush_size (int): radius of the brush in pixels
         """
+        if foreground is -inf:
+            foreground = 0
+
         img = np.copy(self.frame[..., self.feature])
         foreground_in_before = np.any(np.isin(img, foreground))
         background_in_before = np.any(np.isin(img, background))
@@ -244,6 +256,9 @@ class BaseEdit(object):
             x_location (int): x coordinate of region to flood
             y_location (int): y coordinate of region to flood
         """
+        if label is -inf:
+            label = 0
+
         img = self.frame[..., self.feature]
         # Rescale click location to corresponding location in label array
         hole_fill_seed = (int(y_location),
@@ -351,6 +366,9 @@ class BaseEdit(object):
             x2 (int): second x coordinate to bound threshold area
             label (int): label drawn in threshold area
         """
+        if label is -inf:
+            label = 0
+
         top_edge = min(y1, y2)
         bottom_edge = max(y1, y2) + 1
         left_edge = min(x1, x2)
@@ -512,9 +530,11 @@ class ZStackEdit(BaseEdit):
 
     def action_replace(self, label_1, label_2):
         """
-        Replacing label_2 with label_1. Frontend checks to make sure these labels
-        are different before sending action
+        Replacing label_2 with label_1.
         """
+        if label_1 is -inf:
+            label_1 = 0
+
         # TODO: check on backend that labels are different?
         # Check each frame for label_2
         for label_frame in self.project.label_frames:
@@ -630,15 +650,153 @@ class TrackEdit(BaseEdit):
     def tracks(self):
         return self.labels.cell_info[self.feature]
 
-    def action_new_track(self, label):
+    def action_add_daughter(self, parent, daughter):
         """
-        Replaces label with a new label in all subsequent frames after self.frame_id
+        Adds a daughter to a division event.
 
         Args:
-            label (int): label to replace in subsequent frames
+            parent (int): parent label in division
+            daughter (int): daughter label in division
         """
-        new_label = self.project.get_max_label(self.feature) + 1
+        parent_track = self.tracks[parent]
+        daughter_track = self.tracks[daughter]
+
+        # Add new daughter
+        if parent == daughter:
+            # Don't create a new daughter on the first frame of the parent
+            if self.frame_id == parent_track['frames'][0]:
+                return
+
+            # Replace parent with new label for rest of movie
+            daughter = self.project.get_max_label(self.feature) + 1
+
+            for label_frame in self.project.label_frames[self.frame_id:]:
+                img = label_frame.frame
+                img[img == parent] = daughter
+                label_frame.frame = img
+
+            # Split parent frames between parent and daughter
+            frames_before = [frame for frame in parent_track['frames'] if frame < self.frame_id]
+            frames_after = [frame for frame in parent_track['frames'] if frame >= self.frame_id]
+
+            parent_track['frames'] = frames_before
+            daughter_track = {
+                'frames': frames_after,
+                'label': daughter,
+                'daughters': [],
+                'frame_div': None,
+                'capped': False,
+                'parent': parent,
+            }
+
+            # Move divisions after current frame from parent to daughter
+            if parent_track['frame_div'] and parent_track['frame_div'] > self.frame_id:
+                future_daughters = [d for d in parent_track['daughters']
+                                    if min(self.tracks[d]['frames']) > self.frame_id]
+                past_daughters = [d for d in parent_track['daughters']
+                                  if d not in future_daughters]
+
+                for d in future_daughters:
+                    self.tracks[d]['parent'] = daughter
+
+                daughter_track['capped'] = True
+                daughter_track['frame_div'] = parent_track['frame_div']
+                daughter_track['daughters'] = future_daughters
+                parent_track['frame_div'] = self.frame_id
+                parent_track['daughters'] = past_daughters
+
+            self.tracks[daughter] = daughter_track
+
+            self.labels.cell_ids[self.feature] = np.append(
+                self.labels.cell_ids[self.feature],
+                daughter)
+            self.y_changed = True
+        # Add existing daughter
+        else:
+            if daughter_track['parent'] is not None:
+                raise ValueError(
+                    f'Daughter {daughter} already has parent {daughter_track["parent"]}')
+            daughter_track['parent'] = parent
+
+        # Add daughter
+        if daughter not in parent_track['daughters']:
+            parent_track['daughters'] += [daughter]
+        # Add new division info to parent
+        if not parent_track['capped']:
+            parent_track['frame_div'] = self.frame_id
+            parent_track['capped'] = True
+
+        self.labels_changed = True
+
+    def action_remove_daughter(self, daughter):
+        """
+        Removes a daughter from the division event that spawns it.
+        Does not edit the segmentation .
+
+        Args:
+            daughter (int): daughter label to remove from division event
+        """
+        # Get daughter and parent tracks
+        daughter_track = self.tracks[daughter]
+        parent = daughter_track['parent']
+        parent_track = self.tracks[parent]
+        # Compute new daughters
+        daughters = [label for label in parent_track['daughters'] if label != daughter]
+        # Update tracks
+        if daughters == []:
+            parent_track['capped'] = False
+            parent_track['frame_div'] = None
+        parent_track['daughters'] = daughters
+        daughter_track['parent'] = None
+
+        self.labels_changed = True
+
+    def action_replace_with_parent(self, daughter):
+        """
+        Replaces daughter with its parent after the division
+        and removes the division.
+        Future divisions with the daughter become part of the parent's lineage.
+        """
+        daughter_track = self.tracks[daughter]
+        parent = daughter_track['parent']
+        parent_track = self.tracks[parent]
+        frame = parent_track['frame_div']
+
+        # Remove division
+        for d in parent_track['daughters']:
+            self.tracks[d]['parent'] = None
+        # Link future division to parent
+        if (daughter_track['frame_div'] is None or
+                parent_track['frame_div'] < daughter_track['frame_div']):
+            for d in daughter_track['daughters']:
+                self.tracks[d]['parent'] = parent
+            parent_track['daughters'] = daughter_track['daughters']
+            parent_track['frame_div'] = daughter_track['frame_div']
+            parent_track['capped'] = daughter_track['capped']
+        # Past divisions remain with daughter
+        else:
+            parent_track['daughters'] = []
+            parent_track['frame_div'] = None
+            parent_track['capped'] = False
+
+        # Replace daughter with parent after division frame
+        for label_frame in self.project.label_frames[frame:]:
+            img = label_frame.frame[..., self.feature]
+            if np.any(np.isin(img, daughter)):
+                img = np.where(img == daughter, parent, img)
+                self.add_cell_info(add_label=parent, frame=label_frame.frame_id)
+                self.del_cell_info(del_label=daughter, frame=label_frame.frame_id)
+                label_frame.frame[..., self.feature] = img
+
+    def action_new_track(self, label):
+        """
+        Replaces label with a new label in all frames after the current frame
+
+        Args:
+            label (int): label to replace with a new label
+        """
         track = self.tracks[label]
+        new_label = self.project.get_max_label(self.feature) + 1
 
         # Don't create a new track on the first frame of a track
         if self.frame_id == track['frames'][0]:
@@ -647,11 +805,12 @@ class TrackEdit(BaseEdit):
         # replace frame labels
         for label_frame in self.project.label_frames[self.frame_id:]:
             img = label_frame.frame
-            img[img == label] = new_label
-            label_frame.frame = img
+            if np.isin(label, img):
+                img[img == label] = new_label
+                label_frame.frame = img
 
         # replace fields
-        track_new = self.tracks[new_label] = {}
+        new_track = self.tracks[new_label] = {}
 
         idx = track['frames'].index(self.frame_id)
 
@@ -659,22 +818,22 @@ class TrackEdit(BaseEdit):
         frames_after = track['frames'][idx:]
 
         track['frames'] = frames_before
-        track_new['frames'] = frames_after
-        track_new['label'] = new_label
+        new_track['frames'] = frames_after
+        new_track['label'] = new_label
 
         # only add daughters if they aren't in the same frame as the new track
-        track_new['daughters'] = []
+        new_track['daughters'] = []
         for d in track['daughters']:
             if self.frame_id not in self.tracks[d]['frames']:
-                track_new['daughters'].append(d)
+                new_track['daughters'].append(d)
 
-        track_new['frame_div'] = track['frame_div']
-        track_new['capped'] = track['capped']
-        track_new['parent'] = None
+        new_track['frame_div'] = track['frame_div']
+        new_track['capped'] = track['capped']
+        new_track['parent'] = None
 
         track['daughters'] = []
         track['frame_div'] = None
-        track['capped'] = True
+        track['capped'] = False
 
         self.labels.cell_ids[0] = np.append(self.labels.cell_ids[0], new_label)
 
@@ -684,25 +843,28 @@ class TrackEdit(BaseEdit):
         """
         Replacing label_2 with label_1 in all frames.
         """
+        if label_1 is -inf:
+            label_1 = 0
         # replace arrays
         for label_frame in self.project.label_frames:
-            img = label_frame.frame
-            img = np.where(img == label_2, label_1, img)
-            label_frame.frame = img
+            frame = label_frame.frame
+            if label_2 in frame:
+                replaced = np.where(frame == label_2, label_1, frame)
+                label_frame.frame = replaced
 
         # TODO: is this the same as add/remove?
         # replace fields
-        track_1 = self.tracks[label_1]
-        track_2 = self.tracks[label_2]
+        keep_track = self.tracks[label_1]
+        remove_track = self.tracks[label_2]
 
-        for d in track_1['daughters']:
-            self.tracks[d]['parent'] = None
+        for d in remove_track['daughters']:
+            self.tracks[d]['parent'] = label_1
 
-        track_1['frames'].extend(track_2['frames'])
-        track_1['frames'] = sorted(set(track_1['frames']))
-        track_1['daughters'] = track_2['daughters']
-        track_1['frame_div'] = track_2['frame_div']
-        track_1['capped'] = track_2['capped']
+        keep_track['frames'].extend(remove_track['frames'])
+        keep_track['frames'] = sorted(set(keep_track['frames']))
+        keep_track['daughters'] = remove_track['daughters']
+        keep_track['frame_div'] = remove_track['frame_div']
+        keep_track['capped'] = remove_track['capped']
 
         del self.tracks[label_2]
         for _, track in self.tracks.items():
@@ -717,6 +879,11 @@ class TrackEdit(BaseEdit):
         """
         Replace label_1 with label_2 on all frames and vice versa.
         """
+        if label_1 is -inf:
+            label_1 = 0
+        if label_2 is -inf:
+            label_2 = 0
+
         def relabel(old_label, new_label):
             for label_frame in self.project.label_frames:
                 img = label_frame.frame

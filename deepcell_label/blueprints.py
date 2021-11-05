@@ -10,6 +10,8 @@ import json
 import timeit
 import traceback
 from os import listdir
+import hashlib
+
 
 from flask import abort
 from flask import Blueprint
@@ -67,7 +69,8 @@ def raw(token, channel, frame):
     if not project:
         return abort(404, description=f'project {token} not found')
     png = project.get_raw_png(channel, frame)
-    return send_file(png, mimetype='image/png')
+    etag = hashlib.md5(png.getbuffer()).hexdigest()
+    return send_file(png, mimetype='image/png', etag=etag)
 
 
 @bp.route('/api/labeled/<token>/<int:feature>/<int:frame>')
@@ -76,7 +79,9 @@ def labeled(token, feature, frame):
     if not project:
         return abort(404, description=f'project {token} not found')
     png = project.get_labeled_png(feature, frame)
-    return send_file(png, mimetype='image/png', cache_timeout=0)
+    etag = hashlib.md5(png.getbuffer()).hexdigest()
+    response = send_file(png, mimetype='image/png', cache_timeout=0, etag=etag)
+    return response
 
 
 @bp.route('/api/array/<token>/<int:feature>/<int:frame>')
@@ -91,10 +96,11 @@ def array(token, feature, frame):
     response = make_response(content)
     response.headers['Content-length'] = len(content)
     response.headers['Content-Encoding'] = 'gzip'
-    return response
-    # seg_array = project.get_labeled_array(feature, frame)
-    # filename = f'{token}_array_feature{feature}_frame{frame}.npy'
-    # return send_file(seg_array, attachment_filename=filename, cache_timeout=0)
+    # gzip includes a timestamp that changes the md5 hash
+    # TODO: in Python >= 3.8, add mtime=0 to create stable md5 and use add_etag instead
+    etag = hashlib.md5(labeled_array).hexdigest()
+    response.set_etag(etag)
+    return response.make_conditional(request)
 
 
 @bp.route('/api/semantic-labels/<project_id>/<int:feature>')
@@ -103,7 +109,16 @@ def semantic_labels(project_id, feature):
     if not project:
         return jsonify({'error': f'project {project_id} not found'}), 404
     cell_info = project.labels.cell_info[feature]
-    return cell_info
+    df = pd.DataFrame(cell_info).T
+    if df.parent.isnull().all():
+        df['frame_div_parent'] = None
+    else:
+        df = df.join(df[['frame_div']], rsuffix='_parent', how='left', on='parent')
+    df = df.rename(columns={'frame_div_parent': 'parentDivisionFrame',
+                            'frame_div': 'divisionFrame'})
+    response = make_response(df.to_json(orient='index'))
+    response.add_etag()
+    return response.make_conditional(request)
 
 
 @bp.route('/api/colormap/<project_id>/<int:feature>')
@@ -118,8 +133,8 @@ def colormap(project_id, feature):
     colors.append('#FFFFFF')  # New label (last label) is white
     response = make_response({'colors': colors})
     response.headers['Cache-Control'] = 'max-age=0'
-
-    return response
+    response.add_etag()
+    return response.make_conditional(request)
 
 
 @bp.route('/api/edit/<token>/<action_type>', methods=['POST'])
