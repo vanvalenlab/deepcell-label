@@ -1,8 +1,6 @@
 import { Box, Container, Paper, Typography } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import { useInterpret } from '@xstate/react';
-import Footer from '../Footer/Footer';
-import Navbar from '../Navbar';
 import ExampleFileSelect from './ExampleFileSelect';
 import FileUpload from './FileUpload';
 import loadMachine from './loadMachine';
@@ -76,21 +74,17 @@ function Load() {
   window.loadService = loadService;
 
   return (
-    <div className={styles.root}>
-      <Navbar />
-      <main className={styles.main}>
-        <Introduction />
-        <Container maxWidth='md'>
-          <Box className={styles.uploadBox}>
-            <Paper className={styles.paper}>
-              <FileUpload loadService={loadService} onDroppedFile={() => {}} />
-            </Paper>
-            <ExampleFileSelect loadService={loadService} />
-          </Box>
-        </Container>
-      </main>
-      <Footer />
-    </div>
+    <main className={styles.main}>
+      <Introduction />
+      <Container maxWidth='md'>
+        <Box className={styles.uploadBox}>
+          <Paper className={styles.paper}>
+            <FileUpload loadService={loadService} onDroppedFile={() => {}} />
+          </Paper>
+          <ExampleFileSelect loadService={loadService} />
+        </Box>
+      </Container>
+    </main>
   );
 }
 
