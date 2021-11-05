@@ -418,7 +418,6 @@ function SelectedPalette() {
       select.send('RESET_FOREGROUND');
       select.send('RESET_BACKGROUND');
     });
-    return () => unbind('esc');
   }, [select]);
 
   return (

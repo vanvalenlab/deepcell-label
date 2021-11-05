@@ -1,6 +1,6 @@
 import { Box, FormLabel, makeStyles, Typography } from '@material-ui/core';
 import { useSelector } from '@xstate/react';
-import { bind, unbind } from 'mousetrap';
+import { bind } from 'mousetrap';
 import { default as React, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useDivision, useSelect, useTracking } from '../../ProjectContext';
 import Division, { Cell, DivisionFootprint } from './Division';
@@ -83,12 +83,6 @@ function Timeline() {
     });
     bind('[', () => select.send('PREV_FOREGROUND'));
     bind(']', () => select.send('NEXT_FOREGROUND'));
-    return () => {
-      unbind('n');
-      unbind('esc');
-      unbind('[');
-      unbind(']');
-    };
   }, [select, tracking]);
 
   return (
