@@ -24,7 +24,7 @@ import matplotlib
 import pandas as pd
 
 from deepcell_label.label import TrackEdit, ZStackEdit
-from deepcell_label.load_utils import is_zip, is_npz, is_trk, is_png, is_tiff
+from deepcell_label.load_utils import is_dvc
 from deepcell_label.models import Project
 # from deepcell_label import loaders
 from deepcell_label import loaders
@@ -217,9 +217,7 @@ def get_project(token):
 def get_files_in_registry():
     files = listdir(current_app.config['REGISTRY_PATH'])
 
-    def is_valid(f):
-        return is_zip(f) or is_npz(f) or is_trk(f) or is_png(f) or is_tiff(f)
-    files = [f for f in files if is_valid(f)]
+    files = [f for f in files if is_dvc(f)]
     return jsonify({'files': files})
 
 

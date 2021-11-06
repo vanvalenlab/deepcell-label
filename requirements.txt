@@ -17,3 +17,4 @@ flask-dropzone==1.5.4
 requests==2.25.1
 # TODO: drop python 3.6 and bump this requirement
 tifffile==2020.9.3
+pyyaml

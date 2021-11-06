@@ -7,11 +7,12 @@ import pathlib
 
 import requests
 import numpy as np
+import yaml
 
 from deepcell_label.imgutils import reshape
 from deepcell_label.labelmaker import LabelInfoMaker
 from deepcell_label.config import REGISTRY_PATH
-from deepcell_label.load_utils import is_npz, is_trk, is_png, is_tiff, is_zip
+from deepcell_label.load_utils import is_npz, is_trk, is_png, is_tiff, is_zip, is_dvc
 from deepcell_label.load_utils import load_npz, load_png, load_tiff, load_zip
 from deepcell_label.load_utils import load_raw_npz, load_labeled_npz
 from deepcell_label.load_utils import load_raw_trk, load_labeled_trk, load_lineage_trk
@@ -128,27 +129,48 @@ class PathLoader(Loader):
         form = request.form
         self.source = 'lfs'
         self.path = form['file']
-        self.input_axes = 'BZYXC'
-        with open(pathlib.Path(REGISTRY_PATH, self.path), 'rb') as f:
+
+        # Check if data is dvc file and load axes
+        if is_dvc(self.path):
+            with open(pathlib.Path(REGISTRY_PATH, self.path), 'r') as f:
+                dvc_file = yaml.safe_load(f)
+
+            meta = dvc_file.get('meta', {})
+            if 'intermediate_data_schema' in meta:
+                ss = meta['intermediate_data_schema'].get('subregion_spec', {})
+                self.input_axes = ss.get('dimensions', {}).get('dimension_order')
+            elif 'sample' in meta:
+                self.input_axes = meta['sample'].get('dimensions', {}).get('dimension_order')
+
+            # Check that the dimension order is not None
+            if self.input_axes is None:
+                self.input_axes = DCL_AXES
+            else:
+                # Replace T with Z b/c t not supported by DCL
+                self.input_axes = self.input_axes.upper().replace('T', 'Z')
+
+        data_path = pathlib.Path(self.path).stem
+        with open(pathlib.Path(REGISTRY_PATH, data_path), 'rb') as f:
             self.data = f.read()
         self.load()
 
     def load(self):
         label_array = None
+        data_path = pathlib.Path(self.path).stem
         # Load arrays
-        if is_npz(self.path):
+        if is_npz(data_path):
             raw_array = load_raw_npz(self.data)
             label_array = load_labeled_npz(self.data)
-        elif is_png(self.path):
+        elif is_png(data_path):
             raw_array = load_png(self.data)
-        elif is_tiff(self.path):
+        elif is_tiff(data_path):
             raw_array = load_tiff(self.data)
-        elif is_trk(self.path):
+        elif is_trk(data_path):
             raw_array = load_raw_trk(self.data)
             label_array = load_labeled_trk(self.data)
             self.cell_info = load_lineage_trk(self.data)
         else:
-            ext = pathlib.Path(self.path).suffix
+            ext = pathlib.Path(data_path).suffix
             raise InvalidExtension('Invalid file extension: {}'.format(ext))
 
         # Reshape or create arrays

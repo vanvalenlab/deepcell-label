@@ -34,6 +34,10 @@ def is_zip(url):
     return pathlib.Path(url).suffix in {'.zip'}
 
 
+def is_dvc(url):
+    return pathlib.Path(url).suffix.lower() in {'.dvc'}
+
+
 def load_npz(data):
     """Returns the first array in an npz."""
     npz = np.load(io.BytesIO(data))
