@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Label from './Label';
 import Load from './Load/Load';
 import ProjectContext from './ProjectContext';
@@ -13,16 +13,17 @@ import service from './service/service';
 function App() {
   return (
     <Router>
-      <Switch>
-        <Route path='/project'>
-          <ProjectContext project={service}>
-            <Label />
-          </ProjectContext>
-        </Route>
-        <Route path='/'>
-          <Load />
-        </Route>
-      </Switch>
+      <Routes>
+        <Route path='/' element={<Load />} />
+        <Route
+          path='/project'
+          element={
+            <ProjectContext project={service}>
+              <Label />
+            </ProjectContext>
+          }
+        />
+      </Routes>
     </Router>
   );
 }
