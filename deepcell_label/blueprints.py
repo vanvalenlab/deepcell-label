@@ -21,6 +21,7 @@ from flask import make_response
 from werkzeug.exceptions import HTTPException
 import matplotlib
 import pandas as pd
+import numpy as np
 
 from deepcell_label.label import TrackEdit, ZStackEdit
 from deepcell_label.models import Project
@@ -60,13 +61,31 @@ def handle_exception(error):
     return jsonify({'error': str(error)}), 500
 
 
-@bp.route('/api/raw/<token>/<int:channel>/<int:frame>')
+@bp.route('/api/raw/<token>/<int:channel>/<int:frame>', methods=['GET'])
 def raw(token, channel, frame):
     project = Project.get(token)
     if not project:
         return abort(404, description=f'project {token} not found')
     png = project.get_raw_png(channel, frame)
     return send_file(png, mimetype='image/png')
+
+
+@bp.route('/api/raw/<token>', methods=['POST'])
+def add_raw(token):
+    """Add new channel to the project."""
+    project = Project.get(token)
+    if not project:
+        return abort(404, description=f'project {token} not found')
+    # Load channel from first array in attached file
+    npz = np.load(request.files.get('file'))
+    channel = npz[npz.files[0]]
+    # Check channel is the right shape
+    expected_shape = (project.num_frames, project.width, project.height, 1)
+    if channel.shape != expected_shape:
+        raise ValueError(f'New channels for project {token} must have shape {expected_shape}')
+    # Add channel to project
+    project.add_channel(channel)
+    return project.make_first_payload()
 
 
 @bp.route('/api/labeled/<token>/<int:feature>/<int:frame>')

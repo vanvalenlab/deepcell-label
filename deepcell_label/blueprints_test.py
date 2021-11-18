@@ -125,6 +125,23 @@ def test_get_project(client):
     assert response.status_code == 200
 
 
+def test_add_channel(client):
+    project = models.Project.create(DummyLoader(raw=np.zeros((1, 1, 1, 1))))
+
+    npz = io.BytesIO()
+    np.savez(npz, new_channel=np.ones((1, 1, 1, 1)))
+    npz.seek(0)
+    data = {'file': (npz, 'test.npz')}
+
+    response = client.post(f'/api/raw/{project.token}', data=data,
+                           content_type='multipart/form-data')
+    assert response.status_code == 200
+    assert response.json.get('numChannels') == 2
+    assert project.raw_array.shape == (1, 1, 1, 2)
+    assert 0 in project.raw_array
+    assert 1 in project.raw_array
+
+
 # def test_project_finished(client):
 #     project = models.Project.create(DummyLoader())
 #     project.finish()
