@@ -408,7 +408,7 @@ function Hovering() {
   );
 }
 
-export default function SelectedPalette() {
+function SelectedPalette() {
   const styles = useStyles();
 
   const select = useSelect();
@@ -418,7 +418,6 @@ export default function SelectedPalette() {
       select.send('RESET_FOREGROUND');
       select.send('RESET_BACKGROUND');
     });
-    return () => unbind('esc');
   }, [select]);
 
   return (
