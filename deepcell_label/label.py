@@ -55,6 +55,12 @@ class Edit(object):
     def tracks(self):
         return self.labels.cell_info[self.feature]
 
+    def new_label(self):
+        """
+        Gets an unused label
+        """
+        return self.project.get_max_label(self.feature) + 1
+
     @property
     def frame(self):
         """
@@ -70,6 +76,10 @@ class Edit(object):
             ndarray: the current raw frame
         """
         return self.project.raw_frames[self.frame_id].frame
+
+    def clean_label(self, label):
+        """Ensures that a label is a valid integer between the """
+        return int(max(self.new_label, min(0, label)))
 
     def dispatch_action(self, action, info):
         """
@@ -149,10 +159,8 @@ class Edit(object):
             label_1 (int): first label to swap
             label_2 (int): second label to swap
         """
-        if label_1 is -inf:
-            label_1 = 0
-        if label_2 is -inf:
-            label_2 = 0
+        label_1 = self.clean_label(label_1)
+        label_2 = self.clean_label(label_2)
 
         img = self.frame[..., self.feature]
         label_1_present = label_1 in img
@@ -178,8 +186,8 @@ class Edit(object):
         """
         Replaces label_2 with label_1 in the current frame.
         """
-        if label_1 is -inf:
-            label_1 = 0
+        label_1 = self.clean_label(label_1)
+        label_2 = self.clean_label(label_2)
 
         img = self.frame[..., self.feature]
         label_2_present = np.any(np.isin(label_2, img))
@@ -208,8 +216,8 @@ class Edit(object):
             background (int): label overwritten by the brush
             brush_size (int): radius of the brush in pixels
         """
-        if foreground is -inf:
-            foreground = 0
+        foreground = self.clean_label(foreground)
+        background = self.clean_label(background)
 
         img = np.copy(self.frame[..., self.feature])
         foreground_in_before = np.any(np.isin(img, foreground))
@@ -278,8 +286,7 @@ class Edit(object):
             x_location (int): x coordinate of region to flood
             y_location (int): y coordinate of region to flood
         """
-        if label is -inf:
-            label = 0
+        label = self.clean_label(label)
 
         img = self.frame[..., self.feature]
         # Rescale click location to corresponding location in label array
@@ -311,7 +318,7 @@ class Edit(object):
         """Use watershed to segment different objects"""
         # Pull the label that is being split and find a new valid label
         current_label = label
-        new_label = self.project.get_max_label(self.feature) + 1
+        new_label = self.new_label
 
         # Locally store the frames to work on
         img_raw = self.raw_frame[..., self.channel]
@@ -388,9 +395,7 @@ class Edit(object):
             x2 (int): second x coordinate to bound threshold area
             label (int): label drawn in threshold area
         """
-        if label is -inf:
-            label = 0
-
+        label = self.clean_label(label)
         top_edge = min(y1, y2)
         bottom_edge = max(y1, y2) + 1
         left_edge = min(x1, x2)
@@ -544,7 +549,7 @@ class Edit(object):
                 return
 
             # Replace parent with new label for rest of movie
-            daughter = self.project.get_max_label(self.feature) + 1
+            daughter = self.new_label
 
             for label_frame in self.project.label_frames[self.frame_id:]:
                 img = label_frame.frame
@@ -672,7 +677,6 @@ class Edit(object):
             label (int): label to replace with a new label
         """
         track = self.tracks[label]
-        new_label = self.project.get_max_label(self.feature) + 1
 
         # Don't create a new track on the first frame of a track
         if self.frame_id == track['frames'][0]:
@@ -682,11 +686,11 @@ class Edit(object):
         for label_frame in self.project.label_frames[self.frame_id:]:
             img = label_frame.frame
             if np.isin(label, img):
-                img[img == label] = new_label
+                img[img == label] = self.new_label
                 label_frame.frame = img
 
         # replace fields
-        new_track = self.tracks[new_label] = {}
+        new_track = self.tracks[self.new_label] = {}
 
         idx = track['frames'].index(self.frame_id)
 
@@ -695,7 +699,7 @@ class Edit(object):
 
         track['frames'] = frames_before
         new_track['frames'] = frames_after
-        new_track['label'] = new_label
+        new_track['label'] = self.new_label
 
         # only add daughters if they aren't in the same frame as the new track
         new_track['daughters'] = []
@@ -711,6 +715,6 @@ class Edit(object):
         track['frame_div'] = None
         track['capped'] = False
 
-        self.labels.cell_ids[0] = np.append(self.labels.cell_ids[0], new_label)
+        self.labels.cell_ids[0] = np.append(self.labels.cell_ids[0], self.new_label)
 
         self.y_changed = self.labels_changed = True
