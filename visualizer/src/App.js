@@ -1,6 +1,6 @@
 import { Box, makeStyles, Typography } from '@material-ui/core';
 import { useSelector } from '@xstate/react';
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Footer from './Footer/Footer';
 import Label from './Label';
 import Load from './Load/Load';
@@ -82,20 +82,21 @@ function App() {
     <div className={styles.root}>
       <NavBar />
       <Router>
-        <Switch>
-          <Route path='/project'>
-            {isProjectId(id) ? (
-              <LabelProject />
-            ) : id?.split(',')?.every(isProjectId) ? (
-              <Review />
-            ) : (
-              <InvalidProjectId />
-            )}
-          </Route>
-          <Route path='/'>
-            <Load />
-          </Route>
-        </Switch>
+        <Routes>
+          <Route path='/' element={<Load />} />
+          <Route
+            path='/project'
+            element={
+              isProjectId(id) ? (
+                <LabelProject />
+              ) : id?.split(',')?.every(isProjectId) ? (
+                <Review />
+              ) : (
+                <InvalidProjectId />
+              )
+            }
+          />
+        </Routes>
       </Router>
       <Footer />
     </div>
