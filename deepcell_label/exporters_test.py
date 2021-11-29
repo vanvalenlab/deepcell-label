@@ -12,8 +12,8 @@ from deepcell_label.conftest import DummyLoader
 def npz_exporter(app, db_session):
     with app.app_context():
         db_session.autoflush = False
-        project = models.Project.create(DummyLoader(path='test.npz'))
-        exporter = exporters.Exporter(project)
+        project = models.Project.create(DummyLoader())
+        exporter = exporters.Exporter(project, 'npz')
         return exporter
 
 
@@ -21,8 +21,8 @@ def npz_exporter(app, db_session):
 def trk_exporter(app, db_session):
     with app.app_context():
         db_session.autoflush = False
-        project = models.Project.create(DummyLoader(path='test.trk'))
-        exporter = exporters.Exporter(project)
+        project = models.Project.create(DummyLoader())
+        exporter = exporters.Exporter(project, 'trk')
         return exporter
 
 
@@ -44,6 +44,6 @@ class TestS3Exporter():
             mocked = mocker.patch('boto3.s3.inject.upload_fileobj')
             db_session.autoflush = False
             project = models.Project.create(DummyLoader())
-            exporter = exporters.S3Exporter(project)
+            exporter = exporters.S3Exporter(project, 'npz')
             exporter.export('test')
             mocked.assert_called()
