@@ -820,7 +820,7 @@ class TrackEdit(BaseEdit):
 
         track['frames'] = frames_before
         new_track['frames'] = frames_after
-        new_track['label'] = new_label
+        new_track['label'] = self.new_label
 
         # only add daughters if they aren't in the same frame as the new track
         new_track['daughters'] = []
@@ -836,7 +836,7 @@ class TrackEdit(BaseEdit):
         track['frame_div'] = None
         track['capped'] = False
 
-        self.labels.cell_ids[0] = np.append(self.labels.cell_ids[0], new_label)
+        self.labels.cell_ids[0] = np.append(self.labels.cell_ids[0], self.new_label)
 
         self.y_changed = self.labels_changed = True
 
