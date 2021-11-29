@@ -187,14 +187,6 @@ class Project(db.Model):
         """Compiles all raw frames into a single numpy array."""
         return np.array([frame.frame for frame in self.raw_frames])
 
-    @property
-    def is_zstack(self):
-        return os.path.splitext(self.path.lower())[-1] in {'.npz', '.png', '.tif', '.tiff'}
-
-    @property
-    def is_track(self):
-        return os.path.splitext(self.path.lower())[-1] in {'.trk', '.trks'}
-
     @staticmethod
     def get(token):
         """

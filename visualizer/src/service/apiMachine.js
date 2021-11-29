@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { Machine, sendParent } from 'xstate';
 
 /** Returns a Promise for a DeepCell Label API call based on the event. */
@@ -32,19 +33,26 @@ function redo(context, event) {
 
 function upload(context, event) {
   const { bucket, projectId } = context;
-  const uploadRoute = `${document.location.origin}/api/upload/${bucket}/${projectId}`;
-  const options = { method: 'POST' };
-  return fetch(uploadRoute, options).then(checkResponseCode);
+  const form = new FormData();
+  form.append('id', projectId);
+  form.append('bucket', bucket);
+  form.append('format', new URLSearchParams(window.location.search).get('track') ? 'trk' : 'npz');
+  return axios.post('/api/upload', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 }
 
 function download(context, event) {
   const { projectId } = context;
-  const downloadRoute = `${document.location.origin}/api/download/${projectId}`;
-  const options = { method: 'GET' };
-  const promise = fetch(downloadRoute, options);
+  const format = new URLSearchParams(window.location.search).get('track') ? 'trk' : 'npz';
+  const promise = axios.get('/api/download', {
+    params: { id: projectId, format: format },
+    responseType: 'blob',
+  });
+  promise.then(response => console.log(response));
   const filename = promise.then(response => {
     const regex = /filename=(.*)$/;
-    const header = response.headers.get('content-disposition');
+    const header = response.headers['content-disposition'];
     let filename = header.match(regex)[1] ?? `${projectId}.npz`;
     // Strip quotes
     filename = filename.replaceAll('"', '');
@@ -54,7 +62,7 @@ function download(context, event) {
     }
     return filename;
   });
-  const url = promise.then(response => response.blob()).then(blob => URL.createObjectURL(blob));
+  const url = promise.then(response => URL.createObjectURL(response.data));
   return Promise.all([filename, url]);
 }
 
