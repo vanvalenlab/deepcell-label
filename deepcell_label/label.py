@@ -52,6 +52,13 @@ class BaseEdit(object):
         self.labels_changed = False
 
     @property
+    def new_label(self):
+        """
+        Gets an unused label
+        """
+        return self.project.get_max_label(self.feature) + 1
+
+    @property
     def frame(self):
         """
         Returns:
@@ -102,11 +109,10 @@ class BaseEdit(object):
         """
         # Get and edit the displayed labels
         img = self.frame[..., self.feature]
-        new_label = self.project.get_max_label(self.feature) + 1
-        img[img == label] = new_label
+        img[img == label] = self.new_label
         # Update label metadata
         self.del_cell_info(del_label=label, frame=self.frame_id)
-        self.add_cell_info(add_label=new_label, frame=self.frame_id)
+        self.add_cell_info(add_label=self.new_label, frame=self.frame_id)
         # Assign the image to the frame
         self.frame[..., self.feature] = img
 
@@ -290,7 +296,7 @@ class BaseEdit(object):
         """Use watershed to segment different objects"""
         # Pull the label that is being split and find a new valid label
         current_label = label
-        new_label = self.project.get_max_label(self.feature) + 1
+        new_label = self.new_label
 
         # Locally store the frames to work on
         img_raw = self.raw_frame[..., self.channel]
@@ -516,15 +522,14 @@ class ZStackEdit(BaseEdit):
         Args:
             label (int): label to replace with a new label
         """
-        new_label = self.project.get_max_label(self.feature) + 1
         # Replace old label with new in every frame until end
         for label_frame in self.project.label_frames[self.frame_id:]:
             img = label_frame.frame[..., self.feature]
-            img[img == label] = new_label
+            img[img == label] = self.new_label
             # Update cell info for this frame
-            if new_label in img:
+            if self.new_label in img:
                 self.del_cell_info(del_label=label, frame=label_frame.frame_id)
-                self.add_cell_info(add_label=new_label, frame=label_frame.frame_id)
+                self.add_cell_info(add_label=self.new_label, frame=label_frame.frame_id)
             label_frame.frame[..., self.feature] = img
 
     def action_replace(self, label_1, label_2):
@@ -665,7 +670,7 @@ class TrackEdit(BaseEdit):
                 return
 
             # Replace parent with new label for rest of movie
-            daughter = self.project.get_max_label(self.feature) + 1
+            daughter = self.new_label
 
             for label_frame in self.project.label_frames[self.frame_id:]:
                 img = label_frame.frame
@@ -793,7 +798,6 @@ class TrackEdit(BaseEdit):
             label (int): label to replace with a new label
         """
         track = self.tracks[label]
-        new_label = self.project.get_max_label(self.feature) + 1
 
         # Don't create a new track on the first frame of a track
         if self.frame_id == track['frames'][0]:
@@ -803,11 +807,11 @@ class TrackEdit(BaseEdit):
         for label_frame in self.project.label_frames[self.frame_id:]:
             img = label_frame.frame
             if np.isin(label, img):
-                img[img == label] = new_label
+                img[img == label] = self.new_label
                 label_frame.frame = img
 
         # replace fields
-        new_track = self.tracks[new_label] = {}
+        new_track = self.tracks[self.new_label] = {}
 
         idx = track['frames'].index(self.frame_id)
 
