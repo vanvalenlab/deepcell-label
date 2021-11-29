@@ -67,6 +67,10 @@ class BaseEdit(object):
         """
         return self.project.raw_frames[self.frame_id].frame
 
+    def clean_label(self, label):
+        """Ensures that a label is a valid integer between the """
+        return int(max(self.new_label, min(0, label)))
+
     def dispatch_action(self, action, info):
         """
         Call an action method based on an action type.
@@ -127,10 +131,8 @@ class BaseEdit(object):
             label_1 (int): first label to swap
             label_2 (int): second label to swap
         """
-        if label_1 is -inf:
-            label_1 = 0
-        if label_2 is -inf:
-            label_2 = 0
+        label_1 = self.clean_label(label_1)
+        label_2 = self.clean_label(label_2)
 
         img = self.frame[..., self.feature]
         label_1_present = label_1 in img
@@ -156,8 +158,8 @@ class BaseEdit(object):
         """
         Replaces label_2 with label_1 in the current frame.
         """
-        if label_1 is -inf:
-            label_1 = 0
+        label_1 = self.clean_label(label_1)
+        label_2 = self.clean_label(label_2)
 
         img = self.frame[..., self.feature]
         label_2_present = np.any(np.isin(label_2, img))
@@ -186,8 +188,8 @@ class BaseEdit(object):
             background (int): label overwritten by the brush
             brush_size (int): radius of the brush in pixels
         """
-        if foreground is -inf:
-            foreground = 0
+        foreground = self.clean_label(foreground)
+        background = self.clean_label(background)
 
         img = np.copy(self.frame[..., self.feature])
         foreground_in_before = np.any(np.isin(img, foreground))
@@ -256,8 +258,7 @@ class BaseEdit(object):
             x_location (int): x coordinate of region to flood
             y_location (int): y coordinate of region to flood
         """
-        if label is -inf:
-            label = 0
+        label = self.clean_label(label)
 
         img = self.frame[..., self.feature]
         # Rescale click location to corresponding location in label array
@@ -366,9 +367,7 @@ class BaseEdit(object):
             x2 (int): second x coordinate to bound threshold area
             label (int): label drawn in threshold area
         """
-        if label is -inf:
-            label = 0
-
+        label = self.clean_label(label)
         top_edge = min(y1, y2)
         bottom_edge = max(y1, y2) + 1
         left_edge = min(x1, x2)
@@ -532,9 +531,7 @@ class ZStackEdit(BaseEdit):
         """
         Replacing label_2 with label_1.
         """
-        if label_1 is -inf:
-            label_1 = 0
-
+        label_1 = self.clean_label(label_1)
         # TODO: check on backend that labels are different?
         # Check each frame for label_2
         for label_frame in self.project.label_frames:
@@ -843,8 +840,8 @@ class TrackEdit(BaseEdit):
         """
         Replacing label_2 with label_1 in all frames.
         """
-        if label_1 is -inf:
-            label_1 = 0
+        label_1 = self.clean_label(label_1)
+        label_2 = self.clean_label(label_2)
         # replace arrays
         for label_frame in self.project.label_frames:
             frame = label_frame.frame
@@ -879,10 +876,8 @@ class TrackEdit(BaseEdit):
         """
         Replace label_1 with label_2 on all frames and vice versa.
         """
-        if label_1 is -inf:
-            label_1 = 0
-        if label_2 is -inf:
-            label_2 = 0
+        label_1 = self.clean_label(label_1)
+        label_2 = self.clean_label(label_2)
 
         def relabel(old_label, new_label):
             for label_frame in self.project.label_frames:
