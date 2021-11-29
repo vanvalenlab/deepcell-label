@@ -55,6 +55,7 @@ class Edit(object):
     def tracks(self):
         return self.labels.cell_info[self.feature]
 
+    @property
     def new_label(self):
         """
         Gets an unused label
@@ -78,8 +79,8 @@ class Edit(object):
         return self.project.raw_frames[self.frame_id].frame
 
     def clean_label(self, label):
-        """Ensures that a label is a valid integer between the """
-        return int(max(self.new_label, min(0, label)))
+        """Ensures that a label is a valid integer between 0 and an unused label"""
+        return int(min(self.new_label, max(0, label)))
 
     def dispatch_action(self, action, info):
         """
