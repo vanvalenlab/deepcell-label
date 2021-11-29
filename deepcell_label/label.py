@@ -25,9 +25,9 @@ from scipy.ndimage import find_objects
 from deepcell_label.labelmaker import LabelInfoMaker
 
 
-class BaseEdit(object):
+class Edit(object):
     """
-    Base class for editing frames in DeepCell Label.
+    Class for editing label images in DeepCell Label.
     Expected lifespan is a single action.
 
     Actions have three phases:
@@ -50,6 +50,10 @@ class BaseEdit(object):
 
         self.y_changed = False
         self.labels_changed = False
+
+    @property
+    def tracks(self):
+        return self.labels.cell_info[self.feature]
 
     @property
     def frame(self):
@@ -84,40 +88,58 @@ class BaseEdit(object):
             raise ValueError('Invalid action "{}"'.format(action))
 
     def add_cell_info(self, add_label, frame):
-        raise NotImplementedError('add_cell_info is not implemented in BaseEdit')
+        """Add a cell to a frame in the cell_info."""
+        # if cell already exists elsewhere in trk:
+        add_label = int(add_label)
+        try:
+            old_frames = self.tracks[add_label]['frames']
+            updated_frames = np.append(old_frames, frame)
+            updated_frames = np.unique(updated_frames).tolist()
+            self.tracks[add_label]['frames'] = updated_frames
+        # cell does not exist anywhere in trk:
+        except KeyError:
+            self.tracks[add_label] = {
+                'label': add_label,
+                'frames': [frame],
+                'daughters': [],
+                'frame_div': None,
+                'parent': None,
+                'capped': False,
+            }
+            ids = np.append(self.labels.cell_ids[self.feature], add_label)
+            self.labels.cell_ids[self.feature] = ids
+
+        self.y_changed = self.labels_changed = True
 
     def del_cell_info(self, del_label, frame):
-        raise NotImplementedError('del_cell_info is not implemented in BaseEdit')
+        """Remove a cell from a frame in the cell_info."""
+        # remove cell from frame
+        track = self.tracks[del_label]
+        track['frames'] = [i for i in track['frames'] if i != frame]
 
-    def action_new_single_cell(self, label):
-        """
-        Create new label that replaces an existing label in one frame.
+        # if that was the last frame, delete the entry for that cell
+        if track['frames'] == []:
+            del self.tracks[del_label]
 
-        Args:
-            label (int): label to replace
-        """
-        # Get and edit the displayed labels
-        img = self.frame[..., self.feature]
-        new_label = self.project.get_max_label(self.feature) + 1
-        img[img == label] = new_label
-        # Update label metadata
-        self.del_cell_info(del_label=label, frame=self.frame_id)
-        self.add_cell_info(add_label=new_label, frame=self.frame_id)
-        # Assign the image to the frame
-        self.frame[..., self.feature] = img
+            # also remove from list of cell_ids
+            ids = self.labels.cell_ids[self.feature]
+            self.labels.cell_ids[self.feature] = np.delete(
+                ids, np.where(ids == np.int64(del_label))
+            )
 
-    def action_delete_mask(self, label):
-        """
-        Deletes label from one frame, replacing the label with 0.
+            # If deleting lineage data, remove parent/daughter entries
+            for _, track in self.tracks.items():
+                try:
+                    track['daughters'].remove(del_label)
+                    if track['daughters'] == []:
+                        track['frame_div'] = None
+                        track['capped'] = False
+                except ValueError:
+                    pass
+                if track['parent'] == del_label:
+                    track['parent'] = None
 
-        Args:
-            label (int): label to delete
-        """
-        # TODO: update the action name?
-        img = self.frame[..., self.feature]
-        img = np.where(img == label, 0, img)
-        self.del_cell_info(del_label=label, frame=self.frame_id)
-        self.frame[..., self.feature] = img
+        self.y_changed = self.labels_changed = True
 
     def action_swap_single_frame(self, label_1, label_2):
         """
@@ -504,152 +526,6 @@ class BaseEdit(object):
         self.frame[..., self.feature] = img_ann
         self.y_changed = True
 
-
-class ZStackEdit(BaseEdit):
-
-    def __init__(self, project):
-        super(ZStackEdit, self).__init__(project)
-
-    def action_new_cell_stack(self, label):
-        """
-        Creates new cell label and replaces original label with it in all subsequent frames.
-
-        Args:
-            label (int): label to replace with a new label
-        """
-        new_label = self.project.get_max_label(self.feature) + 1
-        # Replace old label with new in every frame until end
-        for label_frame in self.project.label_frames[self.frame_id:]:
-            img = label_frame.frame[..., self.feature]
-            img[img == label] = new_label
-            # Update cell info for this frame
-            if new_label in img:
-                self.del_cell_info(del_label=label, frame=label_frame.frame_id)
-                self.add_cell_info(add_label=new_label, frame=label_frame.frame_id)
-            label_frame.frame[..., self.feature] = img
-
-    def action_replace(self, label_1, label_2):
-        """
-        Replacing label_2 with label_1.
-        """
-        if label_1 is -inf:
-            label_1 = 0
-
-        # TODO: check on backend that labels are different?
-        # Check each frame for label_2
-        for label_frame in self.project.label_frames:
-            img = label_frame.frame[..., self.feature]
-            # if label being replaced is present, remove it from image and update cell info dict
-            if np.any(np.isin(img, label_2)):
-                img = np.where(img == label_2, label_1, img)
-                self.add_cell_info(add_label=label_1, frame=self.frame_id)
-                self.del_cell_info(del_label=label_2, frame=self.frame_id)
-                label_frame.frame[..., self.feature] = img
-
-    def action_predict_single(self):
-        """
-        predicts zstack relationship for current frame based on previous frame
-        useful for finetuning corrections one frame at a time
-        """
-        if self.frame_id > 0:
-            prev_frame = self.frame_id - 1
-            img = self.project.label_frames[prev_frame].frame[..., self.feature]
-            next_img = self.frame[..., self.feature]
-            updated_img = predict_zstack_cell_ids(img, next_img)
-
-            # check if image changed
-            comparison = np.where(next_img != updated_img)
-            self.y_changed = np.any(comparison)
-
-            # if the image changed, update cell info and label frame
-            if self.y_changed:
-                self.remake_cell_info()
-                self.frame[..., self.feature] = updated_img
-
-    def action_predict_zstack(self):
-        """
-        use location of cells in image to predict which annotations are
-        different slices of the same cell
-        """
-        for frame_id in range(self.project.num_frames - 1):
-            img = self.project.label_frames[frame_id].frame[..., self.feature]
-            next_img = self.project.label_frames[frame_id + 1].frame[..., self.feature]
-            predicted_next = predict_zstack_cell_ids(img, next_img)
-            self.project.label_frames[frame_id + 1].frame[..., self.feature] = predicted_next
-
-        # remake cell_info dict based on new annotations
-        self.y_changed = True
-        self.remake_cell_info()
-
-    def action_save_zstack(self, bucket):
-        # save file to BytesIO object
-        store_npz = io.BytesIO()
-
-        # X and y are array names by convention
-        np.savez(store_npz, X=self.project.raw_array, y=self.project.label_array)
-        store_npz.seek(0)
-
-        # store npz file object in bucket/path
-        s3 = self.project._get_s3_client()
-        s3.upload_fileobj(store_npz, bucket, self.project.path)
-
-    def add_cell_info(self, add_label, frame):
-        """Add a cell to the npz"""
-        add_label = int(add_label)
-        # if cell already exists elsewhere in npz
-        try:
-            old_frames = self.labels.cell_info[self.feature][add_label]['frames']
-            new_frames = np.append(old_frames, frame)
-            new_frames = np.unique(new_frames).tolist()
-            self.labels.cell_info[self.feature][add_label]['frames'] = new_frames
-        # cell does not exist anywhere in npz
-        except KeyError:
-            self.labels.cell_info[self.feature][add_label] = {
-                'label': add_label,
-                'frames': [frame],
-                'slices': ''
-            }
-            self.labels.cell_ids[self.feature] = np.append(self.labels.cell_ids[self.feature],
-                                                           add_label)
-
-        # if adding cell, frames and info have necessarily changed
-        self.y_changed = self.labels_changed = True
-
-    def del_cell_info(self, del_label, frame):
-        """Remove a cell from the npz"""
-        # remove cell from frame
-        old_frames = self.labels.cell_info[self.feature][del_label]['frames']
-        new_frames = np.delete(old_frames, np.where(old_frames == np.int64(frame))).tolist()
-        self.labels.cell_info[self.feature][del_label]['frames'] = new_frames
-
-        # if that was the last frame, delete the entry for that cell
-        if self.labels.cell_info[self.feature][del_label]['frames'] == []:
-            del self.labels.cell_info[self.feature][del_label]
-
-            # also remove from list of cell_ids
-            ids = self.labels.cell_ids[self.feature]
-            ids = np.delete(ids, np.where(ids == np.int64(del_label)))
-            self.labels.cell_ids[self.feature] = ids
-
-        # if deleting cell, frames and info have necessarily changed
-        self.y_changed = self.labels_changed = True
-
-    def remake_cell_info(self):
-        """Remake the entire cell_info and cell_ids dicts"""
-        label_maker = LabelInfoMaker(self.project.label_array)
-        self.labels.cell_info = label_maker.cell_info
-        self.labels.cell_ids = label_maker.cell_ids
-        self.labels_changed = True
-
-
-class TrackEdit(BaseEdit):
-    def __init__(self, project):
-        super(TrackEdit, self).__init__(project)
-
-    @property
-    def tracks(self):
-        return self.labels.cell_info[self.feature]
-
     def action_add_daughter(self, parent, daughter):
         """
         Adds a daughter to a division event.
@@ -838,317 +714,3 @@ class TrackEdit(BaseEdit):
         self.labels.cell_ids[0] = np.append(self.labels.cell_ids[0], new_label)
 
         self.y_changed = self.labels_changed = True
-
-    def action_replace(self, label_1, label_2):
-        """
-        Replacing label_2 with label_1 in all frames.
-        """
-        if label_1 is -inf:
-            label_1 = 0
-        # replace arrays
-        for label_frame in self.project.label_frames:
-            frame = label_frame.frame
-            if label_2 in frame:
-                replaced = np.where(frame == label_2, label_1, frame)
-                label_frame.frame = replaced
-
-        # TODO: is this the same as add/remove?
-        # replace fields
-        keep_track = self.tracks[label_1]
-        remove_track = self.tracks[label_2]
-
-        for d in remove_track['daughters']:
-            self.tracks[d]['parent'] = label_1
-
-        keep_track['frames'].extend(remove_track['frames'])
-        keep_track['frames'] = sorted(set(keep_track['frames']))
-        keep_track['daughters'] = remove_track['daughters']
-        keep_track['frame_div'] = remove_track['frame_div']
-        keep_track['capped'] = remove_track['capped']
-
-        del self.tracks[label_2]
-        for _, track in self.tracks.items():
-            try:
-                track['daughters'].remove(label_2)
-            except ValueError:
-                pass
-
-        self.y_changed = self.labels_changed = True
-
-    def action_swap_tracks(self, label_1, label_2):
-        """
-        Replace label_1 with label_2 on all frames and vice versa.
-        """
-        if label_1 is -inf:
-            label_1 = 0
-        if label_2 is -inf:
-            label_2 = 0
-
-        def relabel(old_label, new_label):
-            for label_frame in self.project.label_frames:
-                img = label_frame.frame
-                img[img == old_label] = new_label
-                label_frame.frame = img
-
-            # replace fields
-            track_new = self.tracks[new_label] = self.tracks[old_label]
-            track_new['label'] = new_label
-            del self.tracks[old_label]
-
-            for d in track_new['daughters']:
-                self.tracks[d]['parent'] = new_label
-
-            if track_new['parent'] is not None:
-                parent_track = self.tracks[track_new['parent']]
-                parent_track['daughters'].remove(old_label)
-                parent_track['daughters'].append(new_label)
-
-        relabel(label_1, -1)
-        relabel(label_2, label_1)
-        relabel(-1, label_2)
-
-        self.y_changed = self.labels_changed = True
-
-    def action_save_track(self, bucket):
-        # clear any empty tracks before saving file
-        empty_tracks = []
-        for key in self.tracks:
-            if not self.tracks[key]['frames']:
-                empty_tracks.append(self.tracks[key]['label'])
-        for track in empty_tracks:
-            del self.tracks[track]
-
-        # create file object in memory instead of writing to disk
-        trk_file_obj = io.BytesIO()
-
-        with tarfile.open(fileobj=trk_file_obj, mode='w') as trks:
-            with tempfile.NamedTemporaryFile('w') as lineage_file:
-                json.dump(self.tracks, lineage_file, indent=1)
-                lineage_file.flush()
-                trks.add(lineage_file.name, 'lineage.json')
-
-            with tempfile.NamedTemporaryFile() as raw_file:
-                np.save(raw_file, self.project.raw_array)
-                raw_file.flush()
-                trks.add(raw_file.name, 'raw.npy')
-
-            with tempfile.NamedTemporaryFile() as tracked_file:
-                np.save(tracked_file, self.project.label_array)
-                tracked_file.flush()
-                trks.add(tracked_file.name, 'tracked.npy')
-        try:
-            # go to beginning of file object
-            trk_file_obj.seek(0)
-            s3 = self.project._get_s3_client()
-            s3.upload_fileobj(trk_file_obj, bucket, self.project.path)
-
-        except Exception as e:
-            print('Something Happened: ', e, file=sys.stderr)
-            raise
-
-    def add_cell_info(self, add_label, frame):
-        """Add a cell to the trk"""
-        # if cell already exists elsewhere in trk:
-        add_label = int(add_label)
-        try:
-            old_frames = self.tracks[add_label]['frames']
-            updated_frames = np.append(old_frames, frame)
-            updated_frames = np.unique(updated_frames).tolist()
-            self.tracks[add_label]['frames'] = updated_frames
-        # cell does not exist anywhere in trk:
-        except KeyError:
-            self.tracks[add_label] = {
-                'label': add_label,
-                'frames': [frame],
-                'daughters': [],
-                'frame_div': None,
-                'parent': None,
-                'capped': False,
-            }
-            ids = np.append(self.labels.cell_ids[self.feature], add_label)
-            self.labels.cell_ids[self.feature] = ids
-
-        self.y_changed = self.labels_changed = True
-
-    def del_cell_info(self, del_label, frame):
-        """Remove a cell from the trk"""
-        # remove cell from frame
-        track = self.tracks[del_label]
-        track['frames'] = [i for i in track['frames'] if i != frame]
-
-        # if that was the last frame, delete the entry for that cell
-        if track['frames'] == []:
-            del self.tracks[del_label]
-
-            # also remove from list of cell_ids
-            ids = self.labels.cell_ids[self.feature]
-            self.labels.cell_ids[self.feature] = np.delete(
-                ids, np.where(ids == np.int64(del_label))
-            )
-
-            # If deleting lineage data, remove parent/daughter entries
-            for _, track in self.tracks.items():
-                try:
-                    track['daughters'].remove(del_label)
-                    if track['daughters'] == []:
-                        track['frame_div'] = None
-                        track['capped'] = False
-                except ValueError:
-                    pass
-                if track['parent'] == del_label:
-                    track['parent'] = None
-
-        self.y_changed = self.labels_changed = True
-
-
-def predict_zstack_cell_ids(img, next_img, threshold=0.1):
-    """
-    Predict labels for next_img based on intersection over union (iou)
-    with img. If cells don't meet threshold for iou, they don't count as
-    matching enough to share label with "matching" cell in img. Cells
-    that don't have a match in img (new cells) get a new label so that
-    output relabeled_next does not skip label values (unless label values
-    present in prior image need to be skipped to avoid conflating labels).
-    """
-
-    # relabel to remove skipped values, keeps subsequent predictions cleaner
-    next_img = relabel_frame(next_img)
-
-    # create np array that can hold all pairings between cells in one
-    # image and cells in next image
-    iou = np.zeros((np.max(img) + 1, np.max(next_img) + 1))
-
-    vals = np.unique(img)
-    cells = vals[np.nonzero(vals)]
-
-    # nothing to predict off of
-    if len(cells) == 0:
-        return next_img
-
-    next_vals = np.unique(next_img)
-    next_cells = next_vals[np.nonzero(next_vals)]
-
-    # no values to reassign
-    if len(next_cells) == 0:
-        return next_img
-
-    # calculate IOUs
-    for i in cells:
-        for j in next_cells:
-            intersection = np.logical_and(img == i, next_img == j)
-            union = np.logical_or(img == i, next_img == j)
-            iou[i, j] = intersection.sum(axis=(0, 1)) / union.sum(axis=(0, 1))
-
-    # relabel cells appropriately
-
-    # relabeled_next holds cells as they get relabeled appropriately
-    relabeled_next = np.zeros(next_img.shape, dtype=np.uint16)
-
-    # max_indices[cell_from_next_img] -> cell from first image that matches it best
-    max_indices = np.argmax(iou, axis=0)
-
-    # put cells that into new image if they've been matched with another cell
-
-    # keep track of which (next_img)cells don't have matches
-    # this can be if (next_img)cell matched background, or if (next_img)cell matched
-    # a cell already used
-    unmatched_cells = []
-    # don't reuse cells (if multiple cells in next_img match one particular cell)
-    used_cells_src = []
-
-    # next_cell ranges between 0 and max(next_img)
-    # matched_cell is which cell in img matched next_cell the best
-
-    # this for loop does the matching between cells
-    for next_cell, matched_cell in enumerate(max_indices):
-        # if more than one match, look for best match
-        # otherwise the first match gets linked together, not necessarily reproducible
-
-        # matched_cell != 0 prevents adding the background to used_cells_src
-        if matched_cell != 0 and matched_cell not in used_cells_src:
-            bool_matches = np.where(max_indices == matched_cell)
-            count_matches = np.count_nonzero(bool_matches)
-            if count_matches > 1:
-                # for a given cell in img, which next_cell has highest iou
-                matching_next_options = np.argmax(iou, axis=1)
-                best_matched_next = matching_next_options[matched_cell]
-
-                # ignore if best_matched_next is the background
-                if best_matched_next != 0:
-                    if next_cell != best_matched_next:
-                        unmatched_cells = np.append(unmatched_cells, next_cell)
-                        continue
-                    else:
-                        # don't add if bad match
-                        if iou[matched_cell][best_matched_next] > threshold:
-                            relabeled_next = np.where(next_img == best_matched_next,
-                                                      matched_cell, relabeled_next)
-
-                        # if it's a bad match, we still need to add next_cell back
-                        # into relabeled next later
-                        elif iou[matched_cell][best_matched_next] <= threshold:
-                            unmatched_cells = np.append(unmatched_cells, best_matched_next)
-
-                        # in either case, we want to be done with the "matched_cell" from img
-                        used_cells_src = np.append(used_cells_src, matched_cell)
-
-            # matched_cell != 0 is still true
-            elif count_matches == 1:
-                # add the matched cell to the relabeled image
-                if iou[matched_cell][next_cell] > threshold:
-                    relabeled_next = np.where(next_img == next_cell, matched_cell, relabeled_next)
-                else:
-                    unmatched_cells = np.append(unmatched_cells, next_cell)
-
-                used_cells_src = np.append(used_cells_src, matched_cell)
-
-        elif matched_cell in used_cells_src and next_cell != 0:
-            # skip that pairing, add next_cell to unmatched_cells
-            unmatched_cells = np.append(unmatched_cells, next_cell)
-
-        # if the cell in next_img didn't match anything (and is not the background):
-        if matched_cell == 0 and next_cell != 0:
-            unmatched_cells = np.append(unmatched_cells, next_cell)
-            # note: this also puts skipped (nonexistent) labels into unmatched cells,
-            # main reason to relabel first
-
-    # figure out which labels we should use to label remaining, unmatched cells
-
-    # these are the values that have already been used in relabeled_next
-    relabeled_values = np.unique(relabeled_next)[np.nonzero(np.unique(relabeled_next))]
-
-    # to account for any new cells that appear, create labels by adding to the max number of cells
-    # assumes that these are new cells and that all prev labels have been assigned
-    # only make as many new labels as needed
-
-    current_max = max(np.max(cells), np.max(relabeled_values)) + 1
-
-    stringent_allowed = []
-    for additional_needed in range(len(unmatched_cells)):
-        stringent_allowed.append(current_max)
-        current_max += 1
-
-    # replace each unmatched cell with a value from the stringent_allowed list,
-    # add that relabeled cell to relabeled_next
-    if len(unmatched_cells) > 0:
-        for reassigned_cell in range(len(unmatched_cells)):
-            relabeled_next = np.where(next_img == unmatched_cells[reassigned_cell],
-                                      stringent_allowed[reassigned_cell], relabeled_next)
-
-    return relabeled_next
-
-
-def relabel_frame(img, start_val=1):
-    '''relabel cells in frame starting from 1 without skipping values'''
-
-    # cells in image to be relabeled
-    cell_list = np.unique(img)
-    cell_list = cell_list[np.nonzero(cell_list)]
-
-    relabeled_cell_list = range(start_val, len(cell_list) + start_val)
-
-    relabeled_img = np.zeros(img.shape, dtype=np.uint16)
-    for i, cell in enumerate(cell_list):
-        relabeled_img = np.where(img == cell, relabeled_cell_list[i], relabeled_img)
-
-    return relabeled_img

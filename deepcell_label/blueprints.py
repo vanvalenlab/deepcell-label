@@ -24,12 +24,13 @@ from werkzeug.exceptions import HTTPException
 import matplotlib
 import pandas as pd
 
-from deepcell_label.label import TrackEdit, ZStackEdit
+from deepcell_label.label import Edit
 from deepcell_label.models import Project
 # from deepcell_label import loaders
 from deepcell_label import loaders
 from deepcell_label import exporters
 from deepcell_label.config import S3_INPUT_BUCKET, S3_OUTPUT_BUCKET
+from deepcell_label.utils import add_frame_div_parent, reformat_cell_info
 
 bp = Blueprint('label', __name__)  # pylint: disable=C0103
 
@@ -108,14 +109,9 @@ def semantic_labels(project_id, feature):
     if not project:
         return jsonify({'error': f'project {project_id} not found'}), 404
     cell_info = project.labels.cell_info[feature]
-    df = pd.DataFrame(cell_info).T
-    if df.parent.isnull().all():
-        df['frame_div_parent'] = None
-    else:
-        df = df.join(df[['frame_div']], rsuffix='_parent', how='left', on='parent')
-    df = df.rename(columns={'frame_div_parent': 'parentDivisionFrame',
-                            'frame_div': 'divisionFrame'})
-    response = make_response(df.to_json(orient='index'))
+    cell_info = add_frame_div_parent(cell_info)
+    cell_info = reformat_cell_info(cell_info)
+    response = make_response(cell_info)
     response.add_etag()
     return response.make_conditional(request)
 
@@ -158,7 +154,7 @@ def edit(token, action_type):
     del info['feature']
     del info['channel']
 
-    edit = get_edit(project)
+    edit = Edit(project)
     edit.dispatch_action(action_type, info)
     project.create_memento(action_type)
     project.update()
@@ -287,11 +283,3 @@ def upload_project_to_s3(bucket, token):
                              exporter.path, bucket, token,
                              timeit.default_timer() - start)
     return {}
-
-
-def get_edit(project):
-    """Factory for Edit objects"""
-    if project.is_track:
-        return TrackEdit(project)
-    else:
-        return ZStackEdit(project)
