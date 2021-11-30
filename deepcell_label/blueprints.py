@@ -22,7 +22,6 @@ from flask import send_file
 from flask import make_response
 from werkzeug.exceptions import HTTPException
 import matplotlib
-import pandas as pd
 
 from deepcell_label.label import Edit
 from deepcell_label.models import Project
