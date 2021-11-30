@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 
 import numpy as np
 
-from deepcell_label.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_OUTPUT_BUCKET
+from deepcell_label.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 
 
 class Exporter():

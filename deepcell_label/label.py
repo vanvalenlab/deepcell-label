@@ -3,7 +3,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import base64
 import io
 import json
 import sys
@@ -14,12 +13,11 @@ import numpy as np
 from matplotlib.colors import Normalize
 from skimage import filters
 from skimage.morphology import flood_fill, flood
-from skimage.morphology import watershed, dilation, disk, square, closing, erosion
+from skimage.morphology import watershed, dilation, disk, square, erosion
 from skimage.draw import circle
 from skimage.exposure import rescale_intensity
 from skimage.measure import regionprops
 from skimage.segmentation import morphological_chan_vese
-from scipy.ndimage import find_objects
 
 from deepcell_label.labelmaker import LabelInfoMaker
 
