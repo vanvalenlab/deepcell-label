@@ -715,5 +715,4 @@ class Edit(object):
         track['capped'] = False
 
         self.labels.cell_ids[0] = np.append(self.labels.cell_ids[0], self.new_label)
-
         self.y_changed = self.labels_changed = True
