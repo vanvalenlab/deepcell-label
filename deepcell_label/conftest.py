@@ -5,8 +5,6 @@ import os
 from flask_sqlalchemy import SQLAlchemy
 import numpy as np
 import pytest
-from pytest_lazyfixture import lazy_fixture
-from unittest.mock import MagicMock
 
 from deepcell_label import create_app  # pylint: disable=C0413
 from deepcell_label.loaders import Loader

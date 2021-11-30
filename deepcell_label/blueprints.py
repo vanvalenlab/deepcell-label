@@ -3,8 +3,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import distutils
-import distutils.util
 import gzip
 import json
 import timeit
@@ -14,20 +12,17 @@ from flask import abort
 from flask import Blueprint
 from flask import jsonify
 from flask import request
-from flask import redirect
 from flask import current_app
 from flask import send_file
 from flask import make_response
 from werkzeug.exceptions import HTTPException
 import matplotlib
-import pandas as pd
 
 from deepcell_label.label import TrackEdit, ZStackEdit
 from deepcell_label.models import Project
-# from deepcell_label import loaders
 from deepcell_label import loaders
 from deepcell_label import exporters
-from deepcell_label.config import S3_INPUT_BUCKET, S3_OUTPUT_BUCKET
+
 
 bp = Blueprint('label', __name__)  # pylint: disable=C0103
 
