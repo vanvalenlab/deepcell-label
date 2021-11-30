@@ -1,13 +1,35 @@
-FROM python:3.7
+FROM python:3.7-slim-bullseye as base
+
+FROM base as builder
+
+RUN mkdir /build
+WORKDIR /build
+
+COPY requirements.txt requirements-test.txt ./
+
+# Install deps for mysqlclient and matplotlib
+# Installation on Python3.8+ may require
+# pkg-config libfreetype6-dev libxft-dev libpng-dev
+RUN apt-get update && apt-get install -y \
+    build-essential default-libmysqlclient-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN pip install --prefix=/install --no-cache-dir \
+    -r requirements.txt gunicorn
+
+FROM base
 
 WORKDIR /usr/src/app
 
-COPY requirements.txt requirements.txt
+RUN apt-get update && apt-get install -y \
+  libmariadb-dev-compat && \
+  rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir -r requirements.txt
+COPY --from=builder /install /usr/local
 
-COPY . .
+COPY deepcell_label ./deepcell_label
+COPY application.py .
 
-EXPOSE 5000
+ENV PORT "5000"
 
-CMD ["/bin/sh", "-c", "python application.py"]
+CMD gunicorn --bind 0.0.0.0:$PORT application

@@ -4,17 +4,13 @@ from __future__ import division
 from __future__ import print_function
 
 import base64
-import copy
 import enum
 import io
 import logging
 import os
 import timeit
 from secrets import token_urlsafe
-import pickle
-import io
 
-from flask import current_app
 from flask_sqlalchemy import SQLAlchemy
 from matplotlib import pyplot as plt
 import numpy as np
