@@ -115,7 +115,9 @@ class Project(db.Model):
     scale_factor = db.Column(db.Float, default=1)
     colormap = db.Column(db.PickleType)
 
-    raw_frames = db.relationship('RawFrame', backref='project')
+    raw_frames = db.relationship('RawFrame', backref='project',
+                                 # Delete when detached by add_channel
+                                 cascade='save-update, merge, delete, delete-orphan')
     rgb_frames = db.relationship('RGBFrame', backref='project')
     label_frames = db.relationship('LabelFrame', backref='project',
                                    # Delete frames detached by undo/redo
@@ -453,6 +455,19 @@ class Project(db.Model):
         label_frame = LabelFrame.get(self.id, frame)
         label_arr = label_frame.frame[..., feature]
         return add_outlines(label_arr)
+
+    def add_channel(self, channel):
+        """
+        Adds a channel to an existing project.
+        """
+        new_raw_frames = []
+        for i, raw_frame in enumerate(self.raw_frames):
+            old_array = raw_frame.frame
+            new_array = np.append(old_array, channel[i], axis=-1)
+            new_raw_frames.append(RawFrame(i, new_array))
+        self.raw_frames = new_raw_frames
+        self.num_channels = self.num_channels + 1
+        db.session.commit()
 
 
 class Labels(db.Model):
