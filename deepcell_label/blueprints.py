@@ -15,7 +15,7 @@ from flask import request
 from flask import current_app
 from flask import send_file
 from flask import make_response
-from werkzeug.exceptions import HTTPException
+from werkzeug.exceptions import HTTPException, BadRequestKeyError
 import matplotlib
 import numpy as np
 
@@ -72,12 +72,17 @@ def add_raw(token):
     if not project:
         return abort(404, description=f'project {token} not found')
     # Load channel from first array in attached file
-    npz = np.load(request.files.get('file'))
+    try:
+        npz = np.load(request.files.get('file'))
+    except BadRequestKeyError:  # could not get file from request.files
+        return abort(400, description='Attach a new channel file in a form under the file field.')
+    except TypeError:
+        return abort(400, description='Could not load the attached file. Attach an .npz file.')
     channel = npz[npz.files[0]]
     # Check channel is the right shape
     expected_shape = (project.num_frames, project.width, project.height, 1)
     if channel.shape != expected_shape:
-        raise ValueError(f'New channels for project {token} must have shape {expected_shape}')
+        raise ValueError(f'New channel must have shape {expected_shape}')
     # Add channel to project
     project.add_channel(channel)
     return project.make_first_payload()
