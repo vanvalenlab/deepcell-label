@@ -27,6 +27,10 @@ cd deepcell-label
 
 The backend is a Flask HTTP API that will store and update project data.
 
+#### Set up environment
+
+Flask expects some environment variables to be set, like FLASK_APP. Set these with `export FLASK_APP=application` in your terminal, or set them in the `.env` file in the root of the repository. There is an example `.env.example` with FLASK_APP already set. Make a copy as remove `.example` so the file is named `.env`.
+
 #### Run Python locally
 
 It's recommended to set up a virtual environment with [conda](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) or [venv](https://docs.python.org/3/library/venv.html).
