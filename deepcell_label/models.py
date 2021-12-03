@@ -464,7 +464,7 @@ class Project(db.Model):
         for i, raw_frame in enumerate(self.raw_frames):
             old_array = raw_frame.frame
             new_array = np.append(old_array, channel[i], axis=-1)
-            new_raw_frames += [RawFrame(i, new_array)]
+            new_raw_frames.append(RawFrame(i, new_array))
         self.raw_frames = new_raw_frames
         self.num_channels = self.num_channels + 1
         db.session.commit()
