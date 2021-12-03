@@ -20,10 +20,11 @@ from flask import make_response
 from werkzeug.exceptions import HTTPException
 import matplotlib
 
-from deepcell_label.label import TrackEdit, ZStackEdit
+from deepcell_label.label import Edit
 from deepcell_label.models import Project
 from deepcell_label import loaders
 from deepcell_label import exporters
+from deepcell_label.utils import add_frame_div_parent, reformat_cell_info
 
 
 bp = Blueprint('label', __name__)  # pylint: disable=C0103
@@ -103,14 +104,9 @@ def semantic_labels(project_id, feature):
     if not project:
         return jsonify({'error': f'project {project_id} not found'}), 404
     cell_info = project.labels.cell_info[feature]
-    df = pd.DataFrame(cell_info).T
-    if df.parent.isnull().all():
-        df['frame_div_parent'] = None
-    else:
-        df = df.join(df[['frame_div']], rsuffix='_parent', how='left', on='parent')
-    df = df.rename(columns={'frame_div_parent': 'parentDivisionFrame',
-                            'frame_div': 'divisionFrame'})
-    response = make_response(df.to_json(orient='index'))
+    cell_info = add_frame_div_parent(cell_info)
+    cell_info = reformat_cell_info(cell_info)
+    response = make_response(cell_info)
     response.add_etag()
     return response.make_conditional(request)
 
@@ -153,7 +149,7 @@ def edit(token, action_type):
     del info['feature']
     del info['channel']
 
-    edit = get_edit(project)
+    edit = Edit(project)
     edit.dispatch_action(action_type, info)
     project.create_memento(action_type)
     project.update()
@@ -249,44 +245,40 @@ def create_project_from_url():
     return jsonify({'projectId': project.token})
 
 
-@bp.route('/api/download/<token>', methods=['GET'])
-def download_project(token):
+@bp.route('/api/download', methods=['GET'])
+def download_project():
     """
     Download a DeepCell Label project as a .npz file
     """
-    project = Project.get(token)
+    id = request.args.get('id')
+    project = Project.get(id)
     if not project:
-        return abort(404, description=f'project {token} not found')
-
-    exporter = exporters.Exporter(project)
+        return abort(404, description=f'project {id} not found')
+    format = request.args.get('format')
+    exporter = exporters.Exporter(project, format)
     filestream = exporter.export()
 
     return send_file(filestream, as_attachment=True, attachment_filename=exporter.path)
 
 
-@bp.route('/api/upload/<bucket>/<token>', methods=['GET', 'POST'])
-def upload_project_to_s3(bucket, token):
+@bp.route('/api/upload', methods=['GET', 'POST'])
+def upload_project_to_s3():
     """Upload .trk/.npz data file to AWS S3 bucket."""
     start = timeit.default_timer()
-    project = Project.get(token)
+    id = request.form['id']
+    format = request.form['format']
+    bucket = request.form['bucket']
+    project = Project.get(id)
     if not project:
-        return abort(404, description=f'project {token} not found')
+        return abort(404, description=f'project {id} not found')
 
     # Save data file and send to S3 bucket
-    exporter = exporters.S3Exporter(project)
+    exporter = exporters.S3Exporter(project, format)
     exporter.export(bucket)
     # add "finished" timestamp and null out PickleType columns
     # project.finish()
 
     current_app.logger.debug('Uploaded %s to S3 bucket %s from project %s in %s s.',
-                             exporter.path, bucket, token,
+                             exporter.path, bucket, id,
                              timeit.default_timer() - start)
     return {}
-
-
-def get_edit(project):
-    """Factory for Edit objects"""
-    if project.is_track:
-        return TrackEdit(project)
-    else:
-        return ZStackEdit(project)

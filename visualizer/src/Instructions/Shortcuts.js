@@ -29,20 +29,21 @@ const useStyles = makeStyles(theme => ({
 
 export function Shortcut({ text, shortcut }) {
   const styles = useStyles();
+
+  const hotkeyText = shortcut.split('+').map((key, i) =>
+    i === 0 ? (
+      <kbd key={i}>{key}</kbd>
+    ) : (
+      <span key={i}>
+        +<kbd>{key}</kbd>
+      </span>
+    )
+  );
+
   return (
     <Box className={styles.shortcut}>
       <div className={styles.description}>{text}</div>
-      <div className={styles.hotkey}>
-        {shortcut.split('+').map((key, i) =>
-          i === 0 ? (
-            <kbd>{key}</kbd>
-          ) : (
-            <>
-              {' + '} <kbd>{key}</kbd>
-            </>
-          )
-        )}
-      </div>
+      <div className={styles.hotkey}>{hotkeyText}</div>
     </Box>
   );
 }

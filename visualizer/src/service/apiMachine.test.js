@@ -107,7 +107,8 @@ describe('test apiMachine event handling', () => {
 
     // successful API call
     fetch.mockResponseOnce(JSON.stringify({}));
-    apiService.send({ type: 'UPLOAD', args: [], action: 'test' });
+    apiService.send({ type: 'UPLOAD' });
+    expect(fetch).toHaveBeenCalled();
   });
 
   it(`UPLOAD event -> call API unsuccessfully -> "idle" state`, done => {
@@ -140,6 +141,7 @@ describe('test apiMachine event handling', () => {
 
     // unsuccessful API call
     fetch.mockResponseOnce(() => Promise.reject('API is down'));
-    apiService.send({ type: 'UPLOAD', args: [], action: 'test' });
+    apiService.send({ type: 'UPLOAD' });
+    expect(fetch).toHaveBeenCalled();
   });
 });
