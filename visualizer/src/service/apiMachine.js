@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { Machine, sendParent } from 'xstate';
 
 /** Returns a Promise for a DeepCell Label API call based on the event. */
@@ -33,26 +32,28 @@ function redo(context, event) {
 
 function upload(context, event) {
   const { bucket, projectId } = context;
+  const url = new URL(`${document.location.origin}/api/upload`);
+  const track = new URLSearchParams(window.location.search).get('track');
   const form = new FormData();
   form.append('id', projectId);
   form.append('bucket', bucket);
-  form.append('format', new URLSearchParams(window.location.search).get('track') ? 'trk' : 'npz');
-  return axios.post('/api/upload', form, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  form.append('format', track ? 'trk' : 'npz');
+  return fetch(url.toString(), {
+    method: 'POST',
+    body: form,
+  }).then(checkResponseCode);
 }
 
 function download(context, event) {
   const { projectId } = context;
   const format = new URLSearchParams(window.location.search).get('track') ? 'trk' : 'npz';
-  const promise = axios.get('/api/download', {
-    params: { id: projectId, format: format },
-    responseType: 'blob',
-  });
+  const url = new URL(`${document.location.origin}/api/download`);
+  url.search = new URLSearchParams({ id: projectId, format: format }).toString();
+  const promise = fetch(url.toString());
   promise.then(response => console.log(response));
   const filename = promise.then(response => {
     const regex = /filename=(.*)$/;
-    const header = response.headers['content-disposition'];
+    const header = response.headers.get('content-disposition');
     let filename = header.match(regex)[1] ?? `${projectId}.npz`;
     // Strip quotes
     filename = filename.replaceAll('"', '');
@@ -62,8 +63,8 @@ function download(context, event) {
     }
     return filename;
   });
-  const url = promise.then(response => URL.createObjectURL(response.data));
-  return Promise.all([filename, url]);
+  const blobUrl = promise.then(response => response.blob()).then(blob => URL.createObjectURL(blob));
+  return Promise.all([filename, blobUrl]);
 }
 
 function checkResponseCode(response) {

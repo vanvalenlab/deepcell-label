@@ -1,11 +1,8 @@
-import axios from 'axios';
 import fetchMock from 'jest-fetch-mock';
 import { interpret } from 'xstate';
 import createApiMachine from './apiMachine';
 
 fetchMock.enableMocks();
-
-jest.mock('axios');
 
 describe('test apiMachine event handling', () => {
   beforeEach(() => {
@@ -109,9 +106,9 @@ describe('test apiMachine event handling', () => {
     apiService.start();
 
     // successful API call
-    axios.post.mockResolvedValueOnce({});
+    fetch.mockResponseOnce(JSON.stringify({}));
     apiService.send({ type: 'UPLOAD' });
-    expect(axios.post).toHaveBeenCalledWith('/api/upload', expect.anything(), expect.anything());
+    expect(fetch).toHaveBeenCalled();
   });
 
   it(`UPLOAD event -> call API unsuccessfully -> "idle" state`, done => {
@@ -143,8 +140,8 @@ describe('test apiMachine event handling', () => {
     apiService.start();
 
     // unsuccessful API call
-    axios.post.mockRejectedValue('API is down');
+    fetch.mockResponseOnce(() => Promise.reject('API is down'));
     apiService.send({ type: 'UPLOAD' });
-    expect(axios.post).toHaveBeenCalledWith('/api/upload', expect.anything(), expect.anything());
+    expect(fetch).toHaveBeenCalled();
   });
 });
