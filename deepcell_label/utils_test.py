@@ -5,6 +5,34 @@ import pytest
 from deepcell_label import utils
 
 
+def test_snakecase_to_camelcase():
+    """Tests snakecase_to_camelcase"""
+    snakecase = 'snake_case'
+    camelcase = utils.snakecase_to_camelcase(snakecase)
+    assert camelcase == 'snakeCase'
+
+
+def test_snakecase_to_camelcase_empty():
+    """Tests snakecase_to_camelcase with empty string"""
+    snakecase = ''
+    camelcase = utils.snakecase_to_camelcase(snakecase)
+    assert camelcase == ''
+
+
+def test_snakecase_to_camelcase_no_underscores():
+    """Tests snakecase_to_camelcase with no underscores"""
+    snakecase = 'snakeCase'
+    camelcase = utils.snakecase_to_camelcase(snakecase)
+    assert camelcase == 'snakeCase'
+
+
+def test_snakecase_to_camelcase_only_underscores():
+    """Tests snakecase_to_camelcase with only underscores"""
+    snakecase = '___'
+    camelcase = utils.snakecase_to_camelcase(snakecase)
+    assert camelcase == '___'
+
+
 def test_reformat_cell_info():
     """Tests reformat_cell_info"""
     cell_info = {
