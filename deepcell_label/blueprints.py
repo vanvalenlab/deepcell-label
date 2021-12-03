@@ -85,7 +85,7 @@ def add_raw(token):
         raise ValueError(f'New channel must have shape {expected_shape}')
     # Add channel to project
     project.add_channel(channel)
-    return project.make_first_payload()
+    return {'numChannels': project.num_channels}
 
 
 @bp.route('/api/labeled/<token>/<int:feature>/<int:frame>')
