@@ -29,7 +29,7 @@ The backend is a Flask HTTP API that will store and update project data.
 
 #### Set up environment
 
-Flask expects some environment variables to be set, like FLASK_APP. Set these with `export FLASK_APP=application` in your terminal, or set them in the `.env` file in the root of the repository. There is an example `.env.example` with FLASK_APP already set. Make a copy as remove `.example` so the file is named `.env`.
+Flask expects some environment variables to be set, like [FLASK_APP](https://flask.palletsprojects.com/en/2.0.x/cli/). As the application is defined in `application.py`, we need to set `export FLASK_APP=application` in the terminal or in the `.env` file in the root of the repository. There is an example `.env.example` with FLASK_APP already set. Make a copy and remove `.example` so the file is named `.env`.
 
 #### Run Python locally
 
