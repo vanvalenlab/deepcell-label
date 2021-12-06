@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Label from './Label';
 import Load from './Load/Load';
@@ -11,6 +12,11 @@ import service from './service/service';
 // });
 
 function App() {
+  useEffect(() => {
+    console.log(`Frontend git branch: ${process.env.REACT_APP_BRANCH}`);
+    console.log(`Frontend git commit: ${process.env.REACT_APP_COMMIT}`);
+  }, []);
+
   return (
     <Router>
       <Routes>
