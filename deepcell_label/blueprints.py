@@ -35,11 +35,21 @@ def health():
 
 
 def get_git_commit() -> str:
-    return subprocess.check_output(['git', 'show', '-s', '--oneline', 'HEAD']).decode('ascii').strip()
+    return (
+        subprocess
+        .check_output(['git', 'show', '-s', '--oneline', 'HEAD'])
+        .decode('ascii')
+        .strip()
+    )
 
 
 def get_git_branch() -> str:
-    return subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode('ascii').strip()
+    return (
+        subprocess
+        .check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
+        .decode('ascii')
+        .strip()
+    )
 
 
 @bp.route('/api/version')
