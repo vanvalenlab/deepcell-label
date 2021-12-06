@@ -7,6 +7,7 @@ import gzip
 import json
 import timeit
 import traceback
+import subprocess
 
 from flask import abort
 from flask import Blueprint
@@ -31,6 +32,23 @@ bp = Blueprint('label', __name__)  # pylint: disable=C0103
 def health():
     """Returns success if the application is ready."""
     return jsonify({'message': 'success'}), 200
+
+
+def get_git_commit() -> str:
+    return subprocess.check_output(['git', 'show', '-s', '--oneline', 'HEAD']).decode('ascii').strip()
+
+
+def get_git_branch() -> str:
+    return subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode('ascii').strip()
+
+
+@bp.route('/api/version')
+def version():
+    """Returns the git hash and branch name of the current version."""
+    return jsonify({
+        'git_commit': get_git_commit(),
+        'git_branch': get_git_branch(),
+    })
 
 
 @bp.errorhandler(loaders.InvalidExtension)

@@ -15,6 +15,13 @@ function App() {
   useEffect(() => {
     console.log(`Frontend git branch: ${process.env.REACT_APP_BRANCH}`);
     console.log(`Frontend git commit: ${process.env.REACT_APP_COMMIT}`);
+    const version = fetch('/api/version');
+    version
+      .then(res => res.json())
+      .then(res => {
+        console.log(`Backend git branch: ${res.git_branch}`);
+        console.log(`Backend git commit: ${res.git_commit}`);
+      });
   }, []);
 
   return (
