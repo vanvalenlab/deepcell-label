@@ -33,7 +33,7 @@ def initialize_logger():
     logging.getLogger('urllib3').setLevel(logging.INFO)
 
 
-application = create_app()  # pylint: disable=C0103
+application = app = create_app()  # pylint: disable=C0103
 
 
 if __name__ == '__main__':
