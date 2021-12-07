@@ -11,10 +11,10 @@ import tempfile
 
 import numpy as np
 from matplotlib.colors import Normalize
+import skimage
 from skimage import filters
 from skimage.morphology import flood_fill, flood
 from skimage.morphology import dilation, disk, square, erosion
-from skimage.draw import circle
 from skimage.exposure import rescale_intensity
 from skimage.measure import regionprops
 from skimage.segmentation import watershed, morphological_chan_vese
@@ -182,10 +182,10 @@ class BaseEdit(object):
         img_replaced = np.where(img == background, foreground, img)
 
         for loc in trace:
-            x_loc = loc[0]
-            y_loc = loc[1]
-            brush_area = circle(y_loc, x_loc, brush_size,
-                                (self.project.height, self.project.width))
+            x = loc[0]
+            y = loc[1]
+            brush_area = skimage.draw.disk((y, x), brush_size,
+                                           shape=(self.project.height, self.project.width))
             img[brush_area] = img_replaced[brush_area]
 
         foreground_in_after = np.any(np.isin(img, foreground))
