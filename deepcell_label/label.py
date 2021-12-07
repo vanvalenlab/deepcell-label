@@ -13,11 +13,11 @@ import numpy as np
 from matplotlib.colors import Normalize
 from skimage import filters
 from skimage.morphology import flood_fill, flood
-from skimage.morphology import watershed, dilation, disk, square, erosion
+from skimage.morphology import dilation, disk, square, erosion
 from skimage.draw import circle
 from skimage.exposure import rescale_intensity
 from skimage.measure import regionprops
-from skimage.segmentation import morphological_chan_vese
+from skimage.segmentation import watershed, morphological_chan_vese
 
 from deepcell_label.labelmaker import LabelInfoMaker
 
