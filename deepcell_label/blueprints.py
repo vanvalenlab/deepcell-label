@@ -17,8 +17,9 @@ from flask import request
 from flask import current_app
 from flask import send_file
 from flask import make_response
-from werkzeug.exceptions import HTTPException
+from werkzeug.exceptions import HTTPException, BadRequestKeyError
 import matplotlib
+import numpy as np
 
 from deepcell_label.label import Edit
 from deepcell_label.models import Project
@@ -58,7 +59,7 @@ def handle_exception(error):
     return jsonify({'error': str(error)}), 500
 
 
-@bp.route('/api/raw/<token>/<int:channel>/<int:frame>')
+@bp.route('/api/raw/<token>/<int:channel>/<int:frame>', methods=['GET'])
 def raw(token, channel, frame):
     project = Project.get(token)
     if not project:
@@ -66,6 +67,29 @@ def raw(token, channel, frame):
     png = project.get_raw_png(channel, frame)
     etag = hashlib.md5(png.getbuffer()).hexdigest()
     return send_file(png, mimetype='image/png', etag=etag)
+
+
+@bp.route('/api/raw/<token>', methods=['POST'])
+def add_raw(token):
+    """Add new channel to the project."""
+    project = Project.get(token)
+    if not project:
+        return abort(404, description=f'project {token} not found')
+    # Load channel from first array in attached file
+    try:
+        npz = np.load(request.files.get('file'))
+    except BadRequestKeyError:  # could not get file from request.files
+        return abort(400, description='Attach a new channel file in a form under the file field.')
+    except TypeError:
+        return abort(400, description='Could not load the attached file. Attach an .npz file.')
+    channel = npz[npz.files[0]]
+    # Check channel is the right shape
+    expected_shape = (project.num_frames, project.width, project.height, 1)
+    if channel.shape != expected_shape:
+        raise ValueError(f'New channel must have shape {expected_shape}')
+    # Add channel to project
+    project.add_channel(channel)
+    return {'numChannels': project.num_channels}
 
 
 @bp.route('/api/labeled/<token>/<int:feature>/<int:frame>')

@@ -5,14 +5,12 @@ Tests for loading files in loaders.
 import io
 import zipfile
 
-import pytest
-
 import numpy as np
 import responses
 from PIL import Image
 from tifffile import TiffWriter
 
-from deepcell_label.loaders import URLLoader, FileLoader
+from deepcell_label.loaders import URLLoader
 
 
 @responses.activate

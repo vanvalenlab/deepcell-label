@@ -80,7 +80,8 @@ def main():
             dest = file.parent / file.stem
         data_utils.trks_to_trk_folder(str(file), str(dest))
     else:
-        raise NotImplemented
+        raise NotImplementedError
+
 
 if __name__ == "__main__":
     main()
