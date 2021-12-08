@@ -33,32 +33,40 @@ import pathlib
 def parse_args():
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--npz_to_trks",
-                       action="store_true",
-                       help="Converts *.npz and *kids.npz files to .trks "
-                            "file. An accompanying *kids.npz file must exist "
-                            " in the same directory as the source *.npz file.")
+    group.add_argument(
+        "--npz_to_trks",
+        action="store_true",
+        help="Converts *.npz and *kids.npz files to .trks "
+        "file. An accompanying *kids.npz file must exist "
+        " in the same directory as the source *.npz file.",
+    )
 
-    group.add_argument("--trks_to_folder",
-                       action="store_true",
-                       help="Converts *.npz and *kids.npz files to .trks "
-                            "file. An accompanying *kids.npz file must exist "
-                            " in the same directory as the source *.npz file.")
-    parser.add_argument("source",
-                        type=str,
-                        help="The file or folder to use as the source of "
-                             "conversion. For example, when using the "
-                             "--npz_to_trks mode, this should be the "
-                             "non 'kids' .npz file.")
-    parser.add_argument("destination",
-                        type=str,
-                        nargs="?",
-                        help="The file or folder to use as the destination "
-                             "for conversion. If this is not passed in then "
-                             "the destination will have an inferred name and "
-                             "appear in the same directory as the source. If "
-                             "provided, it must have the correct extension, "
-                             "if any.")
+    group.add_argument(
+        "--trks_to_folder",
+        action="store_true",
+        help="Converts *.npz and *kids.npz files to .trks "
+        "file. An accompanying *kids.npz file must exist "
+        " in the same directory as the source *.npz file.",
+    )
+    parser.add_argument(
+        "source",
+        type=str,
+        help="The file or folder to use as the source of "
+        "conversion. For example, when using the "
+        "--npz_to_trks mode, this should be the "
+        "non 'kids' .npz file.",
+    )
+    parser.add_argument(
+        "destination",
+        type=str,
+        nargs="?",
+        help="The file or folder to use as the destination "
+        "for conversion. If this is not passed in then "
+        "the destination will have an inferred name and "
+        "appear in the same directory as the source. If "
+        "provided, it must have the correct extension, "
+        "if any.",
+    )
     return parser.parse_args()
 
 
