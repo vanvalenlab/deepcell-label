@@ -32,8 +32,8 @@ class BaseEdit(object):
         3. make changes to the label metadata
         4. assign the image to the frame
 
-    NOTE: Actions must directly assign changes to the frame attribute
-    for the MutableNdarray class to detect the change and for the database to persist the change.
+    NOTE: Actions must directly assign changes to the frame attribute for the
+    MutableNdarray class to detect the change and for the database to persist the change.
     Changes to a view of a MutableNdarray will not be detected by the original
     TODO: modify MutableNdarray class to share changed() signals from arrays view
     """
@@ -439,7 +439,7 @@ class BaseEdit(object):
         full_frame = np.copy(self.frame[..., self.feature])
         full_frame[y1:y2, x1:x2] = safe_overlay
 
-        # avoid automated label cleanup if the centroid (flood seed point) is not the right label
+        # avoid automated label cleanup if centroid (flood seed point) is not the right label
         if full_frame[int(props["centroid"][0]), int(props["centroid"][1])] != label:
             img_trimmed = full_frame
         else:
@@ -449,8 +449,8 @@ class BaseEdit(object):
                 seed_point=(int(props["centroid"][0]), int(props["centroid"][1])),
             )
 
-            # any pixels in img_ann that have value 'label' and are NOT connected to hole_fill_seed
-            # get changed to 0, all other pixels retain their original value
+            # any pixels in img_ann that have value 'label' and are NOT connected to
+            # hole_fill_seed get changed to 0, all other pixels retain their original value
             img_trimmed = np.where(
                 np.logical_and(np.invert(contig_cell), full_frame == label),
                 0,
@@ -975,14 +975,15 @@ def predict_zstack_cell_ids(img, next_img, threshold=0.1):
     # these are the values that have already been used in relabeled_next
     relabeled_values = np.unique(relabeled_next)[np.nonzero(np.unique(relabeled_next))]
 
-    # to account for any new cells that appear, create labels by adding to the max number of cells
+    # to account for any new cells that appear,
+    # create labels by adding to the max number of cells
     # assumes that these are new cells and that all prev labels have been assigned
     # only make as many new labels as needed
 
     current_max = max(np.max(cells), np.max(relabeled_values)) + 1
 
     stringent_allowed = []
-    for additional_needed in range(len(unmatched_cells)):
+    for _additional_needed in range(len(unmatched_cells)):
         stringent_allowed.append(current_max)
         current_max += 1
 
