@@ -1,7 +1,6 @@
 """Tests for labelmaker.py"""
 
 import numpy as np
-import pytest
 
 from deepcell_label.labelmaker import LabelInfoMaker
 

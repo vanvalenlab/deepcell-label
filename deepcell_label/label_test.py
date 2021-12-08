@@ -66,7 +66,6 @@ class TestBaseEdit():
         cell = 1
         feature = 0
         expected_new_label = 2
-        frame = 0
 
         with app.app_context():
             edit.action_new_single_cell(cell)
@@ -474,5 +473,5 @@ class TestTrackEdit():
             assert cell not in edit.frame[..., feature]
             assert expected_new_cell in edit.frame[..., feature]
             assert expected_new_cell in edit.labels.cell_ids[feature]
-            assert prev_track['frames'] == (tracks[cell]['frames'] +
-                                            tracks[expected_new_cell]['frames'])
+            assert prev_track['frames'] == (tracks[cell]['frames']
+                                            + tracks[expected_new_cell]['frames'])
