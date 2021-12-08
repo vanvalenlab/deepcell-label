@@ -93,20 +93,6 @@ class TestEdit:
             assert cell2 in edit.tracks
             assert cell1 not in edit.tracks
 
-    def test_action_replace_single(self, app):
-        # single 2 x 2 frame with two labels: 1s in top row, 2s in bottom
-        labels = np.reshape([1, 2], (1, 2, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels))
-        edit = label.Edit(project)
-        expected_labels = np.reshape([1, 1], (1, 2, 1, 1))
-
-        cell1 = 1
-        cell2 = 2
-        with app.app_context():
-            edit.action_replace_single(cell1, cell2)
-            np.testing.assert_array_equal(project.label_array, expected_labels)
-            assert 2 not in edit.tracks
-
     def test_action_flood_background(self, app):
         """Flooding background does NOT spread to diagonal areas."""
         # 3 x 3 frame with label in diamond shape
@@ -237,6 +223,7 @@ class TestEdit:
         with app.app_context():
             edit.action_replace_single(cell1, cell2)
             np.testing.assert_array_equal(edit.frame, expected_labels)
+            assert 2 not in edit.tracks
 
     def test_action_active_contour_other_labels_unchanged(self, app):
         """
@@ -920,40 +907,6 @@ class TestEdit:
             assert parent_track["frame_div"] is None
             assert daughter_track["parent"] is None
 
-    def test_remove_daughter_only_daughter(self, app):
-        # two 2 x 1 frames
-        # one label in the first frame and two in the second frame
-        labels = np.reshape([0, 1, 2, 3], (2, 2, 1, 1))
-        cell_info = {
-            0: {
-                1: {"capped": True, "frame_div": 1, "daughters": [2], "parent": None},
-                2: {"capped": False, "frame_div": None, "daughters": [], "parent": 1},
-                3: {
-                    "capped": False,
-                    "frame_div": None,
-                    "daughters": [],
-                    "parent": None,
-                },
-            }
-        }
-        project = models.Project.create(
-            DummyLoader(labels=labels, cell_info=cell_info, path="test.trk")
-        )
-        edit = label.Edit(project)
-
-        parent = 1
-        daughter = 2
-
-        with app.app_context():
-            edit.action_remove_daughter(daughter)
-            tracks = edit.tracks
-            parent_track = tracks[parent]
-            daughter_track = tracks[daughter]
-            assert not parent_track["capped"]
-            assert parent_track["daughters"] == []
-            assert parent_track["frame_div"] is None
-            assert daughter_track["parent"] is None
-
     def test_track_replace_daughter_with_parent(self, app):
         labels = np.reshape([1, 2], (2, 1, 1, 1))
         cell_info = {
@@ -1043,29 +996,6 @@ class TestEdit:
             assert parent_track["frames"] == [0, 1]
             assert granddaughter_track["parent"] == 1
             np.testing.assert_array_equal(edit.project.label_array, expected_labels)
-
-    def test_add_cell_info_multiple_frames(self):
-        num_frames = 5
-        labels = np.zeros((num_frames, 1, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, path="test.trk"))
-        edit = label.Edit(project)
-        tracks = edit.tracks
-
-        cell = 1
-
-        # Add new label to all frames
-        for frame in range(num_frames):
-            edit.add_cell_info(cell, frame)
-            assert tracks[cell] == {
-                "label": 1,
-                "frames": list(range(frame + 1)),
-                "daughters": [],
-                "frame_div": None,
-                "parent": None,
-                "capped": False,
-            }
-            assert edit.y_changed
-            assert edit.labels_changed
 
     def test_action_new_track_first_frame_of_track(self, app):
         """A new track on the first frame a label appears does nothing."""

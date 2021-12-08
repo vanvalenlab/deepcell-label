@@ -3,13 +3,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import io
-import json
-from math import inf
-import sys
-import tarfile
-import tempfile
-
 import numpy as np
 from matplotlib.colors import Normalize
 import skimage
@@ -19,8 +12,6 @@ from skimage.morphology import dilation, disk, square, erosion
 from skimage.exposure import rescale_intensity
 from skimage.measure import regionprops
 from skimage.segmentation import watershed, morphological_chan_vese
-
-from deepcell_label.labelmaker import LabelInfoMaker
 
 
 class Edit(object):
