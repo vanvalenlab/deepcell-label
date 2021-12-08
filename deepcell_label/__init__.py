@@ -3,10 +3,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import logging
-
 from flask import Flask
-from flask.logging import default_handler
 from flask_cors import CORS
 from flask_compress import Compress
 from flask_dropzone import Dropzone

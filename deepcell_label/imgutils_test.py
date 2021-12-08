@@ -4,7 +4,6 @@ import os
 
 from skimage.io import imread
 import numpy as np
-import pytest
 
 from deepcell_label import imgutils
 from deepcell_label import models

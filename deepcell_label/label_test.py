@@ -66,7 +66,6 @@ class TestBaseEdit:
         cell = 1
         feature = 0
         expected_new_label = 2
-        frame = 0
 
         with app.app_context():
             edit.action_new_single_cell(cell)

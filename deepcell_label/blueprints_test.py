@@ -86,7 +86,7 @@ def test_redo(client):
 
 def test_create_project(client, mocker):
     mocker.patch('deepcell_label.blueprints.loaders.URLLoader', lambda *args: DummyLoader())
-    response = client.post(f'/api/project')
+    response = client.post('/api/project')
     assert response.status_code == 200
 
 
@@ -95,7 +95,7 @@ def test_create_project_dropped_npz(client):
     np.savez(npz, X=np.zeros((1, 1, 1, 1)), y=np.ones((1, 1, 1, 1)))
     npz.seek(0)
     data = {'file': (npz, 'test.npz')}
-    response = client.post(f'/api/project/dropped', data=data, content_type='multipart/form-data')
+    response = client.post('/api/project/dropped', data=data, content_type='multipart/form-data')
     assert response.status_code == 200
 
 
@@ -105,7 +105,7 @@ def test_create_project_dropped_tiff(client):
         writer.save(np.zeros((1, 1, 1, 1)))
         tifffile.seek(0)
     data = {'file': (tifffile, 'test.tiff')}
-    response = client.post(f'/api/project/dropped', data=data, content_type='multipart/form-data')
+    response = client.post('/api/project/dropped', data=data, content_type='multipart/form-data')
     assert response.status_code == 200
 
 
@@ -115,7 +115,7 @@ def test_create_project_dropped_png(client):
     img.save(png, format="png")
     png.seek(0)
     data = {'file': (png, 'test.png')}
-    response = client.post(f'/api/project/dropped', data=data, content_type='multipart/form-data')
+    response = client.post('/api/project/dropped', data=data, content_type='multipart/form-data')
     assert response.status_code == 200
 
 
