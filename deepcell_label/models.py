@@ -24,10 +24,10 @@ import sqlalchemy.types as types
 from deepcell_label.imgutils import grayscale_pngify, pngify, add_outlines
 
 
-logger = logging.getLogger('models.Project')  # pylint: disable=C0103
+logger = logging.getLogger("models.Project")  # pylint: disable=C0103
 # Accessing relationships (like project.label_frames) issues a Query, causing a flush
 # autoflush=False prevents the flush, so we still access the db.session.dirty after the query
-db = SQLAlchemy(session_options={'autoflush': False})  # pylint: disable=C0103
+db = SQLAlchemy(session_options={"autoflush": False})  # pylint: disable=C0103
 
 
 class Npz(types.TypeDecorator):
@@ -48,17 +48,17 @@ class Npz(types.TypeDecorator):
             return None
         bytestream = io.BytesIO(value)
         bytestream.seek(0)
-        return np.load(bytestream)['array']
+        return np.load(bytestream)["array"]
 
 
-@compiles(db.PickleType, 'mysql')
+@compiles(db.PickleType, "mysql")
 def compile_pickle_mysql(type_, compiler, **kw):
     """
     Replaces default BLOB with LONGBLOB for PickleType columns on MySQL backend.
     BLOB (64 kB) truncates pickled objects, while LONGBLOB (4 GB) stores it in full.
     TODO: change to MEDIUMBLOB (16 MB)?
     """
-    return 'LONGBLOB'
+    return "LONGBLOB"
 
 
 class MutableNdarray(Mutable, np.ndarray):
@@ -87,15 +87,16 @@ class MutableNdarray(Mutable, np.ndarray):
 
 
 class SourceEnum(enum.Enum):
-    s3 = 's3'
-    dropped = 'dropped'
-    lfs = 'lfs'
+    s3 = "s3"
+    dropped = "dropped"
+    lfs = "lfs"
 
 
 class Project(db.Model):
     """Project table definition."""
+
     # pylint: disable=E1101
-    __tablename__ = 'projects'
+    __tablename__ = "projects"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     token = db.Column(db.String(12), unique=True, nullable=False, index=True)
     createdAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now())
@@ -115,23 +116,39 @@ class Project(db.Model):
     scale_factor = db.Column(db.Float, default=1)
     colormap = db.Column(db.PickleType)
 
-    raw_frames = db.relationship('RawFrame', backref='project',
-                                 # Delete when detached by add_channel
-                                 cascade='save-update, merge, delete, delete-orphan')
-    rgb_frames = db.relationship('RGBFrame', backref='project')
-    label_frames = db.relationship('LabelFrame', backref='project',
-                                   # Delete frames detached by undo/redo
-                                   cascade='save-update, merge, delete, delete-orphan')
-    labels = db.relationship('Labels', backref='project', uselist=False,
-                             # Delete labels detached by undo/redo
-                             cascade='save-update, merge, delete, delete-orphan')
+    raw_frames = db.relationship(
+        "RawFrame",
+        backref="project",
+        # Delete when detached by add_channel
+        cascade="save-update, merge, delete, delete-orphan",
+    )
+    rgb_frames = db.relationship("RGBFrame", backref="project")
+    label_frames = db.relationship(
+        "LabelFrame",
+        backref="project",
+        # Delete frames detached by undo/redo
+        cascade="save-update, merge, delete, delete-orphan",
+    )
+    labels = db.relationship(
+        "Labels",
+        backref="project",
+        uselist=False,
+        # Delete labels detached by undo/redo
+        cascade="save-update, merge, delete, delete-orphan",
+    )
 
     # Action history
-    action_id = db.Column(db.Integer, db.ForeignKey('actions.action_id'))
-    action = db.relationship('Action', uselist=False, post_update=True,
-                             primaryjoin="and_(Project.id==Action.project_id, "
-                                         "foreign(Project.action_id)==Action.action_id)")
-    actions = db.relationship('Action', backref='project', foreign_keys='[Action.project_id]')
+    action_id = db.Column(db.Integer, db.ForeignKey("actions.action_id"))
+    action = db.relationship(
+        "Action",
+        uselist=False,
+        post_update=True,
+        primaryjoin="and_(Project.id==Action.project_id, "
+        "foreign(Project.action_id)==Action.action_id)",
+    )
+    actions = db.relationship(
+        "Action", backref="project", foreign_keys="[Action.project_id]"
+    )
     num_actions = db.Column(db.Integer, default=0)
 
     def __init__(self, loader):
@@ -141,31 +158,31 @@ class Project(db.Model):
 
         # Record static project attributes
         self.path = loader.path
-        self.source = 's3'
+        self.source = "s3"
         self.num_frames = raw.shape[0]
         self.height = raw.shape[1]
         self.width = raw.shape[2]
         self.num_channels = raw.shape[-1]
         self.num_features = label.shape[-1]
-        cmap = plt.get_cmap('viridis')
-        cmap.set_bad('black')
+        cmap = plt.get_cmap("viridis")
+        cmap.set_bad("black")
         self.colormap = cmap
 
         # Create frames from raw, RGB, and labeled images
-        self.raw_frames = [RawFrame(i, frame)
-                           for i, frame in enumerate(raw)]
-        self.rgb_frames = [RGBFrame(i, frame)
-                           for i, frame in enumerate(raw)]
-        self.label_frames = [LabelFrame(i, frame)
-                             for i, frame in enumerate(label)]
+        self.raw_frames = [RawFrame(i, frame) for i, frame in enumerate(raw)]
+        self.rgb_frames = [RGBFrame(i, frame) for i, frame in enumerate(raw)]
+        self.label_frames = [LabelFrame(i, frame) for i, frame in enumerate(label)]
 
         # Create label metadata
         self.labels = Labels()
         self.labels.cell_ids = loader.cell_ids
         self.labels.cell_info = loader.cell_info
 
-        logger.debug('Initialized project from %s in %ss.',
-                     self.path, timeit.default_timer() - init_start)
+        logger.debug(
+            "Initialized project from %s in %ss.",
+            self.path,
+            timeit.default_timer() - init_start,
+        )
 
     @property
     def label_array(self):
@@ -179,11 +196,16 @@ class Project(db.Model):
 
     @property
     def is_zstack(self):
-        return os.path.splitext(self.path.lower())[-1] in {'.npz', '.png', '.tif', '.tiff'}
+        return os.path.splitext(self.path.lower())[-1] in {
+            ".npz",
+            ".png",
+            ".tif",
+            ".tiff",
+        }
 
     @property
     def is_track(self):
-        return os.path.splitext(self.path.lower())[-1] in {'.trk', '.trks'}
+        return os.path.splitext(self.path.lower())[-1] in {".trk", ".trks"}
 
     @staticmethod
     def get(token):
@@ -198,8 +220,7 @@ class Project(db.Model):
         """
         start = timeit.default_timer()
         project = db.session.query(Project).filter_by(token=token).first()
-        logger.debug('Got project %s in %ss.',
-                     token, timeit.default_timer() - start)
+        logger.debug("Got project %s in %ss.", token, timeit.default_timer() - start)
         return project
 
     @staticmethod
@@ -223,10 +244,14 @@ class Project(db.Model):
                 break
         db.session.add(new_project)
         db.session.commit()
-        new_project.create_memento('create_project', all_frames=True)
+        new_project.create_memento("create_project", all_frames=True)
         db.session.commit()
-        logger.debug('Created new project %s (id %s) in %ss.',
-                     new_project.token, new_project.id, timeit.default_timer() - start)
+        logger.debug(
+            "Created new project %s (id %s) in %ss.",
+            new_project.token,
+            new_project.id,
+            timeit.default_timer() - start,
+        )
         return new_project
 
     def update(self):
@@ -238,8 +263,9 @@ class Project(db.Model):
         if self.action.labels_changed:
             self.labels.update()
         db.session.commit()
-        logger.debug('Updated project %s in %ss.',
-                     self.id, timeit.default_timer() - start)
+        logger.debug(
+            "Updated project %s in %ss.", self.id, timeit.default_timer() - start
+        )
 
     def finish(self):
         """
@@ -260,8 +286,9 @@ class Project(db.Model):
             rgb_frame.finish()
         self.finished = db.func.current_timestamp()
         db.session.commit()
-        logger.debug('Finished project %s in %ss.',
-                     self.id, timeit.default_timer() - start)
+        logger.debug(
+            "Finished project %s in %ss.", self.id, timeit.default_timer() - start
+        )
 
     def create_memento(self, action_name, all_frames=False, session=None):
         """
@@ -314,19 +341,23 @@ class Project(db.Model):
             self.labels.cell_info = action.before_labels.cell_info
 
         payload = {
-            'feature': feature,
+            "feature": feature,
             # 'feature': action.feature,
             # 'channel': action.channel,
-            'frames': [frame.frame_id for frame in action.frames],
-            'labels': action.labels_changed,
+            "frames": [frame.frame_id for frame in action.frames],
+            "labels": action.labels_changed,
         }
 
         action.done = False
         self.action = action.prev_action
 
         db.session.commit()
-        logger.debug('Undo action %s project %s in %ss.',
-                     action.action_id, self.id, timeit.default_timer() - start)
+        logger.debug(
+            "Undo action %s project %s in %ss.",
+            action.action_id,
+            self.id,
+            timeit.default_timer() - start,
+        )
         return payload
 
     def redo(self):
@@ -361,19 +392,23 @@ class Project(db.Model):
             self.labels.cell_info = next_action.after_labels.cell_info
 
         payload = {
-            'feature': feature,
+            "feature": feature,
             # 'feature': next_action.feature,
             # 'channel': next_action.channel,
-            'frames': [frame.frame_id for frame in next_action.frames],
-            'labels': next_action.labels_changed,
+            "frames": [frame.frame_id for frame in next_action.frames],
+            "labels": next_action.labels_changed,
         }
 
         self.action = self.action.next_action
         next_action.done = True
 
         db.session.commit()
-        logger.debug('Redo action %s project %s in %ss.',
-                     next_action.action_id, self.id, timeit.default_timer() - start)
+        logger.debug(
+            "Redo action %s project %s in %ss.",
+            next_action.action_id,
+            self.id,
+            timeit.default_timer() - start,
+        )
         return payload
 
     def get_max_label(self, feature):
@@ -403,16 +438,16 @@ class Project(db.Model):
         payload = {}
 
         # Project attributes to initialize frontend variables
-        payload['frame'] = self.frame
-        payload['channel'] = self.channel
-        payload['feature'] = self.feature
+        payload["frame"] = self.frame
+        payload["channel"] = self.channel
+        payload["feature"] = self.feature
 
-        payload['numFrames'] = self.num_frames
-        payload['numChannels'] = self.num_channels
-        payload['numFeatures'] = self.num_features
+        payload["numFrames"] = self.num_frames
+        payload["numChannels"] = self.num_channels
+        payload["numFeatures"] = self.num_features
 
-        payload['width'] = self.width
-        payload['height'] = self.height
+        payload["width"] = self.width
+        payload["height"] = self.height
 
         # # First frame edited by each action
         # # Excludes the first action, which loads the project
@@ -441,10 +476,12 @@ class Project(db.Model):
         # Create label png
         label_frame = LabelFrame.get(self.id, frame)
         label_arr = label_frame.frame[..., feature]
-        label_png = pngify(imgarr=np.ma.masked_equal(label_arr, 0),
-                           vmin=0,
-                           vmax=self.get_max_label(feature),
-                           cmap=self.colormap)
+        label_png = pngify(
+            imgarr=np.ma.masked_equal(label_arr, 0),
+            vmin=0,
+            vmax=self.get_max_label(feature),
+            cmap=self.colormap,
+        )
         return label_png
 
     def get_labeled_array(self, feature, frame):
@@ -475,10 +512,12 @@ class Labels(db.Model):
     Table definition that stores metadata about the labeling.
     Cell_info stores a dictionary with frame information about each cell.
     """
+
     # pylint: disable=E1101
-    __tablename__ = 'labels'
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
-                           primary_key=True, nullable=False)
+    __tablename__ = "labels"
+    project_id = db.Column(
+        db.Integer, db.ForeignKey("projects.id"), primary_key=True, nullable=False
+    )
     # Label metadata
     cell_ids = db.Column(db.PickleType(comparator=lambda *a: False))
     cell_info = db.Column(db.PickleType(comparator=lambda *a: False))
@@ -506,10 +545,12 @@ class RawFrame(db.Model):
     """
     Table definition that stores the raw frames in a project.
     """
+
     # pylint: disable=E1101
-    __tablename__ = 'rawframes'
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
-                           primary_key=True, nullable=False)
+    __tablename__ = "rawframes"
+    project_id = db.Column(
+        db.Integer, db.ForeignKey("projects.id"), primary_key=True, nullable=False
+    )
     frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
     frame = db.Column(Npz)
 
@@ -519,10 +560,11 @@ class RawFrame(db.Model):
 
     @staticmethod
     def get(project_id, frame_id):
-        return (db.session
-                .query(RawFrame)
-                .filter_by(project_id=project_id, frame_id=frame_id)
-                .first())
+        return (
+            db.session.query(RawFrame)
+            .filter_by(project_id=project_id, frame_id=frame_id)
+            .first()
+        )
 
     def finish(self):
         """
@@ -535,10 +577,12 @@ class RGBFrame(db.Model):
     """
     Table definition for the raw RGB frames in our projects.
     """
+
     # pylint: disable=E1101
-    __tablename__ = 'rgbframes'
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
-                           primary_key=True, nullable=False)
+    __tablename__ = "rgbframes"
+    project_id = db.Column(
+        db.Integer, db.ForeignKey("projects.id"), primary_key=True, nullable=False
+    )
     frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
     frame = db.Column(Npz)
 
@@ -562,10 +606,9 @@ class RGBFrame(db.Model):
         """
         percentiles = np.percentile(frame[frame > 0], [5, 95])
         rescaled_frame = rescale_intensity(
-            frame,
-            in_range=(percentiles[0], percentiles[1]),
-            out_range='uint8')
-        rescaled_frame = rescaled_frame.astype('uint8')
+            frame, in_range=(percentiles[0], percentiles[1]), out_range="uint8"
+        )
+        rescaled_frame = rescaled_frame.astype("uint8")
         return rescaled_frame
 
     def rescale_raw(self, frame):
@@ -578,7 +621,7 @@ class RGBFrame(db.Model):
         Returns:
             np.array: upto 6-channel rescaled image
         """
-        rescaled = np.zeros(frame.shape, dtype='uint8')
+        rescaled = np.zeros(frame.shape, dtype="uint8")
         # this approach allows noise through
         for channel in range(min(6, frame.shape[-1])):
             raw_channel = frame[..., channel]
@@ -601,12 +644,12 @@ class RGBFrame(db.Model):
         """
         rescaled = self.rescale_raw(frame)
         # rgb starts as uint16 so it can handle values above 255 without overflow
-        rgb_img = np.zeros((frame.shape[0], frame.shape[1], 3), dtype='uint16')
+        rgb_img = np.zeros((frame.shape[0], frame.shape[1], 3), dtype="uint16")
 
         # for each of the channels that we have
         for c in range(min(6, frame.shape[-1])):
             # straightforward RGB -> RGB
-            new_channel = (rescaled[..., c]).astype('uint16')
+            new_channel = (rescaled[..., c]).astype("uint16")
             if c < 3:
                 rgb_img[..., c] = new_channel
             # collapse cyan to G and B
@@ -625,7 +668,7 @@ class RGBFrame(db.Model):
             # clip values to uint8 range so it can be cast without overflow
             rgb_img[..., 0:3] = np.clip(rgb_img[..., 0:3], a_min=0, a_max=255)
 
-        return rgb_img.astype('uint8')
+        return rgb_img.astype("uint8")
 
 
 class LabelFrame(db.Model):
@@ -633,14 +676,16 @@ class LabelFrame(db.Model):
     Table definition for the label frames in our projects.
     Allows us to update and finish each frame.
     """
+
     # pylint: disable=E1101
-    __tablename__ = 'labelframes'
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
-                           primary_key=True, nullable=False)
+    __tablename__ = "labelframes"
+    project_id = db.Column(
+        db.Integer, db.ForeignKey("projects.id"), primary_key=True, nullable=False
+    )
     frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
     frame = db.Column(MutableNdarray.as_mutable(Npz))
 
-    actions = association_proxy('frame_actions', 'action')
+    actions = association_proxy("frame_actions", "action")
 
     def __init__(self, frame_id, frame):
         self.frame_id = frame_id
@@ -648,10 +693,11 @@ class LabelFrame(db.Model):
 
     @staticmethod
     def get(project_id, frame_id):
-        return (db.session
-                .query(LabelFrame)
-                .filter_by(project_id=project_id, frame_id=frame_id)
-                .first())
+        return (
+            db.session.query(LabelFrame)
+            .filter_by(project_id=project_id, frame_id=frame_id)
+            .first()
+        )
 
     def finish(self):
         """Finish a frame by setting its frame to null."""
@@ -663,24 +709,38 @@ class Action(db.Model):
     Memento class in the memento pattern.
     Record a Projects internal state, like label frames and label metadata before each action.
     """
+
     # pylint: disable=E1101
-    __tablename__ = 'actions'
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'),
-                           primary_key=True, nullable=False, autoincrement=False)
+    __tablename__ = "actions"
+    project_id = db.Column(
+        db.Integer,
+        db.ForeignKey("projects.id"),
+        primary_key=True,
+        nullable=False,
+        autoincrement=False,
+    )
     action_id = db.Column(db.Integer, primary_key=True, nullable=False)
-    action_time = db.Column(db.TIMESTAMP)   # Set when finishing an action
+    action_time = db.Column(db.TIMESTAMP)  # Set when finishing an action
     # Name of the action (e.g. "handle_draw")
     action_name = db.Column(db.String(64))
     # Action to jump to upon undo
-    prev_action_id = db.Column(db.Integer, db.ForeignKey('actions.action_id'))
-    prev_action = db.relationship('Action', uselist=False, post_update=True,
-                                  primaryjoin="and_(remote(Action.project_id)==Action.project_id,"
-                                  "remote(Action.action_id)==foreign(Action.prev_action_id))")
+    prev_action_id = db.Column(db.Integer, db.ForeignKey("actions.action_id"))
+    prev_action = db.relationship(
+        "Action",
+        uselist=False,
+        post_update=True,
+        primaryjoin="and_(remote(Action.project_id)==Action.project_id,"
+        "remote(Action.action_id)==foreign(Action.prev_action_id))",
+    )
     # Action to jump to upon redo
-    next_action_id = db.Column(db.Integer, db.ForeignKey('actions.action_id'))
-    next_action = db.relationship('Action', uselist=False, post_update=True,
-                                  primaryjoin="and_(remote(Action.project_id)==Action.project_id,"
-                                  "remote(Action.action_id)==foreign(Action.next_action_id))")
+    next_action_id = db.Column(db.Integer, db.ForeignKey("actions.action_id"))
+    next_action = db.relationship(
+        "Action",
+        uselist=False,
+        post_update=True,
+        primaryjoin="and_(remote(Action.project_id)==Action.project_id,"
+        "remote(Action.action_id)==foreign(Action.next_action_id))",
+    )
     # Whether the action is currently in the Projects lineage
     done = db.Column(db.Boolean, default=True)
     # Records label info after an action (whether or not its changed)
@@ -690,9 +750,9 @@ class Action(db.Model):
     # feature = db.Column(db.Integer, nullable=False)
     # channel = db.Column(db.Integer, nullable=False)
 
-    frames = association_proxy('action_frames', 'frame')
+    frames = association_proxy("action_frames", "frame")
 
-    def __init__(self, project, action_name=''):
+    def __init__(self, project, action_name=""):
         self.project = project
         self.prev_action = project.action
         self.action_id = project.num_actions
@@ -717,12 +777,18 @@ class Action(db.Model):
         before_frames = []
         for frame in self.frames:
             # Actions in the frame's lineage before this action
-            valid_actions = filter(lambda action: action.done and action.action_id < self.action_id,
-                                   frame.actions)
+            valid_actions = filter(
+                lambda action: action.done and action.action_id < self.action_id,
+                frame.actions,
+            )
             # Action containing the most recent version
             before_action = max(valid_actions, key=lambda action: action.action_id)
-            before_frame = next(filter(lambda bf, f=frame: bf.frame_id == f.frame_id,
-                                       before_action.action_frames))
+            before_frame = next(
+                filter(
+                    lambda bf, f=frame: bf.frame_id == f.frame_id,
+                    before_action.action_frames,
+                )
+            )
             before_frames.append(before_frame)
         return before_frames
 
@@ -747,8 +813,9 @@ class FrameMemento(db.Model):
     """
     Table to store label frames in a Memento.
     """
+
     # pylint: disable=E1101
-    __tablename__ = 'framemementos'
+    __tablename__ = "framemementos"
     project_id = db.Column(db.Integer)
     action_id = db.Column(db.Integer)
     frame_id = db.Column(db.Integer)
@@ -758,15 +825,14 @@ class FrameMemento(db.Model):
     frame = db.relationship("LabelFrame", backref="frame_actions")
 
     __table_args__ = (
-        PrimaryKeyConstraint('project_id', 'action_id', 'frame_id'),
+        PrimaryKeyConstraint("project_id", "action_id", "frame_id"),
         ForeignKeyConstraint(
-            ['project_id', 'action_id'],
-            ['actions.project_id', 'actions.action_id']
+            ["project_id", "action_id"], ["actions.project_id", "actions.action_id"]
         ),
         ForeignKeyConstraint(
-            ['project_id', 'frame_id'],
-            ['labelframes.project_id', 'labelframes.frame_id']
-        )
+            ["project_id", "frame_id"],
+            ["labelframes.project_id", "labelframes.frame_id"],
+        ),
     )
 
     def __init__(self, action, frame):

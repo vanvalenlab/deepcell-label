@@ -13,12 +13,12 @@ from deepcell_label.conftest import DummyLoader
 def enable_transactional_tests(app, db_session):
     db_session.autoflush = False
 
+
 # Tests can mock a actions different frames/features/channels
 # by setting edit.project.frame/feature/channel within the test
 
 
-class TestBaseEdit():
-
+class TestBaseEdit:
     def test_del_cell_info_last_frame(self):
         labels = np.ones((1, 1, 1, 1))
         project = models.Project.create(DummyLoader(labels=labels))
@@ -54,7 +54,7 @@ class TestBaseEdit():
         edit.del_cell_info(cell, frame)
         assert cell in cell_ids[feature]
         assert cell in cell_info[feature]
-        assert frame not in cell_info[feature][frame]['frames']
+        assert frame not in cell_info[feature][frame]["frames"]
         assert edit.y_changed
         assert edit.labels_changed
 
@@ -206,8 +206,7 @@ class TestBaseEdit():
             assert foreground in edit.labels.cell_ids[feature]
 
 
-class TestZStackEdit():
-
+class TestZStackEdit:
     def test_zstack_add_cell_info(self):
         labels = np.zeros((1, 1, 1, 1))
         project = models.Project.create(DummyLoader(labels=labels))
@@ -222,9 +221,7 @@ class TestZStackEdit():
         # Add new label to first frame
         edit.add_cell_info(cell, frame)
         assert cell in cell_ids[feature]
-        assert cell_info[feature][cell] == {'label': 1,
-                                            'frames': [frame],
-                                            'slices': ''}
+        assert cell_info[feature][cell] == {"label": 1, "frames": [frame], "slices": ""}
         assert edit.y_changed
         assert edit.labels_changed
 
@@ -243,9 +240,11 @@ class TestZStackEdit():
         for frame in range(num_frames):
             edit.add_cell_info(cell, frame)
             assert cell in cell_ids[feature]
-            assert cell_info[feature][cell] == {'label': 1,
-                                                'frames': list(range(frame + 1)),
-                                                'slices': ''}
+            assert cell_info[feature][cell] == {
+                "label": 1,
+                "frames": list(range(frame + 1)),
+                "slices": "",
+            }
             assert edit.y_changed
             assert edit.labels_changed
 
@@ -268,8 +267,7 @@ class TestZStackEdit():
         labels = np.reshape([1, 1, 2, 2], (1, 2, 2, 1))
         project = models.Project.create(DummyLoader(labels=labels))
         edit = label.ZStackEdit(project)
-        expected_labels = np.array([[[1], [1]],
-                                    [[1], [1]]])
+        expected_labels = np.array([[[1], [1]], [[1], [1]]])
 
         cell1 = 1
         cell2 = 2
@@ -286,8 +284,7 @@ class TestZStackEdit():
         frame = 1  # Replace on the middle frame
         project.frame = frame
         edit = label.ZStackEdit(project)
-        expected_frame = np.array([[[1], [1]],
-                                   [[1], [1]]])
+        expected_frame = np.array([[[1], [1]], [[1], [1]]])
         expected_labels = np.array(3 * [expected_frame])
 
         with app.app_context():
@@ -308,8 +305,9 @@ class TestZStackEdit():
 
         with app.app_context():
             edit.action_active_contour(cell)
-            np.testing.assert_array_equal(labels[project.frame] == other_cell,
-                                          edit.frame == other_cell)
+            np.testing.assert_array_equal(
+                labels[project.frame] == other_cell, edit.frame == other_cell
+            )
 
     # TODO: active contouring has no effect in this test; find out what correct behavior is
     # def test_action_active_contour_label_too_small(self, app):
@@ -371,8 +369,9 @@ class TestZStackEdit():
 
         with app.app_context():
             edit.action_erode(cell)
-            np.testing.assert_array_equal(labels[project.frame] == other_cell,
-                                          edit.frame == other_cell)
+            np.testing.assert_array_equal(
+                labels[project.frame] == other_cell, edit.frame == other_cell
+            )
 
     def test_action_dilate_other_labels_unchanged(self, app):
         """Tests that other labels not affected by dilating a label."""
@@ -385,15 +384,15 @@ class TestZStackEdit():
 
         with app.app_context():
             edit.action_dilate(cell)
-            np.testing.assert_array_equal(labels[project.frame] == other_cell,
-                                          edit.frame == other_cell)
+            np.testing.assert_array_equal(
+                labels[project.frame] == other_cell, edit.frame == other_cell
+            )
 
 
-class TestTrackEdit():
-
+class TestTrackEdit:
     def test_track_add_cell_info(self):
         labels = np.zeros((1, 1, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
+        project = models.Project.create(DummyLoader(labels=labels, path="test.trk"))
         edit = label.TrackEdit(project)
         tracks = edit.tracks
 
@@ -403,12 +402,12 @@ class TestTrackEdit():
         # Add new label to first frame
         edit.add_cell_info(cell, frame)
         assert tracks[cell] == {
-            'label': 1,
-            'frames': [frame],
-            'daughters': [],
-            'frame_div': None,
-            'parent': None,
-            'capped': False,
+            "label": 1,
+            "frames": [frame],
+            "daughters": [],
+            "frame_div": None,
+            "parent": None,
+            "capped": False,
         }
         assert edit.y_changed
         assert edit.labels_changed
@@ -416,7 +415,7 @@ class TestTrackEdit():
     def test_add_cell_info_multiple_frames(self):
         num_frames = 5
         labels = np.zeros((num_frames, 1, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
+        project = models.Project.create(DummyLoader(labels=labels, path="test.trk"))
         edit = label.TrackEdit(project)
         tracks = edit.tracks
 
@@ -426,12 +425,12 @@ class TestTrackEdit():
         for frame in range(num_frames):
             edit.add_cell_info(cell, frame)
             assert tracks[cell] == {
-                'label': 1,
-                'frames': list(range(frame + 1)),
-                'daughters': [],
-                'frame_div': None,
-                'parent': None,
-                'capped': False,
+                "label": 1,
+                "frames": list(range(frame + 1)),
+                "daughters": [],
+                "frame_div": None,
+                "parent": None,
+                "capped": False,
             }
             assert edit.y_changed
             assert edit.labels_changed
@@ -440,7 +439,7 @@ class TestTrackEdit():
         """A new track on the first frame a label appears does nothing."""
         # two 1x1 frames with one feature; cell starts on second frame
         labels = np.reshape([0, 1], (2, 1, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
+        project = models.Project.create(DummyLoader(labels=labels, path="test.trk"))
         cell = 1
         frame = 1
         feature = 0
@@ -459,7 +458,7 @@ class TestTrackEdit():
         """Create a new track on the second frame of a label."""
         # two 1x1 frames with one feature; cell appears in both frames
         labels = np.reshape([1, 1], (2, 1, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
+        project = models.Project.create(DummyLoader(labels=labels, path="test.trk"))
         cell = 1
         frame = 1
         feature = 0
@@ -474,5 +473,6 @@ class TestTrackEdit():
             assert cell not in edit.frame[..., feature]
             assert expected_new_cell in edit.frame[..., feature]
             assert expected_new_cell in edit.labels.cell_ids[feature]
-            assert prev_track['frames'] == (tracks[cell]['frames'] +
-                                            tracks[expected_new_cell]['frames'])
+            assert prev_track["frames"] == (
+                tracks[cell]["frames"] + tracks[expected_new_cell]["frames"]
+            )

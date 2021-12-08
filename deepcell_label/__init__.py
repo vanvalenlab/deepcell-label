@@ -31,9 +31,9 @@ class ReverseProxied(object):
         self.app = app
 
     def __call__(self, environ, start_response):
-        scheme = environ.get('HTTP_X_FORWARDED_PROTO')
+        scheme = environ.get("HTTP_X_FORWARDED_PROTO")
         if scheme:
-            environ['wsgi.url_scheme'] = scheme
+            environ["wsgi.url_scheme"] = scheme
         return self.app(environ, start_response)
 
 
@@ -68,8 +68,9 @@ def create_app(**config_overrides):
         def group_action():
             """Apply custom grouping for action endpoint"""
             from flask import request
-            if request.endpoint == 'label.action':
-                return request.view_args['action_type']
+
+            if request.endpoint == "label.action":
+                return request.view_args["action_type"]
 
         dashboard.config.group_by = group_action
         dashboard.bind(app)

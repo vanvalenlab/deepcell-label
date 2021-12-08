@@ -22,10 +22,10 @@ def test_load_raw_npz():
     npz = io.BytesIO()
     np.savez(npz, X=expected)
     npz.seek(0)
-    url = 'http://example.com/mocked/raw.npz'
+    url = "http://example.com/mocked/raw.npz"
     responses.add(responses.GET, url, body=io.BufferedReader(npz))
 
-    loader = URLLoader({'url': url})
+    loader = URLLoader({"url": url})
 
     np.testing.assert_array_equal(loader.raw_array, expected)
     np.testing.assert_array_equal(loader.label_array, expected)
@@ -41,10 +41,10 @@ def test_load_raw_and_labeled_npz():
     npz = io.BytesIO()
     np.savez(npz, X=expected_raw, y=expected_labeled)
     npz.seek(0)
-    url = 'http://example.com/mocked/raw_and_labeled.npz'
+    url = "http://example.com/mocked/raw_and_labeled.npz"
     responses.add(responses.GET, url, body=io.BufferedReader(npz))
 
-    loader = URLLoader({'url': url})
+    loader = URLLoader({"url": url})
 
     np.testing.assert_array_equal(loader.raw_array, expected_raw)
     np.testing.assert_array_equal(loader.label_array, expected_labeled)
@@ -64,12 +64,12 @@ def test_load_separate_url_npz():
         npz.seek(0)
         return io.BufferedReader(npz)
 
-    url = 'http://example.com/mocked/raw.npz'
-    labeled_url = 'http://example.com/mocked/labeled.npz'
+    url = "http://example.com/mocked/raw.npz"
+    labeled_url = "http://example.com/mocked/labeled.npz"
     responses.add(responses.GET, url, body=create_npz())
     responses.add(responses.GET, labeled_url, body=create_npz())
 
-    loader = URLLoader({'url': url, 'labeled_url': labeled_url})
+    loader = URLLoader({"url": url, "labeled_url": labeled_url})
 
     np.testing.assert_array_equal(loader.raw_array, expected_raw)
     np.testing.assert_array_equal(loader.label_array, expected_labeled)
@@ -85,10 +85,10 @@ def test_load_raw_tiff():
     with TiffWriter(tifffile) as writer:
         writer.save(expected)
         tifffile.seek(0)
-    url = 'http://example.com/mocked/raw.tiff'
+    url = "http://example.com/mocked/raw.tiff"
     responses.add(responses.GET, url, body=io.BufferedReader(tifffile))
 
-    loader = URLLoader({'url': url})
+    loader = URLLoader({"url": url})
 
     np.testing.assert_array_equal(loader.raw_array, expected)
     np.testing.assert_array_equal(loader.label_array, expected)
@@ -109,12 +109,12 @@ def test_load_raw_and_labeled_tiff():
     with TiffWriter(labeled) as writer:
         writer.save(expected_labeled)
         labeled.seek(0)
-    url = 'http://example.com/mocked/raw.tiff'
-    labeled_url = 'http://example.com/mocked/labeled.tiff'
+    url = "http://example.com/mocked/raw.tiff"
+    labeled_url = "http://example.com/mocked/labeled.tiff"
     responses.add(responses.GET, url, body=io.BufferedReader(raw))
     responses.add(responses.GET, labeled_url, body=io.BufferedReader(labeled))
 
-    loader = URLLoader({'url': url, 'labeled_url': labeled_url})
+    loader = URLLoader({"url": url, "labeled_url": labeled_url})
 
     np.testing.assert_array_equal(loader.raw_array, expected_raw)
     np.testing.assert_array_equal(loader.label_array, expected_labeled)
@@ -127,13 +127,13 @@ def test_load_raw_png():
     """Load raw array from png file."""
     expected = np.zeros((1, 1, 1, 1))
     raw = io.BytesIO()
-    img = Image.fromarray(np.zeros((1, 1)), mode='L')
+    img = Image.fromarray(np.zeros((1, 1)), mode="L")
     img.save(raw, format="png")
     raw.seek(0)
-    url = 'http://example.com/mocked/raw.png'
+    url = "http://example.com/mocked/raw.png"
     responses.add(responses.GET, url, body=io.BufferedReader(raw))
 
-    loader = URLLoader({'url': url})
+    loader = URLLoader({"url": url})
 
     np.testing.assert_array_equal(loader.raw_array, expected)
     np.testing.assert_array_equal(loader.label_array, expected)
@@ -155,19 +155,19 @@ def test_load_raw_zip():
             tiff.seek(0)
         return tiff.read()
 
-    with zipfile.ZipFile(raw, mode='w') as zf:
-        with zf.open('channel0.tiff', 'w') as tiff:
+    with zipfile.ZipFile(raw, mode="w") as zf:
+        with zf.open("channel0.tiff", "w") as tiff:
             channel_0 = make_tiff(np.array([1]).reshape((1, 1)))
             tiff.write(channel_0)
-        with zf.open('channel1.tiff', 'w') as tiff:
+        with zf.open("channel1.tiff", "w") as tiff:
             channel_1 = make_tiff(np.array([2]).reshape((1, 1)))
             tiff.write(channel_1)
     raw.seek(0)
 
-    url = 'http://example.com/mocked/raw.zip'
+    url = "http://example.com/mocked/raw.zip"
     responses.add(responses.GET, url, body=io.BufferedReader(raw))
 
-    loader = URLLoader({'url': url, 'axes': 'CYX'})
+    loader = URLLoader({"url": url, "axes": "CYX"})
 
     np.testing.assert_array_equal(loader.raw_array, expected_raw)
     np.testing.assert_array_equal(loader.label_array, expected_labeled)
@@ -190,30 +190,30 @@ def test_load_labeled_zip():
             tiff.seek(0)
         return tiff.read()
 
-    with zipfile.ZipFile(raw, mode='w') as zf:
-        with zf.open('channel0.tiff', 'w') as tiff:
+    with zipfile.ZipFile(raw, mode="w") as zf:
+        with zf.open("channel0.tiff", "w") as tiff:
             channel_0 = make_tiff(np.array([1]).reshape((1, 1)))
             tiff.write(channel_0)
-        with zf.open('channel1.tiff', 'w') as tiff:
+        with zf.open("channel1.tiff", "w") as tiff:
             channel_1 = make_tiff(np.array([2]).reshape((1, 1)))
             tiff.write(channel_1)
     raw.seek(0)
 
-    with zipfile.ZipFile(labeled, mode='w') as zf:
-        with zf.open('feature0.tiff', 'w') as tiff:
+    with zipfile.ZipFile(labeled, mode="w") as zf:
+        with zf.open("feature0.tiff", "w") as tiff:
             feature_0 = make_tiff(np.array([3]).reshape((1, 1)))
             tiff.write(feature_0)
-        with zf.open('feature1.tiff', 'w') as tiff:
+        with zf.open("feature1.tiff", "w") as tiff:
             feature_1 = make_tiff(np.array([4]).reshape((1, 1)))
             tiff.write(feature_1)
     labeled.seek(0)
 
-    url = 'http://example.com/mocked/raw.zip'
-    labeled_url = 'http://example.com/mocked/labeled.zip'
+    url = "http://example.com/mocked/raw.zip"
+    labeled_url = "http://example.com/mocked/labeled.zip"
     responses.add(responses.GET, url, body=io.BufferedReader(raw))
     responses.add(responses.GET, labeled_url, body=io.BufferedReader(labeled))
 
-    loader = URLLoader({'url': url, 'labeled_url': labeled_url, 'axes': 'CYX'})
+    loader = URLLoader({"url": url, "labeled_url": labeled_url, "axes": "CYX"})
 
     np.testing.assert_array_equal(loader.raw_array, expected_raw)
     np.testing.assert_array_equal(loader.label_array, expected_labeled)
