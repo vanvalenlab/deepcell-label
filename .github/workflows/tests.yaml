@@ -89,7 +89,7 @@ jobs:
 
       - name: Run PyTest
         run: |
-          pytest deepcell_label --cov deepcell_label --pep8
+          pytest deepcell_label --cov deepcell_label --flake8
 
       - name: Coveralls
         if: env.COVERALLS_REPO_TOKEN != null
