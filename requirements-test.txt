@@ -6,6 +6,7 @@ pytest-flask
 pytest-flask-sqlalchemy
 pytest-lazy-fixture
 fakeredis
+flake8<4 # Pin flake8 to version 3 to prevent StringIO error (see tholo/pytest-flake8#81)
 six>=1.12
 coveralls>3,<3.3.0
 responses
