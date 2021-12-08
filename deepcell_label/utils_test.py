@@ -1,7 +1,5 @@
 """Tests for utils.py"""
 
-import pytest
-
 from deepcell_label import utils
 
 
