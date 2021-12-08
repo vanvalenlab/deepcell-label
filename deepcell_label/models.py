@@ -7,7 +7,6 @@ import base64
 import enum
 import io
 import logging
-import os
 import timeit
 from secrets import token_urlsafe
 
@@ -51,8 +50,7 @@ class Npz(types.TypeDecorator):
         return np.load(bytestream)['array']
 
 
-@compiles(Npz, 'mysql')
-def compile_pickle_mysql(type_, compiler, **kw):
+def compile_npz_mysql(type_, compiler, **kw):
     """
     BLOB (64 kB) can truncate npz data, while LONGBLOB (4 GB) stores it in full.
     """
