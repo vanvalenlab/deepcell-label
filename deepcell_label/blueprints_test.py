@@ -25,32 +25,32 @@ class Bunch(object):
 
 
 def test_health(client):
-    response = client.get('/health')
+    response = client.get("/health")
     assert response.status_code == 200
-    assert response.json.get('message') == 'success'
+    assert response.json.get("message") == "success"
 
 
 def test_raw(client):
     project = models.Project.create(DummyLoader())
-    response = client.get(f'/api/raw/{project.token}/0/0')
+    response = client.get(f"/api/raw/{project.token}/0/0")
     assert response.status_code == 200
 
 
 def test_labeled(client):
     project = models.Project.create(DummyLoader())
-    response = client.get(f'/api/labeled/{project.token}/0/0')
+    response = client.get(f"/api/labeled/{project.token}/0/0")
     assert response.status_code == 200
 
 
 def test_array(client):
     project = models.Project.create(DummyLoader())
-    response = client.get(f'/api/array/{project.token}/0/0')
+    response = client.get(f"/api/array/{project.token}/0/0")
     assert response.status_code == 200
 
 
 def test_colormap(client):
     project = models.Project.create(DummyLoader())
-    response = client.get(f'/api/colormap/{project.token}/0')
+    response = client.get(f"/api/colormap/{project.token}/0")
     assert response.status_code == 200
 
 
@@ -60,33 +60,35 @@ def test_edit(client):
 
 def test_undo(client):
     # Project not found
-    response = client.post('/api/undo/0')
+    response = client.post("/api/undo/0")
     assert response.status_code == 404
 
     # Create a project
     project = models.Project.create(DummyLoader())
 
     # Undo with no action to undo silently does nothing
-    response = client.post('/api/undo/{}'.format(project.token))
+    response = client.post("/api/undo/{}".format(project.token))
     assert response.status_code == 200
 
 
 def test_redo(client):
     # Project not found
-    response = client.post('/api/redo/0')
+    response = client.post("/api/redo/0")
     assert response.status_code == 404
 
     # Create a project
     project = models.Project.create(DummyLoader())
 
     # Redo with no action to redo silently does nothing
-    response = client.post(f'/api/redo/{project.token}')
+    response = client.post(f"/api/redo/{project.token}")
     assert response.status_code == 200
 
 
 def test_create_project(client, mocker):
-    mocker.patch('deepcell_label.blueprints.loaders.URLLoader', lambda *args: DummyLoader())
-    response = client.post('/api/project')
+    mocker.patch(
+        "deepcell_label.blueprints.loaders.URLLoader", lambda *args: DummyLoader()
+    )
+    response = client.post("/api/project")
     assert response.status_code == 200
 
 
@@ -94,8 +96,10 @@ def test_create_project_dropped_npz(client):
     npz = io.BytesIO()
     np.savez(npz, X=np.zeros((1, 1, 1, 1)), y=np.ones((1, 1, 1, 1)))
     npz.seek(0)
-    data = {'file': (npz, 'test.npz')}
-    response = client.post('/api/project/dropped', data=data, content_type='multipart/form-data')
+    data = {"file": (npz, "test.npz")}
+    response = client.post(
+        "/api/project/dropped", data=data, content_type="multipart/form-data"
+    )
     assert response.status_code == 200
 
 
@@ -104,24 +108,28 @@ def test_create_project_dropped_tiff(client):
     with TiffWriter(tifffile) as writer:
         writer.save(np.zeros((1, 1, 1, 1)))
         tifffile.seek(0)
-    data = {'file': (tifffile, 'test.tiff')}
-    response = client.post('/api/project/dropped', data=data, content_type='multipart/form-data')
+    data = {"file": (tifffile, "test.tiff")}
+    response = client.post(
+        "/api/project/dropped", data=data, content_type="multipart/form-data"
+    )
     assert response.status_code == 200
 
 
 def test_create_project_dropped_png(client):
     png = io.BytesIO()
-    img = Image.fromarray(np.zeros((1, 1)), mode='L')
+    img = Image.fromarray(np.zeros((1, 1)), mode="L")
     img.save(png, format="png")
     png.seek(0)
-    data = {'file': (png, 'test.png')}
-    response = client.post('/api/project/dropped', data=data, content_type='multipart/form-data')
+    data = {"file": (png, "test.png")}
+    response = client.post(
+        "/api/project/dropped", data=data, content_type="multipart/form-data"
+    )
     assert response.status_code == 200
 
 
 def test_get_project(client):
     project = models.Project.create(DummyLoader())
-    response = client.get(f'/api/project/{project.token}')
+    response = client.get(f"/api/project/{project.token}")
     assert response.status_code == 200
 
 
@@ -131,12 +139,13 @@ def test_add_channel(client):
     npz = io.BytesIO()
     np.savez(npz, new_channel=np.ones((1, 1, 1, 1)))
     npz.seek(0)
-    data = {'file': (npz, 'test.npz')}
+    data = {"file": (npz, "test.npz")}
 
-    response = client.post(f'/api/raw/{project.token}', data=data,
-                           content_type='multipart/form-data')
+    response = client.post(
+        f"/api/raw/{project.token}", data=data, content_type="multipart/form-data"
+    )
     assert response.status_code == 200
-    assert response.json.get('numChannels') == 2
+    assert response.json.get("numChannels") == 2
     assert project.raw_array.shape == (1, 1, 1, 2)
     assert 0 in project.raw_array
     assert 1 in project.raw_array

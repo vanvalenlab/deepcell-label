@@ -24,14 +24,14 @@ def test_project_init():
     project = models.Project(DummyLoader())
 
     # Check columns filled in by constructor
-    project.path is not None
-    project.source is not None
-    project.num_frames is not None
-    project.height is not None
-    project.width is not None
-    project.num_channels is not None
-    project.num_features is not None
-    project.colormap is not None
+    assert project.path is not None
+    assert project.source is not None
+    assert project.num_frames is not None
+    assert project.height is not None
+    assert project.width is not None
+    assert project.num_channels is not None
+    assert project.num_features is not None
+    assert project.colormap is not None
 
 
 def test_is_track():
