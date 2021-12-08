@@ -1,6 +1,5 @@
 """Tests for exporters.py"""
 
-import pytest
 import io
 
 from deepcell_label import models
