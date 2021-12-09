@@ -67,12 +67,12 @@ function Divisions({ label }) {
 
 function Timeline() {
   const select = useSelect();
-  const selected = useSelector(select, state => state.context.selected);
-  const hovering = useSelector(select, state => state.context.hovering);
+  const selected = useSelector(select, (state) => state.context.selected);
+  const hovering = useSelector(select, (state) => state.context.hovering);
 
   const tracking = useTracking();
-  const addingDaughter = useSelector(tracking, state => state.matches('addingDaughter'));
-  const parent = useSelector(tracking, state => state.context.parent);
+  const addingDaughter = useSelector(tracking, (state) => state.matches('addingDaughter'));
+  const parent = useSelector(tracking, (state) => state.context.parent);
 
   useEffect(() => {
     bind('n', () => select.send('NEW_FOREGROUND'));

@@ -5,7 +5,7 @@ import DaughterBeforeDivisionAlerts from './DaughterBeforeDivisionAlert';
 import OneDaughterAlerts from './OneDaughterAlerts';
 import ParentAfterDivisionAlerts from './ParentAfterDivisionAlert';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
     maxHeight: '200px',
     overflow: 'auto',

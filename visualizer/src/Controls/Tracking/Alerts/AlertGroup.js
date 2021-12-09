@@ -6,7 +6,7 @@ import Alert from '@material-ui/lab/Alert';
 import clsx from 'clsx';
 import React from 'react';
 
-const useStyles = makeStyles(theme => {
+const useStyles = makeStyles((theme) => {
   const transition = {
     duration: theme.transitions.duration.shortest,
   };
@@ -67,12 +67,7 @@ function AlertGroup({ header, severity, children }) {
 
   return (
     <>
-      <Alert
-        className={styles.headerAlert}
-        severity={severity}
-        onClick={toggle}
-        action={action}
-      >
+      <Alert className={styles.headerAlert} severity={severity} onClick={toggle} action={action}>
         {header}
       </Alert>
       <Collapse in={open}>{children}</Collapse>

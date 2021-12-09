@@ -6,8 +6,8 @@ import { useQualityControl } from '../../QualityControlContext';
 function ProjectSelect() {
   const qualityControl = useQualityControl();
 
-  const projectId = useSelector(qualityControl, state => state.context.projectId);
-  const projectIds = useSelector(qualityControl, state => state.context.projectIds);
+  const projectId = useSelector(qualityControl, (state) => state.context.projectId);
+  const projectIds = useSelector(qualityControl, (state) => state.context.projectIds);
 
   // Adds mousetrap class so hotkeys work after using switch
   const inputRef = useRef();
@@ -16,7 +16,7 @@ function ProjectSelect() {
     select.className = `${select.className}  mousetrap`;
   }, []);
 
-  const onChange = e => {
+  const onChange = (e) => {
     qualityControl.send({ type: 'SET_PROJECT', projectId: e.target.value });
   };
 
@@ -31,7 +31,7 @@ function ProjectSelect() {
       <FormLabel>Project</FormLabel>
       <Tooltip title={tooltip}>
         <Select native value={projectId} onChange={onChange} inputRef={inputRef}>
-          {projectIds.map(projectId => (
+          {projectIds.map((projectId) => (
             <option key={projectId} value={projectId}>
               {projectId}
             </option>

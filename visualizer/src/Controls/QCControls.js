@@ -3,7 +3,7 @@ import ExportQualityControlButton from './QualityControl/ExportQualityControlBut
 import ProjectSelect from './QualityControl/ProjectSelect';
 import ReviewButtons from './QualityControl/ReviewButtons';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   qualityControl: {
     display: 'flex',
     flexDirection: 'column',

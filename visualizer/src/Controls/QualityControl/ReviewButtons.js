@@ -5,7 +5,7 @@ import ThumbUpIcon from '@material-ui/icons/ThumbUp';
 import React from 'react';
 import { useQualityControl } from '../../QualityControlContext';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   box: {
     display: 'flex',
   },

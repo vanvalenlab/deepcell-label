@@ -32,7 +32,7 @@ function createQualityControlMachine(projectIds, bucket) {
         spawnProjects: assign({
           projects: ({ projectIds, bucket }) =>
             Object.fromEntries(
-              projectIds.map(projectId => [
+              projectIds.map((projectId) => [
                 projectId,
                 // TODO: refactor buckets
                 spawn(createProjectMachine(projectId, bucket)),
@@ -58,7 +58,7 @@ function createQualityControlMachine(projectIds, bucket) {
           projectId: ({ judgments, projectIds, projectId }) => {
             const index = projectIds.indexOf(projectId);
             const reordered = projectIds.slice(index + 1).concat(projectIds.slice(0, index));
-            return reordered.find(id => !(id in judgments)) || projectId;
+            return reordered.find((id) => !(id in judgments)) || projectId;
           },
         }),
       },

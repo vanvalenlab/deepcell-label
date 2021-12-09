@@ -37,7 +37,5 @@ test('text for single frame and range', () => {
 });
 
 test('text for three ranges', () => {
-  expect(formatFrames([0, 1, 2, 4, 5, 6, 8, 9, 10])).toBe(
-    'frames 0-2, 4-6 and 8-10'
-  );
+  expect(formatFrames([0, 1, 2, 4, 5, 6, 8, 9, 10])).toBe('frames 0-2, 4-6 and 8-10');
 });

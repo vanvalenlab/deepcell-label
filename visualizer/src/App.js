@@ -17,7 +17,7 @@ import { isProjectId, project, qualityControl } from './service/service';
 //   iframe: false // open in new window
 // });
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
     boxSizing: 'border-box',
     display: 'flex',
@@ -35,7 +35,7 @@ const useStyles = makeStyles(theme => ({
 }));
 
 function Review() {
-  const project = useSelector(qualityControl, state => {
+  const project = useSelector(qualityControl, (state) => {
     const { projectId, projects } = state.context;
     return projects[projectId];
   });

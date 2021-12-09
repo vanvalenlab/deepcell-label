@@ -6,7 +6,7 @@ import { useImage, useSelect, useTracking } from '../../../ProjectContext';
 import { oneDaughter } from '../trackingUtils';
 import AlertGroup from './AlertGroup';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
     width: '100%',
     // '& > * + *': {
@@ -28,7 +28,7 @@ const useStyles = makeStyles(theme => ({
 
 function OneDaughterAlert({ label }) {
   const tracking = useTracking();
-  const division = useSelector(tracking, state => state.context.labels[label]);
+  const division = useSelector(tracking, (state) => state.context.labels[label]);
   const { daughters, divisionFrame } = division;
 
   const image = useImage();
@@ -50,11 +50,11 @@ function OneDaughterAlert({ label }) {
 
 function OneDaughterAlerts() {
   const tracking = useTracking();
-  const divisions = useSelector(tracking, state => state.context.labels);
+  const divisions = useSelector(tracking, (state) => state.context.labels);
 
   const oneDaughterAlerts = Object.values(divisions)
-    .filter(division => oneDaughter(division))
-    .map(division => division.label);
+    .filter((division) => oneDaughter(division))
+    .map((division) => division.label);
   const count = oneDaughterAlerts.length;
 
   const header =
@@ -63,7 +63,7 @@ function OneDaughterAlerts() {
   return (
     count > 0 && (
       <AlertGroup header={header} severity={'warning'}>
-        {oneDaughterAlerts.map(label => (
+        {oneDaughterAlerts.map((label) => (
           <OneDaughterAlert label={label} />
         ))}
       </AlertGroup>

@@ -6,7 +6,7 @@ import { useDivision, useTracking } from '../../../ProjectContext';
 import { daughterBeforeDivision, formatFrames } from '../trackingUtils';
 import AlertGroup from './AlertGroup';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
     width: '100%',
     // '& > * + *': {
@@ -30,7 +30,7 @@ function DaughterBeforeDivisionAlert({ label }) {
   const division = useDivision(label);
   const { frames, parentDivisionFrame: divisionFrame } = division;
 
-  const framesBeforeDivision = frames.filter(frame => frame < divisionFrame);
+  const framesBeforeDivision = frames.filter((frame) => frame < divisionFrame);
   const frameText = formatFrames(framesBeforeDivision);
 
   const styles = useStyles();
@@ -44,11 +44,11 @@ function DaughterBeforeDivisionAlert({ label }) {
 
 function DaughterBeforeDivisionAlerts() {
   const tracking = useTracking();
-  const divisions = useSelector(tracking, state => state.context.labels);
+  const divisions = useSelector(tracking, (state) => state.context.labels);
 
   const daughterBeforeDivisionAlerts = Object.values(divisions)
-    .filter(division => daughterBeforeDivision(division, divisions))
-    .map(division => division.label);
+    .filter((division) => daughterBeforeDivision(division, divisions))
+    .map((division) => division.label);
   const count = daughterBeforeDivisionAlerts.length;
 
   const header =
@@ -58,7 +58,7 @@ function DaughterBeforeDivisionAlerts() {
   return (
     count > 0 && (
       <AlertGroup header={header} severity={'error'}>
-        {daughterBeforeDivisionAlerts.map(label => (
+        {daughterBeforeDivisionAlerts.map((label) => (
           <DaughterBeforeDivisionAlert label={label} />
         ))}
       </AlertGroup>

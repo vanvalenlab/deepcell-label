@@ -15,13 +15,13 @@ import { useFeature, useImage, useLabeled, useSelect, useTracking } from '../../
 
 function useColors() {
   const labeled = useLabeled();
-  const featureIndex = useSelector(labeled, state => state.context.feature);
+  const featureIndex = useSelector(labeled, (state) => state.context.feature);
   const feature = useFeature(featureIndex);
-  const colors = useSelector(feature, state => state.context.colors);
+  const colors = useSelector(feature, (state) => state.context.colors);
   return colors;
 }
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   division: {
     display: 'flex',
     alignItems: 'center',
@@ -66,7 +66,7 @@ function Parent({ division }) {
   const theme = useTheme();
   const strokeColor = theme.palette.secondary.main;
 
-  const relations = daughters.map(label => ({
+  const relations = daughters.map((label) => ({
     targetId: `daughter${label}`,
     targetAnchor: 'left',
     sourceAnchor: 'right',
@@ -82,7 +82,7 @@ function Parent({ division }) {
   const select = useSelect();
   const image = useImage();
 
-  const onClick = e => {
+  const onClick = (e) => {
     select.send({ type: 'SET_FOREGROUND', foreground: label });
     image.send({
       type: 'LOAD_FRAME',
@@ -123,7 +123,7 @@ function AddDaughter({ label }) {
 
   const tracking = useTracking();
 
-  const [open, toggle] = useReducer(v => !v, false);
+  const [open, toggle] = useReducer((v) => !v, false);
   const anchorRef = useRef(null);
 
   const handleAddDaughter = () => {
@@ -162,7 +162,7 @@ function DaughterMenu({ parent, daughter }) {
   const tracking = useTracking();
   const { send } = tracking;
 
-  const [open, toggle] = useReducer(v => !v, false);
+  const [open, toggle] = useReducer((v) => !v, false);
   const anchorRef = useRef(null);
 
   const handleRemove = () => {
@@ -202,7 +202,7 @@ function Daughters({ division }) {
 
   return (
     <Box className={styles.daughters}>
-      {daughters.map(daughter => (
+      {daughters.map((daughter) => (
         <Daughter label={label} daughter={daughter} divisionFrame={divisionFrame} key={daughter} />
       ))}
       <AddDaughter label={label} />
@@ -236,7 +236,7 @@ export function DivisionFootprint() {
 function Division({ label }) {
   const styles = useStyles();
   const tracking = useTracking();
-  const division = useSelector(tracking, state => state.context.labels[label]);
+  const division = useSelector(tracking, (state) => state.context.labels[label]);
 
   return (
     <ArcherContainer>

@@ -8,13 +8,13 @@ export function parentAfterDivision(cellInfo) {
   if (!divisionFrame) {
     return false;
   }
-  const framesAfterDivision = frames?.filter(frame => frame >= divisionFrame);
+  const framesAfterDivision = frames?.filter((frame) => frame >= divisionFrame);
   return framesAfterDivision?.length > 0;
 }
 
 export function daughterBeforeDivision(cellInfo) {
   const { frames, parentDivisionFrame } = cellInfo;
-  const framesBeforeDivision = frames?.filter(frame => frame < parentDivisionFrame);
+  const framesBeforeDivision = frames?.filter((frame) => frame < parentDivisionFrame);
   return framesBeforeDivision?.length > 0;
 }
 

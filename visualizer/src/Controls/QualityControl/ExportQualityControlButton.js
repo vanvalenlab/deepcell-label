@@ -5,7 +5,7 @@ import { useSelector } from '@xstate/react';
 import React from 'react';
 import { useQualityControl } from '../../QualityControlContext';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   buttonProgress: {
     color: green[500],
     position: 'absolute',
@@ -22,7 +22,7 @@ function download(judgments) {
     'data:text/csv,' +
     encodeURI(
       Object.entries(judgments)
-        .map(e => e.join(','))
+        .map((e) => e.join(','))
         .join('\n')
     );
   a.href = csvContent;
@@ -32,7 +32,7 @@ function download(judgments) {
 
 function ExportQualityControlButton() {
   const qualityControl = useQualityControl();
-  const judgments = useSelector(qualityControl, state => state.context.judgments);
+  const judgments = useSelector(qualityControl, (state) => state.context.judgments);
   // { 'EXAMPLEID': true, 'OTHERID': false }
 
   const styles = useStyles();

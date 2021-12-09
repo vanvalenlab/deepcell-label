@@ -5,9 +5,9 @@ import { useDivision, useFeature, useImage, useLabeled } from '../../ProjectCont
 
 function useColors() {
   const labeled = useLabeled();
-  const featureIndex = useSelector(labeled, state => state.context.feature);
+  const featureIndex = useSelector(labeled, (state) => state.context.feature);
   const feature = useFeature(featureIndex);
-  const colors = useSelector(feature, state => state.context.colors);
+  const colors = useSelector(feature, (state) => state.context.colors);
   return colors;
 }
 
@@ -34,7 +34,7 @@ function FrameBox({ frame, numFrames, color }) {
 
 function LabelTimeline({ label }) {
   const image = useImage();
-  const numFrames = useSelector(image, state => state.context.numFrames);
+  const numFrames = useSelector(image, (state) => state.context.numFrames);
 
   const colors = useColors();
   const division = useDivision(label);
@@ -50,7 +50,7 @@ function LabelTimeline({ label }) {
         width: '100%',
       }}
     >
-      {[...Array(numFrames).keys()].map(frame => (
+      {[...Array(numFrames).keys()].map((frame) => (
         <FrameBox
           frame={frame}
           numFrames={numFrames}
