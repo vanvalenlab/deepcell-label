@@ -6,8 +6,8 @@ import numpy as np
 import pytest
 
 from deepcell_label import models
-from deepcell_label.imgutils import grayscale_pngify, pngify
 from deepcell_label.conftest import DummyLoader
+from deepcell_label.imgutils import grayscale_pngify, pngify
 
 
 # Automatically enable transactions for all tests, without importing any extra fixtures.
@@ -24,14 +24,14 @@ def test_project_init():
     project = models.Project(DummyLoader())
 
     # Check columns filled in by constructor
-    project.path is not None
-    project.source is not None
-    project.num_frames is not None
-    project.height is not None
-    project.width is not None
-    project.num_channels is not None
-    project.num_features is not None
-    project.colormap is not None
+    assert project.path is not None
+    assert project.source is not None
+    assert project.num_frames is not None
+    assert project.height is not None
+    assert project.width is not None
+    assert project.num_channels is not None
+    assert project.num_features is not None
+    assert project.colormap is not None
 
 
 def test_get_missing_project():
@@ -270,10 +270,12 @@ def test_get_labeled_array():
     label_arr = project.get_labeled_array(frame, feature)
 
     assert label_arr.shape == (project.height, project.width)
-    np.testing.assert_array_equal(label_arr[label_arr >= 0],
-                                  expected_frame[label_arr >= 0])
-    np.testing.assert_array_equal(label_arr[label_arr < 0],
-                                  -expected_frame[label_arr < 0])
+    np.testing.assert_array_equal(
+        label_arr[label_arr >= 0], expected_frame[label_arr >= 0]
+    )
+    np.testing.assert_array_equal(
+        label_arr[label_arr < 0], -expected_frame[label_arr < 0]
+    )
 
 
 def test_get_labeled_png():
@@ -285,10 +287,12 @@ def test_get_labeled_png():
     feature = 0
     expected_frame = project.label_frames[frame].frame[..., feature]
     expected_frame = np.ma.masked_equal(expected_frame, 0)
-    expected_png = pngify(expected_frame,
-                          vmin=0,
-                          vmax=project.get_max_label(feature),
-                          cmap=project.colormap)
+    expected_png = pngify(
+        expected_frame,
+        vmin=0,
+        vmax=project.get_max_label(feature),
+        cmap=project.colormap,
+    )
 
     label_png = project.get_labeled_png(frame, feature)
 
@@ -367,9 +371,9 @@ def test_finish_project():
     assert project.finished is not None
     assert project.labels.cell_ids is None
     assert project.labels.cell_info is None
-    for raw, rgb, label in zip(project.raw_frames,
-                               project.rgb_frames,
-                               project.label_frames):
+    for raw, rgb, label in zip(
+        project.raw_frames, project.rgb_frames, project.label_frames
+    ):
         assert raw.frame is None
         assert rgb.frame is None
         assert label.frame is None

@@ -59,7 +59,7 @@ const loadMachine = Machine(
       isSingleFile: (_, { files }) => files.length === 1,
     },
     services: {
-      submitExample: context => {
+      submitExample: (context) => {
         const { exampleFile } = context;
         const formData = new FormData();
         formData.append('url', exampleFile);
@@ -67,7 +67,7 @@ const loadMachine = Machine(
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       },
-      submitUpload: context => {
+      submitUpload: (context) => {
         const { uploadFile, axes } = context;
         const formData = new FormData();
         formData.append('file', uploadFile);

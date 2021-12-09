@@ -1,17 +1,14 @@
 """Classes to view and edit DeepCell Label Projects"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 import numpy as np
-from matplotlib.colors import Normalize
 import skimage
+from matplotlib.colors import Normalize
 from skimage import filters
-from skimage.morphology import flood_fill, flood
-from skimage.morphology import dilation, disk, square, erosion
 from skimage.exposure import rescale_intensity
 from skimage.measure import regionprops
-from skimage.segmentation import watershed, morphological_chan_vese
+from skimage.morphology import dilation, disk, erosion, flood, flood_fill, square
+from skimage.segmentation import morphological_chan_vese, watershed
 
 
 class Edit(object):
@@ -24,8 +21,8 @@ class Edit(object):
         3. make changes to the label metadata
         4. assign the image to the frame
 
-    NOTE: Actions must directly assign changes to the frame attribute
-    for the MutableNdarray class to detect the change and for the database to persist the change.
+    NOTE: Actions must directly assign changes to the frame attribute for the
+    MutableNdarray class to detect the change and for the database to persist the change.
     Changes to a view of a MutableNdarray will not be detected by the original
     TODO: modify MutableNdarray class to share changed() signals from arrays view
     """
@@ -218,15 +215,20 @@ class Edit(object):
         for loc in trace:
             x = loc[0]
             y = loc[1]
-            brush_area = skimage.draw.disk((y, x), brush_size,
-                                           shape=(self.project.height, self.project.width))
+            brush_area = skimage.draw.disk(
+                (y, x), brush_size, shape=(self.project.height, self.project.width)
+            )
             img[brush_area] = img_replaced[brush_area]
 
         foreground_in_after = np.any(np.isin(img, foreground))
         background_in_after = np.any(np.isin(img, background))
 
-        foreground_added = not foreground_in_before and foreground_in_after and foreground != 0
-        background_deleted = background_in_before and not background_in_after and background != 0
+        foreground_added = (
+            not foreground_in_before and foreground_in_after and foreground != 0
+        )
+        background_deleted = (
+            background_in_before and not background_in_after and background != 0
+        )
 
         # cell deletion
         if background_deleted:
@@ -256,8 +258,7 @@ class Edit(object):
         """
         img_ann = self.frame[..., self.feature]
 
-        seed_point = (int(y_location),
-                      int(x_location))
+        seed_point = (int(y_location), int(x_location))
         contig_cell = flood(image=img_ann, seed_point=seed_point)
         stray_pixels = np.logical_and(np.invert(contig_cell), img_ann == label)
         img_trimmed = np.where(stray_pixels, 0, img_ann)
@@ -280,16 +281,14 @@ class Edit(object):
 
         img = self.frame[..., self.feature]
         # Rescale click location to corresponding location in label array
-        hole_fill_seed = (int(y_location),
-                          int(x_location))
+        hole_fill_seed = (int(y_location), int(x_location))
         # Check current label
         old_label = img[hole_fill_seed]
 
         # Flood region with label
         # helps prevents hole fill from spilling into background
         connectivity = 1 if old_label == 0 else 2
-        flooded = flood_fill(img, hole_fill_seed, label,
-                             connectivity=connectivity)
+        flooded = flood_fill(img, hole_fill_seed, label, connectivity=connectivity)
 
         # Update cell info dicts
         label_in_original = np.any(np.isin(label, img))
@@ -304,7 +303,9 @@ class Edit(object):
         self.frame[..., self.feature] = flooded
         self.y_changed = True
 
-    def action_watershed(self, label, x1_location, y1_location, x2_location, y2_location):
+    def action_watershed(
+        self, label, x1_location, y1_location, x2_location, y2_location
+    ):
         """Use watershed to segment different objects"""
         # Pull the label that is being split and find a new valid label
         current_label = label
@@ -319,11 +320,9 @@ class Edit(object):
         seeds_labeled = np.zeros(img_ann.shape)
 
         # create two seed locations
-        seeds_labeled[int(y1_location),
-                      int(x1_location)] = current_label
+        seeds_labeled[int(y1_location), int(x1_location)] = current_label
 
-        seeds_labeled[int(y2_location),
-                      int(x2_location)] = new_label
+        seeds_labeled[int(y2_location), int(x2_location)] = new_label
 
         # define the bounding box to apply the transform on and select
         # appropriate sections of 3 inputs (raw, seeds, annotation mask)
@@ -339,12 +338,14 @@ class Edit(object):
         img_sub_raw_scaled = rescale_intensity(img_sub_raw)
 
         # apply watershed transform to the subsections
-        ws = watershed(-img_sub_raw_scaled, img_sub_seeds,
-                       mask=img_sub_ann.astype(bool))
+        ws = watershed(
+            -img_sub_raw_scaled, img_sub_seeds, mask=img_sub_ann.astype(bool)
+        )
 
         # did watershed effectively create a new label?
-        new_pixels = np.count_nonzero(np.logical_and(
-            ws == new_label, img_sub_ann == current_label))
+        new_pixels = np.count_nonzero(
+            np.logical_and(ws == new_label, img_sub_ann == current_label)
+        )
 
         # if only a few pixels split, dilate them; new label is "brightest"
         # so will expand over other labels and increase area
@@ -392,8 +393,9 @@ class Edit(object):
         right_edge = max(x1, x2) + 1
 
         # pull out the selection portion of the raw frame
-        predict_area = self.raw_frame[top_edge:bottom_edge,
-                                      left_edge:right_edge, self.channel]
+        predict_area = self.raw_frame[
+            top_edge:bottom_edge, left_edge:right_edge, self.channel
+        ]
 
         # triangle threshold picked after trying a few on one dataset
         # may not be the best threshold approach for other datasets!
@@ -402,18 +404,20 @@ class Edit(object):
         threshold_stringent = 1.10 * threshold
 
         # try to keep stray pixels from appearing
-        hyst = filters.apply_hysteresis_threshold(image=predict_area,
-                                                  low=threshold,
-                                                  high=threshold_stringent)
+        hyst = filters.apply_hysteresis_threshold(
+            image=predict_area, low=threshold, high=threshold_stringent
+        )
         ann_threshold = np.where(hyst, label, 0)
 
         # put prediction in without overwriting
-        predict_area = self.frame[top_edge:bottom_edge,
-                                  left_edge:right_edge, self.feature]
+        predict_area = self.frame[
+            top_edge:bottom_edge, left_edge:right_edge, self.feature
+        ]
         safe_overlay = np.where(predict_area == 0, ann_threshold, predict_area)
 
-        self.frame[top_edge:bottom_edge,
-                   left_edge:right_edge, self.feature] = safe_overlay
+        self.frame[
+            top_edge:bottom_edge, left_edge:right_edge, self.feature
+        ] = safe_overlay
 
         # don't need to update cell_info unless an annotation has been added
         if np.any(np.isin(self.frame[..., self.feature], label)):
@@ -445,7 +449,9 @@ class Edit(object):
         predict_area = adjusted_raw_frame[y1:y2, x1:x2]
 
         # returns 1 where label is predicted to be based on contouring, 0 background
-        contoured = morphological_chan_vese(predict_area, iterations, init_level_set=level_set)
+        contoured = morphological_chan_vese(
+            predict_area, iterations, init_level_set=level_set
+        )
 
         # contoured area should get original label value
         contoured_label = contoured * label
@@ -467,19 +473,23 @@ class Edit(object):
         full_frame = np.copy(self.frame[..., self.feature])
         full_frame[y1:y2, x1:x2] = safe_overlay
 
-        # avoid automated label cleanup if the centroid (flood seed point) is not the right label
+        # avoid automated label cleanup if centroid (flood seed point) is not the right label
         if full_frame[int(props['centroid'][0]), int(props['centroid'][1])] != label:
             img_trimmed = full_frame
         else:
             # morphology and logic used by pixel-trimming action, with object centroid as seed
-            contig_cell = flood(image=full_frame,
-                                seed_point=(int(props['centroid'][0]), int(props['centroid'][1])))
+            contig_cell = flood(
+                image=full_frame,
+                seed_point=(int(props['centroid'][0]), int(props['centroid'][1])),
+            )
 
-            # any pixels in img_ann that have value 'label' and are NOT connected to hole_fill_seed
-            # get changed to 0, all other pixels retain their original value
-            img_trimmed = np.where(np.logical_and(np.invert(contig_cell),
-                                                  full_frame == label),
-                                   0, full_frame)
+            # any pixels in img_ann that have value 'label' and are NOT connected to
+            # hole_fill_seed get changed to 0, all other pixels retain their original value
+            img_trimmed = np.where(
+                np.logical_and(np.invert(contig_cell), full_frame == label),
+                0,
+                full_frame,
+            )
 
         # update image; cell_info should never change as a result of this
         self.frame[y1:y2, x1:x2, self.feature] = img_trimmed[y1:y2, x1:x2]
@@ -516,7 +526,9 @@ class Edit(object):
         img_dilate = np.where(img_ann == label, label, 0)
         img_dilate = dilation(img_dilate, square(3))
 
-        img_ann = np.where(np.logical_and(img_dilate == label, img_ann == 0), img_dilate, img_ann)
+        img_ann = np.where(
+            np.logical_and(img_dilate == label, img_ann == 0), img_dilate, img_ann
+        )
 
         self.frame[..., self.feature] = img_ann
         self.y_changed = True
@@ -541,14 +553,18 @@ class Edit(object):
             # Replace parent with new label for rest of movie
             daughter = self.new_label
 
-            for label_frame in self.project.label_frames[self.frame_id:]:
+            for label_frame in self.project.label_frames[self.frame_id :]:
                 img = label_frame.frame
                 img[img == parent] = daughter
                 label_frame.frame = img
 
             # Split parent frames between parent and daughter
-            frames_before = [frame for frame in parent_track['frames'] if frame < self.frame_id]
-            frames_after = [frame for frame in parent_track['frames'] if frame >= self.frame_id]
+            frames_before = [
+                frame for frame in parent_track['frames'] if frame < self.frame_id
+            ]
+            frames_after = [
+                frame for frame in parent_track['frames'] if frame >= self.frame_id
+            ]
 
             parent_track['frames'] = frames_before
             daughter_track = {
@@ -562,10 +578,14 @@ class Edit(object):
 
             # Move divisions after current frame from parent to daughter
             if parent_track['frame_div'] and parent_track['frame_div'] > self.frame_id:
-                future_daughters = [d for d in parent_track['daughters']
-                                    if min(self.tracks[d]['frames']) > self.frame_id]
-                past_daughters = [d for d in parent_track['daughters']
-                                  if d not in future_daughters]
+                future_daughters = [
+                    d
+                    for d in parent_track['daughters']
+                    if min(self.tracks[d]['frames']) > self.frame_id
+                ]
+                past_daughters = [
+                    d for d in parent_track['daughters'] if d not in future_daughters
+                ]
 
                 for d in future_daughters:
                     self.tracks[d]['parent'] = daughter
@@ -579,14 +599,15 @@ class Edit(object):
             self.tracks[daughter] = daughter_track
 
             self.labels.cell_ids[self.feature] = np.append(
-                self.labels.cell_ids[self.feature],
-                daughter)
+                self.labels.cell_ids[self.feature], daughter
+            )
             self.y_changed = True
         # Add existing daughter
         else:
             if daughter_track['parent'] is not None:
                 raise ValueError(
-                    f'Daughter {daughter} already has parent {daughter_track["parent"]}')
+                    f'Daughter {daughter} already has parent {daughter_track["parent"]}'
+                )
             daughter_track['parent'] = parent
 
         # Add daughter
@@ -637,8 +658,10 @@ class Edit(object):
         for d in parent_track['daughters']:
             self.tracks[d]['parent'] = None
         # Link future division to parent
-        if (daughter_track['frame_div'] is None or
-                parent_track['frame_div'] < daughter_track['frame_div']):
+        if (
+            daughter_track['frame_div'] is None
+            or parent_track['frame_div'] < daughter_track['frame_div']
+        ):
             for d in daughter_track['daughters']:
                 self.tracks[d]['parent'] = parent
             parent_track['daughters'] = daughter_track['daughters']
@@ -673,7 +696,7 @@ class Edit(object):
             return
 
         # replace frame labels
-        for label_frame in self.project.label_frames[self.frame_id:]:
+        for label_frame in self.project.label_frames[self.frame_id :]:
             img = label_frame.frame
             if np.isin(label, img):
                 img[img == label] = self.new_label

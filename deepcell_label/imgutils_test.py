@@ -2,11 +2,10 @@
 
 import os
 
-from skimage.io import imread
 import numpy as np
+from skimage.io import imread
 
-from deepcell_label import imgutils
-from deepcell_label import models
+from deepcell_label import imgutils, models
 from deepcell_label.conftest import DummyLoader
 
 

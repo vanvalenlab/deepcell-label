@@ -6,7 +6,7 @@ import FileUpload from './FileUpload';
 import loadMachine from './loadMachine';
 
 // eslint-disable-line no-unused-vars
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   main: {
     flexGrow: 1,
   },

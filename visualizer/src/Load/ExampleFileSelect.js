@@ -4,7 +4,7 @@ import SendIcon from '@material-ui/icons/Send';
 import { useSelector } from '@xstate/react';
 import React from 'react';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   examplesBox: {
     display: 'flex',
     flexDirection: 'column',
@@ -48,8 +48,8 @@ const exampleFiles = [
 ];
 
 function ExampleFileSelect({ loadService }) {
-  const file = useSelector(loadService, state => state.context.exampleFile);
-  const loading = useSelector(loadService, state => state.matches('submittingExample'));
+  const file = useSelector(loadService, (state) => state.context.exampleFile);
+  const loading = useSelector(loadService, (state) => state.matches('submittingExample'));
 
   const styles = useStyles();
 
@@ -59,7 +59,7 @@ function ExampleFileSelect({ loadService }) {
         className={styles.select}
         native
         value={file ? file.path : false}
-        onChange={e => loadService.send({ type: 'SET_EXAMPLE_FILE', file: e.target.value })}
+        onChange={(e) => loadService.send({ type: 'SET_EXAMPLE_FILE', file: e.target.value })}
         disabled={loading}
       >
         <option disabled value={false} style={{ display: 'none' }}>

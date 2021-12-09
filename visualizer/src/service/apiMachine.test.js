@@ -11,8 +11,8 @@ describe('test apiMachine event handling', () => {
 
   const backendEvents = ['EDIT', 'BACKEND_UNDO', 'BACKEND_REDO'];
 
-  backendEvents.forEach(event => {
-    it(`${event} event -> call API successfully -> "idle" state`, done => {
+  backendEvents.forEach((event) => {
+    it(`${event} event -> call API successfully -> "idle" state`, (done) => {
       let edited = false;
       let transitioned = false;
       const apiMachine = createApiMachine({
@@ -25,7 +25,7 @@ describe('test apiMachine event handling', () => {
           },
         },
       });
-      const apiService = interpret(apiMachine).onTransition(state => {
+      const apiService = interpret(apiMachine).onTransition((state) => {
         // first event causes transition to loading
         if (state.matches('loading')) {
           expect(edited).not.toBeTruthy();
@@ -52,7 +52,7 @@ describe('test apiMachine event handling', () => {
       apiService.send({ type: event, args: [], action: 'test' });
     });
 
-    it(`${event} event -> call API unsuccessfully -> "idle" state`, done => {
+    it(`${event} event -> call API unsuccessfully -> "idle" state`, (done) => {
       let failed = false;
       let transitioned = false;
       const apiMachine = createApiMachine({
@@ -65,7 +65,7 @@ describe('test apiMachine event handling', () => {
           },
         },
       });
-      const apiService = interpret(apiMachine).onTransition(state => {
+      const apiService = interpret(apiMachine).onTransition((state) => {
         // first event causes transition to loading
         if (state.matches('loading')) {
           expect(failed).not.toBeTruthy();
@@ -86,13 +86,13 @@ describe('test apiMachine event handling', () => {
     });
   });
 
-  it('UPLOAD event -> call API successfully -> "idle" state', done => {
+  it('UPLOAD event -> call API successfully -> "idle" state', (done) => {
     let transitioned = false;
     const apiMachine = createApiMachine({
       projectId: 'testProjectId',
       bucket: 'testBucket',
     });
-    const apiService = interpret(apiMachine).onTransition(state => {
+    const apiService = interpret(apiMachine).onTransition((state) => {
       // first event causes transition to uploading.
       if (state.matches('uploading')) {
         transitioned = true;
@@ -111,7 +111,7 @@ describe('test apiMachine event handling', () => {
     expect(fetch).toHaveBeenCalled();
   });
 
-  it(`UPLOAD event -> call API unsuccessfully -> "idle" state`, done => {
+  it(`UPLOAD event -> call API unsuccessfully -> "idle" state`, (done) => {
     let failed = false;
     let transitioned = false;
     const apiMachine = createApiMachine({
@@ -124,7 +124,7 @@ describe('test apiMachine event handling', () => {
         },
       },
     });
-    const apiService = interpret(apiMachine).onTransition(state => {
+    const apiService = interpret(apiMachine).onTransition((state) => {
       // first event causes transition to uploading
       if (state.matches('uploading')) {
         expect(failed).not.toBeTruthy();

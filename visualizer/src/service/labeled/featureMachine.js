@@ -4,13 +4,13 @@ import { pure } from 'xstate/lib/actions';
 function fetchSemanticLabels(context) {
   const { projectId, feature } = context;
   const pathToSemanticLabels = `/api/semantic-labels/${projectId}/${feature}`;
-  return fetch(pathToSemanticLabels).then(res => res.json());
+  return fetch(pathToSemanticLabels).then((res) => res.json());
 }
 
 function fetchColors(context) {
   const { projectId, feature } = context;
   const pathToColors = `/api/colormap/${projectId}/${feature}`;
-  return fetch(pathToColors).then(res => res.json());
+  return fetch(pathToColors).then((res) => res.json());
 }
 
 function fetchLabeledFrame(context) {
@@ -25,7 +25,7 @@ function fetchLabeledFrame(context) {
     .then(showImage);
   // .catch(logError);
 
-  const fetchArray = fetch(pathToArray).then(res => res.json());
+  const fetchArray = fetch(pathToArray).then((res) => res.json());
 
   return Promise.all([fetchImage, fetchArray]);
 }
@@ -39,7 +39,7 @@ function makeImageURL(responseAsBlob) {
 }
 
 function showImage(imgUrl) {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => resolve(img);
     img.src = imgUrl;
@@ -260,7 +260,7 @@ const createFeatureMachine = (projectId, feature, numFrames) =>
             return (
               allFrames
                 // remove loaded frames
-                .filter(frame => !(frame in frames))
+                .filter((frame) => !(frame in frames))
                 // load the closest unloaded frame to the current frame
                 .reduce((prev, curr) =>
                   Math.abs(curr - frame) < Math.abs(prev - frame) ? curr : prev

@@ -135,7 +135,7 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) =>
               );
           },
           featureNames: ({ numFeatures }) =>
-            [...Array(numFeatures).keys()].map(i => `feature ${i}`),
+            [...Array(numFeatures).keys()].map((i) => `feature ${i}`),
         }),
         /** Record which frame we are loading. */
         assignLoadingFrame: assign({ loadingFrame: (_, { frame }) => frame }),
@@ -145,7 +145,7 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) =>
         }),
         /** Start preloading frames in all features. */
         startPreload: pure(({ features }) =>
-          features.map(feature => send('PRELOAD', { to: feature }))
+          features.map((feature) => send('PRELOAD', { to: feature }))
         ),
         /** Preload another frame after the last one is loaded. */
         preload: respond('PRELOAD'),

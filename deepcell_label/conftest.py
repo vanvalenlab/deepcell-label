@@ -2,13 +2,12 @@
 
 import os
 
-from flask_sqlalchemy import SQLAlchemy
 import numpy as np
 import pytest
+from flask_sqlalchemy import SQLAlchemy
 
 from deepcell_label import create_app  # pylint: disable=C0413
 from deepcell_label.loaders import Loader
-
 
 # flask-sqlalchemy fixtures from http://alexmic.net/flask-sqlalchemy-pytest/
 

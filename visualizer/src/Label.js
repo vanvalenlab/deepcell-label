@@ -18,7 +18,7 @@ import Timeline from './Controls/Tracking/Timeline';
 import Instructions from './Instructions/Instructions';
 import { useCanvas, useLabeled, useLabelMode } from './ProjectContext';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   main: {
     boxSizing: 'border-box',
     display: 'flex',
@@ -75,7 +75,7 @@ function Label({ review }) {
   const canvas = useCanvas();
   const labeled = useLabeled();
 
-  const value = useSelector(labelMode, state => {
+  const value = useSelector(labelMode, (state) => {
     return state.matches('segment') ? 0 : state.matches('track') ? 1 : false;
   });
 

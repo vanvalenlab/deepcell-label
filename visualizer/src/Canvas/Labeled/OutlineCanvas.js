@@ -9,28 +9,28 @@ const red = [255, 0, 0, 255];
 
 const OutlineCanvas = ({ className }) => {
   const canvas = useCanvas();
-  const sx = useSelector(canvas, state => state.context.sx);
-  const sy = useSelector(canvas, state => state.context.sy);
-  const zoom = useSelector(canvas, state => state.context.zoom);
-  const scale = useSelector(canvas, state => state.context.scale);
-  const sw = useSelector(canvas, state => state.context.width);
-  const sh = useSelector(canvas, state => state.context.height);
+  const sx = useSelector(canvas, (state) => state.context.sx);
+  const sy = useSelector(canvas, (state) => state.context.sy);
+  const zoom = useSelector(canvas, (state) => state.context.zoom);
+  const scale = useSelector(canvas, (state) => state.context.scale);
+  const sw = useSelector(canvas, (state) => state.context.width);
+  const sh = useSelector(canvas, (state) => state.context.height);
 
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
 
   const select = useSelect();
-  const foreground = useSelector(select, state => state.context.foreground);
-  const background = useSelector(select, state => state.context.background);
+  const foreground = useSelector(select, (state) => state.context.foreground);
+  const background = useSelector(select, (state) => state.context.background);
 
   const labeled = useLabeled();
-  const featureIndex = useSelector(labeled, state => state.context.feature);
-  const outline = useSelector(labeled, state => state.context.outline);
-  const invert = useSelector(labeled, state => state.context.invert);
-  const opacity = useSelector(labeled, state => state.context.opacity);
+  const featureIndex = useSelector(labeled, (state) => state.context.feature);
+  const outline = useSelector(labeled, (state) => state.context.outline);
+  const invert = useSelector(labeled, (state) => state.context.invert);
+  const opacity = useSelector(labeled, (state) => state.context.opacity);
 
   const feature = useFeature(featureIndex);
-  let labeledArray = useSelector(feature, state => state.context.labeledArray);
+  let labeledArray = useSelector(feature, (state) => state.context.labeledArray);
   if (!labeledArray) {
     labeledArray = Array(sh).fill(Array(sw).fill(0));
   }

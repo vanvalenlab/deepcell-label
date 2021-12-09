@@ -5,7 +5,7 @@ import { useSelector } from '@xstate/react';
 import React from 'react';
 import { useApi } from '../../ProjectContext';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   buttonProgress: {
     color: green[500],
     position: 'absolute',
@@ -19,7 +19,7 @@ const useStyles = makeStyles(theme => ({
 function SubmitButton() {
   const api = useApi();
   const { send } = api;
-  const uploading = useSelector(api, state => state.matches('uploading'));
+  const uploading = useSelector(api, (state) => state.matches('uploading'));
 
   const styles = useStyles();
 

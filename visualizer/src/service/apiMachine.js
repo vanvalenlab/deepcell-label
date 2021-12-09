@@ -50,8 +50,8 @@ function download(context, event) {
   const url = new URL(`${document.location.origin}/api/download`);
   url.search = new URLSearchParams({ id: projectId, format: format }).toString();
   const promise = fetch(url.toString());
-  promise.then(response => console.log(response));
-  const filename = promise.then(response => {
+  promise.then((response) => console.log(response));
+  const filename = promise.then((response) => {
     const regex = /filename=(.*)$/;
     const header = response.headers.get('content-disposition');
     let filename = header.match(regex)[1] ?? `${projectId}.npz`;
@@ -63,12 +63,14 @@ function download(context, event) {
     }
     return filename;
   });
-  const blobUrl = promise.then(response => response.blob()).then(blob => URL.createObjectURL(blob));
+  const blobUrl = promise
+    .then((response) => response.blob())
+    .then((blob) => URL.createObjectURL(blob));
   return Promise.all([filename, blobUrl]);
 }
 
 function checkResponseCode(response) {
-  return response.json().then(json => {
+  return response.json().then((json) => {
     return response.ok ? json : Promise.reject(json);
   });
 }

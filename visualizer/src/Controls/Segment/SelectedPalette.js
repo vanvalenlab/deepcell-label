@@ -22,7 +22,7 @@ function luminance(hex) {
   const [r, g, b] = hex
     .substr(1)
     .match(/(\S{2})/g)
-    .map(x => parseInt(x, 16));
+    .map((x) => parseInt(x, 16));
   const a = [r, g, b].map(function (v) {
     v /= 255;
     return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
@@ -39,7 +39,7 @@ function contrast(hex1, hex2) {
   return (brightest + 0.05) / (darkest + 0.05);
 }
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   title: {
     margin: theme.spacing(1),
   },
@@ -152,14 +152,14 @@ export function SwitchButton() {
 
 function HoveringBox() {
   const select = useSelect();
-  const hovering = useSelector(select, state => state.context.hovering);
+  const hovering = useSelector(select, (state) => state.context.hovering);
 
   const styles = useStyles();
 
   const labeled = useLabeled();
-  const featureIndex = useSelector(labeled, state => state.context.feature);
+  const featureIndex = useSelector(labeled, (state) => state.context.feature);
   const feature = useFeature(featureIndex);
-  const colors = useSelector(feature, state => state.context.colors);
+  const colors = useSelector(feature, (state) => state.context.colors);
   const color = colors[hovering] ?? '#000000';
 
   const buttonColor =
@@ -184,14 +184,14 @@ function HoveringBox() {
 function ForegroundBox() {
   const select = useSelect();
   const { send } = select;
-  const foreground = useSelector(select, state => state.context.foreground);
+  const foreground = useSelector(select, (state) => state.context.foreground);
 
   const styles = useStyles();
 
   const labeled = useLabeled();
-  const featureIndex = useSelector(labeled, state => state.context.feature);
+  const featureIndex = useSelector(labeled, (state) => state.context.feature);
   const feature = useFeature(featureIndex);
-  const colors = useSelector(feature, state => state.context.colors);
+  const colors = useSelector(feature, (state) => state.context.colors);
   const color = colors[foreground] ?? '#000000';
 
   useEffect(() => {
@@ -295,14 +295,14 @@ function ForegroundBox() {
 
 function BackgroundBox() {
   const select = useSelect();
-  const background = useSelector(select, state => state.context.background);
+  const background = useSelector(select, (state) => state.context.background);
 
   const styles = useStyles();
 
   const labeled = useLabeled();
-  const featureIndex = useSelector(labeled, state => state.context.feature);
+  const featureIndex = useSelector(labeled, (state) => state.context.feature);
   const feature = useFeature(featureIndex);
-  const colors = useSelector(feature, state => state.context.colors);
+  const colors = useSelector(feature, (state) => state.context.colors);
   const color = colors[background] ?? '#000000';
 
   useEffect(() => {

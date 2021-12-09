@@ -9,7 +9,7 @@ import { useLabeled } from '../../../ProjectContext';
 
 function OutlineToggle() {
   const labeled = useLabeled();
-  const outline = useSelector(labeled, state => state.context.outline);
+  const outline = useSelector(labeled, (state) => state.context.outline);
 
   // Adds mousetrap class so hotkeys work after using switch
   const inputRef = useRef();

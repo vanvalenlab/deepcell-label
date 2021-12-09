@@ -5,31 +5,31 @@ import { highlightImageData, opacityImageData } from '../canvasUtils';
 
 export const LabeledCanvas = ({ className }) => {
   const canvas = useCanvas();
-  const sx = useSelector(canvas, state => state.context.sx);
-  const sy = useSelector(canvas, state => state.context.sy);
-  const zoom = useSelector(canvas, state => state.context.zoom);
-  const scale = useSelector(canvas, state => state.context.scale);
-  const sw = useSelector(canvas, state => state.context.width);
-  const sh = useSelector(canvas, state => state.context.height);
+  const sx = useSelector(canvas, (state) => state.context.sx);
+  const sy = useSelector(canvas, (state) => state.context.sy);
+  const zoom = useSelector(canvas, (state) => state.context.zoom);
+  const scale = useSelector(canvas, (state) => state.context.scale);
+  const sw = useSelector(canvas, (state) => state.context.width);
+  const sh = useSelector(canvas, (state) => state.context.height);
 
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
 
   const labeled = useLabeled();
-  const featureIndex = useSelector(labeled, state => state.context.feature);
-  const highlight = useSelector(labeled, state => state.context.highlight);
-  const opacity = useSelector(labeled, state => state.context.opacity);
+  const featureIndex = useSelector(labeled, (state) => state.context.feature);
+  const highlight = useSelector(labeled, (state) => state.context.highlight);
+  const opacity = useSelector(labeled, (state) => state.context.opacity);
 
   const feature = useFeature(featureIndex);
-  const labeledImage = useSelector(feature, state => state.context.labeledImage);
-  let labeledArray = useSelector(feature, state => state.context.labeledArray);
+  const labeledImage = useSelector(feature, (state) => state.context.labeledImage);
+  let labeledArray = useSelector(feature, (state) => state.context.labeledArray);
   if (!labeledArray) {
     labeledArray = Array(sh).fill(Array(sw).fill(0));
   }
 
   const select = useSelect();
-  const foreground = useSelector(select, state => state.context.foreground);
-  const background = useSelector(select, state => state.context.background);
+  const foreground = useSelector(select, (state) => state.context.foreground);
+  const background = useSelector(select, (state) => state.context.background);
 
   const canvasRef = useRef();
   const ctx = useRef();
