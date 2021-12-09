@@ -18,8 +18,8 @@ jobs:
         run: |
           pip install pre-commit
           pre-commit run --all-files
-      - name: Commit and push changes
-        if: steps.git-check.outputs.modified == 'true'
+      - name: If needed, commit changes to the pull request
+        if: failure()
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'actions@users.noreply.github.com'
