@@ -1,7 +1,5 @@
 """Classes to view and edit DeepCell Label Projects"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 import io
 import json
@@ -10,14 +8,13 @@ import tarfile
 import tempfile
 
 import numpy as np
-from matplotlib.colors import Normalize
 import skimage
+from matplotlib.colors import Normalize
 from skimage import filters
-from skimage.morphology import flood_fill, flood
-from skimage.morphology import dilation, disk, square, erosion
 from skimage.exposure import rescale_intensity
 from skimage.measure import regionprops
-from skimage.segmentation import watershed, morphological_chan_vese
+from skimage.morphology import dilation, disk, erosion, flood, flood_fill, square
+from skimage.segmentation import morphological_chan_vese, watershed
 
 from deepcell_label.labelmaker import LabelInfoMaker
 
@@ -73,7 +70,7 @@ class BaseEdit(object):
                           e.g. "handle_draw" to call "action_handle_draw"
             info (dict): key value pairs with arguments for action
         """
-        attr_name = "action_{}".format(action)
+        attr_name = 'action_{}'.format(action)
         try:
             action_fn = getattr(self, attr_name)
             action_fn(**info)
@@ -81,10 +78,10 @@ class BaseEdit(object):
             raise ValueError('Invalid action "{}"'.format(action))
 
     def add_cell_info(self, add_label, frame):
-        raise NotImplementedError("add_cell_info is not implemented in BaseEdit")
+        raise NotImplementedError('add_cell_info is not implemented in BaseEdit')
 
     def del_cell_info(self, del_label, frame):
-        raise NotImplementedError("del_cell_info is not implemented in BaseEdit")
+        raise NotImplementedError('del_cell_info is not implemented in BaseEdit')
 
     def action_new_single_cell(self, label):
         """
@@ -366,7 +363,7 @@ class BaseEdit(object):
         # triangle threshold picked after trying a few on one dataset
         # may not be the best threshold approach for other datasets!
         # pick two thresholds to use hysteresis thresholding strategy
-        threshold = filters.threshold_triangle(image=predict_area.astype("float64"))
+        threshold = filters.threshold_triangle(image=predict_area.astype('float64'))
         threshold_stringent = 1.10 * threshold
 
         # try to keep stray pixels from appearing
@@ -396,13 +393,13 @@ class BaseEdit(object):
         props = regionprops(np.where(label_img == label, label, 0))[0]
 
         # make bounding box size to encompass some background
-        box_height = props["bbox"][2] - props["bbox"][0]
-        y1 = max(0, props["bbox"][0] - box_height // 2)
-        y2 = min(self.project.height, props["bbox"][2] + box_height // 2)
+        box_height = props['bbox'][2] - props['bbox'][0]
+        y1 = max(0, props['bbox'][0] - box_height // 2)
+        y2 = min(self.project.height, props['bbox'][2] + box_height // 2)
 
-        box_width = props["bbox"][3] - props["bbox"][1]
-        x1 = max(0, props["bbox"][1] - box_width // 2)
-        x2 = min(self.project.width, props["bbox"][3] + box_width // 2)
+        box_width = props['bbox'][3] - props['bbox'][1]
+        x1 = max(0, props['bbox'][1] - box_width // 2)
+        x2 = min(self.project.width, props['bbox'][3] + box_width // 2)
 
         # relevant region of label image to work on
         label_img = label_img[y1:y2, x1:x2]
@@ -440,13 +437,13 @@ class BaseEdit(object):
         full_frame[y1:y2, x1:x2] = safe_overlay
 
         # avoid automated label cleanup if centroid (flood seed point) is not the right label
-        if full_frame[int(props["centroid"][0]), int(props["centroid"][1])] != label:
+        if full_frame[int(props['centroid'][0]), int(props['centroid'][1])] != label:
             img_trimmed = full_frame
         else:
             # morphology and logic used by pixel-trimming action, with object centroid as seed
             contig_cell = flood(
                 image=full_frame,
-                seed_point=(int(props["centroid"][0]), int(props["centroid"][1])),
+                seed_point=(int(props['centroid'][0]), int(props['centroid'][1])),
             )
 
             # any pixels in img_ann that have value 'label' and are NOT connected to
@@ -592,16 +589,16 @@ class ZStackEdit(BaseEdit):
         add_label = int(add_label)
         # if cell already exists elsewhere in npz
         try:
-            old_frames = self.labels.cell_info[self.feature][add_label]["frames"]
+            old_frames = self.labels.cell_info[self.feature][add_label]['frames']
             new_frames = np.append(old_frames, frame)
             new_frames = np.unique(new_frames).tolist()
-            self.labels.cell_info[self.feature][add_label]["frames"] = new_frames
+            self.labels.cell_info[self.feature][add_label]['frames'] = new_frames
         # cell does not exist anywhere in npz
         except KeyError:
             self.labels.cell_info[self.feature][add_label] = {
-                "label": add_label,
-                "frames": [frame],
-                "slices": "",
+                'label': add_label,
+                'frames': [frame],
+                'slices': '',
             }
             self.labels.cell_ids[self.feature] = np.append(
                 self.labels.cell_ids[self.feature], add_label
@@ -613,14 +610,14 @@ class ZStackEdit(BaseEdit):
     def del_cell_info(self, del_label, frame):
         """Remove a cell from the npz"""
         # remove cell from frame
-        old_frames = self.labels.cell_info[self.feature][del_label]["frames"]
+        old_frames = self.labels.cell_info[self.feature][del_label]['frames']
         new_frames = np.delete(
             old_frames, np.where(old_frames == np.int64(frame))
         ).tolist()
-        self.labels.cell_info[self.feature][del_label]["frames"] = new_frames
+        self.labels.cell_info[self.feature][del_label]['frames'] = new_frames
 
         # if that was the last frame, delete the entry for that cell
-        if self.labels.cell_info[self.feature][del_label]["frames"] == []:
+        if self.labels.cell_info[self.feature][del_label]['frames'] == []:
             del self.labels.cell_info[self.feature][del_label]
 
             # also remove from list of cell_ids
@@ -658,7 +655,7 @@ class TrackEdit(BaseEdit):
         track = self.tracks[label]
 
         # Don't create a new track on the first frame of a track
-        if self.frame_id == track["frames"][0]:
+        if self.frame_id == track['frames'][0]:
             return
 
         # replace frame labels
@@ -670,28 +667,28 @@ class TrackEdit(BaseEdit):
         # replace fields
         track_new = self.tracks[new_label] = {}
 
-        idx = track["frames"].index(self.frame_id)
+        idx = track['frames'].index(self.frame_id)
 
-        frames_before = track["frames"][:idx]
-        frames_after = track["frames"][idx:]
+        frames_before = track['frames'][:idx]
+        frames_after = track['frames'][idx:]
 
-        track["frames"] = frames_before
-        track_new["frames"] = frames_after
-        track_new["label"] = new_label
+        track['frames'] = frames_before
+        track_new['frames'] = frames_after
+        track_new['label'] = new_label
 
         # only add daughters if they aren't in the same frame as the new track
-        track_new["daughters"] = []
-        for d in track["daughters"]:
-            if self.frame_id not in self.tracks[d]["frames"]:
-                track_new["daughters"].append(d)
+        track_new['daughters'] = []
+        for d in track['daughters']:
+            if self.frame_id not in self.tracks[d]['frames']:
+                track_new['daughters'].append(d)
 
-        track_new["frame_div"] = track["frame_div"]
-        track_new["capped"] = track["capped"]
-        track_new["parent"] = None
+        track_new['frame_div'] = track['frame_div']
+        track_new['capped'] = track['capped']
+        track_new['parent'] = None
 
-        track["daughters"] = []
-        track["frame_div"] = None
-        track["capped"] = True
+        track['daughters'] = []
+        track['frame_div'] = None
+        track['capped'] = True
 
         self.labels.cell_ids[0] = np.append(self.labels.cell_ids[0], new_label)
 
@@ -712,19 +709,19 @@ class TrackEdit(BaseEdit):
         track_1 = self.tracks[label_1]
         track_2 = self.tracks[label_2]
 
-        for d in track_1["daughters"]:
-            self.tracks[d]["parent"] = None
+        for d in track_1['daughters']:
+            self.tracks[d]['parent'] = None
 
-        track_1["frames"].extend(track_2["frames"])
-        track_1["frames"] = sorted(set(track_1["frames"]))
-        track_1["daughters"] = track_2["daughters"]
-        track_1["frame_div"] = track_2["frame_div"]
-        track_1["capped"] = track_2["capped"]
+        track_1['frames'].extend(track_2['frames'])
+        track_1['frames'] = sorted(set(track_1['frames']))
+        track_1['daughters'] = track_2['daughters']
+        track_1['frame_div'] = track_2['frame_div']
+        track_1['capped'] = track_2['capped']
 
         del self.tracks[label_2]
         for _, track in self.tracks.items():
             try:
-                track["daughters"].remove(label_2)
+                track['daughters'].remove(label_2)
             except ValueError:
                 pass
 
@@ -743,16 +740,16 @@ class TrackEdit(BaseEdit):
 
             # replace fields
             track_new = self.tracks[new_label] = self.tracks[old_label]
-            track_new["label"] = new_label
+            track_new['label'] = new_label
             del self.tracks[old_label]
 
-            for d in track_new["daughters"]:
-                self.tracks[d]["parent"] = new_label
+            for d in track_new['daughters']:
+                self.tracks[d]['parent'] = new_label
 
-            if track_new["parent"] is not None:
-                parent_track = self.tracks[track_new["parent"]]
-                parent_track["daughters"].remove(old_label)
-                parent_track["daughters"].append(new_label)
+            if track_new['parent'] is not None:
+                parent_track = self.tracks[track_new['parent']]
+                parent_track['daughters'].remove(old_label)
+                parent_track['daughters'].append(new_label)
 
         relabel(label_1, -1)
         relabel(label_2, label_1)
@@ -764,29 +761,29 @@ class TrackEdit(BaseEdit):
         # clear any empty tracks before saving file
         empty_tracks = []
         for key in self.tracks:
-            if not self.tracks[key]["frames"]:
-                empty_tracks.append(self.tracks[key]["label"])
+            if not self.tracks[key]['frames']:
+                empty_tracks.append(self.tracks[key]['label'])
         for track in empty_tracks:
             del self.tracks[track]
 
         # create file object in memory instead of writing to disk
         trk_file_obj = io.BytesIO()
 
-        with tarfile.open(fileobj=trk_file_obj, mode="w") as trks:
-            with tempfile.NamedTemporaryFile("w") as lineage_file:
+        with tarfile.open(fileobj=trk_file_obj, mode='w') as trks:
+            with tempfile.NamedTemporaryFile('w') as lineage_file:
                 json.dump(self.tracks, lineage_file, indent=1)
                 lineage_file.flush()
-                trks.add(lineage_file.name, "lineage.json")
+                trks.add(lineage_file.name, 'lineage.json')
 
             with tempfile.NamedTemporaryFile() as raw_file:
                 np.save(raw_file, self.project.raw_array)
                 raw_file.flush()
-                trks.add(raw_file.name, "raw.npy")
+                trks.add(raw_file.name, 'raw.npy')
 
             with tempfile.NamedTemporaryFile() as tracked_file:
                 np.save(tracked_file, self.project.label_array)
                 tracked_file.flush()
-                trks.add(tracked_file.name, "tracked.npy")
+                trks.add(tracked_file.name, 'tracked.npy')
         try:
             # go to beginning of file object
             trk_file_obj.seek(0)
@@ -794,7 +791,7 @@ class TrackEdit(BaseEdit):
             s3.upload_fileobj(trk_file_obj, bucket, self.project.path)
 
         except Exception as e:
-            print("Something Happened: ", e, file=sys.stderr)
+            print('Something Happened: ', e, file=sys.stderr)
             raise
 
     def add_cell_info(self, add_label, frame):
@@ -802,19 +799,19 @@ class TrackEdit(BaseEdit):
         # if cell already exists elsewhere in trk:
         add_label = int(add_label)
         try:
-            old_frames = self.tracks[add_label]["frames"]
+            old_frames = self.tracks[add_label]['frames']
             updated_frames = np.append(old_frames, frame)
             updated_frames = np.unique(updated_frames).tolist()
-            self.tracks[add_label]["frames"] = updated_frames
+            self.tracks[add_label]['frames'] = updated_frames
         # cell does not exist anywhere in trk:
         except KeyError:
             self.tracks[add_label] = {
-                "label": add_label,
-                "frames": [frame],
-                "daughters": [],
-                "frame_div": None,
-                "parent": None,
-                "capped": False,
+                'label': add_label,
+                'frames': [frame],
+                'daughters': [],
+                'frame_div': None,
+                'parent': None,
+                'capped': False,
             }
             ids = np.append(self.labels.cell_ids[self.feature], add_label)
             self.labels.cell_ids[self.feature] = ids
@@ -825,10 +822,10 @@ class TrackEdit(BaseEdit):
         """Remove a cell from the trk"""
         # remove cell from frame
         track = self.tracks[del_label]
-        track["frames"] = [i for i in track["frames"] if i != frame]
+        track['frames'] = [i for i in track['frames'] if i != frame]
 
         # if that was the last frame, delete the entry for that cell
-        if track["frames"] == []:
+        if track['frames'] == []:
             del self.tracks[del_label]
 
             # also remove from list of cell_ids
@@ -840,14 +837,14 @@ class TrackEdit(BaseEdit):
             # If deleting lineage data, remove parent/daughter entries
             for _, track in self.tracks.items():
                 try:
-                    track["daughters"].remove(del_label)
-                    if track["daughters"] == []:
-                        track["frame_div"] = None
-                        track["capped"] = False
+                    track['daughters'].remove(del_label)
+                    if track['daughters'] == []:
+                        track['frame_div'] = None
+                        track['capped'] = False
                 except ValueError:
                     pass
-                if track["parent"] == del_label:
-                    track["parent"] = None
+                if track['parent'] == del_label:
+                    track['parent'] = None
 
         self.y_changed = self.labels_changed = True
 

@@ -6,19 +6,19 @@ Loads or creates raw_array, label_array, cell_ids, and cell_info.
 import io
 import json
 import pathlib
-import tempfile
 import tarfile
+import tempfile
 import zipfile
 
-import requests
 import numpy as np
+import requests
 from PIL import Image
 from tifffile import TiffFile
 
 from deepcell_label.imgutils import reshape
 from deepcell_label.labelmaker import LabelInfoMaker
 
-DCL_AXES = "ZYXC"
+DCL_AXES = 'ZYXC'
 
 
 class Loader:
@@ -27,8 +27,8 @@ class Loader:
     """
 
     def __init__(self):
-        self.path = ""
-        self.labeled_path = ""
+        self.path = ''
+        self.labeled_path = ''
         self.raw_array = None
         self.label_array = None
         self.cell_info = None
@@ -65,7 +65,7 @@ class Loader:
             raw_array = load_zip(data)
         else:
             ext = pathlib.Path(self.path).suffix
-            raise InvalidExtension("invalid file extension: {}".format(ext))
+            raise InvalidExtension('invalid file extension: {}'.format(ext))
 
         # Reshape or create arrays
         raw_array = reshape(raw_array, self.input_axes, self.output_axes)
@@ -92,7 +92,7 @@ class Loader:
             raw_array = load_zip(data)
         else:
             ext = pathlib.Path(self.path).suffix
-            raise InvalidExtension("invalid file extension: {}".format(ext))
+            raise InvalidExtension('invalid file extension: {}'.format(ext))
 
         self.raw_array = reshape(raw_array, self.input_axes, self.output_axes)
 
@@ -111,9 +111,9 @@ class Loader:
             label_array = load_zip(data)
         else:
             ext = pathlib.Path(self.labeled_path).suffix
-            raise InvalidExtension("invalid file extension: {}".format(ext))
+            raise InvalidExtension('invalid file extension: {}'.format(ext))
 
-        self.label_array = reshape(label_array, "CZYX", self.output_axes)
+        self.label_array = reshape(label_array, 'CZYX', self.output_axes)
 
 
 class FileLoader(Loader):
@@ -123,12 +123,12 @@ class FileLoader(Loader):
 
     def __init__(self, request):
         super(FileLoader, self).__init__()
-        file_ = request.files.get("file")
-        self.input_axes = request.form["axes"] if "axes" in request.form else DCL_AXES
+        file_ = request.files.get('file')
+        self.input_axes = request.form['axes'] if 'axes' in request.form else DCL_AXES
         self.output_axes = DCL_AXES
         self.data = file_.stream.read()
         self.path = file_.filename
-        self.source = "dropped"
+        self.source = 'dropped'
         self.load()
 
     def load(self):
@@ -147,7 +147,7 @@ class FileLoader(Loader):
             self.cell_info = load_lineage_trk(self.data)
         else:
             ext = pathlib.Path(self.path).suffix
-            raise InvalidExtension("Invalid file extension: {}".format(ext))
+            raise InvalidExtension('Invalid file extension: {}'.format(ext))
 
         # Reshape or create arrays
         raw_array = reshape(raw_array, self.input_axes, self.output_axes)
@@ -171,12 +171,12 @@ class URLLoader(Loader):
 
     def __init__(self, url_form):
         super(URLLoader, self).__init__()
-        self.source = "s3"
-        self.path = url_form["url"]
+        self.source = 's3'
+        self.path = url_form['url']
         self.labeled_path = (
-            url_form["labeled_url"] if "labeled_url" in url_form else None
+            url_form['labeled_url'] if 'labeled_url' in url_form else None
         )
-        self.input_axes = url_form["axes"] if "axes" in url_form else DCL_AXES
+        self.input_axes = url_form['axes'] if 'axes' in url_form else DCL_AXES
         self.output_axes = DCL_AXES
 
         self.load()
@@ -198,23 +198,23 @@ class URLLoader(Loader):
 
 
 def is_npz(url):
-    return pathlib.Path(url).suffix in {".npz"}
+    return pathlib.Path(url).suffix in {'.npz'}
 
 
 def is_trk(url):
-    return pathlib.Path(url).suffix in {".trk", ".trks"}
+    return pathlib.Path(url).suffix in {'.trk', '.trks'}
 
 
 def is_png(url):
-    return pathlib.Path(url).suffix in {".png"}
+    return pathlib.Path(url).suffix in {'.png'}
 
 
 def is_tiff(url):
-    return pathlib.Path(url).suffix in {".tiff", ".tif"}
+    return pathlib.Path(url).suffix in {'.tiff', '.tif'}
 
 
 def is_zip(url):
-    return pathlib.Path(url).suffix in {".zip"}
+    return pathlib.Path(url).suffix in {'.zip'}
 
 
 def load_npz(data):
@@ -230,11 +230,11 @@ def load_raw_npz(data):
     npz = np.load(io.BytesIO(data))
 
     # standard names for image (X) and labeled (y)
-    if "X" in npz.files:
-        return npz["X"]
+    if 'X' in npz.files:
+        return npz['X']
     # alternate names 'raw' and 'annotated'
-    elif "raw" in npz.files:
-        return npz["raw"]
+    elif 'raw' in npz.files:
+        return npz['raw']
     # if filenames are different, try to load them anyways
     else:
         return npz[npz.files[0]]
@@ -248,10 +248,10 @@ def load_labeled_npz(data):
     npz = np.load(io.BytesIO(data))
 
     # Look for label filenames
-    if "y" in npz.files:
-        return npz["y"]
-    elif "annotated" in npz.files:
-        return npz["annotated"]
+    if 'y' in npz.files:
+        return npz['y']
+    elif 'annotated' in npz.files:
+        return npz['annotated']
     elif len(npz.files) > 1:
         return npz[npz.files[1]]
 
@@ -260,9 +260,9 @@ def load_raw_trk(data):
     """Load a raw image data from a .trk file."""
     with tempfile.NamedTemporaryFile() as temp:
         temp.write(data)
-        with tarfile.open(temp.name, "r") as trks:
+        with tarfile.open(temp.name, 'r') as trks:
             with io.BytesIO() as array_file:
-                array_file.write(trks.extractfile("raw.npy").read())
+                array_file.write(trks.extractfile('raw.npy').read())
                 array_file.seek(0)
                 return np.load(array_file)
 
@@ -271,9 +271,9 @@ def load_labeled_trk(data):
     """Load a labeled image data from a .trk file."""
     with tempfile.NamedTemporaryFile() as temp:
         temp.write(data)
-        with tarfile.open(temp.name, "r") as trks:
+        with tarfile.open(temp.name, 'r') as trks:
             with io.BytesIO() as array_file:
-                array_file.write(trks.extractfile("tracked.npy").read())
+                array_file.write(trks.extractfile('tracked.npy').read())
                 array_file.seek(0)
                 return np.load(array_file)
 
@@ -282,14 +282,14 @@ def load_lineage_trk(data):
     """Loads a lineage JSON from a .trk file."""
     with tempfile.NamedTemporaryFile() as temp:
         temp.write(data)
-        with tarfile.open(temp.name, "r") as trks:
+        with tarfile.open(temp.name, 'r') as trks:
             try:
-                trk_data = trks.getmember("lineages.json")
+                trk_data = trks.getmember('lineages.json')
             except KeyError:
                 try:
-                    trk_data = trks.getmember("lineage.json")
+                    trk_data = trks.getmember('lineage.json')
                 except KeyError:
-                    raise ValueError("Invalid .trk file, no lineage data found.")
+                    raise ValueError('Invalid .trk file, no lineage data found.')
 
             lineages = json.loads(trks.extractfile(trk_data).read().decode())
             lineages = lineages if isinstance(lineages, list) else [lineages]
@@ -300,21 +300,21 @@ def load_lineage_trk(data):
 
             # Track files have only one feature and one lineage
             if len(lineages) != 1:
-                raise ValueError("Input file has multiple trials/lineages.")
+                raise ValueError('Input file has multiple trials/lineages.')
             return {0: lineages[0]}
 
 
 def load_png(data):
     """Returns image array from a PNG file."""
-    image = Image.open(io.BytesIO(data), formats=["PNG"])
+    image = Image.open(io.BytesIO(data), formats=['PNG'])
     # Luminance should add channel dimension at end
-    if image.mode == "L":
+    if image.mode == 'L':
         array = np.array(image)
         array = np.expand_dims(array, -1)
     else:
         # Create three RGB channels
         # Handles RGB, RGBA, P modes
-        array = np.array(image.convert("RGB"))
+        array = np.array(image.convert('RGB'))
     # Add frame dimension at start
     array = np.expand_dims(array, 0)
     return array
@@ -331,11 +331,11 @@ def load_zip(data):
     Loads a series of image arrays from a zip of TIFFs.
     Treats separate TIFFs as channels.
     """
-    zip_file = zipfile.ZipFile(io.BytesIO(data), "r")
+    zip_file = zipfile.ZipFile(io.BytesIO(data), 'r')
     channels = [
         load_tiff(zip_file.open(item).read())
         for item in zip_file.filelist
-        if not str(item.filename).startswith("__MACOSX/")
+        if not str(item.filename).startswith('__MACOSX/')
         and is_tiff(str(item.filename))
     ]
     return np.array(channels)
@@ -353,5 +353,5 @@ class InvalidExtension(Exception):
 
     def to_dict(self):
         rv = dict(self.payload or ())
-        rv["error"] = self.message
+        rv['error'] = self.message
         return rv

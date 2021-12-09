@@ -1,10 +1,9 @@
 """Test for File classes"""
 
-import pytest
 import numpy as np
+import pytest
 
-from deepcell_label import label
-from deepcell_label import models
+from deepcell_label import label, models
 from deepcell_label.conftest import DummyLoader
 
 
@@ -54,7 +53,7 @@ class TestBaseEdit:
         edit.del_cell_info(cell, frame)
         assert cell in cell_ids[feature]
         assert cell in cell_info[feature]
-        assert frame not in cell_info[feature][frame]["frames"]
+        assert frame not in cell_info[feature][frame]['frames']
         assert edit.y_changed
         assert edit.labels_changed
 
@@ -220,7 +219,7 @@ class TestZStackEdit:
         # Add new label to first frame
         edit.add_cell_info(cell, frame)
         assert cell in cell_ids[feature]
-        assert cell_info[feature][cell] == {"label": 1, "frames": [frame], "slices": ""}
+        assert cell_info[feature][cell] == {'label': 1, 'frames': [frame], 'slices': ''}
         assert edit.y_changed
         assert edit.labels_changed
 
@@ -240,9 +239,9 @@ class TestZStackEdit:
             edit.add_cell_info(cell, frame)
             assert cell in cell_ids[feature]
             assert cell_info[feature][cell] == {
-                "label": 1,
-                "frames": list(range(frame + 1)),
-                "slices": "",
+                'label': 1,
+                'frames': list(range(frame + 1)),
+                'slices': '',
             }
             assert edit.y_changed
             assert edit.labels_changed
@@ -391,7 +390,7 @@ class TestZStackEdit:
 class TestTrackEdit:
     def test_track_add_cell_info(self):
         labels = np.zeros((1, 1, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, path="test.trk"))
+        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
         edit = label.TrackEdit(project)
         tracks = edit.tracks
 
@@ -401,12 +400,12 @@ class TestTrackEdit:
         # Add new label to first frame
         edit.add_cell_info(cell, frame)
         assert tracks[cell] == {
-            "label": 1,
-            "frames": [frame],
-            "daughters": [],
-            "frame_div": None,
-            "parent": None,
-            "capped": False,
+            'label': 1,
+            'frames': [frame],
+            'daughters': [],
+            'frame_div': None,
+            'parent': None,
+            'capped': False,
         }
         assert edit.y_changed
         assert edit.labels_changed
@@ -414,7 +413,7 @@ class TestTrackEdit:
     def test_add_cell_info_multiple_frames(self):
         num_frames = 5
         labels = np.zeros((num_frames, 1, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, path="test.trk"))
+        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
         edit = label.TrackEdit(project)
         tracks = edit.tracks
 
@@ -424,12 +423,12 @@ class TestTrackEdit:
         for frame in range(num_frames):
             edit.add_cell_info(cell, frame)
             assert tracks[cell] == {
-                "label": 1,
-                "frames": list(range(frame + 1)),
-                "daughters": [],
-                "frame_div": None,
-                "parent": None,
-                "capped": False,
+                'label': 1,
+                'frames': list(range(frame + 1)),
+                'daughters': [],
+                'frame_div': None,
+                'parent': None,
+                'capped': False,
             }
             assert edit.y_changed
             assert edit.labels_changed
@@ -438,7 +437,7 @@ class TestTrackEdit:
         """A new track on the first frame a label appears does nothing."""
         # two 1x1 frames with one feature; cell starts on second frame
         labels = np.reshape([0, 1], (2, 1, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, path="test.trk"))
+        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
         cell = 1
         frame = 1
         feature = 0
@@ -457,7 +456,7 @@ class TestTrackEdit:
         """Create a new track on the second frame of a label."""
         # two 1x1 frames with one feature; cell appears in both frames
         labels = np.reshape([1, 1], (2, 1, 1, 1))
-        project = models.Project.create(DummyLoader(labels=labels, path="test.trk"))
+        project = models.Project.create(DummyLoader(labels=labels, path='test.trk'))
         cell = 1
         frame = 1
         feature = 0
@@ -472,6 +471,6 @@ class TestTrackEdit:
             assert cell not in edit.frame[..., feature]
             assert expected_new_cell in edit.frame[..., feature]
             assert expected_new_cell in edit.labels.cell_ids[feature]
-            assert prev_track["frames"] == (
-                tracks[cell]["frames"] + tracks[expected_new_cell]["frames"]
+            assert prev_track['frames'] == (
+                tracks[cell]['frames'] + tracks[expected_new_cell]['frames']
             )

@@ -2,24 +2,23 @@
 
 import os
 
-from flask_sqlalchemy import SQLAlchemy
 import numpy as np
 import pytest
+from flask_sqlalchemy import SQLAlchemy
 
 from deepcell_label import create_app  # pylint: disable=C0413
 from deepcell_label.loaders import Loader
 
-
 # flask-sqlalchemy fixtures from http://alexmic.net/flask-sqlalchemy-pytest/
 
 
-TESTDB_PATH = "/tmp/test_project.db"
-TEST_DATABASE_URI = "sqlite:///{}".format(TESTDB_PATH)
+TESTDB_PATH = '/tmp/test_project.db'
+TEST_DATABASE_URI = 'sqlite:///{}'.format(TESTDB_PATH)
 
 
 # TODO: Could this become a fixture?
 class DummyLoader(Loader):
-    def __init__(self, raw=None, labels=None, cell_info=None, path="test.npz"):
+    def __init__(self, raw=None, labels=None, cell_info=None, path='test.npz'):
         super().__init__()
 
         if raw is None:
@@ -38,7 +37,7 @@ class DummyLoader(Loader):
             self.cell_info = cell_info
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='session')
 def app():
     """Session-wide test `Flask` application."""
 
@@ -53,7 +52,7 @@ def app():
     os.unlink(TESTDB_PATH)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='session')
 def _db(app):
     """
     Provide the transactional fixtures with access to the database via a Flask-SQLAlchemy

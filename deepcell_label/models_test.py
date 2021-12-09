@@ -6,8 +6,8 @@ import numpy as np
 import pytest
 
 from deepcell_label import models
-from deepcell_label.imgutils import grayscale_pngify, pngify
 from deepcell_label.conftest import DummyLoader
+from deepcell_label.imgutils import grayscale_pngify, pngify
 
 
 # Automatically enable transactions for all tests, without importing any extra fixtures.
@@ -37,12 +37,12 @@ def test_project_init():
 def test_is_track():
     project = models.Project(DummyLoader())
 
-    valid_trks = ["test.trk", "test.trks", "test.TrKs", "test.TRk"]
+    valid_trks = ['test.trk', 'test.trks', 'test.TrKs', 'test.TRk']
     for name in valid_trks:
         project.path = name
         assert project.is_track
 
-    invalid_trks = ["test.pdf", "test.npz", "a string"]
+    invalid_trks = ['test.pdf', 'test.npz', 'a string']
     for name in invalid_trks:
         project.path = name
         assert not project.is_track
@@ -51,12 +51,12 @@ def test_is_track():
 def test_is_zstack():
     project = models.Project(DummyLoader())
 
-    valid_zstacks = ["test.npz", "test.NpZ", "test.png", "test.tif", "test.tiff"]
+    valid_zstacks = ['test.npz', 'test.NpZ', 'test.png', 'test.tif', 'test.tiff']
     for name in valid_zstacks:
         project.path = name
         assert project.is_zstack
 
-    invalid_zstacks = ["test.pdf", "test.trk", "test.trks", "a string"]
+    invalid_zstacks = ['test.pdf', 'test.trk', 'test.trks', 'a string']
     for name in invalid_zstacks:
         project.path = name
         assert not project.is_zstack
@@ -128,7 +128,7 @@ def test_create_memento_no_changes(db_session):
     prev_action = project.action
     num_actions = project.num_actions
 
-    project.create_memento(action_name="test")
+    project.create_memento(action_name='test')
     db_session.commit()
 
     assert prev_action is not project.action
@@ -153,7 +153,7 @@ def test_create_memento_frame_changed(db_session):
     changed_frame = project.label_frames[0]
     new_frame = changed_frame.frame + 1
     project.label_frames[0].frame = new_frame
-    project.create_memento(action_name="test")
+    project.create_memento(action_name='test')
     project.update()
 
     assert prev_action is not project.action
@@ -199,7 +199,7 @@ def test_undo_first_action():
     # Mock an action and undo
     for frame in project.label_frames:
         frame.frame[:] = -1
-    project.create_memento(action_name="first_action")
+    project.create_memento(action_name='first_action')
     project.update()
     # Save current action before undoing
     action = project.action
@@ -218,7 +218,7 @@ def test_redo_last_action():
     # Mock an action, undo, and redo
     for frame in project.label_frames:
         frame.frame[:] = -1
-    project.create_memento("last_action")
+    project.create_memento('last_action')
     project.update()
     # Save action before undoing
     action = project.action
@@ -243,12 +243,12 @@ def test_undo_frame_not_changed_in_previous_action():
 
     # Mock action on first frame
     project.label_frames[0].frame[:] = 1
-    project.create_memento("first_frame_only")
+    project.create_memento('first_frame_only')
     project.update()
     # Mock action on both frames
     for frame in project.label_frames:
         frame.frame[:] = 2
-    project.create_memento("both_frames")
+    project.create_memento('both_frames')
     project.update()
     # Undo second action
     project.undo()
@@ -268,11 +268,11 @@ def test_redo_frame_not_changed_in_next_action():
     # Mock action on both frame
     for frame in project.label_frames:
         frame.frame[:] = 1
-    project.create_memento("both_frames")
+    project.create_memento('both_frames')
     project.update()
     # Mock action on first frame
     project.label_frames[0].frame[:] = 2
-    project.create_memento("first_frame_only")
+    project.create_memento('first_frame_only')
     project.update()
     # Undo both action
     project.undo()

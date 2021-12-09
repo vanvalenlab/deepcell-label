@@ -35,19 +35,19 @@ DeepCell coding style.
 
 #### General guidelines and philosophy for contribution
 
-*   Include unit tests when you contribute new features, as they help to a)
-    prove that your code works correctly, and b) guard against future breaking
-    changes to lower the maintenance cost.
-*   Bug fixes also generally require unit tests, because the presence of bugs
-    usually indicates insufficient test coverage.
-*   When you contribute a new feature to DeepCell Label, the maintenance burden is
-    (by default) transferred to the DeepCell Label team. This means that the benefit
-    of the contribution must be compared against the cost of maintaining the
-    feature.
-*   As every PR requires CI/CD testing, we discourage
-    submitting PRs to fix one typo, one warning,etc. We recommend fixing the
-    same issue at the file level at least (e.g.: fix all typos in a file, fix
-    all compiler warning in a file, etc.)
+- Include unit tests when you contribute new features, as they help to a)
+  prove that your code works correctly, and b) guard against future breaking
+  changes to lower the maintenance cost.
+- Bug fixes also generally require unit tests, because the presence of bugs
+  usually indicates insufficient test coverage.
+- When you contribute a new feature to DeepCell Label, the maintenance burden is
+  (by default) transferred to the DeepCell Label team. This means that the benefit
+  of the contribution must be compared against the cost of maintaining the
+  feature.
+- As every PR requires CI/CD testing, we discourage
+  submitting PRs to fix one typo, one warning,etc. We recommend fixing the
+  same issue at the file level at least (e.g.: fix all typos in a file, fix
+  all compiler warning in a file, etc.)
 
 #### Python coding style
 

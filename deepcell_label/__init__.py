@@ -1,18 +1,15 @@
 """Flask application entrypoint"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
-from flask import Flask
-from flask_cors import CORS
-from flask_compress import Compress
-from flask_dropzone import Dropzone
 import flask_monitoringdashboard as dashboard
+from flask import Flask
+from flask_compress import Compress
+from flask_cors import CORS
+from flask_dropzone import Dropzone
 
 from deepcell_label import config
 from deepcell_label.blueprints import bp
 from deepcell_label.models import db
-
 
 compress = Compress()  # pylint: disable=C0103
 dropzone = Dropzone()  # pylint: disable=C0103
@@ -28,9 +25,9 @@ class ReverseProxied(object):
         self.app = app
 
     def __call__(self, environ, start_response):
-        scheme = environ.get("HTTP_X_FORWARDED_PROTO")
+        scheme = environ.get('HTTP_X_FORWARDED_PROTO')
         if scheme:
-            environ["wsgi.url_scheme"] = scheme
+            environ['wsgi.url_scheme'] = scheme
         return self.app(environ, start_response)
 
 
@@ -66,8 +63,8 @@ def create_app(**config_overrides):
             """Apply custom grouping for action endpoint"""
             from flask import request
 
-            if request.endpoint == "label.action":
-                return request.view_args["action_type"]
+            if request.endpoint == 'label.action':
+                return request.view_args['action_type']
 
         dashboard.config.group_by = group_action
         dashboard.bind(app)
