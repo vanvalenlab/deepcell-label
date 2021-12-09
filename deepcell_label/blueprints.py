@@ -3,9 +3,9 @@ from __future__ import absolute_import, division, print_function
 
 import gzip
 import json
+import subprocess
 import timeit
 import traceback
-import subprocess
 
 import matplotlib
 import numpy as np
@@ -35,8 +35,7 @@ def health():
 
 def get_git_commit() -> str:
     return (
-        subprocess
-        .check_output(['git', 'show', '-s', '--oneline', 'HEAD'])
+        subprocess.check_output(['git', 'show', '-s', '--oneline', 'HEAD'])
         .decode('ascii')
         .strip()
     )
@@ -44,8 +43,7 @@ def get_git_commit() -> str:
 
 def get_git_branch() -> str:
     return (
-        subprocess
-        .check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
+        subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
         .decode('ascii')
         .strip()
     )
@@ -54,10 +52,12 @@ def get_git_branch() -> str:
 @bp.route('/api/version')
 def version():
     """Returns the git hash and branch name of the current version."""
-    return jsonify({
-        'git_commit': get_git_commit(),
-        'git_branch': get_git_branch(),
-    })
+    return jsonify(
+        {
+            'git_commit': get_git_commit(),
+            'git_branch': get_git_branch(),
+        }
+    )
 
 
 @bp.errorhandler(loaders.InvalidExtension)
