@@ -2,13 +2,11 @@
 
 import io
 
-from deepcell_label import models
-from deepcell_label import exporters
+from deepcell_label import exporters, models
 from deepcell_label.conftest import DummyLoader
 
 
-class TestExporter():
-
+class TestExporter:
     def test_export_npz(self, app, db_session):
         with app.app_context():
             db_session.autoflush = False
@@ -26,8 +24,7 @@ class TestExporter():
             assert isinstance(file_, io.BytesIO)
 
 
-class TestS3Exporter():
-
+class TestS3Exporter:
     def test_export(self, mocker, app, db_session):
         with app.app_context():
             mocked = mocker.patch('boto3.s3.inject.upload_fileobj')

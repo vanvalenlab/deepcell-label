@@ -126,7 +126,7 @@ def test_load_raw_png():
     expected = np.zeros((1, 1, 1, 1))
     raw = io.BytesIO()
     img = Image.fromarray(np.zeros((1, 1)), mode='L')
-    img.save(raw, format="png")
+    img.save(raw, format='png')
     raw.seek(0)
     url = 'http://example.com/mocked/raw.png'
     responses.add(responses.GET, url, body=io.BufferedReader(raw))

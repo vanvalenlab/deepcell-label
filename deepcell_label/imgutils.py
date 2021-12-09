@@ -2,11 +2,10 @@
 import io
 
 import matplotlib.pyplot as plt
-from matplotlib.colors import Normalize
-from skimage.segmentation import find_boundaries
 import numpy as np
-
+from matplotlib.colors import Normalize
 from PIL import Image
+from skimage.segmentation import find_boundaries
 
 
 def pngify(imgarr, vmin, vmax, cmap=None):
@@ -19,7 +18,7 @@ def pngify(imgarr, vmin, vmax, cmap=None):
         imgarr = cmap(imgarr, bytes=True)
 
     img = Image.fromarray(imgarr)
-    img.save(out, format="png")
+    img.save(out, format='png')
     out.seek(0)
     return out
 
@@ -30,7 +29,7 @@ def grayscale_pngify(imgarr):
     imgarr = np.clip(imgarr, 0, 1)
     imgarr = (imgarr * 255).astype('uint8')
     img = Image.fromarray(imgarr)
-    img.save(out, format="png")
+    img.save(out, format='png')
     out.seek(0)
     return out
 
@@ -68,10 +67,12 @@ def reshape(array, input_axes, output_axes):
         ndarray: reshaped array
     """
     if array.ndim != len(input_axes):
-        print(f'input axis order {input_axes} '
-              f'has more dimensions than array with shape {array.shape}')
+        print(
+            f'input axis order {input_axes} '
+            f'has more dimensions than array with shape {array.shape}'
+        )
         print(f'truncating input axis order {input_axes} to {input_axes[:array.ndim]}')
-        input_axes = input_axes[:array.ndim]
+        input_axes = input_axes[: array.ndim]
     dropped, input_axes = drop_axes(array, input_axes, output_axes)
     expanded, input_axes = expand_axes(dropped, input_axes, output_axes)
     permuted = permute_axes(expanded, input_axes, output_axes)
@@ -93,8 +94,9 @@ def drop_axes(array, input_axes, output_axes):
         ndarray: expanded array
         string: input_axes with axes not in output_axes removed
     """
-    extra_axes = tuple(slice(None) if axis in output_axes else 0 for i,
-                       axis in enumerate(input_axes))
+    extra_axes = tuple(
+        slice(None) if axis in output_axes else 0 for i, axis in enumerate(input_axes)
+    )
     axes = ''.join(char for char in input_axes if char in output_axes)
     return array[extra_axes], axes
 
@@ -112,7 +114,9 @@ def expand_axes(array, input_axes, output_axes):
         ndarray: expanded array
         axes: inpit axis order with missing dimensions inserted
     """
-    missing_axes = tuple(i for i, axis in enumerate(output_axes) if axis not in input_axes)
+    missing_axes = tuple(
+        i for i, axis in enumerate(output_axes) if axis not in input_axes
+    )
     axes = input_axes
     for i in missing_axes:
         axes = axes[:i] + output_axes[i] + axes[i:]

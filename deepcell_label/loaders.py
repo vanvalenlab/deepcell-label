@@ -6,12 +6,12 @@ Loads or creates raw_array, label_array, cell_ids, and cell_info.
 import io
 import json
 import pathlib
-import tempfile
 import tarfile
+import tempfile
 import zipfile
 
-import requests
 import numpy as np
+import requests
 from PIL import Image
 from tifffile import TiffFile
 
@@ -21,7 +21,7 @@ from deepcell_label.labelmaker import LabelInfoMaker
 DCL_AXES = 'ZYXC'
 
 
-class Loader():
+class Loader:
     """
     Interface for loading files into DeepCell Label.
     """
@@ -173,7 +173,9 @@ class URLLoader(Loader):
         super(URLLoader, self).__init__()
         self.source = 's3'
         self.path = url_form['url']
-        self.labeled_path = url_form['labeled_url'] if 'labeled_url' in url_form else None
+        self.labeled_path = (
+            url_form['labeled_url'] if 'labeled_url' in url_form else None
+        )
         self.input_axes = url_form['axes'] if 'axes' in url_form else DCL_AXES
         self.output_axes = DCL_AXES
 
@@ -333,7 +335,8 @@ def load_zip(data):
     channels = [
         load_tiff(zip_file.open(item).read())
         for item in zip_file.filelist
-        if not str(item.filename).startswith('__MACOSX/') and is_tiff(str(item.filename))
+        if not str(item.filename).startswith('__MACOSX/')
+        and is_tiff(str(item.filename))
     ]
     return np.array(channels)
 
