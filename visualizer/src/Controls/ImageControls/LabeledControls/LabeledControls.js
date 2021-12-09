@@ -8,7 +8,7 @@ import HighlightToggle from './HighlightToggle';
 import OpacitySlider from './OpacitySlider';
 import OutlineToggle from './OutlineToggle';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   title: {
     paddingTop: theme.spacing(1),
     paddingBottom: theme.spacing(1),

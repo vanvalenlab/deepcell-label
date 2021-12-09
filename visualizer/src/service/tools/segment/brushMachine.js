@@ -44,12 +44,12 @@ const brushMachine = Machine(
   },
   {
     services: {
-      listenForBrushHotkeys: () => send => {
+      listenForBrushHotkeys: () => (send) => {
         const lookup = {
           ArrowUp: 'INCREASE_BRUSH_SIZE',
           ArrowDown: 'DECREASE_BRUSH_SIZE',
         };
-        const listener = e => {
+        const listener = (e) => {
           if (e.key in lookup) {
             e.preventDefault();
             send(lookup[e.key]);
@@ -69,7 +69,7 @@ const brushMachine = Machine(
         brushSize: ({ brushSize }) => Math.max(1, brushSize - 1),
       }),
       addToTrace: assign({ trace: ({ trace, x, y }) => [...trace, [x, y]] }),
-      paint: sendParent(context => ({
+      paint: sendParent((context) => ({
         type: 'EDIT',
         action: 'handle_draw',
         args: {

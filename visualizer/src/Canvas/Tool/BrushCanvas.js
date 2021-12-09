@@ -5,26 +5,26 @@ import { drawBrush, drawTrace } from '../canvasUtils';
 
 const BrushCanvas = ({ className }) => {
   const canvas = useCanvas();
-  const sx = useSelector(canvas, state => state.context.sx);
-  const sy = useSelector(canvas, state => state.context.sy);
-  const zoom = useSelector(canvas, state => state.context.zoom);
-  const scale = useSelector(canvas, state => state.context.scale);
-  const sw = useSelector(canvas, state => state.context.width);
-  const sh = useSelector(canvas, state => state.context.height);
+  const sx = useSelector(canvas, (state) => state.context.sx);
+  const sy = useSelector(canvas, (state) => state.context.sy);
+  const zoom = useSelector(canvas, (state) => state.context.zoom);
+  const scale = useSelector(canvas, (state) => state.context.scale);
+  const sw = useSelector(canvas, (state) => state.context.width);
+  const sh = useSelector(canvas, (state) => state.context.height);
 
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
 
   const select = useSelect();
-  const background = useSelector(select, state => state.context.background);
+  const background = useSelector(select, (state) => state.context.background);
   const erasing = background !== 0;
   const brushColor = useMemo(() => (erasing ? [255, 0, 0, 255] : [255, 255, 255, 255]), [erasing]);
 
   const brush = useBrush();
-  const x = useSelector(brush, state => state.context.x);
-  const y = useSelector(brush, state => state.context.y);
-  const trace = useSelector(brush, state => state.context.trace);
-  const brushSize = useSelector(brush, state => state.context.brushSize);
+  const x = useSelector(brush, (state) => state.context.x);
+  const y = useSelector(brush, (state) => state.context.y);
+  const trace = useSelector(brush, (state) => state.context.trace);
+  const brushSize = useSelector(brush, (state) => state.context.brushSize);
 
   const canvasRef = useRef();
   const ctx = useRef();

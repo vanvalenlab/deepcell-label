@@ -40,8 +40,8 @@ const ButtonWithTooltip = ({ tooltipText, disabled, onClick, ...other }) => {
 
 export default function UndoRedo() {
   const undo = useUndo();
-  const action = useSelector(undo, state => state.context.action);
-  const numActions = useSelector(undo, state => state.context.numActions);
+  const action = useSelector(undo, (state) => state.context.action);
+  const numActions = useSelector(undo, (state) => state.context.numActions);
   const cannotUndo = action === 0;
   const cannotRedo = action === numActions;
 

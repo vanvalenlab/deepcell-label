@@ -165,7 +165,7 @@ const segmentMachine = Machine(
       save: respond(({ tool }) => ({ type: 'RESTORE', tool })),
       restore: assign((_, { tool }) => ({ tool })),
       spawnTools: assign({
-        tools: context => ({
+        tools: (context) => ({
           brush: spawn(brushMachine, 'brush'),
           select: spawn(selectMachine, 'select'),
           threshold: spawn(thresholdMachine, 'threshold'),
@@ -175,7 +175,7 @@ const segmentMachine = Machine(
         }),
       }),
       forwardToTool: forwardTo(({ tool }) => tool),
-      forwardToTools: pure(({ tools }) => Object.values(tools).map(tool => forwardTo(tool))),
+      forwardToTools: pure(({ tools }) => Object.values(tools).map((tool) => forwardTo(tool))),
     },
   }
 );

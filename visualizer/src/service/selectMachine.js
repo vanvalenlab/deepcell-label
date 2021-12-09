@@ -5,7 +5,7 @@ const { pure } = actions;
 
 function prevLabel(label, labels) {
   const allLabels = Object.keys(labels).map(Number);
-  const smallerLabels = allLabels.filter(val => val < label);
+  const smallerLabels = allLabels.filter((val) => val < label);
   const prevLabel = Math.max(...smallerLabels);
   if (prevLabel === -Infinity) {
     return Math.max(...allLabels);
@@ -17,7 +17,7 @@ function nextLabel(label, labels) {
   const allLabels = Object.keys(labels).map(Number);
   const largerLabels = Object.keys(labels)
     .map(Number)
-    .filter(val => val > label);
+    .filter((val) => val > label);
   const nextLabel = Math.min(...largerLabels);
   if (nextLabel === Infinity) {
     return Math.min(...allLabels);

@@ -11,7 +11,7 @@ import ThresholdButton from './ToolButtons/ThresholdButton';
 import TrimButton from './ToolButtons/TrimButton';
 import WatershedButton from './ToolButtons/WatershedButton';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   title: {
     margin: theme.spacing(1),
   },

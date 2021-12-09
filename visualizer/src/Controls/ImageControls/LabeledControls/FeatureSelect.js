@@ -8,11 +8,11 @@ import { useLabeled } from '../../../ProjectContext';
 
 function FeatureSelect() {
   const labeled = useLabeled();
-  const feature = useSelector(labeled, state => state.context.feature);
-  const numFeatures = useSelector(labeled, state => state.context.numFeatures);
-  const featureNames = useSelector(labeled, state => state.context.featureNames);
+  const feature = useSelector(labeled, (state) => state.context.feature);
+  const numFeatures = useSelector(labeled, (state) => state.context.numFeatures);
+  const featureNames = useSelector(labeled, (state) => state.context.featureNames);
 
-  const handleFeatureChange = event => {
+  const handleFeatureChange = (event) => {
     labeled.send({ type: 'LOAD_FEATURE', feature: Number(event.target.value) });
   };
 

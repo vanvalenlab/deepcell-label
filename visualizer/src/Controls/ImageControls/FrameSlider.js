@@ -4,7 +4,7 @@ import { bind } from 'mousetrap';
 import React, { useEffect, useState } from 'react';
 import { useImage } from '../../ProjectContext';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   title: {
     paddingTop: theme.spacing(1),
     paddingBottom: theme.spacing(1),
@@ -13,8 +13,8 @@ const useStyles = makeStyles(theme => ({
 
 function FrameSlider() {
   const image = useImage();
-  const frame = useSelector(image, state => state.context.frame);
-  const numFrames = useSelector(image, state => state.context.numFrames);
+  const frame = useSelector(image, (state) => state.context.frame);
+  const numFrames = useSelector(image, (state) => state.context.numFrames);
 
   useEffect(() => {
     const prevFrame = (frame - 1 + numFrames) % numFrames;

@@ -9,7 +9,7 @@ import { useRaw } from '../../../ProjectContext';
 
 function ColorModeToggle() {
   const raw = useRaw();
-  const grayscale = useSelector(raw, state => state.context.isGrayscale);
+  const grayscale = useSelector(raw, (state) => state.context.isGrayscale);
 
   // Adds mousetrap class so hotkeys work after using switch
   const inputRef = useRef();

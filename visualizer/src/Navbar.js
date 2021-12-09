@@ -9,7 +9,7 @@ import MoreIcon from '@material-ui/icons/MoreVert';
 import React, { useState } from 'react';
 import { FaGithub } from 'react-icons/fa';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {},
   grow: {
     flexGrow: 1,
@@ -69,11 +69,7 @@ export default function NavBar() {
     <div className={classes.root}>
       <AppBar position='static'>
         <Toolbar>
-          <Typography
-            variant='subtitle1'
-            color='inherit'
-            className={classes.grow}
-          >
+          <Typography variant='subtitle1' color='inherit' className={classes.grow}>
             <IconButton color='inherit' href='/'>
               DeepCell Label
             </IconButton>
@@ -101,7 +97,7 @@ export default function NavBar() {
             <IconButton
               aria-haspopup='true'
               color='inherit'
-              onClick={e => setMobileMoreAnchorEl(e.currentTarget)}
+              onClick={(e) => setMobileMoreAnchorEl(e.currentTarget)}
             >
               <MoreIcon />
             </IconButton>

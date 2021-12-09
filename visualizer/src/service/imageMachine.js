@@ -108,7 +108,7 @@ const createImageMachine = ({ projectId }) =>
           labeledRef: ({ projectId, numFeatures, numFrames }) =>
             spawn(createLabeledMachine(projectId, numFeatures, numFrames), 'labeled'),
         }),
-        addActorsToUndo: pure(context => {
+        addActorsToUndo: pure((context) => {
           const { rawRef, labeledRef } = context;
           return [
             sendParent({ type: 'ADD_ACTOR', actor: labeledRef }),

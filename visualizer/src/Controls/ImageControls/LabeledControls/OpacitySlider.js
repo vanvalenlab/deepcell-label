@@ -8,7 +8,7 @@ import { bind } from 'mousetrap';
 import React, { useEffect } from 'react';
 import { useLabeled } from '../../../ProjectContext';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   opacity: {
     display: 'flex',
     flexDirection: 'row',
@@ -20,12 +20,12 @@ const useStyles = makeStyles(theme => ({
 
 function OpacitySlider() {
   const labeled = useLabeled();
-  const opacity = useSelector(labeled, state => state.context.opacity);
+  const opacity = useSelector(labeled, (state) => state.context.opacity);
 
   const handleOpacityChange = (event, newValue) =>
     labeled.send({ type: 'SET_OPACITY', opacity: Number(newValue) });
 
-  const handleDoubleClick = event => labeled.send({ type: 'SET_OPACITY', opacity: 0.3 });
+  const handleDoubleClick = (event) => labeled.send({ type: 'SET_OPACITY', opacity: 0.3 });
 
   const styles = useStyles();
 

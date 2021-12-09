@@ -5,21 +5,21 @@ import { drawBox } from '../canvasUtils';
 
 const ThresholdCanvas = ({ className }) => {
   const canvas = useCanvas();
-  const sx = useSelector(canvas, state => state.context.sx);
-  const sy = useSelector(canvas, state => state.context.sy);
-  const zoom = useSelector(canvas, state => state.context.zoom);
-  const scale = useSelector(canvas, state => state.context.scale);
-  const sw = useSelector(canvas, state => state.context.width);
-  const sh = useSelector(canvas, state => state.context.height);
+  const sx = useSelector(canvas, (state) => state.context.sx);
+  const sy = useSelector(canvas, (state) => state.context.sy);
+  const zoom = useSelector(canvas, (state) => state.context.zoom);
+  const scale = useSelector(canvas, (state) => state.context.scale);
+  const sw = useSelector(canvas, (state) => state.context.width);
+  const sh = useSelector(canvas, (state) => state.context.height);
 
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
 
   const threshold = useThreshold();
-  const x1 = useSelector(threshold, state => state.context.x);
-  const y1 = useSelector(threshold, state => state.context.y);
-  const [x2, y2] = useSelector(threshold, state => state.context.firstPoint);
-  const show = useSelector(threshold, state => state.matches('dragging'));
+  const x1 = useSelector(threshold, (state) => state.context.x);
+  const y1 = useSelector(threshold, (state) => state.context.y);
+  const [x2, y2] = useSelector(threshold, (state) => state.context.firstPoint);
+  const show = useSelector(threshold, (state) => state.matches('dragging'));
 
   const canvasRef = useRef();
   const ctxRef = useRef();

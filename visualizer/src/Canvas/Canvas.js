@@ -30,21 +30,23 @@ export const Canvas = () => {
   const select = useSelect();
 
   const canvas = useCanvas();
-  const sx = useSelector(canvas, state => state.context.sx);
-  const sy = useSelector(canvas, state => state.context.sy);
-  const zoom = useSelector(canvas, state => state.context.zoom);
-  const sw = useSelector(canvas, state => state.context.width);
-  const sh = useSelector(canvas, state => state.context.height);
-  const scale = useSelector(canvas, state => state.context.scale);
+  const sx = useSelector(canvas, (state) => state.context.sx);
+  const sy = useSelector(canvas, (state) => state.context.sy);
+  const zoom = useSelector(canvas, (state) => state.context.zoom);
+  const sw = useSelector(canvas, (state) => state.context.width);
+  const sh = useSelector(canvas, (state) => state.context.height);
+  const scale = useSelector(canvas, (state) => state.context.scale);
 
-  const grab = useSelector(canvas, state => state.matches('pan.grab'));
-  const grabbing = useSelector(canvas, state => state.matches('pan.grab.panning'));
-  const dragged = useSelector(canvas, state => state.matches('pan.interactive.panOnDrag.dragged'));
+  const grab = useSelector(canvas, (state) => state.matches('pan.grab'));
+  const grabbing = useSelector(canvas, (state) => state.matches('pan.grab.panning'));
+  const dragged = useSelector(canvas, (state) =>
+    state.matches('pan.interactive.panOnDrag.dragged')
+  );
 
   const cursor = grabbing || dragged ? 'grabbing' : grab ? 'grab' : 'crosshair';
 
   const segment = useSegment();
-  const tool = useSelector(segment, state => state.context.tool);
+  const tool = useSelector(segment, (state) => state.context.tool);
 
   const styles = useStyles();
 
@@ -65,8 +67,8 @@ export const Canvas = () => {
   // prevent scrolling page when over canvas
   useEffect(() => {
     const canvasBox = document.getElementById('canvasBox');
-    const wheelListener = e => e.preventDefault();
-    const spaceListener = e => {
+    const wheelListener = (e) => e.preventDefault();
+    const spaceListener = (e) => {
       if (e.key === ' ') {
         e.preventDefault();
       }
@@ -79,7 +81,7 @@ export const Canvas = () => {
     };
   }, []);
 
-  const handleMouseDown = event => {
+  const handleMouseDown = (event) => {
     event.preventDefault();
     if (event.shiftKey) {
       select.send({ ...event, type: 'SHIFT_CLICK' });

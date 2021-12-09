@@ -10,26 +10,26 @@ import {
 
 export const GrayscaleCanvas = ({ className }) => {
   const canvas = useCanvas();
-  const sx = useSelector(canvas, state => state.context.sx);
-  const sy = useSelector(canvas, state => state.context.sy);
-  const zoom = useSelector(canvas, state => state.context.zoom);
-  const scale = useSelector(canvas, state => state.context.scale);
-  const sw = useSelector(canvas, state => state.context.width);
-  const sh = useSelector(canvas, state => state.context.height);
+  const sx = useSelector(canvas, (state) => state.context.sx);
+  const sy = useSelector(canvas, (state) => state.context.sy);
+  const zoom = useSelector(canvas, (state) => state.context.zoom);
+  const scale = useSelector(canvas, (state) => state.context.scale);
+  const sw = useSelector(canvas, (state) => state.context.width);
+  const sh = useSelector(canvas, (state) => state.context.height);
 
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
 
   const raw = useRaw();
-  const grayscaleMode = useSelector(raw, state => state.context.grayscaleMode);
-  const channelIndex = useSelector(grayscaleMode, state => state.context.channel);
+  const grayscaleMode = useSelector(raw, (state) => state.context.grayscaleMode);
+  const channelIndex = useSelector(grayscaleMode, (state) => state.context.channel);
   const channel = useChannel(channelIndex);
 
-  const invert = useSelector(channel, state => state.context.invert);
-  const [min, max] = useSelector(channel, state => state.context.range);
-  const brightness = useSelector(channel, state => state.context.brightness);
-  const contrast = useSelector(channel, state => state.context.contrast);
-  const rawImage = useSelector(channel, state => state.context.rawImage);
+  const invert = useSelector(channel, (state) => state.context.invert);
+  const [min, max] = useSelector(channel, (state) => state.context.range);
+  const brightness = useSelector(channel, (state) => state.context.brightness);
+  const contrast = useSelector(channel, (state) => state.context.contrast);
+  const rawImage = useSelector(channel, (state) => state.context.rawImage);
 
   const canvasRef = useRef();
   const ctxRef = useRef();

@@ -42,7 +42,7 @@ function download(context, event) {
   const downloadRoute = `${document.location.origin}/api/download/${projectId}`;
   const options = { method: 'GET' };
   const promise = fetch(downloadRoute, options);
-  const filename = promise.then(response => {
+  const filename = promise.then((response) => {
     const regex = /filename=(.*)$/;
     const header = response.headers.get('content-disposition');
     let filename = header.match(regex)[1] ?? `${projectId}.npz`;
@@ -54,12 +54,12 @@ function download(context, event) {
     }
     return filename;
   });
-  const url = promise.then(response => response.blob()).then(blob => URL.createObjectURL(blob));
+  const url = promise.then((response) => response.blob()).then((blob) => URL.createObjectURL(blob));
   return Promise.all([filename, url]);
 }
 
 function checkResponseCode(response) {
-  return response.json().then(json => {
+  return response.json().then((json) => {
     return response.ok ? json : Promise.reject(json);
   });
 }

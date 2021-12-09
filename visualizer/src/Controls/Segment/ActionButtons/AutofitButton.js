@@ -7,7 +7,7 @@ function AutofitButton(props) {
   const { className, ...rest } = props;
   const styles = useStyles();
   const segment = useSegment();
-  const grayscale = useSelector(segment, state => state.matches('display.grayscale'));
+  const grayscale = useSelector(segment, (state) => state.matches('display.grayscale'));
 
   const onClick = useCallback(() => segment.send('AUTOFIT'), [segment]);
 

@@ -7,8 +7,8 @@ import LayerController from './LayerController';
 
 function RGBControls() {
   const raw = useRaw();
-  const colorMode = useSelector(raw, state => state.context.colorMode);
-  const layers = useSelector(colorMode, state => state.context.layers);
+  const colorMode = useSelector(raw, (state) => state.context.colorMode);
+  const layers = useSelector(colorMode, (state) => state.context.layers);
 
   return (
     <>
