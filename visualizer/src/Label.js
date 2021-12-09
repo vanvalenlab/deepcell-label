@@ -14,7 +14,7 @@ import Instructions from './Instructions/Instructions';
 import Navbar from './Navbar';
 import { useCanvas, useLabeled } from './ProjectContext';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
     boxSizing: 'border-box',
     display: 'flex',

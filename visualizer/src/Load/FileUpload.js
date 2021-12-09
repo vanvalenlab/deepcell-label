@@ -16,7 +16,7 @@ import { PropTypes } from 'prop-types';
 import React from 'react';
 import Dropzone from 'react-dropzone';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
     flexGrow: 1,
     height: '100%',
@@ -49,7 +49,7 @@ const useStyles = makeStyles(theme => ({
 }));
 
 function ImageAxesDropDown({ loadService }) {
-  const axes = useSelector(loadService, state => state.context.axes);
+  const axes = useSelector(loadService, (state) => state.context.axes);
 
   const allAxes = ['YXC', 'ZYXC', 'CYX', 'CZYX'];
 
@@ -62,7 +62,7 @@ function ImageAxesDropDown({ loadService }) {
           id='image-axes-select'
           value={axes}
           label='Axes'
-          onChange={e => loadService.send({ type: 'SET_AXES', axes: e.target.value })}
+          onChange={(e) => loadService.send({ type: 'SET_AXES', axes: e.target.value })}
           autoWidth
         >
           {allAxes.map((ax, i) => (
@@ -92,7 +92,7 @@ export default function FileUpload({ loadService }) {
     <>
       <Dropzone
         name='imageUploadInput'
-        onDrop={files => send({ type: 'SET_UPLOAD_FILE', files })}
+        onDrop={(files) => send({ type: 'SET_UPLOAD_FILE', files })}
         accept='image/png, image/tiff, .npz'
       >
         {({ getRootProps, getInputProps, fileRejections }) => (

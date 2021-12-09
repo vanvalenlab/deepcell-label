@@ -5,12 +5,12 @@ import ChannelCanvas from './ChannelCanvas';
 
 export const RGBCanvas = ({ className }) => {
   const canvas = useCanvas();
-  const sx = useSelector(canvas, state => state.context.sx);
-  const sy = useSelector(canvas, state => state.context.sy);
-  const zoom = useSelector(canvas, state => state.context.zoom);
-  const scale = useSelector(canvas, state => state.context.scale);
-  const sw = useSelector(canvas, state => state.context.width);
-  const sh = useSelector(canvas, state => state.context.height);
+  const sx = useSelector(canvas, (state) => state.context.sx);
+  const sy = useSelector(canvas, (state) => state.context.sy);
+  const zoom = useSelector(canvas, (state) => state.context.zoom);
+  const scale = useSelector(canvas, (state) => state.context.scale);
+  const sw = useSelector(canvas, (state) => state.context.width);
+  const sh = useSelector(canvas, (state) => state.context.height);
 
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
@@ -38,7 +38,7 @@ export const RGBCanvas = ({ className }) => {
       <canvas id='raw-processing' hidden={true} ref={composeCanvasRef} width={sw} height={sh} />
       {/* visible output canvas */}
       <canvas id='raw-canvas' className={className} ref={canvasRef} width={width} height={height} />
-      {layers.map(layer => (
+      {layers.map((layer) => (
         <ChannelCanvas layer={layer} setCanvases={setCanvases} key={layer.sessionId} />
       ))}
     </>

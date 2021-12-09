@@ -11,7 +11,7 @@ import { bind } from 'mousetrap';
 import React, { useEffect, useRef } from 'react';
 import { useRaw } from '../../../ProjectContext';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
     paddingTop: theme.spacing(1),
   },
@@ -22,7 +22,7 @@ const useStyles = makeStyles(theme => ({
 }));
 
 const InvertToggle = ({ channel }) => {
-  const invert = useSelector(channel, state => state.context.invert);
+  const invert = useSelector(channel, (state) => state.context.invert);
 
   // Adds mousetrap class so hotkeys work after using switch
   const inputRef = useRef();
@@ -63,11 +63,11 @@ const InvertToggle = ({ channel }) => {
 
 const ChannelSelector = () => {
   const raw = useRaw();
-  const names = useSelector(raw, state => state.context.channelNames);
-  const channel = useSelector(raw, state => state.context.channel);
-  const numChannels = useSelector(raw, state => state.context.numChannels);
+  const names = useSelector(raw, (state) => state.context.channelNames);
+  const channel = useSelector(raw, (state) => state.context.channel);
+  const numChannels = useSelector(raw, (state) => state.context.numChannels);
 
-  const onChange = e => {
+  const onChange = (e) => {
     raw.send({ type: 'LOAD_CHANNEL', channel: Number(e.target.value) });
   };
 
@@ -99,7 +99,7 @@ const ChannelSelector = () => {
 
 const BrightnessSlider = ({ channel }) => {
   const styles = useStyles();
-  const brightness = useSelector(channel, state => state.context.brightness);
+  const brightness = useSelector(channel, (state) => state.context.brightness);
 
   const { send } = channel;
 
@@ -125,7 +125,7 @@ const BrightnessSlider = ({ channel }) => {
 
 const ContrastSlider = ({ channel }) => {
   const styles = useStyles();
-  const contrast = useSelector(channel, state => state.context.contrast);
+  const contrast = useSelector(channel, (state) => state.context.contrast);
   const { send } = channel;
 
   const onChange = (event, newValue) => send({ type: 'SET_CONTRAST', contrast: Number(newValue) });
@@ -150,7 +150,7 @@ const ContrastSlider = ({ channel }) => {
 const RangeSlider = ({ channel }) => {
   const styles = useStyles();
   const { send } = channel;
-  const range = useSelector(channel, state => state.context.range);
+  const range = useSelector(channel, (state) => state.context.range);
 
   const onChange = (_, value) => send({ type: 'SET_RANGE', range: value });
   const onDoubleClick = () => send({ type: 'SET_RANGE', range: [0, 255] });
@@ -172,7 +172,7 @@ const RangeSlider = ({ channel }) => {
 
 const GrayscaleControls = () => {
   const raw = useRaw();
-  const channel = useSelector(raw, state => state.context.channels[state.context.channel]);
+  const channel = useSelector(raw, (state) => state.context.channels[state.context.channel]);
 
   const styles = useStyles();
 

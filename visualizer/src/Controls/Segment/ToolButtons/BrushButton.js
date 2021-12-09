@@ -5,11 +5,11 @@ import ToolButton from './ToolButton';
 
 function BrushButton(props) {
   const segment = useSegment();
-  const tool = useSelector(segment, state => state.context.tool);
+  const tool = useSelector(segment, (state) => state.context.tool);
 
   const select = useSelect();
-  const selected = useSelector(select, state => state.context.selected);
-  const foreground = useSelector(select, state => state.context.foreground);
+  const selected = useSelector(select, (state) => state.context.selected);
+  const foreground = useSelector(select, (state) => state.context.foreground);
 
   const onClick = useCallback(() => {
     segment.send({ type: 'SET_TOOL', tool: 'brush' });

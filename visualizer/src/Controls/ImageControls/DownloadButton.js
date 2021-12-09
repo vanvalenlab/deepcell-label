@@ -5,7 +5,7 @@ import { useSelector } from '@xstate/react';
 import React from 'react';
 import { useApi } from '../../ProjectContext';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   buttonProgress: {
     color: green[500],
     position: 'absolute',
@@ -19,7 +19,7 @@ const useStyles = makeStyles(theme => ({
 function DownloadButton() {
   const styles = useStyles();
   const api = useApi();
-  const downloading = useSelector(api, state => state.matches('downloading'));
+  const downloading = useSelector(api, (state) => state.matches('downloading'));
 
   return (
     <Button

@@ -33,13 +33,13 @@ const useStyles = makeStyles(() => ({
 }));
 
 function LayerOptions({ layer }) {
-  const [open, toggle] = useReducer(v => !v, false);
+  const [open, toggle] = useReducer((v) => !v, false);
   const anchorRef = useRef(null);
 
   const raw = useRaw();
-  const colorMode = useSelector(raw, state => state.context.colorMode);
+  const colorMode = useSelector(raw, (state) => state.context.colorMode);
 
-  const handleColorSelect = color => {
+  const handleColorSelect = (color) => {
     layer.send({ type: 'SET_COLOR', color });
   };
 

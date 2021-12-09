@@ -4,7 +4,7 @@ import Tooltip from '@material-ui/core/Tooltip';
 import { bind } from 'mousetrap';
 import React, { useEffect } from 'react';
 
-export const useStyles = makeStyles(theme => ({
+export const useStyles = makeStyles((theme) => ({
   button: {
     padding: theme.spacing(0.5),
   },

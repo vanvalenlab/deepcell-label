@@ -11,10 +11,7 @@
     "ecmaVersion": 2018,
     "sourceType": "module"
   },
-  "plugins": [
-    "jest",
-    "prettier"
-  ],
+  "plugins": ["jest", "prettier"],
   "rules": {
     "semi": "off",
     "js-doc": "off",
@@ -22,9 +19,5 @@
     "comma-dangle": "off",
     "jest/no-conditional-expect": "off"
   },
-  "extends": [
-    "react-app",
-    "react-app/jest",
-    "plugin:jest/recommended"
-  ]
+  "extends": ["react-app", "react-app/jest", "plugin:jest/recommended"]
 }

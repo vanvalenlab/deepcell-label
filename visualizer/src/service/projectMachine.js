@@ -12,7 +12,7 @@ import undoMachine from './undoMachine';
 
 function fetchProject(context) {
   const { projectId } = context;
-  return fetch(`/api/project/${projectId}`).then(response => response.json());
+  return fetch(`/api/project/${projectId}`).then((response) => response.json());
 }
 
 const createProjectMachine = (projectId, bucket) =>
@@ -104,15 +104,15 @@ const createProjectMachine = (projectId, bucket) =>
       actions: {
         spawnActors: assign({
           canvasRef: () => spawn(canvasMachine, 'canvas'),
-          imageRef: context => spawn(createImageMachine(context), 'image'),
+          imageRef: (context) => spawn(createImageMachine(context), 'image'),
           segmentRef: () => spawn(segmentMachine, 'segment'),
-          apiRef: context => spawn(createApiMachine(context), 'api'),
+          apiRef: (context) => spawn(createApiMachine(context), 'api'),
           selectRef: () => spawn(selectMachine, 'select'),
         }),
         spawnUndo: assign({
           undoRef: () => spawn(undoMachine, 'undo'),
         }),
-        addActorsToUndo: pure(context => {
+        addActorsToUndo: pure((context) => {
           const { canvasRef, segmentRef, imageRef, selectRef } = context;
           return [
             send({ type: 'ADD_ACTOR', actor: canvasRef }, { to: 'undo' }),

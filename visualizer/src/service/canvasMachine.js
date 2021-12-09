@@ -128,7 +128,7 @@ const canvasMachine = Machine(
       ZOOMOUT: { actions: 'zoomOut' },
       DIMENSIONS: { actions: ['setDimensions', 'resize'] },
       SAVE: {
-        actions: respond(context => ({
+        actions: respond((context) => ({
           type: 'RESTORE',
           sx: context.sx,
           sy: context.sy,
@@ -167,18 +167,18 @@ const canvasMachine = Machine(
   },
   {
     services: {
-      listenForMouseUp: () => send => {
-        const listener = e => send(e);
+      listenForMouseUp: () => (send) => {
+        const listener = (e) => send(e);
         window.addEventListener('mouseup', listener);
         return () => window.removeEventListener('mouseup', listener);
       },
-      listenForSpace: () => send => {
-        const downListener = e => {
+      listenForSpace: () => (send) => {
+        const downListener = (e) => {
           if (e.key === ' ' && !e.repeat) {
             send('keydown.Space');
           }
         };
-        const upListener = e => {
+        const upListener = (e) => {
           if (e.key === ' ') {
             send('keyup.Space');
           }
@@ -190,8 +190,8 @@ const canvasMachine = Machine(
           window.removeEventListener('keyup', upListener);
         };
       },
-      listenForZoomHotkeys: () => send => {
-        const listener = e => {
+      listenForZoomHotkeys: () => (send) => {
+        const listener = (e) => {
           if (e.key === '=') {
             send('ZOOMIN');
           }
@@ -236,7 +236,7 @@ const canvasMachine = Machine(
         padding: (_, { padding }) => padding,
       }),
       resize: assign({
-        scale: context => {
+        scale: (context) => {
           const { width, height, availableWidth, availableHeight, padding } = context;
           const scaleX = (availableWidth - 2 * padding) / width;
           const scaleY = (availableHeight - 2 * padding) / height;

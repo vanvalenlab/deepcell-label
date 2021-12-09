@@ -4,7 +4,7 @@ import { useCanvas, useChannel } from '../../ProjectContext';
 import { adjustRangeImageData, recolorImageData } from '../canvasUtils';
 
 /** Converts a hex string like #FF0000 to three element array for the RGB values. */
-const hexToRGB = hex => {
+const hexToRGB = (hex) => {
   const r = parseInt('0x' + hex[1] + hex[2]);
   const g = parseInt('0x' + hex[3] + hex[4]);
   const b = parseInt('0x' + hex[5] + hex[6]);
@@ -13,20 +13,20 @@ const hexToRGB = hex => {
 
 export const ChannelCanvas = ({ layer, setCanvases }) => {
   const canvas = useCanvas();
-  const width = useSelector(canvas, state => state.context.width);
-  const height = useSelector(canvas, state => state.context.height);
+  const width = useSelector(canvas, (state) => state.context.width);
+  const height = useSelector(canvas, (state) => state.context.height);
 
   const canvasRef = useRef();
   const ctxRef = useRef();
 
-  const layerIndex = useSelector(layer, state => state.context.layer);
-  const channelIndex = useSelector(layer, state => state.context.channel);
-  const color = useSelector(layer, state => state.context.color);
-  const [min, max] = useSelector(layer, state => state.context.range);
-  const on = useSelector(layer, state => state.context.on);
+  const layerIndex = useSelector(layer, (state) => state.context.layer);
+  const channelIndex = useSelector(layer, (state) => state.context.channel);
+  const color = useSelector(layer, (state) => state.context.color);
+  const [min, max] = useSelector(layer, (state) => state.context.range);
+  const on = useSelector(layer, (state) => state.context.on);
 
   const channel = useChannel(channelIndex);
-  const rawImage = useSelector(channel, state => state.context.rawImage);
+  const rawImage = useSelector(channel, (state) => state.context.rawImage);
 
   useEffect(() => {
     const channelCanvas = canvasRef.current;
@@ -49,12 +49,12 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
       ctx.clearRect(0, 0, width, height);
     }
     // assign to channelCanvases to rerender
-    setCanvases(prevCanvases => ({ ...prevCanvases, [layerIndex]: canvas }));
+    setCanvases((prevCanvases) => ({ ...prevCanvases, [layerIndex]: canvas }));
   }, [canvasRef, setCanvases, on, layerIndex, rawImage, color, min, max, width, height]);
 
   useEffect(() => {
     return () =>
-      setCanvases(prevCanvases => {
+      setCanvases((prevCanvases) => {
         delete prevCanvases[layerIndex];
         return { ...prevCanvases };
       });

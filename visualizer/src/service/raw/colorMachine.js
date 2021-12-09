@@ -96,7 +96,7 @@ const createColorMachine = ({ channels }) =>
     {
       guards: {
         /** Check if all channels in layers are loaded. */
-        loaded: ({ loadedChannels }) => [...loadedChannels.values()].every(v => v),
+        loaded: ({ loadedChannels }) => [...loadedChannels.values()].every((v) => v),
         /** Check if the data is for the loading frame. */
         isLoadingFrame: ({ loadingFrame }, { frame }) => loadingFrame === frame,
         diffLoadingFrame: ({ loadingFrame }, { frame }) => loadingFrame !== frame,
@@ -108,7 +108,7 @@ const createColorMachine = ({ channels }) =>
         spawnLayers: assign({
           layers: ({ numChannels }) => {
             const numLayers = Math.min(3, numChannels);
-            return [...Array(numLayers).keys()].map(index =>
+            return [...Array(numLayers).keys()].map((index) =>
               spawn(createLayerMachine(index, index), `layer ${index}`)
             );
           },
@@ -137,7 +137,7 @@ const createColorMachine = ({ channels }) =>
             // load frame in each loaded channel
             ...channels
               .filter((channel, index) => loadedChannels.has(index))
-              .map(channel => send({ type: 'LOAD_FRAME', frame: loadingFrame }, { to: channel })),
+              .map((channel) => send({ type: 'LOAD_FRAME', frame: loadingFrame }, { to: channel })),
           ];
         }),
         loadChannel: send(({ frame }) => ({ type: 'LOAD_FRAME', frame }), {
@@ -149,7 +149,7 @@ const createColorMachine = ({ channels }) =>
         /** Load a different frame in the loading channels. */
         reloadLoadingChannels: pure(({ frame, channels, loadingChannels }) => {
           const frameEvent = { type: 'LOAD_FRAME', frame };
-          return [...loadingChannels].map(channel => send(frameEvent, channels[channel]));
+          return [...loadingChannels].map((channel) => send(frameEvent, channels[channel]));
         }),
         sendLoaded: sendParent('FRAME_LOADED'),
         setFrame: assign((_, { frame }) => ({ frame })),
@@ -168,7 +168,7 @@ const createColorMachine = ({ channels }) =>
           ];
         }),
         forwardToLoadedChannels: pure(({ channels, loadedChannels }) =>
-          [...loadedChannels.keys()].map(channel => forwardTo(channels[channel]))
+          [...loadedChannels.keys()].map((channel) => forwardTo(channels[channel]))
         ),
         addLayer: assign({
           layers: ({ layers }) => [
@@ -177,7 +177,7 @@ const createColorMachine = ({ channels }) =>
           ],
         }),
         removeLayer: assign({
-          layers: ({ layers }, { layer }) => [...layers.filter(val => val !== layer)],
+          layers: ({ layers }, { layer }) => [...layers.filter((val) => val !== layer)],
         }),
       },
     }

@@ -9,19 +9,19 @@ import { useSelector } from '@xstate/react';
 import { useRaw } from '../../../ProjectContext';
 import LayerOptions from './LayerOptions';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
     paddingTop: theme.spacing(1),
   },
 }));
 
 function LayerSelector({ layer }) {
-  const channel = useSelector(layer, state => state.context.channel);
+  const channel = useSelector(layer, (state) => state.context.channel);
 
   const raw = useRaw();
-  const names = useSelector(raw, state => state.context.channelNames);
+  const names = useSelector(raw, (state) => state.context.channelNames);
 
-  const onChange = e => {
+  const onChange = (e) => {
     layer.send({ type: 'CHANGE_CHANNEL', channel: Number(e.target.value) });
   };
 
@@ -37,11 +37,11 @@ function LayerSelector({ layer }) {
 }
 
 function LayerCheckbox({ layer }) {
-  const color = useSelector(layer, state => {
+  const color = useSelector(layer, (state) => {
     const { color } = state.context;
     return color === '#FFFFFF' ? '#000000' : color;
   });
-  const isOn = useSelector(layer, state => state.context.on);
+  const isOn = useSelector(layer, (state) => state.context.on);
 
   return (
     <Checkbox
@@ -59,8 +59,8 @@ function LayerCheckbox({ layer }) {
 
 function LayerSlider({ layer }) {
   const { send } = layer;
-  const range = useSelector(layer, state => state.context.range);
-  const color = useSelector(layer, state => {
+  const range = useSelector(layer, (state) => state.context.range);
+  const color = useSelector(layer, (state) => {
     const { color } = state.context;
     return color === '#FFFFFF' ? '#000000' : color;
   });
@@ -89,11 +89,11 @@ function LayerSlider({ layer }) {
 function LayerController({ layer }) {
   const classes = useStyles();
 
-  const channel = useSelector(layer, state => state.context.channel);
+  const channel = useSelector(layer, (state) => state.context.channel);
 
   const raw = useRaw();
-  const colorMode = useSelector(raw, state => state.context.colorMode);
-  const loading = useSelector(colorMode, state => state.context.loadingChannels.has(channel));
+  const colorMode = useSelector(raw, (state) => state.context.colorMode);
+  const loading = useSelector(colorMode, (state) => state.context.loadingChannels.has(channel));
 
   return (
     <Grid container direction='column' m={2} justify='center' className={classes.root}>

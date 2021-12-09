@@ -42,18 +42,10 @@ const ColorPalette = ({ handleChange }) => {
   const classes = useStyles();
   return (
     <div className={classes.container} aria-label='color-swatch'>
-      {COLOR_PALLETE.map(color => {
+      {COLOR_PALLETE.map((color) => {
         return (
-          <IconButton
-            className={classes.button}
-            key={color}
-            onClick={() => handleChange(color)}
-          >
-            <LensIcon
-              fontSize='small'
-              style={{ color: `${color}` }}
-              className={classes.icon}
-            />
+          <IconButton className={classes.button} key={color} onClick={() => handleChange(color)}>
+            <LensIcon fontSize='small' style={{ color: `${color}` }} className={classes.icon} />
           </IconButton>
         );
       })}

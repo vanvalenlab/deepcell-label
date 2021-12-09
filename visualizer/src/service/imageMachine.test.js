@@ -2,7 +2,7 @@ import { interpret } from 'xstate';
 import createImageMachine from './imageMachine';
 
 describe('test imageMachine', () => {
-  it('imageMachine.loadFrame should reach idle after raw and labeled data load', done => {
+  it('imageMachine.loadFrame should reach idle after raw and labeled data load', (done) => {
     const imageMachine = createImageMachine('testProjectId').withConfig({
       actions: {
         spawnActors: () => {},
@@ -12,7 +12,7 @@ describe('test imageMachine', () => {
         useFrame: () => {},
       },
     });
-    const imageService = interpret(imageMachine).onTransition(state => {
+    const imageService = interpret(imageMachine).onTransition((state) => {
       // this is where you expect the state to eventually
       // be reached
       if (state.matches('loadFrame.idle')) {
