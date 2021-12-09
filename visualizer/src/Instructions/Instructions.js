@@ -75,7 +75,7 @@ const AccordionSummary = withStyles({
   expanded: {},
 })(MuiAccordionSummary);
 
-const AccordionDetails = withStyles(theme => ({
+const AccordionDetails = withStyles((theme) => ({
   root: {
     padding: 0,
     display: 'flex',
@@ -96,7 +96,7 @@ export default function Instructions() {
     setExpanded(!expanded);
   };
 
-  const stopExpansion = event => {
+  const stopExpansion = (event) => {
     if (event.key === ' ') {
       event.preventDefault();
     }

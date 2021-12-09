@@ -1,7 +1,5 @@
 """Flask blueprint for modular routes."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 import gzip
 import json
@@ -9,21 +7,22 @@ import timeit
 import traceback
 import subprocess
 
-from flask import abort
-from flask import Blueprint
-from flask import jsonify
-from flask import request
-from flask import current_app
-from flask import send_file
-from flask import make_response
-from werkzeug.exceptions import HTTPException
 import matplotlib
+import numpy as np
+from flask import (
+    Blueprint,
+    abort,
+    current_app,
+    jsonify,
+    make_response,
+    request,
+    send_file,
+)
+from werkzeug.exceptions import BadRequestKeyError, HTTPException
 
+from deepcell_label import exporters, loaders
 from deepcell_label.label import TrackEdit, ZStackEdit
 from deepcell_label.models import Project
-from deepcell_label import loaders
-from deepcell_label import exporters
-
 
 bp = Blueprint('label', __name__)  # pylint: disable=C0103
 
@@ -75,21 +74,49 @@ def handle_exception(error):
     if isinstance(error, HTTPException):
         return error
 
-    current_app.logger.error('Encountered %s: %s',
-                             error.__class__.__name__, error, exc_info=1)
+    current_app.logger.error(
+        'Encountered %s: %s', error.__class__.__name__, error, exc_info=1
+    )
 
     traceback.print_exc()
     # now you're handling non-HTTP exceptions only
     return jsonify({'error': str(error)}), 500
 
 
-@bp.route('/api/raw/<token>/<int:channel>/<int:frame>')
+@bp.route('/api/raw/<token>/<int:channel>/<int:frame>', methods=['GET'])
 def raw(token, channel, frame):
     project = Project.get(token)
     if not project:
         return abort(404, description=f'project {token} not found')
     png = project.get_raw_png(channel, frame)
     return send_file(png, mimetype='image/png')
+
+
+@bp.route('/api/raw/<token>', methods=['POST'])
+def add_raw(token):
+    """Add new channel to the project."""
+    project = Project.get(token)
+    if not project:
+        return abort(404, description=f'project {token} not found')
+    # Load channel from first array in attached file
+    try:
+        npz = np.load(request.files.get('file'))
+    except BadRequestKeyError:  # could not get file from request.files
+        return abort(
+            400, description='Attach a new channel file in a form under the file field.'
+        )
+    except TypeError:
+        return abort(
+            400, description='Could not load the attached file. Attach an .npz file.'
+        )
+    channel = npz[npz.files[0]]
+    # Check channel is the right shape
+    expected_shape = (project.num_frames, project.width, project.height, 1)
+    if channel.shape != expected_shape:
+        raise ValueError(f'New channel must have shape {expected_shape}')
+    # Add channel to project
+    project.add_channel(channel)
+    return {'numChannels': project.num_channels}
 
 
 @bp.route('/api/labeled/<token>/<int:feature>/<int:frame>')
@@ -103,8 +130,7 @@ def labeled(token, feature, frame):
 
 @bp.route('/api/array/<token>/<int:feature>/<int:frame>')
 def array(token, feature, frame):
-    """
-    """
+    """ """
     project = Project.get(token)
     if not project:
         return jsonify({'error': f'project {token} not found'}), 404
@@ -172,11 +198,18 @@ def edit(token, action_type):
     project.update()
 
     changed_frames = [frame.frame_id for frame in project.action.frames]
-    payload = {'feature': project.feature, 'frames': changed_frames, 'labels': edit.labels_changed}
+    payload = {
+        'feature': project.feature,
+        'frames': changed_frames,
+        'labels': edit.labels_changed,
+    }
 
-    current_app.logger.debug('Finished action %s for project %s in %s s.',
-                             action_type, token,
-                             timeit.default_timer() - start)
+    current_app.logger.debug(
+        'Finished action %s for project %s in %s s.',
+        action_type,
+        token,
+        timeit.default_timer() - start,
+    )
     return jsonify(payload)
 
 
@@ -189,8 +222,11 @@ def undo(token):
         return abort(404, description=f'project {token} not found')
     payload = project.undo()
 
-    current_app.logger.debug('Undid action for project %s finished in %s s.',
-                             token, timeit.default_timer() - start)
+    current_app.logger.debug(
+        'Undid action for project %s finished in %s s.',
+        token,
+        timeit.default_timer() - start,
+    )
     return jsonify(payload)
 
 
@@ -203,8 +239,11 @@ def redo(token):
         return abort(404, description=f'project {token} not found')
     payload = project.redo()
 
-    current_app.logger.debug('Redid action for project %s finished in %s s.',
-                             token, timeit.default_timer() - start)
+    current_app.logger.debug(
+        'Redid action for project %s finished in %s s.',
+        token,
+        timeit.default_timer() - start,
+    )
     return jsonify(payload)
 
 
@@ -218,8 +257,9 @@ def get_project(token):
     if not project:
         return abort(404, description=f'project {token} not found')
     payload = project.make_first_payload()
-    current_app.logger.debug('Loaded project %s in %s s.',
-                             project.token, timeit.default_timer() - start)
+    current_app.logger.debug(
+        'Loaded project %s in %s s.', project.token, timeit.default_timer() - start
+    )
     return jsonify(payload)
 
 
@@ -235,6 +275,7 @@ def get_project(token):
 #                             loader.path, timeit.default_timer() - start)
 #     return jsonify({'projectId': project.token})
 
+
 @bp.route('/api/project/dropped', methods=['POST'])
 def create_project_from_dropped_file():
     """
@@ -243,8 +284,9 @@ def create_project_from_dropped_file():
     start = timeit.default_timer()
     loader = loaders.FileLoader(request)
     project = Project.create(loader)
-    current_app.logger.info('Created project from %s in %s s.',
-                            loader.path, timeit.default_timer() - start)
+    current_app.logger.info(
+        'Created project from %s in %s s.', loader.path, timeit.default_timer() - start
+    )
     return jsonify({'projectId': project.token})
 
 
@@ -257,8 +299,9 @@ def create_project_from_url():
     url_form = request.form
     loader = loaders.URLLoader(url_form)
     project = Project.create(loader)
-    current_app.logger.info('Created project from %s in %s s.',
-                            loader.path, timeit.default_timer() - start)
+    current_app.logger.info(
+        'Created project from %s in %s s.', loader.path, timeit.default_timer() - start
+    )
     return jsonify({'projectId': project.token})
 
 
@@ -291,9 +334,13 @@ def upload_project_to_s3(bucket, token):
     # add "finished" timestamp and null out PickleType columns
     # project.finish()
 
-    current_app.logger.debug('Uploaded %s to S3 bucket %s from project %s in %s s.',
-                             exporter.path, bucket, token,
-                             timeit.default_timer() - start)
+    current_app.logger.debug(
+        'Uploaded %s to S3 bucket %s from project %s in %s s.',
+        exporter.path,
+        bucket,
+        token,
+        timeit.default_timer() - start,
+    )
     return {}
 
 

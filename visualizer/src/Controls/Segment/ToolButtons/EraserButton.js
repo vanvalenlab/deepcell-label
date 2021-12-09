@@ -5,11 +5,11 @@ import ToolButton from './ToolButton';
 
 function EraserButton(props) {
   const segment = useSegment();
-  const tool = useSelector(segment, state => state.context.tool);
+  const tool = useSelector(segment, (state) => state.context.tool);
 
   const select = useSelect();
-  const selected = useSelector(select, state => state.context.selected);
-  const background = useSelector(select, state => state.context.background);
+  const selected = useSelector(select, (state) => state.context.selected);
+  const background = useSelector(select, (state) => state.context.background);
 
   const onClick = useCallback(() => {
     segment.send({ type: 'SET_TOOL', tool: 'brush' });

@@ -4,7 +4,7 @@ import MuiToggleButton from '@material-ui/lab/ToggleButton';
 import { bind } from 'mousetrap';
 import React, { useEffect } from 'react';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   title: {
     margin: theme.spacing(1),
   },

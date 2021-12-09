@@ -1,18 +1,18 @@
 """Classes to export a DeepCell Label project as a .npz or .trk file."""
-import boto3
 import io
-import pathlib
-import tempfile
-import tarfile
 import json
+import pathlib
+import tarfile
+import tempfile
 from urllib.parse import urlparse
 
+import boto3
 import numpy as np
 
 from deepcell_label.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 
 
-class Exporter():
+class Exporter:
     """
     Interface to export work from a DeepCell Label project.
     """
@@ -125,5 +125,5 @@ class S3Exporter(Exporter):
         return boto3.client(
             's3',
             aws_access_key_id=AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
         )

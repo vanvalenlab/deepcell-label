@@ -10,7 +10,7 @@ import ReplaceButton from './ActionButtons/ReplaceButton';
 import ShrinkButton from './ActionButtons/ShrinkButton';
 import SwapButton from './ActionButtons/SwapButton';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   title: {
     margin: theme.spacing(1),
   },

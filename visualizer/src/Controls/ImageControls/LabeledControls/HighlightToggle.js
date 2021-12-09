@@ -9,7 +9,7 @@ import { useLabeled } from '../../../ProjectContext';
 
 function HighlightToggle() {
   const labeled = useLabeled();
-  const highlight = useSelector(labeled, state => state.context.highlight);
+  const highlight = useSelector(labeled, (state) => state.context.highlight);
 
   // Adds mousetrap class so hotkeys work after using switch
   const inputRef = useRef();

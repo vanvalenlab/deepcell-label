@@ -5,14 +5,12 @@ Tests for loading files in loaders.
 import io
 import zipfile
 
-import pytest
-
 import numpy as np
 import responses
 from PIL import Image
 from tifffile import TiffWriter
 
-from deepcell_label.loaders import URLLoader, FileLoader
+from deepcell_label.loaders import URLLoader
 
 
 @responses.activate
@@ -128,7 +126,7 @@ def test_load_raw_png():
     expected = np.zeros((1, 1, 1, 1))
     raw = io.BytesIO()
     img = Image.fromarray(np.zeros((1, 1)), mode='L')
-    img.save(raw, format="png")
+    img.save(raw, format='png')
     raw.seek(0)
     url = 'http://example.com/mocked/raw.png'
     responses.add(responses.GET, url, body=io.BufferedReader(raw))

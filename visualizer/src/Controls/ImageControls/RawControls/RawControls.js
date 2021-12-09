@@ -7,7 +7,7 @@ import ColorModeToggle from './ColorModeToggle';
 import GrayscaleControls from './GrayscaleControls';
 import RGBControls from './RGBControls';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
     // paddingTop: theme.spacing(1),
     display: 'flex',
@@ -19,7 +19,7 @@ const useStyles = makeStyles(theme => ({
 }));
 export const RawControls = () => {
   const raw = useRaw();
-  const isGrayscale = useSelector(raw, state => state.context.isGrayscale);
+  const isGrayscale = useSelector(raw, (state) => state.context.isGrayscale);
 
   const styles = useStyles();
 

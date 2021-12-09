@@ -2,11 +2,10 @@
 
 import io
 
-import pytest
 import numpy as np
-from tifffile import TiffWriter
+import pytest
 from PIL import Image
-
+from tifffile import TiffWriter
 
 from deepcell_label import models
 from deepcell_label.conftest import DummyLoader
@@ -85,8 +84,10 @@ def test_redo(client):
 
 
 def test_create_project(client, mocker):
-    mocker.patch('deepcell_label.blueprints.loaders.URLLoader', lambda *args: DummyLoader())
-    response = client.post(f'/api/project')
+    mocker.patch(
+        'deepcell_label.blueprints.loaders.URLLoader', lambda *args: DummyLoader()
+    )
+    response = client.post('/api/project')
     assert response.status_code == 200
 
 
@@ -95,7 +96,9 @@ def test_create_project_dropped_npz(client):
     np.savez(npz, X=np.zeros((1, 1, 1, 1)), y=np.ones((1, 1, 1, 1)))
     npz.seek(0)
     data = {'file': (npz, 'test.npz')}
-    response = client.post(f'/api/project/dropped', data=data, content_type='multipart/form-data')
+    response = client.post(
+        '/api/project/dropped', data=data, content_type='multipart/form-data'
+    )
     assert response.status_code == 200
 
 
@@ -105,17 +108,21 @@ def test_create_project_dropped_tiff(client):
         writer.save(np.zeros((1, 1, 1, 1)))
         tifffile.seek(0)
     data = {'file': (tifffile, 'test.tiff')}
-    response = client.post(f'/api/project/dropped', data=data, content_type='multipart/form-data')
+    response = client.post(
+        '/api/project/dropped', data=data, content_type='multipart/form-data'
+    )
     assert response.status_code == 200
 
 
 def test_create_project_dropped_png(client):
     png = io.BytesIO()
     img = Image.fromarray(np.zeros((1, 1)), mode='L')
-    img.save(png, format="png")
+    img.save(png, format='png')
     png.seek(0)
     data = {'file': (png, 'test.png')}
-    response = client.post(f'/api/project/dropped', data=data, content_type='multipart/form-data')
+    response = client.post(
+        '/api/project/dropped', data=data, content_type='multipart/form-data'
+    )
     assert response.status_code == 200
 
 
@@ -123,6 +130,24 @@ def test_get_project(client):
     project = models.Project.create(DummyLoader())
     response = client.get(f'/api/project/{project.token}')
     assert response.status_code == 200
+
+
+def test_add_channel(client):
+    project = models.Project.create(DummyLoader(raw=np.zeros((1, 1, 1, 1))))
+
+    npz = io.BytesIO()
+    np.savez(npz, new_channel=np.ones((1, 1, 1, 1)))
+    npz.seek(0)
+    data = {'file': (npz, 'test.npz')}
+
+    response = client.post(
+        f'/api/raw/{project.token}', data=data, content_type='multipart/form-data'
+    )
+    assert response.status_code == 200
+    assert response.json.get('numChannels') == 2
+    assert project.raw_array.shape == (1, 1, 1, 2)
+    assert 0 in project.raw_array
+    assert 1 in project.raw_array
 
 
 # def test_project_finished(client):

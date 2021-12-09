@@ -139,14 +139,14 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
               );
           },
           channelNames: ({ numChannels }) =>
-            [...Array(numChannels).keys()].map(i => `channel ${i}`),
+            [...Array(numChannels).keys()].map((i) => `channel ${i}`),
         }),
         spawnColorModes: assign({
-          grayscaleMode: context => spawn(createGrayscaleMachine(context), 'grayscaleMode'),
-          colorMode: context => spawn(createColorMachine(context), 'colorMode'),
+          grayscaleMode: (context) => spawn(createGrayscaleMachine(context), 'grayscaleMode'),
+          colorMode: (context) => spawn(createColorMachine(context), 'colorMode'),
         }),
         startPreload: pure(({ channels }) =>
-          channels.map(channel => send('PRELOAD', { to: channel }))
+          channels.map((channel) => send('PRELOAD', { to: channel }))
         ),
         preload: respond('PRELOAD'),
         sendLoaded: sendParent('RAW_LOADED'),

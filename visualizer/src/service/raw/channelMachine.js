@@ -24,7 +24,7 @@ function makeImageURL(responseAsBlob) {
 }
 
 function showImage(imgUrl) {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => resolve(img);
     img.src = imgUrl;
@@ -119,7 +119,7 @@ const createChannelMachine = (projectId, channel, numFrames) =>
             return (
               allFrames
                 // remove loaded frames
-                .filter(frame => !(frame in frames))
+                .filter((frame) => !(frame in frames))
                 // load the closest unloaded frame to the current frame
                 .reduce((prev, curr) =>
                   Math.abs(curr - frame) < Math.abs(prev - frame) ? curr : prev
@@ -157,7 +157,7 @@ const createChannelMachine = (projectId, channel, numFrames) =>
             const imageData = ctx.getImageData(0, 0, img.width, img.height);
             const array = imageData.data
               .filter((v, i) => i % 4 === 1) // take only the first channel
-              .filter(v => v > 0); // ignore the background
+              .filter((v) => v > 0); // ignore the background
             const cutoffPercentile = 0.01;
             const topCutoffLocation = Math.floor(array.length * (1 - cutoffPercentile));
             const bottomCutoffLocation = Math.floor(array.length * cutoffPercentile);

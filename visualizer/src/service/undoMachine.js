@@ -2,7 +2,7 @@ import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xs
 
 const { pure } = actions;
 
-const createHistoryMachine = actor =>
+const createHistoryMachine = (actor) =>
   Machine(
     {
       id: 'history',
@@ -46,24 +46,24 @@ const createHistoryMachine = actor =>
     {
       actions: {
         forwardToParent: sendParent((context, event) => event),
-        saveContext: send('SAVE', { to: context => context.actor }),
+        saveContext: send('SAVE', { to: (context) => context.actor }),
         saveRestore: assign((context, event) => ({
           past: [...context.past, event],
           future: [],
         })),
-        restorePast: send(context => context.past[context.past.length - 1], {
-          to: context => context.actor,
+        restorePast: send((context) => context.past[context.past.length - 1], {
+          to: (context) => context.actor,
         }),
-        restoreFuture: send(context => context.future[context.future.length - 1], {
-          to: context => context.actor,
+        restoreFuture: send((context) => context.future[context.future.length - 1], {
+          to: (context) => context.actor,
         }),
         movePastToFuture: assign({
-          past: context => context.past.slice(0, context.past.length - 1),
-          future: context => [...context.future, context.past[context.past.length - 1]],
+          past: (context) => context.past.slice(0, context.past.length - 1),
+          future: (context) => [...context.future, context.past[context.past.length - 1]],
         }),
         moveFutureToPast: assign({
-          past: context => [...context.past, context.future[context.future.length - 1]],
-          future: context => context.future.slice(0, context.future.length - 1),
+          past: (context) => [...context.past, context.future[context.future.length - 1]],
+          future: (context) => context.future.slice(0, context.future.length - 1),
         }),
       },
     }
@@ -139,33 +139,33 @@ const undoMachine = Machine(
   },
   {
     guards: {
-      allHistoriesResponded: context => context.count === context.numHistories,
-      canUndo: context => context.action > 0,
-      canRedo: context => context.action < context.numActions,
+      allHistoriesResponded: (context) => context.count === context.numHistories,
+      canUndo: (context) => context.action > 0,
+      canRedo: (context) => context.action < context.numActions,
     },
     actions: {
       addActor: assign({
         histories: ({ histories }, { actor }) => [...histories, spawn(createHistoryMachine(actor))],
       }),
-      forwardToHistories: pure(context => {
-        return context.histories.map(actor => forwardTo(actor));
+      forwardToHistories: pure((context) => {
+        return context.histories.map((actor) => forwardTo(actor));
       }),
       resetCounts: assign({
         count: 0,
-        numHistories: context => context.histories.length,
+        numHistories: (context) => context.histories.length,
       }),
       incrementCount: assign({
-        count: context => context.count + 1,
+        count: (context) => context.count + 1,
       }),
       newAction: assign({
-        action: context => context.action + 1,
-        numActions: context => context.action + 1,
+        action: (context) => context.action + 1,
+        numActions: (context) => context.action + 1,
       }),
       incrementAction: assign({
-        action: context => context.action + 1,
+        action: (context) => context.action + 1,
       }),
       decrementAction: assign({
-        action: context => context.action - 1,
+        action: (context) => context.action - 1,
       }),
     },
   }
