@@ -5,7 +5,6 @@ import base64
 import enum
 import io
 import logging
-import os
 import timeit
 from secrets import token_urlsafe
 
@@ -46,6 +45,13 @@ class Npz(types.TypeDecorator):
         bytestream = io.BytesIO(value)
         bytestream.seek(0)
         return np.load(bytestream)['array']
+
+
+def compile_npz_mysql(type_, compiler, **kw):
+    """
+    BLOB (64 kB) can truncate npz data, while LONGBLOB (4 GB) stores it in full.
+    """
+    return 'LONGBLOB'
 
 
 @compiles(db.PickleType, 'mysql')
@@ -190,19 +196,6 @@ class Project(db.Model):
     def raw_array(self):
         """Compiles all raw frames into a single numpy array."""
         return np.array([frame.frame for frame in self.raw_frames])
-
-    @property
-    def is_zstack(self):
-        return os.path.splitext(self.path.lower())[-1] in {
-            '.npz',
-            '.png',
-            '.tif',
-            '.tiff',
-        }
-
-    @property
-    def is_track(self):
-        return os.path.splitext(self.path.lower())[-1] in {'.trk', '.trks'}
 
     @staticmethod
     def get(token):

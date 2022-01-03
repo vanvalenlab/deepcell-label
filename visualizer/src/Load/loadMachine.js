@@ -8,6 +8,7 @@ const loadMachine = Machine(
       uploadFile: null,
       axes: 'ZYXC',
       errorText: '',
+      track: false,
     },
     initial: 'idle',
     states: {
@@ -77,7 +78,10 @@ const loadMachine = Machine(
       },
     },
     actions: {
-      setExampleFile: assign({ exampleFile: (_, { file }) => file }),
+      setExampleFile: assign({
+        exampleFile: (_, { file }) => file,
+        track: (_, { file }) => /\.trk$/.test(file),
+      }),
       setUploadFile: assign({
         uploadFile: ({ uploadFile }, { files }) => {
           // Revoke the data uris of existing file previews to avoid memory leaks
@@ -92,9 +96,13 @@ const loadMachine = Machine(
       setAxes: assign({ axes: (_, { axes }) => axes }),
       setErrorText: assign({ errorText: (_, event) => `${event.error}` }),
       setSingleFileError: assign({ errorText: 'Please upload a single file.' }),
-      redirectToProject: (_, event) => {
+      redirectToProject: ({ track }, event) => {
         const { projectId } = event.data.data;
-        window.location.href = `${document.location.origin}/project?projectId=${projectId}&download=true`;
+        let url = `${document.location.origin}/project?projectId=${projectId}&download=true`;
+        if (track) {
+          url = url.concat('&track=true');
+        }
+        window.location.href = url;
       },
     },
   }

@@ -2,6 +2,7 @@
 from __future__ import absolute_import, division, print_function
 
 import gzip
+import hashlib
 import json
 import timeit
 import traceback
@@ -20,8 +21,9 @@ from flask import (
 from werkzeug.exceptions import BadRequestKeyError, HTTPException
 
 from deepcell_label import exporters, loaders
-from deepcell_label.label import TrackEdit, ZStackEdit
+from deepcell_label.label import Edit
 from deepcell_label.models import Project
+from deepcell_label.utils import add_frame_div_parent, reformat_cell_info
 
 bp = Blueprint('label', __name__)  # pylint: disable=C0103
 
@@ -61,7 +63,8 @@ def raw(token, channel, frame):
     if not project:
         return abort(404, description=f'project {token} not found')
     png = project.get_raw_png(channel, frame)
-    return send_file(png, mimetype='image/png')
+    etag = hashlib.md5(png.getbuffer()).hexdigest()
+    return send_file(png, mimetype='image/png', etag=etag)
 
 
 @bp.route('/api/raw/<token>', methods=['POST'])
@@ -97,7 +100,9 @@ def labeled(token, feature, frame):
     if not project:
         return abort(404, description=f'project {token} not found')
     png = project.get_labeled_png(feature, frame)
-    return send_file(png, mimetype='image/png', cache_timeout=0)
+    etag = hashlib.md5(png.getbuffer()).hexdigest()
+    response = send_file(png, mimetype='image/png', cache_timeout=0, etag=etag)
+    return response
 
 
 @bp.route('/api/array/<token>/<int:feature>/<int:frame>')
@@ -111,10 +116,11 @@ def array(token, feature, frame):
     response = make_response(content)
     response.headers['Content-length'] = len(content)
     response.headers['Content-Encoding'] = 'gzip'
-    return response
-    # seg_array = project.get_labeled_array(feature, frame)
-    # filename = f'{token}_array_feature{feature}_frame{frame}.npy'
-    # return send_file(seg_array, attachment_filename=filename, cache_timeout=0)
+    # gzip includes a timestamp that changes the md5 hash
+    # TODO: in Python >= 3.8, add mtime=0 to create stable md5 and use add_etag instead
+    etag = hashlib.md5(labeled_array).hexdigest()
+    response.set_etag(etag)
+    return response.make_conditional(request)
 
 
 @bp.route('/api/semantic-labels/<project_id>/<int:feature>')
@@ -123,7 +129,11 @@ def semantic_labels(project_id, feature):
     if not project:
         return jsonify({'error': f'project {project_id} not found'}), 404
     cell_info = project.labels.cell_info[feature]
-    return cell_info
+    cell_info = add_frame_div_parent(cell_info)
+    cell_info = reformat_cell_info(cell_info)
+    response = make_response(cell_info)
+    response.add_etag()
+    return response.make_conditional(request)
 
 
 @bp.route('/api/colormap/<project_id>/<int:feature>')
@@ -138,8 +148,8 @@ def colormap(project_id, feature):
     colors.append('#FFFFFF')  # New label (last label) is white
     response = make_response({'colors': colors})
     response.headers['Cache-Control'] = 'max-age=0'
-
-    return response
+    response.add_etag()
+    return response.make_conditional(request)
 
 
 @bp.route('/api/edit/<token>/<action_type>', methods=['POST'])
@@ -164,7 +174,7 @@ def edit(token, action_type):
     del info['feature']
     del info['channel']
 
-    edit = get_edit(project)
+    edit = Edit(project)
     edit.dispatch_action(action_type, info)
     project.create_memento(action_type)
     project.update()
@@ -277,31 +287,35 @@ def create_project_from_url():
     return jsonify({'projectId': project.token})
 
 
-@bp.route('/api/download/<token>', methods=['GET'])
-def download_project(token):
+@bp.route('/api/download', methods=['GET'])
+def download_project():
     """
     Download a DeepCell Label project as a .npz file
     """
-    project = Project.get(token)
+    id = request.args.get('id')
+    project = Project.get(id)
     if not project:
-        return abort(404, description=f'project {token} not found')
-
-    exporter = exporters.Exporter(project)
+        return abort(404, description=f'project {id} not found')
+    format = request.args.get('format')
+    exporter = exporters.Exporter(project, format)
     filestream = exporter.export()
 
     return send_file(filestream, as_attachment=True, attachment_filename=exporter.path)
 
 
-@bp.route('/api/upload/<bucket>/<token>', methods=['GET', 'POST'])
-def upload_project_to_s3(bucket, token):
+@bp.route('/api/upload', methods=['GET', 'POST'])
+def upload_project_to_s3():
     """Upload .trk/.npz data file to AWS S3 bucket."""
     start = timeit.default_timer()
-    project = Project.get(token)
+    id = request.form['id']
+    format = request.form['format']
+    bucket = request.form['bucket']
+    project = Project.get(id)
     if not project:
-        return abort(404, description=f'project {token} not found')
+        return abort(404, description=f'project {id} not found')
 
     # Save data file and send to S3 bucket
-    exporter = exporters.S3Exporter(project)
+    exporter = exporters.S3Exporter(project, format)
     exporter.export(bucket)
     # add "finished" timestamp and null out PickleType columns
     # project.finish()
@@ -310,15 +324,7 @@ def upload_project_to_s3(bucket, token):
         'Uploaded %s to S3 bucket %s from project %s in %s s.',
         exporter.path,
         bucket,
-        token,
+        id,
         timeit.default_timer() - start,
     )
     return {}
-
-
-def get_edit(project):
-    """Factory for Edit objects"""
-    if project.is_track:
-        return TrackEdit(project)
-    else:
-        return ZStackEdit(project)

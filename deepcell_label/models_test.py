@@ -34,34 +34,6 @@ def test_project_init():
     assert project.colormap is not None
 
 
-def test_is_track():
-    project = models.Project(DummyLoader())
-
-    valid_trks = ['test.trk', 'test.trks', 'test.TrKs', 'test.TRk']
-    for name in valid_trks:
-        project.path = name
-        assert project.is_track
-
-    invalid_trks = ['test.pdf', 'test.npz', 'a string']
-    for name in invalid_trks:
-        project.path = name
-        assert not project.is_track
-
-
-def test_is_zstack():
-    project = models.Project(DummyLoader())
-
-    valid_zstacks = ['test.npz', 'test.NpZ', 'test.png', 'test.tif', 'test.tiff']
-    for name in valid_zstacks:
-        project.path = name
-        assert project.is_zstack
-
-    invalid_zstacks = ['test.pdf', 'test.trk', 'test.trks', 'a string']
-    for name in invalid_zstacks:
-        project.path = name
-        assert not project.is_zstack
-
-
 def test_get_missing_project():
     """
     Gets a project before it exists.

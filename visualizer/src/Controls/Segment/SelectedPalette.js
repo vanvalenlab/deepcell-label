@@ -196,7 +196,6 @@ function ForegroundBox() {
 
   useEffect(() => {
     bind('n', () => select.send('NEW_FOREGROUND'));
-    bind('esc', () => select.send('RESET_FOREGROUND'));
     bind('[', () => select.send('PREV_FOREGROUND'));
     bind(']', () => select.send('NEXT_FOREGROUND'));
   }, [select]);
@@ -307,7 +306,6 @@ function BackgroundBox() {
   const color = colors[background] ?? '#000000';
 
   useEffect(() => {
-    bind('esc', () => select.send('RESET_BACKGROUND'));
     bind('{', () => select.send('PREV_BACKGROUND'));
     bind('}', () => select.send('NEXT_BACKGROUND'));
   }, [select]);
@@ -410,8 +408,17 @@ function Hovering() {
   );
 }
 
-export default function SelectedPalette() {
+function SelectedPalette() {
   const styles = useStyles();
+
+  const select = useSelect();
+
+  useEffect(() => {
+    bind('esc', () => {
+      select.send('RESET_FOREGROUND');
+      select.send('RESET_BACKGROUND');
+    });
+  }, [select]);
 
   return (
     <Box display='flex' flexDirection='column'>
@@ -422,3 +429,5 @@ export default function SelectedPalette() {
     </Box>
   );
 }
+
+export default SelectedPalette;

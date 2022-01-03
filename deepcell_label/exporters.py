@@ -17,8 +17,9 @@ class Exporter:
     Interface to export work from a DeepCell Label project.
     """
 
-    def __init__(self, project):
+    def __init__(self, project, format):
         self.project = project
+        self.format = '.' + format.lower().strip('.')
         self.path = self.format_path()
 
     def format_path(self):
@@ -28,11 +29,7 @@ class Exporter:
         """
         path = urlparse(self.project.path).path
         path = path.strip('/')
-        path = pathlib.Path(path)
-        if self.project.is_track:
-            path = path.with_suffix('.trk')
-        else:
-            path = path.with_suffix('.npz')
+        path = pathlib.Path(path).with_suffix(self.format)
         return str(path)
 
     def export(self):
@@ -49,12 +46,14 @@ class Exporter:
         Returns:
             function: exports a DeepCell Label project into a BytesIO buffer
         """
-        if self.project.is_zstack:
+        if self.format == '.npz':
             _export = self.export_npz
-        elif self.project.is_track:
+        elif self.format == '.trk':
             _export = self.export_trk
         else:
-            raise ValueError('Cannot export file: {}'.format(self.path))
+            raise ValueError(
+                'Invalid format: {}. Select from .npz or .trk'.format(self.format)
+            )
         return _export
 
     def export_npz(self):
@@ -70,11 +69,9 @@ class Exporter:
         """
         # save file to BytesIO object
         store_npz = io.BytesIO()
-
         # X and y are array names by convention
         np.savez(store_npz, X=self.project.raw_array, y=self.project.label_array)
         store_npz.seek(0)
-
         return store_npz
 
     def export_trk(self):

@@ -10,16 +10,16 @@ class TestExporter:
     def test_export_npz(self, app, db_session):
         with app.app_context():
             db_session.autoflush = False
-            project = models.Project.create(DummyLoader(path='test.npz'))
-            exporter = exporters.Exporter(project)
+            project = models.Project.create(DummyLoader())
+            exporter = exporters.Exporter(project, 'npz')
             file_ = exporter.export()
             assert isinstance(file_, io.BytesIO)
 
     def test_export_trk(self, app, db_session):
         with app.app_context():
             db_session.autoflush = False
-            project = models.Project.create(DummyLoader(path='test.trk'))
-            exporter = exporters.Exporter(project)
+            project = models.Project.create(DummyLoader())
+            exporter = exporters.Exporter(project, 'trk')
             file_ = exporter.export()
             assert isinstance(file_, io.BytesIO)
 
@@ -30,6 +30,6 @@ class TestS3Exporter:
             mocked = mocker.patch('boto3.s3.inject.upload_fileobj')
             db_session.autoflush = False
             project = models.Project.create(DummyLoader())
-            exporter = exporters.S3Exporter(project)
+            exporter = exporters.S3Exporter(project, 'npz')
             exporter.export('test')
             mocked.assert_called()
