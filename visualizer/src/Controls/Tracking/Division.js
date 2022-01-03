@@ -36,8 +36,8 @@ const useStyles = makeStyles((theme) => ({
   },
   cell: {
     margin: theme.spacing(1),
-    height: '40px',
-    width: '40px',
+    height: '2.5rem',
+    width: '2.5rem',
   },
   addButton: {
     position: 'absolute',

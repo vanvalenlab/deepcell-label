@@ -6,7 +6,7 @@ import Alert from '@material-ui/lab/Alert';
 import clsx from 'clsx';
 import React from 'react';
 
-const useStyles = makeStyles((theme) => {
+export const useAlertStyles = makeStyles((theme) => {
   const transition = {
     duration: theme.transitions.duration.shortest,
   };
@@ -20,14 +20,14 @@ const useStyles = makeStyles((theme) => {
     },
     headerAlert: {
       boxSizing: 'border-box',
-      maxWidth: '300px',
+      maxWidth: '20rem',
       marginTop: theme.spacing(2),
     },
     alert: {
       position: 'relative',
       boxSizing: 'border-box',
-      maxWidth: '280px',
-      left: '20px',
+      maxWidth: '18rem',
+      left: '2rem',
     },
     expandIcon: {
       transform: 'rotate(0deg)',
@@ -47,7 +47,7 @@ const useStyles = makeStyles((theme) => {
 });
 
 function AlertGroup({ header, severity, children }) {
-  const styles = useStyles();
+  const styles = useAlertStyles();
 
   const [open, setOpen] = React.useState(false);
   const toggle = () => setOpen(!open);

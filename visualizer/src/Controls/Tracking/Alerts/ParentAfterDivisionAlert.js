@@ -1,30 +1,9 @@
-import { makeStyles } from '@material-ui/core/styles';
 import Alert from '@material-ui/lab/Alert';
 import { useSelector } from '@xstate/react';
 import React from 'react';
 import { useTracking } from '../../../ProjectContext';
 import { formatFrames, parentAfterDivision } from '../trackingUtils';
-import AlertGroup from './AlertGroup';
-
-const useStyles = makeStyles((theme) => ({
-  root: {
-    width: '100%',
-    // '& > * + *': {
-    //   marginTop: theme.spacing(2),
-    // },
-  },
-  headerAlert: {
-    boxSizing: 'border-box',
-    maxWidth: '300px',
-    marginTop: theme.spacing(2),
-  },
-  alert: {
-    position: 'relative',
-    boxSizing: 'border-box',
-    maxWidth: '280px',
-    left: '20px',
-  },
-}));
+import AlertGroup, { useAlertStyles } from './AlertGroup';
 
 function ParentAfterDivisionAlert({ label }) {
   const tracking = useTracking();
@@ -34,7 +13,7 @@ function ParentAfterDivisionAlert({ label }) {
   const framesAfterDivision = frames.filter((frame) => frame >= divisionFrame);
   const frameText = formatFrames(framesAfterDivision);
 
-  const styles = useStyles();
+  const styles = useAlertStyles();
 
   return (
     <Alert className={styles.alert} severity='error'>

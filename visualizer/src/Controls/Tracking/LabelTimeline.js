@@ -17,7 +17,7 @@ function FrameBox({ frame, numFrames, color }) {
   const boxStyle = {
     position: 'absolute',
     backgroundColor: color,
-    height: '10px',
+    height: '1rem',
     width: `${(1 / numFrames) * 100}%`,
     left: `${(frame / numFrames) * 100}%`,
     pointerEvents: 'none',
@@ -46,7 +46,7 @@ function LabelTimeline({ label }) {
       style={{
         position: 'relative',
         display: 'flex',
-        height: '10px',
+        height: '1rem',
         width: '100%',
       }}
     >
