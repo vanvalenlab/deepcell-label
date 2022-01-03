@@ -162,27 +162,27 @@ function DaughterMenu({ parent, daughter }) {
   const tracking = useTracking();
   const { send } = tracking;
 
-  const [open, toggle] = useReducer((v) => !v, false);
+  const [open, toggleOpen] = useReducer((v) => !v, false);
   const anchorRef = useRef(null);
 
   const handleRemove = () => {
     send({ type: 'REMOVE', daughter: daughter });
-    toggle();
+    toggleOpen();
   };
 
   const handleParent = () => {
     send({ type: 'REPLACE_WITH_PARENT', parent: parent, daughter: daughter });
-    toggle();
+    toggleOpen();
   };
 
   return (
     <>
-      <IconButton aria-label='Edit daughter' size='small' onClick={toggle} ref={anchorRef}>
+      <IconButton aria-label='Edit daughter' size='small' onClick={toggleOpen} ref={anchorRef}>
         <CloseIcon fontSize='small' />
       </IconButton>
       <Popper open={open} anchorEl={anchorRef.current} placement='bottom-end'>
         <Paper>
-          <ClickAwayListener onClickAway={toggle}>
+          <ClickAwayListener onClickAway={toggleOpen}>
             <MenuList id='remove-daughter-menu'>
               <MenuItem onClick={handleRemove}>Remove from Division</MenuItem>
               {/* <MenuItem onClick={handleNewCell}>Replace with New Cell</MenuItem> */}
