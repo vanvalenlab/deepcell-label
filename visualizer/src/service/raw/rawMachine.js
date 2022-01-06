@@ -121,6 +121,7 @@ const createRawMachine = (projectId, numChannels, numFrames) =>
       },
       on: {
         TOGGLE_INVERT: { actions: 'forwardToChannel' },
+        ADD_LAYER: { actions: sendParent('ADD_LAYER') },
       },
     },
     {

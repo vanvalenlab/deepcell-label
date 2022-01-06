@@ -79,6 +79,7 @@ const createImageMachine = ({ projectId }) =>
         COLOR: { actions: 'forwardToParent' },
         SAVE: { actions: 'save' },
         RESTORE: { actions: 'restore' },
+        ADD_LAYER: { actions: sendParent('ADD_LAYER') },
       },
     },
     {
