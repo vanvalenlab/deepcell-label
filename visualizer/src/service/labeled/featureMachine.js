@@ -250,7 +250,7 @@ const createFeatureMachine = (projectId, feature, numFrames) =>
         })),
         saveFrame: assign(({ frames, arrays, loadingFrame }, { data: [image, array] }) => ({
           frames: { ...frames, [loadingFrame]: image },
-          arrays: { ...arrays, [loadingFrame]: array },
+          arrays: { ...arrays, [loadingFrame]: array.flat().map(Math.abs) },
         })),
         saveLabels: assign({ labels: (_, event) => event.data }),
         saveColors: assign({ colors: (_, event) => event.data.colors }),

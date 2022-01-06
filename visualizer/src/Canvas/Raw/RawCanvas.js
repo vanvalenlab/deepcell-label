@@ -1,7 +1,7 @@
 import { useSelector } from '@xstate/react';
 import React from 'react';
 import { useRaw } from '../../ProjectContext';
-import GrayscaleCanvas from './GrayscaleCanvas';
+import GrayscaleCanvas from './GrayscaleCanvasGPU';
 import RGBCanvas from './RGBCanvas';
 
 export const RawCanvas = (props) => {

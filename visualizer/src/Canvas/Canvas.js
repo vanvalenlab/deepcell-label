@@ -2,10 +2,10 @@ import Box from '@material-ui/core/Box';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { makeStyles } from '@material-ui/core/styles';
 import { useSelector } from '@xstate/react';
-import React, { useEffect } from 'react';
-import { useCanvas, useLabeled, useRaw, useSegment, useSelect } from '../ProjectContext';
-import LabeledCanvas from './Labeled/LabeledCanvas';
-import OutlineCanvas from './Labeled/OutlineCanvas';
+import React from 'react';
+import { useCanvas, useLabeled, useRaw, useSegment } from '../ProjectContext';
+import LabeledCanvas from './Labeled/LabeledCanvasGPU';
+import OutlineCanvas from './Labeled/OutlineCanvasGPU';
 import RawCanvas from './Raw/RawCanvas';
 import BrushCanvas from './Tool/BrushCanvas';
 import ThresholdCanvas from './Tool/ThresholdCanvas';
@@ -27,7 +27,7 @@ const useStyles = makeStyles({
 export const Canvas = () => {
   const raw = useRaw();
   const labeled = useLabeled();
-  const select = useSelect();
+  // const select = useSelect();
 
   const canvas = useCanvas();
   const sx = useSelector(canvas, (state) => state.context.sx);
@@ -64,31 +64,33 @@ export const Canvas = () => {
     cursor: cursor,
   };
 
-  // prevent scrolling page when over canvas
-  useEffect(() => {
-    const canvasBox = document.getElementById('canvasBox');
-    const wheelListener = (e) => e.preventDefault();
-    const spaceListener = (e) => {
-      if (e.key === ' ') {
-        e.preventDefault();
-      }
-    };
-    canvasBox.addEventListener('wheel', wheelListener);
-    document.addEventListener('keydown', spaceListener);
-    return () => {
-      canvasBox.removeEventListener('wheel', wheelListener);
-      document.removeEventListener('keydown', spaceListener);
-    };
-  }, []);
+  // // prevent scrolling page when over canvas
+  // useEffect(() => {
+  //   const canvasBox = document.getElementById('canvasBox');
+  //   const wheelListener = (e) => e.preventDefault();
+  //   const spaceListener = (e) => {
+  //     if (e.key === ' ') {
+  //       e.preventDefault();
+  //     }
+  //   };
+  //   canvasBox.addEventListener('wheel', wheelListener);
+  //   document.addEventListener('keydown', spaceListener);
+  //   return () => {
+  //     canvasBox.removeEventListener('wheel', wheelListener);
+  //     document.removeEventListener('keydown', spaceListener);
+  //   };
+  // }, []);
 
-  const handleMouseDown = (event) => {
-    event.preventDefault();
-    if (event.shiftKey) {
-      select.send({ ...event, type: 'SHIFT_CLICK' });
-    } else {
-      canvas.send(event);
-    }
-  };
+  // const handleMouseDown = (event) => {
+  //   event.preventDefault();
+  //   if (event.shiftKey) {
+  //     select.send({ ...event, type: 'SHIFT_CLICK' });
+  //   } else {
+  //     canvas.send(event);
+  //   }
+  // };
+
+  const [canvases, setCanvases] = React.useState([]);
 
   return (
     <Box
@@ -98,12 +100,13 @@ export const Canvas = () => {
       boxShadow={10}
       width={scale * sw}
       height={scale * sh}
-      onMouseMove={canvas.send}
-      onWheel={canvas.send}
-      onMouseDown={handleMouseDown}
-      onMouseUp={canvas.send}
+      // onMouseMove={canvas.send}
+      // onWheel={canvas.send}
+      // onMouseDown={handleMouseDown}
+      // onMouseUp={canvas.send}
     >
       {!raw && <CircularProgress style={{ margin: '25%', width: '50%', height: '50%' }} />}
+      {/* <ComposeCanvas canvases={canvases} /> */}
       {raw && <RawCanvas className={styles.canvas} />}
       {labeled && <LabeledCanvas className={styles.canvas} />}
       {labeled && <OutlineCanvas className={styles.canvas} />}

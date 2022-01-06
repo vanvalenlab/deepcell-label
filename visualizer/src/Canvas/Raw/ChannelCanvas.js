@@ -50,7 +50,7 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
     }
     // assign to channelCanvases to rerender
     setCanvases((prevCanvases) => ({ ...prevCanvases, [layerIndex]: canvas }));
-  }, [canvasRef, setCanvases, on, layerIndex, rawImage, color, min, max, width, height]);
+  }, [setCanvases, on, layerIndex, rawImage, color, min, max, width, height]);
 
   useEffect(() => {
     return () =>
