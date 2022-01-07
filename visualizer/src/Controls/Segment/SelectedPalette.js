@@ -12,6 +12,15 @@ import { bind } from 'mousetrap';
 import React, { useEffect, useState } from 'react';
 import { useFeature, useLabeled, useSelect } from '../../ProjectContext';
 
+function componentToHex(c) {
+  var hex = c.toString(16);
+  return hex.length === 1 ? '0' + hex : hex;
+}
+
+function rgbToHex(rgb) {
+  return '#' + componentToHex(rgb[0]) + componentToHex(rgb[1]) + componentToHex(rgb[2]);
+}
+
 // adapted from https://stackoverflow.com/questions/9733288/how-to-programmatically-calculate-the-contrast-ratio-between-two-colors
 
 /**
@@ -159,8 +168,8 @@ function HoveringBox() {
   const labeled = useLabeled();
   const featureIndex = useSelector(labeled, (state) => state.context.feature);
   const feature = useFeature(featureIndex);
-  const colors = useSelector(feature, (state) => state.context.colors);
-  const color = colors[hovering] ?? '#000000';
+  const colormap = useSelector(feature, (state) => state.context.colormap);
+  const color = hovering ? rgbToHex(colormap[hovering]) : '#000000';
 
   const buttonColor =
     contrast(color, '#000000') > contrast(color, '#FFFFFF') ? '#000000' : '#FFFFFF';
@@ -191,8 +200,9 @@ function ForegroundBox() {
   const labeled = useLabeled();
   const featureIndex = useSelector(labeled, (state) => state.context.feature);
   const feature = useFeature(featureIndex);
-  const colors = useSelector(feature, (state) => state.context.colors);
-  const color = colors[foreground] ?? '#000000';
+  const colormap = useSelector(feature, (state) => state.context.colormap);
+  const color = rgbToHex(colormap[foreground]) ?? '#000000';
+  console.log(color);
 
   useEffect(() => {
     bind('n', () => select.send('NEW_FOREGROUND'));
@@ -302,8 +312,9 @@ function BackgroundBox() {
   const labeled = useLabeled();
   const featureIndex = useSelector(labeled, (state) => state.context.feature);
   const feature = useFeature(featureIndex);
-  const colors = useSelector(feature, (state) => state.context.colors);
-  const color = colors[background] ?? '#000000';
+  const colormap = useSelector(feature, (state) => state.context.colormap);
+  const color = rgbToHex(colormap[background]) ?? '#000000';
+  console.log(color);
 
   useEffect(() => {
     bind('{', () => select.send('PREV_BACKGROUND'));

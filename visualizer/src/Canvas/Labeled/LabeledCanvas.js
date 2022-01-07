@@ -1,7 +1,6 @@
 import { useSelector } from '@xstate/react';
-import colormap from 'colormap';
 import { GPU } from 'gpu.js';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useCanvas, useFeature, useLabeled, useSelect } from '../../ProjectContext';
 
 const highlightColor = [255, 0, 0];
@@ -17,6 +16,7 @@ export const LabeledCanvas = ({ setCanvases }) => {
   const opacity = useSelector(labeled, (state) => state.context.opacity);
 
   const feature = useFeature(featureIndex);
+  const colormap = useSelector(feature, (state) => state.context.colormap);
   let labeledArray = useSelector(feature, (state) => state.context.labeledArray);
   if (!labeledArray) {
     labeledArray = Array(height * width).fill(0);
@@ -24,16 +24,6 @@ export const LabeledCanvas = ({ setCanvases }) => {
 
   const select = useSelect();
   const foreground = useSelector(select, (state) => state.context.foreground);
-  const maxLabel = useSelector(select, (state) => Math.max(...Object.keys(state.context.labels)));
-  const cmap = useMemo(
-    () =>
-      colormap({
-        colormap: 'viridis',
-        nshades: Math.max(9, maxLabel),
-        format: 'rgba',
-      }),
-    [maxLabel]
-  );
 
   const kernel = useRef();
   const canvasRef = useRef();
@@ -66,9 +56,9 @@ export const LabeledCanvas = ({ setCanvases }) => {
   }, [width, height]);
 
   useEffect(() => {
-    kernel.current(labeledArray, cmap, foreground, highlight, highlightColor, opacity);
+    kernel.current(labeledArray, colormap, foreground, highlight, highlightColor, opacity);
     setCanvases((canvases) => ({ ...canvases, labeled: canvasRef.current }));
-  }, [labeledArray, cmap, foreground, highlight, opacity, setCanvases]);
+  }, [labeledArray, colormap, foreground, highlight, opacity, setCanvases]);
 
   return <canvas hidden={true} id={'labeled-canvas'} ref={canvasRef} />;
 };

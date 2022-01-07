@@ -1,3 +1,4 @@
+import colormap from 'colormap';
 import { assign, Machine, send, sendParent } from 'xstate';
 import { pure } from 'xstate/lib/actions';
 
@@ -5,12 +6,6 @@ function fetchSemanticLabels(context) {
   const { projectId, feature } = context;
   const pathToSemanticLabels = `/api/semantic-labels/${projectId}/${feature}`;
   return fetch(pathToSemanticLabels).then((res) => res.json());
-}
-
-function fetchColors(context) {
-  const { projectId, feature } = context;
-  const pathToColors = `/api/colormap/${projectId}/${feature}`;
-  return fetch(pathToColors).then((res) => res.json());
 }
 
 function fetchLabeledFrame(context) {
@@ -62,32 +57,11 @@ const reloadLabelsState = {
   },
 };
 
-const reloadColorsState = {
-  entry: assign({ reloadColors: (_, { data: { labels } }) => labels }),
-  initial: 'checkReload',
-  states: {
-    checkReload: {
-      always: [{ cond: ({ reloadColors }) => reloadColors, target: 'reloading' }, 'reloaded'],
-    },
-    reloading: {
-      invoke: {
-        src: fetchColors,
-        onDone: { target: 'reloaded', actions: 'saveColors' },
-        onError: 'reloaded',
-      },
-    },
-    reloaded: {
-      type: 'final',
-    },
-  },
-};
-
 const reloadState = {
   type: 'parallel',
   states: {
     frame: reloadFrameState,
     labels: reloadLabelsState,
-    colors: reloadColorsState,
   },
   onDone: {
     target: 'idle',
@@ -137,18 +111,12 @@ const createFeatureMachine = (projectId, feature, numFrames) =>
         frame: null,
         loadingFrame: null,
         frames: {},
-        colors: {},
+        colormap: [[0, 0, 0, 1], ...colormap({ colormap: 'viridis', format: 'rgba' })],
         labeledArray: null,
         labels: null,
         reloadLabels: false,
       },
       initial: 'idle',
-      invoke: [
-        {
-          src: fetchColors,
-          onDone: { actions: 'saveColors' },
-        },
-      ],
       states: {
         idle: {
           on: {
@@ -211,8 +179,17 @@ const createFeatureMachine = (projectId, feature, numFrames) =>
         saveFrame: assign(({ frames, loadingFrame }, { data }) => ({
           frames: { ...frames, [loadingFrame]: data },
         })),
-        saveLabels: assign({ labels: (_, event) => event.data }),
-        saveColors: assign({ colors: (_, event) => event.data.colors }),
+        saveLabels: assign({
+          labels: (_, event) => event.data,
+          colormap: (_, event) => [
+            [0, 0, 0, 1],
+            ...colormap({
+              colormap: 'viridis',
+              nshades: Math.max(9, Math.max(...Object.keys(event.data))),
+              format: 'rgba',
+            }),
+          ],
+        }),
         loadNextFrame: assign({
           loadingFrame: ({ numFrames, frame, frames }) => {
             const allFrames = [...Array(numFrames).keys()];
