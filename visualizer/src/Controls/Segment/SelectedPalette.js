@@ -202,7 +202,6 @@ function ForegroundBox() {
   const feature = useFeature(featureIndex);
   const colormap = useSelector(feature, (state) => state.context.colormap);
   const color = rgbToHex(colormap[foreground]) ?? '#000000';
-  console.log(color);
 
   useEffect(() => {
     bind('n', () => select.send('NEW_FOREGROUND'));
@@ -314,7 +313,6 @@ function BackgroundBox() {
   const feature = useFeature(featureIndex);
   const colormap = useSelector(feature, (state) => state.context.colormap);
   const color = rgbToHex(colormap[background]) ?? '#000000';
-  console.log(color);
 
   useEffect(() => {
     bind('{', () => select.send('PREV_BACKGROUND'));
