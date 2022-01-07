@@ -35,7 +35,7 @@ export const ComposeCanvas = ({ canvases }) => {
 
   useEffect(() => {
     composeCtxRef.current = composeCanvasRef.current.getContext('2d');
-    composeCtxRef.current.globalCompositeOperation = 'screen';
+    composeCtxRef.current.globalCompositeOperation = 'source-over';
   }, [sh, sw]);
 
   useEffect(() => {

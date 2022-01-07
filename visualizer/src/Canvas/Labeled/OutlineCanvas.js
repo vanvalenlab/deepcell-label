@@ -25,10 +25,15 @@ const OutlineCanvas = ({ setCanvases }) => {
   }
 
   const kernel = useRef();
-  const gpuCanvasRef = useRef();
+  const canvasRef = useRef();
 
   useEffect(() => {
-    const gpu = new GPU();
+    const canvas = canvasRef.current;
+    const gl = canvas.getContext('webgl2', { premultipliedAlpha: false });
+    const gpu = new GPU({
+      canvas,
+      gl,
+    });
     kernel.current = gpu
       .createKernel(function (data, foreground, background) {
         const n = this.thread.x + this.constants.w * (this.constants.h - this.thread.y);
@@ -53,12 +58,11 @@ const OutlineCanvas = ({ setCanvases }) => {
       .setConstants({ w: width, h: height })
       .setOutput([width, height])
       .setGraphical(true);
-    gpuCanvasRef.current = kernel.current.canvas;
   }, [width, height]);
 
   useEffect(() => {
     kernel.current(labeledArray, foreground, background);
-    setCanvases((canvases) => ({ ...canvases, outline: gpuCanvasRef.current }));
+    setCanvases((canvases) => ({ ...canvases, outline: canvasRef.current }));
     // return () =>
     //   setCanvases((canvases) => {
     //     delete canvases['outline'];
@@ -66,7 +70,7 @@ const OutlineCanvas = ({ setCanvases }) => {
     //   });
   }, [labeledArray, foreground, background, setCanvases]);
 
-  return null;
+  return <canvas hidden={true} id={'outline-canvas'} ref={canvasRef} />;
 };
 
 export default OutlineCanvas;

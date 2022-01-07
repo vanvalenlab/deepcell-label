@@ -41,7 +41,6 @@ export const LabeledCanvas = ({ setCanvases }) => {
 
   const select = useSelect();
   const foreground = useSelector(select, (state) => state.context.foreground);
-  // const background = useSelector(select, (state) => state.context.background);
   const maxLabel = useSelector(select, (state) => Math.max(...Object.keys(state.context.labels)));
   const cmap = useMemo(
     () =>
@@ -57,7 +56,12 @@ export const LabeledCanvas = ({ setCanvases }) => {
   const canvasRef = useRef();
 
   useEffect(() => {
-    const gpu = new GPU();
+    const canvas = canvasRef.current;
+    const gl = canvas.getContext('webgl2', { premultipliedAlpha: false });
+    const gpu = new GPU({
+      canvas,
+      gl,
+    });
     kernel.current = gpu
       .createKernel(function (labels, colormap, foreground, highlight, highlightColor, opacity) {
         const n = this.thread.x + this.constants.w * (this.constants.h - this.thread.y);
@@ -76,20 +80,23 @@ export const LabeledCanvas = ({ setCanvases }) => {
       .setOutput([width, height])
       .setGraphical(true)
       .setDynamicArguments(true);
-    canvasRef.current = kernel.current.canvas;
   }, [width, height]);
 
   useEffect(() => {
     kernel.current(labeledArray, cmap, foreground, highlight, highlightColor, opacity);
     setCanvases((canvases) => ({ ...canvases, labeled: canvasRef.current }));
-    // return () =>
-    //   setCanvases((canvases) => {
-    //     delete canvases['labeled'];
-    //     return { ...canvases };
-    //   });
   }, [labeledArray, cmap, foreground, highlight, opacity, setCanvases]);
 
-  return null;
+  useEffect(
+    () => () =>
+      setCanvases((canvases) => {
+        delete canvases['labeled'];
+        return { ...canvases };
+      }),
+    [setCanvases]
+  );
+
+  return <canvas hidden={true} id={'labeled-canvas'} ref={canvasRef} />;
 };
 
 export default LabeledCanvas;
