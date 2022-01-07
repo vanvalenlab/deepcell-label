@@ -15,35 +15,7 @@ function fetchColors(context) {
 
 function fetchLabeledFrame(context) {
   const { projectId, feature, loadingFrame: frame } = context;
-  const pathToLabeled = `/api/labeled/${projectId}/${feature}/${frame}`;
-  const pathToArray = `/api/array/${projectId}/${feature}/${frame}`;
-
-  const fetchImage = fetch(pathToLabeled)
-    // .then(validateResponse)
-    .then(readResponseAsBlob)
-    .then(makeImageURL)
-    .then(showImage);
-  // .catch(logError);
-
-  const fetchArray = fetch(pathToArray).then((res) => res.json());
-
-  return Promise.all([fetchImage, fetchArray]);
-}
-
-function readResponseAsBlob(response) {
-  return response.blob();
-}
-
-function makeImageURL(responseAsBlob) {
-  return URL.createObjectURL(responseAsBlob);
-}
-
-function showImage(imgUrl) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.src = imgUrl;
-  });
+  return fetch(`/api/array/${projectId}/${feature}/${frame}`).then((res) => res.json());
 }
 
 const reloadFrameState = {
@@ -165,9 +137,7 @@ const createFeatureMachine = (projectId, feature, numFrames) =>
         frame: null,
         loadingFrame: null,
         frames: {},
-        arrays: {},
         colors: {},
-        labeledImage: new Image(),
         labeledArray: null,
         labels: null,
         reloadLabels: false,
@@ -217,19 +187,10 @@ const createFeatureMachine = (projectId, feature, numFrames) =>
       },
       actions: {
         clearChangedFrames: assign((context, event) => {
-          const newFrames = event.data.frames;
-          const inNew = ([key, value]) => newFrames.includes(Number(key));
-          const notInNew = ([key, value]) => !newFrames.includes(Number(key));
-          const frames = Object.entries(context.frames);
-          const arrays = Object.entries(context.arrays);
-          const filteredFrames = frames.filter(notInNew);
-          const filteredArrays = arrays.filter(notInNew);
-          for (const [frame, image] of frames.filter(inNew)) {
-            URL.revokeObjectURL(image.src);
-          }
+          const changedFrames = event.data.frames;
+          const notChanged = ([key, value]) => !changedFrames.includes(Number(key));
           return {
-            frames: Object.fromEntries(filteredFrames),
-            arrays: Object.fromEntries(filteredArrays),
+            frames: Object.fromEntries(Object.entries(context.frames).filter(notChanged)),
           };
         }),
         sendLabeledLoaded: sendParent(({ loadingFrame, feature }) => ({
@@ -243,14 +204,12 @@ const createFeatureMachine = (projectId, feature, numFrames) =>
             sendParent({ type: 'LABELS', labels }),
           ];
         }),
-        useFrame: assign(({ frames, arrays }, { frame }) => ({
+        useFrame: assign(({ frames }, { frame }) => ({
           frame,
-          labeledImage: frames[frame],
-          labeledArray: arrays[frame],
+          labeledArray: frames[frame],
         })),
-        saveFrame: assign(({ frames, arrays, loadingFrame }, { data: [image, array] }) => ({
-          frames: { ...frames, [loadingFrame]: image },
-          arrays: { ...arrays, [loadingFrame]: array },
+        saveFrame: assign(({ frames, loadingFrame }, { data }) => ({
+          frames: { ...frames, [loadingFrame]: data },
         })),
         saveLabels: assign({ labels: (_, event) => event.data }),
         saveColors: assign({ colors: (_, event) => event.data.colors }),

@@ -11,14 +11,13 @@ from secrets import token_urlsafe
 import numpy as np
 import sqlalchemy.types as types
 from flask_sqlalchemy import SQLAlchemy
-from matplotlib import pyplot as plt
 from skimage.exposure import rescale_intensity
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy.schema import ForeignKeyConstraint, PrimaryKeyConstraint
 
-from deepcell_label.imgutils import grayscale_pngify, pngify
+from deepcell_label.imgutils import grayscale_pngify
 
 logger = logging.getLogger('models.Project')  # pylint: disable=C0103
 # Accessing relationships (like project.label_frames) issues a Query, causing a flush
@@ -117,7 +116,6 @@ class Project(db.Model):
     channel = db.Column(db.Integer, default=0)
     feature = db.Column(db.Integer, default=0)
     scale_factor = db.Column(db.Float, default=1)
-    colormap = db.Column(db.PickleType)
 
     raw_frames = db.relationship(
         'RawFrame',
@@ -167,9 +165,6 @@ class Project(db.Model):
         self.width = raw.shape[2]
         self.num_channels = raw.shape[-1]
         self.num_features = label.shape[-1]
-        cmap = plt.get_cmap('viridis')
-        cmap.set_bad('black')
-        self.colormap = cmap
 
         # Create frames from raw, RGB, and labeled images
         self.raw_frames = [RawFrame(i, frame) for i, frame in enumerate(raw)]
@@ -264,7 +259,6 @@ class Project(db.Model):
         """
         start = timeit.default_timer()
         self.finished = db.func.current_timestamp()
-        self.colormap = None
         # Clear label metadata
         self.labels.finish()
         # Clear frames
@@ -457,22 +451,6 @@ class Project(db.Model):
         raw_arr = raw_frame.frame[..., channel]
         raw_png = grayscale_pngify(raw_arr)
         return raw_png
-
-    def get_labeled_png(self, feature, frame):
-        """
-        Returns:
-            BytesIO: contains the labeled frame as a .png
-        """
-        # Create label png
-        label_frame = LabelFrame.get(self.id, frame)
-        label_arr = label_frame.frame[..., feature]
-        label_png = pngify(
-            imgarr=np.ma.masked_equal(label_arr, 0),
-            vmin=0,
-            vmax=self.get_max_label(feature),
-            cmap=self.colormap,
-        )
-        return label_png
 
     def get_labeled_array(self, feature, frame):
         """

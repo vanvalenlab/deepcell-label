@@ -7,7 +7,6 @@ import json
 import timeit
 import traceback
 
-import matplotlib
 import numpy as np
 from flask import (
     Blueprint,
@@ -94,17 +93,6 @@ def add_raw(token):
     return {'numChannels': project.num_channels}
 
 
-@bp.route('/api/labeled/<token>/<int:feature>/<int:frame>')
-def labeled(token, feature, frame):
-    project = Project.get(token)
-    if not project:
-        return abort(404, description=f'project {token} not found')
-    png = project.get_labeled_png(feature, frame)
-    etag = hashlib.md5(png.getbuffer()).hexdigest()
-    response = send_file(png, mimetype='image/png', cache_timeout=0, etag=etag)
-    return response
-
-
 @bp.route('/api/array/<token>/<int:feature>/<int:frame>')
 def array(token, feature, frame):
     """ """
@@ -132,22 +120,6 @@ def semantic_labels(project_id, feature):
     cell_info = add_frame_div_parent(cell_info)
     cell_info = reformat_cell_info(cell_info)
     response = make_response(cell_info)
-    response.add_etag()
-    return response.make_conditional(request)
-
-
-@bp.route('/api/colormap/<project_id>/<int:feature>')
-def colormap(project_id, feature):
-    project = Project.get(project_id)
-    if not project:
-        return jsonify({'error': f'project {project_id} not found'}), 404
-    max_label = project.get_max_label(feature)
-    colormap = matplotlib.pyplot.get_cmap('viridis', max_label)
-    colors = list(map(matplotlib.colors.rgb2hex, colormap.colors))
-    colors.insert(0, '#000000')  # No label (label 0) is black
-    colors.append('#FFFFFF')  # New label (last label) is white
-    response = make_response({'colors': colors})
-    response.headers['Cache-Control'] = 'max-age=0'
     response.add_etag()
     return response.make_conditional(request)
 

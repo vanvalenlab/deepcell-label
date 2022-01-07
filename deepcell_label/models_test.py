@@ -7,7 +7,7 @@ import pytest
 
 from deepcell_label import models
 from deepcell_label.conftest import DummyLoader
-from deepcell_label.imgutils import grayscale_pngify, pngify
+from deepcell_label.imgutils import grayscale_pngify
 
 
 # Automatically enable transactions for all tests, without importing any extra fixtures.
@@ -31,7 +31,6 @@ def test_project_init():
     assert project.width is not None
     assert project.num_channels is not None
     assert project.num_features is not None
-    assert project.colormap is not None
 
 
 def test_get_missing_project():
@@ -276,28 +275,6 @@ def test_get_labeled_array():
     np.testing.assert_array_equal(
         label_arr[label_arr < 0], -expected_frame[label_arr < 0]
     )
-
-
-def test_get_labeled_png():
-    """
-    Test label frame PNGs to send to the front-end.
-    """
-    project = models.Project.create(DummyLoader())
-    frame = 0
-    feature = 0
-    expected_frame = project.label_frames[frame].frame[..., feature]
-    expected_frame = np.ma.masked_equal(expected_frame, 0)
-    expected_png = pngify(
-        expected_frame,
-        vmin=0,
-        vmax=project.get_max_label(feature),
-        cmap=project.colormap,
-    )
-
-    label_png = project.get_labeled_png(frame, feature)
-
-    assert isinstance(label_png, io.BytesIO)
-    assert label_png.getvalue() == expected_png.getvalue()
 
 
 def test_get_raw_png_one_channel():
