@@ -1,63 +1,49 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef, useState } from 'react';
 import { useCanvas, useLayers } from '../../ProjectContext';
-import ChannelCanvas from './ChannelCanvasGPU';
+import ChannelCanvas from './ChannelCanvas';
 
-export const RGBCanvas = ({ className }) => {
+export const RGBCanvas = ({ setCanvases }) => {
   const canvas = useCanvas();
-  const sx = useSelector(canvas, (state) => state.context.sx);
-  const sy = useSelector(canvas, (state) => state.context.sy);
-  const zoom = useSelector(canvas, (state) => state.context.zoom);
-  const scale = useSelector(canvas, (state) => state.context.scale);
   const sw = useSelector(canvas, (state) => state.context.width);
   const sh = useSelector(canvas, (state) => state.context.height);
 
-  const width = sw * scale * window.devicePixelRatio;
-  const height = sh * scale * window.devicePixelRatio;
-
   const layers = useLayers();
 
-  const canvasRef = useRef();
-  const ctx = useRef();
-
   // keys: layer index, values: ref to canvas for each layer
-  const [canvases, setCanvases] = useState({});
+  const [layerCanvases, setLayerCanvases] = useState({});
 
-  const hiddenCanvasRef = useRef();
-  const hiddenCtxRef = useRef();
+  const composeCanvasRef = useRef();
+  const composeCtxRef = useRef();
 
   useEffect(() => {
-    const hiddenCanvas = hiddenCanvasRef.current;
-    const hiddenCtx = hiddenCanvas.getContext('2d');
-    hiddenCtx.globalCompositeOperation = 'lighter';
-    hiddenCtxRef.current = hiddenCtx;
+    composeCtxRef.current = composeCanvasRef.current.getContext('2d');
+    composeCtxRef.current.globalCompositeOperation = 'lighter';
   }, [sh, sw]);
 
   useEffect(() => {
-    const hiddenCtx = hiddenCtxRef.current;
-    hiddenCtx.clearRect(0, 0, sw, sh);
-    Object.values(canvases).forEach((canvas) => hiddenCtx.drawImage(canvas, 0, 0));
-  });
+    composeCtxRef.current.clearRect(0, 0, sw, sh);
+    for (let key in layerCanvases) {
+      composeCtxRef.current.drawImage(layerCanvases[key], 0, 0);
+    }
+    setCanvases((canvases) => ({ ...canvases, raw: composeCanvasRef.current }));
+  }, [layerCanvases, sh, sw, setCanvases]);
 
-  useEffect(() => {
-    ctx.current = canvasRef.current.getContext('2d');
-    ctx.current.imageSmoothingEnabled = false;
-  }, [height, width]);
-
-  useEffect(() => {
-    const hiddenCanvas = hiddenCanvasRef.current;
-    ctx.current.clearRect(0, 0, width, height);
-    ctx.current.drawImage(hiddenCanvas, sx, sy, sw / zoom, sh / zoom, 0, 0, width, height);
-  }, [canvases, sx, sy, zoom, sw, sh, width, height]);
+  useEffect(
+    () => () => {
+      setCanvases((canvases) => {
+        delete canvases['raw'];
+        return { ...canvases };
+      });
+    },
+    [setCanvases]
+  );
 
   return (
     <>
-      {/* hidden processing canvas */}
-      <canvas id='compose-raw-canvas' hidden={true} ref={hiddenCanvasRef} width={sw} height={sh} />
-      {/* visible output canvas */}
-      <canvas id='raw-canvas' className={className} ref={canvasRef} width={width} height={height} />
+      <canvas id='compose-layers' hidden={true} ref={composeCanvasRef} width={sw} height={sh} />
       {layers.map((layer) => (
-        <ChannelCanvas layer={layer} setCanvases={setCanvases} key={layer.sessionId} />
+        <ChannelCanvas layer={layer} setCanvases={setLayerCanvases} key={layer.sessionId} />
       ))}
     </>
   );

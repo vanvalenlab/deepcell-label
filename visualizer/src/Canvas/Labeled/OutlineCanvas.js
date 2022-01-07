@@ -1,23 +1,16 @@
 import { useSelector } from '@xstate/react';
-import React, { useEffect, useRef } from 'react';
+import { GPU } from 'gpu.js';
+import { useEffect, useRef } from 'react';
 import { useCanvas, useFeature, useLabeled, useSelect } from '../../ProjectContext';
-import { highlightImageData, outlineAll, outlineSelected } from '../canvasUtils';
 
 const white = [255, 255, 255, 255];
 const black = [0, 0, 0, 255];
 const red = [255, 0, 0, 255];
 
-const OutlineCanvas = ({ className }) => {
+const OutlineCanvas = ({ setCanvases }) => {
   const canvas = useCanvas();
-  const sx = useSelector(canvas, (state) => state.context.sx);
-  const sy = useSelector(canvas, (state) => state.context.sy);
-  const zoom = useSelector(canvas, (state) => state.context.zoom);
-  const scale = useSelector(canvas, (state) => state.context.scale);
-  const sw = useSelector(canvas, (state) => state.context.width);
-  const sh = useSelector(canvas, (state) => state.context.height);
-
-  const width = sw * scale * window.devicePixelRatio;
-  const height = sh * scale * window.devicePixelRatio;
+  const width = useSelector(canvas, (state) => state.context.width);
+  const height = useSelector(canvas, (state) => state.context.height);
 
   const select = useSelect();
   const foreground = useSelector(select, (state) => state.context.foreground);
@@ -25,76 +18,55 @@ const OutlineCanvas = ({ className }) => {
 
   const labeled = useLabeled();
   const featureIndex = useSelector(labeled, (state) => state.context.feature);
-  const outline = useSelector(labeled, (state) => state.context.outline);
-  const invert = useSelector(labeled, (state) => state.context.invert);
-  const opacity = useSelector(labeled, (state) => state.context.opacity);
-
   const feature = useFeature(featureIndex);
   let labeledArray = useSelector(feature, (state) => state.context.labeledArray);
   if (!labeledArray) {
-    labeledArray = Array(sh).fill(Array(sw).fill(0));
+    labeledArray = Array(height * width).fill(0);
   }
 
-  const canvasRef = useRef();
-  const ctx = useRef();
-  // hidden canvas convert the outline array into an image
-  const hiddenCanvasRef = useRef();
-  const hiddenCtx = useRef();
+  const kernel = useRef();
+  const gpuCanvasRef = useRef();
 
   useEffect(() => {
-    ctx.current = canvasRef.current.getContext('2d');
-    ctx.current.imageSmoothingEnabled = false;
+    const gpu = new GPU();
+    kernel.current = gpu
+      .createKernel(function (data, foreground, background) {
+        const n = this.thread.x + this.constants.w * (this.constants.h - this.thread.y);
+        const label = data[n];
+        const outline =
+          label !== 0 &&
+          ((this.thread.x !== 0 && data[n - 1] !== label) ||
+            (this.thread.x !== this.constants.w - 1 && data[n + 1] !== label) ||
+            (this.thread.y !== 0 && data[n - this.constants.w] !== label) ||
+            (this.thread.y !== this.constants.h - 1 && data[n + this.constants.w] !== label));
+
+        if (outline && label === background) {
+          this.color(1, 0, 0, 1);
+        } else if (outline) {
+          this.color(1, 1, 1, 1);
+        } else if (label === foreground && foreground !== 0) {
+          this.color(1, 1, 1, 0.5);
+        } else {
+          this.color(0, 0, 0, 0);
+        }
+      })
+      .setConstants({ w: width, h: height })
+      .setOutput([width, height])
+      .setGraphical(true);
+    gpuCanvasRef.current = kernel.current.canvas;
   }, [width, height]);
 
   useEffect(() => {
-    hiddenCtx.current = hiddenCanvasRef.current.getContext('2d');
-  }, [sw, sh]);
+    kernel.current(labeledArray, foreground, background);
+    setCanvases((canvases) => ({ ...canvases, outline: gpuCanvasRef.current }));
+    // return () =>
+    //   setCanvases((canvases) => {
+    //     delete canvases['outline'];
+    //     return { ...canvases };
+    //   });
+  }, [labeledArray, foreground, background, setCanvases]);
 
-  useEffect(() => {
-    const width = labeledArray[0].length;
-    const height = labeledArray.length;
-    const data = new ImageData(width, height);
-    const fColor = invert ? black : white;
-    const bColor = red;
-    const hColor = [255, 255, 255, 128];
-    highlightImageData(data, labeledArray, foreground, hColor);
-    if (outline) {
-      outlineAll(data, labeledArray, fColor);
-    }
-    outlineSelected(data, labeledArray, foreground, background, fColor, bColor);
-    hiddenCtx.current.putImageData(data, 0, 0);
-  }, [labeledArray, foreground, background, outline, invert, sw, sh]);
-
-  useEffect(() => {
-    ctx.current.save();
-    ctx.current.clearRect(0, 0, width, height);
-    ctx.current.drawImage(
-      hiddenCanvasRef.current,
-      sx,
-      sy,
-      sw / zoom,
-      sh / zoom,
-      0,
-      0,
-      width,
-      height
-    );
-    ctx.current.restore();
-  }, [labeledArray, foreground, background, outline, invert, sw, sh, sx, sy, zoom, width, height]);
-
-  return (
-    <>
-      {/* hidden processing canvas */}
-      <canvas id='outline-processing' hidden={true} ref={hiddenCanvasRef} width={sw} height={sh} />
-      <canvas
-        id='outline-canvas'
-        ref={canvasRef}
-        width={width}
-        height={height}
-        className={className}
-      />
-    </>
-  );
+  return null;
 };
 
 export default OutlineCanvas;
