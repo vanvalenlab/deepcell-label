@@ -1,6 +1,6 @@
 import { useSelector } from '@xstate/react';
 import { GPU } from 'gpu.js';
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useCanvas, useChannel } from '../../ProjectContext';
 
 /** Converts a hex string like #FF0000 to three element array for the RGB values. */
@@ -22,7 +22,10 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
   const on = useSelector(layer, (state) => state.context.on);
   const channelIndex = useSelector(layer, (state) => state.context.channel);
   const channel = useChannel(channelIndex);
-  const rawImage = useSelector(channel, (state) => state.context.rawImage);
+  let imageData = useSelector(channel, (state) => state.context.imageData);
+  if (imageData === null) {
+    imageData = new ImageData(width, height);
+  }
 
   const canvasRef = useRef();
   const ctxRef = useRef();
@@ -57,12 +60,10 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
   useEffect(() => {
     // Draw image to access imageData
     // TODO: provide raw array directly
-    ctxRef.current.drawImage(rawImage, 0, 0);
-    const imageData = ctxRef.current.getImageData(0, 0, width, height);
     kernel.current(imageData.data, on, hexToRGB(color), min, max);
     // Reassign canvas to trigger rerender
     setCanvases((canvases) => ({ ...canvases, [layerIndex]: gpuCanvasRef.current }));
-  }, [rawImage, on, color, min, max, width, height, layerIndex, setCanvases]);
+  }, [imageData, on, color, min, max, width, height, layerIndex, setCanvases]);
 
   // Clean up canvas
   useEffect(() => {
@@ -73,18 +74,7 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
       });
   }, [setCanvases, layerIndex]);
 
-  // TODO: check if we need this canvas?
-  // Right now it's just being used to get the image data out of the raw image
-  // If we provide the raw array directly, it might not be needed at all
-  return (
-    <canvas
-      id={`layer${layerIndex}-processing`}
-      hidden={true}
-      ref={canvasRef}
-      width={width}
-      height={height}
-    />
-  );
+  return null;
 };
 
 export default ChannelCanvas;

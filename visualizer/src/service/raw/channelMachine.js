@@ -11,6 +11,7 @@ function fetchRaw(context) {
       .then(readResponseAsBlob)
       .then(makeImageURL)
       .then(showImage)
+      .then(getImageData)
   );
   // .catch(logError);
 }
@@ -31,6 +32,15 @@ function showImage(imgUrl) {
   });
 }
 
+function getImageData(img) {
+  const canvas = document.createElement('canvas');
+  canvas.width = img.width;
+  canvas.height = img.height;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+  return ctx.getImageData(0, 0, img.width, img.height);
+}
+
 const createChannelMachine = (projectId, channel, numFrames) =>
   Machine(
     {
@@ -42,7 +52,7 @@ const createChannelMachine = (projectId, channel, numFrames) =>
         frame: 0,
         loadingFrame: null,
         frames: {},
-        rawImage: new Image(),
+        imageData: null,
         // layer settings for grayscale mode
         invert: false,
         range: [0, 255],
@@ -111,7 +121,7 @@ const createChannelMachine = (projectId, channel, numFrames) =>
         }),
         useFrame: assign({
           frame: (_, { frame }) => frame,
-          rawImage: ({ frames }, { frame }) => frames[frame],
+          imageData: ({ frames }, { frame }) => frames[frame],
         }),
         loadNextFrame: assign({
           loadingFrame: ({ numFrames, frame, frames }) => {
@@ -146,15 +156,8 @@ const createChannelMachine = (projectId, channel, numFrames) =>
           contrast: 0,
         }),
         setAutoRange: assign({
-          range: ({ rawImage: img }) => {
+          range: ({ imageData }) => {
             // modified from https://github.com/hms-dbmi/viv
-            // get ImageData from rawImage
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-            const imageData = ctx.getImageData(0, 0, img.width, img.height);
             const array = imageData.data
               .filter((v, i) => i % 4 === 1) // take only the first channel
               .filter((v) => v > 0); // ignore the background

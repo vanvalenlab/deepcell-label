@@ -1,6 +1,6 @@
 import { useSelector } from '@xstate/react';
 import { GPU } from 'gpu.js';
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useCanvas, useChannel, useRaw } from '../../ProjectContext';
 
 export const GrayscaleCanvas = ({ setCanvases }) => {
@@ -16,7 +16,10 @@ export const GrayscaleCanvas = ({ setCanvases }) => {
   const [min, max] = useSelector(channel, (state) => state.context.range);
   const brightness = useSelector(channel, (state) => state.context.brightness);
   const contrast = useSelector(channel, (state) => state.context.contrast);
-  const rawImage = useSelector(channel, (state) => state.context.rawImage);
+  let imageData = useSelector(channel, (state) => state.context.imageData);
+  if (imageData === null) {
+    imageData = new ImageData(width, height);
+  }
 
   const hiddenCanvasRef = useRef();
   const hiddenCtxRef = useRef();
@@ -56,17 +59,11 @@ export const GrayscaleCanvas = ({ setCanvases }) => {
   }, [width, height]);
 
   useEffect(() => {
-    // Draw image to access imageData
-    // TODO: provide raw array directly
-    hiddenCtxRef.current.drawImage(rawImage, 0, 0);
-    const imageData = hiddenCtxRef.current.getImageData(0, 0, width, height);
     kernel.current(imageData.data, min, max, brightness, contrast, invert);
     setCanvases((canvases) => ({ ...canvases, raw: canvasRef.current }));
-  }, [rawImage, min, max, brightness, contrast, invert, width, height, setCanvases]);
+  }, [imageData, min, max, brightness, contrast, invert, width, height, setCanvases]);
 
-  return (
-    <canvas id='raw-processing' hidden={true} ref={hiddenCanvasRef} width={width} height={height} />
-  );
+  return null;
 };
 
 export default GrayscaleCanvas;
