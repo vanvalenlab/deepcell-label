@@ -21,13 +21,6 @@ export const GrayscaleCanvas = ({ setCanvases }) => {
     imageData = new ImageData(width, height);
   }
 
-  const hiddenCanvasRef = useRef();
-  const hiddenCtxRef = useRef();
-
-  useEffect(() => {
-    hiddenCtxRef.current = hiddenCanvasRef.current.getContext('2d');
-  }, [width, height]);
-
   const kernel = useRef();
   const canvasRef = useRef();
   useEffect(() => {

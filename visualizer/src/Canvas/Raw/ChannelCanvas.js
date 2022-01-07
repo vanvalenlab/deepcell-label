@@ -27,14 +27,8 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
     imageData = new ImageData(width, height);
   }
 
-  const canvasRef = useRef();
-  const ctxRef = useRef();
-  useEffect(() => {
-    ctxRef.current = canvasRef.current.getContext('2d');
-  }, []);
-
   const kernel = useRef();
-  const gpuCanvasRef = useRef();
+  const canvasRef = useRef();
   useEffect(() => {
     const gpu = new GPU();
     kernel.current = gpu
@@ -53,13 +47,13 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
       .setConstants({ w: width, h: height })
       .setOutput([width, height])
       .setGraphical(true);
-    gpuCanvasRef.current = kernel.current.canvas;
+    canvasRef.current = kernel.current.canvas;
   }, [width, height]);
 
   useEffect(() => {
     kernel.current(imageData.data, on, hexToRGB(color), min, max);
     // Reassign canvas to trigger rerender
-    setCanvases((canvases) => ({ ...canvases, [layerIndex]: gpuCanvasRef.current }));
+    setCanvases((canvases) => ({ ...canvases, [layerIndex]: canvasRef.current }));
   }, [imageData, on, color, min, max, width, height, layerIndex, setCanvases]);
 
   // Remove canvas from canvases when layer is removed
