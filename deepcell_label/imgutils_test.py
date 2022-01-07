@@ -5,8 +5,7 @@ import os
 import numpy as np
 from skimage.io import imread
 
-from deepcell_label import imgutils, models
-from deepcell_label.conftest import DummyLoader
+from deepcell_label import imgutils
 
 
 def test_pngify(tmpdir):
@@ -50,23 +49,6 @@ def test_greyscale_pngify(tmpdir):
 
     loaded_image = np.uint16(imread(outfile))
     np.testing.assert_equal(imgarr.shape, loaded_image.shape)
-
-
-def test_add_outlines(db_session):
-    db_session.autoflush = False
-    labels = np.identity(10)
-    # Add frame and channel dimensions
-    labels = np.expand_dims(labels, (0, -1))
-    assert labels.shape == (1, 10, 10, 1)
-    project = models.Project.create(DummyLoader(labels=labels))
-
-    frame = 0
-    feature = 0
-
-    label_array = project.label_frames[frame].frame[..., feature]
-    outlined = imgutils.add_outlines(label_array)
-    assert (outlined[outlined >= 0] == label_array[outlined >= 0]).all()
-    assert (outlined[outlined < 0] == -label_array[outlined < 0]).all()
 
 
 def test_reshape_out_of_order():

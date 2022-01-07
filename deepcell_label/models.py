@@ -18,7 +18,7 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy.schema import ForeignKeyConstraint, PrimaryKeyConstraint
 
-from deepcell_label.imgutils import add_outlines, grayscale_pngify, pngify
+from deepcell_label.imgutils import grayscale_pngify, pngify
 
 logger = logging.getLogger('models.Project')  # pylint: disable=C0103
 # Accessing relationships (like project.label_frames) issues a Query, causing a flush
@@ -480,8 +480,7 @@ class Project(db.Model):
             ndarray: numpy array of labels
         """
         label_frame = LabelFrame.get(self.id, frame)
-        label_arr = label_frame.frame[..., feature]
-        return add_outlines(label_arr)
+        return label_frame.frame[..., feature]
 
     def add_channel(self, channel):
         """
