@@ -12,7 +12,7 @@ const white = [255, 255, 255, 255];
  * @param {Number} y
  * @returns {Number} distance in pixels from origin
  */
-function distance(x, y) {
+export function distance(x, y) {
   return Math.floor(Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2)));
 }
 
