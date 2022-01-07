@@ -4,20 +4,6 @@ import { GPU } from 'gpu.js';
 import { useEffect, useMemo, useRef } from 'react';
 import { useCanvas, useFeature, useLabeled, useSelect } from '../../ProjectContext';
 
-function getColormap(colormapName, nShades, format) {
-  const minimum = colormap.cm[colormapName].length;
-  let gap = minimum;
-  for (let i = 0; gap < minimum; gap++) {
-    if (i * (nShades - 1) + nShades >= minimum) {
-      gap = i;
-      break;
-    }
-  }
-  const tempNShades = Math.max(minimum, nShades + gap * (nShades - 1));
-  const tempCmap = colormap({ colormap: colormapName, nShades: tempNShades, format });
-  return tempCmap.filter((_, i) => i % gap === 0);
-}
-
 const highlightColor = [255, 0, 0];
 
 export const LabeledCanvas = ({ setCanvases }) => {
@@ -29,11 +15,8 @@ export const LabeledCanvas = ({ setCanvases }) => {
   const featureIndex = useSelector(labeled, (state) => state.context.feature);
   const highlight = useSelector(labeled, (state) => state.context.highlight);
   const opacity = useSelector(labeled, (state) => state.context.opacity);
-  // const highlightColor = [255, 0, 0];
 
   const feature = useFeature(featureIndex);
-  // const labeledImage = useSelector(feature, (state) => state.context.labeledImage);
-  // const cmap = useSelector(feature, (state) => state.context.colormap);
   let labeledArray = useSelector(feature, (state) => state.context.labeledArray);
   if (!labeledArray) {
     labeledArray = Array(height * width).fill(0);
