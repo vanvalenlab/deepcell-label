@@ -111,7 +111,11 @@ const createFeatureMachine = (projectId, feature, numFrames) =>
         frame: null,
         loadingFrame: null,
         frames: {},
-        colormap: [[0, 0, 0, 1], ...colormap({ colormap: 'viridis', format: 'rgba' })],
+        colormap: [
+          [0, 0, 0, 1],
+          ...colormap({ colormap: 'viridis', format: 'rgba' }),
+          [255, 255, 255, 1],
+        ],
         labeledArray: null,
         labels: null,
         reloadLabels: false,
@@ -188,6 +192,7 @@ const createFeatureMachine = (projectId, feature, numFrames) =>
               nshades: Math.max(9, Math.max(...Object.keys(event.data))),
               format: 'rgba',
             }),
+            [255, 255, 255, 1],
           ],
         }),
         loadNextFrame: assign({
