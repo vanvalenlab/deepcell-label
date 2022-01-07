@@ -36,7 +36,7 @@ const OutlineCanvas = ({ setCanvases }) => {
     });
     kernel.current = gpu
       .createKernel(function (data, foreground, background) {
-        const n = this.thread.x + this.constants.w * (this.constants.h - this.thread.y);
+        const n = this.thread.x + this.constants.w * (this.constants.h - 1 - this.thread.y);
         const label = data[n];
         const outline =
           label !== 0 &&
