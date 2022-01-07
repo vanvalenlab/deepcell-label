@@ -16,39 +16,6 @@ function distance(x, y) {
   return Math.floor(Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2)));
 }
 
-/**
- * Computes whether a pixel at (x, y) is on the outline of a brush at (brushX, brushY) with size brushSize.
- * @param {Number} x x-coordinate of pixel
- * @param {Number} y y-coordinate of pixel
- * @param {Number} brushX x-coordinate of brush center
- * @param {Number} brushY y-coordinate of brush center
- * @param {Number} brushSize size of brush
- * @returns {boolean} whether the pixel is on the brush border
- */
-function onBrush(x, y, brushX, brushY, brushSize) {
-  const radius = brushSize - 1;
-  return Math.floor(distance(brushX - x, brushY - y)) === radius; // &&
-  // // not on border if next to border in both directions
-  // !(
-  //   Math.floor(distance(Math.abs(brushX - x) + 1, brushY - y)) === radius &&
-  //   Math.floor(distance(brushX - x, Math.abs(brushY - y) + 1)) === radius
-  // );
-}
-
-/**
- * Computes if a pixel at (x, y) is inside a brush at (brushX, brushY) with size brushSize.
- * @param {Number} x x-coordinate of pixel
- * @param {Number} y y-coordinate of pixel
- * @param {Number} brushX x-coordinate of brush center
- * @param {Number} brushY y-coordinate of brush center
- * @param {Number} brushSize size of brush
- * @returns {boolean} whether the pixel is inside the brush
- */
-function insideBrush(x, y, brushX, brushY, brushSize) {
-  const radius = brushSize - 1;
-  return Math.floor(distance(x - brushX, y - brushY)) <= radius;
-}
-
 const BrushCanvas = ({ setCanvases }) => {
   const canvas = useCanvas();
   const width = useSelector(canvas, (state) => state.context.width);
