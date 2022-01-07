@@ -10,10 +10,10 @@ const white = [255, 255, 255, 255];
  * Computes the distance of (x, y) from the origin (0, 0).
  * @param {Number} x
  * @param {Number} y
- * @returns {Number} distance from origin
+ * @returns {Number} distance in pixels from origin
  */
 function distance(x, y) {
-  return Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2));
+  return Math.floor(Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2)));
 }
 
 /**
@@ -27,14 +27,12 @@ function distance(x, y) {
  */
 function onBrush(x, y, brushX, brushY, brushSize) {
   const radius = brushSize - 1;
-  return (
-    Math.floor(distance(brushX - x, brushY - y)) === radius &&
-    // not on border if next to border in both directions
-    !(
-      Math.floor(distance(Math.abs(brushX - x) + 1, brushY - y)) === radius &&
-      Math.floor(distance(brushX - x, Math.abs(brushY - y) + 1)) === radius
-    )
-  );
+  return Math.floor(distance(brushX - x, brushY - y)) === radius; // &&
+  // // not on border if next to border in both directions
+  // !(
+  //   Math.floor(distance(Math.abs(brushX - x) + 1, brushY - y)) === radius &&
+  //   Math.floor(distance(brushX - x, Math.abs(brushY - y) + 1)) === radius
+  // );
 }
 
 /**
@@ -74,35 +72,47 @@ const BrushCanvas = ({ setCanvases }) => {
     const gl = canvas.getContext('webgl2', { premultipliedAlpha: false });
     const gpu = new GPU({ canvas, gl });
     kernelRef.current = gpu
-      .createKernel(function (size, color, brushX, brushY, trace) {
+      .createKernel(function (trace, traceLength, size, color, brushX, brushY) {
         const x = this.thread.x;
-        const y = this.constants.h - this.thread.y;
+        const y = this.constants.h - 1 - this.thread.y;
         const [r, g, b, a] = color;
+        const radius = size - 1;
+        const distX = Math.abs(x - brushX);
+        const distY = Math.abs(y - brushY);
 
-        if (onBrush(x, y, brushX, brushY, size)) {
-          this.color(r, g, b, a);
-          return;
-        }
-        for (let i = 0; i < trace.length; i++) {
-          if (insideBrush(x, y, trace[i][0], trace[i][1], size)) {
-            this.color(1, 1, 1, 0.5);
-            return;
+        const onBrush =
+          distance(distX, distY) === radius &&
+          // not on border if next to border in both directions
+          !(distance(distX + 1, distY) === radius && distance(distX, distY + 1) === radius);
+
+        if (onBrush) {
+          this.color(r / 255, g / 255, b / 255, a / 255);
+        } else if (traceLength > 0) {
+          for (let i = 0; i < traceLength; i++) {
+            if (distance(trace[i][0] - x, trace[i][1] - y) <= radius) {
+              this.color(r / 255, g / 255, b / 255, a / 255 / 2);
+              break;
+            }
           }
         }
-        this.color(0, 0, 0, 0);
       })
       .setConstants({ w: width, h: height })
       .setOutput([width, height])
-      .setDynamicArguments(true)
       .setGraphical(true)
-      .addFunction(distance)
-      .addFunction(onBrush)
-      .addFunction(insideBrush);
+      .setDynamicArguments(true)
+      .addFunction(distance);
   }, [width, height]);
 
   useEffect(() => {
-    console.log(size, color, x, y, trace, trace.length);
-    kernelRef.current(size, color, x, y); //, trace, trace.length);
+    // edge case to deal with GPU.js error
+    // passing [] as trace causes this error
+    // gpu-browser.js:18662 Uncaught TypeError: Cannot read properties of undefined (reading 'length')
+    // at Object.isArray (gpu-browser.js:18662:1)
+    if (trace.length === 0) {
+      kernelRef.current([[0, 0]], trace.length, size, color, x, y);
+    } else {
+      kernelRef.current(trace, trace.length, size, color, x, y);
+    }
     setCanvases((canvases) => ({ ...canvases, tool: canvasRef.current }));
   }, [setCanvases, size, color, x, y, trace]);
 
