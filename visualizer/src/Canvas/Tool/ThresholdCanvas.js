@@ -1,19 +1,12 @@
 import { useSelector } from '@xstate/react';
-import React, { useEffect, useRef } from 'react';
+import { GPU } from 'gpu.js';
+import { useEffect, useRef } from 'react';
 import { useCanvas, useThreshold } from '../../ProjectContext';
-import { drawBox } from '../canvasUtils';
 
-const ThresholdCanvas = ({ className }) => {
+const ThresholdCanvas = ({ setCanvases }) => {
   const canvas = useCanvas();
-  const sx = useSelector(canvas, (state) => state.context.sx);
-  const sy = useSelector(canvas, (state) => state.context.sy);
-  const zoom = useSelector(canvas, (state) => state.context.zoom);
-  const scale = useSelector(canvas, (state) => state.context.scale);
-  const sw = useSelector(canvas, (state) => state.context.width);
-  const sh = useSelector(canvas, (state) => state.context.height);
-
-  const width = sw * scale * window.devicePixelRatio;
-  const height = sh * scale * window.devicePixelRatio;
+  const width = useSelector(canvas, (state) => state.context.width);
+  const height = useSelector(canvas, (state) => state.context.height);
 
   const threshold = useThreshold();
   const x1 = useSelector(threshold, (state) => state.context.x);
@@ -21,49 +14,49 @@ const ThresholdCanvas = ({ className }) => {
   const [x2, y2] = useSelector(threshold, (state) => state.context.firstPoint);
   const show = useSelector(threshold, (state) => state.matches('dragging'));
 
+  const kernel = useRef();
   const canvasRef = useRef();
-  const ctxRef = useRef();
+
   useEffect(() => {
-    ctxRef.current = canvasRef.current.getContext('2d');
-    ctxRef.current.imageSmoothingEnabled = false;
+    const canvas = canvasRef.current;
+    const gl = canvas.getContext('webgl2', { premultipliedAlpha: false });
+    const gpu = new GPU({ canvas, gl });
+    kernel.current = gpu
+      .createKernel(function (x1, y1, x2, y2) {
+        const x = this.thread.x;
+        const y = this.constants.h - this.thread.y;
+        const minX = Math.min(x1, x2);
+        const maxX = Math.max(x1, x2);
+        const minY = Math.min(y1, y2);
+        const maxY = Math.max(y1, y2);
+        if ((x === minX || x === maxX) && minY <= y && y <= maxY) {
+          this.color(1, 1, 1, 1);
+        } else if ((y === minY || y === maxY) && minX <= x && x <= maxX) {
+          this.color(1, 1, 1, 1);
+        } else if (minX <= x && x <= maxX && minY <= y && y <= maxY) {
+          this.color(1, 1, 1, 0.5);
+        } else {
+          this.color(0, 0, 0, 0);
+        }
+      })
+      .setConstants({ w: width, h: height })
+      .setOutput([width, height])
+      .setGraphical(true);
   }, [width, height]);
 
-  // create references to draw the bounding box
-  const boxCanvasRef = useRef();
-  const boxCtxRef = useRef();
   useEffect(() => {
-    boxCtxRef.current = boxCanvasRef.current.getContext('2d');
-  }, [sw, sh]);
-
-  // draws the box
-  useEffect(() => {
-    const boxCtx = boxCtxRef.current;
-    boxCtx.clearRect(0, 0, sw, sh);
     if (show) {
-      drawBox(boxCtx, x1, y1, x2, y2);
+      kernel.current(x1, y1, x2, y2);
+      setCanvases((canvases) => ({ ...canvases, tool: canvasRef.current }));
+    } else {
+      setCanvases((canvases) => {
+        delete canvases['tool'];
+        return { ...canvases };
+      });
     }
-  }, [show, x1, y1, x2, y2, sw, sh]);
+  }, [setCanvases, show, x1, y1, x2, y2]);
 
-  // draws the brush outline and trace onto the visible canvas
-  useEffect(() => {
-    const ctx = ctxRef.current;
-    const boxCanvas = boxCanvasRef.current;
-    ctx.clearRect(0, 0, width, height);
-    ctx.drawImage(boxCanvas, sx, sy, sw / zoom, sh / zoom, 0, 0, width, height);
-  }, [show, x1, y1, x2, y2, sx, sy, zoom, sw, sh, width, height]);
-
-  return (
-    <>
-      <canvas id='threshold-processing' hidden={true} ref={boxCanvasRef} width={sw} height={sh} />
-      <canvas
-        id='threshold-canvas'
-        ref={canvasRef}
-        width={width}
-        height={height}
-        className={className}
-      />
-    </>
-  );
+  return <canvas hidden={true} ref={canvasRef} />;
 };
 
 export default ThresholdCanvas;

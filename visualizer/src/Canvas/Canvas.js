@@ -8,6 +8,7 @@ import ComposeCanvas from './ComposeCanvases';
 import LabeledCanvas from './Labeled/LabeledCanvas';
 import OutlineCanvas from './Labeled/OutlineCanvas';
 import RawCanvas from './Raw/RawCanvas';
+import ThresholdCanvas from './Tool/ThresholdCanvas';
 
 const useStyles = makeStyles({
   canvasBox: {
@@ -101,10 +102,8 @@ export const Canvas = () => {
       {raw && <RawCanvas setCanvases={setCanvases} />}
       {labeled && <LabeledCanvas setCanvases={setCanvases} />}
       {labeled && <OutlineCanvas setCanvases={setCanvases} />}
-      {/* {tool === 'brush' && <BrushCanvas className={styles.canvas} />}
-      {tool === 'threshold' && (
-        <ThresholdCanvas className={styles.canvas} />
-      )} */}
+      {/* {tool === 'brush' && <BrushCanvas className={styles.canvas} />} */}
+      {tool === 'threshold' && <ThresholdCanvas setCanvases={setCanvases} />}
     </Box>
   );
 };
