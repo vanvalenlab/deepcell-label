@@ -38,10 +38,11 @@ export const GrayscaleCanvas = ({ setCanvases }) => {
         const diff = (max - min) / 255;
         const scale = diff === 0 ? 1 : 1 / diff;
         v = Math.min(1, v * scale);
-        // multiply by contrast factor
-        v = Math.max(0, Math.min(1, (v * (1 + contrast)) / (1.001 - contrast)));
         // add brightness
         v = Math.max(0, Math.min(1, v + brightness));
+        // apply contrast
+        const contrastFactor = (1 + contrast) / (1.001 - contrast);
+        v = Math.max(0, Math.min(1, contrastFactor * (v - 0.5) + 0.5));
         // invert
         if (invert) {
           v = 1 - v;
