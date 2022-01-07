@@ -34,19 +34,18 @@ export const GrayscaleCanvas = ({ setCanvases }) => {
     const gpu = new GPU();
     kernel.current = gpu
       .createKernel(function (data, min, max, brightness, contrast, invert) {
-        // TODO: Remove 4 after switching from imageData to raw array
         const n = 4 * (this.thread.x + this.constants.w * (this.constants.h - this.thread.y));
-        // rescale
+        // Rescale value from min - max to 0 - 1
         let v = Math.max(0, data[n] - min) / 255;
         const diff = (max - min) / 255;
         const scale = diff === 0 ? 1 : 1 / diff;
         v = Math.min(1, v * scale);
-        // add brightness
+        // Shift by brightness
         v = Math.max(0, Math.min(1, v + brightness));
-        // apply contrast
+        // Apply contrast
         const contrastFactor = (1 + contrast) / (1.001 - contrast);
         v = Math.max(0, Math.min(1, contrastFactor * (v - 0.5) + 0.5));
-        // invert
+        // Invert
         if (invert) {
           v = 1 - v;
         }

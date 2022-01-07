@@ -40,7 +40,6 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
     kernel.current = gpu
       .createKernel(function (data, on, color, min, max) {
         if (on) {
-          // TODO: Remove 4 after switching from imageData to raw array
           const n = 4 * (this.thread.x + this.constants.w * (this.constants.h - this.thread.y));
           const v = (data[n] - min) / 255;
           const diff = max - min;
@@ -58,14 +57,12 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
   }, [width, height]);
 
   useEffect(() => {
-    // Draw image to access imageData
-    // TODO: provide raw array directly
     kernel.current(imageData.data, on, hexToRGB(color), min, max);
     // Reassign canvas to trigger rerender
     setCanvases((canvases) => ({ ...canvases, [layerIndex]: gpuCanvasRef.current }));
   }, [imageData, on, color, min, max, width, height, layerIndex, setCanvases]);
 
-  // Clean up canvas
+  // Remove canvas from canvases when layer is removed
   useEffect(() => {
     return () =>
       setCanvases((prevCanvases) => {
