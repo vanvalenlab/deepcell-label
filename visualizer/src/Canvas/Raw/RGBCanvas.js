@@ -29,16 +29,6 @@ export const RGBCanvas = ({ setCanvases }) => {
     setCanvases((canvases) => ({ ...canvases, raw: composeCanvasRef.current }));
   }, [layerCanvases, sh, sw, setCanvases]);
 
-  useEffect(
-    () => () => {
-      setCanvases((canvases) => {
-        delete canvases['raw'];
-        return { ...canvases };
-      });
-    },
-    [setCanvases]
-  );
-
   return (
     <>
       <canvas id='compose-layers' hidden={true} ref={composeCanvasRef} width={sw} height={sh} />

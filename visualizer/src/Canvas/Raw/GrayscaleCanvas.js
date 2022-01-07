@@ -63,16 +63,6 @@ export const GrayscaleCanvas = ({ setCanvases }) => {
     setCanvases((canvases) => ({ ...canvases, raw: canvasRef.current }));
   }, [rawImage, min, max, brightness, contrast, invert, width, height, setCanvases]);
 
-  useEffect(
-    () => () => {
-      setCanvases((canvases) => {
-        delete canvases['raw'];
-        return { ...canvases };
-      });
-    },
-    [setCanvases]
-  );
-
   return (
     <canvas id='raw-processing' hidden={true} ref={hiddenCanvasRef} width={width} height={height} />
   );

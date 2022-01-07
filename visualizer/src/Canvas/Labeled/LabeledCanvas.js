@@ -87,15 +87,6 @@ export const LabeledCanvas = ({ setCanvases }) => {
     setCanvases((canvases) => ({ ...canvases, labeled: canvasRef.current }));
   }, [labeledArray, cmap, foreground, highlight, opacity, setCanvases]);
 
-  useEffect(
-    () => () =>
-      setCanvases((canvases) => {
-        delete canvases['labeled'];
-        return { ...canvases };
-      }),
-    [setCanvases]
-  );
-
   return <canvas hidden={true} id={'labeled-canvas'} ref={canvasRef} />;
 };
 

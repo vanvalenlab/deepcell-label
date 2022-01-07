@@ -63,11 +63,6 @@ const OutlineCanvas = ({ setCanvases }) => {
   useEffect(() => {
     kernel.current(labeledArray, foreground, background);
     setCanvases((canvases) => ({ ...canvases, outline: canvasRef.current }));
-    // return () =>
-    //   setCanvases((canvases) => {
-    //     delete canvases['outline'];
-    //     return { ...canvases };
-    //   });
   }, [labeledArray, foreground, background, setCanvases]);
 
   return <canvas hidden={true} id={'outline-canvas'} ref={canvasRef} />;
