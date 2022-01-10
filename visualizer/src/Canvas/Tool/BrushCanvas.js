@@ -33,12 +33,11 @@ const BrushCanvas = ({ setCanvases }) => {
 
   const kernelRef = useRef();
   const canvasRef = useRef();
-
   useEffect(() => {
     const canvas = canvasRef.current;
     canvas.getContext('webgl2', { premultipliedAlpha: false });
     const gpu = new GPU({ canvas });
-    kernelRef.current = gpu.createKernel(
+    const kernel = gpu.createKernel(
       function (trace, traceLength, size, color, brushX, brushY) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
@@ -71,6 +70,11 @@ const BrushCanvas = ({ setCanvases }) => {
         functions: [distance],
       }
     );
+    kernelRef.current = kernel;
+    return () => {
+      kernel.destroy();
+      gpu.destroy();
+    };
   }, [width, height]);
 
   useEffect(() => {

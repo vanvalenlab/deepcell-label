@@ -21,14 +21,14 @@ const OutlineCanvas = ({ setCanvases }) => {
     labeledArray = Array(height * width).fill(0);
   }
 
-  const kernel = useRef();
+  const kernelRef = useRef();
   const canvasRef = useRef();
 
   useEffect(() => {
     const canvas = canvasRef.current;
     canvas.getContext('webgl2', { premultipliedAlpha: false });
     const gpu = new GPU({ canvas });
-    kernel.current = gpu.createKernel(
+    const kernel = gpu.createKernel(
       function (data, outlineAll, foreground, background) {
         const n = this.thread.x + this.constants.w * (this.constants.h - 1 - this.thread.y);
         const label = data[n];
@@ -56,11 +56,16 @@ const OutlineCanvas = ({ setCanvases }) => {
         graphical: true,
       }
     );
+    kernelRef.current = kernel;
+    return () => {
+      kernel.destroy();
+      gpu.destroy();
+    };
   }, [width, height]);
 
   useEffect(() => {
     // Rerender the canvas for this component
-    kernel.current(labeledArray, outlineAll, foreground, background);
+    kernelRef.current(labeledArray, outlineAll, foreground, background);
     // Rerender the parent canvas
     setCanvases((canvases) => ({ ...canvases, outline: canvasRef.current }));
   }, [labeledArray, outlineAll, foreground, background, setCanvases]);

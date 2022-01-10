@@ -14,14 +14,13 @@ const ThresholdCanvas = ({ setCanvases }) => {
   const [x2, y2] = useSelector(threshold, (state) => state.context.firstPoint);
   const show = useSelector(threshold, (state) => state.matches('dragging'));
 
-  const kernel = useRef();
+  const kernelRef = useRef();
   const canvasRef = useRef();
-
   useEffect(() => {
     const canvas = canvasRef.current;
     canvas.getContext('webgl2', { premultipliedAlpha: false });
     const gpu = new GPU({ canvas });
-    kernel.current = gpu.createKernel(
+    const kernel = gpu.createKernel(
       function (x1, y1, x2, y2) {
         const x = this.thread.x;
         const y = this.constants.h - this.thread.y;
@@ -45,12 +44,17 @@ const ThresholdCanvas = ({ setCanvases }) => {
         graphical: true,
       }
     );
+    kernelRef.current = kernel;
+    return () => {
+      kernel.destroy();
+      gpu.destroy();
+    };
   }, [width, height]);
 
   useEffect(() => {
     if (show) {
       // Render this component's canvas and the parent canvas
-      kernel.current(x1, y1, x2, y2);
+      kernelRef.current(x1, y1, x2, y2);
       setCanvases((canvases) => ({ ...canvases, tool: canvasRef.current }));
     } else {
       // Remove this component's canvas from the parent canvas

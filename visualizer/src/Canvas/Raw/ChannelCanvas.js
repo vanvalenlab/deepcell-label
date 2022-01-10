@@ -27,11 +27,11 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
     imageData = new ImageData(width, height);
   }
 
-  const kernel = useRef();
+  const kernelRef = useRef();
   const canvasRef = useRef();
   useEffect(() => {
     const gpu = new GPU();
-    kernel.current = gpu.createKernel(
+    const kernel = gpu.createKernel(
       function (data, on, color, min, max) {
         if (on) {
           const n = 4 * (this.thread.x + this.constants.w * (this.constants.h - this.thread.y));
@@ -50,12 +50,17 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
         graphical: true,
       }
     );
-    canvasRef.current = kernel.current.canvas;
+    kernelRef.current = kernel;
+    canvasRef.current = kernel.canvas;
+    return () => {
+      kernel.destroy();
+      gpu.destroy();
+    };
   }, [width, height]);
 
   useEffect(() => {
     // Rerender the canvas for this component
-    kernel.current(imageData.data, on, hexToRGB(color), min, max);
+    kernelRef.current(imageData.data, on, hexToRGB(color), min, max);
     // Rerender the parent canvas
     setCanvases((canvases) => ({ ...canvases, [layerIndex]: canvasRef.current }));
   }, [imageData, on, color, min, max, width, height, layerIndex, setCanvases]);
