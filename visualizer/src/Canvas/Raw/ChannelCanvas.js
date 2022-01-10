@@ -51,8 +51,9 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
   }, [width, height]);
 
   useEffect(() => {
+    // Rerender the canvas for this component
     kernel.current(imageData.data, on, hexToRGB(color), min, max);
-    // Reassign canvas to trigger rerender
+    // Rerender the parent canvas
     setCanvases((canvases) => ({ ...canvases, [layerIndex]: canvasRef.current }));
   }, [imageData, on, color, min, max, width, height, layerIndex, setCanvases]);
 

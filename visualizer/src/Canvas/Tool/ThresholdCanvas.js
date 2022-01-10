@@ -46,9 +46,11 @@ const ThresholdCanvas = ({ setCanvases }) => {
 
   useEffect(() => {
     if (show) {
+      // Render this component's canvas and the parent canvas
       kernel.current(x1, y1, x2, y2);
       setCanvases((canvases) => ({ ...canvases, tool: canvasRef.current }));
     } else {
+      // Remove this component's canvas from the parent canvas
       setCanvases((canvases) => {
         delete canvases['tool'];
         return { ...canvases };

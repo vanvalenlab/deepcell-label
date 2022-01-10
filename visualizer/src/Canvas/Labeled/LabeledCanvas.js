@@ -54,7 +54,9 @@ export const LabeledCanvas = ({ setCanvases }) => {
   }, [width, height]);
 
   useEffect(() => {
+    // Rerender the canvas for this component
     kernel.current(labeledArray, colormap, foreground, highlight, highlightColor, opacity);
+    // Rerender the parent canvas
     setCanvases((canvases) => ({ ...canvases, labeled: canvasRef.current }));
   }, [labeledArray, colormap, foreground, highlight, opacity, setCanvases]);
 

@@ -59,7 +59,9 @@ const OutlineCanvas = ({ setCanvases }) => {
   }, [width, height]);
 
   useEffect(() => {
+    // Rerender the canvas for this component
     kernel.current(labeledArray, outlineAll, foreground, background);
+    // Rerender the parent canvas
     setCanvases((canvases) => ({ ...canvases, outline: canvasRef.current }));
   }, [labeledArray, outlineAll, foreground, background, setCanvases]);
 
