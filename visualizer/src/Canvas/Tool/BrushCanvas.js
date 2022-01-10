@@ -36,10 +36,10 @@ const BrushCanvas = ({ setCanvases }) => {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const gl = canvas.getContext('webgl2', { premultipliedAlpha: false });
-    const gpu = new GPU({ canvas, gl });
-    kernelRef.current = gpu
-      .createKernel(function (trace, traceLength, size, color, brushX, brushY) {
+    canvas.getContext('webgl2', { premultipliedAlpha: false });
+    const gpu = new GPU({ canvas });
+    kernelRef.current = gpu.createKernel(
+      function (trace, traceLength, size, color, brushX, brushY) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
         const [r, g, b, a] = color;
@@ -62,12 +62,15 @@ const BrushCanvas = ({ setCanvases }) => {
             }
           }
         }
-      })
-      .setConstants({ w: width, h: height })
-      .setOutput([width, height])
-      .setGraphical(true)
-      .setDynamicArguments(true)
-      .addFunction(distance);
+      },
+      {
+        constants: { w: width, h: height },
+        output: [width, height],
+        graphical: true,
+        dynamicArguments: true,
+        functions: [distance],
+      }
+    );
   }, [width, height]);
 
   useEffect(() => {

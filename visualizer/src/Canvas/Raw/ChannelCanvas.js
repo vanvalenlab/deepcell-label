@@ -31,8 +31,8 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
   const canvasRef = useRef();
   useEffect(() => {
     const gpu = new GPU();
-    kernel.current = gpu
-      .createKernel(function (data, on, color, min, max) {
+    kernel.current = gpu.createKernel(
+      function (data, on, color, min, max) {
         if (on) {
           const n = 4 * (this.thread.x + this.constants.w * (this.constants.h - this.thread.y));
           const v = (data[n] - min) / 255;
@@ -43,10 +43,13 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
         } else {
           this.color(0, 0, 0, 0);
         }
-      })
-      .setConstants({ w: width, h: height })
-      .setOutput([width, height])
-      .setGraphical(true);
+      },
+      {
+        constants: { w: width, h: height },
+        output: [width, height],
+        graphical: true,
+      }
+    );
     canvasRef.current = kernel.current.canvas;
   }, [width, height]);
 

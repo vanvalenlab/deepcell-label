@@ -30,13 +30,10 @@ export const LabeledCanvas = ({ setCanvases }) => {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const gl = canvas.getContext('webgl2', { premultipliedAlpha: false });
-    const gpu = new GPU({
-      canvas,
-      gl,
-    });
-    kernel.current = gpu
-      .createKernel(function (labels, colormap, foreground, highlight, highlightColor, opacity) {
+    canvas.getContext('webgl2', { premultipliedAlpha: false });
+    const gpu = new GPU({ canvas });
+    kernel.current = gpu.createKernel(
+      function (labels, colormap, foreground, highlight, highlightColor, opacity) {
         const n = this.thread.x + this.constants.w * (this.constants.h - 1 - this.thread.y);
         const label = labels[n];
         if (highlight && label === foreground && foreground !== 0) {
@@ -46,11 +43,14 @@ export const LabeledCanvas = ({ setCanvases }) => {
           const [r, g, b] = colormap[label];
           this.color(r / 255, g / 255, b / 255, opacity);
         }
-      })
-      .setConstants({ w: width, h: height })
-      .setOutput([width, height])
-      .setGraphical(true)
-      .setDynamicArguments(true);
+      },
+      {
+        constants: { w: width, h: height },
+        output: [width, height],
+        graphical: true,
+        dynamicArguments: true,
+      }
+    );
   }, [width, height]);
 
   useEffect(() => {

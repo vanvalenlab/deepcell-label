@@ -19,10 +19,10 @@ const ThresholdCanvas = ({ setCanvases }) => {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const gl = canvas.getContext('webgl2', { premultipliedAlpha: false });
-    const gpu = new GPU({ canvas, gl });
-    kernel.current = gpu
-      .createKernel(function (x1, y1, x2, y2) {
+    canvas.getContext('webgl2', { premultipliedAlpha: false });
+    const gpu = new GPU({ canvas });
+    kernel.current = gpu.createKernel(
+      function (x1, y1, x2, y2) {
         const x = this.thread.x;
         const y = this.constants.h - this.thread.y;
         const minX = Math.min(x1, x2);
@@ -38,10 +38,13 @@ const ThresholdCanvas = ({ setCanvases }) => {
         } else {
           this.color(0, 0, 0, 0);
         }
-      })
-      .setConstants({ w: width, h: height })
-      .setOutput([width, height])
-      .setGraphical(true);
+      },
+      {
+        constants: { w: width, h: height },
+        output: [width, height],
+        graphical: true,
+      }
+    );
   }, [width, height]);
 
   useEffect(() => {

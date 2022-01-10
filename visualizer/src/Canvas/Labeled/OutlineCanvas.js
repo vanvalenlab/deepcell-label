@@ -26,13 +26,10 @@ const OutlineCanvas = ({ setCanvases }) => {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const gl = canvas.getContext('webgl2', { premultipliedAlpha: false });
-    const gpu = new GPU({
-      canvas,
-      gl,
-    });
-    kernel.current = gpu
-      .createKernel(function (data, outlineAll, foreground, background) {
+    canvas.getContext('webgl2', { premultipliedAlpha: false });
+    const gpu = new GPU({ canvas });
+    kernel.current = gpu.createKernel(
+      function (data, outlineAll, foreground, background) {
         const n = this.thread.x + this.constants.w * (this.constants.h - 1 - this.thread.y);
         const label = data[n];
         const onOutline =
@@ -52,10 +49,13 @@ const OutlineCanvas = ({ setCanvases }) => {
         } else if (outlineAll && onOutline) {
           this.color(1, 1, 1, 1);
         }
-      })
-      .setConstants({ w: width, h: height })
-      .setOutput([width, height])
-      .setGraphical(true);
+      },
+      {
+        constants: { w: width, h: height },
+        output: [width, height],
+        graphical: true,
+      }
+    );
   }, [width, height]);
 
   useEffect(() => {

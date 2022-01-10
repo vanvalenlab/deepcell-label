@@ -25,8 +25,8 @@ export const GrayscaleCanvas = ({ setCanvases }) => {
   const canvasRef = useRef();
   useEffect(() => {
     const gpu = new GPU();
-    kernel.current = gpu
-      .createKernel(function (data, min, max, brightness, contrast, invert) {
+    kernel.current = gpu.current.createKernel(
+      function (data, min, max, brightness, contrast, invert) {
         const n = 4 * (this.thread.x + this.constants.w * (this.constants.h - this.thread.y));
         // Rescale value from min - max to 0 - 1
         let v = Math.max(0, data[n] - min) / 255;
@@ -43,10 +43,13 @@ export const GrayscaleCanvas = ({ setCanvases }) => {
           v = 1 - v;
         }
         this.color(v, v, v, 1);
-      })
-      .setConstants({ w: width, h: height })
-      .setOutput([width, height])
-      .setGraphical(true);
+      },
+      {
+        constants: { w: width, h: height },
+        output: [width, height],
+        graphical: true,
+      }
+    );
     canvasRef.current = kernel.current.canvas;
   }, [width, height]);
 
