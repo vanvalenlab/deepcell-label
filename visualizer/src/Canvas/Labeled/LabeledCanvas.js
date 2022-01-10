@@ -42,11 +42,9 @@ export const LabeledCanvas = ({ setCanvases }) => {
         if (highlight && label === foreground && foreground !== 0) {
           const [r, g, b] = highlightColor;
           this.color(r / 255, g / 255, b / 255, opacity);
-        } else if (label !== 0) {
-          const [r, g, b] = colormap[label - 1];
-          this.color(r / 255, g / 255, b / 255, opacity);
         } else {
-          this.color(0, 0, 0, opacity);
+          const [r, g, b] = colormap[label];
+          this.color(r / 255, g / 255, b / 255, opacity);
         }
       })
       .setConstants({ w: width, h: height })
