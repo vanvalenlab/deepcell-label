@@ -160,7 +160,7 @@ class Project(db.Model):
         self.num_channels = raw.shape[-1]
         self.num_features = label.shape[-1]
 
-        # Create frames from raw, RGB, and labeled images
+        # Create frames from raw and label images
         self.raw_frames = [RawFrame(i, frame) for i, frame in enumerate(raw)]
         self.label_frames = [LabelFrame(i, frame) for i, frame in enumerate(label)]
 
