@@ -30,14 +30,13 @@ jobs:
             ${{ runner.os }}-yarn-
             ${{ runner.os }}-
 
+      - name: Install Xi
+        run: sudo apt-get update -y && \
+          sudo apt-get install xserver-xorg-dev libxi-dev libxext-dev -y
+
       - name: Yarn Install
         working-directory: visualizer
         run: yarn
-
-      - name: Install Xi
-        working-directory: visualizer
-        run: apt-get update -y && \
-          apt-get install xserver-xorg-dev libxi-dev libxext-dev -y && \
 
       - name: Lint
         working-directory: visualizer
