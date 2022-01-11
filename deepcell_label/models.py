@@ -11,7 +11,6 @@ from secrets import token_urlsafe
 import numpy as np
 import sqlalchemy.types as types
 from flask_sqlalchemy import SQLAlchemy
-from skimage.exposure import rescale_intensity
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.mutable import Mutable
@@ -109,11 +108,9 @@ class Project(db.Model):
     num_frames = db.Column(db.Integer, nullable=False)
     num_channels = db.Column(db.Integer, nullable=False)
     num_features = db.Column(db.Integer, nullable=False)
-    rgb = db.Column(db.Boolean, default=False)
     frame = db.Column(db.Integer, default=0)
     channel = db.Column(db.Integer, default=0)
     feature = db.Column(db.Integer, default=0)
-    scale_factor = db.Column(db.Float, default=1)
 
     raw_frames = db.relationship(
         'RawFrame',
@@ -121,7 +118,6 @@ class Project(db.Model):
         # Delete when detached by add_channel
         cascade='save-update, merge, delete, delete-orphan',
     )
-    rgb_frames = db.relationship('RGBFrame', backref='project')
     label_frames = db.relationship(
         'LabelFrame',
         backref='project',
@@ -166,7 +162,6 @@ class Project(db.Model):
 
         # Create frames from raw, RGB, and labeled images
         self.raw_frames = [RawFrame(i, frame) for i, frame in enumerate(raw)]
-        self.rgb_frames = [RGBFrame(i, frame) for i, frame in enumerate(raw)]
         self.label_frames = [LabelFrame(i, frame) for i, frame in enumerate(label)]
 
         # Create label metadata
@@ -264,8 +259,6 @@ class Project(db.Model):
             label_frame.finish()
         for raw_frame in self.raw_frames:
             raw_frame.finish()
-        for rgb_frame in self.rgb_frames:
-            rgb_frame.finish()
         self.finished = db.func.current_timestamp()
         db.session.commit()
         logger.debug(
@@ -534,104 +527,6 @@ class RawFrame(db.Model):
         Finish the frame by setting its PickleType column to null.
         """
         self.frame = None
-
-
-class RGBFrame(db.Model):
-    """
-    Table definition for the raw RGB frames in our projects.
-    """
-
-    # pylint: disable=E1101
-    __tablename__ = 'rgbframes'
-    project_id = db.Column(
-        db.Integer, db.ForeignKey('projects.id'), primary_key=True, nullable=False
-    )
-    frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
-    frame = db.Column(Npz)
-
-    def __init__(self, frame_id, frame):
-        self.frame_id = frame_id
-        self.frame = self.reduce_to_RGB(frame)
-
-    def finish(self):
-        """Finish a frame by setting its frame to null."""
-        self.frame = None
-
-    def rescale_95(self, frame):
-        """
-        Rescale a single- or multi-channel image.
-
-        Args:
-            frame (np.array): 2d image frame to rescale
-
-        Returns:
-            np.array: rescaled image
-        """
-        percentiles = np.percentile(frame[frame > 0], [5, 95])
-        rescaled_frame = rescale_intensity(
-            frame, in_range=(percentiles[0], percentiles[1]), out_range='uint8'
-        )
-        rescaled_frame = rescaled_frame.astype('uint8')
-        return rescaled_frame
-
-    def rescale_raw(self, frame):
-        """
-        Rescale first 6 raw channels individually and store in memory.
-        The rescaled raw array is used subsequently for image display purposes.
-
-        Args: multi-channel frame to rescale
-
-        Returns:
-            np.array: upto 6-channel rescaled image
-        """
-        rescaled = np.zeros(frame.shape, dtype='uint8')
-        # this approach allows noise through
-        for channel in range(min(6, frame.shape[-1])):
-            raw_channel = frame[..., channel]
-            if np.sum(raw_channel) != 0:
-                rescaled[..., channel] = self.rescale_95(raw_channel)
-        return rescaled
-
-    def reduce_to_RGB(self, frame):
-        """
-        Go from rescaled raw array with up to 6 channels to an RGB image for display.
-        Handles adding in CMY channels as needed, and adjusting each channel if
-        viewing adjusted raw. Used to update self.rgb, which is used to display
-        raw current frame.
-
-        Args:
-            frame (np.array): up to 6-channel image to reduce to 3-channel image
-
-        Returns:
-            np.array: 3-channel image
-        """
-        rescaled = self.rescale_raw(frame)
-        # rgb starts as uint16 so it can handle values above 255 without overflow
-        rgb_img = np.zeros((frame.shape[0], frame.shape[1], 3), dtype='uint16')
-
-        # for each of the channels that we have
-        for c in range(min(6, frame.shape[-1])):
-            # straightforward RGB -> RGB
-            new_channel = (rescaled[..., c]).astype('uint16')
-            if c < 3:
-                rgb_img[..., c] = new_channel
-            # collapse cyan to G and B
-            if c == 3:
-                rgb_img[..., 1] += new_channel
-                rgb_img[..., 2] += new_channel
-            # collapse magenta to R and B
-            if c == 4:
-                rgb_img[..., 0] += new_channel
-                rgb_img[..., 2] += new_channel
-            # collapse yellow to R and G
-            if c == 5:
-                rgb_img[..., 0] += new_channel
-                rgb_img[..., 1] += new_channel
-
-            # clip values to uint8 range so it can be cast without overflow
-            rgb_img[..., 0:3] = np.clip(rgb_img[..., 0:3], a_min=0, a_max=255)
-
-        return rgb_img.astype('uint8')
 
 
 class LabelFrame(db.Model):
