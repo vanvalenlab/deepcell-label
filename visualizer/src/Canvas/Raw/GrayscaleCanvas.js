@@ -18,7 +18,7 @@ export const GrayscaleCanvas = ({ setCanvases }) => {
   const contrast = useSelector(channel, (state) => state.context.contrast);
   let rawArray = useSelector(channel, (state) => state.context.rawArray);
   if (rawArray === null) {
-    rawArray = new Array(width * height).fill(0);
+    rawArray = new Array(height).fill(new Array(width).fill(0));
   }
 
   const kernelRef = useRef();
@@ -27,9 +27,10 @@ export const GrayscaleCanvas = ({ setCanvases }) => {
     const gpu = new GPU();
     const kernel = gpu.createKernel(
       function (data, min, max, brightness, contrast, invert) {
-        const n = this.thread.x + this.constants.w * (this.constants.h - this.thread.y);
+        const x = this.thread.x;
+        const y = this.constants.h - 1 - this.thread.y;
         // Rescale value from min - max to 0 - 1
-        let v = Math.max(0, data[n] - min) / 255;
+        let v = Math.max(0, data[y][x] - min) / 255;
         const diff = (max - min) / 255;
         const scale = diff === 0 ? 1 : 1 / diff;
         v = Math.min(1, v * scale);

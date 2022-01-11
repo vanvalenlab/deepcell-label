@@ -19,7 +19,7 @@ export const LabeledCanvas = ({ setCanvases }) => {
   const colormap = useSelector(feature, (state) => state.context.colormap);
   let labeledArray = useSelector(feature, (state) => state.context.labeledArray);
   if (!labeledArray) {
-    labeledArray = Array(height * width).fill(0);
+    labeledArray = new Array(height).fill(new Array(width).fill(0));
   }
 
   const select = useSelect();
@@ -33,9 +33,8 @@ export const LabeledCanvas = ({ setCanvases }) => {
     canvas.getContext('webgl2', { premultipliedAlpha: false });
     const gpu = new GPU({ canvas });
     const kernel = gpu.createKernel(
-      function (labels, colormap, foreground, highlight, highlightColor, opacity) {
-        const n = this.thread.x + this.constants.w * (this.constants.h - 1 - this.thread.y);
-        const label = labels[n];
+      function (labelArray, colormap, foreground, highlight, highlightColor, opacity) {
+        const label = labelArray[this.constants.h - 1 - this.thread.y][this.thread.x];
         if (highlight && label === foreground && foreground !== 0) {
           const [r, g, b] = highlightColor;
           this.color(r / 255, g / 255, b / 255, opacity);

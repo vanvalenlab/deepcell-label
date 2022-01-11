@@ -61,7 +61,7 @@ def raw(token, channel, frame):
     project = Project.get(token)
     if not project:
         return abort(404, description=f'project {token} not found')
-    raw_array = project.get_raw_array(channel, frame).flatten()
+    raw_array = project.get_raw_array(channel, frame)
     content = gzip.compress(json.dumps(raw_array.tolist()).encode('utf8'), 5)
     response = make_response(content)
     response.headers['Content-length'] = len(content)
@@ -106,14 +106,14 @@ def labeled(token, feature, frame):
     project = Project.get(token)
     if not project:
         return jsonify({'error': f'project {token} not found'}), 404
-    labeled_array = project.get_labeled_array(feature, frame).flatten()
+    labeled_array = project.get_labeled_array(feature, frame)
     content = gzip.compress(json.dumps(labeled_array.tolist()).encode('utf8'), 5)
     response = make_response(content)
     response.headers['Content-length'] = len(content)
     response.headers['Content-Encoding'] = 'gzip'
     # gzip includes a timestamp that changes the md5 hash
     # TODO: in Python >= 3.8, add mtime=0 to create stable md5 and use add_etag instead
-    etag = hashlib.md5(labeled_array).hexdigest()
+    etag = hashlib.md5(np.ascontiguousarray(labeled_array)).hexdigest()
     response.set_etag(etag)
     return response.make_conditional(request)
 

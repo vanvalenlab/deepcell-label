@@ -18,7 +18,7 @@ const OutlineCanvas = ({ setCanvases }) => {
   const feature = useFeature(featureIndex);
   let labeledArray = useSelector(feature, (state) => state.context.labeledArray);
   if (!labeledArray) {
-    labeledArray = Array(height * width).fill(0);
+    labeledArray = new Array(height).fill(new Array(width).fill(0));
   }
 
   const kernelRef = useRef();
@@ -30,14 +30,15 @@ const OutlineCanvas = ({ setCanvases }) => {
     const gpu = new GPU({ canvas });
     const kernel = gpu.createKernel(
       function (data, outlineAll, foreground, background) {
-        const n = this.thread.x + this.constants.w * (this.constants.h - 1 - this.thread.y);
-        const label = data[n];
+        const x = this.thread.x;
+        const y = this.constants.h - 1 - this.thread.y;
+        const label = data[y][x];
         const onOutline =
           label !== 0 &&
-          ((this.thread.x !== 0 && data[n - 1] !== label) ||
-            (this.thread.x !== this.constants.w - 1 && data[n + 1] !== label) ||
-            (this.thread.y !== 0 && data[n - this.constants.w] !== label) ||
-            (this.thread.y !== this.constants.h - 1 && data[n + this.constants.w] !== label));
+          ((x !== 0 && data[y][x - 1] !== label) ||
+            (x !== this.constants.w - 1 && data[y][x + 1] !== label) ||
+            (y !== 0 && data[y - 1][x] !== label) ||
+            (y !== this.constants.h - 1 && data[y + 1][x] !== label));
 
         // always outline selected labels
         if (onOutline && label === background) {

@@ -226,9 +226,9 @@ const canvasMachine = Machine(
         return { type: 'COORDINATES', x, y };
       }),
       setHovering: assign((_, { hovering }) => ({ hovering })),
-      sendHovering: send(({ labeledArray: array, x, y, width }) => ({
+      sendHovering: send(({ labeledArray: array, x, y }) => ({
         type: 'HOVERING',
-        hovering: array && x !== null && y !== null ? array[y * width + x] : null,
+        hovering: array && x !== null && y !== null ? array[y][x] : null,
       })),
       setDimensions: assign({
         availableWidth: (_, { width }) => width,

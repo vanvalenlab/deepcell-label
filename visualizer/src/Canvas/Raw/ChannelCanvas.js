@@ -24,9 +24,8 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
   const channel = useChannel(channelIndex);
   let rawArray = useSelector(channel, (state) => state.context.rawArray);
   if (rawArray === null) {
-    rawArray = new Array(width * height).fill(0);
+    rawArray = new Array(height).fill(new Array(width).fill(0));
   }
-  console.log(rawArray);
 
   const kernelRef = useRef();
   const canvasRef = useRef();
@@ -35,8 +34,9 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
     const kernel = gpu.createKernel(
       function (data, on, color, min, max) {
         if (on) {
-          const n = this.thread.x + this.constants.w * (this.constants.h - this.thread.y);
-          const v = (data[n] - min) / 255;
+          const x = this.thread.x;
+          const y = this.constants.h - 1 - this.thread.y;
+          const v = (data[y][x] - min) / 255;
           const diff = max - min;
           const scale = diff === 0 ? 1 : 1 / diff;
           const [r, g, b] = color;
