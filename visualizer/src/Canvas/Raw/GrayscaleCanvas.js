@@ -50,6 +50,7 @@ export const GrayscaleCanvas = ({ setCanvases }) => {
         graphical: true,
       }
     );
+    kernelRef.current = kernel;
     canvasRef.current = kernel.canvas;
     return () => {
       kernel.destroy();
