@@ -43,7 +43,7 @@ def test_array(client):
 
 def test_semantic_labels(client):
     project = models.Project.create(DummyLoader())
-    response = client.get(f'/api/semantic-labels/{project.token}/0/0')
+    response = client.get(f'/api/semantic-labels/{project.token}/0')
     assert response.status_code == 200
 
 
