@@ -1,13 +1,10 @@
 """Test for DeepCell Label Models"""
 
-import io
-
 import numpy as np
 import pytest
 
 from deepcell_label import models
 from deepcell_label.conftest import DummyLoader
-from deepcell_label.utils import grayscale_pngify
 
 
 # Automatically enable transactions for all tests, without importing any extra fixtures.
@@ -275,21 +272,6 @@ def test_get_labeled_array():
     np.testing.assert_array_equal(
         label_arr[label_arr < 0], -expected_frame[label_arr < 0]
     )
-
-
-def test_get_raw_png_one_channel():
-    """
-    Test raw frame PNGs to send to the front-end.
-    """
-    project = models.Project.create(DummyLoader())
-    frame = 0
-    channel = 0
-    expected_frame = project.raw_frames[frame].frame[..., channel]
-    expected_png = grayscale_pngify(expected_frame)
-
-    raw_png = project.get_raw_png(frame, channel)
-    assert isinstance(raw_png, io.BytesIO)
-    assert raw_png.getvalue() == expected_png.getvalue()
 
 
 def test_get_max_label_all_zeroes():

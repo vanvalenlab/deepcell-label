@@ -1,9 +1,6 @@
 """Tests for utils.py"""
 
-import os
-
 import numpy as np
-from skimage.io import imread
 
 from deepcell_label import utils
 
@@ -79,18 +76,6 @@ def test_add_frame_div_parent():
         3: {'frame_div_parent': 1, 'frame_div': None, 'parent': 1, 'daughters': []},
     }
     assert added_info == expected
-
-
-def test_greyscale_pngify(tmpdir):
-    outfile = os.path.join(str(tmpdir), 'output.png')
-    imgarr = np.random.randint(0, 255, size=(32, 32), dtype='uint16')
-
-    out = utils.grayscale_pngify(imgarr)
-    with open(outfile, 'wb') as f:
-        f.write(out.getbuffer())
-
-    loaded_image = np.uint16(imread(outfile))
-    np.testing.assert_equal(imgarr.shape, loaded_image.shape)
 
 
 def test_reshape_out_of_order():
