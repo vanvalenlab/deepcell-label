@@ -123,8 +123,9 @@ const createChannelMachine = (projectId, channel, numFrames) =>
         setAutoRange: assign({
           range: ({ rawArray }) => {
             // modified from https://github.com/hms-dbmi/viv
+            if (rawArray === null) return [0, 255];
             // ignore the background
-            const array = rawArray.data.filter((v) => v > 0);
+            const array = rawArray.filter((v) => v > 0);
             const cutoffPercentile = 0.01;
             const topCutoffLocation = Math.floor(array.length * (1 - cutoffPercentile));
             const bottomCutoffLocation = Math.floor(array.length * cutoffPercentile);
