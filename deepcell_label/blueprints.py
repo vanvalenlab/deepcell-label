@@ -106,7 +106,7 @@ def labeled(token, feature, frame):
     project = Project.get(token)
     if not project:
         return jsonify({'error': f'project {token} not found'}), 404
-    labeled_array = project.get_labeled_array(feature, frame)
+    labeled_array = project.get_labeled_array(feature, frame).astype(np.int32)
     content = gzip.compress(json.dumps(labeled_array.tolist()).encode('utf8'), 5)
     response = make_response(content)
     response.headers['Content-length'] = len(content)
