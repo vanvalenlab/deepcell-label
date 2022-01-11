@@ -7,7 +7,7 @@ import pytest
 
 from deepcell_label import models
 from deepcell_label.conftest import DummyLoader
-from deepcell_label.imgutils import grayscale_pngify
+from deepcell_label.utils import grayscale_pngify
 
 
 # Automatically enable transactions for all tests, without importing any extra fixtures.

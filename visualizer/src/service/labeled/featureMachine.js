@@ -10,7 +10,7 @@ function fetchSemanticLabels(context) {
 
 function fetchLabeledFrame(context) {
   const { projectId, feature, loadingFrame: frame } = context;
-  return fetch(`/api/array/${projectId}/${feature}/${frame}`).then((res) => res.json());
+  return fetch(`/api/labeled/${projectId}/${feature}/${frame}`).then((res) => res.json());
 }
 
 const reloadFrameState = {

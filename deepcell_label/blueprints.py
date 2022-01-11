@@ -61,9 +61,16 @@ def raw(token, channel, frame):
     project = Project.get(token)
     if not project:
         return abort(404, description=f'project {token} not found')
-    png = project.get_raw_png(channel, frame)
-    etag = hashlib.md5(png.getbuffer()).hexdigest()
-    return send_file(png, mimetype='image/png', etag=etag)
+    raw_array = project.get_raw_array(channel, frame).flatten()
+    content = gzip.compress(json.dumps(raw_array.tolist()).encode('utf8'), 5)
+    response = make_response(content)
+    response.headers['Content-length'] = len(content)
+    response.headers['Content-Encoding'] = 'gzip'
+    # gzip includes a timestamp that changes the md5 hash
+    # TODO: in Python >= 3.8, add mtime=0 to create stable md5 and use add_etag instead
+    etag = hashlib.md5(raw_array).hexdigest()
+    response.set_etag(etag)
+    return response.make_conditional(request)
 
 
 @bp.route('/api/raw/<token>', methods=['POST'])
@@ -93,8 +100,8 @@ def add_raw(token):
     return {'numChannels': project.num_channels}
 
 
-@bp.route('/api/array/<token>/<int:feature>/<int:frame>')
-def array(token, feature, frame):
+@bp.route('/api/labeled/<token>/<int:feature>/<int:frame>')
+def labeled(token, feature, frame):
     """ """
     project = Project.get(token)
     if not project:

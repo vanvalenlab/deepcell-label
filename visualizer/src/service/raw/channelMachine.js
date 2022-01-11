@@ -3,42 +3,7 @@ import { assign, Machine, sendParent } from 'xstate';
 
 function fetchRaw(context) {
   const { projectId, channel, loadingFrame: frame } = context;
-  const pathToRaw = `/api/raw/${projectId}/${channel}/${frame}`;
-
-  return (
-    fetch(pathToRaw)
-      // .then(validateResponse)
-      .then(readResponseAsBlob)
-      .then(makeImageURL)
-      .then(showImage)
-      .then(getImageData)
-  );
-  // .catch(logError);
-}
-
-function readResponseAsBlob(response) {
-  return response.blob();
-}
-
-function makeImageURL(responseAsBlob) {
-  return URL.createObjectURL(responseAsBlob);
-}
-
-function showImage(imgUrl) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.src = imgUrl;
-  });
-}
-
-function getImageData(img) {
-  const canvas = document.createElement('canvas');
-  canvas.width = img.width;
-  canvas.height = img.height;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(img, 0, 0);
-  return ctx.getImageData(0, 0, img.width, img.height);
+  return fetch(`/api/raw/${projectId}/${channel}/${frame}`).then((res) => res.json());
 }
 
 const createChannelMachine = (projectId, channel, numFrames) =>
@@ -52,7 +17,7 @@ const createChannelMachine = (projectId, channel, numFrames) =>
         frame: 0,
         loadingFrame: null,
         frames: {},
-        imageData: null,
+        rawArray: null,
         // layer settings for grayscale mode
         invert: false,
         range: [0, 255],
@@ -121,7 +86,7 @@ const createChannelMachine = (projectId, channel, numFrames) =>
         }),
         useFrame: assign({
           frame: (_, { frame }) => frame,
-          imageData: ({ frames }, { frame }) => frames[frame],
+          rawArray: ({ frames }, { frame }) => frames[frame],
         }),
         loadNextFrame: assign({
           loadingFrame: ({ numFrames, frame, frames }) => {
@@ -156,11 +121,10 @@ const createChannelMachine = (projectId, channel, numFrames) =>
           contrast: 0,
         }),
         setAutoRange: assign({
-          range: ({ imageData }) => {
+          range: ({ rawArray }) => {
             // modified from https://github.com/hms-dbmi/viv
-            const array = imageData.data
-              .filter((v, i) => i % 4 === 1) // take only the first channel
-              .filter((v) => v > 0); // ignore the background
+            // ignore the background
+            const array = rawArray.data.filter((v) => v > 0);
             const cutoffPercentile = 0.01;
             const topCutoffLocation = Math.floor(array.length * (1 - cutoffPercentile));
             const bottomCutoffLocation = Math.floor(array.length * cutoffPercentile);

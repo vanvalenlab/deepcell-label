@@ -15,8 +15,8 @@ import requests
 from PIL import Image
 from tifffile import TiffFile
 
-from deepcell_label.imgutils import reshape
 from deepcell_label.labelmaker import LabelInfoMaker
+from deepcell_label.utils import reshape
 
 DCL_AXES = 'ZYXC'
 

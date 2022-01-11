@@ -17,8 +17,6 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy.schema import ForeignKeyConstraint, PrimaryKeyConstraint
 
-from deepcell_label.imgutils import grayscale_pngify
-
 logger = logging.getLogger('models.Project')  # pylint: disable=C0103
 # Accessing relationships (like project.label_frames) issues a Query, causing a flush
 # autoflush=False prevents the flush, so we still access the db.session.dirty after the query
@@ -440,17 +438,16 @@ class Project(db.Model):
 
         return payload
 
-    def get_raw_png(self, channel, frame):
+    def get_raw_array(self, channel, frame):
         """
         Returns:
-            BytesIO: contains the raw frame as a .png
+            ndarray: numpy array of raw image data
         """
-        # Raw png
-
         raw_frame = RawFrame.get(self.id, frame)
-        raw_arr = raw_frame.frame[..., channel]
-        raw_png = grayscale_pngify(raw_arr)
-        return raw_png
+        array = raw_frame.frame[..., channel]
+        normalized = (array - np.min(array)) / (np.max(array) - np.min(array)) * 255
+        print(np.min(array), np.max(array), np.max(normalized), np.min(normalized))
+        return normalized.astype(np.uint8)
 
     def get_labeled_array(self, feature, frame):
         """

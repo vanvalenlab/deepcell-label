@@ -22,10 +22,11 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
   const on = useSelector(layer, (state) => state.context.on);
   const channelIndex = useSelector(layer, (state) => state.context.channel);
   const channel = useChannel(channelIndex);
-  let imageData = useSelector(channel, (state) => state.context.imageData);
-  if (imageData === null) {
-    imageData = new ImageData(width, height);
+  let rawArray = useSelector(channel, (state) => state.context.rawArray);
+  if (rawArray === null) {
+    rawArray = new Array(width * height).fill(0);
   }
+  console.log(rawArray);
 
   const kernelRef = useRef();
   const canvasRef = useRef();
@@ -34,7 +35,7 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
     const kernel = gpu.createKernel(
       function (data, on, color, min, max) {
         if (on) {
-          const n = 4 * (this.thread.x + this.constants.w * (this.constants.h - this.thread.y));
+          const n = this.thread.x + this.constants.w * (this.constants.h - this.thread.y);
           const v = (data[n] - min) / 255;
           const diff = max - min;
           const scale = diff === 0 ? 1 : 1 / diff;
@@ -60,10 +61,10 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
 
   useEffect(() => {
     // Rerender the canvas for this component
-    kernelRef.current(imageData.data, on, hexToRGB(color), min, max);
+    kernelRef.current(rawArray, on, hexToRGB(color), min, max);
     // Rerender the parent canvas
     setCanvases((canvases) => ({ ...canvases, [layerIndex]: canvasRef.current }));
-  }, [imageData, on, color, min, max, width, height, layerIndex, setCanvases]);
+  }, [rawArray, on, color, min, max, width, height, layerIndex, setCanvases]);
 
   // Remove canvas from canvases when layer is removed
   useEffect(() => {

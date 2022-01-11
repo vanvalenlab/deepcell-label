@@ -37,7 +37,7 @@ def test_raw(client):
 
 def test_array(client):
     project = models.Project.create(DummyLoader())
-    response = client.get(f'/api/array/{project.token}/0/0')
+    response = client.get(f'/api/labeled/{project.token}/0/0')
     assert response.status_code == 200
 
 
