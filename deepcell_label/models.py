@@ -446,7 +446,6 @@ class Project(db.Model):
         raw_frame = RawFrame.get(self.id, frame)
         array = raw_frame.frame[..., channel]
         normalized = (array - np.min(array)) / (np.max(array) - np.min(array)) * 255
-        print(np.min(array), np.max(array), np.max(normalized), np.min(normalized))
         return normalized.astype(np.uint8)
 
     def get_labeled_array(self, feature, frame):
