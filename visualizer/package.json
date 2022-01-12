@@ -68,9 +68,9 @@
   },
   "proxy": "http://localhost:5000",
   "devDependencies": {
-    "c8": "^7.11.0",
     "canvas": "^2.8.0",
     "eslint-plugin-prettier": "^3.4.0",
+    "istanbul-spy": "^1.1.2",
     "prettier": "^2.3.1",
     "prettier-plugin-organize-imports": "^2.1.0"
   },
