@@ -12,7 +12,7 @@ const white = [255, 255, 255, 255];
  * @param {Number} y
  * @returns {Number} distance in pixels from origin
  */
-export function distance(x, y) {
+export function dist(x, y) {
   return Math.floor(Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2)));
 }
 
@@ -47,15 +47,15 @@ const BrushCanvas = ({ setCanvases }) => {
         const distY = Math.abs(y - brushY);
 
         const onBrush =
-          distance(distX, distY) === radius &&
+          dist(distX, distY) === radius &&
           // not on border if next to border in both directions
-          !(distance(distX + 1, distY) === radius && distance(distX, distY + 1) === radius);
+          !(dist(distX + 1, distY) === radius && dist(distX, distY + 1) === radius);
 
         if (onBrush) {
           this.color(r / 255, g / 255, b / 255, a / 255);
         } else if (traceLength > 0) {
           for (let i = 0; i < traceLength; i++) {
-            if (distance(trace[i][0] - x, trace[i][1] - y) <= radius) {
+            if (dist(trace[i][0] - x, trace[i][1] - y) <= radius) {
               this.color(r / 255, g / 255, b / 255, a / 255 / 2);
               break;
             }
@@ -67,7 +67,7 @@ const BrushCanvas = ({ setCanvases }) => {
         output: [width, height],
         graphical: true,
         dynamicArguments: true,
-        functions: [distance],
+        functions: [dist],
       }
     );
     kernelRef.current = kernel;
