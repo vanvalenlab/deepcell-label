@@ -83,19 +83,6 @@ const grabState = {
   },
 };
 
-const panState = {
-  initial: 'interactive',
-  states: {
-    interactive: interactiveState,
-    grab: grabState,
-  },
-  invoke: { src: 'listenForSpace' },
-  on: {
-    'keydown.Space': '.grab',
-    'keyup.Space': '.interactive',
-  },
-};
-
 const canvasMachine = Machine(
   {
     id: 'canvas',
@@ -121,12 +108,16 @@ const canvasMachine = Machine(
       hovering: null,
       panOnDrag: true,
     },
-    invoke: [{ src: 'listenForMouseUp' }, { src: 'listenForZoomHotkeys' }],
+    invoke: [
+      { src: 'listenForMouseUp' },
+      { src: 'listenForZoomHotkeys' },
+      { src: 'listenForSpace' },
+    ],
     on: {
       wheel: { actions: 'zoom' },
-      ZOOMIN: { actions: 'zoomIn' },
-      ZOOMOUT: { actions: 'zoomOut' },
-      DIMENSIONS: { actions: ['setDimensions', 'resize'] },
+      ZOOM_IN: { actions: 'zoomIn' },
+      ZOOM_OUT: { actions: 'zoomOut' },
+      DIMENSIONS: { actions: ['setSpace', 'resize'] },
       SAVE: {
         actions: respond((context) => ({
           type: 'RESTORE',
@@ -145,24 +136,14 @@ const canvasMachine = Machine(
         cond: 'newHovering',
         actions: ['setHovering', 'sendParent'],
       },
+      PROJECT: { actions: ['setDimensions', 'resize'] },
+      'keydown.Space': '.grab',
+      'keyup.Space': '.interactive',
     },
-    initial: 'idle',
+    initial: 'interactive',
     states: {
-      idle: {
-        on: {
-          PROJECT: {
-            target: 'pan',
-            actions: [
-              assign((context, event) => ({
-                height: event.height,
-                width: event.width,
-              })),
-              'resize',
-            ],
-          },
-        },
-      },
-      pan: panState,
+      interactive: interactiveState,
+      grab: grabState,
     },
   },
   {
@@ -193,10 +174,10 @@ const canvasMachine = Machine(
       listenForZoomHotkeys: () => (send) => {
         const listener = (e) => {
           if (e.key === '=') {
-            send('ZOOMIN');
+            send('ZOOM_IN');
           }
           if (e.key === '-') {
-            send('ZOOMOUT');
+            send('ZOOM_OUT');
           }
         };
         window.addEventListener('keydown', listener);
@@ -210,6 +191,10 @@ const canvasMachine = Machine(
       panOnDrag: ({ panOnDrag }) => panOnDrag,
     },
     actions: {
+      setDimensions: assign((context, event) => ({
+        height: event.height,
+        width: event.width,
+      })),
       updateMove: assign({
         dx: ({ dx }, event) => dx + event.movementX,
         dy: ({ dy }, event) => dy + event.movementY,
@@ -230,7 +215,7 @@ const canvasMachine = Machine(
         type: 'HOVERING',
         hovering: array && x !== null && y !== null ? array[y][x] : null,
       })),
-      setDimensions: assign({
+      setSpace: assign({
         availableWidth: (_, { width }) => width,
         availableHeight: (_, { height }) => height,
         padding: (_, { padding }) => padding,
