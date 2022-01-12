@@ -68,6 +68,7 @@
   },
   "proxy": "http://localhost:5000",
   "devDependencies": {
+    "canvas": "^2.8.0",
     "eslint-plugin-prettier": "^3.4.0",
     "prettier": "^2.3.1",
     "prettier-plugin-organize-imports": "^2.1.0"
