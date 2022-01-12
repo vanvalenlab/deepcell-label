@@ -50,16 +50,21 @@ const BrushCanvas = ({ setCanvases }) => {
           dist(distX, distY) === radius &&
           // not on border if next to border in both directions
           !(dist(distX + 1, distY) === radius && dist(distX, distY + 1) === radius);
-
+        let drawn = false;
         if (onBrush) {
           this.color(r / 255, g / 255, b / 255, a / 255);
+          drawn = true;
         } else if (traceLength > 0) {
           for (let i = 0; i < traceLength; i++) {
             if (dist(trace[i][0] - x, trace[i][1] - y) <= radius) {
               this.color(r / 255, g / 255, b / 255, a / 255 / 2);
+              drawn = true;
               break;
             }
           }
+        }
+        if (!drawn) {
+          this.color(0, 0, 0, 0);
         }
       },
       {
