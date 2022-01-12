@@ -1,45 +1,39 @@
 import { useSelector } from '@xstate/react';
-import React, { useEffect, useRef } from 'react';
-import { useCanvas, useComposeLayers, useLayers } from '../../ProjectContext';
+import React, { useEffect, useRef, useState } from 'react';
+import { useCanvas, useLayers } from '../../ProjectContext';
 import ChannelCanvas from './ChannelCanvas';
 
-export const RGBCanvas = ({ className }) => {
+export const RGBCanvas = ({ setCanvases }) => {
   const canvas = useCanvas();
-  const sx = useSelector(canvas, (state) => state.context.sx);
-  const sy = useSelector(canvas, (state) => state.context.sy);
-  const zoom = useSelector(canvas, (state) => state.context.zoom);
-  const scale = useSelector(canvas, (state) => state.context.scale);
   const sw = useSelector(canvas, (state) => state.context.width);
   const sh = useSelector(canvas, (state) => state.context.height);
 
-  const width = sw * scale * window.devicePixelRatio;
-  const height = sh * scale * window.devicePixelRatio;
-
   const layers = useLayers();
 
-  const canvasRef = useRef();
-  const ctx = useRef();
-  const [composeCanvasRef, canvases, setCanvases] = useComposeLayers();
+  // keys: layer index, values: ref to canvas for each layer
+  const [layerCanvases, setLayerCanvases] = useState({});
+
+  const composeCanvasRef = useRef();
+  const composeCtxRef = useRef();
 
   useEffect(() => {
-    ctx.current = canvasRef.current.getContext('2d');
-    ctx.current.imageSmoothingEnabled = false;
-  }, [height, width]);
+    composeCtxRef.current = composeCanvasRef.current.getContext('2d');
+    composeCtxRef.current.globalCompositeOperation = 'lighter';
+  }, [sh, sw]);
 
   useEffect(() => {
-    const composeCanvas = composeCanvasRef.current;
-    ctx.current.clearRect(0, 0, width, height);
-    ctx.current.drawImage(composeCanvas, sx, sy, sw / zoom, sh / zoom, 0, 0, width, height);
-  }, [composeCanvasRef, canvases, sx, sy, zoom, sw, sh, width, height]);
+    composeCtxRef.current.clearRect(0, 0, sw, sh);
+    for (let key in layerCanvases) {
+      composeCtxRef.current.drawImage(layerCanvases[key], 0, 0);
+    }
+    setCanvases((canvases) => ({ ...canvases, raw: composeCanvasRef.current }));
+  }, [layerCanvases, sh, sw, setCanvases]);
 
   return (
     <>
-      {/* hidden processing canvas */}
-      <canvas id='raw-processing' hidden={true} ref={composeCanvasRef} width={sw} height={sh} />
-      {/* visible output canvas */}
-      <canvas id='raw-canvas' className={className} ref={canvasRef} width={width} height={height} />
+      <canvas id='compose-layers' hidden={true} ref={composeCanvasRef} width={sw} height={sh} />
       {layers.map((layer) => (
-        <ChannelCanvas layer={layer} setCanvases={setCanvases} key={layer.sessionId} />
+        <ChannelCanvas layer={layer} setCanvases={setLayerCanvases} key={layer.sessionId} />
       ))}
     </>
   );

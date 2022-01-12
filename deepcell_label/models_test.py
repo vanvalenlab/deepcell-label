@@ -1,13 +1,10 @@
 """Test for DeepCell Label Models"""
 
-import io
-
 import numpy as np
 import pytest
 
 from deepcell_label import models
 from deepcell_label.conftest import DummyLoader
-from deepcell_label.imgutils import grayscale_pngify, pngify
 
 
 # Automatically enable transactions for all tests, without importing any extra fixtures.
@@ -31,7 +28,6 @@ def test_project_init():
     assert project.width is not None
     assert project.num_channels is not None
     assert project.num_features is not None
-    assert project.colormap is not None
 
 
 def test_get_missing_project():
@@ -64,7 +60,6 @@ def test_create():
     assert project.id is not None
     assert project.createdAt is not None
     assert project.finished is None  # None until project is done
-    assert project.rgb is not None
     assert project.frame is not None
     assert project.channel is not None
     assert project.feature is not None
@@ -72,7 +67,6 @@ def test_create():
     # Check relationships
     assert project.labels is not None
     assert project.raw_frames is not None
-    assert project.rgb_frames is not None
     assert project.label_frames is not None
 
     raw_frames = project.raw_frames
@@ -278,43 +272,6 @@ def test_get_labeled_array():
     )
 
 
-def test_get_labeled_png():
-    """
-    Test label frame PNGs to send to the front-end.
-    """
-    project = models.Project.create(DummyLoader())
-    frame = 0
-    feature = 0
-    expected_frame = project.label_frames[frame].frame[..., feature]
-    expected_frame = np.ma.masked_equal(expected_frame, 0)
-    expected_png = pngify(
-        expected_frame,
-        vmin=0,
-        vmax=project.get_max_label(feature),
-        cmap=project.colormap,
-    )
-
-    label_png = project.get_labeled_png(frame, feature)
-
-    assert isinstance(label_png, io.BytesIO)
-    assert label_png.getvalue() == expected_png.getvalue()
-
-
-def test_get_raw_png_one_channel():
-    """
-    Test raw frame PNGs to send to the front-end.
-    """
-    project = models.Project.create(DummyLoader())
-    frame = 0
-    channel = 0
-    expected_frame = project.raw_frames[frame].frame[..., channel]
-    expected_png = grayscale_pngify(expected_frame)
-
-    raw_png = project.get_raw_png(frame, channel)
-    assert isinstance(raw_png, io.BytesIO)
-    assert raw_png.getvalue() == expected_png.getvalue()
-
-
 def test_get_max_label_all_zeroes():
     labels = np.zeros((1, 1, 1, 1))
     project = models.Project.create(DummyLoader(labels=labels))
@@ -371,11 +328,8 @@ def test_finish_project():
     assert project.finished is not None
     assert project.labels.cell_ids is None
     assert project.labels.cell_info is None
-    for raw, rgb, label in zip(
-        project.raw_frames, project.rgb_frames, project.label_frames
-    ):
+    for raw, label in zip(project.raw_frames, project.label_frames):
         assert raw.frame is None
-        assert rgb.frame is None
         assert label.frame is None
 
 
@@ -386,17 +340,6 @@ def test_raw_frame_init():
     for frame in raw_frames:
         assert len(frame.frame.shape) == 3  # Height, width, channels
         assert frame.frame_id is not None
-
-
-def test_rgb_frame_init():
-    """Test constructing the RGB frames for a project."""
-    project = models.Project.create(DummyLoader())
-
-    rgb_frames = project.rgb_frames
-    for frame in rgb_frames:
-        assert frame.frame.ndim == 3  # Height, width, features
-        assert frame.frame_id is not None
-        assert frame.frame.shape[2] == 3  # RGB channels
 
 
 def test_label_frame_init():
@@ -410,21 +353,16 @@ def test_label_frame_init():
 
 
 def test_frames_init():
-    """Test that raw, RGB, and label frames within a project are all compatible."""
+    """Test that raw, and label frames within a project are all compatible."""
     project = models.Project.create(DummyLoader())
 
     raw_frames = project.raw_frames
     label_frames = project.label_frames
-    rgb_frames = project.rgb_frames
     assert len(raw_frames) == len(label_frames)
-    assert len(raw_frames) == len(rgb_frames)
-    for raw_frame, label_frame, rgb_frame in zip(raw_frames, label_frames, rgb_frames):
+    for raw_frame, label_frame in zip(raw_frames, label_frames):
         assert raw_frame.frame.shape[:-1] == label_frame.frame.shape[:-1]
         assert raw_frame.frame_id == label_frame.frame_id
         assert raw_frame.project_id == label_frame.project_id
-        assert raw_frame.frame.shape[:-1] == rgb_frame.frame.shape[:-1]
-        assert raw_frame.frame_id == rgb_frame.frame_id
-        assert raw_frame.project_id == rgb_frame.project_id
 
 
 def test_labels_init():

@@ -88,8 +88,8 @@ const createColorMachine = ({ channels }) =>
         channel: channelState,
       },
       on: {
-        ADD_LAYER: { actions: 'addLayer' },
-        REMOVE_LAYER: { actions: 'removeLayer' },
+        ADD_LAYER: { actions: ['addLayer', sendParent('ADD_LAYER')] },
+        REMOVE_LAYER: { actions: ['removeLayer', sendParent('ADD_LAYER')] },
         LAYER_CHANNEL_CHANGE: { actions: 'addToLoading' },
       },
     },

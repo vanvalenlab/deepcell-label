@@ -1,81 +1,72 @@
 import { useSelector } from '@xstate/react';
-import React, { useEffect, useRef } from 'react';
+import { GPU } from 'gpu.js';
+import { useEffect, useRef } from 'react';
 import { useCanvas, useChannel, useRaw } from '../../ProjectContext';
-import {
-  adjustRangeImageData,
-  brightnessImageData,
-  contrastImageData,
-  invertImageData,
-} from '../canvasUtils';
 
-export const GrayscaleCanvas = ({ className }) => {
+export const GrayscaleCanvas = ({ setCanvases }) => {
   const canvas = useCanvas();
-  const sx = useSelector(canvas, (state) => state.context.sx);
-  const sy = useSelector(canvas, (state) => state.context.sy);
-  const zoom = useSelector(canvas, (state) => state.context.zoom);
-  const scale = useSelector(canvas, (state) => state.context.scale);
-  const sw = useSelector(canvas, (state) => state.context.width);
-  const sh = useSelector(canvas, (state) => state.context.height);
-
-  const width = sw * scale * window.devicePixelRatio;
-  const height = sh * scale * window.devicePixelRatio;
+  const width = useSelector(canvas, (state) => state.context.width);
+  const height = useSelector(canvas, (state) => state.context.height);
 
   const raw = useRaw();
   const grayscaleMode = useSelector(raw, (state) => state.context.grayscaleMode);
   const channelIndex = useSelector(grayscaleMode, (state) => state.context.channel);
   const channel = useChannel(channelIndex);
-
   const invert = useSelector(channel, (state) => state.context.invert);
   const [min, max] = useSelector(channel, (state) => state.context.range);
   const brightness = useSelector(channel, (state) => state.context.brightness);
   const contrast = useSelector(channel, (state) => state.context.contrast);
-  const rawImage = useSelector(channel, (state) => state.context.rawImage);
+  let rawArray = useSelector(channel, (state) => state.context.rawArray);
+  if (rawArray === null) {
+    rawArray = new Array(height).fill(new Array(width).fill(0));
+  }
 
+  const kernelRef = useRef();
   const canvasRef = useRef();
-  const ctxRef = useRef();
-  const hiddenCanvasRef = useRef();
-  const hiddenCtxRef = useRef();
+  useEffect(() => {
+    const gpu = new GPU();
+    const kernel = gpu.createKernel(
+      function (data, min, max, brightness, contrast, invert) {
+        const x = this.thread.x;
+        const y = this.constants.h - 1 - this.thread.y;
+        // Rescale value from min - max to 0 - 1
+        let v = Math.max(0, data[y][x] - min) / 255;
+        const diff = (max - min) / 255;
+        const scale = diff === 0 ? 1 : 1 / diff;
+        v = Math.min(1, v * scale);
+        // Shift by brightness
+        v = Math.max(0, Math.min(1, v + brightness));
+        // Apply contrast
+        const contrastFactor = (1 + contrast) / (1.001 - contrast);
+        v = Math.max(0, Math.min(1, contrastFactor * (v - 0.5) + 0.5));
+        // Invert
+        if (invert) {
+          v = 1 - v;
+        }
+        this.color(v, v, v, 1);
+      },
+      {
+        constants: { w: width, h: height },
+        output: [width, height],
+        graphical: true,
+      }
+    );
+    kernelRef.current = kernel;
+    canvasRef.current = kernel.canvas;
+    return () => {
+      kernel.destroy();
+      gpu.destroy();
+    };
+  }, [width, height]);
 
   useEffect(() => {
-    ctxRef.current = canvasRef.current.getContext('2d');
-    ctxRef.current.imageSmoothingEnabled = false;
-  }, [height, width]);
+    // Rerender the canvas for this component
+    kernelRef.current(rawArray, min, max, brightness, contrast, invert);
+    // Rerender the parent canvas
+    setCanvases((canvases) => ({ ...canvases, raw: canvasRef.current }));
+  }, [rawArray, min, max, brightness, contrast, invert, width, height, setCanvases]);
 
-  useEffect(() => {
-    hiddenCtxRef.current = hiddenCanvasRef.current.getContext('2d');
-  }, [sw, sh]);
-
-  useEffect(() => {
-    // draw image onto canvas to get image data
-    const ctx = hiddenCtxRef.current;
-    ctx.drawImage(rawImage, 0, 0);
-    const imageData = ctx.getImageData(0, 0, width, height);
-    // adjust image data
-    adjustRangeImageData(imageData, min, max);
-    brightnessImageData(imageData, brightness);
-    contrastImageData(imageData, contrast);
-    if (invert) {
-      invertImageData(imageData);
-    }
-    // redraw with adjusted data
-    ctx.putImageData(imageData, 0, 0);
-  }, [rawImage, min, max, invert, brightness, contrast, width, height]);
-
-  useEffect(() => {
-    const hiddenCanvas = hiddenCanvasRef.current;
-    const ctx = ctxRef.current;
-    ctx.clearRect(0, 0, width, height);
-    ctx.drawImage(hiddenCanvas, sx, sy, sw / zoom, sh / zoom, 0, 0, width, height);
-  }, [rawImage, min, max, invert, brightness, contrast, sx, sy, zoom, sw, sh, width, height]);
-
-  return (
-    <>
-      {/* hidden processing canvas */}
-      <canvas id='raw-processing' hidden={true} ref={hiddenCanvasRef} width={sw} height={sh} />
-      {/* visible output canvas */}
-      <canvas id='raw-canvas' className={className} ref={canvasRef} width={width} height={height} />
-    </>
-  );
+  return null;
 };
 
 export default GrayscaleCanvas;

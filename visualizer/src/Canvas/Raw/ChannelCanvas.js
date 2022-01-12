@@ -1,7 +1,7 @@
 import { useSelector } from '@xstate/react';
-import React, { useEffect, useRef } from 'react';
+import { GPU } from 'gpu.js';
+import { useEffect, useRef } from 'react';
 import { useCanvas, useChannel } from '../../ProjectContext';
-import { adjustRangeImageData, recolorImageData } from '../canvasUtils';
 
 /** Converts a hex string like #FF0000 to three element array for the RGB values. */
 const hexToRGB = (hex) => {
@@ -16,42 +16,57 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
   const width = useSelector(canvas, (state) => state.context.width);
   const height = useSelector(canvas, (state) => state.context.height);
 
-  const canvasRef = useRef();
-  const ctxRef = useRef();
-
   const layerIndex = useSelector(layer, (state) => state.context.layer);
-  const channelIndex = useSelector(layer, (state) => state.context.channel);
   const color = useSelector(layer, (state) => state.context.color);
   const [min, max] = useSelector(layer, (state) => state.context.range);
   const on = useSelector(layer, (state) => state.context.on);
-
+  const channelIndex = useSelector(layer, (state) => state.context.channel);
   const channel = useChannel(channelIndex);
-  const rawImage = useSelector(channel, (state) => state.context.rawImage);
+  let rawArray = useSelector(channel, (state) => state.context.rawArray);
+  if (rawArray === null) {
+    rawArray = new Array(height).fill(new Array(width).fill(0));
+  }
+
+  const kernelRef = useRef();
+  const canvasRef = useRef();
+  useEffect(() => {
+    const gpu = new GPU();
+    const kernel = gpu.createKernel(
+      function (data, on, color, min, max) {
+        if (on) {
+          const x = this.thread.x;
+          const y = this.constants.h - 1 - this.thread.y;
+          const v = (data[y][x] - min) / 255;
+          const diff = max - min;
+          const scale = diff === 0 ? 1 : 1 / diff;
+          const [r, g, b] = color;
+          this.color(r * v * scale, g * v * scale, b * v * scale, 1);
+        } else {
+          this.color(0, 0, 0, 0);
+        }
+      },
+      {
+        constants: { w: width, h: height },
+        output: [width, height],
+        graphical: true,
+      }
+    );
+    kernelRef.current = kernel;
+    canvasRef.current = kernel.canvas;
+    return () => {
+      kernel.destroy();
+      gpu.destroy();
+    };
+  }, [width, height]);
 
   useEffect(() => {
-    const channelCanvas = canvasRef.current;
-    ctxRef.current = channelCanvas.getContext('2d');
-  }, []);
+    // Rerender the canvas for this component
+    kernelRef.current(rawArray, on, hexToRGB(color), min, max);
+    // Rerender the parent canvas
+    setCanvases((canvases) => ({ ...canvases, [layerIndex]: canvasRef.current }));
+  }, [rawArray, on, color, min, max, width, height, layerIndex, setCanvases]);
 
-  useEffect(() => {
-    // draw image onto canvas to get image data
-    const canvas = canvasRef.current;
-    const ctx = ctxRef.current;
-    if (on) {
-      ctx.drawImage(rawImage, 0, 0);
-      // adjust image data
-      const imageData = ctx.getImageData(0, 0, width, height);
-      adjustRangeImageData(imageData, min, max);
-      recolorImageData(imageData, hexToRGB(color));
-      // redraw with adjusted data
-      ctx.putImageData(imageData, 0, 0);
-    } else {
-      ctx.clearRect(0, 0, width, height);
-    }
-    // assign to channelCanvases to rerender
-    setCanvases((prevCanvases) => ({ ...prevCanvases, [layerIndex]: canvas }));
-  }, [canvasRef, setCanvases, on, layerIndex, rawImage, color, min, max, width, height]);
-
+  // Remove canvas from canvases when layer is removed
   useEffect(() => {
     return () =>
       setCanvases((prevCanvases) => {
@@ -60,15 +75,7 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
       });
   }, [setCanvases, layerIndex]);
 
-  return (
-    <canvas
-      id={`layer${layerIndex}-processing`}
-      hidden={true}
-      ref={canvasRef}
-      width={width}
-      height={height}
-    />
-  );
+  return null;
 };
 
 export default ChannelCanvas;

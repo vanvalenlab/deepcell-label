@@ -1,5 +1,7 @@
 """Tests for utils.py"""
 
+import numpy as np
+
 from deepcell_label import utils
 
 
@@ -74,3 +76,43 @@ def test_add_frame_div_parent():
         3: {'frame_div_parent': 1, 'frame_div': None, 'parent': 1, 'daughters': []},
     }
     assert added_info == expected
+
+
+def test_reshape_out_of_order():
+    array = np.zeros((1, 2, 3))
+    expected = np.zeros((3, 1, 2))
+    input_axes = 'XYZ'
+    output_axes = 'ZXY'
+
+    reshaped = utils.reshape(array, input_axes, output_axes)
+    np.testing.assert_array_equal(reshaped, expected)
+
+
+def test_reshape_more_dimensions():
+    array = np.zeros((1, 2, 3))
+    expected = np.zeros((1, 2, 3, 1))
+    input_axes = 'XYZ'
+    output_axes = 'XYZC'
+
+    reshaped = utils.reshape(array, input_axes, output_axes)
+    np.testing.assert_array_equal(reshaped, expected)
+
+
+def test_reshape_fewer_dimensions():
+    array = np.zeros((1, 2, 3, 4))
+    expected = np.zeros((1, 2, 4))
+    input_axes = 'XYZC'
+    output_axes = 'XYC'
+
+    reshaped = utils.reshape(array, input_axes, output_axes)
+    np.testing.assert_array_equal(reshaped, expected)
+
+
+def test_reshape_too_many_input_dimensions():
+    array = np.zeros((1, 2))
+    expected = np.zeros((1, 2, 1, 1, 1))
+    input_axes = 'XYZCT'
+    output_axes = 'XYZCT'
+
+    reshaped = utils.reshape(array, input_axes, output_axes)
+    np.testing.assert_array_equal(reshaped, expected)

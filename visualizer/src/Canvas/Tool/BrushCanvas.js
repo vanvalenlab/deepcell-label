@@ -1,92 +1,110 @@
 import { useSelector } from '@xstate/react';
-import React, { useEffect, useMemo, useRef } from 'react';
+import { GPU } from 'gpu.js';
+import React, { useEffect, useRef } from 'react';
 import { useBrush, useCanvas, useSelect } from '../../ProjectContext';
-import { drawBrush, drawTrace } from '../canvasUtils';
 
-const BrushCanvas = ({ className }) => {
+const red = [255, 0, 0, 255];
+const white = [255, 255, 255, 255];
+
+/**
+ * Computes the distance of (x, y) from the origin (0, 0).
+ * @param {Number} x
+ * @param {Number} y
+ * @returns {Number} distance in pixels from origin
+ */
+export function dist(x, y) {
+  return Math.floor(Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2)));
+}
+
+const BrushCanvas = ({ setCanvases }) => {
   const canvas = useCanvas();
-  const sx = useSelector(canvas, (state) => state.context.sx);
-  const sy = useSelector(canvas, (state) => state.context.sy);
-  const zoom = useSelector(canvas, (state) => state.context.zoom);
-  const scale = useSelector(canvas, (state) => state.context.scale);
-  const sw = useSelector(canvas, (state) => state.context.width);
-  const sh = useSelector(canvas, (state) => state.context.height);
-
-  const width = sw * scale * window.devicePixelRatio;
-  const height = sh * scale * window.devicePixelRatio;
-
-  const select = useSelect();
-  const background = useSelector(select, (state) => state.context.background);
-  const erasing = background !== 0;
-  const brushColor = useMemo(() => (erasing ? [255, 0, 0, 255] : [255, 255, 255, 255]), [erasing]);
+  const width = useSelector(canvas, (state) => state.context.width);
+  const height = useSelector(canvas, (state) => state.context.height);
 
   const brush = useBrush();
   const x = useSelector(brush, (state) => state.context.x);
   const y = useSelector(brush, (state) => state.context.y);
   const trace = useSelector(brush, (state) => state.context.trace);
-  const brushSize = useSelector(brush, (state) => state.context.brushSize);
+  const size = useSelector(brush, (state) => state.context.brushSize);
 
+  const select = useSelect();
+  const background = useSelector(select, (state) => state.context.background);
+  const color = background !== 0 ? red : white;
+
+  const kernelRef = useRef();
   const canvasRef = useRef();
-  const ctx = useRef();
   useEffect(() => {
-    ctx.current = canvasRef.current.getContext('2d');
-    ctx.current.imageSmoothingEnabled = false;
+    const canvas = canvasRef.current;
+    canvas.getContext('webgl2', { premultipliedAlpha: false });
+    const gpu = new GPU({ canvas });
+    const kernel = gpu.createKernel(
+      function (trace, traceLength, size, color, brushX, brushY) {
+        const x = this.thread.x;
+        const y = this.constants.h - 1 - this.thread.y;
+        const [r, g, b, a] = color;
+        const radius = size - 1;
+        const distX = Math.abs(x - brushX);
+        const distY = Math.abs(y - brushY);
+
+        const onBrush =
+          dist(distX, distY) === radius &&
+          // not on border if next to border in both directions
+          !(dist(distX + 1, distY) === radius && dist(distX, distY + 1) === radius);
+        let drawn = false;
+        if (onBrush) {
+          this.color(r / 255, g / 255, b / 255, a / 255);
+          drawn = true;
+        } else if (traceLength > 0) {
+          for (let i = 0; i < traceLength; i++) {
+            if (dist(trace[i][0] - x, trace[i][1] - y) <= radius) {
+              this.color(r / 255, g / 255, b / 255, a / 255 / 2);
+              drawn = true;
+              break;
+            }
+          }
+        }
+        if (!drawn) {
+          this.color(0, 0, 0, 0);
+        }
+      },
+      {
+        constants: { w: width, h: height },
+        output: [width, height],
+        graphical: true,
+        dynamicArguments: true,
+        functions: [dist],
+      }
+    );
+    kernelRef.current = kernel;
+    return () => {
+      kernel.destroy();
+      gpu.destroy();
+    };
   }, [width, height]);
 
-  // create references for the brush outline and trace
-  const brushCanvas = useRef();
-  const brushCtx = useRef();
-  const traceCanvas = useRef();
-  const traceCtx = useRef();
   useEffect(() => {
-    brushCtx.current = brushCanvas.current.getContext('2d');
-    traceCtx.current = traceCanvas.current.getContext('2d');
-  }, [sw, sh]);
-
-  // draws the brush outline
-  useEffect(() => {
-    brushCtx.current.clearRect(0, 0, sw, sh);
-    drawBrush(brushCtx.current, x, y, brushSize, brushColor);
-  }, [brushCtx, x, y, brushSize, brushColor, sh, sw]);
-
-  // draws the brush trace
-  useEffect(() => {
+    // edge case to deal with GPU.js error
+    // passing [] as trace causes this error
+    // gpu-browser.js:18662 Uncaught TypeError: Cannot read properties of undefined (reading 'length')
+    // at Object.isArray (gpu-browser.js:18662:1)
     if (trace.length === 0) {
-      traceCtx.current.clearRect(0, 0, sw, sh);
+      kernelRef.current([[0, 0]], trace.length, size, color, x, y);
     } else {
-      const [tx, ty] = trace[trace.length - 1];
-      drawTrace(traceCtx.current, tx, ty, brushSize);
+      kernelRef.current(trace, trace.length, size, color, x, y);
     }
-  }, [traceCtx, trace, brushSize, sh, sw]);
+    setCanvases((canvases) => ({ ...canvases, tool: canvasRef.current }));
+  }, [setCanvases, size, color, x, y, trace]);
 
-  // redraws the brush trace when resizing the brush size
-  useEffect(() => {
-    traceCtx.current.clearRect(0, 0, sh, sw);
-    for (const [tx, ty] of trace) {
-      drawTrace(traceCtx.current, tx, ty, brushSize);
-    }
-  }, [brushSize]);
-
-  // draws the brush outline and trace onto the visible canvas
-  useEffect(() => {
-    ctx.current.clearRect(0, 0, width, height);
-    ctx.current.drawImage(traceCanvas.current, sx, sy, sw / zoom, sh / zoom, 0, 0, width, height);
-    ctx.current.drawImage(brushCanvas.current, sx, sy, sw / zoom, sh / zoom, 0, 0, width, height);
-  }, [trace, brushSize, brushColor, x, y, sx, sy, zoom, sw, sh, width, height]);
-
-  return (
-    <>
-      <canvas id='brush-processing' hidden={true} ref={brushCanvas} width={sw} height={sh} />
-      <canvas id='trace-processing' hidden={true} ref={traceCanvas} width={sw} height={sh} />
-      <canvas
-        id='brush-canvas'
-        ref={canvasRef}
-        width={width}
-        height={height}
-        className={className}
-      />
-    </>
+  useEffect(
+    () => () =>
+      setCanvases((canvases) => {
+        delete canvases['tool'];
+        return { ...canvases };
+      }),
+    [setCanvases]
   );
+
+  return <canvas id='brush-canvas' hidden={true} ref={canvasRef} />;
 };
 
 export default BrushCanvas;

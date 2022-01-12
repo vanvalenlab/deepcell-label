@@ -35,21 +35,15 @@ def test_raw(client):
     assert response.status_code == 200
 
 
-def test_labeled(client):
+def test_array(client):
     project = models.Project.create(DummyLoader())
     response = client.get(f'/api/labeled/{project.token}/0/0')
     assert response.status_code == 200
 
 
-def test_array(client):
+def test_semantic_labels(client):
     project = models.Project.create(DummyLoader())
-    response = client.get(f'/api/array/{project.token}/0/0')
-    assert response.status_code == 200
-
-
-def test_colormap(client):
-    project = models.Project.create(DummyLoader())
-    response = client.get(f'/api/colormap/{project.token}/0')
+    response = client.get(f'/api/semantic-labels/{project.token}/0')
     assert response.status_code == 200
 
 

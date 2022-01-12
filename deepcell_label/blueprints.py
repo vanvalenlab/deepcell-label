@@ -7,7 +7,6 @@ import json
 import timeit
 import traceback
 
-import matplotlib
 import numpy as np
 from flask import (
     Blueprint,
@@ -62,9 +61,16 @@ def raw(token, channel, frame):
     project = Project.get(token)
     if not project:
         return abort(404, description=f'project {token} not found')
-    png = project.get_raw_png(channel, frame)
-    etag = hashlib.md5(png.getbuffer()).hexdigest()
-    return send_file(png, mimetype='image/png', etag=etag)
+    raw_array = project.get_raw_array(channel, frame)
+    content = gzip.compress(json.dumps(raw_array.tolist()).encode('utf8'), 5)
+    response = make_response(content)
+    response.headers['Content-length'] = len(content)
+    response.headers['Content-Encoding'] = 'gzip'
+    # gzip includes a timestamp that changes the md5 hash
+    # TODO: in Python >= 3.8, add mtime=0 to create stable md5 and use add_etag instead
+    etag = hashlib.md5(raw_array).hexdigest()
+    response.set_etag(etag)
+    return response.make_conditional(request)
 
 
 @bp.route('/api/raw/<token>', methods=['POST'])
@@ -96,29 +102,18 @@ def add_raw(token):
 
 @bp.route('/api/labeled/<token>/<int:feature>/<int:frame>')
 def labeled(token, feature, frame):
-    project = Project.get(token)
-    if not project:
-        return abort(404, description=f'project {token} not found')
-    png = project.get_labeled_png(feature, frame)
-    etag = hashlib.md5(png.getbuffer()).hexdigest()
-    response = send_file(png, mimetype='image/png', cache_timeout=0, etag=etag)
-    return response
-
-
-@bp.route('/api/array/<token>/<int:feature>/<int:frame>')
-def array(token, feature, frame):
     """ """
     project = Project.get(token)
     if not project:
         return jsonify({'error': f'project {token} not found'}), 404
-    labeled_array = project.get_labeled_array(feature, frame)
+    labeled_array = project.get_labeled_array(feature, frame).astype(np.int32)
     content = gzip.compress(json.dumps(labeled_array.tolist()).encode('utf8'), 5)
     response = make_response(content)
     response.headers['Content-length'] = len(content)
     response.headers['Content-Encoding'] = 'gzip'
     # gzip includes a timestamp that changes the md5 hash
     # TODO: in Python >= 3.8, add mtime=0 to create stable md5 and use add_etag instead
-    etag = hashlib.md5(labeled_array).hexdigest()
+    etag = hashlib.md5(np.ascontiguousarray(labeled_array)).hexdigest()
     response.set_etag(etag)
     return response.make_conditional(request)
 
@@ -132,22 +127,6 @@ def semantic_labels(project_id, feature):
     cell_info = add_frame_div_parent(cell_info)
     cell_info = reformat_cell_info(cell_info)
     response = make_response(cell_info)
-    response.add_etag()
-    return response.make_conditional(request)
-
-
-@bp.route('/api/colormap/<project_id>/<int:feature>')
-def colormap(project_id, feature):
-    project = Project.get(project_id)
-    if not project:
-        return jsonify({'error': f'project {project_id} not found'}), 404
-    max_label = project.get_max_label(feature)
-    colormap = matplotlib.pyplot.get_cmap('viridis', max_label)
-    colors = list(map(matplotlib.colors.rgb2hex, colormap.colors))
-    colors.insert(0, '#000000')  # No label (label 0) is black
-    colors.append('#FFFFFF')  # New label (last label) is white
-    response = make_response({'colors': colors})
-    response.headers['Cache-Control'] = 'max-age=0'
     response.add_etag()
     return response.make_conditional(request)
 

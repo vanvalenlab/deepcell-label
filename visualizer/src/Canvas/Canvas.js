@@ -4,6 +4,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import { useSelector } from '@xstate/react';
 import React, { useEffect } from 'react';
 import { useCanvas, useLabeled, useRaw, useSegment, useSelect } from '../ProjectContext';
+import ComposeCanvas from './ComposeCanvases';
 import LabeledCanvas from './Labeled/LabeledCanvas';
 import OutlineCanvas from './Labeled/OutlineCanvas';
 import RawCanvas from './Raw/RawCanvas';
@@ -14,13 +15,6 @@ const useStyles = makeStyles({
   canvasBox: {
     alignSelf: 'flex-start',
     position: 'absolute',
-  },
-  canvas: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    maxHeight: '100%',
-    maxWidth: '100%',
   },
 });
 
@@ -42,7 +36,6 @@ export const Canvas = () => {
   const dragged = useSelector(canvas, (state) =>
     state.matches('pan.interactive.panOnDrag.dragged')
   );
-
   const cursor = grabbing || dragged ? 'grabbing' : grab ? 'grab' : 'crosshair';
 
   const segment = useSegment();
@@ -90,6 +83,8 @@ export const Canvas = () => {
     }
   };
 
+  const [canvases, setCanvases] = React.useState({});
+
   return (
     <Box
       id={'canvasBox'}
@@ -104,11 +99,12 @@ export const Canvas = () => {
       onMouseUp={canvas.send}
     >
       {!raw && <CircularProgress style={{ margin: '25%', width: '50%', height: '50%' }} />}
-      {raw && <RawCanvas className={styles.canvas} />}
-      {labeled && <LabeledCanvas className={styles.canvas} />}
-      {labeled && <OutlineCanvas className={styles.canvas} />}
-      {tool === 'brush' && <BrushCanvas className={styles.canvas} />}
-      {tool === 'threshold' && <ThresholdCanvas className={styles.canvas} />}
+      <ComposeCanvas canvases={canvases} />
+      {raw && <RawCanvas setCanvases={setCanvases} />}
+      {labeled && <LabeledCanvas setCanvases={setCanvases} />}
+      {labeled && <OutlineCanvas setCanvases={setCanvases} />}
+      {tool === 'brush' && <BrushCanvas setCanvases={setCanvases} />}
+      {tool === 'threshold' && <ThresholdCanvas setCanvases={setCanvases} />}
     </Box>
   );
 };
