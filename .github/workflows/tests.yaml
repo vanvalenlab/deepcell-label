@@ -43,13 +43,9 @@ jobs:
 
       - name: Unit Tests
         working-directory: visualizer
-        run: yarn test
+        run: yarn test --coverage
         env:
           CI: true
-
-      - name: Coverage
-        working-directory: visualizer
-        run: c8 node
 
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@master
