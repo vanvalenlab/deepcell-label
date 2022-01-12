@@ -20,12 +20,12 @@ jest.mock('../ProjectContext', () => ({
   useSegment: () => mockSegmentActor,
 }));
 
-jest.mock('./ComposeCanvases', () => 'ComposeCanvases');
-jest.mock('./Labeled/LabeledCanvas', () => 'LabeledCanvas');
-jest.mock('./Labeled/OutlineCanvas', () => 'OutlineCanvas');
-jest.mock('./Raw/RawCanvas', () => 'RawCanvas');
-jest.mock('./Tool/BrushCanvas', () => 'BrushCanvas');
-jest.mock('./Tool/ThresholdCanvas', () => 'ThresholdCanvas');
+jest.mock('./ComposeCanvases', () => () => 'ComposeCanvases');
+jest.mock('./Labeled/LabeledCanvas', () => () => 'LabeledCanvas');
+jest.mock('./Labeled/OutlineCanvas', () => () => 'OutlineCanvas');
+jest.mock('./Raw/RawCanvas', () => () => 'RawCanvas');
+jest.mock('./Tool/BrushCanvas', () => () => 'BrushCanvas');
+jest.mock('./Tool/ThresholdCanvas', () => () => 'ThresholdCanvas');
 
 test('canvas sends interaction to actors', () => {
   const eventsSentToCanvas = [];

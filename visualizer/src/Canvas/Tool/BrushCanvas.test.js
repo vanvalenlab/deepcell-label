@@ -3,7 +3,7 @@ import { interpret } from 'xstate';
 import canvasMachine from '../../service/canvasMachine';
 import selectMachine from '../../service/selectMachine';
 import brushMachine from '../../service/tools/segment/brushMachine';
-import { BrushCanvas, dist } from './BrushCanvas';
+import BrushCanvas, { dist } from './BrushCanvas';
 
 test('distance of (0, 0) is 0', () => {
   expect(dist(0, 0)).toBe(0);
