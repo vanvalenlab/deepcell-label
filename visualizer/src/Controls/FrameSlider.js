@@ -1,8 +1,8 @@
-import { makeStyles, Slider, Tooltip } from '@material-ui/core';
+import { FormLabel, makeStyles, Slider, Tooltip } from '@material-ui/core';
 import { useSelector } from '@xstate/react';
 import { bind, unbind } from 'mousetrap';
 import React, { useEffect, useState } from 'react';
-import { useImage } from '../../ProjectContext';
+import { useImage } from '../ProjectContext';
 
 const useStyles = makeStyles((theme) => ({
   title: {
@@ -11,7 +11,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-function FrameSlider() {
+function FrameSlider({ showLabel = true }) {
   const image = useImage();
   const frame = useSelector(image, (state) => state.context.frame);
   const numFrames = useSelector(image, (state) => state.context.numFrames);
@@ -52,17 +52,20 @@ function FrameSlider() {
 
   return (
     numFrames > 1 && (
-      <Tooltip title={tooltipText}>
-        <Slider
-          value={frame}
-          valueLabelDisplay={display}
-          step={1}
-          marks
-          min={0}
-          max={numFrames - 1}
-          onChange={handleFrameChange}
-        />
-      </Tooltip>
+      <>
+        {showLabel && <FormLabel>Frame</FormLabel>}
+        <Tooltip title={tooltipText}>
+          <Slider
+            value={frame}
+            valueLabelDisplay={display}
+            step={1}
+            marks
+            min={0}
+            max={numFrames - 1}
+            onChange={handleFrameChange}
+          />
+        </Tooltip>
+      </>
     )
   );
 }
