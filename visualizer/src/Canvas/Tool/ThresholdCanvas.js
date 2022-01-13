@@ -85,7 +85,7 @@ const ThresholdCanvas = ({ setCanvases }) => {
         return { ...canvases };
       });
     }
-  }, [setCanvases, show, x1, y1, x2, y2]);
+  }, [setCanvases, show, x1, y1, x2, y2, width, height]);
 
   return null;
 };

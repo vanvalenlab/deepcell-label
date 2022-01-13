@@ -80,7 +80,7 @@ export const LabeledCanvas = ({ setCanvases }) => {
     drawCtx.drawImage(kernelCanvasRef.current, 0, 0);
     // Rerender the parent canvas with the kernel output
     setCanvases((canvases) => ({ ...canvases, labeled: drawCanvasRef.current }));
-  }, [labeledArray, colormap, foreground, highlight, opacity, setCanvases]);
+  }, [labeledArray, colormap, foreground, highlight, opacity, setCanvases, width, height]);
 
   return null;
 };
