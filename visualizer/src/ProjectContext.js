@@ -138,7 +138,7 @@ export function useComposeLayers() {
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalCompositeOperation = 'source-over';
     ctxRef.current = ctx;
   }, [height, width]);
 
