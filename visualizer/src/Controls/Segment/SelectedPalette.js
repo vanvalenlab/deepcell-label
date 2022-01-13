@@ -10,16 +10,7 @@ import SubdirectoryArrowRightIcon from '@material-ui/icons/SubdirectoryArrowRigh
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
 import React, { useEffect, useState } from 'react';
-import { useFeature, useLabeled, useSelect } from '../../ProjectContext';
-
-function componentToHex(c) {
-  var hex = c.toString(16);
-  return hex.length === 1 ? '0' + hex : hex;
-}
-
-function rgbToHex(rgb) {
-  return '#' + componentToHex(rgb[0]) + componentToHex(rgb[1]) + componentToHex(rgb[2]);
-}
+import { useHexColormap, useSelect } from '../../ProjectContext';
 
 // adapted from https://stackoverflow.com/questions/9733288/how-to-programmatically-calculate-the-contrast-ratio-between-two-colors
 
@@ -165,11 +156,8 @@ function HoveringBox() {
 
   const styles = useStyles();
 
-  const labeled = useLabeled();
-  const featureIndex = useSelector(labeled, (state) => state.context.feature);
-  const feature = useFeature(featureIndex);
-  const colormap = useSelector(feature, (state) => state.context.colormap);
-  const color = hovering ? rgbToHex(colormap[hovering]) : '#000000';
+  const colormap = useHexColormap();
+  const color = hovering ? colormap[hovering] : '#000000';
 
   const buttonColor =
     contrast(color, '#000000') > contrast(color, '#FFFFFF') ? '#000000' : '#FFFFFF';
@@ -197,11 +185,8 @@ function ForegroundBox() {
 
   const styles = useStyles();
 
-  const labeled = useLabeled();
-  const featureIndex = useSelector(labeled, (state) => state.context.feature);
-  const feature = useFeature(featureIndex);
-  const colormap = useSelector(feature, (state) => state.context.colormap);
-  const color = rgbToHex(colormap[foreground]) ?? '#000000';
+  const colormap = useHexColormap();
+  const color = colormap[foreground] ?? '#000000';
 
   useEffect(() => {
     bind('n', () => select.send('NEW_FOREGROUND'));
@@ -308,11 +293,8 @@ function BackgroundBox() {
 
   const styles = useStyles();
 
-  const labeled = useLabeled();
-  const featureIndex = useSelector(labeled, (state) => state.context.feature);
-  const feature = useFeature(featureIndex);
-  const colormap = useSelector(feature, (state) => state.context.colormap);
-  const color = rgbToHex(colormap[background]) ?? '#000000';
+  const colormap = useHexColormap();
+  const color = colormap[background] ?? '#000000';
 
   useEffect(() => {
     bind('{', () => select.send('PREV_BACKGROUND'));

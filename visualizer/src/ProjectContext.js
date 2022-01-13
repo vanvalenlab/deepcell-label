@@ -205,6 +205,23 @@ export function useThreshold() {
   return tool;
 }
 
+function componentToHex(c) {
+  var hex = c.toString(16);
+  return hex.length === 1 ? '0' + hex : hex;
+}
+
+function rgbToHex(rgb) {
+  return '#' + componentToHex(rgb[0]) + componentToHex(rgb[1]) + componentToHex(rgb[2]);
+}
+
+export function useHexColormap() {
+  const labeled = useLabeled();
+  const featureIndex = useSelector(labeled, (state) => state.context.feature);
+  const feature = useFeature(featureIndex);
+  const colormap = useSelector(feature, (state) => state.context.colormap);
+  return colormap.map(rgbToHex);
+}
+
 function ProjectContext({ project, children }) {
   return <Context.Provider value={project}>{children}</Context.Provider>;
 }

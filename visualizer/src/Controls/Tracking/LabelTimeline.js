@@ -1,15 +1,7 @@
 import { Box } from '@material-ui/core';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useDivision, useFeature, useImage, useLabeled } from '../../ProjectContext';
-
-function useColors() {
-  const labeled = useLabeled();
-  const featureIndex = useSelector(labeled, (state) => state.context.feature);
-  const feature = useFeature(featureIndex);
-  const colors = useSelector(feature, (state) => state.context.colors);
-  return colors;
-}
+import { useDivision, useHexColormap, useImage } from '../../ProjectContext';
 
 function FrameBox({ frame, numFrames, color }) {
   const image = useImage();
@@ -36,7 +28,7 @@ function LabelTimeline({ label }) {
   const image = useImage();
   const numFrames = useSelector(image, (state) => state.context.numFrames);
 
-  const colors = useColors();
+  const colors = useHexColormap();
   const division = useDivision(label);
   const { frames } = division;
   const color = colors[label] ?? '#000000';
