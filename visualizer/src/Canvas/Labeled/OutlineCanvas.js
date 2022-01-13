@@ -1,7 +1,14 @@
 import { useSelector } from '@xstate/react';
 import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
-import { useCanvas, useFeature, useLabeled, useSelect } from '../../ProjectContext';
+import {
+  useAlphaKernelCanvas,
+  useCanvas,
+  useDrawCanvas,
+  useFeature,
+  useLabeled,
+  useSelect,
+} from '../../ProjectContext';
 
 const OutlineCanvas = ({ setCanvases }) => {
   const canvas = useCanvas();
@@ -22,12 +29,11 @@ const OutlineCanvas = ({ setCanvases }) => {
   }
 
   const kernelRef = useRef();
-  const canvasRef = useRef();
+  const kernelCanvasRef = useAlphaKernelCanvas();
+  const drawCanvasRef = useDrawCanvas();
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    canvas.getContext('webgl2', { premultipliedAlpha: false });
-    const gpu = new GPU({ canvas });
+    const gpu = new GPU({ canvas: kernelCanvasRef.current });
     const kernel = gpu.createKernel(
       function (data, outlineAll, foreground, background) {
         const x = this.thread.x;
@@ -62,16 +68,30 @@ const OutlineCanvas = ({ setCanvases }) => {
       kernel.destroy();
       gpu.destroy();
     };
-  }, [width, height]);
+  }, [kernelCanvasRef, width, height]);
 
   useEffect(() => {
-    // Rerender the canvas for this component
+    // Compute the outline of the labels with the kernel
     kernelRef.current(labeledArray, outlineAll, foreground, background);
+    // Draw kernel output on another canvas (needed to reuse webgl output)
+    const drawCtx = drawCanvasRef.current.getContext('2d');
+    drawCtx.clearRect(0, 0, width, height);
+    drawCtx.drawImage(kernelCanvasRef.current, 0, 0);
     // Rerender the parent canvas
-    setCanvases((canvases) => ({ ...canvases, outline: canvasRef.current }));
-  }, [labeledArray, outlineAll, foreground, background, setCanvases]);
+    setCanvases((canvases) => ({ ...canvases, outline: drawCanvasRef.current }));
+  }, [
+    labeledArray,
+    outlineAll,
+    foreground,
+    background,
+    setCanvases,
+    kernelCanvasRef,
+    drawCanvasRef,
+    width,
+    height,
+  ]);
 
-  return <canvas hidden={true} id={'outline-canvas'} ref={canvasRef} />;
+  return null;
 };
 
 export default OutlineCanvas;
