@@ -93,7 +93,7 @@ export default function FileUpload({ loadService }) {
       <Dropzone
         name='imageUploadInput'
         onDrop={(files) => send({ type: 'SET_UPLOAD_FILE', files })}
-        accept='image/png, image/tiff, .npz'
+        accept='image/png, image/tiff, .npz, .trk'
       >
         {({ getRootProps, getInputProps, fileRejections }) => (
           <section>

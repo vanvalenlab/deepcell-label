@@ -1,4 +1,4 @@
-import { FormLabel, Paper, Tab, Tabs } from '@material-ui/core';
+import { Paper, Tab, Tabs } from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import { makeStyles } from '@material-ui/core/styles';
 import { useSelector } from '@xstate/react';
@@ -8,15 +8,10 @@ import { useEffect, useRef, useState } from 'react';
 import Canvas from './Canvas/Canvas';
 import ImageControls from './Controls/ImageControls/ImageControls';
 import QCControls from './Controls/QCControls';
-import ActionButtons from './Controls/Segment/ActionButtons';
-import SelectedPalette from './Controls/Segment/SelectedPalette';
-import ToolButtons from './Controls/Segment/ToolButtons';
-import UndoRedo from './Controls/Segment/UndoRedo';
-import DivisionAlerts from './Controls/Tracking/Alerts/DivisionAlerts';
-import FrameSlider from './Controls/Tracking/FrameSlider';
-import Timeline from './Controls/Tracking/Timeline';
+import SegmentControls from './Controls/SegmentControls';
+import TrackingControls from './Controls/TrackingControls';
 import Instructions from './Instructions/Instructions';
-import { useCanvas, useLabeled, useLabelMode } from './ProjectContext';
+import { useCanvas, useLabelMode } from './ProjectContext';
 
 const useStyles = makeStyles((theme) => ({
   main: {
@@ -73,8 +68,6 @@ function Label({ review }) {
 
   const labelMode = useLabelMode();
   const canvas = useCanvas();
-  const labeled = useLabeled();
-
   const value = useSelector(labelMode, (state) => {
     return state.matches('segment') ? 0 : state.matches('track') ? 1 : false;
   });
@@ -136,23 +129,10 @@ function Label({ review }) {
         </Box>
         <Box className={styles.toolbarBox}>
           <TabPanel value={value} index={0}>
-            <Box display='flex' flexDirection='column'>
-              <UndoRedo />
-              <FormLabel>Frame</FormLabel>
-              <FrameSlider />
-              <Box display='flex' flexDirection='row'>
-                <Box display='flex' flexDirection='column'>
-                  <ToolButtons />
-                  <ActionButtons />
-                </Box>
-                {labeled && <SelectedPalette />}
-              </Box>
-            </Box>
+            <SegmentControls />
           </TabPanel>
           <TabPanel value={value} index={1}>
-            <UndoRedo />
-            <DivisionAlerts />
-            {labeled && <Timeline />}
+            <TrackingControls />
           </TabPanel>
         </Box>
         <Box ref={canvasBoxRef} className={styles.canvasBox}>

@@ -3,8 +3,8 @@ import { useSelector } from '@xstate/react';
 import { bind, unbind } from 'mousetrap';
 import { default as React, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useDivision, useSelect, useTracking } from '../../ProjectContext';
+import FrameSlider from '../FrameSlider';
 import Division, { Cell, DivisionFootprint } from './Division';
-import FrameSlider from './FrameSlider';
 import LabelTimeline from './LabelTimeline';
 
 const useStyles = makeStyles({
@@ -102,7 +102,7 @@ function Timeline() {
       <Divisions label={selected} />
       <FormLabel>Frames</FormLabel>
       <LabelTimeline label={selected} />
-      <FrameSlider />
+      <FrameSlider showLabel={false} />
       <LabelTimeline label={hovering} />
       <FormLabel>Hovering over Label</FormLabel>
       {hovering !== null && <Cell label={hovering} />}

@@ -11,15 +11,7 @@ import CloseIcon from '@material-ui/icons/Close';
 import { useSelector } from '@xstate/react';
 import React, { useReducer, useRef } from 'react';
 import { ArcherContainer, ArcherElement } from 'react-archer';
-import { useFeature, useImage, useLabeled, useSelect, useTracking } from '../../ProjectContext';
-
-function useColors() {
-  const labeled = useLabeled();
-  const featureIndex = useSelector(labeled, (state) => state.context.feature);
-  const feature = useFeature(featureIndex);
-  const colors = useSelector(feature, (state) => state.context.colors);
-  return colors;
-}
+import { useHexColormap, useImage, useSelect, useTracking } from '../../ProjectContext';
 
 const useStyles = makeStyles((theme) => ({
   division: {
@@ -49,7 +41,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export const Cell = React.forwardRef(({ label, onClick }, ref) => {
-  const colors = useColors();
+  const colors = useHexColormap();
   const color = colors[label] ?? '#000000';
 
   const styles = useStyles();
