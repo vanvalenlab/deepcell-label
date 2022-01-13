@@ -1,7 +1,7 @@
 import { useSelector } from '@xstate/react';
 import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
-import { useCanvas, useThreshold } from '../../ProjectContext';
+import { useAlphaKernelCanvas, useCanvas, useDrawCanvas, useThreshold } from '../../ProjectContext';
 
 const ThresholdCanvas = ({ setCanvases }) => {
   const canvas = useCanvas();
@@ -15,11 +15,11 @@ const ThresholdCanvas = ({ setCanvases }) => {
   const show = useSelector(threshold, (state) => state.matches('dragging'));
 
   const kernelRef = useRef();
-  const canvasRef = useRef();
+  const kernelCanvasRef = useAlphaKernelCanvas();
+  const drawCanvasRef = useDrawCanvas();
+
   useEffect(() => {
-    const canvas = canvasRef.current;
-    canvas.getContext('webgl2', { premultipliedAlpha: false });
-    const gpu = new GPU({ canvas });
+    const gpu = new GPU({ canvas: kernelCanvasRef.current });
     const kernel = gpu.createKernel(
       function (x1, y1, x2, y2) {
         const x = this.thread.x;
@@ -49,13 +49,18 @@ const ThresholdCanvas = ({ setCanvases }) => {
       kernel.destroy();
       gpu.destroy();
     };
-  }, [width, height]);
+  }, [kernelCanvasRef, width, height]);
 
   useEffect(() => {
     if (show) {
-      // Render this component's canvas and the parent canvas
+      // Compute threshold box with the kernel
       kernelRef.current(x1, y1, x2, y2);
-      setCanvases((canvases) => ({ ...canvases, tool: canvasRef.current }));
+      // Draw the threshold box on a separate canvas (needed to reuse webgl output)
+      const drawCtx = drawCanvasRef.current.getContext('2d');
+      drawCtx.clearRect(0, 0, width, height);
+      drawCtx.drawImage(kernelCanvasRef.current, 0, 0);
+      // Rerender the parent canvas
+      setCanvases((canvases) => ({ ...canvases, tool: drawCanvasRef.current }));
     } else {
       // Remove this component's canvas from the parent canvas
       setCanvases((canvases) => {
@@ -63,9 +68,9 @@ const ThresholdCanvas = ({ setCanvases }) => {
         return { ...canvases };
       });
     }
-  }, [setCanvases, show, x1, y1, x2, y2]);
+  }, [setCanvases, show, x1, y1, x2, y2, kernelCanvasRef, drawCanvasRef, width, height]);
 
-  return <canvas hidden={true} ref={canvasRef} />;
+  return null;
 };
 
 export default ThresholdCanvas;

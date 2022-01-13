@@ -1,10 +1,18 @@
 import { useSelector } from '@xstate/react';
 import { GPU } from 'gpu.js';
-import React, { useEffect, useRef } from 'react';
-import { useBrush, useCanvas, useSelect } from '../../ProjectContext';
+import { useEffect, useRef } from 'react';
+import {
+  useAlphaKernelCanvas,
+  useBrush,
+  useCanvas,
+  useDrawCanvas,
+  useSelect,
+} from '../../ProjectContext';
 
 const red = [255, 0, 0, 255];
 const white = [255, 255, 255, 255];
+const gl2 = document.createElement('canvas').getContext('webgl2');
+const gl = document.createElement('canvas').getContext('webgl');
 
 /**
  * Computes the distance of (x, y) from the origin (0, 0).
@@ -32,11 +40,11 @@ const BrushCanvas = ({ setCanvases }) => {
   const color = background !== 0 ? red : white;
 
   const kernelRef = useRef();
-  const canvasRef = useRef();
+  const kernelCanvasRef = useAlphaKernelCanvas();
+  const drawCanvasRef = useDrawCanvas();
+
   useEffect(() => {
-    const canvas = canvasRef.current;
-    canvas.getContext('webgl2', { premultipliedAlpha: false });
-    const gpu = new GPU({ canvas });
+    const gpu = new GPU({ canvas: kernelCanvasRef.current });
     const kernel = gpu.createKernel(
       function (trace, traceLength, size, color, brushX, brushY) {
         const x = this.thread.x;
@@ -80,9 +88,10 @@ const BrushCanvas = ({ setCanvases }) => {
       kernel.destroy();
       gpu.destroy();
     };
-  }, [width, height]);
+  }, [kernelCanvasRef, width, height]);
 
   useEffect(() => {
+    // Draw the brush with the kernel
     // edge case to deal with GPU.js error
     // passing [] as trace causes this error
     // gpu-browser.js:18662 Uncaught TypeError: Cannot read properties of undefined (reading 'length')
@@ -92,8 +101,13 @@ const BrushCanvas = ({ setCanvases }) => {
     } else {
       kernelRef.current(trace, trace.length, size, color, x, y);
     }
-    setCanvases((canvases) => ({ ...canvases, tool: canvasRef.current }));
-  }, [setCanvases, size, color, x, y, trace]);
+    // Draw brush on a separate canvas (needed to reuse webgl output)\
+    const drawCtx = drawCanvasRef.current.getContext('2d');
+    drawCtx.clearRect(0, 0, width, height);
+    drawCtx.drawImage(kernelCanvasRef.current, 0, 0);
+    // Rerender the parent canvas
+    setCanvases((canvases) => ({ ...canvases, tool: drawCanvasRef.current }));
+  }, [setCanvases, size, color, x, y, trace, kernelCanvasRef, drawCanvasRef, width, height]);
 
   useEffect(
     () => () =>
@@ -104,7 +118,7 @@ const BrushCanvas = ({ setCanvases }) => {
     [setCanvases]
   );
 
-  return <canvas id='brush-canvas' hidden={true} ref={canvasRef} />;
+  return null;
 };
 
 export default BrushCanvas;

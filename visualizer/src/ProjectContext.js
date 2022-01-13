@@ -138,7 +138,7 @@ export function useComposeLayers() {
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalCompositeOperation = 'source-over';
     ctxRef.current = ctx;
   }, [height, width]);
 
@@ -220,6 +220,44 @@ export function useHexColormap() {
   const feature = useFeature(featureIndex);
   const colormap = useSelector(feature, (state) => state.context.colormap);
   return colormap.map(rgbToHex);
+}
+
+const gl2 = !!document.createElement('canvas').getContext('webgl2');
+const gl = !!document.createElement('canvas').getContext('webgl');
+
+/** Creates a reference to a canvas with an alpha channel to use with a GPU.js kernel. */
+export function useAlphaKernelCanvas() {
+  const canvasRef = useRef();
+
+  useEffect(() => {
+    const canvas = document.createElement('canvas');
+    if (gl2) {
+      canvas.getContext('webgl2', { premultipliedAlpha: false });
+    } else if (gl) {
+      canvas.getContext('webgl', { premultipliedAlpha: false });
+    }
+    canvasRef.current = canvas;
+  }, []);
+
+  return canvasRef;
+}
+
+/** Creates a references to a canvas with the same dimensions as the project. */
+export function useDrawCanvas() {
+  const canvasRef = useRef();
+
+  const canvas = useCanvas();
+  const width = useSelector(canvas, (state) => state.context.width);
+  const height = useSelector(canvas, (state) => state.context.height);
+
+  useEffect(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    canvasRef.current = canvas;
+  }, [height, width]);
+
+  return canvasRef;
 }
 
 function ProjectContext({ project, children }) {

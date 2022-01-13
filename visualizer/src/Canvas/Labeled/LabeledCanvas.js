@@ -1,7 +1,14 @@
 import { useSelector } from '@xstate/react';
 import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
-import { useCanvas, useFeature, useLabeled, useSelect } from '../../ProjectContext';
+import {
+  useAlphaKernelCanvas,
+  useCanvas,
+  useDrawCanvas,
+  useFeature,
+  useLabeled,
+  useSelect,
+} from '../../ProjectContext';
 
 const highlightColor = [255, 0, 0];
 
@@ -26,12 +33,11 @@ export const LabeledCanvas = ({ setCanvases }) => {
   const foreground = useSelector(select, (state) => state.context.foreground);
 
   const kernelRef = useRef();
-  const canvasRef = useRef();
+  const kernelCanvasRef = useAlphaKernelCanvas();
+  const drawCanvasRef = useDrawCanvas();
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    canvas.getContext('webgl2', { premultipliedAlpha: false });
-    const gpu = new GPU({ canvas });
+    const gpu = new GPU({ canvas: kernelCanvasRef.current });
     const kernel = gpu.createKernel(
       function (labelArray, colormap, foreground, highlight, highlightColor, opacity) {
         const label = labelArray[this.constants.h - 1 - this.thread.y][this.thread.x];
@@ -55,16 +61,31 @@ export const LabeledCanvas = ({ setCanvases }) => {
       kernel.destroy();
       gpu.destroy();
     };
-  }, [width, height]);
+  }, [width, height, kernelCanvasRef]);
 
   useEffect(() => {
-    // Rerender the canvas for this component
+    // Compute the label image with the kernel
     kernelRef.current(labeledArray, colormap, foreground, highlight, highlightColor, opacity);
-    // Rerender the parent canvas
-    setCanvases((canvases) => ({ ...canvases, labeled: canvasRef.current }));
-  }, [labeledArray, colormap, foreground, highlight, opacity, setCanvases]);
+    // Draw the label image on a separate canvas (needed to reuse webgl output)
+    const drawCtx = drawCanvasRef.current.getContext('2d');
+    drawCtx.clearRect(0, 0, width, height);
+    drawCtx.drawImage(kernelCanvasRef.current, 0, 0);
+    // Rerender the parent canvas with the kernel output
+    setCanvases((canvases) => ({ ...canvases, labeled: drawCanvasRef.current }));
+  }, [
+    labeledArray,
+    colormap,
+    foreground,
+    highlight,
+    opacity,
+    kernelCanvasRef,
+    drawCanvasRef,
+    setCanvases,
+    width,
+    height,
+  ]);
 
-  return <canvas hidden={true} id={'labeled-canvas'} ref={canvasRef} />;
+  return null;
 };
 
 export default LabeledCanvas;

@@ -1,7 +1,7 @@
 import { makeStyles } from '@material-ui/core';
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-import { useCanvas } from '../ProjectContext';
+import { useCanvas, useDrawCanvas } from '../ProjectContext';
 
 const useStyles = makeStyles({
   canvas: {
@@ -28,48 +28,32 @@ export const ComposeCanvas = ({ canvases }) => {
   const height = sh * scale * window.devicePixelRatio;
 
   const canvasRef = useRef();
-  const ctxRef = useRef();
-
-  const composeCanvasRef = useRef();
-  const composeCtxRef = useRef();
+  const composeCanvasRef = useDrawCanvas();
 
   useEffect(() => {
-    composeCtxRef.current = composeCanvasRef.current.getContext('2d');
-    composeCtxRef.current.globalCompositeOperation = 'source-over';
-  }, [sh, sw]);
+    composeCanvasRef.current.getContext('2d').globalCompositeOperation = 'source-over';
+  }, [composeCanvasRef]);
 
   useEffect(() => {
-    ctxRef.current = canvasRef.current.getContext('2d');
-    ctxRef.current.imageSmoothingEnabled = false;
+    canvasRef.current.getContext('2d').imageSmoothingEnabled = false;
   }, [height, width]);
 
   useEffect(() => {
-    composeCtxRef.current.clearRect(0, 0, sw, sh);
+    const ctx = composeCanvasRef.current.getContext('2d');
+    ctx.clearRect(0, 0, sw, sh);
     for (let key in canvases) {
-      composeCtxRef.current.drawImage(canvases[key], 0, 0);
+      ctx.drawImage(canvases[key], 0, 0);
     }
-  }, [canvases, sh, sw]);
+  }, [canvases, sh, sw, composeCanvasRef]);
 
   useEffect(() => {
-    ctxRef.current.clearRect(0, 0, width, height);
-    ctxRef.current.drawImage(
-      composeCanvasRef.current,
-      sx,
-      sy,
-      sw / zoom,
-      sh / zoom,
-      0,
-      0,
-      width,
-      height
-    );
-  }, [canvases, sx, sy, sw, sh, zoom, width, height]);
+    const ctx = canvasRef.current.getContext('2d');
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(composeCanvasRef.current, sx, sy, sw / zoom, sh / zoom, 0, 0, width, height);
+  }, [canvases, sx, sy, sw, sh, zoom, width, height, composeCanvasRef]);
 
   return (
-    <>
-      <canvas id='compose-canvas' hidden={true} ref={composeCanvasRef} width={sw} height={sh} />
-      <canvas id='canvas' className={styles.canvas} ref={canvasRef} width={width} height={height} />
-    </>
+    <canvas id='canvas' className={styles.canvas} ref={canvasRef} width={width} height={height} />
   );
 };
 
