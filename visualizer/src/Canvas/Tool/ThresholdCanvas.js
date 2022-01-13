@@ -3,6 +3,9 @@ import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
 import { useCanvas, useThreshold } from '../../ProjectContext';
 
+const gl2 = document.createElement('canvas').getContext('webgl2');
+const gl = document.createElement('canvas').getContext('webgl');
+
 const ThresholdCanvas = ({ setCanvases }) => {
   const canvas = useCanvas();
   const width = useSelector(canvas, (state) => state.context.width);
@@ -16,9 +19,23 @@ const ThresholdCanvas = ({ setCanvases }) => {
 
   const kernelRef = useRef();
   const canvasRef = useRef();
+  const kernelCanvasRef = useRef();
+  const drawCanvasRef = useRef();
+
   useEffect(() => {
-    const canvas = canvasRef.current;
-    canvas.getContext('webgl2', { premultipliedAlpha: false });
+    kernelCanvasRef.current = document.createElement('canvas');
+    drawCanvasRef.current = document.createElement('canvas');
+    drawCanvasRef.current.width = width;
+    drawCanvasRef.current.height = height;
+  }, [height, width]);
+
+  useEffect(() => {
+    const canvas = kernelCanvasRef.current;
+    if (gl2) {
+      canvas.getContext('webgl2', { premultipliedAlpha: false });
+    } else if (gl) {
+      canvas.getContext('webgl', { premultipliedAlpha: false });
+    }
     const gpu = new GPU({ canvas });
     const kernel = gpu.createKernel(
       function (x1, y1, x2, y2) {
@@ -53,9 +70,14 @@ const ThresholdCanvas = ({ setCanvases }) => {
 
   useEffect(() => {
     if (show) {
-      // Render this component's canvas and the parent canvas
+      // Compute threshold box with the kernel
       kernelRef.current(x1, y1, x2, y2);
-      setCanvases((canvases) => ({ ...canvases, tool: canvasRef.current }));
+      // Draw the threshold box on a separate canvas (needed to reuse webgl output)
+      const drawCtx = drawCanvasRef.current.getContext('2d');
+      drawCtx.clearRect(0, 0, width, height);
+      drawCtx.drawImage(kernelCanvasRef.current, 0, 0);
+      // Rerender the parent canvas
+      setCanvases((canvases) => ({ ...canvases, tool: drawCanvasRef.current }));
     } else {
       // Remove this component's canvas from the parent canvas
       setCanvases((canvases) => {
@@ -65,7 +87,7 @@ const ThresholdCanvas = ({ setCanvases }) => {
     }
   }, [setCanvases, show, x1, y1, x2, y2]);
 
-  return <canvas hidden={true} ref={canvasRef} />;
+  return null;
 };
 
 export default ThresholdCanvas;
