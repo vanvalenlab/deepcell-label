@@ -1,10 +1,7 @@
 import { useSelector } from '@xstate/react';
 import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
-import { useCanvas, useThreshold } from '../../ProjectContext';
-
-const gl2 = document.createElement('canvas').getContext('webgl2');
-const gl = document.createElement('canvas').getContext('webgl');
+import { useAlphaKernelCanvas, useCanvas, useDrawCanvas, useThreshold } from '../../ProjectContext';
 
 const ThresholdCanvas = ({ setCanvases }) => {
   const canvas = useCanvas();
@@ -18,25 +15,11 @@ const ThresholdCanvas = ({ setCanvases }) => {
   const show = useSelector(threshold, (state) => state.matches('dragging'));
 
   const kernelRef = useRef();
-  const canvasRef = useRef();
-  const kernelCanvasRef = useRef();
-  const drawCanvasRef = useRef();
+  const kernelCanvasRef = useAlphaKernelCanvas();
+  const drawCanvasRef = useDrawCanvas();
 
   useEffect(() => {
-    kernelCanvasRef.current = document.createElement('canvas');
-    drawCanvasRef.current = document.createElement('canvas');
-    drawCanvasRef.current.width = width;
-    drawCanvasRef.current.height = height;
-  }, [height, width]);
-
-  useEffect(() => {
-    const canvas = kernelCanvasRef.current;
-    if (gl2) {
-      canvas.getContext('webgl2', { premultipliedAlpha: false });
-    } else if (gl) {
-      canvas.getContext('webgl', { premultipliedAlpha: false });
-    }
-    const gpu = new GPU({ canvas });
+    const gpu = new GPU({ canvas: kernelCanvasRef.current });
     const kernel = gpu.createKernel(
       function (x1, y1, x2, y2) {
         const x = this.thread.x;
@@ -66,7 +49,7 @@ const ThresholdCanvas = ({ setCanvases }) => {
       kernel.destroy();
       gpu.destroy();
     };
-  }, [width, height]);
+  }, [kernelCanvasRef, width, height]);
 
   useEffect(() => {
     if (show) {
@@ -85,7 +68,7 @@ const ThresholdCanvas = ({ setCanvases }) => {
         return { ...canvases };
       });
     }
-  }, [setCanvases, show, x1, y1, x2, y2, width, height]);
+  }, [setCanvases, show, x1, y1, x2, y2, kernelCanvasRef, drawCanvasRef, width, height]);
 
   return null;
 };

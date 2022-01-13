@@ -1,7 +1,13 @@
 import { useSelector } from '@xstate/react';
 import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
-import { useBrush, useCanvas, useSelect } from '../../ProjectContext';
+import {
+  useAlphaKernelCanvas,
+  useBrush,
+  useCanvas,
+  useDrawCanvas,
+  useSelect,
+} from '../../ProjectContext';
 
 const red = [255, 0, 0, 255];
 const white = [255, 255, 255, 255];
@@ -34,24 +40,11 @@ const BrushCanvas = ({ setCanvases }) => {
   const color = background !== 0 ? red : white;
 
   const kernelRef = useRef();
-  const kernelCanvasRef = useRef();
-  const drawCanvasRef = useRef();
+  const kernelCanvasRef = useAlphaKernelCanvas();
+  const drawCanvasRef = useDrawCanvas();
 
   useEffect(() => {
-    kernelCanvasRef.current = document.createElement('canvas');
-    drawCanvasRef.current = document.createElement('canvas');
-    drawCanvasRef.current.width = width;
-    drawCanvasRef.current.height = height;
-  }, [height, width]);
-
-  useEffect(() => {
-    const canvas = kernelCanvasRef.current;
-    if (gl2) {
-      canvas.getContext('webgl2', { premultipliedAlpha: false });
-    } else if (gl) {
-      canvas.getContext('webgl', { premultipliedAlpha: false });
-    }
-    const gpu = new GPU({ canvas });
+    const gpu = new GPU({ canvas: kernelCanvasRef.current });
     const kernel = gpu.createKernel(
       function (trace, traceLength, size, color, brushX, brushY) {
         const x = this.thread.x;
@@ -95,7 +88,7 @@ const BrushCanvas = ({ setCanvases }) => {
       kernel.destroy();
       gpu.destroy();
     };
-  }, [width, height]);
+  }, [kernelCanvasRef, width, height]);
 
   useEffect(() => {
     // Draw the brush with the kernel
@@ -114,7 +107,7 @@ const BrushCanvas = ({ setCanvases }) => {
     drawCtx.drawImage(kernelCanvasRef.current, 0, 0);
     // Rerender the parent canvas
     setCanvases((canvases) => ({ ...canvases, tool: drawCanvasRef.current }));
-  }, [setCanvases, size, color, x, y, trace, width, height]);
+  }, [setCanvases, size, color, x, y, trace, kernelCanvasRef, drawCanvasRef, width, height]);
 
   useEffect(
     () => () =>

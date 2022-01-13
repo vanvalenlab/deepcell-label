@@ -1,10 +1,14 @@
 import { useSelector } from '@xstate/react';
 import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
-import { useCanvas, useFeature, useLabeled, useSelect } from '../../ProjectContext';
-
-const gl2 = document.createElement('canvas').getContext('webgl2');
-const gl = document.createElement('canvas').getContext('webgl');
+import {
+  useAlphaKernelCanvas,
+  useCanvas,
+  useDrawCanvas,
+  useFeature,
+  useLabeled,
+  useSelect,
+} from '../../ProjectContext';
 
 const OutlineCanvas = ({ setCanvases }) => {
   const canvas = useCanvas();
@@ -25,24 +29,11 @@ const OutlineCanvas = ({ setCanvases }) => {
   }
 
   const kernelRef = useRef();
-  const kernelCanvasRef = useRef();
-  const drawCanvasRef = useRef();
+  const kernelCanvasRef = useAlphaKernelCanvas();
+  const drawCanvasRef = useDrawCanvas();
 
   useEffect(() => {
-    kernelCanvasRef.current = document.createElement('canvas');
-    drawCanvasRef.current = document.createElement('canvas');
-    drawCanvasRef.current.width = width;
-    drawCanvasRef.current.height = height;
-  }, [height, width]);
-
-  useEffect(() => {
-    const canvas = kernelCanvasRef.current;
-    if (gl2) {
-      canvas.getContext('webgl2', { premultipliedAlpha: false });
-    } else if (gl) {
-      canvas.getContext('webgl', { premultipliedAlpha: false });
-    }
-    const gpu = new GPU({ canvas });
+    const gpu = new GPU({ canvas: kernelCanvasRef.current });
     const kernel = gpu.createKernel(
       function (data, outlineAll, foreground, background) {
         const x = this.thread.x;
@@ -77,7 +68,7 @@ const OutlineCanvas = ({ setCanvases }) => {
       kernel.destroy();
       gpu.destroy();
     };
-  }, [width, height]);
+  }, [kernelCanvasRef, width, height]);
 
   useEffect(() => {
     // Compute the outline of the labels with the kernel
@@ -88,7 +79,17 @@ const OutlineCanvas = ({ setCanvases }) => {
     drawCtx.drawImage(kernelCanvasRef.current, 0, 0);
     // Rerender the parent canvas
     setCanvases((canvases) => ({ ...canvases, outline: drawCanvasRef.current }));
-  }, [labeledArray, outlineAll, foreground, background, setCanvases, width, height]);
+  }, [
+    labeledArray,
+    outlineAll,
+    foreground,
+    background,
+    setCanvases,
+    kernelCanvasRef,
+    drawCanvasRef,
+    width,
+    height,
+  ]);
 
   return null;
 };
