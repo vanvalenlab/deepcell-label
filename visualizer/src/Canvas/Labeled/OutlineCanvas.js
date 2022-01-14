@@ -35,6 +35,9 @@ const OutlineCanvas = ({ setCanvases }) => {
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvasRef.current });
     const kernel = gpu.createKernel(
+      // template string needed to avoid minification breaking function
+      // by changing if (x) { y } to x && y
+      // TODO: research how to work around minification changes
       `function (data, outlineAll, foreground, background) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
