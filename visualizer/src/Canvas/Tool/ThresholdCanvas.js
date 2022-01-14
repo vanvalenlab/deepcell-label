@@ -21,7 +21,7 @@ const ThresholdCanvas = ({ setCanvases }) => {
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvasRef.current });
     const kernel = gpu.createKernel(
-      function (x1, y1, x2, y2) {
+      `function (x1, y1, x2, y2) {
         const x = this.thread.x;
         const y = this.constants.h - this.thread.y;
         const minX = Math.min(x1, x2);
@@ -37,7 +37,7 @@ const ThresholdCanvas = ({ setCanvases }) => {
         } else {
           this.color(0, 0, 0, 0);
         }
-      },
+      }`,
       {
         constants: { w: width, h: height },
         output: [width, height],

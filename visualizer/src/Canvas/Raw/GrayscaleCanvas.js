@@ -26,7 +26,7 @@ export const GrayscaleCanvas = ({ setCanvases }) => {
   useEffect(() => {
     const gpu = new GPU();
     const kernel = gpu.createKernel(
-      function (data, min, max, brightness, contrast, invert) {
+      `function (data, min, max, brightness, contrast, invert) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
         // Rescale value from min - max to 0 - 1
@@ -44,7 +44,7 @@ export const GrayscaleCanvas = ({ setCanvases }) => {
           v = 1 - v;
         }
         this.color(v, v, v, 1);
-      },
+      }`,
       {
         constants: { w: width, h: height },
         output: [width, height],
