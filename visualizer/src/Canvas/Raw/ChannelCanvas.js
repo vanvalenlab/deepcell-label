@@ -32,7 +32,7 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
   useEffect(() => {
     const gpu = new GPU();
     const kernel = gpu.createKernel(
-      function (data, on, color, min, max) {
+      `function (data, on, color, min, max) {
         if (on) {
           const x = this.thread.x;
           const y = this.constants.h - 1 - this.thread.y;
@@ -44,7 +44,7 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
         } else {
           this.color(0, 0, 0, 0);
         }
-      },
+      }`,
       {
         constants: { w: width, h: height },
         output: [width, height],

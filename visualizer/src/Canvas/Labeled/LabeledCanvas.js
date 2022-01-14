@@ -39,7 +39,7 @@ export const LabeledCanvas = ({ setCanvases }) => {
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvasRef.current });
     const kernel = gpu.createKernel(
-      function (labelArray, colormap, foreground, highlight, highlightColor, opacity) {
+      `function (labelArray, colormap, foreground, highlight, highlightColor, opacity) {
         const label = labelArray[this.constants.h - 1 - this.thread.y][this.thread.x];
         if (highlight && label === foreground && foreground !== 0) {
           const [r, g, b] = highlightColor;
@@ -48,7 +48,7 @@ export const LabeledCanvas = ({ setCanvases }) => {
           const [r, g, b] = colormap[label];
           this.color(r / 255, g / 255, b / 255, opacity);
         }
-      },
+      }`,
       {
         constants: { w: width, h: height },
         output: [width, height],
