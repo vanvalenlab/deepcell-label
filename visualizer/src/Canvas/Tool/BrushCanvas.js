@@ -12,16 +12,6 @@ import {
 const red = [255, 0, 0, 255];
 const white = [255, 255, 255, 255];
 
-/**
- * Computes the distance of (x, y) from the origin (0, 0).
- * @param {Number} x
- * @param {Number} y
- * @returns {Number} distance in pixels from origin
- */
-export function dist(x, y) {
-  return Math.floor(Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2)));
-}
-
 const BrushCanvas = ({ setCanvases }) => {
   const canvas = useCanvas();
   const width = useSelector(canvas, (state) => state.context.width);
@@ -44,7 +34,7 @@ const BrushCanvas = ({ setCanvases }) => {
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvasRef.current });
     const kernel = gpu.createKernel(
-      function (trace, traceLength, size, color, brushX, brushY) {
+      `function (trace, traceLength, size, color, brushX, brushY) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
         const [r, g, b, a] = color;
@@ -52,17 +42,16 @@ const BrushCanvas = ({ setCanvases }) => {
         const distX = Math.abs(x - brushX);
         const distY = Math.abs(y - brushY);
 
+        function dist(x, y) {
+          return Math.floor(Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2)));
+        }
+
         const onBrush =
           dist(distX, distY) === radius &&
           // not on border if next to border in both directions
           !(dist(distX + 1, distY) === radius && dist(distX, distY + 1) === radius);
         if (onBrush) {
           this.color(r / 255, g / 255, b / 255, a / 255);
-          // needed to avoid minification that converts `if (x) { y }` to `x && y`
-          // https://github.com/gpujs/gpu.js/issues/152
-          for (let i = 0; i < 1; i++) {
-            break;
-          }
         } else if (traceLength > 0) {
           for (let i = 0; i < traceLength; i++) {
             if (dist(trace[i][0] - x, trace[i][1] - y) <= radius) {
@@ -71,13 +60,12 @@ const BrushCanvas = ({ setCanvases }) => {
             }
           }
         }
-      },
+      }`,
       {
         constants: { w: width, h: height },
         output: [width, height],
         graphical: true,
         dynamicArguments: true,
-        functions: [dist],
       }
     );
     kernelRef.current = kernel;
