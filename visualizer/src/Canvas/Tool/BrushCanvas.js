@@ -46,7 +46,7 @@ const BrushCanvas = ({ setCanvases }) => {
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvasRef.current });
     const kernel = gpu.createKernel(
-      function (trace, traceLength, size, color, brushX, brushY) {
+      `function (trace, traceLength, size, color, brushX, brushY) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
         const [r, g, b, a] = color;
@@ -58,23 +58,17 @@ const BrushCanvas = ({ setCanvases }) => {
           dist(distX, distY) === radius &&
           // not on border if next to border in both directions
           !(dist(distX + 1, distY) === radius && dist(distX, distY + 1) === radius);
-        let drawn = false;
         if (onBrush) {
           this.color(r / 255, g / 255, b / 255, a / 255);
-          drawn = true;
         } else if (traceLength > 0) {
           for (let i = 0; i < traceLength; i++) {
             if (dist(trace[i][0] - x, trace[i][1] - y) <= radius) {
               this.color(r / 255, g / 255, b / 255, a / 255 / 2);
-              drawn = true;
               break;
             }
           }
         }
-        if (!drawn) {
-          this.color(0, 0, 0, 0);
-        }
-      },
+      }`,
       {
         constants: { w: width, h: height },
         output: [width, height],
