@@ -11,8 +11,6 @@ import {
 
 const red = [255, 0, 0, 255];
 const white = [255, 255, 255, 255];
-const gl2 = document.createElement('canvas').getContext('webgl2');
-const gl = document.createElement('canvas').getContext('webgl');
 
 /**
  * Computes the distance of (x, y) from the origin (0, 0).
@@ -46,7 +44,7 @@ const BrushCanvas = ({ setCanvases }) => {
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvasRef.current });
     const kernel = gpu.createKernel(
-      `function (trace, traceLength, size, color, brushX, brushY) {
+      function (trace, traceLength, size, color, brushX, brushY) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
         const [r, g, b, a] = color;
@@ -60,6 +58,10 @@ const BrushCanvas = ({ setCanvases }) => {
           !(dist(distX + 1, distY) === radius && dist(distX, distY + 1) === radius);
         if (onBrush) {
           this.color(r / 255, g / 255, b / 255, a / 255);
+          // needed to avoid minification that converts `if (x) { y }` to `x && y`
+          for (let i = 0; i < 1; i++) {
+            break;
+          }
         } else if (traceLength > 0) {
           for (let i = 0; i < traceLength; i++) {
             if (dist(trace[i][0] - x, trace[i][1] - y) <= radius) {
@@ -68,7 +70,7 @@ const BrushCanvas = ({ setCanvases }) => {
             }
           }
         }
-      }`,
+      },
       {
         constants: { w: width, h: height },
         output: [width, height],
