@@ -59,6 +59,7 @@ const BrushCanvas = ({ setCanvases }) => {
         if (onBrush) {
           this.color(r / 255, g / 255, b / 255, a / 255);
           // needed to avoid minification that converts `if (x) { y }` to `x && y`
+          // https://github.com/gpujs/gpu.js/issues/152
           for (let i = 0; i < 1; i++) {
             break;
           }
