@@ -1,8 +1,17 @@
-import { assign, Machine, sendParent } from 'xstate';
+import { assign, Machine, send } from 'xstate';
+import { apiEventBus } from '../../apiMachine';
+import { canvasEventBus } from '../../canvasMachine';
+import { fromEventBus } from '../../eventBus';
+import { selectedCellsEventBus } from '../../selectMachine';
 import { toolActions, toolGuards } from './toolUtils';
 
 const watershedMachine = Machine(
   {
+    invoke: [
+      { src: fromEventBus('watershed', () => canvasEventBus) },
+      { id: 'selectedCells', src: fromEventBus('watershed', () => selectedCellsEventBus) },
+      { id: 'api', src: fromEventBus('watershed', () => apiEventBus) },
+    ],
     context: {
       x: null,
       y: null,
@@ -60,19 +69,22 @@ const watershedMachine = Machine(
         storedX: ({ x }) => x,
         storedY: ({ y }) => y,
       }),
-      selectForeground: sendParent('SELECT_FOREGROUND'),
-      newBackground: sendParent({ type: 'BACKGROUND', background: 0 }),
-      watershed: sendParent(({ storedLabel, storedX, storedY, x, y }) => ({
-        type: 'EDIT',
-        action: 'watershed',
-        args: {
-          label: storedLabel,
-          x1_location: storedX,
-          y1_location: storedY,
-          x2_location: x,
-          y2_location: y,
-        },
-      })),
+      selectForeground: send('SELECT_FOREGROUND', { to: 'selectedCells' }),
+      newBackground: send({ type: 'BACKGROUND', background: 0 }, { to: 'selectedCells' }),
+      watershed: send(
+        ({ storedLabel, storedX, storedY, x, y }) => ({
+          type: 'EDIT',
+          action: 'watershed',
+          args: {
+            label: storedLabel,
+            x1_location: storedX,
+            y1_location: storedY,
+            x2_location: x,
+            y2_location: y,
+          },
+        }),
+        { to: 'api' }
+      ),
     },
   }
 );

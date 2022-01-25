@@ -1,4 +1,6 @@
-import { Machine, sendParent } from 'xstate';
+import { assign, Machine, send, sendParent } from 'xstate';
+import { EventBus, fromEventBus } from './eventBus';
+import { imageEventBus } from './imageMachine';
 
 /** Returns a Promise for a DeepCell Label API call based on the event. */
 function getApiService(context, event) {
@@ -13,8 +15,12 @@ function getApiService(context, event) {
 }
 
 function edit(context, event) {
+  const { frame, feature, channel } = context;
   const editRoute = `${document.location.origin}/api/edit/${context.projectId}/${event.action}`;
-  const options = { method: 'POST', body: new URLSearchParams(event.args) };
+  const options = {
+    method: 'POST',
+    body: new URLSearchParams({ ...event.args, frame, feature, channel }),
+  };
   return fetch(editRoute, options).then(checkResponseCode);
 }
 
@@ -75,15 +81,29 @@ function checkResponseCode(response) {
   });
 }
 
+export const apiEventBus = new EventBus('api');
+
 const createApiMachine = ({ projectId, bucket }) =>
   Machine(
     {
       id: 'api',
+      invoke: [
+        { id: 'eventBus', src: fromEventBus('api', () => apiEventBus) },
+        { id: 'image', src: fromEventBus('api', () => imageEventBus) },
+      ],
       context: {
         projectId,
         bucket,
+        frame: 0,
+        feature: 0,
+        channel: 0,
       },
       initial: 'idle',
+      on: {
+        FRAME: { actions: 'setFrame' },
+        FEATURE: { actions: 'setFeature' },
+        CHANNEL: { actions: 'setChannel' },
+      },
       states: {
         idle: {
           on: {
@@ -139,14 +159,20 @@ const createApiMachine = ({ projectId, bucket }) =>
           link.download = filename;
           link.click();
         },
-        sendEdited: sendParent((_, event) => ({
-          type: 'EDITED',
-          data: event.data,
-        })),
+        sendEdited: send(
+          (_, event) => ({
+            type: 'EDITED',
+            data: event.data,
+          }),
+          { to: 'image' }
+        ),
         sendError: sendParent((_, event) => ({
           type: 'ERROR',
           error: event.data.error,
         })),
+        setFrame: assign((_, { frame }) => ({ frame })),
+        setFeature: assign((_, { feature }) => ({ feature })),
+        setChannel: assign((_, { channel }) => ({ channel })),
       },
     }
   );

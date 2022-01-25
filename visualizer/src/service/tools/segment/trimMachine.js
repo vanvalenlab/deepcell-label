@@ -1,8 +1,17 @@
-import { Machine, sendParent } from 'xstate';
+import { Machine, send } from 'xstate';
+import { apiEventBus } from '../../apiMachine';
+import { canvasEventBus } from '../../canvasMachine';
+import { fromEventBus } from '../../eventBus';
+import { selectedCellsEventBus } from '../../selectMachine';
 import { toolActions, toolGuards } from './toolUtils';
 
 const trimMachine = Machine(
   {
+    invoke: [
+      { src: fromEventBus('trim', () => canvasEventBus) },
+      { id: 'selectedCells', src: fromEventBus('trim', () => selectedCellsEventBus) },
+      { id: 'api', src: fromEventBus('trim', () => apiEventBus) },
+    ],
     context: {
       x: null,
       y: null,
@@ -22,16 +31,19 @@ const trimMachine = Machine(
     guards: toolGuards,
     actions: {
       ...toolActions,
-      selectForeground: sendParent('SELECT_FOREGROUND'),
-      trim: sendParent(({ hovering, x, y }, event) => ({
-        type: 'EDIT',
-        action: 'trim_pixels',
-        args: {
-          label: hovering,
-          x_location: x,
-          y_location: y,
-        },
-      })),
+      selectForeground: send('SELECT_FOREGROUND', { to: 'selectedCells' }),
+      trim: send(
+        ({ hovering, x, y }, event) => ({
+          type: 'EDIT',
+          action: 'trim_pixels',
+          args: {
+            label: hovering,
+            x_location: x,
+            y_location: y,
+          },
+        }),
+        { to: 'api' }
+      ),
     },
   }
 );

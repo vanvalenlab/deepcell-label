@@ -1,8 +1,12 @@
 /**
  * Root statechart for DeepCell Label in XState.
  */
-import { assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
-import { pure, respond } from 'xstate/lib/actions';
+import { assign, forwardTo, Machine, send, spawn } from 'xstate';
+import { respond } from 'xstate/lib/actions';
+import { canvasEventBus } from '../canvasMachine';
+import { fromEventBus } from '../eventBus';
+import { selectedCellsEventBus } from '../selectMachine';
+import { undoEventBus } from '../undoMachine';
 import segmentMachine from './segmentMachine';
 import trackMachine from './trackMachine';
 
@@ -12,6 +16,11 @@ const toolMachine = Machine(
     context: {
       tool: 'segment',
     },
+    invoke: [
+      { id: 'selectedCells', src: fromEventBus('tool', () => selectedCellsEventBus) },
+      { id: 'canvas', src: fromEventBus('tool', () => canvasEventBus) },
+      { id: 'undo', src: fromEventBus('tool', () => undoEventBus) },
+    ],
     initial: 'checkTool',
     entry: ['spawnTools', 'addToolsToUndo', 'checkTrack'],
     states: {
@@ -26,7 +35,7 @@ const toolMachine = Machine(
         },
       },
       track: {
-        entry: send({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
+        entry: send({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }, { to: 'canvas' }),
         on: {
           mouseup: { actions: forwardTo('track') },
           mousedown: { actions: forwardTo('track') },
@@ -40,29 +49,12 @@ const toolMachine = Machine(
 
       SEGMENT: { target: '.checkTool', actions: assign({ tool: 'segment' }) },
       TRACK: { target: '.checkTool', actions: assign({ tool: 'track' }) },
-
-      GRAYSCALE: { actions: forwardTo('segment') },
-      COLOR: { actions: forwardTo('segment') },
-      COORDINATES: { actions: forwardTo('segment') },
-      LABELS: { actions: [forwardTo('segment'), forwardTo('track')] },
-      HOVERING: { actions: [forwardTo('segment'), forwardTo('track')] },
-      FOREGROUND: { actions: [forwardTo('segment'), forwardTo('track')] },
-      BACKGROUND: { actions: [forwardTo('segment'), forwardTo('track')] },
-      SELECTED: { actions: [forwardTo('segment'), forwardTo('track')] },
-
-      EDIT: { actions: 'sendParent' },
-      SET_PAN_ON_DRAG: { actions: 'sendParent' },
-      SET_FOREGROUND: { actions: 'sendParent' },
-      SELECT_FOREGROUND: { actions: 'sendParent' },
-      SELECT_BACKGROUND: { actions: 'sendParent' },
-      RESET_FOREGROUND: { actions: 'sendParent' },
     },
   },
   {
     actions: {
       save: respond(({ tool }) => ({ type: 'RESTORE', tool })),
       restore: assign((_, { tool }) => ({ tool })),
-      sendParent: sendParent((_, e) => e),
       spawnTools: assign({
         segmentRef: () => spawn(segmentMachine, 'segment'),
         trackRef: () => spawn(trackMachine, 'track'),
@@ -72,8 +64,8 @@ const toolMachine = Machine(
         const track = search.get('track');
         return track ? { type: 'TRACK' } : { type: 'SEGMENT' };
       }),
-      addToolsToUndo: pure(({ segmentRef }) => {
-        return [sendParent({ type: 'ADD_ACTOR', actor: segmentRef }, { to: 'undo' })];
+      addToolsToUndo: send(({ segmentRef }) => ({ type: 'ADD_ACTOR', actor: segmentRef }), {
+        to: 'undo',
       }),
     },
   }

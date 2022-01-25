@@ -1,11 +1,18 @@
-import { assign, Machine, sendParent } from 'xstate';
+import { assign, Machine, send } from 'xstate';
+import { apiEventBus } from '../../apiMachine';
+import { canvasEventBus } from '../../canvasMachine';
+import { fromEventBus } from '../../eventBus';
+import { selectedCellsEventBus } from '../../selectMachine';
 import { toolActions, toolGuards } from './toolUtils';
 
 const brushMachine = Machine(
   {
-    invoke: {
-      src: 'listenForBrushHotkeys',
-    },
+    invoke: [
+      { src: 'listenForBrushHotkeys' },
+      { src: fromEventBus('brush', () => canvasEventBus) },
+      { src: fromEventBus('brush', () => selectedCellsEventBus) },
+      { id: 'api', src: fromEventBus('brush', () => apiEventBus) },
+    ],
     context: {
       x: null,
       y: null,
@@ -69,16 +76,19 @@ const brushMachine = Machine(
         brushSize: ({ brushSize }) => Math.max(1, brushSize - 1),
       }),
       addToTrace: assign({ trace: ({ trace, x, y }) => [...trace, [x, y]] }),
-      paint: sendParent((context) => ({
-        type: 'EDIT',
-        action: 'handle_draw',
-        args: {
-          trace: JSON.stringify(context.trace),
-          foreground: context.foreground,
-          background: context.background,
-          brush_size: context.brushSize,
-        },
-      })),
+      paint: send(
+        (context) => ({
+          type: 'EDIT',
+          action: 'handle_draw',
+          args: {
+            trace: JSON.stringify(context.trace),
+            foreground: context.foreground,
+            background: context.background,
+            brush_size: context.brushSize,
+          },
+        }),
+        { to: 'api' }
+      ),
     },
   }
 );

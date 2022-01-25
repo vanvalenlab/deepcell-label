@@ -9,7 +9,9 @@
 // Features that need dragging interactions,
 // like drawing or creating a bounding box, should set panOnDrag to false
 
-import { actions, assign, Machine, send, sendParent } from 'xstate';
+import { actions, assign, Machine, send } from 'xstate';
+import { EventBus, fromEventBus } from './eventBus';
+import { labelImageEventBus } from './labeled/labeledMachine';
 
 const { respond } = actions;
 
@@ -31,7 +33,7 @@ const panOnDragState = {
           { cond: 'moved', target: 'dragged', actions: 'pan' },
           { actions: ['updateMove', 'pan'] },
         ],
-        mouseup: { target: 'idle', actions: 'sendParent' },
+        mouseup: { target: 'idle', actions: 'sendToEventBus' },
       },
     },
     dragged: {
@@ -45,8 +47,8 @@ const panOnDragState = {
 
 const noPanState = {
   on: {
-    mousedown: { actions: 'sendParent' },
-    mouseup: { actions: 'sendParent' },
+    mousedown: { actions: 'sendToEventBus' },
+    mouseup: { actions: 'sendToEventBus' },
     mousemove: { actions: 'computeCoordinates' },
   },
 };
@@ -83,6 +85,8 @@ const grabState = {
   },
 };
 
+export const canvasEventBus = new EventBus('canvas');
+
 const canvasMachine = Machine(
   {
     id: 'canvas',
@@ -109,6 +113,8 @@ const canvasMachine = Machine(
       panOnDrag: true,
     },
     invoke: [
+      { id: 'eventBus', src: fromEventBus('canvas', () => canvasEventBus) },
+      { src: fromEventBus('canvas', () => labelImageEventBus) },
       { src: 'listenForMouseUp' },
       { src: 'listenForZoomHotkeys' },
       { src: 'listenForSpace' },
@@ -130,11 +136,11 @@ const canvasMachine = Machine(
       LABELED_ARRAY: { actions: ['setLabeledArray', 'sendHovering'] },
       COORDINATES: {
         cond: 'newCoordinates',
-        actions: ['setCoordinates', 'sendHovering', 'sendParent'],
+        actions: ['setCoordinates', 'sendHovering', 'sendToEventBus'],
       },
       HOVERING: {
         cond: 'newHovering',
-        actions: ['setHovering', 'sendParent'],
+        actions: ['setHovering', 'sendToEventBus'],
       },
       PROJECT: { actions: ['setDimensions', 'resize'] },
       'keydown.Space': '.grab',
@@ -284,7 +290,7 @@ const canvasMachine = Machine(
       }),
       setPanOnDrag: assign((_, { panOnDrag }) => ({ panOnDrag })),
       setLabeledArray: assign((_, { labeledArray }) => ({ labeledArray })),
-      sendParent: sendParent((c, e) => e),
+      sendToEventBus: send((c, e) => e, { to: 'eventBus' }),
     },
   }
 );

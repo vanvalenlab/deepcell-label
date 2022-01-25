@@ -1,4 +1,6 @@
 import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
+import { apiEventBus } from './apiMachine';
+import { EventBus, fromEventBus } from './eventBus';
 
 const { pure } = actions;
 
@@ -69,9 +71,15 @@ const createHistoryMachine = (actor) =>
     }
   );
 
+export const undoEventBus = new EventBus('undo');
+
 const undoMachine = Machine(
   {
     id: 'undo',
+    invoke: [
+      { id: 'eventBus', src: fromEventBus('undo', () => undoEventBus) },
+      { id: 'api', src: fromEventBus('undo', () => apiEventBus) },
+    ],
     context: {
       histories: [],
       count: 0,
@@ -101,10 +109,10 @@ const undoMachine = Machine(
             actions: 'forwardToHistories',
           },
           BACKEND_UNDO: {
-            actions: ['decrementAction', sendParent('BACKEND_UNDO'), 'forwardToHistories'],
+            actions: ['decrementAction', forwardTo('api'), 'forwardToHistories'],
           },
           BACKEND_REDO: {
-            actions: ['incrementAction', sendParent('BACKEND_REDO'), 'forwardToHistories'],
+            actions: ['incrementAction', forwardTo('api'), 'forwardToHistories'],
           },
         },
       },

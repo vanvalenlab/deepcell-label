@@ -1,4 +1,7 @@
-import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
+import { actions, assign, forwardTo, Machine, send, spawn } from 'xstate';
+import { canvasEventBus } from '../canvasMachine';
+import { fromEventBus } from '../eventBus';
+import { rawEventBus } from '../raw/rawMachine';
 import brushMachine from './segment/brushMachine';
 import floodMachine from './segment/floodMachine';
 import selectMachine from './segment/selectMachine';
@@ -18,13 +21,13 @@ const panState = {
   initial: 'pan',
   states: {
     pan: {
-      entry: sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
+      entry: send({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }, { to: 'canvas' }),
       on: {
         SET_TOOL: { cond: 'isNoPanTool', target: 'noPan' },
       },
     },
     noPan: {
-      entry: sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: false }),
+      entry: send({ type: 'SET_PAN_ON_DRAG', panOnDrag: false }, { to: 'canvas' }),
       on: {
         SET_TOOL: { cond: 'isPanTool', target: 'pan' },
       },
@@ -52,72 +55,75 @@ const displayState = {
       },
     },
   },
-  on: {
-    // available in all display states
-    SWAP: { actions: 'swap' },
-    REPLACE: { actions: 'replace' },
-    DELETE: { actions: 'delete' },
-    ERODE: { actions: 'erode' },
-    DILATE: { actions: 'dilate' },
-  },
-};
-
-const syncState = {
-  on: {
-    // only send to tool in use
-    mousedown: { actions: 'forwardToTool' },
-    mouseup: { actions: 'forwardToTool' },
-    // send to all tools
-    COORDINATES: { actions: 'forwardToTools' },
-    HOVERING: { actions: 'forwardToTools' },
-    FOREGROUND: { actions: ['forwardToTools', 'setForeground'] },
-    BACKGROUND: { actions: ['forwardToTools', 'setBackground'] },
-    SELECTED: { actions: ['forwardToTools', 'setSelected'] },
-  },
 };
 
 const editActions = {
-  swap: send(({ foreground, background }) => ({
-    type: 'EDIT',
-    action: 'swap_single_frame',
-    args: {
-      label_1: foreground,
-      label_2: background,
-    },
-  })),
-  replace: send(({ foreground, background }) => ({
-    type: 'EDIT',
-    action: 'replace_single',
-    args: {
-      label_1: foreground,
-      label_2: background,
-    },
-  })),
-  erode: send(({ selected }) => ({
-    type: 'EDIT',
-    action: 'erode',
-    args: { label: selected },
-  })),
-  dilate: send(({ selected }) => ({
-    type: 'EDIT',
-    action: 'dilate',
-    args: { label: selected },
-  })),
-  delete: send(({ selected }) => ({
-    type: 'EDIT',
-    action: 'replace_single',
-    args: { label_1: 0, label_2: selected },
-  })),
-  autofit: send(({ selected }) => ({
-    type: 'EDIT',
-    action: 'active_contour',
-    args: { label: selected },
-  })),
+  swap: send(
+    ({ foreground, background }) => ({
+      type: 'EDIT',
+      action: 'swap_single_frame',
+      args: {
+        label_1: foreground,
+        label_2: background,
+      },
+    }),
+    { to: 'api' }
+  ),
+  replace: send(
+    ({ foreground, background }) => ({
+      type: 'EDIT',
+      action: 'replace_single',
+      args: {
+        label_1: foreground,
+        label_2: background,
+      },
+    }),
+    { to: 'api' }
+  ),
+  erode: send(
+    ({ selected }) => ({
+      type: 'EDIT',
+      action: 'erode',
+      args: { label: selected },
+    }),
+    { to: 'api' }
+  ),
+  dilate: send(
+    ({ selected }) => ({
+      type: 'EDIT',
+      action: 'dilate',
+      args: { label: selected },
+    }),
+    { to: 'api' }
+  ),
+  delete: send(
+    ({ selected }) => ({
+      type: 'EDIT',
+      action: 'replace_single',
+      args: { label_1: 0, label_2: selected },
+    }),
+    { to: 'api' }
+  ),
+  autofit: send(
+    ({ selected }) => ({
+      type: 'EDIT',
+      action: 'active_contour',
+      args: { label: selected },
+    }),
+    { to: 'api' }
+  ),
 };
 
 const segmentMachine = Machine(
   {
     id: 'segment',
+    invoke: [
+      {
+        id: 'canvas',
+        src: fromEventBus('segment', () => canvasEventBus),
+      },
+      { src: fromEventBus('segment', () => rawEventBus) },
+    ],
     context: {
       foreground: null,
       background: null,
@@ -130,19 +136,23 @@ const segmentMachine = Machine(
     states: {
       display: displayState,
       pan: panState,
-      sync: syncState,
     },
     on: {
-      EDIT: { actions: sendParent((_, e) => e) },
-
       // undo/redo actions
       SAVE: { actions: 'save' },
       RESTORE: { actions: ['restore', respond('RESTORED')] },
 
-      // select events (from select tool)
-      SELECT_FOREGROUND: { actions: sendParent((c, e) => e) },
-      SELECT_BACKGROUND: { actions: sendParent((c, e) => e) },
-      RESET_FOREGROUND: { actions: sendParent((c, e) => e) },
+      mousedown: { actions: 'forwardToTool' },
+      mouseup: { actions: 'forwardToTool' },
+      FOREGROUND: { actions: 'setForeground' },
+      BACKGROUND: { actions: 'setBackground' },
+      SELECTED: { actions: 'setSelected' },
+
+      SWAP: { actions: 'swap' },
+      REPLACE: { actions: 'replace' },
+      DELETE: { actions: 'delete' },
+      ERODE: { actions: 'erode' },
+      DILATE: { actions: 'dilate' },
     },
   },
   {

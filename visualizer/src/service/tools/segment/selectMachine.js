@@ -1,8 +1,15 @@
-import { Machine, sendParent } from 'xstate';
+import { Machine, send } from 'xstate';
+import { canvasEventBus } from '../../canvasMachine';
+import { fromEventBus } from '../../eventBus';
+import { selectedCellsEventBus } from '../../selectMachine';
 import { toolActions, toolGuards } from './toolUtils';
 
 const selectMachine = Machine(
   {
+    invoke: [
+      { src: fromEventBus('select', () => canvasEventBus) },
+      { id: 'selectedCells', src: fromEventBus('select', () => selectedCellsEventBus) },
+    ],
     context: {
       hovering: null,
       foreground: null,
@@ -26,9 +33,9 @@ const selectMachine = Machine(
     guards: toolGuards,
     actions: {
       ...toolActions,
-      selectForeground: sendParent('SELECT_FOREGROUND'),
-      selectBackground: sendParent('SELECT_BACKGROUND'),
-      resetForeground: sendParent('RESET_FOREGROUND'),
+      selectForeground: send('SELECT_FOREGROUND', { to: 'selectedCells' }),
+      selectBackground: send('SELECT_BACKGROUND', { to: 'selectedCells' }),
+      resetForeground: send('RESET_FOREGROUND', { to: 'selectedCells' }),
     },
   }
 );

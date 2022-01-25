@@ -1,5 +1,8 @@
-import { actions, assign, Machine, send, sendParent } from 'xstate';
+import { actions, assign, Machine, send } from 'xstate';
 import { respond } from 'xstate/lib/actions';
+import { canvasEventBus } from './canvasMachine';
+import { EventBus, fromEventBus } from './eventBus';
+import { labelImageEventBus } from './labeled/labeledMachine';
 
 const { pure } = actions;
 
@@ -92,12 +95,22 @@ const setActions = {
   setSelected: assign({ selected: (_, { selected }) => selected }),
 };
 
+export const selectedCellsEventBus = new EventBus('selectedCells');
+
 const selectMachine = Machine(
   {
     id: 'select',
     entry: [
       send({ type: 'FOREGROUND', foreground: 1 }),
       send({ type: 'BACKGROUND', background: 0 }),
+    ],
+    invoke: [
+      {
+        id: 'eventBus',
+        src: fromEventBus('select', () => selectedCellsEventBus),
+      },
+      { src: fromEventBus('select', () => canvasEventBus) },
+      { src: fromEventBus('select', () => labelImageEventBus) },
     ],
     context: {
       selected: null,
@@ -118,12 +131,12 @@ const selectMachine = Machine(
 
       HOVERING: { actions: 'setHovering' },
       LABELS: { actions: 'setLabels' },
-      SELECTED: { actions: ['setSelected', sendParent((c, e) => e)] },
+      SELECTED: { actions: ['setSelected', 'sendToEventBus'] },
       FOREGROUND: {
-        actions: ['setForeground', 'sendSelected', sendParent((c, e) => e)],
+        actions: ['setForeground', 'sendSelected', 'sendToEventBus'],
       },
       BACKGROUND: {
-        actions: ['setBackground', 'sendSelected', sendParent((c, e) => e)],
+        actions: ['setBackground', 'sendSelected', 'sendToEventBus'],
       },
       SET_FOREGROUND: {
         actions: send((_, { foreground }) => ({
@@ -161,6 +174,7 @@ const selectMachine = Machine(
         send({ type: 'FOREGROUND', foreground }),
         send({ type: 'BACKGROUND', background }),
       ]),
+      sendToEventBus: send((c, e) => e, { to: 'eventBus' }),
     },
   }
 );

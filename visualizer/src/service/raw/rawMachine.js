@@ -1,4 +1,5 @@
 import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
+import { EventBus, fromEventBus } from '../eventBus';
 import createChannelMachine from './channelMachine';
 import createColorMachine from './colorMachine';
 import createGrayscaleMachine from './grayscaleMachine';
@@ -50,12 +51,12 @@ const channelState = {
 };
 
 const colorState = {
-  entry: [sendParent('COLOR'), assign({ isGrayscale: false })],
+  entry: [send('COLOR', { to: 'eventBus' }), assign({ isGrayscale: false })],
   on: { TOGGLE_COLOR_MODE: 'grayscale' },
 };
 
 const grayscaleState = {
-  entry: [sendParent('GRAYSCALE'), assign({ isGrayscale: true })],
+  entry: [send('GRAYSCALE', { to: 'eventBus' }), assign({ isGrayscale: true })],
   on: {
     TOGGLE_COLOR_MODE: 'color',
     RESET: { actions: 'forwardToChannel' },
@@ -94,9 +95,15 @@ const restoreState = {
   },
 };
 
+export const rawEventBus = new EventBus('raw');
+
 const createRawMachine = (projectId, numChannels, numFrames) =>
   Machine(
     {
+      invoke: {
+        id: 'eventBus',
+        src: fromEventBus('raw', () => rawEventBus),
+      },
       context: {
         projectId,
         numChannels,
