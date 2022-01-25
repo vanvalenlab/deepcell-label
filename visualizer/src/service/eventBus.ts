@@ -74,5 +74,3 @@ export function fromEventBus<TContext, TEvent extends EventObject = AnyEventObje
     };
   };
 }
-
-export const eventBus = new EventBus<any>('test');
