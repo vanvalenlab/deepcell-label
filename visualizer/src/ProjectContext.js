@@ -227,6 +227,7 @@ const gl = !!document.createElement('canvas').getContext('webgl');
 
 /** Creates a reference to a canvas with an alpha channel to use with a GPU.js kernel. */
 export function useAlphaKernelCanvas() {
+  const project = useProject();
   const canvasRef = useRef();
 
   useEffect(() => {
@@ -237,7 +238,7 @@ export function useAlphaKernelCanvas() {
       canvas.getContext('webgl', { premultipliedAlpha: false });
     }
     canvasRef.current = canvas;
-  }, []);
+  }, [project]);
 
   return canvasRef;
 }
