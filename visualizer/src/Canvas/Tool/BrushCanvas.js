@@ -34,6 +34,7 @@ const BrushCanvas = ({ setCanvases }) => {
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvasRef.current });
     const kernel = gpu.createKernel(
+      // TODO: research how to work around minification
       `function (trace, traceLength, size, color, brushX, brushY) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
