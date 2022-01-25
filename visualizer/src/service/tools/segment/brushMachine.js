@@ -1,6 +1,5 @@
 import { assign, Machine, send } from 'xstate';
 import { apiEventBus } from '../../apiMachine';
-import { canvasEventBus } from '../../canvasMachine';
 import { fromEventBus } from '../../eventBus';
 import { selectedCellsEventBus } from '../../selectMachine';
 import { toolActions, toolGuards } from './toolUtils';
@@ -9,7 +8,6 @@ const brushMachine = Machine(
   {
     invoke: [
       { src: 'listenForBrushHotkeys' },
-      { src: fromEventBus('brush', () => canvasEventBus) },
       { src: fromEventBus('brush', () => selectedCellsEventBus) },
       { id: 'api', src: fromEventBus('brush', () => apiEventBus) },
     ],

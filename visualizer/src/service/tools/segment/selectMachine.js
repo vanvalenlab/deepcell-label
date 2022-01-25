@@ -1,15 +1,11 @@
 import { Machine, send } from 'xstate';
-import { canvasEventBus } from '../../canvasMachine';
 import { fromEventBus } from '../../eventBus';
 import { selectedCellsEventBus } from '../../selectMachine';
 import { toolActions, toolGuards } from './toolUtils';
 
 const selectMachine = Machine(
   {
-    invoke: [
-      { src: fromEventBus('select', () => canvasEventBus) },
-      { id: 'selectedCells', src: fromEventBus('select', () => selectedCellsEventBus) },
-    ],
+    invoke: [{ id: 'selectedCells', src: fromEventBus('select', () => selectedCellsEventBus) }],
     context: {
       hovering: null,
       foreground: null,

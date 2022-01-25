@@ -31,15 +31,13 @@ const toolMachine = Machine(
         on: {
           mouseup: { actions: forwardTo('segment') },
           mousedown: { actions: forwardTo('segment') },
-          mousemove: { actions: forwardTo('segment') },
         },
       },
       track: {
-        entry: send({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }, { to: 'canvas' }),
+        entry: send({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
         on: {
           mouseup: { actions: forwardTo('track') },
           mousedown: { actions: forwardTo('track') },
-          mousemove: { actions: forwardTo('track') },
         },
       },
     },
@@ -47,8 +45,13 @@ const toolMachine = Machine(
       SAVE: { actions: 'save' },
       RESTORE: { target: '.checkTool', actions: ['restore', respond('RESTORED')] },
 
+      HOVERING: { actions: [forwardTo('segment'), forwardTo('track')] },
+      COORDINATES: { actions: [forwardTo('segment'), forwardTo('track')] },
+
       SEGMENT: { target: '.checkTool', actions: assign({ tool: 'segment' }) },
       TRACK: { target: '.checkTool', actions: assign({ tool: 'track' }) },
+
+      SET_PAN_ON_DRAG: { actions: forwardTo('canvas') },
     },
   },
   {

@@ -1,6 +1,5 @@
 import { assign, Machine, send } from 'xstate';
 import { apiEventBus } from '../../apiMachine';
-import { canvasEventBus } from '../../canvasMachine';
 import { fromEventBus } from '../../eventBus';
 import { selectedCellsEventBus } from '../../selectMachine';
 import { toolActions, toolGuards } from './toolUtils';
@@ -8,7 +7,6 @@ import { toolActions, toolGuards } from './toolUtils';
 const watershedMachine = Machine(
   {
     invoke: [
-      { src: fromEventBus('watershed', () => canvasEventBus) },
       { id: 'selectedCells', src: fromEventBus('watershed', () => selectedCellsEventBus) },
       { id: 'api', src: fromEventBus('watershed', () => apiEventBus) },
     ],

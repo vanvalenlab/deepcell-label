@@ -1,6 +1,5 @@
 import { Machine, send } from 'xstate';
 import { apiEventBus } from '../../apiMachine';
-import { canvasEventBus } from '../../canvasMachine';
 import { fromEventBus } from '../../eventBus';
 import { selectedCellsEventBus } from '../../selectMachine';
 import { toolActions, toolGuards } from './toolUtils';
@@ -8,7 +7,6 @@ import { toolActions, toolGuards } from './toolUtils';
 const floodMachine = Machine(
   {
     invoke: [
-      { src: fromEventBus('flood', () => canvasEventBus) },
       { id: 'selectedCells', src: fromEventBus('flood', () => selectedCellsEventBus) },
       { id: 'api', src: fromEventBus('flood', () => apiEventBus) },
     ],

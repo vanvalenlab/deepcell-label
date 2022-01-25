@@ -1,6 +1,5 @@
 import { assign, Machine, send } from 'xstate';
 import { apiEventBus } from '../apiMachine';
-import { canvasEventBus } from '../canvasMachine';
 import { fromEventBus } from '../eventBus';
 import { labelImageEventBus } from '../labeled/labeledMachine';
 import { selectedCellsEventBus } from '../selectMachine';
@@ -9,7 +8,6 @@ const trackMachine = Machine(
   {
     id: 'track',
     invoke: [
-      { src: fromEventBus('track', () => canvasEventBus) },
       { id: 'selectedCells', src: fromEventBus('track', () => selectedCellsEventBus) },
       { src: fromEventBus('track', () => labelImageEventBus) },
       { id: 'api', src: fromEventBus('track', () => apiEventBus) },

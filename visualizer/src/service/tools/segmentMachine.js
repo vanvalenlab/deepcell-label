@@ -1,5 +1,4 @@
-import { actions, assign, forwardTo, Machine, send, spawn } from 'xstate';
-import { canvasEventBus } from '../canvasMachine';
+import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
 import { fromEventBus } from '../eventBus';
 import { rawEventBus } from '../raw/rawMachine';
 import brushMachine from './segment/brushMachine';
@@ -21,13 +20,13 @@ const panState = {
   initial: 'pan',
   states: {
     pan: {
-      entry: send({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }, { to: 'canvas' }),
+      entry: sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
       on: {
         SET_TOOL: { cond: 'isNoPanTool', target: 'noPan' },
       },
     },
     noPan: {
-      entry: send({ type: 'SET_PAN_ON_DRAG', panOnDrag: false }, { to: 'canvas' }),
+      entry: sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: false }),
       on: {
         SET_TOOL: { cond: 'isPanTool', target: 'pan' },
       },
@@ -117,13 +116,7 @@ const editActions = {
 const segmentMachine = Machine(
   {
     id: 'segment',
-    invoke: [
-      {
-        id: 'canvas',
-        src: fromEventBus('segment', () => canvasEventBus),
-      },
-      { src: fromEventBus('segment', () => rawEventBus) },
-    ],
+    invoke: { src: fromEventBus('segment', () => rawEventBus) },
     context: {
       foreground: null,
       background: null,
@@ -142,8 +135,12 @@ const segmentMachine = Machine(
       SAVE: { actions: 'save' },
       RESTORE: { actions: ['restore', respond('RESTORED')] },
 
+      // from canvas event bus (forwarded from parent)
       mousedown: { actions: 'forwardToTool' },
       mouseup: { actions: 'forwardToTool' },
+      HOVERING: { actions: 'forwardToTools' },
+      COORDINATES: { actions: 'forwardToTools' },
+      // from selected labels event bus
       FOREGROUND: { actions: 'setForeground' },
       BACKGROUND: { actions: 'setBackground' },
       SELECTED: { actions: 'setSelected' },
