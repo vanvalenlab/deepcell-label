@@ -1,5 +1,5 @@
 import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
-import { EventBus, fromEventBus } from '../eventBus';
+import { fromEventBus } from '../eventBus';
 import createFeatureMachine from './featureMachine';
 
 const { pure, respond } = actions;
@@ -75,14 +75,12 @@ const restoreState = {
   },
 };
 
-export const labelImageEventBus = new EventBus('labelImage');
-
-const createLabeledMachine = (projectId, numFeatures, numFrames) =>
+const createLabeledMachine = ({ projectId, numFeatures, numFrames, eventBuses }) =>
   Machine(
     {
       invoke: {
         id: 'eventBus',
-        src: fromEventBus('labeled', () => labelImageEventBus),
+        src: fromEventBus('labeled', () => eventBuses.labeled),
       },
       context: {
         projectId,

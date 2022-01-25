@@ -1,13 +1,12 @@
 import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
 import { fromEventBus } from '../eventBus';
-import { rawEventBus } from '../raw/rawMachine';
-import brushMachine from './segment/brushMachine';
-import floodMachine from './segment/floodMachine';
-import selectMachine from './segment/selectMachine';
-import thresholdMachine from './segment/thresholdMachine';
+import createBrushMachine from './segment/brushMachine';
+import createFloodMachine from './segment/floodMachine';
+import createSelectMachine from './segment/selectMachine';
+import createThresholdMachine from './segment/thresholdMachine';
 import { toolActions, toolGuards } from './segment/toolUtils';
-import trimMachine from './segment/trimMachine';
-import watershedMachine from './segment/watershedMachine';
+import createTrimMachine from './segment/trimMachine';
+import createWatershedMachine from './segment/watershedMachine';
 
 const { pure, respond } = actions;
 
@@ -113,78 +112,80 @@ const editActions = {
   ),
 };
 
-const segmentMachine = Machine(
-  {
-    id: 'segment',
-    invoke: { src: fromEventBus('segment', () => rawEventBus) },
-    context: {
-      foreground: null,
-      background: null,
-      selected: null,
-      tool: 'select',
-      tools: null,
-    },
-    entry: 'spawnTools',
-    type: 'parallel',
-    states: {
-      display: displayState,
-      pan: panState,
-    },
-    on: {
-      // undo/redo actions
-      SAVE: { actions: 'save' },
-      RESTORE: { actions: ['restore', respond('RESTORED')] },
+const createSegmentMachine = ({ eventBuses }) =>
+  Machine(
+    {
+      id: 'segment',
+      invoke: { src: fromEventBus('segment', () => eventBuses.raw) },
+      context: {
+        foreground: null,
+        background: null,
+        selected: null,
+        tool: 'select',
+        tools: null,
+        eventBuses,
+      },
+      entry: [(c, e) => console.log(eventBuses), 'spawnTools'],
+      type: 'parallel',
+      states: {
+        display: displayState,
+        pan: panState,
+      },
+      on: {
+        // undo/redo actions
+        SAVE: { actions: 'save' },
+        RESTORE: { actions: ['restore', respond('RESTORED')] },
 
-      // from canvas event bus (forwarded from parent)
-      mousedown: { actions: 'forwardToTool' },
-      mouseup: { actions: 'forwardToTool' },
-      HOVERING: { actions: 'forwardToTools' },
-      COORDINATES: { actions: 'forwardToTools' },
-      // from selected labels event bus
-      FOREGROUND: { actions: 'setForeground' },
-      BACKGROUND: { actions: 'setBackground' },
-      SELECTED: { actions: 'setSelected' },
+        // from canvas event bus (forwarded from parent)
+        mousedown: { actions: 'forwardToTool' },
+        mouseup: { actions: 'forwardToTool' },
+        HOVERING: { actions: 'forwardToTools' },
+        COORDINATES: { actions: 'forwardToTools' },
+        // from selected labels event bus
+        FOREGROUND: { actions: 'setForeground' },
+        BACKGROUND: { actions: 'setBackground' },
+        SELECTED: { actions: 'setSelected' },
 
-      SWAP: { actions: 'swap' },
-      REPLACE: { actions: 'replace' },
-      DELETE: { actions: 'delete' },
-      ERODE: { actions: 'erode' },
-      DILATE: { actions: 'dilate' },
+        SWAP: { actions: 'swap' },
+        REPLACE: { actions: 'replace' },
+        DELETE: { actions: 'delete' },
+        ERODE: { actions: 'erode' },
+        DILATE: { actions: 'dilate' },
+      },
     },
-  },
-  {
-    guards: {
-      ...toolGuards,
-      usingColorTool: ({ tool }) => colorTools.includes(tool),
-      isColorTool: (_, { tool }) => colorTools.includes(tool),
-      usingGrayscaleTool: ({ tool }) => grayscaleTools.includes(tool),
-      isGrayscaleTool: (_, { tool }) => grayscaleTools.includes(tool),
-      isNoPanTool: (_, { tool }) => noPanTools.includes(tool),
-      isPanTool: (_, { tool }) => panTools.includes(tool),
-    },
-    actions: {
-      ...toolActions,
-      ...editActions,
-      setTool: pure((context, event) => [
-        send('EXIT', { to: context.tool }),
-        assign({ tool: event.tool }),
-      ]),
-      save: respond(({ tool }) => ({ type: 'RESTORE', tool })),
-      restore: assign((_, { tool }) => ({ tool })),
-      spawnTools: assign({
-        tools: (context) => ({
-          brush: spawn(brushMachine, 'brush'),
-          select: spawn(selectMachine, 'select'),
-          threshold: spawn(thresholdMachine, 'threshold'),
-          trim: spawn(trimMachine, 'trim'),
-          flood: spawn(floodMachine, 'flood'),
-          watershed: spawn(watershedMachine, 'watershed'),
+    {
+      guards: {
+        ...toolGuards,
+        usingColorTool: ({ tool }) => colorTools.includes(tool),
+        isColorTool: (_, { tool }) => colorTools.includes(tool),
+        usingGrayscaleTool: ({ tool }) => grayscaleTools.includes(tool),
+        isGrayscaleTool: (_, { tool }) => grayscaleTools.includes(tool),
+        isNoPanTool: (_, { tool }) => noPanTools.includes(tool),
+        isPanTool: (_, { tool }) => panTools.includes(tool),
+      },
+      actions: {
+        ...toolActions,
+        ...editActions,
+        setTool: pure((context, event) => [
+          send('EXIT', { to: context.tool }),
+          assign({ tool: event.tool }),
+        ]),
+        save: respond(({ tool }) => ({ type: 'RESTORE', tool })),
+        restore: assign((_, { tool }) => ({ tool })),
+        spawnTools: assign({
+          tools: (context) => ({
+            brush: spawn(createBrushMachine(context), 'brush'),
+            select: spawn(createSelectMachine(context), 'select'),
+            threshold: spawn(createThresholdMachine(context), 'threshold'),
+            trim: spawn(createTrimMachine(context), 'trim'),
+            flood: spawn(createFloodMachine(context), 'flood'),
+            watershed: spawn(createWatershedMachine(context), 'watershed'),
+          }),
         }),
-      }),
-      forwardToTool: forwardTo(({ tool }) => tool),
-      forwardToTools: pure(({ tools }) => Object.values(tools).map((tool) => forwardTo(tool))),
-    },
-  }
-);
+        forwardToTool: forwardTo(({ tool }) => tool),
+        forwardToTools: pure(({ tools }) => Object.values(tools).map((tool) => forwardTo(tool))),
+      },
+    }
+  );
 
-export default segmentMachine;
+export default createSegmentMachine;

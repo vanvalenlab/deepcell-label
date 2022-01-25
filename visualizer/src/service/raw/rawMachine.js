@@ -1,5 +1,5 @@
 import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
-import { EventBus, fromEventBus } from '../eventBus';
+import { fromEventBus } from '../eventBus';
 import createChannelMachine from './channelMachine';
 import createColorMachine from './colorMachine';
 import createGrayscaleMachine from './grayscaleMachine';
@@ -95,14 +95,12 @@ const restoreState = {
   },
 };
 
-export const rawEventBus = new EventBus('raw');
-
-const createRawMachine = (projectId, numChannels, numFrames) =>
+const createRawMachine = ({ projectId, numChannels, numFrames, eventBuses }) =>
   Machine(
     {
       invoke: {
         id: 'eventBus',
-        src: fromEventBus('raw', () => rawEventBus),
+        src: fromEventBus('raw', () => eventBuses.raw),
       },
       context: {
         projectId,

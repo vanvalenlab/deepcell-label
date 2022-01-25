@@ -1,6 +1,5 @@
 import { assign, Machine, send, sendParent } from 'xstate';
-import { EventBus, fromEventBus } from './eventBus';
-import { imageEventBus } from './imageMachine';
+import { fromEventBus } from './eventBus';
 
 /** Returns a Promise for a DeepCell Label API call based on the event. */
 function getApiService(context, event) {
@@ -81,15 +80,13 @@ function checkResponseCode(response) {
   });
 }
 
-export const apiEventBus = new EventBus('api');
-
-const createApiMachine = ({ projectId, bucket }) =>
+const createApiMachine = ({ projectId, bucket, eventBuses }) =>
   Machine(
     {
       id: 'api',
       invoke: [
-        { id: 'eventBus', src: fromEventBus('api', () => apiEventBus) },
-        { id: 'image', src: fromEventBus('api', () => imageEventBus) },
+        { id: 'eventBus', src: fromEventBus('api', () => eventBuses.api) },
+        { id: 'image', src: fromEventBus('api', () => eventBuses.image) },
       ],
       context: {
         projectId,

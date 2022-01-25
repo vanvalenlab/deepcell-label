@@ -1,8 +1,7 @@
 import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
-import { EventBus, fromEventBus } from './eventBus';
+import { fromEventBus } from './eventBus';
 import createLabeledMachine from './labeled/labeledMachine';
 import createRawMachine from './raw/rawMachine';
-import { undoEventBus } from './undoMachine';
 
 const { pure, respond } = actions;
 
@@ -39,15 +38,13 @@ const loadFrameState = {
   },
 };
 
-export const imageEventBus = new EventBus('image');
-
-const createImageMachine = ({ projectId }) =>
+const createImageMachine = ({ projectId, eventBuses }) =>
   Machine(
     {
       id: 'image',
       invoke: [
-        { id: 'eventBus', src: fromEventBus('image', () => imageEventBus) },
-        { id: 'undo', src: fromEventBus('image', () => undoEventBus) },
+        { id: 'eventBus', src: fromEventBus('image', () => eventBuses.image) },
+        { id: 'undo', src: fromEventBus('image', () => eventBuses.undo) },
       ],
       context: {
         projectId,
@@ -58,6 +55,7 @@ const createImageMachine = ({ projectId }) =>
         numChannels: 1,
         rawRef: null,
         labeledRef: null,
+        eventBuses,
       },
       initial: 'waitForProject',
       states: {
@@ -107,12 +105,10 @@ const createImageMachine = ({ projectId }) =>
           }
         ),
         // create child actors to fetch raw & labeled data
-        spawnActors: assign({
-          rawRef: ({ projectId, numChannels, numFrames }) =>
-            spawn(createRawMachine(projectId, numChannels, numFrames), 'raw'),
-          labeledRef: ({ projectId, numFeatures, numFrames }) =>
-            spawn(createLabeledMachine(projectId, numFeatures, numFrames), 'labeled'),
-        }),
+        spawnActors: assign((context) => ({
+          rawRef: spawn(createRawMachine(context), 'raw'),
+          labeledRef: spawn(createLabeledMachine(context), 'labeled'),
+        })),
         addActorsToUndo: pure((context) => {
           const { rawRef, labeledRef } = context;
           return [

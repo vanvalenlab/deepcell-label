@@ -4,11 +4,12 @@
 import { assign, Machine, send, spawn } from 'xstate';
 import { pure } from 'xstate/lib/actions';
 import createApiMachine from './apiMachine';
-import canvasMachine from './canvasMachine';
+import createCanvasMachine from './canvasMachine';
+import { EventBus } from './eventBus';
 import createImageMachine from './imageMachine';
-import selectMachine from './selectMachine';
-import toolMachine from './tools/toolMachine';
-import undoMachine from './undoMachine';
+import createSelectMachine from './selectMachine';
+import createToolMachine from './tools/toolMachine';
+import createUndoMachine from './undoMachine';
 
 function fetchProject(context) {
   const { projectId } = context;
@@ -22,6 +23,15 @@ const createProjectMachine = (projectId, bucket) =>
       context: {
         projectId,
         bucket,
+        eventBuses: {
+          canvas: new EventBus('canvas'),
+          image: new EventBus('image'),
+          labeled: new EventBus('labeled'),
+          raw: new EventBus('raw'),
+          select: new EventBus('select'),
+          undo: new EventBus('undo'),
+          api: new EventBus('api'),
+        },
       },
       initial: 'setUpActors',
       states: {
@@ -30,7 +40,7 @@ const createProjectMachine = (projectId, bucket) =>
           always: 'setUpUndo',
         },
         setUpUndo: {
-          entry: ['spawnUndo', 'addActorsToUndo'],
+          entry: 'addActorsToUndo',
           always: 'loading',
         },
         loading: {
@@ -51,15 +61,16 @@ const createProjectMachine = (projectId, bucket) =>
     },
     {
       actions: {
-        spawnActors: assign({
-          canvasRef: () => spawn(canvasMachine, 'canvas'),
-          imageRef: (context) => spawn(createImageMachine(context), 'image'),
-          apiRef: (context) => spawn(createApiMachine(context), 'api'),
-          selectRef: () => spawn(selectMachine, 'select'),
-          toolRef: () => spawn(toolMachine, 'tool'),
-        }),
-        spawnUndo: assign({
-          undoRef: () => spawn(undoMachine, 'undo'),
+        spawnActors: assign((context) => {
+          console.log(context);
+          return {
+            canvasRef: spawn(createCanvasMachine(context), 'canvas'),
+            imageRef: spawn(createImageMachine(context), 'image'),
+            apiRef: spawn(createApiMachine(context), 'api'),
+            selectRef: spawn(createSelectMachine(context), 'select'),
+            toolRef: spawn(createToolMachine(context), 'tool'),
+            undoRef: spawn(createUndoMachine(context), 'undo'),
+          };
         }),
         addActorsToUndo: pure((context) => {
           const { canvasRef, toolRef, imageRef, selectRef } = context;
