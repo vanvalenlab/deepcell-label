@@ -3,7 +3,7 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import { makeStyles } from '@material-ui/core/styles';
 import { useSelector } from '@xstate/react';
 import React, { useEffect } from 'react';
-import { useCanvas, useLabeled, useRaw, useSegment, useSelect } from '../ProjectContext';
+import { useArrays, useCanvas, useLabeled, useRaw, useSegment, useSelect } from '../ProjectContext';
 import ComposeCanvas from './ComposeCanvases';
 import LabeledCanvas from './Labeled/LabeledCanvas';
 import OutlineCanvas from './Labeled/OutlineCanvas';
@@ -83,6 +83,9 @@ export const Canvas = () => {
 
   const [canvases, setCanvases] = React.useState([]);
 
+  const arrays = useArrays();
+  const loading = useSelector(arrays, (state) => state.matches('loading'));
+
   return (
     <Box
       id={'canvasBox'}
@@ -96,13 +99,18 @@ export const Canvas = () => {
       onMouseDown={handleMouseDown}
       onMouseUp={canvas.send}
     >
-      {!raw && <CircularProgress style={{ margin: '25%', width: '50%', height: '50%' }} />}
-      <ComposeCanvas canvases={canvases} />
-      {raw && <RawCanvas setCanvases={setCanvases} />}
-      {labeled && <LabeledCanvas setCanvases={setCanvases} />}
-      {labeled && <OutlineCanvas setCanvases={setCanvases} />}
-      {tool === 'brush' && <BrushCanvas setCanvases={setCanvases} />}
-      {tool === 'threshold' && <ThresholdCanvas setCanvases={setCanvases} />}
+      {loading ? (
+        <CircularProgress style={{ margin: '25%', width: '50%', height: '50%' }} />
+      ) : (
+        <>
+          <ComposeCanvas canvases={canvases} />
+          <RawCanvas setCanvases={setCanvases} />
+          <LabeledCanvas setCanvases={setCanvases} />
+          <OutlineCanvas setCanvases={setCanvases} />
+          {tool === 'brush' && <BrushCanvas setCanvases={setCanvases} />}
+          {tool === 'threshold' && <ThresholdCanvas setCanvases={setCanvases} />}
+        </>
+      )}
     </Box>
   );
 };

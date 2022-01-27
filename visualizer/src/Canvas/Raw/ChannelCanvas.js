@@ -26,13 +26,10 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
   const frame = useSelector(image, (state) => state.context.frame);
 
   const arrays = useArrays();
-  let rawArray = useSelector(
+  const rawArray = useSelector(
     arrays,
     (state) => state.context.rawArrays && state.context.rawArrays[channel][frame]
   );
-  if (rawArray === null) {
-    rawArray = new Array(height).fill(new Array(width).fill(0));
-  }
 
   const kernelRef = useRef();
   const canvasRef = useRef();

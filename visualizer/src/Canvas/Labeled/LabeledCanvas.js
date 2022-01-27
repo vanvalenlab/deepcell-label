@@ -31,13 +31,10 @@ export const LabeledCanvas = ({ setCanvases }) => {
   const frame = useSelector(image, (state) => state.context.frame);
 
   const arrays = useArrays();
-  let labeledArray = useSelector(
+  const labeledArray = useSelector(
     arrays,
     (state) => state.context.labeledArrays && state.context.labeledArrays[feature][frame]
   );
-  if (!labeledArray) {
-    labeledArray = new Array(height).fill(new Array(width).fill(0));
-  }
 
   const select = useSelect();
   const foreground = useSelector(select, (state) => state.context.foreground);
