@@ -83,7 +83,6 @@ function InvalidProjectId() {
 }
 
 function App() {
-  window.labelsService = labelsService;
   const styles = useStyles();
   const id = new URLSearchParams(window.location.search).get('projectId');
 
