@@ -4,10 +4,8 @@ import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Footer from './Footer/Footer';
 import Label from './Label';
-import { labelsService } from './Label API/api';
 import Load from './Load/Load';
 import NavBar from './Navbar';
-import NewLabelFormatContext from './NewLabelFormatContext';
 import ProjectContext from './ProjectContext';
 import QualityControlContext from './QualityControlContext';
 import { createProject, isProjectId, qualityControl } from './service/service';
@@ -45,11 +43,9 @@ function Review() {
 
   return (
     <QualityControlContext qualityControl={qualityControl}>
-      <NewLabelFormatContext labels={labelsService}>
-        <ProjectContext project={project}>
-          <Label review={true} />
-        </ProjectContext>
-      </NewLabelFormatContext>
+      <ProjectContext project={project}>
+        <Label review={true} />
+      </ProjectContext>
     </QualityControlContext>
   );
 }
@@ -62,11 +58,9 @@ function LabelProject() {
 
   return (
     project && (
-      <NewLabelFormatContext labels={labelsService}>
-        <ProjectContext project={project}>
-          <Label review={false} />
-        </ProjectContext>
-      </NewLabelFormatContext>
+      <ProjectContext project={project}>
+        <Label review={false} />
+      </ProjectContext>
     )
   );
 }
