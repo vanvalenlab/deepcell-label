@@ -17,7 +17,7 @@ function FrameBox({ frame, numFrames, color }) {
 
   const onClick = (event, newValue) => {
     if (newValue !== frame) {
-      image.send({ type: 'LOAD_FRAME', frame: newValue });
+      image.send({ type: 'SET_FRAME', frame: newValue });
     }
   };
 

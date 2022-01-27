@@ -84,14 +84,14 @@ const grabState = {
   },
 };
 
-const createCanvasMachine = ({ eventBuses }) =>
+const createCanvasMachine = ({ width, height, eventBuses }) =>
   Machine(
     {
       id: 'canvas',
       context: {
         // raw dimensions of image
-        width: 512,
-        height: 512,
+        width,
+        height,
         availableWidth: 512,
         availableHeight: 512,
         scale: 1, // how much the canvas is scaled to fill the available space
@@ -112,7 +112,7 @@ const createCanvasMachine = ({ eventBuses }) =>
       },
       invoke: [
         { id: 'eventBus', src: fromEventBus('canvas', () => eventBuses.canvas) },
-        { src: fromEventBus('canvas', () => eventBuses.labeled) },
+        { src: fromEventBus('canvas', () => eventBuses.arrays) },
         { src: 'listenForMouseUp' },
         { src: 'listenForZoomHotkeys' },
         { src: 'listenForSpace' },
@@ -140,7 +140,6 @@ const createCanvasMachine = ({ eventBuses }) =>
           cond: 'newHovering',
           actions: ['setHovering', 'sendToEventBus'],
         },
-        PROJECT: { actions: ['setDimensions', 'resize'] },
         'keydown.Space': '.grab',
         'keyup.Space': '.interactive',
       },
@@ -195,10 +194,6 @@ const createCanvasMachine = ({ eventBuses }) =>
         panOnDrag: ({ panOnDrag }) => panOnDrag,
       },
       actions: {
-        setDimensions: assign((context, event) => ({
-          height: event.height,
-          width: event.width,
-        })),
         updateMove: assign({
           dx: ({ dx }, event) => dx + event.movementX,
           dy: ({ dy }, event) => dy + event.movementY,

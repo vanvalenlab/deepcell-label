@@ -2,9 +2,8 @@ import { assign, Machine, send } from 'xstate';
 import { fromEventBus } from '../../eventBus';
 import { toolActions, toolGuards } from './toolUtils';
 
-const createThresholdMachine = ({ eventBuses }) => {
-  console.log(eventBuses);
-  return Machine(
+const createThresholdMachine = ({ eventBuses }) =>
+  Machine(
     {
       initial: 'idle',
       invoke: [
@@ -58,6 +57,5 @@ const createThresholdMachine = ({ eventBuses }) => {
       },
     }
   );
-};
 
 export default createThresholdMachine;

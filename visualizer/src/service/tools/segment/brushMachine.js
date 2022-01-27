@@ -5,7 +5,6 @@ import { toolActions, toolGuards } from './toolUtils';
 const createBrushMachine = (context) =>
   Machine(
     {
-      entry: () => console.log(context),
       invoke: [
         { src: 'listenForBrushHotkeys' },
         { src: fromEventBus('brush', () => context.eventBuses.select) },

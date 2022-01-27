@@ -1,7 +1,7 @@
 import { useSelector } from '@xstate/react';
 import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
-import { useCanvas, useChannel } from '../../ProjectContext';
+import { useArrays, useCanvas, useImage } from '../../ProjectContext';
 
 /** Converts a hex string like #FF0000 to three element array for the RGB values. */
 const hexToRGB = (hex) => {
@@ -20,9 +20,16 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
   const color = useSelector(layer, (state) => state.context.color);
   const [min, max] = useSelector(layer, (state) => state.context.range);
   const on = useSelector(layer, (state) => state.context.on);
-  const channelIndex = useSelector(layer, (state) => state.context.channel);
-  const channel = useChannel(channelIndex);
-  let rawArray = useSelector(channel, (state) => state.context.rawArray);
+  const channel = useSelector(layer, (state) => state.context.channel);
+
+  const image = useImage();
+  const frame = useSelector(image, (state) => state.context.frame);
+
+  const arrays = useArrays();
+  let rawArray = useSelector(
+    arrays,
+    (state) => state.context.rawArrays && state.context.rawArrays[channel][frame]
+  );
   if (rawArray === null) {
     rawArray = new Array(height).fill(new Array(width).fill(0));
   }

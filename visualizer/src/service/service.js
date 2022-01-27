@@ -14,7 +14,7 @@ export function isQualityControl(ids) {
   return ids.split(',').every(isProjectId);
 }
 
-function createProject() {
+export async function createProject() {
   const location = window.location;
   const search = new URLSearchParams(location.search);
   const projectId = search.get('projectId');
@@ -22,7 +22,8 @@ function createProject() {
     return;
   }
   const bucket = search.has('bucket') ? search.get('bucket') : 'caliban-output';
-  const machine = createProjectMachine(projectId, bucket);
+  const dimensions = await fetch(`/api/project/${projectId}`).then((response) => response.json());
+  const machine = createProjectMachine(projectId, dimensions, bucket);
   const service = interpret(machine); // , { devTools: true });
   service.start();
   window.dcl = service;

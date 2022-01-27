@@ -7,7 +7,6 @@ import Paper from '@material-ui/core/Paper';
 import Popper from '@material-ui/core/Popper';
 import { makeStyles } from '@material-ui/core/styles';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
-import { useSelector } from '@xstate/react';
 import React, { useReducer, useRef } from 'react';
 import { useRaw } from '../../../ProjectContext';
 import ColorPalette from './ColorPalette';
@@ -37,7 +36,6 @@ function LayerOptions({ layer }) {
   const anchorRef = useRef(null);
 
   const raw = useRaw();
-  const colorMode = useSelector(raw, (state) => state.context.colorMode);
 
   const handleColorSelect = (color) => {
     layer.send({ type: 'SET_COLOR', color });
@@ -45,7 +43,7 @@ function LayerOptions({ layer }) {
 
   const handleRemove = () => {
     toggle();
-    colorMode.send({ type: 'REMOVE_LAYER', layer });
+    raw.send({ type: 'REMOVE_LAYER', layer });
   };
 
   const classes = useStyles();

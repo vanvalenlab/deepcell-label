@@ -1,19 +1,19 @@
-import { assign, Machine, sendParent } from 'xstate';
+import { assign, Machine } from 'xstate';
 
 const CHANNEL_COLORS = ['#FF0000', '#00FF00', '#0000FF', '#00FFFF', '#FF00FF', '#FFFF00'];
 
-const createLayerMachine = (layer, channel) =>
+const createLayerMachine = (layer, numChannels) =>
   Machine(
     {
       context: {
         layer,
-        channel: channel || 0,
+        channel: layer % numChannels,
         on: true,
         color: CHANNEL_COLORS[layer] || '#FF0000',
         range: [0, 255],
       },
       on: {
-        CHANGE_CHANNEL: { actions: ['setChannel', 'loadChannel'] },
+        SET_CHANNEL: { actions: 'setChannel' },
         SET_COLOR: { actions: 'setColor' },
         TOGGLE_ON: { actions: 'toggleOn' },
         SET_RANGE: { actions: 'setRange' },
@@ -21,10 +21,6 @@ const createLayerMachine = (layer, channel) =>
     },
     {
       actions: {
-        loadChannel: sendParent(({ channel }) => ({
-          type: 'LOAD_CHANNEL',
-          channel,
-        })),
         setChannel: assign({ channel: (_, { channel }) => channel }),
         setColor: assign({ color: (_, { color }) => color }),
         toggleOn: assign({ on: ({ on }) => !on }),

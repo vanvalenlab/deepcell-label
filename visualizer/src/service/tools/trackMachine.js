@@ -9,6 +9,7 @@ const createTrackMachine = ({ eventBuses }) =>
         { id: 'selectedCells', src: fromEventBus('track', () => eventBuses.select) },
         { src: fromEventBus('track', () => eventBuses.labeled) },
         { id: 'api', src: fromEventBus('track', () => eventBuses.api) },
+        { src: fromEventBus('track', () => eventBuses.labels) },
       ],
       context: {
         foreground: null,

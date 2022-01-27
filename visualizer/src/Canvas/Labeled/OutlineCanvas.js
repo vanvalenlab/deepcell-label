@@ -3,9 +3,10 @@ import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
 import {
   useAlphaKernelCanvas,
+  useArrays,
   useCanvas,
   useDrawCanvas,
-  useFeature,
+  useImage,
   useLabeled,
   useSelect,
 } from '../../ProjectContext';
@@ -21,9 +22,16 @@ const OutlineCanvas = ({ setCanvases }) => {
 
   const labeled = useLabeled();
   const outlineAll = useSelector(labeled, (state) => state.context.outline);
-  const featureIndex = useSelector(labeled, (state) => state.context.feature);
-  const feature = useFeature(featureIndex);
-  let labeledArray = useSelector(feature, (state) => state.context.labeledArray);
+  const feature = useSelector(labeled, (state) => state.context.feature);
+
+  const image = useImage();
+  const frame = useSelector(image, (state) => state.context.frame);
+
+  const arrays = useArrays();
+  let labeledArray = useSelector(
+    arrays,
+    (state) => state.context.labeledArrays && state.context.labeledArrays[feature][frame]
+  );
   if (!labeledArray) {
     labeledArray = new Array(height).fill(new Array(width).fill(0));
   }

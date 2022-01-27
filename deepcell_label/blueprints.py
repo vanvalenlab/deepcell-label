@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 
 import gzip
 import hashlib
+import io
 import json
 import timeit
 import traceback
@@ -54,6 +55,48 @@ def handle_exception(error):
     traceback.print_exc()
     # now you're handling non-HTTP exceptions only
     return jsonify({'error': str(error)}), 500
+
+
+# TODO: send compressed data instead of octet-stream
+@bp.route('/dev/raw/<project_id>')
+def dev_raw(project_id):
+    project = Project.get(project_id)
+    if not project:
+        return abort(404, description=f'project {project_id} not found')
+    # Send binary data for raw image array
+    raw = project.raw_array
+    raw = (
+        (raw - np.min(raw, axis=(0, 1, 2)))
+        / (np.max(raw, axis=(0, 1, 2)) - np.min(raw, axis=(0, 1, 2)))
+        * 255
+    )
+    # Reshape (frames, height, width, channels) to (channels, frames, height, width)
+    raw = np.moveaxis(raw, -1, 0)
+    raw = raw.astype('uint8')
+    return send_file(io.BytesIO(raw.tobytes()), mimetype='application/octet-stream')
+
+
+@bp.route('/dev/labeled/<project_id>')
+def dev_labeled(project_id):
+    project = Project.get(project_id)
+    if not project:
+        return abort(404, description=f'project {project_id} not found')
+    # send binary data for label array (int16? int32?)
+    labeled = project.label_array
+    # Reshape (frames, height, width, features) to (features, frames, height, width)
+    labeled = np.moveaxis(labeled, -1, 0)
+    labeled = labeled.astype('int32')
+    return send_file(io.BytesIO(labeled.tobytes()), mimetype='application/octet-stream')
+
+
+@bp.route('/dev/labels/<project_id>')
+def dev_labels(project_id):
+    project = Project.get(project_id)
+    if not project:
+        return abort(404, description=f'project {project_id} not found')
+    # send JSON data
+    labels = project.labels.cell_info
+    return labels
 
 
 @bp.route('/api/raw/<token>/<int:channel>/<int:frame>', methods=['GET'])

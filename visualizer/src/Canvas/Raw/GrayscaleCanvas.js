@@ -1,7 +1,7 @@
 import { useSelector } from '@xstate/react';
 import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
-import { useCanvas, useChannel, useRaw } from '../../ProjectContext';
+import { useArrays, useCanvas, useChannel, useImage, useRaw } from '../../ProjectContext';
 
 export const GrayscaleCanvas = ({ setCanvases }) => {
   const canvas = useCanvas();
@@ -9,14 +9,21 @@ export const GrayscaleCanvas = ({ setCanvases }) => {
   const height = useSelector(canvas, (state) => state.context.height);
 
   const raw = useRaw();
-  const grayscaleMode = useSelector(raw, (state) => state.context.grayscaleMode);
-  const channelIndex = useSelector(grayscaleMode, (state) => state.context.channel);
+  const channelIndex = useSelector(raw, (state) => state.context.channel);
   const channel = useChannel(channelIndex);
   const invert = useSelector(channel, (state) => state.context.invert);
   const [min, max] = useSelector(channel, (state) => state.context.range);
   const brightness = useSelector(channel, (state) => state.context.brightness);
   const contrast = useSelector(channel, (state) => state.context.contrast);
-  let rawArray = useSelector(channel, (state) => state.context.rawArray);
+
+  const image = useImage();
+  const frame = useSelector(image, (state) => state.context.frame);
+
+  const arrays = useArrays();
+  let rawArray = useSelector(
+    arrays,
+    (state) => state.context.rawArrays && state.context.rawArrays[channelIndex][frame]
+  );
   if (rawArray === null) {
     rawArray = new Array(height).fill(new Array(width).fill(0));
   }

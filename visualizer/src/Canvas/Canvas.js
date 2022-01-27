@@ -81,7 +81,7 @@ export const Canvas = () => {
     }
   };
 
-  const [canvases, setCanvases] = React.useState({});
+  const [canvases, setCanvases] = React.useState([]);
 
   return (
     <Box

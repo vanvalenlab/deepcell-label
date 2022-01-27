@@ -108,6 +108,7 @@ const createSelectMachine = ({ eventBuses }) =>
         },
         { src: fromEventBus('select', () => eventBuses.canvas) },
         { src: fromEventBus('select', () => eventBuses.labeled) },
+        { src: fromEventBus('select', () => eventBuses.labels) },
       ],
       context: {
         selected: null,

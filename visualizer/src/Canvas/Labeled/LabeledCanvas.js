@@ -3,10 +3,12 @@ import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
 import {
   useAlphaKernelCanvas,
+  useArrays,
   useCanvas,
   useDrawCanvas,
-  useFeature,
+  useImage,
   useLabeled,
+  useLabels,
   useSelect,
 } from '../../ProjectContext';
 
@@ -18,13 +20,21 @@ export const LabeledCanvas = ({ setCanvases }) => {
   const height = useSelector(canvas, (state) => state.context.height);
 
   const labeled = useLabeled();
-  const featureIndex = useSelector(labeled, (state) => state.context.feature);
+  const feature = useSelector(labeled, (state) => state.context.feature);
   const highlight = useSelector(labeled, (state) => state.context.highlight);
   const opacity = useSelector(labeled, (state) => state.context.opacity);
 
-  const feature = useFeature(featureIndex);
-  const colormap = useSelector(feature, (state) => state.context.colormap);
-  let labeledArray = useSelector(feature, (state) => state.context.labeledArray);
+  const labels = useLabels();
+  const colormap = useSelector(labels, (state) => state.context.colormap);
+
+  const image = useImage();
+  const frame = useSelector(image, (state) => state.context.frame);
+
+  const arrays = useArrays();
+  let labeledArray = useSelector(
+    arrays,
+    (state) => state.context.labeledArrays && state.context.labeledArrays[feature][frame]
+  );
   if (!labeledArray) {
     labeledArray = new Array(height).fill(new Array(width).fill(0));
   }

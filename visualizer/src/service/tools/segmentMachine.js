@@ -125,7 +125,7 @@ const createSegmentMachine = ({ eventBuses }) =>
         tools: null,
         eventBuses,
       },
-      entry: [(c, e) => console.log(eventBuses), 'spawnTools'],
+      entry: 'spawnTools',
       type: 'parallel',
       states: {
         display: displayState,

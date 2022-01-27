@@ -87,6 +87,8 @@ const createApiMachine = ({ projectId, bucket, eventBuses }) =>
       invoke: [
         { id: 'eventBus', src: fromEventBus('api', () => eventBuses.api) },
         { id: 'image', src: fromEventBus('api', () => eventBuses.image) },
+        { id: 'raw', src: fromEventBus('api', () => eventBuses.raw) },
+        { id: 'labeled', src: fromEventBus('api', () => eventBuses.labeled) },
       ],
       context: {
         projectId,
@@ -97,9 +99,9 @@ const createApiMachine = ({ projectId, bucket, eventBuses }) =>
       },
       initial: 'idle',
       on: {
-        FRAME: { actions: 'setFrame' },
-        FEATURE: { actions: 'setFeature' },
-        CHANNEL: { actions: 'setChannel' },
+        SET_FRAME: { actions: 'setFrame' },
+        SET_FEATURE: { actions: 'setFeature' },
+        SET_CHANNEL: { actions: 'setChannel' },
       },
       states: {
         idle: {
@@ -161,7 +163,7 @@ const createApiMachine = ({ projectId, bucket, eventBuses }) =>
             type: 'EDITED',
             data: event.data,
           }),
-          { to: 'image' }
+          { to: 'labeled' }
         ),
         sendError: sendParent((_, event) => ({
           type: 'ERROR',

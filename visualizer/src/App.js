@@ -1,13 +1,16 @@
 import { Box, makeStyles, Typography } from '@material-ui/core';
 import { useSelector } from '@xstate/react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Footer from './Footer/Footer';
 import Label from './Label';
+import { labelsService } from './Label API/api';
 import Load from './Load/Load';
 import NavBar from './Navbar';
+import NewLabelFormatContext from './NewLabelFormatContext';
 import ProjectContext from './ProjectContext';
 import QualityControlContext from './QualityControlContext';
-import { isProjectId, project, qualityControl } from './service/service';
+import { createProject, isProjectId, qualityControl } from './service/service';
 
 // import service from './service/service';
 
@@ -42,18 +45,29 @@ function Review() {
 
   return (
     <QualityControlContext qualityControl={qualityControl}>
-      <ProjectContext project={project}>
-        <Label review={true} />
-      </ProjectContext>
+      <NewLabelFormatContext labels={labelsService}>
+        <ProjectContext project={project}>
+          <Label review={true} />
+        </ProjectContext>
+      </NewLabelFormatContext>
     </QualityControlContext>
   );
 }
 
 function LabelProject() {
+  const [project, setProject] = useState(null);
+  useEffect(() => {
+    createProject().then((project) => setProject(project));
+  }, []);
+
   return (
-    <ProjectContext project={project}>
-      <Label review={false} />
-    </ProjectContext>
+    project && (
+      <NewLabelFormatContext labels={labelsService}>
+        <ProjectContext project={project}>
+          <Label review={false} />
+        </ProjectContext>
+      </NewLabelFormatContext>
+    )
   );
 }
 
@@ -75,6 +89,7 @@ function InvalidProjectId() {
 }
 
 function App() {
+  window.labelsService = labelsService;
   const styles = useStyles();
   const id = new URLSearchParams(window.location.search).get('projectId');
 
