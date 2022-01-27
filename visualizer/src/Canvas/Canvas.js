@@ -3,7 +3,7 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import { makeStyles } from '@material-ui/core/styles';
 import { useSelector } from '@xstate/react';
 import React, { useEffect } from 'react';
-import { useArrays, useCanvas, useLabeled, useRaw, useSegment, useSelect } from '../ProjectContext';
+import { useArrays, useCanvas, useSegment, useSelect } from '../ProjectContext';
 import ComposeCanvas from './ComposeCanvases';
 import LabeledCanvas from './Labeled/LabeledCanvas';
 import OutlineCanvas from './Labeled/OutlineCanvas';
@@ -19,8 +19,6 @@ const useStyles = makeStyles({
 });
 
 export const Canvas = () => {
-  const raw = useRaw();
-  const labeled = useLabeled();
   const select = useSelect();
 
   const canvas = useCanvas();
