@@ -1,3 +1,4 @@
+import { createMuiTheme, ThemeProvider } from '@material-ui/core';
 import { Box, Typography } from '@mui/material';
 import makeStyles from '@mui/styles/makeStyles';
 import { useSelector } from '@xstate/react';
@@ -17,6 +18,8 @@ import { isProjectId, project, qualityControl } from './service/service';
 //   // url: 'https://statecharts.io/inspect', // (default)
 //   iframe: false // open in new window
 // });
+
+const theme = createMuiTheme();
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -75,7 +78,7 @@ function InvalidProjectId() {
   );
 }
 
-function App() {
+function DeepCellLabel() {
   const styles = useStyles();
   const id = new URLSearchParams(window.location.search).get('projectId');
 
@@ -101,6 +104,14 @@ function App() {
       </Router>
       <Footer />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <ThemeProvider theme={theme}>
+      <DeepCellLabel />
+    </ThemeProvider>
   );
 }
 
