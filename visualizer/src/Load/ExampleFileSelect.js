@@ -1,6 +1,7 @@
-import { Box, Button, LinearProgress, makeStyles } from '@material-ui/core';
-import Select from '@material-ui/core/Select';
-import SendIcon from '@material-ui/icons/Send';
+import { Box, Button, LinearProgress } from '@mui/material';
+import makeStyles from '@mui/styles/makeStyles';
+import Select from '@mui/material/Select';
+import SendIcon from '@mui/icons-material/Send';
 import { useSelector } from '@xstate/react';
 import React from 'react';
 

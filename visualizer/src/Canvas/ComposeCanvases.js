@@ -1,4 +1,4 @@
-import { makeStyles } from '@material-ui/core';
+import makeStyles from '@mui/styles/makeStyles';
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
 import { useCanvas, useDrawCanvas } from '../ProjectContext';

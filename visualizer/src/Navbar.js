@@ -1,11 +1,11 @@
-import AppBar from '@material-ui/core/AppBar';
-import Button from '@material-ui/core/Button';
-import IconButton from '@material-ui/core/IconButton';
-import Menu from '@material-ui/core/Menu';
-import { makeStyles } from '@material-ui/core/styles';
-import Toolbar from '@material-ui/core/Toolbar';
-import Typography from '@material-ui/core/Typography';
-import MoreIcon from '@material-ui/icons/MoreVert';
+import MoreIcon from '@mui/icons-material/MoreVert';
+import AppBar from '@mui/material/AppBar';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Menu from '@mui/material/Menu';
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
+import makeStyles from '@mui/styles/makeStyles';
 import React, { useState } from 'react';
 import { FaGithub } from 'react-icons/fa';
 
@@ -70,7 +70,7 @@ export default function NavBar() {
       <AppBar position='static'>
         <Toolbar>
           <Typography variant='subtitle1' color='inherit' className={classes.grow}>
-            <IconButton color='inherit' href='/'>
+            <IconButton color='inherit' href='/' size='large'>
               DeepCell Label
             </IconButton>
           </Typography>
@@ -98,6 +98,7 @@ export default function NavBar() {
               aria-haspopup='true'
               color='inherit'
               onClick={(e) => setMobileMoreAnchorEl(e.currentTarget)}
+              size='large'
             >
               <MoreIcon />
             </IconButton>

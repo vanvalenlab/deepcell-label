@@ -1,13 +1,14 @@
-import { Box, IconButton, makeStyles } from '@material-ui/core';
-import Avatar from '@material-ui/core/Avatar';
-import ClickAwayListener from '@material-ui/core/ClickAwayListener';
-import MenuItem from '@material-ui/core/MenuItem';
-import MenuList from '@material-ui/core/MenuList';
-import Paper from '@material-ui/core/Paper';
-import Popper from '@material-ui/core/Popper';
-import { useTheme } from '@material-ui/core/styles';
-import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
-import CloseIcon from '@material-ui/icons/Close';
+import { Box, IconButton } from '@mui/material';
+import makeStyles from '@mui/styles/makeStyles';
+import Avatar from '@mui/material/Avatar';
+import ClickAwayListener from '@mui/material/ClickAwayListener';
+import MenuItem from '@mui/material/MenuItem';
+import MenuList from '@mui/material/MenuList';
+import Paper from '@mui/material/Paper';
+import Popper from '@mui/material/Popper';
+import { useTheme } from '@mui/material/styles';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import CloseIcon from '@mui/icons-material/Close';
 import { useSelector } from '@xstate/react';
 import React, { useReducer, useRef } from 'react';
 import { ArcherContainer, ArcherElement } from 'react-archer';
@@ -133,7 +134,7 @@ function AddDaughter({ label }) {
       <ArcherElement id='addDaughter'>
         <Avatar className={styles.cell} style={{ visibility: 'hidden' }} />
       </ArcherElement>
-      <IconButton className={styles.addButton} onClick={toggle} ref={anchorRef}>
+      <IconButton className={styles.addButton} onClick={toggle} ref={anchorRef} size='large'>
         <AddCircleOutlineIcon />
       </IconButton>
       <Popper open={open} anchorEl={anchorRef.current} placement='bottom-end'>

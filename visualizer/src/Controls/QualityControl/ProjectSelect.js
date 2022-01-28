@@ -1,4 +1,4 @@
-import { FormLabel, Select, Tooltip } from '@material-ui/core';
+import { FormLabel, Select, Tooltip } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import { useEffect, useRef } from 'react';
 import { useQualityControl } from '../../QualityControlContext';

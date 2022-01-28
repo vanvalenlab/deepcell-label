@@ -1,6 +1,6 @@
-import { Paper, Tab, Tabs } from '@material-ui/core';
-import Box from '@material-ui/core/Box';
-import { makeStyles } from '@material-ui/core/styles';
+import { Paper, Tab, Tabs } from '@mui/material';
+import Box from '@mui/material/Box';
+import makeStyles from '@mui/styles/makeStyles';
 import { useSelector } from '@xstate/react';
 import { ResizeSensor } from 'css-element-queries';
 import debounce from 'lodash.debounce';

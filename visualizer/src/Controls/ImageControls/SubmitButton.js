@@ -1,6 +1,7 @@
-import { Button, CircularProgress, makeStyles } from '@material-ui/core';
-import { green } from '@material-ui/core/colors';
-import SendIcon from '@material-ui/icons/Send';
+import { Button, CircularProgress } from '@mui/material';
+import makeStyles from '@mui/styles/makeStyles';
+import { green } from '@mui/material/colors';
+import SendIcon from '@mui/icons-material/Send';
 import { useSelector } from '@xstate/react';
 import React from 'react';
 import { useApi } from '../../ProjectContext';

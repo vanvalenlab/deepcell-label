@@ -1,4 +1,5 @@
-import { FormLabel, makeStyles, Slider, Tooltip } from '@material-ui/core';
+import { FormLabel, Slider, Tooltip } from '@mui/material';
+import makeStyles from '@mui/styles/makeStyles';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
 import React, { useEffect, useState } from 'react';

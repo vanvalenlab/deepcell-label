@@ -1,6 +1,7 @@
-import MuiButton from '@material-ui/core/Button';
-import { makeStyles, withStyles } from '@material-ui/core/styles';
-import Tooltip from '@material-ui/core/Tooltip';
+import MuiButton from '@mui/material/Button';
+import makeStyles from '@mui/styles/makeStyles';
+import withStyles from '@mui/styles/withStyles';
+import Tooltip from '@mui/material/Tooltip';
 import { bind } from 'mousetrap';
 import React, { useEffect } from 'react';
 

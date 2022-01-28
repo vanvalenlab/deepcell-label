@@ -1,4 +1,4 @@
-import { Box } from '@material-ui/core';
+import { Box } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import React from 'react';
 import { useDivision, useHexColormap, useImage } from '../../ProjectContext';

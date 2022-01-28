@@ -1,4 +1,5 @@
-import { Box, FormLabel, makeStyles, Typography } from '@material-ui/core';
+import { Box, FormLabel, Typography } from '@mui/material';
+import makeStyles from '@mui/styles/makeStyles';
 import { useSelector } from '@xstate/react';
 import { bind, unbind } from 'mousetrap';
 import { default as React, useEffect, useLayoutEffect, useRef, useState } from 'react';

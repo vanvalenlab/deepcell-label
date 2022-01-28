@@ -1,16 +1,16 @@
-import { Box, Button, LinearProgress } from '@material-ui/core';
-import Container from '@material-ui/core/Container';
-import FormControl from '@material-ui/core/FormControl';
-import IconButton from '@material-ui/core/IconButton';
-import InputLabel from '@material-ui/core/InputLabel';
-import MenuItem from '@material-ui/core/MenuItem';
-import Select from '@material-ui/core/Select';
-import { makeStyles } from '@material-ui/core/styles';
-import Tooltip from '@material-ui/core/Tooltip';
-import Typography from '@material-ui/core/Typography';
-import CloudUpload from '@material-ui/icons/CloudUpload';
-import HelpIcon from '@material-ui/icons/Help';
-import SendIcon from '@material-ui/icons/Send';
+import CloudUpload from '@mui/icons-material/CloudUpload';
+import HelpIcon from '@mui/icons-material/Help';
+import SendIcon from '@mui/icons-material/Send';
+import { Box, Button, LinearProgress } from '@mui/material';
+import Container from '@mui/material/Container';
+import FormControl from '@mui/material/FormControl';
+import IconButton from '@mui/material/IconButton';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
+import makeStyles from '@mui/styles/makeStyles';
 import { useActor, useSelector } from '@xstate/react';
 import { PropTypes } from 'prop-types';
 import React from 'react';
@@ -73,7 +73,7 @@ function ImageAxesDropDown({ loadService }) {
         </Select>
       </FormControl>
       <Tooltip title='What are the dimensions of the image?' placement='right'>
-        <IconButton>
+        <IconButton size='large'>
           <HelpIcon />
         </IconButton>
       </Tooltip>

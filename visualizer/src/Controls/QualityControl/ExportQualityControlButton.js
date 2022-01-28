@@ -1,6 +1,7 @@
-import { Button, makeStyles } from '@material-ui/core';
-import { green } from '@material-ui/core/colors';
-import GetAppIcon from '@material-ui/icons/GetApp';
+import { Button } from '@mui/material';
+import makeStyles from '@mui/styles/makeStyles';
+import { green } from '@mui/material/colors';
+import GetAppIcon from '@mui/icons-material/GetApp';
 import { useSelector } from '@xstate/react';
 import React from 'react';
 import { useQualityControl } from '../../QualityControlContext';

@@ -1,7 +1,7 @@
-import { makeStyles } from '@material-ui/core';
-import Box from '@material-ui/core/Box';
-import FormLabel from '@material-ui/core/FormLabel';
-import Grid from '@material-ui/core/Grid';
+import makeStyles from '@mui/styles/makeStyles';
+import Box from '@mui/material/Box';
+import FormLabel from '@mui/material/FormLabel';
+import Grid from '@mui/material/Grid';
 import React from 'react';
 import FeatureSelect from './FeatureSelect';
 import HighlightToggle from './HighlightToggle';

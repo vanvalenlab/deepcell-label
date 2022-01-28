@@ -1,7 +1,7 @@
-import { FormLabel } from '@material-ui/core';
-import Box from '@material-ui/core/Box';
-import { makeStyles } from '@material-ui/core/styles';
-import ToggleButtonGroup from '@material-ui/lab/ToggleButtonGroup';
+import { FormLabel } from '@mui/material';
+import Box from '@mui/material/Box';
+import makeStyles from '@mui/styles/makeStyles';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import React from 'react';
 import BrushButton from './ToolButtons/BrushButton';
 import EraserButton from './ToolButtons/EraserButton';

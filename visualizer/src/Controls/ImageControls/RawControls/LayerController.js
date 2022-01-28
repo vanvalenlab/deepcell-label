@@ -1,10 +1,10 @@
 /** Modified from https://github.com/hms-dbmi/viv */
-import Checkbox from '@material-ui/core/Checkbox';
-import Grid from '@material-ui/core/Grid';
-import LinearProgress from '@material-ui/core/LinearProgress';
-import Select from '@material-ui/core/Select';
-import Slider from '@material-ui/core/Slider';
-import { makeStyles } from '@material-ui/core/styles';
+import Checkbox from '@mui/material/Checkbox';
+import Grid from '@mui/material/Grid';
+import LinearProgress from '@mui/material/LinearProgress';
+import Select from '@mui/material/Select';
+import Slider from '@mui/material/Slider';
+import makeStyles from '@mui/styles/makeStyles';
 import { useSelector } from '@xstate/react';
 import { useRaw } from '../../../ProjectContext';
 import LayerOptions from './LayerOptions';
@@ -96,8 +96,8 @@ function LayerController({ layer }) {
   const loading = useSelector(colorMode, (state) => state.context.loadingChannels.has(channel));
 
   return (
-    <Grid container direction='column' m={2} justify='center' className={classes.root}>
-      <Grid container direction='row' justify='space-between'>
+    <Grid container direction='column' m={2} justifyContent='center' className={classes.root}>
+      <Grid container direction='row' justifyContent='space-between'>
         <Grid item xs={10}>
           <LayerSelector layer={layer} />
         </Grid>
@@ -110,7 +110,7 @@ function LayerController({ layer }) {
           {loading && <LinearProgress />}
         </Grid>
       </Grid>
-      <Grid container direction='row' justify='flex-start' alignItems='center'>
+      <Grid container direction='row' justifyContent='flex-start' alignItems='center'>
         <Grid item xs={2}>
           <LayerCheckbox layer={layer} />
         </Grid>

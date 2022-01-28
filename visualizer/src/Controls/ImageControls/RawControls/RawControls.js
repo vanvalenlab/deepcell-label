@@ -1,5 +1,6 @@
-import { Box, makeStyles } from '@material-ui/core';
-import FormLabel from '@material-ui/core/FormLabel';
+import { Box } from '@mui/material';
+import makeStyles from '@mui/styles/makeStyles';
+import FormLabel from '@mui/material/FormLabel';
 import { useSelector } from '@xstate/react';
 import React from 'react';
 import { useRaw } from '../../../ProjectContext';

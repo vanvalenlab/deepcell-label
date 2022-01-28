@@ -1,12 +1,13 @@
-import { FormLabel, makeStyles, Typography } from '@material-ui/core';
-import Box from '@material-ui/core/Box';
-import IconButton from '@material-ui/core/IconButton';
-import Tooltip from '@material-ui/core/Tooltip';
-import AddIcon from '@material-ui/icons/Add';
-import ArrowBackIosIcon from '@material-ui/icons/ArrowBackIos';
-import ClearIcon from '@material-ui/icons/Clear';
-import SubdirectoryArrowLeftIcon from '@material-ui/icons/SubdirectoryArrowLeft';
-import SubdirectoryArrowRightIcon from '@material-ui/icons/SubdirectoryArrowRight';
+import { FormLabel, Typography } from '@mui/material';
+import makeStyles from '@mui/styles/makeStyles';
+import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import AddIcon from '@mui/icons-material/Add';
+import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+import ClearIcon from '@mui/icons-material/Clear';
+import SubdirectoryArrowLeftIcon from '@mui/icons-material/SubdirectoryArrowLeft';
+import SubdirectoryArrowRightIcon from '@mui/icons-material/SubdirectoryArrowRight';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
 import React, { useEffect, useState } from 'react';
@@ -65,7 +66,7 @@ const useStyles = makeStyles((theme) => ({
     left: '0',
     width: theme.spacing(8),
     height: theme.spacing(8),
-    border: `${theme.spacing(0.5)}px solid #DDDDDD`,
+    border: `${theme.spacing(0.5)} solid #DDDDDD`,
     display: 'flex',
     alignContent: 'center',
     justifyContent: 'center',
@@ -76,7 +77,7 @@ const useStyles = makeStyles((theme) => ({
     left: theme.spacing(4),
     width: theme.spacing(8),
     height: theme.spacing(8),
-    border: `${theme.spacing(0.5)}px solid #DD0000`,
+    border: `${theme.spacing(0.5)} solid #DD0000`,
     display: 'flex',
     alignContent: 'center',
     justifyContent: 'center',
@@ -143,7 +144,7 @@ export function SwitchButton() {
 
   return (
     <Tooltip title={tooltipText}>
-      <IconButton color='primary' onClick={() => select.send('SWITCH')}>
+      <IconButton color='primary' onClick={() => select.send('SWITCH')} size='large'>
         <SwitchIcon />
       </IconButton>
     </Tooltip>

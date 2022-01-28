@@ -1,7 +1,7 @@
-import { Box, Button } from '@material-ui/core';
-import { makeStyles } from '@material-ui/core/styles';
-import ThumbDownIcon from '@material-ui/icons/ThumbDown';
-import ThumbUpIcon from '@material-ui/icons/ThumbUp';
+import { Box, Button } from '@mui/material';
+import makeStyles from '@mui/styles/makeStyles';
+import ThumbDownIcon from '@mui/icons-material/ThumbDown';
+import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import React from 'react';
 import { useQualityControl } from '../../QualityControlContext';
 

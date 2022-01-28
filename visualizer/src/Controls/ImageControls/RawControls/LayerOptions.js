@@ -1,12 +1,12 @@
 /** Modified from https://github.com/hms-dbmi/viv */
-import ClickAwayListener from '@material-ui/core/ClickAwayListener';
-import IconButton from '@material-ui/core/IconButton';
-import MenuItem from '@material-ui/core/MenuItem';
-import MenuList from '@material-ui/core/MenuList';
-import Paper from '@material-ui/core/Paper';
-import Popper from '@material-ui/core/Popper';
-import { makeStyles } from '@material-ui/core/styles';
-import MoreVertIcon from '@material-ui/icons/MoreVert';
+import ClickAwayListener from '@mui/material/ClickAwayListener';
+import IconButton from '@mui/material/IconButton';
+import MenuItem from '@mui/material/MenuItem';
+import MenuList from '@mui/material/MenuList';
+import Paper from '@mui/material/Paper';
+import Popper from '@mui/material/Popper';
+import makeStyles from '@mui/styles/makeStyles';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { useSelector } from '@xstate/react';
 import React, { useReducer, useRef } from 'react';
 import { useRaw } from '../../../ProjectContext';

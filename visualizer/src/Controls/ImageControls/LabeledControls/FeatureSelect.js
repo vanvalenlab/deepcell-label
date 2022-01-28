@@ -1,6 +1,6 @@
-import Grid from '@material-ui/core/Grid';
-import Select from '@material-ui/core/Select';
-import Tooltip from '@material-ui/core/Tooltip';
+import Grid from '@mui/material/Grid';
+import Select from '@mui/material/Select';
+import Tooltip from '@mui/material/Tooltip';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
 import React, { useEffect } from 'react';

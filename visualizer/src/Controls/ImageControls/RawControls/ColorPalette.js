@@ -1,7 +1,7 @@
 /** Modified from https://github.com/hms-dbmi/viv */
-import IconButton from '@material-ui/core/IconButton';
-import { makeStyles } from '@material-ui/core/styles';
-import LensIcon from '@material-ui/icons/Lens';
+import IconButton from '@mui/material/IconButton';
+import makeStyles from '@mui/styles/makeStyles';
+import LensIcon from '@mui/icons-material/Lens';
 import React from 'react';
 
 // TODO: move to constants
@@ -44,7 +44,12 @@ const ColorPalette = ({ handleChange }) => {
     <div className={classes.container} aria-label='color-swatch'>
       {COLOR_PALLETE.map((color) => {
         return (
-          <IconButton className={classes.button} key={color} onClick={() => handleChange(color)}>
+          <IconButton
+            className={classes.button}
+            key={color}
+            onClick={() => handleChange(color)}
+            size='large'
+          >
             <LensIcon fontSize='small' style={{ color: `${color}` }} className={classes.icon} />
           </IconButton>
         );

@@ -1,4 +1,5 @@
-import { Box, makeStyles, Typography } from '@material-ui/core';
+import { Box, Typography } from '@mui/material';
+import makeStyles from '@mui/styles/makeStyles';
 import { useSelector } from '@xstate/react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Footer from './Footer/Footer';

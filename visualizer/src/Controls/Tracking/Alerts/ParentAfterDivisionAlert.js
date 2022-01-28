@@ -1,4 +1,4 @@
-import Alert from '@material-ui/lab/Alert';
+import Alert from '@mui/material/Alert';
 import { useSelector } from '@xstate/react';
 import React from 'react';
 import { useTracking } from '../../../ProjectContext';

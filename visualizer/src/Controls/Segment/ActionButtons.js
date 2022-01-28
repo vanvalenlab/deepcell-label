@@ -1,7 +1,7 @@
-import { FormLabel } from '@material-ui/core';
-import Box from '@material-ui/core/Box';
-import ButtonGroup from '@material-ui/core/ButtonGroup';
-import { makeStyles } from '@material-ui/core/styles';
+import { FormLabel } from '@mui/material';
+import Box from '@mui/material/Box';
+import ButtonGroup from '@mui/material/ButtonGroup';
+import makeStyles from '@mui/styles/makeStyles';
 import React from 'react';
 import AutofitButton from './ActionButtons/AutofitButton';
 import DeleteButton from './ActionButtons/DeleteButton';
