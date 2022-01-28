@@ -1,4 +1,4 @@
-import { createMuiTheme, ThemeProvider } from '@material-ui/core';
+import { createTheme, ThemeProvider, StyledEngineProvider } from '@mui/material';
 import { Box, Typography } from '@mui/material';
 import makeStyles from '@mui/styles/makeStyles';
 import { useSelector } from '@xstate/react';
@@ -19,7 +19,7 @@ import { isProjectId, project, qualityControl } from './service/service';
 //   iframe: false // open in new window
 // });
 
-const theme = createMuiTheme();
+const theme = createTheme();
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -109,9 +109,11 @@ function DeepCellLabel() {
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <DeepCellLabel />
-    </ThemeProvider>
+    <StyledEngineProvider injectFirst>
+      <ThemeProvider theme={theme}>
+        <DeepCellLabel />
+      </ThemeProvider>
+    </StyledEngineProvider>
   );
 }
 
