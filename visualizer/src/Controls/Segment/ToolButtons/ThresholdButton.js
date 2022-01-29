@@ -24,6 +24,7 @@ function ThresholdButton(props) {
   return (
     <ToolButton
       {...props}
+      value='threshold'
       tooltipText={tooltipText}
       selected={tool === 'threshold'}
       onClick={onClick}
