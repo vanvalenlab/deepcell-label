@@ -96,7 +96,7 @@ function LayerController({ layer }) {
   const loading = useSelector(colorMode, (state) => state.context.loadingChannels.has(channel));
 
   return (
-    <Grid container direction='column' m={2} justifyContent='center' className={classes.root}>
+    <Grid container direction='column' justifyContent='center' className={classes.root}>
       <Grid container direction='row' justifyContent='space-between'>
         <Grid item xs={10}>
           <LayerSelector layer={layer} />
@@ -114,7 +114,7 @@ function LayerController({ layer }) {
         <Grid item xs={2}>
           <LayerCheckbox layer={layer} />
         </Grid>
-        <Grid item xs={10}>
+        <Grid item m={1} xs={9}>
           <LayerSlider layer={layer} />
         </Grid>
       </Grid>

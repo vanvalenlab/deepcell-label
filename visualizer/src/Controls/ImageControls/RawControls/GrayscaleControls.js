@@ -1,5 +1,4 @@
 import { Box, FormLabel } from '@mui/material';
-import makeStyles from '@mui/styles/makeStyles';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormGroup from '@mui/material/FormGroup';
 import Grid from '@mui/material/Grid';
@@ -7,6 +6,7 @@ import Select from '@mui/material/Select';
 import Slider from '@mui/material/Slider';
 import Switch from '@mui/material/Switch';
 import Tooltip from '@mui/material/Tooltip';
+import makeStyles from '@mui/styles/makeStyles';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
 import React, { useEffect, useRef } from 'react';
@@ -183,7 +183,7 @@ const GrayscaleControls = () => {
 
   return (
     <Grid style={{ width: '100%' }} item>
-      <Grid container direction='column' m={1} className={styles.root}>
+      <Grid container direction='column' className={styles.root}>
         <Grid item xs={12} container direction='row' style={{ justifyContent: 'space-between' }}>
           <ChannelSelector />
           <InvertToggle channel={channel} />
@@ -200,7 +200,14 @@ const GrayscaleControls = () => {
               <FormLabel>Brightness</FormLabel>
               <FormLabel>Contrast</FormLabel>
             </Box>
-            <Box display='flex' flexDirection='column' justifyContent='space-around' flex='1'>
+            <Box
+              display='flex'
+              flexDirection='column'
+              justifyContent='space-around'
+              flex='1'
+              marginLeft={1}
+              marginRight={1}
+            >
               <RangeSlider channel={channel} />
               <BrightnessSlider channel={channel} />
               <ContrastSlider channel={channel} />
