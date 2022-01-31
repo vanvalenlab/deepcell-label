@@ -1,9 +1,10 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useState } from 'react';
-import { useCanvas, useDrawCanvas, useLayers } from '../../ProjectContext';
+import { useCanvas, useDrawCanvas, useLayers, useProject } from '../../ProjectContext';
 import ChannelCanvas from './ChannelCanvas';
 
 export const RGBCanvas = ({ setCanvases }) => {
+  const project = useProject();
   const canvas = useCanvas();
   const width = useSelector(canvas, (state) => state.context.width);
   const height = useSelector(canvas, (state) => state.context.height);
@@ -15,7 +16,7 @@ export const RGBCanvas = ({ setCanvases }) => {
 
   useEffect(() => {
     canvasRef.current.getContext('2d').globalCompositeOperation = 'lighter';
-  }, [canvasRef]);
+  }, [canvasRef, project]);
 
   useEffect(() => {
     const ctx = canvasRef.current.getContext('2d');
