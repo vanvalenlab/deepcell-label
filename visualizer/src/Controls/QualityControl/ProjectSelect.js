@@ -29,7 +29,7 @@ function ProjectSelect() {
   return (
     <>
       <FormLabel>Project</FormLabel>
-      <Tooltip title={tooltip}>
+      <Tooltip title={tooltip} placement='top'>
         <TextField select size='small' value={projectId} onChange={onChange} inputRef={inputRef}>
           {projectIds.map((projectId) => (
             <MenuItem key={projectId} value={projectId}>

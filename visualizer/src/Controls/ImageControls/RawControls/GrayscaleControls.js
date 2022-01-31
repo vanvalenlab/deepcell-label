@@ -74,7 +74,7 @@ const ChannelSelector = () => {
   }, [raw, channel, numChannels]);
 
   return (
-    <Tooltip title={tooltip}>
+    <Tooltip title={tooltip} placement='top'>
       <TextField select size='small' value={channel} onChange={onChange}>
         {names.map((opt, index) => (
           <MenuItem key={index} value={index}>

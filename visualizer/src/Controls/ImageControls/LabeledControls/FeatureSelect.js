@@ -30,7 +30,7 @@ function FeatureSelect() {
   return (
     numFeatures > 1 && (
       <Grid item>
-        <Tooltip title={tooltipText}>
+        <Tooltip title={tooltipText} placement='top'>
           <TextField select size='small' value={feature} onChange={handleFeatureChange}>
             {featureNames.map((name, index) => (
               <MenuItem key={index} value={index}>
