@@ -86,7 +86,7 @@ function Label({ review }) {
           padding: 1,
           alignItems: 'stretch',
           justifyContent: 'space-evenly',
-          minHeight: 'calc(100vh - 66px - 57px - 74px - 1px)',
+          minHeight: 'calc(100vh - 73px - 56px - 76px - 2px)',
         }}
       >
         <Box
