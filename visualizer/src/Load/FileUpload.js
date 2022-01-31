@@ -10,43 +10,13 @@ import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import makeStyles from '@mui/styles/makeStyles';
+import { styled } from '@mui/system';
 import { useActor, useSelector } from '@xstate/react';
 import { PropTypes } from 'prop-types';
 import React from 'react';
 import Dropzone from 'react-dropzone';
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    flexGrow: 1,
-    height: '100%',
-  },
-  preview: {
-    borderRadius: theme.spacing(1),
-    objectFit: 'cover',
-    width: theme.spacing(10),
-    height: theme.spacing(10),
-  },
-  uploadIcon: {
-    paddingTop: theme.spacing(4),
-    paddingBottom: theme.spacing(4),
-    height: '100%',
-  },
-  uploadForm: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexDirection: 'column',
-  },
-  submit: {
-    width: '100%',
-    margin: theme.spacing(1),
-  },
-  progress: {
-    margin: theme.spacing(1),
-    width: '100%',
-  },
-}));
+const Img = styled('img')``;
 
 function ImageAxesDropDown({ loadService }) {
   const axes = useSelector(loadService, (state) => state.context.axes);
@@ -86,8 +56,6 @@ export default function FileUpload({ loadService }) {
   const { errorText, uploadFile: file } = state.context;
   const showError = state.matches('error');
 
-  const classes = useStyles();
-
   return (
     <>
       <Dropzone
@@ -123,7 +91,6 @@ export default function FileUpload({ loadService }) {
 
               {fileRejections.map(({ file }) => (
                 <Typography
-                  className={classes.paddedTop}
                   variant='caption'
                   display='block'
                   align='center'
@@ -136,30 +103,43 @@ export default function FileUpload({ loadService }) {
 
               {/* Display error to user */}
               {showError && (
-                <Typography
-                  className={classes.paddedTop}
-                  variant='caption'
-                  display='block'
-                  align='center'
-                  color='error'
-                >
+                <Typography variant='caption' display='block' align='center' color='error'>
                   {errorText}
                 </Typography>
               )}
 
               <div align='center' display='block'>
                 {state.matches('idle') && (
-                  <CloudUpload color='disabled' fontSize='large' className={classes.uploadIcon} />
+                  <CloudUpload
+                    color='disabled'
+                    fontSize='large'
+                    sx={{
+                      paddingTop: 4,
+                      paddingBottom: 4,
+                      height: '100%',
+                    }}
+                  />
                 )}
               </div>
             </div>
             {file && (
-              <Container maxWidth='xs' className={classes.uploadForm}>
-                <img className={classes.preview} src={file.preview} />
+              <Container
+                maxWidth='xs'
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  flexDirection: 'column',
+                }}
+              >
+                <Img
+                  sx={{ borderRadius: 1, objectFit: 'cover', width: '5rem', height: '5rem' }}
+                  src={file.preview}
+                />
                 <Typography>{file.path}</Typography>
                 {file.type !== 'image/png' && <ImageAxesDropDown loadService={loadService} />}
                 <Button
-                  className={classes.submit}
+                  sx={{ width: '100%', margin: 1 }}
                   variant='contained'
                   color='primary'
                   endIcon={<SendIcon />}
@@ -168,7 +148,7 @@ export default function FileUpload({ loadService }) {
                   Upload
                 </Button>
                 {state.matches('submittingUpload') && (
-                  <LinearProgress className={classes.progress} />
+                  <LinearProgress sx={{ margin: 1, width: '100%' }} />
                 )}
               </Container>
             )}

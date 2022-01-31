@@ -3,7 +3,7 @@ import { useSelector } from '@xstate/react';
 import React from 'react';
 import { useDivision, useTracking } from '../../../ProjectContext';
 import { daughterBeforeDivision, formatFrames } from '../trackingUtils';
-import AlertGroup, { useAlertStyles } from './AlertGroup';
+import AlertGroup, { alertStyle } from './AlertGroup';
 
 function DaughterBeforeDivisionAlert({ label }) {
   const division = useDivision(label);
@@ -12,10 +12,8 @@ function DaughterBeforeDivisionAlert({ label }) {
   const framesBeforeDivision = frames.filter((frame) => frame < divisionFrame);
   const frameText = formatFrames(framesBeforeDivision);
 
-  const styles = useAlertStyles();
-
   return (
-    <Alert className={styles.alert} severity='error'>
+    <Alert sx={alertStyle} severity='error'>
       Daughter {label} in {frameText} before division in frame {divisionFrame}.
     </Alert>
   );

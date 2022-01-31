@@ -1,4 +1,3 @@
-import makeStyles from '@mui/styles/makeStyles';
 import Box from '@mui/material/Box';
 import FormLabel from '@mui/material/FormLabel';
 import Grid from '@mui/material/Grid';
@@ -8,22 +7,13 @@ import HighlightToggle from './HighlightToggle';
 import OpacitySlider from './OpacitySlider';
 import OutlineToggle from './OutlineToggle';
 
-const useStyles = makeStyles((theme) => ({
-  title: {
-    paddingTop: theme.spacing(1),
-    paddingBottom: theme.spacing(1),
-  },
-}));
-
 const LabeledControls = () => {
-  const styles = useStyles();
-
   return (
     <>
-      <Grid container direction='column' className={styles.root}>
+      <Grid container direction='column'>
         <Grid item>
           <Box display='flex' flexDirection='row' justifyContent='space-between'>
-            <FormLabel component='legend' className={styles.title}>
+            <FormLabel component='legend' sx={{ paddingTop: 1, paddingBottom: 1 }}>
               Segmentations
             </FormLabel>
             <OutlineToggle />

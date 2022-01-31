@@ -1,6 +1,5 @@
-import { createTheme, ThemeProvider, StyledEngineProvider } from '@mui/material';
-import { Box, Typography } from '@mui/material';
-import makeStyles from '@mui/styles/makeStyles';
+import { Box, createTheme, StyledEngineProvider, ThemeProvider, Typography } from '@mui/material';
+import { styled } from '@mui/system';
 import { useSelector } from '@xstate/react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Footer from './Footer/Footer';
@@ -19,24 +18,9 @@ import { isProjectId, project, qualityControl } from './service/service';
 //   iframe: false // open in new window
 // });
 
-const theme = createTheme();
+const Div = styled('div')``;
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    boxSizing: 'border-box',
-    display: 'flex',
-    minHeight: '100vh',
-    flexDirection: 'column',
-  },
-  main: {
-    boxSizing: 'border-box',
-    display: 'flex',
-    flexGrow: 1,
-    flexDirection: 'column',
-    padding: theme.spacing(2),
-    alignItems: 'center',
-  },
-}));
+const theme = createTheme();
 
 function Review() {
   const project = useSelector(qualityControl, (state) => {
@@ -62,11 +46,19 @@ function LabelProject() {
 }
 
 function InvalidProjectId() {
-  const styles = useStyles();
   const id = new URLSearchParams(window.location.search).get('projectId');
 
   return (
-    <Box className={styles.main}>
+    <Box
+      sx={{
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexGrow: 1,
+        flexDirection: 'column',
+        padding: 2,
+        alignItems: 'center',
+      }}
+    >
       <Typography>
         <tt>{id}</tt> is not a valid project ID.
       </Typography>
@@ -79,11 +71,17 @@ function InvalidProjectId() {
 }
 
 function DeepCellLabel() {
-  const styles = useStyles();
   const id = new URLSearchParams(window.location.search).get('projectId');
 
   return (
-    <div className={styles.root}>
+    <Div
+      sx={{
+        boxSizing: 'border-box',
+        display: 'flex',
+        minHeight: '100vh',
+        flexDirection: 'column',
+      }}
+    >
       <NavBar />
       <Router>
         <Routes>
@@ -103,7 +101,7 @@ function DeepCellLabel() {
         </Routes>
       </Router>
       <Footer />
-    </div>
+    </Div>
   );
 }
 

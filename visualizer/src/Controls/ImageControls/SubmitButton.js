@@ -1,28 +1,14 @@
-import { Button, CircularProgress } from '@mui/material';
-import makeStyles from '@mui/styles/makeStyles';
-import { green } from '@mui/material/colors';
 import SendIcon from '@mui/icons-material/Send';
+import { Button, CircularProgress } from '@mui/material';
+import { green } from '@mui/material/colors';
 import { useSelector } from '@xstate/react';
 import React from 'react';
 import { useApi } from '../../ProjectContext';
-
-const useStyles = makeStyles((theme) => ({
-  buttonProgress: {
-    color: green[500],
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    marginTop: -12,
-    marginLeft: -12,
-  },
-}));
 
 function SubmitButton() {
   const api = useApi();
   const { send } = api;
   const uploading = useSelector(api, (state) => state.matches('uploading'));
-
-  const styles = useStyles();
 
   return (
     <Button
@@ -33,7 +19,18 @@ function SubmitButton() {
       disabled={uploading}
     >
       Submit
-      {uploading && <CircularProgress className={styles.buttonProgress} />}
+      {uploading && (
+        <CircularProgress
+          sx={{
+            color: green[500],
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            marginTop: -12,
+            marginLeft: -12,
+          }}
+        />
+      )}
     </Button>
   );
 }

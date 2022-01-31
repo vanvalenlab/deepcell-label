@@ -3,7 +3,7 @@ import { useSelector } from '@xstate/react';
 import React from 'react';
 import { useImage, useSelect, useTracking } from '../../../ProjectContext';
 import { oneDaughter } from '../trackingUtils';
-import AlertGroup, { useAlertStyles } from './AlertGroup';
+import AlertGroup, { alertStyle } from './AlertGroup';
 
 function OneDaughterAlert({ label }) {
   const tracking = useTracking();
@@ -18,10 +18,8 @@ function OneDaughterAlert({ label }) {
     image.send({ type: 'LOAD_FRAME', frame: divisionFrame });
   };
 
-  const styles = useAlertStyles();
-
   return (
-    <Alert className={styles.alert} severity='warning' onClick={onClick}>
+    <Alert sx={alertStyle} severity='warning' onClick={onClick}>
       Parent {label} has only daughter {daughters[0]}
     </Alert>
   );

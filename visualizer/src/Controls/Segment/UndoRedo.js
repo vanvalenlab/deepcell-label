@@ -1,20 +1,13 @@
-import { Box } from '@mui/material';
-import MuiButton from '@mui/material/Button';
-import makeStyles from '@mui/styles/makeStyles';
-import withStyles from '@mui/styles/withStyles';
-import Tooltip from '@mui/material/Tooltip';
 import RedoIcon from '@mui/icons-material/Redo';
 import UndoIcon from '@mui/icons-material/Undo';
+import { Box } from '@mui/material';
+import MuiButton from '@mui/material/Button';
+import Tooltip from '@mui/material/Tooltip';
+import withStyles from '@mui/styles/withStyles';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
 import React, { useEffect } from 'react';
 import { useUndo } from '../../ProjectContext';
-
-const useStyles = makeStyles({
-  button: {
-    width: '50%',
-  },
-});
 
 // for adding tooltip to disabled buttons
 // from https://stackoverflow.com/questions/61115913
@@ -47,8 +40,6 @@ export default function UndoRedo() {
   const cannotUndo = action === 0;
   const cannotRedo = action === numActions;
 
-  const styles = useStyles();
-
   const undoTooltip = (
     <>
       <kbd>Ctrl</kbd>+<kbd>Z</kbd>
@@ -63,12 +54,12 @@ export default function UndoRedo() {
   useEffect(() => {
     bind('mod+z', () => undo.send('UNDO'));
     bind('mod+shift+z', () => undo.send('REDO'));
-  }, []);
+  }, [undo]);
 
   return (
     <Box display='flex' flexDirection='row'>
       <ButtonWithTooltip
-        className={styles.button}
+        sx={{ width: '50%' }}
         tooltipText={undoTooltip}
         variant='contained'
         color='primary'
@@ -80,7 +71,7 @@ export default function UndoRedo() {
       </ButtonWithTooltip>
       <ButtonWithTooltip
         tooltipText={redoTooltip}
-        className={styles.button}
+        sx={{ width: '50%' }}
         variant='contained'
         color='primary'
         disabled={cannotRedo}

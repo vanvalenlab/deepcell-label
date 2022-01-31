@@ -1,15 +1,8 @@
 import MuiButton from '@mui/material/Button';
-import makeStyles from '@mui/styles/makeStyles';
-import withStyles from '@mui/styles/withStyles';
 import Tooltip from '@mui/material/Tooltip';
+import withStyles from '@mui/styles/withStyles';
 import { bind } from 'mousetrap';
 import React, { useEffect } from 'react';
-
-export const useStyles = makeStyles((theme) => ({
-  button: {
-    padding: theme.spacing(0.5),
-  },
-}));
 
 // for adding tooltip to disabled buttons
 // from https://stackoverflow.com/questions/61115913
@@ -27,6 +20,7 @@ const ActionButton = ({ tooltipText, disabled, onClick, hotkey, ...other }) => {
     disabled: disabled,
     component: disabled ? 'div' : undefined,
     onClick: disabled ? undefined : onClick,
+    sx: { padding: 0.5 },
   };
 
   useEffect(() => {

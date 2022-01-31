@@ -1,5 +1,6 @@
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import CloseIcon from '@mui/icons-material/Close';
 import { Box, IconButton } from '@mui/material';
-import makeStyles from '@mui/styles/makeStyles';
 import Avatar from '@mui/material/Avatar';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
 import MenuItem from '@mui/material/MenuItem';
@@ -7,48 +8,22 @@ import MenuList from '@mui/material/MenuList';
 import Paper from '@mui/material/Paper';
 import Popper from '@mui/material/Popper';
 import { useTheme } from '@mui/material/styles';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import CloseIcon from '@mui/icons-material/Close';
 import { useSelector } from '@xstate/react';
 import React, { useReducer, useRef } from 'react';
 import { ArcherContainer, ArcherElement } from 'react-archer';
 import { useHexColormap, useImage, useSelect, useTracking } from '../../ProjectContext';
 
-const useStyles = makeStyles((theme) => ({
-  division: {
-    display: 'flex',
-    alignItems: 'center',
-  },
-  daughter: {
-    display: 'flex',
-    alignItems: 'center',
-  },
-  daughters: {
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  cell: {
-    margin: theme.spacing(1),
-    height: '2.5rem',
-    width: '2.5rem',
-  },
-  addButton: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    height: '100%',
-    width: '100%',
-  },
-}));
-
 export const Cell = React.forwardRef(({ label, onClick }, ref) => {
   const colors = useHexColormap();
   const color = colors[label] ?? '#000000';
 
-  const styles = useStyles();
-
   return (
-    <Avatar ref={ref} className={styles.cell} style={{ backgroundColor: color }} onClick={onClick}>
+    <Avatar
+      ref={ref}
+      sx={{ margin: 1, height: '2.5rem', width: '2.5rem' }}
+      style={{ backgroundColor: color }}
+      onClick={onClick}
+    >
       {label}
     </Avatar>
   );
@@ -91,8 +66,6 @@ function Parent({ division }) {
 }
 
 function Daughter({ label, daughter, divisionFrame }) {
-  const styles = useStyles();
-
   const select = useSelect();
   const image = useImage();
 
@@ -102,7 +75,7 @@ function Daughter({ label, daughter, divisionFrame }) {
   };
 
   return (
-    <Box className={styles.daughter}>
+    <Box sx={{ display: 'flex', alignItems: 'center' }}>
       <ArcherElement id={`daughter${daughter}`}>
         <Cell label={daughter} onClick={onClick} />
       </ArcherElement>
@@ -112,8 +85,6 @@ function Daughter({ label, daughter, divisionFrame }) {
 }
 
 function AddDaughter({ label }) {
-  const styles = useStyles();
-
   const tracking = useTracking();
 
   const [open, toggle] = useReducer((v) => !v, false);
@@ -132,9 +103,17 @@ function AddDaughter({ label }) {
     <Box style={{ position: 'relative' }}>
       {/* point arrow to hidden Avatar so arrows look aligned */}
       <ArcherElement id='addDaughter'>
-        <Avatar className={styles.cell} style={{ visibility: 'hidden' }} />
+        <Avatar
+          sx={{ margin: 1, height: '2.5rem', width: '2.5rem' }}
+          style={{ visibility: 'hidden' }}
+        />
       </ArcherElement>
-      <IconButton className={styles.addButton} onClick={toggle} ref={anchorRef} size='large'>
+      <IconButton
+        sx={{ position: 'absolute', top: 0, left: 0, height: '100%', width: '100%' }}
+        onClick={toggle}
+        ref={anchorRef}
+        size='large'
+      >
         <AddCircleOutlineIcon />
       </IconButton>
       <Popper open={open} anchorEl={anchorRef.current} placement='bottom-end'>
@@ -189,12 +168,10 @@ function DaughterMenu({ parent, daughter }) {
 }
 
 function Daughters({ division }) {
-  const styles = useStyles();
-
   const { label, daughters, divisionFrame } = division;
 
   return (
-    <Box className={styles.daughters}>
+    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
       {daughters.map((daughter) => (
         <Daughter label={label} daughter={daughter} divisionFrame={divisionFrame} key={daughter} />
       ))}
@@ -214,11 +191,9 @@ const dummyDivision = {
 };
 
 export function DivisionFootprint() {
-  const styles = useStyles();
-
   return (
     <ArcherContainer>
-      <Box className={styles.division}>
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
         <Parent division={dummyDivision} />
         <Daughters division={dummyDivision} />
       </Box>
@@ -227,13 +202,12 @@ export function DivisionFootprint() {
 }
 
 function Division({ label }) {
-  const styles = useStyles();
   const tracking = useTracking();
   const division = useSelector(tracking, (state) => state.context.labels[label]);
 
   return (
     <ArcherContainer>
-      <Box className={styles.division}>
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
         {division && <Parent division={division} />}
         {division && <Daughters division={division} />}
       </Box>

@@ -1,15 +1,8 @@
-import makeStyles from '@mui/styles/makeStyles';
-import withStyles from '@mui/styles/withStyles';
-import Tooltip from '@mui/material/Tooltip';
 import MuiToggleButton from '@mui/material/ToggleButton';
+import Tooltip from '@mui/material/Tooltip';
+import withStyles from '@mui/styles/withStyles';
 import { bind } from 'mousetrap';
 import React, { useEffect } from 'react';
-
-const useStyles = makeStyles((theme) => ({
-  title: {
-    margin: theme.spacing(1),
-  },
-}));
 
 // for adding tooltip to disabled buttons
 // from https://stackoverflow.com/questions/61115913

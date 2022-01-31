@@ -4,16 +4,9 @@ import Grid from '@mui/material/Grid';
 import LinearProgress from '@mui/material/LinearProgress';
 import Select from '@mui/material/Select';
 import Slider from '@mui/material/Slider';
-import makeStyles from '@mui/styles/makeStyles';
 import { useSelector } from '@xstate/react';
 import { useRaw } from '../../../ProjectContext';
 import LayerOptions from './LayerOptions';
-
-const useStyles = makeStyles((theme) => ({
-  root: {
-    paddingTop: theme.spacing(1),
-  },
-}));
 
 function LayerSelector({ layer }) {
   const channel = useSelector(layer, (state) => state.context.channel);
@@ -26,7 +19,7 @@ function LayerSelector({ layer }) {
   };
 
   return (
-    <Select native value={channel} onChange={onChange}>
+    <Select native value={channel} onChange={onChange} sx={{ p: 0 }}>
       {names.map((opt, index) => (
         <option key={index} value={index}>
           {opt}
@@ -87,8 +80,6 @@ function LayerSlider({ layer }) {
 }
 
 function LayerController({ layer }) {
-  const classes = useStyles();
-
   const channel = useSelector(layer, (state) => state.context.channel);
 
   const raw = useRaw();
@@ -96,7 +87,7 @@ function LayerController({ layer }) {
   const loading = useSelector(colorMode, (state) => state.context.loadingChannels.has(channel));
 
   return (
-    <Grid container direction='column' justifyContent='center' className={classes.root}>
+    <Grid container direction='column' justifyContent='center' sx={{ paddingTop: 1 }}>
       <Grid container direction='row' justifyContent='space-between'>
         <Grid item xs={10}>
           <LayerSelector layer={layer} />

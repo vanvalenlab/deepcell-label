@@ -1,16 +1,8 @@
 import { FormLabel, Slider, Tooltip } from '@mui/material';
-import makeStyles from '@mui/styles/makeStyles';
 import { useSelector } from '@xstate/react';
 import { bind, unbind } from 'mousetrap';
 import React, { useEffect, useState } from 'react';
 import { useImage } from '../ProjectContext';
-
-const useStyles = makeStyles((theme) => ({
-  title: {
-    paddingTop: theme.spacing(1),
-    paddingBottom: theme.spacing(1),
-  },
-}));
 
 function FrameSlider({ showLabel = true }) {
   const image = useImage();
@@ -39,8 +31,6 @@ function FrameSlider({ showLabel = true }) {
       Cycle with <kbd>A</kbd> and <kbd>D</kbd>.
     </span>
   );
-
-  const styles = useStyles();
 
   const [display, setDisplay] = useState('on');
 

@@ -1,21 +1,11 @@
-import makeStyles from '@mui/styles/makeStyles';
+import { styled } from '@mui/material/styles';
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
 import { useCanvas, useDrawCanvas } from '../ProjectContext';
 
-const useStyles = makeStyles({
-  canvas: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    maxHeight: '100%',
-    maxWidth: '100%',
-  },
-});
+const Canvas = styled('canvas')``;
 
 export const ComposeCanvas = ({ canvases }) => {
-  const styles = useStyles();
-
   const canvas = useCanvas();
   const sx = useSelector(canvas, (state) => state.context.sx);
   const sy = useSelector(canvas, (state) => state.context.sy);
@@ -53,7 +43,13 @@ export const ComposeCanvas = ({ canvases }) => {
   }, [canvases, sx, sy, sw, sh, zoom, width, height, composeCanvasRef]);
 
   return (
-    <canvas id='canvas' className={styles.canvas} ref={canvasRef} width={width} height={height} />
+    <Canvas
+      id='canvas'
+      sx={{ position: 'absolute', top: 0, left: 0, maxHeight: '100%', maxWidth: '100%' }}
+      ref={canvasRef}
+      width={width}
+      height={height}
+    />
   );
 };
 

@@ -1,16 +1,11 @@
-import makeStyles from '@mui/styles/makeStyles';
+import { styled } from '@mui/system';
 import React from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import DaughterBeforeDivisionAlerts from './DaughterBeforeDivisionAlert';
 import OneDaughterAlerts from './OneDaughterAlerts';
 import ParentAfterDivisionAlerts from './ParentAfterDivisionAlert';
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    maxHeight: '200px',
-    overflow: 'auto',
-  },
-}));
+const Div = styled('div')``;
 
 function ErrorFallback({ error, resetErrorBoundary }) {
   return (
@@ -23,8 +18,6 @@ function ErrorFallback({ error, resetErrorBoundary }) {
 }
 
 function DivisionAlerts() {
-  const classes = useStyles();
-
   return (
     <ErrorBoundary
       FallbackComponent={ErrorFallback}
@@ -32,11 +25,11 @@ function DivisionAlerts() {
         // reset the state of your app so the error doesn't happen again
       }}
     >
-      <div className={classes.root}>
+      <Div sx={{ maxHeight: '200px', overflow: 'auto' }}>
         <ParentAfterDivisionAlerts />
         <DaughterBeforeDivisionAlerts />
         <OneDaughterAlerts />
-      </div>
+      </Div>
     </ErrorBoundary>
   );
 }

@@ -1,4 +1,3 @@
-import makeStyles from '@mui/styles/makeStyles';
 import Box from '@mui/material/Box';
 import Slider from '@mui/material/Slider';
 import Tooltip from '@mui/material/Tooltip';
@@ -8,16 +7,6 @@ import { bind } from 'mousetrap';
 import React, { useEffect } from 'react';
 import { useLabeled } from '../../../ProjectContext';
 
-const useStyles = makeStyles((theme) => ({
-  opacity: {
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: theme.spacing(5),
-    paddingTop: theme.spacing(1),
-  },
-}));
-
 function OpacitySlider() {
   const labeled = useLabeled();
   const opacity = useSelector(labeled, (state) => state.context.opacity);
@@ -26,8 +15,6 @@ function OpacitySlider() {
     labeled.send({ type: 'SET_OPACITY', opacity: Number(newValue) });
 
   const handleDoubleClick = (event) => labeled.send({ type: 'SET_OPACITY', opacity: 0.3 });
-
-  const styles = useStyles();
 
   const tooltipText = (
     <span>
@@ -41,7 +28,15 @@ function OpacitySlider() {
 
   return (
     <Tooltip title={tooltipText}>
-      <Box className={styles.opacity}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          gap: 5,
+          paddingTop: 1,
+        }}
+      >
         <Typography gutterBottom>Opacity</Typography>
 
         <Slider
