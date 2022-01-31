@@ -1,8 +1,8 @@
 /** Modified from https://github.com/hms-dbmi/viv */
+import { MenuItem, TextField } from '@mui/material';
 import Checkbox from '@mui/material/Checkbox';
 import Grid from '@mui/material/Grid';
 import LinearProgress from '@mui/material/LinearProgress';
-import Select from '@mui/material/Select';
 import Slider from '@mui/material/Slider';
 import { useSelector } from '@xstate/react';
 import { useRaw } from '../../../ProjectContext';
@@ -19,13 +19,13 @@ function LayerSelector({ layer }) {
   };
 
   return (
-    <Select native value={channel} onChange={onChange} sx={{ p: 0 }}>
+    <TextField select size='small' value={channel} onChange={onChange}>
       {names.map((opt, index) => (
-        <option key={index} value={index}>
+        <MenuItem key={index} value={index}>
           {opt}
-        </option>
+        </MenuItem>
       ))}
-    </Select>
+    </TextField>
   );
 }
 

@@ -1,8 +1,7 @@
-import { Box, FormLabel } from '@mui/material';
+import { Box, FormLabel, MenuItem, TextField } from '@mui/material';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormGroup from '@mui/material/FormGroup';
 import Grid from '@mui/material/Grid';
-import Select from '@mui/material/Select';
 import Slider from '@mui/material/Slider';
 import Switch from '@mui/material/Switch';
 import Tooltip from '@mui/material/Tooltip';
@@ -76,13 +75,13 @@ const ChannelSelector = () => {
 
   return (
     <Tooltip title={tooltip}>
-      <Select native value={channel} onChange={onChange}>
+      <TextField select size='small' value={channel} onChange={onChange}>
         {names.map((opt, index) => (
-          <option key={index} value={index}>
+          <MenuItem key={index} value={index}>
             {opt}
-          </option>
+          </MenuItem>
         ))}
-      </Select>
+      </TextField>
     </Tooltip>
   );
 };
