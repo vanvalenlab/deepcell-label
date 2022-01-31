@@ -1,9 +1,7 @@
 import RedoIcon from '@mui/icons-material/Redo';
 import UndoIcon from '@mui/icons-material/Undo';
-import { Box } from '@mui/material';
-import MuiButton from '@mui/material/Button';
+import { Box, Button } from '@mui/material';
 import Tooltip from '@mui/material/Tooltip';
-import withStyles from '@mui/styles/withStyles';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
 import React, { useEffect } from 'react';
@@ -11,14 +9,6 @@ import { useUndo } from '../../ProjectContext';
 
 // for adding tooltip to disabled buttons
 // from https://stackoverflow.com/questions/61115913
-const Button = withStyles({
-  root: {
-    padding: 4,
-    '&.Mui-disabled': {
-      pointerEvents: 'auto',
-    },
-  },
-})(MuiButton);
 
 const ButtonWithTooltip = ({ tooltipText, disabled, onClick, ...other }) => {
   const adjustedButtonProps = {
@@ -28,7 +18,16 @@ const ButtonWithTooltip = ({ tooltipText, disabled, onClick, ...other }) => {
   };
   return (
     <Tooltip title={tooltipText}>
-      <Button {...other} {...adjustedButtonProps} />
+      <Button
+        {...other}
+        {...adjustedButtonProps}
+        sx={{
+          p: 4,
+          '&.Mui-disabled': {
+            pointerEvents: 'auto',
+          },
+        }}
+      />
     </Tooltip>
   );
 };

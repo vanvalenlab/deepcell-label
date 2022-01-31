@@ -1,8 +1,8 @@
-import MuiAccordion from '@mui/material/Accordion';
-import MuiAccordionDetails from '@mui/material/AccordionDetails';
-import MuiAccordionSummary from '@mui/material/AccordionSummary';
+import Accordion from '@mui/material/Accordion';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import AccordionSummary from '@mui/material/AccordionSummary';
 import Box from '@mui/material/Box';
-import withStyles from '@mui/styles/withStyles';
+import { styled } from '@mui/material/styles';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
@@ -14,34 +14,19 @@ import DisplayInstructions from './DisplayInstructions';
 import SelectInstructions from './SelectInstructions';
 import ToolInstructions from './ToolInstructions';
 
-function TabPanel(props) {
-  const { children, value, index, ...other } = props;
+const PREFIX = 'Instructions';
 
-  return (
-    <div
-      role='tabpanel'
-      hidden={value !== index}
-      id={`simple-tabpanel-${index}`}
-      aria-labelledby={`simple-tab-${index}`}
-      {...other}
-    >
-      {value === index && (
-        <Box p={3}>
-          <Typography component='div'>{children}</Typography>
-        </Box>
-      )}
-    </div>
-  );
-}
-
-TabPanel.propTypes = {
-  children: PropTypes.node,
-  index: PropTypes.any.isRequired,
-  value: PropTypes.any.isRequired,
+const classes = {
+  root: `${PREFIX}-root`,
+  expanded: `${PREFIX}-expanded`,
+  root2: `${PREFIX}-root2`,
+  content: `${PREFIX}-content`,
+  expanded2: `${PREFIX}-expanded2`,
+  root3: `${PREFIX}-root3`,
 };
 
-const Accordion = withStyles({
-  root: {
+const Root = styled('div')(({ theme }) => ({
+  [`& .${classes.root}`]: {
     border: '1px solid rgba(0, 0, 0, .125)',
     boxShadow: 'none',
     '&:not(:last-child)': {
@@ -54,11 +39,10 @@ const Accordion = withStyles({
       margin: 'auto',
     },
   },
-  expanded: {},
-})(MuiAccordion);
 
-const AccordionSummary = withStyles({
-  root: {
+  [`& .${classes.expanded}`]: {},
+
+  [`& .${classes.root2}`]: {
     backgroundColor: 'rgba(0, 0, 0, .03)',
     borderBottom: '1px solid rgba(0, 0, 0, .125)',
     marginBottom: -1,
@@ -67,21 +51,41 @@ const AccordionSummary = withStyles({
       minHeight: 56,
     },
   },
-  content: {
+
+  [`& .${classes.content}`]: {
     '&$expanded': {
       margin: '12px 0',
     },
   },
-  expanded: {},
-})(MuiAccordionSummary);
 
-const AccordionDetails = withStyles((theme) => ({
-  root: {
-    padding: 0,
-    display: 'flex',
-    flexDirection: 'column',
-  },
-}))(MuiAccordionDetails);
+  [`& .${classes.expanded2}`]: {},
+}));
+
+function TabPanel(props) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <Root
+      role='tabpanel'
+      hidden={value !== index}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box p={3}>
+          <Typography component='div'>{children}</Typography>
+        </Box>
+      )}
+    </Root>
+  );
+}
+
+TabPanel.propTypes = {
+  children: PropTypes.node,
+  index: PropTypes.any.isRequired,
+  value: PropTypes.any.isRequired,
+};
 
 export default function Instructions() {
   const [expanded, setExpanded] = React.useState(false);
@@ -109,15 +113,24 @@ export default function Instructions() {
         expanded={expanded}
         onChange={toggleExpanded}
         TransitionProps={{ unmountOnExit: true }}
+        classes={{
+          root: classes.root,
+          expanded: classes.expanded,
+        }}
       >
         <AccordionSummary
           aria-controls='panel1d-content'
           id='panel1d-header'
           onKeyUp={stopExpansion}
+          classes={{
+            root: classes.root2,
+            content: classes.content,
+            expanded: classes.expanded2,
+          }}
         >
           <Typography>Instructions (Click to expand/collapse)</Typography>
         </AccordionSummary>
-        <AccordionDetails>
+        <AccordionDetails sx={{ padding: 0, display: 'flex', flexDirection: 'column' }}>
           <Tabs value={value} onChange={handleTabChange}>
             <Tab label='Display' />
             <Tab label='Canvas' />
