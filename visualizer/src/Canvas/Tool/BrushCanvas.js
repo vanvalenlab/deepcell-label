@@ -11,18 +11,6 @@ import {
 
 const red = [255, 0, 0, 255];
 const white = [255, 255, 255, 255];
-const gl2 = document.createElement('canvas').getContext('webgl2');
-const gl = document.createElement('canvas').getContext('webgl');
-
-/**
- * Computes the distance of (x, y) from the origin (0, 0).
- * @param {Number} x
- * @param {Number} y
- * @returns {Number} distance in pixels from origin
- */
-export function dist(x, y) {
-  return Math.floor(Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2)));
-}
 
 const BrushCanvas = ({ setCanvases }) => {
   const canvas = useCanvas();
@@ -46,7 +34,8 @@ const BrushCanvas = ({ setCanvases }) => {
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvasRef.current });
     const kernel = gpu.createKernel(
-      function (trace, traceLength, size, color, brushX, brushY) {
+      // TODO: research how to work around minification
+      `function (trace, traceLength, size, color, brushX, brushY) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
         const [r, g, b, a] = color;
@@ -54,33 +43,30 @@ const BrushCanvas = ({ setCanvases }) => {
         const distX = Math.abs(x - brushX);
         const distY = Math.abs(y - brushY);
 
+        function dist(x, y) {
+          return Math.floor(Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2)));
+        }
+
         const onBrush =
           dist(distX, distY) === radius &&
           // not on border if next to border in both directions
           !(dist(distX + 1, distY) === radius && dist(distX, distY + 1) === radius);
-        let drawn = false;
         if (onBrush) {
           this.color(r / 255, g / 255, b / 255, a / 255);
-          drawn = true;
         } else if (traceLength > 0) {
           for (let i = 0; i < traceLength; i++) {
             if (dist(trace[i][0] - x, trace[i][1] - y) <= radius) {
               this.color(r / 255, g / 255, b / 255, a / 255 / 2);
-              drawn = true;
               break;
             }
           }
         }
-        if (!drawn) {
-          this.color(0, 0, 0, 0);
-        }
-      },
+      }`,
       {
         constants: { w: width, h: height },
         output: [width, height],
         graphical: true,
         dynamicArguments: true,
-        functions: [dist],
       }
     );
     kernelRef.current = kernel;
