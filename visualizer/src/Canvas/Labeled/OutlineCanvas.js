@@ -29,11 +29,11 @@ const OutlineCanvas = ({ setCanvases }) => {
   }
 
   const kernelRef = useRef();
-  const kernelCanvasRef = useAlphaKernelCanvas();
-  const drawCanvasRef = useDrawCanvas();
+  const kernelCanvas = useAlphaKernelCanvas();
+  const drawCanvas = useDrawCanvas();
 
   useEffect(() => {
-    const gpu = new GPU({ canvas: kernelCanvasRef.current });
+    const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
       // template string needed to avoid minification breaking function
       // by changing if (x) { y } to x && y
@@ -71,25 +71,25 @@ const OutlineCanvas = ({ setCanvases }) => {
       kernel.destroy();
       gpu.destroy();
     };
-  }, [kernelCanvasRef, width, height]);
+  }, [kernelCanvas, width, height]);
 
   useEffect(() => {
     // Compute the outline of the labels with the kernel
     kernelRef.current(labeledArray, outlineAll, foreground, background);
     // Draw kernel output on another canvas (needed to reuse webgl output)
-    const drawCtx = drawCanvasRef.current.getContext('2d');
+    const drawCtx = drawCanvas.getContext('2d');
     drawCtx.clearRect(0, 0, width, height);
-    drawCtx.drawImage(kernelCanvasRef.current, 0, 0);
+    drawCtx.drawImage(kernelCanvas, 0, 0);
     // Rerender the parent canvas
-    setCanvases((canvases) => ({ ...canvases, outline: drawCanvasRef.current }));
+    setCanvases((canvases) => ({ ...canvases, outline: drawCanvas }));
   }, [
     labeledArray,
     outlineAll,
     foreground,
     background,
     setCanvases,
-    kernelCanvasRef,
-    drawCanvasRef,
+    kernelCanvas,
+    drawCanvas,
     width,
     height,
   ]);

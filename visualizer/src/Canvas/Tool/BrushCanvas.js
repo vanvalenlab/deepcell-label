@@ -40,11 +40,11 @@ const BrushCanvas = ({ setCanvases }) => {
   const color = background !== 0 ? red : white;
 
   const kernelRef = useRef();
-  const kernelCanvasRef = useAlphaKernelCanvas();
-  const drawCanvasRef = useDrawCanvas();
+  const kernelCanvas = useAlphaKernelCanvas();
+  const drawCanvas = useDrawCanvas();
 
   useEffect(() => {
-    const gpu = new GPU({ canvas: kernelCanvasRef.current });
+    const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
       function (trace, traceLength, size, color, brushX, brushY) {
         const x = this.thread.x;
@@ -88,7 +88,7 @@ const BrushCanvas = ({ setCanvases }) => {
       kernel.destroy();
       gpu.destroy();
     };
-  }, [kernelCanvasRef, width, height]);
+  }, [kernelCanvas, width, height]);
 
   useEffect(() => {
     // Draw the brush with the kernel
@@ -102,12 +102,12 @@ const BrushCanvas = ({ setCanvases }) => {
       kernelRef.current(trace, trace.length, size, color, x, y);
     }
     // Draw brush on a separate canvas (needed to reuse webgl output)\
-    const drawCtx = drawCanvasRef.current.getContext('2d');
+    const drawCtx = drawCanvas.getContext('2d');
     drawCtx.clearRect(0, 0, width, height);
-    drawCtx.drawImage(kernelCanvasRef.current, 0, 0);
+    drawCtx.drawImage(kernelCanvas, 0, 0);
     // Rerender the parent canvas
-    setCanvases((canvases) => ({ ...canvases, tool: drawCanvasRef.current }));
-  }, [setCanvases, size, color, x, y, trace, kernelCanvasRef, drawCanvasRef, width, height]);
+    setCanvases((canvases) => ({ ...canvases, tool: drawCanvas }));
+  }, [setCanvases, size, color, x, y, trace, kernelCanvas, drawCanvas, width, height]);
 
   useEffect(
     () => () =>

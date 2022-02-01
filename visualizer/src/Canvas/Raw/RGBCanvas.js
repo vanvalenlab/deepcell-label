@@ -12,20 +12,20 @@ export const RGBCanvas = ({ setCanvases }) => {
   const layers = useLayers();
   // keys: layer index, values: ref to canvas for each layer
   const [layerCanvases, setLayerCanvases] = useState({});
-  const canvasRef = useDrawCanvas();
+  const drawCanvas = useDrawCanvas();
 
   useEffect(() => {
-    canvasRef.current.getContext('2d').globalCompositeOperation = 'lighter';
-  }, [canvasRef, project]);
+    drawCanvas.getContext('2d').globalCompositeOperation = 'lighter';
+  }, [drawCanvas, project]);
 
   useEffect(() => {
-    const ctx = canvasRef.current.getContext('2d');
+    const ctx = drawCanvas.getContext('2d');
     ctx.clearRect(0, 0, width, height);
     for (let key in layerCanvases) {
       ctx.drawImage(layerCanvases[key], 0, 0);
     }
-    setCanvases((canvases) => ({ ...canvases, raw: canvasRef.current }));
-  }, [layerCanvases, width, height, setCanvases, canvasRef]);
+    setCanvases((canvases) => ({ ...canvases, raw: drawCanvas }));
+  }, [layerCanvases, width, height, setCanvases, drawCanvas]);
 
   return layers.map((layer) => (
     <ChannelCanvas layer={layer} setCanvases={setLayerCanvases} key={layer.sessionId} />
