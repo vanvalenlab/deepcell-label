@@ -22,7 +22,6 @@ const ActionButton = ({ tooltipText, disabled, onClick, hotkey, ...other }) => {
       <Button
         {...other}
         {...adjustedButtonProps}
-        classes='MuiButtonBase-root MuiToggleButton-root MuiToggleButton-sizeMedium MuiToggleButton-standard MuiToggleButtonGroup-grouped MuiToggleButtonGroup-groupedVertical'
         sx={{
           p: 0.5,
           '&.Mui-disabled': {
