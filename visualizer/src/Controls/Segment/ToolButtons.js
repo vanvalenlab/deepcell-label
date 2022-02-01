@@ -13,7 +13,7 @@ import WatershedButton from './ToolButtons/WatershedButton';
 function ToolButtons() {
   return (
     <Box display='flex' flexDirection='column'>
-      <FormLabel sx={{ margin: 1 }}>Tools</FormLabel>
+      <FormLabel sx={{ m: 1 }}>Tools</FormLabel>
       <ToggleButtonGroup orientation='vertical'>
         <SelectButton />
         <BrushButton />

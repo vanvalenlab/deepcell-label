@@ -13,7 +13,7 @@ const LabeledControls = () => {
       <Grid container direction='column'>
         <Grid item>
           <Box display='flex' flexDirection='row' justifyContent='space-between'>
-            <FormLabel component='legend' sx={{ paddingTop: 1, paddingBottom: 1 }}>
+            <FormLabel component='legend' sx={{ py: 1 }}>
               Segmentations
             </FormLabel>
             <OutlineToggle />

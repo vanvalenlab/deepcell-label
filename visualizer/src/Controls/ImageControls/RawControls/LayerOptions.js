@@ -41,8 +41,7 @@ function LayerOptions({ layer }) {
                   sx={{
                     width: '70px',
                     textAlign: 'center',
-                    paddingLeft: '2px',
-                    paddingRight: '2px',
+                    px: '2px',
                     color: 'white',
                   }}
                 >
@@ -56,8 +55,7 @@ function LayerOptions({ layer }) {
                   '&:hover': {
                     backgroundColor: 'transparent',
                   },
-                  paddingLeft: '2px',
-                  paddingRight: '2px',
+                  px: '2px',
                 }}
               >
                 <ColorPalette handleChange={handleColorSelect} />

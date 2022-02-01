@@ -40,7 +40,7 @@ function FrameSlider() {
   return (
     numFrames > 1 && (
       <>
-        <FormLabel component='legend' sx={{ paddingTop: 1, paddingBottom: 1 }}>
+        <FormLabel component='legend' sx={{ py: 1 }}>
           Frame
         </FormLabel>
         <Tooltip title={tooltipText}>

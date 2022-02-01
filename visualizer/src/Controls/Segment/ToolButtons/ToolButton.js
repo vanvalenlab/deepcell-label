@@ -24,7 +24,7 @@ function ToolButton(props) {
         {...rest}
         {...adjustedButtonProps}
         sx={{
-          padding: 0.5,
+          p: 0.5,
           '&.Mui-disabled': {
             pointerEvents: 'auto',
           },

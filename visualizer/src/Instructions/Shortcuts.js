@@ -23,10 +23,10 @@ export function Shortcut({ text, shortcut }) {
         display: 'flex',
         flexFlow: 'row nowrap',
         justifyContent: 'space-between',
-        margin: 0.5,
+        m: 0.5,
       }}
     >
-      <Div sx={{ marginRight: 1, whiteSpace: 'nowrap' }}>{text}</Div>
+      <Div sx={{ mr: 1, whiteSpace: 'nowrap' }}>{text}</Div>
       <Div sx={{ whiteSpace: 'nowrap' }}>{hotkeyText}</Div>
     </Box>
   );
@@ -36,11 +36,11 @@ export function Shortcuts({ children }) {
   return (
     <Paper
       sx={{
-        padding: 1,
+        p: 1,
         display: 'flex',
         height: 'fit-content',
         flexDirection: 'column',
-        marginLeft: 2,
+        ml: 2,
       }}
       elevation={5}
     >

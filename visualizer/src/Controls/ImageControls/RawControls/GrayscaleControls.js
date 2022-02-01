@@ -98,7 +98,7 @@ const BrightnessSlider = ({ channel }) => {
 
   return (
     <Slider
-      sx={{ color: 'primary', marginTop: 1 }}
+      sx={{ color: 'primary', mt: 1 }}
       value={brightness}
       onChange={onChange}
       onDoubleClick={onDoubleClick}
@@ -121,7 +121,7 @@ const ContrastSlider = ({ channel }) => {
 
   return (
     <Slider
-      sx={{ color: 'primary', marginTop: 1 }}
+      sx={{ color: 'primary', mt: 1 }}
       value={contrast}
       onChange={onChange}
       onDoubleClick={onDoubleClick}
@@ -143,7 +143,7 @@ const RangeSlider = ({ channel }) => {
 
   return (
     <Slider
-      sx={{ color: 'primary', marginTop: 1 }}
+      sx={{ color: 'primary', mt: 1 }}
       value={range}
       onChange={onChange}
       onDoubleClick={onDoubleClick}
@@ -166,7 +166,7 @@ const GrayscaleControls = () => {
 
   return (
     <Grid style={{ width: '100%' }} item>
-      <Grid container direction='column' sx={{ paddingTop: 1 }}>
+      <Grid container direction='column' sx={{ pt: 1 }}>
         <Grid item xs={12} container direction='row' style={{ justifyContent: 'space-between' }}>
           <ChannelSelector />
           <InvertToggle channel={channel} />
@@ -184,12 +184,13 @@ const GrayscaleControls = () => {
               <FormLabel>Contrast</FormLabel>
             </Box>
             <Box
-              display='flex'
-              flexDirection='column'
-              justifyContent='space-around'
-              flex='1'
-              marginLeft={1}
-              marginRight={1}
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-around',
+                flex: 1,
+                mx: 1,
+              }}
             >
               <RangeSlider channel={channel} />
               <BrightnessSlider channel={channel} />

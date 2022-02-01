@@ -86,7 +86,7 @@ export const Canvas = () => {
       onMouseDown={handleMouseDown}
       onMouseUp={canvas.send}
     >
-      {!raw && <CircularProgress style={{ margin: '25%', width: '50%', height: '50%' }} />}
+      {!raw && <CircularProgress sx={{ m: '25%', width: '50%', height: '50%' }} />}
       <ComposeCanvas canvases={canvases} />
       {raw && <RawCanvas setCanvases={setCanvases} />}
       {labeled && <LabeledCanvas setCanvases={setCanvases} />}

@@ -16,18 +16,18 @@ function Introduction() {
         justifyContent: 'center',
         alignItems: 'center',
         width: (theme) => `calc(100% - ${theme.spacing(4)})`,
-        margin: 4,
+        m: 4,
         boxSizing: 'border-box',
       }}
     >
       <Typography variant='h2' align='center'>
         Welcome to DeepCell Label
       </Typography>
-      <Typography variant='body1' sx={{ width: '80%', margin: 1, boxSizing: 'border-box' }}>
+      <Typography variant='body1' sx={{ width: '80%', m: 1, boxSizing: 'border-box' }}>
         DeepCell Label is a data labeling tool to segment images into instance labels, mapping each
         pixel to an object in the image.
       </Typography>
-      <Typography variant='body1' sx={{ width: '80%', margin: 1, boxSizing: 'border-box' }}>
+      <Typography variant='body1' sx={{ width: '80%', m: 1, boxSizing: 'border-box' }}>
         Label can work with 2D images, 3D images, and timelapses. 4D images, or 3D timelapse images,
         are not yet supported. Label expects input images to have frames first and channels last, or
         a ZYXC (TYXC for timelapses) dimension order. When loading images with a different dimension
@@ -52,11 +52,11 @@ function Load() {
             justifyContent: 'center',
             alignItems: 'center',
             width: (theme) => `calc(100% - ${theme.spacing(4)})`,
-            margin: 4,
+            m: 4,
             boxSizing: 'border-box',
           }}
         >
-          <Paper sx={{ padding: 4, width: '100%', boxSizing: 'border-box' }}>
+          <Paper sx={{ p: 4, width: '100%', boxSizing: 'border-box' }}>
             <FileUpload loadService={loadService} onDroppedFile={() => {}} />
           </Paper>
           <ExampleFileSelect loadService={loadService} />

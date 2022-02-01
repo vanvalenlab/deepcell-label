@@ -114,8 +114,7 @@ export default function FileUpload({ loadService }) {
                     color='disabled'
                     fontSize='large'
                     sx={{
-                      paddingTop: 4,
-                      paddingBottom: 4,
+                      py: 4,
                       height: '100%',
                     }}
                   />
@@ -139,7 +138,7 @@ export default function FileUpload({ loadService }) {
                 <Typography>{file.path}</Typography>
                 {file.type !== 'image/png' && <ImageAxesDropDown loadService={loadService} />}
                 <Button
-                  sx={{ width: '100%', margin: 1 }}
+                  sx={{ width: '100%', m: 1 }}
                   variant='contained'
                   color='primary'
                   endIcon={<SendIcon />}
@@ -148,7 +147,7 @@ export default function FileUpload({ loadService }) {
                   Upload
                 </Button>
                 {state.matches('submittingUpload') && (
-                  <LinearProgress sx={{ margin: 1, width: '100%' }} />
+                  <LinearProgress sx={{ m: 1, width: '100%' }} />
                 )}
               </Container>
             )}

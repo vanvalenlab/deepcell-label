@@ -10,21 +10,20 @@ function ReviewButtons() {
   return (
     <Box sx={{ display: 'flex' }}>
       <Button
-        sx={{ width: '50%', margin: 1 }}
+        sx={{ width: '50%', m: 1 }}
         variant='contained'
         color='primary'
         onClick={() => qualityControl.send('ACCEPT')}
-        style={{ marginLeft: 0 }}
+        style={{ ml: 0 }}
       >
         Accept
         <ThumbUpIcon />
       </Button>
       <Button
-        sx={{ width: '50%', margin: 1 }}
+        sx={{ width: '50%', m: 1, mr: 0 }}
         variant='contained'
         color='secondary'
         onClick={() => qualityControl.send('REJECT')}
-        style={{ marginRight: 0 }}
       >
         Reject
         <ThumbDownIcon />

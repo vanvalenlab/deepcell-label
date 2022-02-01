@@ -34,7 +34,7 @@ function OpacitySlider() {
           flexDirection: 'row',
           justifyContent: 'space-between',
           gap: 5,
-          paddingTop: 1,
+          pt: 1,
         }}
       >
         <Typography gutterBottom>Opacity</Typography>

@@ -12,7 +12,7 @@ import SwapButton from './ActionButtons/SwapButton';
 function ActionButtons() {
   return (
     <Box display='flex' flexDirection='column'>
-      <FormLabel sx={{ margin: 1 }}>Actions</FormLabel>
+      <FormLabel sx={{ m: 1 }}>Actions</FormLabel>
       <ButtonGroup orientation='vertical'>
         <DeleteButton />
         <AutofitButton />

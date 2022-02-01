@@ -41,7 +41,7 @@ function ExampleFileSelect({ loadService }) {
       }}
     >
       <Select
-        sx={{ margin: 3, padding: 1 }}
+        sx={{ m: 3, p: 1 }}
         native
         value={file ? file.path : false}
         onChange={(e) => loadService.send({ type: 'SET_EXAMPLE_FILE', file: e.target.value })}
@@ -67,7 +67,7 @@ function ExampleFileSelect({ loadService }) {
       >
         Submit
       </Button>
-      {loading && <LinearProgress sx={{ margin: 1, width: '100%' }} />}
+      {loading && <LinearProgress sx={{ m: 1, width: '100%' }} />}
     </Box>
   );
 }

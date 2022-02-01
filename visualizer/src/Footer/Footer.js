@@ -12,7 +12,7 @@ export default function Footer() {
     <MuiFooter
       sx={{
         flex: 'none',
-        padding: 2,
+        p: 2,
         backgroundColor: 'background.paper',
       }}
     >

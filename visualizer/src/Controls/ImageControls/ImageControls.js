@@ -20,7 +20,7 @@ const ImageControls = () => {
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
-        padding: 1,
+        p: 1,
       }}
     >
       {download ? (

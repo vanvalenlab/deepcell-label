@@ -19,14 +19,14 @@ const ButtonWithTooltip = ({ tooltipText, disabled, onClick, ...other }) => {
   return (
     <Tooltip title={tooltipText}>
       <Button
-        {...other}
-        {...adjustedButtonProps}
         sx={{
-          p: 4,
+          p: 0.5,
           '&.Mui-disabled': {
             pointerEvents: 'auto',
           },
         }}
+        {...other}
+        {...adjustedButtonProps}
       />
     </Tooltip>
   );

@@ -91,7 +91,7 @@ function HoveringBox() {
         display: 'flex',
         alignContent: 'center',
         justifyContent: 'center',
-        margin: 1,
+        m: 1,
       }}
       style={{ background: color }}
     >
@@ -329,7 +329,7 @@ export function Selected() {
     <Box
       sx={{
         position: 'relative',
-        margin: 1,
+        m: 1,
         height: (theme) => theme.spacing(13),
         width: (theme) => theme.spacing(13),
       }}
@@ -365,9 +365,9 @@ function SelectedPalette() {
 
   return (
     <Box display='flex' flexDirection='column'>
-      <FormLabel sx={{ margin: 1 }}>Selected</FormLabel>
+      <FormLabel sx={{ m: 1 }}>Selected</FormLabel>
       <Selected />
-      <FormLabel sx={{ margin: 1 }}>Hovering over</FormLabel>
+      <FormLabel sx={{ m: 1 }}>Hovering over</FormLabel>
       <Hovering />
     </Box>
   );

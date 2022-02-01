@@ -20,7 +20,7 @@ export const Cell = React.forwardRef(({ label, onClick }, ref) => {
   return (
     <Avatar
       ref={ref}
-      sx={{ margin: 1, height: '2.5rem', width: '2.5rem' }}
+      sx={{ m: 1, height: '2.5rem', width: '2.5rem' }}
       style={{ backgroundColor: color }}
       onClick={onClick}
     >

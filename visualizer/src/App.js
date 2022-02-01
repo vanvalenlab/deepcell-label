@@ -55,7 +55,7 @@ function InvalidProjectId() {
         display: 'flex',
         flexGrow: 1,
         flexDirection: 'column',
-        padding: 2,
+        p: 2,
         alignItems: 'center',
       }}
     >

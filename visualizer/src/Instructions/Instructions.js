@@ -36,7 +36,7 @@ const Root = styled('div')(({ theme }) => ({
       display: 'none',
     },
     '&$expanded': {
-      margin: 'auto',
+      m: 'auto',
     },
   },
 
@@ -45,7 +45,7 @@ const Root = styled('div')(({ theme }) => ({
   [`& .${classes.root2}`]: {
     backgroundColor: 'rgba(0, 0, 0, .03)',
     borderBottom: '1px solid rgba(0, 0, 0, .125)',
-    marginBottom: -1,
+    mb: -1,
     minHeight: 56,
     '&$expanded': {
       minHeight: 56,
@@ -54,7 +54,7 @@ const Root = styled('div')(({ theme }) => ({
 
   [`& .${classes.content}`]: {
     '&$expanded': {
-      margin: '12px 0',
+      m: '12px 0',
     },
   },
 
@@ -130,7 +130,7 @@ export default function Instructions() {
         >
           <Typography>Instructions (Click to expand/collapse)</Typography>
         </AccordionSummary>
-        <AccordionDetails sx={{ padding: 0, display: 'flex', flexDirection: 'column' }}>
+        <AccordionDetails sx={{ p: 0, display: 'flex', flexDirection: 'column' }}>
           <Tabs value={value} onChange={handleTabChange}>
             <Tab label='Display' />
             <Tab label='Canvas' />

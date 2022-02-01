@@ -71,9 +71,9 @@ function LayerSlider({ layer }) {
       max={255}
       step={1}
       orientation='horizontal'
-      style={{
+      sx={{
         color: color,
-        marginTop: '7px',
+        mt: '7px',
       }}
     />
   );
@@ -87,7 +87,7 @@ function LayerController({ layer }) {
   const loading = useSelector(colorMode, (state) => state.context.loadingChannels.has(channel));
 
   return (
-    <Grid container direction='column' justifyContent='center' sx={{ paddingTop: 1 }}>
+    <Grid container direction='column' justifyContent='center' sx={{ pt: 1 }}>
       <Grid container direction='row' justifyContent='space-between'>
         <Grid item xs={10}>
           <LayerSelector layer={layer} />

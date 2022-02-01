@@ -26,8 +26,8 @@ function SubmitButton() {
             position: 'absolute',
             top: '50%',
             left: '50%',
-            marginTop: -12,
-            marginLeft: -12,
+            mt: -12,
+            ml: -12,
           }}
         />
       )}

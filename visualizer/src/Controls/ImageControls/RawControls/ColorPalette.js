@@ -31,7 +31,7 @@ const ColorPalette = ({ handleChange }) => {
       {COLOR_PALLETE.map((color) => {
         return (
           <IconButton
-            sx={{ padding: '3px', width: '16px', height: '16px' }}
+            sx={{ p: '3px', width: '16px', height: '16px' }}
             key={color}
             onClick={() => handleChange(color)}
             size='large'
