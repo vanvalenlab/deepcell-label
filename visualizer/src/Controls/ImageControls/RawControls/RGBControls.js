@@ -1,6 +1,6 @@
+import AddIcon from '@mui/icons-material/Add';
 import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
-import AddIcon from '@mui/icons-material/Add';
 import { useSelector } from '@xstate/react';
 import { useRaw } from '../../../ProjectContext';
 import LayerController from './LayerController';
@@ -13,7 +13,7 @@ function RGBControls() {
   return (
     <>
       {layers.map((layer, index) => (
-        <Grid key={layer.sessionId} style={{ width: '100%' }} item>
+        <Grid key={layer.sessionId} sx={{ width: '100%' }} item>
           <LayerController layer={layer} />
         </Grid>
       ))}
@@ -21,7 +21,7 @@ function RGBControls() {
         onClick={() => colorMode.send('ADD_LAYER')}
         fullWidth
         variant='outlined'
-        style={{ borderStyle: 'dashed' }}
+        sx={{ borderStyle: 'dashed' }}
         startIcon={<AddIcon />}
         size='medium'
       >

@@ -10,7 +10,7 @@ import LabelTimeline from './LabelTimeline';
 // Renders a hidden division timeline to size the real divisions
 function DivisionsFootprint({ footprintRef }) {
   return (
-    <Box ref={footprintRef} style={{ display: 'flex', visibility: 'hidden', position: 'absolute' }}>
+    <Box ref={footprintRef} sx={{ display: 'flex', visibility: 'hidden', position: 'absolute' }}>
       <DivisionFootprint />
       <DivisionFootprint />
     </Box>
@@ -34,8 +34,13 @@ function Divisions({ label }) {
     <>
       <DivisionsFootprint footprintRef={footprintRef} />
       <Box
-        sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-        style={{ minWidth, minHeight }}
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          minWidth,
+          minHeight,
+        }}
       >
         {label !== 0 && (
           <>
@@ -85,7 +90,7 @@ function Timeline() {
   return (
     <Box m={1}>
       {addingDaughter && (
-        <Typography style={{ maxWidth: '100%' }}>
+        <Typography sx={{ maxWidth: '100%' }}>
           Click a label to add a daughter to label {parent}.
         </Typography>
       )}

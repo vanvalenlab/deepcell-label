@@ -19,7 +19,7 @@ function DisplayShortcuts() {
       <Shortcut text='Previous feature' shortcut='Shift+F' />
       <Shortcut text='Next frame' shortcut='D' />
       <Shortcut text='Previous frame' shortcut='A' />
-      <Typography variant='h6' style={{ whiteSpace: 'nowrap' }}>
+      <Typography variant='h6' sx={{ whiteSpace: 'nowrap' }}>
         Single-channel mode only
       </Typography>
       <Shortcut text='Next channel' shortcut='C' />

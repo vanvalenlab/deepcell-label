@@ -42,7 +42,7 @@ function LayerCheckbox({ layer }) {
       checked={isOn}
       style={{
         color: color,
-        '&$checked': {
+        '&.Mui-checked': {
           color: color,
         },
       }}

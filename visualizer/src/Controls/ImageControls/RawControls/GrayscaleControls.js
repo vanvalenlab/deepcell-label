@@ -165,9 +165,9 @@ const GrayscaleControls = () => {
   }, [raw]);
 
   return (
-    <Grid style={{ width: '100%' }} item>
+    <Grid sx={{ width: '100%' }} item>
       <Grid container direction='column' sx={{ pt: 1 }}>
-        <Grid item xs={12} container direction='row' style={{ justifyContent: 'space-between' }}>
+        <Grid item xs={12} container direction='row' sx={{ justifyContent: 'space-between' }}>
           <ChannelSelector />
           <InvertToggle channel={channel} />
         </Grid>

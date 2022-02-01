@@ -24,7 +24,7 @@ function ImageAxesDropDown({ loadService }) {
   const allAxes = ['YXC', 'ZYXC', 'CYX', 'CZYX'];
 
   return (
-    <Box display='flex' style={{ width: '100%' }}>
+    <Box display='flex' sx={{ width: '100%' }}>
       <FormControl fullWidth>
         <InputLabel id='image-axes-input-label'>Dimension Order</InputLabel>
         <Select

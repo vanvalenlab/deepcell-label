@@ -36,11 +36,7 @@ const ColorPalette = ({ handleChange }) => {
             onClick={() => handleChange(color)}
             size='large'
           >
-            <LensIcon
-              fontSize='small'
-              style={{ color: `${color}` }}
-              sx={{ width: '17px', height: '17px' }}
-            />
+            <LensIcon fontSize='small' sx={{ width: '17px', height: '17px', color: color }} />
           </IconButton>
         );
       })}

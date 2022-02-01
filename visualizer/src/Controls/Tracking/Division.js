@@ -20,8 +20,7 @@ export const Cell = React.forwardRef(({ label, onClick }, ref) => {
   return (
     <Avatar
       ref={ref}
-      sx={{ m: 1, height: '2.5rem', width: '2.5rem' }}
-      style={{ backgroundColor: color }}
+      sx={{ m: 1, height: '2.5rem', width: '2.5rem', backgroundColor: color }}
       onClick={onClick}
     >
       {label}
@@ -100,13 +99,10 @@ function AddDaughter({ label }) {
   };
 
   return (
-    <Box style={{ position: 'relative' }}>
+    <Box sx={{ position: 'relative' }}>
       {/* point arrow to hidden Avatar so arrows look aligned */}
       <ArcherElement id='addDaughter'>
-        <Avatar
-          sx={{ margin: 1, height: '2.5rem', width: '2.5rem' }}
-          style={{ visibility: 'hidden' }}
-        />
+        <Avatar sx={{ m: 1, height: '2.5rem', width: '2.5rem', visibility: 'hidden' }} />
       </ArcherElement>
       <IconButton
         sx={{ position: 'absolute', top: 0, left: 0, height: '100%', width: '100%' }}

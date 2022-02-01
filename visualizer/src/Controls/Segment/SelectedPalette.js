@@ -92,11 +92,11 @@ function HoveringBox() {
         alignContent: 'center',
         justifyContent: 'center',
         m: 1,
+        background: color,
       }}
-      style={{ background: color }}
     >
       <Typography
-        style={{
+        sx={{
           color: buttonColor,
           display: 'flex',
           justifyContent: 'center',
@@ -170,7 +170,7 @@ function ForegroundBox() {
       onMouseLeave={() => setShowButtons(false)}
     >
       <Typography
-        style={{
+        sx={{
           color: buttonColor,
           display: 'flex',
           justifyContent: 'center',
@@ -186,7 +186,7 @@ function ForegroundBox() {
             size='small'
             onClick={() => send('NEW_FOREGROUND')}
           >
-            <AddIcon style={{ color: buttonColor }} />
+            <AddIcon sx={{ color: buttonColor }} />
           </IconButton>
         </Tooltip>
       )}
@@ -197,7 +197,7 @@ function ForegroundBox() {
             size='small'
             onClick={() => send('RESET_FOREGROUND')}
           >
-            <ClearIcon style={{ color: buttonColor }} />
+            <ClearIcon sx={{ color: buttonColor }} />
           </IconButton>
         </Tooltip>
       )}
@@ -208,7 +208,7 @@ function ForegroundBox() {
             size='small'
             onClick={() => send('PREV_FOREGROUND')}
           >
-            <ArrowBackIosIcon style={{ color: buttonColor }} />
+            <ArrowBackIosIcon sx={{ color: buttonColor }} />
           </IconButton>
         </Tooltip>
       )}
@@ -219,7 +219,7 @@ function ForegroundBox() {
             size='small'
             onClick={() => send('NEXT_FOREGROUND')}
           >
-            <ArrowBackIosIcon style={{ color: buttonColor, transform: 'rotate(180deg)' }} />
+            <ArrowBackIosIcon sx={{ color: buttonColor, transform: 'rotate(180deg)' }} />
           </IconButton>
         </Tooltip>
       )}
@@ -278,7 +278,7 @@ function BackgroundBox() {
       onMouseLeave={() => setShowButtons(false)}
     >
       <Typography
-        style={{
+        sx={{
           color: buttonColor,
           display: 'flex',
           justifyContent: 'center',
@@ -294,7 +294,7 @@ function BackgroundBox() {
             size='small'
             onClick={() => select.send('RESET_BACKGROUND')}
           >
-            <ClearIcon style={{ color: buttonColor }} />
+            <ClearIcon sx={{ color: buttonColor }} />
           </IconButton>
         </Tooltip>
       )}
@@ -305,7 +305,7 @@ function BackgroundBox() {
             size='small'
             onClick={() => select.send('PREV_BACKGROUND')}
           >
-            <ArrowBackIosIcon style={{ color: buttonColor }} />
+            <ArrowBackIosIcon sx={{ color: buttonColor }} />
           </IconButton>
         </Tooltip>
       )}
@@ -316,7 +316,7 @@ function BackgroundBox() {
             size='small'
             onClick={() => select.send('NEXT_BACKGROUND')}
           >
-            <ArrowBackIosIcon style={{ color: buttonColor, transform: 'rotate(180deg)' }} />
+            <ArrowBackIosIcon sx={{ color: buttonColor, transform: 'rotate(180deg)' }} />
           </IconButton>
         </Tooltip>
       )}
