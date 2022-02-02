@@ -40,7 +40,7 @@ function LayerCheckbox({ layer }) {
     <Checkbox
       onChange={() => layer.send('TOGGLE_ON')}
       checked={isOn}
-      style={{
+      sx={{
         color: color,
         '&.Mui-checked': {
           color: color,
