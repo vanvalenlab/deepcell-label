@@ -1,4 +1,5 @@
-import { Box, makeStyles, Typography } from '@material-ui/core';
+import { Box, createTheme, StyledEngineProvider, ThemeProvider, Typography } from '@mui/material';
+import { styled } from '@mui/system';
 import { useSelector } from '@xstate/react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Footer from './Footer/Footer';
@@ -17,22 +18,9 @@ import { isProjectId, project, qualityControl } from './service/service';
 //   iframe: false // open in new window
 // });
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    boxSizing: 'border-box',
-    display: 'flex',
-    minHeight: '100vh',
-    flexDirection: 'column',
-  },
-  main: {
-    boxSizing: 'border-box',
-    display: 'flex',
-    flexGrow: 1,
-    flexDirection: 'column',
-    padding: theme.spacing(2),
-    alignItems: 'center',
-  },
-}));
+const Div = styled('div')``;
+
+const theme = createTheme();
 
 function Review() {
   const project = useSelector(qualityControl, (state) => {
@@ -58,11 +46,19 @@ function LabelProject() {
 }
 
 function InvalidProjectId() {
-  const styles = useStyles();
   const id = new URLSearchParams(window.location.search).get('projectId');
 
   return (
-    <Box className={styles.main}>
+    <Box
+      sx={{
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexGrow: 1,
+        flexDirection: 'column',
+        p: 2,
+        alignItems: 'center',
+      }}
+    >
       <Typography>
         <tt>{id}</tt> is not a valid project ID.
       </Typography>
@@ -74,12 +70,18 @@ function InvalidProjectId() {
   );
 }
 
-function App() {
-  const styles = useStyles();
+function DeepCellLabel() {
   const id = new URLSearchParams(window.location.search).get('projectId');
 
   return (
-    <div className={styles.root}>
+    <Div
+      sx={{
+        boxSizing: 'border-box',
+        display: 'flex',
+        minHeight: '100vh',
+        flexDirection: 'column',
+      }}
+    >
       <NavBar />
       <Router>
         <Routes>
@@ -99,7 +101,17 @@ function App() {
         </Routes>
       </Router>
       <Footer />
-    </div>
+    </Div>
+  );
+}
+
+function App() {
+  return (
+    <StyledEngineProvider injectFirst>
+      <ThemeProvider theme={theme}>
+        <DeepCellLabel />
+      </ThemeProvider>
+    </StyledEngineProvider>
   );
 }
 

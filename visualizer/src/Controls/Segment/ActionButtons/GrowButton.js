@@ -1,10 +1,8 @@
 import React, { useCallback } from 'react';
 import { useSegment } from '../../../ProjectContext';
-import ActionButton, { useStyles } from './ActionButton';
+import ActionButton from './ActionButton';
 
 function GrowButton(props) {
-  const { className, ...rest } = props;
-  const styles = useStyles();
   const segment = useSegment();
 
   const onClick = useCallback(() => segment.send('DILATE'), [segment]);
@@ -16,13 +14,7 @@ function GrowButton(props) {
   );
 
   return (
-    <ActionButton
-      {...rest}
-      tooltipText={tooltipText}
-      onClick={onClick}
-      hotkey='shift+q'
-      className={`${className} ${styles.button}`}
-    >
+    <ActionButton {...props} tooltipText={tooltipText} onClick={onClick} hotkey='shift+q'>
       Grow
     </ActionButton>
   );

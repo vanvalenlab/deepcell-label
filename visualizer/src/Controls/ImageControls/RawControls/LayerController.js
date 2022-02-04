@@ -1,19 +1,12 @@
 /** Modified from https://github.com/hms-dbmi/viv */
-import Checkbox from '@material-ui/core/Checkbox';
-import Grid from '@material-ui/core/Grid';
-import LinearProgress from '@material-ui/core/LinearProgress';
-import Select from '@material-ui/core/Select';
-import Slider from '@material-ui/core/Slider';
-import { makeStyles } from '@material-ui/core/styles';
+import { MenuItem, TextField } from '@mui/material';
+import Checkbox from '@mui/material/Checkbox';
+import Grid from '@mui/material/Grid';
+import LinearProgress from '@mui/material/LinearProgress';
+import Slider from '@mui/material/Slider';
 import { useSelector } from '@xstate/react';
 import { useRaw } from '../../../ProjectContext';
 import LayerOptions from './LayerOptions';
-
-const useStyles = makeStyles((theme) => ({
-  root: {
-    paddingTop: theme.spacing(1),
-  },
-}));
 
 function LayerSelector({ layer }) {
   const channel = useSelector(layer, (state) => state.context.channel);
@@ -26,13 +19,13 @@ function LayerSelector({ layer }) {
   };
 
   return (
-    <Select native value={channel} onChange={onChange}>
+    <TextField select size='small' value={channel} onChange={onChange}>
       {names.map((opt, index) => (
-        <option key={index} value={index}>
+        <MenuItem key={index} value={index}>
           {opt}
-        </option>
+        </MenuItem>
       ))}
-    </Select>
+    </TextField>
   );
 }
 
@@ -47,9 +40,9 @@ function LayerCheckbox({ layer }) {
     <Checkbox
       onChange={() => layer.send('TOGGLE_ON')}
       checked={isOn}
-      style={{
+      sx={{
         color: color,
-        '&$checked': {
+        '&.Mui-checked': {
           color: color,
         },
       }}
@@ -78,17 +71,15 @@ function LayerSlider({ layer }) {
       max={255}
       step={1}
       orientation='horizontal'
-      style={{
+      sx={{
         color: color,
-        marginTop: '7px',
+        mt: '7px',
       }}
     />
   );
 }
 
 function LayerController({ layer }) {
-  const classes = useStyles();
-
   const channel = useSelector(layer, (state) => state.context.channel);
 
   const raw = useRaw();
@@ -96,8 +87,8 @@ function LayerController({ layer }) {
   const loading = useSelector(colorMode, (state) => state.context.loadingChannels.has(channel));
 
   return (
-    <Grid container direction='column' m={2} justify='center' className={classes.root}>
-      <Grid container direction='row' justify='space-between'>
+    <Grid container direction='column' justifyContent='center' sx={{ pt: 1 }}>
+      <Grid container direction='row' justifyContent='space-between'>
         <Grid item xs={10}>
           <LayerSelector layer={layer} />
         </Grid>
@@ -110,11 +101,11 @@ function LayerController({ layer }) {
           {loading && <LinearProgress />}
         </Grid>
       </Grid>
-      <Grid container direction='row' justify='flex-start' alignItems='center'>
+      <Grid container direction='row' justifyContent='flex-start' alignItems='center'>
         <Grid item xs={2}>
           <LayerCheckbox layer={layer} />
         </Grid>
-        <Grid item xs={10}>
+        <Grid item m={1} xs={9}>
           <LayerSlider layer={layer} />
         </Grid>
       </Grid>

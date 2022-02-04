@@ -1,30 +1,14 @@
-import { Box } from '@material-ui/core';
-import MuiButton from '@material-ui/core/Button';
-import { makeStyles, withStyles } from '@material-ui/core/styles';
-import Tooltip from '@material-ui/core/Tooltip';
-import RedoIcon from '@material-ui/icons/Redo';
-import UndoIcon from '@material-ui/icons/Undo';
+import RedoIcon from '@mui/icons-material/Redo';
+import UndoIcon from '@mui/icons-material/Undo';
+import { Box, Button } from '@mui/material';
+import Tooltip from '@mui/material/Tooltip';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
 import React, { useEffect } from 'react';
 import { useUndo } from '../../ProjectContext';
 
-const useStyles = makeStyles({
-  button: {
-    width: '50%',
-  },
-});
-
 // for adding tooltip to disabled buttons
 // from https://stackoverflow.com/questions/61115913
-const Button = withStyles({
-  root: {
-    padding: 4,
-    '&.Mui-disabled': {
-      pointerEvents: 'auto',
-    },
-  },
-})(MuiButton);
 
 const ButtonWithTooltip = ({ tooltipText, disabled, onClick, ...other }) => {
   const adjustedButtonProps = {
@@ -34,7 +18,16 @@ const ButtonWithTooltip = ({ tooltipText, disabled, onClick, ...other }) => {
   };
   return (
     <Tooltip title={tooltipText}>
-      <Button {...other} {...adjustedButtonProps} />
+      <Button
+        sx={{
+          p: 0.5,
+          '&.Mui-disabled': {
+            pointerEvents: 'auto',
+          },
+        }}
+        {...other}
+        {...adjustedButtonProps}
+      />
     </Tooltip>
   );
 };
@@ -45,8 +38,6 @@ export default function UndoRedo() {
   const numActions = useSelector(undo, (state) => state.context.numActions);
   const cannotUndo = action === 0;
   const cannotRedo = action === numActions;
-
-  const styles = useStyles();
 
   const undoTooltip = (
     <>
@@ -62,12 +53,12 @@ export default function UndoRedo() {
   useEffect(() => {
     bind('mod+z', () => undo.send('UNDO'));
     bind('mod+shift+z', () => undo.send('REDO'));
-  }, []);
+  }, [undo]);
 
   return (
     <Box display='flex' flexDirection='row'>
       <ButtonWithTooltip
-        className={styles.button}
+        sx={{ width: '50%' }}
         tooltipText={undoTooltip}
         variant='contained'
         color='primary'
@@ -79,7 +70,7 @@ export default function UndoRedo() {
       </ButtonWithTooltip>
       <ButtonWithTooltip
         tooltipText={redoTooltip}
-        className={styles.button}
+        sx={{ width: '50%' }}
         variant='contained'
         color='primary'
         disabled={cannotRedo}

@@ -24,6 +24,7 @@ function WatershedButton(props) {
   return (
     <ToolButton
       {...props}
+      value='watershed'
       tooltipText={tooltipText}
       selected={tool === 'watershed'}
       onClick={onClick}

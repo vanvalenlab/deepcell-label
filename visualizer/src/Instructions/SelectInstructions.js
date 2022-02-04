@@ -1,5 +1,5 @@
-import { Box, Grid } from '@material-ui/core';
-import Typography from '@material-ui/core/Typography';
+import { Box, Grid } from '@mui/material';
+import Typography from '@mui/material/Typography';
 import React from 'react';
 import { Selected } from '../Controls/Segment/SelectedPalette';
 import { useLabeled } from '../ProjectContext';

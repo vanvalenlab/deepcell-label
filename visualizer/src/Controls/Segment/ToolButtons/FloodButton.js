@@ -18,6 +18,7 @@ function FloodButton(props) {
   return (
     <ToolButton
       {...props}
+      value='flood'
       tooltipText={tooltipText}
       selected={tool === 'flood'}
       onClick={onClick}
