@@ -28,6 +28,7 @@ function BrushButton(props) {
   return (
     <ToolButton
       {...props}
+      value='brush'
       tooltipText={tooltipText}
       selected={tool === 'brush' && foreground !== 0}
       hotkey='b'

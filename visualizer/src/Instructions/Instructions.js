@@ -1,11 +1,11 @@
-import MuiAccordion from '@material-ui/core/Accordion';
-import MuiAccordionDetails from '@material-ui/core/AccordionDetails';
-import MuiAccordionSummary from '@material-ui/core/AccordionSummary';
-import Box from '@material-ui/core/Box';
-import { withStyles } from '@material-ui/core/styles';
-import Tab from '@material-ui/core/Tab';
-import Tabs from '@material-ui/core/Tabs';
-import Typography from '@material-ui/core/Typography';
+import Accordion from '@mui/material/Accordion';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import Box from '@mui/material/Box';
+import { styled } from '@mui/material/styles';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
+import Typography from '@mui/material/Typography';
 import PropTypes from 'prop-types';
 import React from 'react';
 import ActionInstructions from './ActionInstructions';
@@ -14,11 +14,58 @@ import DisplayInstructions from './DisplayInstructions';
 import SelectInstructions from './SelectInstructions';
 import ToolInstructions from './ToolInstructions';
 
+const PREFIX = 'Instructions';
+
+const classes = {
+  root: `${PREFIX}-root`,
+  expanded: `${PREFIX}-expanded`,
+  root2: `${PREFIX}-root2`,
+  content: `${PREFIX}-content`,
+  expanded2: `${PREFIX}-expanded2`,
+  root3: `${PREFIX}-root3`,
+};
+
+const Root = styled('div')(({ theme }) => ({
+  [`& .${classes.root}`]: {
+    border: '1px solid rgba(0, 0, 0, .125)',
+    boxShadow: 'none',
+    '&:not(:last-child)': {
+      borderBottom: 0,
+    },
+    '&:before': {
+      display: 'none',
+    },
+    '&$expanded': {
+      m: 'auto',
+    },
+  },
+
+  [`& .${classes.expanded}`]: {},
+
+  [`& .${classes.root2}`]: {
+    backgroundColor: 'rgba(0, 0, 0, .03)',
+    borderBottom: '1px solid rgba(0, 0, 0, .125)',
+    mb: -1,
+    minHeight: 56,
+    '&$expanded': {
+      minHeight: 56,
+    },
+  },
+
+  [`& .${classes.content}`]: {
+    '&$expanded': {
+      m: '12px 0',
+    },
+  },
+
+  [`& .${classes.expanded2}`]: {},
+}));
+
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
 
   return (
-    <div
+    <Root
       role='tabpanel'
       hidden={value !== index}
       id={`simple-tabpanel-${index}`}
@@ -30,7 +77,7 @@ function TabPanel(props) {
           <Typography component='div'>{children}</Typography>
         </Box>
       )}
-    </div>
+    </Root>
   );
 }
 
@@ -39,49 +86,6 @@ TabPanel.propTypes = {
   index: PropTypes.any.isRequired,
   value: PropTypes.any.isRequired,
 };
-
-const Accordion = withStyles({
-  root: {
-    border: '1px solid rgba(0, 0, 0, .125)',
-    boxShadow: 'none',
-    '&:not(:last-child)': {
-      borderBottom: 0,
-    },
-    '&:before': {
-      display: 'none',
-    },
-    '&$expanded': {
-      margin: 'auto',
-    },
-  },
-  expanded: {},
-})(MuiAccordion);
-
-const AccordionSummary = withStyles({
-  root: {
-    backgroundColor: 'rgba(0, 0, 0, .03)',
-    borderBottom: '1px solid rgba(0, 0, 0, .125)',
-    marginBottom: -1,
-    minHeight: 56,
-    '&$expanded': {
-      minHeight: 56,
-    },
-  },
-  content: {
-    '&$expanded': {
-      margin: '12px 0',
-    },
-  },
-  expanded: {},
-})(MuiAccordionSummary);
-
-const AccordionDetails = withStyles((theme) => ({
-  root: {
-    padding: 0,
-    display: 'flex',
-    flexDirection: 'column',
-  },
-}))(MuiAccordionDetails);
 
 export default function Instructions() {
   const [expanded, setExpanded] = React.useState(false);
@@ -109,15 +113,24 @@ export default function Instructions() {
         expanded={expanded}
         onChange={toggleExpanded}
         TransitionProps={{ unmountOnExit: true }}
+        classes={{
+          root: classes.root,
+          expanded: classes.expanded,
+        }}
       >
         <AccordionSummary
           aria-controls='panel1d-content'
           id='panel1d-header'
           onKeyUp={stopExpansion}
+          classes={{
+            root: classes.root2,
+            content: classes.content,
+            expanded: classes.expanded2,
+          }}
         >
           <Typography>Instructions (Click to expand/collapse)</Typography>
         </AccordionSummary>
-        <AccordionDetails>
+        <AccordionDetails sx={{ p: 0, display: 'flex', flexDirection: 'column' }}>
           <Tabs value={value} onChange={handleTabChange}>
             <Tab label='Display' />
             <Tab label='Canvas' />

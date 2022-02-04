@@ -1,6 +1,5 @@
-import { Paper, Tab, Tabs } from '@material-ui/core';
-import Box from '@material-ui/core/Box';
-import { makeStyles } from '@material-ui/core/styles';
+import { Paper, Tab, Tabs } from '@mui/material';
+import Box from '@mui/material/Box';
 import { useSelector } from '@xstate/react';
 import { ResizeSensor } from 'css-element-queries';
 import debounce from 'lodash.debounce';
@@ -12,33 +11,6 @@ import SegmentControls from './Controls/SegmentControls';
 import TrackingControls from './Controls/TrackingControls';
 import Instructions from './Instructions/Instructions';
 import { useCanvas, useLabelMode } from './ProjectContext';
-
-const useStyles = makeStyles((theme) => ({
-  main: {
-    boxSizing: 'border-box',
-    display: 'flex',
-    flexGrow: 1,
-    padding: theme.spacing(1),
-    alignItems: 'stretch',
-    justifyContent: 'space-evenly',
-    minHeight: 'calc(100vh - 66px - 57px - 74px - 1px)',
-    // height: 'calc(100vh - 66px - 57px - 60px - 80px - 1px)'
-  },
-  controlPanelBox: {
-    flex: '0 0 auto',
-    padding: theme.spacing(1),
-  },
-  toolbarBox: {
-    flex: '0 0 auto',
-    padding: theme.spacing(1),
-  },
-  canvasBox: {
-    position: 'relative',
-    flex: '1 1 auto',
-    maxHeight: '100vh',
-    maxWidth: '100vw',
-  },
-}));
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -57,8 +29,6 @@ function TabPanel(props) {
 }
 
 function Label({ review }) {
-  const styles = useStyles();
-
   const search = new URLSearchParams(window.location.search);
   const track = search.get('track');
 
@@ -108,8 +78,23 @@ function Label({ review }) {
   return (
     <>
       <Instructions />
-      <Box className={styles.main}>
-        <Box className={styles.controlPanelBox}>
+      <Box
+        sx={{
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexGrow: 1,
+          p: 1,
+          alignItems: 'stretch',
+          justifyContent: 'space-evenly',
+          minHeight: 'calc(100vh - 73px - 56px - 76px - 2px)',
+        }}
+      >
+        <Box
+          sx={{
+            flex: '0 0 auto',
+            p: 1,
+          }}
+        >
           {track && (
             <Paper square>
               <Tabs
@@ -127,7 +112,12 @@ function Label({ review }) {
           {review && <QCControls />}
           <ImageControls />
         </Box>
-        <Box className={styles.toolbarBox}>
+        <Box
+          sx={{
+            flex: '0 0 auto',
+            p: 1,
+          }}
+        >
           <TabPanel value={value} index={0}>
             <SegmentControls />
           </TabPanel>
@@ -135,7 +125,10 @@ function Label({ review }) {
             <TrackingControls />
           </TabPanel>
         </Box>
-        <Box ref={canvasBoxRef} className={styles.canvasBox}>
+        <Box
+          ref={canvasBoxRef}
+          sx={{ position: 'relative', flex: '1 1 auto', maxHeight: '100vh', maxWidth: '100vw' }}
+        >
           <Canvas />
         </Box>
       </Box>

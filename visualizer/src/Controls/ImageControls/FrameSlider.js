@@ -1,15 +1,8 @@
-import { FormLabel, makeStyles, Slider, Tooltip } from '@material-ui/core';
+import { FormLabel, Slider, Tooltip } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
 import React, { useEffect, useState } from 'react';
 import { useImage } from '../../ProjectContext';
-
-const useStyles = makeStyles((theme) => ({
-  title: {
-    paddingTop: theme.spacing(1),
-    paddingBottom: theme.spacing(1),
-  },
-}));
 
 function FrameSlider() {
   const image = useImage();
@@ -35,8 +28,6 @@ function FrameSlider() {
     </span>
   );
 
-  const styles = useStyles();
-
   const [display, setDisplay] = useState('on');
 
   // Display label for a second after the label changes
@@ -49,7 +40,7 @@ function FrameSlider() {
   return (
     numFrames > 1 && (
       <>
-        <FormLabel component='legend' className={styles.title}>
+        <FormLabel component='legend' sx={{ py: 1 }}>
           Frame
         </FormLabel>
         <Tooltip title={tooltipText}>

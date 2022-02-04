@@ -1,5 +1,5 @@
-import { Box } from '@material-ui/core';
-import Typography from '@material-ui/core/Typography';
+import { Box } from '@mui/material';
+import Typography from '@mui/material/Typography';
 import React from 'react';
 import { Shortcut, Shortcuts } from './Shortcuts';
 

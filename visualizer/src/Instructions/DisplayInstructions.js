@@ -1,5 +1,5 @@
-import { Box, Grid } from '@material-ui/core';
-import Typography from '@material-ui/core/Typography';
+import { Box, Grid } from '@mui/material';
+import Typography from '@mui/material/Typography';
 import React from 'react';
 import LabeledControls from '../Controls/ImageControls/LabeledControls/LabeledControls';
 import ColorModeToggle from '../Controls/ImageControls/RawControls/ColorModeToggle';
@@ -19,7 +19,7 @@ function DisplayShortcuts() {
       <Shortcut text='Previous feature' shortcut='Shift+F' />
       <Shortcut text='Next frame' shortcut='D' />
       <Shortcut text='Previous frame' shortcut='A' />
-      <Typography variant='h6' style={{ whiteSpace: 'nowrap' }}>
+      <Typography variant='h6' sx={{ whiteSpace: 'nowrap' }}>
         Single-channel mode only
       </Typography>
       <Shortcut text='Next channel' shortcut='C' />

@@ -1,7 +1,6 @@
-import { FormLabel } from '@material-ui/core';
-import Box from '@material-ui/core/Box';
-import { makeStyles } from '@material-ui/core/styles';
-import ToggleButtonGroup from '@material-ui/lab/ToggleButtonGroup';
+import { FormLabel } from '@mui/material';
+import Box from '@mui/material/Box';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import React from 'react';
 import BrushButton from './ToolButtons/BrushButton';
 import EraserButton from './ToolButtons/EraserButton';
@@ -11,18 +10,10 @@ import ThresholdButton from './ToolButtons/ThresholdButton';
 import TrimButton from './ToolButtons/TrimButton';
 import WatershedButton from './ToolButtons/WatershedButton';
 
-const useStyles = makeStyles((theme) => ({
-  title: {
-    margin: theme.spacing(1),
-  },
-}));
-
 function ToolButtons() {
-  const styles = useStyles();
-
   return (
     <Box display='flex' flexDirection='column'>
-      <FormLabel className={styles.title}>Tools</FormLabel>
+      <FormLabel sx={{ m: 1 }}>Tools</FormLabel>
       <ToggleButtonGroup orientation='vertical'>
         <SelectButton />
         <BrushButton />
