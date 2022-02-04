@@ -1,7 +1,10 @@
 /** Modified from https://github.com/hms-dbmi/viv */
 import LensIcon from '@mui/icons-material/Lens';
 import IconButton from '@mui/material/IconButton';
+import { styled } from '@mui/system';
 import React from 'react';
+
+const Div = styled('div')``;
 
 // TODO: move to constants
 const COLOR_PALLETE = [
@@ -17,7 +20,7 @@ const COLOR_PALLETE = [
 
 const ColorPalette = ({ handleChange }) => {
   return (
-    <div
+    <Div
       sx={{
         width: '70px',
         height: '40px',
@@ -40,7 +43,7 @@ const ColorPalette = ({ handleChange }) => {
           </IconButton>
         );
       })}
-    </div>
+    </Div>
   );
 };
 

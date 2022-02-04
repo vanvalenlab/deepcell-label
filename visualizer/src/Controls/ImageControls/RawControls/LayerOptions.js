@@ -6,10 +6,13 @@ import MenuItem from '@mui/material/MenuItem';
 import MenuList from '@mui/material/MenuList';
 import Paper from '@mui/material/Paper';
 import Popper from '@mui/material/Popper';
+import { styled } from '@mui/system';
 import { useSelector } from '@xstate/react';
 import React, { useReducer, useRef } from 'react';
 import { useRaw } from '../../../ProjectContext';
 import ColorPalette from './ColorPalette';
+
+const Span = styled('span')``;
 
 function LayerOptions({ layer }) {
   const [open, toggle] = useReducer((v) => !v, false);
@@ -37,7 +40,7 @@ function LayerOptions({ layer }) {
           <ClickAwayListener onClickAway={toggle}>
             <MenuList id='channel-options'>
               <MenuItem dense disableGutters onClick={handleRemove}>
-                <span
+                <Span
                   sx={{
                     width: '70px',
                     textAlign: 'center',
@@ -46,7 +49,7 @@ function LayerOptions({ layer }) {
                   }}
                 >
                   Remove
-                </span>
+                </Span>
               </MenuItem>
               <MenuItem
                 dense
