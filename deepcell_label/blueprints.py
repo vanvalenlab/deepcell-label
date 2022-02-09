@@ -1,29 +1,18 @@
 """Flask blueprint for modular routes."""
 from __future__ import absolute_import, division, print_function
 
-import gzip
-import hashlib
 import io
 import json
 import timeit
 import traceback
 
 import numpy as np
-from flask import (
-    Blueprint,
-    abort,
-    current_app,
-    jsonify,
-    make_response,
-    request,
-    send_file,
-)
+from flask import Blueprint, abort, current_app, jsonify, request, send_file
 from werkzeug.exceptions import BadRequestKeyError, HTTPException
 
 from deepcell_label import exporters, loaders
 from deepcell_label.label import Edit
 from deepcell_label.models import Project
-from deepcell_label.utils import add_frame_div_parent, reformat_cell_info
 
 bp = Blueprint('label', __name__)  # pylint: disable=C0103
 
@@ -99,23 +88,6 @@ def dev_labels(project_id):
     return labels
 
 
-@bp.route('/api/raw/<token>/<int:channel>/<int:frame>', methods=['GET'])
-def raw(token, channel, frame):
-    project = Project.get(token)
-    if not project:
-        return abort(404, description=f'project {token} not found')
-    raw_array = project.get_raw_array(channel, frame)
-    content = gzip.compress(json.dumps(raw_array.tolist()).encode('utf8'), 5)
-    response = make_response(content)
-    response.headers['Content-length'] = len(content)
-    response.headers['Content-Encoding'] = 'gzip'
-    # gzip includes a timestamp that changes the md5 hash
-    # TODO: in Python >= 3.8, add mtime=0 to create stable md5 and use add_etag instead
-    etag = hashlib.md5(raw_array).hexdigest()
-    response.set_etag(etag)
-    return response.make_conditional(request)
-
-
 @bp.route('/api/raw/<token>', methods=['POST'])
 def add_raw(token):
     """Add new channel to the project."""
@@ -143,35 +115,25 @@ def add_raw(token):
     return {'numChannels': project.num_channels}
 
 
-@bp.route('/api/labeled/<token>/<int:feature>/<int:frame>')
-def labeled(token, feature, frame):
-    """ """
-    project = Project.get(token)
-    if not project:
-        return jsonify({'error': f'project {token} not found'}), 404
-    labeled_array = project.get_labeled_array(feature, frame).astype(np.int32)
-    content = gzip.compress(json.dumps(labeled_array.tolist()).encode('utf8'), 5)
-    response = make_response(content)
-    response.headers['Content-length'] = len(content)
-    response.headers['Content-Encoding'] = 'gzip'
-    # gzip includes a timestamp that changes the md5 hash
-    # TODO: in Python >= 3.8, add mtime=0 to create stable md5 and use add_etag instead
-    etag = hashlib.md5(np.ascontiguousarray(labeled_array)).hexdigest()
-    response.set_etag(etag)
-    return response.make_conditional(request)
+@bp.route('/dev/edit/<action>', methods=['POST'])
+def dev_edit(action):
+    """Edits a label image and returns the updated label image and segments in the label image."""
+    start = timeit.default_timer()
+    # Get arguments for action
+    args = {k: json.loads(v) for k, v in request.values.to_dict().items()}
 
+    labels = request.values['labels']
+    raw = request.values['raw'] if 'raw' in request.values else None
+    print(labels, raw, args)
 
-@bp.route('/api/semantic-labels/<project_id>/<int:feature>')
-def semantic_labels(project_id, feature):
-    project = Project.get(project_id)
-    if not project:
-        return jsonify({'error': f'project {project_id} not found'}), 404
-    cell_info = project.labels.cell_info[feature]
-    cell_info = add_frame_div_parent(cell_info)
-    cell_info = reformat_cell_info(cell_info)
-    response = make_response(cell_info)
-    response.add_etag()
-    return response.make_conditional(request)
+    edit = Edit(labels, raw)
+    edit.dispatch_action(action, args)
+    current_app.logger.debug(
+        'Finished action %s in %s s.',
+        action,
+        timeit.default_timer() - start,
+    )
+    return jsonify({'labels': edit.labels, 'patch': edit.patch})
 
 
 @bp.route('/api/edit/<token>/<action_type>', methods=['POST'])
