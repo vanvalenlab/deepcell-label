@@ -83,6 +83,14 @@ class Edit(object):
         except AttributeError:
             raise ValueError('Invalid action "{}"'.format(action))
 
+    def action_replace(self, a, b):
+        """
+        Replaces b with a in the current frame.
+        """
+        a = self.clean_label(a)
+        b = self.clean_label(b)
+        self.label_image = np.where(self.label_image == b, a, self.label_image)
+
     def action_handle_draw(self, trace, foreground, background, brush_size):
         """
         Use a "brush" to draw in the brush value along trace locations of

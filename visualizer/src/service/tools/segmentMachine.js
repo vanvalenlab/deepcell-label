@@ -61,8 +61,8 @@ const editActions = {
       type: 'EDIT',
       action: 'swap_single_frame',
       args: {
-        label_1: foreground,
-        label_2: background,
+        a: foreground,
+        b: background,
       },
     }),
     { to: 'api' }
@@ -70,10 +70,10 @@ const editActions = {
   replace: send(
     ({ foreground, background }) => ({
       type: 'EDIT',
-      action: 'replace_single',
+      action: 'replace',
       args: {
-        label_1: foreground,
-        label_2: background,
+        a: foreground,
+        b: background,
       },
     }),
     { to: 'api' }
@@ -97,7 +97,7 @@ const editActions = {
   delete: send(
     ({ selected }) => ({
       type: 'EDIT',
-      action: 'replace_single',
+      action: 'replace',
       args: { label_1: 0, label_2: selected },
     }),
     { to: 'api' }
@@ -116,7 +116,10 @@ const createSegmentMachine = ({ eventBuses }) =>
   Machine(
     {
       id: 'segment',
-      invoke: { src: fromEventBus('segment', () => eventBuses.raw) },
+      invoke: [
+        { id: 'api', src: fromEventBus('segment', () => eventBuses.api) },
+        { src: fromEventBus('segment', () => eventBuses.raw) },
+      ],
       context: {
         foreground: null,
         background: null,
