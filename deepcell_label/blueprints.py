@@ -120,13 +120,31 @@ def dev_edit(action):
     """Edits a label image and returns the updated label image and segments in the label image."""
     start = timeit.default_timer()
     # Get arguments for action
+    # args = {k: json.loads(v) for k, v in request.values.to_dict().items()}
     args = {k: json.loads(v) for k, v in request.values.to_dict().items()}
+    height = args['height']
+    width = args['width']
+    del args['height']
+    del args['width']
 
-    labels = request.values['labels']
-    raw = request.values['raw'] if 'raw' in request.values else None
-    print(labels, raw, args)
+    if 'labels' not in request.files:
+        return abort(
+            400, description='Attach the labels in a form under the labels field.'
+        )
+    else:
+        labels = request.files['labels']
+        labels_array = np.fromfile(labels, 'int32')
+        labels_array = labels_array.reshape((height, width))
+        print(labels_array)
+    # if 'raw' in request.files:
+    #     raw = request.files['raw']
+    #     raw_array = np.fromfile(raw, 'uint8')
+    #     raw_array = raw_array.reshape((height, width))
+    #     print(raw_array)
+    # else:
+    #     raw = None
 
-    edit = Edit(labels, raw)
+    edit = Edit(labels_array)
     edit.dispatch_action(action, args)
     current_app.logger.debug(
         'Finished action %s in %s s.',
@@ -134,49 +152,6 @@ def dev_edit(action):
         timeit.default_timer() - start,
     )
     return jsonify({'labels': edit.labels, 'patch': edit.patch})
-
-
-@bp.route('/api/edit/<token>/<action_type>', methods=['POST'])
-def edit(token, action_type):
-    """
-    Edit the labeling of the project and
-    update the project in the database.
-    """
-    start = timeit.default_timer()
-    # obtain 'info' parameter data sent by .js script
-    info = {k: json.loads(v) for k, v in request.values.to_dict().items()}
-
-    project = Project.get(token)
-    if not project:
-        return abort(404, description=f'project {token} not found')
-    # TODO: remove frame/feature/channel columns from db schema? or keep them around
-    # to load projects on the last edited frame
-    project.frame = info['frame']
-    project.feature = info['feature']
-    project.channel = info['channel']
-    del info['frame']
-    del info['feature']
-    del info['channel']
-
-    edit = Edit(project)
-    edit.dispatch_action(action_type, info)
-    project.create_memento(action_type)
-    project.update()
-
-    changed_frames = [frame.frame_id for frame in project.action.frames]
-    payload = {
-        'feature': project.feature,
-        'frames': changed_frames,
-        'labels': edit.labels_changed,
-    }
-
-    current_app.logger.debug(
-        'Finished action %s for project %s in %s s.',
-        action_type,
-        token,
-        timeit.default_timer() - start,
-    )
-    return jsonify(payload)
 
 
 @bp.route('/api/undo/<token>', methods=['POST'])
