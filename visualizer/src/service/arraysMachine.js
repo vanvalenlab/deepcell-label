@@ -31,6 +31,7 @@ const createArraysMachine = ({
         labeledArrays: null,
         frame: 0,
         feature: 0,
+        channel: 0,
       },
       initial: 'loading',
       states: {
@@ -65,10 +66,11 @@ const createArraysMachine = ({
           onDone: 'loaded',
         },
         loaded: {
-          entry: 'sendLabeledArray',
+          entry: ['sendLabeledArray', 'sendRawArray'],
           on: {
-            SET_FRAME: { actions: ['setFrame', 'sendLabeledArray'] },
+            SET_FRAME: { actions: ['setFrame', 'sendLabeledArray', 'sendRawArray'] },
             SET_FEATURE: { actions: ['setFeature', 'sendLabeledArray'] },
+            SET_CHANNEL: { actions: ['setChannel', 'sendRawArray'] },
           },
         },
       },
@@ -76,13 +78,6 @@ const createArraysMachine = ({
     {
       guards: {},
       actions: {
-        setDimensions: assign((context, event) => ({
-          numFrames: event.numFrames,
-          numFeatures: event.numFeatures,
-          numChannels: event.numChannels,
-          height: event.height,
-          width: event.width,
-        })),
         setRawArrays: assign({ rawArrays: (ctx, evt) => evt.data }),
         setLabeledArrays: assign({ labeledArrays: (ctx, evt) => evt.data }),
         setFrame: assign({ frame: (ctx, evt) => evt.frame }),
@@ -91,6 +86,13 @@ const createArraysMachine = ({
           (ctx, evt) => ({
             type: 'LABELED_ARRAY',
             labeledArray: ctx.labeledArrays[ctx.feature][ctx.frame],
+          }),
+          { to: 'eventBus' }
+        ),
+        sendRawArray: send(
+          (ctx, evt) => ({
+            type: 'RAW_ARRAY',
+            labeledArray: ctx.rawArrays[ctx.channel][ctx.frame],
           }),
           { to: 'eventBus' }
         ),
