@@ -54,7 +54,7 @@ class Edit(object):
         self.initial_labels = labels.copy()
         self.labels = labels
         self.raw = raw
-        self.new_label = max(labels) + 1
+        self.new_label = np.max(labels) + 1
 
     @property
     def patch(self):
