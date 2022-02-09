@@ -14,11 +14,24 @@ function getApiService(context, event) {
 }
 
 function edit(context, event) {
-  const { frame, feature, channel } = context;
-  const editRoute = `${document.location.origin}/api/edit/${context.projectId}/${event.action}`;
+  const { labeledArray, rawArray } = context;
+  const { action, args } = event;
+  const editRoute = `${document.location.origin}/dev/edit/${action}`;
+  // const usesRaw = action === 'handle_draw' || action === 'threshold' || action === 'watershed';
+
+  const form = new FormData();
+  for (const key in args) {
+    form.append(key, args[key]);
+  }
+  form.append('labels', new Blob(labeledArray), 'labels');
+  form.append('raw', new Blob(rawArray), 'raw');
+  form.append('height', labeledArray.length);
+  form.append('width', labeledArray[0].length);
+
   const options = {
     method: 'POST',
-    body: new URLSearchParams({ ...event.args, frame, feature, channel }),
+    body: form,
+    'Content-Type': 'multipart/form-data',
   };
   return fetch(editRoute, options).then(checkResponseCode);
 }
@@ -86,22 +99,16 @@ const createApiMachine = ({ projectId, bucket, eventBuses }) =>
       id: 'api',
       invoke: [
         { id: 'eventBus', src: fromEventBus('api', () => eventBuses.api) },
-        { id: 'image', src: fromEventBus('api', () => eventBuses.image) },
-        { id: 'raw', src: fromEventBus('api', () => eventBuses.raw) },
-        { id: 'labeled', src: fromEventBus('api', () => eventBuses.labeled) },
+        { id: 'arrays', src: fromEventBus('api', () => eventBuses.arrays) },
       ],
       context: {
         projectId,
         bucket,
-        frame: 0,
-        feature: 0,
-        channel: 0,
       },
       initial: 'idle',
       on: {
-        SET_FRAME: { actions: 'setFrame' },
-        SET_FEATURE: { actions: 'setFeature' },
-        SET_CHANNEL: { actions: 'setChannel' },
+        LABELED_ARRAY: { actions: 'setLabeledArray' },
+        RAW_ARRAY: { actions: 'setRawArray' },
       },
       states: {
         idle: {
@@ -169,9 +176,8 @@ const createApiMachine = ({ projectId, bucket, eventBuses }) =>
           type: 'ERROR',
           error: event.data.error,
         })),
-        setFrame: assign((_, { frame }) => ({ frame })),
-        setFeature: assign((_, { feature }) => ({ feature })),
-        setChannel: assign((_, { channel }) => ({ channel })),
+        setRawArray: assign((_, { rawArray }) => ({ rawArray })),
+        setLabeledArray: assign((_, { labeledArray }) => ({ labeledArray })),
       },
     }
   );
