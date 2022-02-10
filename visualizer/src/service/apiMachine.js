@@ -1,4 +1,4 @@
-import { assign, Machine, send, sendParent } from 'xstate';
+import { assign, Machine, send } from 'xstate';
 import { fromEventBus } from './eventBus';
 
 /** Returns a Promise for a DeepCell Label API call based on the event. */
@@ -100,20 +100,34 @@ const createApiMachine = ({ projectId, bucket, eventBuses }) =>
       invoke: [
         { id: 'eventBus', src: fromEventBus('api', () => eventBuses.api) },
         { id: 'arrays', src: fromEventBus('api', () => eventBuses.arrays) },
+        { src: fromEventBus('api', () => eventBuses.image) },
+        { src: fromEventBus('api', () => eventBuses.labeled) },
       ],
       context: {
         projectId,
         bucket,
+        frame: 0,
+        feature: 0,
+        actionFrame: 0,
+        actionFeature: 0,
       },
       initial: 'idle',
       on: {
         LABELED_ARRAY: { actions: 'setLabeledArray' },
         RAW_ARRAY: { actions: 'setRawArray' },
+        SET_FRAME: { actions: 'setFrame' },
+        SET_FEATURE: { actions: 'setFeature' },
       },
       states: {
         idle: {
           on: {
-            EDIT: 'loading',
+            EDIT: {
+              target: 'loading',
+              actions: assign((context) => ({
+                actionFrame: context.frame,
+                actionFeature: context.feature,
+              })),
+            },
             BACKEND_UNDO: 'loading',
             BACKEND_REDO: 'loading',
             UPLOAD: 'uploading',
@@ -128,30 +142,21 @@ const createApiMachine = ({ projectId, bucket, eventBuses }) =>
               target: 'idle',
               actions: 'sendEdited',
             },
-            onError: {
-              target: 'idle',
-              actions: 'sendError',
-            },
+            onError: 'idle',
           },
         },
         uploading: {
           invoke: {
             src: upload,
             onDone: 'idle',
-            onError: {
-              target: 'idle',
-              actions: 'sendError',
-            },
+            onError: 'idle',
           },
         },
         downloading: {
           invoke: {
             src: download,
             onDone: { target: 'idle', actions: 'download' },
-            onError: {
-              target: 'idle',
-              actions: 'sendError',
-            },
+            onError: 'idle',
           },
         },
       },
@@ -166,16 +171,15 @@ const createApiMachine = ({ projectId, bucket, eventBuses }) =>
           link.click();
         },
         sendEdited: send(
-          (_, event) => ({
+          (context, event) => ({
             type: 'EDITED',
-            data: event.data,
+            frame: context.actionFrame,
+            feature: context.actionFeature,
+            labeledArray: event.data.labels,
+            segmentsPatch: event.data.segmentsPatch,
           }),
-          { to: 'labeled' }
+          { to: 'eventBus' }
         ),
-        sendError: sendParent((_, event) => ({
-          type: 'ERROR',
-          error: event.data.error,
-        })),
         setRawArray: assign((_, { rawArray }) => ({ rawArray })),
         setLabeledArray: assign((_, { labeledArray }) => ({ labeledArray })),
       },
