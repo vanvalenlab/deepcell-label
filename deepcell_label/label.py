@@ -89,7 +89,7 @@ class Edit(object):
         """
         a = self.clean_label(a)
         b = self.clean_label(b)
-        self.label_image = np.where(self.label_image == b, a, self.label_image)
+        self.labels = np.where(self.labels == b, a, self.labels)
 
     def action_handle_draw(self, trace, foreground, background, brush_size):
         """
@@ -112,9 +112,7 @@ class Edit(object):
         for loc in trace:
             x = loc[0]
             y = loc[1]
-            brush_area = skimage.draw.disk(
-                (y, x), brush_size, shape=(self.project.height, self.project.width)
-            )
+            brush_area = skimage.draw.disk((y, x), brush_size, shape=self.labels.shape)
             image[brush_area] = image_replaced[brush_area]
 
         self.labels = image
@@ -234,7 +232,7 @@ class Edit(object):
         right = max(x1, x2) + 1
 
         # pull out the selection portion of the raw frame
-        predict_area = self.raw_frame[top:bottom, left:right]
+        predict_area = self.raw[top:bottom, left:right]
 
         # triangle threshold picked after trying a few on one dataset
         # may not be the best threshold approach for other datasets!
@@ -263,11 +261,11 @@ class Edit(object):
         # make bounding box size to encompass some background
         box_height = props['bbox'][2] - props['bbox'][0]
         top = max(0, props['bbox'][0] - box_height // 2)
-        bottom = min(self.project.height, props['bbox'][2] + box_height // 2)
+        bottom = min(self.labels.shape[0], props['bbox'][2] + box_height // 2)
 
         box_width = props['bbox'][3] - props['bbox'][1]
         left = max(0, props['bbox'][1] - box_width // 2)
-        right = min(self.project.width, props['bbox'][3] + box_width // 2)
+        right = min(self.labels.shape[1], props['bbox'][3] + box_width // 2)
 
         # relevant region of label image to work on
         labels = labels[top:bottom, left:right]
