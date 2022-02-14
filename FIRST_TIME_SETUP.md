@@ -1,10 +1,16 @@
 # First Time Setup Guide
 
-Here we provide instructions on setting up your machine. If you've worked with Python or Javascript projects before, you can skip this steps and install the dependencies and run the application right away as described in the README.
+This instructions install Python and Node on your machine. If you've worked with Python or Javascript projects on your machine, skip this instructions and proceed with the README.
 
 ## Set up Python
 
-The DeepCell Label backend runs on Python. We recommend installing Python with Anaconda if you do not already have Python available. Follow the installation instructions here: https://docs.anaconda.com/anaconda/install/index.html
+The DeepCell Label backend runs on Python. You can check if Python is installed by running:
+
+```bash
+python --version
+```
+
+If the command fails, install Python with Anaconda by following the installation instructions here: https://docs.anaconda.com/anaconda/install/index.html
 
 ### Create a Python virtual environment
 
