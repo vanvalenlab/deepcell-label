@@ -48,7 +48,6 @@ const createThresholdMachine = ({ eventBuses }) =>
               y1: firstPoint[1],
               x2: x,
               y2: y,
-              // frame: context.frame,
               label: foreground,
             },
           }),

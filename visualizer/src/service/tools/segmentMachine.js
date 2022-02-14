@@ -98,7 +98,7 @@ const editActions = {
     ({ selected }) => ({
       type: 'EDIT',
       action: 'replace',
-      args: { label_1: 0, label_2: selected },
+      args: { a: 0, b: selected },
     }),
     { to: 'api' }
   ),

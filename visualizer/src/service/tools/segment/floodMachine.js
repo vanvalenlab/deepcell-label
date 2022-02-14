@@ -35,8 +35,8 @@ const creatFloodMachine = ({ eventBuses }) =>
             action: 'flood',
             args: {
               label: foreground,
-              x_location: x,
-              y_location: y,
+              x,
+              y,
             },
           }),
           { to: 'api' }

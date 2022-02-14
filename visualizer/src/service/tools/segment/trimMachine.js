@@ -35,8 +35,8 @@ const createTrimMachine = ({ eventBuses }) =>
             action: 'trim_pixels',
             args: {
               label: hovering,
-              x_location: x,
-              y_location: y,
+              x,
+              y,
             },
           }),
           { to: 'api' }

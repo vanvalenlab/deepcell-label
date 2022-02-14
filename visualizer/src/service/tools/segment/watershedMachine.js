@@ -74,10 +74,10 @@ const createWatershedMachine = ({ eventBuses }) =>
             action: 'watershed',
             args: {
               label: storedLabel,
-              x1_location: storedX,
-              y1_location: storedY,
-              x2_location: x,
-              y2_location: y,
+              x1: storedX,
+              y1: storedY,
+              x2: x,
+              y2: y,
             },
           }),
           { to: 'api' }
