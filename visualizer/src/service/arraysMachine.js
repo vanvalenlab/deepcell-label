@@ -102,7 +102,7 @@ const createArraysMachine = ({
         sendRawArray: send(
           (ctx, evt) => ({
             type: 'RAW_ARRAY',
-            labeledArray: ctx.rawArrays[ctx.channel][ctx.frame],
+            rawArray: ctx.rawArrays[ctx.channel][ctx.frame],
           }),
           { to: 'eventBus' }
         ),

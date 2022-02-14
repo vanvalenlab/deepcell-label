@@ -129,30 +129,30 @@ def dev_edit(action):
     """Edits a label image and returns the updated label image and segments in the label image."""
     start = timeit.default_timer()
     # Get arguments for action
-    # args = {k: json.loads(v) for k, v in request.values.to_dict().items()}
     args = {k: json.loads(v) for k, v in request.values.to_dict().items()}
+    # Separate height and width from args
     height = args['height']
     width = args['width']
     del args['height']
     del args['width']
 
+    # Parse label and raw arrays
     if 'labels' not in request.files:
-        return abort(
-            400, description='Attach the labels in a form under the labels field.'
-        )
+        return abort(400, description='Attach the labels.')
     else:
         labels = request.files['labels']
         labels_array = np.fromfile(labels, 'int32')
         labels_array = labels_array.reshape((height, width))
-    # if 'raw' in request.files:
-    #     raw = request.files['raw']
-    #     raw_array = np.fromfile(raw, 'uint8')
-    #     raw_array = raw_array.reshape((height, width))
-    #     print(raw_array)
-    # else:
-    #     raw = None
+    if 'raw' in request.files:
+        raw = request.files['raw']
+        raw_array = np.fromfile(raw, 'uint8')
+        raw_array = raw_array.reshape((height, width))
+    elif action in ['watershed', 'threshold', 'autofit']:
+        return abort(400, description=f'Attach a raw image to use the {action} action.')
+    else:
+        raw_array = None
 
-    edit = Edit(labels_array)
+    edit = Edit(labels_array, raw_array)
     edit.dispatch_action(action, args)
 
     content = gzip.compress(json.dumps(edit.labels.tolist()).encode('utf8'), 5)
