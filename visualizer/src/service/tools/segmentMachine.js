@@ -134,13 +134,13 @@ const createSegmentMachine = (context) =>
         getSelectedLabels: {
           entry: send('GET_STATE', { to: 'select' }),
           on: {
-            FOREGROUND: { actions: [(c, e) => console.log(e), 'setForeground'] },
+            FOREGROUND: { actions: 'setForeground' },
             BACKGROUND: { actions: 'setBackground' },
           },
           always: { cond: 'have selected labels', target: 'idle' },
         },
         idle: {
-          entry: [(c, e) => console.log(c), 'spawnTools'],
+          entry: 'spawnTools',
           type: 'parallel',
           states: {
             display: displayState,

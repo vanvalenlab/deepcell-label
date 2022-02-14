@@ -5,7 +5,6 @@ import { toolActions, toolGuards } from './toolUtils';
 const createThresholdMachine = (context) =>
   Machine(
     {
-      entry: () => console.log(context),
       initial: 'idle',
       invoke: [
         { src: fromEventBus('threshold', () => context.eventBuses.select) },
@@ -26,7 +25,7 @@ const createThresholdMachine = (context) =>
         },
         dragging: {
           on: {
-            mouseup: { target: 'idle', actions: [(c, e) => console.log(c), 'threshold'] },
+            mouseup: { target: 'idle', actions: 'threshold' },
           },
         },
       },

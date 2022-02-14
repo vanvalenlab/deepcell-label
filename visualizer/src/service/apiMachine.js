@@ -140,7 +140,7 @@ const createApiMachine = ({ projectId, bucket, eventBuses }) =>
             src: getApiService,
             onDone: {
               target: 'idle',
-              actions: [(c, e) => console.log(e), 'sendEdited'],
+              actions: 'sendEdited',
             },
             onError: 'idle',
           },

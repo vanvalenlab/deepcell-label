@@ -124,7 +124,7 @@ const createSelectMachine = ({ eventBuses }) =>
         ],
 
         GET_STATE: {
-          actions: [(c, e) => console.log(e), 'sendSelected', 'sendForeground', 'sendBackground'],
+          actions: ['sendSelected', 'sendForeground', 'sendBackground'],
         },
 
         HOVERING: { actions: 'setHovering' },
