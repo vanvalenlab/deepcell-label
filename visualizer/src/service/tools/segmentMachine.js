@@ -112,13 +112,14 @@ const editActions = {
   ),
 };
 
-const createSegmentMachine = ({ eventBuses }) =>
+const createSegmentMachine = (context) =>
   Machine(
     {
       id: 'segment',
       invoke: [
-        { id: 'api', src: fromEventBus('segment', () => eventBuses.api) },
-        { src: fromEventBus('segment', () => eventBuses.raw) },
+        { id: 'api', src: fromEventBus('segment', () => context.eventBuses.api) },
+        { src: fromEventBus('segment', () => context.eventBuses.raw) },
+        { id: 'select', src: fromEventBus('segment', () => context.eventBuses.select) },
       ],
       context: {
         foreground: null,
@@ -126,34 +127,46 @@ const createSegmentMachine = ({ eventBuses }) =>
         selected: null,
         tool: 'select',
         tools: null,
-        eventBuses,
+        eventBuses: context.eventBuses,
       },
-      entry: 'spawnTools',
-      type: 'parallel',
+      initial: 'getSelectedLabels',
       states: {
-        display: displayState,
-        pan: panState,
-      },
-      on: {
-        // undo/redo actions
-        SAVE: { actions: 'save' },
-        RESTORE: { actions: ['restore', respond('RESTORED')] },
+        getSelectedLabels: {
+          entry: send('GET_STATE', { to: 'select' }),
+          on: {
+            FOREGROUND: { actions: [(c, e) => console.log(e), 'setForeground'] },
+            BACKGROUND: { actions: 'setBackground' },
+          },
+          always: { cond: 'have selected labels', target: 'idle' },
+        },
+        idle: {
+          entry: [(c, e) => console.log(c), 'spawnTools'],
+          type: 'parallel',
+          states: {
+            display: displayState,
+            pan: panState,
+          },
+          on: {
+            // from canvas event bus (forwarded from parent)
+            mousedown: { actions: 'forwardToTool' },
+            mouseup: { actions: 'forwardToTool' },
+            HOVERING: { actions: 'forwardToTools' },
+            COORDINATES: { actions: 'forwardToTools' },
+            // from selected labels event bus
+            FOREGROUND: { actions: 'setForeground' },
+            BACKGROUND: { actions: 'setBackground' },
+            SELECTED: { actions: 'setSelected' },
 
-        // from canvas event bus (forwarded from parent)
-        mousedown: { actions: 'forwardToTool' },
-        mouseup: { actions: 'forwardToTool' },
-        HOVERING: { actions: 'forwardToTools' },
-        COORDINATES: { actions: 'forwardToTools' },
-        // from selected labels event bus
-        FOREGROUND: { actions: 'setForeground' },
-        BACKGROUND: { actions: 'setBackground' },
-        SELECTED: { actions: 'setSelected' },
+            SWAP: { actions: 'swap' },
+            REPLACE: { actions: 'replace' },
+            DELETE: { actions: 'delete' },
+            ERODE: { actions: 'erode' },
+            DILATE: { actions: 'dilate' },
 
-        SWAP: { actions: 'swap' },
-        REPLACE: { actions: 'replace' },
-        DELETE: { actions: 'delete' },
-        ERODE: { actions: 'erode' },
-        DILATE: { actions: 'dilate' },
+            SAVE: { actions: 'save' },
+            RESTORE: { actions: ['restore', respond('RESTORED')] },
+          },
+        },
       },
     },
     {
@@ -165,6 +178,8 @@ const createSegmentMachine = ({ eventBuses }) =>
         isGrayscaleTool: (_, { tool }) => grayscaleTools.includes(tool),
         isNoPanTool: (_, { tool }) => noPanTools.includes(tool),
         isPanTool: (_, { tool }) => panTools.includes(tool),
+        'have selected labels': (context) =>
+          context.foreground !== null && context.background !== null,
       },
       actions: {
         ...toolActions,

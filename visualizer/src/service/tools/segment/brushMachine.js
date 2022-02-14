@@ -13,8 +13,8 @@ const createBrushMachine = (context) =>
       context: {
         x: null,
         y: null,
-        foreground: null,
-        background: null,
+        foreground: context.foreground,
+        background: context.background,
         trace: [],
         brushSize: 5,
       },

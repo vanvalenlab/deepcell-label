@@ -2,33 +2,30 @@ import { Machine, send } from 'xstate';
 import { fromEventBus } from '../../eventBus';
 import { toolActions, toolGuards } from './toolUtils';
 
-const creatFloodMachine = ({ eventBuses }) =>
+const creatFloodMachine = (context) =>
   Machine(
     {
       invoke: [
-        { id: 'selectedCells', src: fromEventBus('flood', () => eventBuses.select) },
-        { id: 'api', src: fromEventBus('flood', () => eventBuses.api) },
+        { src: fromEventBus('flood', () => context.eventBuses.select) },
+        { id: 'api', src: fromEventBus('flood', () => context.eventBuses.api) },
       ],
       context: {
         x: null,
         y: null,
-        label: null,
-        foreground: null,
-        background: null,
+        foreground: context.foreground,
+        background: context.background,
       },
       on: {
         COORDINATES: { actions: 'setCoordinates' },
-        HOVERING: { actions: 'setHovering' },
         FOREGROUND: { actions: 'setForeground' },
         BACKGROUND: { actions: 'setBackground' },
-        mouseup: { actions: ['flood', 'selectBackground'] },
+        mouseup: { actions: 'flood' },
       },
     },
     {
       guards: toolGuards,
       actions: {
         ...toolActions,
-        selectBackground: send('SELECT_BACKGROUND', { to: 'selectedCells' }),
         flood: send(
           ({ foreground, x, y }, event) => ({
             type: 'EDIT',
