@@ -1,13 +1,22 @@
 """Flask blueprint for modular routes."""
 from __future__ import absolute_import, division, print_function
 
+import gzip
 import io
 import json
 import timeit
 import traceback
 
 import numpy as np
-from flask import Blueprint, abort, current_app, jsonify, request, send_file
+from flask import (
+    Blueprint,
+    abort,
+    current_app,
+    jsonify,
+    make_response,
+    request,
+    send_file,
+)
 from werkzeug.exceptions import BadRequestKeyError, HTTPException
 
 from deepcell_label import exporters, loaders
@@ -135,7 +144,6 @@ def dev_edit(action):
         labels = request.files['labels']
         labels_array = np.fromfile(labels, 'int32')
         labels_array = labels_array.reshape((height, width))
-        print(labels_array)
     # if 'raw' in request.files:
     #     raw = request.files['raw']
     #     raw_array = np.fromfile(raw, 'uint8')
@@ -146,12 +154,18 @@ def dev_edit(action):
 
     edit = Edit(labels_array)
     edit.dispatch_action(action, args)
+
+    content = gzip.compress(json.dumps(edit.labels.tolist()).encode('utf8'), 5)
+    response = make_response(content)
+    response.headers['Content-length'] = len(content)
+    response.headers['Content-Encoding'] = 'gzip'
+
     current_app.logger.debug(
         'Finished action %s in %s s.',
         action,
         timeit.default_timer() - start,
     )
-    return jsonify({'labels': edit.labels, 'patch': edit.patch})
+    return response
 
 
 @bp.route('/api/undo/<token>', methods=['POST'])
