@@ -140,7 +140,7 @@ const createApiMachine = ({ projectId, bucket, eventBuses }) =>
             src: getApiService,
             onDone: {
               target: 'idle',
-              actions: 'sendEdited',
+              actions: [(c, e) => console.log(e), 'sendEdited'],
             },
             onError: 'idle',
           },
@@ -175,8 +175,7 @@ const createApiMachine = ({ projectId, bucket, eventBuses }) =>
             type: 'EDITED',
             frame: context.actionFrame,
             feature: context.actionFeature,
-            labeledArray: event.data.labels,
-            segmentsPatch: event.data.segmentsPatch,
+            labeledArray: event.data.map((arr) => Int32Array.from(arr)),
           }),
           { to: 'eventBus' }
         ),
