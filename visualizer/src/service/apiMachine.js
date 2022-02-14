@@ -16,7 +16,7 @@ function getApiService(context, event) {
 function edit(context, event) {
   const { labeledArray, rawArray } = context;
   const { action, args } = event;
-  const editRoute = `${document.location.origin}/dev/edit/${action}`;
+  const editRoute = `${document.location.origin}/api/edit/${action}`;
   // const usesRaw = action === 'handle_draw' || action === 'threshold' || action === 'watershed';
 
   const form = new FormData();

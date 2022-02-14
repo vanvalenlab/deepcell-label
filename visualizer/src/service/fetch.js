@@ -20,14 +20,14 @@ export function fetchRaw(context) {
     return channels;
   };
 
-  return fetch(`/dev/raw/${projectId}`)
+  return fetch(`/api/raw/${projectId}`)
     .then((response) => response.arrayBuffer())
     .then(splitBuffer);
 }
 
 export function fetchLabeled(context) {
   const { projectId, numFeatures, numFrames, height, width } = context;
-  const pathToLabeled = `/dev/labeled/${projectId}`;
+  const pathToLabeled = `/api/labeled/${projectId}`;
 
   const splitBuffer = (buffer) => {
     const features = [];
@@ -55,7 +55,7 @@ export function fetchLabeled(context) {
 
 export function fetchLabels(context) {
   const { projectId } = context;
-  const pathToLabeled = `/dev/labels/${projectId}`;
+  const pathToLabeled = `/api/labels/${projectId}`;
 
   return fetch(pathToLabeled).then((res) => res.json());
 }
