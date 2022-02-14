@@ -19,6 +19,7 @@ const createArraysMachine = ({
       invoke: [
         { id: 'eventBus', src: fromEventBus('arrays', () => eventBuses.arrays) },
         { id: 'image', src: fromEventBus('arrays', () => eventBuses.image) },
+        { src: fromEventBus('arrays', () => eventBuses.api) },
       ],
       context: {
         projectId,
@@ -71,6 +72,7 @@ const createArraysMachine = ({
             SET_FRAME: { actions: ['setFrame', 'sendLabeledArray', 'sendRawArray'] },
             SET_FEATURE: { actions: ['setFeature', 'sendLabeledArray'] },
             SET_CHANNEL: { actions: ['setChannel', 'sendRawArray'] },
+            EDITED: { actions: ['updateLabeledArray', 'sendLabeledArray'] },
           },
         },
       },
@@ -82,6 +84,14 @@ const createArraysMachine = ({
         setLabeledArrays: assign({ labeledArrays: (ctx, evt) => evt.data }),
         setFrame: assign({ frame: (ctx, evt) => evt.frame }),
         setFeature: assign({ feature: (ctx, evt) => evt.feature }),
+        updateLabeledArray: assign({
+          labeledArrays: (ctx, evt) => {
+            const { frame, feature, labeledArray } = evt;
+            const { labeledArrays } = ctx;
+            labeledArrays[feature][frame] = labeledArray;
+            return labeledArrays;
+          },
+        }),
         sendLabeledArray: send(
           (ctx, evt) => ({
             type: 'LABELED_ARRAY',
