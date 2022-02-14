@@ -30,8 +30,8 @@ jobs:
             ${{ runner.os }}-yarn-
             ${{ runner.os }}-
 
-      - name: Install Xi
-        run: sudo apt-get install -y xserver-xorg-dev libxi-dev libxext-dev
+      # - name: Install Xi
+      #   run: sudo apt-get install -y xserver-xorg-dev libxi-dev libxext-dev
 
       - name: Yarn Install
         working-directory: visualizer
