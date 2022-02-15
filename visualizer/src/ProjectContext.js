@@ -228,7 +228,7 @@ const gl = !!document.createElement('canvas').getContext('webgl');
 /** Creates a reference to a canvas with an alpha channel to use with a GPU.js kernel. */
 export function useAlphaKernelCanvas() {
   const project = useProject();
-  const canvasRef = useRef();
+  const [canvas, setCanvas] = useState(document.createElement('canvas'));
 
   useEffect(() => {
     const canvas = document.createElement('canvas');
@@ -237,28 +237,26 @@ export function useAlphaKernelCanvas() {
     } else if (gl) {
       canvas.getContext('webgl', { premultipliedAlpha: false });
     }
-    canvasRef.current = canvas;
+    setCanvas(canvas);
   }, [project]);
 
-  return canvasRef;
+  return canvas;
 }
 
 /** Creates a references to a canvas with the same dimensions as the project. */
 export function useDrawCanvas() {
-  const canvasRef = useRef();
+  const [drawCanvas] = useState(document.createElement('canvas'));
 
   const canvas = useCanvas();
   const width = useSelector(canvas, (state) => state.context.width);
   const height = useSelector(canvas, (state) => state.context.height);
 
   useEffect(() => {
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    canvasRef.current = canvas;
-  }, [height, width]);
+    drawCanvas.width = width;
+    drawCanvas.height = height;
+  }, [drawCanvas, height, width]);
 
-  return canvasRef;
+  return drawCanvas;
 }
 
 function ProjectContext({ project, children }) {
