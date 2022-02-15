@@ -33,7 +33,7 @@ const createRawMachine = ({ projectId, numChannels, eventBuses }) =>
             TOGGLE_COLOR_MODE: 'grayscale',
             // Need propagate event to root actor to rerender canvas
             ADD_LAYER: { actions: ['addLayer', sendParent((c, e) => e)] },
-            REMOVE_LAYER: { actions: ['removeLayer', sendParent((c, e) => e)] },
+            REMOVE_LAYER: { actions: ['removeLayer', sendParent((c, e) => e), 'setLayers'] },
           },
         },
         grayscale: {
@@ -95,6 +95,9 @@ const createRawMachine = ({ projectId, numChannels, eventBuses }) =>
         removeLayer: assign({
           layers: ({ layers }, { layer }) => [...layers.filter((val) => val !== layer)],
         }),
+        setLayers: pure((context) =>
+          context.layers.map((layer, i) => send({ type: 'SET_LAYER', layer: i }, { to: layer }))
+        ),
         save: respond(({ channel, isGrayscale }) => ({ type: 'RESTORE', isGrayscale, channel })),
         restore: pure((context, event) =>
           context.isGrayscale === event.isGrayscale

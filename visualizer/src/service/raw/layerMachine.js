@@ -13,6 +13,7 @@ const createLayerMachine = (layer, numChannels) =>
         range: [0, 255],
       },
       on: {
+        SET_LAYER: { actions: 'setLayer' },
         SET_CHANNEL: { actions: 'setChannel' },
         SET_COLOR: { actions: 'setColor' },
         TOGGLE_ON: { actions: 'toggleOn' },
@@ -21,6 +22,7 @@ const createLayerMachine = (layer, numChannels) =>
     },
     {
       actions: {
+        setLayer: assign({ layer: (_, event) => event.layer }),
         setChannel: assign({ channel: (_, { channel }) => channel }),
         setColor: assign({ color: (_, { color }) => color }),
         toggleOn: assign({ on: ({ on }) => !on }),
