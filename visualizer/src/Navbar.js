@@ -1,40 +1,19 @@
-import AppBar from '@material-ui/core/AppBar';
-import Button from '@material-ui/core/Button';
-import IconButton from '@material-ui/core/IconButton';
-import Menu from '@material-ui/core/Menu';
-import { makeStyles } from '@material-ui/core/styles';
-import Toolbar from '@material-ui/core/Toolbar';
-import Typography from '@material-ui/core/Typography';
-import MoreIcon from '@material-ui/icons/MoreVert';
+import MoreIcon from '@mui/icons-material/MoreVert';
+import AppBar from '@mui/material/AppBar';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Menu from '@mui/material/Menu';
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
+import { styled } from '@mui/system';
 import React, { useState } from 'react';
 import { FaGithub } from 'react-icons/fa';
 
-const useStyles = makeStyles((theme) => ({
-  root: {},
-  grow: {
-    flexGrow: 1,
-  },
-  sectionDesktop: {
-    display: 'none',
-    [theme.breakpoints.up('sm')]: {
-      display: 'flex',
-    },
-  },
-  sectionMobile: {
-    display: 'flex',
-    [theme.breakpoints.up('sm')]: {
-      display: 'none',
-    },
-  },
-  mobileMenuItem: {
-    display: 'block',
-  },
-}));
+const Div = styled('div')``;
 
 export default function NavBar() {
   // const [anchorEl, setAnchorEl] = useState(null);
   const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = useState(null);
-  const classes = useStyles();
 
   const MobileMenu = () => {
     return (
@@ -49,7 +28,7 @@ export default function NavBar() {
           color='inherit'
           href='http://deepcell.org/'
           target='_blank'
-          className={classes.mobileMenuItem}
+          sx={{ display: 'block' }}
         >
           DeepCell
         </Button>
@@ -57,7 +36,7 @@ export default function NavBar() {
           color='inherit'
           href='https://github.com/vanvalenlab'
           target='_blank'
-          className={classes.mobileMenuItem}
+          sx={{ display: 'block' }}
         >
           <FaGithub size={28} />
         </Button>
@@ -66,21 +45,28 @@ export default function NavBar() {
   };
 
   return (
-    <div className={classes.root}>
+    <div>
       <AppBar position='static'>
         <Toolbar>
-          <Typography variant='subtitle1' color='inherit' className={classes.grow}>
-            <IconButton color='inherit' href='/'>
+          <Typography variant='subtitle1' color='inherit' sx={{ flexGrow: 1 }}>
+            <IconButton color='inherit' href='/' size='large'>
               DeepCell Label
             </IconButton>
           </Typography>
-          <div className={classes.grow} />
-          <div className={classes.sectionDesktop}>
+          <Div sx={{ flexGrow: 1 }} />
+          <Div
+            sx={{
+              display: {
+                xs: 'none',
+                sm: 'flex',
+              },
+            }}
+          >
             <Button
               color='inherit'
               href='http://deepcell.org/'
               target='_blank'
-              className={classes.mobileMenuItem}
+              sx={{ display: 'block' }}
             >
               DeepCell
             </Button>
@@ -88,20 +74,28 @@ export default function NavBar() {
               color='inherit'
               href='https://github.com/vanvalenlab'
               target='_blank'
-              className={classes.mobileMenuItem}
+              sx={{ display: 'block' }}
             >
               <FaGithub size={28} />
             </Button>
-          </div>
-          <div className={classes.sectionMobile}>
+          </Div>
+          <Div
+            sx={{
+              display: {
+                xs: 'flex',
+                sm: 'none',
+              },
+            }}
+          >
             <IconButton
               aria-haspopup='true'
               color='inherit'
               onClick={(e) => setMobileMoreAnchorEl(e.currentTarget)}
+              size='large'
             >
               <MoreIcon />
             </IconButton>
-          </div>
+          </Div>
         </Toolbar>
       </AppBar>
       <MobileMenu />

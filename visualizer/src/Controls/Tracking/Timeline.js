@@ -1,4 +1,4 @@
-import { Box, FormLabel, makeStyles, Typography } from '@material-ui/core';
+import { Box, FormLabel, Typography } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import { bind, unbind } from 'mousetrap';
 import { default as React, useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -7,24 +7,10 @@ import FrameSlider from '../FrameSlider';
 import Division, { Cell, DivisionFootprint } from './Division';
 import LabelTimeline from './LabelTimeline';
 
-const useStyles = makeStyles({
-  divisions: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  division: {
-    display: 'flex',
-    justifyContent: 'left',
-    alignItems: 'center',
-    width: '50%',
-  },
-});
-
 // Renders a hidden division timeline to size the real divisions
 function DivisionsFootprint({ footprintRef }) {
   return (
-    <Box ref={footprintRef} style={{ display: 'flex', visibility: 'hidden', position: 'absolute' }}>
+    <Box ref={footprintRef} sx={{ display: 'flex', visibility: 'hidden', position: 'absolute' }}>
       <DivisionFootprint />
       <DivisionFootprint />
     </Box>
@@ -32,8 +18,6 @@ function DivisionsFootprint({ footprintRef }) {
 }
 
 function Divisions({ label }) {
-  const styles = useStyles();
-
   const division = useDivision(label);
 
   const footprintRef = useRef();
@@ -49,13 +33,25 @@ function Divisions({ label }) {
   return (
     <>
       <DivisionsFootprint footprintRef={footprintRef} />
-      <Box className={styles.divisions} style={{ minWidth, minHeight }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          minWidth,
+          minHeight,
+        }}
+      >
         {label !== 0 && (
           <>
-            <Box className={styles.division}>
+            <Box
+              sx={{ display: 'flex', justifyContent: 'left', alignItems: 'center', width: '50%' }}
+            >
               {division.parent && <Division label={division.parent} />}
             </Box>
-            <Box className={styles.division}>
+            <Box
+              sx={{ display: 'flex', justifyContent: 'left', alignItems: 'center', width: '50%' }}
+            >
               <Division label={label} />
             </Box>
           </>
@@ -94,7 +90,7 @@ function Timeline() {
   return (
     <Box m={1}>
       {addingDaughter && (
-        <Typography style={{ maxWidth: '100%' }}>
+        <Typography sx={{ maxWidth: '100%' }}>
           Click a label to add a daughter to label {parent}.
         </Typography>
       )}

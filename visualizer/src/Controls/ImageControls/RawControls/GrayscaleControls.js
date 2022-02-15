@@ -1,25 +1,14 @@
-import { Box, FormLabel, makeStyles } from '@material-ui/core';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import FormGroup from '@material-ui/core/FormGroup';
-import Grid from '@material-ui/core/Grid';
-import Select from '@material-ui/core/Select';
-import Slider from '@material-ui/core/Slider';
-import Switch from '@material-ui/core/Switch';
-import Tooltip from '@material-ui/core/Tooltip';
+import { Box, FormLabel, MenuItem, TextField } from '@mui/material';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import FormGroup from '@mui/material/FormGroup';
+import Grid from '@mui/material/Grid';
+import Slider from '@mui/material/Slider';
+import Switch from '@mui/material/Switch';
+import Tooltip from '@mui/material/Tooltip';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
 import React, { useEffect, useRef } from 'react';
 import { useRaw } from '../../../ProjectContext';
-
-const useStyles = makeStyles((theme) => ({
-  root: {
-    paddingTop: theme.spacing(1),
-  },
-  slider: {
-    color: 'primary',
-    marginTop: theme.spacing(1),
-  },
-}));
 
 const InvertToggle = ({ channel }) => {
   const invert = useSelector(channel, (state) => state.context.invert);
@@ -85,20 +74,19 @@ const ChannelSelector = () => {
   }, [raw, channel, numChannels]);
 
   return (
-    <Tooltip title={tooltip}>
-      <Select native value={channel} onChange={onChange}>
+    <Tooltip title={tooltip} placement='top'>
+      <TextField select size='small' value={channel} onChange={onChange}>
         {names.map((opt, index) => (
-          <option key={index} value={index}>
+          <MenuItem key={index} value={index}>
             {opt}
-          </option>
+          </MenuItem>
         ))}
-      </Select>
+      </TextField>
     </Tooltip>
   );
 };
 
 const BrightnessSlider = ({ channel }) => {
-  const styles = useStyles();
   const brightness = useSelector(channel, (state) => state.context.brightness);
 
   const { send } = channel;
@@ -110,7 +98,7 @@ const BrightnessSlider = ({ channel }) => {
 
   return (
     <Slider
-      className={styles.slider}
+      sx={{ color: 'primary', mt: 1 }}
       value={brightness}
       onChange={onChange}
       onDoubleClick={onDoubleClick}
@@ -124,7 +112,6 @@ const BrightnessSlider = ({ channel }) => {
 };
 
 const ContrastSlider = ({ channel }) => {
-  const styles = useStyles();
   const contrast = useSelector(channel, (state) => state.context.contrast);
   const { send } = channel;
 
@@ -134,7 +121,7 @@ const ContrastSlider = ({ channel }) => {
 
   return (
     <Slider
-      className={styles.slider}
+      sx={{ color: 'primary', mt: 1 }}
       value={contrast}
       onChange={onChange}
       onDoubleClick={onDoubleClick}
@@ -148,7 +135,6 @@ const ContrastSlider = ({ channel }) => {
 };
 
 const RangeSlider = ({ channel }) => {
-  const styles = useStyles();
   const { send } = channel;
   const range = useSelector(channel, (state) => state.context.range);
 
@@ -157,7 +143,7 @@ const RangeSlider = ({ channel }) => {
 
   return (
     <Slider
-      className={styles.slider}
+      sx={{ color: 'primary', mt: 1 }}
       value={range}
       onChange={onChange}
       onDoubleClick={onDoubleClick}
@@ -174,16 +160,14 @@ const GrayscaleControls = () => {
   const raw = useRaw();
   const channel = useSelector(raw, (state) => state.context.channels[state.context.channel]);
 
-  const styles = useStyles();
-
   useEffect(() => {
     bind('0', () => raw.send('RESET'));
   }, [raw]);
 
   return (
-    <Grid style={{ width: '100%' }} item>
-      <Grid container direction='column' m={1} className={styles.root}>
-        <Grid item xs={12} container direction='row' style={{ justifyContent: 'space-between' }}>
+    <Grid sx={{ width: '100%' }} item>
+      <Grid container direction='column' sx={{ pt: 1 }}>
+        <Grid item xs={12} container direction='row' sx={{ justifyContent: 'space-between' }}>
           <ChannelSelector />
           <InvertToggle channel={channel} />
         </Grid>
@@ -199,7 +183,15 @@ const GrayscaleControls = () => {
               <FormLabel>Brightness</FormLabel>
               <FormLabel>Contrast</FormLabel>
             </Box>
-            <Box display='flex' flexDirection='column' justifyContent='space-around' flex='1'>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-around',
+                flex: 1,
+                mx: 1,
+              }}
+            >
               <RangeSlider channel={channel} />
               <BrightnessSlider channel={channel} />
               <ContrastSlider channel={channel} />

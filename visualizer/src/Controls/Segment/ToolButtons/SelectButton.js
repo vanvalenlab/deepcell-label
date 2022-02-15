@@ -20,6 +20,7 @@ function SelectButton(props) {
   return (
     <ToolButton
       {...props}
+      value='select'
       hotkey='v'
       tooltipText={tooltipText}
       selected={tool === 'select'}

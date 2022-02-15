@@ -1,6 +1,5 @@
-import Box from '@material-ui/core/Box';
-import CircularProgress from '@material-ui/core/CircularProgress';
-import { makeStyles } from '@material-ui/core/styles';
+import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
 import { useSelector } from '@xstate/react';
 import React, { useEffect } from 'react';
 import { useCanvas, useLabeled, useRaw, useSegment, useSelect } from '../ProjectContext';
@@ -10,13 +9,6 @@ import OutlineCanvas from './Labeled/OutlineCanvas';
 import RawCanvas from './Raw/RawCanvas';
 import BrushCanvas from './Tool/BrushCanvas';
 import ThresholdCanvas from './Tool/ThresholdCanvas';
-
-const useStyles = makeStyles({
-  canvasBox: {
-    alignSelf: 'flex-start',
-    position: 'absolute',
-  },
-});
 
 export const Canvas = () => {
   const raw = useRaw();
@@ -39,21 +31,12 @@ export const Canvas = () => {
   const segment = useSegment();
   const tool = useSelector(segment, (state) => state.context.tool);
 
-  const styles = useStyles();
-
   // dynamic canvas border styling based on position
   const padding = 5;
   const topColor = Math.floor(sy) === 0 ? 'white' : 'black';
   const bottomColor = Math.ceil(sy + sh / zoom) === sh ? 'white' : 'black';
   const rightColor = Math.ceil(sx + sw / zoom) === sw ? 'white' : 'black';
   const leftColor = Math.floor(sx) === 0 ? 'white' : 'black';
-  const canvasStyles = {
-    borderTop: `${padding}px solid ${topColor}`,
-    borderBottom: `${padding}px solid ${bottomColor}`,
-    borderLeft: `${padding}px solid ${leftColor}`,
-    borderRight: `${padding}px solid ${rightColor}`,
-    cursor: cursor,
-  };
 
   // prevent scrolling page when over canvas
   useEffect(() => {
@@ -86,8 +69,15 @@ export const Canvas = () => {
   return (
     <Box
       id={'canvasBox'}
-      className={styles.canvasBox}
-      style={canvasStyles}
+      sx={{
+        alignSelf: 'flex-start',
+        position: 'absolute',
+        borderTop: `${padding}px solid ${topColor}`,
+        borderBottom: `${padding}px solid ${bottomColor}`,
+        borderLeft: `${padding}px solid ${leftColor}`,
+        borderRight: `${padding}px solid ${rightColor}`,
+        cursor: cursor,
+      }}
       boxShadow={10}
       width={scale * sw}
       height={scale * sh}
@@ -96,7 +86,7 @@ export const Canvas = () => {
       onMouseDown={handleMouseDown}
       onMouseUp={canvas.send}
     >
-      {!raw && <CircularProgress style={{ margin: '25%', width: '50%', height: '50%' }} />}
+      {!raw && <CircularProgress size='50%' sx={{ m: '25%' }} />}
       <ComposeCanvas canvases={canvases} />
       {raw && <RawCanvas setCanvases={setCanvases} />}
       {labeled && <LabeledCanvas setCanvases={setCanvases} />}

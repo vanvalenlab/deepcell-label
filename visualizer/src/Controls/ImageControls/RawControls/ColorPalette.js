@@ -1,8 +1,10 @@
 /** Modified from https://github.com/hms-dbmi/viv */
-import IconButton from '@material-ui/core/IconButton';
-import { makeStyles } from '@material-ui/core/styles';
-import LensIcon from '@material-ui/icons/Lens';
+import LensIcon from '@mui/icons-material/Lens';
+import IconButton from '@mui/material/IconButton';
+import { styled } from '@mui/system';
 import React from 'react';
+
+const Div = styled('div')``;
 
 // TODO: move to constants
 const COLOR_PALLETE = [
@@ -16,40 +18,32 @@ const COLOR_PALLETE = [
   '#FF0000',
 ];
 
-const useStyles = makeStyles(() => ({
-  container: {
-    width: '70px',
-    height: '40px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-  },
-  button: {
-    padding: '3px',
-    width: '16px',
-    height: '16px',
-  },
-  icon: {
-    width: '17px',
-    height: '17px',
-    // border: '1px solid black',
-    // borderRadius: '50%'
-  },
-}));
-
 const ColorPalette = ({ handleChange }) => {
-  const classes = useStyles();
   return (
-    <div className={classes.container} aria-label='color-swatch'>
+    <Div
+      sx={{
+        width: '70px',
+        height: '40px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+      }}
+      aria-label='color-swatch'
+    >
       {COLOR_PALLETE.map((color) => {
         return (
-          <IconButton className={classes.button} key={color} onClick={() => handleChange(color)}>
-            <LensIcon fontSize='small' style={{ color: `${color}` }} className={classes.icon} />
+          <IconButton
+            sx={{ p: '3px', width: '16px', height: '16px' }}
+            key={color}
+            onClick={() => handleChange(color)}
+            size='large'
+          >
+            <LensIcon fontSize='small' sx={{ width: '17px', height: '17px', color: color }} />
           </IconButton>
         );
       })}
-    </div>
+    </Div>
   );
 };
 

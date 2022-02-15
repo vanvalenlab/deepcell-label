@@ -26,6 +26,7 @@ function EraserButton(props) {
   return (
     <ToolButton
       {...props}
+      value='eraser'
       tooltipText={tooltipText}
       selected={tool === 'brush' && background !== 0}
       hotkey='e'
