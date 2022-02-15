@@ -14,61 +14,59 @@ Visit [label.deepcell.org](https://label.deepcell.org) and create a project from
 
 ## Local use
 
-To run DeepCell Label locally, you will set up the client and the server from your computer. If you haven't worked with Python or Javascript projects before, follow the [first time setup instructions](FIRST_TIME_SETUP.md) to install Python and Node.js.
+To run DeepCell Label locally, you will set up the client and the server from your computer.
 
-To start, clone the repository with:
+To begin, clone the repository with the following command:
 
 ```bash
 git clone https://github.com/vanvalenlab/deepcell-label.git
-```
-
-and open the repository with:
-
-```bash
 cd deepcell-label
 ```
 
 ### Set up Flask server
 
-The backend is a Flask HTTP API that stores and updates project data.
+The backend is a Flask HTTP API that will store and update project data.
 
-#### Run Python backend
+#### Set up environment
 
-We recommend using Python virtual environment, either with [conda](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) or [venv](https://docs.python.org/3/library/venv.html).
-After setting up a virtual environment, install the Python dependencies with:
+Flask expects some environment variables to be set, like [FLASK_APP](https://flask.palletsprojects.com/en/2.0.x/cli/). As the application is defined in `application.py`, we need to set `export FLASK_APP=application` in the terminal or in the `.env` file in the root of the repository. There is an example `.env.example` with FLASK_APP already set. Make a copy and remove `.example` so the file is named `.env`.
+
+#### Run Python locally
+
+It's recommended to set up a virtual environment with [conda](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) or [venv](https://docs.python.org/3/library/venv.html).
+Install the Python dependencies with:
 
 ```bash
 pip install -r requirements.txt
-pip install -r requirements-test.txt
 ```
 
-Flask requires some environment variables to be set, like [FLASK_APP](https://flask.palletsprojects.com/en/2.0.x/cli/). We need to set `export FLASK_APP=application` in the terminal or in an `.env` file. There is an example `.env.example` with FLASK_APP already set. Make a copy and rename the file `.env`. Then, start the server with:
+Then, start the server with:
 
 ```bash
 flask run
 ```
 
-By default, DeepCell Label creates a temporary database in `/tmp`. Change `SQLALCHEMY_DATABASE_URI` in your `.env`, for example `SQLALCHEMY_DATABASE_URI=sqlite:///~/Documents/deepcell_label.db`, to make a persistent database in another location.
+When starting the application, Flask will create the database and tables if they do not exist. By default, the app makes a database in `/tmp` and erases on restart. To make a persistent database, change `SQLALCHEMY_DATABASE_URI` in `.env` to create the database in another folder like `SQLALCHEMY_DATABASE_URI=sqlite:///~/Documents/deepcell_label.db`.
 
 #### Run with Docker
 
-The backend can also be containerized with [Docker](https://www.docker.com). To build a production-ready Docker image, run:
+The backend can also be containerized with [Docker](https://www.docker.com). To build a production-ready Docker image:
 
 ```bash
 docker build -t vanvalenlab/deepcell-label:$USER
 ```
 
-The built image can run the backend on port 5000 with:
+The built image can be used to run the backend on port 5000 with:
 
 ```bash
 docker run -p 5000:5000 -it vanvalenlab/deepcell-label:$USER
 ```
 
-Envrionment variables like `SQLALCHEMY_DATABASE_URI` can be passed to the run command using the [environment variable flags](https://docs.docker.com/engine/reference/commandline/run/#set-environment-variables--e---env---env-file): `-e` and `--env`.
+The `SQLALCHEMY_DATABASE_URI` can be passed to the run command using the [environment variable flags](https://docs.docker.com/engine/reference/commandline/run/#set-environment-variables--e---env---env-file): `-e` and `--env`.
 
 ### Set up React client
 
-Once the server is running, we need to set up the frontend. Install the dependencies for the frontend with:
+Once the server is running, we need to set up the frontend to interact with it. Install the dependencies for the frontend with:
 
 ```bash
 cd visualizer
