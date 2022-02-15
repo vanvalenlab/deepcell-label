@@ -1,9 +1,9 @@
-import Alert from '@material-ui/lab/Alert';
+import Alert from '@mui/material/Alert';
 import { useSelector } from '@xstate/react';
 import React from 'react';
 import { useTracking } from '../../../ProjectContext';
 import { formatFrames, parentAfterDivision } from '../trackingUtils';
-import AlertGroup, { useAlertStyles } from './AlertGroup';
+import AlertGroup, { alertStyle } from './AlertGroup';
 
 function ParentAfterDivisionAlert({ label }) {
   const tracking = useTracking();
@@ -13,10 +13,8 @@ function ParentAfterDivisionAlert({ label }) {
   const framesAfterDivision = frames.filter((frame) => frame >= divisionFrame);
   const frameText = formatFrames(framesAfterDivision);
 
-  const styles = useAlertStyles();
-
   return (
-    <Alert className={styles.alert} severity='error'>
+    <Alert sx={alertStyle} severity='error'>
       Parent {label} in {frameText} after division in frame {divisionFrame}.
     </Alert>
   );

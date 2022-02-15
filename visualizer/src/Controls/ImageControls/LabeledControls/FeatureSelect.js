@@ -1,6 +1,4 @@
-import Grid from '@material-ui/core/Grid';
-import Select from '@material-ui/core/Select';
-import Tooltip from '@material-ui/core/Tooltip';
+import { Grid, MenuItem, TextField, Tooltip } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
 import React, { useEffect } from 'react';
@@ -32,14 +30,14 @@ function FeatureSelect() {
   return (
     numFeatures > 1 && (
       <Grid item>
-        <Tooltip title={tooltipText}>
-          <Select native value={feature} onChange={handleFeatureChange}>
+        <Tooltip title={tooltipText} placement='top'>
+          <TextField select size='small' value={feature} onChange={handleFeatureChange}>
             {featureNames.map((name, index) => (
-              <option key={index} value={index}>
+              <MenuItem key={index} value={index}>
                 {name}
-              </option>
+              </MenuItem>
             ))}
-          </Select>
+          </TextField>
         </Tooltip>
       </Grid>
     )

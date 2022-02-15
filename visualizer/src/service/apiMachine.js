@@ -10,6 +10,8 @@ function getApiService(context, event) {
       return undo(context, event);
     case 'BACKEND_REDO':
       return redo(context, event);
+    default:
+      return;
   }
 }
 

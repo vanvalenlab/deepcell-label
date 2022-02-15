@@ -1,12 +1,12 @@
-import { FormLabel, makeStyles, Typography } from '@material-ui/core';
-import Box from '@material-ui/core/Box';
-import IconButton from '@material-ui/core/IconButton';
-import Tooltip from '@material-ui/core/Tooltip';
-import AddIcon from '@material-ui/icons/Add';
-import ArrowBackIosIcon from '@material-ui/icons/ArrowBackIos';
-import ClearIcon from '@material-ui/icons/Clear';
-import SubdirectoryArrowLeftIcon from '@material-ui/icons/SubdirectoryArrowLeft';
-import SubdirectoryArrowRightIcon from '@material-ui/icons/SubdirectoryArrowRight';
+import AddIcon from '@mui/icons-material/Add';
+import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+import ClearIcon from '@mui/icons-material/Clear';
+import SubdirectoryArrowLeftIcon from '@mui/icons-material/SubdirectoryArrowLeft';
+import SubdirectoryArrowRightIcon from '@mui/icons-material/SubdirectoryArrowRight';
+import { FormLabel, Typography } from '@mui/material';
+import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
 import React, { useEffect, useState } from 'react';
@@ -39,91 +39,13 @@ function contrast(hex1, hex2) {
   return (brightest + 0.05) / (darkest + 0.05);
 }
 
-const useStyles = makeStyles((theme) => ({
-  title: {
-    margin: theme.spacing(1),
-  },
-  palette: {
-    position: 'relative',
-    margin: theme.spacing(1),
-    height: theme.spacing(13),
-    width: theme.spacing(13),
-  },
-  hovering: {
-    border: '0.25rem solid #DDDDDD',
-    width: theme.spacing(8),
-    height: theme.spacing(8),
-    display: 'flex',
-    alignContent: 'center',
-    justifyContent: 'center',
-    margin: theme.spacing(1),
-  },
-  foreground: {
-    position: 'absolute',
-    zIndex: 1,
-    top: '0',
-    left: '0',
-    width: theme.spacing(8),
-    height: theme.spacing(8),
-    border: `${theme.spacing(0.5)}px solid #DDDDDD`,
-    display: 'flex',
-    alignContent: 'center',
-    justifyContent: 'center',
-  },
-  background: {
-    position: 'absolute',
-    top: theme.spacing(4),
-    left: theme.spacing(4),
-    width: theme.spacing(8),
-    height: theme.spacing(8),
-    border: `${theme.spacing(0.5)}px solid #DD0000`,
-    display: 'flex',
-    alignContent: 'center',
-    justifyContent: 'center',
-  },
-  switchBox: {
-    position: 'absolute',
-    left: theme.spacing(8),
-    top: -theme.spacing(0.5),
-  },
-  leftArrow: {
-    transform: 'rotate(-90deg)',
-  },
-  rightArrow: {
-    position: 'absolute',
-    transform: 'rotate(180deg)',
-    top: '0.5rem',
-    left: '0.5rem',
-  },
-  topLeft: {
-    position: 'absolute',
-    top: -5,
-    left: -5,
-  },
-  topRight: {
-    position: 'absolute',
-    top: -5,
-    right: -5,
-  },
-  bottomRight: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-  },
-  bottomLeft: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-  },
-}));
-
 function SwitchIcon() {
-  const styles = useStyles();
-
   return (
     <>
-      <SubdirectoryArrowLeftIcon className={styles.leftArrow} />
-      <SubdirectoryArrowRightIcon className={styles.rightArrow} />
+      <SubdirectoryArrowLeftIcon sx={{ transform: 'rotate(-90deg)' }} />
+      <SubdirectoryArrowRightIcon
+        sx={{ position: 'absolute', transform: 'rotate(180deg)', top: '0.5rem', left: '0.5rem' }}
+      />
     </>
   );
 }
@@ -143,7 +65,7 @@ export function SwitchButton() {
 
   return (
     <Tooltip title={tooltipText}>
-      <IconButton color='primary' onClick={() => select.send('SWITCH')}>
+      <IconButton color='primary' onClick={() => select.send('SWITCH')} size='large'>
         <SwitchIcon />
       </IconButton>
     </Tooltip>
@@ -154,8 +76,6 @@ function HoveringBox() {
   const select = useSelect();
   const hovering = useSelector(select, (state) => state.context.hovering);
 
-  const styles = useStyles();
-
   const colormap = useHexColormap();
   const color = colormap[hovering] ?? '#000000';
 
@@ -163,9 +83,20 @@ function HoveringBox() {
     contrast(color, '#000000') > contrast(color, '#FFFFFF') ? '#000000' : '#FFFFFF';
 
   return (
-    <Box className={styles.hovering} style={{ background: color }}>
+    <Box
+      sx={{
+        border: (theme) => `${theme.spacing(0.5)} solid #DDDDDD`,
+        width: (theme) => theme.spacing(8),
+        height: (theme) => theme.spacing(8),
+        display: 'flex',
+        alignContent: 'center',
+        justifyContent: 'center',
+        m: 1,
+        background: color,
+      }}
+    >
       <Typography
-        style={{
+        sx={{
           color: buttonColor,
           display: 'flex',
           justifyContent: 'center',
@@ -182,8 +113,6 @@ function ForegroundBox() {
   const select = useSelect();
   const { send } = select;
   const foreground = useSelector(select, (state) => state.context.foreground);
-
-  const styles = useStyles();
 
   const colormap = useHexColormap();
   const color = colormap[foreground] ?? '#000000';
@@ -224,13 +153,24 @@ function ForegroundBox() {
 
   return (
     <Box
-      className={styles.foreground}
-      style={{ background: color }}
+      sx={{
+        position: 'absolute',
+        zIndex: 1,
+        top: 0,
+        left: 0,
+        width: (theme) => theme.spacing(8),
+        height: (theme) => theme.spacing(8),
+        border: (theme) => `${theme.spacing(0.5)} solid #DDDDDD`,
+        display: 'flex',
+        alignContent: 'center',
+        justifyContent: 'center',
+        background: color,
+      }}
       onMouseEnter={() => setShowButtons(true)}
       onMouseLeave={() => setShowButtons(false)}
     >
       <Typography
-        style={{
+        sx={{
           color: buttonColor,
           display: 'flex',
           justifyContent: 'center',
@@ -242,44 +182,44 @@ function ForegroundBox() {
       {showButtons && (
         <Tooltip title={newTooltip}>
           <IconButton
-            className={styles.topLeft}
+            sx={{ position: 'absolute', top: -5, left: -5 }}
             size='small'
             onClick={() => send('NEW_FOREGROUND')}
           >
-            <AddIcon style={{ color: buttonColor }} />
+            <AddIcon sx={{ color: buttonColor }} />
           </IconButton>
         </Tooltip>
       )}
       {showButtons && (
         <Tooltip title={resetTooltip}>
           <IconButton
-            className={styles.topRight}
+            sx={{ position: 'absolute', top: -5, right: -5 }}
             size='small'
             onClick={() => send('RESET_FOREGROUND')}
           >
-            <ClearIcon style={{ color: buttonColor }} />
+            <ClearIcon sx={{ color: buttonColor }} />
           </IconButton>
         </Tooltip>
       )}
       {showButtons && (
         <Tooltip title={prevTooltip}>
           <IconButton
-            className={styles.bottomLeft}
+            sx={{ position: 'absolute', bottom: 0, left: 0 }}
             size='small'
             onClick={() => send('PREV_FOREGROUND')}
           >
-            <ArrowBackIosIcon style={{ color: buttonColor }} />
+            <ArrowBackIosIcon sx={{ color: buttonColor }} />
           </IconButton>
         </Tooltip>
       )}
       {showButtons && (
         <Tooltip title={nextTooltip}>
           <IconButton
-            className={styles.bottomRight}
+            sx={{ position: 'absolute', bottom: 0, right: 0 }}
             size='small'
             onClick={() => send('NEXT_FOREGROUND')}
           >
-            <ArrowBackIosIcon style={{ color: buttonColor, transform: 'rotate(180deg)' }} />
+            <ArrowBackIosIcon sx={{ color: buttonColor, transform: 'rotate(180deg)' }} />
           </IconButton>
         </Tooltip>
       )}
@@ -290,8 +230,6 @@ function ForegroundBox() {
 function BackgroundBox() {
   const select = useSelect();
   const background = useSelector(select, (state) => state.context.background);
-
-  const styles = useStyles();
 
   const colormap = useHexColormap();
   const color = colormap[background] ?? '#000000';
@@ -324,13 +262,23 @@ function BackgroundBox() {
 
   return (
     <Box
-      className={styles.background}
-      style={{ background: color }}
+      sx={{
+        position: 'absolute',
+        top: (theme) => theme.spacing(4),
+        left: (theme) => theme.spacing(4),
+        width: (theme) => theme.spacing(8),
+        height: (theme) => theme.spacing(8),
+        border: (theme) => `${theme.spacing(0.5)} solid #DD0000`,
+        display: 'flex',
+        alignContent: 'center',
+        justifyContent: 'center',
+        background: color,
+      }}
       onMouseEnter={() => setShowButtons(true)}
       onMouseLeave={() => setShowButtons(false)}
     >
       <Typography
-        style={{
+        sx={{
           color: buttonColor,
           display: 'flex',
           justifyContent: 'center',
@@ -342,33 +290,33 @@ function BackgroundBox() {
       {showButtons && (
         <Tooltip title={resetTooltip}>
           <IconButton
-            className={styles.topRight}
+            sx={{ position: 'absolute', top: -5, right: -5 }}
             size='small'
             onClick={() => select.send('RESET_BACKGROUND')}
           >
-            <ClearIcon style={{ color: buttonColor }} />
+            <ClearIcon sx={{ color: buttonColor }} />
           </IconButton>
         </Tooltip>
       )}
       {showButtons && (
         <Tooltip title={prevTooltip}>
           <IconButton
-            className={styles.bottomLeft}
+            sx={{ position: 'absolute', bottom: 0, left: 0 }}
             size='small'
             onClick={() => select.send('PREV_BACKGROUND')}
           >
-            <ArrowBackIosIcon style={{ color: buttonColor }} />
+            <ArrowBackIosIcon sx={{ color: buttonColor }} />
           </IconButton>
         </Tooltip>
       )}
       {showButtons && (
         <Tooltip title={nextTooltip}>
           <IconButton
-            className={styles.bottomRight}
+            sx={{ position: 'absolute', bottom: 0, right: 0 }}
             size='small'
             onClick={() => select.send('NEXT_BACKGROUND')}
           >
-            <ArrowBackIosIcon style={{ color: buttonColor, transform: 'rotate(180deg)' }} />
+            <ArrowBackIosIcon sx={{ color: buttonColor, transform: 'rotate(180deg)' }} />
           </IconButton>
         </Tooltip>
       )}
@@ -377,13 +325,19 @@ function BackgroundBox() {
 }
 
 export function Selected() {
-  const styles = useStyles();
   return (
-    <Box className={styles.palette}>
+    <Box
+      sx={{
+        position: 'relative',
+        m: 1,
+        height: (theme) => theme.spacing(13),
+        width: (theme) => theme.spacing(13),
+      }}
+    >
       <Box display='flex' justifyContent='center'>
         <ForegroundBox />
         <BackgroundBox />
-        <Box className={styles.switchBox}>
+        <Box sx={{ position: 'absolute', left: 8, top: -0.5 }}>
           <SwitchButton />
         </Box>
       </Box>
@@ -400,8 +354,6 @@ function Hovering() {
 }
 
 function SelectedPalette() {
-  const styles = useStyles();
-
   const select = useSelect();
 
   useEffect(() => {
@@ -413,9 +365,9 @@ function SelectedPalette() {
 
   return (
     <Box display='flex' flexDirection='column'>
-      <FormLabel className={styles.title}>Selected</FormLabel>
+      <FormLabel sx={{ m: 1 }}>Selected</FormLabel>
       <Selected />
-      <FormLabel className={styles.title}>Hovering over</FormLabel>
+      <FormLabel sx={{ m: 1 }}>Hovering over</FormLabel>
       <Hovering />
     </Box>
   );

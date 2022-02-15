@@ -1,35 +1,17 @@
 /** Modified from https://github.com/hms-dbmi/viv */
-import ClickAwayListener from '@material-ui/core/ClickAwayListener';
-import IconButton from '@material-ui/core/IconButton';
-import MenuItem from '@material-ui/core/MenuItem';
-import MenuList from '@material-ui/core/MenuList';
-import Paper from '@material-ui/core/Paper';
-import Popper from '@material-ui/core/Popper';
-import { makeStyles } from '@material-ui/core/styles';
-import MoreVertIcon from '@material-ui/icons/MoreVert';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import ClickAwayListener from '@mui/material/ClickAwayListener';
+import IconButton from '@mui/material/IconButton';
+import MenuItem from '@mui/material/MenuItem';
+import MenuList from '@mui/material/MenuList';
+import Paper from '@mui/material/Paper';
+import Popper from '@mui/material/Popper';
+import { styled } from '@mui/system';
 import React, { useReducer, useRef } from 'react';
 import { useRaw } from '../../../ProjectContext';
 import ColorPalette from './ColorPalette';
 
-const useStyles = makeStyles(() => ({
-  paper: {
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-  },
-  span: {
-    width: '70px',
-    textAlign: 'center',
-    paddingLeft: '2px',
-    paddingRight: '2px',
-    color: 'white',
-  },
-  colors: {
-    '&:hover': {
-      backgroundColor: 'transparent',
-    },
-    paddingLeft: '2px',
-    paddingRight: '2px',
-  },
-}));
+const Span = styled('span')``;
 
 function LayerOptions({ layer }) {
   const [open, toggle] = useReducer((v) => !v, false);
@@ -46,20 +28,37 @@ function LayerOptions({ layer }) {
     raw.send({ type: 'REMOVE_LAYER', layer });
   };
 
-  const classes = useStyles();
   return (
     <>
       <IconButton aria-label='Remove channel' size='small' onClick={toggle} ref={anchorRef}>
         <MoreVertIcon fontSize='small' />
       </IconButton>
       <Popper open={open} anchorEl={anchorRef.current} placement='bottom-end'>
-        <Paper className={classes.paper}>
+        <Paper sx={{ backgroundColor: 'rgba(0, 0, 0, 0.75)' }}>
           <ClickAwayListener onClickAway={toggle}>
             <MenuList id='channel-options'>
               <MenuItem dense disableGutters onClick={handleRemove}>
-                <span className={classes.span}>Remove</span>
+                <Span
+                  sx={{
+                    width: '70px',
+                    textAlign: 'center',
+                    px: '2px',
+                    color: 'white',
+                  }}
+                >
+                  Remove
+                </Span>
               </MenuItem>
-              <MenuItem dense disableGutters className={classes.colors}>
+              <MenuItem
+                dense
+                disableGutters
+                sx={{
+                  '&:hover': {
+                    backgroundColor: 'transparent',
+                  },
+                  px: '2px',
+                }}
+              >
                 <ColorPalette handleChange={handleColorSelect} />
               </MenuItem>
             </MenuList>

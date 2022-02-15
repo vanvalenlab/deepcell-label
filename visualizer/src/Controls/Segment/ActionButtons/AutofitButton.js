@@ -1,11 +1,9 @@
 import { useSelector } from '@xstate/react';
 import React, { useCallback } from 'react';
 import { useSegment } from '../../../ProjectContext';
-import ActionButton, { useStyles } from './ActionButton';
+import ActionButton from './ActionButton';
 
 function AutofitButton(props) {
-  const { className, ...rest } = props;
-  const styles = useStyles();
   const segment = useSegment();
   const grayscale = useSelector(segment, (state) => state.matches('idle.display.grayscale'));
 
@@ -19,12 +17,11 @@ function AutofitButton(props) {
 
   return (
     <ActionButton
-      {...rest}
+      {...props}
       disabled={!grayscale}
       tooltipText={grayscale ? tooltipText : 'Requires a single channel'}
       onClick={onClick}
       hotkey='m'
-      className={`${className} ${styles.button}`}
     >
       Autofit
     </ActionButton>

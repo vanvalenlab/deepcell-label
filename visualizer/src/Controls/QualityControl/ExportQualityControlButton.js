@@ -1,20 +1,8 @@
-import { Button, makeStyles } from '@material-ui/core';
-import { green } from '@material-ui/core/colors';
-import GetAppIcon from '@material-ui/icons/GetApp';
+import GetAppIcon from '@mui/icons-material/GetApp';
+import { Button } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import React from 'react';
 import { useQualityControl } from '../../QualityControlContext';
-
-const useStyles = makeStyles((theme) => ({
-  buttonProgress: {
-    color: green[500],
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    marginTop: -12,
-    marginLeft: -12,
-  },
-}));
 
 function download(judgments) {
   const a = document.createElement('a');
@@ -33,13 +21,10 @@ function download(judgments) {
 function ExportQualityControlButton() {
   const qualityControl = useQualityControl();
   const judgments = useSelector(qualityControl, (state) => state.context.judgments);
-  // { 'EXAMPLEID': true, 'OTHERID': false }
-
-  const styles = useStyles();
+  // { 'EXAMPLE_ID': true, 'OTHER_ID': false }
 
   return (
     <Button
-      className={styles.button}
       type='submit'
       variant='contained'
       color='primary'

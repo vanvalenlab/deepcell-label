@@ -18,6 +18,7 @@ function TrimButton(props) {
   return (
     <ToolButton
       {...props}
+      value='trim'
       tooltipText={tooltipText}
       selected={tool === 'trim'}
       onClick={onClick}

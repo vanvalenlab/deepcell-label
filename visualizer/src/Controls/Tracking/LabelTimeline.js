@@ -1,4 +1,4 @@
-import { Box } from '@material-ui/core';
+import { Box } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import React from 'react';
 import { useDivision, useHexColormap, useImage } from '../../ProjectContext';
@@ -21,7 +21,7 @@ function FrameBox({ frame, numFrames, color }) {
     }
   };
 
-  return <Box style={boxStyle} onClick={onClick}></Box>;
+  return <Box sx={boxStyle} onClick={onClick}></Box>;
 }
 
 function LabelTimeline({ label }) {
@@ -35,7 +35,7 @@ function LabelTimeline({ label }) {
 
   return (
     <Box
-      style={{
+      sx={{
         position: 'relative',
         display: 'flex',
         height: '1rem',

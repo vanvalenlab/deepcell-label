@@ -5,7 +5,7 @@ import createQualityControlMachine from './qualityControlMachine';
 export function isProjectId(id) {
   // Checks id is a 12 character URL-safe base64 string
   // URL-safe base 64 uses - instead of + and _ instead of /
-  const projectIdRegex = /^[\w\-]{12}$/;
+  const projectIdRegex = /^[\w-]{12}$/;
   return projectIdRegex.test(id);
 }
 

@@ -1,48 +1,28 @@
-import { Box, makeStyles } from '@material-ui/core';
-import { green } from '@material-ui/core/colors';
+import { Box } from '@mui/material';
 import React from 'react';
 import DownloadButton from './DownloadButton';
 import LabeledControls from './LabeledControls/LabeledControls';
 import RawControls from './RawControls/RawControls';
 import SubmitButton from './SubmitButton';
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-    // width: '100%',
-    padding: theme.spacing(1),
-  },
-  buttons: {
-    width: '100%',
-  },
-  title: {
-    paddingTop: theme.spacing(1),
-    paddingBottom: theme.spacing(1),
-  },
-  buttonProgress: {
-    color: green[500],
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    marginTop: -12,
-    marginLeft: -12,
-  },
-}));
-
 const ImageControls = () => {
-  const styles = useStyles();
-
   const search = new URLSearchParams(window.location.search);
   const download = search.get('download');
 
   return (
-    <Box id='image-controls' className={styles.root}>
+    <Box
+      id='image-controls'
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        p: 1,
+      }}
+    >
       {download ? (
-        <DownloadButton className={styles.buttons} />
+        <DownloadButton sx={{ width: '100%' }} />
       ) : (
-        <SubmitButton className={styles.buttons} />
+        <SubmitButton sx={{ width: '100%' }} />
       )}
       <LabeledControls />
       <RawControls />

@@ -1,18 +1,11 @@
 /** Modified from https://github.com/hms-dbmi/viv */
-import Checkbox from '@material-ui/core/Checkbox';
-import Grid from '@material-ui/core/Grid';
-import Select from '@material-ui/core/Select';
-import Slider from '@material-ui/core/Slider';
-import { makeStyles } from '@material-ui/core/styles';
+import { MenuItem, TextField } from '@mui/material';
+import Checkbox from '@mui/material/Checkbox';
+import Grid from '@mui/material/Grid';
+import Slider from '@mui/material/Slider';
 import { useSelector } from '@xstate/react';
 import { useRaw } from '../../../ProjectContext';
 import LayerOptions from './LayerOptions';
-
-const useStyles = makeStyles((theme) => ({
-  root: {
-    paddingTop: theme.spacing(1),
-  },
-}));
 
 function LayerSelector({ layer }) {
   const channel = useSelector(layer, (state) => state.context.channel);
@@ -25,13 +18,13 @@ function LayerSelector({ layer }) {
   };
 
   return (
-    <Select native value={channel} onChange={onChange}>
+    <TextField select size='small' value={channel} onChange={onChange}>
       {names.map((opt, index) => (
-        <option key={index} value={index}>
+        <MenuItem key={index} value={index}>
           {opt}
-        </option>
+        </MenuItem>
       ))}
-    </Select>
+    </TextField>
   );
 }
 
@@ -46,9 +39,9 @@ function LayerCheckbox({ layer }) {
     <Checkbox
       onChange={() => layer.send('TOGGLE_ON')}
       checked={isOn}
-      style={{
+      sx={{
         color: color,
-        '&$checked': {
+        '&.Mui-checked': {
           color: color,
         },
       }}
@@ -77,20 +70,18 @@ function LayerSlider({ layer }) {
       max={255}
       step={1}
       orientation='horizontal'
-      style={{
+      sx={{
         color: color,
-        marginTop: '7px',
+        mt: '7px',
       }}
     />
   );
 }
 
 function LayerController({ layer }) {
-  const classes = useStyles();
-
   return (
-    <Grid container direction='column' m={2} justify='center' className={classes.root}>
-      <Grid container direction='row' justify='space-between'>
+    <Grid container direction='column' justifyContent='center' sx={{ pt: 1 }}>
+      <Grid container direction='row' justifyContent='space-between'>
         <Grid item xs={10}>
           <LayerSelector layer={layer} />
         </Grid>
@@ -102,7 +93,7 @@ function LayerController({ layer }) {
         <Grid item xs={2}>
           <LayerCheckbox layer={layer} />
         </Grid>
-        <Grid item xs={10}>
+        <Grid item m={1} xs={9}>
           <LayerSlider layer={layer} />
         </Grid>
       </Grid>
