@@ -57,7 +57,7 @@ def handle_exception(error):
 
 # TODO: send compressed data instead of octet-stream
 @bp.route('/api/raw/<project_id>')
-def dev_raw(project_id):
+def raw(project_id):
     project = Project.get(project_id)
     if not project:
         return abort(404, description=f'project {project_id} not found')
@@ -75,7 +75,7 @@ def dev_raw(project_id):
 
 
 @bp.route('/api/labeled/<project_id>')
-def dev_labeled(project_id):
+def labeled(project_id):
     project = Project.get(project_id)
     if not project:
         return abort(404, description=f'project {project_id} not found')
@@ -88,7 +88,7 @@ def dev_labeled(project_id):
 
 
 @bp.route('/api/labels/<project_id>')
-def dev_labels(project_id):
+def labels(project_id):
     project = Project.get(project_id)
     if not project:
         return abort(404, description=f'project {project_id} not found')
@@ -125,7 +125,7 @@ def add_raw(token):
 
 
 @bp.route('/api/edit/<action>', methods=['POST'])
-def dev_edit(action):
+def edit(action):
     """Edits a label image and returns the updated label image and segments in the label image."""
     start = timeit.default_timer()
     # Get arguments for action
