@@ -160,7 +160,6 @@ fmd_config.cfg
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-yarn.lock
 package-lock.json
 
 # Webpack builds javascript files into deepcell_label/static
