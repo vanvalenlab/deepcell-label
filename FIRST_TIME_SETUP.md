@@ -1,6 +1,6 @@
 # First Time Setup Guide
 
-This instructions install Python and Node on your machine. If you've worked with Python or Javascript projects on your machine, skip this instructions and proceed with the README.
+This instructions install Python and Node on your machine. If you've worked with Python or Javascript projects on your machine, skip this instructions and proceed with the README. DeepCell Label has been developed for Unix based systems, but it should work on Windows as well.
 
 ## Set up Python
 
@@ -34,7 +34,7 @@ As DeepCell Label is a web application, the frontend is written in JavaScript. W
 
 ### Node
 
-- #### Node installation on Windows and macOS
+- #### Node installation on macOS
 
   Go to [official Node.js website](https://nodejs.org/) and download the installer for the LTS version of Node.js that is recommended for most users.
   Be sure to have `git` available in your PATH, `npm` might need it (You can find git [here](https://git-scm.com/)).
