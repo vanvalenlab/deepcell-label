@@ -1,6 +1,6 @@
 import colormap from 'colormap';
 import { actions, assign, Machine, send } from 'xstate';
-import { fromEventBus } from '../eventBus';
+import { fromEventBus } from './eventBus';
 
 const { respond } = actions;
 

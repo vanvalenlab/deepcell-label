@@ -1,6 +1,6 @@
 import { actions, assign, Machine, send, sendParent, spawn } from 'xstate';
 import { fromEventBus } from './eventBus';
-import createLabeledMachine from './labeled/labeledMachine';
+import createLabeledMachine from './labeledMachine';
 import createRawMachine from './raw/rawMachine';
 
 const { pure, respond } = actions;
