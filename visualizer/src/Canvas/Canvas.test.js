@@ -1,23 +1,47 @@
 import { fireEvent, render } from '@testing-library/react';
 import { interpret } from 'xstate';
-import canvasMachine from '../service/canvasMachine';
-import createLabeledMachine from '../service/labeled/labeledMachine';
-import createRawMachine from '../service/raw/rawMachine';
-import selectMachine from '../service/selectMachine';
-import segmentMachine from '../service/tools/segmentMachine';
+import createArraysMachine from '../service/arraysMachine';
+import createCanvasMachine from '../service/canvasMachine';
+import { EventBus } from '../service/eventBus';
+import createSelectMachine from '../service/selectMachine';
+import createSegmentMachine from '../service/tools/segmentMachine';
 import Canvas from './Canvas';
 
-let mockCanvasActor = interpret(canvasMachine).start();
-let mockSelectActor = interpret(selectMachine, { parent: { send: jest.fn() } }).start();
-let mockRawActor = interpret(createRawMachine(), { parent: { send: jest.fn() } }).start();
-let mockLabeledActor = interpret(createLabeledMachine()).start();
-let mockSegmentActor = interpret(segmentMachine, { parent: { send: jest.fn() } }).start();
+const eventBuses = {
+  canvas: new EventBus('canvas'),
+  image: new EventBus('image'),
+  labeled: new EventBus('labeled'),
+  raw: new EventBus('raw'),
+  select: new EventBus('select'),
+  undo: new EventBus('undo'),
+  api: new EventBus('api'),
+  arrays: new EventBus('arrays'),
+  labels: new EventBus('labels'),
+};
+const context = {
+  projectId: 'testId',
+  bucket: 'testBucket',
+  eventBuses,
+  numFeatures: 2,
+  numChannels: 3,
+  numFrames: 2,
+  width: 100,
+  height: 100,
+};
+
+let mockCanvasActor = interpret(createCanvasMachine(context)).start();
+let mockArraysActor = interpret(createArraysMachine(context)).start();
+let mockSelectActor = interpret(createSelectMachine(context), {
+  parent: { send: jest.fn() },
+}).start();
+let mockSegmentActor = interpret(createSegmentMachine(context), {
+  parent: { send: jest.fn() },
+}).start();
 jest.mock('../ProjectContext', () => ({
+  useArrays: () => mockArraysActor,
   useCanvas: () => mockCanvasActor,
-  useSelect: () => mockSelectActor,
-  useRaw: () => mockRawActor,
-  useLabeled: () => mockLabeledActor,
   useSegment: () => mockSegmentActor,
+  useSelect: () => mockSelectActor,
 }));
 
 jest.mock('./ComposeCanvases', () => () => 'ComposeCanvases');

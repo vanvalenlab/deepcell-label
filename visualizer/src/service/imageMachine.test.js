@@ -1,31 +1,31 @@
 import { interpret } from 'xstate';
+import { EventBus } from './eventBus';
 import createImageMachine from './imageMachine';
 
+const eventBuses = {
+  image: new EventBus(),
+  undo: new EventBus(),
+};
+
 describe('test imageMachine', () => {
-  it('imageMachine.loadFrame should reach idle after raw and labeled data load', (done) => {
-    const imageMachine = createImageMachine('testProjectId').withConfig({
+  it('imageMachine should reach idle after setting up children', (done) => {
+    const imageMachine = createImageMachine({
+      projectId: 'testProjectId',
+      eventBuses,
+    }).withConfig({
       actions: {
         spawnActors: () => {},
         addActorsToUndo: () => {},
-        loadRaw: () => {},
-        loadLabeled: () => {},
-        useFrame: () => {},
       },
     });
     const imageService = interpret(imageMachine).onTransition((state) => {
       // this is where you expect the state to eventually
       // be reached
-      if (state.matches('loadFrame.idle')) {
+      if (state.matches('idle')) {
         done();
       }
     });
 
     imageService.start();
-
-    // send zero or more events to the service that should
-    // cause it to eventually reach its expected state
-    imageService.send({ type: 'PROJECT' });
-    imageService.send({ type: 'RAW_LOADED' });
-    imageService.send({ type: 'LABELED_LOADED' });
   });
 });

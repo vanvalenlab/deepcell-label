@@ -113,7 +113,7 @@ const createApiMachine = ({ projectId, bucket, eventBuses }) =>
         actionFrame: 0,
         actionFeature: 0,
       },
-      initial: 'idle',
+      initial: 'waitForLabels',
       on: {
         LABELED_ARRAY: { actions: 'setLabeledArray' },
         RAW_ARRAY: { actions: 'setRawArray' },
@@ -121,6 +121,11 @@ const createApiMachine = ({ projectId, bucket, eventBuses }) =>
         SET_FEATURE: { actions: 'setFeature' },
       },
       states: {
+        waitForLabels: {
+          on: {
+            LABELED_ARRAY: { actions: 'setLabeledArray', target: 'idle' },
+          },
+        },
         idle: {
           on: {
             EDIT: {
