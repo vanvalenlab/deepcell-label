@@ -4,7 +4,7 @@ flask-sqlalchemy>=2.5
 sqlalchemy<1.4
 matplotlib==3.0.3
 mysqlclient==1.4.5
-numpy>=1.16.4
+numpy~=1.19.0
 boto3==1.9.182
 scikit-image>=0.15.0,<0.17.0
 python-decouple==3.1
