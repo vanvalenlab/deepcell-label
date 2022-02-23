@@ -1,34 +1,24 @@
 /**
  * Root statechart for DeepCell Label in XState.
  */
-import { assign, Machine, send, spawn } from 'xstate';
+import { assign, forwardTo, Machine, send, spawn } from 'xstate';
 import { pure } from 'xstate/lib/actions';
 import createApiMachine from './apiMachine';
 import createArraysMachine from './arraysMachine';
 import createCanvasMachine from './canvasMachine';
-import { EventBus } from './eventBus';
+import { EventBus, fromEventBus } from './eventBus';
 import createImageMachine from './imageMachine';
 import createLabelsMachine from './labelsMachine';
 import createSelectMachine from './selectMachine';
 import createToolMachine from './tools/toolMachine';
 import createUndoMachine from './undoMachine';
 
-const createProjectMachine = (
-  projectId,
-  { numFrames, numFeatures, numChannels, height, width },
-  bucket
-) =>
+const createProjectMachine = (projectId) =>
   Machine(
     {
       id: `${projectId}`,
       context: {
         projectId,
-        numFrames,
-        numFeatures,
-        numChannels,
-        height,
-        width,
-        bucket,
         eventBuses: {
           canvas: new EventBus('canvas'),
           image: new EventBus('image'),
@@ -39,9 +29,14 @@ const createProjectMachine = (
           api: new EventBus('api'),
           arrays: new EventBus('arrays'),
           labels: new EventBus('labels'),
+          load: new EventBus('load'),
         },
       },
       initial: 'setUpActors',
+      invoke: {
+        id: 'loadEventBus',
+        src: 'loadEventBus',
+      },
       states: {
         setUpActors: {
           entry: 'spawnActors',
@@ -51,10 +46,35 @@ const createProjectMachine = (
           entry: 'addActorsToUndo',
           always: 'idle',
         },
-        idle: {},
+        idle: {
+          on: {
+            LOADED: {
+              actions: [
+                forwardTo('loadEventBus'),
+                send(
+                  (c, e) => {
+                    const { rawArrays, labeledArrays } = e;
+                    return {
+                      type: 'DIMENSIONS',
+                      numChannels: rawArrays.length,
+                      numFeatures: labeledArrays.length,
+                      numFrames: rawArrays[0].length,
+                      height: rawArrays[0][0].length,
+                      width: rawArrays[0][0][0].length,
+                    };
+                  },
+                  { to: 'loadEventBus' }
+                ),
+              ],
+            },
+          },
+        },
       },
     },
     {
+      services: {
+        loadEventBus: fromEventBus('project', (context) => context.eventBuses.load),
+      },
       actions: {
         spawnActors: assign((context) => ({
           canvasRef: spawn(createCanvasMachine(context), 'canvas'),

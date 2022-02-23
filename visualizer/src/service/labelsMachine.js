@@ -3,7 +3,6 @@
 import colormap from 'colormap';
 import { assign, Machine, send } from 'xstate';
 import { fromEventBus } from './eventBus';
-import { fetchLabels } from './fetch';
 
 const createLabelsMachine = ({ projectId, eventBuses }) =>
   Machine(
@@ -12,10 +11,11 @@ const createLabelsMachine = ({ projectId, eventBuses }) =>
       invoke: [
         { id: 'eventBus', src: fromEventBus('labels', () => eventBuses.labels) },
         { src: fromEventBus('labels', () => eventBuses.labeled) },
+        { src: fromEventBus('labeled', () => eventBuses.load) },
       ],
       context: {
         projectId,
-        labels: null,
+        labels: {},
         feature: 0,
         colormap: [
           [0, 0, 0, 1],
@@ -23,12 +23,11 @@ const createLabelsMachine = ({ projectId, eventBuses }) =>
           [255, 255, 255, 1],
         ],
       },
-      initial: 'loading',
+      initial: 'waiting',
       states: {
-        loading: {
-          invoke: {
-            src: fetchLabels,
-            onDone: {
+        waiting: {
+          on: {
+            LOADED: {
               target: 'loaded',
               actions: ['setLabels', 'setColormap'],
             },
@@ -45,7 +44,7 @@ const createLabelsMachine = ({ projectId, eventBuses }) =>
     {
       guards: {},
       actions: {
-        setLabels: assign({ labels: (ctx, evt) => evt.data }),
+        setLabels: assign({ labels: (ctx, evt) => evt.labels }),
         setFeature: assign({ feature: (ctx, evt) => evt.feature }),
         sendLabels: send(
           (ctx, evt) => ({

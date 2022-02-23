@@ -71,14 +71,16 @@ export const LabeledCanvas = ({ setCanvases }) => {
   }, [width, height, kernelCanvas]);
 
   useEffect(() => {
-    // Compute the label image with the kernel
-    kernelRef.current(labeledArray, colormap, foreground, highlight, highlightColor, opacity);
-    // Draw the label image on a separate canvas (needed to reuse webgl output)
-    const drawCtx = drawCanvas.getContext('2d');
-    drawCtx.clearRect(0, 0, width, height);
-    drawCtx.drawImage(kernelCanvas, 0, 0);
-    // Rerender the parent canvas with the kernel output
-    setCanvases((canvases) => ({ ...canvases, labeled: drawCanvas }));
+    if (labeledArray) {
+      // Compute the label image with the kernel
+      kernelRef.current(labeledArray, colormap, foreground, highlight, highlightColor, opacity);
+      // Draw the label image on a separate canvas (needed to reuse webgl output)
+      const drawCtx = drawCanvas.getContext('2d');
+      drawCtx.clearRect(0, 0, width, height);
+      drawCtx.drawImage(kernelCanvas, 0, 0);
+      // Rerender the parent canvas with the kernel output
+      setCanvases((canvases) => ({ ...canvases, labeled: drawCanvas }));
+    }
   }, [
     labeledArray,
     colormap,

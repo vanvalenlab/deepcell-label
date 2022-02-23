@@ -65,9 +65,12 @@ export const GrayscaleCanvas = ({ setCanvases }) => {
 
   useEffect(() => {
     // Rerender the canvas for this component
-    kernelRef.current(rawArray, min, max, brightness, contrast, invert);
-    // Rerender the parent canvas
-    setCanvases((canvases) => ({ ...canvases, raw: canvasRef.current }));
+    if (rawArray) {
+      console.log(rawArray);
+      kernelRef.current(rawArray, min, max, brightness, contrast, invert);
+      // Rerender the parent canvas
+      setCanvases((canvases) => ({ ...canvases, raw: canvasRef.current }));
+    }
   }, [rawArray, min, max, brightness, contrast, invert, width, height, setCanvases]);
 
   return null;

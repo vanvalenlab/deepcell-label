@@ -68,7 +68,7 @@ function Label({ review }) {
   useEffect(() => {
     const padding = 5;
     canvas.send({
-      type: 'DIMENSIONS',
+      type: 'AVAILABLE_SPACE',
       width: canvasBoxWidth,
       height: canvasBoxHeight,
       padding,

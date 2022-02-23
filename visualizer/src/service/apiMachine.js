@@ -95,7 +95,7 @@ function checkResponseCode(response) {
   });
 }
 
-const createApiMachine = ({ projectId, bucket, eventBuses }) =>
+const createApiMachine = ({ projectId, eventBuses }) =>
   Machine(
     {
       id: 'api',
@@ -107,7 +107,6 @@ const createApiMachine = ({ projectId, bucket, eventBuses }) =>
       ],
       context: {
         projectId,
-        bucket,
         frame: 0,
         feature: 0,
         actionFrame: 0,

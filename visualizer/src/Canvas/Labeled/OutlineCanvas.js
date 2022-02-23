@@ -79,14 +79,16 @@ const OutlineCanvas = ({ setCanvases }) => {
   }, [kernelCanvas, width, height]);
 
   useEffect(() => {
-    // Compute the outline of the labels with the kernel
-    kernelRef.current(labeledArray, outlineAll, foreground, background);
-    // Draw kernel output on another canvas (needed to reuse webgl output)
-    const drawCtx = drawCanvas.getContext('2d');
-    drawCtx.clearRect(0, 0, width, height);
-    drawCtx.drawImage(kernelCanvas, 0, 0);
-    // Rerender the parent canvas
-    setCanvases((canvases) => ({ ...canvases, outline: drawCanvas }));
+    if (labeledArray) {
+      // Compute the outline of the labels with the kernel
+      kernelRef.current(labeledArray, outlineAll, foreground, background);
+      // Draw kernel output on another canvas (needed to reuse webgl output)
+      const drawCtx = drawCanvas.getContext('2d');
+      drawCtx.clearRect(0, 0, width, height);
+      drawCtx.drawImage(kernelCanvas, 0, 0);
+      // Rerender the parent canvas
+      setCanvases((canvases) => ({ ...canvases, outline: drawCanvas }));
+    }
   }, [
     labeledArray,
     outlineAll,

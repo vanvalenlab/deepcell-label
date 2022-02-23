@@ -80,8 +80,8 @@ interface Context {
   height: number | null;
   width: number | null;
   numFeatures: number | null;
-  'raw array': Array<Array<Array<Uint8Array>>> | null;
-  'labeled array': Array<Array<Array<Int32Array>>> | null;
+  rawArrays: Array<Array<Array<Uint8Array>>> | null;
+  labeledArrays: Array<Array<Array<Int32Array>>> | null;
   labels: any | null;
 }
 
@@ -96,8 +96,8 @@ const createLoadMachine = (projectId: string) =>
         height: null,
         width: null,
         numChannels: null,
-        'raw array': null,
-        'labeled array': null,
+        rawArrays: null,
+        labeledArrays: null,
         labels: null,
       },
       tsTypes: {} as import('./loadMachine.typegen').Typegen0,
@@ -233,10 +233,10 @@ const createLoadMachine = (projectId: string) =>
       },
       actions: {
         'set raw array': assign({
-          'raw array': (context, event) => event.data,
+          rawArrays: (context, event) => event.data,
         }),
         'set labeled array': assign({
-          'labeled array': (context, event) => event.data,
+          labeledArrays: (context, event) => event.data,
         }),
         'set labels': assign({
           labels: (context, event) => event.data,

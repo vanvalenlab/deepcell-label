@@ -5,21 +5,21 @@ import createLayerMachine from './layerMachine';
 
 const { pure, respond } = actions;
 
-const createRawMachine = ({ projectId, numChannels, eventBuses }) =>
+const createRawMachine = ({ projectId, eventBuses }) =>
   Machine(
     {
-      invoke: {
-        id: 'eventBus',
-        src: fromEventBus('raw', () => eventBuses.raw),
-      },
+      invoke: [
+        { id: 'eventBus', src: fromEventBus('raw', () => eventBuses.raw) },
+        { src: fromEventBus('raw', () => eventBuses.load) },
+      ],
       context: {
         projectId,
-        numChannels,
+        numChannels: 1,
         channel: 0,
         channels: [], // channel machines
-        channelNames: [],
+        channelNames: ['channel 0'],
         layers: [],
-        isGrayscale: Number(numChannels) === 1,
+        isGrayscale: true,
       },
       entry: ['spawnLayers', 'spawnChannels'],
       initial: 'checkDisplay',
@@ -46,6 +46,10 @@ const createRawMachine = ({ projectId, numChannels, eventBuses }) =>
         },
       },
       on: {
+        DIMENSIONS: {
+          target: '.checkDisplay',
+          actions: ['setNumChannels', 'spawnLayers', 'spawnChannels'],
+        },
         TOGGLE_INVERT: { actions: 'forwardToChannel' },
         SAVE: { actions: 'save' },
         RESTORE: { actions: ['restore', respond('RESTORED')] },
@@ -56,6 +60,10 @@ const createRawMachine = ({ projectId, numChannels, eventBuses }) =>
         isGrayscale: ({ isGrayscale }) => isGrayscale,
       },
       actions: {
+        setNumChannels: assign({
+          numChannels: (context, event) => event.numChannels,
+          isGrayscale: (context, event) => event.numChannels === 1,
+        }),
         sendToEventBus: send((c, e) => e, { to: 'eventBus' }),
         setChannel: assign({ channel: (_, { channel }) => channel }),
         /** Creates a channel machines and names */
