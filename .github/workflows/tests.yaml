@@ -15,7 +15,7 @@ jobs:
       - name: Cypress run
         uses: cypress-io/github-action@v2
         with:
-          base-path: visualizer
+          working-directory: visualizer
           build: npm run backend
           start: npm start
 
