@@ -17,7 +17,7 @@ describe('Homepage content', () => {
 });
 
 describe('Create a project from an example file', () => {
-  it('disables uploading after submitting', () => {
+  it('opens the project page', () => {
     cy.visit('/');
     cy.get('.MuiNativeSelect-select').select('2D tissue segmentation');
     cy.get('#submitExample').click();
