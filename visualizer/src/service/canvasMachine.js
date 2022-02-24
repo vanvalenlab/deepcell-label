@@ -94,6 +94,7 @@ const createCanvasMachine = ({ eventBuses }) =>
         height: 512,
         availableWidth: 512,
         availableHeight: 512,
+        padding: 5,
         scale: 1, // how much the canvas is scaled to fill the available space
         zoom: 1, // how much the image is scaled within the canvas
         // position of canvas within image
