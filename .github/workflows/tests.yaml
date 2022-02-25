@@ -41,7 +41,7 @@ jobs:
           start: |
             npm start
             npm run backend
-          wait-on: http://localhost:3000
+          wait-on: 'http://localhost:3000, http://localhost:5000'
 
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@master
