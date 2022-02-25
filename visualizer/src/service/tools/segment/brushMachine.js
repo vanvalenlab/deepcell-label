@@ -11,8 +11,8 @@ const createBrushMachine = (context) =>
         { id: 'api', src: fromEventBus('brush', () => context.eventBuses.api) },
       ],
       context: {
-        x: null,
-        y: null,
+        x: 0,
+        y: 0,
         foreground: context.foreground,
         background: context.background,
         trace: [],
