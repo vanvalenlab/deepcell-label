@@ -22,6 +22,17 @@ describe('Create a project from an example file', () => {
     cy.get('.MuiNativeSelect-select').select('2D tissue segmentation');
     cy.get('#submitExample').click();
     cy.get('.MuiLinearProgress-root');
-    cy.url({ timeout: 30000 }).should('include', '/project');
+    cy.url({ timeout: 30000 })
+      .should('include', '/project')
+      .and('include', 'projectId=')
+      .and('include', 'download=true');
+    cy.get('canvas');
+    cy.contains('DeepCell Label');
+    cy.contains('Instructions');
+    cy.contains('Download');
+    cy.contains('Segmentations');
+    cy.contains('Channels');
+    cy.contains('Undo');
+    cy.contains('Redo');
   });
 });
