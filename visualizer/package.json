@@ -72,6 +72,7 @@
   },
   "proxy": "http://localhost:5000",
   "devDependencies": {
+    "@cypress/code-coverage": "^3.9.12",
     "@testing-library/user-event": "^14.0.0-beta",
     "canvas": "^2.9.0",
     "cypress": "^9.5.0",
