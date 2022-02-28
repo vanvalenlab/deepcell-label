@@ -38,7 +38,6 @@ jobs:
         uses: cypress-io/github-action@v2
         with:
           working-directory: visualizer
-          env: FLASK_APP=application,FLASK_ENV=development,DEBUG=False
           start: |
             npm start
             npm run cypress:backend
