@@ -56,7 +56,6 @@ jobs:
       
       - name: Make LCOV for Backend Coverage
         run: |
-          kill -9 $(ps aux | grep 'flask run' | awk '{print $2}')
           coverage lcov
       
       - name: Cypress Coveralls Backend
