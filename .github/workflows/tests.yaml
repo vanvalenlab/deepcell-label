@@ -38,6 +38,7 @@ jobs:
         uses: cypress-io/github-action@v2
         with:
           working-directory: visualizer
+          env: FLASK_APP=application,FLASK_ENV=development,DEBUG=False
           start: |
             npm start
             npm run cypress:backend
@@ -56,6 +57,7 @@ jobs:
       
       - name: Make LCOV for Backend Coverage
         run: |
+          kill -9 $(ps aux | grep 'flask run' | awk '{print $2}')
           coverage lcov
       
       - name: Cypress Coveralls Backend
