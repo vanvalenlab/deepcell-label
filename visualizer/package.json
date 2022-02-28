@@ -58,7 +58,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "lint": "eslint 'src/**/*.{ts,tsx}' --fix",
-    "backend": "cd .. && FLASK_APP=application FLASK_ENV=development flask run"
+    "cypress:backend": "cd .. && FLASK_APP=application FLASK_ENV=development coverage run -m flask run"
   },
   "browserslist": {
     "production": [
