@@ -122,11 +122,9 @@ it('shows quality control interface', () => {
   cy.intercept('GET', '/api/labels/fakefakefake', fakeLabels);
 
   cy.visit('/project?projectId=fakefakefake,fakefakefake');
-  cy.contains('Accept');
-  cy.contains('Reject');
-  cy.contains('Download QC');
-
   cy.contains('Accept').click();
+  cy.contains('Reject').click();
+  cy.contains('Download QC').click();
 });
 
 it('removes channel', () => {
