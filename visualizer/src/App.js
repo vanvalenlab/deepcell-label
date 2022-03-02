@@ -53,13 +53,14 @@ function getProjectId() {
 
 function LabelProject() {
   const projectId = getProjectId();
-  const [loadState] = useMachine(createLoadMachine(projectId));
+  const [loadMachine] = useState(createLoadMachine(projectId));
+  const [load] = useMachine(loadMachine);
   const [project] = useState(interpret(createProjectMachine(projectId)).start());
   window.dcl = project;
 
   useEffect(() => {
-    if (loadState.matches('loaded')) {
-      const { rawArrays, labeledArrays, labels } = loadState.context;
+    if (load.matches('loaded')) {
+      const { rawArrays, labeledArrays, labels } = load.context;
       project.send({
         type: 'LOADED',
         rawArrays,
@@ -67,7 +68,7 @@ function LabelProject() {
         labels,
       });
     }
-  }, [loadState, project]);
+  }, [load, project]);
 
   return (
     project && (
