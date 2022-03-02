@@ -43,7 +43,7 @@ jobs:
             npm run cypress:backend
           wait-on: "http://localhost:3000, http://localhost:5000/health"
 
-      - name: Cypress Coveralls Frontend
+      - name: Cypress Coveralls
         uses: coverallsapp/github-action@master
         env:
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
@@ -51,21 +51,7 @@ jobs:
           base-path: visualizer
           path-to-lcov: visualizer/coverage/lcov.info
           github-token: ${{ secrets.github_token }}
-          flag-name: cypress-backend
-          parallel: true
-
-      - name: Make LCOV for Backend Coverage
-        run: |
-          coverage lcov
-
-      - name: Cypress Coveralls Backend
-        uses: coverallsapp/github-action@master
-        env:
-          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-        with:
-          path-to-lcov: coverage.lcov
-          github-token: ${{ secrets.github_token }}
-          flag-name: cypress-frontend
+          flag-name: cypress
           parallel: true
 
   frontend-tests:
