@@ -7,6 +7,7 @@ import MenuList from '@mui/material/MenuList';
 import Paper from '@mui/material/Paper';
 import Popper from '@mui/material/Popper';
 import { styled } from '@mui/system';
+import { useSelector } from '@xstate/react';
 import React, { useReducer, useRef } from 'react';
 import { useRaw } from '../../../ProjectContext';
 import ColorPalette from './ColorPalette';
@@ -16,6 +17,7 @@ const Span = styled('span')``;
 function LayerOptions({ layer }) {
   const [open, toggle] = useReducer((v) => !v, false);
   const anchorRef = useRef(null);
+  const index = useSelector(layer, (state) => state.context.layer);
 
   const raw = useRaw();
 
@@ -30,7 +32,13 @@ function LayerOptions({ layer }) {
 
   return (
     <>
-      <IconButton aria-label='Remove channel' size='small' onClick={toggle} ref={anchorRef}>
+      <IconButton
+        data-testid={`layer${index}-options`}
+        aria-label='Remove channel'
+        size='small'
+        onClick={toggle}
+        ref={anchorRef}
+      >
         <MoreVertIcon fontSize='small' />
       </IconButton>
       <Popper open={open} anchorEl={anchorRef.current} placement='bottom-end'>
