@@ -55,6 +55,7 @@ function LabelProject() {
   const projectId = getProjectId();
   const [loadState] = useMachine(createLoadMachine(projectId));
   const [project] = useState(interpret(createProjectMachine(projectId)).start());
+  window.dcl = project;
 
   useEffect(() => {
     if (loadState.matches('loaded')) {
