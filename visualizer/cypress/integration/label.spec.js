@@ -10,8 +10,12 @@ const fakeProject = {
   width: 2,
 };
 
-const fakeRawArray = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
-const fakeLabeledArray = new Int32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+const fakeRawArray = {
+  body: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]).buffer,
+};
+const fakeLabeledArray = {
+  body: new Int32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).buffer,
+};
 const fakeLabels = {
   0: {
     segments: [],
