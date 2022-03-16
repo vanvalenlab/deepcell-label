@@ -1,5 +1,6 @@
-import { actions, assign, Machine, send, sendParent } from 'xstate';
+import { actions, assign, Machine, send } from 'xstate';
 import { respond } from 'xstate/lib/actions';
+import { fromEventBus } from './eventBus';
 
 const { pure } = actions;
 
@@ -92,77 +93,91 @@ const setActions = {
   setSelected: assign({ selected: (_, { selected }) => selected }),
 };
 
-const selectMachine = Machine(
-  {
-    id: 'select',
-    entry: [
-      send({ type: 'FOREGROUND', foreground: 1 }),
-      send({ type: 'BACKGROUND', background: 0 }),
-    ],
-    context: {
-      selected: null,
-      foreground: null,
-      background: null,
-      hovering: null,
-      labels: {},
-    },
-    on: {
-      SHIFT_CLICK: [
-        {
-          cond: 'doubleClick',
-          actions: ['selectForeground', send({ type: 'BACKGROUND', background: 0 })],
-        },
-        { cond: 'onBackground', actions: 'selectForeground' },
-        { actions: 'selectBackground' },
+const createSelectMachine = ({ eventBuses }) =>
+  Machine(
+    {
+      id: 'select',
+      entry: [
+        send({ type: 'FOREGROUND', foreground: 1 }),
+        send({ type: 'BACKGROUND', background: 0 }),
       ],
+      invoke: [
+        {
+          id: 'eventBus',
+          src: fromEventBus('select', () => eventBuses.select),
+        },
+        { src: fromEventBus('select', () => eventBuses.canvas) },
+        { src: fromEventBus('select', () => eventBuses.labeled) },
+      ],
+      context: {
+        selected: null,
+        foreground: null,
+        background: null,
+        hovering: null,
+        labels: {},
+      },
+      on: {
+        SHIFT_CLICK: [
+          {
+            cond: 'doubleClick',
+            actions: ['selectForeground', send({ type: 'BACKGROUND', background: 0 })],
+          },
+          { cond: 'onBackground', actions: 'selectForeground' },
+          { actions: 'selectBackground' },
+        ],
 
-      HOVERING: { actions: 'setHovering' },
-      LABELS: { actions: 'setLabels' },
-      SELECTED: { actions: ['setSelected', sendParent((c, e) => e)] },
-      FOREGROUND: {
-        actions: ['setForeground', 'sendSelected', sendParent((c, e) => e)],
+        HOVERING: { actions: 'setHovering' },
+        LABELS: { actions: 'setLabels' },
+        SELECTED: { actions: ['setSelected', 'sendToEventBus'] },
+        FOREGROUND: {
+          actions: ['setForeground', 'sendSelected', 'sendToEventBus'],
+        },
+        BACKGROUND: {
+          actions: ['setBackground', 'sendSelected', 'sendToEventBus'],
+        },
+        SET_FOREGROUND: {
+          actions: send((_, { foreground }) => ({
+            type: 'FOREGROUND',
+            foreground,
+          })),
+        },
+        SELECT_FOREGROUND: { actions: 'selectForeground' },
+        SELECT_BACKGROUND: { actions: 'selectBackground' },
+        SWITCH: { actions: 'switch' },
+        NEW_FOREGROUND: { actions: 'newForeground' },
+        RESET_FOREGROUND: { actions: 'resetForeground' },
+        RESET_BACKGROUND: { actions: 'resetBackground' },
+        PREV_FOREGROUND: { actions: 'prevForeground' },
+        NEXT_FOREGROUND: { actions: 'nextForeground' },
+        PREV_BACKGROUND: { actions: 'prevBackground' },
+        NEXT_BACKGROUND: { actions: 'nextBackground' },
+        SAVE: { actions: 'save' },
+        RESTORE: { actions: 'restore' },
       },
-      BACKGROUND: {
-        actions: ['setBackground', 'sendSelected', sendParent((c, e) => e)],
+    },
+    {
+      guards: {
+        doubleClick: (_, event) => event.detail === 2,
+        onBackground: ({ hovering, background }) => hovering === background,
       },
-      SET_FOREGROUND: {
-        actions: send((_, { foreground }) => ({
-          type: 'FOREGROUND',
+      actions: {
+        ...selectActions,
+        ...selectShortcutActions,
+        ...cycleActions,
+        ...setActions,
+        save: respond(({ foreground, background }) => ({
+          type: 'RESTORE',
           foreground,
+          background,
         })),
+        restore: pure((_, { foreground, background }) => [
+          respond('RESTORED'),
+          send({ type: 'FOREGROUND', foreground }),
+          send({ type: 'BACKGROUND', background }),
+        ]),
+        sendToEventBus: send((c, e) => e, { to: 'eventBus' }),
       },
-      SELECT_FOREGROUND: { actions: 'selectForeground' },
-      SELECT_BACKGROUND: { actions: 'selectBackground' },
-      SWITCH: { actions: 'switch' },
-      NEW_FOREGROUND: { actions: 'newForeground' },
-      RESET_FOREGROUND: { actions: 'resetForeground' },
-      RESET_BACKGROUND: { actions: 'resetBackground' },
-      PREV_FOREGROUND: { actions: 'prevForeground' },
-      NEXT_FOREGROUND: { actions: 'nextForeground' },
-      PREV_BACKGROUND: { actions: 'prevBackground' },
-      NEXT_BACKGROUND: { actions: 'nextBackground' },
-      SAVE: { actions: 'save' },
-      RESTORE: { actions: 'restore' },
-    },
-  },
-  {
-    guards: {
-      doubleClick: (_, event) => event.detail === 2,
-      onBackground: ({ hovering, background }) => hovering === background,
-    },
-    actions: {
-      ...selectActions,
-      ...selectShortcutActions,
-      ...cycleActions,
-      ...setActions,
-      save: respond(({ foreground, background }) => ({ type: 'RESTORE', foreground, background })),
-      restore: pure((_, { foreground, background }) => [
-        respond('RESTORED'),
-        send({ type: 'FOREGROUND', foreground }),
-        send({ type: 'BACKGROUND', background }),
-      ]),
-    },
-  }
-);
+    }
+  );
 
-export default selectMachine;
+export default createSelectMachine;

@@ -1,4 +1,5 @@
 import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
+import { fromEventBus } from './eventBus';
 
 const { pure } = actions;
 
@@ -69,106 +70,114 @@ const createHistoryMachine = (actor) =>
     }
   );
 
-const undoMachine = Machine(
-  {
-    id: 'undo',
-    context: {
-      histories: [],
-      count: 0,
-      numHistories: 0,
-      action: 0,
-      numActions: 0,
-    },
-    on: {
-      ADD_ACTOR: { actions: 'addActor' },
-    },
-    initial: 'idle',
-    states: {
-      idle: {
-        on: {
-          EDIT: {
-            target: 'saving',
-            actions: ['newAction', 'forwardToHistories'],
-          },
-          UNDO: {
-            target: 'undoing',
-            cond: 'canUndo',
-            actions: 'forwardToHistories',
-          },
-          REDO: {
-            target: 'redoing',
-            cond: 'canRedo',
-            actions: 'forwardToHistories',
-          },
-          BACKEND_UNDO: {
-            actions: ['decrementAction', sendParent('BACKEND_UNDO'), 'forwardToHistories'],
-          },
-          BACKEND_REDO: {
-            actions: ['incrementAction', sendParent('BACKEND_REDO'), 'forwardToHistories'],
-          },
-        },
-      },
-      saving: {
-        entry: 'resetCounts',
-        on: { SAVED: { actions: 'incrementCount' } },
-        always: { cond: 'allHistoriesResponded', target: 'idle' },
-      },
-      undoing: {
-        entry: 'resetCounts',
-        on: {
-          RESTORED: { actions: 'incrementCount' },
-        },
-        always: {
-          cond: 'allHistoriesResponded',
-          target: 'idle',
-          actions: send('BACKEND_UNDO'),
-        },
-      },
-      redoing: {
-        entry: 'resetCounts',
-        on: {
-          RESTORED: { actions: 'incrementCount' },
-        },
-        always: {
-          cond: 'allHistoriesResponded',
-          target: 'idle',
-          actions: send('BACKEND_REDO'),
-        },
-      },
-    },
-  },
-  {
-    guards: {
-      allHistoriesResponded: (context) => context.count === context.numHistories,
-      canUndo: (context) => context.action > 0,
-      canRedo: (context) => context.action < context.numActions,
-    },
-    actions: {
-      addActor: assign({
-        histories: ({ histories }, { actor }) => [...histories, spawn(createHistoryMachine(actor))],
-      }),
-      forwardToHistories: pure((context) => {
-        return context.histories.map((actor) => forwardTo(actor));
-      }),
-      resetCounts: assign({
+const createUndoMachine = ({ eventBuses }) =>
+  Machine(
+    {
+      id: 'undo',
+      invoke: [
+        { id: 'eventBus', src: fromEventBus('undo', () => eventBuses.undo) },
+        { id: 'api', src: fromEventBus('undo', () => eventBuses.api) },
+      ],
+      context: {
+        histories: [],
         count: 0,
-        numHistories: (context) => context.histories.length,
-      }),
-      incrementCount: assign({
-        count: (context) => context.count + 1,
-      }),
-      newAction: assign({
-        action: (context) => context.action + 1,
-        numActions: (context) => context.action + 1,
-      }),
-      incrementAction: assign({
-        action: (context) => context.action + 1,
-      }),
-      decrementAction: assign({
-        action: (context) => context.action - 1,
-      }),
+        numHistories: 0,
+        action: 0,
+        numActions: 0,
+      },
+      on: {
+        ADD_ACTOR: { actions: 'addActor' },
+      },
+      initial: 'idle',
+      states: {
+        idle: {
+          on: {
+            EDIT: {
+              target: 'saving',
+              actions: ['newAction', 'forwardToHistories'],
+            },
+            UNDO: {
+              target: 'undoing',
+              cond: 'canUndo',
+              actions: 'forwardToHistories',
+            },
+            REDO: {
+              target: 'redoing',
+              cond: 'canRedo',
+              actions: 'forwardToHistories',
+            },
+            BACKEND_UNDO: {
+              actions: ['decrementAction', forwardTo('api'), 'forwardToHistories'],
+            },
+            BACKEND_REDO: {
+              actions: ['incrementAction', forwardTo('api'), 'forwardToHistories'],
+            },
+          },
+        },
+        saving: {
+          entry: 'resetCounts',
+          on: { SAVED: { actions: 'incrementCount' } },
+          always: { cond: 'allHistoriesResponded', target: 'idle' },
+        },
+        undoing: {
+          entry: 'resetCounts',
+          on: {
+            RESTORED: { actions: 'incrementCount' },
+          },
+          always: {
+            cond: 'allHistoriesResponded',
+            target: 'idle',
+            actions: send('BACKEND_UNDO'),
+          },
+        },
+        redoing: {
+          entry: 'resetCounts',
+          on: {
+            RESTORED: { actions: 'incrementCount' },
+          },
+          always: {
+            cond: 'allHistoriesResponded',
+            target: 'idle',
+            actions: send('BACKEND_REDO'),
+          },
+        },
+      },
     },
-  }
-);
+    {
+      guards: {
+        allHistoriesResponded: (context) => context.count === context.numHistories,
+        canUndo: (context) => context.action > 0,
+        canRedo: (context) => context.action < context.numActions,
+      },
+      actions: {
+        addActor: assign({
+          histories: ({ histories }, { actor }) => [
+            ...histories,
+            spawn(createHistoryMachine(actor)),
+          ],
+        }),
+        forwardToHistories: pure((context) => {
+          return context.histories.map((actor) => forwardTo(actor));
+        }),
+        resetCounts: assign({
+          count: 0,
+          numHistories: (context) => context.histories.length,
+        }),
+        incrementCount: assign({
+          count: (context) => context.count + 1,
+        }),
+        newAction: assign({
+          action: (context) => context.action + 1,
+          numActions: (context) => context.action + 1,
+        }),
+        incrementAction: assign({
+          action: (context) => context.action + 1,
+        }),
+        decrementAction: assign({
+          action: (context) => context.action - 1,
+        }),
+      },
+    }
+  );
 
-export default undoMachine;
+export default createUndoMachine;

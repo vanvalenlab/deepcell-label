@@ -1,4 +1,5 @@
 import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
+import { fromEventBus } from '../eventBus';
 import createFeatureMachine from './featureMachine';
 
 const { pure, respond } = actions;
@@ -74,9 +75,13 @@ const restoreState = {
   },
 };
 
-const createLabeledMachine = (projectId, numFeatures, numFrames) =>
+const createLabeledMachine = ({ projectId, numFeatures, numFrames, eventBuses }) =>
   Machine(
     {
+      invoke: {
+        id: 'eventBus',
+        src: fromEventBus('labeled', () => eventBuses.labeled),
+      },
       context: {
         projectId,
         numFeatures,
@@ -104,8 +109,8 @@ const createLabeledMachine = (projectId, numFeatures, numFrames) =>
         TOGGLE_OUTLINE: { actions: 'toggleOutline' },
         SET_OPACITY: { actions: 'setOpacity' },
         CYCLE_OPACITY: { actions: 'cycleOpacity' },
-        LABELED_ARRAY: { actions: sendParent((c, e) => e) },
-        LABELS: { actions: sendParent((c, e) => e) },
+        LABELED_ARRAY: { actions: send((c, e) => e, { to: 'eventBus' }) },
+        LABELS: { actions: send((c, e) => e, { to: 'eventBus' }) },
         EDITED: {
           actions: forwardTo(({ features }, event) => features[event.data.feature]),
         },

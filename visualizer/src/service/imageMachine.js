@@ -1,4 +1,5 @@
 import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
+import { fromEventBus } from './eventBus';
 import createLabeledMachine from './labeled/labeledMachine';
 import createRawMachine from './raw/rawMachine';
 
@@ -37,10 +38,14 @@ const loadFrameState = {
   },
 };
 
-const createImageMachine = ({ projectId }) =>
+const createImageMachine = ({ projectId, eventBuses }) =>
   Machine(
     {
       id: 'image',
+      invoke: [
+        { id: 'eventBus', src: fromEventBus('image', () => eventBuses.image) },
+        { id: 'undo', src: fromEventBus('image', () => eventBuses.undo) },
+      ],
       context: {
         projectId,
         frame: 0,
@@ -50,6 +55,7 @@ const createImageMachine = ({ projectId }) =>
         numChannels: 1,
         rawRef: null,
         labeledRef: null,
+        eventBuses,
       },
       initial: 'waitForProject',
       states: {
@@ -71,12 +77,8 @@ const createImageMachine = ({ projectId }) =>
         EDITED: { actions: forwardTo('labeled') },
         TOGGLE_COLOR_MODE: { actions: forwardTo('raw') },
         // send events to parent
-        LABELED_ARRAY: { actions: 'forwardToParent' },
-        LABELS: { actions: 'forwardToParent' },
-        FEATURE: { actions: ['setFeature', 'forwardToParent'] },
-        CHANNEL: { actions: ['setChannel', 'forwardToParent'] },
-        GRAYSCALE: { actions: 'forwardToParent' },
-        COLOR: { actions: 'forwardToParent' },
+        FEATURE: { actions: ['setFeature', 'sendToEventBus'] },
+        CHANNEL: { actions: ['setChannel', 'sendToEventBus'] },
         SAVE: { actions: 'save' },
         RESTORE: { actions: 'restore' },
         ADD_LAYER: { actions: sendParent('ADD_LAYER') },
@@ -88,7 +90,7 @@ const createImageMachine = ({ projectId }) =>
         isLoaded: ({ rawLoaded, labeledLoaded }) => rawLoaded && labeledLoaded,
       },
       actions: {
-        forwardToParent: sendParent((_, event) => event),
+        sendToEventBus: send((c, e) => e, { to: 'eventBus' }),
         handleProject: assign(
           (_, { frame, feature, channel, numFrames, numFeatures, numChannels }) => {
             return {
@@ -103,17 +105,15 @@ const createImageMachine = ({ projectId }) =>
           }
         ),
         // create child actors to fetch raw & labeled data
-        spawnActors: assign({
-          rawRef: ({ projectId, numChannels, numFrames }) =>
-            spawn(createRawMachine(projectId, numChannels, numFrames), 'raw'),
-          labeledRef: ({ projectId, numFeatures, numFrames }) =>
-            spawn(createLabeledMachine(projectId, numFeatures, numFrames), 'labeled'),
-        }),
+        spawnActors: assign((context) => ({
+          rawRef: spawn(createRawMachine(context), 'raw'),
+          labeledRef: spawn(createLabeledMachine(context), 'labeled'),
+        })),
         addActorsToUndo: pure((context) => {
           const { rawRef, labeledRef } = context;
           return [
-            sendParent({ type: 'ADD_ACTOR', actor: labeledRef }),
-            sendParent({ type: 'ADD_ACTOR', actor: rawRef }),
+            send({ type: 'ADD_ACTOR', actor: labeledRef }, { to: 'undo' }),
+            send({ type: 'ADD_ACTOR', actor: rawRef }, { to: 'undo' }),
           ];
         }),
         loadLabeled: send(({ loadingFrame }) => ({ type: 'LOAD_FRAME', frame: loadingFrame }), {
@@ -133,7 +133,7 @@ const createImageMachine = ({ projectId }) =>
             assign({ frame: loadingFrame }),
             send(frameEvent, { to: 'raw' }),
             send(frameEvent, { to: 'labeled' }),
-            sendParent(frameEvent),
+            send(frameEvent, { to: 'eventBus' }),
           ];
         }),
         setFeature: assign({ feature: (_, { feature }) => ({ feature }) }),
