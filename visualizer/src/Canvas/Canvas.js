@@ -65,7 +65,7 @@ export const Canvas = () => {
   const [canvases, setCanvases] = React.useState([]);
 
   const arrays = useArrays();
-  const loading = useSelector(arrays, (state) => state.matches('loading'));
+  const loading = useSelector(arrays, (state) => state.matches('waiting'));
 
   return (
     <Box

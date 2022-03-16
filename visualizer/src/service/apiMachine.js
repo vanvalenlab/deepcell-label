@@ -187,6 +187,8 @@ const createApiMachine = ({ projectId, eventBuses }) =>
         ),
         setRawArray: assign((_, { rawArray }) => ({ rawArray })),
         setLabeledArray: assign((_, { labeledArray }) => ({ labeledArray })),
+        setFrame: assign((_, { frame }) => ({ frame })),
+        setFeature: assign((_, { feature }) => ({ feature })),
       },
     }
   );
