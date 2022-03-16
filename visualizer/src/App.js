@@ -1,15 +1,18 @@
 import { Box, createTheme, StyledEngineProvider, ThemeProvider, Typography } from '@mui/material';
 import { styled } from '@mui/system';
-import { useSelector } from '@xstate/react';
+import { useMachine, useSelector } from '@xstate/react';
 import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { interpret } from 'xstate';
 import Footer from './Footer/Footer';
 import Label from './Label';
 import Load from './Load/Load';
 import NavBar from './Navbar';
 import ProjectContext from './ProjectContext';
 import QualityControlContext from './QualityControlContext';
-import { createProject, isProjectId, qualityControl } from './service/service';
+import createLoadMachine from './service/loadMachine';
+import createProjectMachine from './service/projectMachine';
+import { isProjectId, qualityControl } from './service/service';
 
 // import service from './service/service';
 
@@ -38,11 +41,32 @@ function Review() {
   );
 }
 
+function getProjectId() {
+  const location = window.location;
+  const search = new URLSearchParams(location.search);
+  const projectId = search.get('projectId');
+  if (!projectId || projectId.split(',').length > 1) {
+    return;
+  }
+  return projectId;
+}
+
 function LabelProject() {
-  const [project, setProject] = useState(null);
+  const projectId = getProjectId();
+  const [loadState] = useMachine(createLoadMachine(projectId));
+  const [project] = useState(interpret(createProjectMachine(projectId)).start());
+
   useEffect(() => {
-    createProject().then((project) => setProject(project));
-  }, []);
+    if (loadState.matches('loaded')) {
+      const { rawArrays, labeledArrays, labels } = loadState.context;
+      project.send({
+        type: 'LOADED',
+        rawArrays,
+        labeledArrays,
+        labels,
+      });
+    }
+  }, [loadState, project]);
 
   return (
     project && (

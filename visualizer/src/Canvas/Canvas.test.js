@@ -17,6 +17,7 @@ const eventBuses = {
   api: new EventBus('api'),
   arrays: new EventBus('arrays'),
   labels: new EventBus('labels'),
+  load: new EventBus('load'),
 };
 const context = {
   projectId: 'testId',

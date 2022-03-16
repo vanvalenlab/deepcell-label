@@ -5,6 +5,7 @@ import createImageMachine from './imageMachine';
 const eventBuses = {
   image: new EventBus(),
   undo: new EventBus(),
+  load: new EventBus(),
 };
 
 describe('test imageMachine', () => {

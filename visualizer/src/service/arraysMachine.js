@@ -2,17 +2,8 @@
 
 import { assign, Machine, send } from 'xstate';
 import { fromEventBus } from './eventBus';
-import { fetchLabeled, fetchRaw } from './fetch';
 
-const createArraysMachine = ({
-  projectId,
-  numFrames,
-  numFeatures,
-  numChannels,
-  height,
-  width,
-  eventBuses,
-}) =>
+const createArraysMachine = ({ projectId, eventBuses }) =>
   Machine(
     {
       id: 'arrays',
@@ -20,53 +11,27 @@ const createArraysMachine = ({
         { id: 'eventBus', src: fromEventBus('arrays', () => eventBuses.arrays) },
         { id: 'image', src: fromEventBus('arrays', () => eventBuses.image) },
         { src: fromEventBus('arrays', () => eventBuses.api) },
+        { src: fromEventBus('labeled', () => eventBuses.load) },
       ],
       context: {
         projectId,
-        numFrames,
-        numFeatures,
-        numChannels,
-        height,
-        width,
         rawArrays: null,
         labeledArrays: null,
         frame: 0,
         feature: 0,
         channel: 0,
       },
-      initial: 'loading',
+      initial: 'waiting',
       states: {
-        loading: {
-          type: 'parallel',
-          states: {
-            raw: {
-              initial: 'loading',
-              states: {
-                loading: {
-                  invoke: {
-                    src: fetchRaw,
-                    onDone: { target: 'done', actions: 'setRawArrays' },
-                  },
-                },
-                done: { type: 'final' },
-              },
-            },
-            labeled: {
-              initial: 'loading',
-              states: {
-                loading: {
-                  invoke: {
-                    src: fetchLabeled,
-                    onDone: { target: 'done', actions: 'setLabeledArrays' },
-                  },
-                },
-                done: { type: 'final' },
-              },
-            },
+        waiting: {
+          on: {
+            LOADED: { target: 'idle', actions: ['setRawArrays', 'setLabeledArrays'] },
+            SET_FRAME: { actions: 'setFrame' },
+            SET_FEATURE: { actions: 'setFeature' },
+            SET_CHANNEL: { actions: 'setChannel' },
           },
-          onDone: 'loaded',
         },
-        loaded: {
+        idle: {
           entry: ['sendLabeledArray', 'sendRawArray'],
           on: {
             SET_FRAME: { actions: ['setFrame', 'sendLabeledArray', 'sendRawArray'] },
@@ -80,10 +45,11 @@ const createArraysMachine = ({
     {
       guards: {},
       actions: {
-        setRawArrays: assign({ rawArrays: (ctx, evt) => evt.data }),
-        setLabeledArrays: assign({ labeledArrays: (ctx, evt) => evt.data }),
+        setRawArrays: assign({ rawArrays: (ctx, evt) => evt.rawArrays }),
+        setLabeledArrays: assign({ labeledArrays: (ctx, evt) => evt.labeledArrays }),
         setFrame: assign({ frame: (ctx, evt) => evt.frame }),
         setFeature: assign({ feature: (ctx, evt) => evt.feature }),
+        setChannel: assign({ channel: (ctx, evt) => evt.channel }),
         updateLabeledArray: assign({
           labeledArrays: (ctx, evt) => {
             const { frame, feature, labeledArray } = evt;

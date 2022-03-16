@@ -5,19 +5,20 @@ import createRawMachine from './raw/rawMachine';
 
 const { pure, respond } = actions;
 
-const createImageMachine = ({ projectId, numFrames, numFeatures, numChannels, eventBuses }) =>
+const createImageMachine = ({ projectId, eventBuses }) =>
   Machine(
     {
       id: 'image',
       invoke: [
         { id: 'eventBus', src: fromEventBus('image', () => eventBuses.image) },
         { id: 'undo', src: fromEventBus('image', () => eventBuses.undo) },
+        { src: fromEventBus('labeled', () => eventBuses.load) },
       ],
       context: {
         projectId,
-        numFrames,
-        numFeatures,
-        numChannels,
+        numFrames: 1,
+        numFeatures: 1,
+        numChannels: 1,
         frame: 0,
         rawRef: null,
         labeledRef: null,
@@ -33,6 +34,7 @@ const createImageMachine = ({ projectId, numFrames, numFeatures, numChannels, ev
         },
         idle: {
           on: {
+            DIMENSIONS: { actions: 'setDimensions' },
             SET_FRAME: { actions: ['setFrame', 'sendToEventBus'] },
             SAVE: { actions: 'save' },
             RESTORE: { actions: 'restore' },
@@ -45,9 +47,13 @@ const createImageMachine = ({ projectId, numFrames, numFeatures, numChannels, ev
     },
     {
       actions: {
+        setDimensions: assign({
+          numFrames: (context, event) => event.numFrames,
+          numFeatures: (context, event) => event.numFeatures,
+          numChannels: (context, event) => event.numChannels,
+        }),
         setFrame: assign({ frame: (_, { frame }) => frame }),
         sendToEventBus: send((c, e) => e, { to: 'eventBus' }),
-        // create child actors to fetch raw & labeled data
         spawnActors: assign((context) => ({
           rawRef: spawn(createRawMachine(context), 'raw'),
           labeledRef: spawn(createLabeledMachine(context), 'labeled'),

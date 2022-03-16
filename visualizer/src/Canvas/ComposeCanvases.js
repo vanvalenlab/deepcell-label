@@ -45,6 +45,7 @@ export const ComposeCanvas = ({ canvases }) => {
   return (
     <Canvas
       id='canvas'
+      data-testid='canvas'
       sx={{ position: 'absolute', top: 0, left: 0, maxHeight: '100%', maxWidth: '100%' }}
       ref={canvasRef}
       width={width}

@@ -64,10 +64,12 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
   }, [width, height]);
 
   useEffect(() => {
-    // Rerender the canvas for this component
-    kernelRef.current(rawArray, on, hexToRGB(color), min, max);
-    // Rerender the parent canvas
-    setCanvases((canvases) => ({ ...canvases, [layerIndex]: canvasRef.current }));
+    if (rawArray) {
+      // Rerender the canvas for this component
+      kernelRef.current(rawArray, on, hexToRGB(color), min, max);
+      // Rerender the parent canvas
+      setCanvases((canvases) => ({ ...canvases, [layerIndex]: canvasRef.current }));
+    }
   }, [rawArray, on, color, min, max, width, height, layerIndex, setCanvases]);
 
   // Remove canvas from canvases when layer is removed

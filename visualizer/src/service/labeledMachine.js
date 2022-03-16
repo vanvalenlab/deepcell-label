@@ -4,19 +4,18 @@ import { fromEventBus } from './eventBus';
 
 const { respond } = actions;
 
-const createLabeledMachine = ({ projectId, numFeatures, eventBuses }) =>
+const createLabeledMachine = ({ projectId, eventBuses }) =>
   Machine(
     {
-      invoke: {
-        id: 'eventBus',
-        src: fromEventBus('labeled', () => eventBuses.labeled),
-      },
-
+      invoke: [
+        { id: 'eventBus', src: fromEventBus('labeled', () => eventBuses.labeled) },
+        { src: fromEventBus('labeled', () => eventBuses.load) },
+      ],
       context: {
         projectId,
-        numFeatures,
+        numFeatures: 1,
         feature: 0,
-        featureNames: [],
+        featureNames: ['feature 0'],
         opacity: 0,
         lastOpacity: 0.3,
         highlight: true,
@@ -27,8 +26,8 @@ const createLabeledMachine = ({ projectId, numFeatures, eventBuses }) =>
           [255, 255, 255, 1],
         ],
       },
-      entry: 'setNames',
       on: {
+        DIMENSIONS: { actions: 'setNumFeatures' },
         SET_FEATURE: { actions: ['setFeature', 'sendToEventBus'] },
         TOGGLE_HIGHLIGHT: { actions: 'toggleHighlight' },
         TOGGLE_OUTLINE: { actions: 'toggleOutline' },
@@ -40,12 +39,12 @@ const createLabeledMachine = ({ projectId, numFeatures, eventBuses }) =>
     },
     {
       actions: {
-        setFeature: assign({ feature: (_, { feature }) => feature }),
-        /** Create feature machines and names. */
-        setNames: assign({
+        setNumFeatures: assign({
+          numFeatures: (context, event) => event.numFeatures,
           featureNames: ({ numFeatures }) =>
             [...Array(numFeatures).keys()].map((i) => `feature ${i}`),
         }),
+        setFeature: assign({ feature: (_, { feature }) => feature }),
         toggleHighlight: assign({ highlight: ({ highlight }) => !highlight }),
         setOpacity: assign({
           opacity: (_, { opacity }) => Math.min(1, Math.max(0, opacity)),
