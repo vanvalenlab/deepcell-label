@@ -185,6 +185,7 @@ const createSelectMachine = ({ eventBuses }) =>
           type: 'BACKGROUND',
           background: ctx.background,
         })),
+        sendToEventBus: send((c, e) => e, { to: 'eventBus' }),
       },
     }
   );
