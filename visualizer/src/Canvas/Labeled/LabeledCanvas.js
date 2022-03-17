@@ -5,10 +5,10 @@ import {
   useAlphaKernelCanvas,
   useArrays,
   useCanvas,
-  useDrawCanvas,
   useImage,
   useLabeled,
   useLabels,
+  usePixelatedCanvas,
   useSelect,
 } from '../../ProjectContext';
 
@@ -41,7 +41,7 @@ export const LabeledCanvas = ({ setCanvases }) => {
 
   const kernelRef = useRef();
   const kernelCanvas = useAlphaKernelCanvas();
-  const drawCanvas = useDrawCanvas();
+  const drawCanvas = usePixelatedCanvas();
 
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvas });

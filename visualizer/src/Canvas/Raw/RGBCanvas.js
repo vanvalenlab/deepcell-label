@@ -1,6 +1,6 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useState } from 'react';
-import { useCanvas, useDrawCanvas, useLayers, useProject } from '../../ProjectContext';
+import { useCanvas, useLayers, usePixelatedCanvas, useProject } from '../../ProjectContext';
 import ChannelCanvas from './ChannelCanvas';
 
 export const RGBCanvas = ({ setCanvases }) => {
@@ -12,7 +12,7 @@ export const RGBCanvas = ({ setCanvases }) => {
   const layers = useLayers();
   // keys: layer index, values: ref to canvas for each layer
   const [layerCanvases, setLayerCanvases] = useState({});
-  const drawCanvas = useDrawCanvas();
+  const drawCanvas = usePixelatedCanvas();
 
   useEffect(() => {
     drawCanvas.getContext('2d').globalCompositeOperation = 'lighter';

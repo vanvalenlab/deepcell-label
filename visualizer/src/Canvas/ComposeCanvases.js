@@ -1,7 +1,7 @@
 import { styled } from '@mui/material/styles';
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useRef } from 'react';
-import { useCanvas, useDrawCanvas } from '../ProjectContext';
+import { useCanvas, usePixelatedCanvas } from '../ProjectContext';
 
 const Canvas = styled('canvas')``;
 
@@ -18,7 +18,7 @@ export const ComposeCanvas = ({ canvases }) => {
   const height = sh * scale * window.devicePixelRatio;
 
   const canvasRef = useRef();
-  const composeCanvas = useDrawCanvas();
+  const composeCanvas = usePixelatedCanvas();
 
   useEffect(() => {
     composeCanvas.getContext('2d').globalCompositeOperation = 'source-over';

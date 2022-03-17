@@ -252,20 +252,39 @@ export function useAlphaKernelCanvas() {
   return canvas;
 }
 
-/** Creates a references to a canvas with the same dimensions as the project. */
-export function useDrawCanvas() {
-  const [drawCanvas] = useState(document.createElement('canvas'));
+/** Creates a canvas with the same dimensions as the project. */
+export function usePixelatedCanvas() {
+  const [canvas] = useState(document.createElement('canvas'));
 
-  const canvas = useCanvas();
-  const width = useSelector(canvas, (state) => state.context.width);
-  const height = useSelector(canvas, (state) => state.context.height);
+  const canvasMachine = useCanvas();
+  const width = useSelector(canvasMachine, (state) => state.context.width);
+  const height = useSelector(canvasMachine, (state) => state.context.height);
 
   useEffect(() => {
-    drawCanvas.width = width;
-    drawCanvas.height = height;
-  }, [drawCanvas, height, width]);
+    canvas.width = width;
+    canvas.height = height;
+  }, [canvas, height, width]);
 
-  return drawCanvas;
+  return canvas;
+}
+
+/** Creates a canvas with the same resolution as the displayed canvas.. */
+export function useFullResolutionCanvas() {
+  const [canvas] = useState(document.createElement('canvas'));
+
+  const canvasMachine = useCanvas();
+  const sw = useSelector(canvasMachine, (state) => state.context.width);
+  const sh = useSelector(canvasMachine, (state) => state.context.height);
+  const scale = useSelector(canvasMachine, (state) => state.context.scale);
+  const width = sw * scale * window.devicePixelRatio;
+  const height = sh * scale * window.devicePixelRatio;
+
+  useEffect(() => {
+    canvas.width = width;
+    canvas.height = height;
+  }, [canvas, height, width]);
+
+  return canvas;
 }
 
 function ProjectContext({ project, children }) {

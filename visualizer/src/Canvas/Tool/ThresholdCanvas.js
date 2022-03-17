@@ -1,7 +1,12 @@
 import { useSelector } from '@xstate/react';
 import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
-import { useAlphaKernelCanvas, useCanvas, useDrawCanvas, useThreshold } from '../../ProjectContext';
+import {
+  useAlphaKernelCanvas,
+  useCanvas,
+  usePixelatedCanvas,
+  useThreshold,
+} from '../../ProjectContext';
 
 const ThresholdCanvas = ({ setCanvases }) => {
   const canvas = useCanvas();
@@ -16,7 +21,7 @@ const ThresholdCanvas = ({ setCanvases }) => {
 
   const kernelRef = useRef();
   const kernelCanvas = useAlphaKernelCanvas();
-  const drawCanvas = useDrawCanvas();
+  const drawCanvas = usePixelatedCanvas();
 
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvas });
