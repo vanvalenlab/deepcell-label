@@ -6,6 +6,7 @@ import { useArrays, useCanvas, useSegment, useSelect } from '../ProjectContext';
 import ComposeCanvas from './ComposeCanvases';
 import LabeledCanvas from './Labeled/LabeledCanvas';
 import OutlineCanvas from './Labeled/OutlineCanvas';
+import SpotsCanvas from './Labeled/SpotsCanvas';
 import RawCanvas from './Raw/RawCanvas';
 import BrushCanvas from './Tool/BrushCanvas';
 import ThresholdCanvas from './Tool/ThresholdCanvas';
@@ -95,6 +96,7 @@ export const Canvas = () => {
           <RawCanvas setCanvases={setCanvases} />
           <LabeledCanvas setCanvases={setCanvases} />
           <OutlineCanvas setCanvases={setCanvases} />
+          <SpotsCanvas setCanvases={setCanvases} />
           {tool === 'brush' && <BrushCanvas setCanvases={setCanvases} />}
           {tool === 'threshold' && <ThresholdCanvas setCanvases={setCanvases} />}
         </>

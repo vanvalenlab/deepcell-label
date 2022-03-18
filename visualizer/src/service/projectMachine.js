@@ -10,6 +10,7 @@ import { EventBus, fromEventBus } from './eventBus';
 import createImageMachine from './imageMachine';
 import createLabelsMachine from './labelsMachine';
 import createSelectMachine from './selectMachine';
+import createSpotsMachine from './spotsMachine';
 import createToolMachine from './tools/toolMachine';
 import createUndoMachine from './undoMachine';
 
@@ -85,6 +86,7 @@ const createProjectMachine = (projectId) =>
           undoRef: spawn(createUndoMachine(context), 'undo'),
           arraysRef: spawn(createArraysMachine(context), 'arrays'),
           labelsRef: spawn(createLabelsMachine(context), 'labels'),
+          spotsRef: spawn(createSpotsMachine(context), 'spots'),
         })),
         addActorsToUndo: pure((context) => {
           const { canvasRef, toolRef, imageRef, selectRef } = context;

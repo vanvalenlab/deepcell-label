@@ -15,6 +15,12 @@ function useReturnContext(contextType) {
   return context;
 }
 
+export function useSpots() {
+  const project = useProject();
+  const spots = useSelector(project, (state) => state.context.spotsRef);
+  return spots;
+}
+
 export function useArrays() {
   const project = useProject();
   const arrays = useSelector(project, (state) => state.context.arraysRef);
