@@ -38,12 +38,18 @@ function SpotsCanvas({ setCanvases }) {
         spot[0] < sy + sh / zoom + scaledRadius
     );
     for (let spot of visibleSpots) {
-      const [x, y, cell] = spot;
+      const [y, x, cell] = spot;
       // const [r, g, b] = colormap[cell];
       const [r, g, b] = [255, 0, 255];
       ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`;
       ctx.beginPath();
-      ctx.arc((x - sx) * zoom, (y - sy) * zoom, radius, 0, 2 * Math.PI);
+      ctx.arc(
+        (x - sx) * zoom * scale * window.devicePixelRatio,
+        (y - sy) * zoom * scale * window.devicePixelRatio,
+        radius,
+        0,
+        2 * Math.PI
+      );
       ctx.fill();
     }
     setCanvases((canvases) => ({ ...canvases, spots: drawCanvas }));
