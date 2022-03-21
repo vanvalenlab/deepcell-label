@@ -3,7 +3,6 @@ import Checkbox from '@mui/material/Checkbox';
 import Grid from '@mui/material/Grid';
 import Slider from '@mui/material/Slider';
 import { useSelector } from '@xstate/react';
-import { useEffect } from 'react';
 import { useCanvas, useSpots } from '../../ProjectContext';
 
 function SpotsCheckbox() {
@@ -34,20 +33,11 @@ function SpotRadiusSlider() {
   const height = useSelector(canvas, (state) => state.context.height);
   const width = useSelector(canvas, (state) => state.context.width);
   const scale = useSelector(canvas, (state) => state.context.scale);
-  const zoom = useSelector(canvas, (state) => state.context.zoom);
 
-  const maxRadius = Math.floor(
-    0.01 * Math.min(height, width) * window.devicePixelRatio * scale * zoom
-  );
+  const maxRadius = Math.floor(0.01 * Math.min(height, width) * window.devicePixelRatio * scale);
 
   const spots = useSpots();
   const radius = useSelector(spots, (state) => state.context.radius);
-
-  useEffect(() => {
-    if (radius > maxRadius && maxRadius > 0) {
-      spots.send({ type: 'SET_RADIUS', radius: maxRadius });
-    }
-  }, [maxRadius]);
 
   return (
     <Slider
