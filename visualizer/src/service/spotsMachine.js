@@ -1,7 +1,7 @@
 /** Manages spots labels. */
 
 import { assign, Machine } from 'xstate';
-import spots from './spots';
+import spots from './spots2';
 
 function createSpotsMachine() {
   return Machine(
