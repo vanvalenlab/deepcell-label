@@ -3,6 +3,7 @@ import React from 'react';
 import DownloadButton from './DownloadButton';
 import LabeledControls from './LabeledControls/LabeledControls';
 import RawControls from './RawControls/RawControls';
+import SpotsControls from './SpotsControls';
 import SubmitButton from './SubmitButton';
 
 const ImageControls = () => {
@@ -24,6 +25,7 @@ const ImageControls = () => {
       ) : (
         <SubmitButton sx={{ width: '100%' }} />
       )}
+      <SpotsControls />
       <LabeledControls />
       <RawControls />
     </Box>
