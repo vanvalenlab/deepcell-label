@@ -40,8 +40,8 @@ const createLabeledMachine = ({ projectId, eventBuses }) =>
     {
       actions: {
         setNumFeatures: assign({
-          numFeatures: (context, event) => event.numFeatures,
-          featureNames: ({ numFeatures }) =>
+          numFeatures: (ctx, evt) => evt.numFeatures,
+          featureNames: (ctx, { numFeatures }) =>
             [...Array(numFeatures).keys()].map((i) => `feature ${i}`),
         }),
         setFeature: assign({ feature: (_, { feature }) => feature }),
