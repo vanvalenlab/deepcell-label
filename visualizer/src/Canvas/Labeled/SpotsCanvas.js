@@ -1,8 +1,12 @@
 import { useSelector } from '@xstate/react';
 import { useEffect } from 'react';
-import { useCanvas, useFullResolutionCanvas, useLabels, useSpots } from '../../ProjectContext';
-
-const highlightColor = [255, 0, 0];
+import {
+  useArrays,
+  useCanvas,
+  useFullResolutionCanvas,
+  useLabels,
+  useSpots,
+} from '../../ProjectContext';
 
 function SpotsCanvas({ setCanvases }) {
   const canvas = useCanvas();
@@ -21,39 +25,64 @@ function SpotsCanvas({ setCanvases }) {
 
   const drawCanvas = useFullResolutionCanvas();
 
+  const arrays = useArrays();
+  const labeledArray = useSelector(
+    arrays,
+    ({ context: { frame, feature, labeledArrays } }) =>
+      labeledArrays && labeledArrays[feature][frame]
+  );
+
   const spots = useSpots();
   const spotArray = useSelector(spots, (state) => state.context.spots);
   const radius = useSelector(spots, (state) => state.context.radius);
   const opacity = useSelector(spots, (state) => state.context.opacity);
+  const showSpots = useSelector(spots, (state) => state.context.showSpots);
 
   useEffect(() => {
     const ctx = drawCanvas.getContext('2d');
     ctx.clearRect(0, 0, width, height);
-    const scaledRadius = (radius / window.devicePixelRatio / scale) * zoom;
-    const visibleSpots = spotArray.filter(
-      (spot) =>
-        sx - scaledRadius * zoom < spot[1] &&
-        spot[1] < sx + sw / zoom + scaledRadius &&
-        sy - scaledRadius * zoom < spot[0] &&
-        spot[0] < sy + sh / zoom + scaledRadius
-    );
-    for (let spot of visibleSpots) {
-      const [y, x, cell] = spot;
-      // const [r, g, b] = colormap[cell];
-      const [r, g, b] = [255, 0, 255];
-      ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`;
-      ctx.beginPath();
-      ctx.arc(
-        (x - sx) * zoom * scale * window.devicePixelRatio,
-        (y - sy) * zoom * scale * window.devicePixelRatio,
-        radius,
-        0,
-        2 * Math.PI
+    if (showSpots) {
+      const scaledRadius = (radius / window.devicePixelRatio / scale) * zoom;
+      const visibleSpots = spotArray.filter(
+        ([x, y]) =>
+          sx - scaledRadius * zoom < x &&
+          x < sx + sw / zoom + scaledRadius &&
+          sy - scaledRadius * zoom < y &&
+          y < sy + sh / zoom + scaledRadius
       );
-      ctx.fill();
+      for (let spot of visibleSpots) {
+        const [x, y] = spot;
+        const cell = labeledArray ? labeledArray[Math.floor(y)][Math.floor(x)] : 0;
+        let [r, g, b] = cell !== 0 && colormap[cell] ? colormap[cell] : [255, 255, 255];
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+        ctx.beginPath();
+        ctx.arc(
+          (x - sx) * zoom * scale * window.devicePixelRatio,
+          (y - sy) * zoom * scale * window.devicePixelRatio,
+          radius,
+          0,
+          2 * Math.PI
+        );
+        ctx.fill();
+      }
     }
     setCanvases((canvases) => ({ ...canvases, spots: drawCanvas }));
-  }, [setCanvases, sh, sw, sx, sy, radius, zoom, width, height, colormap, spots, opacity]);
+  }, [
+    setCanvases,
+    sh,
+    sw,
+    sx,
+    sy,
+    radius,
+    zoom,
+    width,
+    height,
+    colormap,
+    spots,
+    opacity,
+    showSpots,
+    labeledArray,
+  ]);
 
   return null;
 }

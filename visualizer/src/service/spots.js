@@ -3731,6 +3731,6 @@ const spotsCsv = `1270.4296945929527,82.57030540704727,11.0
 1.4801661372184753,1176.5203224420547,1.0
 1.8469566702842712,1135.1530432999134,1.0`;
 
-const spots = spotsCsv.split('\n').map((row) => row.split(','));
+const spots = spotsCsv.split('\n').map((row) => row.split(',').map(Number));
 
 export default spots;
