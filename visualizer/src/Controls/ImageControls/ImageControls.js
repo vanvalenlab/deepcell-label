@@ -1,9 +1,9 @@
 import { Box } from '@mui/material';
 import React from 'react';
+import SpotsControls from '../SpotsControls';
 import DownloadButton from './DownloadButton';
 import LabeledControls from './LabeledControls/LabeledControls';
 import RawControls from './RawControls/RawControls';
-import SpotsControls from './SpotsControls';
 import SubmitButton from './SubmitButton';
 
 const ImageControls = () => {
