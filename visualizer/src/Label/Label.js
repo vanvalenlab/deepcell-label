@@ -2,13 +2,13 @@ import Box from '@mui/material/Box';
 import { ResizeSensor } from 'css-element-queries';
 import debounce from 'lodash.debounce';
 import { useEffect, useRef, useState } from 'react';
-import DisplayControls from './Label/DisplayControls';
-import Instructions from './Label/Instructions';
-import LabelControls from './Label/LabelControls';
-import LabelTabs from './Label/LabelControls/LabelTabs';
-import QualityControlControls from './Label/QualityControlControls/QualityControlControls';
-import SpaceFillingCanvas from './Label/SpaceFillingCanvas';
-import { useCanvas } from './ProjectContext';
+import { useCanvas } from '../ProjectContext';
+import DisplayControls from './DisplayControls';
+import Instructions from './Instructions';
+import LabelControls from './LabelControls';
+import LabelTabs from './LabelControls/LabelTabs';
+import QualityControlControls from './QualityControlControls/QualityControlControls';
+import SpaceFillingCanvas from './SpaceFillingCanvas';
 
 function Label({ review }) {
   const search = new URLSearchParams(window.location.search);
