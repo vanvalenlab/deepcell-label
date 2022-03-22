@@ -1,6 +1,8 @@
 import { FormLabel, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
+import SpotColorToggle from './SpotColorToggle';
 import SpotOpacitySlider from './SpotOpacitySlider';
+import SpotOutlineToggle from './SpotOutlineToggle';
 import SpotRadiusSlider from './SpotRadiusSlider';
 import SpotsCheckbox from './SpotsCheckbox';
 
@@ -14,6 +16,14 @@ function SpotsControls() {
         <Grid item xs={7} />
         <Grid item xs={1}>
           <SpotsCheckbox />
+        </Grid>
+      </Grid>
+      <Grid container direction='row'>
+        <Grid item xs={6}>
+          <SpotOutlineToggle />
+        </Grid>
+        <Grid item xs={6}>
+          <SpotColorToggle />
         </Grid>
       </Grid>
       <Grid container direction='row' alignItems='center'>

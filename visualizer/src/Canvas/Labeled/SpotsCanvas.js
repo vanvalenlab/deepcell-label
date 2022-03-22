@@ -9,6 +9,27 @@ import {
   useSpots,
 } from '../../ProjectContext';
 
+function transformImageCoordinatesToCanvas(spots, sx, sy, scale) {
+  return spots.map(([x, y]) => [Math.floor((x - sx) * scale), Math.floor((y - sy) * scale)]);
+}
+
+function drawSpots(ctx, spots, radius, color, opacity, outline) {
+  ctx.beginPath();
+  for (let spot of spots) {
+    const [x, y] = spot;
+    ctx.moveTo(x + radius, y);
+    ctx.arc(x, y, radius, 0, 2 * Math.PI);
+  }
+  const [r, g, b] = color;
+  ctx.closePath();
+  ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  ctx.fill();
+  if (outline) {
+    ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
+    ctx.stroke();
+  }
+}
+
 function SpotsCanvas({ setCanvases }) {
   const canvas = useCanvas();
   const zoom = useSelector(canvas, (state) => state.context.zoom);
@@ -34,23 +55,25 @@ function SpotsCanvas({ setCanvases }) {
   );
 
   const spots = useSpots();
-  const spotArray = useSelector(spots, (state) => state.context.spots);
+  const spotsArray = useSelector(spots, (state) => state.context.spots);
   const radius = useSelector(spots, (state) => state.context.radius);
   const opacity = useSelector(spots, (state) => state.context.opacity);
   const showSpots = useSelector(spots, (state) => state.context.showSpots);
+  const colorSpots = useSelector(spots, (state) => state.context.colorSpots);
+  const outline = useSelector(spots, (state) => state.context.outline);
 
   useEffect(() => {
     const ctx = drawCanvas.getContext('2d');
     // ctx.globalCompositeOperation = 'lighten';
     ctx.clearRect(0, 0, width, height);
     if (showSpots) {
-      const scaledRadius = (radius / window.devicePixelRatio / scale) * zoom;
-      const visibleSpots = spotArray.filter(
+      const imagePixelRadius = (radius * zoom) / scale / window.devicePixelRatio;
+      const visibleSpots = spotsArray.filter(
         ([x, y]) =>
-          sx - scaledRadius * zoom < x &&
-          x < sx + sw / zoom + scaledRadius &&
-          sy - scaledRadius * zoom < y &&
-          y < sy + sh / zoom + scaledRadius
+          sx - imagePixelRadius * zoom < x &&
+          x < sx + sw / zoom + imagePixelRadius &&
+          sy - imagePixelRadius * zoom < y &&
+          y < sy + sh / zoom + imagePixelRadius
       );
       const cellSpots = groupBy(visibleSpots, ([x, y]) =>
         labeledArray ? labeledArray[Math.floor(y)][Math.floor(x)] : 0
@@ -58,22 +81,18 @@ function SpotsCanvas({ setCanvases }) {
 
       for (let cell in cellSpots) {
         const spots = cellSpots[cell];
-        ctx.beginPath();
-        for (let spot of spots) {
-          const [x, y] = spot;
-          // const cell = labeledArray ? labeledArray[Math.floor(y)][Math.floor(x)] : 0;
-          const cx = Math.floor((x - sx) * zoom * scale * window.devicePixelRatio);
-          const cy = Math.floor((y - sy) * zoom * scale * window.devicePixelRatio);
-          ctx.moveTo(cx + radius, cy);
-          ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+        const imageToCanvas = zoom * scale * window.devicePixelRatio;
+        const canvasSpots = spots.map(([x, y]) => [
+          Math.floor((x - sx) * imageToCanvas),
+          Math.floor((y - sy) * imageToCanvas),
+        ]);
+        let color;
+        if (colorSpots && colormap[cell] && Number(cell) !== 0) {
+          color = colormap[cell];
+        } else {
+          color = [255, 255, 255];
         }
-        const [r, g, b] = Number(cell) !== 0 && colormap[cell] ? colormap[cell] : [255, 255, 255];
-        ctx.closePath();
-        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`;
-        // ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
-        ctx.fill();
-        ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
-        ctx.stroke();
+        drawSpots(ctx, canvasSpots, radius, color, opacity, outline);
       }
     }
     setCanvases((canvases) => ({ ...canvases, spots: drawCanvas }));
@@ -91,6 +110,8 @@ function SpotsCanvas({ setCanvases }) {
     spots,
     opacity,
     showSpots,
+    colorSpots,
+    outline,
     labeledArray,
   ]);
 
