@@ -1,32 +1,14 @@
-import { Paper, Tab, Tabs } from '@mui/material';
 import Box from '@mui/material/Box';
-import { useSelector } from '@xstate/react';
 import { ResizeSensor } from 'css-element-queries';
 import debounce from 'lodash.debounce';
 import { useEffect, useRef, useState } from 'react';
-import Canvas from './Canvas/Canvas';
-import ImageControls from './Controls/ImageControls/ImageControls';
-import QCControls from './Controls/QCControls';
-import SegmentControls from './Controls/SegmentControls';
-import TrackingControls from './Controls/TrackingControls';
-import Instructions from './Instructions/Instructions';
-import { useCanvas, useLabelMode } from './ProjectContext';
-
-function TabPanel(props) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role='tabpanel'
-      hidden={value !== index}
-      id={`simple-tabpanel-${index}`}
-      aria-labelledby={`simple-tab-${index}`}
-      {...other}
-    >
-      {value === index && children}
-    </div>
-  );
-}
+import DisplayControls from './Label/DisplayControls';
+import Instructions from './Label/Instructions';
+import LabelControls from './Label/LabelControls';
+import LabelTabs from './Label/LabelControls/LabelTabs';
+import QualityControlControls from './Label/QualityControlControls/QualityControlControls';
+import SpaceFillingCanvas from './Label/SpaceFillingCanvas';
+import { useCanvas } from './ProjectContext';
 
 function Label({ review }) {
   const search = new URLSearchParams(window.location.search);
@@ -36,24 +18,7 @@ function Label({ review }) {
   const [canvasBoxWidth, setCanvasBoxWidth] = useState(0);
   const [canvasBoxHeight, setCanvasBoxHeight] = useState(0);
 
-  const labelMode = useLabelMode();
   const canvas = useCanvas();
-  const value = useSelector(labelMode, (state) => {
-    return state.matches('segment') ? 0 : state.matches('track') ? 1 : false;
-  });
-
-  const handleChange = (event, newValue) => {
-    switch (newValue) {
-      case 0:
-        labelMode.send('SEGMENT');
-        break;
-      case 1:
-        labelMode.send('TRACK');
-        break;
-      default:
-        break;
-    }
-  };
 
   useEffect(() => {
     const setCanvasBoxDimensions = () => {
@@ -95,42 +60,12 @@ function Label({ review }) {
             p: 1,
           }}
         >
-          {track && (
-            <Paper square>
-              <Tabs
-                orientation='vertical'
-                value={value}
-                indicatorColor='primary'
-                textColor='primary'
-                onChange={handleChange}
-              >
-                <Tab label='Segment' />
-                <Tab label='Track' />
-              </Tabs>
-            </Paper>
-          )}
-          {review && <QCControls />}
-          <ImageControls />
+          {track && <LabelTabs />}
+          {review && <QualityControlControls />}
+          <DisplayControls />
         </Box>
-        <Box
-          sx={{
-            flex: '0 0 auto',
-            p: 1,
-          }}
-        >
-          <TabPanel value={value} index={0}>
-            <SegmentControls />
-          </TabPanel>
-          <TabPanel value={value} index={1}>
-            <TrackingControls />
-          </TabPanel>
-        </Box>
-        <Box
-          ref={canvasBoxRef}
-          sx={{ position: 'relative', flex: '1 1 auto', maxHeight: '100vh', maxWidth: '100vw' }}
-        >
-          <Canvas />
-        </Box>
+        <LabelControls />
+        <SpaceFillingCanvas />
       </Box>
     </>
   );
