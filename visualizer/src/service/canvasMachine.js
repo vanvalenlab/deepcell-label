@@ -84,6 +84,25 @@ const grabState = {
   },
 };
 
+const movingState = {
+  initial: 'idle',
+  states: {
+    idle: {
+      on: {
+        SET_POSITION: { target: 'moving', actions: ['setInitialPosition', 'setPosition'] },
+      },
+    },
+    moving: {
+      on: {
+        SET_POSITION: { target: 'moving', actions: 'setPosition' },
+      },
+      after: {
+        100: 'idle',
+      },
+    },
+  },
+};
+
 const createCanvasMachine = ({ eventBuses }) =>
   Machine(
     {
@@ -143,13 +162,19 @@ const createCanvasMachine = ({ eventBuses }) =>
           cond: 'newHovering',
           actions: ['setHovering', 'sendToEventBus'],
         },
-        'keydown.Space': '.grab',
-        'keyup.Space': '.interactive',
+        'keydown.Space': '.pan.grab',
+        'keyup.Space': '.pan.interactive',
       },
-      initial: 'interactive',
+      type: 'parallel',
       states: {
-        interactive: interactiveState,
-        grab: grabState,
+        pan: {
+          initial: 'interactive',
+          states: {
+            interactive: interactiveState,
+            grab: grabState,
+          },
+        },
+        moving: movingState,
       },
     },
     {
@@ -236,37 +261,36 @@ const createCanvasMachine = ({ eventBuses }) =>
             return scale;
           },
         }),
-        pan: assign({
-          sx: (context, event) => {
-            const dx = (-1 * event.movementX) / context.zoom / context.scale;
-            let newSx = context.sx + dx;
-            newSx = Math.min(newSx, context.width * (1 - 1 / context.zoom));
-            newSx = Math.max(newSx, 0);
-            return newSx;
-          },
-          sy: (context, event) => {
-            const dy = (-1 * event.movementY) / context.zoom / context.scale;
-            let newSy = context.sy + dy;
-            newSy = Math.min(newSy, context.height * (1 - 1 / context.zoom));
-            newSy = Math.max(newSy, 0);
-            return newSy;
-          },
+        setInitialPosition: assign({
+          initialPosition: ({ sx, sy, zoom }) => ({ sx, sy, zoom }),
         }),
-        zoom: assign((context, event) => {
-          const zoomFactor = 1 + event.deltaY / window.innerHeight;
-          const newZoom = Math.max(context.zoom * zoomFactor, 1);
-          const propX = event.nativeEvent.offsetX / context.scale;
-          const propY = event.nativeEvent.offsetY / context.scale;
+        setPosition: assign({
+          sx: (ctx, evt) => evt.sx,
+          sy: (ctx, evt) => evt.sy,
+          zoom: (ctx, evt) => evt.zoom,
+        }),
+        pan: send((ctx, evt) => {
+          const dx = (-1 * evt.movementX) / ctx.zoom / ctx.scale;
+          const sx = Math.max(0, Math.min(ctx.sx + dx, ctx.width * (1 - 1 / ctx.zoom)));
+          const dy = (-1 * evt.movementY) / ctx.zoom / ctx.scale;
+          const sy = Math.max(0, Math.min(ctx.sy + dy, ctx.height * (1 - 1 / ctx.zoom)));
+          return { type: 'SET_POSITION', sx, sy, zoom: ctx.zoom };
+        }),
+        zoom: send((ctx, evt) => {
+          const zoomFactor = 1 + evt.deltaY / window.innerHeight;
+          const newZoom = Math.max(ctx.zoom * zoomFactor, 1);
+          const propX = evt.nativeEvent.offsetX / ctx.scale;
+          const propY = evt.nativeEvent.offsetY / ctx.scale;
 
-          let newSx = context.sx + propX * (1 / context.zoom - 1 / newZoom);
-          newSx = Math.min(newSx, context.width * (1 - 1 / newZoom));
+          let newSx = ctx.sx + propX * (1 / ctx.zoom - 1 / newZoom);
+          newSx = Math.min(newSx, ctx.width * (1 - 1 / newZoom));
           newSx = Math.max(newSx, 0);
 
-          let newSy = context.sy + propY * (1 / context.zoom - 1 / newZoom);
-          newSy = Math.min(newSy, context.height * (1 - 1 / newZoom));
+          let newSy = ctx.sy + propY * (1 / ctx.zoom - 1 / newZoom);
+          newSy = Math.min(newSy, ctx.height * (1 - 1 / newZoom));
           newSy = Math.max(newSy, 0);
 
-          return { zoom: newZoom, sx: newSx, sy: newSy };
+          return { type: 'SET_POSITION', zoom: newZoom, sx: newSx, sy: newSy };
         }),
         zoomIn: assign(({ zoom, width, height, sx, sy }) => {
           const newZoom = 1.1 * zoom;
