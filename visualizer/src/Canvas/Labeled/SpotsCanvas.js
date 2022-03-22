@@ -9,10 +9,6 @@ import {
   useSpots,
 } from '../../ProjectContext';
 
-function transformImageCoordinatesToCanvas(spots, sx, sy, scale) {
-  return spots.map(([x, y]) => [Math.floor((x - sx) * scale), Math.floor((y - sy) * scale)]);
-}
-
 function drawSpots(ctx, spots, radius, color, opacity, outline) {
   ctx.beginPath();
   for (let spot of spots) {
@@ -75,23 +71,27 @@ function SpotsCanvas({ setCanvases }) {
           sy - imagePixelRadius * zoom < y &&
           y < sy + sh / zoom + imagePixelRadius
       );
-      const cellSpots = groupBy(visibleSpots, ([x, y]) =>
-        labeledArray ? labeledArray[Math.floor(y)][Math.floor(x)] : 0
-      );
+      const imageToCanvas = zoom * scale * window.devicePixelRatio;
+      if (colorSpots) {
+        const cellSpots = groupBy(visibleSpots, ([x, y]) =>
+          labeledArray ? labeledArray[Math.floor(y)][Math.floor(x)] : 0
+        );
 
-      for (let cell in cellSpots) {
-        const spots = cellSpots[cell];
-        const imageToCanvas = zoom * scale * window.devicePixelRatio;
-        const canvasSpots = spots.map(([x, y]) => [
+        for (let cell in cellSpots) {
+          const spots = cellSpots[cell];
+          const canvasSpots = spots.map(([x, y]) => [
+            Math.floor((x - sx) * imageToCanvas),
+            Math.floor((y - sy) * imageToCanvas),
+          ]);
+          const color = colormap[cell] && Number(cell) !== 0 ? colormap[cell] : [255, 255, 255];
+          drawSpots(ctx, canvasSpots, radius, color, opacity, outline);
+        }
+      } else {
+        const canvasSpots = visibleSpots.map(([x, y]) => [
           Math.floor((x - sx) * imageToCanvas),
           Math.floor((y - sy) * imageToCanvas),
         ]);
-        let color;
-        if (colorSpots && colormap[cell] && Number(cell) !== 0) {
-          color = colormap[cell];
-        } else {
-          color = [255, 255, 255];
-        }
+        const color = [255, 255, 255];
         drawSpots(ctx, canvasSpots, radius, color, opacity, outline);
       }
     }
