@@ -87,7 +87,7 @@ function SpotsCanvas({ setCanvases }) {
 
   useEffect(() => {
     const ctx = drawCanvas.getContext('2d');
-    if (moving && visibleSpots.length > 2000) {
+    if (moving && visibleSpots.length > 1000) {
       return;
     }
     if (showSpots) {
@@ -142,7 +142,7 @@ function SpotsCanvas({ setCanvases }) {
   ]);
 
   useEffect(() => {
-    if (moving && visibleSpots.length > 2000) {
+    if (moving && visibleSpots.length > 1000) {
       const { sx: initialSx, sy: initialSy, zoom: initialZoom } = initialPosition;
       const ctx = movingCanvas.getContext('2d');
       ctx.clearRect(0, 0, width, height);
@@ -157,7 +157,7 @@ function SpotsCanvas({ setCanvases }) {
   }, [moving, initialPosition, sx, sy, zoom, scale, width, height, drawCanvas, movingCanvas]);
 
   useEffect(() => {
-    if (!(moving && visibleSpots.length > 2000)) {
+    if (!(moving && visibleSpots.length > 1000)) {
       console.log({ sx, sy, zoom });
       setInitialPosition({ sx, sy, zoom });
     }
