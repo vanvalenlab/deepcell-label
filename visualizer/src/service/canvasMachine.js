@@ -88,6 +88,7 @@ const movingState = {
   initial: 'idle',
   states: {
     idle: {
+      entry: 'setInitialPosition',
       on: {
         SET_POSITION: { target: 'moving', actions: ['setInitialPosition', 'setPosition'] },
       },
