@@ -1,8 +1,4 @@
 import Box from '@mui/material/Box';
-import { ResizeSensor } from 'css-element-queries';
-import debounce from 'lodash.debounce';
-import { useEffect, useRef, useState } from 'react';
-import { useCanvas } from '../ProjectContext';
 import DisplayControls from './DisplayControls';
 import Instructions from './Instructions';
 import LabelControls from './LabelControls';
@@ -13,32 +9,6 @@ import SpaceFillingCanvas from './SpaceFillingCanvas';
 function Label({ review }) {
   const search = new URLSearchParams(window.location.search);
   const track = search.get('track');
-
-  const canvasBoxRef = useRef({ offsetWidth: 0, offsetHeight: 0 });
-  const [canvasBoxWidth, setCanvasBoxWidth] = useState(0);
-  const [canvasBoxHeight, setCanvasBoxHeight] = useState(0);
-
-  const canvas = useCanvas();
-
-  useEffect(() => {
-    const setCanvasBoxDimensions = () => {
-      setCanvasBoxWidth(canvasBoxRef.current.offsetWidth);
-      setCanvasBoxHeight(canvasBoxRef.current.offsetHeight);
-    };
-    setCanvasBoxDimensions();
-
-    new ResizeSensor(canvasBoxRef.current, debounce(setCanvasBoxDimensions, 20));
-  }, [canvasBoxRef]);
-
-  useEffect(() => {
-    const padding = 5;
-    canvas.send({
-      type: 'AVAILABLE_SPACE',
-      width: canvasBoxWidth,
-      height: canvasBoxHeight,
-      padding,
-    });
-  }, [canvas, canvasBoxWidth, canvasBoxHeight]);
 
   return (
     <>
@@ -60,11 +30,13 @@ function Label({ review }) {
             p: 1,
           }}
         >
-          {track && <LabelTabs />}
-          {review && <QualityControlControls />}
+          {track && process.env.REACT_APP_SPOTS_VISUALIZER !== 'true' && <LabelTabs />}
+          {review && process.env.REACT_APP_SPOTS_VISUALIZER !== 'true' && (
+            <QualityControlControls />
+          )}
           <DisplayControls />
         </Box>
-        <LabelControls />
+        {process.env.REACT_APP_SPOTS_VISUALIZER !== 'true' && <LabelControls />}
         <SpaceFillingCanvas />
       </Box>
     </>
