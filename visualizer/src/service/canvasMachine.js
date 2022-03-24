@@ -90,8 +90,7 @@ const movingState = {
     idle: {},
     moving: {
       after: {
-        // 17 ms is just under 60 frames per second
-        17: 'idle',
+        200: 'idle',
       },
     },
   },
