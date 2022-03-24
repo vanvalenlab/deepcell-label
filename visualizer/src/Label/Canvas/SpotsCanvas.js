@@ -7,7 +7,7 @@ import {
   useFullResolutionCanvas,
   useLabels,
   useSpots,
-} from '../../../ProjectContext';
+} from '../../ProjectContext';
 
 function drawSpots(ctx, spots, radius, color, opacity, outline) {
   ctx.beginPath();

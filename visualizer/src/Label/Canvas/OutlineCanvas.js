@@ -9,7 +9,7 @@ import {
   useLabeled,
   usePixelatedCanvas,
   useSelect,
-} from '../../../ProjectContext';
+} from '../../ProjectContext';
 
 const OutlineCanvas = ({ setCanvases }) => {
   const canvas = useCanvas();

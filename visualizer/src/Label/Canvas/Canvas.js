@@ -2,14 +2,13 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useSelector } from '@xstate/react';
 import React, { useEffect } from 'react';
-import { useArrays, useCanvas, useSegment, useSelect } from '../../ProjectContext';
+import { useArrays, useCanvas, useSelect } from '../../ProjectContext';
+import LabeledCanvas from './Canvas';
 import ComposeCanvas from './ComposeCanvases';
-import LabeledCanvas from './Labeled/LabeledCanvas';
-import OutlineCanvas from './Labeled/OutlineCanvas';
-import SpotsCanvas from './Labeled/SpotsCanvas';
-import RawCanvas from './Raw/RawCanvas';
-import BrushCanvas from './Tool/BrushCanvas';
-import ThresholdCanvas from './Tool/ThresholdCanvas';
+import OutlineCanvas from './OutlineCanvas';
+import RawCanvas from './RawCanvas';
+import SpotsCanvas from './SpotsCanvas';
+import ToolCanvas from './ToolCanvas';
 
 export const Canvas = () => {
   const select = useSelect();
@@ -28,9 +27,6 @@ export const Canvas = () => {
     state.matches('pan.interactive.panOnDrag.dragged')
   );
   const cursor = grabbing || dragged ? 'grabbing' : grab ? 'grab' : 'crosshair';
-
-  const segment = useSegment();
-  const tool = useSelector(segment, (state) => state.context.tool);
 
   // dynamic canvas border styling based on position
   const padding = 5;
@@ -98,9 +94,12 @@ export const Canvas = () => {
           <RawCanvas setCanvases={setCanvases} />
           <LabeledCanvas setCanvases={setCanvases} />
           <OutlineCanvas setCanvases={setCanvases} />
-          <SpotsCanvas setCanvases={setCanvases} />
-          {tool === 'brush' && <BrushCanvas setCanvases={setCanvases} />}
-          {tool === 'threshold' && <ThresholdCanvas setCanvases={setCanvases} />}
+          {process.env.REACT_APP_SPOTS_VISUALIZER === 'true' && (
+            <SpotsCanvas setCanvases={setCanvases} />
+          )}
+          {process.env.REACT_APP_SPOTS_VISUALIZER !== 'true' && (
+            <ToolCanvas setCanvases={setCanvases} />
+          )}
         </>
       )}
     </Box>
