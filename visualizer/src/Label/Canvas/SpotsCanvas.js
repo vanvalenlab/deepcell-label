@@ -29,19 +29,16 @@ function drawSpots(ctx, spots, radius, color, opacity, outline) {
 
 function SpotsCanvas({ setCanvases }) {
   const canvas = useCanvas();
-  const { sx, sy, zoom, sw, sh, scale } = useSelector(
+  const { sx, sy, zoom, sw, sh, scale, moving, initialPosition } = useSelector(
     canvas,
-    ({ context: { sx, sy, zoom, width: sw, height: sh, scale } }) => ({
-      sx,
-      sy,
-      zoom,
-      sw,
-      sh,
-      scale,
-    }),
+    (state) => {
+      const { sx, sy, zoom, width, height, scale, initialPosition } = state.context;
+      const moving = state.matches('moving.moving');
+      return { sx, sy, zoom, sw: width, sh: height, scale, moving, initialPosition };
+    },
     equal
   );
-  console.log(sx, sy, zoom, sw, sh, scale);
+  const { sx: initialSx, sy: initialSy, zoom: initialZoom } = initialPosition;
 
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
@@ -50,6 +47,7 @@ function SpotsCanvas({ setCanvases }) {
   const colormap = useSelector(labels, (state) => state.context.colormap);
 
   const drawCanvas = useFullResolutionCanvas();
+  const movingCanvas = useFullResolutionCanvas();
 
   const arrays = useArrays();
   const labeledArray = useSelector(
@@ -74,8 +72,6 @@ function SpotsCanvas({ setCanvases }) {
 
   useEffect(() => {
     const ctx = drawCanvas.getContext('2d');
-    // ctx.globalCompositeOperation = 'lighten';
-    ctx.clearRect(0, 0, width, height);
     if (showSpots) {
       const imagePixelRadius = (radius * zoom) / scale / window.devicePixelRatio;
       const visibleSpots = spotsArray.filter(
@@ -86,30 +82,53 @@ function SpotsCanvas({ setCanvases }) {
           y < sy + sh / zoom + imagePixelRadius
       );
       const imageToCanvas = zoom * scale * window.devicePixelRatio;
-      if (colorSpots) {
-        const cellSpots = groupBy(visibleSpots, ([x, y]) =>
-          labeledArray ? labeledArray[Math.floor(y)][Math.floor(x)] : 0
+      if (moving) {
+        const ctx = movingCanvas.getContext('2d');
+        ctx.clearRect(0, 0, width, height);
+        const zoomFactor = initialZoom / zoom;
+        const movingSx = (sx - initialSx) * window.devicePixelRatio * scale * zoom * zoomFactor;
+        const movingSy = (sy - initialSy) * window.devicePixelRatio * scale * zoom * zoomFactor;
+        const movingWidth = width * zoomFactor;
+        const movingHeight = height * zoomFactor;
+        ctx.drawImage(
+          drawCanvas,
+          movingSx,
+          movingSy,
+          movingWidth,
+          movingHeight,
+          0,
+          0,
+          width,
+          height
         );
+        setCanvases((canvases) => ({ ...canvases, spots: movingCanvas }));
+      } else {
+        ctx.clearRect(0, 0, width, height);
+        if (colorSpots) {
+          const cellSpots = groupBy(visibleSpots, ([x, y]) =>
+            labeledArray ? labeledArray[Math.floor(y)][Math.floor(x)] : 0
+          );
 
-        for (let cell in cellSpots) {
-          const spots = cellSpots[cell];
-          const canvasSpots = spots.map(([x, y]) => [
+          for (let cell in cellSpots) {
+            const spots = cellSpots[cell];
+            const canvasSpots = spots.map(([x, y]) => [
+              Math.floor((x - sx) * imageToCanvas),
+              Math.floor((y - sy) * imageToCanvas),
+            ]);
+            const color = colormap[cell] && Number(cell) !== 0 ? colormap[cell] : [255, 255, 255];
+            drawSpots(ctx, canvasSpots, radius, color, opacity, outline);
+          }
+        } else {
+          const canvasSpots = visibleSpots.map(([x, y]) => [
             Math.floor((x - sx) * imageToCanvas),
             Math.floor((y - sy) * imageToCanvas),
           ]);
-          const color = colormap[cell] && Number(cell) !== 0 ? colormap[cell] : [255, 255, 255];
+          const color = [255, 255, 255];
           drawSpots(ctx, canvasSpots, radius, color, opacity, outline);
         }
-      } else {
-        const canvasSpots = visibleSpots.map(([x, y]) => [
-          Math.floor((x - sx) * imageToCanvas),
-          Math.floor((y - sy) * imageToCanvas),
-        ]);
-        const color = [255, 255, 255];
-        drawSpots(ctx, canvasSpots, radius, color, opacity, outline);
+        setCanvases((canvases) => ({ ...canvases, spots: drawCanvas }));
       }
     }
-    setCanvases((canvases) => ({ ...canvases, spots: drawCanvas }));
   }, [
     setCanvases,
     sh,
@@ -127,6 +146,10 @@ function SpotsCanvas({ setCanvases }) {
     colorSpots,
     outline,
     labeledArray,
+    moving,
+    initialSx,
+    initialSy,
+    initialZoom,
   ]);
 
   return null;

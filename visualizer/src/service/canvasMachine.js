@@ -129,6 +129,7 @@ const createCanvasMachine = ({ eventBuses }) =>
         labeledArray: null,
         hovering: null,
         panOnDrag: true,
+        initialPosition: { sx: 0, sy: 0, zoom: 1 },
       },
       invoke: [
         { id: 'eventBus', src: fromEventBus('canvas', () => eventBuses.canvas) },
