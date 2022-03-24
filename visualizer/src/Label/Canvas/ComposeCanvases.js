@@ -54,7 +54,6 @@ export const ComposeCanvas = ({ canvases }) => {
     if ('spots' in canvases) {
       ctx.drawImage(canvases['spots'], 0, 0);
     }
-    console.log(canvases, sx, sy, zoom);
   }, [canvases, sx, sy, sw, sh, zoom, width, height, composeCanvas]);
 
   return (

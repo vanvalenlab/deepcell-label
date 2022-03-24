@@ -36,7 +36,7 @@ const createArraysMachine = ({ projectId, eventBuses }) =>
           entry: ['sendLabeledArray', 'sendRawArray'],
           on: {
             SET_FRAME: { actions: ['setFrame', 'sendLabeledArray', 'sendRawArray'] },
-            SET_FEATURE: { actions: [(c, e) => console.log(e), 'setFeature', 'sendLabeledArray'] },
+            SET_FEATURE: { actions: ['setFeature', 'sendLabeledArray'] },
             SET_CHANNEL: { actions: ['setChannel', 'sendRawArray'] },
             EDITED: { actions: ['updateLabeledArray', 'sendLabeledArray'] },
           },
