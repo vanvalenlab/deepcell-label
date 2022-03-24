@@ -73,7 +73,7 @@ function SpotsCanvas({ setCanvases }) {
   useEffect(() => {
     const ctx = drawCanvas.getContext('2d');
     if (showSpots) {
-      const imagePixelRadius = (radius * zoom) / scale / window.devicePixelRatio;
+      const imagePixelRadius = radius / zoom / scale / window.devicePixelRatio;
       const visibleSpots = spotsArray.filter(
         ([x, y]) =>
           sx - imagePixelRadius * zoom < x &&
@@ -81,8 +81,9 @@ function SpotsCanvas({ setCanvases }) {
           sy - imagePixelRadius * zoom < y &&
           y < sy + sh / zoom + imagePixelRadius
       );
+      console.log(visibleSpots.length);
       const imageToCanvas = zoom * scale * window.devicePixelRatio;
-      if (moving) {
+      if (moving && visibleSpots.length > 2000) {
         const ctx = movingCanvas.getContext('2d');
         ctx.clearRect(0, 0, width, height);
         const zoomFactor = initialZoom / zoom;
