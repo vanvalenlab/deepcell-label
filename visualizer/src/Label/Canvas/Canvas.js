@@ -1,10 +1,10 @@
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useSelector } from '@xstate/react';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useArrays, useCanvas, useSelect } from '../../ProjectContext';
-import LabeledCanvas from './Canvas';
 import ComposeCanvas from './ComposeCanvases';
+import LabeledCanvas from './LabeledCanvas';
 import OutlineCanvas from './OutlineCanvas';
 import RawCanvas from './RawCanvas';
 import SpotsCanvas from './SpotsCanvas';
@@ -61,7 +61,7 @@ export const Canvas = () => {
     }
   };
 
-  const [canvases, setCanvases] = React.useState([]);
+  const [canvases, setCanvases] = useState([]);
 
   const arrays = useArrays();
   const loading = useSelector(arrays, (state) => state.matches('waiting'));
