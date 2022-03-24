@@ -1,4 +1,5 @@
 import { useSelector } from '@xstate/react';
+import equal from 'fast-deep-equal';
 import { groupBy } from 'lodash';
 import { useEffect } from 'react';
 import {
@@ -28,12 +29,19 @@ function drawSpots(ctx, spots, radius, color, opacity, outline) {
 
 function SpotsCanvas({ setCanvases }) {
   const canvas = useCanvas();
-  const zoom = useSelector(canvas, (state) => state.context.zoom);
-  const sx = useSelector(canvas, (state) => state.context.sx);
-  const sy = useSelector(canvas, (state) => state.context.sy);
-  const sh = useSelector(canvas, (state) => state.context.height);
-  const sw = useSelector(canvas, (state) => state.context.width);
-  const scale = useSelector(canvas, (state) => state.context.scale);
+  const { sx, sy, zoom, sw, sh, scale } = useSelector(
+    canvas,
+    ({ context: { sx, sy, zoom, width: sw, height: sh, scale } }) => ({
+      sx,
+      sy,
+      zoom,
+      sw,
+      sh,
+      scale,
+    }),
+    equal
+  );
+  console.log(sx, sy, zoom, sw, sh, scale);
 
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
@@ -51,12 +59,18 @@ function SpotsCanvas({ setCanvases }) {
   );
 
   const spots = useSpots();
-  const spotsArray = useSelector(spots, (state) => state.context.spots);
-  const radius = useSelector(spots, (state) => state.context.radius);
-  const opacity = useSelector(spots, (state) => state.context.opacity);
-  const showSpots = useSelector(spots, (state) => state.context.showSpots);
-  const colorSpots = useSelector(spots, (state) => state.context.colorSpots);
-  const outline = useSelector(spots, (state) => state.context.outline);
+  const { spotsArray, radius, opacity, showSpots, colorSpots, outline } = useSelector(
+    spots,
+    ({ context: { spots: spotsArray, radius, opacity, showSpots, colorSpots, outline } }) => ({
+      spotsArray,
+      radius,
+      opacity,
+      showSpots,
+      colorSpots,
+      outline,
+    }),
+    equal
+  );
 
   useEffect(() => {
     const ctx = drawCanvas.getContext('2d');

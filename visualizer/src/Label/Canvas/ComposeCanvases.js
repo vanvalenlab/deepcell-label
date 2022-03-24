@@ -1,5 +1,6 @@
 import { styled } from '@mui/material/styles';
 import { useSelector } from '@xstate/react';
+import equal from 'fast-deep-equal';
 import React, { useEffect, useRef } from 'react';
 import { useCanvas, usePixelatedCanvas } from '../../ProjectContext';
 
@@ -7,12 +8,18 @@ const Canvas = styled('canvas')``;
 
 export const ComposeCanvas = ({ canvases }) => {
   const canvas = useCanvas();
-  const sx = useSelector(canvas, (state) => state.context.sx);
-  const sy = useSelector(canvas, (state) => state.context.sy);
-  const zoom = useSelector(canvas, (state) => state.context.zoom);
-  const sw = useSelector(canvas, (state) => state.context.width);
-  const sh = useSelector(canvas, (state) => state.context.height);
-  const scale = useSelector(canvas, (state) => state.context.scale);
+  const { sx, sy, zoom, sw, sh, scale } = useSelector(
+    canvas,
+    ({ context: { sx, sy, zoom, width: sw, height: sh, scale } }) => ({
+      sx,
+      sy,
+      zoom,
+      sw,
+      sh,
+      scale,
+    }),
+    equal
+  );
 
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
@@ -47,6 +54,7 @@ export const ComposeCanvas = ({ canvases }) => {
     if ('spots' in canvases) {
       ctx.drawImage(canvases['spots'], 0, 0);
     }
+    console.log(canvases, sx, sy, zoom);
   }, [canvases, sx, sy, sw, sh, zoom, width, height, composeCanvas]);
 
   return (
