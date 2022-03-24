@@ -83,7 +83,7 @@ function SpotsCanvas({ setCanvases }) {
           y < sy + sh / zoom + imagePixelRadius
       )
     );
-  }, [spotsArray, sx, sy, sw, sh, zoom, radius, zoom, scale]);
+  }, [spotsArray, sx, sy, sw, sh, zoom, radius, scale]);
 
   useEffect(() => {
     const ctx = drawCanvas.getContext('2d');
@@ -138,6 +138,7 @@ function SpotsCanvas({ setCanvases }) {
     outline,
     labeledArray,
     moving,
+    visibleSpots,
   ]);
 
   useEffect(() => {
