@@ -4,7 +4,7 @@ import { useSegment } from '../../../ProjectContext';
 import BrushCanvas from './BrushCanvas';
 import ThresholdCanvas from './ThresholdCanvas';
 
-function ToolCanvas() {
+function ToolCanvas({ setCanvases }) {
   const segment = useSegment();
 
   const tool = useSelector(segment, (state) => state.context.tool);
@@ -16,3 +16,5 @@ function ToolCanvas() {
     </>
   );
 }
+
+export default ToolCanvas;
