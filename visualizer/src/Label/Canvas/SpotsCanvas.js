@@ -81,7 +81,6 @@ function SpotsCanvas({ setCanvases }) {
           sy - imagePixelRadius * zoom < y &&
           y < sy + sh / zoom + imagePixelRadius
       );
-      console.log(visibleSpots.length);
       const imageToCanvas = zoom * scale * window.devicePixelRatio;
       if (moving && visibleSpots.length > 2000) {
         const ctx = movingCanvas.getContext('2d');
@@ -129,6 +128,9 @@ function SpotsCanvas({ setCanvases }) {
         }
         setCanvases((canvases) => ({ ...canvases, spots: drawCanvas }));
       }
+    } else {
+      ctx.clearRect(0, 0, width, height);
+      setCanvases((canvases) => ({ ...canvases, spots: drawCanvas }));
     }
   }, [
     setCanvases,
