@@ -25,7 +25,7 @@ const DisplayControls = () => {
       ) : (
         <SubmitButton sx={{ width: '100%' }} />
       )}
-      <SpotsControls />
+      {process.env.REACT_APP_SPOTS_VISUALIZER === 'true' && <SpotsControls />}
       <LabeledControls />
       <RawControls />
     </Box>

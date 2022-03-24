@@ -41,7 +41,10 @@ const createProjectMachine = (projectId) =>
       states: {
         setUpActors: {
           entry: 'spawnActors',
-          always: 'setUpUndo',
+          always: [
+            { cond: () => process.env.REACT_APP_SPOTS_VISUALIZER === 'true', target: 'idle' },
+            { target: 'setUpUndo' },
+          ],
         },
         setUpUndo: {
           entry: 'addActorsToUndo',
@@ -77,17 +80,22 @@ const createProjectMachine = (projectId) =>
         loadEventBus: fromEventBus('project', (context) => context.eventBuses.load),
       },
       actions: {
-        spawnActors: assign((context) => ({
-          canvasRef: spawn(createCanvasMachine(context), 'canvas'),
-          imageRef: spawn(createImageMachine(context), 'image'),
-          apiRef: spawn(createApiMachine(context), 'api'),
-          selectRef: spawn(createSelectMachine(context), 'select'),
-          toolRef: spawn(createToolMachine(context), 'tool'),
-          undoRef: spawn(createUndoMachine(context), 'undo'),
-          arraysRef: spawn(createArraysMachine(context), 'arrays'),
-          labelsRef: spawn(createLabelsMachine(context), 'labels'),
-          spotsRef: spawn(createSpotsMachine(context), 'spots'),
-        })),
+        spawnActors: assign((context) => {
+          const actors = {};
+          actors.canvasRef = spawn(createCanvasMachine(context), 'canvas');
+          actors.imageRef = spawn(createImageMachine(context), 'image');
+          actors.arraysRef = spawn(createArraysMachine(context), 'arrays');
+          actors.labelsRef = spawn(createLabelsMachine(context), 'labels');
+          actors.apiRef = spawn(createApiMachine(context), 'api');
+          actors.selectRef = spawn(createSelectMachine(context), 'select');
+          if (process.env.REACT_APP_SPOTS_VISUALIZER === 'true') {
+            actors.spotsRef = spawn(createSpotsMachine(context), 'spots');
+          } else {
+            actors.toolRef = spawn(createToolMachine(context), 'tool');
+            actors.undoRef = spawn(createUndoMachine(context), 'undo');
+          }
+          return actors;
+        }),
         addActorsToUndo: pure((context) => {
           const { canvasRef, toolRef, imageRef, selectRef } = context;
           return [
