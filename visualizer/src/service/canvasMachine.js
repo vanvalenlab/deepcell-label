@@ -90,7 +90,8 @@ const movingState = {
     idle: {},
     moving: {
       after: {
-        100: 'idle',
+        // 17 ms is just under 60 frames per second
+        17: 'idle',
       },
     },
   },
@@ -285,15 +286,15 @@ const createCanvasMachine = ({ eventBuses }) =>
 
           return { type: 'SET_POSITION', zoom: newZoom, sx: newSx, sy: newSy };
         }),
-        zoomIn: assign(({ zoom, width, height, sx, sy }) => {
+        zoomIn: send(({ zoom, width, height, sx, sy }) => {
           const newZoom = 1.1 * zoom;
           const propX = width / 2;
           const propY = height / 2;
           const newSx = sx + propX * (1 / zoom - 1 / newZoom);
           const newSy = sy + propY * (1 / zoom - 1 / newZoom);
-          return { zoom: newZoom, sx: newSx, sy: newSy };
+          return { type: 'SET_POSITION', zoom: newZoom, sx: newSx, sy: newSy };
         }),
-        zoomOut: assign(({ zoom, width, height, sx, sy }) => {
+        zoomOut: send(({ zoom, width, height, sx, sy }) => {
           const newZoom = Math.max(zoom / 1.1, 1);
           const propX = width / 2;
           const propY = height / 2;
@@ -303,7 +304,7 @@ const createCanvasMachine = ({ eventBuses }) =>
           let newSy = sy + propY * (1 / zoom - 1 / newZoom);
           newSy = Math.min(newSy, height * (1 - 1 / newZoom));
           newSy = Math.max(newSy, 0);
-          return { zoom: newZoom, sx: newSx, sy: newSy };
+          return { type: 'SET_POSITION', zoom: newZoom, sx: newSx, sy: newSy };
         }),
         setPanOnDrag: assign((_, { panOnDrag }) => ({ panOnDrag })),
         setLabeledArray: assign((_, { labeledArray }) => ({ labeledArray })),
