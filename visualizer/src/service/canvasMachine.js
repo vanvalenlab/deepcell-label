@@ -87,20 +87,15 @@ const grabState = {
 const movingState = {
   initial: 'idle',
   states: {
-    idle: {
-      entry: 'setInitialPosition',
-      on: {
-        SET_POSITION: { target: 'moving', actions: ['setInitialPosition', 'setPosition'] },
-      },
-    },
+    idle: {},
     moving: {
-      on: {
-        SET_POSITION: { target: 'moving', actions: 'setPosition' },
-      },
       after: {
         100: 'idle',
       },
     },
+  },
+  on: {
+    SET_POSITION: { target: '.moving', actions: 'setPosition' },
   },
 };
 
@@ -130,7 +125,6 @@ const createCanvasMachine = ({ eventBuses }) =>
         labeledArray: null,
         hovering: null,
         panOnDrag: true,
-        initialPosition: { sx: 0, sy: 0, zoom: 1 },
       },
       invoke: [
         { id: 'eventBus', src: fromEventBus('canvas', () => eventBuses.canvas) },
@@ -262,9 +256,6 @@ const createCanvasMachine = ({ eventBuses }) =>
             const scale = Math.min(scaleX, scaleY);
             return scale;
           },
-        }),
-        setInitialPosition: assign({
-          initialPosition: ({ sx, sy, zoom }) => ({ sx, sy, zoom }),
         }),
         setPosition: assign({
           sx: (ctx, evt) => evt.sx,
