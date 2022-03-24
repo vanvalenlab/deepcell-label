@@ -1,4 +1,4 @@
-import { Box, FormLabel, MenuItem, TextField } from '@mui/material';
+import { Box, MenuItem, TextField, Typography } from '@mui/material';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormGroup from '@mui/material/FormGroup';
 import Grid from '@mui/material/Grid';
@@ -98,7 +98,7 @@ const BrightnessSlider = ({ channel }) => {
 
   return (
     <Slider
-      sx={{ color: 'primary', mt: 1 }}
+      sx={{ color: 'primary', p: 0 }}
       value={brightness}
       onChange={onChange}
       onDoubleClick={onDoubleClick}
@@ -121,7 +121,7 @@ const ContrastSlider = ({ channel }) => {
 
   return (
     <Slider
-      sx={{ color: 'primary', mt: 1 }}
+      sx={{ color: 'primary', p: 0 }}
       value={contrast}
       onChange={onChange}
       onDoubleClick={onDoubleClick}
@@ -143,7 +143,7 @@ const RangeSlider = ({ channel }) => {
 
   return (
     <Slider
-      sx={{ color: 'primary', mt: 1 }}
+      sx={{ color: 'primary', p: 0 }}
       value={range}
       onChange={onChange}
       onDoubleClick={onDoubleClick}
@@ -166,7 +166,7 @@ const GrayscaleControls = () => {
 
   return (
     <Grid sx={{ width: '100%' }} item>
-      <Grid container direction='column' sx={{ pt: 1 }}>
+      <Grid container direction='column'>
         <Grid item xs={12} container direction='row' sx={{ justifyContent: 'space-between' }}>
           <ChannelSelector />
           <InvertToggle channel={channel} />
@@ -179,9 +179,9 @@ const GrayscaleControls = () => {
               justifyContent='space-around'
               alignItems='flex-start'
             >
-              <FormLabel>Range</FormLabel>
-              <FormLabel>Brightness</FormLabel>
-              <FormLabel>Contrast</FormLabel>
+              <Typography>Range</Typography>
+              <Typography>Brightness</Typography>
+              <Typography>Contrast</Typography>
             </Box>
             <Box
               sx={{

@@ -1,4 +1,4 @@
-import { FormLabel, Typography } from '@mui/material';
+import { Box, FormLabel, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import SpotColorToggle from './SpotColorToggle';
 import SpotOpacitySlider from './SpotOpacitySlider';
@@ -19,26 +19,29 @@ function SpotsControls() {
         </Grid>
       </Grid>
       <Grid container direction='row'>
-        <Grid item xs={6}>
+        <Box
+          display='flex'
+          flexDirection='row'
+          justifyContent='space-between'
+          sx={{ width: '100%' }}
+        >
           <SpotOutlineToggle />
-        </Grid>
-        <Grid item xs={6}>
           <SpotColorToggle />
-        </Grid>
+        </Box>
       </Grid>
       <Grid container direction='row' alignItems='center'>
         <Grid item xs={4}>
           <Typography>Radius</Typography>
         </Grid>
-        <Grid item xs={8}>
+        <Grid container item xs={8} alignItems='center'>
           <SpotRadiusSlider />
         </Grid>
       </Grid>
-      <Grid container direction='row' justify='flex-start' alignItems='center'>
+      <Grid container direction='row'>
         <Grid item xs={4}>
           <Typography>Opacity</Typography>
         </Grid>
-        <Grid item xs={8}>
+        <Grid container item xs={8} alignItems='center'>
           <SpotOpacitySlider />
         </Grid>
       </Grid>

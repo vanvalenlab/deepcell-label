@@ -29,6 +29,7 @@ function SpotOutlineToggle() {
         }
         label='Outline'
         labelPlacement='start'
+        sx={{ m: 0 }}
       />
     </FormGroup>
   );

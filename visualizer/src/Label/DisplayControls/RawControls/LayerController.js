@@ -70,17 +70,14 @@ function LayerSlider({ layer }) {
       max={255}
       step={1}
       orientation='horizontal'
-      sx={{
-        color: color,
-        mt: '7px',
-      }}
+      sx={{ color: color, p: 0 }}
     />
   );
 }
 
 function LayerController({ layer }) {
   return (
-    <Grid container direction='column' justifyContent='center' sx={{ pt: 1 }}>
+    <Grid container direction='column' justifyContent='center'>
       <Grid container direction='row' justifyContent='space-between'>
         <Grid item xs={10}>
           <LayerSelector layer={layer} />
@@ -89,11 +86,11 @@ function LayerController({ layer }) {
           <LayerOptions layer={layer} />
         </Grid>
       </Grid>
-      <Grid container direction='row' justify='flex-start' alignItems='center'>
+      <Grid container direction='row'>
         <Grid item xs={2}>
           <LayerCheckbox layer={layer} />
         </Grid>
-        <Grid item m={1} xs={9}>
+        <Grid container item xs={9} sx={{ ml: 1 }} alignItems='center'>
           <LayerSlider layer={layer} />
         </Grid>
       </Grid>

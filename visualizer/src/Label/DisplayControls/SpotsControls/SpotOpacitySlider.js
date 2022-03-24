@@ -14,6 +14,7 @@ function SpotOpacitySlider() {
       step={0.01}
       orientation='horizontal'
       valueLabelDisplay='auto'
+      sx={{ p: 0 }}
     />
   );
 }

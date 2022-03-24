@@ -54,6 +54,7 @@ function FrameSlider({ showLabel = true }) {
             min={0}
             max={numFrames - 1}
             onChange={handleFrameChange}
+            sx={{ p: 0 }}
           />
         </Tooltip>
       </>

@@ -22,6 +22,7 @@ function SpotRadiusSlider() {
       step={1}
       orientation='horizontal'
       valueLabelDisplay='auto'
+      sx={{ p: 0 }}
     />
   );
 }

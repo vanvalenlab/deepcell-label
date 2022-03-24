@@ -1,7 +1,5 @@
-import Box from '@mui/material/Box';
 import Slider from '@mui/material/Slider';
 import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
 import React, { useEffect } from 'react';
@@ -28,27 +26,16 @@ function OpacitySlider() {
 
   return (
     <Tooltip title={tooltipText}>
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          gap: 5,
-          pt: 1,
-        }}
-      >
-        <Typography gutterBottom>Opacity</Typography>
-
-        <Slider
-          value={opacity}
-          valueLabelDisplay='auto'
-          min={0}
-          max={1}
-          step={0.01}
-          onChange={handleOpacityChange}
-          onDoubleClick={handleDoubleClick}
-        />
-      </Box>
+      <Slider
+        value={opacity}
+        valueLabelDisplay='auto'
+        min={0}
+        max={1}
+        step={0.01}
+        onChange={handleOpacityChange}
+        onDoubleClick={handleDoubleClick}
+        sx={{ p: 0 }}
+      />
     </Tooltip>
   );
 }
