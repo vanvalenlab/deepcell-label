@@ -10,7 +10,7 @@ import {
   useSpots,
 } from '../../ProjectContext';
 
-function drawSpots(ctx, spots, radius, color, opacity, outline) {
+function drawSpots(ctx, spots, radius, color, outline) {
   ctx.beginPath();
   for (let spot of spots) {
     const [x, y] = spot;
@@ -19,10 +19,10 @@ function drawSpots(ctx, spots, radius, color, opacity, outline) {
   }
   const [r, g, b] = color;
   ctx.closePath();
-  ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  ctx.fillStyle = `rgba(${r}, ${g}, ${b})`;
   ctx.fill();
   if (outline) {
-    ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
+    ctx.strokeStyle = `rgba(255, 255, 255)`;
     ctx.stroke();
   }
 }
@@ -87,6 +87,7 @@ function SpotsCanvas({ setCanvases }) {
 
   useEffect(() => {
     const ctx = drawCanvas.getContext('2d');
+    ctx.globalAlpha = opacity;
     if (moving && visibleSpots.length > 1000) {
       return;
     }
@@ -105,7 +106,7 @@ function SpotsCanvas({ setCanvases }) {
             Math.floor((y - sy) * imageToCanvas),
           ]);
           const color = colormap[cell] && Number(cell) !== 0 ? colormap[cell] : [255, 255, 255];
-          drawSpots(ctx, canvasSpots, radius, color, opacity, outline);
+          drawSpots(ctx, canvasSpots, radius, color, outline);
         }
       } else {
         const canvasSpots = visibleSpots.map(([x, y]) => [
@@ -113,7 +114,7 @@ function SpotsCanvas({ setCanvases }) {
           Math.floor((y - sy) * imageToCanvas),
         ]);
         const color = [255, 255, 255];
-        drawSpots(ctx, canvasSpots, radius, color, opacity, outline);
+        drawSpots(ctx, canvasSpots, radius, color, outline);
       }
       setCanvases((canvases) => ({ ...canvases, spots: drawCanvas }));
     } else {
