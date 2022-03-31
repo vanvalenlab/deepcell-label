@@ -8,8 +8,8 @@ from flask_cors import CORS
 from flask_dropzone import Dropzone
 
 from deepcell_label import config
-from deepcell_label.blueprints import bp
-from deepcell_label.models import db
+from deepcell_label.spots_blueprints import bp
+from deepcell_label.spots_models import db
 
 compress = Compress()  # pylint: disable=C0103
 dropzone = Dropzone()  # pylint: disable=C0103
