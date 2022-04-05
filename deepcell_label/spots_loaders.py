@@ -10,7 +10,7 @@ import zipfile
 import magic
 import numpy as np
 from PIL import Image
-from tifffile import TiffFile
+from tifffile import TiffFile, TiffWriter
 
 
 class Loader:
@@ -39,45 +39,66 @@ class Loader:
         return self._label_file
 
     def load(self):
-        self.load_images()
-        self.load_segmentation()
-        self.load_spots()
-
-    def write_images(self, X):
-        raw = io.BytesIO()
-        np.savez_compressed(raw, X=X)
-        raw.seek(0)
-        self.zip.writestr('X.npz', raw.read())
-        print('Images loaded')
-
-    def write_segmentation(self, y):
-        segmentation = io.BytesIO()
-        np.savez_compressed(segmentation, y=y)
-        segmentation.seek(0)
-        self.zip.writestr('y.npz', segmentation.read())
-        print('Segmentation loaded')
-
-    def write_spots(self, spots):
-        buffer = io.BytesIO()
-        buffer.write(spots)
-        buffer.seek(0)
-        self.zip.writestr('spots.csv', buffer.read())
-        print('Spots loaded')
-
-    def load_images(self):
-        f = self.image_file
-        X = load_zip(f) or load_tiff(f) or load_png(f)
+        """Extracts data from input files and writes standardized data to output zip."""
+        X = self.load_images()
+        y = self.load_segmentation()
+        spots = self.load_spots()
         if X is not None:
             self.write_images(X)
         else:
             raise ValueError('No images found in files')
+        if y is not None:
+            if y.shape[:-1] != X.shape[:-1]:
+                raise ValueError(
+                    'Segmentation shape %s is incompatible with image shape %s'
+                    % (y.shape, X.shape)
+                )
+            self.write_segmentation(y)
+        if spots is not None:
+            self.write_spots(spots)
+
+    def write_images(self, X):
+        """Writes raw images to output zip."""
+        images = io.BytesIO()
+        with TiffWriter(images, ome=True) as tif:
+            tif.save(np.moveaxis(X, -1, 0), metadata={'axes': 'CZYX'})
+        images.seek(0)
+        self.zip.writestr('X.ome.tiff', images.read())
+        print('Wrote images')
+
+    def write_segmentation(self, y):
+        """Writes segmentation to output zip."""
+        segmentation = io.BytesIO()
+        with TiffWriter(segmentation, ome=True) as tif:
+            tif.save(np.moveaxis(y, -1, 0), metadata={'axes': 'CZYX'})
+        segmentation.seek(0)
+        self.zip.writestr('y.ome.tiff', segmentation.read())
+        print('Wrote segmentation')
+
+    def write_spots(self, spots):
+        """Writes spots to output zip."""
+        buffer = io.BytesIO()
+        buffer.write(spots)
+        buffer.seek(0)
+        self.zip.writestr('spots.csv', buffer.read())
+        print('Wrote spots')
+
+    def load_images(self):
+        """Extracts raw images from input image file."""
+        return (
+            load_zip(self.image_file)
+            or load_tiff(self.image_file)
+            or load_png(self.image_file)
+        )
 
     def load_segmentation(self):
+        """Extracts segmentation from input label file."""
         if zipfile.is_zipfile(self.label_file):
             label_zip = zipfile.ZipFile(self.label_file, 'r')
             return load_zip_numpy(label_zip) or load_zip_tiffs(label_zip)
 
     def load_spots(self):
+        """Extracts spots from input label file."""
         if zipfile.is_zipfile(self.label_file):
             label_zip = zipfile.ZipFile(self.label_file, 'r')
             return load_zip_csv(label_zip)
@@ -110,7 +131,11 @@ def load_zip_tiffs(zf):
                 tiff = TiffFile(f).asarray()
                 tiffs.append(tiff)
     if len(tiffs) > 0:
+        # Stack channels on last axis
         y = np.stack(tiffs, axis=-1)
+        # Add frame axis
+        if y.ndim == 3:
+            y = y[np.newaxis, ...]
         return y
 
 
@@ -138,19 +163,21 @@ def load_zip_csv(z):
 
 
 def load_zip(f):
-    """Loads image data from a zip file"""
+    """Loads image data from a zip file by loading from the npz, tiff, or png files in the archive."""
     if zipfile.is_zipfile(f):
         zf = zipfile.ZipFile(f, 'r')
         return load_zip_numpy(zf) or load_zip_tiffs(zf) or load_zip_png(zf)
 
 
 def load_tiff(f):
+    """Loads image data from a tiff file"""
     if 'TIFF image data' in magic.from_buffer(f.read(2048)):
         f.seek(0)
         return TiffFile(f).asarray()
 
 
 def load_png(f):
+    """Loads image data from a png file"""
     if 'PNG image data' in magic.from_buffer(f.read(2048)):
         f.seek(0)
         image = Image.open(f, formats=['PNG'])
