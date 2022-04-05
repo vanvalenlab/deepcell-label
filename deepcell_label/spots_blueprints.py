@@ -43,10 +43,9 @@ def handle_exception(error):
 def get_project(project):
     s3 = boto3.client('s3')
     data = io.BytesIO()
-    with open(data, 'wb') as f:
-        bucket = 'spots-visualizer'
-        object_name = f'{project}.zip'
-        s3.download_fileobj(bucket, object_name, f)
+    bucket = 'spots-visualizer'
+    object_name = f'{project}.zip'
+    s3.download_fileobj(bucket, object_name, data)
     data.seek(0)
 
     return send_file(data, mimetype='application/zip')
