@@ -1,14 +1,15 @@
 /** Manages spots labels. */
 
 import { assign, Machine } from 'xstate';
-import spots from './spots2';
+import { fromEventBus } from './eventBus';
 
-function createSpotsMachine() {
+function createSpotsMachine({ eventBuses }) {
   return Machine(
     {
       id: 'spots',
+      invoke: [{ src: fromEventBus('labeled', () => eventBuses.load) }],
       context: {
-        spots: spots,
+        spots: null,
         opacity: 0.7,
         radius: 3, // radius in screen pixels
         showSpots: true,
@@ -22,10 +23,19 @@ function createSpotsMachine() {
         TOGGLE_OUTLINE: { actions: 'toggleOutline' },
         TOGGLE_COLOR_SPOTS: { actions: 'toggleColorSpots' },
       },
+      initial: 'loading',
+      states: {
+        loading: {
+          on: {
+            LOADED: { target: 'loaded', actions: 'setSpots' },
+          },
+        },
+        loaded: {},
+      },
     },
     {
       actions: {
-        setSpots: assign({ labels: (ctx, evt) => evt.labels }),
+        setSpots: assign({ spots: (ctx, evt) => evt.spots }),
         toggleShowSpots: assign({ showSpots: (ctx, evt) => !ctx.showSpots }),
         toggleOutline: assign({ outline: (ctx, evt) => !ctx.outline }),
         toggleColorSpots: assign({ colorSpots: (ctx, evt) => !ctx.colorSpots }),

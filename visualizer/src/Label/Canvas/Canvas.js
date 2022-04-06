@@ -3,7 +3,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { useSelector } from '@xstate/react';
 import equal from 'fast-deep-equal';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useArrays, useCanvas, useSelect } from '../../ProjectContext';
+import { useArrays, useCanvas, useSelect, useSpots } from '../../ProjectContext';
 import ComposeCanvas from './ComposeCanvases';
 import LabeledCanvas from './LabeledCanvas';
 import OutlineCanvas from './OutlineCanvas';
@@ -81,6 +81,8 @@ export const Canvas = () => {
 
   const arrays = useArrays();
   const loading = useSelector(arrays, (state) => state.matches('waiting'));
+  const spots = useSpots();
+  const spotsLoading = useSelector(spots, (state) => state.matches('loading'));
 
   return (
     <Box
@@ -102,7 +104,7 @@ export const Canvas = () => {
           <RawCanvas setCanvases={setCanvases} />
           <LabeledCanvas setCanvases={setCanvases} />
           <OutlineCanvas setCanvases={setCanvases} />
-          {process.env.REACT_APP_SPOTS_VISUALIZER === 'true' && (
+          {process.env.REACT_APP_SPOTS_VISUALIZER === 'true' && !spotsLoading && (
             <SpotsCanvas setCanvases={setCanvases} />
           )}
           {process.env.REACT_APP_SPOTS_VISUALIZER !== 'true' && (
