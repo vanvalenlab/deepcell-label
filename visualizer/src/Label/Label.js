@@ -3,7 +3,7 @@ import DisplayControls from './DisplayControls';
 import Instructions from './Instructions';
 import LabelControls from './LabelControls';
 import LabelTabs from './LabelControls/LabelTabs';
-import QualityControlControls from './QualityControlControls/QualityControlControls';
+import ReviewControls from './ReviewControls';
 import SpaceFillingCanvas from './SpaceFillingCanvas';
 
 function Label({ review }) {
@@ -31,9 +31,7 @@ function Label({ review }) {
           }}
         >
           {track && process.env.REACT_APP_SPOTS_VISUALIZER !== 'true' && <LabelTabs />}
-          {review && process.env.REACT_APP_SPOTS_VISUALIZER !== 'true' && (
-            <QualityControlControls />
-          )}
+          {review && process.env.REACT_APP_SPOTS_VISUALIZER !== 'true' && <ReviewControls />}
           <DisplayControls />
         </Box>
         {process.env.REACT_APP_SPOTS_VISUALIZER !== 'true' && <LabelControls />}

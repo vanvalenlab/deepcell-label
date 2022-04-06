@@ -2,7 +2,7 @@ import React, { createContext, useContext } from 'react';
 
 export const Context = createContext();
 
-export const useQualityControl = () => {
+export const useReview = () => {
   return useReturnContext(Context);
 };
 
@@ -14,8 +14,8 @@ function useReturnContext(contextType) {
   return context;
 }
 
-function QualityControlContext({ qualityControl, children }) {
-  return <Context.Provider value={qualityControl}>{children}</Context.Provider>;
+function ReviewContext({ review, children }) {
+  return <Context.Provider value={review}>{children}</Context.Provider>;
 }
 
-export default QualityControlContext;
+export default ReviewContext;

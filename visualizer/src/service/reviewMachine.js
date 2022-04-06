@@ -5,10 +5,10 @@ import { assign, Machine, spawn } from 'xstate';
 import createProjectMachine from './projectMachine';
 
 // TODO: refactor bucket
-function createQualityControlMachine(projectIds, bucket) {
+function createReviewMachine(projectIds, bucket) {
   return Machine(
     {
-      id: 'qualityControl',
+      id: 'review',
       context: {
         projectIds,
         bucket,
@@ -66,4 +66,4 @@ function createQualityControlMachine(projectIds, bucket) {
   );
 }
 
-export default createQualityControlMachine;
+export default createReviewMachine;

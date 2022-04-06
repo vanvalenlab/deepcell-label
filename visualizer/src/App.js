@@ -9,13 +9,11 @@ import Label from './Label';
 import Load from './Load';
 import NavBar from './Navbar';
 import ProjectContext from './ProjectContext';
-import QualityControlContext from './QualityControlContext';
+import ReviewContext from './ReviewContext';
 import createLoadMachine from './service/loadMachine';
 import createLoadSpotsMachine from './service/loadSpotsMachine';
 import createProjectMachine from './service/projectMachine';
-import { isProjectId, qualityControl } from './service/service';
-
-// import service from './service/service';
+import createReviewMachine from './service/reviewMachine';
 
 // inspect({
 //   // options
@@ -27,18 +25,32 @@ const Div = styled('div')``;
 
 const theme = createTheme();
 
-function Review() {
-  const project = useSelector(qualityControl, (state) => {
+function isProjectId(id) {
+  // Checks id is a 12 character URL-safe base64 string
+  // URL-safe base 64 uses - instead of + and _ instead of /
+  const projectIdRegex = /^[\w-]{12}$/;
+  return projectIdRegex.test(id);
+}
+
+function isReview(ids) {
+  // Checks ids is a comma separated list of project IDs
+  return ids.split(',').every(isProjectId);
+}
+
+function Review({ ids }) {
+  const reviewMachine = useState(createReviewMachine(ids.split(',')));
+  const review = useMachine(reviewMachine);
+  const project = useSelector(review, (state) => {
     const { projectId, projects } = state.context;
     return projects[projectId];
   });
 
   return (
-    <QualityControlContext qualityControl={qualityControl}>
+    <ReviewContext review={review}>
       <ProjectContext project={project}>
         <Label review={true} />
       </ProjectContext>
-    </QualityControlContext>
+    </ReviewContext>
   );
 }
 
@@ -132,8 +144,8 @@ function DeepCellLabel() {
             element={
               isProjectId(id) ? (
                 <LabelProject />
-              ) : id?.split(',')?.every(isProjectId) ? (
-                <Review />
+              ) : isReview(id) ? (
+                <Review ids={id} />
               ) : (
                 <InvalidProjectId />
               )

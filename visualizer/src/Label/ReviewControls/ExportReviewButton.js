@@ -2,7 +2,6 @@ import GetAppIcon from '@mui/icons-material/GetApp';
 import { Button } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useQualityControl } from '../../QualityControlContext';
 
 function download(judgments) {
   const a = document.createElement('a');
@@ -14,13 +13,13 @@ function download(judgments) {
         .join('\n')
     );
   a.href = csvContent;
-  a.setAttribute('download', 'qualityControl.csv');
+  a.setAttribute('download', 'review.csv');
   a.click();
 }
 
-function ExportQualityControlButton() {
-  const qualityControl = useQualityControl();
-  const judgments = useSelector(qualityControl, (state) => state.context.judgments);
+function ExportReviewButton() {
+  const review = useReview();
+  const judgments = useSelector(review, (state) => state.context.judgments);
   // { 'EXAMPLE_ID': true, 'OTHER_ID': false }
 
   return (
@@ -36,4 +35,4 @@ function ExportQualityControlButton() {
   );
 }
 
-export default ExportQualityControlButton;
+export default ExportReviewButton;

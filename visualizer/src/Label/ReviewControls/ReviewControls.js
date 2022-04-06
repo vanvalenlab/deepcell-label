@@ -1,9 +1,8 @@
 import { Box } from '@mui/material';
-import ExportQualityControlButton from './ExportQualityControlButton';
 import ProjectSelect from './ProjectSelect';
 import ReviewButtons from './ReviewButtons';
 
-function QualityControlControls() {
+function ReviewControls() {
   return (
     <Box
       sx={{
@@ -15,9 +14,9 @@ function QualityControlControls() {
     >
       <ProjectSelect />
       <ReviewButtons />
-      <ExportQualityControlButton />
+      <ExportReviewButton />
     </Box>
   );
 }
 
-export default QualityControlControls;
+export default ReviewControls;

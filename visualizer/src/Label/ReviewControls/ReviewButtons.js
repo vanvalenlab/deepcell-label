@@ -2,10 +2,9 @@ import ThumbDownIcon from '@mui/icons-material/ThumbDown';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import { Box, Button } from '@mui/material';
 import React from 'react';
-import { useQualityControl } from '../../QualityControlContext';
 
 function ReviewButtons() {
-  const qualityControl = useQualityControl();
+  const review = useReview();
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -13,7 +12,7 @@ function ReviewButtons() {
         sx={{ width: '50%', m: 1, ml: 0 }}
         variant='contained'
         color='primary'
-        onClick={() => qualityControl.send('ACCEPT')}
+        onClick={() => review.send('ACCEPT')}
       >
         Accept
         <ThumbUpIcon />
@@ -22,7 +21,7 @@ function ReviewButtons() {
         sx={{ width: '50%', m: 1, mr: 0 }}
         variant='contained'
         color='secondary'
-        onClick={() => qualityControl.send('REJECT')}
+        onClick={() => review.send('REJECT')}
       >
         Reject
         <ThumbDownIcon />

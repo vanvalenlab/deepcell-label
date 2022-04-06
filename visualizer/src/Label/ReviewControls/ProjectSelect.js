@@ -1,13 +1,12 @@
 import { FormLabel, MenuItem, TextField, Tooltip } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import { useEffect, useRef } from 'react';
-import { useQualityControl } from '../../QualityControlContext';
 
 function ProjectSelect() {
-  const qualityControl = useQualityControl();
+  const review = useReview();
 
-  const projectId = useSelector(qualityControl, (state) => state.context.projectId);
-  const projectIds = useSelector(qualityControl, (state) => state.context.projectIds);
+  const projectId = useSelector(review, (state) => state.context.projectId);
+  const projectIds = useSelector(review, (state) => state.context.projectIds);
 
   // Adds mousetrap class so hotkeys work after using switch
   const inputRef = useRef();
@@ -17,7 +16,7 @@ function ProjectSelect() {
   }, []);
 
   const onChange = (e) => {
-    qualityControl.send({ type: 'SET_PROJECT', projectId: e.target.value });
+    review.send({ type: 'SET_PROJECT', projectId: e.target.value });
   };
 
   const tooltip = (
