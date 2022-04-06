@@ -4,6 +4,7 @@ Loads both raw image data and labels
 """
 
 import io
+import json
 import tempfile
 import zipfile
 
@@ -11,6 +12,8 @@ import magic
 import numpy as np
 from PIL import Image
 from tifffile import TiffFile, TiffWriter
+
+from deepcell_label.labelmaker import LabelInfoMaker
 
 
 class Loader:
@@ -40,20 +43,30 @@ class Loader:
 
     def load(self):
         """Extracts data from input files and writes standardized data to output zip."""
+        # Load data from input files
         X = self.load_images()
         y = self.load_segmentation()
         spots = self.load_spots()
+
+        # Write standardized data to output zip
         if X is not None:
-            self.write_images(X)
+            # TODO: check if we need to rescale data before castint to uint8
+            self.write_images(X.astype(np.uint8))
         else:
             raise ValueError('No images found in files')
+
         if y is not None:
             if y.shape[:-1] != X.shape[:-1]:
                 raise ValueError(
                     'Segmentation shape %s is incompatible with image shape %s'
                     % (y.shape, X.shape)
                 )
-            self.write_segmentation(y)
+            # TODO: check if float vs int matters
+            self.write_segmentation(y.astype(np.uint32))
+            # Write cells in segmentation
+            cells = LabelInfoMaker(y).cell_info
+            self.write_cells(cells)
+
         if spots is not None:
             self.write_spots(spots)
 
@@ -82,6 +95,11 @@ class Loader:
         buffer.seek(0)
         self.zip.writestr('spots.csv', buffer.read())
         print('Wrote spots')
+
+    def write_cells(self, cells):
+        """Writes cells.json to output zip."""
+        self.zip.writestr('cells.json', json.dumps(cells))
+        print('Wrote cells')
 
     def load_images(self):
         """Extracts raw images from input image file."""
