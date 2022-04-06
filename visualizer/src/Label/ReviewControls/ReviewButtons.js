@@ -2,6 +2,7 @@ import ThumbDownIcon from '@mui/icons-material/ThumbDown';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import { Box, Button } from '@mui/material';
 import React from 'react';
+import { useReview } from '../../ReviewContext';
 
 function ReviewButtons() {
   const review = useReview();
