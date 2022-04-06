@@ -159,7 +159,6 @@ function SpotsCanvas({ setCanvases }) {
 
   useEffect(() => {
     if (!(moving && visibleSpots.length > 1000)) {
-      console.log({ sx, sy, zoom });
       setInitialPosition({ sx, sy, zoom });
     }
   }, [moving, visibleSpots, sx, sy, zoom]);
