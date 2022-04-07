@@ -10,7 +10,6 @@ import Load from './Load';
 import NavBar from './Navbar';
 import ProjectContext from './ProjectContext';
 import ReviewContext from './ReviewContext';
-import createLoadMachine from './service/loadMachine';
 import createLoadSpotsMachine from './service/loadSpotsMachine';
 import createProjectMachine from './service/projectMachine';
 import createReviewMachine from './service/reviewMachine';
@@ -66,11 +65,7 @@ function getProjectId() {
 
 function LabelProject() {
   const projectId = getProjectId();
-  const [loadMachine] = useState(
-    process.env.REACT_APP_SPOTS_VISUALIZER === 'true'
-      ? createLoadSpotsMachine(projectId)
-      : createLoadMachine(projectId)
-  );
+  const [loadMachine] = useState(createLoadSpotsMachine(projectId));
   const [load] = useMachine(loadMachine);
   const [project] = useState(interpret(createProjectMachine(projectId)).start());
   window.dcl = project;
