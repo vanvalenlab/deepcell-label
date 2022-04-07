@@ -7,7 +7,6 @@ import {
   useCanvas,
   useImage,
   useLabeled,
-  usePixelatedCanvas,
   useSelect,
 } from '../../ProjectContext';
 
@@ -35,7 +34,6 @@ const OutlineCanvas = ({ setCanvases }) => {
 
   const kernelRef = useRef();
   const kernelCanvas = useAlphaKernelCanvas();
-  const drawCanvas = usePixelatedCanvas();
 
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvas });
@@ -82,24 +80,10 @@ const OutlineCanvas = ({ setCanvases }) => {
     if (labeledArray) {
       // Compute the outline of the labels with the kernel
       kernelRef.current(labeledArray, outlineAll, foreground, background);
-      // Draw kernel output on another canvas (needed to reuse webgl output)
-      const drawCtx = drawCanvas.getContext('2d');
-      drawCtx.clearRect(0, 0, width, height);
-      drawCtx.drawImage(kernelCanvas, 0, 0);
       // Rerender the parent canvas
-      setCanvases((canvases) => ({ ...canvases, outline: drawCanvas }));
+      setCanvases((canvases) => ({ ...canvases, outline: kernelCanvas }));
     }
-  }, [
-    labeledArray,
-    outlineAll,
-    foreground,
-    background,
-    setCanvases,
-    kernelCanvas,
-    drawCanvas,
-    width,
-    height,
-  ]);
+  }, [labeledArray, outlineAll, foreground, background, setCanvases, kernelCanvas]);
 
   return null;
 };

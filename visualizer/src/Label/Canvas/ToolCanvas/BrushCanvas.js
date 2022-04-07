@@ -1,13 +1,7 @@
 import { useSelector } from '@xstate/react';
 import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
-import {
-  useAlphaKernelCanvas,
-  useBrush,
-  useCanvas,
-  usePixelatedCanvas,
-  useSelect,
-} from '../../../ProjectContext';
+import { useAlphaKernelCanvas, useBrush, useCanvas, useSelect } from '../../../ProjectContext';
 
 const red = [255, 0, 0, 255];
 const white = [255, 255, 255, 255];
@@ -29,7 +23,6 @@ const BrushCanvas = ({ setCanvases }) => {
 
   const kernelRef = useRef();
   const kernelCanvas = useAlphaKernelCanvas();
-  const drawCanvas = usePixelatedCanvas();
 
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvas });
@@ -87,13 +80,9 @@ const BrushCanvas = ({ setCanvases }) => {
     } else {
       kernelRef.current(trace, trace.length, size, color, x, y);
     }
-    // Draw brush on a separate canvas (needed to reuse webgl output)\
-    const drawCtx = drawCanvas.getContext('2d');
-    drawCtx.clearRect(0, 0, width, height);
-    drawCtx.drawImage(kernelCanvas, 0, 0);
     // Rerender the parent canvas
-    setCanvases((canvases) => ({ ...canvases, tool: drawCanvas }));
-  }, [setCanvases, size, color, x, y, trace, kernelCanvas, drawCanvas, width, height]);
+    setCanvases((canvases) => ({ ...canvases, tool: kernelCanvas }));
+  }, [setCanvases, size, color, x, y, trace, kernelCanvas]);
 
   useEffect(
     () => () =>

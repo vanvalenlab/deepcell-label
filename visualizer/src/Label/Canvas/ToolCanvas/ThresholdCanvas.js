@@ -1,12 +1,7 @@
 import { useSelector } from '@xstate/react';
 import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
-import {
-  useAlphaKernelCanvas,
-  useCanvas,
-  usePixelatedCanvas,
-  useThreshold,
-} from '../../../ProjectContext';
+import { useAlphaKernelCanvas, useCanvas, useThreshold } from '../../../ProjectContext';
 
 const ThresholdCanvas = ({ setCanvases }) => {
   const canvas = useCanvas();
@@ -21,7 +16,6 @@ const ThresholdCanvas = ({ setCanvases }) => {
 
   const kernelRef = useRef();
   const kernelCanvas = useAlphaKernelCanvas();
-  const drawCanvas = usePixelatedCanvas();
 
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvas });
@@ -60,12 +54,8 @@ const ThresholdCanvas = ({ setCanvases }) => {
     if (show) {
       // Compute threshold box with the kernel
       kernelRef.current(x1, y1, x2, y2);
-      // Draw the threshold box on a separate canvas (needed to reuse webgl output)
-      const drawCtx = drawCanvas.getContext('2d');
-      drawCtx.clearRect(0, 0, width, height);
-      drawCtx.drawImage(kernelCanvas, 0, 0);
       // Rerender the parent canvas
-      setCanvases((canvases) => ({ ...canvases, tool: drawCanvas }));
+      setCanvases((canvases) => ({ ...canvases, tool: kernelCanvas }));
     } else {
       // Remove this component's canvas from the parent canvas
       setCanvases((canvases) => {
@@ -73,7 +63,7 @@ const ThresholdCanvas = ({ setCanvases }) => {
         return { ...canvases };
       });
     }
-  }, [setCanvases, show, x1, y1, x2, y2, kernelCanvas, drawCanvas, width, height]);
+  }, [setCanvases, show, x1, y1, x2, y2, kernelCanvas]);
 
   return null;
 };

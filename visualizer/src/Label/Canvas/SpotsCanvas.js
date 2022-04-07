@@ -56,16 +56,21 @@ function SpotsCanvas({ setCanvases }) {
   );
 
   const spots = useSpots();
-  const { spotsArray, radius, opacity, showSpots, colorSpots, outline } = useSelector(
+  const { spotsArray, radius, opacity, showSpots, colorSpots, outline, loading } = useSelector(
     spots,
-    ({ context: { spots: spotsArray, radius, opacity, showSpots, colorSpots, outline } }) => ({
-      spotsArray,
-      radius,
-      opacity,
-      showSpots,
-      colorSpots,
-      outline,
-    }),
+    (state) => {
+      const { spots: spotsArray, radius, opacity, showSpots, colorSpots, outline } = state.context;
+      const loading = state.matches('loading');
+      return {
+        spotsArray,
+        radius,
+        opacity,
+        showSpots,
+        colorSpots,
+        outline,
+        loading,
+      };
+    },
     equal
   );
 
@@ -140,6 +145,8 @@ function SpotsCanvas({ setCanvases }) {
     labeledArray,
     moving,
     visibleSpots,
+    drawCanvas,
+    scale,
   ]);
 
   useEffect(() => {
@@ -155,7 +162,20 @@ function SpotsCanvas({ setCanvases }) {
       ctx.drawImage(drawCanvas, movingSx, movingSy, movingWidth, movingHeight, 0, 0, width, height);
       setCanvases((canvases) => ({ ...canvases, spots: movingCanvas }));
     }
-  }, [moving, initialPosition, sx, sy, zoom, scale, width, height, drawCanvas, movingCanvas]);
+  }, [
+    moving,
+    visibleSpots,
+    initialPosition,
+    sx,
+    sy,
+    zoom,
+    scale,
+    width,
+    height,
+    drawCanvas,
+    movingCanvas,
+    setCanvases,
+  ]);
 
   useEffect(() => {
     if (!(moving && visibleSpots.length > 1000)) {

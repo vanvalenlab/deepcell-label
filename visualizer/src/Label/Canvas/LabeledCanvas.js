@@ -8,7 +8,6 @@ import {
   useImage,
   useLabeled,
   useLabels,
-  usePixelatedCanvas,
   useSelect,
 } from '../../ProjectContext';
 
@@ -41,7 +40,6 @@ export const LabeledCanvas = ({ setCanvases }) => {
 
   const kernelRef = useRef();
   const kernelCanvas = useAlphaKernelCanvas();
-  const drawCanvas = usePixelatedCanvas();
 
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvas });
@@ -74,25 +72,10 @@ export const LabeledCanvas = ({ setCanvases }) => {
     if (labeledArray) {
       // Compute the label image with the kernel
       kernelRef.current(labeledArray, colormap, foreground, highlight, highlightColor, opacity);
-      // Draw the label image on a separate canvas (needed to reuse webgl output)
-      const drawCtx = drawCanvas.getContext('2d');
-      drawCtx.clearRect(0, 0, width, height);
-      drawCtx.drawImage(kernelCanvas, 0, 0);
       // Rerender the parent canvas with the kernel output
-      setCanvases((canvases) => ({ ...canvases, labeled: drawCanvas }));
+      setCanvases((canvases) => ({ ...canvases, labeled: kernelCanvas }));
     }
-  }, [
-    labeledArray,
-    colormap,
-    foreground,
-    highlight,
-    opacity,
-    kernelCanvas,
-    drawCanvas,
-    setCanvases,
-    width,
-    height,
-  ]);
+  }, [labeledArray, colormap, foreground, highlight, opacity, kernelCanvas, setCanvases]);
 
   return null;
 };
