@@ -33,7 +33,7 @@ function isProjectId(id) {
 
 function isReview(ids) {
   // Checks ids is a comma separated list of project IDs
-  return ids.split(',').every(isProjectId);
+  return ids?.split(',')?.every(isProjectId);
 }
 
 function Review({ ids }) {
