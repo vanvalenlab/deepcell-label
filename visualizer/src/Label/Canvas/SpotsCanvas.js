@@ -56,11 +56,10 @@ function SpotsCanvas({ setCanvases }) {
   );
 
   const spots = useSpots();
-  const { spotsArray, radius, opacity, showSpots, colorSpots, outline, loading } = useSelector(
+  const { spotsArray, radius, opacity, showSpots, colorSpots, outline } = useSelector(
     spots,
     (state) => {
       const { spots: spotsArray, radius, opacity, showSpots, colorSpots, outline } = state.context;
-      const loading = state.matches('loading');
       return {
         spotsArray,
         radius,
@@ -68,7 +67,6 @@ function SpotsCanvas({ setCanvases }) {
         showSpots,
         colorSpots,
         outline,
-        loading,
       };
     },
     equal
@@ -79,7 +77,7 @@ function SpotsCanvas({ setCanvases }) {
 
   useEffect(() => {
     const imagePixelRadius = radius / zoom / scale / window.devicePixelRatio;
-    if (!loading) {
+    if (spotsArray) {
       setVisibleSpots(
         spotsArray.filter(
           ([x, y]) =>
@@ -90,7 +88,7 @@ function SpotsCanvas({ setCanvases }) {
         )
       );
     }
-  }, [loading, spotsArray, sx, sy, sw, sh, zoom, radius, scale]);
+  }, [spotsArray, sx, sy, sw, sh, zoom, radius, scale]);
 
   useEffect(() => {
     const ctx = drawCanvas.getContext('2d');
