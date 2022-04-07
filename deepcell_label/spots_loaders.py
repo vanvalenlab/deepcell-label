@@ -50,8 +50,10 @@ class Loader:
 
         # Write standardized data to output zip
         if X is not None:
-            # TODO: check if we need to rescale data before castint to uint8
-            self.write_images(X.astype(np.uint8))
+            # Rescale data before casting to uint8
+            X = (X - np.min(X)) / (np.max(X) - np.min(X)) * 255
+            X = X.astype(np.uint8)
+            self.write_images(X)
         else:
             raise ValueError('No images found in files')
 
@@ -103,17 +105,23 @@ class Loader:
 
     def load_images(self):
         """Extracts raw images from input image file."""
-        return (
-            load_zip(self.image_file)
-            or load_tiff(self.image_file)
-            or load_png(self.image_file)
-        )
+        X = load_zip(self.image_file)
+        if X is None:
+            X = load_npy(self.image_file)
+        if X is None:
+            X = load_tiff(self.image_file)
+        if X is None:
+            X = load_png(self.image_file)
+        return X
 
     def load_segmentation(self):
         """Extracts segmentation from input label file."""
         if zipfile.is_zipfile(self.label_file):
             label_zip = zipfile.ZipFile(self.label_file, 'r')
-            return load_zip_numpy(label_zip) or load_zip_tiffs(label_zip)
+            y = load_zip_numpy(label_zip, name='y')
+            if y is None:
+                y = load_zip_tiffs(label_zip)
+            return y
 
     def load_spots(self):
         """Extracts spots from input label file."""
@@ -128,7 +136,7 @@ def load_zip_numpy(zf, name='X'):
     If loading from an NPZ with multiple arrays, use name parameter to pick one.
     """
     for filename in zf.namelist():
-        if filename.endswith('.npy'):
+        if filename == f'{name}.npy':
             with zf.open(filename) as f:
                 return np.load(f)
         if filename.endswith('.npz'):
@@ -184,7 +192,20 @@ def load_zip(f):
     """Loads image data from a zip file by loading from the npz, tiff, or png files in the archive."""
     if zipfile.is_zipfile(f):
         zf = zipfile.ZipFile(f, 'r')
-        return load_zip_numpy(zf) or load_zip_tiffs(zf) or load_zip_png(zf)
+        X = load_zip_numpy(zf)
+        if X is None:
+            X = load_zip_tiffs(zf)
+        if X is None:
+            X = load_zip_png(zf)
+        return X
+
+
+def load_npy(f):
+    """Loads image data from a npy file"""
+    if 'NumPy data file' in magic.from_buffer(f.read(2048)):
+        f.seek(0)
+        npy = np.load(f)
+        return npy
 
 
 def load_tiff(f):
