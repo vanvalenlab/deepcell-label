@@ -62,7 +62,7 @@ const loadMachine = Machine(
       submitExample: (context) => {
         const { exampleFile } = context;
         const formData = new FormData();
-        formData.append('url', exampleFile);
+        formData.append('images', exampleFile);
         return axios.post('/api/project', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
@@ -97,7 +97,7 @@ const loadMachine = Machine(
       setErrorText: assign({ errorText: (_, event) => `${event.error}` }),
       setSingleFileError: assign({ errorText: 'Please upload a single file.' }),
       redirectToProject: ({ track }, event) => {
-        const { projectId } = event.data.data;
+        const projectId = event.data.data;
         let url = `${document.location.origin}/project?projectId=${projectId}&download=true`;
         if (track) {
           url = url.concat('&track=true');
