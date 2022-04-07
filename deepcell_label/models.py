@@ -1,94 +1,18 @@
 """SQL Alchemy database models."""
 from __future__ import absolute_import, division, print_function
 
-import base64
-import enum
 import io
 import logging
 import timeit
 from secrets import token_urlsafe
 
-import numpy as np
-import sqlalchemy.types as types
+import boto3
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.ext.mutable import Mutable
-from sqlalchemy.schema import ForeignKeyConstraint, PrimaryKeyConstraint
+
+from deepcell_label.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 
 logger = logging.getLogger('models.Project')  # pylint: disable=C0103
-# Accessing relationships (like project.label_frames) issues a Query, causing a flush
-# autoflush=False prevents the flush, so we still access the db.session.dirty after the query
-db = SQLAlchemy(session_options={'autoflush': False})  # pylint: disable=C0103
-
-
-class Npz(types.TypeDecorator):
-    """Marshals a numpy array to and from a compressed npz"""
-
-    impl = types.LargeBinary
-
-    def process_bind_param(self, value, dialect):
-        if value is None:
-            return None
-        bytestream = io.BytesIO()
-        np.savez_compressed(bytestream, array=value)
-        bytestream.seek(0)
-        return bytestream.read()
-
-    def process_result_value(self, value, dialect):
-        if value is None:
-            return None
-        bytestream = io.BytesIO(value)
-        bytestream.seek(0)
-        return np.load(bytestream)['array']
-
-
-def compile_npz_mysql(type_, compiler, **kw):
-    """
-    BLOB (64 kB) can truncate npz data, while LONGBLOB (4 GB) stores it in full.
-    """
-    return 'LONGBLOB'
-
-
-@compiles(db.PickleType, 'mysql')
-def compile_pickle_mysql(type_, compiler, **kw):
-    """
-    Replaces default BLOB with LONGBLOB for PickleType columns on MySQL backend.
-    BLOB (64 kB) truncates pickled objects, while LONGBLOB (4 GB) stores it in full.
-    TODO: change to MEDIUMBLOB (16 MB)?
-    """
-    return 'LONGBLOB'
-
-
-class MutableNdarray(Mutable, np.ndarray):
-    @classmethod
-    def coerce(cls, key, value):
-        """Convert plain numpy arrays to MutableNdarray."""
-        if not isinstance(value, MutableNdarray):
-            if isinstance(value, np.ndarray):
-                mutable_array = value.view(MutableNdarray)
-                return mutable_array
-
-            # this call will raise ValueError
-            return Mutable.coerce(key, value)
-        else:
-            return value
-
-    def __setitem__(self, key, value):
-        """Detect array set events and emit change events."""
-        np.ndarray.__setitem__(self, key, value)
-        self.changed()
-
-    def __delitem__(self, key):
-        """Detect array del events and emit change events."""
-        np.ndarray.__delitem__(self, key)
-        self.changed()
-
-
-class SourceEnum(enum.Enum):
-    s3 = 's3'
-    dropped = 'dropped'
-    lfs = 'lfs'
+db = SQLAlchemy()  # pylint: disable=C0103
 
 
 class Project(db.Model):
@@ -97,611 +21,78 @@ class Project(db.Model):
     # pylint: disable=E1101
     __tablename__ = 'projects'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    token = db.Column(db.String(12), unique=True, nullable=False, index=True)
+    project = db.Column(db.String(12), unique=True, nullable=False, index=True)
     createdAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now())
-    finished = db.Column(db.TIMESTAMP)
+    bucket = db.Column(db.Text, nullable=False)
+    key = db.Column(db.Text, nullable=False)
+    parent = db.Column(db.Integer, db.ForeignKey('projects.id'))
 
-    path = db.Column(db.Text, nullable=False)
-    source = db.Column(db.Enum(SourceEnum), nullable=False)
-    height = db.Column(db.Integer, nullable=False)
-    width = db.Column(db.Integer, nullable=False)
-    num_frames = db.Column(db.Integer, nullable=False)
-    num_channels = db.Column(db.Integer, nullable=False)
-    num_features = db.Column(db.Integer, nullable=False)
-    frame = db.Column(db.Integer, default=0)
-    channel = db.Column(db.Integer, default=0)
-    feature = db.Column(db.Integer, default=0)
+    def __init__(self, data):
+        """
+        Args:
+            data (BytesIO): zip file with loaded project data
+            parent (string): public token for existing project
+        """
+        start = timeit.default_timer()
 
-    raw_frames = db.relationship(
-        'RawFrame',
-        backref='project',
-        # Delete when detached by add_channel
-        cascade='save-update, merge, delete, delete-orphan',
-    )
-    label_frames = db.relationship(
-        'LabelFrame',
-        backref='project',
-        # Delete frames detached by undo/redo
-        cascade='save-update, merge, delete, delete-orphan',
-    )
-    labels = db.relationship(
-        'Labels',
-        backref='project',
-        uselist=False,
-        # Delete labels detached by undo/redo
-        cascade='save-update, merge, delete, delete-orphan',
-    )
+        # Create a unique 12 character base64 project ID
+        while True:
+            project = token_urlsafe(9)  # 9 bytes is 12 base64 characters
+            if not db.session.query(Project).filter_by(project=project).first():
+                self.project = project
+                break
 
-    # Action history
-    action_id = db.Column(db.Integer, db.ForeignKey('actions.action_id'))
-    action = db.relationship(
-        'Action',
-        uselist=False,
-        post_update=True,
-        primaryjoin='and_(Project.id==Action.project_id, '
-        'foreign(Project.action_id)==Action.action_id)',
-    )
-    actions = db.relationship(
-        'Action', backref='project', foreign_keys='[Action.project_id]'
-    )
-    num_actions = db.Column(db.Integer, default=0)
-
-    def __init__(self, loader):
-        init_start = timeit.default_timer()
-        raw = loader.raw_array
-        label = loader.label_array
-
-        # Record static project attributes
-        self.path = loader.path
-        self.source = 's3'
-        self.num_frames = raw.shape[0]
-        self.height = raw.shape[1]
-        self.width = raw.shape[2]
-        self.num_channels = raw.shape[-1]
-        self.num_features = label.shape[-1]
-
-        # Create frames from raw and label images
-        self.raw_frames = [RawFrame(i, frame) for i, frame in enumerate(raw)]
-        self.label_frames = [LabelFrame(i, frame) for i, frame in enumerate(label)]
-
-        # Create label metadata
-        self.labels = Labels()
-        self.labels.cell_ids = loader.cell_ids
-        self.labels.cell_info = loader.cell_info
+        # Upload to s3
+        s3 = boto3.client(
+            's3',
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        )
+        self.bucket = 'spots-visualizer'
+        self.key = f'{self.project}.zip'
+        s3.upload_fileobj(io.BytesIO(data), self.bucket, self.key)
 
         logger.debug(
-            'Initialized project from %s in %ss.',
-            self.path,
-            timeit.default_timer() - init_start,
+            'Initialized project %s and uploaded to %s in %ss.',
+            self.project,
+            self.bucket,
+            timeit.default_timer() - start,
         )
 
-    @property
-    def label_array(self):
-        """Compiles all label frames into a single numpy array."""
-        return np.array([frame.frame for frame in self.label_frames])
-
-    @property
-    def raw_array(self):
-        """Compiles all raw frames into a single numpy array."""
-        return np.array([frame.frame for frame in self.raw_frames])
-
     @staticmethod
-    def get(token):
+    def get(project):
         """
         Return the project with the given ID, if it exists.
 
         Args:
-            token (int): unique 12 character base64 string to identify project
+            project (int): unique 12 character base64 string to identify project
 
         Returns:
             Project: row from the Project table
         """
         start = timeit.default_timer()
-        project = db.session.query(Project).filter_by(token=token).first()
-        logger.debug('Got project %s in %ss.', token, timeit.default_timer() - start)
+        project = db.session.query(Project).filter_by(project=project).first()
+        logger.debug('Got project %s in %ss.', project, timeit.default_timer() - start)
         return project
 
     @staticmethod
-    def create(loader):
+    def create(data):
         """
         Create a new project in the Project table.
 
         Args:
-            loader (Loader): loads or creates raw_array, label_array, cell_ids, & cell_info
+            data: zip file with loaded project data
 
         Returns:
             Project: new row in the Project table
         """
         start = timeit.default_timer()
-        new_project = Project(loader)
-        # Assign a unique 12 character base64 token to the project
-        while True:
-            token = token_urlsafe(9)  # 9 bytes is 12 base64 characters
-            if not db.session.query(Project).filter_by(token=token).first():
-                new_project.token = token
-                break
-        db.session.add(new_project)
-        db.session.commit()
-        new_project.create_memento('create_project', all_frames=True)
+        project = Project(data)
+        db.session.add(project)
         db.session.commit()
         logger.debug(
-            'Created new project %s (id %s) in %ss.',
-            new_project.token,
-            new_project.id,
+            'Created new project %s in %ss.',
+            project.project,
             timeit.default_timer() - start,
         )
-        return new_project
-
-    def update(self):
-        """
-        Commit the project changes from an action.
-        Records the effects of the action in the Action table.
-        """
-        start = timeit.default_timer()
-        if self.action.labels_changed:
-            self.labels.update()
-        db.session.commit()
-        logger.debug(
-            'Updated project %s in %ss.', self.id, timeit.default_timer() - start
-        )
-
-    def finish(self):
-        """
-        Complete a project and its associated objects.
-        Sets the PickleType columns to None.
-        """
-        start = timeit.default_timer()
-        self.finished = db.func.current_timestamp()
-        # Clear label metadata
-        self.labels.finish()
-        # Clear frames
-        for label_frame in self.label_frames:
-            label_frame.finish()
-        for raw_frame in self.raw_frames:
-            raw_frame.finish()
-        self.finished = db.func.current_timestamp()
-        db.session.commit()
-        logger.debug(
-            'Finished project %s in %ss.', self.id, timeit.default_timer() - start
-        )
-
-    def create_memento(self, action_name, all_frames=False, session=None):
-        """
-        Saves the project state.
-        """
-        session = session or db.session
-        # Create action and store project state inside
-        action = Action(self, action_name=action_name)
-        for frame in self.label_frames:
-            if frame in session.dirty or all_frames:
-                session.add(FrameMemento(action=action, frame=frame))
-        action.labels = self.labels
-        # action.feature = self.feature
-        # action.channel = self.channel
-        if self.action is not None:
-            self.action.next_action = action
-        # Move the Project to the new action
-        self.action = action
-        self.num_actions += 1
-
-    def undo(self):
-        """
-        Restores the project to before the current action.
-
-        Returns:
-            dict: payload to send to frontend
-        """
-        start = timeit.default_timer()
-        action = self.action
-        if self.action.prev_action is None:
-            return
-
-        # Compute which feature changed
-        # TODO: database migration to store in Action table
-        feature = self.feature
-        for prev_frame in action.before_frames:
-            current_frame = LabelFrame.get(self.id, prev_frame.frame_id)
-            diff = np.where(prev_frame.frame_array != current_frame.frame)
-            if len(diff[-1]) > 0:
-                feature = int(diff[-1][0])
-                break
-
-        # Restore edited label frames
-        for prev_frame in action.before_frames:
-            current_frame = LabelFrame.get(self.id, prev_frame.frame_id)
-            current_frame.frame = prev_frame.frame_array
-        # Restore edited label info
-        if action.before_labels is not None:
-            self.labels.cell_ids = action.before_labels.cell_ids
-            self.labels.cell_info = action.before_labels.cell_info
-
-        payload = {
-            'feature': feature,
-            # 'feature': action.feature,
-            # 'channel': action.channel,
-            'frames': [frame.frame_id for frame in action.frames],
-            'labels': action.labels_changed,
-        }
-
-        action.done = False
-        self.action = action.prev_action
-
-        db.session.commit()
-        logger.debug(
-            'Undo action %s project %s in %ss.',
-            action.action_id,
-            self.id,
-            timeit.default_timer() - start,
-        )
-        return payload
-
-    def redo(self):
-        """
-        Restore the project to after the next action.
-
-        Returns:
-            dict: payload to send to frontend
-        """
-        start = timeit.default_timer()
-        if self.action.next_action is None:
-            return
-        next_action = self.action.next_action
-
-        feature = self.feature
-        # Compute which feature changed
-        # TODO: database migration to store in Action table
-        for after_frame in next_action.after_frames:
-            current_frame = LabelFrame.get(self.id, after_frame.frame_id)
-            diff = np.where(after_frame.frame_array != current_frame.frame)
-            if len(diff[-1]) > 0:
-                feature = int(diff[-1][0])
-                break
-
-        # Restore edited label frames
-        for after_frame in next_action.after_frames:
-            current_frame = LabelFrame.get(self.id, after_frame.frame_id)
-            current_frame.frame = after_frame.frame_array
-        # Restore edited label info
-        if next_action.after_labels is not None:
-            self.labels.cell_ids = next_action.after_labels.cell_ids
-            self.labels.cell_info = next_action.after_labels.cell_info
-
-        payload = {
-            'feature': feature,
-            # 'feature': next_action.feature,
-            # 'channel': next_action.channel,
-            'frames': [frame.frame_id for frame in next_action.frames],
-            'labels': next_action.labels_changed,
-        }
-
-        self.action = self.action.next_action
-        next_action.done = True
-
-        db.session.commit()
-        logger.debug(
-            'Redo action %s project %s in %ss.',
-            next_action.action_id,
-            self.id,
-            timeit.default_timer() - start,
-        )
-        return payload
-
-    def get_max_label(self, feature):
-        """
-        Get the highest label in use in currently-viewed feature.
-        If feature is empty, returns 0 to prevent other functions from crashing.
-
-        Returns:
-            int: highest label in the current feature
-        """
-        # check this first, np.max of empty array will crash
-        if len(self.labels.cell_ids[feature]) == 0:
-            max_label = 0
-        # if any labels exist in feature, find the max label
-        else:
-            max_label = int(np.max(self.labels.cell_ids[feature]))
-        return max_label
-
-    def make_first_payload(self):
-        """
-        Creates the first payload to be sent to the front-end,
-        containing extra metadata about the Project.
-
-        Returns:
-            dict: payload with image data, label tracks, and project attributes
-        """
-        payload = {}
-
-        # Project attributes to initialize frontend variables
-        payload['frame'] = self.frame
-        payload['channel'] = self.channel
-        payload['feature'] = self.feature
-
-        payload['numFrames'] = self.num_frames
-        payload['numChannels'] = self.num_channels
-        payload['numFeatures'] = self.num_features
-
-        payload['width'] = self.width
-        payload['height'] = self.height
-
-        # # First frame edited by each action
-        # # Excludes the first action, which loads the project
-        # payload['actionFrames'] = [action.frames[0].frame_id
-        #                            for action in self.actions[1:] if action.done]
-
-        return payload
-
-    def get_raw_array(self, channel, frame):
-        """
-        Returns:
-            ndarray: numpy array of raw image data
-        """
-        raw_frame = RawFrame.get(self.id, frame)
-        array = raw_frame.frame[..., channel]
-        normalized = (array - np.min(array)) / (np.max(array) - np.min(array)) * 255
-        return normalized.astype(np.uint8)
-
-    def get_labeled_array(self, feature, frame):
-        """
-        Returns:
-            ndarray: numpy array of labels
-        """
-        label_frame = LabelFrame.get(self.id, frame)
-        return label_frame.frame[..., feature]
-
-    def add_channel(self, channel):
-        """
-        Adds a channel to an existing project.
-        """
-        new_raw_frames = []
-        for i, raw_frame in enumerate(self.raw_frames):
-            old_array = raw_frame.frame
-            new_array = np.append(old_array, channel[i], axis=-1)
-            new_raw_frames.append(RawFrame(i, new_array))
-        self.raw_frames = new_raw_frames
-        self.num_channels = self.num_channels + 1
-        db.session.commit()
-
-
-class Labels(db.Model):
-    """
-    Table definition that stores metadata about the labeling.
-    Cell_info stores a dictionary with frame information about each cell.
-    """
-
-    # pylint: disable=E1101
-    __tablename__ = 'labels'
-    project_id = db.Column(
-        db.Integer, db.ForeignKey('projects.id'), primary_key=True, nullable=False
-    )
-    # Label metadata
-    cell_ids = db.Column(db.PickleType(comparator=lambda *a: False))
-    cell_info = db.Column(db.PickleType(comparator=lambda *a: False))
-
-    def __init__(self):
-        self.cell_ids = {}
-        self.cell_info = {}
-
-    def update(self):
-        """
-        Update the label metadata by explicitly copying the PickleType
-        columns so the database knows to commit them.
-        """
-        # TODO: use Mutable mixin to avoid explicit copying
-        self.cell_ids = self.cell_ids.copy()
-        self.cell_info = self.cell_info.copy()
-
-    def finish(self):
-        """Set PickleType columns to null."""
-        self.cell_ids = None
-        self.cell_info = None
-
-
-class RawFrame(db.Model):
-    """
-    Table definition that stores the raw frames in a project.
-    """
-
-    # pylint: disable=E1101
-    __tablename__ = 'rawframes'
-    project_id = db.Column(
-        db.Integer, db.ForeignKey('projects.id'), primary_key=True, nullable=False
-    )
-    frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
-    frame = db.Column(Npz)
-
-    def __init__(self, frame_id, frame):
-        self.frame_id = frame_id
-        self.frame = frame
-
-    @staticmethod
-    def get(project_id, frame_id):
-        return (
-            db.session.query(RawFrame)
-            .filter_by(project_id=project_id, frame_id=frame_id)
-            .first()
-        )
-
-    def finish(self):
-        """
-        Finish the frame by setting its PickleType column to null.
-        """
-        self.frame = None
-
-
-class LabelFrame(db.Model):
-    """
-    Table definition for the label frames in our projects.
-    Allows us to update and finish each frame.
-    """
-
-    # pylint: disable=E1101
-    __tablename__ = 'labelframes'
-    project_id = db.Column(
-        db.Integer, db.ForeignKey('projects.id'), primary_key=True, nullable=False
-    )
-    frame_id = db.Column(db.Integer, primary_key=True, nullable=False)
-    frame = db.Column(MutableNdarray.as_mutable(Npz))
-
-    actions = association_proxy('frame_actions', 'action')
-
-    def __init__(self, frame_id, frame):
-        self.frame_id = frame_id
-        self.frame = frame
-
-    @staticmethod
-    def get(project_id, frame_id):
-        return (
-            db.session.query(LabelFrame)
-            .filter_by(project_id=project_id, frame_id=frame_id)
-            .first()
-        )
-
-    def finish(self):
-        """Finish a frame by setting its frame to null."""
-        self.frame = None
-
-
-class Action(db.Model):
-    """
-    Memento class in the memento pattern.
-    Record a Projects internal state, like label frames and label metadata before each action.
-    """
-
-    # pylint: disable=E1101
-    __tablename__ = 'actions'
-    project_id = db.Column(
-        db.Integer,
-        db.ForeignKey('projects.id'),
-        primary_key=True,
-        nullable=False,
-        autoincrement=False,
-    )
-    action_id = db.Column(db.Integer, primary_key=True, nullable=False)
-    action_time = db.Column(db.TIMESTAMP)  # Set when finishing an action
-    # Name of the action (e.g. "handle_draw")
-    action_name = db.Column(db.String(64))
-    # Action to jump to upon undo
-    prev_action_id = db.Column(db.Integer, db.ForeignKey('actions.action_id'))
-    prev_action = db.relationship(
-        'Action',
-        uselist=False,
-        post_update=True,
-        primaryjoin='and_(remote(Action.project_id)==Action.project_id,'
-        'remote(Action.action_id)==foreign(Action.prev_action_id))',
-    )
-    # Action to jump to upon redo
-    next_action_id = db.Column(db.Integer, db.ForeignKey('actions.action_id'))
-    next_action = db.relationship(
-        'Action',
-        uselist=False,
-        post_update=True,
-        primaryjoin='and_(remote(Action.project_id)==Action.project_id,'
-        'remote(Action.action_id)==foreign(Action.next_action_id))',
-    )
-    # Whether the action is currently in the Projects lineage
-    done = db.Column(db.Boolean, default=True)
-    # Records label info after an action (whether or not its changed)
-    # Pickles an ORM row from the Labels table
-    labels = db.Column(db.PickleType)
-
-    # feature = db.Column(db.Integer, nullable=False)
-    # channel = db.Column(db.Integer, nullable=False)
-
-    frames = association_proxy('action_frames', 'frame')
-
-    def __init__(self, project, action_name=''):
-        self.project = project
-        self.prev_action = project.action
-        self.action_id = project.num_actions
-        self.action_name = action_name
-
-    @property
-    def y_changed(self):
-        return len(self.frames) > 0
-
-    @property
-    def labels_changed(self):
-        return self.labels is not None
-
-    @property
-    def before_frames(self):
-        """
-        Returns a list of FrameMementos containing
-        the before version of frames edited by this action.
-        TODO: profile this search
-        """
-        # Find the most last version of each edited frame before this action
-        before_frames = []
-        for frame in self.frames:
-            # Actions in the frame's lineage before this action
-            valid_actions = filter(
-                lambda action: action.done and action.action_id < self.action_id,
-                frame.actions,
-            )
-            # Action containing the most recent version
-            before_action = max(valid_actions, key=lambda action: action.action_id)
-            before_frame = next(
-                filter(
-                    lambda bf, f=frame: bf.frame_id == f.frame_id,
-                    before_action.action_frames,
-                )
-            )
-            before_frames.append(before_frame)
-        return before_frames
-
-    @property
-    def after_frames(self):
-        """Returns a list of FramesMementos containing
-        the after version of frames edited by this action."""
-        return self.action_frames
-
-    @property
-    def before_labels(self):
-        if self.prev_action is None:
-            return None
-        return self.prev_action.labels
-
-    @property
-    def after_labels(self):
-        return self.labels
-
-
-class FrameMemento(db.Model):
-    """
-    Table to store label frames in a Memento.
-    """
-
-    # pylint: disable=E1101
-    __tablename__ = 'framemementos'
-    project_id = db.Column(db.Integer)
-    action_id = db.Column(db.Integer)
-    frame_id = db.Column(db.Integer)
-    frame_array = db.Column(Npz)
-
-    action = db.relationship('Action', backref='action_frames')
-    frame = db.relationship('LabelFrame', backref='frame_actions')
-
-    __table_args__ = (
-        PrimaryKeyConstraint('project_id', 'action_id', 'frame_id'),
-        ForeignKeyConstraint(
-            ['project_id', 'action_id'], ['actions.project_id', 'actions.action_id']
-        ),
-        ForeignKeyConstraint(
-            ['project_id', 'frame_id'],
-            ['labelframes.project_id', 'labelframes.frame_id'],
-        ),
-    )
-
-    def __init__(self, action, frame):
-        self.action = action
-        self.frame = frame
-        self.frame_array = frame.frame.copy()
-
-
-def consecutive(data, stepsize=1):
-    return np.split(data, np.where(np.diff(data) != stepsize)[0] + 1)
-
-
-def encode(x):
-    return base64.encodebytes(x.read()).decode()
+        return project
