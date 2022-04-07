@@ -10,7 +10,7 @@ import Load from './Load';
 import NavBar from './Navbar';
 import ProjectContext from './ProjectContext';
 import ReviewContext from './ReviewContext';
-import createLoadSpotsMachine from './service/loadSpotsMachine';
+import createLoadMachine from './service/loadMachine';
 import createProjectMachine from './service/projectMachine';
 import createReviewMachine from './service/reviewMachine';
 
@@ -65,7 +65,7 @@ function getProjectId() {
 
 function LabelProject() {
   const projectId = getProjectId();
-  const [loadMachine] = useState(createLoadSpotsMachine(projectId));
+  const [loadMachine] = useState(createLoadMachine(projectId));
   const [load] = useMachine(loadMachine);
   const [project] = useState(interpret(createProjectMachine(projectId)).start());
   window.dcl = project;

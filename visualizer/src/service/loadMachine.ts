@@ -4,9 +4,6 @@ import * as zip from '@zip.js/zip.js';
 import { assign, createMachine } from 'xstate';
 import { loadOmeTiff, TiffPixelSource } from '@hms-dbmi/viv';
 
-// @ts-ignore
-window.loadOmeTiff = loadOmeTiff;
-
 type UnboxPromise<T extends Promise<any>> = T extends Promise<infer U> ? U : never;
 type OmeTiff = UnboxPromise<ReturnType<typeof loadOmeTiff>>;
 type Spots = number[][];
@@ -154,7 +151,7 @@ const createLoadMachine = (projectId: string) =>
         labels: null,
         spots: null,
       },
-      tsTypes: {} as import('./loadSpotsMachine.typegen').Typegen0,
+      tsTypes: {} as import('./loadMachine.typegen').Typegen0,
       schema: {
         context: {} as Context,
         services: {} as {
