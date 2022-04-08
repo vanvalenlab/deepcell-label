@@ -68,7 +68,6 @@ class Loader:
             # Write cells in segmentation
             cells = LabelInfoMaker(y).cell_info
             self.write_cells(cells)
-
         if spots is not None:
             self.write_spots(spots)
 
@@ -79,7 +78,6 @@ class Loader:
             tif.save(np.moveaxis(X, -1, 0), metadata={'axes': 'CZYX'})
         images.seek(0)
         self.zip.writestr('X.ome.tiff', images.read())
-        print('Wrote images')
 
     def write_segmentation(self, y):
         """Writes segmentation to output zip."""
@@ -88,7 +86,6 @@ class Loader:
             tif.save(np.moveaxis(y, -1, 0), metadata={'axes': 'CZYX'})
         segmentation.seek(0)
         self.zip.writestr('y.ome.tiff', segmentation.read())
-        print('Wrote segmentation')
 
     def write_spots(self, spots):
         """Writes spots to output zip."""
@@ -96,12 +93,10 @@ class Loader:
         buffer.write(spots)
         buffer.seek(0)
         self.zip.writestr('spots.csv', buffer.read())
-        print('Wrote spots')
 
     def write_cells(self, cells):
         """Writes cells.json to output zip."""
         self.zip.writestr('cells.json', json.dumps(cells))
-        print('Wrote cells')
 
     def load_images(self):
         """Extracts raw images from input image file."""
@@ -182,8 +177,8 @@ def load_zip_csv(z):
     Returns the binary data for the first CSV file in the zip file, if it exists.
     """
     for name in z.namelist():
-        with z.open(name) as f:
-            if 'CSV text' in magic.from_buffer(f.read(2048)):
+        if name.endswith('.csv'):
+            with z.open(name) as f:
                 f.seek(0)
                 return f.read()
 
