@@ -212,7 +212,14 @@ def load_tiff(f):
     """Loads image data from a tiff file"""
     if 'TIFF image data' in magic.from_buffer(f.read(2048)):
         f.seek(0)
-        return TiffFile(f).asarray()
+        X = TiffFile(io.BytesIO(f.read())).asarray()
+        if X.ndim == 2:
+            # Add channel and frame axes
+            X = X[np.newaxis, ..., np.newaxis]
+        if X.ndim == 3:
+            # TODO: use dimension order to know whether to add frame or channel axis
+            X = X[np.newaxis, ...]
+        return X
 
 
 def load_png(f):
