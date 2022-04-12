@@ -48,11 +48,8 @@ class Loader:
         y = self.load_segmentation()
         spots = self.load_spots()
 
-        # Write standardized data to output zip
+        # Write standardized files to zip
         if X is not None:
-            # Rescale data before casting to uint8
-            X = (X - np.min(X)) / (np.max(X) - np.min(X)) * 255
-            X = X.astype(np.uint8)
             self.write_images(X)
         else:
             raise ValueError('No images found in files')
@@ -64,7 +61,7 @@ class Loader:
                     % (y.shape, X.shape)
                 )
             # TODO: check if float vs int matters
-            self.write_segmentation(y.astype(np.uint32))
+            self.write_segmentation(y.astype(np.int32))
             # Write cells in segmentation
             cells = LabelInfoMaker(y).cell_info
             self.write_cells(cells)
@@ -73,17 +70,25 @@ class Loader:
 
     def write_images(self, X):
         """Writes raw images to output zip."""
+        # Rescale data
+        max, min = np.max(X), np.min(X)
+        X = (X - min) / (max - min if max - min > 0 else 1) * 255
+        X = X.astype(np.uint8)
+        # Move channel axis
+        X = np.moveaxis(X, -1, 1)
         images = io.BytesIO()
         with TiffWriter(images, ome=True) as tif:
-            tif.save(np.moveaxis(X, -1, 0), metadata={'axes': 'CZYX'})
+            tif.save(X, metadata={'axes': 'ZCYX'})
         images.seek(0)
         self.zip.writestr('X.ome.tiff', images.read())
 
     def write_segmentation(self, y):
         """Writes segmentation to output zip."""
+        # Move channel axis
+        y = np.moveaxis(y, -1, 1)
         segmentation = io.BytesIO()
         with TiffWriter(segmentation, ome=True) as tif:
-            tif.save(np.moveaxis(y, -1, 0), metadata={'axes': 'CZYX'})
+            tif.save(y, metadata={'axes': 'ZCYX'})
         segmentation.seek(0)
         self.zip.writestr('y.ome.tiff', segmentation.read())
 
@@ -207,13 +212,15 @@ def load_tiff(f):
     """Loads image data from a tiff file"""
     if 'TIFF image data' in magic.from_buffer(f.read(2048)):
         f.seek(0)
-        X = TiffFile(io.BytesIO(f.read())).asarray()
+        X = TiffFile(io.BytesIO(f.read())).asarray(squeeze=False)
         if X.ndim == 2:
             # Add channel and frame axes
             X = X[np.newaxis, ..., np.newaxis]
         if X.ndim == 3:
             # TODO: use dimension order to know whether to add frame or channel axis
             X = X[np.newaxis, ...]
+        if X.ndim > 4:
+            raise ValueError('Tiff file has more than 4 dimensions')
         return X
 
 
