@@ -18,16 +18,23 @@ from deepcell_label.labelmaker import LabelInfoMaker
 
 class Loader:
     """
-    Loads data into a DeepCell Label project file
+    Loads and writes data into a DeepCell Label project zip.
     """
 
     def __init__(self, image_file, label_file=None):
+        self.X = None
+        self.y = None
+        self.cells = None
+        self.spots = None
+
         self._image_file = image_file
         self._label_file = image_file if label_file is None else label_file
+
         with tempfile.TemporaryFile() as project_file:
             with zipfile.ZipFile(project_file, 'w', zipfile.ZIP_DEFLATED) as zip:
                 self.zip = zip
                 self.load()
+                self.write()
             project_file.seek(0)
             self.data = project_file.read()
 
@@ -42,98 +49,140 @@ class Loader:
         return self._label_file
 
     def load(self):
-        """Extracts data from input files and writes standardized data to output zip."""
-        # Load data from input files
-        X = self.load_images()
-        y = self.load_segmentation()
-        spots = self.load_spots()
+        """Loads data from input files."""
+        self.X = load_images(self.image_file)
+        self.y = load_segmentation(self.label_file)
+        self.spots = load_spots(self.label_file)
 
-        # Write standardized files to zip
+    def write(self):
+        """Writes loaded data to zip."""
+        self.write_images()
+        self.write_segmentation()
+        self.write_cells()
+        self.write_spots()
+
+    def write_images(self):
+        """
+        Writes raw images to X.ome.tiff in the output zip.
+
+        Raises:
+            ValueError: no image data has been loaded to write
+        """
+        X = self.X
         if X is not None:
-            self.write_images(X)
+            # Rescale data
+            max, min = np.max(X), np.min(X)
+            X = (X - min) / (max - min if max - min > 0 else 1) * 255
+            X = X.astype(np.uint8)
+            # Move channel axis
+            X = np.moveaxis(X, -1, 1)
+            images = io.BytesIO()
+            with TiffWriter(images, ome=True) as tif:
+                tif.save(X, metadata={'axes': 'ZCYX'})
+            images.seek(0)
+            self.zip.writestr('X.ome.tiff', images.read())
         else:
             raise ValueError('No images found in files')
 
+    def write_segmentation(self):
+        """Writes segmentation to y.ome.tiff in the output zip."""
+        y = self.y
         if y is not None:
-            if y.shape[:-1] != X.shape[:-1]:
+            if y.shape[:-1] != self.X.shape[:-1]:
                 raise ValueError(
                     'Segmentation shape %s is incompatible with image shape %s'
-                    % (y.shape, X.shape)
+                    % (y.shape, self.X.shape)
                 )
             # TODO: check if float vs int matters
-            self.write_segmentation(y.astype(np.int32))
-            # Write cells in segmentation
-            cells = LabelInfoMaker(y).cell_info
-            self.write_cells(cells)
-        if spots is not None:
-            self.write_spots(spots)
+            y = y.astype(np.int32)
+            # Move channel axis
+            y = np.moveaxis(y, -1, 1)
 
-    def write_images(self, X):
-        """Writes raw images to output zip."""
-        # Rescale data
-        max, min = np.max(X), np.min(X)
-        X = (X - min) / (max - min if max - min > 0 else 1) * 255
-        X = X.astype(np.uint8)
-        # Move channel axis
-        X = np.moveaxis(X, -1, 1)
-        images = io.BytesIO()
-        with TiffWriter(images, ome=True) as tif:
-            tif.save(X, metadata={'axes': 'ZCYX'})
-        images.seek(0)
-        self.zip.writestr('X.ome.tiff', images.read())
+            segmentation = io.BytesIO()
+            with TiffWriter(segmentation, ome=True) as tif:
+                tif.save(y, metadata={'axes': 'ZCYX'})
+            segmentation.seek(0)
+            self.zip.writestr('y.ome.tiff', segmentation.read())
 
-    def write_segmentation(self, y):
-        """Writes segmentation to output zip."""
-        # Move channel axis
-        y = np.moveaxis(y, -1, 1)
-        segmentation = io.BytesIO()
-        with TiffWriter(segmentation, ome=True) as tif:
-            tif.save(y, metadata={'axes': 'ZCYX'})
-        segmentation.seek(0)
-        self.zip.writestr('y.ome.tiff', segmentation.read())
+    def write_spots(self):
+        """Writes spots to spots.csv in the output zip."""
+        if self.spots is not None:
+            buffer = io.BytesIO()
+            buffer.write(self.spots)
+            buffer.seek(0)
+            self.zip.writestr('spots.csv', buffer.read())
 
-    def write_spots(self, spots):
-        """Writes spots to output zip."""
-        buffer = io.BytesIO()
-        buffer.write(spots)
-        buffer.seek(0)
-        self.zip.writestr('spots.csv', buffer.read())
+    def write_cells(self):
+        """Writes cells to cells.json in the output zip."""
+        if self.y is not None:
+            self.cells = LabelInfoMaker(self.y).cell_info
+            self.zip.writestr('cells.json', json.dumps(self.cells))
 
-    def write_cells(self, cells):
-        """Writes cells.json to output zip."""
-        self.zip.writestr('cells.json', json.dumps(cells))
 
-    def load_images(self):
-        """Extracts raw images from input image file."""
-        X = load_zip(self.image_file)
-        if X is None:
-            X = load_npy(self.image_file)
-        if X is None:
-            X = load_tiff(self.image_file)
-        if X is None:
-            X = load_png(self.image_file)
-        return X
+def load_images(image_file):
+    """
+    Loads image data from image file.
 
-    def load_segmentation(self):
-        """Extracts segmentation from input label file."""
-        if zipfile.is_zipfile(self.label_file):
-            label_zip = zipfile.ZipFile(self.label_file, 'r')
-            y = load_zip_numpy(label_zip, name='y')
-            if y is None:
-                y = load_zip_tiffs(label_zip)
-            return y
+    Args:
+        image_file: zip, npy, tiff, or png file object containing image data
 
-    def load_spots(self):
-        """Extracts spots from input label file."""
-        if zipfile.is_zipfile(self.label_file):
-            label_zip = zipfile.ZipFile(self.label_file, 'r')
-            return load_zip_csv(label_zip)
+    Returns:
+        numpy array or None if no image data found
+    """
+    X = load_zip(image_file)
+    if X is None:
+        X = load_npy(image_file)
+    if X is None:
+        X = load_tiff(image_file)
+    if X is None:
+        X = load_png(image_file)
+    return X
+
+
+def load_segmentation(label_file):
+    """
+    Loads segmentation array from label file.
+
+    Args:
+        label_file: ZipFile with npy or tiff containing segmentation data
+
+    Returns:
+        numpy array or None if no segmentation data found
+    """
+    if zipfile.is_zipfile(label_file):
+        label_zip = zipfile.ZipFile(label_file, 'r')
+        y = load_zip_numpy(label_zip, name='y')
+        if y is None:
+            y = load_zip_tiffs(label_zip)
+        return y
+
+
+def load_spots(label_file):
+    """
+    Load spots data from label file.
+
+    Args:
+        label_file: ZipFile with csv file containing spots data
+
+    Returns:
+        bytes read from csv in zip or None if no csv in zip
+    """
+    if zipfile.is_zipfile(label_file):
+        label_zip = zipfile.ZipFile(label_file, 'r')
+        return load_zip_csv(label_zip)
 
 
 def load_zip_numpy(zf, name='X'):
     """
-    Loads a numpy array from the zip file, if it exists.
-    If loading from an NPZ with multiple arrays, use name parameter to pick one.
+    Loads a numpy array from the zip file
+    If loading an NPZ with multiple arrays, name selects which one to load
+
+    Args:
+        zf: a ZipFile with a npy or npz file
+        name (str): name of the array to load
+
+    Returns:
+        numpy array or None if no png in zip
     """
     for filename in zf.namelist():
         if filename == f'{name}.npy':
@@ -147,7 +196,13 @@ def load_zip_numpy(zf, name='X'):
 
 def load_zip_tiffs(zf):
     """
-    Returns an array with all tiff image data in the zip file, if any.
+    Returns an array with all tiff image data in the zip file
+
+    Args:
+        zf: a ZipFile containing tiffs to load
+
+    Returns:
+        numpy array or None if no png in zip
     """
     tiffs = []
     for name in zf.namelist():
@@ -167,7 +222,13 @@ def load_zip_tiffs(zf):
 
 def load_zip_png(zf):
     """
-    Returns the image data array for the first PNG image in the zip file, if it exists.
+    Returns the image data array for the first PNG image in the zip file
+
+    Args:
+        zf: a ZipFile with a PNG
+
+    Returns:
+        numpy array or None if no png in zip
     """
     for name in zf.namelist():
         with zf.open(name) as f:
@@ -180,6 +241,12 @@ def load_zip_png(zf):
 def load_zip_csv(z):
     """
     Returns the binary data for the first CSV file in the zip file, if it exists.
+
+    Args:
+        f: a ZipFile with a CSV
+
+    Returns:
+        bytes or None if not a csv file
     """
     for name in z.namelist():
         if name.endswith('.csv'):
@@ -189,7 +256,15 @@ def load_zip_csv(z):
 
 
 def load_zip(f):
-    """Loads image data from a zip file by loading from the npz, tiff, or png files in the archive."""
+    """
+    Loads image data from a zip file by loading from the npz, tiff, or png files in the archive
+
+    Args:
+        f: file object
+
+    Returns:
+        numpy array or None if not a zip file
+    """
     if zipfile.is_zipfile(f):
         zf = zipfile.ZipFile(f, 'r')
         X = load_zip_numpy(zf)
@@ -201,7 +276,15 @@ def load_zip(f):
 
 
 def load_npy(f):
-    """Loads image data from a npy file"""
+    """
+    Loads image data from a npy file
+
+    Args:
+        f: file object
+
+    Returns:
+        numpy array or None if not a npy file
+    """
     if 'NumPy data file' in magic.from_buffer(f.read(2048)):
         f.seek(0)
         npy = np.load(f)
@@ -209,7 +292,18 @@ def load_npy(f):
 
 
 def load_tiff(f):
-    """Loads image data from a tiff file"""
+    """
+    Loads image data from a tiff file
+
+    Args:
+        f: file object
+
+    Returns:
+        numpy array or None if not a tiff file
+
+    Raises:
+        ValueError: loaded image data is more than 4 dimensional
+    """
     if 'TIFF image data' in magic.from_buffer(f.read(2048)):
         f.seek(0)
         X = TiffFile(io.BytesIO(f.read())).asarray(squeeze=False)
@@ -225,7 +319,15 @@ def load_tiff(f):
 
 
 def load_png(f):
-    """Loads image data from a png file"""
+    """
+    Loads image data from a png file
+
+    Args:
+        f: file object
+
+    Returns:
+        numpy array or None if not a png file
+    """
     if 'PNG image data' in magic.from_buffer(f.read(2048)):
         f.seek(0)
         image = Image.open(f, formats=['PNG'])
