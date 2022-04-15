@@ -21,14 +21,14 @@ class Loader:
     Loads and writes data into a DeepCell Label project zip.
     """
 
-    def __init__(self, image_file, label_file=None):
+    def __init__(self, image_file=None, label_file=None):
         self.X = None
         self.y = None
         self.cells = None
         self.spots = None
 
-        self._image_file = image_file
-        self._label_file = image_file if label_file is None else label_file
+        self._image_file = io.BytesIO() if image_file is None else image_file
+        self._label_file = self._image_file if label_file is None else label_file
 
         with tempfile.TemporaryFile() as project_file:
             with zipfile.ZipFile(project_file, 'w', zipfile.ZIP_DEFLATED) as zip:
@@ -53,6 +53,9 @@ class Loader:
         self.X = load_images(self.image_file)
         self.y = load_segmentation(self.label_file)
         self.spots = load_spots(self.label_file)
+
+        if self.y is not None:
+            self.cells = LabelInfoMaker(self.y).cell_info
 
     def write(self):
         """Writes loaded data to zip."""
@@ -81,8 +84,8 @@ class Loader:
                 tif.save(X, metadata={'axes': 'ZCYX'})
             images.seek(0)
             self.zip.writestr('X.ome.tiff', images.read())
-        else:
-            raise ValueError('No images found in files')
+        # else:
+        #     raise ValueError('No images found in files')
 
     def write_segmentation(self):
         """Writes segmentation to y.ome.tiff in the output zip."""
@@ -114,8 +117,7 @@ class Loader:
 
     def write_cells(self):
         """Writes cells to cells.json in the output zip."""
-        if self.y is not None:
-            self.cells = LabelInfoMaker(self.y).cell_info
+        if self.cells is not None:
             self.zip.writestr('cells.json', json.dumps(self.cells))
 
 

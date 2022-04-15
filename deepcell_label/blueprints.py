@@ -88,7 +88,7 @@ def create_project():
             label_file.write(requests.get(labels_url).content)
             label_file.seek(0)
         loader = Loader(image_file, None if labels_url is None else label_file)
-        project = Project.create(loader.data)
+        project = Project.create(loader)
     current_app.logger.info(
         'Created project %s from %s in %s s.',
         project.project,
@@ -107,7 +107,7 @@ def create_project_from_dropped_file():
     input_file = request.files.get('file')
     # axes = request.form['axes'] if 'axes' in request.form else DCL_AXES
     loader = Loader(input_file)
-    project = Project.create(loader.data)
+    project = Project.create(loader)
     current_app.logger.info(
         'Created project %s from %s in %s s.',
         project.project,

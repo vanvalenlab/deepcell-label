@@ -1,7 +1,6 @@
 """SQL Alchemy database models."""
 from __future__ import absolute_import, division, print_function
 
-import io
 import logging
 import timeit
 from secrets import token_urlsafe
@@ -25,13 +24,11 @@ class Project(db.Model):
     createdAt = db.Column(db.TIMESTAMP, nullable=False, default=db.func.now())
     bucket = db.Column(db.Text, nullable=False)
     key = db.Column(db.Text, nullable=False)
-    parent = db.Column(db.Integer, db.ForeignKey('projects.id'))
 
-    def __init__(self, data):
+    def __init__(self, loader):
         """
         Args:
-            data (BytesIO): zip file with loaded project data
-            parent (string): public token for existing project
+            loader: deepcell_label.loaders.Loader object
         """
         start = timeit.default_timer()
 
@@ -50,7 +47,7 @@ class Project(db.Model):
         )
         self.bucket = 'spots-visualizer'
         self.key = f'{self.project}.zip'
-        s3.upload_fileobj(io.BytesIO(data), self.bucket, self.key)
+        s3.upload_fileobj(loader.data, self.bucket, self.key)
 
         logger.debug(
             'Initialized project %s and uploaded to %s in %ss.',

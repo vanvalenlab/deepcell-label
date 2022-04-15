@@ -2,7 +2,6 @@
 
 import os
 
-import numpy as np
 import pytest
 from flask_sqlalchemy import SQLAlchemy
 
@@ -18,23 +17,45 @@ TEST_DATABASE_URI = 'sqlite:///{}'.format(TESTDB_PATH)
 
 # TODO: Could this become a fixture?
 class DummyLoader(Loader):
-    def __init__(self, raw=None, labels=None, cell_info=None, path='test.npz'):
+    def __init__(self, X=None, y=None, cells=None, spots=None):
+        self._X = X
+        self._y = y
+        self._cells = cells
+        self._spots = spots
         super().__init__()
 
-        if raw is None:
-            raw = np.zeros((1, 1, 1, 1))
+    # Prevent changing mocked data
+    @property
+    def X(self):
+        return self._X
 
-        if labels is None:
-            labels = np.zeros(raw.shape)
-        elif labels.shape != raw.shape:
-            raw = np.zeros(labels.shape)
+    @X.setter
+    def X(self, value):
+        pass
 
-        self.path = path
-        self.raw_array = raw
-        self.label_array = labels
-        self.add_semantic_labels()  # computes cell_ids
-        if cell_info is not None:
-            self.cell_info = cell_info
+    @property
+    def y(self):
+        return self._y
+
+    @y.setter
+    def y(self, value):
+        pass
+
+    @property
+    def cells(self):
+        return self._cells
+
+    @cells.setter
+    def cells(self, value):
+        pass
+
+    @property
+    def spots(self):
+        return self._spots
+
+    @spots.setter
+    def spots(self, value):
+        pass
 
 
 @pytest.fixture(scope='session')
