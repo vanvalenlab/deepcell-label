@@ -13,11 +13,6 @@ def enable_transactional_tests(db_session):
     pass
 
 
-@pytest.fixture(autouse=True)
-def mock_aws(mocker):
-    mocker.patch('deepcell_label.models.boto3.client')
-
-
 def test_project_init(mocker):
     """
     Test constructor for Project table.

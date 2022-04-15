@@ -58,6 +58,11 @@ class DummyLoader(Loader):
         pass
 
 
+@pytest.fixture(autouse=True)
+def mock_aws(mocker):
+    mocker.patch('deepcell_label.models.boto3.client')
+
+
 @pytest.fixture(scope='session')
 def app():
     """Session-wide test `Flask` application."""

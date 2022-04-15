@@ -69,7 +69,7 @@ def create_project():
     Create a new Project from URL.
     """
     start = timeit.default_timer()
-    images_url = request.form['images']
+    images_url = request.form['images'] if 'images' in request.form else None
     labels_url = request.form['labels'] if 'labels' in request.form else None
     # dimension_order = (
     #     request.form['dimension_order']
@@ -82,12 +82,13 @@ def create_project():
     #     else None
     # )
     with tempfile.TemporaryFile() as image_file, tempfile.TemporaryFile() as label_file:
-        image_file.write(requests.get(images_url).content)
-        image_file.seek(0)
+        if images_url is not None:
+            image_file.write(requests.get(images_url).content)
+            image_file.seek(0)
         if labels_url is not None:
             label_file.write(requests.get(labels_url).content)
             label_file.seek(0)
-        loader = Loader(image_file, None if labels_url is None else label_file)
+        loader = Loader(image_file, label_file)
         project = Project.create(loader)
     current_app.logger.info(
         'Created project %s from %s in %s s.',
