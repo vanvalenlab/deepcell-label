@@ -27,8 +27,8 @@ class Loader:
         self.cells = None
         self.spots = None
 
-        self._image_file = io.BytesIO() if image_file is None else image_file
-        self._label_file = self._image_file if label_file is None else label_file
+        self.image_file = io.BytesIO() if image_file is None else image_file
+        self.label_file = self.image_file if label_file is None else label_file
 
         with tempfile.TemporaryFile() as project_file:
             with zipfile.ZipFile(project_file, 'w', zipfile.ZIP_DEFLATED) as zip:
@@ -37,16 +37,6 @@ class Loader:
                 self.write()
             project_file.seek(0)
             self.data = project_file.read()
-
-    @property
-    def image_file(self):
-        self._image_file.seek(0)
-        return self._image_file
-
-    @property
-    def label_file(self):
-        self._label_file.seek(0)
-        return self._label_file
 
     def load(self):
         """Loads data from input files."""
@@ -141,37 +131,39 @@ def load_images(image_file):
     return X
 
 
-def load_segmentation(label_file):
+def load_segmentation(f):
     """
     Loads segmentation array from label file.
 
     Args:
-        label_file: ZipFile with npy or tiff containing segmentation data
+        label_file: file with zipped npy or tiff containing segmentation data
 
     Returns:
         numpy array or None if no segmentation data found
     """
-    if zipfile.is_zipfile(label_file):
-        label_zip = zipfile.ZipFile(label_file, 'r')
-        y = load_zip_numpy(label_zip, name='y')
+    f.seek(0)
+    if zipfile.is_zipfile(f):
+        zf = zipfile.ZipFile(f, 'r')
+        y = load_zip_numpy(zf, name='y')
         if y is None:
-            y = load_zip_tiffs(label_zip)
+            y = load_zip_tiffs(zf)
         return y
 
 
-def load_spots(label_file):
+def load_spots(f):
     """
     Load spots data from label file.
 
     Args:
-        label_file: ZipFile with csv file containing spots data
+        zf: file with zipped csv containing spots data
 
     Returns:
         bytes read from csv in zip or None if no csv in zip
     """
-    if zipfile.is_zipfile(label_file):
-        label_zip = zipfile.ZipFile(label_file, 'r')
-        return load_zip_csv(label_zip)
+    f.seek(0)
+    if zipfile.is_zipfile(f):
+        zf = zipfile.ZipFile(f, 'r')
+        return load_zip_csv(zf)
 
 
 def load_zip_numpy(zf, name='X'):
@@ -267,6 +259,7 @@ def load_zip(f):
     Returns:
         numpy array or None if not a zip file
     """
+    f.seek(0)
     if zipfile.is_zipfile(f):
         zf = zipfile.ZipFile(f, 'r')
         X = load_zip_numpy(zf)
@@ -287,6 +280,7 @@ def load_npy(f):
     Returns:
         numpy array or None if not a npy file
     """
+    f.seek(0)
     if 'NumPy data file' in magic.from_buffer(f.read(2048)):
         f.seek(0)
         npy = np.load(f)
@@ -306,6 +300,7 @@ def load_tiff(f):
     Raises:
         ValueError: loaded image data is more than 4 dimensional
     """
+    f.seek(0)
     if 'TIFF image data' in magic.from_buffer(f.read(2048)):
         f.seek(0)
         X = TiffFile(io.BytesIO(f.read())).asarray(squeeze=False)
@@ -330,6 +325,7 @@ def load_png(f):
     Returns:
         numpy array or None if not a png file
     """
+    f.seek(0)
     if 'PNG image data' in magic.from_buffer(f.read(2048)):
         f.seek(0)
         image = Image.open(f, formats=['PNG'])
