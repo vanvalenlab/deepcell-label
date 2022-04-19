@@ -3,10 +3,12 @@ import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
 import {
   useAlphaKernelCanvas,
+  useArrays,
   useCanvas,
   useDrawCanvas,
-  useFeature,
+  useImage,
   useLabeled,
+  useLabels,
   useSelect,
 } from '../../ProjectContext';
 
@@ -18,16 +20,21 @@ export const LabeledCanvas = ({ setCanvases }) => {
   const height = useSelector(canvas, (state) => state.context.height);
 
   const labeled = useLabeled();
-  const featureIndex = useSelector(labeled, (state) => state.context.feature);
+  const feature = useSelector(labeled, (state) => state.context.feature);
   const highlight = useSelector(labeled, (state) => state.context.highlight);
   const opacity = useSelector(labeled, (state) => state.context.opacity);
 
-  const feature = useFeature(featureIndex);
-  const colormap = useSelector(feature, (state) => state.context.colormap);
-  let labeledArray = useSelector(feature, (state) => state.context.labeledArray);
-  if (!labeledArray) {
-    labeledArray = new Array(height).fill(new Array(width).fill(0));
-  }
+  const labels = useLabels();
+  const colormap = useSelector(labels, (state) => state.context.colormap);
+
+  const image = useImage();
+  const frame = useSelector(image, (state) => state.context.frame);
+
+  const arrays = useArrays();
+  const labeledArray = useSelector(
+    arrays,
+    (state) => state.context.labeledArrays && state.context.labeledArrays[feature][frame]
+  );
 
   const select = useSelect();
   const foreground = useSelector(select, (state) => state.context.foreground);
@@ -64,14 +71,16 @@ export const LabeledCanvas = ({ setCanvases }) => {
   }, [width, height, kernelCanvas]);
 
   useEffect(() => {
-    // Compute the label image with the kernel
-    kernelRef.current(labeledArray, colormap, foreground, highlight, highlightColor, opacity);
-    // Draw the label image on a separate canvas (needed to reuse webgl output)
-    const drawCtx = drawCanvas.getContext('2d');
-    drawCtx.clearRect(0, 0, width, height);
-    drawCtx.drawImage(kernelCanvas, 0, 0);
-    // Rerender the parent canvas with the kernel output
-    setCanvases((canvases) => ({ ...canvases, labeled: drawCanvas }));
+    if (labeledArray) {
+      // Compute the label image with the kernel
+      kernelRef.current(labeledArray, colormap, foreground, highlight, highlightColor, opacity);
+      // Draw the label image on a separate canvas (needed to reuse webgl output)
+      const drawCtx = drawCanvas.getContext('2d');
+      drawCtx.clearRect(0, 0, width, height);
+      drawCtx.drawImage(kernelCanvas, 0, 0);
+      // Rerender the parent canvas with the kernel output
+      setCanvases((canvases) => ({ ...canvases, labeled: drawCanvas }));
+    }
   }, [
     labeledArray,
     colormap,

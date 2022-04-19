@@ -7,8 +7,7 @@ import LayerController from './LayerController';
 
 function RGBControls() {
   const raw = useRaw();
-  const colorMode = useSelector(raw, (state) => state.context.colorMode);
-  const layers = useSelector(colorMode, (state) => state.context.layers);
+  const layers = useSelector(raw, (state) => state.context.layers);
 
   return (
     <>
@@ -18,7 +17,7 @@ function RGBControls() {
         </Grid>
       ))}
       <Button
-        onClick={() => colorMode.send('ADD_LAYER')}
+        onClick={() => raw.send('ADD_LAYER')}
         fullWidth
         variant='outlined'
         sx={{ borderStyle: 'dashed' }}

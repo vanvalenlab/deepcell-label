@@ -94,6 +94,7 @@ const createCanvasMachine = ({ eventBuses }) =>
         height: 512,
         availableWidth: 512,
         availableHeight: 512,
+        padding: 5,
         scale: 1, // how much the canvas is scaled to fill the available space
         zoom: 1, // how much the image is scaled within the canvas
         // position of canvas within image
@@ -112,16 +113,18 @@ const createCanvasMachine = ({ eventBuses }) =>
       },
       invoke: [
         { id: 'eventBus', src: fromEventBus('canvas', () => eventBuses.canvas) },
-        { src: fromEventBus('canvas', () => eventBuses.labeled) },
+        { src: fromEventBus('canvas', () => eventBuses.arrays) },
+        { src: fromEventBus('canvas', () => eventBuses.load) },
         { src: 'listenForMouseUp' },
         { src: 'listenForZoomHotkeys' },
         { src: 'listenForSpace' },
       ],
       on: {
+        DIMENSIONS: { actions: ['setDimensions', 'resize'] },
         wheel: { actions: 'zoom' },
         ZOOM_IN: { actions: 'zoomIn' },
         ZOOM_OUT: { actions: 'zoomOut' },
-        DIMENSIONS: { actions: ['setSpace', 'resize'] },
+        AVAILABLE_SPACE: { actions: ['setSpace', 'resize'] },
         SAVE: {
           actions: respond((context) => ({
             type: 'RESTORE',
@@ -140,7 +143,6 @@ const createCanvasMachine = ({ eventBuses }) =>
           cond: 'newHovering',
           actions: ['setHovering', 'sendToEventBus'],
         },
-        PROJECT: { actions: ['setDimensions', 'resize'] },
         'keydown.Space': '.grab',
         'keyup.Space': '.interactive',
       },
@@ -195,10 +197,10 @@ const createCanvasMachine = ({ eventBuses }) =>
         panOnDrag: ({ panOnDrag }) => panOnDrag,
       },
       actions: {
-        setDimensions: assign((context, event) => ({
-          height: event.height,
-          width: event.width,
-        })),
+        setDimensions: assign({
+          width: (context, event) => event.width,
+          height: (context, event) => event.height,
+        }),
         updateMove: assign({
           dx: ({ dx }, event) => dx + event.movementX,
           dy: ({ dy }, event) => dy + event.movementY,

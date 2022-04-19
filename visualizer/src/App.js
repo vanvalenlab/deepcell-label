@@ -1,14 +1,18 @@
 import { Box, createTheme, StyledEngineProvider, ThemeProvider, Typography } from '@mui/material';
 import { styled } from '@mui/system';
-import { useSelector } from '@xstate/react';
+import { useMachine, useSelector } from '@xstate/react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { interpret } from 'xstate';
 import Footer from './Footer/Footer';
 import Label from './Label';
 import Load from './Load/Load';
 import NavBar from './Navbar';
 import ProjectContext from './ProjectContext';
 import QualityControlContext from './QualityControlContext';
-import { isProjectId, project, qualityControl } from './service/service';
+import createLoadMachine from './service/loadMachine';
+import createProjectMachine from './service/projectMachine';
+import { isProjectId, qualityControl } from './service/service';
 
 // import service from './service/service';
 
@@ -37,11 +41,41 @@ function Review() {
   );
 }
 
+function getProjectId() {
+  const location = window.location;
+  const search = new URLSearchParams(location.search);
+  const projectId = search.get('projectId');
+  if (!projectId || projectId.split(',').length > 1) {
+    return;
+  }
+  return projectId;
+}
+
 function LabelProject() {
+  const projectId = getProjectId();
+  const [loadMachine] = useState(createLoadMachine(projectId));
+  const [load] = useMachine(loadMachine);
+  const [project] = useState(interpret(createProjectMachine(projectId)).start());
+  window.dcl = project;
+
+  useEffect(() => {
+    if (load.matches('loaded')) {
+      const { rawArrays, labeledArrays, labels } = load.context;
+      project.send({
+        type: 'LOADED',
+        rawArrays,
+        labeledArrays,
+        labels,
+      });
+    }
+  }, [load, project]);
+
   return (
-    <ProjectContext project={project}>
-      <Label review={false} />
-    </ProjectContext>
+    project && (
+      <ProjectContext project={project}>
+        <Label review={false} />
+      </ProjectContext>
+    )
   );
 }
 

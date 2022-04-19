@@ -15,6 +15,18 @@ function useReturnContext(contextType) {
   return context;
 }
 
+export function useArrays() {
+  const project = useProject();
+  const arrays = useSelector(project, (state) => state.context.arraysRef);
+  return arrays;
+}
+
+export function useLabels() {
+  const project = useProject();
+  const labels = useSelector(project, (state) => state.context.labelsRef);
+  return labels;
+}
+
 export function useSelect() {
   const project = useProject();
   const select = useSelector(project, (state) => state.context.selectRef);
@@ -117,8 +129,7 @@ export function useLayers() {
   const layers = useSelector(project, (state) => {
     const image = state.context.imageRef;
     const raw = image.state.context.rawRef;
-    const colorMode = raw.state.context.colorMode;
-    const layers = colorMode.state.context.layers;
+    const layers = raw.state.context.layers;
     return layers;
   });
   return layers;
@@ -215,10 +226,8 @@ function rgbToHex(rgb) {
 }
 
 export function useHexColormap() {
-  const labeled = useLabeled();
-  const featureIndex = useSelector(labeled, (state) => state.context.feature);
-  const feature = useFeature(featureIndex);
-  const colormap = useSelector(feature, (state) => state.context.colormap);
+  const labels = useLabels();
+  const colormap = useSelector(labels, (state) => state.context.colormap);
   return colormap.map(rgbToHex);
 }
 

@@ -2,7 +2,7 @@
 from __future__ import absolute_import, division, print_function
 
 import gzip
-import hashlib
+import io
 import json
 import timeit
 import traceback
@@ -22,7 +22,6 @@ from werkzeug.exceptions import BadRequestKeyError, HTTPException
 from deepcell_label import exporters, loaders
 from deepcell_label.label import Edit
 from deepcell_label.models import Project
-from deepcell_label.utils import add_frame_div_parent, reformat_cell_info
 
 bp = Blueprint('label', __name__)  # pylint: disable=C0103
 
@@ -56,21 +55,46 @@ def handle_exception(error):
     return jsonify({'error': str(error)}), 500
 
 
-@bp.route('/api/raw/<token>/<int:channel>/<int:frame>', methods=['GET'])
-def raw(token, channel, frame):
-    project = Project.get(token)
+# TODO: send compressed data instead of octet-stream
+@bp.route('/api/raw/<project_id>')
+def raw(project_id):
+    project = Project.get(project_id)
     if not project:
-        return abort(404, description=f'project {token} not found')
-    raw_array = project.get_raw_array(channel, frame)
-    content = gzip.compress(json.dumps(raw_array.tolist()).encode('utf8'), 5)
-    response = make_response(content)
-    response.headers['Content-length'] = len(content)
-    response.headers['Content-Encoding'] = 'gzip'
-    # gzip includes a timestamp that changes the md5 hash
-    # TODO: in Python >= 3.8, add mtime=0 to create stable md5 and use add_etag instead
-    etag = hashlib.md5(raw_array).hexdigest()
-    response.set_etag(etag)
-    return response.make_conditional(request)
+        return abort(404, description=f'project {project_id} not found')
+    # Send binary data for raw image array
+    raw = project.raw_array
+    raw = (
+        (raw - np.min(raw, axis=(0, 1, 2)))
+        / (np.max(raw, axis=(0, 1, 2)) - np.min(raw, axis=(0, 1, 2)))
+        * 255
+    )
+    # Reshape (frames, height, width, channels) to (channels, frames, height, width)
+    raw = np.moveaxis(raw, -1, 0)
+    raw = raw.astype('uint8')
+    return send_file(io.BytesIO(raw.tobytes()), mimetype='application/octet-stream')
+
+
+@bp.route('/api/labeled/<project_id>')
+def labeled(project_id):
+    project = Project.get(project_id)
+    if not project:
+        return abort(404, description=f'project {project_id} not found')
+    # send binary data for label array (int16? int32?)
+    labeled = project.label_array
+    # Reshape (frames, height, width, features) to (features, frames, height, width)
+    labeled = np.moveaxis(labeled, -1, 0)
+    labeled = labeled.astype('int32')
+    return send_file(io.BytesIO(labeled.tobytes()), mimetype='application/octet-stream')
+
+
+@bp.route('/api/labels/<project_id>')
+def labels(project_id):
+    project = Project.get(project_id)
+    if not project:
+        return abort(404, description=f'project {project_id} not found')
+    # send JSON data
+    labels = project.labels.cell_info
+    return labels
 
 
 @bp.route('/api/raw/<token>', methods=['POST'])
@@ -100,78 +124,48 @@ def add_raw(token):
     return {'numChannels': project.num_channels}
 
 
-@bp.route('/api/labeled/<token>/<int:feature>/<int:frame>')
-def labeled(token, feature, frame):
-    """ """
-    project = Project.get(token)
-    if not project:
-        return jsonify({'error': f'project {token} not found'}), 404
-    labeled_array = project.get_labeled_array(feature, frame).astype(np.int32)
-    content = gzip.compress(json.dumps(labeled_array.tolist()).encode('utf8'), 5)
+@bp.route('/api/edit/<action>', methods=['POST'])
+def edit(action):
+    """Edits a label image and returns the updated label image and segments in the label image."""
+    start = timeit.default_timer()
+    # Get arguments for action
+    args = {k: json.loads(v) for k, v in request.values.to_dict().items()}
+    # Separate height and width from args
+    height = args['height']
+    width = args['width']
+    del args['height']
+    del args['width']
+
+    # Parse label and raw arrays
+    if 'labels' not in request.files:
+        return abort(400, description='Attach the labels.')
+    else:
+        labels = request.files['labels']
+        labels_array = np.fromfile(labels, 'int32')
+        labels_array = labels_array.reshape((height, width))
+    if 'raw' in request.files:
+        raw = request.files['raw']
+        raw_array = np.fromfile(raw, 'uint8')
+        raw_array = raw_array.reshape((height, width))
+    elif action in ['watershed', 'threshold', 'autofit']:
+        return abort(400, description=f'Attach a raw image to use the {action} action.')
+    else:
+        raw_array = None
+
+    edit = Edit(labels_array, raw_array)
+    edit.dispatch_action(action, args)
+
+    content = gzip.compress(json.dumps(edit.labels.tolist()).encode('utf8'), 5)
     response = make_response(content)
     response.headers['Content-length'] = len(content)
     response.headers['Content-Encoding'] = 'gzip'
-    # gzip includes a timestamp that changes the md5 hash
-    # TODO: in Python >= 3.8, add mtime=0 to create stable md5 and use add_etag instead
-    etag = hashlib.md5(np.ascontiguousarray(labeled_array)).hexdigest()
-    response.set_etag(etag)
-    return response.make_conditional(request)
-
-
-@bp.route('/api/semantic-labels/<project_id>/<int:feature>')
-def semantic_labels(project_id, feature):
-    project = Project.get(project_id)
-    if not project:
-        return jsonify({'error': f'project {project_id} not found'}), 404
-    cell_info = project.labels.cell_info[feature]
-    cell_info = add_frame_div_parent(cell_info)
-    cell_info = reformat_cell_info(cell_info)
-    response = make_response(cell_info)
-    response.add_etag()
-    return response.make_conditional(request)
-
-
-@bp.route('/api/edit/<token>/<action_type>', methods=['POST'])
-def edit(token, action_type):
-    """
-    Edit the labeling of the project and
-    update the project in the database.
-    """
-    start = timeit.default_timer()
-    # obtain 'info' parameter data sent by .js script
-    info = {k: json.loads(v) for k, v in request.values.to_dict().items()}
-
-    project = Project.get(token)
-    if not project:
-        return abort(404, description=f'project {token} not found')
-    # TODO: remove frame/feature/channel columns from db schema? or keep them around
-    # to load projects on the last edited frame
-    project.frame = info['frame']
-    project.feature = info['feature']
-    project.channel = info['channel']
-    del info['frame']
-    del info['feature']
-    del info['channel']
-
-    edit = Edit(project)
-    edit.dispatch_action(action_type, info)
-    project.create_memento(action_type)
-    project.update()
-
-    changed_frames = [frame.frame_id for frame in project.action.frames]
-    payload = {
-        'feature': project.feature,
-        'frames': changed_frames,
-        'labels': edit.labels_changed,
-    }
 
     current_app.logger.debug(
-        'Finished action %s for project %s in %s s.',
-        action_type,
-        token,
+        'Finished action %s in %s s.',
+        action,
         timeit.default_timer() - start,
     )
-    return jsonify(payload)
+    return response
 
 
 @bp.route('/api/undo/<token>', methods=['POST'])

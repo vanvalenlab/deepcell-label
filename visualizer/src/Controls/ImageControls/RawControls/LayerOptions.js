@@ -17,9 +17,9 @@ const Span = styled('span')``;
 function LayerOptions({ layer }) {
   const [open, toggle] = useReducer((v) => !v, false);
   const anchorRef = useRef(null);
+  const index = useSelector(layer, (state) => state.context.layer);
 
   const raw = useRaw();
-  const colorMode = useSelector(raw, (state) => state.context.colorMode);
 
   const handleColorSelect = (color) => {
     layer.send({ type: 'SET_COLOR', color });
@@ -27,12 +27,18 @@ function LayerOptions({ layer }) {
 
   const handleRemove = () => {
     toggle();
-    colorMode.send({ type: 'REMOVE_LAYER', layer });
+    raw.send({ type: 'REMOVE_LAYER', layer });
   };
 
   return (
     <>
-      <IconButton aria-label='Remove channel' size='small' onClick={toggle} ref={anchorRef}>
+      <IconButton
+        data-testid={`layer${index}-options`}
+        aria-label='Remove channel'
+        size='small'
+        onClick={toggle}
+        ref={anchorRef}
+      >
         <MoreVertIcon fontSize='small' />
       </IconButton>
       <Popper open={open} anchorEl={anchorRef.current} placement='bottom-end'>

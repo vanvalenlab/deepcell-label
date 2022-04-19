@@ -2,19 +2,18 @@ import { assign, Machine, send } from 'xstate';
 import { fromEventBus } from '../../eventBus';
 import { toolActions, toolGuards } from './toolUtils';
 
-const createThresholdMachine = ({ eventBuses }) => {
-  console.log(eventBuses);
-  return Machine(
+const createThresholdMachine = (context) =>
+  Machine(
     {
       initial: 'idle',
       invoke: [
-        { src: fromEventBus('threshold', () => eventBuses.select) },
-        { id: 'api', src: fromEventBus('threshold', () => eventBuses.api) },
+        { src: fromEventBus('threshold', () => context.eventBuses.select) },
+        { id: 'api', src: fromEventBus('threshold', () => context.eventBuses.api) },
       ],
       context: {
         x: null,
         y: null,
-        foreground: null,
+        foreground: context.foreground,
         firstPoint: [null, null],
       },
       states: {
@@ -49,7 +48,6 @@ const createThresholdMachine = ({ eventBuses }) => {
               y1: firstPoint[1],
               x2: x,
               y2: y,
-              // frame: context.frame,
               label: foreground,
             },
           }),
@@ -58,6 +56,5 @@ const createThresholdMachine = ({ eventBuses }) => {
       },
     }
   );
-};
 
 export default createThresholdMachine;

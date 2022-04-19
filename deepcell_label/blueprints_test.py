@@ -31,19 +31,19 @@ def test_health(client):
 
 def test_raw(client):
     project = models.Project.create(DummyLoader())
-    response = client.get(f'/api/raw/{project.token}/0/0')
+    response = client.get(f'/api/raw/{project.token}')
     assert response.status_code == 200
 
 
-def test_array(client):
+def test_labeled(client):
     project = models.Project.create(DummyLoader())
-    response = client.get(f'/api/labeled/{project.token}/0/0')
+    response = client.get(f'/api/labeled/{project.token}')
     assert response.status_code == 200
 
 
-def test_semantic_labels(client):
+def test_labels(client):
     project = models.Project.create(DummyLoader())
-    response = client.get(f'/api/semantic-labels/{project.token}/0')
+    response = client.get(f'/api/labels/{project.token}')
     assert response.status_code == 200
 
 

@@ -12,8 +12,8 @@ function FrameSlider({ showLabel = true }) {
   useEffect(() => {
     const prevFrame = Math.max(0, frame - 1);
     const nextFrame = Math.min(frame + 1, numFrames - 1);
-    bind('a', () => image.send({ type: 'LOAD_FRAME', frame: prevFrame }));
-    bind('d', () => image.send({ type: 'LOAD_FRAME', frame: nextFrame }));
+    bind('a', () => image.send({ type: 'SET_FRAME', frame: prevFrame }));
+    bind('d', () => image.send({ type: 'SET_FRAME', frame: nextFrame }));
     return () => {
       unbind('a');
       unbind('d');
@@ -22,7 +22,7 @@ function FrameSlider({ showLabel = true }) {
 
   const handleFrameChange = (event, newValue) => {
     if (newValue !== frame) {
-      image.send({ type: 'LOAD_FRAME', frame: newValue });
+      image.send({ type: 'SET_FRAME', frame: newValue });
     }
   };
 

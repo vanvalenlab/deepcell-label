@@ -77,7 +77,7 @@ function HoveringBox() {
   const hovering = useSelector(select, (state) => state.context.hovering);
 
   const colormap = useHexColormap();
-  const color = hovering ? colormap[hovering] : '#000000';
+  const color = colormap[hovering] ?? '#000000';
 
   const buttonColor =
     contrast(color, '#000000') > contrast(color, '#FFFFFF') ? '#000000' : '#FFFFFF';

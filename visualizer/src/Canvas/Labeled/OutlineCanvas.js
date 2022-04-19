@@ -3,9 +3,10 @@ import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
 import {
   useAlphaKernelCanvas,
+  useArrays,
   useCanvas,
   useDrawCanvas,
-  useFeature,
+  useImage,
   useLabeled,
   useSelect,
 } from '../../ProjectContext';
@@ -21,12 +22,16 @@ const OutlineCanvas = ({ setCanvases }) => {
 
   const labeled = useLabeled();
   const outlineAll = useSelector(labeled, (state) => state.context.outline);
-  const featureIndex = useSelector(labeled, (state) => state.context.feature);
-  const feature = useFeature(featureIndex);
-  let labeledArray = useSelector(feature, (state) => state.context.labeledArray);
-  if (!labeledArray) {
-    labeledArray = new Array(height).fill(new Array(width).fill(0));
-  }
+  const feature = useSelector(labeled, (state) => state.context.feature);
+
+  const image = useImage();
+  const frame = useSelector(image, (state) => state.context.frame);
+
+  const arrays = useArrays();
+  const labeledArray = useSelector(
+    arrays,
+    (state) => state.context.labeledArrays && state.context.labeledArrays[feature][frame]
+  );
 
   const kernelRef = useRef();
   const kernelCanvas = useAlphaKernelCanvas();
@@ -74,14 +79,16 @@ const OutlineCanvas = ({ setCanvases }) => {
   }, [kernelCanvas, width, height]);
 
   useEffect(() => {
-    // Compute the outline of the labels with the kernel
-    kernelRef.current(labeledArray, outlineAll, foreground, background);
-    // Draw kernel output on another canvas (needed to reuse webgl output)
-    const drawCtx = drawCanvas.getContext('2d');
-    drawCtx.clearRect(0, 0, width, height);
-    drawCtx.drawImage(kernelCanvas, 0, 0);
-    // Rerender the parent canvas
-    setCanvases((canvases) => ({ ...canvases, outline: drawCanvas }));
+    if (labeledArray) {
+      // Compute the outline of the labels with the kernel
+      kernelRef.current(labeledArray, outlineAll, foreground, background);
+      // Draw kernel output on another canvas (needed to reuse webgl output)
+      const drawCtx = drawCanvas.getContext('2d');
+      drawCtx.clearRect(0, 0, width, height);
+      drawCtx.drawImage(kernelCanvas, 0, 0);
+      // Rerender the parent canvas
+      setCanvases((canvases) => ({ ...canvases, outline: drawCanvas }));
+    }
   }, [
     labeledArray,
     outlineAll,

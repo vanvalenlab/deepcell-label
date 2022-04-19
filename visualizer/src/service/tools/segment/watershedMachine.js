@@ -2,19 +2,19 @@ import { assign, Machine, send } from 'xstate';
 import { fromEventBus } from '../../eventBus';
 import { toolActions, toolGuards } from './toolUtils';
 
-const createWatershedMachine = ({ eventBuses }) =>
+const createWatershedMachine = (context) =>
   Machine(
     {
       invoke: [
-        { id: 'selectedCells', src: fromEventBus('watershed', () => eventBuses.select) },
-        { id: 'api', src: fromEventBus('watershed', () => eventBuses.api) },
+        { id: 'select', src: fromEventBus('watershed', () => context.eventBuses.select) },
+        { id: 'api', src: fromEventBus('watershed', () => context.eventBuses.api) },
       ],
       context: {
         x: null,
         y: null,
         hovering: null,
-        foreground: null,
-        background: null,
+        foreground: context.foreground,
+        background: context.background,
         storedLabel: null,
         storedX: null,
         storedY: null,
@@ -66,18 +66,18 @@ const createWatershedMachine = ({ eventBuses }) =>
           storedX: ({ x }) => x,
           storedY: ({ y }) => y,
         }),
-        selectForeground: send('SELECT_FOREGROUND', { to: 'selectedCells' }),
-        newBackground: send({ type: 'BACKGROUND', background: 0 }, { to: 'selectedCells' }),
+        selectForeground: send('SELECT_FOREGROUND', { to: 'select' }),
+        newBackground: send({ type: 'BACKGROUND', background: 0 }, { to: 'select' }),
         watershed: send(
           ({ storedLabel, storedX, storedY, x, y }) => ({
             type: 'EDIT',
             action: 'watershed',
             args: {
               label: storedLabel,
-              x1_location: storedX,
-              y1_location: storedY,
-              x2_location: x,
-              y2_location: y,
+              x1: storedX,
+              y1: storedY,
+              x2: x,
+              y2: y,
             },
           }),
           { to: 'api' }

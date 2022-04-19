@@ -1,7 +1,7 @@
 import { useSelector } from '@xstate/react';
 import { GPU } from 'gpu.js';
-import { useEffect, useRef } from 'react';
-import { useCanvas, useChannel, useRaw } from '../../ProjectContext';
+import { useEffect, useRef, useState } from 'react';
+import { useArrays, useCanvas, useChannel, useImage, useRaw } from '../../ProjectContext';
 
 export const GrayscaleCanvas = ({ setCanvases }) => {
   const canvas = useCanvas();
@@ -9,22 +9,27 @@ export const GrayscaleCanvas = ({ setCanvases }) => {
   const height = useSelector(canvas, (state) => state.context.height);
 
   const raw = useRaw();
-  const grayscaleMode = useSelector(raw, (state) => state.context.grayscaleMode);
-  const channelIndex = useSelector(grayscaleMode, (state) => state.context.channel);
+  const channelIndex = useSelector(raw, (state) => state.context.channel);
   const channel = useChannel(channelIndex);
   const invert = useSelector(channel, (state) => state.context.invert);
   const [min, max] = useSelector(channel, (state) => state.context.range);
   const brightness = useSelector(channel, (state) => state.context.brightness);
   const contrast = useSelector(channel, (state) => state.context.contrast);
-  let rawArray = useSelector(channel, (state) => state.context.rawArray);
-  if (rawArray === null) {
-    rawArray = new Array(height).fill(new Array(width).fill(0));
-  }
+
+  const image = useImage();
+  const frame = useSelector(image, (state) => state.context.frame);
+
+  const arrays = useArrays();
+  const rawArray = useSelector(
+    arrays,
+    (state) => state.context.rawArrays && state.context.rawArrays[channelIndex][frame]
+  );
 
   const kernelRef = useRef();
-  const canvasRef = useRef();
+  const [kernelCanvas] = useState(document.createElement('canvas'));
+
   useEffect(() => {
-    const gpu = new GPU();
+    const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
       `function (data, min, max, brightness, contrast, invert) {
         const x = this.thread.x;
@@ -52,19 +57,20 @@ export const GrayscaleCanvas = ({ setCanvases }) => {
       }
     );
     kernelRef.current = kernel;
-    canvasRef.current = kernel.canvas;
     return () => {
       kernel.destroy();
       gpu.destroy();
     };
-  }, [width, height]);
+  }, [kernelCanvas, width, height]);
 
   useEffect(() => {
     // Rerender the canvas for this component
-    kernelRef.current(rawArray, min, max, brightness, contrast, invert);
-    // Rerender the parent canvas
-    setCanvases((canvases) => ({ ...canvases, raw: canvasRef.current }));
-  }, [rawArray, min, max, brightness, contrast, invert, width, height, setCanvases]);
+    if (rawArray) {
+      kernelRef.current(rawArray, min, max, brightness, contrast, invert);
+      // Rerender the parent canvas
+      setCanvases((canvases) => ({ ...canvases, raw: kernelCanvas }));
+    }
+  }, [kernelCanvas, rawArray, min, max, brightness, contrast, invert, setCanvases]);
 
   return null;
 };

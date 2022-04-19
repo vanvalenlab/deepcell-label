@@ -52,7 +52,7 @@ function Parent({ division }) {
   const onClick = (e) => {
     select.send({ type: 'SET_FOREGROUND', foreground: label });
     image.send({
-      type: 'LOAD_FRAME',
+      type: 'SET_FRAME',
       frame: divisionFrame ? divisionFrame - 1 : frames[frames.length - 1],
     });
   };
@@ -70,7 +70,7 @@ function Daughter({ label, daughter, divisionFrame }) {
 
   const onClick = () => {
     select.send({ type: 'SET_FOREGROUND', foreground: daughter });
-    image.send({ type: 'LOAD_FRAME', frame: divisionFrame });
+    image.send({ type: 'SET_FRAME', frame: divisionFrame });
   };
 
   return (

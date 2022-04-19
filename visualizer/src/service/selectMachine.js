@@ -97,10 +97,6 @@ const createSelectMachine = ({ eventBuses }) =>
   Machine(
     {
       id: 'select',
-      entry: [
-        send({ type: 'FOREGROUND', foreground: 1 }),
-        send({ type: 'BACKGROUND', background: 0 }),
-      ],
       invoke: [
         {
           id: 'eventBus',
@@ -108,11 +104,12 @@ const createSelectMachine = ({ eventBuses }) =>
         },
         { src: fromEventBus('select', () => eventBuses.canvas) },
         { src: fromEventBus('select', () => eventBuses.labeled) },
+        { src: fromEventBus('select', () => eventBuses.labels) },
       ],
       context: {
-        selected: null,
-        foreground: null,
-        background: null,
+        selected: 1,
+        foreground: 1,
+        background: 0,
         hovering: null,
         labels: {},
       },
@@ -125,6 +122,10 @@ const createSelectMachine = ({ eventBuses }) =>
           { cond: 'onBackground', actions: 'selectForeground' },
           { actions: 'selectBackground' },
         ],
+
+        GET_STATE: {
+          actions: ['sendSelected', 'sendForeground', 'sendBackground'],
+        },
 
         HOVERING: { actions: 'setHovering' },
         LABELS: { actions: 'setLabels' },
@@ -175,6 +176,15 @@ const createSelectMachine = ({ eventBuses }) =>
           send({ type: 'FOREGROUND', foreground }),
           send({ type: 'BACKGROUND', background }),
         ]),
+        sendToEventBus: send((c, e) => e, { to: 'eventBus' }),
+        sendForeground: send((ctx) => ({
+          type: 'FOREGROUND',
+          foreground: ctx.foreground,
+        })),
+        sendBackground: send((ctx) => ({
+          type: 'BACKGROUND',
+          background: ctx.background,
+        })),
         sendToEventBus: send((c, e) => e, { to: 'eventBus' }),
       },
     }

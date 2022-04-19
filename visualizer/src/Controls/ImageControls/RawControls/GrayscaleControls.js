@@ -57,7 +57,7 @@ const ChannelSelector = () => {
   const numChannels = useSelector(raw, (state) => state.context.numChannels);
 
   const onChange = (e) => {
-    raw.send({ type: 'LOAD_CHANNEL', channel: Number(e.target.value) });
+    raw.send({ type: 'SET_CHANNEL', channel: Number(e.target.value) });
   };
 
   const tooltip = (
@@ -69,8 +69,8 @@ const ChannelSelector = () => {
   useEffect(() => {
     const prevChannel = (channel - 1 + numChannels) % numChannels;
     const nextChannel = (channel + 1) % numChannels;
-    bind('shift+c', () => raw.send({ type: 'LOAD_CHANNEL', channel: prevChannel }));
-    bind('c', () => raw.send({ type: 'LOAD_CHANNEL', channel: nextChannel }));
+    bind('shift+c', () => raw.send({ type: 'SET_CHANNEL', channel: prevChannel }));
+    bind('c', () => raw.send({ type: 'SET_CHANNEL', channel: nextChannel }));
   }, [raw, channel, numChannels]);
 
   return (

@@ -1,5 +1,4 @@
 import Box from '@mui/material/Box';
-import { useLabeled } from '../ProjectContext';
 import FrameSlider from './FrameSlider';
 import ActionButtons from './Segment/ActionButtons';
 import SelectedPalette from './Segment/SelectedPalette';
@@ -7,7 +6,6 @@ import ToolButtons from './Segment/ToolButtons';
 import UndoRedo from './Segment/UndoRedo';
 
 function SegmentControls() {
-  const labeled = useLabeled();
   return (
     <Box display='flex' flexDirection='column'>
       <UndoRedo />
@@ -17,7 +15,7 @@ function SegmentControls() {
           <ToolButtons />
           <ActionButtons />
         </Box>
-        {labeled && <SelectedPalette />}
+        <SelectedPalette />
       </Box>
     </Box>
   );

@@ -61,8 +61,8 @@ const editActions = {
       type: 'EDIT',
       action: 'swap_single_frame',
       args: {
-        label_1: foreground,
-        label_2: background,
+        a: foreground,
+        b: background,
       },
     }),
     { to: 'api' }
@@ -70,10 +70,10 @@ const editActions = {
   replace: send(
     ({ foreground, background }) => ({
       type: 'EDIT',
-      action: 'replace_single',
+      action: 'replace',
       args: {
-        label_1: foreground,
-        label_2: background,
+        a: foreground,
+        b: background,
       },
     }),
     { to: 'api' }
@@ -97,8 +97,8 @@ const editActions = {
   delete: send(
     ({ selected }) => ({
       type: 'EDIT',
-      action: 'replace_single',
-      args: { label_1: 0, label_2: selected },
+      action: 'replace',
+      args: { a: 0, b: selected },
     }),
     { to: 'api' }
   ),
@@ -112,45 +112,61 @@ const editActions = {
   ),
 };
 
-const createSegmentMachine = ({ eventBuses }) =>
+const createSegmentMachine = (context) =>
   Machine(
     {
       id: 'segment',
-      invoke: { src: fromEventBus('segment', () => eventBuses.raw) },
+      invoke: [
+        { id: 'api', src: fromEventBus('segment', () => context.eventBuses.api) },
+        { src: fromEventBus('segment', () => context.eventBuses.raw) },
+        { id: 'select', src: fromEventBus('segment', () => context.eventBuses.select) },
+      ],
       context: {
         foreground: null,
         background: null,
         selected: null,
         tool: 'select',
         tools: null,
-        eventBuses,
+        eventBuses: context.eventBuses,
       },
-      entry: [(c, e) => console.log(eventBuses), 'spawnTools'],
-      type: 'parallel',
+      initial: 'getSelectedLabels',
       states: {
-        display: displayState,
-        pan: panState,
-      },
-      on: {
-        // undo/redo actions
-        SAVE: { actions: 'save' },
-        RESTORE: { actions: ['restore', respond('RESTORED')] },
+        getSelectedLabels: {
+          entry: send('GET_STATE', { to: 'select' }),
+          on: {
+            FOREGROUND: { actions: 'setForeground' },
+            BACKGROUND: { actions: 'setBackground' },
+          },
+          always: { cond: 'have selected labels', target: 'idle' },
+        },
+        idle: {
+          entry: 'spawnTools',
+          type: 'parallel',
+          states: {
+            display: displayState,
+            pan: panState,
+          },
+          on: {
+            // from canvas event bus (forwarded from parent)
+            mousedown: { actions: 'forwardToTool' },
+            mouseup: { actions: 'forwardToTool' },
+            HOVERING: { actions: 'forwardToTools' },
+            COORDINATES: { actions: 'forwardToTools' },
+            // from selected labels event bus
+            FOREGROUND: { actions: 'setForeground' },
+            BACKGROUND: { actions: 'setBackground' },
+            SELECTED: { actions: 'setSelected' },
 
-        // from canvas event bus (forwarded from parent)
-        mousedown: { actions: 'forwardToTool' },
-        mouseup: { actions: 'forwardToTool' },
-        HOVERING: { actions: 'forwardToTools' },
-        COORDINATES: { actions: 'forwardToTools' },
-        // from selected labels event bus
-        FOREGROUND: { actions: 'setForeground' },
-        BACKGROUND: { actions: 'setBackground' },
-        SELECTED: { actions: 'setSelected' },
+            SWAP: { actions: 'swap' },
+            REPLACE: { actions: 'replace' },
+            DELETE: { actions: 'delete' },
+            ERODE: { actions: 'erode' },
+            DILATE: { actions: 'dilate' },
 
-        SWAP: { actions: 'swap' },
-        REPLACE: { actions: 'replace' },
-        DELETE: { actions: 'delete' },
-        ERODE: { actions: 'erode' },
-        DILATE: { actions: 'dilate' },
+            SAVE: { actions: 'save' },
+            RESTORE: { actions: ['restore', respond('RESTORED')] },
+          },
+        },
       },
     },
     {
@@ -162,6 +178,8 @@ const createSegmentMachine = ({ eventBuses }) =>
         isGrayscaleTool: (_, { tool }) => grayscaleTools.includes(tool),
         isNoPanTool: (_, { tool }) => noPanTools.includes(tool),
         isPanTool: (_, { tool }) => panTools.includes(tool),
+        'have selected labels': (context) =>
+          context.foreground !== null && context.background !== null,
       },
       actions: {
         ...toolActions,

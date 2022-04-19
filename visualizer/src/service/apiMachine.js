@@ -1,4 +1,4 @@
-import { assign, Machine, send, sendParent } from 'xstate';
+import { assign, Machine, send } from 'xstate';
 import { fromEventBus } from './eventBus';
 
 /** Returns a Promise for a DeepCell Label API call based on the event. */
@@ -16,11 +16,24 @@ function getApiService(context, event) {
 }
 
 function edit(context, event) {
-  const { frame, feature, channel } = context;
-  const editRoute = `${document.location.origin}/api/edit/${context.projectId}/${event.action}`;
+  const { labeledArray, rawArray } = context;
+  const { action, args } = event;
+  const editRoute = `${document.location.origin}/api/edit/${action}`;
+  // const usesRaw = action === 'handle_draw' || action === 'threshold' || action === 'watershed';
+
+  const form = new FormData();
+  for (const key in args) {
+    form.append(key, args[key]);
+  }
+  form.append('labels', new Blob(labeledArray), 'labels');
+  form.append('raw', new Blob(rawArray), 'raw');
+  form.append('height', labeledArray.length);
+  form.append('width', labeledArray[0].length);
+
   const options = {
     method: 'POST',
-    body: new URLSearchParams({ ...event.args, frame, feature, channel }),
+    body: form,
+    'Content-Type': 'multipart/form-data',
   };
   return fetch(editRoute, options).then(checkResponseCode);
 }
@@ -82,31 +95,45 @@ function checkResponseCode(response) {
   });
 }
 
-const createApiMachine = ({ projectId, bucket, eventBuses }) =>
+const createApiMachine = ({ projectId, eventBuses }) =>
   Machine(
     {
       id: 'api',
       invoke: [
         { id: 'eventBus', src: fromEventBus('api', () => eventBuses.api) },
-        { id: 'image', src: fromEventBus('api', () => eventBuses.image) },
+        { id: 'arrays', src: fromEventBus('api', () => eventBuses.arrays) },
+        { src: fromEventBus('api', () => eventBuses.image) },
+        { src: fromEventBus('api', () => eventBuses.labeled) },
       ],
       context: {
         projectId,
-        bucket,
         frame: 0,
         feature: 0,
-        channel: 0,
+        actionFrame: 0,
+        actionFeature: 0,
       },
-      initial: 'idle',
+      initial: 'waitForLabels',
       on: {
-        FRAME: { actions: 'setFrame' },
-        FEATURE: { actions: 'setFeature' },
-        CHANNEL: { actions: 'setChannel' },
+        LABELED_ARRAY: { actions: 'setLabeledArray' },
+        RAW_ARRAY: { actions: 'setRawArray' },
+        SET_FRAME: { actions: 'setFrame' },
+        SET_FEATURE: { actions: 'setFeature' },
       },
       states: {
+        waitForLabels: {
+          on: {
+            LABELED_ARRAY: { actions: 'setLabeledArray', target: 'idle' },
+          },
+        },
         idle: {
           on: {
-            EDIT: 'loading',
+            EDIT: {
+              target: 'loading',
+              actions: assign((context) => ({
+                actionFrame: context.frame,
+                actionFeature: context.feature,
+              })),
+            },
             BACKEND_UNDO: 'loading',
             BACKEND_REDO: 'loading',
             UPLOAD: 'uploading',
@@ -121,30 +148,21 @@ const createApiMachine = ({ projectId, bucket, eventBuses }) =>
               target: 'idle',
               actions: 'sendEdited',
             },
-            onError: {
-              target: 'idle',
-              actions: 'sendError',
-            },
+            onError: 'idle',
           },
         },
         uploading: {
           invoke: {
             src: upload,
             onDone: 'idle',
-            onError: {
-              target: 'idle',
-              actions: 'sendError',
-            },
+            onError: 'idle',
           },
         },
         downloading: {
           invoke: {
             src: download,
             onDone: { target: 'idle', actions: 'download' },
-            onError: {
-              target: 'idle',
-              actions: 'sendError',
-            },
+            onError: 'idle',
           },
         },
       },
@@ -159,19 +177,18 @@ const createApiMachine = ({ projectId, bucket, eventBuses }) =>
           link.click();
         },
         sendEdited: send(
-          (_, event) => ({
+          (context, event) => ({
             type: 'EDITED',
-            data: event.data,
+            frame: context.actionFrame,
+            feature: context.actionFeature,
+            labeledArray: event.data.map((arr) => Int32Array.from(arr)),
           }),
-          { to: 'image' }
+          { to: 'eventBus' }
         ),
-        sendError: sendParent((_, event) => ({
-          type: 'ERROR',
-          error: event.data.error,
-        })),
+        setRawArray: assign((_, { rawArray }) => ({ rawArray })),
+        setLabeledArray: assign((_, { labeledArray }) => ({ labeledArray })),
         setFrame: assign((_, { frame }) => ({ frame })),
         setFeature: assign((_, { feature }) => ({ feature })),
-        setChannel: assign((_, { channel }) => ({ channel })),
       },
     }
   );

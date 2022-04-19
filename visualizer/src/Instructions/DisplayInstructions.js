@@ -5,7 +5,6 @@ import LabeledControls from '../Controls/ImageControls/LabeledControls/LabeledCo
 import ColorModeToggle from '../Controls/ImageControls/RawControls/ColorModeToggle';
 import GrayscaleControls from '../Controls/ImageControls/RawControls/GrayscaleControls';
 import RGBControls from '../Controls/ImageControls/RawControls/RGBControls';
-import { useLabeled, useRaw } from '../ProjectContext';
 import { Shortcut, Shortcuts } from './Shortcuts';
 
 function DisplayShortcuts() {
@@ -31,8 +30,6 @@ function DisplayShortcuts() {
 }
 
 const DisplayInstructions = () => {
-  const labeled = useLabeled();
-  const raw = useRaw();
   return (
     <Box display='flex' justifyContent='space-between'>
       <div>
@@ -46,7 +43,7 @@ const DisplayInstructions = () => {
         <Typography variant='h5'>Segmentations</Typography>
         <Grid container spacing={3}>
           <Grid item xs={4}>
-            {labeled && <LabeledControls />}
+            <LabeledControls />
             <br />
           </Grid>
           <Grid item xs={8}>
@@ -63,7 +60,7 @@ const DisplayInstructions = () => {
         <Typography variant='h5'>Channels </Typography>
         <Grid container spacing={3}>
           <Grid item xs={3}>
-            {raw && <ColorModeToggle />}
+            <ColorModeToggle />
           </Grid>
           <Grid item xs={9}>
             <Typography>
@@ -76,7 +73,7 @@ const DisplayInstructions = () => {
         <Typography variant='h6'> Multi-channel mode </Typography>
         <Grid container spacing={3}>
           <Grid item xs={4}>
-            {raw && <RGBControls />}
+            <RGBControls />
           </Grid>
           <Grid item xs={8}>
             <Typography>
@@ -95,7 +92,7 @@ const DisplayInstructions = () => {
         <Typography variant='h6'>Single-channel mode </Typography>
         <Grid container spacing={3}>
           <Grid item xs={4}>
-            {raw && <GrayscaleControls />}
+            <GrayscaleControls />
           </Grid>
           <Grid item xs={8}>
             <Typography>

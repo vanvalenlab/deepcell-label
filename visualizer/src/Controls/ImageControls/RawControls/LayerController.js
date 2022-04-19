@@ -2,7 +2,6 @@
 import { MenuItem, TextField } from '@mui/material';
 import Checkbox from '@mui/material/Checkbox';
 import Grid from '@mui/material/Grid';
-import LinearProgress from '@mui/material/LinearProgress';
 import Slider from '@mui/material/Slider';
 import { useSelector } from '@xstate/react';
 import { useRaw } from '../../../ProjectContext';
@@ -15,7 +14,7 @@ function LayerSelector({ layer }) {
   const names = useSelector(raw, (state) => state.context.channelNames);
 
   const onChange = (e) => {
-    layer.send({ type: 'CHANGE_CHANNEL', channel: Number(e.target.value) });
+    layer.send({ type: 'SET_CHANNEL', channel: Number(e.target.value) });
   };
 
   return (
@@ -80,12 +79,6 @@ function LayerSlider({ layer }) {
 }
 
 function LayerController({ layer }) {
-  const channel = useSelector(layer, (state) => state.context.channel);
-
-  const raw = useRaw();
-  const colorMode = useSelector(raw, (state) => state.context.colorMode);
-  const loading = useSelector(colorMode, (state) => state.context.loadingChannels.has(channel));
-
   return (
     <Grid container direction='column' justifyContent='center' sx={{ pt: 1 }}>
       <Grid container direction='row' justifyContent='space-between'>
@@ -96,12 +89,7 @@ function LayerController({ layer }) {
           <LayerOptions layer={layer} />
         </Grid>
       </Grid>
-      <Grid container direction='row'>
-        <Grid item xs={12}>
-          {loading && <LinearProgress />}
-        </Grid>
-      </Grid>
-      <Grid container direction='row' justifyContent='flex-start' alignItems='center'>
+      <Grid container direction='row' justify='flex-start' alignItems='center'>
         <Grid item xs={2}>
           <LayerCheckbox layer={layer} />
         </Grid>

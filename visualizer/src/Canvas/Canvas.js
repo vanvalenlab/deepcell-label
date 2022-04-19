@@ -2,7 +2,7 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useSelector } from '@xstate/react';
 import React, { useEffect } from 'react';
-import { useCanvas, useLabeled, useRaw, useSegment, useSelect } from '../ProjectContext';
+import { useArrays, useCanvas, useSegment, useSelect } from '../ProjectContext';
 import ComposeCanvas from './ComposeCanvases';
 import LabeledCanvas from './Labeled/LabeledCanvas';
 import OutlineCanvas from './Labeled/OutlineCanvas';
@@ -11,8 +11,6 @@ import BrushCanvas from './Tool/BrushCanvas';
 import ThresholdCanvas from './Tool/ThresholdCanvas';
 
 export const Canvas = () => {
-  const raw = useRaw();
-  const labeled = useLabeled();
   const select = useSelect();
 
   const canvas = useCanvas();
@@ -64,7 +62,10 @@ export const Canvas = () => {
     }
   };
 
-  const [canvases, setCanvases] = React.useState({});
+  const [canvases, setCanvases] = React.useState([]);
+
+  const arrays = useArrays();
+  const loading = useSelector(arrays, (state) => state.matches('waiting'));
 
   return (
     <Box
@@ -86,13 +87,18 @@ export const Canvas = () => {
       onMouseDown={handleMouseDown}
       onMouseUp={canvas.send}
     >
-      {!raw && <CircularProgress size='50%' sx={{ m: '25%' }} />}
-      <ComposeCanvas canvases={canvases} />
-      {raw && <RawCanvas setCanvases={setCanvases} />}
-      {labeled && <LabeledCanvas setCanvases={setCanvases} />}
-      {labeled && <OutlineCanvas setCanvases={setCanvases} />}
-      {tool === 'brush' && <BrushCanvas setCanvases={setCanvases} />}
-      {tool === 'threshold' && <ThresholdCanvas setCanvases={setCanvases} />}
+      {loading ? (
+        <CircularProgress style={{ margin: '25%', width: '50%', height: '50%' }} />
+      ) : (
+        <>
+          <ComposeCanvas canvases={canvases} />
+          <RawCanvas setCanvases={setCanvases} />
+          <LabeledCanvas setCanvases={setCanvases} />
+          <OutlineCanvas setCanvases={setCanvases} />
+          {tool === 'brush' && <BrushCanvas setCanvases={setCanvases} />}
+          {tool === 'threshold' && <ThresholdCanvas setCanvases={setCanvases} />}
+        </>
+      )}
     </Box>
   );
 };

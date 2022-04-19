@@ -2,14 +2,14 @@ import { Machine, send } from 'xstate';
 import { fromEventBus } from '../../eventBus';
 import { toolActions, toolGuards } from './toolUtils';
 
-const createSelectMachine = ({ eventBuses }) =>
+const createSelectMachine = (context) =>
   Machine(
     {
-      invoke: [{ id: 'selectedCells', src: fromEventBus('select', () => eventBuses.select) }],
+      invoke: [{ id: 'select', src: fromEventBus('select', () => context.eventBuses.select) }],
       context: {
         hovering: null,
-        foreground: null,
-        background: null,
+        foreground: context.foreground,
+        background: context.background,
       },
       on: {
         FOREGROUND: { actions: 'setForeground' },
@@ -29,9 +29,9 @@ const createSelectMachine = ({ eventBuses }) =>
       guards: toolGuards,
       actions: {
         ...toolActions,
-        selectForeground: send('SELECT_FOREGROUND', { to: 'selectedCells' }),
-        selectBackground: send('SELECT_BACKGROUND', { to: 'selectedCells' }),
-        resetForeground: send('RESET_FOREGROUND', { to: 'selectedCells' }),
+        selectForeground: send('SELECT_FOREGROUND', { to: 'select' }),
+        selectBackground: send('SELECT_BACKGROUND', { to: 'select' }),
+        resetForeground: send('RESET_FOREGROUND', { to: 'select' }),
       },
     }
   );

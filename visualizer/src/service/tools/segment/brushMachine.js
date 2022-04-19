@@ -5,17 +5,16 @@ import { toolActions, toolGuards } from './toolUtils';
 const createBrushMachine = (context) =>
   Machine(
     {
-      entry: () => console.log(context),
       invoke: [
         { src: 'listenForBrushHotkeys' },
         { src: fromEventBus('brush', () => context.eventBuses.select) },
         { id: 'api', src: fromEventBus('brush', () => context.eventBuses.api) },
       ],
       context: {
-        x: null,
-        y: null,
-        foreground: null,
-        background: null,
+        x: 0,
+        y: 0,
+        foreground: context.foreground,
+        background: context.background,
         trace: [],
         brushSize: 5,
       },

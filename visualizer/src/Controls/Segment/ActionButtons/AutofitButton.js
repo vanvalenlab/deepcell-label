@@ -5,7 +5,7 @@ import ActionButton from './ActionButton';
 
 function AutofitButton(props) {
   const segment = useSegment();
-  const grayscale = useSelector(segment, (state) => state.matches('display.grayscale'));
+  const grayscale = useSelector(segment, (state) => state.matches('idle.display.grayscale'));
 
   const onClick = useCallback(() => segment.send('AUTOFIT'), [segment]);
 

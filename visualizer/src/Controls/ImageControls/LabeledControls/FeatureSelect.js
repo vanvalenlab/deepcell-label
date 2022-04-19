@@ -11,7 +11,7 @@ function FeatureSelect() {
   const featureNames = useSelector(labeled, (state) => state.context.featureNames);
 
   const handleFeatureChange = (event) => {
-    labeled.send({ type: 'LOAD_FEATURE', feature: Number(event.target.value) });
+    labeled.send({ type: 'SET_FEATURE', feature: Number(event.target.value) });
   };
 
   const tooltipText = (
@@ -23,8 +23,8 @@ function FeatureSelect() {
   useEffect(() => {
     const prevFeature = (feature - 1 + numFeatures) % numFeatures;
     const nextFeature = (feature + 1) % numFeatures;
-    bind('shift+f', () => labeled.send({ type: 'LOAD_FEATURE', feature: prevFeature }));
-    bind('f', () => labeled.send({ type: 'LOAD_FEATURE', feature: nextFeature }));
+    bind('shift+f', () => labeled.send({ type: 'SET_FEATURE', feature: prevFeature }));
+    bind('f', () => labeled.send({ type: 'SET_FEATURE', feature: nextFeature }));
   }, [labeled, feature, numFeatures]);
 
   return (

@@ -12,13 +12,13 @@ function FrameSlider() {
   useEffect(() => {
     const prevFrame = (frame - 1 + numFrames) % numFrames;
     const nextFrame = (frame + 1) % numFrames;
-    bind('a', () => image.send({ type: 'LOAD_FRAME', frame: prevFrame }));
-    bind('d', () => image.send({ type: 'LOAD_FRAME', frame: nextFrame }));
+    bind('a', () => image.send({ type: 'SET_FRAME', frame: prevFrame }));
+    bind('d', () => image.send({ type: 'SET_FRAME', frame: nextFrame }));
   }, [frame, image, numFrames]);
 
   const handleFrameChange = (event, newValue) => {
     if (newValue !== frame) {
-      image.send({ type: 'LOAD_FRAME', frame: newValue });
+      image.send({ type: 'SET_FRAME', frame: newValue });
     }
   };
 

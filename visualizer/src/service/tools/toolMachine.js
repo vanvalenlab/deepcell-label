@@ -16,9 +16,9 @@ const createToolMachine = ({ eventBuses }) =>
         eventBuses,
       },
       invoke: [
-        { id: 'selectedCells', src: fromEventBus('tool', () => eventBuses.select) },
         { id: 'canvas', src: fromEventBus('tool', () => eventBuses.canvas) },
         { id: 'undo', src: fromEventBus('tool', () => eventBuses.undo) },
+        { src: fromEventBus('tool', () => eventBuses.select) },
       ],
       initial: 'checkTool',
       entry: ['spawnTools', 'addToolsToUndo', 'checkTrack'],

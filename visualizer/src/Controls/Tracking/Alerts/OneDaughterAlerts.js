@@ -15,7 +15,7 @@ function OneDaughterAlert({ label }) {
 
   const onClick = () => {
     select.send({ type: 'SET_FOREGROUND', foreground: daughters[0] });
-    image.send({ type: 'LOAD_FRAME', frame: divisionFrame });
+    image.send({ type: 'SET_FRAME', frame: divisionFrame });
   };
 
   return (

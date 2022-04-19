@@ -2,19 +2,19 @@ import { Machine, send } from 'xstate';
 import { fromEventBus } from '../../eventBus';
 import { toolActions, toolGuards } from './toolUtils';
 
-const createTrimMachine = ({ eventBuses }) =>
+const createTrimMachine = (context) =>
   Machine(
     {
       invoke: [
-        { id: 'selectedCells', src: fromEventBus('trim', () => eventBuses.select) },
-        { id: 'api', src: fromEventBus('trim', () => eventBuses.api) },
+        { id: 'select', src: fromEventBus('trim', () => context.eventBuses.select) },
+        { id: 'api', src: fromEventBus('trim', () => context.eventBuses.api) },
       ],
       context: {
         x: null,
         y: null,
-        label: null,
-        foreground: null,
-        background: null,
+        hovering: null,
+        foreground: context.foreground,
+        background: context.background,
       },
       on: {
         COORDINATES: { actions: 'setCoordinates' },
@@ -28,15 +28,15 @@ const createTrimMachine = ({ eventBuses }) =>
       guards: toolGuards,
       actions: {
         ...toolActions,
-        selectForeground: send('SELECT_FOREGROUND', { to: 'selectedCells' }),
+        selectForeground: send('SELECT_FOREGROUND', { to: 'select' }),
         trim: send(
           ({ hovering, x, y }, event) => ({
             type: 'EDIT',
             action: 'trim_pixels',
             args: {
               label: hovering,
-              x_location: x,
-              y_location: y,
+              x,
+              y,
             },
           }),
           { to: 'api' }
