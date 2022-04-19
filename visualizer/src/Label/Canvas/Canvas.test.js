@@ -38,7 +38,7 @@ let mockSelectActor = interpret(createSelectMachine(context), {
 let mockSegmentActor = interpret(createSegmentMachine(context), {
   parent: { send: jest.fn() },
 }).start();
-jest.mock('../ProjectContext', () => ({
+jest.mock('../../ProjectContext', () => ({
   useArrays: () => mockArraysActor,
   useCanvas: () => mockCanvasActor,
   useSegment: () => mockSegmentActor,
@@ -46,11 +46,10 @@ jest.mock('../ProjectContext', () => ({
 }));
 
 jest.mock('./ComposeCanvases', () => () => 'ComposeCanvases');
-jest.mock('./Labeled/LabeledCanvas', () => () => 'LabeledCanvas');
-jest.mock('./Labeled/OutlineCanvas', () => () => 'OutlineCanvas');
-jest.mock('./Raw/RawCanvas', () => () => 'RawCanvas');
-jest.mock('./Tool/BrushCanvas', () => () => 'BrushCanvas');
-jest.mock('./Tool/ThresholdCanvas', () => () => 'ThresholdCanvas');
+jest.mock('./LabeledCanvas', () => () => 'LabeledCanvas');
+jest.mock('./OutlineCanvas', () => () => 'OutlineCanvas');
+jest.mock('./RawCanvas', () => () => 'RawCanvas');
+jest.mock('./ToolCanvas', () => () => 'ToolCanvas');
 
 test('canvas sends interaction to actors', () => {
   const eventsSentToCanvas = [];
