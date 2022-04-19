@@ -37,8 +37,8 @@ function isReview(ids) {
 }
 
 function Review({ ids }) {
-  const reviewMachine = useState(createReviewMachine(ids.split(',')));
-  const review = useMachine(reviewMachine);
+  const [reviewMachine] = useState(createReviewMachine(ids.split(',')));
+  const [review] = useMachine(reviewMachine);
   const project = useSelector(review, (state) => {
     const { projectId, projects } = state.context;
     return projects[projectId];
