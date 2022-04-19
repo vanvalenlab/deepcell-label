@@ -1,6 +1,7 @@
 """SQL Alchemy database models."""
 from __future__ import absolute_import, division, print_function
 
+import io
 import logging
 import timeit
 from secrets import token_urlsafe
@@ -47,7 +48,8 @@ class Project(db.Model):
         )
         self.bucket = 'spots-visualizer'
         self.key = f'{self.project}.zip'
-        s3.upload_fileobj(loader.data, self.bucket, self.key)
+        fileobj = io.BytesIO(loader.data)
+        s3.upload_fileobj(fileobj, self.bucket, self.key)
 
         logger.debug(
             'Initialized project %s and uploaded to %s in %ss.',
