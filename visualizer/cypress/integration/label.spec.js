@@ -1,30 +1,6 @@
 /* eslint-disable jest/expect-expect */
 /* eslint-disable no-undef */
 
-const fakeProject = {
-  projectId: 'fakefakefake',
-  numChannels: 2,
-  numFeatures: 2,
-  numFrames: 2,
-  height: 2,
-  width: 2,
-};
-
-const fakeRawArray = {
-  body: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]).buffer,
-};
-const fakeLabeledArray = {
-  body: new Int32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).buffer,
-};
-const fakeLabels = {
-  0: {
-    segments: [],
-  },
-  1: {
-    segments: [],
-  },
-};
-
 it('finds DeepCell Label homepage text', () => {
   cy.visit('/');
   cy.contains('DeepCell Label');
@@ -78,10 +54,7 @@ it('Creates a tracking project', () => {
 });
 
 it('updates state with keybinds', () => {
-  cy.intercept('GET', '/api/project/fakefakefake', fakeProject);
-  cy.intercept('GET', '/api/raw/fakefakefake', fakeRawArray);
-  cy.intercept('GET', '/api/labeled/fakefakefake', fakeLabeledArray);
-  cy.intercept('GET', '/api/labels/fakefakefake', fakeLabels);
+  cy.intercept('GET', '/api/project/fakefakefake', { fixture: 'testProject.zip' });
 
   cy.visit('/project?projectId=fakefakefake');
   cy.get('.MuiCircularProgress-svg').should('not.exist');
@@ -101,10 +74,7 @@ it('updates state with keybinds', () => {
 });
 
 it('opens instructions', () => {
-  cy.intercept('GET', '/api/project/fakefakefake', fakeProject);
-  cy.intercept('GET', '/api/raw/fakefakefake', fakeRawArray);
-  cy.intercept('GET', '/api/labeled/fakefakefake', fakeLabeledArray);
-  cy.intercept('GET', '/api/labels/fakefakefake', fakeLabels);
+  cy.intercept('GET', '/api/project/fakefakefake', { fixture: 'testProject.zip' });
 
   cy.visit('/project?projectId=fakefakefake');
   cy.contains('Instructions').click();
@@ -116,10 +86,7 @@ it('opens instructions', () => {
 });
 
 it('shows quality control interface', () => {
-  cy.intercept('GET', '/api/project/fakefakefake', fakeProject);
-  cy.intercept('GET', '/api/raw/fakefakefake', fakeRawArray);
-  cy.intercept('GET', '/api/labeled/fakefakefake', fakeLabeledArray);
-  cy.intercept('GET', '/api/labels/fakefakefake', fakeLabels);
+  cy.intercept('GET', '/api/project/fakefakefake', { fixture: 'testProject.zip' });
 
   cy.visit('/project?projectId=fakefakefake,fakefakefake');
   cy.contains('Accept').click();
@@ -128,10 +95,7 @@ it('shows quality control interface', () => {
 });
 
 it('removes channel', () => {
-  cy.intercept('GET', '/api/project/fakefakefake', fakeProject);
-  cy.intercept('GET', '/api/raw/fakefakefake', fakeRawArray);
-  cy.intercept('GET', '/api/labeled/fakefakefake', fakeLabeledArray);
-  cy.intercept('GET', '/api/labels/fakefakefake', fakeLabels);
+  cy.intercept('GET', '/api/project/fakefakefake', { fixture: 'testProject.zip' });
 
   cy.visit('/project?projectId=fakefakefake');
   cy.contains('channel 0');
