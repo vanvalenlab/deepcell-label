@@ -17,10 +17,9 @@ TEST_DATABASE_URI = 'sqlite:///{}'.format(TESTDB_PATH)
 
 # TODO: Could this become a fixture?
 class DummyLoader(Loader):
-    def __init__(self, X=None, y=None, cells=None, spots=None):
+    def __init__(self, X=None, y=None, spots=None):
         self._X = X
         self._y = y
-        self._cells = cells
         self._spots = spots
         super().__init__()
 
@@ -39,14 +38,6 @@ class DummyLoader(Loader):
 
     @y.setter
     def y(self, value):
-        pass
-
-    @property
-    def cells(self):
-        return self._cells
-
-    @cells.setter
-    def cells(self, value):
         pass
 
     @property

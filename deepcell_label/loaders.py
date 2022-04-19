@@ -44,9 +44,6 @@ class Loader:
         self.y = load_segmentation(self.label_file)
         self.spots = load_spots(self.label_file)
 
-        if self.y is not None:
-            self.cells = LabelInfoMaker(self.y).cell_info
-
     def write(self):
         """Writes loaded data to zip."""
         self.write_images()
@@ -80,22 +77,25 @@ class Loader:
     def write_segmentation(self):
         """Writes segmentation to y.ome.tiff in the output zip."""
         y = self.y
-        if y is not None:
-            if y.shape[:-1] != self.X.shape[:-1]:
-                raise ValueError(
-                    'Segmentation shape %s is incompatible with image shape %s'
-                    % (y.shape, self.X.shape)
-                )
-            # TODO: check if float vs int matters
-            y = y.astype(np.int32)
-            # Move channel axis
-            y = np.moveaxis(y, -1, 1)
+        if y is None:
+            shape = (*self.X.shape[:-1], 1)
+            y = np.zeros(shape)
+            self.y = y
+        if y.shape[:-1] != self.X.shape[:-1]:
+            raise ValueError(
+                'Segmentation shape %s is incompatible with image shape %s'
+                % (y.shape, self.X.shape)
+            )
+        # TODO: check if float vs int matters
+        y = y.astype(np.int32)
+        # Move channel axis
+        y = np.moveaxis(y, -1, 1)
 
-            segmentation = io.BytesIO()
-            with TiffWriter(segmentation, ome=True) as tif:
-                tif.save(y, metadata={'axes': 'ZCYX'})
-            segmentation.seek(0)
-            self.zip.writestr('y.ome.tiff', segmentation.read())
+        segmentation = io.BytesIO()
+        with TiffWriter(segmentation, ome=True) as tif:
+            tif.save(y, metadata={'axes': 'ZCYX'})
+        segmentation.seek(0)
+        self.zip.writestr('y.ome.tiff', segmentation.read())
 
     def write_spots(self):
         """Writes spots to spots.csv in the output zip."""
@@ -107,8 +107,8 @@ class Loader:
 
     def write_cells(self):
         """Writes cells to cells.json in the output zip."""
-        if self.cells is not None:
-            self.zip.writestr('cells.json', json.dumps(self.cells))
+        cells = LabelInfoMaker(self.y).cell_info
+        self.zip.writestr('cells.json', json.dumps(cells))
 
 
 def load_images(image_file):
