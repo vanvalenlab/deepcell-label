@@ -2,10 +2,13 @@
 
 import * as zip from '@zip.js/zip.js';
 import { assign, createMachine } from 'xstate';
-import { loadOmeTiff, TiffPixelSource } from '@hms-dbmi/viv';
+import { loadOmeTiff } from '@hms-dbmi/viv';
 
+type PropType<TObj, TProp extends keyof TObj> = TObj[TProp];
 type UnboxPromise<T extends Promise<any>> = T extends Promise<infer U> ? U : never;
+
 type OmeTiff = UnboxPromise<ReturnType<typeof loadOmeTiff>>;
+type TiffPixelSource = PropType<OmeTiff, 'data'>[number];
 type Spots = number[][];
 type Cells = {
   [feature: number]: {
@@ -60,18 +63,15 @@ function fetchZip(context: Context) {
 async function splitArrays(files: Files) {
   const rawFile = files['X.ome.tiff'] as OmeTiff;
   const labeledFile = files['y.ome.tiff'] as OmeTiff;
-  const rawArrays = await getRawRasters(rawFile.data[0] as TiffPixelSource<['t', 'c', 'z']>);
-  const labeledArrays = await getLabelRasters(
-    labeledFile.data[0] as TiffPixelSource<['t', 'c', 'z']>
-  );
+  const rawArrays = await getRawRasters(rawFile.data[0]);
+  const labeledArrays = await getLabelRasters(labeledFile.data[0]);
   return { rawArrays, labeledArrays };
 }
 
-async function getRawRasters(source: TiffPixelSource<['t', 'c', 'z']>) {
-  // getRasters<S extends string[]>(source: TiffPixelSource<S>)
-  const { shape } = source;
-  // TODO: use time dimension
-  const [t, c, z] = shape;
+async function getRawRasters(source: TiffPixelSource) {
+  const { labels, shape } = source;
+  const c = shape[labels.indexOf('c')];
+  const z = shape[labels.indexOf('z')];
   const channels = [];
   for (let i = 0; i < c; i++) {
     const frames = [];
@@ -86,10 +86,10 @@ async function getRawRasters(source: TiffPixelSource<['t', 'c', 'z']>) {
   return channels;
 }
 
-async function getLabelRasters(source: TiffPixelSource<['t', 'c', 'z']>) {
-  const { shape } = source;
-  // TODO: use time dimension
-  const [t, c, z] = shape;
+async function getLabelRasters(source: TiffPixelSource) {
+  const { labels, shape } = source;
+  const c = shape[labels.indexOf('c')];
+  const z = shape[labels.indexOf('z')];
   const channels = [];
   for (let i = 0; i < c; i++) {
     const frames = [];
