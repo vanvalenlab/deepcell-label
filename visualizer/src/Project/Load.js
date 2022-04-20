@@ -15,7 +15,6 @@ function Load({ id, track, spots }) {
 
   useEffect(() => {
     if (load.matches('loaded')) {
-      console.log('loaded');
       const { rawArrays, labeledArrays, labels, spots } = load.context;
       project.send({
         type: 'LOADED',
