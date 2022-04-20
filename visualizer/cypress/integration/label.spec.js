@@ -54,7 +54,7 @@ it('Creates a tracking project', () => {
 });
 
 it('updates state with keybinds', () => {
-  cy.intercept('GET', '/api/project/fakefakefake', { fixture: 'testProject.zip' });
+  cy.intercept('GET', '/api/project/fakefakefake', { fixture: 'rgb.zip' });
 
   cy.visit('/project?projectId=fakefakefake');
   cy.get('.MuiCircularProgress-svg').should('not.exist');
@@ -74,7 +74,7 @@ it('updates state with keybinds', () => {
 });
 
 it('opens instructions', () => {
-  cy.intercept('GET', '/api/project/fakefakefake', { fixture: 'testProject.zip' });
+  cy.intercept('GET', '/api/project/fakefakefake', { fixture: 'rgb.zip' });
 
   cy.visit('/project?projectId=fakefakefake');
   cy.contains('Instructions').click();
@@ -86,7 +86,7 @@ it('opens instructions', () => {
 });
 
 it('shows quality control interface', () => {
-  cy.intercept('GET', '/api/project/fakefakefake', { fixture: 'testProject.zip' });
+  cy.intercept('GET', '/api/project/fakefakefake', { fixture: 'rgb.zip' });
 
   cy.visit('/project?projectId=fakefakefake,fakefakefake');
   cy.contains('Accept').click();
@@ -95,7 +95,7 @@ it('shows quality control interface', () => {
 });
 
 it('removes channel', () => {
-  cy.intercept('GET', '/api/project/fakefakefake', { fixture: 'testProject.zip' });
+  cy.intercept('GET', '/api/project/fakefakefake', { fixture: 'rgb.zip' });
 
   cy.visit('/project?projectId=fakefakefake');
   cy.contains('channel 0');
