@@ -38,7 +38,7 @@ let mockSelectActor = interpret(createSelectMachine(context), {
 let mockSegmentActor = interpret(createSegmentMachine(context), {
   parent: { send: jest.fn() },
 }).start();
-jest.mock('../../ProjectContext', () => ({
+jest.mock('../ProjectContext', () => ({
   useArrays: () => mockArraysActor,
   useCanvas: () => mockCanvasActor,
   useSegment: () => mockSegmentActor,
