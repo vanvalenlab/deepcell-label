@@ -39,9 +39,10 @@ jobs:
         with:
           working-directory: visualizer
           start: |
-            npm start
+            npm run cypress:frontend
             npm run cypress:backend
           wait-on: "http://localhost:3000, http://localhost:5000/health"
+          spec: cypress/integration/label.spec.js
 
       - name: Cypress Coveralls
         uses: coverallsapp/github-action@master
@@ -52,6 +53,27 @@ jobs:
           path-to-lcov: visualizer/coverage/lcov.info
           github-token: ${{ secrets.github_token }}
           flag-name: cypress
+          parallel: true
+
+      - name: Cypress Spots
+        uses: cypress-io/github-action@v2
+        with:
+          working-directory: visualizer
+          start: |
+            REACT_APP_SPOTS_VISUALIZER=true && npm run cypress:frontend
+            npm run cypress:backend
+          wait-on: "http://localhost:3000, http://localhost:5000/health"
+          spec: cypress/integration/spots.spec.js
+
+      - name: Spots Viz Coveralls
+        uses: coverallsapp/github-action@master
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+        with:
+          base-path: visualizer
+          path-to-lcov: visualizer/coverage/lcov.info
+          github-token: ${{ secrets.github_token }}
+          flag-name: cypress-spots-viz
           parallel: true
 
   frontend-tests:
