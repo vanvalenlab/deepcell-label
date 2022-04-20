@@ -1,7 +1,9 @@
 """Tests for the DeepCell Label Flask App."""
 
+import io
 import os
 
+import numpy as np
 import pytest
 from flask_sqlalchemy import SQLAlchemy
 
@@ -18,10 +20,10 @@ TEST_DATABASE_URI = 'sqlite:///{}'.format(TESTDB_PATH)
 # TODO: Could this become a fixture?
 class DummyLoader(Loader):
     def __init__(self, X=None, y=None, spots=None):
-        self._X = X
-        self._y = y
+        self._X = X if X is not None else np.zeros((1, 1, 1, 1))
+        self._y = y if y is not None else np.zeros(self._X.shape)
         self._spots = spots
-        super().__init__()
+        super().__init__(io.BytesIO(), io.BytesIO())
 
     # Prevent changing mocked data
     @property

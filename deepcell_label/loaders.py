@@ -28,7 +28,7 @@ class Loader:
         self.spots = None
 
         self.image_file = image_file
-        self.label_file = label_file
+        self.label_file = label_file if label_file else image_file
 
         with tempfile.TemporaryFile() as project_file:
             with zipfile.ZipFile(project_file, 'w', zipfile.ZIP_DEFLATED) as zip:
@@ -43,6 +43,10 @@ class Loader:
         self.X = load_images(self.image_file)
         self.y = load_segmentation(self.label_file)
         self.spots = load_spots(self.label_file)
+
+        if self.y is None:
+            shape = (*self.X.shape[:-1], 1)
+            self.y = np.zeros(shape)
 
     def write(self):
         """Writes loaded data to zip."""
@@ -77,10 +81,6 @@ class Loader:
     def write_segmentation(self):
         """Writes segmentation to y.ome.tiff in the output zip."""
         y = self.y
-        if y is None:
-            shape = (*self.X.shape[:-1], 1)
-            y = np.zeros(shape)
-            self.y = y
         if y.shape[:-1] != self.X.shape[:-1]:
             raise ValueError(
                 'Segmentation shape %s is incompatible with image shape %s'
