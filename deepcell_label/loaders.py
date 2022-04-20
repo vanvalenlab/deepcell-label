@@ -27,8 +27,8 @@ class Loader:
         self.cells = None
         self.spots = None
 
-        self.image_file = io.BytesIO() if image_file is None else image_file
-        self.label_file = self.image_file if label_file is None else label_file
+        self.image_file = image_file
+        self.label_file = label_file
 
         with tempfile.TemporaryFile() as project_file:
             with zipfile.ZipFile(project_file, 'w', zipfile.ZIP_DEFLATED) as zip:

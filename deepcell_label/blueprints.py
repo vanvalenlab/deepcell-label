@@ -88,6 +88,8 @@ def create_project():
         if labels_url is not None:
             label_file.write(requests.get(labels_url).content)
             label_file.seek(0)
+        else:
+            label_file = image_file
         loader = Loader(image_file, label_file)
         project = Project.create(loader)
     current_app.logger.info(
