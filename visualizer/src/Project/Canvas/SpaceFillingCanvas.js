@@ -2,8 +2,8 @@ import Box from '@mui/material/Box';
 import { ResizeSensor } from 'css-element-queries';
 import debounce from 'lodash.debounce';
 import { useEffect, useRef, useState } from 'react';
+import { useCanvas } from '../ProjectContext';
 import Canvas from './Canvas';
-import { useCanvas } from './ProjectContext';
 
 function SpaceFillingCanvas() {
   const canvasBoxRef = useRef({ offsetWidth: 0, offsetHeight: 0 });

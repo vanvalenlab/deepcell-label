@@ -1,10 +1,10 @@
 import Box from '@mui/material/Box';
+import Canvas from './Canvas';
 import DisplayControls from './DisplayControls';
 import Instructions from './Instructions';
 import LabelControls from './LabelControls';
 import LabelTabs from './LabelControls/LabelTabs';
 import ReviewControls from './ReviewControls';
-import SpaceFillingCanvas from './SpaceFillingCanvas';
 
 function Project({ review, track, spots }) {
   return (
@@ -32,7 +32,7 @@ function Project({ review, track, spots }) {
           <DisplayControls />
         </Box>
         {!spots && <LabelControls />}
-        <SpaceFillingCanvas />
+        <Canvas />
       </Box>
     </>
   );
