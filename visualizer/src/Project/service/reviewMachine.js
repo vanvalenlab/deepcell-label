@@ -5,14 +5,12 @@ import { assign, Machine, spawn } from 'xstate';
 import createLoadMachine from './loadMachine';
 import createProjectMachine from './projectMachine';
 
-// TODO: refactor bucket
-function createReviewMachine(projectIds, bucket) {
+function createReviewMachine(projectIds) {
   return Machine(
     {
       id: 'review',
       context: {
         projectIds,
-        bucket,
         projectId: projectIds[0],
         projects: {},
         judgments: {},

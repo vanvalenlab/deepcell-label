@@ -1,10 +1,10 @@
 import { useMachine } from '@xstate/react';
 import { useEffect, useState } from 'react';
 import { interpret } from 'xstate';
-import createLoadMachine from '../service/loadMachine';
-import createProjectMachine from '../service/projectMachine';
 import Display from './Display';
 import ProjectContext from './ProjectContext';
+import createLoadMachine from './service/loadMachine';
+import createProjectMachine from './service/projectMachine';
 
 function Load({ id, track, spots }) {
   const [loadMachine] = useState(createLoadMachine(id));

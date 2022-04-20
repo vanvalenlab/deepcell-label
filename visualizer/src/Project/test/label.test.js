@@ -2,8 +2,8 @@ import { render, screen } from '@testing-library/react'; // testing helpers
 import userEvent from '@testing-library/user-event'; // testing helpers for imitating user events
 import React from 'react'; // so that we can use JSX syntax
 import { interpret } from 'xstate';
-import Display from '../Project/Display';
-import ProjectContext from '../Project/ProjectContext';
+import Display from '../Display';
+import ProjectContext from '../ProjectContext';
 import createProjectMachine from '../service/projectMachine';
 import * as testData from './testData';
 

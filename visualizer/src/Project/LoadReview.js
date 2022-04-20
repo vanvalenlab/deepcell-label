@@ -1,9 +1,9 @@
 import { useActor, useInterpret, useSelector } from '@xstate/react';
 import { useEffect, useState } from 'react';
-import createReviewMachine from '../service/reviewMachine';
 import Display from './Display';
 import ProjectContext from './ProjectContext';
 import ReviewContext from './ReviewContext';
+import createReviewMachine from './service/reviewMachine';
 
 function LoadReview({ ids, track, spots }) {
   const [reviewMachine] = useState(createReviewMachine(ids.split(',')));
