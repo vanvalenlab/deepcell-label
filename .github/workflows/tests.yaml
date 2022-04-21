@@ -58,7 +58,7 @@ jobs:
           flag-name: cypress
           parallel: true
 
-    spots-e2e-tests:
+  spots-e2e-tests:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
