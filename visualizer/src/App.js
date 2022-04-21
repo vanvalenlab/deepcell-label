@@ -6,8 +6,6 @@ import Load from './Load';
 import NavBar from './Navbar';
 import Project from './Project';
 
-process.title = 'dcl-frontend';
-
 // inspect({
 //   // options
 //   // url: 'https://statecharts.io/inspect', // (default)
