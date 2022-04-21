@@ -185,15 +185,6 @@ const createSelectMachine = ({ eventBuses }) =>
           background: ctx.background,
         })),
         sendToEventBus: send((c, e) => e, { to: 'eventBus' }),
-        sendForeground: send((ctx) => ({
-          type: 'FOREGROUND',
-          foreground: ctx.foreground,
-        })),
-        sendBackground: send((ctx) => ({
-          type: 'BACKGROUND',
-          background: ctx.background,
-        })),
-        sendToEventBus: send((c, e) => e, { to: 'eventBus' }),
       },
     }
   );
