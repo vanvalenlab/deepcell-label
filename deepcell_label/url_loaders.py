@@ -22,20 +22,24 @@ from PIL import Image
 from skimage.external.tifffile import TiffFile
 
 from deepcell_label.imgutils import reshape
-from deepcell_label.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_INPUT_BUCKET
+from deepcell_label.config import (
+    AWS_ACCESS_KEY_ID,
+    AWS_SECRET_ACCESS_KEY,
+    S3_INPUT_BUCKET,
+)
 from deepcell_label.labelmaker import LabelInfoMaker
 
 DCL_AXES = 'ZYXC'
 
 
-class Loader():
+class Loader:
     """
     Interface for loading files into DeepCell Label.
     """
 
     def __init__(self, url_form):
-        self.url = url_form['url']
-        self.labeled_url = url_form['labeled_url'] if 'labeled_url' in url_form else None
+        self.url = url_form['images'] or url_form['url']
+        self.labeled_url = url_form['labels'] or url_form['labeled_url'] if 'labels' or 'labeled_url' in url_form else None
         self.input_axes = url_form['axes'] if 'axes' in url_form else DCL_AXES
         self.output_axes = DCL_AXES
 
