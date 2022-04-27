@@ -4,7 +4,9 @@ Loads both raw image data and labels
 """
 
 import io
+import itertools
 import json
+import re
 import tempfile
 import zipfile
 
@@ -21,7 +23,7 @@ class Loader:
     Loads and writes data into a DeepCell Label project zip.
     """
 
-    def __init__(self, image_file=None, label_file=None):
+    def __init__(self, image_file=None, label_file=None, dimension_order=None):
         self.X = None
         self.y = None
         self.cells = None
@@ -29,6 +31,7 @@ class Loader:
 
         self.image_file = image_file
         self.label_file = label_file if label_file else image_file
+        self.dimension_order = dimension_order
 
         with tempfile.TemporaryFile() as project_file:
             with zipfile.ZipFile(project_file, 'w', zipfile.ZIP_DEFLATED) as zip:
@@ -40,7 +43,7 @@ class Loader:
 
     def load(self):
         """Loads data from input files."""
-        self.X = load_images(self.image_file)
+        self.X = load_images(self.image_file, self.dimension_order)
         self.y = load_segmentation(self.label_file)
         self.spots = load_spots(self.label_file)
 
@@ -111,7 +114,7 @@ class Loader:
         self.zip.writestr('cells.json', json.dumps(cells))
 
 
-def load_images(image_file):
+def load_images(image_file, dimension_order):
     """
     Loads image data from image file.
 
@@ -125,7 +128,7 @@ def load_images(image_file):
     if X is None:
         X = load_npy(image_file)
     if X is None:
-        X = load_tiff(image_file)
+        X = load_tiff(image_file, dimension_order)
     if X is None:
         X = load_png(image_file)
     return X
@@ -198,17 +201,44 @@ def load_zip_tiffs(zf):
     Returns:
         numpy array or None if no png in zip
     """
-    tiffs = []
+    tiffs = {}
     for name in zf.namelist():
         with zf.open(name) as f:
             if 'TIFF image data' in magic.from_buffer(f.read(2048)):
                 f.seek(0)
                 tiff = TiffFile(f).asarray()
-                tiffs.append(tiff)
-    if len(tiffs) > 0:
-        # Stack channels on last axis
+                tiffs[name] = tiff
+
+    regex = r'(.*)_batch_(\d*)_feature_(\d*)\.tif'
+
+    def get_batch(filename):
+        match = re.match(regex, filename)
+        if match:
+            return int(match.group(2))
+
+    def get_feature(filename):
+        match = re.match(regex, filename)
+        if match:
+            return int(match.group(3))
+
+    filenames = list(tiffs.keys())
+    all_have_batch = all(map(lambda x: x is not None, map(get_batch, filenames)))
+    if all_have_batch:  # Use batches as Z dimension
+        batches = {}
+        for batch, batch_group in itertools.groupby(filenames, get_batch):
+            # Stack features on last axis
+            features = [
+                tiffs[filename]
+                for filename in sorted(list(batch_group), key=get_feature)
+            ]
+            batches[batch] = np.stack(features, axis=-1)
+        # Stack batches on first axis
+        batches = map(lambda x: x[1], sorted(batches.items()))
+        array = np.stack(batches, axis=0)
+        return array
+    else:  # Use each tiff as a channel and stack on the last axis
         y = np.stack(tiffs, axis=-1)
-        # Add frame axis
+        # Add Z axis (if missing)
         if y.ndim == 3:
             y = y[np.newaxis, ...]
         return y
@@ -287,7 +317,7 @@ def load_npy(f):
         return npy
 
 
-def load_tiff(f):
+def load_tiff(f, dimension_order):
     """
     Loads image data from a tiff file
 
@@ -298,21 +328,55 @@ def load_tiff(f):
         numpy array or None if not a tiff file
 
     Raises:
-        ValueError: loaded image data is more than 4 dimensional
+        ValueError: tiff has less than 2 or more than 4 dimensions
     """
     f.seek(0)
     if 'TIFF image data' in magic.from_buffer(f.read(2048)):
         f.seek(0)
         X = TiffFile(io.BytesIO(f.read())).asarray(squeeze=False)
-        if X.ndim == 2:
-            # Add channel and frame axes
-            X = X[np.newaxis, ..., np.newaxis]
-        if X.ndim == 3:
-            # TODO: use dimension order to know whether to add frame or channel axis
-            X = X[np.newaxis, ...]
-        if X.ndim > 4:
-            raise ValueError('Tiff file has more than 4 dimensions')
-        return X
+        if X.ndim == 0:
+            raise ValueError('Loaded image has no data')
+        elif X.ndim == 1:
+            raise ValueError('Loaded tiff is 1 dimensional')
+        elif X.ndim == 2:
+            # Add Z and C axes
+            return X[np.newaxis, ..., np.newaxis]
+        elif X.ndim == 3:
+            if dimension_order == 'BXY':
+                return X[..., np.newaxis]
+            elif dimension_order == 'XYC':
+                return X[np.newaxis, ...]
+            elif dimension_order == 'CXY':
+                X = np.moveaxis(X, 0, -1)
+                return X[np.newaxis, ...]
+            elif dimension_order == 'XYB':
+                X = np.moveaxis(X, -1, 0)
+                return X[..., np.newaxis]
+            else:  # Treat smallest axis as channels
+                print(
+                    f'Warning: tiff with shape {X.shape} has 3 dimensions '
+                    f'with unsupported dimension_order {dimension_order}. '
+                    'Using smallest axis as channels.'
+                )
+                smallest_axis = np.argmin(X.shape)
+                X = np.moveaxis(X, smallest_axis, -1)
+                return X[np.newaxis, ...]
+        elif X.ndim == 4:
+            if dimension_order == 'BXYC':
+                return X
+            elif dimension_order == 'CXYB':
+                X = np.moveaxis(X, (0, -1), (-1, 0))
+                return X
+            else:
+                print(
+                    f'Warning: tiff with shape {X.shape} has 4 dimensions, '
+                    f'but dimension_order is {dimension_order}. Assuming BXYC.'
+                )
+                return X
+        else:
+            raise ValueError(
+                f'Loaded tiff with shape {X.shape} has more than 4 dimensions.'
+            )
 
 
 def load_png(f):
