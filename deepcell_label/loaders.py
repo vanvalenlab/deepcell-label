@@ -26,6 +26,7 @@ class Loader:
         self.y = None
         self.cells = None
         self.spots = None
+        self.lineage = None
 
         self.image_file = image_file
         self.label_file = label_file if label_file else image_file
@@ -43,6 +44,7 @@ class Loader:
         self.X = load_images(self.image_file)
         self.y = load_segmentation(self.label_file)
         self.spots = load_spots(self.label_file)
+        self.lineage = load_lineage(self.label_file)
 
         if self.y is None:
             shape = (*self.X.shape[:-1], 1)
@@ -54,6 +56,7 @@ class Loader:
         self.write_segmentation()
         self.write_cells()
         self.write_spots()
+        self.write_lineage()
 
     def write_images(self):
         """
@@ -110,6 +113,10 @@ class Loader:
         cells = LabelInfoMaker(self.y).cell_info
         self.zip.writestr('cells.json', json.dumps(cells))
 
+    def write_lineage(self):
+        """Writes lineage to lineage.json in the output zip."""
+        self.zip.writestr('lineage.json', json.dumps(self.lineage))
+
 
 def load_images(image_file):
     """
@@ -164,6 +171,22 @@ def load_spots(f):
     if zipfile.is_zipfile(f):
         zf = zipfile.ZipFile(f, 'r')
         return load_zip_csv(zf)
+
+
+def load_lineage(f):
+    """
+    Load lineage data from label file.
+
+    Args:
+        zf: file with zipped csv containing spots data
+
+    Returns:
+        bytes read from csv in zip or None if no csv in zip
+    """
+    f.seek(0)
+    if zipfile.is_zipfile(f):
+        zf = zipfile.ZipFile(f, 'r')
+        return load_zip_json(zf, filename='lineage.json')
 
 
 def load_zip_numpy(zf, name='X'):
@@ -232,21 +255,47 @@ def load_zip_png(zf):
                 return np.array(png)
 
 
-def load_zip_csv(z):
+def load_zip_csv(zf):
     """
     Returns the binary data for the first CSV file in the zip file, if it exists.
 
     Args:
-        f: a ZipFile with a CSV
+        zf: a ZipFile with a CSV
 
     Returns:
         bytes or None if not a csv file
     """
-    for name in z.namelist():
+    for name in zf.namelist():
         if name.endswith('.csv'):
-            with z.open(name) as f:
-                f.seek(0)
+            with zf.open(name) as f:
                 return f.read()
+
+
+def load_zip_json(zf, filename=None):
+    """
+    Returns a dicstion json file in the zip file, if it exists.
+
+    Args:
+        zf: a ZipFile with a CSV
+
+    Returns:
+        bytes or None if not a csv file
+    """
+    if filename in zf.namelist():
+        with zf.open(filename) as f:
+            if 'JSON data' in magic.from_buffer(f.read(2048)):
+                f.seek(0)
+                return json.load(f)
+            else:
+                print('Warning: {filename} is not a json file')
+    if filename is not None:
+        print(f'Warning: JSON file {filename} not found. Loading first JSON in zip.')
+    for name in zf.namelist():
+        with zf.open(name) as f:
+            if 'JSON data' in magic.from_buffer(f.read(2048)):
+                f.seek(0)
+                return json.loads(f.read())
+    print('Warning: no JSON file in zip.')
 
 
 def load_zip(f):
@@ -287,7 +336,7 @@ def load_npy(f):
         return npy
 
 
-def load_tiff(f):
+def load_tiff(f, axes=None):
     """
     Loads image data from a tiff file
 
@@ -303,16 +352,37 @@ def load_tiff(f):
     f.seek(0)
     if 'TIFF image data' in magic.from_buffer(f.read(2048)):
         f.seek(0)
-        X = TiffFile(io.BytesIO(f.read())).asarray(squeeze=False)
+        tiff = TiffFile(io.BytesIO(f.read()))
+        # Load array
+        if tiff.is_imagej:
+            X = tiff.asarray()
+            # TODO: use axes to know which axes to add and permute
+            # TODO: handle tiffs with multiple series
+            axes = tiff.series[0].axes
+            if len(axes) != len(X.shape):
+                print(
+                    f'Warning: TIFF has shape {X.shape} and axes {axes} in ImageJ metadata'
+                )
+        elif tiff.is_ome:
+            # TODO: use DimensionOrder from OME-TIFF metadata to know which axes to add and permute
+            X = tiff.asarray(squeeze=False)
+        else:
+            X = tiff.asarray(squeeze=False)
+        # Reshape array
         if X.ndim == 2:
-            # Add channel and frame axes
-            X = X[np.newaxis, ..., np.newaxis]
+            # Add channels and frames
+            return X[np.newaxis, ..., np.newaxis]
         if X.ndim == 3:
-            # TODO: use dimension order to know whether to add frame or channel axis
-            X = X[np.newaxis, ...]
+            # TODO: more general axis handling
+            if axes[0] == 'C':  # Move channels to last axis and add frame
+                X = np.moveaxis(X, 0, -1)
+                return X[np.newaxis, ...]
+            else:  # Add channels
+                return X[..., np.newaxis]
+        if X.ndim == 4:
+            return X
         if X.ndim > 4:
             raise ValueError('Tiff file has more than 4 dimensions')
-        return X
 
 
 def load_png(f):
