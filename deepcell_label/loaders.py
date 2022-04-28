@@ -283,11 +283,11 @@ def load_zip_json(zf, filename=None):
     """
     if filename in zf.namelist():
         with zf.open(filename) as f:
-            if 'JSON data' in magic.from_buffer(f.read(2048)):
+            try:
                 f.seek(0)
                 return json.load(f)
-            else:
-                print('Warning: {filename} is not a json file')
+            except json.JSONDecodeError as e:
+                print(f'Warning: Could not load {filename} as JSON. {e.msg}')
     if filename is not None:
         print(f'Warning: JSON file {filename} not found. Loading first JSON in zip.')
     for name in zf.namelist():
