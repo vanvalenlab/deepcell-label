@@ -13,7 +13,7 @@ import numpy as np
 from PIL import Image
 from tifffile import TiffFile, TiffWriter
 
-from deepcell_label.labelmaker import LabelInfoMaker
+from deepcell_label.cells import Cells
 
 
 class Loader:
@@ -110,7 +110,7 @@ class Loader:
 
     def write_cells(self):
         """Writes cells to cells.json in the output zip."""
-        cells = LabelInfoMaker(self.y).cells
+        cells = Cells(self.y).cells
         self.zip.writestr('cells.json', json.dumps(cells))
 
     def write_lineage(self):

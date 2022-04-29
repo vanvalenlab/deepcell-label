@@ -3,7 +3,7 @@
 import numpy as np
 
 
-class LabelInfoMaker:
+class Cells:
     """
     Given a labeled image array with shape (frames, height, width, features),
     generates dictionaries with label metadata.

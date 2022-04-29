@@ -2,14 +2,14 @@
 
 import numpy as np
 
-from deepcell_label.labelmaker import LabelInfoMaker
+from deepcell_label.cells import Cells
 
 
-class TestLabelInfoMaker:
+class TestCells:
     def test_empty(self):
         labels = np.zeros((1, 1, 1, 1))
         expected_cells = {0: {}}
-        labeler = LabelInfoMaker(labels)
+        labeler = Cells(labels)
 
         assert labeler.cells == expected_cells
 
@@ -23,20 +23,20 @@ class TestLabelInfoMaker:
                 }
             }
         }
-        labeler = LabelInfoMaker(labels)
+        labeler = Cells(labels)
 
         assert labeler.cells == expected_cells
 
     def test_two_features_no_labels(self):
         labels = np.zeros((1, 1, 1, 2))
-        labeler = LabelInfoMaker(labels)
+        labeler = Cells(labels)
         expected_cells = {0: {}, 1: {}}
 
         assert labeler.cells == expected_cells
 
     def test_two_features_one_label(self):
         labels = np.ones((1, 1, 1, 2))
-        labeler = LabelInfoMaker(labels)
+        labeler = Cells(labels)
         expected_cell = {
             'label': 1,
             'frames': [0],
@@ -47,7 +47,7 @@ class TestLabelInfoMaker:
 
     def test_two_features_two_labels(self):
         labels = np.reshape([1, 2], (1, 1, 1, 2))
-        labeler = LabelInfoMaker(labels)
+        labeler = Cells(labels)
         expected_cells = {
             0: {
                 1: {
