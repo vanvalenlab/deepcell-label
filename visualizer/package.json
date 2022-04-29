@@ -35,6 +35,7 @@
     "dropzone": "^6.0.0-beta.2",
     "fast-deep-equal": "^3.1.3",
     "gpu.js": "^2.11.4",
+    "http-proxy-middleware": "^2.0.6",
     "husky": "^7.0.4",
     "istanbul-lib-coverage": "^3.2.0",
     "jest-fetch-mock": "^3.0.3",
@@ -79,7 +80,6 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "http://127.0.0.1:5000",
   "devDependencies": {
     "@cypress/code-coverage": "^3.9.12",
     "@cypress/instrument-cra": "^1.4.0",
