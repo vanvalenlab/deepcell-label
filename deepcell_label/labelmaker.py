@@ -9,47 +9,49 @@ class LabelInfoMaker:
     generates dictionaries with label metadata.
 
     The dictionaries are
-    cell_ids: key for each feature, values are numpy lists of labels present in that feature
-    cell_info: key for each feature, values are dicts
-               each feature dict has a key for each label, values are dicts
-               each label dict has keys 'label', 'frames', and 'slices'
+    cells: key for each feature, values are dicts
+           each feature dict has a key for each cell, values are dicts
+           each cell dict has keys 'label' and 'frames'
     """
 
     def __init__(self, labels):
         self.labels = labels
         self.num_features = labels.shape[-1]
         self.num_frames = labels.shape[0]
-        self._cell_info = None
+        self.compute_cells()
 
     @property
-    def cell_info(self):
-        if self._cell_info is None:
-            self._cell_info = {}
+    def cells(self):
+        if self._cells is None:
+            self._cells = {}
             for feature in range(self.num_features):
-                self.compute_feature_lineage(feature)
-        return self._cell_info
+                self.compute_feature_cells(feature)
+        return self._cells
 
-    def compute_feature_lineage(self, feature):
+    def compute_cells(self):
         """
-        Create tracks dictionary from a labels array.
-        Creates placeholders to build a lineage like frame_div, daughters, capped, parent.
+        Creates cells dictionary from the labels.
+        """
+        self.cells = {}
+        for feature in range(self.num_features):
+            self.compute_feature_cells(feature)
+
+    def compute_feature_cells(self, feature):
+        """
+        Create cells dictionary for one feature of the labels.
         """
         labels = self.labels[..., feature]
         cells = np.unique(labels)[np.nonzero(np.unique(labels))]
 
-        tracks = {}
+        feature_cells = {}
         for cell in cells:
             cell = int(cell)
-            tracks[cell] = {
+            feature_cells[cell] = {
                 'label': cell,
                 'frames': [],
-                'frame_div': None,
-                'daughters': [],
-                'capped': False,
-                'parent': None,
             }
             for frame in range(labels.shape[0]):
                 if cell in labels[frame, ...]:
-                    tracks[cell]['frames'].append(frame)
+                    feature_cells[cell]['frames'].append(frame)
 
-        self._cell_info[feature] = tracks
+        self.cells[feature] = feature_cells

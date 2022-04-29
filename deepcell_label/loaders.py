@@ -110,7 +110,7 @@ class Loader:
 
     def write_cells(self):
         """Writes cells to cells.json in the output zip."""
-        cells = LabelInfoMaker(self.y).cell_info
+        cells = LabelInfoMaker(self.y).cells
         self.zip.writestr('cells.json', json.dumps(cells))
 
     def write_lineage(self):
