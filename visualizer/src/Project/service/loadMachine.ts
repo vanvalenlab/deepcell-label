@@ -15,15 +15,21 @@ type Cells = {
     [cell: number]: {
       label: number;
       frames: number[];
-      frame_div: number | null;
-      daughters: number[];
-      capped: boolean;
-      parent: number | null;
     };
   };
 };
+type Lineage = {
+  [cell: number]: {
+    label: number;
+    frames: number[];
+    frame_div: number | null;
+    daughters: number[];
+    capped: boolean;
+    parent: number | null;
+  };
+};
 type Files = {
-  [filename: string]: OmeTiff | Spots | Cells;
+  [filename: string]: OmeTiff | Spots | Cells | Lineage;
 };
 
 async function parseZip(response: Response) {
@@ -50,6 +56,12 @@ async function parseZip(response: Response) {
       const json = await entry.getData(new zip.TextWriter());
       const cells: Cells = JSON.parse(json);
       files[entry.filename] = cells;
+    }
+    if (entry.filename === 'lineage.json') {
+      // @ts-ignore
+      const json = await entry.getData(new zip.TextWriter());
+      const lineage: Lineage = JSON.parse(json);
+      files[entry.filename] = lineage;
     }
   }
   return { files };
@@ -132,6 +144,7 @@ interface Context {
   labeledArrays: Int32Array[][][] | null;
   labels: Cells | null;
   spots: Spots | null;
+  lineage: Lineage | null;
 }
 
 const createLoadMachine = (projectId: string) =>
@@ -150,6 +163,7 @@ const createLoadMachine = (projectId: string) =>
         labeledArrays: null,
         labels: null,
         spots: null,
+        lineage: null,
       },
       tsTypes: {} as import('./loadMachine.typegen').Typegen0,
       schema: {
@@ -174,7 +188,10 @@ const createLoadMachine = (projectId: string) =>
         loading: {
           invoke: {
             src: 'fetch project zip',
-            onDone: { target: 'splitArrays', actions: ['set spots', 'set cells', 'set metadata'] },
+            onDone: {
+              target: 'splitArrays',
+              actions: ['set spots', 'set cells', 'set lineage', 'set metadata'],
+            },
           },
         },
         splitArrays: {
@@ -201,6 +218,10 @@ const createLoadMachine = (projectId: string) =>
         'set cells': assign({
           // @ts-ignore
           labels: (context, event) => event.data.files['cells.json'] as Cells,
+        }),
+        'set lineage': assign({
+          // @ts-ignore
+          lineage: (context, event) => event.data.files['lineage.json'] as Lineage,
         }),
         'set metadata': assign((ctx, evt) => {
           // @ts-ignore
