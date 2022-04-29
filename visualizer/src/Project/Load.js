@@ -15,13 +15,14 @@ function Load({ id, track, spots }) {
 
   useEffect(() => {
     if (load.matches('loaded')) {
-      const { rawArrays, labeledArrays, labels, spots } = load.context;
+      const { rawArrays, labeledArrays, labels, spots, lineage } = load.context;
       project.send({
         type: 'LOADED',
         rawArrays,
         labeledArrays,
         labels,
         spots,
+        lineage,
       });
     }
   }, [load, project]);
