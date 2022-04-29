@@ -8,7 +8,7 @@ import Paper from '@mui/material/Paper';
 import Popper from '@mui/material/Popper';
 import React, { useReducer, useRef } from 'react';
 import { ArcherElement } from 'react-archer';
-import { useTracking } from '../../ProjectContext';
+import { useTracking } from '../../../ProjectContext';
 
 function AddDaughter({ label }) {
   const tracking = useTracking();
