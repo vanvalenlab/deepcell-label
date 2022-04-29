@@ -6,7 +6,7 @@ import LabelControls from './LabelControls';
 import LabelTabs from './LabelControls/LabelTabs';
 import ReviewControls from './ReviewControls';
 
-function Project({ review, track, spots }) {
+function Project({ review, track, edit }) {
   return (
     <>
       <Instructions />
@@ -27,11 +27,11 @@ function Project({ review, track, spots }) {
             p: 1,
           }}
         >
-          {track && !spots && <LabelTabs />}
-          {review && !spots && <ReviewControls />}
+          {track && edit && <LabelTabs />}
+          {review && edit && <ReviewControls />}
           <DisplayControls />
         </Box>
-        {!spots && <LabelControls />}
+        {edit && <LabelControls />}
         <Canvas />
       </Box>
     </>
