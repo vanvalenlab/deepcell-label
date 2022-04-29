@@ -11,7 +11,7 @@ import RawCanvas from './RawCanvas';
 import SpotsCanvas from './SpotsCanvas';
 import ToolCanvas from './ToolCanvas';
 
-export const Canvas = () => {
+function Canvas({ edit }) {
   const select = useSelect();
 
   const canvas = useCanvas();
@@ -105,13 +105,11 @@ export const Canvas = () => {
           {process.env.REACT_APP_SPOTS_VISUALIZER === 'true' && (
             <SpotsCanvas setCanvases={setCanvases} />
           )}
-          {process.env.REACT_APP_SPOTS_VISUALIZER !== 'true' && (
-            <ToolCanvas setCanvases={setCanvases} />
-          )}
+          {edit && <ToolCanvas setCanvases={setCanvases} />}
         </>
       )}
     </Box>
   );
-};
+}
 
 export default Canvas;

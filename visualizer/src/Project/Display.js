@@ -32,7 +32,7 @@ function Project({ review, track, edit }) {
           <DisplayControls />
         </Box>
         {edit && <LabelControls />}
-        <Canvas />
+        <Canvas edit={edit} />
       </Box>
     </>
   );
