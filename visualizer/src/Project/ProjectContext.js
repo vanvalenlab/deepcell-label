@@ -21,6 +21,26 @@ export function useSpots() {
   return spots;
 }
 
+export function useLineage() {
+  const project = useProject();
+  const spots = useSelector(project, (state) => state.context.lineageRef);
+  return spots;
+}
+
+const emptyDivision = {
+  parent: null,
+  daughters: [],
+  divisionFrame: null,
+  parentDivisionFrame: null,
+  frames: [],
+};
+
+export function useDivision(label) {
+  const lineage = useLineage();
+  const division = lineage[label] || emptyDivision;
+  return division;
+}
+
 export function useArrays() {
   const project = useProject();
   const arrays = useSelector(project, (state) => state.context.arraysRef);
@@ -47,26 +67,6 @@ export function useTracking(label) {
     return track;
   });
   return tracking;
-}
-
-const emptyDivision = {
-  parent: null,
-  daughters: [],
-  divisionFrame: null,
-  parentDivisionFrame: null,
-  frames: [],
-};
-
-export function useDivision(label) {
-  const project = useProject();
-  const division = useSelector(project, (state) => {
-    const labelMode = state.context.toolRef;
-    const track = labelMode.state.context.trackRef;
-    const labels = track.state.context.labels;
-    const division = labels[label];
-    return division || emptyDivision;
-  });
-  return division;
 }
 
 export function useApi() {
