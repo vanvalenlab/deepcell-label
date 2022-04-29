@@ -2,6 +2,17 @@ import { Box } from '@mui/material';
 import { default as React, useLayoutEffect, useRef, useState } from 'react';
 import { useDivision } from '../../ProjectContext';
 import Division from './Division';
+import DivisionFootprint from './Division/DivisionFootprint';
+
+// Renders a hidden division timeline to size the real divisions
+function DivisionsFootprint({ footprintRef }) {
+  return (
+    <Box ref={footprintRef} sx={{ display: 'flex', visibility: 'hidden', position: 'absolute' }}>
+      <DivisionFootprint />
+      <DivisionFootprint />
+    </Box>
+  );
+}
 
 function Divisions({ label }) {
   const division = useDivision(label);

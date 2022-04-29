@@ -1,7 +1,7 @@
 import { useTheme } from '@mui/material/styles';
 import React from 'react';
 import { ArcherElement } from 'react-archer';
-import { useImage, useSelect } from '../../ProjectContext';
+import { useImage, useSelect } from '../../../ProjectContext';
 import Cell from './Cell';
 
 function Parent({ division }) {

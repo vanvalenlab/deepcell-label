@@ -1,8 +1,9 @@
 import { Box } from '@mui/material';
 import React from 'react';
 import { ArcherElement } from 'react-archer';
-import { useImage, useSelect } from '../../ProjectContext';
+import { useImage, useSelect } from '../../../ProjectContext';
 import Cell from './Cell';
+import DaughterMenu from './DaughterMenu';
 
 function Daughter({ label, daughter, divisionFrame }) {
   const select = useSelect();

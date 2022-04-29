@@ -4,19 +4,9 @@ import { bind, unbind } from 'mousetrap';
 import { default as React, useEffect } from 'react';
 import FrameSlider from '../../FrameSlider';
 import { useSelect, useTracking } from '../../ProjectContext';
-import { Cell, DivisionFootprint } from './Division';
+import Cell from './Division/Cell';
 import Divisions from './Divisions';
 import LabelTimeline from './LabelTimeline';
-
-// Renders a hidden division timeline to size the real divisions
-function DivisionsFootprint({ footprintRef }) {
-  return (
-    <Box ref={footprintRef} sx={{ display: 'flex', visibility: 'hidden', position: 'absolute' }}>
-      <DivisionFootprint />
-      <DivisionFootprint />
-    </Box>
-  );
-}
 
 function Timeline() {
   const select = useSelect();

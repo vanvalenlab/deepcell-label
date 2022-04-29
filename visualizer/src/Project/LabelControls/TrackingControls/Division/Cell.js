@@ -1,6 +1,6 @@
 import Avatar from '@mui/material/Avatar';
 import React from 'react';
-import { useHexColormap } from '../../ProjectContext';
+import { useHexColormap } from '../../../ProjectContext';
 
 const Cell = React.forwardRef(({ label, onClick }, ref) => {
   const colors = useHexColormap();

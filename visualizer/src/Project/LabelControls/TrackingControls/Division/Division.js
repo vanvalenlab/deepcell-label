@@ -2,7 +2,7 @@ import { Box } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import React from 'react';
 import { ArcherContainer } from 'react-archer';
-import { useTracking } from '../../ProjectContext';
+import { useTracking } from '../../../ProjectContext';
 import Daughters from './Daughters';
 import Parent from './Parent';
 
