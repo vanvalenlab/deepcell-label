@@ -29,8 +29,8 @@ export function useSpots() {
 
 export function useLineage() {
   const project = useProject();
-  const spots = useSelector(project, (state) => state.context.lineageRef);
-  return spots;
+  const lineage = useSelector(project, (state) => state.context.lineageRef);
+  return lineage;
 }
 
 const emptyDivision = {
