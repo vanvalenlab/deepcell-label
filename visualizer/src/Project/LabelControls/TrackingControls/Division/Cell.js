@@ -6,6 +6,10 @@ const Cell = React.forwardRef(({ label, onClick }, ref) => {
   const colors = useHexColormap();
   const color = colors[label] ?? '#000000';
 
+  if (!label) {
+    return null;
+  }
+
   return (
     <Avatar
       ref={ref}

@@ -1,54 +1,49 @@
-import { Box, FormLabel, Typography } from '@mui/material';
+import { Box, FormLabel } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import { bind, unbind } from 'mousetrap';
 import { default as React, useEffect } from 'react';
 import FrameSlider from '../../FrameSlider';
-import { useSelect, useTracking } from '../../ProjectContext';
+import { useCanvas, useEditing, useLineage } from '../../ProjectContext';
+import Cells from './Cells';
 import Cell from './Division/Cell';
 import Divisions from './Divisions';
+import EditingPrompt from './EditingPrompt';
 import LabelTimeline from './LabelTimeline';
 
 function Timeline() {
-  const select = useSelect();
-  const selected = useSelector(select, (state) => state.context.selected);
-  const hovering = useSelector(select, (state) => state.context.hovering);
+  const canvas = useCanvas();
+  const hovering = useSelector(canvas, (state) => state.context.hovering);
 
-  const tracking = useTracking();
-  const addingDaughter = useSelector(tracking, (state) => state.matches('addingDaughter'));
+  const lineage = useLineage();
+  const selected = useSelector(lineage, (state) => state.context.selected);
+
   const parent = useSelector(tracking, (state) => state.context.parent);
 
+  const editing = useEditing();
+
   useEffect(() => {
-    bind('n', () => select.send('NEW_FOREGROUND'));
     bind('esc', () => {
-      tracking.send('RESET');
-      select.send('RESET_FOREGROUND');
-      select.send('RESET_BACKGROUND');
+      lineage.send('RESET_CELL');
     });
-    bind('[', () => select.send('PREV_FOREGROUND'));
-    bind(']', () => select.send('NEXT_FOREGROUND'));
+    bind('[', () => lineage.send('PREV_CELL'));
+    bind(']', () => lineage.send('NEXT_CELL'));
     return () => {
-      unbind('n');
       unbind('esc');
       unbind('[');
       unbind(']');
     };
-  }, [select, tracking]);
+  }, [lineage]);
 
   return (
-    <Box m={1}>
-      {addingDaughter && (
-        <Typography sx={{ maxWidth: '100%' }}>
-          Click a label to add a daughter to label {parent}.
-        </Typography>
-      )}
-      <FormLabel>Selected Label</FormLabel>
-      <Divisions label={selected} />
+    <Box>
       <FormLabel>Frames</FormLabel>
-      <LabelTimeline label={selected} />
       <FrameSlider showLabel={false} />
+      <LabelTimeline label={selected} />
       <LabelTimeline label={hovering} />
-      <FormLabel>Hovering over Label</FormLabel>
-      {hovering !== null && <Cell label={hovering} />}
+      <Cells />
+      <Cell />
+      <Divisions />
+      {editing && <EditingPrompt />}
     </Box>
   );
 }
