@@ -42,8 +42,9 @@ const emptyDivision = {
 };
 
 export function useDivision(label) {
-  const lineage = useLineage();
-  const division = lineage[label] || emptyDivision;
+  const lineageMachine = useLineage();
+  const lineage = useSelector(lineageMachine, (state) => state.context.lineage);
+  const division = lineage?.[label] ?? emptyDivision;
   return division;
 }
 
