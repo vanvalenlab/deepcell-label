@@ -11,7 +11,6 @@ function Daughter({ parent, daughter, divisionFrame }) {
   const editing = useEditing();
 
   const onClick = () => {
-    console.log('daughter', daughter);
     lineage.send({ type: 'SET_CELL', cell: daughter });
     image.send({ type: 'SET_FRAME', frame: divisionFrame });
   };
