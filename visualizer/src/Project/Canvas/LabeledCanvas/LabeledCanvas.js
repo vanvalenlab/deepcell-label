@@ -9,7 +9,7 @@ import {
   useLabeled,
   useLabels,
   useSelect,
-} from '../ProjectContext';
+} from '../../ProjectContext';
 
 const highlightColor = [255, 0, 0];
 
