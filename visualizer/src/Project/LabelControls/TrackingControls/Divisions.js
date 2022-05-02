@@ -1,6 +1,7 @@
 import { Box } from '@mui/material';
-import { default as React, useLayoutEffect, useRef, useState } from 'react';
-import { useDivision } from '../../ProjectContext';
+import { useSelector } from '@xstate/react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
+import { useDivision, useLineage } from '../../ProjectContext';
 import Division from './Division';
 import DivisionFootprint from './Division/DivisionFootprint';
 
@@ -14,7 +15,9 @@ function DivisionsFootprint({ footprintRef }) {
   );
 }
 
-function Divisions({ label }) {
+function Divisions() {
+  const lineage = useLineage();
+  const label = useSelector(lineage, (state) => state.context.selected);
   const division = useDivision(label);
 
   const footprintRef = useRef();

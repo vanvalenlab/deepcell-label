@@ -6,12 +6,12 @@ import Cell from './Cell';
 import DaughterMenu from './DaughterMenu';
 
 function Daughter({ label, daughter, divisionFrame }) {
-  const select = useSelect();
+  const lineage = useSelect();
   const image = useImage();
   const editing = useEditing();
 
   const onClick = () => {
-    select.send({ type: 'SET_FOREGROUND', foreground: daughter });
+    lineage.send({ type: 'SET_CELL', cell: daughter });
     image.send({ type: 'SET_FRAME', frame: divisionFrame });
   };
 

@@ -25,11 +25,11 @@ function Parent({ division }) {
     });
   }
 
-  const select = useSelect();
+  const lineage = useSelect();
   const image = useImage();
 
   const onClick = (e) => {
-    select.send({ type: 'SET_FOREGROUND', foreground: label });
+    lineage.send({ type: 'SET_CELL', cell: label });
     image.send({
       type: 'SET_FRAME',
       frame: divisionFrame ? divisionFrame - 1 : frames[frames.length - 1],
