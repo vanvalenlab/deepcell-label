@@ -15,6 +15,12 @@ function useReturnContext(contextType) {
   return context;
 }
 
+export function useEditing() {
+  const polaris = process.env.REACT_APP_SPOTS_VISUALIZER === 'true';
+  const caliban = process.env.REACT_APP_CALIBAN_VISUALIZER === 'true';
+  return !polaris && !caliban;
+}
+
 export function useSpots() {
   const project = useProject();
   const spots = useSelector(project, (state) => state.context.spotsRef);
