@@ -1,4 +1,4 @@
-import { Box, FormLabel } from '@mui/material';
+import { Box } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import { bind, unbind } from 'mousetrap';
 import { default as React, useEffect } from 'react';
@@ -34,8 +34,7 @@ function Timeline() {
 
   return (
     <Box>
-      <FormLabel>Frames</FormLabel>
-      <FrameSlider showLabel={false} />
+      <FrameSlider />
       <LabelTimeline label={selected} />
       <LabelTimeline label={hovering} />
       <Cells />

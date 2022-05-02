@@ -4,7 +4,7 @@ import { bind, unbind } from 'mousetrap';
 import React, { useEffect, useState } from 'react';
 import { useImage } from './ProjectContext';
 
-function FrameSlider({ showLabel = true }) {
+function FrameSlider() {
   const image = useImage();
   const frame = useSelector(image, (state) => state.context.frame);
   const numFrames = useSelector(image, (state) => state.context.numFrames);
@@ -44,7 +44,7 @@ function FrameSlider({ showLabel = true }) {
   return (
     numFrames > 1 && (
       <>
-        {showLabel && <FormLabel>Frame</FormLabel>}
+        <FormLabel>Frame</FormLabel>
         <Tooltip title={tooltipText}>
           <Slider
             value={frame}
