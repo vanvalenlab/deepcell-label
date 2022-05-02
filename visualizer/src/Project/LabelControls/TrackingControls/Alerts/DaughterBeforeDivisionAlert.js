@@ -1,13 +1,12 @@
 import Alert from '@mui/material/Alert';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useDivision, useTracking } from '../../../ProjectContext';
+import { useDivision, useLineage } from '../../../ProjectContext';
 import { daughterBeforeDivision, formatFrames } from '../trackingUtils';
 import AlertGroup, { alertStyle } from './AlertGroup';
 
 function DaughterBeforeDivisionAlert({ label }) {
-  const division = useDivision(label);
-  const { frames, parentDivisionFrame: divisionFrame } = division;
+  const { frames, parentDivisionFrame: divisionFrame } = useDivision(label);
 
   const framesBeforeDivision = frames.filter((frame) => frame < divisionFrame);
   const frameText = formatFrames(framesBeforeDivision);
@@ -20,12 +19,12 @@ function DaughterBeforeDivisionAlert({ label }) {
 }
 
 function DaughterBeforeDivisionAlerts() {
-  const tracking = useTracking();
-  const divisions = useSelector(tracking, (state) => state.context.labels);
+  const lineageMachine = useLineage();
+  const lineage = useSelector(lineageMachine, (state) => state.context.lineage);
 
-  const daughterBeforeDivisionAlerts = Object.values(divisions)
-    .filter((division) => daughterBeforeDivision(division, divisions))
-    .map((division) => division.label);
+  const daughterBeforeDivisionAlerts = Object.values(lineage)
+    .filter((cell) => daughterBeforeDivision(cell, lineage))
+    .map((cell) => cell.label);
   const count = daughterBeforeDivisionAlerts.length;
 
   const header =

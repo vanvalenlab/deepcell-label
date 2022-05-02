@@ -1,14 +1,12 @@
 import { Box } from '@mui/material';
-import { useSelector } from '@xstate/react';
 import React from 'react';
 import { ArcherContainer } from 'react-archer';
-import { useTracking } from '../../../ProjectContext';
+import { useDivision } from '../../../ProjectContext';
 import Daughters from './Daughters';
 import Parent from './Parent';
 
 function Division({ label }) {
-  const tracking = useTracking();
-  const division = useSelector(tracking, (state) => state.context.labels[label]);
+  const division = useDivision(label);
 
   return (
     <ArcherContainer>

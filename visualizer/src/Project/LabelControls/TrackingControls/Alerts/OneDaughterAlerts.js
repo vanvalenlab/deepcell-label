@@ -1,14 +1,12 @@
 import Alert from '@mui/material/Alert';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useImage, useSelect, useTracking } from '../../../ProjectContext';
+import { useDivision, useImage, useLineage, useSelect } from '../../../ProjectContext';
 import { oneDaughter } from '../trackingUtils';
 import AlertGroup, { alertStyle } from './AlertGroup';
 
 function OneDaughterAlert({ label }) {
-  const tracking = useTracking();
-  const division = useSelector(tracking, (state) => state.context.labels[label]);
-  const { daughters, divisionFrame } = division;
+  const { daughters, divisionFrame } = useDivision(label);
 
   const image = useImage();
   const select = useSelect();
@@ -26,12 +24,12 @@ function OneDaughterAlert({ label }) {
 }
 
 function OneDaughterAlerts() {
-  const tracking = useTracking();
-  const divisions = useSelector(tracking, (state) => state.context.labels);
+  const lineageMachine = useLineage();
+  const lineage = useSelector(lineageMachine, (state) => state.context.lineage);
 
-  const oneDaughterAlerts = Object.values(divisions)
-    .filter((division) => oneDaughter(division))
-    .map((division) => division.label);
+  const oneDaughterAlerts = Object.values(lineage)
+    .filter((cell) => oneDaughter(cell))
+    .map((cell) => cell.label);
   const count = oneDaughterAlerts.length;
 
   const header =
