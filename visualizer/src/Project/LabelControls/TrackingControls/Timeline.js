@@ -17,8 +17,6 @@ function Timeline() {
   const lineage = useLineage();
   const selected = useSelector(lineage, (state) => state.context.selected);
 
-  const parent = useSelector(tracking, (state) => state.context.parent);
-
   const editing = useEditing();
 
   useEffect(() => {
