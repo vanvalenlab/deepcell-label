@@ -8,6 +8,7 @@ import {
   useImage,
   useLabeled,
   useLabels,
+  useLineage,
   useSelect,
 } from '../../ProjectContext';
 
@@ -35,8 +36,12 @@ export const LabeledCanvas = ({ setCanvases }) => {
     (state) => state.context.labeledArrays && state.context.labeledArrays[feature][frame]
   );
 
+  // Get all selected labels
+  const lineage = useLineage();
+  const lineageLabel = useSelector(lineage, (state) => state.context.selected);
   const select = useSelect();
-  const foreground = useSelector(select, (state) => state.context.foreground);
+  const selectLabel = useSelector(select, (state) => state.context.foreground);
+  const label = process.env.REACT_APP_CALIBAN_VISUALIZER === 'true' ? lineageLabel : selectLabel;
 
   const kernelRef = useRef();
   const kernelCanvas = useAlphaKernelCanvas();
@@ -44,9 +49,9 @@ export const LabeledCanvas = ({ setCanvases }) => {
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
-      `function (labelArray, colormap, foreground, highlight, highlightColor, opacity) {
+      `function (labelArray, colormap, highlightedLabel, highlight, highlightColor, opacity) {
         const label = labelArray[this.constants.h - 1 - this.thread.y][this.thread.x];
-        if (highlight && label === foreground && foreground !== 0) {
+        if (highlight && label === highlightedLabel && highlightedLabel !== 0) {
           const [r, g, b] = highlightColor;
           this.color(r / 255, g / 255, b / 255, opacity);
         } else {
@@ -71,11 +76,11 @@ export const LabeledCanvas = ({ setCanvases }) => {
   useEffect(() => {
     if (labeledArray) {
       // Compute the label image with the kernel
-      kernelRef.current(labeledArray, colormap, foreground, highlight, highlightColor, opacity);
+      kernelRef.current(labeledArray, colormap, label, highlight, highlightColor, opacity);
       // Rerender the parent canvas with the kernel output
       setCanvases((canvases) => ({ ...canvases, labeled: kernelCanvas }));
     }
-  }, [labeledArray, colormap, foreground, highlight, opacity, kernelCanvas, setCanvases]);
+  }, [labeledArray, colormap, label, highlight, opacity, kernelCanvas, setCanvases]);
 
   return null;
 };

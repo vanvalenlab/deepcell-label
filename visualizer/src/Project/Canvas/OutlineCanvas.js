@@ -7,6 +7,7 @@ import {
   useCanvas,
   useImage,
   useLabeled,
+  useLineage,
   useSelect,
 } from '../ProjectContext';
 
@@ -18,6 +19,10 @@ const OutlineCanvas = ({ setCanvases }) => {
   const select = useSelect();
   const foreground = useSelector(select, (state) => state.context.foreground);
   const background = useSelector(select, (state) => state.context.background);
+
+  const lineage = useLineage();
+  const lineageLabel = useSelector(lineage, (state) => state.context.selected);
+  const label = process.env.REACT_APP_CALIBAN_VISUALIZER === 'true' ? lineageLabel : foreground;
 
   const labeled = useLabeled();
   const outlineAll = useSelector(labeled, (state) => state.context.outline);
@@ -79,11 +84,11 @@ const OutlineCanvas = ({ setCanvases }) => {
   useEffect(() => {
     if (labeledArray) {
       // Compute the outline of the labels with the kernel
-      kernelRef.current(labeledArray, outlineAll, foreground, background);
+      kernelRef.current(labeledArray, outlineAll, label, background);
       // Rerender the parent canvas
       setCanvases((canvases) => ({ ...canvases, outline: kernelCanvas }));
     }
-  }, [labeledArray, outlineAll, foreground, background, setCanvases, kernelCanvas]);
+  }, [labeledArray, outlineAll, label, background, setCanvases, kernelCanvas]);
 
   return null;
 };
