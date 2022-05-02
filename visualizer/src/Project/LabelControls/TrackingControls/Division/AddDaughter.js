@@ -8,27 +8,27 @@ import Paper from '@mui/material/Paper';
 import Popper from '@mui/material/Popper';
 import React, { useReducer, useRef } from 'react';
 import { ArcherElement } from 'react-archer';
-import { useTracking } from '../../../ProjectContext';
+import { useEditLineage } from '../../../ProjectContext';
 
 function AddDaughter({ label }) {
-  const tracking = useTracking();
+  const editLineage = useEditLineage();
 
   const [open, toggle] = useReducer((v) => !v, false);
   const anchorRef = useRef(null);
 
   const handleAddDaughter = () => {
-    tracking.send({ type: 'ADD_DAUGHTER', parent: label });
+    editLineage.send({ type: 'ADD_DAUGHTER', parent: label });
     toggle();
   };
   const handleNewCell = () => {
-    tracking.send({ type: 'CREATE_NEW_CELL', label });
+    editLineage.send({ type: 'CREATE_NEW_CELL', label });
     toggle();
   };
 
   return (
     <Box sx={{ position: 'relative' }}>
-      {/* point arrow to hidden Avatar so arrows look aligned */}
       <ArcherElement id='addDaughter'>
+        {/* point to hidden Avatar to align arrows */}
         <Avatar sx={{ m: 1, height: '2.5rem', width: '2.5rem', visibility: 'hidden' }} />
       </ArcherElement>
       <IconButton

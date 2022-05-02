@@ -6,22 +6,21 @@ import MenuList from '@mui/material/MenuList';
 import Paper from '@mui/material/Paper';
 import Popper from '@mui/material/Popper';
 import React, { useReducer, useRef } from 'react';
-import { useTracking } from '../../../ProjectContext';
+import { useEditLineage } from '../../../ProjectContext';
 
 function DaughterMenu({ parent, daughter }) {
-  const tracking = useTracking();
-  const { send } = tracking;
+  const editLineage = useEditLineage();
 
   const [open, toggleOpen] = useReducer((v) => !v, false);
   const anchorRef = useRef(null);
 
   const handleRemove = () => {
-    send({ type: 'REMOVE', daughter: daughter });
+    editLineage.send({ type: 'REMOVE', daughter: daughter });
     toggleOpen();
   };
 
   const handleParent = () => {
-    send({ type: 'REPLACE_WITH_PARENT', parent: parent, daughter: daughter });
+    editLineage.send({ type: 'REPLACE_WITH_PARENT', parent: parent, daughter: daughter });
     toggleOpen();
   };
 

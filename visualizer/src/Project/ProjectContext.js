@@ -66,7 +66,7 @@ export function useSelect() {
   return select;
 }
 
-export function useTracking(label) {
+export function useEditLineage(label) {
   const project = useProject();
   const tracking = useSelector(project, (state) => {
     const labelMode = state.context.toolRef;
