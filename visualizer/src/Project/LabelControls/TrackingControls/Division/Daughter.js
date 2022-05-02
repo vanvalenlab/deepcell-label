@@ -1,16 +1,17 @@
 import { Box } from '@mui/material';
 import React from 'react';
 import { ArcherElement } from 'react-archer';
-import { useEditing, useImage, useSelect } from '../../../ProjectContext';
+import { useEditing, useImage, useLineage } from '../../../ProjectContext';
 import Cell from './Cell';
 import DaughterMenu from './DaughterMenu';
 
-function Daughter({ label, daughter, divisionFrame }) {
-  const lineage = useSelect();
+function Daughter({ parent, daughter, divisionFrame }) {
+  const lineage = useLineage();
   const image = useImage();
   const editing = useEditing();
 
   const onClick = () => {
+    console.log('daughter', daughter);
     lineage.send({ type: 'SET_CELL', cell: daughter });
     image.send({ type: 'SET_FRAME', frame: divisionFrame });
   };
@@ -20,7 +21,7 @@ function Daughter({ label, daughter, divisionFrame }) {
       <ArcherElement id={`daughter${daughter}`}>
         <Cell label={daughter} onClick={onClick} />
       </ArcherElement>
-      {editing && <DaughterMenu parent={label} daughter={daughter} />}
+      {editing && <DaughterMenu parent={parent} daughter={daughter} />}
     </Box>
   );
 }

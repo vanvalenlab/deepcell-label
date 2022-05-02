@@ -1,11 +1,11 @@
 import { useTheme } from '@mui/material/styles';
 import React from 'react';
 import { ArcherElement } from 'react-archer';
-import { useEditing, useImage, useSelect } from '../../../ProjectContext';
+import { useEditing, useImage, useLineage } from '../../../ProjectContext';
 import Cell from './Cell';
 
 function Parent({ division }) {
-  const { label, daughters, divisionFrame, frames } = division;
+  const { label, daughters, frame_div: divisionFrame, frames } = division;
   const theme = useTheme();
   const strokeColor = theme.palette.secondary.main;
   const editing = useEditing();
@@ -25,7 +25,7 @@ function Parent({ division }) {
     });
   }
 
-  const lineage = useSelect();
+  const lineage = useLineage();
   const image = useImage();
 
   const onClick = (e) => {
