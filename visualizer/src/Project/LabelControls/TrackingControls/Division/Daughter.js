@@ -1,13 +1,14 @@
 import { Box } from '@mui/material';
 import React from 'react';
 import { ArcherElement } from 'react-archer';
-import { useImage, useSelect } from '../../../ProjectContext';
+import { useEditing, useImage, useSelect } from '../../../ProjectContext';
 import Cell from './Cell';
 import DaughterMenu from './DaughterMenu';
 
 function Daughter({ label, daughter, divisionFrame }) {
   const select = useSelect();
   const image = useImage();
+  const editing = useEditing();
 
   const onClick = () => {
     select.send({ type: 'SET_FOREGROUND', foreground: daughter });
@@ -19,7 +20,7 @@ function Daughter({ label, daughter, divisionFrame }) {
       <ArcherElement id={`daughter${daughter}`}>
         <Cell label={daughter} onClick={onClick} />
       </ArcherElement>
-      <DaughterMenu parent={label} daughter={daughter} />
+      {editing && <DaughterMenu parent={label} daughter={daughter} />}
     </Box>
   );
 }

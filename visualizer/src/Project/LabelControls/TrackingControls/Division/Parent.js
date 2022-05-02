@@ -1,13 +1,14 @@
 import { useTheme } from '@mui/material/styles';
 import React from 'react';
 import { ArcherElement } from 'react-archer';
-import { useImage, useSelect } from '../../../ProjectContext';
+import { useEditing, useImage, useSelect } from '../../../ProjectContext';
 import Cell from './Cell';
 
 function Parent({ division }) {
   const { label, daughters, divisionFrame, frames } = division;
   const theme = useTheme();
   const strokeColor = theme.palette.secondary.main;
+  const editing = useEditing();
 
   const relations = daughters.map((label) => ({
     targetId: `daughter${label}`,
@@ -15,12 +16,14 @@ function Parent({ division }) {
     sourceAnchor: 'right',
     style: { strokeColor, strokeWidth: 1, noCurves: true },
   }));
-  relations.push({
-    targetId: 'addDaughter',
-    targetAnchor: 'left',
-    sourceAnchor: 'right',
-    style: { strokeColor, strokeWidth: 1, noCurves: true },
-  });
+  if (editing) {
+    relations.push({
+      targetId: 'addDaughter',
+      targetAnchor: 'left',
+      sourceAnchor: 'right',
+      style: { strokeColor, strokeWidth: 1, noCurves: true },
+    });
+  }
 
   const select = useSelect();
   const image = useImage();

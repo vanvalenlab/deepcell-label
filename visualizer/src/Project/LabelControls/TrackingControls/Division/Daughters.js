@@ -1,17 +1,20 @@
 import { Box } from '@mui/material';
 import React from 'react';
+import { useEditing } from '../../../ProjectContext';
 import AddDaughter from './AddDaughter';
 import Daughter from './Daughter';
 
 function Daughters({ division }) {
   const { label, daughters, divisionFrame } = division;
 
+  const editing = useEditing();
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
       {daughters.map((daughter) => (
         <Daughter label={label} daughter={daughter} divisionFrame={divisionFrame} key={daughter} />
       ))}
-      <AddDaughter label={label} />
+      {editing && <AddDaughter label={label} />}
     </Box>
   );
 }
