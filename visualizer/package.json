@@ -47,7 +47,7 @@
     "prop-types": "^15.8.1",
     "quickselect": "^2.0.0",
     "react": "^17.0.1",
-    "react-archer": "^3.2.2",
+    "react-archer": "^3.3.0",
     "react-dom": "^17.0.1",
     "react-dropzone": "^11.4.0",
     "react-error-boundary": "^3.1.3",
