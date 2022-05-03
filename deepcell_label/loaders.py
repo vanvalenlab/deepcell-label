@@ -14,6 +14,7 @@ from PIL import Image
 from tifffile import TiffFile, TiffWriter
 
 from deepcell_label.cells import Cells
+from deepcell_label.utils import add_frame_div_parent, reformat_lineage
 
 
 class Loader:
@@ -186,7 +187,10 @@ def load_lineage(f):
     f.seek(0)
     if zipfile.is_zipfile(f):
         zf = zipfile.ZipFile(f, 'r')
-        return load_zip_json(zf, filename='lineage.json')
+        lineage = load_zip_json(zf, filename='lineage.json')
+        lineage = add_frame_div_parent(lineage)
+        lineage = reformat_lineage(lineage)
+        return lineage
 
 
 def load_zip_numpy(zf, name='X'):

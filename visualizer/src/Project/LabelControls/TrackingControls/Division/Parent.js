@@ -5,7 +5,7 @@ import { useEditing, useImage, useLineage } from '../../../ProjectContext';
 import Cell from './Cell';
 
 function Parent({ division }) {
-  const { label, daughters, frame_div: divisionFrame, frames } = division;
+  const { label, daughters, divisionFrame, frames } = division;
   const theme = useTheme();
   const strokeColor = theme.palette.secondary.main;
   const editing = useEditing();

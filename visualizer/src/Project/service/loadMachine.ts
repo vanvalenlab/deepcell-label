@@ -22,7 +22,8 @@ type Lineage = {
   [cell: number]: {
     label: number;
     frames: number[];
-    frame_div: number | null;
+    divisionFrame: number | null;
+    parentDivisionFrame: number | null;
     daughters: number[];
     capped: boolean;
     parent: number | null;

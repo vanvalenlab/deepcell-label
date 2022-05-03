@@ -5,7 +5,7 @@ import AddDaughter from './AddDaughter';
 import Daughter from './Daughter';
 
 function Daughters({ division }) {
-  const { label, daughters, frame_div: divisionFrame } = division;
+  const { label, daughters, divisionFrame } = division;
 
   const editing = useEditing();
 
