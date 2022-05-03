@@ -15,6 +15,16 @@ function useReturnContext(contextType) {
   return context;
 }
 
+export function useMousetrapInputRef() {
+  // Adds mousetrap class so hotkeys work after using switch
+  const inputRef = useRef();
+  useEffect(() => {
+    const input = inputRef.current;
+    input.className = `${input.className} mousetrap`;
+  }, []);
+  return inputRef;
+}
+
 export function useEditing() {
   const polaris = process.env.REACT_APP_SPOTS_VISUALIZER === 'true';
   const caliban = process.env.REACT_APP_CALIBAN_VISUALIZER === 'true';

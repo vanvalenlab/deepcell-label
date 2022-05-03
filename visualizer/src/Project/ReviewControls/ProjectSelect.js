@@ -1,6 +1,6 @@
 import { FormLabel, MenuItem, TextField } from '@mui/material';
 import { useSelector } from '@xstate/react';
-import { useEffect, useRef } from 'react';
+import { useMousetrapInputRef } from '../ProjectContext';
 import { useReview } from '../ReviewContext';
 
 function ProjectSelect() {
@@ -9,12 +9,7 @@ function ProjectSelect() {
   const projectId = useSelector(review, (state) => state.context.projectId);
   const projectIds = useSelector(review, (state) => state.context.projectIds);
 
-  // Adds mousetrap class so hotkeys work after using switch
-  const inputRef = useRef();
-  useEffect(() => {
-    const select = inputRef.current;
-    select.className = `${select.className}  mousetrap`;
-  }, []);
+  const inputRef = useMousetrapInputRef();
 
   const onChange = (e) => {
     review.send({ type: 'SET_PROJECT', projectId: e.target.value });
