@@ -8,12 +8,12 @@ import Tooltip from '@mui/material/Tooltip';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
 import React, { useEffect } from 'react';
-import { useMousetrapInputRef, useRaw } from '../../ProjectContext';
+import { useMousetrapRef, useRaw } from '../../ProjectContext';
 
 const InvertToggle = ({ channel }) => {
   const invert = useSelector(channel, (state) => state.context.invert);
 
-  const inputRef = useMousetrapInputRef();
+  const inputRef = useMousetrapRef();
 
   const tooltip = (
     <span>

@@ -5,13 +5,13 @@ import Tooltip from '@mui/material/Tooltip';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
 import React, { useEffect } from 'react';
-import { useLabeled, useMousetrapInputRef } from '../../ProjectContext';
+import { useLabeled, useMousetrapRef } from '../../ProjectContext';
 
 function HighlightToggle() {
   const labeled = useLabeled();
   const highlight = useSelector(labeled, (state) => state.context.highlight);
 
-  const inputRef = useMousetrapInputRef();
+  const inputRef = useMousetrapRef();
 
   const tooltipText = (
     <span>

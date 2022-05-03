@@ -15,14 +15,23 @@ function useReturnContext(contextType) {
   return context;
 }
 
-export function useMousetrapInputRef() {
-  // Adds mousetrap class so hotkeys work after using switch
-  const inputRef = useRef();
+/**
+ * Return a ref that adds mousetrap to its className.
+ * By default keyboard events will not fire inside of a textarea, input, or select.
+ * Elements with the mousetrap class will fire keybinds. */
+export function useMousetrapRef() {
+  const ref = useRef();
+  const [hasClass, setHasClass] = useState(false);
+
   useEffect(() => {
-    const input = inputRef.current;
-    input.className = `${input.className} mousetrap`;
-  }, []);
-  return inputRef;
+    // Adds mousetrap class so hotkeys work after using input element
+    if (ref.current && !hasClass) {
+      setHasClass(true);
+      const inputEl = ref.current;
+      inputEl.className = `${inputEl.className} mousetrap`;
+    }
+  });
+  return ref;
 }
 
 export function useEditing() {

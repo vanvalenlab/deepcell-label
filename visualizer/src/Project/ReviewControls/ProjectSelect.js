@@ -1,6 +1,6 @@
 import { FormLabel, MenuItem, TextField } from '@mui/material';
 import { useSelector } from '@xstate/react';
-import { useMousetrapInputRef } from '../ProjectContext';
+import { useMousetrapRef } from '../ProjectContext';
 import { useReview } from '../ReviewContext';
 
 function ProjectSelect() {
@@ -9,7 +9,7 @@ function ProjectSelect() {
   const projectId = useSelector(review, (state) => state.context.projectId);
   const projectIds = useSelector(review, (state) => state.context.projectIds);
 
-  const inputRef = useMousetrapInputRef();
+  const inputRef = useMousetrapRef();
 
   const onChange = (e) => {
     review.send({ type: 'SET_PROJECT', projectId: e.target.value });

@@ -3,13 +3,13 @@ import FormGroup from '@mui/material/FormGroup';
 import Switch from '@mui/material/Switch';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useMousetrapInputRef, useSpots } from '../../ProjectContext';
+import { useMousetrapRef, useSpots } from '../../ProjectContext';
 
 function SpotColorToggle() {
   const spots = useSpots();
   const colorSpots = useSelector(spots, (state) => state.context.colorSpots);
 
-  const inputRef = useMousetrapInputRef();
+  const inputRef = useMousetrapRef();
 
   return (
     <FormGroup row>

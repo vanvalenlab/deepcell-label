@@ -5,13 +5,13 @@ import Tooltip from '@mui/material/Tooltip';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
 import React, { useCallback, useEffect } from 'react';
-import { useMousetrapInputRef, useRaw } from '../../ProjectContext';
+import { useMousetrapRef, useRaw } from '../../ProjectContext';
 
 function ColorModeToggle() {
   const raw = useRaw();
   const grayscale = useSelector(raw, (state) => state.context.isGrayscale);
 
-  const inputRef = useMousetrapInputRef();
+  const inputRef = useMousetrapRef();
 
   const onClick = useCallback(() => raw.send('TOGGLE_COLOR_MODE'), [raw]);
 
