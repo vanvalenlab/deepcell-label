@@ -1,6 +1,6 @@
 import Slider from '@mui/material/Slider';
 import { useSelector } from '@xstate/react';
-import { useCanvas, useSpots } from '../../ProjectContext';
+import { useCanvas, useMousetrapRef, useSpots } from '../../ProjectContext';
 
 function SpotRadiusSlider() {
   const canvas = useCanvas();
@@ -13,6 +13,8 @@ function SpotRadiusSlider() {
   const spots = useSpots();
   const radius = useSelector(spots, (state) => state.context.radius);
 
+  const inputRef = useMousetrapRef();
+
   return (
     <Slider
       value={radius}
@@ -23,6 +25,7 @@ function SpotRadiusSlider() {
       orientation='horizontal'
       valueLabelDisplay='auto'
       sx={{ p: 0 }}
+      componentsProps={{ input: { ref: inputRef } }}
     />
   );
 }

@@ -3,11 +3,13 @@ import Tooltip from '@mui/material/Tooltip';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
 import React, { useEffect } from 'react';
-import { useLabeled } from '../../ProjectContext';
+import { useLabeled, useMousetrapRef } from '../../ProjectContext';
 
 function OpacitySlider() {
   const labeled = useLabeled();
   const opacity = useSelector(labeled, (state) => state.context.opacity);
+
+  const inputRef = useMousetrapRef();
 
   const handleOpacityChange = (event, newValue) =>
     labeled.send({ type: 'SET_OPACITY', opacity: Number(newValue) });
@@ -35,6 +37,7 @@ function OpacitySlider() {
         onChange={handleOpacityChange}
         onDoubleClick={handleDoubleClick}
         sx={{ p: 0 }}
+        componentsProps={{ input: { ref: inputRef } }}
       />
     </Tooltip>
   );
