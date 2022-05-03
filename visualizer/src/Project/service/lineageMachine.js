@@ -56,7 +56,9 @@ function createLineageMachine({ eventBuses }) {
     {
       actions: {
         setHovering: assign({ hovering: (ctx, evt) => evt.hovering }),
-        selectCell: assign({ selected: (ctx, evt) => ctx.hovering }),
+        selectCell: assign({
+          selected: (ctx, evt) => (ctx.selected === ctx.hovering ? 0 : ctx.hovering),
+        }),
         setLineage: assign({ lineage: (ctx, evt) => evt.lineage }),
         setCell: assign({ selected: (ctx, evt) => evt.cell }),
         resetCell: assign({ selected: 0 }),
