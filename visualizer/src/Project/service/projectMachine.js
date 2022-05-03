@@ -90,10 +90,9 @@ const createProjectMachine = (projectId) =>
           actors.labelsRef = spawn(createLabelsMachine(context), 'labels');
           actors.apiRef = spawn(createApiMachine(context), 'api');
           actors.selectRef = spawn(createSelectMachine(context), 'select');
+          actors.lineageRef = spawn(createLineageMachine(context), 'lineage');
           if (process.env.REACT_APP_SPOTS_VISUALIZER === 'true') {
             actors.spotsRef = spawn(createSpotsMachine(context), 'spots');
-          } else if (process.env.REACT_APP_CALIBAN_VISUALIZER === 'true') {
-            actors.lineageRef = spawn(createLineageMachine(context), 'lineage');
           } else {
             actors.toolRef = spawn(createToolMachine(context), 'tool');
             actors.undoRef = spawn(createUndoMachine(context), 'undo');
