@@ -23,14 +23,12 @@ export function useMousetrapRef() {
   const ref = useRef();
   const [hasClass, setHasClass] = useState(false);
 
-  useEffect(() => {
-    // Adds mousetrap class so hotkeys work after using input element
-    if (ref.current && !hasClass) {
-      setHasClass(true);
-      const inputEl = ref.current;
-      inputEl.className = `${inputEl.className} mousetrap`;
-    }
-  });
+  if (ref.current && !hasClass) {
+    setHasClass(true);
+    const inputEl = ref.current;
+    inputEl.className = `${inputEl.className} mousetrap`;
+  }
+
   return ref;
 }
 
