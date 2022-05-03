@@ -3,7 +3,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { useSelector } from '@xstate/react';
 import equal from 'fast-deep-equal';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useArrays, useCanvas, useSelect } from '../ProjectContext';
+import { useArrays, useCanvas, useEditing, useSelect } from '../ProjectContext';
 import ComposeCanvas from './ComposeCanvases';
 import LabeledCanvas from './LabeledCanvas';
 import OutlineCanvas from './OutlineCanvas';
@@ -11,7 +11,7 @@ import RawCanvas from './RawCanvas';
 import SpotsCanvas from './SpotsCanvas';
 import ToolCanvas from './ToolCanvas';
 
-function Canvas({ edit }) {
+function Canvas() {
   const select = useSelect();
 
   const canvas = useCanvas();
@@ -26,6 +26,8 @@ function Canvas({ edit }) {
     },
     equal
   );
+
+  const editing = useEditing();
 
   const padding = 5;
   const topColor = Math.floor(sy) === 0 ? 'white' : 'black';
@@ -105,7 +107,7 @@ function Canvas({ edit }) {
           {process.env.REACT_APP_SPOTS_VISUALIZER === 'true' && (
             <SpotsCanvas setCanvases={setCanvases} />
           )}
-          {edit && <ToolCanvas setCanvases={setCanvases} />}
+          {editing && <ToolCanvas setCanvases={setCanvases} />}
         </>
       )}
     </Box>

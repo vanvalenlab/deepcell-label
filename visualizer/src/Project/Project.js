@@ -24,19 +24,16 @@ function Project() {
   const review = isReview(id);
   const invalid = !isProjectId(id) && !review;
   const track = new URLSearchParams(window.location.search).get('track');
-  const spots = process.env.REACT_APP_SPOTS_VISUALIZER === 'true';
-  const caliban = process.env.REACT_APP_CALIBAN_VISUALIZER === 'true';
-  const edit = !spots && !caliban;
 
   if (invalid) {
     return <InvalidId id={id} />;
   }
 
   if (review) {
-    return <LoadProjects ids={id} edit={edit} track={track} />;
+    return <LoadProjects ids={id} track={track} />;
   }
 
-  return <LoadProject id={id} edit={edit} track={track} />;
+  return <LoadProject id={id} track={track} />;
 }
 
 export default Project;

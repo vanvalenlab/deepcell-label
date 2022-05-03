@@ -4,9 +4,11 @@ import DisplayControls from './DisplayControls';
 import Instructions from './Instructions';
 import LabelControls from './LabelControls';
 import LabelTabs from './LabelControls/LabelTabs';
+import { useEditing } from './ProjectContext';
 import ReviewControls from './ReviewControls';
 
-function Project({ review, track, edit }) {
+function Project({ review, track }) {
+  const editing = useEditing();
   return (
     <>
       <Instructions />
@@ -27,12 +29,12 @@ function Project({ review, track, edit }) {
             p: 1,
           }}
         >
-          {track && edit && <LabelTabs />}
-          {review && edit && <ReviewControls />}
+          {track && editing && <LabelTabs />}
+          {review && editing && <ReviewControls />}
           <DisplayControls />
         </Box>
-        {edit && <LabelControls />}
-        <Canvas edit={edit} />
+        {editing && <LabelControls />}
+        <Canvas />
       </Box>
     </>
   );
