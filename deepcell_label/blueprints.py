@@ -83,10 +83,24 @@ def create_project():
     # )
     with tempfile.TemporaryFile() as image_file, tempfile.TemporaryFile() as label_file:
         if images_url is not None:
-            image_file.write(requests.get(images_url).content)
+            image_response = requests.get(images_url)
+            if image_response.status_code != 200:
+                return (
+                    image_response.text,
+                    image_response.status_code,
+                    image_response.headers.items(),
+                )
+            image_file.write(image_response.content)
             image_file.seek(0)
         if labels_url is not None:
-            label_file.write(requests.get(labels_url).content)
+            labels_response = requests.get(labels_url)
+            if labels_response.status_code != 200:
+                return (
+                    labels_response.text,
+                    labels_response.status_code,
+                    labels_response.headers.items(),
+                )
+            label_file.write(labels_response.content)
             label_file.seek(0)
         else:
             label_file = image_file
