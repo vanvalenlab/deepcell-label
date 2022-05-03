@@ -17,7 +17,7 @@ def add_frame_div_parent(lineage):
     new_lineage = lineage.copy()
     for cell in new_lineage.values():
         if cell['parent']:
-            parent = cell['parent']
+            parent = str(cell['parent'])
             cell['frame_div_parent'] = new_lineage[parent]['frame_div']
         else:
             cell['frame_div_parent'] = None
