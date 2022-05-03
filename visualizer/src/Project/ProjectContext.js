@@ -15,6 +15,24 @@ function useReturnContext(contextType) {
   return context;
 }
 
+export function useSelectedCell() {
+  // Get selected cell from each labeling mode
+  const lineage = useLineage();
+  const lineageLabel = useSelector(lineage, (state) => state.context.selected);
+  const select = useSelect();
+  const selectLabel = useSelector(select, (state) => state.context.foreground);
+  // Get labeling mode
+  const labelMode = useLabelMode();
+  const mode = useSelector(labelMode, (state) => {
+    return state.matches('segment') ? 0 : state.matches('track') ? 1 : false;
+  });
+  // Switch between selections
+  if (mode === 1 || process.env.REACT_APP_CALIBAN_VISUALIZER === 'true') {
+    return lineageLabel;
+  }
+  return selectLabel;
+}
+
 /**
  * Return a ref that adds mousetrap to its className.
  * By default keyboard events will not fire inside of a textarea, input, or select.

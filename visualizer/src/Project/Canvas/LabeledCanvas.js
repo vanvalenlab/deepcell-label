@@ -7,10 +7,8 @@ import {
   useCanvas,
   useImage,
   useLabeled,
-  useLabelMode,
   useLabels,
-  useLineage,
-  useSelect,
+  useSelectedCell,
 } from '../ProjectContext';
 
 const highlightColor = [255, 0, 0];
@@ -37,17 +35,7 @@ export const LabeledCanvas = ({ setCanvases }) => {
     (state) => state.context.labeledArrays && state.context.labeledArrays[feature][frame]
   );
 
-  // Get selected cell from each labeling mode
-  const lineage = useLineage();
-  const lineageLabel = useSelector(lineage, (state) => state.context.selected);
-  const select = useSelect();
-  const selectLabel = useSelector(select, (state) => state.context.foreground);
-  // Pick selected cell
-  const labelMode = useLabelMode();
-  const mode = useSelector(labelMode, (state) => {
-    return state.matches('segment') ? 0 : state.matches('track') ? 1 : false;
-  });
-  const label = mode === 1 || process.env.REACT_APP_CALIBAN_VISUALIZER ? lineageLabel : selectLabel;
+  const highlightedCell = useSelectedCell();
 
   const kernelRef = useRef();
   const kernelCanvas = useAlphaKernelCanvas();
@@ -82,11 +70,18 @@ export const LabeledCanvas = ({ setCanvases }) => {
   useEffect(() => {
     if (labeledArray) {
       // Compute the label image with the kernel
-      kernelRef.current(labeledArray, colormap, label, highlight, highlightColor, opacity);
+      kernelRef.current(
+        labeledArray,
+        colormap,
+        highlightedCell,
+        highlight,
+        highlightColor,
+        opacity
+      );
       // Rerender the parent canvas with the kernel output
       setCanvases((canvases) => ({ ...canvases, labeled: kernelCanvas }));
     }
-  }, [labeledArray, colormap, label, highlight, opacity, kernelCanvas, setCanvases]);
+  }, [labeledArray, colormap, highlightedCell, highlight, opacity, kernelCanvas, setCanvases]);
 
   return null;
 };

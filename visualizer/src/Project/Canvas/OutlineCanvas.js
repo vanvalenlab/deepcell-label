@@ -7,9 +7,8 @@ import {
   useCanvas,
   useImage,
   useLabeled,
-  useLabelMode,
-  useLineage,
   useSelect,
+  useSelectedCell,
 } from '../ProjectContext';
 
 const OutlineCanvas = ({ setCanvases }) => {
@@ -18,18 +17,8 @@ const OutlineCanvas = ({ setCanvases }) => {
   const height = useSelector(canvas, (state) => state.context.height);
 
   const select = useSelect();
-  const foreground = useSelector(select, (state) => state.context.foreground);
-  const background = useSelector(select, (state) => state.context.background);
-
-  const lineage = useLineage();
-  const lineageLabel = useSelector(lineage, (state) => state.context.selected);
-
-  // Pick selected label based on mode
-  const labelMode = useLabelMode();
-  const mode = useSelector(labelMode, (state) => {
-    return state.matches('segment') ? 0 : state.matches('track') ? 1 : false;
-  });
-  const label = mode === 1 || process.env.REACT_APP_CALIBAN_VISUALIZER ? lineageLabel : foreground;
+  const redOutlinedCell = useSelector(select, (state) => state.context.background);
+  const shadedCell = useSelectedCell();
 
   const labeled = useLabeled();
   const outlineAll = useSelector(labeled, (state) => state.context.outline);
@@ -53,7 +42,7 @@ const OutlineCanvas = ({ setCanvases }) => {
       // template string needed to avoid minification breaking function
       // by changing if (x) { y } to x && y
       // TODO: research how to work around minification changes
-      `function (data, outlineAll, foreground, background) {
+      `function (data, outlineAll, shadedCell, redOutlinedCell) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
         const label = data[y][x];
@@ -65,11 +54,11 @@ const OutlineCanvas = ({ setCanvases }) => {
             (y !== this.constants.h - 1 && data[y + 1][x] !== label));
 
         // always outline selected labels
-        if (onOutline && label === background) {
+        if (onOutline && label === redOutlinedCell) {
           this.color(1, 0, 0, 1);
-        } else if (onOutline && label === foreground) {
+        } else if (onOutline && label === shadedCell) {
           this.color(1, 1, 1, 1);
-        } else if (label === foreground && foreground !== 0) {
+        } else if (label === shadedCell && shadedCell !== 0) {
           this.color(1, 1, 1, 0.5);
         } else if (outlineAll && onOutline) {
           this.color(1, 1, 1, 1);
@@ -91,11 +80,11 @@ const OutlineCanvas = ({ setCanvases }) => {
   useEffect(() => {
     if (labeledArray) {
       // Compute the outline of the labels with the kernel
-      kernelRef.current(labeledArray, outlineAll, label, background);
+      kernelRef.current(labeledArray, outlineAll, shadedCell, redOutlinedCell);
       // Rerender the parent canvas
       setCanvases((canvases) => ({ ...canvases, outline: kernelCanvas }));
     }
-  }, [labeledArray, outlineAll, label, background, setCanvases, kernelCanvas]);
+  }, [labeledArray, outlineAll, shadedCell, redOutlinedCell, setCanvases, kernelCanvas]);
 
   return null;
 };
