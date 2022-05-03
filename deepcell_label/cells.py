@@ -20,14 +20,6 @@ class Cells:
         self.num_frames = labels.shape[0]
         self.compute_cells()
 
-    @property
-    def cells(self):
-        if self._cells is None:
-            self._cells = {}
-            for feature in range(self.num_features):
-                self.compute_feature_cells(feature)
-        return self._cells
-
     def compute_cells(self):
         """
         Creates cells dictionary from the labels.
