@@ -7,6 +7,7 @@ import {
   useCanvas,
   useImage,
   useLabeled,
+  useLabelMode,
   useLineage,
   useSelect,
 } from '../ProjectContext';
@@ -22,7 +23,13 @@ const OutlineCanvas = ({ setCanvases }) => {
 
   const lineage = useLineage();
   const lineageLabel = useSelector(lineage, (state) => state.context.selected);
-  const label = process.env.REACT_APP_CALIBAN_VISUALIZER === 'true' ? lineageLabel : foreground;
+
+  // Pick selected label based on mode
+  const labelMode = useLabelMode();
+  const mode = useSelector(labelMode, (state) => {
+    return state.matches('segment') ? 0 : state.matches('track') ? 1 : false;
+  });
+  const label = mode === 1 || process.env.REACT_APP_CALIBAN_VISUALIZER ? lineageLabel : foreground;
 
   const labeled = useLabeled();
   const outlineAll = useSelector(labeled, (state) => state.context.outline);

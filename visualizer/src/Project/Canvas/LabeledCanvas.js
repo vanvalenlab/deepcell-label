@@ -7,6 +7,7 @@ import {
   useCanvas,
   useImage,
   useLabeled,
+  useLabelMode,
   useLabels,
   useLineage,
   useSelect,
@@ -36,12 +37,17 @@ export const LabeledCanvas = ({ setCanvases }) => {
     (state) => state.context.labeledArrays && state.context.labeledArrays[feature][frame]
   );
 
-  // Get all selected labels
+  // Get selected cell from each labeling mode
   const lineage = useLineage();
   const lineageLabel = useSelector(lineage, (state) => state.context.selected);
   const select = useSelect();
   const selectLabel = useSelector(select, (state) => state.context.foreground);
-  const label = process.env.REACT_APP_CALIBAN_VISUALIZER === 'true' ? lineageLabel : selectLabel;
+  // Pick selected cell
+  const labelMode = useLabelMode();
+  const mode = useSelector(labelMode, (state) => {
+    return state.matches('segment') ? 0 : state.matches('track') ? 1 : false;
+  });
+  const label = mode === 1 || process.env.REACT_APP_CALIBAN_VISUALIZER ? lineageLabel : selectLabel;
 
   const kernelRef = useRef();
   const kernelCanvas = useAlphaKernelCanvas();
