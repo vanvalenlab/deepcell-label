@@ -121,7 +121,7 @@ def create_project_from_dropped_file():
     Create a new Project from drag & dropped file.
     """
     start = timeit.default_timer()
-    input_file = request.files.get('file')
+    input_file = request.files.get('images')
     # axes = request.form['axes'] if 'axes' in request.form else DCL_AXES
     loader = Loader(input_file)
     project = Project.create(loader)
