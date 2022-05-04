@@ -52,7 +52,7 @@ const DisplayInstructions = () => {
                 <li>Feature switches segmentations, like whole-cell and nuclear</li>
                 <li>Outline toggles outlining all labels or only selected labels</li>
                 <li>Opacity overlays the labels on the channels</li>
-                <li>Highlight colors the foreground label red</li>
+                <li>Highlight colors the selected label red</li>
               </ul>
             </Typography>
           </Grid>

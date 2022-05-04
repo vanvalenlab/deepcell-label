@@ -1,189 +1,93 @@
-import { actions, assign, Machine, send } from 'xstate';
-import { respond } from 'xstate/lib/actions';
+import { assign, Machine, send } from 'xstate';
+import { pure, respond } from 'xstate/lib/actions';
 import { fromEventBus } from './eventBus';
 
-const { pure } = actions;
-
-function prevLabel(label, labels) {
-  const allLabels = Object.keys(labels).map(Number);
-  const smallerLabels = allLabels.filter((val) => val < label);
-  const prevLabel = Math.max(...smallerLabels);
-  if (prevLabel === -Infinity) {
-    return Math.max(...allLabels);
+function prevLabel(label, overlaps) {
+  const numLabels = overlaps[0].length - 1;
+  const prevLabel = label - 1;
+  if (prevLabel === 0) {
+    return numLabels;
   }
   return prevLabel;
 }
 
-function nextLabel(label, labels) {
-  const allLabels = Object.keys(labels).map(Number);
-  const largerLabels = Object.keys(labels)
-    .map(Number)
-    .filter((val) => val > label);
-  const nextLabel = Math.min(...largerLabels);
-  if (nextLabel === Infinity) {
-    return Math.min(...allLabels);
+function nextLabel(label, overlaps) {
+  const numLabels = overlaps[0].length - 1;
+  const nextLabel = label + 1;
+  if (nextLabel > numLabels) {
+    return 1;
   }
   return nextLabel;
 }
-
-const selectActions = {
-  selectForeground: pure(({ hovering, foreground, background }) => {
-    return [
-      send({ type: 'FOREGROUND', foreground: hovering }),
-      send({
-        type: 'BACKGROUND',
-        background: hovering === background ? foreground : background,
-      }),
-    ];
-  }),
-  selectBackground: pure(({ hovering, foreground, background }) => {
-    return [
-      send({ type: 'BACKGROUND', background: hovering }),
-      send({
-        type: 'FOREGROUND',
-        foreground: hovering === foreground ? background : foreground,
-      }),
-    ];
-  }),
-  sendSelected: send(({ foreground, background }) => ({
-    type: 'SELECTED',
-    selected: foreground === 0 ? background : foreground,
-  })),
-};
-
-const selectShortcutActions = {
-  switch: pure(({ foreground, background }) => {
-    return [
-      send({ type: 'FOREGROUND', foreground: background }),
-      send({ type: 'BACKGROUND', background: foreground }),
-    ];
-  }),
-  newForeground: send(({ labels }) => ({
-    type: 'FOREGROUND',
-    foreground: Math.max(0, ...Object.keys(labels).map(Number)) + 1,
-  })),
-  resetForeground: send({ type: 'FOREGROUND', foreground: 0 }),
-  resetBackground: send({ type: 'BACKGROUND', background: 0 }),
-};
-
-const cycleActions = {
-  prevForeground: send(({ foreground, labels }) => ({
-    type: 'FOREGROUND',
-    foreground: prevLabel(foreground, labels),
-  })),
-  nextForeground: send(({ foreground, labels }) => ({
-    type: 'FOREGROUND',
-    foreground: nextLabel(foreground, labels),
-  })),
-  prevBackground: send(({ background, labels }) => ({
-    type: 'BACKGROUND',
-    background: prevLabel(background, labels),
-  })),
-  nextBackground: send(({ background, labels }) => ({
-    type: 'BACKGROUND',
-    background: nextLabel(background, labels),
-  })),
-};
-
-const setActions = {
-  setHovering: assign({ hovering: (_, { hovering }) => hovering }),
-  setLabels: assign({ labels: (_, { labels }) => labels }),
-  setForeground: assign({ foreground: (_, { foreground }) => foreground }),
-  setBackground: assign({ background: (_, { background }) => background }),
-  setSelected: assign({ selected: (_, { selected }) => selected }),
-};
 
 const createSelectMachine = ({ eventBuses }) =>
   Machine(
     {
       id: 'select',
       invoke: [
-        {
-          id: 'eventBus',
-          src: fromEventBus('select', () => eventBuses.select),
-        },
+        { id: 'eventBus', src: fromEventBus('select', () => eventBuses.select) },
         { src: fromEventBus('select', () => eventBuses.canvas) },
         { src: fromEventBus('select', () => eventBuses.labeled) },
-        { src: fromEventBus('select', () => eventBuses.labels) },
+        { src: fromEventBus('select', () => eventBuses.overlaps) },
       ],
       context: {
         selected: 1,
-        foreground: 1,
-        background: 0,
         hovering: null,
-        labels: {},
+        overlaps: null,
       },
       on: {
-        SHIFT_CLICK: [
-          {
-            cond: 'doubleClick',
-            actions: ['selectForeground', send({ type: 'BACKGROUND', background: 0 })],
-          },
-          { cond: 'onBackground', actions: 'selectForeground' },
-          { actions: 'selectBackground' },
-        ],
-
-        GET_STATE: {
-          actions: ['sendSelected', 'sendForeground', 'sendBackground'],
-        },
+        GET_SELECTED: { actions: 'sendSelected' },
 
         HOVERING: { actions: 'setHovering' },
-        LABELS: { actions: 'setLabels' },
+        OVERLAPS: { actions: 'setOverlaps' },
         SELECTED: { actions: ['setSelected', 'sendToEventBus'] },
-        FOREGROUND: {
-          actions: ['setForeground', 'sendSelected', 'sendToEventBus'],
-        },
-        BACKGROUND: {
-          actions: ['setBackground', 'sendSelected', 'sendToEventBus'],
-        },
-        SET_FOREGROUND: {
-          actions: send((_, { foreground }) => ({
-            type: 'FOREGROUND',
-            foreground,
-          })),
-        },
-        SELECT_FOREGROUND: { actions: 'selectForeground' },
-        SELECT_BACKGROUND: { actions: 'selectBackground' },
-        SWITCH: { actions: 'switch' },
-        NEW_FOREGROUND: { actions: 'newForeground' },
-        RESET_FOREGROUND: { actions: 'resetForeground' },
-        RESET_BACKGROUND: { actions: 'resetBackground' },
-        PREV_FOREGROUND: { actions: 'prevForeground' },
-        NEXT_FOREGROUND: { actions: 'nextForeground' },
-        PREV_BACKGROUND: { actions: 'prevBackground' },
-        NEXT_BACKGROUND: { actions: 'nextBackground' },
+        SET_SELECTED: { actions: send((_, { selected }) => ({ type: 'SELECTED', selected })) },
+        SELECT: { actions: 'select' },
+        SELECT_NEW: { actions: 'selectNew' },
+        RESET: { actions: 'reset' },
+        SELECT_PREVIOUS: { actions: 'selectPrevious' },
+        SELECT_NEXT: { actions: 'selectNext' },
         SAVE: { actions: 'save' },
         RESTORE: { actions: 'restore' },
       },
     },
     {
-      guards: {
-        doubleClick: (_, event) => event.detail === 2,
-        onBackground: ({ hovering, background }) => hovering === background,
-      },
       actions: {
-        ...selectActions,
-        ...selectShortcutActions,
-        ...cycleActions,
-        ...setActions,
-        save: respond(({ foreground, background }) => ({
-          type: 'RESTORE',
-          foreground,
-          background,
+        sendSelected: send(({ selected }) => ({ type: 'SELECTED', selected }), { to: 'eventBus' }),
+        select: pure(({ selected, hovering, overlaps }) => {
+          const labels = overlaps[hovering];
+          if (labels[selected]) {
+            // Get next label that hovering value encodes
+            const copy = [...labels];
+            copy[0] = 1; // Reset (select 0) after cycling through all labels
+            const reordered = copy.slice(selected + 1).concat(copy.slice(0, selected + 1));
+            const nextLabel = (reordered.findIndex((i) => !!i) + selected + 1) % labels.length;
+            return send({ type: 'SELECTED', selected: nextLabel });
+          }
+          const firstLabel = labels.findIndex((i) => i === 1);
+          return send({ type: 'SELECTED', selected: firstLabel === -1 ? 0 : firstLabel });
+        }),
+        reset: send({ type: 'SELECTED', selected: 0 }),
+        selectNew: send(({ overlaps }) => ({
+          type: 'SELECTED',
+          selected: overlaps[0].length,
         })),
-        restore: pure((_, { foreground, background }) => [
+        selectPrevious: send(({ selected, overlaps }) => ({
+          type: 'SELECTED',
+          selected: prevLabel(selected, overlaps),
+        })),
+        selectNext: send(({ selected, overlaps }) => ({
+          type: 'SELECTED',
+          selected: nextLabel(selected, overlaps),
+        })),
+        setHovering: assign({ hovering: (_, { hovering }) => hovering }),
+        setOverlaps: assign({ overlaps: (_, { overlaps }) => overlaps }),
+        setSelected: assign({ selected: (_, { selected }) => selected }),
+        save: respond(({ selected }) => ({ type: 'RESTORE', selected })),
+        restore: pure((_, { selected }) => [
           respond('RESTORED'),
-          send({ type: 'FOREGROUND', foreground }),
-          send({ type: 'BACKGROUND', background }),
+          send({ type: 'SELECTED', selected }),
         ]),
-        sendForeground: send((ctx) => ({
-          type: 'FOREGROUND',
-          foreground: ctx.foreground,
-        })),
-        sendBackground: send((ctx) => ({
-          type: 'BACKGROUND',
-          background: ctx.background,
-        })),
         sendToEventBus: send((c, e) => e, { to: 'eventBus' }),
       },
     }

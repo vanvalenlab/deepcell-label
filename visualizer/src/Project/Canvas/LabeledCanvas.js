@@ -8,7 +8,8 @@ import {
   useImage,
   useLabeled,
   useLabels,
-  useSelectedCell,
+  useOverlaps,
+  useSelect,
 } from '../ProjectContext';
 
 const highlightColor = [255, 0, 0];
@@ -21,7 +22,7 @@ export const LabeledCanvas = ({ setCanvases }) => {
   const labeled = useLabeled();
   const feature = useSelector(labeled, (state) => state.context.feature);
   const highlight = useSelector(labeled, (state) => state.context.highlight);
-  const opacity = useSelector(labeled, (state) => state.context.opacity);
+  const opacity = useSelector(labeled, (state) => state.context.labelsOpacity);
 
   const labels = useLabels();
   const colormap = useSelector(labels, (state) => state.context.colormap);
@@ -35,23 +36,38 @@ export const LabeledCanvas = ({ setCanvases }) => {
     (state) => state.context.labeledArrays && state.context.labeledArrays[feature][frame]
   );
 
-  const highlightedCell = useSelectedCell();
+  const overlaps = useOverlaps();
+  const overlapsArray = useSelector(overlaps, (state) => state.context.overlaps[feature][frame]);
+  const numLabels = overlapsArray[0].length;
+
+  const select = useSelect();
+  const selected = useSelector(select, (state) => state.context.selected);
 
   const kernelRef = useRef();
   const kernelCanvas = useAlphaKernelCanvas();
 
+  const color = [255, 0, 0];
+
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
-      `function (labelArray, colormap, highlightedLabel, highlight, highlightColor, opacity) {
-        const label = labelArray[this.constants.h - 1 - this.thread.y][this.thread.x];
-        if (highlight && label === highlightedLabel && highlightedLabel !== 0) {
-          const [r, g, b] = highlightColor;
-          this.color(r / 255, g / 255, b / 255, opacity);
-        } else {
-          const [r, g, b] = colormap[label];
-          this.color(r / 255, g / 255, b / 255, opacity);
+      `function (labelArray, overlaps, opacity, colormap, selected, numLabels) {
+        const value = labelArray[this.constants.h - 1 - this.thread.y][this.thread.x];
+        let [r, g, b, a] = [0, 0, 0, 1];
+        for (let i = 0; i < numLabels; i++) {
+          if (overlaps[value][i] === 1) {
+            if (i !== selected) {
+              a = a * (1 - opacity[0]);
+            } else {
+              a = a * (1 - opacity[1]);
+            }
+            let [sr, sg, sb] = colormap[i];
+            r = r + sr / 255 - r * sr / 255;
+            g = g + sg / 255 - g * sg / 255;
+            b = b + sb / 255 - b * sb / 255;
+          }
         }
+        this.color(r, g, b, 1 - a);
       }`,
       {
         constants: { w: width, h: height },
@@ -70,18 +86,22 @@ export const LabeledCanvas = ({ setCanvases }) => {
   useEffect(() => {
     if (labeledArray) {
       // Compute the label image with the kernel
-      kernelRef.current(
-        labeledArray,
-        colormap,
-        highlightedCell,
-        highlight,
-        highlightColor,
-        opacity
-      );
+      kernelRef.current(labeledArray, overlapsArray, opacity, colormap, selected, numLabels);
       // Rerender the parent canvas with the kernel output
       setCanvases((canvases) => ({ ...canvases, labeled: kernelCanvas }));
     }
-  }, [labeledArray, colormap, highlightedCell, highlight, opacity, kernelCanvas, setCanvases]);
+  }, [
+    labeledArray,
+    overlapsArray,
+    opacity,
+    colormap,
+    selected,
+    numLabels,
+    kernelCanvas,
+    setCanvases,
+    width,
+    height,
+  ]);
 
   return null;
 };

@@ -1,6 +1,5 @@
-import { Machine, send } from 'xstate';
+import { assign, Machine, send } from 'xstate';
 import { fromEventBus } from '../../eventBus';
-import { toolActions, toolGuards } from './toolUtils';
 
 const createTrimMachine = (context) =>
   Machine(
@@ -8,33 +7,38 @@ const createTrimMachine = (context) =>
       invoke: [
         { id: 'select', src: fromEventBus('trim', () => context.eventBuses.select) },
         { id: 'api', src: fromEventBus('trim', () => context.eventBuses.api) },
+        { src: fromEventBus('trim', () => context.eventBuses.overlaps) },
       ],
       context: {
         x: null,
         y: null,
         hovering: null,
-        foreground: context.foreground,
-        background: context.background,
+        label: context.selected,
       },
       on: {
         COORDINATES: { actions: 'setCoordinates' },
         HOVERING: { actions: 'setHovering' },
-        FOREGROUND: { actions: 'setForeground' },
-        BACKGROUND: { actions: 'setBackground' },
-        mouseup: [{ cond: 'onNoLabel' }, { actions: ['selectForeground', 'trim'] }],
+        SELECTED: { actions: 'setLabel' },
+        OVERLAPS: { actions: 'setOverlaps' },
+        mouseup: [{ cond: 'onLabel', actions: 'trim' }, { actions: 'select' }],
       },
     },
     {
-      guards: toolGuards,
+      guards: {
+        onLabel: ({ label, hovering, overlaps }) => overlaps[hovering][label] === 1,
+      },
       actions: {
-        ...toolActions,
-        selectForeground: send('SELECT_FOREGROUND', { to: 'select' }),
+        setCoordinates: assign({ x: (_, { x }) => x, y: (_, { y }) => y }),
+        setHovering: assign({ hovering: (_, { hovering }) => hovering }),
+        setLabel: assign({ label: (_, { selected }) => selected }),
+        setOverlaps: assign({ overlaps: (_, { overlaps }) => overlaps }),
+        select: send({ type: 'SELECT' }, { to: 'select' }),
         trim: send(
-          ({ hovering, x, y }, event) => ({
+          ({ x, y, label }, event) => ({
             type: 'EDIT',
             action: 'trim_pixels',
             args: {
-              label: hovering,
+              label,
               x,
               y,
             },

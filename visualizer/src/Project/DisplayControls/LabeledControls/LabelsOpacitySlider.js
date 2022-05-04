@@ -45,7 +45,6 @@ function LabelsOpacitySlider() {
           step={0.01}
           onChange={handleOpacityChange}
           onDoubleClick={handleDoubleClick}
-          sx={{ p: 0 }}
           componentsProps={{ input: { ref: inputRef } }}
         />
       </Box>

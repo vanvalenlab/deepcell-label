@@ -1,7 +1,7 @@
 import { Box, Grid } from '@mui/material';
 import Typography from '@mui/material/Typography';
 import React from 'react';
-import { Selected } from '../LabelControls/SegmentControls/SelectedPalette';
+import SelectedBox from '../LabelControls/SegmentControls/SelectedPalette/SelectedBox';
 import { Shortcut, Shortcuts } from './Shortcuts';
 
 function SelectShortcuts() {
@@ -9,10 +9,8 @@ function SelectShortcuts() {
     <Shortcuts>
       <Shortcut text='New label' shortcut='N' />
       <Shortcut text='Unselect ' shortcut='Esc' />
-      <Shortcut text='Previous foreground' shortcut='[' />
-      <Shortcut text='Next foreground' shortcut=']' />
-      <Shortcut text='Previous background' shortcut='Shift+[' />
-      <Shortcut text='Next background' shortcut='Shift+]' />
+      <Shortcut text='Select previous label' shortcut='[' />
+      <Shortcut text='Select next label' shortcut=']' />
     </Shortcuts>
   );
 }
@@ -21,26 +19,15 @@ function SelectInstructions() {
   return (
     <Box display='flex' justifyContent='space-between'>
       <div>
-        <Typography variant='h5'>Foreground and Background</Typography>
-        <Typography>
-          We can select up to two labels to edit, a foreground label and a background label.
-          <br />
-          Edits add the foreground label and remove the background label.
-          <br />
-          The canvas shows the foreground label in translucent white.
-          <br />
-          The canvas outlines the background label in red.
-        </Typography>
-        <Typography variant='h5'>Foreground and Background Palette</Typography>
+        <Typography variant='h5'>Selected Label Palette</Typography>
         <Grid container spacing={3}>
           <Grid item xs={6} sm={4} md={2}>
-            <Selected />
+            <SelectedBox />
           </Grid>
           <Grid item xs={6} sm={8} md={10}>
             <Typography>
-              Here are the selected labels, with the foreground above and the background below.
-              <br />
-              Use the buttons within the boxes to cycle, reset, or select a new label.
+              This box shows the selected label and has controls to cycle, reset, or select a new
+              label.
             </Typography>
           </Grid>
         </Grid>
@@ -48,18 +35,7 @@ function SelectInstructions() {
         <Typography>
           Click on labels on the canvas to select them.
           <br />
-          While using the Select tool,
-          <ul>
-            <li>click to select the foreground</li>
-            <li>double click to select the background</li>
-            <li>click on a selected label to swap the foreground and background</li>
-          </ul>
-          While using any tool, hold <kbd>Shift</kbd> and
-          <ul>
-            <li>click to select the background</li>
-            <li>double click to select the foreground</li>
-            <li>click on a select label to swap the foreground and background</li>
-          </ul>
+          While using the Select tool, click to select a label.
         </Typography>
       </div>
       <SelectShortcuts />

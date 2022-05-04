@@ -1,27 +1,26 @@
-import { Box, Typography } from '@mui/material';
+import Box from '@mui/material/Box';
 import Slider from '@mui/material/Slider';
 import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useLabeled, useMousetrapRef } from '../../ProjectContext';
+import { useLabeled } from '../../ProjectContext';
 
-function LabelsOpacitySlider() {
+function OutlineOpacitySlider() {
   const labeled = useLabeled();
-  const opacity = useSelector(labeled, (state) => state.context.labelsOpacity);
-
-  const inputRef = useMousetrapRef();
+  const opacity = useSelector(labeled, (state) => state.context.outlineOpacity);
 
   const handleOpacityChange = (event, newValue) =>
-    labeled.send({ type: 'SET_LABELS_OPACITY', opacity: newValue });
+    labeled.send({ type: 'SET_OUTLINE_OPACITY', opacity: newValue });
 
   const handleDoubleClick = (event) =>
-    labeled.send({ type: 'SET_LABELS_OPACITY', opacity: [0.3, 1] });
+    labeled.send({ type: 'SET_OUTLINE_OPACITY', opacity: [0.3, 1] });
 
   const tooltipText = (
     <span>
-      Low sets opacity for all labels
+      Low sets opacity for all outlines
       <br />
-      High sets opacity for selected label
+      High sets opacity for selected outline
     </span>
   );
 
@@ -34,7 +33,7 @@ function LabelsOpacitySlider() {
           px: 1,
         }}
       >
-        <Typography>Labels Opacity</Typography>
+        <Typography>Outline Opacity</Typography>
 
         <Slider
           value={opacity}
@@ -45,12 +44,10 @@ function LabelsOpacitySlider() {
           step={0.01}
           onChange={handleOpacityChange}
           onDoubleClick={handleDoubleClick}
-          sx={{ p: 0 }}
-          componentsProps={{ input: { ref: inputRef } }}
         />
       </Box>
     </Tooltip>
   );
 }
 
-export default LabelsOpacitySlider;
+export default OutlineOpacitySlider;

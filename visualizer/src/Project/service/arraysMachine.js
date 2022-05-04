@@ -51,9 +51,9 @@ const createArraysMachine = ({ projectId, eventBuses }) =>
         setChannel: assign({ channel: (ctx, evt) => evt.channel }),
         updateLabeledArray: assign({
           labeledArrays: (ctx, evt) => {
-            const { frame, feature, labeledArray } = evt;
+            const { frame, feature, labeled } = evt;
             const { labeledArrays } = ctx;
-            labeledArrays[feature][frame] = labeledArray;
+            labeledArrays[feature][frame] = labeled;
             return labeledArrays;
           },
         }),

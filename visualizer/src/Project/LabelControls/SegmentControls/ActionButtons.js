@@ -5,21 +5,17 @@ import React from 'react';
 import AutofitButton from './ActionButtons/AutofitButton';
 import DeleteButton from './ActionButtons/DeleteButton';
 import GrowButton from './ActionButtons/GrowButton';
-import ReplaceButton from './ActionButtons/ReplaceButton';
 import ShrinkButton from './ActionButtons/ShrinkButton';
-import SwapButton from './ActionButtons/SwapButton';
 
 function ActionButtons() {
   return (
     <Box display='flex' flexDirection='column'>
-      <FormLabel sx={{ m: 1 }}>Actions</FormLabel>
+      <FormLabel>Actions</FormLabel>
       <ButtonGroup orientation='vertical'>
         <DeleteButton />
         <AutofitButton />
         <ShrinkButton />
         <GrowButton />
-        <SwapButton />
-        <ReplaceButton />
       </ButtonGroup>
     </Box>
   );

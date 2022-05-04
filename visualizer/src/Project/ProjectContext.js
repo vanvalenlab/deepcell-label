@@ -253,6 +253,28 @@ export function useThreshold() {
   return tool;
 }
 
+export function useWatershed() {
+  const project = useProject();
+  const tool = useSelector(project, (state) => {
+    const labelMode = state.context.toolRef;
+    const segment = labelMode.state.context.segmentRef;
+    const tools = segment.state.context.tools;
+    return tools.watershed;
+  });
+  return tool;
+}
+
+export function useFlood() {
+  const project = useProject();
+  const tool = useSelector(project, (state) => {
+    const labelMode = state.context.toolRef;
+    const segment = labelMode.state.context.segmentRef;
+    const tools = segment.state.context.tools;
+    return tools.flood;
+  });
+  return tool;
+}
+
 function componentToHex(c) {
   var hex = c.toString(16);
   return hex.length === 1 ? '0' + hex : hex;
@@ -322,6 +344,12 @@ export function useFullResolutionCanvas() {
   }, [canvas, height, width]);
 
   return canvas;
+}
+
+export function useOverlaps() {
+  const project = useProject();
+  const overlaps = useSelector(project, (state) => state.context.overlapsRef);
+  return overlaps;
 }
 
 function ProjectContext({ project, children }) {
