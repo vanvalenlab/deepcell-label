@@ -18,6 +18,13 @@ function ErrorFallback({ error, resetErrorBoundary }) {
 }
 
 function DivisionAlerts() {
+  const lineageMachine = useLineage();
+  const lineage = useSelector(lineageMachine, (state) => state.context.lineage);
+
+  if (!lineage) {
+    return null;
+  }
+
   return (
     <ErrorBoundary
       FallbackComponent={ErrorFallback}
