@@ -1,7 +1,7 @@
 import { Box, FormLabel } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import React, { useLayoutEffect, useRef, useState } from 'react';
-import { useDivision, useLineage } from '../../ProjectContext';
+import { useDivision, useEditing, useLineage } from '../../ProjectContext';
 import Division from './Division';
 import DivisionFootprint from './Division/DivisionFootprint';
 
@@ -19,6 +19,7 @@ function Divisions() {
   const lineage = useLineage();
   const label = useSelector(lineage, (state) => state.context.selected);
   const division = useDivision(label);
+  const editing = useEditing();
 
   const footprintRef = useRef();
   const [minWidth, setMinWidth] = useState(0);
@@ -66,7 +67,7 @@ function Divisions() {
           }}
         >
           <FormLabel sx={{ alignSelf: 'flex-end' }}>Daughters</FormLabel>
-          {division.daughters.length > 0 && <Division label={label} />}
+          {(division.daughters.length > 0 || editing) && <Division label={label} />}
         </Box>
       </Box>
     </>
