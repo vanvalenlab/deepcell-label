@@ -14,7 +14,7 @@ from PIL import Image
 from tifffile import TiffFile, TiffWriter
 
 from deepcell_label.cells import Cells
-from deepcell_label.utils import add_parent_division_frame, reformat_lineage
+from deepcell_label.utils import add_parent_division_frame, reformat_lineage, reshape
 
 
 class Loader:
@@ -154,7 +154,7 @@ def load_segmentation(f):
         zf = zipfile.ZipFile(f, 'r')
         y = load_zip_numpy(zf, name='y')
         if y is None:
-            y = load_zip_tiffs(zf)
+            y = load_zip_tiffs(zf, filename='y.ome.tiff')
         return y
 
 
@@ -217,7 +217,7 @@ def load_zip_numpy(zf, name='X'):
                 return npz[name] if name in npz.files else npz[npz.files[0]]
 
 
-def load_zip_tiffs(zf):
+def load_zip_tiffs(zf, filename):
     """
     Returns an array with all tiff image data in the zip file
 
@@ -227,6 +227,20 @@ def load_zip_tiffs(zf):
     Returns:
         numpy array or None if no png in zip
     """
+    if filename in zf.namelist():
+        with zf.open(filename) as f:
+            if 'TIFF image data' in magic.from_buffer(f.read(2048)):
+                f.seek(0)
+                tiff = TiffFile(f)
+                # TODO: check when there are multiple series
+                axes = tiff.series[0].axes
+                array = reshape(tiff.asarray(), axes, 'ZYXC')
+                return array
+            else:
+                print(f'{filename} is not a tiff file.')
+    else:
+        print(f'{filename} not found in zip.')
+    print('Loading all tiffs in zip.')
     tiffs = []
     for name in zf.namelist():
         with zf.open(name) as f:
@@ -319,7 +333,7 @@ def load_zip(f):
         zf = zipfile.ZipFile(f, 'r')
         X = load_zip_numpy(zf)
         if X is None:
-            X = load_zip_tiffs(zf)
+            X = load_zip_tiffs(zf, filename='X.ome.tiff')
         if X is None:
             X = load_zip_png(zf)
         return X
