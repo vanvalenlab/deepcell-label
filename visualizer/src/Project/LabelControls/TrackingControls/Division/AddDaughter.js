@@ -28,11 +28,19 @@ function AddDaughter({ label }) {
   return (
     <Box sx={{ position: 'relative' }}>
       <ArcherElement id='addDaughter'>
-        {/* point to hidden Avatar to align arrows */}
-        <Avatar sx={{ m: 1, height: '2.5rem', width: '2.5rem', visibility: 'hidden' }} />
+        {/* point to hidden Cell to align arrows and size button */}
+        <Avatar sx={{ m: 1, my: 0.25, height: '2.5rem', width: '2.5rem', visibility: 'hidden' }} />
       </ArcherElement>
       <IconButton
-        sx={{ position: 'absolute', top: 0, left: 0, height: '100%', width: '100%' }}
+        sx={{
+          position: 'absolute',
+          m: 1,
+          my: 0.25,
+          top: 0,
+          left: 0,
+          height: '2.5rem',
+          width: '2.5rem',
+        }}
         onClick={toggle}
         ref={anchorRef}
         size='large'
