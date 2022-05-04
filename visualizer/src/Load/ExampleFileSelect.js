@@ -17,12 +17,12 @@ const exampleFiles = [
   },
   {
     value: 2,
-    path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/example_corrected.trk',
+    path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/example_track_corrected.zip',
     name: 'corrected tracking timelapse',
   },
   {
     value: 3,
-    path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/example_uncorrected.trk',
+    path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/example_track_uncorrected.zip',
     name: 'uncorrected tracking timelapse',
   },
 ];
