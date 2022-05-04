@@ -5,7 +5,7 @@ import { useImage, useLineage } from '../../../ProjectContext';
 import { oneDaughter } from '../trackingUtils';
 import AlertGroup, { alertStyle } from './AlertGroup';
 
-function OneDaughterAlert(division) {
+function OneDaughterAlert({ division }) {
   const { label, daughters, divisionFrame } = division;
 
   const image = useImage();

@@ -5,7 +5,7 @@ import { useLineage } from '../../../ProjectContext';
 import { daughterBeforeDivision, formatFrames } from '../trackingUtils';
 import AlertGroup, { alertStyle } from './AlertGroup';
 
-function DaughterBeforeDivisionAlert(division) {
+function DaughterBeforeDivisionAlert({ division }) {
   const { label, frames, parentDivisionFrame } = division;
 
   const framesBeforeDivision = frames.filter((frame) => frame < parentDivisionFrame);
