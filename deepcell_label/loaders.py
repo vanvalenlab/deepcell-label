@@ -14,7 +14,7 @@ from PIL import Image
 from tifffile import TiffFile, TiffWriter
 
 from deepcell_label.cells import Cells
-from deepcell_label.utils import add_frame_div_parent, reformat_lineage
+from deepcell_label.utils import add_parent_division_frame, reformat_lineage
 
 
 class Loader:
@@ -190,8 +190,8 @@ def load_lineage(f):
         lineage = load_zip_json(zf, filename='lineage.json')
         if lineage is None:
             return
-        lineage = add_frame_div_parent(lineage)
         lineage = reformat_lineage(lineage)
+        lineage = add_parent_division_frame(lineage)
         return lineage
 
 

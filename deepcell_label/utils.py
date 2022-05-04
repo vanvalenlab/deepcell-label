@@ -5,22 +5,22 @@ import re
 import numpy as np
 
 
-def add_frame_div_parent(lineage):
+def add_parent_division_frame(lineage):
     """
     Adds the frame a cells parent divides on to lineage.
 
     Args:
         lineage (dict): dict that maps cells to lineage info
     Returns:
-        dict: lineage with added frame_div_parent
+        dict: lineage with added parentDivisionFrame
     """
     new_lineage = lineage.copy()
     for cell in new_lineage.values():
         if cell['parent']:
             parent = str(cell['parent'])
-            cell['frame_div_parent'] = new_lineage[parent]['frame_div']
+            cell['parentDivisionFrame'] = new_lineage[parent]['divisionFrame']
         else:
-            cell['frame_div_parent'] = None
+            cell['parentDivisionFrame'] = None
     return new_lineage
 
 
@@ -32,8 +32,7 @@ def snakecase_to_camelcase(name):
 def reformat_lineage(lineage):
     """
     Reformats snake case to camel case
-    and renames frame_div to divisionFrame
-    and renames frame_div_parent to parentDivisionFrame.
+    and renames frame_div to divisionFrame.
     """
     reformated = {}
     for cell, info in lineage.items():
@@ -41,8 +40,6 @@ def reformat_lineage(lineage):
         for key in info:
             if key == 'frame_div':
                 reformated[cell]['divisionFrame'] = info[key]
-            elif key == 'frame_div_parent':
-                reformated[cell]['parentDivisionFrame'] = info[key]
             else:
                 reformated[cell][snakecase_to_camelcase(key)] = info[key]
     return reformated
