@@ -188,6 +188,8 @@ def load_lineage(f):
     if zipfile.is_zipfile(f):
         zf = zipfile.ZipFile(f, 'r')
         lineage = load_zip_json(zf, filename='lineage.json')
+        if lineage is None:
+            return
         lineage = add_frame_div_parent(lineage)
         lineage = reformat_lineage(lineage)
         return lineage
