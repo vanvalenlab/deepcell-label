@@ -70,7 +70,7 @@ const loadMachine = Machine(
       submitUpload: (context) => {
         const { uploadFile, axes } = context;
         const formData = new FormData();
-        formData.append('file', uploadFile);
+        formData.append('images', uploadFile);
         formData.append('axes', axes);
         return axios.post('/api/project/dropped', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
