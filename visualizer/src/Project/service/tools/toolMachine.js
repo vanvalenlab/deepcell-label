@@ -4,8 +4,8 @@
 import { assign, forwardTo, Machine, send, spawn } from 'xstate';
 import { respond } from 'xstate/lib/actions';
 import { fromEventBus } from '../eventBus';
+import createEditLineageMachine from './editLineageMachine';
 import createSegmentMachine from './segmentMachine';
-import createTrackMachine from './trackMachine';
 
 const createToolMachine = ({ eventBuses }) =>
   Machine(
@@ -15,7 +15,7 @@ const createToolMachine = ({ eventBuses }) =>
         tool: 'segment',
         eventBuses,
         segmentRef: null,
-        trackRef: null,
+        editLineageRef: null,
       },
       invoke: [
         { id: 'canvas', src: fromEventBus('tool', () => eventBuses.canvas) },
@@ -74,7 +74,7 @@ const createToolMachine = ({ eventBuses }) =>
         restore: assign((_, { tool }) => ({ tool })),
         spawnTools: assign((context) => ({
           segmentRef: spawn(createSegmentMachine(context), 'segment'),
-          trackRef: spawn(createTrackMachine(context), 'track'),
+          editLineageRef: spawn(createEditLineageMachine(context), 'editLineage'),
         })),
         addToolsToUndo: send(({ segmentRef }) => ({ type: 'ADD_ACTOR', actor: segmentRef }), {
           to: 'undo',

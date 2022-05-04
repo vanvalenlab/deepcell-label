@@ -1,15 +1,15 @@
 import { assign, Machine, send } from 'xstate';
 import { fromEventBus } from '../eventBus';
 
-const createTrackMachine = ({ eventBuses }) =>
+const createEditLineageMachine = ({ eventBuses }) =>
   Machine(
     {
-      id: 'track',
+      id: 'editLineage',
       invoke: [
-        { id: 'selectedCells', src: fromEventBus('track', () => eventBuses.select) },
-        { src: fromEventBus('track', () => eventBuses.labeled) },
-        { id: 'api', src: fromEventBus('track', () => eventBuses.api) },
-        { src: fromEventBus('track', () => eventBuses.labels) },
+        { id: 'selectedCells', src: fromEventBus('editLineage', () => eventBuses.select) },
+        { src: fromEventBus('editLineage', () => eventBuses.labeled) },
+        { id: 'api', src: fromEventBus('editLineage', () => eventBuses.api) },
+        { src: fromEventBus('editLineage', () => eventBuses.labels) },
       ],
       context: {
         foreground: null,
@@ -114,4 +114,4 @@ const createTrackMachine = ({ eventBuses }) =>
     }
   );
 
-export default createTrackMachine;
+export default createEditLineageMachine;

@@ -103,12 +103,11 @@ export function useSelect() {
 
 export function useEditLineage(label) {
   const project = useProject();
-  const tracking = useSelector(project, (state) => {
+  const editLineage = useSelector(project, (state) => {
     const labelMode = state.context.toolRef;
-    const track = labelMode.state.context.trackRef;
-    return track;
+    return labelMode.state.context.editLineageRef;
   });
-  return tracking;
+  return editLineage;
 }
 
 export function useApi() {
@@ -230,16 +229,6 @@ export function useSegment() {
     return segment;
   });
   return segment;
-}
-
-export function useTrack() {
-  const project = useProject();
-  const track = useSelector(project, (state) => {
-    const tool = state.context.toolRef;
-    const track = tool.state.context.trackRef;
-    return track;
-  });
-  return track;
 }
 
 export function useBrush() {
