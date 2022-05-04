@@ -17,7 +17,6 @@ function Load({ id, spots }) {
   useEffect(() => {
     if (load.matches('loaded')) {
       const { rawArrays, labeledArrays, labels, spots, lineage } = load.context;
-      console.log(lineage);
       setTrack(lineage !== null);
       project.send({
         type: 'LOADED',

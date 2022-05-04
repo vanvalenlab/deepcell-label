@@ -21,13 +21,11 @@ function ParentAfterDivisionAlert({ division }) {
 function ParentAfterDivisionAlerts() {
   const lineageMachine = useLineage();
   const lineage = useSelector(lineageMachine, (state) => state.context.lineage);
-  console.log(lineage);
 
   const parentAfterDivisionAlerts = Object.values(lineage).filter((cell) =>
     parentAfterDivision(cell)
   );
   const count = parentAfterDivisionAlerts.length;
-  console.log(parentAfterDivisionAlerts);
 
   const header =
     count === 1 ? `1 parent present after division` : `${count} parents present after division`;
