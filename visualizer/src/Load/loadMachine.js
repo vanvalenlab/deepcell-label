@@ -99,9 +99,6 @@ const loadMachine = Machine(
       redirectToProject: ({ track }, event) => {
         const projectId = event.data.data;
         let url = `${document.location.origin}/project?projectId=${projectId}&download=true`;
-        if (track) {
-          url = url.concat('&track=true');
-        }
         window.location.href = url;
       },
     },

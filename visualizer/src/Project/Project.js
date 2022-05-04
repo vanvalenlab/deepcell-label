@@ -23,17 +23,16 @@ function Project() {
   const id = new URLSearchParams(window.location.search).get('projectId');
   const review = isReview(id);
   const invalid = !isProjectId(id) && !review;
-  const track = new URLSearchParams(window.location.search).get('track');
 
   if (invalid) {
     return <InvalidId id={id} />;
   }
 
   if (review) {
-    return <LoadProjects ids={id} track={track} />;
+    return <LoadProjects ids={id} />;
   }
 
-  return <LoadProject id={id} track={track} />;
+  return <LoadProject id={id} />;
 }
 
 export default Project;

@@ -21,10 +21,16 @@ const createToolMachine = ({ eventBuses }) =>
         { id: 'canvas', src: fromEventBus('tool', () => eventBuses.canvas) },
         { id: 'undo', src: fromEventBus('tool', () => eventBuses.undo) },
         { src: fromEventBus('tool', () => eventBuses.select) },
+        { src: fromEventBus('tool', () => eventBuses.load) },
       ],
-      initial: 'checkTool',
-      entry: ['spawnTools', 'addToolsToUndo', 'checkTrack'],
+      initial: 'loading',
+      entry: ['spawnTools', 'addToolsToUndo'],
       states: {
+        loading: {
+          on: {
+            LOADED: [{ cond: 'hasLineage', target: 'track' }, { target: 'segment' }],
+          },
+        },
         checkTool: {
           always: [
             { cond: ({ tool }) => tool === 'track', target: 'track' },
@@ -32,13 +38,14 @@ const createToolMachine = ({ eventBuses }) =>
           ],
         },
         segment: {
+          entry: assign({ tool: 'segment' }),
           on: {
             mouseup: { actions: forwardTo('segment') },
             mousedown: { actions: forwardTo('segment') },
           },
         },
         track: {
-          entry: send({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
+          entry: [assign({ tool: 'track' }), send({ type: 'SET_PAN_ON_DRAG', panOnDrag: true })],
           on: {
             mouseup: { actions: forwardTo('track') },
             mousedown: { actions: forwardTo('track') },
@@ -52,13 +59,16 @@ const createToolMachine = ({ eventBuses }) =>
         HOVERING: { actions: [forwardTo('segment'), forwardTo('track')] },
         COORDINATES: { actions: [forwardTo('segment'), forwardTo('track')] },
 
-        SEGMENT: { target: '.checkTool', actions: assign({ tool: 'segment' }) },
-        TRACK: { target: '.checkTool', actions: assign({ tool: 'track' }) },
+        SEGMENT: 'segment',
+        TRACK: 'track',
 
         SET_PAN_ON_DRAG: { actions: forwardTo('canvas') },
       },
     },
     {
+      guards: {
+        hasLineage: (ctx, evt) => evt.lineage !== null,
+      },
       actions: {
         save: respond(({ tool }) => ({ type: 'RESTORE', tool })),
         restore: assign((_, { tool }) => ({ tool })),
@@ -66,11 +76,6 @@ const createToolMachine = ({ eventBuses }) =>
           segmentRef: spawn(createSegmentMachine(context), 'segment'),
           trackRef: spawn(createTrackMachine(context), 'track'),
         })),
-        checkTrack: send(() => {
-          const search = new URLSearchParams(window.location.search);
-          const track = search.get('track');
-          return track ? { type: 'TRACK' } : { type: 'SEGMENT' };
-        }),
         addToolsToUndo: send(({ segmentRef }) => ({ type: 'ADD_ACTOR', actor: segmentRef }), {
           to: 'undo',
         }),
