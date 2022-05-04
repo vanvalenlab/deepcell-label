@@ -14,6 +14,8 @@ const createToolMachine = ({ eventBuses }) =>
       context: {
         tool: 'segment',
         eventBuses,
+        segmentRef: null,
+        trackRef: null,
       },
       invoke: [
         { id: 'canvas', src: fromEventBus('tool', () => eventBuses.canvas) },
