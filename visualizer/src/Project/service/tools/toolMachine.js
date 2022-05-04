@@ -28,12 +28,12 @@ const createToolMachine = ({ eventBuses }) =>
       states: {
         loading: {
           on: {
-            LOADED: [{ cond: 'hasLineage', target: 'track' }, { target: 'segment' }],
+            LOADED: [{ cond: 'hasLineage', target: 'editLineage' }, { target: 'segment' }],
           },
         },
         checkTool: {
           always: [
-            { cond: ({ tool }) => tool === 'track', target: 'track' },
+            { cond: ({ tool }) => tool === 'editLineage', target: 'editLineage' },
             { target: 'segment' },
           ],
         },
@@ -44,11 +44,14 @@ const createToolMachine = ({ eventBuses }) =>
             mousedown: { actions: forwardTo('segment') },
           },
         },
-        track: {
-          entry: [assign({ tool: 'track' }), send({ type: 'SET_PAN_ON_DRAG', panOnDrag: true })],
+        editLineage: {
+          entry: [
+            assign({ tool: 'editLineage' }),
+            send({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
+          ],
           on: {
-            mouseup: { actions: forwardTo('track') },
-            mousedown: { actions: forwardTo('track') },
+            mouseup: { actions: forwardTo('editLineage') },
+            mousedown: { actions: forwardTo('editLineage') },
           },
         },
       },
@@ -56,11 +59,11 @@ const createToolMachine = ({ eventBuses }) =>
         SAVE: { actions: 'save' },
         RESTORE: { target: '.checkTool', actions: ['restore', respond('RESTORED')] },
 
-        HOVERING: { actions: [forwardTo('segment'), forwardTo('track')] },
-        COORDINATES: { actions: [forwardTo('segment'), forwardTo('track')] },
+        HOVERING: { actions: [forwardTo('segment'), forwardTo('editLineage')] },
+        COORDINATES: { actions: [forwardTo('segment'), forwardTo('editLineage')] },
 
         SEGMENT: 'segment',
-        TRACK: 'track',
+        EDIT_LINEAGE: 'editLineage',
 
         SET_PAN_ON_DRAG: { actions: forwardTo('canvas') },
       },

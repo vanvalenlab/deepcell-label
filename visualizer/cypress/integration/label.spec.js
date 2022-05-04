@@ -47,10 +47,9 @@ it('shows loading spinner', () => {
 //     .should('include', '/project')
 //     .and('include', 'projectId=')
 //     .and('include', 'download=true')
-//     .and('include', 'track=true');
 //   cy.get('.MuiCircularProgress-svg');
 //   cy.get('canvas');
-//   cy.contains('Track');
+//   cy.contains('Lineage');
 //   cy.get('.MuiCircularProgress-svg').should('not.exist');
 // });
 

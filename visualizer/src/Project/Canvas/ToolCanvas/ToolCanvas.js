@@ -11,7 +11,7 @@ function ToolCanvas({ setCanvases }) {
 
   const labelMode = useLabelMode();
   const mode = useSelector(labelMode, (state) =>
-    state.matches('segment') ? 'segment' : state.matches('track') ? 'track' : false
+    state.matches('segment') ? 'segment' : state.matches('editLineage') ? 'track' : false
   );
 
   if (mode === 'track') {

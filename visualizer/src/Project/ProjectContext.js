@@ -24,7 +24,7 @@ export function useSelectedCell() {
   // Get labeling mode
   const labelMode = useLabelMode();
   const mode = useSelector(labelMode, (state) => {
-    return state.matches('segment') ? 0 : state.matches('track') ? 1 : false;
+    return state.matches('segment') ? 0 : state.matches('editLineage') ? 1 : false;
   });
   // Switch between selections
   if (mode === 1 || process.env.REACT_APP_CALIBAN_VISUALIZER === 'true') {
