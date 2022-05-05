@@ -42,9 +42,8 @@ const createLabeledMachine = ({ projectId, eventBuses }) =>
         setOutlineOpacity: assign({ outlineOpacity: (ctx, event) => event.opacity }),
         setLabelsOpacity: assign({ labelsOpacity: (ctx, event) => event.opacity }),
         setNumFeatures: assign({
-          numFeatures: (context, event) => event.numFeatures,
-          featureNames: ({ numFeatures }) =>
-            [...Array(numFeatures).keys()].map((i) => `feature ${i}`),
+          numFeatures: (ctx, evt) => evt.numFeatures,
+          featureNames: (ctx, evt) => [...Array(evt.numFeatures).keys()].map((i) => `feature ${i}`),
         }),
         setFeature: assign({ feature: (_, { feature }) => feature }),
         toggleHighlight: assign({ highlight: ({ highlight }) => !highlight }),
