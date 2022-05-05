@@ -32,7 +32,7 @@ const FloodCanvas = ({ setCanvases }) => {
   );
 
   const overlaps = useOverlaps();
-  const overlapsArray = useSelector(overlaps, (state) => state.context.overlaps[feature][frame]);
+  const overlapsArray = useSelector(overlaps, (state) => state.context.overlaps); // [feature][frame]);
 
   const kernelRef = useRef();
   const kernelCanvas = useAlphaKernelCanvas();
@@ -81,7 +81,7 @@ const FloodCanvas = ({ setCanvases }) => {
   }, [kernelCanvas, width, height]);
 
   useEffect(() => {
-    if (labeledArray) {
+    if (labeledArray && overlapsArray) {
       kernelRef.current(labeledArray, overlapsArray, label);
       // Rerender the parent canvas
       setCanvases((canvases) => ({ ...canvases, tool: kernelCanvas }));

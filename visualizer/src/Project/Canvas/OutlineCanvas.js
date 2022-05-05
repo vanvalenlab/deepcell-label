@@ -33,8 +33,7 @@ const OutlineCanvas = ({ setCanvases }) => {
   );
 
   const overlaps = useOverlaps();
-  const overlapsArray = useSelector(overlaps, (state) => state.context.overlaps[feature][frame]);
-  const numLabels = overlapsArray[0].length;
+  const overlapsArray = useSelector(overlaps, (state) => state.context.overlaps); // [feature][frame]);
 
   const kernelRef = useRef();
   const kernelCanvas = useAlphaKernelCanvas();
@@ -92,23 +91,14 @@ const OutlineCanvas = ({ setCanvases }) => {
   }, [kernelCanvas, width, height]);
 
   useEffect(() => {
-    if (labeledArray) {
+    if (labeledArray && overlapsArray) {
+      const numLabels = overlapsArray[0].length;
       // Compute the outline of the labels with the kernel
       kernelRef.current(labeledArray, overlapsArray, numLabels, opacity, selected);
       // Rerender the parent canvas
       setCanvases((canvases) => ({ ...canvases, outline: kernelCanvas }));
     }
-  }, [
-    labeledArray,
-    overlapsArray,
-    numLabels,
-    opacity,
-    selected,
-    setCanvases,
-    kernelCanvas,
-    width,
-    height,
-  ]);
+  }, [labeledArray, overlapsArray, opacity, selected, setCanvases, kernelCanvas, width, height]);
 
   return null;
 };

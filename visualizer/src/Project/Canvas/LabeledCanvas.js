@@ -37,8 +37,7 @@ export const LabeledCanvas = ({ setCanvases }) => {
   );
 
   const overlaps = useOverlaps();
-  const overlapsArray = useSelector(overlaps, (state) => state.context.overlaps[feature][frame]);
-  const numLabels = overlapsArray[0].length;
+  const overlapsArray = useSelector(overlaps, (state) => state.context.overlaps); // [feature][frame]);
 
   const select = useSelect();
   const selected = useSelector(select, (state) => state.context.selected);
@@ -84,7 +83,8 @@ export const LabeledCanvas = ({ setCanvases }) => {
   }, [width, height, kernelCanvas]);
 
   useEffect(() => {
-    if (labeledArray) {
+    if (labeledArray && overlapsArray) {
+      const numLabels = overlapsArray[0].length;
       // Compute the label image with the kernel
       kernelRef.current(labeledArray, overlapsArray, opacity, colormap, selected, numLabels);
       // Rerender the parent canvas with the kernel output
@@ -96,7 +96,6 @@ export const LabeledCanvas = ({ setCanvases }) => {
     opacity,
     colormap,
     selected,
-    numLabels,
     kernelCanvas,
     setCanvases,
     width,

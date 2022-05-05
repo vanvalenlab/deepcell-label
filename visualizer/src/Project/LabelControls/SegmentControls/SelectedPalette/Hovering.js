@@ -22,7 +22,7 @@ function OverlapHovering() {
   const overlaps = useOverlaps();
   const labels = useSelector(
     overlaps,
-    (state) => value && state.context.overlaps[feature][frame][value]
+    (state) => state.context.overlaps?.[value] // [feature][frame][value]
   );
 
   return (

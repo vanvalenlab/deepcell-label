@@ -11,7 +11,7 @@ const createArraysMachine = ({ projectId, eventBuses }) =>
         { id: 'eventBus', src: fromEventBus('arrays', () => eventBuses.arrays) },
         { id: 'image', src: fromEventBus('arrays', () => eventBuses.image) },
         { src: fromEventBus('arrays', () => eventBuses.api) },
-        { src: fromEventBus('labeled', () => eventBuses.load) },
+        { src: fromEventBus('arrays', () => eventBuses.load) },
       ],
       context: {
         rawArrays: null,

@@ -29,8 +29,9 @@ type Lineage = {
     parent: number | null;
   };
 };
+type Overlaps = (0 | 1)[][];
 type Files = {
-  [filename: string]: OmeTiff | Spots | Cells | Lineage;
+  [filename: string]: OmeTiff | Spots | Cells | Lineage | Overlaps;
 };
 
 async function parseZip(response: Response) {
@@ -63,6 +64,12 @@ async function parseZip(response: Response) {
       const json = await entry.getData(new zip.TextWriter());
       const lineage: Lineage = JSON.parse(json);
       files[entry.filename] = lineage;
+    }
+    if (entry.filename === 'overlaps.json') {
+      // @ts-ignore
+      const json = await entry.getData(new zip.TextWriter());
+      const overlaps: Overlaps = JSON.parse(json);
+      files[entry.filename] = overlaps;
     }
   }
   return { files };
@@ -146,6 +153,7 @@ interface Context {
   labels: Cells | null;
   spots: Spots | null;
   lineage: Lineage | null;
+  overlaps: Overlaps | null;
 }
 
 const createLoadMachine = (projectId: string) =>
@@ -165,6 +173,7 @@ const createLoadMachine = (projectId: string) =>
         labels: null,
         spots: null,
         lineage: null,
+        overlaps: null,
       },
       tsTypes: {} as import('./loadMachine.typegen').Typegen0,
       schema: {
@@ -191,7 +200,7 @@ const createLoadMachine = (projectId: string) =>
             src: 'fetch project zip',
             onDone: {
               target: 'splitArrays',
-              actions: ['set spots', 'set cells', 'set lineage', 'set metadata'],
+              actions: ['set spots', 'set cells', 'set lineage', 'set overlaps', 'set metadata'],
             },
           },
         },
@@ -223,6 +232,10 @@ const createLoadMachine = (projectId: string) =>
         'set lineage': assign({
           // @ts-ignore
           lineage: (context, event) => event.data.files['lineage.json'] as Lineage,
+        }),
+        'set overlaps': assign({
+          // @ts-ignore
+          overlaps: (context, event) => event.data.files['overlaps.json'] as Overlaps,
         }),
         'set metadata': assign((ctx, evt) => {
           // @ts-ignore

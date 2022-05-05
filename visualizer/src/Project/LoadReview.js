@@ -22,7 +22,7 @@ function LoadReview({ ids, spots }) {
 
   useEffect(() => {
     if (load.matches('loaded')) {
-      const { rawArrays, labeledArrays, labels, spots, lineage } = load.context;
+      const { rawArrays, labeledArrays, labels, spots, lineage, overlaps } = load.context;
       setTrack(lineage !== null);
       project.send({
         type: 'LOADED',
@@ -31,6 +31,7 @@ function LoadReview({ ids, spots }) {
         labels,
         spots,
         lineage,
+        overlaps,
       });
     }
   }, [load, project]);
