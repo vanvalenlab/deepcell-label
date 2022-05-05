@@ -3,148 +3,146 @@ Tests for loading files in loaders.
 """
 
 import io
+import json
 import zipfile
 
 import numpy as np
-import responses
 from PIL import Image
-from tifffile import TiffWriter
+from tifffile import TiffFile, TiffWriter
 
-from deepcell_label.loaders import URLLoader
+from deepcell_label.loaders import Loader
 
 
-@responses.activate
-def test_load_raw_npz():
-    """Load NPZ file with just a raw array."""
+def assert_image(archive, expected):
+    """Assert that image is as expected."""
+    # TZCYXS dimension order with squeeze=False
+    image = TiffFile(archive.open('X.ome.tiff')).asarray(squeeze=False)
+    # Drop the T and S dimension and move C to last dimension
+    image = image[0, :, :, :, :, 0]
+    image = np.moveaxis(image, 1, -1)
+    np.testing.assert_array_equal(image, expected)
+
+
+def assert_segmentation(archive, expected):
+    """Assert that segmentation is as expected."""
+    segmentation = TiffFile(archive.open('y.ome.tiff')).asarray(squeeze=False)
+    # Drop the T and S dimension and move C to last dimension
+    segmentation = segmentation[0, :, :, :, :, 0]
+    segmentation = np.moveaxis(segmentation, 1, -1)
+    np.testing.assert_array_equal(segmentation, expected)
+    assert json.loads(archive.open('cells.json').read()) is not None
+
+
+def test_load_npz():
+    """Load npz with image data."""
     expected = np.zeros((1, 1, 1, 1))
     npz = io.BytesIO()
     np.savez(npz, X=expected)
     npz.seek(0)
-    url = 'http://example.com/mocked/raw.npz'
-    responses.add(responses.GET, url, body=io.BufferedReader(npz))
 
-    loader = URLLoader({'url': url})
+    loader = Loader(npz)
 
-    np.testing.assert_array_equal(loader.raw_array, expected)
-    np.testing.assert_array_equal(loader.label_array, expected)
-    assert loader.cell_ids is not None
-    assert loader.cell_info is not None
+    loaded_zip = zipfile.ZipFile(io.BytesIO(loader.data))
+    assert_image(loaded_zip, expected)
 
 
-@responses.activate
-def test_load_raw_and_labeled_npz():
-    """Loads NPZ file with both a raw and labeled array."""
-    expected_raw = np.zeros((1, 1, 1, 1))
-    expected_labeled = np.ones((1, 1, 1, 1))
+def test_load_two_channel_npz():
+    """Load npz with image data with two channels."""
+    expected = np.zeros((1, 100, 100, 2))
     npz = io.BytesIO()
-    np.savez(npz, X=expected_raw, y=expected_labeled)
+    np.savez(npz, X=expected)
     npz.seek(0)
-    url = 'http://example.com/mocked/raw_and_labeled.npz'
-    responses.add(responses.GET, url, body=io.BufferedReader(npz))
 
-    loader = URLLoader({'url': url})
+    loader = Loader(npz)
 
-    np.testing.assert_array_equal(loader.raw_array, expected_raw)
-    np.testing.assert_array_equal(loader.label_array, expected_labeled)
-    assert loader.cell_ids is not None
-    assert loader.cell_info is not None
+    loaded_zip = zipfile.ZipFile(io.BytesIO(loader.data))
+    assert_image(loaded_zip, expected)
 
 
-@responses.activate
-def test_load_separate_url_npz():
-    """Loads raw and labeled arrays from separate responses."""
-    expected_raw = np.zeros((1, 1, 1, 1))
-    expected_labeled = np.ones((1, 1, 1, 1))
+def test_load_npz_with_segmentation():
+    """Loads npz with image and segmentation."""
+    expected_image = np.zeros((1, 1, 1, 1))
+    expected_segmentation = np.ones((1, 1, 1, 1))
+    npz = io.BytesIO()
+    np.savez(npz, X=expected_image, y=expected_segmentation)
+    npz.seek(0)
 
-    def create_npz():
-        npz = io.BytesIO()
-        np.savez(npz, X=expected_raw, y=expected_labeled)
-        npz.seek(0)
-        return io.BufferedReader(npz)
+    loader = Loader(npz)
 
-    url = 'http://example.com/mocked/raw.npz'
-    labeled_url = 'http://example.com/mocked/labeled.npz'
-    responses.add(responses.GET, url, body=create_npz())
-    responses.add(responses.GET, labeled_url, body=create_npz())
-
-    loader = URLLoader({'url': url, 'labeled_url': labeled_url})
-
-    np.testing.assert_array_equal(loader.raw_array, expected_raw)
-    np.testing.assert_array_equal(loader.label_array, expected_labeled)
-    assert loader.cell_ids is not None
-    assert loader.cell_info is not None
+    loaded_zip = zipfile.ZipFile(io.BytesIO(loader.data))
+    assert_image(loaded_zip, expected_image)
+    assert_segmentation(loaded_zip, expected_segmentation)
 
 
-@responses.activate
-def test_load_raw_tiff():
-    """Load raw array from tiff file."""
+def test_load_separate_npz():
+    """Loads image and segmentation from separate npz."""
+    expected_image = np.zeros((1, 1, 1, 1))
+    expected_segmentation = np.ones((1, 1, 1, 1))
+    image_npz = io.BytesIO()
+    label_npz = io.BytesIO()
+    np.savez(image_npz, X=expected_image)
+    np.savez(label_npz, y=expected_segmentation)
+
+    loader = Loader(image_npz, label_npz)
+
+    loaded_zip = zipfile.ZipFile(io.BytesIO(loader.data))
+    assert_image(loaded_zip, expected_image)
+    assert_segmentation(loaded_zip, expected_segmentation)
+
+
+def test_load_image_tiff():
+    """Load image from tiff file."""
     expected = np.zeros((1, 1, 1, 1))
     tifffile = io.BytesIO()
     with TiffWriter(tifffile) as writer:
         writer.save(expected)
         tifffile.seek(0)
-    url = 'http://example.com/mocked/raw.tiff'
-    responses.add(responses.GET, url, body=io.BufferedReader(tifffile))
 
-    loader = URLLoader({'url': url})
+    loader = Loader(tifffile)
 
-    np.testing.assert_array_equal(loader.raw_array, expected)
-    np.testing.assert_array_equal(loader.label_array, expected)
-    assert loader.cell_ids is not None
-    assert loader.cell_info is not None
+    loaded_zip = zipfile.ZipFile(io.BytesIO(loader.data))
+    assert_image(loaded_zip, expected)
 
 
-@responses.activate
-def test_load_raw_and_labeled_tiff():
-    """Load raw and labeled array from separate tiff files."""
-    expected_raw = np.zeros((1, 1, 1, 1))
-    expected_labeled = np.ones((1, 1, 1, 1))
-    raw = io.BytesIO()
-    labeled = io.BytesIO()
-    with TiffWriter(raw) as writer:
-        writer.save(expected_raw)
-        raw.seek(0)
-    with TiffWriter(labeled) as writer:
-        writer.save(expected_labeled)
-        labeled.seek(0)
-    url = 'http://example.com/mocked/raw.tiff'
-    labeled_url = 'http://example.com/mocked/labeled.tiff'
-    responses.add(responses.GET, url, body=io.BufferedReader(raw))
-    responses.add(responses.GET, labeled_url, body=io.BufferedReader(labeled))
+def test_load_image_and_segmentation_tiff():
+    """Load image from a tiff and labeled array a zipped tiff."""
+    expected_image = np.zeros((1, 1, 1, 1))
+    expected_segmentation = np.ones((1, 1, 1, 1))
+    image_tiff = io.BytesIO()
+    zipped_segmentation = io.BytesIO()
+    with TiffWriter(image_tiff) as writer:
+        writer.save(expected_image)
+        image_tiff.seek(0)
+    with zipfile.ZipFile(zipped_segmentation, mode='w') as zf:
+        tiff = io.BytesIO()
+        with TiffWriter(tiff) as writer:
+            writer.save(np.array([[1]]))
+            tiff.seek(0)
+        zf.writestr('feature0.tiff', tiff.read())
 
-    loader = URLLoader({'url': url, 'labeled_url': labeled_url})
-
-    np.testing.assert_array_equal(loader.raw_array, expected_raw)
-    np.testing.assert_array_equal(loader.label_array, expected_labeled)
-    assert loader.cell_ids is not None
-    assert loader.cell_info is not None
+    loader = Loader(image_tiff, zipped_segmentation)
+    loaded_zip = zipfile.ZipFile(io.BytesIO(loader.data))
+    assert_image(loaded_zip, expected_image)
+    assert_segmentation(loaded_zip, expected_segmentation)
 
 
-@responses.activate
-def test_load_raw_png():
-    """Load raw array from png file."""
+def test_load_image_png():
+    """Load image array from png file."""
     expected = np.zeros((1, 1, 1, 1))
-    raw = io.BytesIO()
+    png = io.BytesIO()
     img = Image.fromarray(np.zeros((1, 1)), mode='L')
-    img.save(raw, format='png')
-    raw.seek(0)
-    url = 'http://example.com/mocked/raw.png'
-    responses.add(responses.GET, url, body=io.BufferedReader(raw))
+    img.save(png, format='png')
+    png.seek(0)
 
-    loader = URLLoader({'url': url})
-
-    np.testing.assert_array_equal(loader.raw_array, expected)
-    np.testing.assert_array_equal(loader.label_array, expected)
-    assert loader.cell_ids is not None
-    assert loader.cell_info is not None
+    loader = Loader(png)
+    loaded_zip = zipfile.ZipFile(io.BytesIO(loader.data))
+    assert_image(loaded_zip, expected)
 
 
-@responses.activate
-def test_load_raw_zip():
-    """Load raw array from zip of tiff files."""
-    expected_raw = np.array([1, 2]).reshape((1, 1, 1, 2))
-    expected_labeled = np.array([0]).reshape((1, 1, 1, 1))
-    raw = io.BytesIO()
+def test_load_image_zip():
+    """Load image array from zip of tiff files."""
+    expected_image = np.zeros((1, 100, 100, 2))
+    zipped_tiffs = io.BytesIO()
 
     def make_tiff(array):
         tiff = io.BytesIO()
@@ -153,33 +151,26 @@ def test_load_raw_zip():
             tiff.seek(0)
         return tiff.read()
 
-    with zipfile.ZipFile(raw, mode='w') as zf:
+    with zipfile.ZipFile(zipped_tiffs, mode='w') as zf:
         with zf.open('channel0.tiff', 'w') as tiff:
-            channel_0 = make_tiff(np.array([1]).reshape((1, 1)))
+            channel_0 = make_tiff(np.zeros((1, 100, 100)))
             tiff.write(channel_0)
         with zf.open('channel1.tiff', 'w') as tiff:
-            channel_1 = make_tiff(np.array([2]).reshape((1, 1)))
+            channel_1 = make_tiff(np.zeros((1, 100, 100)))
             tiff.write(channel_1)
-    raw.seek(0)
+    zipped_tiffs.seek(0)
 
-    url = 'http://example.com/mocked/raw.zip'
-    responses.add(responses.GET, url, body=io.BufferedReader(raw))
-
-    loader = URLLoader({'url': url, 'axes': 'CYX'})
-
-    np.testing.assert_array_equal(loader.raw_array, expected_raw)
-    np.testing.assert_array_equal(loader.label_array, expected_labeled)
-    assert loader.cell_ids is not None
-    assert loader.cell_info is not None
+    loader = Loader(zipped_tiffs)
+    loaded_zip = zipfile.ZipFile(io.BytesIO(loader.data))
+    assert_image(loaded_zip, expected_image)
 
 
-@responses.activate
-def test_load_labeled_zip():
+def test_load_segmentation_zip():
     """Load labeled array from zip of tiff files."""
-    expected_raw = np.array([1, 2]).reshape((1, 1, 1, 2))
-    expected_labeled = np.array([3, 4]).reshape((1, 1, 1, 2))
-    raw = io.BytesIO()
-    labeled = io.BytesIO()
+    expected_image = np.zeros((1, 100, 100, 2))
+    expected_segmentation = np.zeros((1, 100, 100, 2))
+    zipped_image = io.BytesIO()
+    zipped_segmentation = io.BytesIO()
 
     def make_tiff(array):
         tiff = io.BytesIO()
@@ -188,32 +179,25 @@ def test_load_labeled_zip():
             tiff.seek(0)
         return tiff.read()
 
-    with zipfile.ZipFile(raw, mode='w') as zf:
+    with zipfile.ZipFile(zipped_image, mode='w') as zf:
         with zf.open('channel0.tiff', 'w') as tiff:
-            channel_0 = make_tiff(np.array([1]).reshape((1, 1)))
+            channel_0 = make_tiff(np.zeros((1, 100, 100)))
             tiff.write(channel_0)
         with zf.open('channel1.tiff', 'w') as tiff:
-            channel_1 = make_tiff(np.array([2]).reshape((1, 1)))
+            channel_1 = make_tiff(np.zeros((1, 100, 100)))
             tiff.write(channel_1)
-    raw.seek(0)
+    zipped_image.seek(0)
 
-    with zipfile.ZipFile(labeled, mode='w') as zf:
+    with zipfile.ZipFile(zipped_segmentation, mode='w') as zf:
         with zf.open('feature0.tiff', 'w') as tiff:
-            feature_0 = make_tiff(np.array([3]).reshape((1, 1)))
+            feature_0 = make_tiff(np.zeros((1, 100, 100)))
             tiff.write(feature_0)
         with zf.open('feature1.tiff', 'w') as tiff:
-            feature_1 = make_tiff(np.array([4]).reshape((1, 1)))
+            feature_1 = make_tiff(np.zeros((1, 100, 100)))
             tiff.write(feature_1)
-    labeled.seek(0)
+    zipped_segmentation.seek(0)
 
-    url = 'http://example.com/mocked/raw.zip'
-    labeled_url = 'http://example.com/mocked/labeled.zip'
-    responses.add(responses.GET, url, body=io.BufferedReader(raw))
-    responses.add(responses.GET, labeled_url, body=io.BufferedReader(labeled))
-
-    loader = URLLoader({'url': url, 'labeled_url': labeled_url, 'axes': 'CYX'})
-
-    np.testing.assert_array_equal(loader.raw_array, expected_raw)
-    np.testing.assert_array_equal(loader.label_array, expected_labeled)
-    assert loader.cell_ids is not None
-    assert loader.cell_info is not None
+    loader = Loader(zipped_image, zipped_segmentation)
+    loaded_zip = zipfile.ZipFile(io.BytesIO(loader.data))
+    assert_image(loaded_zip, expected_image)
+    assert_segmentation(loaded_zip, expected_segmentation)
