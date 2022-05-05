@@ -27,7 +27,7 @@ function OverlapHovering() {
 
   return (
     <Box display='flex' justifyContent='center' flexDirection='column'>
-      {!!labels && labels.map((label, i) => !!label && <Cell label={i} />)}
+      {!!labels && labels.map((label, i) => !!label && <Cell label={i} key={i} />)}
     </Box>
   );
 }
