@@ -70,7 +70,7 @@ const createToolMachine = ({ eventBuses }) =>
     },
     {
       guards: {
-        hasLineage: (ctx, evt) => evt.lineage !== null,
+        hasLineage: (ctx, evt) => evt.lineage !== null && evt.lineage !== undefined,
       },
       actions: {
         save: respond(({ tool }) => ({ type: 'RESTORE', tool })),
