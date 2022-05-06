@@ -43,6 +43,7 @@ jest.mock('../ProjectContext', () => ({
   useCanvas: () => mockCanvasActor,
   useSegment: () => mockSegmentActor,
   useSelect: () => mockSelectActor,
+  useEditing: () => true,
 }));
 
 jest.mock('./ComposeCanvases', () => () => 'ComposeCanvases');

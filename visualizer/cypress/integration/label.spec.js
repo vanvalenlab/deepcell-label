@@ -21,7 +21,7 @@ it('Create a project from an example file', () => {
     .and('include', 'projectId=')
     .and('include', 'download=true');
   cy.get('.MuiCircularProgress-svg');
-  cy.get('canvas');
+  cy.get('canvas', { timeout: 10000 });
   cy.contains('DeepCell Label');
   cy.contains('Instructions');
   cy.contains('Download');

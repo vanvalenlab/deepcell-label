@@ -61,7 +61,7 @@ export default function FileUpload({ loadService }) {
       <Dropzone
         name='imageUploadInput'
         onDrop={(files) => send({ type: 'SET_UPLOAD_FILE', files })}
-        accept='image/png, image/tiff, .npz, .trk'
+        accept='image/png, image/tiff, application/zip, .npz'
       >
         {({ getRootProps, getInputProps, fileRejections }) => (
           <section>
@@ -97,7 +97,7 @@ export default function FileUpload({ loadService }) {
                   color='error'
                   key={file.path}
                 >
-                  {file.path} is not a valid file. Please upload a .tiff, .png, or .npz.
+                  {file.path} is not a valid file. Please upload a .zip, .tiff, or .png.
                 </Typography>
               ))}
 

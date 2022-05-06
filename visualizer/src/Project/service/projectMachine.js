@@ -94,10 +94,10 @@ const createProjectMachine = (projectId) =>
           actors.selectRef = spawn(createSelectMachine(context), 'select');
           actors.lineageRef = spawn(createLineageMachine(context), 'lineage');
           actors.overlapsRef = spawn(createOverlapsMachine(context), 'overlaps');
+          actors.toolRef = spawn(createToolMachine(context), 'tool');
           if (process.env.REACT_APP_SPOTS_VISUALIZER === 'true') {
             actors.spotsRef = spawn(createSpotsMachine(context), 'spots');
           } else {
-            actors.toolRef = spawn(createToolMachine(context), 'tool');
             actors.undoRef = spawn(createUndoMachine(context), 'undo');
           }
           return actors;
