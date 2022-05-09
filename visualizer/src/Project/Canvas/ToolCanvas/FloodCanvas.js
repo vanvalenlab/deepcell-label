@@ -32,7 +32,7 @@ const FloodCanvas = ({ setCanvases }) => {
   );
 
   const overlaps = useOverlaps();
-  const overlapsArray = useSelector(overlaps, (state) => state.context.overlaps); // [feature][frame]);
+  const overlapsArray = useSelector(overlaps, (state) => state.context.overlaps);
 
   const kernelRef = useRef();
   const kernelCanvas = useAlphaKernelCanvas();

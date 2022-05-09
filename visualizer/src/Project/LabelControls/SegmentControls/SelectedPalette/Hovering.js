@@ -20,10 +20,7 @@ function OverlapHovering() {
   // get label(s) from overlaps array
 
   const overlaps = useOverlaps();
-  const labels = useSelector(
-    overlaps,
-    (state) => state.context.overlaps?.[value] // [feature][frame][value]
-  );
+  const labels = useSelector(overlaps, (state) => state.context.overlaps?.[value]);
 
   return (
     <Box display='flex' justifyContent='center' flexDirection='column'>

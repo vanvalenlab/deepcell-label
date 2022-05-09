@@ -37,7 +37,7 @@ export const LabeledCanvas = ({ setCanvases }) => {
   );
 
   const overlaps = useOverlaps();
-  const overlapsArray = useSelector(overlaps, (state) => state.context.overlaps); // [feature][frame]);
+  const overlapsArray = useSelector(overlaps, (state) => state.context.overlaps);
 
   const select = useSelect();
   const selected = useSelector(select, (state) => state.context.selected);
