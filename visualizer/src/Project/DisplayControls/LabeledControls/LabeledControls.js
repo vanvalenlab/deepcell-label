@@ -1,3 +1,4 @@
+import { Typography } from '@mui/material';
 import Box from '@mui/material/Box';
 import FormLabel from '@mui/material/FormLabel';
 import Grid from '@mui/material/Grid';
@@ -29,6 +30,9 @@ const LabeledControls = () => {
             <div />
             <HighlightToggle />
           </Box>
+        </Grid>
+        <Grid item>
+          <Typography>Opacity</Typography>
         </Grid>
         <Grid item>
           <LabelsOpacitySlider />

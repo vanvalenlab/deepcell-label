@@ -1,4 +1,4 @@
-import Box from '@mui/material/Box';
+import { Grid } from '@mui/material';
 import Slider from '@mui/material/Slider';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
@@ -26,26 +26,25 @@ function OutlineOpacitySlider() {
 
   return (
     <Tooltip title={tooltipText}>
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          px: 1,
-        }}
-      >
-        <Typography>Outline Opacity</Typography>
-
-        <Slider
-          value={opacity}
-          valueLabelDisplay='auto'
-          min={0}
-          max={1}
-          track={false}
-          step={0.01}
-          onChange={handleOpacityChange}
-          onDoubleClick={handleDoubleClick}
-        />
-      </Box>
+      <Grid container>
+        <Grid item xs={4} sx={{ display: 'flex', justifyContent: 'flex-end', pr: 1 }}>
+          <Typography>Outline</Typography>
+        </Grid>
+        <Grid item xs={8} sx={{ display: 'flex', alignItems: 'center' }}>
+          <Slider
+            value={opacity}
+            valueLabelDisplay='auto'
+            min={0}
+            max={1}
+            track={false}
+            step={0.01}
+            onChange={handleOpacityChange}
+            onDoubleClick={handleDoubleClick}
+            sx={{ py: 0 }}
+            size='small'
+          />
+        </Grid>
+      </Grid>
     </Tooltip>
   );
 }
