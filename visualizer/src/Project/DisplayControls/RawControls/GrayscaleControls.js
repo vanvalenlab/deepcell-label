@@ -104,6 +104,7 @@ const BrightnessSlider = ({ channel }) => {
       step={0.01}
       orientation='horizontal'
       componentsProps={{ input: { ref: inputRef } }}
+      size='small'
     />
   );
 };
@@ -129,6 +130,7 @@ const ContrastSlider = ({ channel }) => {
       step={0.01}
       orientation='horizontal'
       componentsProps={{ input: { ref: inputRef } }}
+      size='small'
     />
   );
 };
@@ -152,6 +154,7 @@ const RangeSlider = ({ channel }) => {
       step={1}
       orientation='horizontal'
       componentsProps={{ input: { ref: inputRef } }}
+      size='small'
     />
   );
 };

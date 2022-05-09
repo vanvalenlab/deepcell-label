@@ -72,6 +72,7 @@ function LayerSlider({ layer }) {
       orientation='horizontal'
       sx={{ color: color, p: 0 }}
       componentsProps={{ input: { ref: inputRef } }}
+      size='small'
     />
   );
 }
