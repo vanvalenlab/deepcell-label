@@ -3,7 +3,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { useSelector } from '@xstate/react';
 import equal from 'fast-deep-equal';
 import React, { useEffect, useMemo } from 'react';
-import { useArrays, useCanvas, useEditing, useSelect } from '../ProjectContext';
+import { useArrays, useCanvas, useEditing } from '../ProjectContext';
 import ComposeCanvas from './ComposeCanvases';
 import LabeledCanvas from './LabeledCanvas';
 import OutlineCanvas from './OutlineCanvas';
@@ -12,8 +12,6 @@ import SpotsCanvas from './SpotsCanvas';
 import ToolCanvas from './ToolCanvas';
 
 function Canvas() {
-  const select = useSelect();
-
   const canvas = useCanvas();
   const { sx, sy, zoom, sw, sh, scale, grab, grabbing, dragged } = useSelector(
     canvas,
