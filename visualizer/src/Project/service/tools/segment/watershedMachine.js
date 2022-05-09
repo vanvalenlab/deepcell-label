@@ -91,8 +91,8 @@ const createWatershedMachine = (context) =>
         setCoordinates: assign({ x: (_, { x }) => x, y: (_, { y }) => y }),
         setHovering: assign({ hovering: (_, { hovering }) => hovering }),
         setOverlaps: assign({ overlaps: (_, { overlaps }) => overlaps }),
-        storeFirstPoint: assign({ x1: ({ x }) => x, y1: ({ y }) => y }),
-        storeSecondPoint: assign({ x2: ({ x }) => x, y2: ({ y }) => y }),
+        setFirstPoint: assign({ x1: ({ x }) => x, y1: ({ y }) => y }),
+        setSecondPoint: assign({ x2: ({ x }) => x, y2: ({ y }) => y }),
         setLabel: assign({ label: ({ selected }) => selected }),
         select: send('SELECT', { to: 'select' }),
         watershed: send(
