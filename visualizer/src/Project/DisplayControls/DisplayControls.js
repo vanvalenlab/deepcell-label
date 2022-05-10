@@ -17,7 +17,6 @@ function DisplayControls() {
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'hidden',
         p: 1,
       }}
     >
