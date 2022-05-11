@@ -102,13 +102,13 @@ const createProjectMachine = (projectId) =>
           }
           return actors;
         }),
-        addActorsToUndo: pure((context) => {
-          const { canvasRef, toolRef, imageRef, selectRef } = context;
+        addActorsToUndo: pure((ctx) => {
           return [
-            send({ type: 'ADD_ACTOR', actor: canvasRef }, { to: 'undo' }),
-            send({ type: 'ADD_ACTOR', actor: imageRef }, { to: 'undo' }),
-            send({ type: 'ADD_ACTOR', actor: toolRef }, { to: 'undo' }),
-            send({ type: 'ADD_ACTOR', actor: selectRef }, { to: 'undo' }),
+            send({ type: 'ADD_ACTOR', actor: ctx.canvasRef }, { to: 'undo' }),
+            send({ type: 'ADD_ACTOR', actor: ctx.imageRef }, { to: 'undo' }),
+            send({ type: 'ADD_ACTOR', actor: ctx.toolRef }, { to: 'undo' }),
+            send({ type: 'ADD_ACTOR', actor: ctx.selectRef }, { to: 'undo' }),
+            send({ type: 'ADD_LABEL_ACTOR', actor: ctx.apiRef }, { to: 'undo' }),
           ];
         }),
       },

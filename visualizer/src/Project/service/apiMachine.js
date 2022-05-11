@@ -1,5 +1,5 @@
 import * as zip from '@zip.js/zip.js';
-import { assign, Machine, send } from 'xstate';
+import { assign, forwardTo, Machine, send } from 'xstate';
 import { fromEventBus } from './eventBus';
 
 async function edit(context, event) {
@@ -107,12 +107,12 @@ const createApiMachine = ({ projectId, eventBuses }) =>
         projectId,
         frame: 0,
         feature: 0,
-        actionFrame: 0,
-        actionFeature: 0,
         labeledArray: null,
         rawArray: null,
         overlaps: null,
         writeMode: 'overlap',
+        initialLabels: null,
+        historyRef: null,
       },
       initial: 'waitForLabels',
       on: {
@@ -122,6 +122,8 @@ const createApiMachine = ({ projectId, eventBuses }) =>
         SET_FRAME: { actions: 'setFrame' },
         SET_FEATURE: { actions: 'setFeature' },
         SET_WRITE_MODE: { actions: 'setWriteMode' },
+        HISTORY_REF: { actions: 'setHistoryRef' }, // TODO: check that history ref is set before allowing edits
+        EDITED: { actions: forwardTo('eventBus') },
       },
       states: {
         waitForLabels: {
@@ -133,9 +135,13 @@ const createApiMachine = ({ projectId, eventBuses }) =>
           on: {
             EDIT: {
               target: 'loading',
-              actions: assign((context) => ({
-                actionFrame: context.frame,
-                actionFeature: context.feature,
+              actions: assign((ctx) => ({
+                initialLabels: {
+                  frame: ctx.frame,
+                  feature: ctx.feature,
+                  labeled: ctx.labeledArray,
+                  overlaps: ctx.overlaps,
+                },
               })),
             },
             UPLOAD: 'uploading',
@@ -155,7 +161,7 @@ const createApiMachine = ({ projectId, eventBuses }) =>
             src: (ctx, evt) => parseResponseZip(evt.data),
             onDone: {
               target: 'idle',
-              actions: 'sendEdited',
+              actions: ['sendEdited', 'sendSnapshot'],
             },
             onError: {
               target: 'idle',
@@ -189,12 +195,12 @@ const createApiMachine = ({ projectId, eventBuses }) =>
           link.click();
         },
         sendEdited: send(
-          (context, event) => ({
+          (ctx, evt) => ({
             type: 'EDITED',
-            frame: context.actionFrame,
-            feature: context.actionFeature,
-            labeled: event.data.labeled,
-            overlaps: event.data.overlaps,
+            frame: ctx.initialLabels.frame,
+            feature: ctx.initialLabels.feature,
+            labeled: evt.data.labeled,
+            overlaps: evt.data.overlaps,
           }),
           { to: 'eventBus' }
         ),
@@ -204,6 +210,21 @@ const createApiMachine = ({ projectId, eventBuses }) =>
         setFrame: assign((_, { frame }) => ({ frame })),
         setFeature: assign((_, { feature }) => ({ feature })),
         setWriteMode: assign((_, { writeMode }) => ({ writeMode })),
+        // undo redo
+        setHistoryRef: assign({ historyRef: (ctx, evt, meta) => meta._event.origin }),
+        sendSnapshot: send(
+          (ctx, evt) => ({
+            type: 'SAVE_LABELS',
+            initialLabels: ctx.initialLabels,
+            editedLabels: {
+              frame: ctx.initialLabels.frame,
+              feature: ctx.initialLabels.feature,
+              labeled: evt.data.labeled,
+              overlaps: evt.data.overlaps,
+            },
+          }),
+          { to: (ctx) => ctx.historyRef }
+        ),
       },
     }
   );
