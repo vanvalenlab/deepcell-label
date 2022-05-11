@@ -2,36 +2,32 @@ import * as zip from '@zip.js/zip.js';
 import { assign, Machine, send } from 'xstate';
 import { fromEventBus } from './eventBus';
 
-/** Returns a Promise for a DeepCell Label API call based on the event. */
-function getApiService(context, event) {
-  switch (event.type) {
-    case 'EDIT':
-      return edit(context, event);
-    case 'BACKEND_UNDO':
-      return undo(context, event);
-    case 'BACKEND_REDO':
-      return redo(context, event);
-    default:
-      return;
-  }
-}
-
-function edit(context, event) {
-  const { labeledArray, rawArray, overlaps, writeMode } = context;
+async function edit(context, event) {
+  const { labeledArray, rawArray, overlaps, writeMode, lineage } = context;
   const { action, args } = event;
-  const editRoute = `${document.location.origin}/api/edit/${action}`;
-  // const usesRaw = action === 'handle_draw' || action === 'threshold' || action === 'watershed';
+  const editRoute = `${document.location.origin}/api/edit`;
+  const usesRaw = action === 'active_contour' || action === 'threshold' || action === 'watershed';
+  // const usesLineage = action === 'handle_draw' || action === 'threshold' || action === 'watershed';
+  const width = labeledArray[0].length;
+  const height = labeledArray.length;
+  const edit = { width, height, action, args, writeMode };
 
-  const form = new FormData();
-  for (const key in args) {
-    form.append(key, args[key]);
+  const zipWriter = new zip.ZipWriter(new zip.BlobWriter('application/zip'));
+  // Required files
+  await zipWriter.add('edit.json', new zip.TextReader(JSON.stringify(edit)));
+  await zipWriter.add('overlaps.json', new zip.TextReader(JSON.stringify(overlaps)));
+  await zipWriter.add('labeled.dat', new zip.BlobReader(new Blob(labeledArray)));
+  // Optional files
+  if (usesRaw) {
+    await zipWriter.add('raw.dat', new zip.BlobReader(new Blob(rawArray)));
   }
-  form.append('labels', new Blob(labeledArray), 'labels');
-  form.append('raw', new Blob(rawArray), 'raw');
-  form.append('overlaps', JSON.stringify(overlaps));
-  form.append('height', labeledArray.length);
-  form.append('width', labeledArray[0].length);
-  form.append('writeMode', JSON.stringify(writeMode));
+  if (lineage) {
+    await zipWriter.add('lineage.json', new zip.TextReader(JSON.stringify(lineage)));
+  }
+
+  const zipBlob = await zipWriter.close();
+  const form = new FormData();
+  form.append('labels', zipBlob, 'labels.zip');
 
   const options = {
     method: 'POST',
@@ -39,18 +35,6 @@ function edit(context, event) {
     'Content-Type': 'multipart/form-data',
   };
   return fetch(editRoute, options).then(checkResponseCode);
-}
-
-function undo(context, event) {
-  const undoRoute = `${document.location.origin}/api/undo/${context.projectId}`;
-  const options = { method: 'POST' };
-  return fetch(undoRoute, options).then(checkResponseCode);
-}
-
-function redo(context, event) {
-  const redoRoute = `${document.location.origin}/api/redo/${context.projectId}`;
-  const options = { method: 'POST' };
-  return fetch(redoRoute, options).then(checkResponseCode);
 }
 
 function upload(context, event) {
@@ -154,8 +138,6 @@ const createApiMachine = ({ projectId, eventBuses }) =>
                 actionFeature: context.feature,
               })),
             },
-            BACKEND_UNDO: 'loading',
-            BACKEND_REDO: 'loading',
             UPLOAD: 'uploading',
             DOWNLOAD: 'downloading',
           },
@@ -163,7 +145,7 @@ const createApiMachine = ({ projectId, eventBuses }) =>
         loading: {
           invoke: {
             id: 'labelAPI',
-            src: getApiService,
+            src: edit,
             onDone: 'parseResponse',
             onError: 'idle',
           },

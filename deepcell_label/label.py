@@ -1,11 +1,13 @@
 """Classes to view and edit DeepCell Label Projects"""
 from __future__ import absolute_import, division, print_function
 
-import jsonpatch
+import io
+import json
+import zipfile
+
 import numpy as np
 import skimage
 from matplotlib.colors import Normalize
-from scipy.ndimage import find_objects
 from skimage import filters
 from skimage.exposure import rescale_intensity
 from skimage.measure import regionprops
@@ -13,60 +15,95 @@ from skimage.morphology import dilation, disk, erosion, flood, square
 from skimage.segmentation import morphological_chan_vese, watershed
 
 
-def make_segments(labels):
-    """
-    Returns a list of the segments in a label image.
-    """
-    objects = find_objects(labels)
-    segments = {
-        (i + 1): {
-            # Does not contain
-            # image coordinates (t, z, c); could be added server side or client side
-            # id: likely added on client side
-            'x': obj[1].start,
-            'y': obj[0].start,
-            'width': obj[1].stop - obj[1].start,
-            'height': obj[0].stop - obj[0].start,
-        }
-        for i, obj in enumerate(objects)
-        if obj is not None
-    }
-    return segments
-
-
 class Edit(object):
     """
-    Class for editing label images in DeepCell Label.
-    Expected lifespan is a single action.
-
-    Actions have three phases:
-        1. select and edit the image currently on display
-        3. make changes to the label metadata
-        4. assign the image to the frame
-
-    NOTE: Actions must directly assign changes to the frame attribute for the
-    MutableNdarray class to detect the change and for the database to persist the change.
-    Changes to a view of a MutableNdarray will not be detected by the original
-    TODO: modify MutableNdarray class to share changed() signals from arrays view
+    Loads labeled data from a zip file,
+    edits the labels according to edit.json in the zip,
+    and writes the edited labels to a new zip file.
     """
 
-    def __init__(self, labels, raw=None, overlaps=None, write_mode='overlap'):
-        self.initial_labels = labels.copy()
-        self.labels = labels
-        self.raw = raw
+    def __init__(self, labels_zip):
 
-        self.overlaps = overlaps
-        self.new_value = self.overlaps.shape[0]
-        self.new_label = self.overlaps.shape[1]
+        self.valid_modes = ['overlap', 'overwrite', 'exclude']
+        self.raw_required = ['watershed', 'active_contour', 'threshold']
+        self.lineage_required = []
 
-        self.write_mode = write_mode
+        self.lineage = None
 
-    @property
-    def patch(self):
-        initial = make_segments(self.initial_labels)
-        final = make_segments(self.labels)
-        patch = jsonpatch.make_patch(initial, final)
-        return patch.patch
+        self.load(labels_zip)
+        self.dispatch_action()
+        self.write_response_zip()
+
+    def load(self, labels_zip):
+        """
+        Load the project data to edit from a zip file.
+        """
+        if not zipfile.is_zipfile(labels_zip):
+            raise ValueError('Attached labels.zip is not a zip file.')
+        zf = zipfile.ZipFile(labels_zip)
+
+        # Load edit args
+        if 'edit.json' not in zf.namelist():
+            raise ValueError('Attached labels.zip must contain edit.json.')
+        with zf.open('edit.json') as f:
+            edit = json.load(f)
+            if 'action' not in edit:
+                raise ValueError('No action specified in edit.json.')
+            self.action = edit['action']
+            self.height = edit['height']
+            self.width = edit['width']
+            self.args = edit.get('args', None)
+            self.write_mode = edit.get('writeMode', 'overlap')
+            if self.write_mode not in self.valid_modes:
+                raise ValueError(
+                    f'Invalid writeMode {self.write_mode} in edit.json. Choose from overlap, overwrite, or exclude.'
+                )
+
+        # Load label array
+        if 'labeled.dat' not in zf.namelist():
+            raise ValueError('zip must contain labeled.dat.')
+        with zf.open('labeled.dat') as f:
+            labels = np.frombuffer(f.read(), np.int32)
+            self.initial_labels = np.reshape(labels, (self.width, self.height))
+            self.labels = self.initial_labels.copy()
+
+        # Load overlaps array
+        if 'overlaps.json' not in zf.namelist():
+            raise ValueError('zip must contain overlaps.json.')
+        with zf.open('overlaps.json') as f:
+            self.overlaps = np.array(json.load(f))
+            self.new_value = self.overlaps.shape[0]
+            self.new_label = self.overlaps.shape[1]
+
+        # Load raw image
+        if 'raw.dat' in zf.namelist():
+            with zf.open('raw.dat') as f:
+                raw = np.frombuffer(f.read(), np.uint8)
+                self.raw = np.reshape(raw, (self.width, self.height))
+        elif self.action in self.raw_required:
+            raise ValueError(
+                f'Include raw array in raw.json to use action {self.action}.'
+            )
+
+        # Load lineage
+        if 'lineage.json' in zf.namelist():
+            with zf.open('lineage.json') as f:
+                self.lineage = json.load(f)
+        elif self.action in self.lineage_required:
+            raise ValueError(
+                f'Include lineage in lineage.json for action {self.action}.'
+            )
+
+    def write_response_zip(self):
+        """Write edited labels to zip."""
+        f = io.BytesIO()
+        with zipfile.ZipFile(f, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr('labeled.json', str(self.labels.tolist()))
+            zf.writestr('overlaps.json', str(self.overlaps.tolist()))
+            if self.lineage is not None:
+                zf.writestr('lineage.json', json.dumps(self.lineage))
+        f.seek(0)
+        self.response_zip = f
 
     def add_label(self, label):
         if label == self.new_label:
@@ -78,8 +115,8 @@ class Edit(object):
         """
         Returns the value that encodes the vector of labels
         """
-        matchingValues = np.where(np.all(labels == self.overlaps, axis=1))[0]
-        if matchingValues.size == 0:  # No matching value
+        matching_values = np.where(np.all(labels == self.overlaps, axis=1))[0]
+        if matching_values.size == 0:  # No matching value
             new_value = self.new_value
             self.new_value += 1
             self.overlaps = np.append(
@@ -87,7 +124,7 @@ class Edit(object):
             )
             return new_value
         else:
-            return matchingValues[0]
+            return matching_values[0]
 
     def get_mask(self, label):
         """
@@ -139,21 +176,21 @@ class Edit(object):
         """Ensures that a label is a valid integer between 0 and an unused label"""
         return int(min(self.new_label, max(0, label)))
 
-    def dispatch_action(self, action, info):
+    def dispatch_action(self):
         """
         Call an action method based on an action type.
 
         Args:
             action (str): name of action method after "action_"
-                          e.g. "handle_draw" to call "action_handle_draw"
+                          e.g. "draw" to call "action_draw"
             info (dict): key value pairs with arguments for action
         """
-        attr_name = 'action_{}'.format(action)
+        attr_name = 'action_{}'.format(self.action)
         try:
             action_fn = getattr(self, attr_name)
-            action_fn(**info)
+            action_fn(**self.args)
         except AttributeError:
-            raise ValueError('Invalid action "{}"'.format(action))
+            raise ValueError('Invalid action "{}"'.format(self.action))
 
     def action_replace(self, a, b):
         """
@@ -182,6 +219,7 @@ class Edit(object):
             label (int): label to edit with the brush
             erase (bool): whether to add or remove label from brush stroke area
         """
+        trace = json.loads(trace)
 
         # TODO: handle new labels (add column to overlaps)
         # TODO: switch between overwriting, overlapping, and excluding
