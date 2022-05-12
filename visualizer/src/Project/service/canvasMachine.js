@@ -105,10 +105,10 @@ const createCanvasMachine = ({ eventBuses }) =>
       id: 'canvas',
       context: {
         // raw dimensions of image
-        width: 512,
-        height: 512,
-        availableWidth: 512,
-        availableHeight: 512,
+        width: 1,
+        height: 1,
+        availableWidth: 1,
+        availableHeight: 1,
         padding: 5,
         scale: 1, // how much the canvas is scaled to fill the available space
         zoom: 1, // how much the image is scaled within the canvas
