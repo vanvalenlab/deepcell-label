@@ -68,7 +68,7 @@ export const GrayscaleCanvas = ({ setCanvases }) => {
     if (rawArray) {
       kernelRef.current(rawArray, min, max, brightness, contrast, invert);
       // Rerender the parent canvas
-      setCanvases((canvases) => ({ ...canvases, rawArray: kernelCanvas }));
+      setCanvases((canvases) => ({ ...canvases, raw: kernelCanvas }));
     }
   }, [kernelCanvas, rawArray, min, max, brightness, contrast, invert, setCanvases]);
 

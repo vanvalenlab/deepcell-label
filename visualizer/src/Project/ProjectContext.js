@@ -296,17 +296,21 @@ const gl = !!document.createElement('canvas').getContext('webgl');
 /** Creates a reference to a canvas with an alpha channel to use with a GPU.js kernel. */
 export function useAlphaKernelCanvas() {
   const project = useProject();
+  const width = useSelector(useCanvas(), (state) => state.context.width);
+  const height = useSelector(useCanvas(), (state) => state.context.height);
   const [canvas, setCanvas] = useState(document.createElement('canvas'));
 
   useEffect(() => {
     const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
     if (gl2) {
       canvas.getContext('webgl2', { premultipliedAlpha: false });
     } else if (gl) {
       canvas.getContext('webgl', { premultipliedAlpha: false });
     }
     setCanvas(canvas);
-  }, [project]);
+  }, [project, width, height]);
 
   return canvas;
 }

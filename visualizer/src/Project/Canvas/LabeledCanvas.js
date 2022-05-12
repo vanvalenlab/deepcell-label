@@ -33,7 +33,7 @@ export const LabeledCanvas = ({ setCanvases }) => {
   const arrays = useArrays();
   const labeledArray = useSelector(
     arrays,
-    (state) => state.context.labeledArrays && state.context.labeledArrays[feature][frame]
+    (state) => state.context.labeled && state.context.labeled[feature][frame]
   );
 
   const overlaps = useOverlaps();
