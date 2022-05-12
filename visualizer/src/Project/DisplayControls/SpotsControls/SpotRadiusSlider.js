@@ -26,7 +26,6 @@ function SpotRadiusSlider() {
       valueLabelDisplay='auto'
       sx={{ p: 0 }}
       componentsProps={{ input: { ref: inputRef } }}
-      size='small'
     />
   );
 }
