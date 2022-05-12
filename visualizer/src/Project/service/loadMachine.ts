@@ -1,7 +1,7 @@
 /** Fetches data from the project storage API, including raw image data, label image data, and labels. */
 
 import * as zip from '@zip.js/zip.js';
-import { assign, createMachine } from 'xstate';
+import { assign, createMachine, sendParent } from 'xstate';
 import { loadOmeTiff } from '@hms-dbmi/viv';
 
 type PropType<TObj, TProp extends keyof TObj> = TObj[TProp];
@@ -212,6 +212,7 @@ const createLoadMachine = (projectId: string) =>
         },
         loaded: {
           type: 'final',
+          entry: 'send loaded',
         },
       },
     },
@@ -257,6 +258,15 @@ const createLoadMachine = (projectId: string) =>
           raw: (_, event) => event.data.raw,
           labeled: (_, event) => event.data.labeled,
         }),
+        'send loaded': sendParent((ctx) => ({
+          type: 'LOADED',
+          raw: ctx.raw,
+          labeled: ctx.labeled,
+          labels: ctx.labels,
+          spots: ctx.spots,
+          lineage: ctx.lineage,
+          overlaps: ctx.overlaps,
+        })),
       },
     }
   );
