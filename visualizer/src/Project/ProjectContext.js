@@ -38,16 +38,11 @@ export function useSelectedCell() {
  * By default keyboard events will not fire inside of a textarea, input, or select.
  * Elements with the mousetrap class will fire keybinds. */
 export function useMousetrapRef() {
-  const ref = useRef();
-  const [hasClass, setHasClass] = useState(false);
-
-  if (ref.current && !hasClass) {
-    setHasClass(true);
-    const inputEl = ref.current;
-    inputEl.className = `${inputEl.className} mousetrap`;
-  }
-
-  return ref;
+  return (input) => {
+    if (input && !input?.className?.includes('mousetrap')) {
+      input.className = `${input?.className} mousetrap`;
+    }
+  };
 }
 
 export function useEditing() {
