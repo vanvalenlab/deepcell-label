@@ -111,7 +111,7 @@ function createLabelHistoryMachine(actor) {
       states: {
         idle: {
           on: {
-            SAVE_LABELS: { actions: [(c, e) => console.log(c, e), 'addSnapshotToPast'] },
+            SAVE_LABELS: { actions: 'addSnapshotToPast' },
             UNDO: 'undoing',
             REDO: 'redoing',
           },
