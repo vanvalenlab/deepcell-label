@@ -55,15 +55,21 @@ export const LabeledCanvas = ({ setCanvases }) => {
         let [r, g, b, a] = [0, 0, 0, 1];
         for (let i = 0; i < numLabels; i++) {
           if (overlaps[value][i] === 1) {
+            let [sr, sg, sb] = colormap[i];
             if (i !== selected) {
               a = a * (1 - opacity[0]);
+              sr = opacity[0] * sr / 255;
+              sg = opacity[0] * sg / 255;
+              sb = opacity[0] * sb / 255;
             } else {
               a = a * (1 - opacity[1]);
+              sr = opacity[1] * sr / 255;
+              sg = opacity[1] * sg / 255;
+              sb = opacity[1] * sb / 255;
             }
-            let [sr, sg, sb] = colormap[i];
-            r = r + sr / 255 - r * sr / 255;
-            g = g + sg / 255 - g * sg / 255;
-            b = b + sb / 255 - b * sb / 255;
+            r = r + sr - r * sr;
+            g = g + sg - g * sg;
+            b = b + sb - b * sb;
           }
         }
         this.color(r, g, b, 1 - a);
@@ -86,6 +92,7 @@ export const LabeledCanvas = ({ setCanvases }) => {
     if (labeledArray && overlapsArray) {
       const numLabels = overlapsArray[0].length;
       // Compute the label image with the kernel
+      console.log(opacity, colormap);
       kernelRef.current(labeledArray, overlapsArray, opacity, colormap, selected, numLabels);
       // Rerender the parent canvas with the kernel output
       setCanvases((canvases) => ({ ...canvases, labeled: kernelCanvas }));
