@@ -122,7 +122,7 @@ const createCanvasMachine = ({ eventBuses }) =>
         dx: 0,
         dy: 0,
         // label data
-        labeledArray: null,
+        labeled: null,
         hovering: null,
         panOnDrag: true,
       },
@@ -149,7 +149,7 @@ const createCanvasMachine = ({ eventBuses }) =>
           })),
         },
         RESTORE: { actions: ['restore', respond('RESTORED')] },
-        LABELED_ARRAY: { actions: ['setLabeledArray', 'sendHovering'] },
+        LABELED: { actions: ['setLabeled', 'sendHovering'] },
         COORDINATES: {
           cond: 'newCoordinates',
           actions: ['setCoordinates', 'sendHovering', 'sendToEventBus'],
@@ -238,9 +238,9 @@ const createCanvasMachine = ({ eventBuses }) =>
           return { type: 'COORDINATES', x, y };
         }),
         setHovering: assign((_, { hovering }) => ({ hovering })),
-        sendHovering: send(({ labeledArray: array, x, y }) => ({
+        sendHovering: send(({ labeled, x, y }) => ({
           type: 'HOVERING',
-          hovering: array && x !== null && y !== null ? array[y][x] : null,
+          hovering: labeled && x !== null && y !== null ? labeled[y][x] : null,
         })),
         setSpace: assign({
           availableWidth: (_, { width }) => width,
@@ -306,7 +306,7 @@ const createCanvasMachine = ({ eventBuses }) =>
           return { type: 'SET_POSITION', zoom: newZoom, sx: newSx, sy: newSy };
         }),
         setPanOnDrag: assign((_, { panOnDrag }) => ({ panOnDrag })),
-        setLabeledArray: assign((_, { labeledArray }) => ({ labeledArray })),
+        setLabeled: assign((_, { labeled }) => ({ labeled })),
         sendToEventBus: send((c, e) => e, { to: 'eventBus' }),
       },
     }

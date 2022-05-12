@@ -61,14 +61,14 @@ const createProjectMachine = (projectId) =>
                 forwardTo('loadEventBus'),
                 send(
                   (c, e) => {
-                    const { rawArrays, labeledArrays } = e;
+                    const { raw, labeled } = e;
                     return {
                       type: 'DIMENSIONS',
-                      numChannels: rawArrays.length,
-                      numFeatures: labeledArrays.length,
-                      numFrames: rawArrays[0].length,
-                      height: rawArrays[0][0].length,
-                      width: rawArrays[0][0][0].length,
+                      numChannels: raw.length,
+                      numFeatures: labeled.length,
+                      numFrames: raw[0].length,
+                      height: raw[0][0].length,
+                      width: raw[0][0][0].length,
                     };
                   },
                   { to: 'loadEventBus' }

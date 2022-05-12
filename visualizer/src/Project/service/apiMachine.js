@@ -3,23 +3,23 @@ import { assign, forwardTo, Machine, send } from 'xstate';
 import { fromEventBus } from './eventBus';
 
 async function edit(context, event) {
-  const { labeledArray, rawArray, overlaps, writeMode, lineage } = context;
+  const { labeled, raw, overlaps, writeMode, lineage } = context;
   const { action, args } = event;
   const editRoute = `${document.location.origin}/api/edit`;
   const usesRaw = action === 'active_contour' || action === 'threshold' || action === 'watershed';
   // const usesLineage = action === 'handle_draw' || action === 'threshold' || action === 'watershed';
-  const width = labeledArray[0].length;
-  const height = labeledArray.length;
+  const width = labeled[0].length;
+  const height = labeled.length;
   const edit = { width, height, action, args, writeMode };
 
   const zipWriter = new zip.ZipWriter(new zip.BlobWriter('application/zip'));
   // Required files
   await zipWriter.add('edit.json', new zip.TextReader(JSON.stringify(edit)));
   await zipWriter.add('overlaps.json', new zip.TextReader(JSON.stringify(overlaps)));
-  await zipWriter.add('labeled.dat', new zip.BlobReader(new Blob(labeledArray)));
+  await zipWriter.add('labeled.dat', new zip.BlobReader(new Blob(labeled)));
   // Optional files
   if (usesRaw) {
-    await zipWriter.add('raw.dat', new zip.BlobReader(new Blob(rawArray)));
+    await zipWriter.add('raw.dat', new zip.BlobReader(new Blob(raw)));
   }
   if (lineage) {
     await zipWriter.add('lineage.json', new zip.TextReader(JSON.stringify(lineage)));
@@ -107,8 +107,8 @@ const createApiMachine = ({ projectId, eventBuses }) =>
         projectId,
         frame: 0,
         feature: 0,
-        labeledArray: null,
-        rawArray: null,
+        labeled: null,
+        raw: null,
         overlaps: null,
         writeMode: 'overlap',
         initialLabels: null,
@@ -116,8 +116,8 @@ const createApiMachine = ({ projectId, eventBuses }) =>
       },
       initial: 'waitForLabels',
       on: {
-        LABELED_ARRAY: { actions: 'setLabeledArray' },
-        RAW_ARRAY: { actions: 'setRawArray' },
+        LABELED: { actions: 'setLabeled' },
+        RAW: { actions: 'setRaw' },
         OVERLAPS: { actions: 'setOverlaps' },
         SET_FRAME: { actions: 'setFrame' },
         SET_FEATURE: { actions: 'setFeature' },
@@ -128,7 +128,7 @@ const createApiMachine = ({ projectId, eventBuses }) =>
       states: {
         waitForLabels: {
           on: {
-            LABELED_ARRAY: { actions: 'setLabeledArray', target: 'idle' },
+            LABELED: { actions: 'setLabeled', target: 'idle' },
           },
         },
         idle: {
@@ -139,7 +139,7 @@ const createApiMachine = ({ projectId, eventBuses }) =>
                 initialLabels: {
                   frame: ctx.frame,
                   feature: ctx.feature,
-                  labeled: ctx.labeledArray,
+                  labeled: ctx.labeled,
                   overlaps: ctx.overlaps,
                 },
               })),
@@ -204,8 +204,8 @@ const createApiMachine = ({ projectId, eventBuses }) =>
           }),
           { to: 'eventBus' }
         ),
-        setRawArray: assign((_, { rawArray }) => ({ rawArray })),
-        setLabeledArray: assign((_, { labeledArray }) => ({ labeledArray })),
+        setRaw: assign((_, { raw }) => ({ raw })),
+        setLabeled: assign((_, { labeled }) => ({ labeled })),
         setOverlaps: assign((_, { overlaps }) => ({ overlaps })),
         setFrame: assign((_, { frame }) => ({ frame })),
         setFeature: assign((_, { feature }) => ({ feature })),

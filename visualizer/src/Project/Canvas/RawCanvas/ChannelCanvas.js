@@ -26,9 +26,9 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
   const frame = useSelector(image, (state) => state.context.frame);
 
   const arrays = useArrays();
-  const rawArray = useSelector(
+  const raw = useSelector(
     arrays,
-    (state) => state.context.rawArrays && state.context.rawArrays[channel][frame]
+    (state) => state.context.raw && state.context.raw[channel][frame]
   );
 
   const kernelRef = useRef();
@@ -64,13 +64,13 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
   }, [width, height]);
 
   useEffect(() => {
-    if (rawArray) {
+    if (raw) {
       // Rerender the canvas for this component
-      kernelRef.current(rawArray, on, hexToRGB(color), min, max);
+      kernelRef.current(raw, on, hexToRGB(color), min, max);
       // Rerender the parent canvas
       setCanvases((canvases) => ({ ...canvases, [layerIndex]: canvasRef.current }));
     }
-  }, [rawArray, on, color, min, max, width, height, layerIndex, setCanvases]);
+  }, [raw, on, color, min, max, width, height, layerIndex, setCanvases]);
 
   // Remove canvas from canvases when layer is removed
   useEffect(() => {

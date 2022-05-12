@@ -17,7 +17,7 @@ describe('test apiMachine event handling', () => {
     fetch.resetMocks();
   });
 
-  it('LABELED_ARRAY event -> idle state', (done) => {
+  it('LABELED event -> idle state', (done) => {
     const apiMachine = createApiMachine({
       projectId: 'testProjectId',
       bucket: 'testBucket',
@@ -31,7 +31,7 @@ describe('test apiMachine event handling', () => {
     });
 
     apiService.start();
-    apiService.send({ type: 'LABELED_ARRAY', labeledArray: [new Int32Array([])] });
+    apiService.send({ type: 'LABELED', labeled: [new Int32Array([])] });
   });
 
   it('EDIT event -> call API successfully -> "idle" state', (done) => {
@@ -72,7 +72,7 @@ describe('test apiMachine event handling', () => {
         },
       })
     );
-    apiService.send({ type: 'LABELED_ARRAY', labeledArray: [new Int32Array([])] });
+    apiService.send({ type: 'LABELED', labeled: [new Int32Array([])] });
     apiService.send({ type: 'EDIT', args: [], action: 'test' });
   });
 
@@ -103,7 +103,7 @@ describe('test apiMachine event handling', () => {
       failed = true;
       return Promise.reject('API is down');
     });
-    apiService.send({ type: 'LABELED_ARRAY', labeledArray: [new Int32Array([])] });
+    apiService.send({ type: 'LABELED', labeled: [new Int32Array([])] });
     apiService.send({ type: 'EDIT', args: [], action: 'test' });
   });
 
@@ -129,7 +129,7 @@ describe('test apiMachine event handling', () => {
 
     // successful API call
     fetch.mockResponseOnce(JSON.stringify({}));
-    apiService.send({ type: 'LABELED_ARRAY', labeledArray: [new Int32Array([])] });
+    apiService.send({ type: 'LABELED', labeled: [new Int32Array([])] });
     apiService.send({ type: 'UPLOAD' });
     expect(fetch).toHaveBeenCalled();
   });
@@ -161,7 +161,7 @@ describe('test apiMachine event handling', () => {
       failed = true;
       return Promise.reject('API is down');
     });
-    apiService.send({ type: 'LABELED_ARRAY', labeledArray: [new Int32Array([])] });
+    apiService.send({ type: 'LABELED', labeled: [new Int32Array([])] });
     apiService.send({ type: 'UPLOAD' });
     expect(fetch).toHaveBeenCalled();
   });

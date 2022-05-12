@@ -22,7 +22,7 @@ export const GrayscaleCanvas = ({ setCanvases }) => {
   const arrays = useArrays();
   const rawArray = useSelector(
     arrays,
-    (state) => state.context.rawArrays && state.context.rawArrays[channelIndex][frame]
+    (state) => state.context.raw && state.context.raw[channelIndex][frame]
   );
 
   const kernelRef = useRef();
@@ -68,7 +68,7 @@ export const GrayscaleCanvas = ({ setCanvases }) => {
     if (rawArray) {
       kernelRef.current(rawArray, min, max, brightness, contrast, invert);
       // Rerender the parent canvas
-      setCanvases((canvases) => ({ ...canvases, raw: kernelCanvas }));
+      setCanvases((canvases) => ({ ...canvases, rawArray: kernelCanvas }));
     }
   }, [kernelCanvas, rawArray, min, max, brightness, contrast, invert, setCanvases]);
 
