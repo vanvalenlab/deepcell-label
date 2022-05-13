@@ -1,7 +1,6 @@
 import * as zip from '@zip.js/zip.js';
 import { assign, Machine, send } from 'xstate';
 import { fromEventBus } from './eventBus';
-
 /** Returns a Promise for a DeepCell Label API call based on the event. */
 function getApiService(context, event) {
   switch (event.type) {
