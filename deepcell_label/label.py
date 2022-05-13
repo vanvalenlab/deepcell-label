@@ -93,6 +93,8 @@ class Edit(object):
         """
         Returns a boolean mask of the label.
         """
+        if label == 0:
+            return self.labels == 0
         mask = np.zeros(self.labels.shape, dtype=bool)
         for value, encodes_label in enumerate(self.overlaps[:, label]):
             if encodes_label:
@@ -233,7 +235,7 @@ class Edit(object):
             y (int): y coordinate of region to flood
         """
         if background == 0:
-            mask = self.get_mask(foreground)
+            mask = self.get_mask(background)
             # Lower connectivity helps prevent flooding whole image
             flooded = flood(mask, (y, x), connectivity=1)
             self.add_mask(flooded, foreground)
@@ -340,9 +342,12 @@ class Edit(object):
 
         # Keep only the largest connected component
         regions = skimage.measure.label(contoured)
-        largest_component = regions == (np.argmax(np.bincount(regions.flat)[1:]) + 1)
-        mask = np.zeros(self.labels.shape, dtype=bool)
-        mask[top:bottom, left:right] = largest_component
+        if np.any(regions):
+            largest_component = regions == (
+                np.argmax(np.bincount(regions.flat)[1:]) + 1
+            )
+            mask = np.zeros(self.labels.shape, dtype=bool)
+            mask[top:bottom, left:right] = largest_component
 
         # Throw away small contoured labels
         if np.count_nonzero(mask) >= min_pixels:
