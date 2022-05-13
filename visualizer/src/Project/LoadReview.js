@@ -5,7 +5,7 @@ import ProjectContext from './ProjectContext';
 import ReviewContext from './ReviewContext';
 import createReviewMachine from './service/reviewMachine';
 
-function LoadReview({ ids, track, spots }) {
+function LoadReview({ ids }) {
   const [reviewMachine] = useState(createReviewMachine(ids.split(',')));
   const review = useInterpret(reviewMachine);
   const project = useSelector(review, (state) => {
@@ -18,15 +18,19 @@ function LoadReview({ ids, track, spots }) {
   });
   const [load] = useActor(loader);
 
+  const [track, setTrack] = useState(false);
+
   useEffect(() => {
     if (load.matches('loaded')) {
-      const { rawArrays, labeledArrays, labels, spots } = load.context;
+      const { rawArrays, labeledArrays, labels, spots, lineage } = load.context;
+      setTrack(lineage !== null && lineage !== undefined);
       project.send({
         type: 'LOADED',
         rawArrays,
         labeledArrays,
         labels,
         spots,
+        lineage,
       });
     }
   }, [load, project]);
@@ -34,7 +38,7 @@ function LoadReview({ ids, track, spots }) {
   return (
     <ReviewContext review={review}>
       <ProjectContext project={project}>
-        <Display review={true} track={track} spots={spots} />
+        <Display review={true} track={track} />
       </ProjectContext>
     </ReviewContext>
   );

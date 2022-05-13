@@ -2,19 +2,14 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import FormGroup from '@mui/material/FormGroup';
 import Switch from '@mui/material/Switch';
 import { useSelector } from '@xstate/react';
-import React, { useEffect, useRef } from 'react';
-import { useSpots } from '../../ProjectContext';
+import React from 'react';
+import { useMousetrapRef, useSpots } from '../../ProjectContext';
 
 function SpotOutlineToggle() {
   const spots = useSpots();
   const outline = useSelector(spots, (state) => state.context.outline);
 
-  // Adds mousetrap class so hotkeys work after using switch
-  const inputRef = useRef();
-  useEffect(() => {
-    const input = inputRef.current;
-    input.className = `${input.className} mousetrap`;
-  }, []);
+  const inputRef = useMousetrapRef();
 
   return (
     <FormGroup row>

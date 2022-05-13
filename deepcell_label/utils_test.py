@@ -33,23 +33,21 @@ def test_snakecase_to_camelcase_only_underscores():
     assert camelcase == '___'
 
 
-def test_reformat_cell_info():
-    """Tests reformat_cell_info"""
+def test_reformat_lineage():
+    """Tests reformat_lineage"""
     cell_info = {
-        1: {'frame_div': 1, 'frame_div_parent': None, 'parent': None, 'daughters': [2]},
-        2: {'frame_div': None, 'frame_div_parent': 1, 'parent': 1, 'daughters': []},
+        '1': {'frame_div': 1, 'parent': None, 'daughters': [2]},
+        '2': {'frame_div': None, 'parent': 1, 'daughters': []},
     }
-    reformated = utils.reformat_cell_info(cell_info)
+    reformated = utils.reformat_lineage(cell_info)
     expected = {
-        1: {
+        '1': {
             'divisionFrame': 1,
-            'parentDivisionFrame': None,
             'parent': None,
             'daughters': [2],
         },
-        2: {
+        '2': {
             'divisionFrame': None,
-            'parentDivisionFrame': 1,
             'parent': 1,
             'daughters': [],
         },
@@ -57,23 +55,33 @@ def test_reformat_cell_info():
     assert reformated == expected
 
 
-def test_add_frame_div_parent():
-    """Tests add_frame_div_parent"""
+def test_add_parent_division_frame():
+    """Tests add_parent_division_frame"""
     cell_info = {
-        1: {'frame_div': 1, 'parent': None, 'daughters': [2, 3]},
-        2: {'frame_div': None, 'parent': 1, 'daughters': []},
-        3: {'frame_div': None, 'parent': 1, 'daughters': []},
+        '1': {'divisionFrame': 1, 'parent': None, 'daughters': [2, 3]},
+        '2': {'divisionFrame': None, 'parent': 1, 'daughters': []},
+        '3': {'divisionFrame': None, 'parent': 1, 'daughters': []},
     }
-    added_info = utils.add_frame_div_parent(cell_info)
+    added_info = utils.add_parent_division_frame(cell_info)
     expected = {
-        1: {
-            'frame_div_parent': None,
-            'frame_div': 1,
+        '1': {
+            'parentDivisionFrame': None,
+            'divisionFrame': 1,
             'parent': None,
             'daughters': [2, 3],
         },
-        2: {'frame_div_parent': 1, 'frame_div': None, 'parent': 1, 'daughters': []},
-        3: {'frame_div_parent': 1, 'frame_div': None, 'parent': 1, 'daughters': []},
+        '2': {
+            'parentDivisionFrame': 1,
+            'divisionFrame': None,
+            'parent': 1,
+            'daughters': [],
+        },
+        '3': {
+            'parentDivisionFrame': 1,
+            'divisionFrame': None,
+            'parent': 1,
+            'daughters': [],
+        },
     }
     assert added_info == expected
 

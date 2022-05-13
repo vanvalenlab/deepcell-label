@@ -23,7 +23,7 @@ function TabPanel(props) {
 function LabelControls() {
   const labelMode = useLabelMode();
   const value = useSelector(labelMode, (state) => {
-    return state.matches('segment') ? 0 : state.matches('track') ? 1 : false;
+    return state.matches('segment') ? 0 : state.matches('editLineage') ? 1 : false;
   });
 
   return (

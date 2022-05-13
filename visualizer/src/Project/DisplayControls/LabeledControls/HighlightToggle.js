@@ -4,19 +4,14 @@ import Switch from '@mui/material/Switch';
 import Tooltip from '@mui/material/Tooltip';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
-import React, { useEffect, useRef } from 'react';
-import { useLabeled } from '../../ProjectContext';
+import React, { useEffect } from 'react';
+import { useLabeled, useMousetrapRef } from '../../ProjectContext';
 
 function HighlightToggle() {
   const labeled = useLabeled();
   const highlight = useSelector(labeled, (state) => state.context.highlight);
 
-  // Adds mousetrap class so hotkeys work after using switch
-  const inputRef = useRef();
-  useEffect(() => {
-    const input = inputRef.current;
-    input.className = `${input.className}  mousetrap`;
-  }, []);
+  const inputRef = useMousetrapRef();
 
   const tooltipText = (
     <span>

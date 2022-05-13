@@ -10,7 +10,7 @@ import Tooltip from '@mui/material/Tooltip';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
 import React, { useEffect, useState } from 'react';
-import { useHexColormap, useSelect } from '../../ProjectContext';
+import { useCanvas, useHexColormap, useSelect } from '../../ProjectContext';
 
 // adapted from https://stackoverflow.com/questions/9733288/how-to-programmatically-calculate-the-contrast-ratio-between-two-colors
 
@@ -73,8 +73,8 @@ export function SwitchButton() {
 }
 
 function HoveringBox() {
-  const select = useSelect();
-  const hovering = useSelector(select, (state) => state.context.hovering);
+  const canvas = useCanvas();
+  const hovering = useSelector(canvas, (state) => state.context.hovering);
 
   const colormap = useHexColormap();
   const color = colormap[hovering] ?? '#000000';

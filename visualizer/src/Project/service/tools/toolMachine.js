@@ -4,8 +4,8 @@
 import { assign, forwardTo, Machine, send, spawn } from 'xstate';
 import { respond } from 'xstate/lib/actions';
 import { fromEventBus } from '../eventBus';
+import createEditLineageMachine from './editLineageMachine';
 import createSegmentMachine from './segmentMachine';
-import createTrackMachine from './trackMachine';
 
 const createToolMachine = ({ eventBuses }) =>
   Machine(
@@ -14,32 +14,44 @@ const createToolMachine = ({ eventBuses }) =>
       context: {
         tool: 'segment',
         eventBuses,
+        segmentRef: null,
+        editLineageRef: null,
       },
       invoke: [
         { id: 'canvas', src: fromEventBus('tool', () => eventBuses.canvas) },
         { id: 'undo', src: fromEventBus('tool', () => eventBuses.undo) },
         { src: fromEventBus('tool', () => eventBuses.select) },
+        { src: fromEventBus('tool', () => eventBuses.load) },
       ],
-      initial: 'checkTool',
-      entry: ['spawnTools', 'addToolsToUndo', 'checkTrack'],
+      initial: 'loading',
+      entry: ['spawnTools', 'addToolsToUndo'],
       states: {
+        loading: {
+          on: {
+            LOADED: [{ cond: 'hasLineage', target: 'editLineage' }, { target: 'segment' }],
+          },
+        },
         checkTool: {
           always: [
-            { cond: ({ tool }) => tool === 'track', target: 'track' },
+            { cond: ({ tool }) => tool === 'editLineage', target: 'editLineage' },
             { target: 'segment' },
           ],
         },
         segment: {
+          entry: assign({ tool: 'segment' }),
           on: {
             mouseup: { actions: forwardTo('segment') },
             mousedown: { actions: forwardTo('segment') },
           },
         },
-        track: {
-          entry: send({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
+        editLineage: {
+          entry: [
+            assign({ tool: 'editLineage' }),
+            send({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
+          ],
           on: {
-            mouseup: { actions: forwardTo('track') },
-            mousedown: { actions: forwardTo('track') },
+            mouseup: { actions: forwardTo('editLineage') },
+            mousedown: { actions: forwardTo('editLineage') },
           },
         },
       },
@@ -47,28 +59,26 @@ const createToolMachine = ({ eventBuses }) =>
         SAVE: { actions: 'save' },
         RESTORE: { target: '.checkTool', actions: ['restore', respond('RESTORED')] },
 
-        HOVERING: { actions: [forwardTo('segment'), forwardTo('track')] },
-        COORDINATES: { actions: [forwardTo('segment'), forwardTo('track')] },
+        HOVERING: { actions: [forwardTo('segment'), forwardTo('editLineage')] },
+        COORDINATES: { actions: [forwardTo('segment'), forwardTo('editLineage')] },
 
-        SEGMENT: { target: '.checkTool', actions: assign({ tool: 'segment' }) },
-        TRACK: { target: '.checkTool', actions: assign({ tool: 'track' }) },
+        SEGMENT: 'segment',
+        EDIT_LINEAGE: 'editLineage',
 
         SET_PAN_ON_DRAG: { actions: forwardTo('canvas') },
       },
     },
     {
+      guards: {
+        hasLineage: (ctx, evt) => evt.lineage !== null && evt.lineage !== undefined,
+      },
       actions: {
         save: respond(({ tool }) => ({ type: 'RESTORE', tool })),
         restore: assign((_, { tool }) => ({ tool })),
         spawnTools: assign((context) => ({
           segmentRef: spawn(createSegmentMachine(context), 'segment'),
-          trackRef: spawn(createTrackMachine(context), 'track'),
+          editLineageRef: spawn(createEditLineageMachine(context), 'editLineage'),
         })),
-        checkTrack: send(() => {
-          const search = new URLSearchParams(window.location.search);
-          const track = search.get('track');
-          return track ? { type: 'TRACK' } : { type: 'SEGMENT' };
-        }),
         addToolsToUndo: send(({ segmentRef }) => ({ type: 'ADD_ACTOR', actor: segmentRef }), {
           to: 'undo',
         }),

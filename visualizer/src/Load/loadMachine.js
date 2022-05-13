@@ -70,7 +70,7 @@ const loadMachine = Machine(
       submitUpload: (context) => {
         const { uploadFile, axes } = context;
         const formData = new FormData();
-        formData.append('file', uploadFile);
+        formData.append('images', uploadFile);
         formData.append('axes', axes);
         return axios.post('/api/project/dropped', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
@@ -99,9 +99,6 @@ const loadMachine = Machine(
       redirectToProject: ({ track }, event) => {
         const projectId = event.data.data;
         let url = `${document.location.origin}/project?projectId=${projectId}&download=true`;
-        if (track) {
-          url = url.concat('&track=true');
-        }
         window.location.href = url;
       },
     },

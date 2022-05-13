@@ -7,18 +7,13 @@ import Switch from '@mui/material/Switch';
 import Tooltip from '@mui/material/Tooltip';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
-import React, { useEffect, useRef } from 'react';
-import { useRaw } from '../../ProjectContext';
+import React, { useEffect } from 'react';
+import { useMousetrapRef, useRaw } from '../../ProjectContext';
 
 const InvertToggle = ({ channel }) => {
   const invert = useSelector(channel, (state) => state.context.invert);
 
-  // Adds mousetrap class so hotkeys work after using switch
-  const inputRef = useRef();
-  useEffect(() => {
-    const input = inputRef.current;
-    input.className = `${input.className}  mousetrap`;
-  }, []);
+  const inputRef = useMousetrapRef();
 
   const tooltip = (
     <span>
@@ -88,6 +83,7 @@ const ChannelSelector = () => {
 
 const BrightnessSlider = ({ channel }) => {
   const brightness = useSelector(channel, (state) => state.context.brightness);
+  const inputRef = useMousetrapRef();
 
   const { send } = channel;
 
@@ -107,17 +103,19 @@ const BrightnessSlider = ({ channel }) => {
       max={1}
       step={0.01}
       orientation='horizontal'
+      componentsProps={{ input: { ref: inputRef } }}
     />
   );
 };
 
 const ContrastSlider = ({ channel }) => {
   const contrast = useSelector(channel, (state) => state.context.contrast);
-  const { send } = channel;
+  const inputRef = useMousetrapRef();
 
-  const onChange = (event, newValue) => send({ type: 'SET_CONTRAST', contrast: Number(newValue) });
+  const onChange = (event, newValue) =>
+    channel.send({ type: 'SET_CONTRAST', contrast: Number(newValue) });
 
-  const onDoubleClick = () => send({ type: 'SET_CONTRAST', contrast: 0 });
+  const onDoubleClick = () => channel.send({ type: 'SET_CONTRAST', contrast: 0 });
 
   return (
     <Slider
@@ -130,16 +128,17 @@ const ContrastSlider = ({ channel }) => {
       max={1}
       step={0.01}
       orientation='horizontal'
+      componentsProps={{ input: { ref: inputRef } }}
     />
   );
 };
 
 const RangeSlider = ({ channel }) => {
-  const { send } = channel;
   const range = useSelector(channel, (state) => state.context.range);
+  const inputRef = useMousetrapRef();
 
-  const onChange = (_, value) => send({ type: 'SET_RANGE', range: value });
-  const onDoubleClick = () => send({ type: 'SET_RANGE', range: [0, 255] });
+  const onChange = (_, value) => channel.send({ type: 'SET_RANGE', range: value });
+  const onDoubleClick = () => channel.send({ type: 'SET_RANGE', range: [0, 255] });
 
   return (
     <Slider
@@ -152,6 +151,7 @@ const RangeSlider = ({ channel }) => {
       max={255}
       step={1}
       orientation='horizontal'
+      componentsProps={{ input: { ref: inputRef } }}
     />
   );
 };

@@ -1,20 +1,18 @@
 import Alert from '@mui/material/Alert';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useImage, useSelect, useTracking } from '../../../ProjectContext';
+import { useImage, useLineage } from '../../../ProjectContext';
 import { oneDaughter } from '../trackingUtils';
 import AlertGroup, { alertStyle } from './AlertGroup';
 
-function OneDaughterAlert({ label }) {
-  const tracking = useTracking();
-  const division = useSelector(tracking, (state) => state.context.labels[label]);
-  const { daughters, divisionFrame } = division;
+function OneDaughterAlert({ division }) {
+  const { label, daughters, divisionFrame } = division;
 
   const image = useImage();
-  const select = useSelect();
+  const lineage = useLineage();
 
   const onClick = () => {
-    select.send({ type: 'SET_FOREGROUND', foreground: daughters[0] });
+    lineage.send({ type: 'SET_CELL', cell: daughters[0] });
     image.send({ type: 'SET_FRAME', frame: divisionFrame });
   };
 
@@ -26,12 +24,10 @@ function OneDaughterAlert({ label }) {
 }
 
 function OneDaughterAlerts() {
-  const tracking = useTracking();
-  const divisions = useSelector(tracking, (state) => state.context.labels);
+  const lineageMachine = useLineage();
+  const lineage = useSelector(lineageMachine, (state) => state.context.lineage);
 
-  const oneDaughterAlerts = Object.values(divisions)
-    .filter((division) => oneDaughter(division))
-    .map((division) => division.label);
+  const oneDaughterAlerts = Object.values(lineage).filter((division) => oneDaughter(division));
   const count = oneDaughterAlerts.length;
 
   const header =
@@ -40,8 +36,8 @@ function OneDaughterAlerts() {
   return (
     count > 0 && (
       <AlertGroup header={header} severity={'warning'}>
-        {oneDaughterAlerts.map((label) => (
-          <OneDaughterAlert label={label} />
+        {oneDaughterAlerts.map((division) => (
+          <OneDaughterAlert division={division} />
         ))}
       </AlertGroup>
     )

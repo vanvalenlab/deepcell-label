@@ -8,7 +8,7 @@ import {
   useImage,
   useLabeled,
   useLabels,
-  useSelect,
+  useSelectedCell,
 } from '../ProjectContext';
 
 const highlightColor = [255, 0, 0];
@@ -35,8 +35,7 @@ export const LabeledCanvas = ({ setCanvases }) => {
     (state) => state.context.labeledArrays && state.context.labeledArrays[feature][frame]
   );
 
-  const select = useSelect();
-  const foreground = useSelector(select, (state) => state.context.foreground);
+  const highlightedCell = useSelectedCell();
 
   const kernelRef = useRef();
   const kernelCanvas = useAlphaKernelCanvas();
@@ -44,9 +43,9 @@ export const LabeledCanvas = ({ setCanvases }) => {
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
-      `function (labelArray, colormap, foreground, highlight, highlightColor, opacity) {
+      `function (labelArray, colormap, highlightedLabel, highlight, highlightColor, opacity) {
         const label = labelArray[this.constants.h - 1 - this.thread.y][this.thread.x];
-        if (highlight && label === foreground && foreground !== 0) {
+        if (highlight && label === highlightedLabel && highlightedLabel !== 0) {
           const [r, g, b] = highlightColor;
           this.color(r / 255, g / 255, b / 255, opacity);
         } else {
@@ -71,11 +70,18 @@ export const LabeledCanvas = ({ setCanvases }) => {
   useEffect(() => {
     if (labeledArray) {
       // Compute the label image with the kernel
-      kernelRef.current(labeledArray, colormap, foreground, highlight, highlightColor, opacity);
+      kernelRef.current(
+        labeledArray,
+        colormap,
+        highlightedCell,
+        highlight,
+        highlightColor,
+        opacity
+      );
       // Rerender the parent canvas with the kernel output
       setCanvases((canvases) => ({ ...canvases, labeled: kernelCanvas }));
     }
-  }, [labeledArray, colormap, foreground, highlight, opacity, kernelCanvas, setCanvases]);
+  }, [labeledArray, colormap, highlightedCell, highlight, opacity, kernelCanvas, setCanvases]);
 
   return null;
 };

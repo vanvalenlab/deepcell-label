@@ -4,7 +4,7 @@ import Checkbox from '@mui/material/Checkbox';
 import Grid from '@mui/material/Grid';
 import Slider from '@mui/material/Slider';
 import { useSelector } from '@xstate/react';
-import { useRaw } from '../../ProjectContext';
+import { useMousetrapRef, useRaw } from '../../ProjectContext';
 import LayerOptions from './LayerOptions';
 
 function LayerSelector({ layer }) {
@@ -50,15 +50,15 @@ function LayerCheckbox({ layer }) {
 }
 
 function LayerSlider({ layer }) {
-  const { send } = layer;
   const range = useSelector(layer, (state) => state.context.range);
   const color = useSelector(layer, (state) => {
     const { color } = state.context;
     return color === '#FFFFFF' ? '#000000' : color;
   });
+  const inputRef = useMousetrapRef();
 
-  const onChange = (_, value) => send({ type: 'SET_RANGE', range: value });
-  const onDoubleClick = () => send({ type: 'SET_RANGE', range: [0, 255] });
+  const onChange = (_, value) => layer.send({ type: 'SET_RANGE', range: value });
+  const onDoubleClick = () => layer.send({ type: 'SET_RANGE', range: [0, 255] });
 
   return (
     <Slider
@@ -71,6 +71,7 @@ function LayerSlider({ layer }) {
       step={1}
       orientation='horizontal'
       sx={{ color: color, p: 0 }}
+      componentsProps={{ input: { ref: inputRef } }}
     />
   );
 }

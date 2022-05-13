@@ -5,6 +5,7 @@ Loads both raw image data and labels
 
 import io
 import json
+import tarfile
 import tempfile
 import zipfile
 
@@ -13,7 +14,8 @@ import numpy as np
 from PIL import Image
 from tifffile import TiffFile, TiffWriter
 
-from deepcell_label.labelmaker import LabelInfoMaker
+from deepcell_label.cells import Cells
+from deepcell_label.utils import add_parent_division_frame, reformat_lineage, reshape
 
 
 class Loader:
@@ -26,6 +28,7 @@ class Loader:
         self.y = None
         self.cells = None
         self.spots = None
+        self.lineage = None
 
         self.image_file = image_file
         self.label_file = label_file if label_file else image_file
@@ -43,6 +46,7 @@ class Loader:
         self.X = load_images(self.image_file)
         self.y = load_segmentation(self.label_file)
         self.spots = load_spots(self.label_file)
+        self.lineage = load_lineage(self.label_file)
 
         if self.y is None:
             shape = (*self.X.shape[:-1], 1)
@@ -54,6 +58,7 @@ class Loader:
         self.write_segmentation()
         self.write_cells()
         self.write_spots()
+        self.write_lineage()
 
     def write_images(self):
         """
@@ -107,8 +112,12 @@ class Loader:
 
     def write_cells(self):
         """Writes cells to cells.json in the output zip."""
-        cells = LabelInfoMaker(self.y).cell_info
+        cells = Cells(self.y).cells
         self.zip.writestr('cells.json', json.dumps(cells))
+
+    def write_lineage(self):
+        """Writes lineage to lineage.json in the output zip."""
+        self.zip.writestr('lineage.json', json.dumps(self.lineage))
 
 
 def load_images(image_file):
@@ -128,6 +137,8 @@ def load_images(image_file):
         X = load_tiff(image_file)
     if X is None:
         X = load_png(image_file)
+    if X is None:
+        X = load_trk(image_file, filename='raw.npy')
     return X
 
 
@@ -146,8 +157,10 @@ def load_segmentation(f):
         zf = zipfile.ZipFile(f, 'r')
         y = load_zip_numpy(zf, name='y')
         if y is None:
-            y = load_zip_tiffs(zf)
+            y = load_zip_tiffs(zf, filename='y.ome.tiff')
         return y
+    if tarfile.is_tarfile(f.name):
+        return load_trk(f, filename='tracked.npy')
 
 
 def load_spots(f):
@@ -164,6 +177,29 @@ def load_spots(f):
     if zipfile.is_zipfile(f):
         zf = zipfile.ZipFile(f, 'r')
         return load_zip_csv(zf)
+
+
+def load_lineage(f):
+    """
+    Load lineage from label file.
+
+    Args:
+        zf: zip file with lineage json
+
+    Returns:
+        dict or None if no json in zip
+    """
+    f.seek(0)
+    lineage = None
+    if zipfile.is_zipfile(f):
+        zf = zipfile.ZipFile(f, 'r')
+        lineage = load_zip_json(zf, filename='lineage.json')
+    elif tarfile.is_tarfile(f.name):
+        lineage = load_trk(f, filename='lineage.json')
+    if lineage is not None:
+        lineage = reformat_lineage(lineage)
+        lineage = add_parent_division_frame(lineage)
+        return lineage
 
 
 def load_zip_numpy(zf, name='X'):
@@ -188,7 +224,7 @@ def load_zip_numpy(zf, name='X'):
                 return npz[name] if name in npz.files else npz[npz.files[0]]
 
 
-def load_zip_tiffs(zf):
+def load_zip_tiffs(zf, filename):
     """
     Returns an array with all tiff image data in the zip file
 
@@ -198,6 +234,20 @@ def load_zip_tiffs(zf):
     Returns:
         numpy array or None if no png in zip
     """
+    if filename in zf.namelist():
+        with zf.open(filename) as f:
+            if 'TIFF image data' in magic.from_buffer(f.read(2048)):
+                f.seek(0)
+                tiff = TiffFile(f)
+                # TODO: check when there are multiple series
+                axes = tiff.series[0].axes
+                array = reshape(tiff.asarray(), axes, 'ZYXC')
+                return array
+            else:
+                print(f'{filename} is not a tiff file.')
+    else:
+        print(f'{filename} not found in zip.')
+    print('Loading all tiffs in zip.')
     tiffs = []
     for name in zf.namelist():
         with zf.open(name) as f:
@@ -232,21 +282,41 @@ def load_zip_png(zf):
                 return np.array(png)
 
 
-def load_zip_csv(z):
+def load_zip_csv(zf):
     """
     Returns the binary data for the first CSV file in the zip file, if it exists.
 
     Args:
-        f: a ZipFile with a CSV
+        zf: a ZipFile with a CSV
 
     Returns:
         bytes or None if not a csv file
     """
-    for name in z.namelist():
+    for name in zf.namelist():
         if name.endswith('.csv'):
-            with z.open(name) as f:
-                f.seek(0)
+            with zf.open(name) as f:
                 return f.read()
+
+
+def load_zip_json(zf, filename=None):
+    """
+    Returns a dicstion json file in the zip file, if it exists.
+
+    Args:
+        zf: a ZipFile with a CSV
+
+    Returns:
+        bytes or None if not a csv file
+    """
+    if filename in zf.namelist():
+        with zf.open(filename) as f:
+            try:
+                f.seek(0)
+                return json.load(f)
+            except json.JSONDecodeError as e:
+                print(f'Warning: Could not load {filename} as JSON. {e.msg}')
+                return
+    print(f'Warning: JSON file {filename} not found.')
 
 
 def load_zip(f):
@@ -264,7 +334,7 @@ def load_zip(f):
         zf = zipfile.ZipFile(f, 'r')
         X = load_zip_numpy(zf)
         if X is None:
-            X = load_zip_tiffs(zf)
+            X = load_zip_tiffs(zf, filename='X.ome.tiff')
         if X is None:
             X = load_zip_png(zf)
         return X
@@ -287,7 +357,7 @@ def load_npy(f):
         return npy
 
 
-def load_tiff(f):
+def load_tiff(f, axes=None):
     """
     Loads image data from a tiff file
 
@@ -303,16 +373,37 @@ def load_tiff(f):
     f.seek(0)
     if 'TIFF image data' in magic.from_buffer(f.read(2048)):
         f.seek(0)
-        X = TiffFile(io.BytesIO(f.read())).asarray(squeeze=False)
+        tiff = TiffFile(io.BytesIO(f.read()))
+        # Load array
+        if tiff.is_imagej:
+            X = tiff.asarray()
+            # TODO: use axes to know which axes to add and permute
+            # TODO: handle tiffs with multiple series
+            axes = tiff.series[0].axes
+            if len(axes) != len(X.shape):
+                print(
+                    f'Warning: TIFF has shape {X.shape} and axes {axes} in ImageJ metadata'
+                )
+        elif tiff.is_ome:
+            # TODO: use DimensionOrder from OME-TIFF metadata to know which axes to add and permute
+            X = tiff.asarray(squeeze=False)
+        else:
+            X = tiff.asarray(squeeze=False)
+        # Reshape array
         if X.ndim == 2:
-            # Add channel and frame axes
-            X = X[np.newaxis, ..., np.newaxis]
+            # Add channels and frames
+            return X[np.newaxis, ..., np.newaxis]
         if X.ndim == 3:
-            # TODO: use dimension order to know whether to add frame or channel axis
-            X = X[np.newaxis, ...]
+            # TODO: more general axis handling
+            if axes[0] == 'C':  # Move channels to last axis and add frame
+                X = np.moveaxis(X, 0, -1)
+                return X[np.newaxis, ...]
+            else:  # Add channels
+                return X[..., np.newaxis]
+        if X.ndim == 4:
+            return X
         if X.ndim > 4:
             raise ValueError('Tiff file has more than 4 dimensions')
-        return X
 
 
 def load_png(f):
@@ -340,3 +431,18 @@ def load_png(f):
         # Add frame dimension at start
         X = np.expand_dims(X, 0)
         return X
+
+
+def load_trk(f, filename='raw.npy'):
+    f.seek(0)
+    if tarfile.is_tarfile(f.name):
+        with tarfile.open(fileobj=f) as trks:
+            if filename == 'raw.npy' or filename == 'tracked.npy':
+                # numpy can't read these from disk...
+                with io.BytesIO() as array_file:
+                    array_file.write(trks.extractfile(filename).read())
+                    array_file.seek(0)
+                    return np.load(array_file)
+            if filename == 'lineage.json':
+                trk_data = trks.getmember('lineage.json')
+                return json.loads(trks.extractfile(trk_data).read().decode())

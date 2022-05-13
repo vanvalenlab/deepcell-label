@@ -5,23 +5,23 @@ import re
 import numpy as np
 
 
-def add_frame_div_parent(cell_info):
+def add_parent_division_frame(lineage):
     """
-    Adds the frame a cells parent divides on to cell info.
+    Adds the frame a cells parent divides on to lineage.
 
     Args:
-        cell_info (dict): dict that maps cells to cell info
+        lineage (dict): dict that maps cells to lineage info
     Returns:
-        dict: cell info with added frame_div_parent
+        dict: lineage with added parentDivisionFrame
     """
-    new_info = cell_info.copy()
-    for info in new_info.values():
-        if info['parent']:
-            parent = info['parent']
-            info['frame_div_parent'] = new_info[parent]['frame_div']
+    new_lineage = lineage.copy()
+    for cell in new_lineage.values():
+        if cell['parent']:
+            parent = str(cell['parent'])
+            cell['parentDivisionFrame'] = new_lineage[parent]['divisionFrame']
         else:
-            info['frame_div_parent'] = None
-    return new_info
+            cell['parentDivisionFrame'] = None
+    return new_lineage
 
 
 def snakecase_to_camelcase(name):
@@ -29,18 +29,17 @@ def snakecase_to_camelcase(name):
     return snake_pattern.sub(lambda x: x.group(1).upper(), name)
 
 
-def reformat_cell_info(cell_info):
+def reformat_lineage(lineage):
     """
-    Reformats snake case to camel case and renames frame_div to divisionFrame.
+    Reformats snake case to camel case
+    and renames frame_div to divisionFrame.
     """
     reformated = {}
-    for cell, info in cell_info.items():
+    for cell, info in lineage.items():
         reformated[cell] = {}
         for key in info:
             if key == 'frame_div':
                 reformated[cell]['divisionFrame'] = info[key]
-            elif key == 'frame_div_parent':
-                reformated[cell]['parentDivisionFrame'] = info[key]
             else:
                 reformated[cell][snakecase_to_camelcase(key)] = info[key]
     return reformated

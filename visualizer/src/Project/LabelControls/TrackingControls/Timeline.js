@@ -1,107 +1,46 @@
-import { Box, FormLabel, Typography } from '@mui/material';
+import { Box } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import { bind, unbind } from 'mousetrap';
-import { default as React, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { default as React, useEffect } from 'react';
 import FrameSlider from '../../FrameSlider';
-import { useDivision, useSelect, useTracking } from '../../ProjectContext';
-import Division, { Cell, DivisionFootprint } from './Division';
+import { useCanvas, useEditing, useLineage } from '../../ProjectContext';
+import Cells from './Cells';
+import Cell from './Division/Cell';
+import Divisions from './Divisions';
+import EditingPrompt from './EditingPrompt';
 import LabelTimeline from './LabelTimeline';
 
-// Renders a hidden division timeline to size the real divisions
-function DivisionsFootprint({ footprintRef }) {
-  return (
-    <Box ref={footprintRef} sx={{ display: 'flex', visibility: 'hidden', position: 'absolute' }}>
-      <DivisionFootprint />
-      <DivisionFootprint />
-    </Box>
-  );
-}
-
-function Divisions({ label }) {
-  const division = useDivision(label);
-
-  const footprintRef = useRef();
-  const [minWidth, setMinWidth] = useState(0);
-  const [minHeight, setMinHeight] = useState(0);
-  useLayoutEffect(() => {
-    if (footprintRef.current) {
-      setMinWidth(footprintRef.current.offsetWidth);
-      setMinHeight(footprintRef.current.offsetHeight);
-    }
-  }, []);
-
-  return (
-    <>
-      <DivisionsFootprint footprintRef={footprintRef} />
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          minWidth,
-          minHeight,
-        }}
-      >
-        {label !== 0 && (
-          <>
-            <Box
-              sx={{ display: 'flex', justifyContent: 'left', alignItems: 'center', width: '50%' }}
-            >
-              {division.parent && <Division label={division.parent} />}
-            </Box>
-            <Box
-              sx={{ display: 'flex', justifyContent: 'left', alignItems: 'center', width: '50%' }}
-            >
-              <Division label={label} />
-            </Box>
-          </>
-        )}
-      </Box>
-    </>
-  );
-}
-
 function Timeline() {
-  const select = useSelect();
-  const selected = useSelector(select, (state) => state.context.selected);
-  const hovering = useSelector(select, (state) => state.context.hovering);
+  const canvas = useCanvas();
+  const hovering = useSelector(canvas, (state) => state.context.hovering);
 
-  const tracking = useTracking();
-  const addingDaughter = useSelector(tracking, (state) => state.matches('addingDaughter'));
-  const parent = useSelector(tracking, (state) => state.context.parent);
+  const lineage = useLineage();
+  const selected = useSelector(lineage, (state) => state.context.selected);
+
+  const editing = useEditing();
 
   useEffect(() => {
-    bind('n', () => select.send('NEW_FOREGROUND'));
     bind('esc', () => {
-      tracking.send('RESET');
-      select.send('RESET_FOREGROUND');
-      select.send('RESET_BACKGROUND');
+      lineage.send('RESET_CELL');
     });
-    bind('[', () => select.send('PREV_FOREGROUND'));
-    bind(']', () => select.send('NEXT_FOREGROUND'));
+    bind('[', () => lineage.send('PREV_CELL'));
+    bind(']', () => lineage.send('NEXT_CELL'));
     return () => {
-      unbind('n');
       unbind('esc');
       unbind('[');
       unbind(']');
     };
-  }, [select, tracking]);
+  }, [lineage]);
 
   return (
-    <Box m={1}>
-      {addingDaughter && (
-        <Typography sx={{ maxWidth: '100%' }}>
-          Click a label to add a daughter to label {parent}.
-        </Typography>
-      )}
-      <FormLabel>Selected Label</FormLabel>
-      <Divisions label={selected} />
-      <FormLabel>Frames</FormLabel>
+    <Box>
+      <FrameSlider />
       <LabelTimeline label={selected} />
-      <FrameSlider showLabel={false} />
       <LabelTimeline label={hovering} />
-      <FormLabel>Hovering over Label</FormLabel>
-      {hovering !== null && <Cell label={hovering} />}
+      <Cells />
+      <Cell />
+      <Divisions />
+      {editing && <EditingPrompt />}
     </Box>
   );
 }

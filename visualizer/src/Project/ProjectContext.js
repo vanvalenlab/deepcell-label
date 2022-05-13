@@ -15,10 +15,72 @@ function useReturnContext(contextType) {
   return context;
 }
 
+export function useSelectedCell() {
+  // Get selected cell from each labeling mode
+  const lineage = useLineage();
+  const lineageLabel = useSelector(lineage, (state) => state.context.selected);
+  const select = useSelect();
+  const selectLabel = useSelector(select, (state) => state.context.foreground);
+  // Get labeling mode
+  const labelMode = useLabelMode();
+  const mode = useSelector(labelMode, (state) => {
+    return state.matches('segment') ? 0 : state.matches('editLineage') ? 1 : false;
+  });
+  // Switch between selections
+  if (mode === 1 || process.env.REACT_APP_CALIBAN_VISUALIZER === 'true') {
+    return lineageLabel;
+  }
+  return selectLabel;
+}
+
+/**
+ * Return a ref that adds mousetrap to its className.
+ * By default keyboard events will not fire inside of a textarea, input, or select.
+ * Elements with the mousetrap class will fire keybinds. */
+export function useMousetrapRef() {
+  const ref = useRef();
+  const [hasClass, setHasClass] = useState(false);
+
+  if (ref.current && !hasClass) {
+    setHasClass(true);
+    const inputEl = ref.current;
+    inputEl.className = `${inputEl.className} mousetrap`;
+  }
+
+  return ref;
+}
+
+export function useEditing() {
+  const polaris = process.env.REACT_APP_SPOTS_VISUALIZER === 'true';
+  const caliban = process.env.REACT_APP_CALIBAN_VISUALIZER === 'true';
+  return !polaris && !caliban;
+}
+
 export function useSpots() {
   const project = useProject();
   const spots = useSelector(project, (state) => state.context.spotsRef);
   return spots;
+}
+
+export function useLineage() {
+  const project = useProject();
+  const lineage = useSelector(project, (state) => state.context.lineageRef);
+  return lineage;
+}
+
+const emptyDivision = {
+  parent: null,
+  daughters: [],
+  divisionFrame: null,
+  parentDivisionFrame: null,
+  frames: [],
+};
+
+export function useDivision(label) {
+  const lineageMachine = useLineage();
+  const lineage = useSelector(lineageMachine, (state) => state.context.lineage);
+  const division = lineage?.[label] ?? emptyDivision;
+  return division;
 }
 
 export function useArrays() {
@@ -39,34 +101,13 @@ export function useSelect() {
   return select;
 }
 
-export function useTracking(label) {
+export function useEditLineage(label) {
   const project = useProject();
-  const tracking = useSelector(project, (state) => {
+  const editLineage = useSelector(project, (state) => {
     const labelMode = state.context.toolRef;
-    const track = labelMode.state.context.trackRef;
-    return track;
+    return labelMode.state.context.editLineageRef;
   });
-  return tracking;
-}
-
-const emptyDivision = {
-  parent: null,
-  daughters: [],
-  divisionFrame: null,
-  parentDivisionFrame: null,
-  frames: [],
-};
-
-export function useDivision(label) {
-  const project = useProject();
-  const division = useSelector(project, (state) => {
-    const labelMode = state.context.toolRef;
-    const track = labelMode.state.context.trackRef;
-    const labels = track.state.context.labels;
-    const division = labels[label];
-    return division || emptyDivision;
-  });
-  return division;
+  return editLineage;
 }
 
 export function useApi() {
@@ -188,16 +229,6 @@ export function useSegment() {
     return segment;
   });
   return segment;
-}
-
-export function useTrack() {
-  const project = useProject();
-  const track = useSelector(project, (state) => {
-    const tool = state.context.toolRef;
-    const track = tool.state.context.trackRef;
-    return track;
-  });
-  return track;
 }
 
 export function useBrush() {

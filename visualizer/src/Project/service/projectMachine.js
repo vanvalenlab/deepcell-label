@@ -9,6 +9,7 @@ import createCanvasMachine from './canvasMachine';
 import { EventBus, fromEventBus } from './eventBus';
 import createImageMachine from './imageMachine';
 import createLabelsMachine from './labelsMachine';
+import createLineageMachine from './lineageMachine';
 import createSelectMachine from './selectMachine';
 import createSpotsMachine from './spotsMachine';
 import createToolMachine from './tools/toolMachine';
@@ -43,6 +44,7 @@ const createProjectMachine = (projectId) =>
           entry: 'spawnActors',
           always: [
             { cond: () => process.env.REACT_APP_SPOTS_VISUALIZER === 'true', target: 'idle' },
+            { cond: () => process.env.REACT_APP_CALIBAN_VISUALIZER === 'true', target: 'idle' },
             { target: 'setUpUndo' },
           ],
         },
@@ -88,10 +90,11 @@ const createProjectMachine = (projectId) =>
           actors.labelsRef = spawn(createLabelsMachine(context), 'labels');
           actors.apiRef = spawn(createApiMachine(context), 'api');
           actors.selectRef = spawn(createSelectMachine(context), 'select');
+          actors.lineageRef = spawn(createLineageMachine(context), 'lineage');
+          actors.toolRef = spawn(createToolMachine(context), 'tool');
           if (process.env.REACT_APP_SPOTS_VISUALIZER === 'true') {
             actors.spotsRef = spawn(createSpotsMachine(context), 'spots');
           } else {
-            actors.toolRef = spawn(createToolMachine(context), 'tool');
             actors.undoRef = spawn(createUndoMachine(context), 'undo');
           }
           return actors;

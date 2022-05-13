@@ -9,7 +9,7 @@ from secrets import token_urlsafe
 import boto3
 from flask_sqlalchemy import SQLAlchemy
 
-from deepcell_label.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+from deepcell_label.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_BUCKET
 
 logger = logging.getLogger('models.Project')  # pylint: disable=C0103
 db = SQLAlchemy()  # pylint: disable=C0103
@@ -46,7 +46,7 @@ class Project(db.Model):
             aws_access_key_id=AWS_ACCESS_KEY_ID,
             aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
         )
-        self.bucket = 'spots-visualizer'
+        self.bucket = S3_BUCKET
         self.key = f'{self.project}.zip'
         fileobj = io.BytesIO(loader.data)
         s3.upload_fileobj(fileobj, self.bucket, self.key)

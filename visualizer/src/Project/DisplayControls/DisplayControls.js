@@ -5,8 +5,9 @@ import LabeledControls from './LabeledControls/LabeledControls';
 import RawControls from './RawControls/RawControls';
 import SpotsControls from './SpotsControls';
 import SubmitButton from './SubmitButton';
+import TrackControls from './TrackControls';
 
-const DisplayControls = () => {
+function DisplayControls() {
   const search = new URLSearchParams(window.location.search);
   const download = search.get('download');
 
@@ -16,7 +17,6 @@ const DisplayControls = () => {
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'hidden',
         p: 1,
       }}
     >
@@ -25,11 +25,12 @@ const DisplayControls = () => {
       ) : (
         <SubmitButton sx={{ width: '100%' }} />
       )}
+      {process.env.REACT_APP_CALIBAN_VISUALIZER === 'true' && <TrackControls />}
       {process.env.REACT_APP_SPOTS_VISUALIZER === 'true' && <SpotsControls />}
       <LabeledControls />
       <RawControls />
     </Box>
   );
-};
+}
 
 export default DisplayControls;

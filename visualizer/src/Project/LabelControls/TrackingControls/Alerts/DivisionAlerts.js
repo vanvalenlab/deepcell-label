@@ -1,6 +1,8 @@
 import { styled } from '@mui/system';
+import { useSelector } from '@xstate/react';
 import React from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
+import { useLineage } from '../../../ProjectContext';
 import DaughterBeforeDivisionAlerts from './DaughterBeforeDivisionAlert';
 import OneDaughterAlerts from './OneDaughterAlerts';
 import ParentAfterDivisionAlerts from './ParentAfterDivisionAlert';
@@ -18,6 +20,13 @@ function ErrorFallback({ error, resetErrorBoundary }) {
 }
 
 function DivisionAlerts() {
+  const lineageMachine = useLineage();
+  const lineage = useSelector(lineageMachine, (state) => state.context.lineage);
+
+  if (!lineage) {
+    return null;
+  }
+
   return (
     <ErrorBoundary
       FallbackComponent={ErrorFallback}
