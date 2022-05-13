@@ -176,13 +176,13 @@ def load_spots(f):
 
 def load_lineage(f):
     """
-    Load lineage data from label file.
+    Load lineage from label file.
 
     Args:
-        zf: file with zipped csv containing spots data
+        zf: zip file with lineage json
 
     Returns:
-        bytes read from csv in zip or None if no csv in zip
+        dict or None if no json in zip
     """
     f.seek(0)
     if zipfile.is_zipfile(f):
