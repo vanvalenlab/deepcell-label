@@ -5,6 +5,7 @@ Loads both raw image data and labels
 
 import io
 import json
+import tarfile
 import tempfile
 import zipfile
 
@@ -136,6 +137,8 @@ def load_images(image_file):
         X = load_tiff(image_file)
     if X is None:
         X = load_png(image_file)
+    if X is None:
+        X = load_trk(image_file, filename='raw.npy')
     return X
 
 
@@ -156,6 +159,8 @@ def load_segmentation(f):
         if y is None:
             y = load_zip_tiffs(zf, filename='y.ome.tiff')
         return y
+    if f.filename.endswith('.trk'):
+        return load_trk(f, filename='tracked.npy')
 
 
 def load_spots(f):
@@ -185,11 +190,13 @@ def load_lineage(f):
         dict or None if no json in zip
     """
     f.seek(0)
+    lineage = None
     if zipfile.is_zipfile(f):
         zf = zipfile.ZipFile(f, 'r')
         lineage = load_zip_json(zf, filename='lineage.json')
-        if lineage is None:
-            return
+    elif f.filename.endswith('.trk'):
+        lineage = load_trk(f, filename='lineage.json')
+    if lineage is not None:
         lineage = reformat_lineage(lineage)
         lineage = add_parent_division_frame(lineage)
         return lineage
@@ -424,3 +431,18 @@ def load_png(f):
         # Add frame dimension at start
         X = np.expand_dims(X, 0)
         return X
+
+
+def load_trk(f, filename='raw.npy'):
+    f.seek(0)
+    if f.filename.endswith('.trk'):
+        with tarfile.open(fileobj=f) as trks:
+            if filename == 'raw.npy' or filename == 'tracked.npy':
+                # numpy can't read these from disk...
+                with io.BytesIO() as array_file:
+                    array_file.write(trks.extractfile(filename).read())
+                    array_file.seek(0)
+                    return np.load(array_file)
+            if filename == 'lineage.json':
+                trk_data = trks.getmember('lineage.json')
+                return json.loads(trks.extractfile(trk_data).read().decode())
