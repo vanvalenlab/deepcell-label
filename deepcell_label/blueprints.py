@@ -73,7 +73,7 @@ def create_project():
     #     if 'labels_dimension_order' in request.form
     #     else None
     # )
-    with tempfile.TemporaryFile() as image_file, tempfile.TemporaryFile() as label_file:
+    with tempfile.NamedTemporaryFile() as image_file, tempfile.NamedTemporaryFile() as label_file:
         if images_url is not None:
             image_response = requests.get(images_url)
             if image_response.status_code != 200:
@@ -115,8 +115,11 @@ def create_project_from_dropped_file():
     start = timeit.default_timer()
     input_file = request.files.get('images')
     # axes = request.form['axes'] if 'axes' in request.form else DCL_AXES
-    loader = Loader(input_file)
-    project = Project.create(loader)
+    with tempfile.NamedTemporaryFile() as f:
+        f.write(input_file.read())
+        f.seek(0)
+        loader = Loader(f)
+        project = Project.create(loader)
     current_app.logger.info(
         'Created project %s from %s in %s s.',
         project.project,
