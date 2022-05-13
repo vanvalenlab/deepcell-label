@@ -6,7 +6,7 @@ import ProjectContext from './ProjectContext';
 import createLoadMachine from './service/loadMachine';
 import createProjectMachine from './service/projectMachine';
 
-function Load({ id, spots }) {
+function Load({ id }) {
   const [loadMachine] = useState(createLoadMachine(id));
   const [load] = useMachine(loadMachine);
   const [project] = useState(interpret(createProjectMachine(id)).start());
@@ -31,7 +31,7 @@ function Load({ id, spots }) {
 
   return (
     <ProjectContext project={project}>
-      <Display review={false} track={track} spots={spots} />
+      <Display review={false} track={track} />
     </ProjectContext>
   );
 }
