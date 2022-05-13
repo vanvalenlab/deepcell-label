@@ -159,7 +159,7 @@ def load_segmentation(f):
         if y is None:
             y = load_zip_tiffs(zf, filename='y.ome.tiff')
         return y
-    if tarfile.is_tarfile(f):
+    if tarfile.is_tarfile(f.read()):
         return load_trk(f, filename='tracked.npy')
 
 
@@ -194,7 +194,7 @@ def load_lineage(f):
     if zipfile.is_zipfile(f):
         zf = zipfile.ZipFile(f, 'r')
         lineage = load_zip_json(zf, filename='lineage.json')
-    elif tarfile.is_tarfile(f):
+    elif tarfile.is_tarfile(f.read()):
         lineage = load_trk(f, filename='lineage.json')
     if lineage is not None:
         lineage = reformat_lineage(lineage)
@@ -435,7 +435,8 @@ def load_png(f):
 
 def load_trk(f, filename='raw.npy'):
     f.seek(0)
-    if tarfile.is_tarfile(f):
+    if tarfile.is_tarfile(f.read()):
+        f.seek(0)
         with tarfile.open(fileobj=f) as trks:
             if filename == 'raw.npy' or filename == 'tracked.npy':
                 # numpy can't read these from disk...
