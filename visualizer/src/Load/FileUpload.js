@@ -97,7 +97,9 @@ export default function FileUpload({ loadService }) {
                   color='error'
                   key={file.path}
                 >
-                  {file.path} is not a valid file. Please upload a .zip, .tiff, or .png.
+                  {file.path} is not a valid file. Please upload an image file (tiff, png, or npz)
+                  or a zip with both images and labels (tiff or npz for segmentations, json for
+                  lineage, or csv for spots)
                 </Typography>
               ))}
 
