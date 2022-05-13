@@ -92,7 +92,6 @@ export const LabeledCanvas = ({ setCanvases }) => {
     if (labeledArray && overlapsArray) {
       const numLabels = overlapsArray[0].length;
       // Compute the label image with the kernel
-      console.log(opacity, colormap);
       kernelRef.current(labeledArray, overlapsArray, opacity, colormap, selected, numLabels);
       // Rerender the parent canvas with the kernel output
       setCanvases((canvases) => ({ ...canvases, labeled: kernelCanvas }));
