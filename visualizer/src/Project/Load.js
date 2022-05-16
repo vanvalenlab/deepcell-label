@@ -10,7 +10,7 @@ function Load({ id, spots }) {
 
   return (
     <ProjectContext project={project}>
-      <Display review={false} track={track} spots={spots} />
+      <Display review={false} track={track} />
     </ProjectContext>
   );
 }

@@ -40,6 +40,7 @@ function LabelTimeline({ label }) {
         display: 'flex',
         height: '1rem',
         width: '100%',
+        zIndex: -1,
       }}
     >
       {[...Array(numFrames).keys()].map((frame) => (

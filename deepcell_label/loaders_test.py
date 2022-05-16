@@ -4,6 +4,7 @@ Tests for loading files in loaders.
 
 import io
 import json
+import tempfile
 import zipfile
 
 import numpy as np
@@ -36,11 +37,10 @@ def assert_segmentation(archive, expected):
 def test_load_npz():
     """Load npz with image data."""
     expected = np.zeros((1, 1, 1, 1))
-    npz = io.BytesIO()
-    np.savez(npz, X=expected)
-    npz.seek(0)
-
-    loader = Loader(npz)
+    with tempfile.NamedTemporaryFile() as images:
+        np.savez(images, X=expected)
+        images.seek(0)
+        loader = Loader(images)
 
     loaded_zip = zipfile.ZipFile(io.BytesIO(loader.data))
     assert_image(loaded_zip, expected)
@@ -49,11 +49,10 @@ def test_load_npz():
 def test_load_two_channel_npz():
     """Load npz with image data with two channels."""
     expected = np.zeros((1, 100, 100, 2))
-    npz = io.BytesIO()
-    np.savez(npz, X=expected)
-    npz.seek(0)
-
-    loader = Loader(npz)
+    with tempfile.NamedTemporaryFile() as images:
+        np.savez(images, X=expected)
+        images.seek(0)
+        loader = Loader(images)
 
     loaded_zip = zipfile.ZipFile(io.BytesIO(loader.data))
     assert_image(loaded_zip, expected)
@@ -63,11 +62,10 @@ def test_load_npz_with_segmentation():
     """Loads npz with image and segmentation."""
     expected_image = np.zeros((1, 1, 1, 1))
     expected_segmentation = np.ones((1, 1, 1, 1))
-    npz = io.BytesIO()
-    np.savez(npz, X=expected_image, y=expected_segmentation)
-    npz.seek(0)
-
-    loader = Loader(npz)
+    with tempfile.NamedTemporaryFile() as images:
+        np.savez(images, X=expected_image, y=expected_segmentation)
+        images.seek(0)
+        loader = Loader(images)
 
     loaded_zip = zipfile.ZipFile(io.BytesIO(loader.data))
     assert_image(loaded_zip, expected_image)
@@ -78,12 +76,10 @@ def test_load_separate_npz():
     """Loads image and segmentation from separate npz."""
     expected_image = np.zeros((1, 1, 1, 1))
     expected_segmentation = np.ones((1, 1, 1, 1))
-    image_npz = io.BytesIO()
-    label_npz = io.BytesIO()
-    np.savez(image_npz, X=expected_image)
-    np.savez(label_npz, y=expected_segmentation)
-
-    loader = Loader(image_npz, label_npz)
+    with tempfile.NamedTemporaryFile() as images, tempfile.NamedTemporaryFile() as labels:
+        np.savez(images, X=expected_image)
+        np.savez(labels, y=expected_segmentation)
+        loader = Loader(images, labels)
 
     loaded_zip = zipfile.ZipFile(io.BytesIO(loader.data))
     assert_image(loaded_zip, expected_image)
@@ -93,12 +89,12 @@ def test_load_separate_npz():
 def test_load_image_tiff():
     """Load image from tiff file."""
     expected = np.zeros((1, 1, 1, 1))
-    tifffile = io.BytesIO()
-    with TiffWriter(tifffile) as writer:
-        writer.save(expected)
-        tifffile.seek(0)
+    with tempfile.NamedTemporaryFile() as images:
+        with TiffWriter(images) as writer:
+            writer.save(expected)
+            images.seek(0)
 
-    loader = Loader(tifffile)
+        loader = Loader(images)
 
     loaded_zip = zipfile.ZipFile(io.BytesIO(loader.data))
     assert_image(loaded_zip, expected)
@@ -108,19 +104,18 @@ def test_load_image_and_segmentation_tiff():
     """Load image from a tiff and labeled array a zipped tiff."""
     expected_image = np.zeros((1, 1, 1, 1))
     expected_segmentation = np.ones((1, 1, 1, 1))
-    image_tiff = io.BytesIO()
-    zipped_segmentation = io.BytesIO()
-    with TiffWriter(image_tiff) as writer:
-        writer.save(expected_image)
-        image_tiff.seek(0)
-    with zipfile.ZipFile(zipped_segmentation, mode='w') as zf:
-        tiff = io.BytesIO()
-        with TiffWriter(tiff) as writer:
-            writer.save(np.array([[1]]))
-            tiff.seek(0)
-        zf.writestr('feature0.tiff', tiff.read())
+    with tempfile.NamedTemporaryFile() as images, tempfile.NamedTemporaryFile() as labels:
+        with TiffWriter(images) as writer:
+            writer.save(expected_image)
+            images.seek(0)
+        with zipfile.ZipFile(labels, mode='w') as zf:
+            tiff = io.BytesIO()
+            with TiffWriter(tiff) as writer:
+                writer.save(np.array([[1]]))
+                tiff.seek(0)
+            zf.writestr('feature0.tiff', tiff.read())
 
-    loader = Loader(image_tiff, zipped_segmentation)
+        loader = Loader(images, labels)
     loaded_zip = zipfile.ZipFile(io.BytesIO(loader.data))
     assert_image(loaded_zip, expected_image)
     assert_segmentation(loaded_zip, expected_segmentation)
@@ -129,12 +124,11 @@ def test_load_image_and_segmentation_tiff():
 def test_load_image_png():
     """Load image array from png file."""
     expected = np.zeros((1, 1, 1, 1))
-    png = io.BytesIO()
-    img = Image.fromarray(np.zeros((1, 1)), mode='L')
-    img.save(png, format='png')
-    png.seek(0)
-
-    loader = Loader(png)
+    with tempfile.NamedTemporaryFile() as images:
+        img = Image.fromarray(np.zeros((1, 1)), mode='L')
+        img.save(images, format='png')
+        images.seek(0)
+        loader = Loader(images)
     loaded_zip = zipfile.ZipFile(io.BytesIO(loader.data))
     assert_image(loaded_zip, expected)
 
@@ -142,25 +136,24 @@ def test_load_image_png():
 def test_load_image_zip():
     """Load image array from zip of tiff files."""
     expected_image = np.zeros((1, 100, 100, 2))
-    zipped_tiffs = io.BytesIO()
+    with tempfile.NamedTemporaryFile() as images:
 
-    def make_tiff(array):
-        tiff = io.BytesIO()
-        with TiffWriter(tiff) as writer:
-            writer.save(array)
-            tiff.seek(0)
-        return tiff.read()
+        def make_tiff(array):
+            tiff = io.BytesIO()
+            with TiffWriter(tiff) as writer:
+                writer.save(array)
+                tiff.seek(0)
+            return tiff.read()
 
-    with zipfile.ZipFile(zipped_tiffs, mode='w') as zf:
-        with zf.open('channel0.tiff', 'w') as tiff:
-            channel_0 = make_tiff(np.zeros((1, 100, 100)))
-            tiff.write(channel_0)
-        with zf.open('channel1.tiff', 'w') as tiff:
-            channel_1 = make_tiff(np.zeros((1, 100, 100)))
-            tiff.write(channel_1)
-    zipped_tiffs.seek(0)
-
-    loader = Loader(zipped_tiffs)
+        with zipfile.ZipFile(images, mode='w') as zf:
+            with zf.open('channel0.tiff', 'w') as tiff:
+                channel_0 = make_tiff(np.zeros((1, 100, 100)))
+                tiff.write(channel_0)
+            with zf.open('channel1.tiff', 'w') as tiff:
+                channel_1 = make_tiff(np.zeros((1, 100, 100)))
+                tiff.write(channel_1)
+        images.seek(0)
+        loader = Loader(images)
     loaded_zip = zipfile.ZipFile(io.BytesIO(loader.data))
     assert_image(loaded_zip, expected_image)
 
@@ -169,35 +162,34 @@ def test_load_segmentation_zip():
     """Load labeled array from zip of tiff files."""
     expected_image = np.zeros((1, 100, 100, 2))
     expected_segmentation = np.zeros((1, 100, 100, 2))
-    zipped_image = io.BytesIO()
-    zipped_segmentation = io.BytesIO()
+    with tempfile.NamedTemporaryFile() as images, tempfile.NamedTemporaryFile() as labels:
 
-    def make_tiff(array):
-        tiff = io.BytesIO()
-        with TiffWriter(tiff) as writer:
-            writer.save(array)
-            tiff.seek(0)
-        return tiff.read()
+        def make_tiff(array):
+            tiff = io.BytesIO()
+            with TiffWriter(tiff) as writer:
+                writer.save(array)
+                tiff.seek(0)
+            return tiff.read()
 
-    with zipfile.ZipFile(zipped_image, mode='w') as zf:
-        with zf.open('channel0.tiff', 'w') as tiff:
-            channel_0 = make_tiff(np.zeros((1, 100, 100)))
-            tiff.write(channel_0)
-        with zf.open('channel1.tiff', 'w') as tiff:
-            channel_1 = make_tiff(np.zeros((1, 100, 100)))
-            tiff.write(channel_1)
-    zipped_image.seek(0)
+        with zipfile.ZipFile(images, mode='w') as zf:
+            with zf.open('channel0.tiff', 'w') as tiff:
+                channel_0 = make_tiff(np.zeros((1, 100, 100)))
+                tiff.write(channel_0)
+            with zf.open('channel1.tiff', 'w') as tiff:
+                channel_1 = make_tiff(np.zeros((1, 100, 100)))
+                tiff.write(channel_1)
+        images.seek(0)
 
-    with zipfile.ZipFile(zipped_segmentation, mode='w') as zf:
-        with zf.open('feature0.tiff', 'w') as tiff:
-            feature_0 = make_tiff(np.zeros((1, 100, 100)))
-            tiff.write(feature_0)
-        with zf.open('feature1.tiff', 'w') as tiff:
-            feature_1 = make_tiff(np.zeros((1, 100, 100)))
-            tiff.write(feature_1)
-    zipped_segmentation.seek(0)
+        with zipfile.ZipFile(labels, mode='w') as zf:
+            with zf.open('feature0.tiff', 'w') as tiff:
+                feature_0 = make_tiff(np.zeros((1, 100, 100)))
+                tiff.write(feature_0)
+            with zf.open('feature1.tiff', 'w') as tiff:
+                feature_1 = make_tiff(np.zeros((1, 100, 100)))
+                tiff.write(feature_1)
+        labels.seek(0)
 
-    loader = Loader(zipped_image, zipped_segmentation)
+        loader = Loader(images, labels)
     loaded_zip = zipfile.ZipFile(io.BytesIO(loader.data))
     assert_image(loaded_zip, expected_image)
     assert_segmentation(loaded_zip, expected_segmentation)

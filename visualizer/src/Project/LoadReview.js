@@ -5,7 +5,7 @@ import ProjectContext from './ProjectContext';
 import ReviewContext from './ReviewContext';
 import createReviewMachine from './service/reviewMachine';
 
-function LoadReview({ ids, spots }) {
+function LoadReview({ ids }) {
   const [reviewMachine] = useState(createReviewMachine(ids.split(',')));
   const review = useInterpret(reviewMachine);
   const project = useSelector(review, (state) => {
@@ -17,7 +17,7 @@ function LoadReview({ ids, spots }) {
   return (
     <ReviewContext review={review}>
       <ProjectContext project={project}>
-        <Display review={true} track={track} spots={spots} />
+        <Display review={true} track={track} />
       </ProjectContext>
     </ReviewContext>
   );
