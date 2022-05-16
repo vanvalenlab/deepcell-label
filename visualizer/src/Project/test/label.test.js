@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'; // testing helpers
 import userEvent from '@testing-library/user-event'; // testing helpers for imitating user events
+import 'fake-indexeddb/auto';
 import React from 'react'; // so that we can use JSX syntax
 import { interpret } from 'xstate';
 import Display from '../Display';
@@ -8,6 +9,12 @@ import createProjectMachine from '../service/projectMachine';
 import * as testData from './testData';
 
 jest.mock('@zip.js/zip.js', () => ({
+  __esModule: true,
+  default: 'mockedDefaultExport',
+  namedExport: jest.fn(),
+}));
+
+jest.mock('@hms-dbmi/viv', () => ({
   __esModule: true,
   default: 'mockedDefaultExport',
   namedExport: jest.fn(),
