@@ -81,6 +81,7 @@ it('updates state with keybinds', () => {
 });
 
 it('opens instructions', () => {
+  const id = getUniqueId();
   cy.intercept('GET', `/api/project${id}`, { fixture: 'rgb.zip' });
 
   cy.visit(`/project?projectId=${id}`);
@@ -107,7 +108,7 @@ it('removes channel', () => {
   const id = getUniqueId();
   cy.intercept('GET', `/api/project/${id}`, { fixture: 'rgb.zip' });
 
-  cy.visit(`project?projectId=${id1},${id2}`);
+  cy.visit(`project?projectId=${id}`);
   cy.contains('channel 0');
   cy.get('[data-testid="layer0-options"]').click();
   cy.contains('Remove').click();
