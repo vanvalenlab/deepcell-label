@@ -7,6 +7,12 @@ import ProjectContext from '../ProjectContext';
 import createProjectMachine from '../service/projectMachine';
 import * as testData from './testData';
 
+jest.mock('@zip.js/zip.js', () => ({
+  __esModule: true,
+  default: 'mockedDefaultExport',
+  namedExport: jest.fn(),
+}));
+
 function setup(projectData) {
   const project = interpret(createProjectMachine('testProject')).start();
   project.send({ type: 'LOADED', ...projectData });

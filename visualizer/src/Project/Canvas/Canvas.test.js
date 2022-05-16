@@ -18,6 +18,7 @@ const eventBuses = {
   arrays: new EventBus('arrays'),
   labels: new EventBus('labels'),
   load: new EventBus('load'),
+  overlaps: new EventBus('overlaps'),
 };
 const context = {
   projectId: 'testId',

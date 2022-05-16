@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
+jest.useFakeTimers();
 
 jest.mock('@zip.js/zip.js', () => ({
   __esModule: true,
