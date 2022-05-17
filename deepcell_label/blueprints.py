@@ -11,6 +11,8 @@ import requests
 from flask import Blueprint, abort, current_app, jsonify, request, send_file
 from werkzeug.exceptions import HTTPException
 
+from deepcell_label.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+from deepcell_label.export import Export
 from deepcell_label.label import Edit
 from deepcell_label.loaders import Loader
 from deepcell_label.models import Project
@@ -142,17 +144,52 @@ def edit():
     return send_file(edit.response_zip, mimetype='application/zip')
 
 
-@bp.route('/api/download', methods=['GET'])
+@bp.route('/api/download', methods=['POST'])
 def download_project():
     """
-    Download a DeepCell Label project as a .npz file
+    Create a DeepCell Label zip file for the user to download
+    The submitted zip should contain the raw and labeled array buffers
+    in .dat files with the dimensions in dimensions.json,
+    which are transformed into OME TIFFs in the submitted zips.
     """
-    id = request.args.get('id')
-    project = Project.get(id)
-    if not project:
-        return abort(404, description=f'project {id} not found')
-    s3 = boto3.client('s3')
-    data = io.BytesIO()
-    s3.download_fileobj(project.bucket, project.key, data)
-    data.seek(0)
-    return send_file(data, as_attachment=True, attachment_filename=project.key)
+    if 'labels' not in request.files:
+        return abort(400, description='Attach labels.zip to download.')
+    labels_zip = request.files['labels']
+    id = request.form['id']
+    export = Export(labels_zip)
+    data = export.export_zip
+    return send_file(data, as_attachment=True, attachment_filename=f'{id}.zip')
+
+
+@bp.route('/api/submit', methods=['POST'])
+def submit_project():
+    """
+    Create and upload an edited DeepCell Label zip file to an S3 bucket.
+    The submitted zip should contain the raw and labeled array buffers
+    in .dat files with the dimensions in dimensions.json,
+    which are transformed into OME TIFFs in the submitted zips.
+    """
+    start = timeit.default_timer()
+    if 'labels' not in request.files:
+        return abort(400, description='Attach labels.zip to submit.')
+    labels_zip = request.files['labels']
+    id = request.form['id']
+    bucket = request.form['bucket']
+    export = Export(labels_zip)
+    data = export.export_zip
+
+    # store npz file object in bucket/path
+    s3 = boto3.client(
+        's3',
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    )
+    s3.upload_fileobj(data, bucket, f'{id}.zip')
+
+    current_app.logger.debug(
+        'Uploaded %s to S3 bucket %s in %s s.',
+        f'{id}.zip',
+        bucket,
+        timeit.default_timer() - start,
+    )
+    return {}
