@@ -1,6 +1,7 @@
 /** Loads and stores image arrays. */
 
 import { assign, Machine, send } from 'xstate';
+import { respond } from 'xstate/lib/actions';
 import { fromEventBus } from './eventBus';
 
 const createArraysMachine = ({ projectId, eventBuses }) =>
@@ -37,6 +38,7 @@ const createArraysMachine = ({ projectId, eventBuses }) =>
             SET_FEATURE: { actions: ['setFeature', 'sendLabeled'] },
             SET_CHANNEL: { actions: ['setChannel', 'sendRaw'] },
             EDITED: { actions: ['setLabeledFrame', 'sendLabeled'] },
+            GET_ARRAYS: { actions: 'sendArrays' },
           },
         },
       },
@@ -71,6 +73,11 @@ const createArraysMachine = ({ projectId, eventBuses }) =>
           }),
           { to: 'eventBus' }
         ),
+        sendArrays: respond((ctx) => ({
+          type: 'ARRAYS',
+          rawArrays: ctx.raw,
+          labeledArrays: ctx.labeled,
+        })),
       },
     }
   );
