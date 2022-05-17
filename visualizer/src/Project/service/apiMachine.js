@@ -135,7 +135,8 @@ const createApiMachine = ({ projectId, eventBuses }) =>
       ],
       context: {
         projectId,
-        bucket: new URLSearchParams(window.location.search).get('bucket') ?? 'caliban-output',
+        bucket:
+          new URLSearchParams(window.location.search).get('bucket') ?? 'deepcell-label-output',
         frame: 0,
         feature: 0,
         labeled: null, // current frame on display (for edit route)
