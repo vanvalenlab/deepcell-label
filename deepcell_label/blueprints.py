@@ -2,14 +2,11 @@
 from __future__ import absolute_import, division, print_function
 
 import io
-import json
 import tempfile
 import timeit
 import traceback
-import zipfile
 
 import boto3
-import numpy as np
 import requests
 from flask import Blueprint, abort, current_app, jsonify, request, send_file
 from werkzeug.exceptions import HTTPException
@@ -129,58 +126,20 @@ def create_project_from_dropped_file():
     return jsonify(project.project)
 
 
-@bp.route('/api/edit/<action>', methods=['POST'])
-def edit(action):
-    """Edits a label image and returns the updated label image and segments in the label image."""
+@bp.route('/api/edit', methods=['POST'])
+def edit():
+    """Loads labeled data from a zip, edits them, and responds with a zip with the edited labels."""
     start = timeit.default_timer()
-    # Get arguments for action
-    args = {k: json.loads(v) for k, v in request.values.to_dict().items()}
-    # Separate height and width from args
-    height = args['height']
-    width = args['width']
-    write_mode = args['writeMode']
-    del args['height']
-    del args['width']
-    del args['writeMode']
-    # Separate overlaps
-    overlaps = np.array(args['overlaps'])
-    del args['overlaps']
-
-    # Parse label array
     if 'labels' not in request.files:
-        return abort(400, description='Attach the labels.')
-    else:
-        labels = request.files['labels']
-        labels_array = np.fromfile(labels, 'int32')
-        labels_array = labels_array.reshape((height, width))
-    # Parse the raw array
-    if 'raw' in request.files:
-        raw = request.files['raw']
-        raw_array = np.fromfile(raw, 'uint8')
-        raw_array = raw_array.reshape((height, width))
-    elif action in ['watershed', 'threshold', 'autofit']:
-        return abort(400, description=f'Attach a raw image to use {action}.')
-    else:
-        raw_array = None
-
-    edit = Edit(labels_array, raw_array, overlaps, write_mode)
-    edit.dispatch_action(action, args)
-
-    # Write zipped response
-    f = io.BytesIO()
-    with zipfile.ZipFile(f, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr('labeled.json', str(edit.labels.tolist()))
-        zf.writestr('overlaps.json', str(edit.overlaps.tolist()))
-        # TODO: write segments (or segments patch)
-    f.seek(0)
-
+        return abort(400, description='Attach the labeled data to edit in labels.zip.')
+    labels_zip = request.files['labels']
+    edit = Edit(labels_zip)
     current_app.logger.debug(
         'Finished action %s in %s s.',
-        action,
+        edit.action,
         timeit.default_timer() - start,
     )
-
-    return send_file(f, mimetype='application/zip')
+    return send_file(edit.response_zip, mimetype='application/zip')
 
 
 @bp.route('/api/download', methods=['GET'])
