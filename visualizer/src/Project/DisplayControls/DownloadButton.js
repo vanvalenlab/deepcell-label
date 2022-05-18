@@ -24,8 +24,6 @@ function DownloadButton() {
           sx={{
             color: green[500],
             position: 'absolute',
-            top: '50%',
-            left: '50%',
           }}
         />
       )}
