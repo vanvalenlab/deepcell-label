@@ -64,13 +64,25 @@ class Export:
                     export_zf.writestr(item, buffer)
             # Write OME TIFF for labeled
             labeled_ome_tiff = io.BytesIO()
-            with tifffile.TiffWriter(labeled_ome_tiff, ome=True) as tif:
-                tif.save(self.labeled, metadata={'axes': 'CZYX'})
-                labeled_ome_tiff.seek(0)
+            tifffile.imwrite(
+                labeled_ome_tiff,
+                self.labeled,
+                ome=True,
+                photometric='minisblack',
+                compression='zlib',
+                metadata={'axes': 'CZYX'},
+            )
+            labeled_ome_tiff.seek(0)
             export_zf.writestr('y.ome.tiff', labeled_ome_tiff.read())
             # Write OME TIFF for raw
             raw_ome_tiff = io.BytesIO()
-            with tifffile.TiffWriter(raw_ome_tiff, ome=True) as tif:
-                tif.save(self.raw, metadata={'axes': 'CZYX'})
+            tifffile.imwrite(
+                raw_ome_tiff,
+                self.raw,
+                ome=True,
+                photometric='minisblack',
+                compression='zlib',
+                metadata={'axes': 'CZYX'},
+            )
             raw_ome_tiff.seek(0)
             export_zf.writestr('X.ome.tiff', raw_ome_tiff.read())
