@@ -1,25 +1,17 @@
 """Flask blueprint for modular routes."""
 from __future__ import absolute_import, division, print_function
 
-import gzip
 import io
 import json
 import tempfile
 import timeit
 import traceback
+import zipfile
 
 import boto3
 import numpy as np
 import requests
-from flask import (
-    Blueprint,
-    abort,
-    current_app,
-    jsonify,
-    make_response,
-    request,
-    send_file,
-)
+from flask import Blueprint, abort, current_app, jsonify, request, send_file
 from werkzeug.exceptions import HTTPException
 
 from deepcell_label.label import Edit
@@ -146,39 +138,49 @@ def edit(action):
     # Separate height and width from args
     height = args['height']
     width = args['width']
+    write_mode = args['writeMode']
     del args['height']
     del args['width']
+    del args['writeMode']
+    # Separate overlaps
+    overlaps = np.array(args['overlaps'])
+    del args['overlaps']
 
-    # Parse label and raw arrays
+    # Parse label array
     if 'labels' not in request.files:
         return abort(400, description='Attach the labels.')
     else:
         labels = request.files['labels']
         labels_array = np.fromfile(labels, 'int32')
         labels_array = labels_array.reshape((height, width))
+    # Parse the raw array
     if 'raw' in request.files:
         raw = request.files['raw']
         raw_array = np.fromfile(raw, 'uint8')
         raw_array = raw_array.reshape((height, width))
     elif action in ['watershed', 'threshold', 'autofit']:
-        return abort(400, description=f'Attach a raw image to use the {action} action.')
+        return abort(400, description=f'Attach a raw image to use {action}.')
     else:
         raw_array = None
 
-    edit = Edit(labels_array, raw_array)
+    edit = Edit(labels_array, raw_array, overlaps, write_mode)
     edit.dispatch_action(action, args)
 
-    content = gzip.compress(json.dumps(edit.labels.tolist()).encode('utf8'), 5)
-    response = make_response(content)
-    response.headers['Content-length'] = len(content)
-    response.headers['Content-Encoding'] = 'gzip'
+    # Write zipped response
+    f = io.BytesIO()
+    with zipfile.ZipFile(f, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr('labeled.json', str(edit.labels.tolist()))
+        zf.writestr('overlaps.json', str(edit.overlaps.tolist()))
+        # TODO: write segments (or segments patch)
+    f.seek(0)
 
     current_app.logger.debug(
         'Finished action %s in %s s.',
         action,
         timeit.default_timer() - start,
     )
-    return response
+
+    return send_file(f, mimetype='application/zip')
 
 
 @bp.route('/api/download', methods=['GET'])

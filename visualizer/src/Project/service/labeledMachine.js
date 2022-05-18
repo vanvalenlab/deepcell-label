@@ -16,8 +16,8 @@ const createLabeledMachine = ({ projectId, eventBuses }) =>
         numFeatures: 1,
         feature: 0,
         featureNames: ['feature 0'],
-        opacity: 0,
-        lastOpacity: 0.3,
+        labelsOpacity: [0, 0.3],
+        outlineOpacity: [0.5, 1],
         highlight: true,
         outline: true,
         colormap: [
@@ -31,29 +31,22 @@ const createLabeledMachine = ({ projectId, eventBuses }) =>
         SET_FEATURE: { actions: ['setFeature', 'sendToEventBus'] },
         TOGGLE_HIGHLIGHT: { actions: 'toggleHighlight' },
         TOGGLE_OUTLINE: { actions: 'toggleOutline' },
-        SET_OPACITY: { actions: 'setOpacity' },
-        CYCLE_OPACITY: { actions: 'cycleOpacity' },
+        SET_LABELS_OPACITY: { actions: 'setLabelsOpacity' },
+        SET_OUTLINE_OPACITY: { actions: 'setOutlineOpacity' },
         SAVE: { actions: 'save' },
         RESTORE: { actions: ['restore', respond('RESTORED')] },
       },
     },
     {
       actions: {
+        setOutlineOpacity: assign({ outlineOpacity: (ctx, event) => event.opacity }),
+        setLabelsOpacity: assign({ labelsOpacity: (ctx, event) => event.opacity }),
         setNumFeatures: assign({
           numFeatures: (ctx, evt) => evt.numFeatures,
-          featureNames: (ctx, { numFeatures }) =>
-            [...Array(numFeatures).keys()].map((i) => `feature ${i}`),
+          featureNames: (ctx, evt) => [...Array(evt.numFeatures).keys()].map((i) => `feature ${i}`),
         }),
         setFeature: assign({ feature: (_, { feature }) => feature }),
         toggleHighlight: assign({ highlight: ({ highlight }) => !highlight }),
-        setOpacity: assign({
-          opacity: (_, { opacity }) => Math.min(1, Math.max(0, opacity)),
-          lastOpacity: (_, { opacity }) => (opacity === 1 || opacity === 0 ? 0.3 : opacity),
-        }),
-        cycleOpacity: assign({
-          opacity: ({ opacity, lastOpacity }) =>
-            opacity === 0 ? lastOpacity : opacity === 1 ? 0 : 1,
-        }),
         toggleOutline: assign({ outline: ({ outline }) => !outline }),
         save: respond(({ feature }) => ({ type: 'RESTORE', feature })),
         restore: send((_, { feature }) => ({ type: 'SET_FEATURE', feature })),

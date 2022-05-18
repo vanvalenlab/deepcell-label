@@ -10,6 +10,7 @@ import { EventBus, fromEventBus } from './eventBus';
 import createImageMachine from './imageMachine';
 import createLabelsMachine from './labelsMachine';
 import createLineageMachine from './lineageMachine';
+import createOverlapsMachine from './overlapsMachine';
 import createSelectMachine from './selectMachine';
 import createSpotsMachine from './spotsMachine';
 import createToolMachine from './tools/toolMachine';
@@ -32,6 +33,7 @@ const createProjectMachine = (projectId) =>
           arrays: new EventBus('arrays'),
           labels: new EventBus('labels'),
           load: new EventBus('load'),
+          overlaps: new EventBus('overlaps'),
         },
       },
       initial: 'setUpActors',
@@ -91,6 +93,7 @@ const createProjectMachine = (projectId) =>
           actors.apiRef = spawn(createApiMachine(context), 'api');
           actors.selectRef = spawn(createSelectMachine(context), 'select');
           actors.lineageRef = spawn(createLineageMachine(context), 'lineage');
+          actors.overlapsRef = spawn(createOverlapsMachine(context), 'overlaps');
           actors.toolRef = spawn(createToolMachine(context), 'tool');
           if (process.env.REACT_APP_SPOTS_VISUALIZER === 'true') {
             actors.spotsRef = spawn(createSpotsMachine(context), 'spots');

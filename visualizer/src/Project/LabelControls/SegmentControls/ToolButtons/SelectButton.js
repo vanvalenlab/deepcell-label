@@ -9,13 +9,7 @@ function SelectButton(props) {
 
   const onClick = useCallback(() => segment.send({ type: 'SET_TOOL', tool: 'select' }), [segment]);
 
-  const tooltipText = (
-    <span>
-      Click to pick the foreground.
-      <br />
-      Click the foreground to make it the background. <kbd>V</kbd>
-    </span>
-  );
+  const tooltipText = <span>Click to select a label</span>;
 
   return (
     <ToolButton

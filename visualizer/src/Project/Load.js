@@ -16,7 +16,7 @@ function Load({ id }) {
 
   useEffect(() => {
     if (load.matches('loaded')) {
-      const { rawArrays, labeledArrays, labels, spots, lineage } = load.context;
+      const { rawArrays, labeledArrays, labels, spots, lineage, overlaps } = load.context;
       setTrack(lineage !== null && lineage !== undefined);
       project.send({
         type: 'LOADED',
@@ -25,6 +25,7 @@ function Load({ id }) {
         labels,
         spots,
         lineage,
+        overlaps,
       });
     }
   }, [load, project]);

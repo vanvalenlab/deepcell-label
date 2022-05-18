@@ -23,7 +23,7 @@ const ActionButton = ({ tooltipText, disabled, onClick, hotkey, ...other }) => {
         {...other}
         {...adjustedButtonProps}
         sx={{
-          p: 0.5,
+          p: 0,
           '&.Mui-disabled': {
             pointerEvents: 'auto',
           },

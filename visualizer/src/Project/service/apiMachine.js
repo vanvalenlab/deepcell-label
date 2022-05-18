@@ -1,6 +1,6 @@
+import * as zip from '@zip.js/zip.js';
 import { assign, Machine, send } from 'xstate';
 import { fromEventBus } from './eventBus';
-
 /** Returns a Promise for a DeepCell Label API call based on the event. */
 function getApiService(context, event) {
   switch (event.type) {
@@ -16,7 +16,7 @@ function getApiService(context, event) {
 }
 
 function edit(context, event) {
-  const { labeledArray, rawArray } = context;
+  const { labeledArray, rawArray, overlaps, writeMode } = context;
   const { action, args } = event;
   const editRoute = `${document.location.origin}/api/edit/${action}`;
   // const usesRaw = action === 'handle_draw' || action === 'threshold' || action === 'watershed';
@@ -27,8 +27,10 @@ function edit(context, event) {
   }
   form.append('labels', new Blob(labeledArray), 'labels');
   form.append('raw', new Blob(rawArray), 'raw');
+  form.append('overlaps', JSON.stringify(overlaps));
   form.append('height', labeledArray.length);
   form.append('width', labeledArray[0].length);
+  form.append('writeMode', JSON.stringify(writeMode));
 
   const options = {
     method: 'POST',
@@ -90,9 +92,19 @@ function download(context, event) {
 }
 
 function checkResponseCode(response) {
-  return response.json().then((json) => {
-    return response.ok ? json : Promise.reject(json);
-  });
+  return response.ok ? response : Promise.reject(response);
+}
+
+async function parseResponseZip(response) {
+  const blob = await response.blob();
+  const reader = new zip.ZipReader(new zip.BlobReader(blob));
+  const entries = await reader.getEntries();
+  const labeledJson = await entries[0].getData(new zip.TextWriter());
+  const overlapsJson = await entries[1].getData(new zip.TextWriter());
+  const labeled = JSON.parse(labeledJson).map((arr) => Int32Array.from(arr));
+  const overlaps = JSON.parse(overlapsJson);
+  await reader.close();
+  return { labeled, overlaps };
 }
 
 const createApiMachine = ({ projectId, eventBuses }) =>
@@ -102,6 +114,7 @@ const createApiMachine = ({ projectId, eventBuses }) =>
       invoke: [
         { id: 'eventBus', src: fromEventBus('api', () => eventBuses.api) },
         { id: 'arrays', src: fromEventBus('api', () => eventBuses.arrays) },
+        { id: 'overlaps', src: fromEventBus('api', () => eventBuses.overlaps) },
         { src: fromEventBus('api', () => eventBuses.image) },
         { src: fromEventBus('api', () => eventBuses.labeled) },
       ],
@@ -111,13 +124,19 @@ const createApiMachine = ({ projectId, eventBuses }) =>
         feature: 0,
         actionFrame: 0,
         actionFeature: 0,
+        labeledArray: null,
+        rawArray: null,
+        overlaps: null,
+        writeMode: 'overlap',
       },
       initial: 'waitForLabels',
       on: {
         LABELED_ARRAY: { actions: 'setLabeledArray' },
         RAW_ARRAY: { actions: 'setRawArray' },
+        OVERLAPS: { actions: 'setOverlaps' },
         SET_FRAME: { actions: 'setFrame' },
         SET_FEATURE: { actions: 'setFeature' },
+        SET_WRITE_MODE: { actions: 'setWriteMode' },
       },
       states: {
         waitForLabels: {
@@ -144,11 +163,21 @@ const createApiMachine = ({ projectId, eventBuses }) =>
           invoke: {
             id: 'labelAPI',
             src: getApiService,
+            onDone: 'parseResponse',
+            onError: 'idle',
+          },
+        },
+        parseResponse: {
+          invoke: {
+            src: (ctx, evt) => parseResponseZip(evt.data),
             onDone: {
               target: 'idle',
               actions: 'sendEdited',
             },
-            onError: 'idle',
+            onError: {
+              target: 'idle',
+              actions: (context, event) => console.log(event),
+            },
           },
         },
         uploading: {
@@ -181,14 +210,17 @@ const createApiMachine = ({ projectId, eventBuses }) =>
             type: 'EDITED',
             frame: context.actionFrame,
             feature: context.actionFeature,
-            labeledArray: event.data.map((arr) => Int32Array.from(arr)),
+            labeled: event.data.labeled,
+            overlaps: event.data.overlaps,
           }),
           { to: 'eventBus' }
         ),
         setRawArray: assign((_, { rawArray }) => ({ rawArray })),
         setLabeledArray: assign((_, { labeledArray }) => ({ labeledArray })),
+        setOverlaps: assign((_, { overlaps }) => ({ overlaps })),
         setFrame: assign((_, { frame }) => ({ frame })),
         setFeature: assign((_, { feature }) => ({ feature })),
+        setWriteMode: assign((_, { writeMode }) => ({ writeMode })),
       },
     }
   );

@@ -5,23 +5,22 @@ import {
   useAlphaKernelCanvas,
   useArrays,
   useCanvas,
+  useFlood,
   useImage,
   useLabeled,
   useOverlaps,
-  useSelect,
-} from '../ProjectContext';
+} from '../../ProjectContext';
 
-const OutlineCanvas = ({ setCanvases }) => {
+const FloodCanvas = ({ setCanvases }) => {
   const canvas = useCanvas();
   const width = useSelector(canvas, (state) => state.context.width);
   const height = useSelector(canvas, (state) => state.context.height);
 
-  const select = useSelect();
-  const selected = useSelector(select, (state) => state.context.selected);
-
   const labeled = useLabeled();
-  const opacity = useSelector(labeled, (state) => state.context.outlineOpacity);
   const feature = useSelector(labeled, (state) => state.context.feature);
+
+  const flood = useFlood();
+  const label = useSelector(flood, (state) => state.context.floodedLabel);
 
   const image = useImage();
   const frame = useSelector(image, (state) => state.context.frame);
@@ -41,7 +40,7 @@ const OutlineCanvas = ({ setCanvases }) => {
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
-      `function (data, overlaps, numLabels, opacity, selected) {
+      `function (data, overlaps, label) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
         const value = data[y][x];
@@ -61,20 +60,11 @@ const OutlineCanvas = ({ setCanvases }) => {
         if (y !== this.constants.h - 1) {
           east = data[y + 1][x];
         }
-        let outlineOpacity = 1;
-        for (let i = 0; i < numLabels; i++) {
-          if (overlaps[value][i] === 1) {
-            if (overlaps[north][i] === 0 || overlaps[south][i] === 0 || overlaps[west][i] === 0 || overlaps[east][i] === 0)
-           {
-              if (selected === i) {
-                outlineOpacity = outlineOpacity * (1 - opacity[1]);
-              } else {
-                outlineOpacity = outlineOpacity * (1 - opacity[0]);
-              }
-            }
+        if (overlaps[value][label] === 1) {
+          if (overlaps[north][label] === 0 || overlaps[south][label] === 0 || overlaps[west][label] === 0 || overlaps[east][label] === 0) {
+            this.color(1, 0, 0, 1);
           }
         }
-        this.color(1, 1, 1, 1 - outlineOpacity);
       }`,
       {
         constants: { w: width, h: height },
@@ -92,15 +82,13 @@ const OutlineCanvas = ({ setCanvases }) => {
 
   useEffect(() => {
     if (labeledArray && overlapsArray) {
-      const numLabels = overlapsArray[0].length;
-      // Compute the outline of the labels with the kernel
-      kernelRef.current(labeledArray, overlapsArray, numLabels, opacity, selected);
+      kernelRef.current(labeledArray, overlapsArray, label);
       // Rerender the parent canvas
-      setCanvases((canvases) => ({ ...canvases, outline: kernelCanvas }));
+      setCanvases((canvases) => ({ ...canvases, tool: kernelCanvas }));
     }
-  }, [labeledArray, overlapsArray, opacity, selected, setCanvases, kernelCanvas, width, height]);
+  }, [labeledArray, overlapsArray, label, setCanvases, kernelCanvas, width, height]);
 
   return null;
 };
 
-export default OutlineCanvas;
+export default FloodCanvas;

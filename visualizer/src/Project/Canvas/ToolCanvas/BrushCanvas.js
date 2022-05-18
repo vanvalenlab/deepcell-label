@@ -1,7 +1,7 @@
 import { useSelector } from '@xstate/react';
 import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
-import { useAlphaKernelCanvas, useBrush, useCanvas, useSelect } from '../../ProjectContext';
+import { useAlphaKernelCanvas, useBrush, useCanvas } from '../../ProjectContext';
 
 const red = [255, 0, 0, 255];
 const white = [255, 255, 255, 255];
@@ -16,10 +16,8 @@ const BrushCanvas = ({ setCanvases }) => {
   const y = useSelector(brush, (state) => state.context.y);
   const trace = useSelector(brush, (state) => state.context.trace);
   const size = useSelector(brush, (state) => state.context.brushSize);
-
-  const select = useSelect();
-  const background = useSelector(select, (state) => state.context.background);
-  const color = background !== 0 ? red : white;
+  const erase = useSelector(brush, (state) => state.context.erase);
+  const color = erase ? red : white;
 
   const kernelRef = useRef();
   const kernelCanvas = useAlphaKernelCanvas();
@@ -28,13 +26,13 @@ const BrushCanvas = ({ setCanvases }) => {
     const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
       // TODO: research how to work around minification
-      `function (trace, traceLength, size, color, brushX, brushY) {
+      `function (trace, traceLength, size, brushX, brushY, color) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
-        const [r, g, b, a] = color;
         const radius = size - 1;
         const distX = Math.abs(x - brushX);
         const distY = Math.abs(y - brushY);
+        const [r, g, b, a] = color
 
         function dist(x, y) {
           return Math.floor(Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2)));
@@ -76,9 +74,9 @@ const BrushCanvas = ({ setCanvases }) => {
     // gpu-browser.js:18662 Uncaught TypeError: Cannot read properties of undefined (reading 'length')
     // at Object.isArray (gpu-browser.js:18662:1)
     if (trace.length === 0) {
-      kernelRef.current([[0, 0]], trace.length, size, color, x, y);
+      kernelRef.current([[0, 0]], trace.length, size, x, y, color);
     } else {
-      kernelRef.current(trace, trace.length, size, color, x, y);
+      kernelRef.current(trace, trace.length, size, x, y, color);
     }
     // Rerender the parent canvas
     setCanvases((canvases) => ({ ...canvases, tool: kernelCanvas }));

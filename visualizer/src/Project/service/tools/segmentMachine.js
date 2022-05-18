@@ -4,7 +4,6 @@ import createBrushMachine from './segment/brushMachine';
 import createFloodMachine from './segment/floodMachine';
 import createSelectMachine from './segment/selectMachine';
 import createThresholdMachine from './segment/thresholdMachine';
-import { toolActions, toolGuards } from './segment/toolUtils';
 import createTrimMachine from './segment/trimMachine';
 import createWatershedMachine from './segment/watershedMachine';
 
@@ -55,63 +54,6 @@ const displayState = {
   },
 };
 
-const editActions = {
-  swap: send(
-    ({ foreground, background }) => ({
-      type: 'EDIT',
-      action: 'swap_single_frame',
-      args: {
-        a: foreground,
-        b: background,
-      },
-    }),
-    { to: 'api' }
-  ),
-  replace: send(
-    ({ foreground, background }) => ({
-      type: 'EDIT',
-      action: 'replace',
-      args: {
-        a: foreground,
-        b: background,
-      },
-    }),
-    { to: 'api' }
-  ),
-  erode: send(
-    ({ selected }) => ({
-      type: 'EDIT',
-      action: 'erode',
-      args: { label: selected },
-    }),
-    { to: 'api' }
-  ),
-  dilate: send(
-    ({ selected }) => ({
-      type: 'EDIT',
-      action: 'dilate',
-      args: { label: selected },
-    }),
-    { to: 'api' }
-  ),
-  delete: send(
-    ({ selected }) => ({
-      type: 'EDIT',
-      action: 'replace',
-      args: { a: 0, b: selected },
-    }),
-    { to: 'api' }
-  ),
-  autofit: send(
-    ({ selected }) => ({
-      type: 'EDIT',
-      action: 'active_contour',
-      args: { label: selected },
-    }),
-    { to: 'api' }
-  ),
-};
-
 const createSegmentMachine = (context) =>
   Machine(
     {
@@ -122,20 +64,17 @@ const createSegmentMachine = (context) =>
         { id: 'select', src: fromEventBus('segment', () => context.eventBuses.select) },
       ],
       context: {
-        foreground: null,
-        background: null,
         selected: null,
         tool: 'select',
         tools: null,
         eventBuses: context.eventBuses,
       },
-      initial: 'getSelectedLabels',
+      initial: 'getSelected',
       states: {
-        getSelectedLabels: {
-          entry: send('GET_STATE', { to: 'select' }),
+        getSelected: {
+          entry: send('GET_SELECTED', { to: 'select' }),
           on: {
-            FOREGROUND: { actions: 'setForeground' },
-            BACKGROUND: { actions: 'setBackground' },
+            SELECTED: { actions: 'setSelected' },
           },
           always: { cond: 'have selected labels', target: 'idle' },
         },
@@ -153,8 +92,6 @@ const createSegmentMachine = (context) =>
             HOVERING: { actions: 'forwardToTools' },
             COORDINATES: { actions: 'forwardToTools' },
             // from selected labels event bus
-            FOREGROUND: { actions: 'setForeground' },
-            BACKGROUND: { actions: 'setBackground' },
             SELECTED: { actions: 'setSelected' },
 
             SWAP: { actions: 'swap' },
@@ -171,19 +108,16 @@ const createSegmentMachine = (context) =>
     },
     {
       guards: {
-        ...toolGuards,
         usingColorTool: ({ tool }) => colorTools.includes(tool),
         isColorTool: (_, { tool }) => colorTools.includes(tool),
         usingGrayscaleTool: ({ tool }) => grayscaleTools.includes(tool),
         isGrayscaleTool: (_, { tool }) => grayscaleTools.includes(tool),
         isNoPanTool: (_, { tool }) => noPanTools.includes(tool),
         isPanTool: (_, { tool }) => panTools.includes(tool),
-        'have selected labels': (context) =>
-          context.foreground !== null && context.background !== null,
+        'have selected labels': (context) => context.selected !== null,
       },
       actions: {
-        ...toolActions,
-        ...editActions,
+        setSelected: assign({ selected: (_, { selected }) => selected }),
         setTool: pure((context, event) => [
           send('EXIT', { to: context.tool }),
           assign({ tool: event.tool }),
@@ -202,6 +136,38 @@ const createSegmentMachine = (context) =>
         }),
         forwardToTool: forwardTo(({ tool }) => tool),
         forwardToTools: pure(({ tools }) => Object.values(tools).map((tool) => forwardTo(tool))),
+        erode: send(
+          ({ selected }) => ({
+            type: 'EDIT',
+            action: 'erode',
+            args: { label: selected },
+          }),
+          { to: 'api' }
+        ),
+        dilate: send(
+          ({ selected }) => ({
+            type: 'EDIT',
+            action: 'dilate',
+            args: { label: selected },
+          }),
+          { to: 'api' }
+        ),
+        delete: send(
+          ({ selected }) => ({
+            type: 'EDIT',
+            action: 'replace',
+            args: { a: 0, b: selected },
+          }),
+          { to: 'api' }
+        ),
+        autofit: send(
+          ({ selected }) => ({
+            type: 'EDIT',
+            action: 'active_contour',
+            args: { label: selected },
+          }),
+          { to: 'api' }
+        ),
       },
     }
   );

@@ -1,37 +1,68 @@
-import { Machine, send } from 'xstate';
+import { assign, Machine, send } from 'xstate';
 import { fromEventBus } from '../../eventBus';
-import { toolActions, toolGuards } from './toolUtils';
 
 const creatFloodMachine = (context) =>
   Machine(
     {
       invoke: [
-        { src: fromEventBus('flood', () => context.eventBuses.select) },
+        { id: 'select', src: fromEventBus('flood', () => context.eventBuses.select) },
         { id: 'api', src: fromEventBus('flood', () => context.eventBuses.api) },
+        { src: fromEventBus('flood', () => context.eventBuses.overlaps) },
       ],
       context: {
         x: null,
         y: null,
-        foreground: context.foreground,
-        background: context.background,
+        floodingLabel: context.selected,
+        floodedLabel: 0,
+        hovering: null,
+        overlaps: null,
       },
       on: {
         COORDINATES: { actions: 'setCoordinates' },
-        FOREGROUND: { actions: 'setForeground' },
-        BACKGROUND: { actions: 'setBackground' },
-        mouseup: { actions: 'flood' },
+        SELECTED: { actions: 'setFloodingLabel' },
+        HOVERING: { actions: 'setHovering' },
+        OVERLAPS: { actions: 'setOverlaps' },
+        mouseup: [
+          { cond: 'shift', actions: 'setFloodedLabel' },
+          { cond: 'onFloodedLabel', actions: 'flood' },
+          { actions: 'setFloodedLabel' },
+        ],
       },
     },
     {
-      guards: toolGuards,
+      guards: {
+        shift: (_, event) => event.shiftKey,
+        onFloodedLabel: ({ floodedLabel, hovering, overlaps }) =>
+          overlaps[hovering][floodedLabel] === 1,
+      },
       actions: {
-        ...toolActions,
+        setFloodingLabel: assign({ floodingLabel: (_, { selected }) => selected }),
+        setFloodedLabel: assign({
+          floodedLabel: ({ hovering, overlaps, floodedLabel }) => {
+            const labels = overlaps[hovering];
+            if (labels[floodedLabel]) {
+              // Get next label that hovering value encodes
+              const reordered = labels
+                .slice(floodedLabel + 1)
+                .concat(labels.slice(0, floodedLabel + 1));
+              const nextLabel =
+                (reordered.findIndex((i) => !!i) + floodedLabel + 1) % labels.length;
+              return nextLabel;
+            }
+            const firstLabel = labels.findIndex((i) => i === 1);
+            return firstLabel === -1 ? 0 : firstLabel;
+          },
+        }),
+        setCoordinates: assign({ x: (_, { x }) => x, y: (_, { y }) => y }),
+        setHovering: assign({ hovering: (_, { hovering }) => hovering }),
+        setOverlaps: assign({ overlaps: (_, { overlaps }) => overlaps }),
         flood: send(
-          ({ foreground, x, y }, event) => ({
+          ({ floodingLabel, floodedLabel, x, y }, event) => ({
             type: 'EDIT',
             action: 'flood',
             args: {
-              label: foreground,
+              foreground: floodingLabel,
+              background: floodedLabel,
               x,
               y,
             },

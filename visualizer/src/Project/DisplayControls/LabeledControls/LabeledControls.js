@@ -5,7 +5,8 @@ import Grid from '@mui/material/Grid';
 import React from 'react';
 import FeatureSelect from './FeatureSelect';
 import HighlightToggle from './HighlightToggle';
-import OpacitySlider from './OpacitySlider';
+import LabelsOpacitySlider from './LabelsOpacitySlider';
+import OutlineOpacitySlider from './OutlineOpacitySlider';
 import OutlineToggle from './OutlineToggle';
 
 const LabeledControls = () => {
@@ -30,13 +31,14 @@ const LabeledControls = () => {
             <HighlightToggle />
           </Box>
         </Grid>
-        <Grid container direction='row'>
-          <Grid item xs={4}>
-            <Typography>Opacity</Typography>
-          </Grid>
-          <Grid container item xs={8} alignItems='center'>
-            <OpacitySlider />
-          </Grid>
+        <Grid item>
+          <Typography>Opacity</Typography>
+        </Grid>
+        <Grid item>
+          <LabelsOpacitySlider />
+        </Grid>
+        <Grid item>
+          <OutlineOpacitySlider />
         </Grid>
       </Grid>
     </>

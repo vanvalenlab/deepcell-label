@@ -2,8 +2,8 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useSelector } from '@xstate/react';
 import equal from 'fast-deep-equal';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useArrays, useCanvas, useEditing, useSelect } from '../ProjectContext';
+import React, { useEffect, useMemo } from 'react';
+import { useArrays, useCanvas, useEditing } from '../ProjectContext';
 import ComposeCanvas from './ComposeCanvases';
 import LabeledCanvas from './LabeledCanvas';
 import OutlineCanvas from './OutlineCanvas';
@@ -12,8 +12,6 @@ import SpotsCanvas from './SpotsCanvas';
 import ToolCanvas from './ToolCanvas';
 
 function Canvas() {
-  const select = useSelect();
-
   const canvas = useCanvas();
   const { sx, sy, zoom, sw, sh, scale, grab, grabbing, dragged } = useSelector(
     canvas,
@@ -67,19 +65,7 @@ function Canvas() {
     };
   }, []);
 
-  const handleMouseDown = useCallback(
-    (event) => {
-      event.preventDefault();
-      if (event.shiftKey) {
-        select.send({ ...event, type: 'SHIFT_CLICK' });
-      } else {
-        canvas.send(event);
-      }
-    },
-    [canvas, select]
-  );
-
-  const [canvases, setCanvases] = useState([]);
+  const [canvases, setCanvases] = React.useState([]);
 
   const arrays = useArrays();
   const loading = useSelector(arrays, (state) => state.matches('waiting'));
@@ -93,7 +79,7 @@ function Canvas() {
       height={scale * sh}
       onMouseMove={canvas.send}
       onWheel={canvas.send}
-      onMouseDown={handleMouseDown}
+      onMouseDown={canvas.send}
       onMouseUp={canvas.send}
     >
       {loading ? (

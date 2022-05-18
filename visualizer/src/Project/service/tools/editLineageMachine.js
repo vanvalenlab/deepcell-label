@@ -12,17 +12,15 @@ const createEditLineageMachine = ({ eventBuses }) =>
         { src: fromEventBus('editLineage', () => eventBuses.labels) },
       ],
       context: {
-        foreground: null,
-        background: null,
         selected: null,
         hovering: null,
         labels: {},
         parent: null,
       },
       on: {
-        FOREGROUND: {
-          cond: (_, { foreground }) => foreground !== 0,
-          actions: 'setForeground',
+        SELECTED: {
+          cond: (_, { selected }) => selected !== 0,
+          actions: 'setSelected',
         },
         HOVERING: { actions: 'setHovering' },
         LABELS: { actions: 'setLabels' },
@@ -33,7 +31,7 @@ const createEditLineageMachine = ({ eventBuses }) =>
       states: {
         idle: {
           on: {
-            mouseup: { actions: 'selectForeground' },
+            mouseup: { actions: 'select' },
             ADD_DAUGHTER: { target: 'addingDaughter', actions: 'recordParent' },
             CREATE_NEW_CELL: { actions: 'createNewCell' },
           },
@@ -58,14 +56,8 @@ const createEditLineageMachine = ({ eventBuses }) =>
         onNoLabel: ({ hovering }) => hovering === 0,
       },
       actions: {
-        selectForeground: send(
-          ({ hovering }) => ({
-            type: 'SET_FOREGROUND',
-            foreground: hovering,
-          }),
-          { to: 'selectedCells' }
-        ),
-        setForeground: assign({ foreground: (_, { foreground }) => foreground }),
+        select: send('SELECT', { to: 'selectedCells' }),
+        setSelected: assign({ selected: (_, { selected }) => selected }),
         setHovering: assign({ hovering: (_, { hovering }) => hovering }),
         setLabels: assign({ labels: (_, { labels }) => labels }),
         recordParent: assign({ parent: (_, { parent }) => parent }),

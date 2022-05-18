@@ -1,6 +1,5 @@
 import { assign, Machine, send } from 'xstate';
 import { fromEventBus } from '../../eventBus';
-import { toolActions, toolGuards } from './toolUtils';
 
 const createBrushMachine = (context) =>
   Machine(
@@ -13,17 +12,17 @@ const createBrushMachine = (context) =>
       context: {
         x: 0,
         y: 0,
-        foreground: context.foreground,
-        background: context.background,
+        label: context.selected,
         trace: [],
         brushSize: 5,
+        erase: false,
       },
       initial: 'idle',
       states: {
         idle: {
           entry: assign({ trace: [] }),
           on: {
-            mousedown: [{ cond: 'shift' }, { target: 'dragging', actions: 'addToTrace' }],
+            mousedown: { target: 'dragging', actions: 'addToTrace' },
           },
         },
         dragging: {
@@ -39,11 +38,11 @@ const createBrushMachine = (context) =>
         },
       },
       on: {
+        SET_ERASE: { actions: 'setErase' },
         INCREASE_BRUSH_SIZE: { actions: 'increaseBrushSize' },
         DECREASE_BRUSH_SIZE: { actions: 'decreaseBrushSize' },
         COORDINATES: { actions: 'setCoordinates' },
-        FOREGROUND: { actions: 'setForeground' },
-        BACKGROUND: { actions: 'setBackground' },
+        SELECTED: { actions: 'setLabel' },
       },
     },
     {
@@ -63,9 +62,10 @@ const createBrushMachine = (context) =>
           return () => window.removeEventListener('keydown', listener);
         },
       },
-      guards: toolGuards,
       actions: {
-        ...toolActions,
+        setErase: assign({ erase: (ctx, e) => e.erase }),
+        setLabel: assign({ label: (_, { selected }) => selected }),
+        setCoordinates: assign({ x: (_, { x }) => x, y: (_, { y }) => y }),
         increaseBrushSize: assign({
           brushSize: ({ brushSize }) => brushSize + 1,
         }),
@@ -76,12 +76,12 @@ const createBrushMachine = (context) =>
         paint: send(
           (context) => ({
             type: 'EDIT',
-            action: 'handle_draw',
+            action: 'draw',
             args: {
               trace: JSON.stringify(context.trace),
-              foreground: context.foreground,
-              background: context.background,
+              label: context.label,
               brush_size: context.brushSize,
+              erase: context.erase,
             },
           }),
           { to: 'api' }

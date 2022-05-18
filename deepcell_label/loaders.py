@@ -47,6 +47,7 @@ class Loader:
         self.y = load_segmentation(self.label_file)
         self.spots = load_spots(self.label_file)
         self.lineage = load_lineage(self.label_file)
+        self.overlaps = load_overlaps(self.label_file)
 
         if self.y is None:
             shape = (*self.X.shape[:-1], 1)
@@ -59,6 +60,7 @@ class Loader:
         self.write_cells()
         self.write_spots()
         self.write_lineage()
+        self.write_overlaps()
 
     def write_images(self):
         """
@@ -118,6 +120,15 @@ class Loader:
     def write_lineage(self):
         """Writes lineage to lineage.json in the output zip."""
         self.zip.writestr('lineage.json', json.dumps(self.lineage))
+
+    def write_overlaps(self):
+        """Writes overlaps to overlaps.json in the output zip."""
+        if self.overlaps is None:
+            num_cells = int(np.max(self.y))
+            overlaps = np.identity(num_cells + 1, dtype=np.int8)
+            overlaps[0, 0] = 0  # 0 encodes background (no cells)
+            self.overlaps = overlaps.tolist()
+        self.zip.writestr('overlaps.json', json.dumps(self.overlaps))
 
 
 def load_images(image_file):
@@ -200,6 +211,22 @@ def load_lineage(f):
         lineage = reformat_lineage(lineage)
         lineage = add_parent_division_frame(lineage)
         return lineage
+
+
+def load_overlaps(f):
+    """
+    Load overlaps from label file.
+
+    Args:
+        zf: zip file with overlaps json
+
+    Returns:
+        dict or None if no json in zip
+    """
+    f.seek(0)
+    if zipfile.is_zipfile(f):
+        zf = zipfile.ZipFile(f, 'r')
+        return load_zip_json(zf, filename='overlaps.json')
 
 
 def load_zip_numpy(zf, name='X'):

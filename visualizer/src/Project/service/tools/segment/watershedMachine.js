@@ -1,6 +1,5 @@
 import { assign, Machine, send } from 'xstate';
 import { fromEventBus } from '../../eventBus';
-import { toolActions, toolGuards } from './toolUtils';
 
 const createWatershedMachine = (context) =>
   Machine(
@@ -8,22 +7,24 @@ const createWatershedMachine = (context) =>
       invoke: [
         { id: 'select', src: fromEventBus('watershed', () => context.eventBuses.select) },
         { id: 'api', src: fromEventBus('watershed', () => context.eventBuses.api) },
+        { src: fromEventBus('watershed', () => context.eventBuses.overlaps) },
       ],
       context: {
-        x: null,
-        y: null,
+        x: 0,
+        y: 0,
         hovering: null,
-        foreground: context.foreground,
-        background: context.background,
-        storedLabel: null,
-        storedX: null,
-        storedY: null,
+        label: context.selected,
+        x1: 0,
+        y1: 0,
+        x2: 0,
+        y2: 0,
+        overlaps: null,
       },
       on: {
         COORDINATES: { actions: 'setCoordinates' },
         HOVERING: { actions: 'setHovering' },
-        FOREGROUND: { actions: 'setForeground' },
-        BACKGROUND: { actions: 'setBackground' },
+        OVERLAPS: { actions: 'setOverlaps' },
+        SELECTED: { actions: 'setLabel' },
       },
       initial: 'idle',
       states: {
@@ -32,52 +33,78 @@ const createWatershedMachine = (context) =>
             mouseup: [
               { cond: 'onNoLabel' },
               {
+                cond: 'onLabel',
                 target: 'clicked',
-                actions: ['selectForeground', 'storeClick'],
+                actions: ['setFirstPoint', 'setLabel'],
+              },
+              {
+                target: 'switchLabel',
+                actions: ['select', 'setFirstPoint'],
               },
             ],
+          },
+        },
+        switchLabel: {
+          on: {
+            SELECTED: { target: 'clicked', actions: ['setLabel'] },
           },
         },
         clicked: {
           on: {
             EXIT: 'idle',
-            FOREGROUND: { cond: 'differentForeground', actions: 'setForeground', target: 'idle' },
-            mouseup: {
-              cond: 'validSecondSeed',
-              target: 'idle',
-              actions: ['watershed', 'newBackground'],
-            },
+            SELECTED: { cond: 'differentLabel', actions: 'setLabel', target: 'idle' },
+            mouseup: [
+              {
+                cond: 'validSecondSeed',
+                target: 'waiting',
+                actions: ['setSecondPoint', 'watershed', 'newBackground'],
+              },
+              {
+                cond: 'notOnLabel',
+                target: 'switchLabel',
+                actions: ['select', 'setFirstPoint'],
+              },
+            ],
+          },
+        },
+        waiting: {
+          on: {
+            EDITED: 'idle',
+          },
+          after: {
+            1000: 'idle',
           },
         },
       },
     },
     {
       guards: {
-        ...toolGuards,
-        validSecondSeed: ({ hovering, foreground, x, y, storedX, storedY }) =>
-          hovering === foreground && // same label
-          (x !== storedX || y !== storedY), // different point
-        differentForeground: (context, event) => context.foreground !== event.foreground,
+        validSecondSeed: ({ overlaps, hovering, label, x, y, x1, y2 }) =>
+          overlaps[hovering][label] === 1 && // same label
+          (x !== x1 || y !== y2), // different point
+        differentLabel: (ctx, evt) => ctx.label !== evt.label,
+        onLabel: ({ hovering, label, overlaps }) => overlaps[hovering][label] === 1,
+        notOnLabel: ({ hovering, label, overlaps }) => overlaps[hovering][label] === 0,
+        onNoLabel: ({ hovering }) => hovering === 0,
       },
       actions: {
-        ...toolActions,
-        storeClick: assign({
-          storedLabel: ({ hovering }) => hovering,
-          storedX: ({ x }) => x,
-          storedY: ({ y }) => y,
-        }),
-        selectForeground: send('SELECT_FOREGROUND', { to: 'select' }),
-        newBackground: send({ type: 'BACKGROUND', background: 0 }, { to: 'select' }),
+        setCoordinates: assign({ x: (_, { x }) => x, y: (_, { y }) => y }),
+        setHovering: assign({ hovering: (_, { hovering }) => hovering }),
+        setOverlaps: assign({ overlaps: (_, { overlaps }) => overlaps }),
+        setFirstPoint: assign({ x1: ({ x }) => x, y1: ({ y }) => y }),
+        setSecondPoint: assign({ x2: ({ x }) => x, y2: ({ y }) => y }),
+        setLabel: assign({ label: ({ selected }) => selected }),
+        select: send('SELECT', { to: 'select' }),
         watershed: send(
-          ({ storedLabel, storedX, storedY, x, y }) => ({
+          ({ label, x1, y1, x2, y2 }) => ({
             type: 'EDIT',
             action: 'watershed',
             args: {
-              label: storedLabel,
-              x1: storedX,
-              y1: storedY,
-              x2: x,
-              y2: y,
+              label,
+              x1,
+              y1,
+              x2,
+              y2,
             },
           }),
           { to: 'api' }

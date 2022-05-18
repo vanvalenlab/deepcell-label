@@ -1,6 +1,5 @@
 import { assign, Machine, send } from 'xstate';
 import { fromEventBus } from '../../eventBus';
-import { toolActions, toolGuards } from './toolUtils';
 
 const createThresholdMachine = (context) =>
   Machine(
@@ -13,14 +12,14 @@ const createThresholdMachine = (context) =>
       context: {
         x: null,
         y: null,
-        foreground: context.foreground,
+        label: context.selected,
         firstPoint: [null, null],
       },
       states: {
         idle: {
           on: {
             EXIT: 'idle',
-            mousedown: { target: 'dragging', actions: 'saveFirstPoint' },
+            mousedown: { target: 'dragging', actions: 'setFirstPoint' },
           },
         },
         dragging: {
@@ -31,16 +30,17 @@ const createThresholdMachine = (context) =>
       },
       on: {
         COORDINATES: { actions: 'setCoordinates' },
-        FOREGROUND: { actions: 'setForeground' },
+        SELECTED: { actions: 'setLabel' },
       },
     },
     {
-      guards: toolGuards,
+      guards: {},
       actions: {
-        ...toolActions,
-        saveFirstPoint: assign({ firstPoint: ({ x, y }) => [x, y] }),
+        setCoordinates: assign({ x: (_, { x }) => x, y: (_, { y }) => y }),
+        setLabel: assign({ label: (_, { selected }) => selected }),
+        setFirstPoint: assign({ firstPoint: ({ x, y }) => [x, y] }),
         threshold: send(
-          ({ foreground, firstPoint, x, y }, event) => ({
+          ({ label, firstPoint, x, y }, event) => ({
             type: 'EDIT',
             action: 'threshold',
             args: {
@@ -48,7 +48,7 @@ const createThresholdMachine = (context) =>
               y1: firstPoint[1],
               x2: x,
               y2: y,
-              label: foreground,
+              label,
             },
           }),
           { to: 'api' }

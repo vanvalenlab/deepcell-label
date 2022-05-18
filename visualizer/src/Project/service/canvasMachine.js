@@ -116,8 +116,8 @@ const createCanvasMachine = ({ eventBuses }) =>
         sx: 0,
         sy: 0,
         // position of cursor within image
-        x: null,
-        y: null,
+        x: 0,
+        y: 0,
         // how much the canvas has moved in the current pan
         dx: 0,
         dy: 0,
