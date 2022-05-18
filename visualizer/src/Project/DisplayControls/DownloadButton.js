@@ -16,6 +16,7 @@ function DownloadButton() {
       endIcon={<GetAppIcon />}
       onClick={() => api.send('DOWNLOAD')}
       disabled={downloading}
+      sx={{ position: 'relative' }}
     >
       Download
       {downloading && (
@@ -25,8 +26,6 @@ function DownloadButton() {
             position: 'absolute',
             top: '50%',
             left: '50%',
-            mt: -12,
-            ml: -12,
           }}
         />
       )}
