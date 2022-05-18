@@ -161,7 +161,7 @@ def download_project():
     return send_file(data, as_attachment=True, attachment_filename=f'{id}.zip')
 
 
-@bp.route('/api/submit', methods=['POST'])
+@bp.route('/api/upload', methods=['POST'])
 def submit_project():
     """
     Create and upload an edited DeepCell Label zip file to an S3 bucket.
