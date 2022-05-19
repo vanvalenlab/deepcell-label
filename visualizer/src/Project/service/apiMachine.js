@@ -3,16 +3,28 @@ import { flattenDeep } from 'lodash';
 import { assign, forwardTo, Machine, send } from 'xstate';
 import { fromEventBus } from './eventBus';
 
+function splitRows(buffer, width, height) {
+  const frame = [];
+  for (let i = 0; i < height; i++) {
+    const row = new Int32Array(buffer, width * i * 4, width);
+    frame.push(row);
+  }
+  return frame;
+}
+
 /** Creates a blob for a zip file with all project . */
 async function makeEditZip(context, event) {
-  const { labeled, raw, overlaps, writeMode, lineage } = context;
+  const { labeled, raw, overlaps, writeMode, lineage, frame } = context;
   const { action, args } = event;
   const edit = { width: labeled[0].length, height: labeled.length, action, args, writeMode };
 
   const zipWriter = new zip.ZipWriter(new zip.BlobWriter('application/zip'));
   // Required files
   await zipWriter.add('edit.json', new zip.TextReader(JSON.stringify(edit)));
-  await zipWriter.add('overlaps.json', new zip.TextReader(JSON.stringify(overlaps)));
+  await zipWriter.add(
+    'overlaps.json',
+    new zip.TextReader(JSON.stringify(overlaps.overlaps.filter((o) => o.z === frame)))
+  );
   await zipWriter.add('labeled.dat', new zip.BlobReader(new Blob(labeled)));
   // Optional files
   const usesRaw = action === 'active_contour' || action === 'threshold' || action === 'watershed';
@@ -56,6 +68,8 @@ async function edit(context, event) {
   const form = new FormData();
   const zipBlob = await makeEditZip(context, event);
   form.append('labels', zipBlob, 'labels.zip');
+  const width = context.labeled[0].length;
+  const height = context.labeled.length;
 
   const options = {
     method: 'POST',
@@ -64,7 +78,7 @@ async function edit(context, event) {
   };
   return fetch(`${document.location.origin}/api/edit`, options)
     .then(checkResponseCode)
-    .then(parseResponseZip);
+    .then((res) => parseResponseZip(res, width, height));
 }
 
 /** Sends a zip to the DeepCell Label API to be repackaged for upload to an S3 bucket. */
@@ -110,13 +124,15 @@ function checkResponseCode(response) {
   return response.ok ? response : Promise.reject(response);
 }
 
-async function parseResponseZip(response) {
+async function parseResponseZip(response, width, height) {
   const blob = await response.blob();
   const reader = new zip.ZipReader(new zip.BlobReader(blob));
   const entries = await reader.getEntries();
-  const labeledJson = await entries[0].getData(new zip.TextWriter());
+  const labeledBlob = await entries[0].getData(new zip.BlobWriter());
   const overlapsJson = await entries[1].getData(new zip.TextWriter());
-  const labeled = JSON.parse(labeledJson).map((arr) => Int32Array.from(arr));
+  // const labeled = JSON.parse(labeledJson).map((arr) => Int32Array.from(arr));
+  const labeledBuffer = await labeledBlob.arrayBuffer();
+  const labeled = splitRows(labeledBuffer, width, height);
   const overlaps = JSON.parse(overlapsJson);
   await reader.close();
   return { labeled, overlaps };
@@ -167,16 +183,20 @@ const createApiMachine = ({ projectId, eventBuses }) =>
         },
         idle: {
           on: {
-            EDIT: { target: 'loading', actions: 'setInitialLabels' },
+            EDIT: { target: 'editing', actions: 'setInitialLabels' },
             UPLOAD: 'uploading',
             DOWNLOAD: 'downloading',
           },
         },
-        loading: {
+        editing: {
           invoke: {
             id: 'labelAPI',
             src: edit,
-            onDone: { target: 'idle', actions: ['sendEdited', 'sendSnapshot'] },
+            onDone: {
+              target: 'idle',
+              actions: [(c, e) => console.log(c, e), 'sendEdited', 'sendSnapshot'],
+            },
+            onError: { target: 'idle', actions: (c, e) => console.log(c, e) },
           },
         },
         uploading: {

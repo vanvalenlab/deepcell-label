@@ -124,10 +124,14 @@ class Loader:
     def write_overlaps(self):
         """Writes overlaps to overlaps.json in the output zip."""
         if self.overlaps is None:
-            num_cells = int(np.max(self.y))
-            overlaps = np.identity(num_cells + 1, dtype=np.int8)
-            overlaps[0, 0] = 0  # 0 encodes background (no cells)
-            self.overlaps = overlaps.tolist()
+            overlaps = []
+            for z in range(self.y.shape[0]):
+                for value in np.unique(self.y[z]):
+                    if value != 0:
+                        overlaps.append(
+                            {'cell': int(value), 'value': int(value), 'z': int(z)}
+                        )
+            self.overlaps = overlaps
         self.zip.writestr('overlaps.json', json.dumps(self.overlaps))
 
 

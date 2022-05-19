@@ -15,6 +15,41 @@ from skimage.morphology import dilation, disk, erosion, flood, square
 from skimage.segmentation import morphological_chan_vese, watershed
 
 
+def make_overlap_matrix(overlaps):
+    """
+    Make an overlap matrix of overlaps from a list of overlaps objects.
+
+    Args:
+        overlaps (list): list of overlaps like { value: 1, cell: 1 }
+
+    Returns:
+        numpy.ndarray: matrix of overlaps where (i, j) is 1 if { value: i, cell: j } is in the overlaps
+    """
+    max_value = max(map(lambda o: o['value'], overlaps))
+    max_cell = max(map(lambda o: o['cell'], overlaps))
+
+    overlap_matrix = np.zeros((max_value + 1, max_cell + 1))
+    for overlap in overlaps:
+        overlap_matrix[int(overlap['value']), int(overlap['cell'])] = 1
+    return overlap_matrix
+
+
+def make_overlaps(overlap_matrix):
+    """
+    Make a list of overlaps from an overlap matrix.
+
+    Args:
+        overlap_matrix: 2D numpy array where (i, j) is 1 if value i encodes cell j
+
+    Returns:
+        list of overlaps like { value: i, cell: j }
+    """
+    values, cells = np.nonzero(overlap_matrix)
+    return [
+        {'value': int(value), 'cell': int(cell)} for (value, cell) in zip(values, cells)
+    ]
+
+
 class Edit(object):
     """
     Loads labeled data from a zip file,
@@ -71,9 +106,10 @@ class Edit(object):
         if 'overlaps.json' not in zf.namelist():
             raise ValueError('zip must contain overlaps.json.')
         with zf.open('overlaps.json') as f:
-            self.overlaps = np.array(json.load(f))
+            overlaps = json.load(f)
+            self.overlaps = make_overlap_matrix(overlaps)
             self.new_value = self.overlaps.shape[0]
-            self.new_label = self.overlaps.shape[1]
+            self.new_cell = self.overlaps.shape[1]
 
         # Load raw image
         if 'raw.dat' in zf.namelist():
@@ -98,15 +134,17 @@ class Edit(object):
         """Write edited labels to zip."""
         f = io.BytesIO()
         with zipfile.ZipFile(f, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
-            zf.writestr('labeled.json', str(self.labels.tolist()))
-            zf.writestr('overlaps.json', str(self.overlaps.tolist()))
+            # zf.writestr('labeled.json', str(self.labels.tolist()))
+            zf.writestr('labeled.dat', self.labels.tobytes())
+            overlaps = make_overlaps(self.overlaps)
+            zf.writestr('overlaps.json', json.dumps(overlaps))
             if self.lineage is not None:
                 zf.writestr('lineage.json', json.dumps(self.lineage))
         f.seek(0)
         self.response_zip = f
 
     def add_label(self, label):
-        if label == self.new_label:
+        if label == self.new_cell:
             # TODO: error handling if new label is too large (or negative or 0 or non integer)
             new_column = np.zeros((self.overlaps.shape[0], 1))
             self.overlaps = np.append(self.overlaps, new_column, axis=1)
@@ -176,7 +214,7 @@ class Edit(object):
 
     def clean_label(self, label):
         """Ensures that a label is a valid integer between 0 and an unused label"""
-        return int(min(self.new_label, max(0, label)))
+        return int(min(self.new_cell, max(0, label)))
 
     def dispatch_action(self):
         """
@@ -204,10 +242,10 @@ class Edit(object):
         for value in np.unique(self.labels):
             labels = self.overlaps[value]
             if labels[b] == 1:
-                new_labels = np.copy(labels)
-                new_labels[b] = 0
-                new_labels[a] = 1 if a != 0 else 0
-                new_value = self.get_value(new_labels)
+                new_cells = np.copy(labels)
+                new_cells[b] = 0
+                new_cells[a] = 1 if a != 0 else 0
+                new_value = self.get_value(new_cells)
                 self.labels[self.labels == value] = new_value
 
     def action_draw(self, trace, brush_size, label, erase=False):
@@ -285,11 +323,11 @@ class Edit(object):
 
     def action_watershed(self, label, x1, y1, x2, y2):
         """Use watershed to segment different objects"""
-        new_label = self.new_label
+        new_cell = self.new_cell
         # Create markers for to seed watershed labels
         markers = np.zeros(self.labels.shape)
         markers[y1, x1] = label
-        markers[y2, x2] = new_label
+        markers[y2, x2] = new_cell
 
         # Cut images to label bounding box
         mask = self.get_mask(label)
@@ -305,21 +343,21 @@ class Edit(object):
         results = watershed(raw, markers, mask=mask)
 
         # Dilate small labels to prevent "dimmer" label from being eroded by the "brighter" label
-        if np.sum(results == new_label) < 5:
-            dilated = dilation(results == new_label, disk(3))
-            results[dilated] = new_label
+        if np.sum(results == new_cell) < 5:
+            dilated = dilation(results == new_cell, disk(3))
+            results[dilated] = new_cell
         if np.sum(results == label) < 5:
             dilated = dilation(results == label, disk(3))
             results[dilated] = label
 
         # Update labels where watershed changed label
-        new_label_mask = np.zeros(self.labels.shape, dtype=bool)
+        new_cell_mask = np.zeros(self.labels.shape, dtype=bool)
         label_mask = np.zeros(self.labels.shape, dtype=bool)
-        new_label_mask[top:bottom, left:right] = results == new_label
+        new_cell_mask[top:bottom, left:right] = results == new_cell
         label_mask[top:bottom, left:right] = results == label
         self.remove_mask(self.get_mask(label), label)
         self.add_mask(label_mask, label)
-        self.add_mask(new_label_mask, new_label)
+        self.add_mask(new_cell_mask, new_cell)
 
     def action_threshold(self, y1, x1, y2, x2, label):
         """
