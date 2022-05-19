@@ -9,12 +9,10 @@ const createEditLineageMachine = ({ eventBuses }) =>
         { id: 'selectedCells', src: fromEventBus('editLineage', () => eventBuses.select) },
         { src: fromEventBus('editLineage', () => eventBuses.labeled) },
         { id: 'api', src: fromEventBus('editLineage', () => eventBuses.api) },
-        { src: fromEventBus('editLineage', () => eventBuses.labels) },
       ],
       context: {
         selected: null,
         hovering: null,
-        labels: {},
         parent: null,
       },
       on: {
@@ -23,7 +21,6 @@ const createEditLineageMachine = ({ eventBuses }) =>
           actions: 'setSelected',
         },
         HOVERING: { actions: 'setHovering' },
-        LABELS: { actions: 'setLabels' },
         REMOVE: { actions: 'remove' },
         REPLACE_WITH_PARENT: { actions: 'replaceWithParent' },
       },
@@ -59,7 +56,6 @@ const createEditLineageMachine = ({ eventBuses }) =>
         select: send('SELECT', { to: 'selectedCells' }),
         setSelected: assign({ selected: (_, { selected }) => selected }),
         setHovering: assign({ hovering: (_, { hovering }) => hovering }),
-        setLabels: assign({ labels: (_, { labels }) => labels }),
         recordParent: assign({ parent: (_, { parent }) => parent }),
         remove: send(
           (_, { daughter }) => ({

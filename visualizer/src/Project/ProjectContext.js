@@ -84,12 +84,6 @@ export function useArrays() {
   return arrays;
 }
 
-export function useLabels() {
-  const project = useProject();
-  const labels = useSelector(project, (state) => state.context.labelsRef);
-  return labels;
-}
-
 export function useSelect() {
   const project = useProject();
   const select = useSelector(project, (state) => state.context.selectRef);
@@ -280,7 +274,7 @@ function rgbToHex(rgb) {
 }
 
 export function useHexColormap() {
-  const labels = useLabels();
+  const labels = useOverlaps();
   const colormap = useSelector(labels, (state) => state.context.colormap);
   return colormap.map(rgbToHex);
 }

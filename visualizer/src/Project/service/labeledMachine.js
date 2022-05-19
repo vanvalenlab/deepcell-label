@@ -1,4 +1,3 @@
-import colormap from 'colormap';
 import { actions, assign, Machine, send } from 'xstate';
 import { fromEventBus } from './eventBus';
 
@@ -20,11 +19,6 @@ const createLabeledMachine = ({ projectId, eventBuses }) =>
         outlineOpacity: [0.5, 1],
         highlight: true,
         outline: true,
-        colormap: [
-          [0, 0, 0, 1],
-          ...colormap({ colormap: 'viridis', format: 'rgba' }),
-          [255, 255, 255, 1],
-        ],
       },
       on: {
         DIMENSIONS: { actions: 'setNumFeatures' },

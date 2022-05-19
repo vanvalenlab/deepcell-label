@@ -9,7 +9,6 @@ import createCanvasMachine from './canvasMachine';
 import { EventBus, fromEventBus } from './eventBus';
 import createIDBMachine from './idbMachine';
 import createImageMachine from './imageMachine';
-import createLabelsMachine from './labelsMachine';
 import createLineageMachine from './lineageMachine';
 import createLoadMachine from './loadMachine';
 import createOverlapsMachine from './overlapsMachine';
@@ -92,7 +91,6 @@ const createProjectMachine = (projectId) =>
           actors.canvasRef = spawn(createCanvasMachine(context), 'canvas');
           actors.imageRef = spawn(createImageMachine(context), 'image');
           actors.arraysRef = spawn(createArraysMachine(context), 'arrays');
-          actors.labelsRef = spawn(createLabelsMachine(context), 'labels');
           actors.apiRef = spawn(createApiMachine(context), 'api');
           actors.selectRef = spawn(createSelectMachine(context), 'select');
           actors.lineageRef = spawn(createLineageMachine(context), 'lineage');
