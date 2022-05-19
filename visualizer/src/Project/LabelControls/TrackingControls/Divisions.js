@@ -34,39 +34,21 @@ function Divisions() {
   return (
     <>
       <DivisionsFootprint footprintRef={footprintRef} />
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          minWidth,
-          minHeight,
-        }}
-      >
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'left',
-            alignItems: 'center',
-            width: '50%',
-            minHeight,
-            flexDirection: 'column',
-          }}
-        >
-          <FormLabel sx={{ alignSelf: 'flex-start' }}>Parent</FormLabel>
-          {division.parent && <Division label={division.parent} />}
+      <Box>
+        <Box display='flex' sx={{ width: '100%', justifyContent: 'space-between' }}>
+          <FormLabel>Parent</FormLabel>
+          <FormLabel>Daughters</FormLabel>
         </Box>
         <Box
           sx={{
             display: 'flex',
-            justifyContent: 'left',
+            justifyContent: 'space-between',
             alignItems: 'center',
-            width: '50%',
+            minWidth,
             minHeight,
-            flexDirection: 'column',
           }}
         >
-          <FormLabel sx={{ alignSelf: 'flex-end' }}>Daughters</FormLabel>
+          {division.parent && <Division label={division.parent} />}
           {(division.daughters.length > 0 || editing) && <Division label={label} />}
         </Box>
       </Box>
