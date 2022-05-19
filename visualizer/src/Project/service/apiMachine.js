@@ -252,7 +252,7 @@ const createApiMachine = ({ projectId, eventBuses }) =>
             frame: ctx.frame,
             feature: ctx.feature,
             labeled: ctx.labeled,
-            overlaps: ctx.overlaps,
+            overlaps: ctx.overlaps.overlaps.filter((o) => o.z === ctx.frame),
           },
         })),
         sendEdited: send(
