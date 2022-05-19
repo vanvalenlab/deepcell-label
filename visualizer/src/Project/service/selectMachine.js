@@ -2,24 +2,6 @@ import { assign, Machine, send } from 'xstate';
 import { pure, respond } from 'xstate/lib/actions';
 import { fromEventBus } from './eventBus';
 
-function prevLabel(label, overlaps) {
-  const numLabels = overlaps[0].length - 1;
-  const prevLabel = label - 1;
-  if (prevLabel === 0) {
-    return numLabels;
-  }
-  return prevLabel;
-}
-
-function nextLabel(label, overlaps) {
-  const numLabels = overlaps[0].length - 1;
-  const nextLabel = label + 1;
-  if (nextLabel > numLabels) {
-    return 1;
-  }
-  return nextLabel;
-}
-
 const createSelectMachine = ({ eventBuses }) =>
   Machine(
     {
