@@ -1,5 +1,6 @@
 import { Box } from '@mui/material';
 import { useSelector } from '@xstate/react';
+import equal from 'fast-deep-equal';
 import React from 'react';
 import { useArrays, useCanvas, useOverlaps } from '../../../ProjectContext';
 import Cell from './Cell';
@@ -20,11 +21,15 @@ function OverlapHovering() {
   // get label(s) from overlaps array
 
   const overlaps = useOverlaps();
-  const labels = useSelector(overlaps, (state) => state.context.overlaps?.[value]);
+  const cells = useSelector(
+    overlaps,
+    (state) => state.context.overlaps?.getCellsForValue(value, frame),
+    equal
+  );
 
   return (
     <Box display='flex' justifyContent='center' flexDirection='column'>
-      {!!labels && labels.map((label, i) => !!label && <Cell label={i} key={i} />)}
+      {!!cells && cells.map((cell) => <Cell cell={cell} key={cell} />)}
     </Box>
   );
 }

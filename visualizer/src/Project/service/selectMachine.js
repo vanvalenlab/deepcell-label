@@ -29,17 +29,20 @@ const createSelectMachine = ({ eventBuses }) =>
         { src: fromEventBus('select', () => eventBuses.canvas) },
         { src: fromEventBus('select', () => eventBuses.labeled) },
         { src: fromEventBus('select', () => eventBuses.overlaps) },
+        { src: fromEventBus('select', () => eventBuses.image) },
       ],
       context: {
         selected: 1,
         hovering: null,
         overlaps: null,
+        frame: 0,
       },
       on: {
         GET_SELECTED: { actions: 'sendSelected' },
 
         HOVERING: { actions: 'setHovering' },
-        OVERLAPS: { actions: 'setOverlaps' },
+        OVERLAPS: { actions: ['setOverlaps'] },
+        FRAME: { actions: 'setFrame' },
         SELECTED: { actions: ['setSelected', 'sendToEventBus'] },
         SET_SELECTED: { actions: send((_, { selected }) => ({ type: 'SELECTED', selected })) },
         SELECT: { actions: 'select' },
@@ -54,35 +57,38 @@ const createSelectMachine = ({ eventBuses }) =>
     {
       actions: {
         sendSelected: send(({ selected }) => ({ type: 'SELECTED', selected }), { to: 'eventBus' }),
-        select: pure(({ selected, hovering, overlaps }) => {
-          const labels = overlaps[hovering];
-          if (labels[selected]) {
-            // Get next label that hovering value encodes
-            const copy = [...labels];
-            copy[0] = 1; // Reset (select 0) after cycling through all labels
-            const reordered = copy.slice(selected + 1).concat(copy.slice(0, selected + 1));
-            const nextLabel = (reordered.findIndex((i) => !!i) + selected + 1) % labels.length;
-            return send({ type: 'SELECTED', selected: nextLabel });
+        select: pure(({ selected, hovering, overlaps, frame }) => {
+          const cells = overlaps.getCellsForValue(hovering, frame);
+          const i = cells.indexOf(selected);
+          let newCell;
+          if (cells.length === 0 || i === cells.length - 1) {
+            newCell = 0;
+          } else if (i === -1) {
+            newCell = cells[0];
+          } else {
+            newCell = cells[i + 1];
           }
-          const firstLabel = labels.findIndex((i) => i === 1);
-          return send({ type: 'SELECTED', selected: firstLabel === -1 ? 0 : firstLabel });
+          return send({ type: 'SELECTED', selected: newCell });
         }),
         reset: send({ type: 'SELECTED', selected: 0 }),
         selectNew: send(({ overlaps }) => ({
           type: 'SELECTED',
-          selected: overlaps[0].length,
+          selected: overlaps.getNewCell(),
         })),
         selectPrevious: send(({ selected, overlaps }) => ({
           type: 'SELECTED',
-          selected: prevLabel(selected, overlaps),
+          selected: selected - 1 < 1 ? overlaps.getNewCell() : selected - 1,
         })),
-        selectNext: send(({ selected, overlaps }) => ({
-          type: 'SELECTED',
-          selected: nextLabel(selected, overlaps),
-        })),
+        selectNext: send(({ selected, overlaps }) => {
+          return {
+            type: 'SELECTED',
+            selected: selected + 1 > overlaps.getNewCell() ? 1 : selected + 1,
+          };
+        }),
         setHovering: assign({ hovering: (_, { hovering }) => hovering }),
         setOverlaps: assign({ overlaps: (_, { overlaps }) => overlaps }),
         setSelected: assign({ selected: (_, { selected }) => selected }),
+        setFrame: assign({ frame: (_, { frame }) => frame }),
         save: respond(({ selected }) => ({ type: 'RESTORE', selected })),
         restore: pure((_, { selected }) => [
           respond('RESTORED'),

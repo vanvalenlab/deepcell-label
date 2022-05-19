@@ -18,12 +18,12 @@ const createWatershedMachine = (context) =>
         y1: 0,
         x2: 0,
         y2: 0,
-        overlaps: null,
+        overlapMatrix: null,
       },
       on: {
         COORDINATES: { actions: 'setCoordinates' },
         HOVERING: { actions: 'setHovering' },
-        OVERLAPS: { actions: 'setOverlaps' },
+        OVERLAP_MATRIX: { actions: 'setOverlapMatrix' },
         SELECTED: { actions: 'setLabel' },
       },
       initial: 'idle',
@@ -79,18 +79,18 @@ const createWatershedMachine = (context) =>
     },
     {
       guards: {
-        validSecondSeed: ({ overlaps, hovering, label, x, y, x1, y2 }) =>
-          overlaps[hovering][label] === 1 && // same label
+        validSecondSeed: ({ overlapMatrix, hovering, label, x, y, x1, y2 }) =>
+          overlapMatrix[hovering][label] === 1 && // same label
           (x !== x1 || y !== y2), // different point
         differentLabel: (ctx, evt) => ctx.label !== evt.label,
-        onLabel: ({ hovering, label, overlaps }) => overlaps[hovering][label] === 1,
-        notOnLabel: ({ hovering, label, overlaps }) => overlaps[hovering][label] === 0,
+        onLabel: ({ hovering, label, overlapMatrix }) => overlapMatrix[hovering][label] === 1,
+        notOnLabel: ({ hovering, label, overlapMatrix }) => overlapMatrix[hovering][label] === 0,
         onNoLabel: ({ hovering }) => hovering === 0,
       },
       actions: {
         setCoordinates: assign({ x: (_, { x }) => x, y: (_, { y }) => y }),
         setHovering: assign({ hovering: (_, { hovering }) => hovering }),
-        setOverlaps: assign({ overlaps: (_, { overlaps }) => overlaps }),
+        setOverlapMatrix: assign({ overlapMatrix: (_, { overlapMatrix }) => overlapMatrix }),
         setFirstPoint: assign({ x1: ({ x }) => x, y1: ({ y }) => y }),
         setSecondPoint: assign({ x2: ({ x }) => x, y2: ({ y }) => y }),
         setLabel: assign({ label: ({ selected }) => selected }),

@@ -3,6 +3,7 @@
 import * as zip from '@zip.js/zip.js';
 import { assign, createMachine, sendParent } from 'xstate';
 import { loadOmeTiff } from '@hms-dbmi/viv';
+import Overlaps from '../overlaps';
 
 type PropType<TObj, TProp extends keyof TObj> = TObj[TProp];
 type UnboxPromise<T extends Promise<any>> = T extends Promise<infer U> ? U : never;
@@ -29,7 +30,6 @@ type Lineage = {
     parent: number | null;
   };
 };
-type Overlaps = (0 | 1)[][];
 type Files = {
   [filename: string]: OmeTiff | Spots | Cells | Lineage | Overlaps;
 };
@@ -68,7 +68,7 @@ async function parseZip(response: Response) {
     if (entry.filename === 'overlaps.json') {
       // @ts-ignore
       const json = await entry.getData(new zip.TextWriter());
-      const overlaps: Overlaps = JSON.parse(json);
+      const overlaps = new Overlaps(JSON.parse(json));
       files[entry.filename] = overlaps;
     }
   }

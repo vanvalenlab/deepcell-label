@@ -8,6 +8,7 @@ const creatFloodMachine = (context) =>
         { id: 'select', src: fromEventBus('flood', () => context.eventBuses.select) },
         { id: 'api', src: fromEventBus('flood', () => context.eventBuses.api) },
         { src: fromEventBus('flood', () => context.eventBuses.overlaps) },
+        { src: fromEventBus('flood', () => context.eventBuses.image) },
       ],
       context: {
         x: null,
@@ -16,12 +17,14 @@ const creatFloodMachine = (context) =>
         floodedLabel: 0,
         hovering: null,
         overlaps: null,
+        frame: null,
       },
       on: {
         COORDINATES: { actions: 'setCoordinates' },
         SELECTED: { actions: 'setFloodingLabel' },
         HOVERING: { actions: 'setHovering' },
-        OVERLAPS: { actions: 'setOverlaps' },
+        OVERLAP_MATRIX: { actions: 'setOverlapMatrix' },
+        FRAME: { actions: 'setFrame' },
         mouseup: [
           { cond: 'shift', actions: 'setFloodedLabel' },
           { cond: 'onFloodedLabel', actions: 'flood' },
@@ -32,14 +35,14 @@ const creatFloodMachine = (context) =>
     {
       guards: {
         shift: (_, event) => event.shiftKey,
-        onFloodedLabel: ({ floodedLabel, hovering, overlaps }) =>
-          overlaps[hovering][floodedLabel] === 1,
+        onFloodedLabel: ({ floodedLabel, hovering, overlapMatrix }) =>
+          overlapMatrix[hovering][floodedLabel] === 1,
       },
       actions: {
         setFloodingLabel: assign({ floodingLabel: (_, { selected }) => selected }),
         setFloodedLabel: assign({
-          floodedLabel: ({ hovering, overlaps, floodedLabel }) => {
-            const labels = overlaps[hovering];
+          floodedLabel: ({ hovering, overlapMatrix, frame, floodedLabel }) => {
+            const labels = overlapMatrix[hovering];
             if (labels[floodedLabel]) {
               // Get next label that hovering value encodes
               const reordered = labels
@@ -55,7 +58,7 @@ const creatFloodMachine = (context) =>
         }),
         setCoordinates: assign({ x: (_, { x }) => x, y: (_, { y }) => y }),
         setHovering: assign({ hovering: (_, { hovering }) => hovering }),
-        setOverlaps: assign({ overlaps: (_, { overlaps }) => overlaps }),
+        setOverlapMatrix: assign({ overlapMatrix: (_, { overlapMatrix }) => overlapMatrix }),
         flood: send(
           ({ floodingLabel, floodedLabel, x, y }, event) => ({
             type: 'EDIT',

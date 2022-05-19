@@ -3,6 +3,7 @@
  */
 import { openDB } from 'idb';
 import { assign, Machine, sendParent } from 'xstate';
+import Overlaps from '../overlaps';
 import { fromEventBus } from './eventBus';
 
 function createIDBMachine({ projectId, eventBuses }) {
@@ -14,7 +15,7 @@ function createIDBMachine({ projectId, eventBuses }) {
         project: {
           raw: null,
           labeled: null,
-          overlaps: null,
+          overlaps: null, // LOADED events send Overlaps object, but write list of overlaps to IDB
           lineage: null,
           labels: null,
         },
@@ -78,8 +79,13 @@ function createIDBMachine({ projectId, eventBuses }) {
       actions: {
         updateProject: assign({
           project: (ctx, evt) => {
-            const { frame, feature, labeled, overlaps } = evt;
+            console.log(ctx, evt);
+            const { frame, feature, labeled } = evt;
             ctx.project.labeled[feature][frame] = labeled;
+            const overlaps = [
+              ...ctx.project.overlaps.filter((o) => o.z !== evt.frame),
+              ...evt.overlaps.map((o) => ({ ...o, z: evt.frame })),
+            ];
             return { ...ctx.project, labeled: ctx.project.labeled, overlaps };
           },
         }),
@@ -97,7 +103,7 @@ function createIDBMachine({ projectId, eventBuses }) {
           project: {
             raw: evt.raw,
             labeled: evt.labeled,
-            overlaps: evt.overlaps,
+            overlaps: evt.overlaps.overlaps, // LOADED sends Overlaps object, need to get overlaps list
             lineage: evt.lineage,
             labels: evt.labels,
           },
@@ -110,7 +116,7 @@ function createIDBMachine({ projectId, eventBuses }) {
           labels: ctx.project.labels, // TODO: swap labels for cells?
           spots: ctx.project.spots, // TODO: include spots in IDB
           lineage: ctx.project.lineage,
-          overlaps: ctx.project.overlaps,
+          overlaps: new Overlaps(ctx.project.overlaps),
           message: 'from idb machine',
         })),
       },

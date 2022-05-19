@@ -1,4 +1,5 @@
 import { useSelector } from '@xstate/react';
+import equal from 'fast-deep-equal';
 import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
 import {
@@ -7,7 +8,6 @@ import {
   useCanvas,
   useImage,
   useLabeled,
-  useLabels,
   useOverlaps,
   useSelect,
 } from '../ProjectContext';
@@ -24,9 +24,6 @@ export const LabeledCanvas = ({ setCanvases }) => {
   const highlight = useSelector(labeled, (state) => state.context.highlight);
   const opacity = useSelector(labeled, (state) => state.context.labelsOpacity);
 
-  const labels = useLabels();
-  const colormap = useSelector(labels, (state) => state.context.colormap);
-
   const image = useImage();
   const frame = useSelector(image, (state) => state.context.frame);
 
@@ -37,7 +34,12 @@ export const LabeledCanvas = ({ setCanvases }) => {
   );
 
   const overlaps = useOverlaps();
-  const overlapsArray = useSelector(overlaps, (state) => state.context.overlaps);
+  const overlapsMatrix = useSelector(
+    overlaps,
+    (state) => state.context.overlaps?.getMatrix(frame),
+    equal
+  );
+  const colormap = useSelector(overlaps, (state) => state.context.colormap);
 
   const select = useSelect();
   const selected = useSelector(select, (state) => state.context.selected);
@@ -50,11 +52,11 @@ export const LabeledCanvas = ({ setCanvases }) => {
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
-      `function (labelArray, overlaps, opacity, colormap, selected, numLabels) {
+      `function (labelArray, overlapsMatrix, opacity, colormap, selected, numLabels) {
         const value = labelArray[this.constants.h - 1 - this.thread.y][this.thread.x];
         let [r, g, b, a] = [0, 0, 0, 1];
         for (let i = 0; i < numLabels; i++) {
-          if (overlaps[value][i] === 1) {
+          if (overlapsMatrix[value][i] === 1) {
             let [sr, sg, sb] = colormap[i];
             if (i !== selected) {
               a = a * (1 - opacity[0]);
@@ -89,16 +91,16 @@ export const LabeledCanvas = ({ setCanvases }) => {
   }, [width, height, kernelCanvas]);
 
   useEffect(() => {
-    if (labeledArray && overlapsArray) {
-      const numLabels = overlapsArray[0].length;
+    if (labeledArray && overlapsMatrix) {
+      const numLabels = overlapsMatrix[0].length;
       // Compute the label image with the kernel
-      kernelRef.current(labeledArray, overlapsArray, opacity, colormap, selected, numLabels);
+      kernelRef.current(labeledArray, overlapsMatrix, opacity, colormap, selected, numLabels);
       // Rerender the parent canvas with the kernel output
       setCanvases((canvases) => ({ ...canvases, labeled: kernelCanvas }));
     }
   }, [
     labeledArray,
-    overlapsArray,
+    overlapsMatrix,
     opacity,
     colormap,
     selected,

@@ -19,19 +19,19 @@ const createTrimMachine = (context) =>
         COORDINATES: { actions: 'setCoordinates' },
         HOVERING: { actions: 'setHovering' },
         SELECTED: { actions: 'setLabel' },
-        OVERLAPS: { actions: 'setOverlaps' },
+        OVERLAP_MATRIX: { actions: 'setOverlapMatrix' },
         mouseup: [{ cond: 'onLabel', actions: 'trim' }, { actions: 'select' }],
       },
     },
     {
       guards: {
-        onLabel: ({ label, hovering, overlaps }) => overlaps[hovering][label] === 1,
+        onLabel: ({ label, hovering, overlapMatrix }) => overlapMatrix[hovering][label] === 1,
       },
       actions: {
         setCoordinates: assign({ x: (_, { x }) => x, y: (_, { y }) => y }),
         setHovering: assign({ hovering: (_, { hovering }) => hovering }),
         setLabel: assign({ label: (_, { selected }) => selected }),
-        setOverlaps: assign({ overlaps: (_, { overlaps }) => overlaps }),
+        setOverlapMatrix: assign({ overlapMatrix: (_, { overlapMatrix }) => overlapMatrix }),
         select: send({ type: 'SELECT' }, { to: 'select' }),
         trim: send(
           ({ x, y, label }, event) => ({

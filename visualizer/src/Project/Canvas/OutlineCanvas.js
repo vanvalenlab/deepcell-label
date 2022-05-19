@@ -1,4 +1,5 @@
 import { useSelector } from '@xstate/react';
+import equal from 'fast-deep-equal';
 import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
 import {
@@ -33,7 +34,11 @@ const OutlineCanvas = ({ setCanvases }) => {
   );
 
   const overlaps = useOverlaps();
-  const overlapsArray = useSelector(overlaps, (state) => state.context.overlaps);
+  const overlapsMatrix = useSelector(
+    overlaps,
+    (state) => state.context.overlaps?.getMatrix(frame),
+    equal
+  );
 
   const kernelRef = useRef();
   const kernelCanvas = useAlphaKernelCanvas();
@@ -91,14 +96,14 @@ const OutlineCanvas = ({ setCanvases }) => {
   }, [kernelCanvas, width, height]);
 
   useEffect(() => {
-    if (labeledArray && overlapsArray) {
-      const numLabels = overlapsArray[0].length;
+    if (labeledArray && overlapsMatrix) {
+      const numLabels = overlapsMatrix[0].length;
       // Compute the outline of the labels with the kernel
-      kernelRef.current(labeledArray, overlapsArray, numLabels, opacity, selected);
+      kernelRef.current(labeledArray, overlapsMatrix, numLabels, opacity, selected);
       // Rerender the parent canvas
       setCanvases((canvases) => ({ ...canvases, outline: kernelCanvas }));
     }
-  }, [labeledArray, overlapsArray, opacity, selected, setCanvases, kernelCanvas, width, height]);
+  }, [labeledArray, overlapsMatrix, opacity, selected, setCanvases, kernelCanvas, width, height]);
 
   return null;
 };

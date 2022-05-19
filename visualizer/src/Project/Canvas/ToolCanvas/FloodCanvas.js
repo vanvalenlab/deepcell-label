@@ -1,4 +1,5 @@
 import { useSelector } from '@xstate/react';
+import equal from 'fast-deep-equal';
 import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
 import {
@@ -32,7 +33,11 @@ const FloodCanvas = ({ setCanvases }) => {
   );
 
   const overlaps = useOverlaps();
-  const overlapsArray = useSelector(overlaps, (state) => state.context.overlaps);
+  const overlapsMatrix = useSelector(
+    overlaps,
+    (state) => state.context.overlaps?.getMatrix(frame),
+    equal
+  );
 
   const kernelRef = useRef();
   const kernelCanvas = useAlphaKernelCanvas();
@@ -81,12 +86,12 @@ const FloodCanvas = ({ setCanvases }) => {
   }, [kernelCanvas, width, height]);
 
   useEffect(() => {
-    if (labeledArray && overlapsArray) {
-      kernelRef.current(labeledArray, overlapsArray, label);
+    if (labeledArray && overlapsMatrix) {
+      kernelRef.current(labeledArray, overlapsMatrix, label);
       // Rerender the parent canvas
       setCanvases((canvases) => ({ ...canvases, tool: kernelCanvas }));
     }
-  }, [labeledArray, overlapsArray, label, setCanvases, kernelCanvas, width, height]);
+  }, [labeledArray, overlapsMatrix, label, setCanvases, kernelCanvas, width, height]);
 
   return null;
 };

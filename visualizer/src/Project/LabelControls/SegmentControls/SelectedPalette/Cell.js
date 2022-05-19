@@ -2,9 +2,9 @@ import Avatar from '@mui/material/Avatar';
 import React from 'react';
 import { useHexColormap } from '../../../ProjectContext';
 
-const Cell = React.forwardRef(({ label, onClick }, ref) => {
+const Cell = React.forwardRef(({ cell, onClick }, ref) => {
   const colors = useHexColormap();
-  const color = colors[label] ?? '#000000';
+  const color = colors[cell] ?? '#000000';
 
   return (
     <Avatar
@@ -12,13 +12,13 @@ const Cell = React.forwardRef(({ label, onClick }, ref) => {
       sx={{ m: 1, height: '2.5rem', width: '2.5rem', backgroundColor: color }}
       onClick={onClick}
     >
-      {label}
+      {cell}
     </Avatar>
   );
 });
 
 Cell.defaultProps = {
-  label: 0,
+  cell: 0,
   onClick: () => {},
 };
 

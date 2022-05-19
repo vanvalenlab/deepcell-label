@@ -6,7 +6,7 @@ import {
   useArrays,
   useCanvas,
   useFullResolutionCanvas,
-  useLabels,
+  useOverlaps,
   useSpots,
 } from '../ProjectContext';
 
@@ -42,8 +42,8 @@ function SpotsCanvas({ setCanvases }) {
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
 
-  const labels = useLabels();
-  const colormap = useSelector(labels, (state) => state.context.colormap);
+  const overlaps = useOverlaps();
+  const colormap = useSelector(overlaps, (state) => state.context.colormap);
 
   const drawCanvas = useFullResolutionCanvas();
   const movingCanvas = useFullResolutionCanvas();
