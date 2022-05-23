@@ -21,6 +21,7 @@ function createSwapMachine(context) {
         mouseup: [
           { cond: 'shift', actions: 'setSwapCell' },
           { cond: 'onSwapCell', actions: 'swap' },
+          { cond: 'onSelected', actions: 'swap' },
           { actions: 'setSwapCell' },
         ],
       },
@@ -29,6 +30,7 @@ function createSwapMachine(context) {
       guards: {
         shift: (_, evt) => evt.shiftKey,
         onSwapCell: (ctx) => ctx.overlapMatrix[ctx.hovering][ctx.swapCell] === 1,
+        onSelected: (ctx) => ctx.overlapMatrix[ctx.hovering][ctx.selected] === 1,
       },
       actions: {
         setSelected: assign({ selected: (_, evt) => evt.selected }),
@@ -47,17 +49,9 @@ function createSwapMachine(context) {
         }),
         setHovering: assign({ hovering: (_, evt) => evt.hovering }),
         setOverlapMatrix: assign({ overlapMatrix: (_, evt) => evt.overlapMatrix }),
-        swap: send(
-          (ctx, evt) => ({
-            type: 'EDIT',
-            action: 'flood',
-            args: {
-              a: ctx.selected,
-              b: ctx.swapCell,
-            },
-          }),
-          { to: 'overlaps' }
-        ),
+        swap: send((ctx) => ({ type: 'SWAP', a: ctx.selected, b: ctx.swapCell }), {
+          to: 'overlaps',
+        }),
       },
     }
   );
