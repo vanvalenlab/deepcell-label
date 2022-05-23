@@ -273,6 +273,28 @@ export function useFlood() {
   return tool;
 }
 
+export function useSwap() {
+  const project = useProject();
+  const tool = useSelector(project, (state) => {
+    const labelMode = state.context.toolRef;
+    const editCells = labelMode.state.context.editCellsRef;
+    const tools = editCells.state.context.tools;
+    return tools.swap;
+  });
+  return tool;
+}
+
+export function useReplace() {
+  const project = useProject();
+  const tool = useSelector(project, (state) => {
+    const labelMode = state.context.toolRef;
+    const editCells = labelMode.state.context.editCellsRef;
+    const tools = editCells.state.context.tools;
+    return tools.replace;
+  });
+  return tool;
+}
+
 function componentToHex(c) {
   var hex = c.toString(16);
   return hex.length === 1 ? '0' + hex : hex;
