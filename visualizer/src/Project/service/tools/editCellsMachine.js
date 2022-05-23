@@ -3,6 +3,7 @@ import { fromEventBus } from '../eventBus';
 import createDeleteMachine from './editCells/deleteMachine';
 import createReplaceMachine from './editCells/replaceMachine';
 import createSwapMachine from './editCells/swapMachine';
+import createSelectMachine from './segment/selectMachine';
 
 const { pure, respond } = actions;
 
@@ -52,6 +53,7 @@ function createEditCellsMachine({ eventBuses }) {
         restore: assign((_, { tool }) => ({ tool })),
         spawnTools: assign({
           tools: (context) => ({
+            select: spawn(createSelectMachine(context), 'select'),
             swap: spawn(createSwapMachine(context), 'swap'),
             replace: spawn(createReplaceMachine(context), 'replace'),
             delete: spawn(createDeleteMachine(context), 'delete'),

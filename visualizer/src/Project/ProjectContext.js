@@ -90,13 +90,22 @@ export function useSelect() {
   return select;
 }
 
-export function useEditLineage(label) {
+export function useEditLineage() {
   const project = useProject();
   const editLineage = useSelector(project, (state) => {
     const labelMode = state.context.toolRef;
     return labelMode.state.context.editLineageRef;
   });
   return editLineage;
+}
+
+export function useEditCells() {
+  const project = useProject();
+  const editCells = useSelector(project, (state) => {
+    const labelMode = state.context.toolRef;
+    return labelMode.state.context.editCellsRef;
+  });
+  return editCells;
 }
 
 export function useApi() {
