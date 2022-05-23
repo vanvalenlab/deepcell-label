@@ -6,22 +6,18 @@ import {
   useAlphaKernelCanvas,
   useArrays,
   useCanvas,
-  useFlood,
   useImage,
   useLabeled,
   useOverlaps,
 } from '../../ProjectContext';
 
-const FloodCanvas = ({ setCanvases }) => {
+function OutlineCellCanvas({ setCanvases, cell }) {
   const canvas = useCanvas();
   const width = useSelector(canvas, (state) => state.context.width);
   const height = useSelector(canvas, (state) => state.context.height);
 
   const labeled = useLabeled();
   const feature = useSelector(labeled, (state) => state.context.feature);
-
-  const flood = useFlood();
-  const label = useSelector(flood, (state) => state.context.floodedLabel);
 
   const image = useImage();
   const frame = useSelector(image, (state) => state.context.frame);
@@ -45,7 +41,7 @@ const FloodCanvas = ({ setCanvases }) => {
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
-      `function (data, overlaps, label) {
+      `function (data, overlaps, cell) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
         const value = data[y][x];
@@ -65,8 +61,8 @@ const FloodCanvas = ({ setCanvases }) => {
         if (y !== this.constants.h - 1) {
           east = data[y + 1][x];
         }
-        if (overlaps[value][label] === 1) {
-          if (overlaps[north][label] === 0 || overlaps[south][label] === 0 || overlaps[west][label] === 0 || overlaps[east][label] === 0) {
+        if (overlaps[value][cell] === 1) {
+          if (overlaps[north][cell] === 0 || overlaps[south][cell] === 0 || overlaps[west][cell] === 0 || overlaps[east][label] === 0) {
             this.color(1, 0, 0, 1);
           }
         }
@@ -87,13 +83,13 @@ const FloodCanvas = ({ setCanvases }) => {
 
   useEffect(() => {
     if (labeledArray && overlapsMatrix) {
-      kernelRef.current(labeledArray, overlapsMatrix, label);
+      kernelRef.current(labeledArray, overlapsMatrix, cell);
       // Rerender the parent canvas
       setCanvases((canvases) => ({ ...canvases, tool: kernelCanvas }));
     }
-  }, [labeledArray, overlapsMatrix, label, setCanvases, kernelCanvas, width, height]);
+  }, [labeledArray, overlapsMatrix, cell, setCanvases, kernelCanvas, width, height]);
 
   return null;
-};
+}
 
-export default FloodCanvas;
+export default OutlineCellCanvas;

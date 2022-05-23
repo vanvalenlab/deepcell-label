@@ -1,8 +1,8 @@
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useLabelMode, useSegment } from '../../ProjectContext';
+import { useFlood, useLabelMode, useSegment } from '../../ProjectContext';
 import BrushCanvas from './BrushCanvas';
-import FloodCanvas from './FloodCanvas';
+import OutlineCellCanvas from './OutlineCellCanvas';
 import ThresholdCanvas from './ThresholdCanvas';
 import WatershedCanvas from './WatershedCanvas';
 
@@ -16,6 +16,9 @@ function ToolCanvas({ setCanvases }) {
     state.matches('segment') ? 'segment' : state.matches('editLineage') ? 'track' : false
   );
 
+  const flood = useFlood();
+  const cell = useSelector(flood, (state) => state.context.floodedCell);
+
   if (mode === 'track') {
     return null;
   }
@@ -25,7 +28,7 @@ function ToolCanvas({ setCanvases }) {
       {tool === 'brush' && <BrushCanvas setCanvases={setCanvases} />}
       {tool === 'threshold' && <ThresholdCanvas setCanvases={setCanvases} />}
       {tool === 'watershed' && <WatershedCanvas setCanvases={setCanvases} />}
-      {tool === 'flood' && <FloodCanvas setCanvases={setCanvases} />}
+      {tool === 'flood' && <OutlineCellCanvas setCanvases={setCanvases} cell={cell} />}
     </>
   );
 }
