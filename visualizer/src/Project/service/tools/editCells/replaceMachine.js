@@ -6,7 +6,7 @@ function createReplaceMachine(context) {
     {
       invoke: [
         { id: 'select', src: fromEventBus('replace', () => context.eventBuses.select) },
-        { src: fromEventBus('replace', () => context.eventBuses.overlaps) },
+        { id: 'overlaps', src: fromEventBus('replace', () => context.eventBuses.overlaps) },
       ],
       context: {
         selected: context.selected,

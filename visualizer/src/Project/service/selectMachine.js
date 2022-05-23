@@ -24,7 +24,7 @@ const createSelectMachine = ({ eventBuses }) =>
 
         HOVERING: { actions: 'setHovering' },
         OVERLAPS: { actions: ['setOverlaps'] },
-        FRAME: { actions: 'setFrame' },
+        SET_FRAME: { actions: 'setFrame' },
         SELECTED: { actions: ['setSelected', 'sendToEventBus'] },
         SET_SELECTED: { actions: send((_, { selected }) => ({ type: 'SELECTED', selected })) },
         SELECT: { actions: 'select' },

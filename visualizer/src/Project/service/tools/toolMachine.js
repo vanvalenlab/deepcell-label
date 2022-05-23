@@ -71,8 +71,12 @@ const createToolMachine = ({ eventBuses }) =>
         SAVE: { actions: 'save' },
         RESTORE: { target: '.checkTool', actions: ['restore', respond('RESTORED')] },
 
-        HOVERING: { actions: [forwardTo('segment'), forwardTo('editLineage')] },
-        COORDINATES: { actions: [forwardTo('segment'), forwardTo('editLineage')] },
+        HOVERING: {
+          actions: [forwardTo('segment'), forwardTo('editLineage'), forwardTo('editCells')],
+        },
+        COORDINATES: {
+          actions: [forwardTo('segment'), forwardTo('editLineage'), forwardTo('editCells')],
+        },
 
         SEGMENT: 'segment',
         EDIT_LINEAGE: 'editLineage',

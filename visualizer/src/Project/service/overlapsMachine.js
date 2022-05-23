@@ -30,7 +30,7 @@ const createOverlapsMachine = ({ eventBuses }) =>
         waiting: {
           on: {
             SET_FRAME_MODE: { actions: 'setFrameMode' },
-            FRAME: { actions: 'setFrame' },
+            SET_FRAME: { actions: 'setFrame' },
             LOADED: {
               target: 'editedOverlaps',
               actions: 'setOverlaps',
@@ -44,10 +44,10 @@ const createOverlapsMachine = ({ eventBuses }) =>
         idle: {
           on: {
             SET_FRAME_MODE: { actions: 'setFrameMode' },
-            FRAME: { actions: ['setFrame', 'sendOverlapMatrix'] },
+            SET_FRAME: { actions: [(c, e) => console.log(e), 'setFrame', 'sendOverlapMatrix'] },
             EDITED: { actions: 'updateOverlaps', target: 'editedOverlaps' },
             REPLACE: { actions: 'replace', target: 'editedOverlaps' },
-            DELETE: { actions: 'delete', target: 'editedOverlaps' },
+            DELETE: { actions: [(c, e) => console.log(c, e), 'delete'], target: 'editedOverlaps' },
             SWAP: { actions: 'swap', target: 'editedOverlaps' },
           },
         },
@@ -113,7 +113,7 @@ const createOverlapsMachine = ({ eventBuses }) =>
               overlaps = ctx.overlaps.overlaps.filter((o) => o.cell !== evt.cell);
             } else {
               overlaps = ctx.overlaps.overlaps.filter(
-                (o) => o.z !== ctx.frame || o.cell !== ctx.cell
+                (o) => o.z !== ctx.frame || o.cell !== evt.cell
               );
             }
             return new Overlaps(overlaps);

@@ -6,7 +6,7 @@ function createSwapMachine(context) {
     {
       invoke: [
         { id: 'select', src: fromEventBus('flood', () => context.eventBuses.select) },
-        { src: fromEventBus('flood', () => context.eventBuses.overlaps) },
+        { id: 'overlaps', src: fromEventBus('flood', () => context.eventBuses.overlaps) },
       ],
       context: {
         selected: context.selected,

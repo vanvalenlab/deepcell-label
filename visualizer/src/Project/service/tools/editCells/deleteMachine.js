@@ -5,8 +5,8 @@ function createDeleteMachine(context) {
   return Machine(
     {
       invoke: [
-        { id: 'select', src: fromEventBus('swap', () => context.eventBuses.select) },
-        { src: fromEventBus('swap', () => context.eventBuses.overlaps) },
+        { id: 'select', src: fromEventBus('delete', () => context.eventBuses.select) },
+        { id: 'overlaps', src: fromEventBus('delete', () => context.eventBuses.overlaps) },
       ],
       context: {
         selected: context.selected,

@@ -17,14 +17,12 @@ const creatFloodMachine = (context) =>
         floodedLabel: 0,
         hovering: null,
         overlaps: null,
-        frame: null,
       },
       on: {
         COORDINATES: { actions: 'setCoordinates' },
         SELECTED: { actions: 'setFloodingLabel' },
         HOVERING: { actions: 'setHovering' },
         OVERLAP_MATRIX: { actions: 'setOverlapMatrix' },
-        FRAME: { actions: 'setFrame' },
         mouseup: [
           { cond: 'shift', actions: 'setFloodedLabel' },
           { cond: 'onFloodedLabel', actions: 'flood' },
@@ -41,7 +39,7 @@ const creatFloodMachine = (context) =>
       actions: {
         setFloodingLabel: assign({ floodingLabel: (_, { selected }) => selected }),
         setFloodedLabel: assign({
-          floodedLabel: ({ hovering, overlapMatrix, frame, floodedLabel }) => {
+          floodedLabel: ({ hovering, overlapMatrix, floodedLabel }) => {
             const labels = overlapMatrix[hovering];
             if (labels[floodedLabel]) {
               // Get next label that hovering value encodes
