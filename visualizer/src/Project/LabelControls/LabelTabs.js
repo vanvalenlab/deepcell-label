@@ -5,7 +5,13 @@ import { useLabelMode } from '../ProjectContext';
 function LabelTabs() {
   const labelMode = useLabelMode();
   const value = useSelector(labelMode, (state) => {
-    return state.matches('segment') ? 0 : state.matches('editLineage') ? 1 : false;
+    return state.matches('segment')
+      ? 0
+      : state.matches('editCells')
+      ? 1
+      : state.matches('editLineage')
+      ? 2
+      : false;
   });
   const handleChange = (event, newValue) => {
     switch (newValue) {
@@ -13,6 +19,9 @@ function LabelTabs() {
         labelMode.send('SEGMENT');
         break;
       case 1:
+        labelMode.send('EDIT_CELLS');
+        break;
+      case 2:
         labelMode.send('EDIT_LINEAGE');
         break;
       default:
@@ -30,6 +39,7 @@ function LabelTabs() {
         onChange={handleChange}
       >
         <Tab label='Segment' />
+        <Tab label='Cells' />
         <Tab label='Lineage' />
       </Tabs>
     </Paper>

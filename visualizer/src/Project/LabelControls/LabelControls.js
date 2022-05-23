@@ -1,8 +1,10 @@
 import Box from '@mui/material/Box';
 import { useSelector } from '@xstate/react';
 import { useLabelMode } from '../ProjectContext';
+import CellControls from './CellControls';
 import SegmentControls from './SegmentControls';
 import TrackingControls from './TrackingControls';
+import UndoRedo from './UndoRedo';
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -23,7 +25,13 @@ function TabPanel(props) {
 function LabelControls() {
   const labelMode = useLabelMode();
   const value = useSelector(labelMode, (state) => {
-    return state.matches('segment') ? 0 : state.matches('editLineage') ? 1 : false;
+    return state.matches('segment')
+      ? 0
+      : state.matches('editCells')
+      ? 1
+      : state.matches('editLineage')
+      ? 2
+      : false;
   });
 
   return (
@@ -33,10 +41,14 @@ function LabelControls() {
         p: 1,
       }}
     >
+      <UndoRedo />
       <TabPanel value={value} index={0}>
         <SegmentControls />
       </TabPanel>
       <TabPanel value={value} index={1}>
+        <CellControls />
+      </TabPanel>
+      <TabPanel value={value} index={2}>
         <TrackingControls />
       </TabPanel>
     </Box>
