@@ -44,10 +44,10 @@ const createOverlapsMachine = ({ eventBuses }) =>
         idle: {
           on: {
             SET_FRAME_MODE: { actions: 'setFrameMode' },
-            SET_FRAME: { actions: [(c, e) => console.log(e), 'setFrame', 'sendOverlapMatrix'] },
+            SET_FRAME: { actions: ['setFrame', 'sendOverlapMatrix'] },
             EDITED: { actions: 'updateOverlaps', target: 'editedOverlaps' },
             REPLACE: { actions: 'replace', target: 'editedOverlaps' },
-            DELETE: { actions: [(c, e) => console.log(c, e), 'delete'], target: 'editedOverlaps' },
+            DELETE: { actions: 'delete', target: 'editedOverlaps' },
             SWAP: { actions: 'swap', target: 'editedOverlaps' },
           },
         },

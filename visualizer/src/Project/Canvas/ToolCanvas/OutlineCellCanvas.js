@@ -25,7 +25,7 @@ function OutlineCellCanvas({ setCanvases, cell }) {
   const arrays = useArrays();
   const labeledArray = useSelector(
     arrays,
-    (state) => state.context.labeledArrays && state.context.labeledArrays[feature][frame]
+    (state) => state.context.labeled && state.context.labeled[feature][frame]
   );
 
   const overlaps = useOverlaps();
@@ -62,7 +62,7 @@ function OutlineCellCanvas({ setCanvases, cell }) {
           east = data[y + 1][x];
         }
         if (overlaps[value][cell] === 1) {
-          if (overlaps[north][cell] === 0 || overlaps[south][cell] === 0 || overlaps[west][cell] === 0 || overlaps[east][label] === 0) {
+          if (overlaps[north][cell] === 0 || overlaps[south][cell] === 0 || overlaps[west][cell] === 0 || overlaps[east][cell] === 0) {
             this.color(1, 0, 0, 1);
           }
         }

@@ -13,57 +13,56 @@ const creatFloodMachine = (context) =>
       context: {
         x: null,
         y: null,
-        floodingLabel: context.selected,
-        floodedLabel: 0,
+        floodingCell: context.selected,
+        floodedCell: 0,
         hovering: null,
         overlaps: null,
       },
       on: {
         COORDINATES: { actions: 'setCoordinates' },
-        SELECTED: { actions: 'setFloodingLabel' },
+        SELECTED: { actions: 'setFloodingCell' },
         HOVERING: { actions: 'setHovering' },
         OVERLAP_MATRIX: { actions: 'setOverlapMatrix' },
         mouseup: [
-          { cond: 'shift', actions: 'setFloodedLabel' },
-          { cond: 'onFloodedLabel', actions: 'flood' },
-          { actions: 'setFloodedLabel' },
+          { cond: 'shift', actions: 'setFloodedCell' },
+          { cond: 'onFloodedCell', actions: 'flood' },
+          { actions: 'setFloodedCell' },
         ],
       },
     },
     {
       guards: {
         shift: (_, event) => event.shiftKey,
-        onFloodedLabel: ({ floodedLabel, hovering, overlapMatrix }) =>
-          overlapMatrix[hovering][floodedLabel] === 1,
+        onFloodedCell: ({ floodedCell, hovering, overlapMatrix }) =>
+          overlapMatrix[hovering][floodedCell] === 1,
       },
       actions: {
-        setFloodingLabel: assign({ floodingLabel: (_, { selected }) => selected }),
-        setFloodedLabel: assign({
-          floodedLabel: ({ hovering, overlapMatrix, floodedLabel }) => {
-            const labels = overlapMatrix[hovering];
-            if (labels[floodedLabel]) {
-              // Get next label that hovering value encodes
-              const reordered = labels
-                .slice(floodedLabel + 1)
-                .concat(labels.slice(0, floodedLabel + 1));
-              const nextLabel =
-                (reordered.findIndex((i) => !!i) + floodedLabel + 1) % labels.length;
-              return nextLabel;
+        setFloodingCell: assign({ floodingCell: (_, { selected }) => selected }),
+        setFloodedCell: assign({
+          floodedCell: ({ hovering, overlapMatrix, floodedCell }) => {
+            const cells = overlapMatrix[hovering];
+            if (cells[floodedCell]) {
+              // Get next cell that hovering value encodes
+              const reordered = cells
+                .slice(floodedCell + 1)
+                .concat(cells.slice(0, floodedCell + 1));
+              const nextCell = (reordered.findIndex((i) => !!i) + floodedCell + 1) % cells.length;
+              return nextCell;
             }
-            const firstLabel = labels.findIndex((i) => i === 1);
-            return firstLabel === -1 ? 0 : firstLabel;
+            const firstCell = cells.findIndex((i) => i === 1);
+            return firstCell === -1 ? 0 : firstCell;
           },
         }),
         setCoordinates: assign({ x: (_, { x }) => x, y: (_, { y }) => y }),
         setHovering: assign({ hovering: (_, { hovering }) => hovering }),
         setOverlapMatrix: assign({ overlapMatrix: (_, { overlapMatrix }) => overlapMatrix }),
         flood: send(
-          ({ floodingLabel, floodedLabel, x, y }, event) => ({
+          ({ floodingCell, floodedCell, x, y }, event) => ({
             type: 'EDIT',
             action: 'flood',
             args: {
-              foreground: floodingLabel,
-              background: floodedLabel,
+              foreground: floodingCell,
+              background: floodedCell,
               x,
               y,
             },

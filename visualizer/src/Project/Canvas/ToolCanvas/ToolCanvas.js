@@ -17,7 +17,7 @@ function ToolCanvas({ setCanvases }) {
 
   const labelMode = useLabelMode();
   const mode = useSelector(labelMode, (state) =>
-    state.matches('segment') ? 'segment' : state.matches('editLineage') ? 'track' : false
+    state.matches('segment') ? 'segment' : state.matches('editCells') ? 'cells' : false
   );
 
   switch (mode) {
@@ -34,8 +34,8 @@ function ToolCanvas({ setCanvases }) {
         default:
           return null;
       }
-    case 'editLineage':
-      switch (segmentTool) {
+    case 'cells':
+      switch (cellsTool) {
         case 'swap':
           return <SwapCanvas setCanvases={setCanvases} />;
         case 'replace':

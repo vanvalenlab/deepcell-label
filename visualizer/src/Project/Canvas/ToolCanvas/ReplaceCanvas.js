@@ -6,6 +6,10 @@ function ReplaceCanvas({ setCanvases }) {
   const replace = useReplace();
   const cell = useSelector(replace, (state) => state.context.replaceCell);
 
+  if (!cell) {
+    return null;
+  }
+
   return <OutlineCellCanvas setCanvases={setCanvases} cell={cell} />;
 }
 

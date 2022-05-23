@@ -51,8 +51,8 @@ function SpotsCanvas({ setCanvases }) {
   const arrays = useArrays();
   const labeledArray = useSelector(
     arrays,
-    ({ context: { frame, feature, labeledArrays } }) =>
-      labeledArrays && labeledArrays[feature][frame]
+    (state) =>
+      state.context.labeled && state.context.labeled[state.context.feature][state.context.frame]
   );
 
   const spots = useSpots();
