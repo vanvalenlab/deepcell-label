@@ -23,39 +23,43 @@ const createOverlapsMachine = ({ eventBuses }) =>
           ...colormap({ colormap: 'viridis', format: 'rgba' }),
           [255, 255, 255, 1],
         ],
+        frameMode: 'one',
       },
       initial: 'waiting',
-      on: {
-        FRAME: { actions: 'setFrame' },
-      },
       states: {
         waiting: {
           on: {
+            SET_FRAME_MODE: { actions: 'setFrameMode' },
+            FRAME: { actions: 'setFrame' },
             LOADED: {
-              target: 'idle',
-              actions: ['setOverlaps', 'setColormap'],
+              target: 'editedOverlaps',
+              actions: 'setOverlaps',
             },
           },
         },
+        editedOverlaps: {
+          entry: ['setColormap', 'sendOverlaps', 'sendOverlapMatrix'],
+          always: 'idle',
+        },
         idle: {
-          entry: ['sendOverlaps', 'sendOverlapMatrix'],
           on: {
+            SET_FRAME_MODE: { actions: 'setFrameMode' },
             FRAME: { actions: ['setFrame', 'sendOverlapMatrix'] },
-            EDITED: {
-              actions: ['updateOverlaps', 'setColormap', 'sendOverlaps', 'sendOverlapMatrix'],
-            },
+            EDITED: { actions: 'updateOverlaps', target: 'editedOverlaps' },
+            REPLACE: { actions: 'replace', target: 'editedOverlaps' },
+            DELETE: { actions: 'delete', target: 'editedOverlaps' },
+            SWAP: { actions: 'swap', target: 'editedOverlaps' },
           },
         },
       },
     },
     {
-      guards: {},
       actions: {
-        setFrame: assign({ frame: (_, event) => event.frame }),
-        setOverlaps: assign({ overlaps: (_, event) => event.overlaps }),
+        setFrameMode: assign({ frameMode: (_, evt) => evt.frameMode }),
+        setFrame: assign({ frame: (_, evt) => evt.frame }),
+        setOverlaps: assign({ overlaps: (_, evt) => evt.overlaps }),
         updateOverlaps: assign({
           overlaps: (ctx, evt) => {
-            console.log(ctx, evt);
             return new Overlaps([
               ...ctx.overlaps.overlaps.filter((o) => o.z !== evt.frame),
               ...evt.overlaps.map((o) => ({ ...o, z: evt.frame })),
@@ -86,6 +90,57 @@ const createOverlapsMachine = ({ eventBuses }) =>
             }),
             [255, 255, 255, 1],
           ],
+        }),
+        replace: assign({
+          overlaps: (ctx, evt) => {
+            let overlaps;
+            if (ctx.frameMode === 'all') {
+              overlaps = ctx.overlaps.overlaps.map((o) =>
+                o.cell === evt.b ? { ...o, cell: evt.a } : o
+              );
+            } else {
+              overlaps = ctx.overlaps.overlaps.map((o) =>
+                o.cell === evt.b && o.z === ctx.frame ? { ...o, cell: evt.a } : o
+              );
+            }
+            return new Overlaps(overlaps);
+          },
+        }),
+        delete: assign({
+          overlaps: (ctx, evt) => {
+            let overlaps;
+            if (ctx.frameMode === 'all') {
+              overlaps = ctx.overlaps.overlaps.filter((o) => o.cell !== evt.cell);
+            } else {
+              overlaps = ctx.overlaps.overlaps.filter(
+                (o) => o.z !== ctx.frame || o.cell !== ctx.cell
+              );
+            }
+            return new Overlaps(overlaps);
+          },
+        }),
+        swap: assign({
+          overlaps: (ctx, evt) => {
+            let overlaps;
+            if (ctx.frameMode === 'all') {
+              overlaps = ctx.overlaps.overlaps.map((o) =>
+                o.cell === evt.a
+                  ? { ...o, cell: evt.b }
+                  : o.cell === evt.b
+                  ? { ...o, cell: evt.a }
+                  : o
+              );
+            } else {
+              overlaps = ctx.overlaps.overlaps.map((o) =>
+                o.cell === evt.a && o.z === ctx.frame
+                  ? { ...o, cell: evt.b }
+                  : o.cell === evt.b && o.z === ctx.frame
+                  ? { ...o, cell: evt.a }
+                  : o
+              );
+            }
+            return new Overlaps(overlaps);
+          },
         }),
       },
     }

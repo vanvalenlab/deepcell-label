@@ -4,6 +4,7 @@
 import { assign, forwardTo, Machine, send, spawn } from 'xstate';
 import { respond } from 'xstate/lib/actions';
 import { fromEventBus } from '../eventBus';
+import createEditCellsMachine from './editCellsMachine';
 import createEditLineageMachine from './editLineageMachine';
 import createSegmentMachine from './segmentMachine';
 
@@ -16,6 +17,7 @@ const createToolMachine = ({ eventBuses }) =>
         eventBuses,
         segmentRef: null,
         editLineageRef: null,
+        eventBuses,
       },
       invoke: [
         { id: 'canvas', src: fromEventBus('tool', () => eventBuses.canvas) },
@@ -54,6 +56,16 @@ const createToolMachine = ({ eventBuses }) =>
             mousedown: { actions: forwardTo('editLineage') },
           },
         },
+        editCells: {
+          entry: [
+            assign({ tool: 'editCells' }),
+            send({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
+          ],
+          on: {
+            mouseup: { actions: forwardTo('editCells') },
+            mousedown: { actions: forwardTo('editCells') },
+          },
+        },
       },
       on: {
         SAVE: { actions: 'save' },
@@ -64,6 +76,7 @@ const createToolMachine = ({ eventBuses }) =>
 
         SEGMENT: 'segment',
         EDIT_LINEAGE: 'editLineage',
+        EDIT_CELLS: 'editCells',
 
         SET_PAN_ON_DRAG: { actions: forwardTo('canvas') },
       },
@@ -78,6 +91,7 @@ const createToolMachine = ({ eventBuses }) =>
         spawnTools: assign((context) => ({
           segmentRef: spawn(createSegmentMachine(context), 'segment'),
           editLineageRef: spawn(createEditLineageMachine(context), 'editLineage'),
+          editCellsRef: spawn(createEditCellsMachine(context), 'editCells'),
         })),
         addToolsToUndo: send(({ segmentRef }) => ({ type: 'ADD_ACTOR', actor: segmentRef }), {
           to: 'undo',
