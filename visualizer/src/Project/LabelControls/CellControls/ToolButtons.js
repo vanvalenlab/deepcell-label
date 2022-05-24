@@ -12,38 +12,38 @@ function ToolButtons() {
   return (
     <Box display='flex' flexDirection='column'>
       <FormLabel>Tools</FormLabel>
-      <ToggleButtonGroup orientation='vertical'>
+      <ToggleButtonGroup orientation='vertical' value={tool}>
         <ToggleButton
           onClick={() => editCells.send({ type: 'SET_TOOL', tool: 'select' })}
-          selected={tool === 'select'}
+          value={'select'}
           sx={{ px: 0.5, py: 0 }}
         >
           Select
         </ToggleButton>
         <ToggleButton
           onClick={() => editCells.send({ type: 'SET_TOOL', tool: 'delete' })}
-          selected={tool === 'delete'}
+          value={'delete'}
           sx={{ px: 0.5, py: 0 }}
         >
           Delete
         </ToggleButton>
         <ToggleButton
           onClick={() => editCells.send({ type: 'SET_TOOL', tool: 'replace' })}
-          selected={tool === 'replace'}
+          value={'replace'}
           sx={{ px: 0.5, py: 0 }}
         >
           Replace
         </ToggleButton>
         <ToggleButton
           onClick={() => editCells.send({ type: 'SET_TOOL', tool: 'swap' })}
-          selected={tool === 'swap'}
+          value={'swap'}
           sx={{ px: 0.5, py: 0 }}
         >
           Swap
         </ToggleButton>
         <ToggleButton
           onClick={() => editCells.send({ type: 'SET_TOOL', tool: 'new' })}
-          selected={tool === 'new'}
+          value={'new'}
           sx={{ px: 0.5, py: 0 }}
         >
           New

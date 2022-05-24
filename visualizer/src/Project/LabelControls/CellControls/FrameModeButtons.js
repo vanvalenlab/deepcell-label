@@ -14,10 +14,10 @@ function FrameModeButtons() {
   return (
     <Box display='flex' flexDirection='column'>
       <FormLabel>Frame Mode</FormLabel>
-      <ToggleButtonGroup orientation='vertical'>
+      <ToggleButtonGroup orientation='vertical' value={frameMode}>
         <ToggleButton
           onClick={() => cells.send({ type: 'SET_FRAME_MODE', frameMode: 'one' })}
-          selected={frameMode === 'one'}
+          value={'one'}
           sx={{ px: 0.5, py: 0 }}
         >
           One
@@ -25,21 +25,21 @@ function FrameModeButtons() {
         </ToggleButton>
         <ToggleButton
           onClick={() => cells.send({ type: 'SET_FRAME_MODE', frameMode: 'past' })}
-          selected={frameMode === 'past'}
+          value={'past'}
           sx={{ px: 0.5, py: 0 }}
         >
           Past <ForwardIcon sx={{ transform: 'rotate(180deg)' }} />
         </ToggleButton>
         <ToggleButton
           onClick={() => cells.send({ type: 'SET_FRAME_MODE', frameMode: 'future' })}
-          selected={frameMode === 'future'}
+          value={'future'}
           sx={{ px: 0.5, py: 0 }}
         >
           Future <ForwardIcon />
         </ToggleButton>
         <ToggleButton
           onClick={() => cells.send({ type: 'SET_FRAME_MODE', frameMode: 'all' })}
-          selected={frameMode === 'all'}
+          value={'all'}
           sx={{ px: 0.5, py: 0 }}
         >
           All
