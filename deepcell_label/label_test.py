@@ -17,7 +17,7 @@ class DummyEdit(Edit):
     def __init__(
         self,
         labels=None,
-        overlaps=None,
+        cells=None,
         action=None,
         args=None,
         raw=None,
@@ -25,9 +25,9 @@ class DummyEdit(Edit):
         write_mode='overlap',
     ):
         self.labels = labels
-        self.overlaps = overlaps
-        self.new_value = self.overlaps.shape[0]
-        self.new_label = self.overlaps.shape[1]
+        self.cells = cells
+        self.new_value = self.cells.shape[0]
+        self.new_label = self.cells.shape[1]
         self.action = action
         self.args = args
         self.raw = raw
@@ -53,7 +53,7 @@ class TestEdit:
             [1, 2, 1],
             [0, 1, 0],
         ], dtype=np.int32)
-        overlaps = np.array([
+        cells = np.array([
             [0, 0, 0],
             [0, 1, 0],
             [0, 0, 1]])
@@ -62,7 +62,7 @@ class TestEdit:
         args = {'foreground': 2, 'background': 0, 'x': 1, 'y': 1}
 
         with app.app_context():
-            edit = DummyEdit(labels=labels, overlaps=overlaps, action=action, args=args)
+            edit = DummyEdit(labels=labels, cells=cells, action=action, args=args)
             np.testing.assert_array_equal(edit.labels, expected_labels)
 
     def test_action_flood_label(self, app):
@@ -79,7 +79,7 @@ class TestEdit:
             [2, 0, 2],
             [0, 2, 0],
         ], dtype=np.int32)
-        overlaps = np.array([
+        cells = np.array([
             [0, 0, 0],
             [0, 1, 0],
             [0, 0, 1]])
@@ -88,7 +88,7 @@ class TestEdit:
         with app.app_context():
             edit = DummyEdit(
                 labels=labels,
-                overlaps=overlaps,
+                cells=cells,
                 action='flood',
                 args={'foreground': 2, 'background': 1, 'x': 1, 'y': 0},
             )
@@ -98,12 +98,12 @@ class TestEdit:
         """Erasing a label with by drawing over it."""
         labels = np.array([[1]], dtype=np.int32)
         expected = np.array([[0]], dtype=np.int32)
-        overlaps = np.array([[0, 0], [0, 1]])
+        cells = np.array([[0, 0], [0, 1]])
 
         with app.app_context():
             edit = DummyEdit(
                 labels=labels,
-                overlaps=overlaps,
+                cells=cells,
                 action='draw',
                 args={'trace': '[[0, 0]]', 'brush_size': 1, 'label': 1, 'erase': True},
             )
@@ -113,12 +113,12 @@ class TestEdit:
         """Adding a label with by drawing it in."""
         labels = np.array([[0]], dtype=np.int32)
         expected = np.array([[1]], dtype=np.int32)
-        overlaps = np.array([[0, 0], [0, 1]])
+        cells = np.array([[0, 0], [0, 1]])
 
         with app.app_context():
             edit = DummyEdit(
                 labels=labels,
-                overlaps=overlaps,
+                cells=cells,
                 action='draw',
                 args={'trace': '[[0, 0]]', 'brush_size': 1, 'label': 1, 'erase': False},
             )
@@ -127,12 +127,12 @@ class TestEdit:
     def test_action_replace(self, app):
         labels = np.array([[1, 1], [2, 2]], dtype=np.int32)
         expected = np.array([[1, 1], [1, 1]], dtype=np.int32)
-        overlaps = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 1]])
+        cells = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 1]])
 
         with app.app_context():
             edit = DummyEdit(
                 labels=labels,
-                overlaps=overlaps,
+                cells=cells,
                 action='replace',
                 args={'a': 1, 'b': 2},
             )
@@ -147,12 +147,12 @@ class TestEdit:
         labels[5:, :] = 2
         initial_labels = labels.copy()
         raw = np.identity(10)
-        overlaps = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 1]])
+        cells = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 1]])
 
         with app.app_context():
             edit = DummyEdit(
                 labels=labels,
-                overlaps=overlaps,
+                cells=cells,
                 action='active_contour',
                 args={'label': 1},
                 raw=raw,
@@ -168,8 +168,8 @@ class TestEdit:
     #     labels = np.zeros((10, 10), dtype=np.int32)
     #     labels[4:6, 4:6] = 1
     #     raw[2:8, 2:8] = 1
-    #     overlaps = np.array([[0, 0], [0, 1]])
-    #     edit = Edit(labels, raw, overlaps=overlaps)
+    #     cells = np.array([[0, 0], [0, 1]])
+    #     edit = Edit(labels, raw, cells=cells)
 
     #     with app.app_context():
     #         edit.action_active_contour(1)
@@ -186,12 +186,12 @@ class TestEdit:
         labels[0, :] = 0
         labels[-1, :] = 0
         initial_labels = labels.copy()
-        overlaps = np.array([[0, 0], [0, 1]])
+        cells = np.array([[0, 0], [0, 1]])
 
         with app.app_context():
             edit = DummyEdit(
                 labels=labels,
-                overlaps=overlaps,
+                cells=cells,
                 action='active_contour',
                 args={'label': 1, 'min_pixels': 1},
                 raw=raw,
@@ -202,12 +202,12 @@ class TestEdit:
         """Tests that a label is correctly removed when eroding deletes all of its pixels."""
         labels = np.zeros((3, 3), dtype=np.int32)
         labels[1, 1] = 1
-        overlaps = np.array([[0, 0], [0, 1]])
+        cells = np.array([[0, 0], [0, 1]])
 
         with app.app_context():
             edit = DummyEdit(
                 labels=labels,
-                overlaps=overlaps,
+                cells=cells,
                 action='erode',
                 args={'label': 1},
             )
@@ -217,12 +217,12 @@ class TestEdit:
         """Tests that other labels not affected by eroding a label."""
         labels = np.array([[1, 1], [2, 2]], dtype=np.int32)
         initial_labels = labels.copy()
-        overlaps = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 1]])
+        cells = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 1]])
 
         with app.app_context():
             edit = DummyEdit(
                 labels=labels,
-                overlaps=overlaps,
+                cells=cells,
                 action='erode',
                 args={'label': 1},
             )
@@ -232,30 +232,30 @@ class TestEdit:
         """Dilating a label creates a new overlap value when write_mode is overlap."""
         labels = np.array([[1, 1], [2, 2]], dtype=np.int32)
         expected_labels = np.array([[1, 1], [3, 3]], dtype=np.int32)
-        overlaps = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 1]])
-        expected_overlaps = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 1]])
+        cells = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 1]])
+        expected_cells = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 1]])
 
         with app.app_context():
             edit = DummyEdit(
                 labels=labels,
-                overlaps=overlaps,
+                cells=cells,
                 action='dilate',
                 args={'label': 1},
                 write_mode='overlap',
             )
             np.testing.assert_array_equal(edit.labels, expected_labels)
-            np.testing.assert_array_equal(edit.overlaps, expected_overlaps)
+            np.testing.assert_array_equal(edit.cells, expected_cells)
 
     def test_action_dilate_overwrite(self, app):
         """Dilating a label removes other labels when write_mode is overwrite."""
         labels = np.array([[1, 1], [2, 2]], dtype=np.int32)
         expected_labels = np.array([[1, 1], [1, 1]], dtype=np.int32)
-        overlaps = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 1]])
+        cells = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 1]])
 
         with app.app_context():
             edit = DummyEdit(
                 labels=labels,
-                overlaps=overlaps,
+                cells=cells,
                 action='dilate',
                 args={'label': 1},
                 write_mode='overwrite',
@@ -266,12 +266,12 @@ class TestEdit:
         """Filated label does not affect other labels when write_mode is exclude."""
         labels = np.array([[1, 1], [2, 2]], dtype=np.int32)
         expected_labels = labels.copy()
-        overlaps = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 1]])
+        cells = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 1]])
 
         with app.app_context():
             edit = DummyEdit(
                 labels=labels,
-                overlaps=overlaps,
+                cells=cells,
                 action='dilate',
                 args={'label': 1},
                 write_mode='exclude',

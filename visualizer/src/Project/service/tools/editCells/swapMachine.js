@@ -6,18 +6,18 @@ function createSwapMachine(context) {
     {
       invoke: [
         { id: 'select', src: fromEventBus('flood', () => context.eventBuses.select) },
-        { id: 'overlaps', src: fromEventBus('flood', () => context.eventBuses.overlaps) },
+        { id: 'cells', src: fromEventBus('flood', () => context.eventBuses.cells) },
       ],
       context: {
         selected: context.selected,
         swapCell: null,
         hovering: null,
-        overlapMatrix: null,
+        cellMatrix: null,
       },
       on: {
         SELECTED: { actions: 'setSelected' },
         HOVERING: { actions: 'setHovering' },
-        OVERLAP_MATRIX: { actions: 'setOverlapMatrix' },
+        CELL_MATRIX: { actions: 'setCellMatrix' },
         mouseup: [
           { cond: 'shift', actions: 'setSwapCell' },
           { cond: 'onSwapCell', actions: 'swap' },
@@ -30,15 +30,15 @@ function createSwapMachine(context) {
     {
       guards: {
         shift: (_, evt) => evt.shiftKey,
-        onSwapCell: (ctx) => ctx.swapCell && ctx.overlapMatrix[ctx.hovering][ctx.swapCell] === 1,
-        onSelected: (ctx) => ctx.overlapMatrix[ctx.hovering][ctx.selected] === 1,
+        onSwapCell: (ctx) => ctx.swapCell && ctx.cellMatrix[ctx.hovering][ctx.swapCell] === 1,
+        onSelected: (ctx) => ctx.cellMatrix[ctx.hovering][ctx.selected] === 1,
       },
       actions: {
         setSelected: assign({ selected: (_, evt) => evt.selected }),
         setSwapCell: assign({
           swapCell: (ctx) => {
-            const { hovering, swapCell: cell, overlapMatrix } = ctx;
-            const cells = overlapMatrix[hovering];
+            const { hovering, swapCell: cell, cellMatrix } = ctx;
+            const cells = cellMatrix[hovering];
             if (cells[cell]) {
               // Get next label that hovering value encodes
               const reordered = cells.slice(cell + 1).concat(cells.slice(0, cell + 1));
@@ -50,9 +50,9 @@ function createSwapMachine(context) {
           },
         }),
         setHovering: assign({ hovering: (_, evt) => evt.hovering }),
-        setOverlapMatrix: assign({ overlapMatrix: (_, evt) => evt.overlapMatrix }),
+        setCellMatrix: assign({ cellMatrix: (_, evt) => evt.cellMatrix }),
         swap: send((ctx) => ({ type: 'SWAP', a: ctx.selected, b: ctx.swapCell }), {
-          to: 'overlaps',
+          to: 'cells',
         }),
       },
     }

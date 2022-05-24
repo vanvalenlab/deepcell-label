@@ -1,22 +1,22 @@
-/** Loads and stores overlaps arrays. */
+/** Loads and stores cells arrays. */
 
 import colormap from 'colormap';
 import { assign, Machine, send } from 'xstate';
-import Overlaps from '../overlaps';
+import Cells from '../overlaps';
 import { fromEventBus } from './eventBus';
 
-const createOverlapsMachine = ({ eventBuses }) =>
+const createCellsMachine = ({ eventBuses }) =>
   Machine(
     {
-      id: 'overlaps',
+      id: 'cells',
       invoke: [
-        { id: 'eventBus', src: fromEventBus('overlaps', () => eventBuses.overlaps) },
-        { src: fromEventBus('overlaps', () => eventBuses.api) },
-        { src: fromEventBus('overlaps', () => eventBuses.load) },
-        { src: fromEventBus('overlaps', () => eventBuses.image) },
+        { id: 'eventBus', src: fromEventBus('cells', () => eventBuses.cells) },
+        { src: fromEventBus('cells', () => eventBuses.api) },
+        { src: fromEventBus('cells', () => eventBuses.load) },
+        { src: fromEventBus('cells', () => eventBuses.image) },
       ],
       context: {
-        overlaps: null, // Overlaps object
+        cells: null, // Cells object
         frame: 0,
         colormap: [
           [0, 0, 0, 1],
@@ -32,24 +32,24 @@ const createOverlapsMachine = ({ eventBuses }) =>
             SET_FRAME_MODE: { actions: 'setFrameMode' },
             SET_FRAME: { actions: 'setFrame' },
             LOADED: {
-              target: 'editedOverlaps',
-              actions: 'setOverlaps',
+              target: 'editedCells',
+              actions: 'setCells',
             },
           },
         },
-        editedOverlaps: {
-          entry: ['setColormap', 'sendOverlaps', 'sendOverlapMatrix'],
+        editedCells: {
+          entry: ['setColormap', 'sendCells', 'sendCellMatrix'],
           always: 'idle',
         },
         idle: {
           on: {
             SET_FRAME_MODE: { actions: 'setFrameMode' },
-            SET_FRAME: { actions: ['setFrame', 'sendOverlapMatrix'] },
-            EDITED: { actions: 'updateOverlaps', target: 'editedOverlaps' },
-            REPLACE: { actions: 'replace', target: 'editedOverlaps' },
-            DELETE: { actions: 'delete', target: 'editedOverlaps' },
-            SWAP: { actions: 'swap', target: 'editedOverlaps' },
-            NEW: { actions: 'new', target: 'editedOverlaps' },
+            SET_FRAME: { actions: ['setFrame', 'sendCellMatrix'] },
+            EDITED: { actions: 'updateCells', target: 'editedCells' },
+            REPLACE: { actions: 'replace', target: 'editedCells' },
+            DELETE: { actions: 'delete', target: 'editedCells' },
+            SWAP: { actions: 'swap', target: 'editedCells' },
+            NEW: { actions: 'new', target: 'editedCells' },
           },
         },
       },
@@ -58,26 +58,26 @@ const createOverlapsMachine = ({ eventBuses }) =>
       actions: {
         setFrameMode: assign({ frameMode: (_, evt) => evt.frameMode }),
         setFrame: assign({ frame: (_, evt) => evt.frame }),
-        setOverlaps: assign({ overlaps: (_, evt) => evt.overlaps }),
-        updateOverlaps: assign({
-          overlaps: (ctx, evt) => {
-            return new Overlaps([
-              ...ctx.overlaps.overlaps.filter((o) => o.z !== evt.frame),
-              ...evt.overlaps.map((o) => ({ ...o, z: evt.frame })),
+        setCells: assign({ cells: (_, evt) => evt.cells }),
+        updateCells: assign({
+          cells: (ctx, evt) => {
+            return new Cells([
+              ...ctx.cells.cells.filter((o) => o.z !== evt.frame),
+              ...evt.cells.map((o) => ({ ...o, z: evt.frame })),
             ]);
           },
         }),
-        sendOverlaps: send(
+        sendCells: send(
           (ctx, evt) => ({
-            type: 'OVERLAPS',
-            overlaps: ctx.overlaps,
+            type: 'CELLS',
+            cells: ctx.cells,
           }),
           { to: 'eventBus' }
         ),
-        sendOverlapMatrix: send(
+        sendCellMatrix: send(
           (ctx, evt) => ({
-            type: 'OVERLAP_MATRIX',
-            overlapMatrix: ctx.overlaps.getMatrix(ctx.frame),
+            type: 'CELL_MATRIX',
+            cellMatrix: ctx.cells.getMatrix(ctx.frame),
           }),
           { to: 'eventBus' }
         ),
@@ -86,76 +86,68 @@ const createOverlapsMachine = ({ eventBuses }) =>
             [0, 0, 0, 1],
             ...colormap({
               colormap: 'viridis',
-              nshades: Math.max(9, ctx.overlaps.getNewCell() - 1),
+              nshades: Math.max(9, ctx.cells.getNewCell() - 1),
               format: 'rgba',
             }),
             [255, 255, 255, 1],
           ],
         }),
         replace: assign({
-          overlaps: (ctx, evt) => {
-            let overlaps;
+          cells: (ctx, evt) => {
+            let cells;
             switch (ctx.frameMode) {
               case 'one':
-                overlaps = ctx.overlaps.overlaps.map((o) =>
+                cells = ctx.cells.cells.map((o) =>
                   o.cell === evt.b && o.z === ctx.frame ? { ...o, cell: evt.a } : o
                 );
                 break;
               case 'past':
-                overlaps = ctx.overlaps.overlaps.map((o) =>
+                cells = ctx.cells.cells.map((o) =>
                   o.cell === evt.b && o.z <= ctx.frame ? { ...o, cell: evt.a } : o
                 );
                 break;
               case 'future':
-                overlaps = ctx.overlaps.overlaps.map((o) =>
+                cells = ctx.cells.cells.map((o) =>
                   o.cell === evt.b && o.z >= ctx.frame ? { ...o, cell: evt.a } : o
                 );
                 break;
               case 'all':
-                overlaps = ctx.overlaps.overlaps.map((o) =>
-                  o.cell === evt.b ? { ...o, cell: evt.a } : o
-                );
+                cells = ctx.cells.cells.map((o) => (o.cell === evt.b ? { ...o, cell: evt.a } : o));
                 break;
               default:
-                overlaps = ctx.overlaps.overlaps;
+                cells = ctx.cells.cells;
             }
-            return new Overlaps(overlaps);
+            return new Cells(cells);
           },
         }),
         delete: assign({
-          overlaps: (ctx, evt) => {
-            let overlaps;
+          cells: (ctx, evt) => {
+            let cells;
             switch (ctx.frameMode) {
               case 'one':
-                overlaps = ctx.overlaps.overlaps.filter(
-                  (o) => o.z !== ctx.frame || o.cell !== evt.cell
-                );
+                cells = ctx.cells.cells.filter((o) => o.z !== ctx.frame || o.cell !== evt.cell);
                 break;
               case 'past':
-                overlaps = ctx.overlaps.overlaps.filter(
-                  (o) => o.z > ctx.frame || o.cell !== evt.cell
-                );
+                cells = ctx.cells.cells.filter((o) => o.z > ctx.frame || o.cell !== evt.cell);
                 break;
               case 'future':
-                overlaps = ctx.overlaps.overlaps.filter(
-                  (o) => o.z < ctx.frame || o.cell !== evt.cell
-                );
+                cells = ctx.cells.cells.filter((o) => o.z < ctx.frame || o.cell !== evt.cell);
                 break;
               case 'all':
-                overlaps = ctx.overlaps.overlaps.filter((o) => o.cell !== evt.cell);
+                cells = ctx.cells.cells.filter((o) => o.cell !== evt.cell);
                 break;
               default:
-                overlaps = ctx.overlaps.overlaps;
+                cells = ctx.cells.cells;
             }
-            return new Overlaps(overlaps);
+            return new Cells(cells);
           },
         }),
         swap: assign({
-          overlaps: (ctx, evt) => {
-            let overlaps;
+          cells: (ctx, evt) => {
+            let cells;
             switch (ctx.frameMode) {
               case 'one':
-                overlaps = ctx.overlaps.overlaps.map((o) =>
+                cells = ctx.cells.cells.map((o) =>
                   o.cell === evt.a && o.z === ctx.frame
                     ? { ...o, cell: evt.b }
                     : o.cell === evt.b && o.z === ctx.frame
@@ -164,7 +156,7 @@ const createOverlapsMachine = ({ eventBuses }) =>
                 );
                 break;
               case 'past':
-                overlaps = ctx.overlaps.overlaps.map((o) =>
+                cells = ctx.cells.cells.map((o) =>
                   o.cell === evt.a && o.z <= ctx.frame
                     ? { ...o, cell: evt.b }
                     : o.cell === evt.b && o.z <= ctx.frame
@@ -173,7 +165,7 @@ const createOverlapsMachine = ({ eventBuses }) =>
                 );
                 break;
               case 'future':
-                overlaps = ctx.overlaps.overlaps.map((o) =>
+                cells = ctx.cells.cells.map((o) =>
                   o.cell === evt.a && o.z >= ctx.frame
                     ? { ...o, cell: evt.b }
                     : o.cell === evt.b && o.z >= ctx.frame
@@ -182,7 +174,7 @@ const createOverlapsMachine = ({ eventBuses }) =>
                 );
                 break;
               case 'all':
-                overlaps = ctx.overlaps.overlaps.map((o) =>
+                cells = ctx.cells.cells.map((o) =>
                   o.cell === evt.a
                     ? { ...o, cell: evt.b }
                     : o.cell === evt.b
@@ -191,44 +183,44 @@ const createOverlapsMachine = ({ eventBuses }) =>
                 );
                 break;
               default:
-                overlaps = ctx.overlaps.overlaps;
+                cells = ctx.cells.cells;
             }
-            return new Overlaps(overlaps);
+            return new Cells(cells);
           },
         }),
         new: assign({
-          overlaps: (ctx, evt) => {
-            let overlaps;
-            const newCell = ctx.overlaps.getNewCell();
+          cells: (ctx, evt) => {
+            let cells;
+            const newCell = ctx.cells.getNewCell();
             switch (ctx.frameMode) {
               case 'one':
-                overlaps = ctx.overlaps.overlaps.map((o) =>
+                cells = ctx.cells.cells.map((o) =>
                   o.cell === evt.cell && o.z === ctx.frame ? { ...o, cell: newCell } : o
                 );
                 break;
               case 'past':
-                overlaps = ctx.overlaps.overlaps.map((o) =>
+                cells = ctx.cells.cells.map((o) =>
                   o.cell === evt.cell && o.z <= ctx.frame ? { ...o, cell: newCell } : o
                 );
                 break;
               case 'future':
-                overlaps = ctx.overlaps.overlaps.map((o) =>
+                cells = ctx.cells.cells.map((o) =>
                   o.cell === evt.cell && o.z >= ctx.frame ? { ...o, cell: newCell } : o
                 );
                 break;
               case 'all':
-                overlaps = ctx.overlaps.overlaps.map((o) =>
+                cells = ctx.cells.cells.map((o) =>
                   o.cell === evt.cell ? { ...o, cell: newCell } : o
                 );
                 break;
               default:
-                overlaps = ctx.overlaps.overlaps;
+                cells = ctx.cells.cells;
             }
-            return new Overlaps(overlaps);
+            return new Cells(cells);
           },
         }),
       },
     }
   );
 
-export default createOverlapsMachine;
+export default createCellsMachine;

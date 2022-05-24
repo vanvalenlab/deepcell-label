@@ -7,7 +7,7 @@ const createWatershedMachine = (context) =>
       invoke: [
         { id: 'select', src: fromEventBus('watershed', () => context.eventBuses.select) },
         { id: 'api', src: fromEventBus('watershed', () => context.eventBuses.api) },
-        { src: fromEventBus('watershed', () => context.eventBuses.overlaps) },
+        { src: fromEventBus('watershed', () => context.eventBuses.cells) },
       ],
       context: {
         x: 0,
@@ -18,12 +18,12 @@ const createWatershedMachine = (context) =>
         y1: 0,
         x2: 0,
         y2: 0,
-        overlapMatrix: null,
+        cellMatrix: null,
       },
       on: {
         COORDINATES: { actions: 'setCoordinates' },
         HOVERING: { actions: 'setHovering' },
-        OVERLAP_MATRIX: { actions: 'setOverlapMatrix' },
+        CELL_MATRIX: { actions: 'setCellMatrix' },
         SELECTED: { actions: 'setLabel' },
       },
       initial: 'idle',
@@ -79,18 +79,18 @@ const createWatershedMachine = (context) =>
     },
     {
       guards: {
-        validSecondSeed: ({ overlapMatrix, hovering, label, x, y, x1, y2 }) =>
-          overlapMatrix[hovering][label] === 1 && // same label
+        validSecondSeed: ({ cellMatrix, hovering, label, x, y, x1, y2 }) =>
+          cellMatrix[hovering][label] === 1 && // same label
           (x !== x1 || y !== y2), // different point
         differentLabel: (ctx, evt) => ctx.label !== evt.label,
-        onLabel: ({ hovering, label, overlapMatrix }) => overlapMatrix[hovering][label] === 1,
-        notOnLabel: ({ hovering, label, overlapMatrix }) => overlapMatrix[hovering][label] === 0,
+        onLabel: ({ hovering, label, cellMatrix }) => cellMatrix[hovering][label] === 1,
+        notOnLabel: ({ hovering, label, cellMatrix }) => cellMatrix[hovering][label] === 0,
         onNoLabel: ({ hovering }) => hovering === 0,
       },
       actions: {
         setCoordinates: assign({ x: (_, { x }) => x, y: (_, { y }) => y }),
         setHovering: assign({ hovering: (_, { hovering }) => hovering }),
-        setOverlapMatrix: assign({ overlapMatrix: (_, { overlapMatrix }) => overlapMatrix }),
+        setCellMatrix: assign({ cellMatrix: (_, { cellMatrix }) => cellMatrix }),
         setFirstPoint: assign({ x1: ({ x }) => x, y1: ({ y }) => y }),
         setSecondPoint: assign({ x2: ({ x }) => x, y2: ({ y }) => y }),
         setLabel: assign({ label: ({ selected }) => selected }),

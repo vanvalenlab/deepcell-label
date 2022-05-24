@@ -11,7 +11,7 @@ import createIDBMachine from './idbMachine';
 import createImageMachine from './imageMachine';
 import createLineageMachine from './lineageMachine';
 import createLoadMachine from './loadMachine';
-import createOverlapsMachine from './overlapsMachine';
+import createCellsMachine from './overlapsMachine';
 import createSelectMachine from './selectMachine';
 import createSpotsMachine from './spotsMachine';
 import createToolMachine from './tools/toolMachine';
@@ -34,7 +34,7 @@ const createProjectMachine = (projectId) =>
           arrays: new EventBus('arrays'),
           labels: new EventBus('labels'),
           load: new EventBus('load'),
-          overlaps: new EventBus('overlaps'),
+          cells: new EventBus('cells'),
         },
         track: false,
       },
@@ -94,7 +94,7 @@ const createProjectMachine = (projectId) =>
           actors.apiRef = spawn(createApiMachine(context), 'api');
           actors.selectRef = spawn(createSelectMachine(context), 'select');
           actors.lineageRef = spawn(createLineageMachine(context), 'lineage');
-          actors.overlapsRef = spawn(createOverlapsMachine(context), 'overlaps');
+          actors.cellsRef = spawn(createCellsMachine(context), 'cells');
           actors.toolRef = spawn(createToolMachine(context), 'tool');
           if (process.env.REACT_APP_SPOTS_VISUALIZER === 'true') {
             actors.spotsRef = spawn(createSpotsMachine(context), 'spots');

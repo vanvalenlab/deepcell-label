@@ -14,7 +14,6 @@ import numpy as np
 from PIL import Image
 from tifffile import TiffFile, TiffWriter
 
-from deepcell_label.cells import Cells
 from deepcell_label.utils import add_parent_division_frame, reformat_lineage, reshape
 
 
@@ -26,9 +25,9 @@ class Loader:
     def __init__(self, image_file=None, label_file=None):
         self.X = None
         self.y = None
-        self.cells = None
         self.spots = None
         self.lineage = None
+        self.cells = None
 
         self.image_file = image_file
         self.label_file = label_file if label_file else image_file
@@ -47,7 +46,7 @@ class Loader:
         self.y = load_segmentation(self.label_file)
         self.spots = load_spots(self.label_file)
         self.lineage = load_lineage(self.label_file)
-        self.overlaps = load_overlaps(self.label_file)
+        self.cells = load_cells(self.label_file)
 
         if self.y is None:
             shape = (*self.X.shape[:-1], 1)
@@ -57,10 +56,9 @@ class Loader:
         """Writes loaded data to zip."""
         self.write_images()
         self.write_segmentation()
-        self.write_cells()
         self.write_spots()
         self.write_lineage()
-        self.write_overlaps()
+        self.write_cells()
 
     def write_images(self):
         """
@@ -112,27 +110,22 @@ class Loader:
             buffer.seek(0)
             self.zip.writestr('spots.csv', buffer.read())
 
-    def write_cells(self):
-        """Writes cells to cells.json in the output zip."""
-        cells = Cells(self.y).cells
-        self.zip.writestr('cells.json', json.dumps(cells))
-
     def write_lineage(self):
         """Writes lineage to lineage.json in the output zip."""
         self.zip.writestr('lineage.json', json.dumps(self.lineage))
 
-    def write_overlaps(self):
-        """Writes overlaps to overlaps.json in the output zip."""
-        if self.overlaps is None:
-            overlaps = []
+    def write_cells(self):
+        """Writes cells to cells.json in the output zip."""
+        if self.cells is None:
+            cells = []
             for z in range(self.y.shape[0]):
                 for value in np.unique(self.y[z]):
                     if value != 0:
-                        overlaps.append(
+                        cells.append(
                             {'cell': int(value), 'value': int(value), 'z': int(z)}
                         )
-            self.overlaps = overlaps
-        self.zip.writestr('overlaps.json', json.dumps(self.overlaps))
+            self.cells = cells
+        self.zip.writestr('cells.json', json.dumps(self.cells))
 
 
 def load_images(image_file):
@@ -217,12 +210,12 @@ def load_lineage(f):
         return lineage
 
 
-def load_overlaps(f):
+def load_cells(f):
     """
-    Load overlaps from label file.
+    Load cells from label file.
 
     Args:
-        zf: zip file with overlaps json
+        zf: zip file with cells json
 
     Returns:
         dict or None if no json in zip
@@ -230,7 +223,7 @@ def load_overlaps(f):
     f.seek(0)
     if zipfile.is_zipfile(f):
         zf = zipfile.ZipFile(f, 'r')
-        return load_zip_json(zf, filename='overlaps.json')
+        return load_zip_json(zf, filename='cells.json')
 
 
 def load_zip_numpy(zf, name='X'):

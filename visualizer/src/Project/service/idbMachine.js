@@ -3,7 +3,7 @@
  */
 import { openDB } from 'idb';
 import { assign, Machine, sendParent } from 'xstate';
-import Overlaps from '../overlaps';
+import Cells from '../overlaps';
 import { fromEventBus } from './eventBus';
 
 function createIDBMachine({ projectId, eventBuses }) {
@@ -15,9 +15,8 @@ function createIDBMachine({ projectId, eventBuses }) {
         project: {
           raw: null,
           labeled: null,
-          overlaps: null, // LOADED events send Overlaps object, but write list of overlaps to IDB
+          cells: null, // LOADED events send Cells object, but write list of cells to IDB
           lineage: null,
-          labels: null,
         },
       },
       invoke: [
@@ -82,11 +81,11 @@ function createIDBMachine({ projectId, eventBuses }) {
             console.log(ctx, evt);
             const { frame, feature, labeled } = evt;
             ctx.project.labeled[feature][frame] = labeled;
-            const overlaps = [
-              ...ctx.project.overlaps.filter((o) => o.z !== evt.frame),
-              ...evt.overlaps.map((o) => ({ ...o, z: evt.frame })),
+            const cells = [
+              ...ctx.project.cells.filter((o) => o.z !== evt.frame),
+              ...evt.cells.map((o) => ({ ...o, z: evt.frame })),
             ];
-            return { ...ctx.project, labeled: ctx.project.labeled, overlaps };
+            return { ...ctx.project, labeled: ctx.project.labeled, cells };
           },
         }),
         setDb: assign({ db: (ctx, evt) => evt.data }),
@@ -94,18 +93,16 @@ function createIDBMachine({ projectId, eventBuses }) {
           project: {
             raw: evt.data.raw,
             labeled: evt.data.labeled,
-            overlaps: evt.data.overlaps,
+            cells: evt.data.cells,
             lineage: evt.data.lineage,
-            labels: evt.data.labels,
           },
         })),
         loadProject: assign((ctx, evt) => ({
           project: {
             raw: evt.raw,
             labeled: evt.labeled,
-            overlaps: evt.overlaps.overlaps, // LOADED sends Overlaps object, need to get overlaps list
+            cells: evt.cells.cells, // LOADED sends Cells object, need to get cells list
             lineage: evt.lineage,
-            labels: evt.labels,
           },
         })),
         sendProjectNotInDB: sendParent('PROJECT_NOT_IN_DB'),
@@ -113,10 +110,9 @@ function createIDBMachine({ projectId, eventBuses }) {
           type: 'LOADED',
           raw: ctx.project.raw,
           labeled: ctx.project.labeled,
-          labels: ctx.project.labels, // TODO: swap labels for cells?
           spots: ctx.project.spots, // TODO: include spots in IDB
           lineage: ctx.project.lineage,
-          overlaps: new Overlaps(ctx.project.overlaps),
+          cells: new Cells(ctx.project.cells),
           message: 'from idb machine',
         })),
       },

@@ -10,20 +10,20 @@ const createSelectMachine = ({ eventBuses }) =>
         { id: 'eventBus', src: fromEventBus('select', () => eventBuses.select) },
         { src: fromEventBus('select', () => eventBuses.canvas) },
         { src: fromEventBus('select', () => eventBuses.labeled) },
-        { src: fromEventBus('select', () => eventBuses.overlaps) },
+        { src: fromEventBus('select', () => eventBuses.cells) },
         { src: fromEventBus('select', () => eventBuses.image) },
       ],
       context: {
         selected: 1,
         hovering: null,
-        overlaps: null,
+        cells: null,
         frame: 0,
       },
       on: {
         GET_SELECTED: { actions: 'sendSelected' },
 
         HOVERING: { actions: 'setHovering' },
-        OVERLAPS: { actions: ['setOverlaps'] },
+        CELLS: { actions: ['setCells'] },
         SET_FRAME: { actions: 'setFrame' },
         SELECTED: { actions: ['setSelected', 'sendToEventBus'] },
         SET_SELECTED: { actions: send((_, { selected }) => ({ type: 'SELECTED', selected })) },
@@ -39,36 +39,36 @@ const createSelectMachine = ({ eventBuses }) =>
     {
       actions: {
         sendSelected: send(({ selected }) => ({ type: 'SELECTED', selected }), { to: 'eventBus' }),
-        select: pure(({ selected, hovering, overlaps, frame }) => {
-          const cells = overlaps.getCellsForValue(hovering, frame);
-          const i = cells.indexOf(selected);
+        select: pure(({ selected, hovering, cells, frame }) => {
+          const hoveringCells = cells.getCellsForValue(hovering, frame);
+          const i = hoveringCells.indexOf(selected);
           let newCell;
-          if (cells.length === 0 || i === cells.length - 1) {
+          if (hoveringCells.length === 0 || i === cells.length - 1) {
             newCell = 0;
           } else if (i === -1) {
-            newCell = cells[0];
+            newCell = hoveringCells[0];
           } else {
-            newCell = cells[i + 1];
+            newCell = hoveringCells[i + 1];
           }
           return send({ type: 'SELECTED', selected: newCell });
         }),
         reset: send({ type: 'SELECTED', selected: 0 }),
-        selectNew: send(({ overlaps }) => ({
+        selectNew: send(({ cells }) => ({
           type: 'SELECTED',
-          selected: overlaps.getNewCell(),
+          selected: cells.getNewCell(),
         })),
-        selectPrevious: send(({ selected, overlaps }) => ({
+        selectPrevious: send(({ selected, cells }) => ({
           type: 'SELECTED',
-          selected: selected - 1 < 1 ? overlaps.getNewCell() : selected - 1,
+          selected: selected - 1 < 1 ? cells.getNewCell() : selected - 1,
         })),
-        selectNext: send(({ selected, overlaps }) => {
+        selectNext: send(({ selected, cells }) => {
           return {
             type: 'SELECTED',
-            selected: selected + 1 > overlaps.getNewCell() ? 1 : selected + 1,
+            selected: selected + 1 > cells.getNewCell() ? 1 : selected + 1,
           };
         }),
         setHovering: assign({ hovering: (_, { hovering }) => hovering }),
-        setOverlaps: assign({ overlaps: (_, { overlaps }) => overlaps }),
+        setCells: assign({ cells: (_, { cells }) => cells }),
         setSelected: assign({ selected: (_, { selected }) => selected }),
         setFrame: assign({ frame: (_, { frame }) => frame }),
         save: respond(({ selected }) => ({ type: 'RESTORE', selected })),

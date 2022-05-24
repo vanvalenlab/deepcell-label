@@ -6,9 +6,9 @@ import {
   useAlphaKernelCanvas,
   useArrays,
   useCanvas,
+  useCells,
   useImage,
   useLabeled,
-  useOverlaps,
   useSelectedCell,
 } from '../ProjectContext';
 
@@ -32,12 +32,8 @@ const OutlineCanvas = ({ setCanvases }) => {
     (state) => state.context.labeled && state.context.labeled[feature][frame]
   );
 
-  const overlaps = useOverlaps();
-  const overlapsMatrix = useSelector(
-    overlaps,
-    (state) => state.context.overlaps?.getMatrix(frame),
-    equal
-  );
+  const cells = useCells();
+  const cellsMatrix = useSelector(cells, (state) => state.context.cells?.getMatrix(frame), equal);
 
   const kernelRef = useRef();
   const kernelCanvas = useAlphaKernelCanvas();
@@ -45,7 +41,7 @@ const OutlineCanvas = ({ setCanvases }) => {
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
-      `function (data, overlaps, numLabels, opacity, cell) {
+      `function (data, cells, numLabels, opacity, cell) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
         const value = data[y][x];
@@ -67,8 +63,8 @@ const OutlineCanvas = ({ setCanvases }) => {
         }
         let outlineOpacity = 1;
         for (let i = 0; i < numLabels; i++) {
-          if (overlaps[value][i] === 1) {
-            if (overlaps[north][i] === 0 || overlaps[south][i] === 0 || overlaps[west][i] === 0 || overlaps[east][i] === 0)
+          if (cells[value][i] === 1) {
+            if (cells[north][i] === 0 || cells[south][i] === 0 || cells[west][i] === 0 || cells[east][i] === 0)
            {
               if (cell === i) {
                 outlineOpacity = outlineOpacity * (1 - opacity[1]);
@@ -95,14 +91,14 @@ const OutlineCanvas = ({ setCanvases }) => {
   }, [kernelCanvas, width, height]);
 
   useEffect(() => {
-    if (labeledArray && overlapsMatrix) {
-      const numLabels = overlapsMatrix[0].length;
+    if (labeledArray && cellsMatrix) {
+      const numLabels = cellsMatrix[0].length;
       // Compute the outline of the labels with the kernel
-      kernelRef.current(labeledArray, overlapsMatrix, numLabels, opacity, cell);
+      kernelRef.current(labeledArray, cellsMatrix, numLabels, opacity, cell);
       // Rerender the parent canvas
       setCanvases((canvases) => ({ ...canvases, outline: kernelCanvas }));
     }
-  }, [labeledArray, overlapsMatrix, opacity, cell, setCanvases, kernelCanvas, width, height]);
+  }, [labeledArray, cellsMatrix, opacity, cell, setCanvases, kernelCanvas, width, height]);
 
   return null;
 };

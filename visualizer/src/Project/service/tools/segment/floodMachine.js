@@ -7,7 +7,7 @@ const creatFloodMachine = (context) =>
       invoke: [
         { id: 'select', src: fromEventBus('flood', () => context.eventBuses.select) },
         { id: 'api', src: fromEventBus('flood', () => context.eventBuses.api) },
-        { src: fromEventBus('flood', () => context.eventBuses.overlaps) },
+        { src: fromEventBus('flood', () => context.eventBuses.cells) },
         { src: fromEventBus('flood', () => context.eventBuses.image) },
       ],
       context: {
@@ -16,13 +16,13 @@ const creatFloodMachine = (context) =>
         floodingCell: context.selected,
         floodedCell: 0,
         hovering: null,
-        overlaps: null,
+        cells: null,
       },
       on: {
         COORDINATES: { actions: 'setCoordinates' },
         SELECTED: { actions: 'setFloodingCell' },
         HOVERING: { actions: 'setHovering' },
-        OVERLAP_MATRIX: { actions: 'setOverlapMatrix' },
+        CELL_MATRIX: { actions: 'setCellMatrix' },
         mouseup: [
           { cond: 'shift', actions: 'setFloodedCell' },
           { cond: 'onFloodedCell', actions: 'flood' },
@@ -33,14 +33,14 @@ const creatFloodMachine = (context) =>
     {
       guards: {
         shift: (_, event) => event.shiftKey,
-        onFloodedCell: ({ floodedCell, hovering, overlapMatrix }) =>
-          overlapMatrix[hovering][floodedCell] === 1,
+        onFloodedCell: ({ floodedCell, hovering, cellMatrix }) =>
+          cellMatrix[hovering][floodedCell] === 1,
       },
       actions: {
         setFloodingCell: assign({ floodingCell: (_, { selected }) => selected }),
         setFloodedCell: assign({
-          floodedCell: ({ hovering, overlapMatrix, floodedCell }) => {
-            const cells = overlapMatrix[hovering];
+          floodedCell: ({ hovering, cellMatrix, floodedCell }) => {
+            const cells = cellMatrix[hovering];
             if (cells[floodedCell]) {
               // Get next cell that hovering value encodes
               const reordered = cells
@@ -55,7 +55,7 @@ const creatFloodMachine = (context) =>
         }),
         setCoordinates: assign({ x: (_, { x }) => x, y: (_, { y }) => y }),
         setHovering: assign({ hovering: (_, { hovering }) => hovering }),
-        setOverlapMatrix: assign({ overlapMatrix: (_, { overlapMatrix }) => overlapMatrix }),
+        setCellMatrix: assign({ cellMatrix: (_, { cellMatrix }) => cellMatrix }),
         flood: send(
           ({ floodingCell, floodedCell, x, y }, event) => ({
             type: 'EDIT',

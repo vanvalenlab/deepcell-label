@@ -2,7 +2,7 @@ import { Box } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import equal from 'fast-deep-equal';
 import React from 'react';
-import { useHexColormap, useImage, useOverlaps } from '../../ProjectContext';
+import { useCells, useHexColormap, useImage } from '../../ProjectContext';
 import FrameBox from './FrameBox';
 
 function CellTimeline({ cell }) {
@@ -12,8 +12,8 @@ function CellTimeline({ cell }) {
   const colors = useHexColormap();
   const color = colors[cell] ?? '#000000';
 
-  const overlaps = useOverlaps();
-  const frames = useSelector(overlaps, (state) => state.context.overlaps.getFrames(cell), equal);
+  const cells = useCells();
+  const frames = useSelector(cells, (state) => state.context.cells.getFrames(cell), equal);
 
   return (
     <Box

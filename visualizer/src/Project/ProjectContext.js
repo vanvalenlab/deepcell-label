@@ -31,14 +31,14 @@ export function useHoveringCells() {
   // get frame
   const image = useImage();
   const frame = useSelector(image, (state) => state.context.frame);
-  // get cells for hovering value from overlaps array
-  const overlaps = useOverlaps();
-  const cells = useSelector(
-    overlaps,
-    (state) => state.context.overlaps?.getCellsForValue(hovering, frame),
+  // get cells for hovering value from cells array
+  const cells = useCells();
+  const hoveringCells = useSelector(
+    cells,
+    (state) => state.context.cells?.getCellsForValue(hovering, frame),
     equal
   );
-  return cells || [];
+  return hoveringCells || [];
 }
 
 /** Returns the other selected cell when using the flood, replace, or swap tools.
@@ -347,7 +347,7 @@ function rgbToHex(rgb) {
 }
 
 export function useHexColormap() {
-  const labels = useOverlaps();
+  const labels = useCells();
   const colormap = useSelector(labels, (state) => state.context.colormap);
   return colormap.map(rgbToHex);
 }
@@ -412,10 +412,10 @@ export function useFullResolutionCanvas() {
   return canvas;
 }
 
-export function useOverlaps() {
+export function useCells() {
   const project = useProject();
-  const overlaps = useSelector(project, (state) => state.context.overlapsRef);
-  return overlaps;
+  const cells = useSelector(project, (state) => state.context.cellsRef);
+  return cells;
 }
 
 function ProjectContext({ project, children }) {

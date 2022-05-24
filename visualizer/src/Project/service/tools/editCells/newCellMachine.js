@@ -6,17 +6,17 @@ function createNewCellMachine(context) {
     {
       invoke: [
         { id: 'select', src: fromEventBus('delete', () => context.eventBuses.select) },
-        { id: 'overlaps', src: fromEventBus('delete', () => context.eventBuses.overlaps) },
+        { id: 'cells', src: fromEventBus('delete', () => context.eventBuses.cells) },
       ],
       context: {
         selected: context.selected,
         hovering: null,
-        overlapMatrix: null,
+        cellMatrix: null,
       },
       on: {
         SELECTED: { actions: 'setSelected' },
         HOVERING: { actions: 'setHovering' },
-        OVERLAP_MATRIX: { actions: 'setOverlapMatrix' },
+        CELL_MATRIX: { actions: 'setCellMatrix' },
         mouseup: [
           { cond: 'shift', actions: 'selectCell' },
           { cond: 'onSelected', actions: 'newCell' },
@@ -27,13 +27,13 @@ function createNewCellMachine(context) {
     {
       guards: {
         shift: (_, event) => event.shiftKey,
-        onSelected: (ctx) => ctx.overlapMatrix[ctx.hovering][ctx.selected] === 1,
+        onSelected: (ctx) => ctx.cellMatrix[ctx.hovering][ctx.selected] === 1,
       },
       actions: {
         setSelected: assign({ selected: (_, evt) => evt.selected }),
         setHovering: assign({ hovering: (_, evt) => evt.hovering }),
-        setOverlapMatrix: assign({ overlapMatrix: (_, evt) => evt.overlapMatrix }),
-        newCell: send((ctx) => ({ type: 'NEW', cell: ctx.selected }), { to: 'overlaps' }),
+        setCellMatrix: assign({ cellMatrix: (_, evt) => evt.cellMatrix }),
+        newCell: send((ctx) => ({ type: 'NEW', cell: ctx.selected }), { to: 'cells' }),
         selectCell: send('SELECT', { to: 'select' }),
       },
     }

@@ -7,7 +7,7 @@ const createTrimMachine = (context) =>
       invoke: [
         { id: 'select', src: fromEventBus('trim', () => context.eventBuses.select) },
         { id: 'api', src: fromEventBus('trim', () => context.eventBuses.api) },
-        { src: fromEventBus('trim', () => context.eventBuses.overlaps) },
+        { src: fromEventBus('trim', () => context.eventBuses.cells) },
       ],
       context: {
         x: null,
@@ -19,19 +19,19 @@ const createTrimMachine = (context) =>
         COORDINATES: { actions: 'setCoordinates' },
         HOVERING: { actions: 'setHovering' },
         SELECTED: { actions: 'setLabel' },
-        OVERLAP_MATRIX: { actions: 'setOverlapMatrix' },
+        CELL_MATRIX: { actions: 'setCellMatrix' },
         mouseup: [{ cond: 'onLabel', actions: 'trim' }, { actions: 'select' }],
       },
     },
     {
       guards: {
-        onLabel: ({ label, hovering, overlapMatrix }) => overlapMatrix[hovering][label] === 1,
+        onLabel: ({ label, hovering, cellMatrix }) => cellMatrix[hovering][label] === 1,
       },
       actions: {
         setCoordinates: assign({ x: (_, { x }) => x, y: (_, { y }) => y }),
         setHovering: assign({ hovering: (_, { hovering }) => hovering }),
         setLabel: assign({ label: (_, { selected }) => selected }),
-        setOverlapMatrix: assign({ overlapMatrix: (_, { overlapMatrix }) => overlapMatrix }),
+        setCellMatrix: assign({ cellMatrix: (_, { cellMatrix }) => cellMatrix }),
         select: send({ type: 'SELECT' }, { to: 'select' }),
         trim: send(
           ({ x, y, label }, event) => ({

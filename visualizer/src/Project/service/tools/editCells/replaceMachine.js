@@ -6,18 +6,18 @@ function createReplaceMachine(context) {
     {
       invoke: [
         { id: 'select', src: fromEventBus('replace', () => context.eventBuses.select) },
-        { id: 'overlaps', src: fromEventBus('replace', () => context.eventBuses.overlaps) },
+        { id: 'cells', src: fromEventBus('replace', () => context.eventBuses.cells) },
       ],
       context: {
         selected: context.selected,
         replaceCell: null,
         hovering: null,
-        overlapMatrix: null,
+        cellMatrix: null,
       },
       on: {
         SELECTED: { actions: 'setSelected' },
         HOVERING: { actions: 'setHovering' },
-        OVERLAP_MATRIX: { actions: 'setOverlapMatrix' },
+        CELL_MATRIX: { actions: 'setCellMatrix' },
         mouseup: [
           { cond: 'shift', actions: 'setReplaceCell' },
           { cond: 'onReplaceCell', actions: 'replace' },
@@ -30,16 +30,15 @@ function createReplaceMachine(context) {
       guards: {
         shift: (_, evt) => evt.shiftKey,
         onReplaceCell: (ctx) =>
-          ctx.replaceCell && ctx.overlapMatrix[ctx.hovering][ctx.replaceCell] === 1,
+          ctx.replaceCell && ctx.cellMatrix[ctx.hovering][ctx.replaceCell] === 1,
       },
       actions: {
         resetReplaceCell: assign({ replaceCell: null }),
         setSelected: assign({ selected: (_, evt) => evt.selected }),
         setReplaceCell: assign({
           replaceCell: (ctx) => {
-            const { hovering, replaceCell: cell, overlapMatrix } = ctx;
-            const cells = overlapMatrix[hovering];
-            console.log(cells, cell, cells[cell]);
+            const { hovering, replaceCell: cell, cellMatrix } = ctx;
+            const cells = cellMatrix[hovering];
             if (cells[cell]) {
               // Get next label that hovering value encodes
               const reordered = cells.slice(cell + 1).concat(cells.slice(0, cell + 1));
@@ -51,9 +50,9 @@ function createReplaceMachine(context) {
           },
         }),
         setHovering: assign({ hovering: (_, evt) => evt.hovering }),
-        setOverlapMatrix: assign({ overlapMatrix: (_, evt) => evt.overlapMatrix }),
+        setCellMatrix: assign({ cellMatrix: (_, evt) => evt.cellMatrix }),
         replace: send((ctx, evt) => ({ type: 'REPLACE', a: ctx.selected, b: ctx.replaceCell }), {
-          to: 'overlaps',
+          to: 'cells',
         }),
       },
     }

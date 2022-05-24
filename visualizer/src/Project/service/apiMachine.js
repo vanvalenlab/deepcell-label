@@ -14,7 +14,7 @@ function splitRows(buffer, width, height) {
 
 /** Creates a blob for a zip file with all project . */
 async function makeEditZip(context, event) {
-  const { labeled, raw, overlaps, writeMode, lineage, frame } = context;
+  const { labeled, raw, cells, writeMode, lineage, frame } = context;
   const { action, args } = event;
   const edit = { width: labeled[0].length, height: labeled.length, action, args, writeMode };
 
@@ -22,8 +22,8 @@ async function makeEditZip(context, event) {
   // Required files
   await zipWriter.add('edit.json', new zip.TextReader(JSON.stringify(edit)));
   await zipWriter.add(
-    'overlaps.json',
-    new zip.TextReader(JSON.stringify(overlaps.overlaps.filter((o) => o.z === frame)))
+    'cells.json',
+    new zip.TextReader(JSON.stringify(cells.cells.filter((o) => o.z === frame)))
   );
   await zipWriter.add('labeled.dat', new zip.BlobReader(new Blob(labeled)));
   // Optional files
@@ -41,7 +41,7 @@ async function makeEditZip(context, event) {
 
 /** Creates a blob for a zip file with all project data. */
 async function makeExportZip(context) {
-  const { rawArrays, labeledArrays, overlaps, lineage } = context;
+  const { rawArrays, labeledArrays, cells, lineage } = context;
   const dimensions = {
     width: rawArrays[0][0][0].length,
     height: rawArrays[0][0].length,
@@ -54,7 +54,7 @@ async function makeExportZip(context) {
   await zipWriter.add('dimensions.json', new zip.TextReader(JSON.stringify(dimensions)));
   await zipWriter.add('labeled.dat', new zip.BlobReader(new Blob(flattenDeep(labeledArrays))));
   await zipWriter.add('raw.dat', new zip.BlobReader(new Blob(flattenDeep(rawArrays))));
-  await zipWriter.add('overlaps.json', new zip.TextReader(JSON.stringify(overlaps)));
+  await zipWriter.add('cells.json', new zip.TextReader(JSON.stringify(cells)));
   if (lineage) {
     await zipWriter.add('lineage.json', new zip.TextReader(JSON.stringify(lineage)));
   }
@@ -129,13 +129,13 @@ async function parseResponseZip(response, width, height) {
   const reader = new zip.ZipReader(new zip.BlobReader(blob));
   const entries = await reader.getEntries();
   const labeledBlob = await entries[0].getData(new zip.BlobWriter());
-  const overlapsJson = await entries[1].getData(new zip.TextWriter());
+  const cellsJson = await entries[1].getData(new zip.TextWriter());
   // const labeled = JSON.parse(labeledJson).map((arr) => Int32Array.from(arr));
   const labeledBuffer = await labeledBlob.arrayBuffer();
   const labeled = splitRows(labeledBuffer, width, height);
-  const overlaps = JSON.parse(overlapsJson);
+  const cells = JSON.parse(cellsJson);
   await reader.close();
-  return { labeled, overlaps };
+  return { labeled, cells };
 }
 
 const createApiMachine = ({ projectId, eventBuses }) =>
@@ -145,7 +145,7 @@ const createApiMachine = ({ projectId, eventBuses }) =>
       invoke: [
         { id: 'eventBus', src: fromEventBus('api', () => eventBuses.api) },
         { id: 'arrays', src: fromEventBus('api', () => eventBuses.arrays) },
-        { id: 'overlaps', src: fromEventBus('api', () => eventBuses.overlaps) },
+        { id: 'cells', src: fromEventBus('api', () => eventBuses.cells) },
         { src: fromEventBus('api', () => eventBuses.image) },
         { src: fromEventBus('api', () => eventBuses.labeled) },
       ],
@@ -159,7 +159,7 @@ const createApiMachine = ({ projectId, eventBuses }) =>
         raw: null, // current frame on display (for edit route)
         rawArrays: null, // all frames and channels (for upload/download route)
         labeledArrays: null, // all frames and features (for upload/download route)
-        overlaps: null,
+        cells: null,
         writeMode: 'overlap',
         initialLabels: null,
         historyRef: null, // to send snapshots for undo/redo history
@@ -168,7 +168,7 @@ const createApiMachine = ({ projectId, eventBuses }) =>
       on: {
         LABELED: { actions: 'setLabeled' },
         RAW: { actions: 'setRaw' },
-        OVERLAPS: { actions: 'setOverlaps' },
+        CELLS: { actions: 'setCells' },
         SET_FRAME: { actions: 'setFrame' },
         SET_FEATURE: { actions: 'setFeature' },
         SET_WRITE_MODE: { actions: 'setWriteMode' },
@@ -252,7 +252,7 @@ const createApiMachine = ({ projectId, eventBuses }) =>
             frame: ctx.frame,
             feature: ctx.feature,
             labeled: ctx.labeled,
-            overlaps: ctx.overlaps.overlaps.filter((o) => o.z === ctx.frame),
+            cells: ctx.cells.cells.filter((o) => o.z === ctx.frame),
           },
         })),
         sendEdited: send(
@@ -261,7 +261,7 @@ const createApiMachine = ({ projectId, eventBuses }) =>
             frame: ctx.initialLabels.frame,
             feature: ctx.initialLabels.feature,
             labeled: evt.data.labeled,
-            overlaps: evt.data.overlaps,
+            cells: evt.data.cells,
           }),
           { to: 'eventBus' }
         ),
@@ -272,7 +272,7 @@ const createApiMachine = ({ projectId, eventBuses }) =>
         })),
         setRaw: assign((_, { raw }) => ({ raw })),
         setLabeled: assign((_, { labeled }) => ({ labeled })),
-        setOverlaps: assign((_, { overlaps }) => ({ overlaps })),
+        setCells: assign((_, { cells }) => ({ cells })),
         setFrame: assign((_, { frame }) => ({ frame })),
         setFeature: assign((_, { feature }) => ({ feature })),
         setWriteMode: assign((_, { writeMode }) => ({ writeMode })),
@@ -286,7 +286,7 @@ const createApiMachine = ({ projectId, eventBuses }) =>
               frame: ctx.initialLabels.frame,
               feature: ctx.initialLabels.feature,
               labeled: evt.data.labeled,
-              overlaps: evt.data.overlaps,
+              cells: evt.data.cells,
             },
           }),
           { to: (ctx) => ctx.historyRef }

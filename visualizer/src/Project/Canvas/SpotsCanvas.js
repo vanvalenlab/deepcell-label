@@ -5,8 +5,8 @@ import { useEffect, useState } from 'react';
 import {
   useArrays,
   useCanvas,
+  useCells,
   useFullResolutionCanvas,
-  useOverlaps,
   useSpots,
 } from '../ProjectContext';
 
@@ -42,8 +42,8 @@ function SpotsCanvas({ setCanvases }) {
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
 
-  const overlaps = useOverlaps();
-  const colormap = useSelector(overlaps, (state) => state.context.colormap);
+  const cells = useCells();
+  const colormap = useSelector(cells, (state) => state.context.colormap);
 
   const drawCanvas = useFullResolutionCanvas();
   const movingCanvas = useFullResolutionCanvas();

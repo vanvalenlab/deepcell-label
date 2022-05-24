@@ -15,36 +15,36 @@ from skimage.morphology import dilation, disk, erosion, flood, square
 from skimage.segmentation import morphological_chan_vese, watershed
 
 
-def make_overlap_matrix(overlaps):
+def make_cell_matrix(cells):
     """
-    Make an overlap matrix of overlaps from a list of overlaps objects.
+    Make an cell matrix from a list of cells objects.
 
     Args:
-        overlaps (list): list of overlaps like { value: 1, cell: 1 }
+        cells (list): list of cells like { value: 1, cell: 1 }
 
     Returns:
-        numpy.ndarray: matrix of overlaps where (i, j) is 1 if { value: i, cell: j } is in the overlaps
+        numpy.ndarray: matrix of cells where (i, j) is 1 if { value: i, cell: j } is in the cells
     """
-    max_value = max(map(lambda o: o['value'], overlaps))
-    max_cell = max(map(lambda o: o['cell'], overlaps))
+    max_value = max(map(lambda o: o['value'], cells))
+    max_cell = max(map(lambda o: o['cell'], cells))
 
-    overlap_matrix = np.zeros((max_value + 1, max_cell + 1))
-    for overlap in overlaps:
-        overlap_matrix[int(overlap['value']), int(overlap['cell'])] = 1
-    return overlap_matrix
+    cell_matrix = np.zeros((max_value + 1, max_cell + 1))
+    for cell in cells:
+        cell_matrix[int(cell['value']), int(cell['cell'])] = 1
+    return cell_matrix
 
 
-def make_overlaps(overlap_matrix):
+def make_cells(cell_matrix):
     """
-    Make a list of overlaps from an overlap matrix.
+    Make a list of cells from an cell matrix.
 
     Args:
-        overlap_matrix: 2D numpy array where (i, j) is 1 if value i encodes cell j
+        cell_matrix: 2D numpy array where (i, j) is 1 if value i encodes cell j
 
     Returns:
-        list of overlaps like { value: i, cell: j }
+        list of cells like { value: i, cell: j }
     """
-    values, cells = np.nonzero(overlap_matrix)
+    values, cells = np.nonzero(cell_matrix)
     return [
         {'value': int(value), 'cell': int(cell)} for (value, cell) in zip(values, cells)
     ]
@@ -91,7 +91,7 @@ class Edit(object):
             self.write_mode = edit.get('writeMode', 'overlap')
             if self.write_mode not in self.valid_modes:
                 raise ValueError(
-                    f'Invalid writeMode {self.write_mode} in edit.json. Choose from overlap, overwrite, or exclude.'
+                    f'Invalid writeMode {self.write_mode} in edit.json. Choose from cell, overwrite, or exclude.'
                 )
 
         # Load label array
@@ -102,14 +102,14 @@ class Edit(object):
             self.initial_labels = np.reshape(labels, (self.width, self.height))
             self.labels = self.initial_labels.copy()
 
-        # Load overlaps array
-        if 'overlaps.json' not in zf.namelist():
-            raise ValueError('zip must contain overlaps.json.')
-        with zf.open('overlaps.json') as f:
-            overlaps = json.load(f)
-            self.overlaps = make_overlap_matrix(overlaps)
-            self.new_value = self.overlaps.shape[0]
-            self.new_cell = self.overlaps.shape[1]
+        # Load cells array
+        if 'cells.json' not in zf.namelist():
+            raise ValueError('zip must contain cells.json.')
+        with zf.open('cells.json') as f:
+            cells = json.load(f)
+            self.cells = make_cell_matrix(cells)
+            self.new_value = self.cells.shape[0]
+            self.new_cell = self.cells.shape[1]
 
         # Load raw image
         if 'raw.dat' in zf.namelist():
@@ -136,8 +136,8 @@ class Edit(object):
         with zipfile.ZipFile(f, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
             # zf.writestr('labeled.json', str(self.labels.tolist()))
             zf.writestr('labeled.dat', self.labels.tobytes())
-            overlaps = make_overlaps(self.overlaps)
-            zf.writestr('overlaps.json', json.dumps(overlaps))
+            cells = make_cells(self.cells)
+            zf.writestr('cells.json', json.dumps(cells))
             if self.lineage is not None:
                 zf.writestr('lineage.json', json.dumps(self.lineage))
         f.seek(0)
@@ -146,20 +146,18 @@ class Edit(object):
     def add_label(self, label):
         if label == self.new_cell:
             # TODO: error handling if new label is too large (or negative or 0 or non integer)
-            new_column = np.zeros((self.overlaps.shape[0], 1))
-            self.overlaps = np.append(self.overlaps, new_column, axis=1)
+            new_column = np.zeros((self.cells.shape[0], 1))
+            self.cells = np.append(self.cells, new_column, axis=1)
 
     def get_value(self, labels):
         """
         Returns the value that encodes the vector of labels
         """
-        matching_values = np.where(np.all(labels == self.overlaps, axis=1))[0]
+        matching_values = np.where(np.all(labels == self.cells, axis=1))[0]
         if matching_values.size == 0:  # No matching value
             new_value = self.new_value
             self.new_value += 1
-            self.overlaps = np.append(
-                self.overlaps, np.expand_dims(labels, axis=0), axis=0
-            )
+            self.cells = np.append(self.cells, np.expand_dims(labels, axis=0), axis=0)
             return new_value
         else:
             return matching_values[0]
@@ -171,7 +169,7 @@ class Edit(object):
         if label == 0:
             return self.labels == 0
         mask = np.zeros(self.labels.shape, dtype=bool)
-        for value, encodes_label in enumerate(self.overlaps[:, label]):
+        for value, encodes_label in enumerate(self.cells[:, label]):
             if encodes_label:
                 mask[self.labels == value] = True
         return mask
@@ -180,14 +178,14 @@ class Edit(object):
         if self.write_mode == 'overwrite':
             if np.any(mask):
                 self.add_label(label)
-            labels = np.zeros(self.overlaps.shape[1])
+            labels = np.zeros(self.cells.shape[1])
             labels[label] = True
             self.labels[mask] = self.get_value(labels)
         elif self.write_mode == 'exclude':
             mask = mask & (self.labels == 0)
             if np.any(mask):
                 self.add_label(label)
-            labels = np.zeros(self.overlaps.shape[1])
+            labels = np.zeros(self.cells.shape[1])
             labels[label] = True
             self.labels[mask] = self.get_value(labels)
         else:  # self.write_mode == 'overlap'
@@ -207,7 +205,7 @@ class Edit(object):
         values = np.unique(self.labels[mask])
         for value in values:
             # Get value to encode new set of labels
-            labels = np.copy(self.overlaps[value])
+            labels = np.copy(self.cells[value])
             labels[label] = not remove
             new_value = self.get_value(labels)
             self.labels[mask & (self.labels == value)] = new_value
@@ -240,7 +238,7 @@ class Edit(object):
         b = self.clean_label(b)
 
         for value in np.unique(self.labels):
-            labels = self.overlaps[value]
+            labels = self.cells[value]
             if labels[b] == 1:
                 new_cells = np.copy(labels)
                 new_cells[b] = 0
@@ -261,7 +259,7 @@ class Edit(object):
         """
         trace = json.loads(trace)
 
-        # TODO: handle new labels (add column to overlaps)
+        # TODO: handle new labels (add column to cells)
         # TODO: switch between overwriting, overlapping, and excluding
         # overwrite: replace labels with label
         # exclude: prevent drawing over labels with label
@@ -293,7 +291,7 @@ class Edit(object):
             y (int): y position of seed
         """
         seed_value = self.labels[y, x]
-        if self.overlaps[seed_value][label]:
+        if self.cells[seed_value][label]:
             label_mask = self.get_mask(label)
             connected_label_mask = flood(label_mask, (y, x))
             self.remove_mask(~connected_label_mask, label)
