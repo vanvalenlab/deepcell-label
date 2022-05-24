@@ -1,7 +1,7 @@
 import { actions, assign, forwardTo, Machine, spawn } from 'xstate';
-import { fromEventBus } from './eventBus';
-import createHistoryMachine from './undo/historyMachine';
-import createLabelHistoryMachine from './undo/labelHistoryMachine';
+import { fromEventBus } from '../eventBus';
+import createHistoryMachine from './historyMachine';
+import createLabelHistoryMachine from './labelHistoryMachine';
 
 const { pure } = actions;
 

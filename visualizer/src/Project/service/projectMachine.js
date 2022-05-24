@@ -15,7 +15,7 @@ import createLoadMachine from './loadMachine';
 import createSelectMachine from './selectMachine';
 import createSpotsMachine from './spotsMachine';
 import createToolMachine from './tools/toolMachine';
-import createUndoMachine from './undoMachine';
+import createUndoMachine from './undo';
 
 const createProjectMachine = (projectId) =>
   Machine(
