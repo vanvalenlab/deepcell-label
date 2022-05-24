@@ -105,10 +105,12 @@ const createOverlapsMachine = ({ eventBuses }) =>
                 overlaps = ctx.overlaps.overlaps.map((o) =>
                   o.cell === evt.b && o.z <= ctx.frame ? { ...o, cell: evt.a } : o
                 );
+                break;
               case 'future':
                 overlaps = ctx.overlaps.overlaps.map((o) =>
                   o.cell === evt.b && o.z >= ctx.frame ? { ...o, cell: evt.a } : o
                 );
+                break;
               case 'all':
                 overlaps = ctx.overlaps.overlaps.map((o) =>
                   o.cell === evt.b ? { ...o, cell: evt.a } : o
