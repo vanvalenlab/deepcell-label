@@ -7,8 +7,10 @@ import {
   useArrays,
   useCanvas,
   useCells,
+  useChannel,
   useImage,
   useLabeled,
+  useRaw,
   useSelectedCell,
 } from '../ProjectContext';
 
@@ -22,6 +24,12 @@ const OutlineCanvas = ({ setCanvases }) => {
   const labeled = useLabeled();
   const opacity = useSelector(labeled, (state) => state.context.outlineOpacity);
   const feature = useSelector(labeled, (state) => state.context.feature);
+
+  const raw = useRaw();
+  const isGrayscale = useSelector(raw, (state) => state.context.isGrayscale);
+  const channelIndex = useSelector(raw, (state) => state.context.channel);
+  const channel = useChannel(channelIndex);
+  const invert = useSelector(channel, (state) => state.context.invert && isGrayscale);
 
   const image = useImage();
   const frame = useSelector(image, (state) => state.context.frame);
@@ -41,7 +49,7 @@ const OutlineCanvas = ({ setCanvases }) => {
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
-      `function (data, cells, numLabels, opacity, cell) {
+      `function (data, cells, numLabels, opacity, cell, invert) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
         const value = data[y][x];
@@ -74,7 +82,13 @@ const OutlineCanvas = ({ setCanvases }) => {
             }
           }
         }
-        this.color(1, 1, 1, 1 - outlineOpacity);
+        let [r, g, b] = [1, 1, 1];
+        if (invert) {
+          r = 0;
+          g = 0;
+          b = 0;
+        }
+        this.color(r, g, b, 1 - outlineOpacity);
       }`,
       {
         constants: { w: width, h: height },
@@ -94,11 +108,11 @@ const OutlineCanvas = ({ setCanvases }) => {
     if (labeledArray && cellsMatrix) {
       const numLabels = cellsMatrix[0].length;
       // Compute the outline of the labels with the kernel
-      kernelRef.current(labeledArray, cellsMatrix, numLabels, opacity, cell);
+      kernelRef.current(labeledArray, cellsMatrix, numLabels, opacity, cell, invert);
       // Rerender the parent canvas
       setCanvases((canvases) => ({ ...canvases, outline: kernelCanvas }));
     }
-  }, [labeledArray, cellsMatrix, opacity, cell, setCanvases, kernelCanvas, width, height]);
+  }, [labeledArray, cellsMatrix, opacity, cell, invert, setCanvases, kernelCanvas, width, height]);
 
   return null;
 };
