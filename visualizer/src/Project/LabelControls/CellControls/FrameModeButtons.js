@@ -1,4 +1,5 @@
 import AutoAwesomeMotionSharpIcon from '@mui/icons-material/AutoAwesomeMotionSharp';
+import ForwardIcon from '@mui/icons-material/Forward';
 import SquareSharpIcon from '@mui/icons-material/SquareSharp';
 import { FormLabel, ToggleButton } from '@mui/material';
 import Box from '@mui/material/Box';
@@ -21,6 +22,20 @@ function FrameModeButtons() {
         >
           One Frame
           <SquareSharpIcon fontSize='small' />
+        </ToggleButton>
+        <ToggleButton
+          onClick={() => overlaps.send({ type: 'SET_FRAME_MODE', frameMode: 'past' })}
+          selected={frameMode === 'past'}
+          sx={{ px: 0.5, py: 0 }}
+        >
+          Past Frames <ForwardIcon sx={{ transform: 'rotate(180deg)' }} />
+        </ToggleButton>
+        <ToggleButton
+          onClick={() => overlaps.send({ type: 'SET_FRAME_MODE', frameMode: 'future' })}
+          selected={frameMode === 'future'}
+          sx={{ px: 0.5, py: 0 }}
+        >
+          Future Frames <ForwardIcon />
         </ToggleButton>
         <ToggleButton
           onClick={() => overlaps.send({ type: 'SET_FRAME_MODE', frameMode: 'all' })}

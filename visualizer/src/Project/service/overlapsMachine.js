@@ -94,14 +94,27 @@ const createOverlapsMachine = ({ eventBuses }) =>
         replace: assign({
           overlaps: (ctx, evt) => {
             let overlaps;
-            if (ctx.frameMode === 'all') {
-              overlaps = ctx.overlaps.overlaps.map((o) =>
-                o.cell === evt.b ? { ...o, cell: evt.a } : o
-              );
-            } else {
-              overlaps = ctx.overlaps.overlaps.map((o) =>
-                o.cell === evt.b && o.z === ctx.frame ? { ...o, cell: evt.a } : o
-              );
+            switch (ctx.frameMode) {
+              case 'one':
+                overlaps = ctx.overlaps.overlaps.map((o) =>
+                  o.cell === evt.b && o.z === ctx.frame ? { ...o, cell: evt.a } : o
+                );
+                break;
+              case 'past':
+                overlaps = ctx.overlaps.overlaps.map((o) =>
+                  o.cell === evt.b && o.z <= ctx.frame ? { ...o, cell: evt.a } : o
+                );
+              case 'future':
+                overlaps = ctx.overlaps.overlaps.map((o) =>
+                  o.cell === evt.b && o.z >= ctx.frame ? { ...o, cell: evt.a } : o
+                );
+              case 'all':
+                overlaps = ctx.overlaps.overlaps.map((o) =>
+                  o.cell === evt.b ? { ...o, cell: evt.a } : o
+                );
+                break;
+              default:
+                overlaps = ctx.overlaps.overlaps;
             }
             return new Overlaps(overlaps);
           },
@@ -109,12 +122,27 @@ const createOverlapsMachine = ({ eventBuses }) =>
         delete: assign({
           overlaps: (ctx, evt) => {
             let overlaps;
-            if (ctx.frameMode === 'all') {
-              overlaps = ctx.overlaps.overlaps.filter((o) => o.cell !== evt.cell);
-            } else {
-              overlaps = ctx.overlaps.overlaps.filter(
-                (o) => o.z !== ctx.frame || o.cell !== evt.cell
-              );
+            switch (ctx.frameMode) {
+              case 'one':
+                overlaps = ctx.overlaps.overlaps.filter(
+                  (o) => o.z !== ctx.frame || o.cell !== evt.cell
+                );
+                break;
+              case 'past':
+                overlaps = ctx.overlaps.overlaps.filter(
+                  (o) => o.z > ctx.frame || o.cell !== evt.cell
+                );
+                break;
+              case 'future':
+                overlaps = ctx.overlaps.overlaps.filter(
+                  (o) => o.z < ctx.frame || o.cell !== evt.cell
+                );
+                break;
+              case 'all':
+                overlaps = ctx.overlaps.overlaps.filter((o) => o.cell !== evt.cell);
+                break;
+              default:
+                overlaps = ctx.overlaps.overlaps;
             }
             return new Overlaps(overlaps);
           },
@@ -122,22 +150,45 @@ const createOverlapsMachine = ({ eventBuses }) =>
         swap: assign({
           overlaps: (ctx, evt) => {
             let overlaps;
-            if (ctx.frameMode === 'all') {
-              overlaps = ctx.overlaps.overlaps.map((o) =>
-                o.cell === evt.a
-                  ? { ...o, cell: evt.b }
-                  : o.cell === evt.b
-                  ? { ...o, cell: evt.a }
-                  : o
-              );
-            } else {
-              overlaps = ctx.overlaps.overlaps.map((o) =>
-                o.cell === evt.a && o.z === ctx.frame
-                  ? { ...o, cell: evt.b }
-                  : o.cell === evt.b && o.z === ctx.frame
-                  ? { ...o, cell: evt.a }
-                  : o
-              );
+            switch (ctx.frameMode) {
+              case 'one':
+                overlaps = ctx.overlaps.overlaps.map((o) =>
+                  o.cell === evt.a && o.z === ctx.frame
+                    ? { ...o, cell: evt.b }
+                    : o.cell === evt.b && o.z === ctx.frame
+                    ? { ...o, cell: evt.a }
+                    : o
+                );
+                break;
+              case 'past':
+                overlaps = ctx.overlaps.overlaps.map((o) =>
+                  o.cell === evt.a && o.z <= ctx.frame
+                    ? { ...o, cell: evt.b }
+                    : o.cell === evt.b && o.z <= ctx.frame
+                    ? { ...o, cell: evt.a }
+                    : o
+                );
+                break;
+              case 'future':
+                overlaps = ctx.overlaps.overlaps.map((o) =>
+                  o.cell === evt.a && o.z >= ctx.frame
+                    ? { ...o, cell: evt.b }
+                    : o.cell === evt.b && o.z >= ctx.frame
+                    ? { ...o, cell: evt.a }
+                    : o
+                );
+                break;
+              case 'all':
+                overlaps = ctx.overlaps.overlaps.map((o) =>
+                  o.cell === evt.a
+                    ? { ...o, cell: evt.b }
+                    : o.cell === evt.b
+                    ? { ...o, cell: evt.a }
+                    : o
+                );
+                break;
+              default:
+                overlaps = ctx.overlaps.overlaps;
             }
             return new Overlaps(overlaps);
           },
