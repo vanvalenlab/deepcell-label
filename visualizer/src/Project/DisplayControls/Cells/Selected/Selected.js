@@ -16,6 +16,7 @@ function Selected() {
   const cell = useSelector(select, (state) => state.context.selected);
 
   useEffect(() => {
+    bind('esc', () => select.send('RESET'));
     bind('n', () => select.send('SELECT_NEW'));
     bind('[', () => select.send('SELECT_PREVIOUS'));
     bind(']', () => select.send('SELECT_NEXT'));
