@@ -8,7 +8,6 @@ function Divisions() {
   const cell = useSelectedCell();
   const division = useDivision(cell);
   const editing = useEditing();
-  console.log('Divisions', { cell, division, editing });
 
   return (
     <Box display='flex'>
