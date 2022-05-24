@@ -32,7 +32,6 @@ const createProjectMachine = (projectId) =>
           undo: new EventBus('undo'),
           api: new EventBus('api'),
           arrays: new EventBus('arrays'),
-          labels: new EventBus('labels'),
           load: new EventBus('load'),
           cells: new EventBus('cells'),
         },
