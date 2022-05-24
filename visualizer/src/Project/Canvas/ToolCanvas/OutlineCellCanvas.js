@@ -89,6 +89,15 @@ function OutlineCellCanvas({ setCanvases, cell }) {
     }
   }, [labeledArray, overlapsMatrix, cell, setCanvases, kernelCanvas, width, height]);
 
+  useEffect(
+    () => () =>
+      setCanvases((canvases) => {
+        const { tool, ...rest } = canvases;
+        return rest;
+      }),
+    [setCanvases]
+  );
+
   return null;
 }
 
