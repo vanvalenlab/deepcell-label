@@ -20,7 +20,8 @@ function Divisions() {
         <FormLabel>Parent</FormLabel>
         {division.parent ? <Division cell={division.parent} /> : <DivisionFootprint />}
         <FormLabel>Daughters</FormLabel>
-        {division.daughters.length > 0 || editing ? (
+        {/* division.label is undefined for dummy divisions (background/new cells) */}
+        {(division.daughters.length > 0 || editing) && division.label ? (
           <Division cell={cell} />
         ) : (
           <DivisionFootprint />
