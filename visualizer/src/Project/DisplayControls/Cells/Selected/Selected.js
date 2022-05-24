@@ -8,16 +8,12 @@ import Tooltip from '@mui/material/Tooltip';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
 import React, { useEffect, useState } from 'react';
-import { useHexColormap, useSelect } from '../../../ProjectContext';
+import { useSelect } from '../../../ProjectContext';
 import Cell from '../Cell';
-import { contrast } from './utils';
 
-function SelectedBox() {
+function Selected() {
   const select = useSelect();
   const cell = useSelector(select, (state) => state.context.selected);
-
-  const colormap = useHexColormap();
-  const color = colormap[cell] ?? '#000000';
 
   useEffect(() => {
     bind('n', () => select.send('SELECT_NEW'));
@@ -26,8 +22,7 @@ function SelectedBox() {
   }, [select]);
 
   const [showButtons, setShowButtons] = useState(false);
-  const buttonColor = '#000000';
-  const temp = contrast(color, '#000000') > contrast(color, '#FFFFFF') ? '#000000' : '#FFFFFF';
+  const color = '#000000';
 
   const newTooltip = (
     <span>
@@ -57,8 +52,6 @@ function SelectedBox() {
     <Box
       sx={{
         position: 'relative',
-        // width: (theme) => theme.spacing(8),
-        // height: (theme) => theme.spacing(8),
         display: 'flex',
         alignContent: 'center',
         justifyContent: 'center',
@@ -67,38 +60,15 @@ function SelectedBox() {
       onMouseEnter={() => setShowButtons(true)}
       onMouseLeave={() => setShowButtons(false)}
     >
-      {/* <Box
-        sx={{
-          // position: 'absolute',
-          width: (theme) => theme.spacing(8),
-          height: (theme) => theme.spacing(8),
-          // border: (theme) => `${theme.spacing(0.5)} solid #DDDDDD`,
-          display: 'flex',
-          alignContent: 'center',
-          justifyContent: 'center',
-          // background: color,
-        }}
-      > */}
       <Cell cell={cell} />
-      {/* </Box> */}
-      {/* <Typography
-          sx={{
-            color: buttonColor,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          {selected}
-        </Typography> */}
       {showButtons && (
         <Tooltip title={newTooltip}>
           <IconButton
             sx={{ position: 'absolute', top: -5, left: -5 }}
             size='small'
-            onClick={() => send('SELECT_NEW')}
+            onClick={() => select.send('SELECT_NEW')}
           >
-            <AddIcon sx={{ color: buttonColor }} />
+            <AddIcon sx={{ color }} />
           </IconButton>
         </Tooltip>
       )}
@@ -107,9 +77,9 @@ function SelectedBox() {
           <IconButton
             sx={{ position: 'absolute', top: -5, right: -5 }}
             size='small'
-            onClick={() => send('RESET')}
+            onClick={() => select.send('RESET')}
           >
-            <ClearIcon sx={{ color: buttonColor }} />
+            <ClearIcon sx={{ color }} />
           </IconButton>
         </Tooltip>
       )}
@@ -118,9 +88,9 @@ function SelectedBox() {
           <IconButton
             sx={{ position: 'absolute', bottom: -5, left: -5 }}
             size='small'
-            onClick={() => send('SELECT_PREVIOUS')}
+            onClick={() => select.send('SELECT_PREVIOUS')}
           >
-            <ArrowBackIosNewIcon sx={{ color: buttonColor }} />
+            <ArrowBackIosNewIcon sx={{ color }} />
           </IconButton>
         </Tooltip>
       )}
@@ -129,15 +99,14 @@ function SelectedBox() {
           <IconButton
             sx={{ position: 'absolute', bottom: -5, right: -5 }}
             size='small'
-            onClick={() => send('SELECT_NEXT')}
+            onClick={() => select.send('SELECT_NEXT')}
           >
-            <ArrowForwardIosIcon sx={{ color: buttonColor }} />
+            <ArrowForwardIosIcon sx={{ color }} />
           </IconButton>
         </Tooltip>
       )}
-      {/* </Box> */}
     </Box>
   );
 }
 
-export default SelectedBox;
+export default Selected;
