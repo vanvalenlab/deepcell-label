@@ -36,12 +36,13 @@ function createSwapMachine(context) {
       actions: {
         setSelected: assign({ selected: (_, evt) => evt.selected }),
         setSwapCell: assign({
-          swapCell: ({ hovering, overlapMatrix, swapCell }) => {
+          swapCell: (ctx) => {
+            const { hovering, swapCell: cell, overlapMatrix } = ctx;
             const cells = overlapMatrix[hovering];
-            if (cells[swapCell]) {
+            if (cells[cell]) {
               // Get next label that hovering value encodes
-              const reordered = cells.slice(swapCell + 1).concat(cells.slice(0, swapCell + 1));
-              const nextCell = (reordered.findIndex((i) => !!i) + swapCell + 1) % cells.length;
+              const reordered = cells.slice(cell + 1).concat(cells.slice(0, cell + 1));
+              const nextCell = (reordered.findIndex((i) => !!i) + cell + 1) % cells.length;
               return nextCell;
             }
             const firstCell = cells.findIndex((i) => i === 1);

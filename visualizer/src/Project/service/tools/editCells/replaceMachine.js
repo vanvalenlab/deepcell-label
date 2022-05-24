@@ -37,8 +37,9 @@ function createReplaceMachine(context) {
         setSelected: assign({ selected: (_, evt) => evt.selected }),
         setReplaceCell: assign({
           replaceCell: (ctx) => {
-            const { hovering, replace: cell, overlapMatrix } = ctx;
+            const { hovering, replaceCell: cell, overlapMatrix } = ctx;
             const cells = overlapMatrix[hovering];
+            console.log(cells, cell, cells[cell]);
             if (cells[cell]) {
               // Get next label that hovering value encodes
               const reordered = cells.slice(cell + 1).concat(cells.slice(0, cell + 1));
