@@ -19,10 +19,10 @@ function Divisions() {
         }}
       >
         <FormLabel>Parent</FormLabel>
-        {division.parent ? <Division label={division.parent} /> : <DivisionFootprint />}
+        {division.parent ? <Division cell={division.parent} /> : <DivisionFootprint />}
         <FormLabel>Daughters</FormLabel>
         {division.daughters.length > 0 || editing ? (
-          <Division label={cell} />
+          <Division cell={cell} />
         ) : (
           <DivisionFootprint />
         )}

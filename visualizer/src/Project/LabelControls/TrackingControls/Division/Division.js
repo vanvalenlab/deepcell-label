@@ -5,8 +5,8 @@ import { useDivision } from '../../../ProjectContext';
 import Daughters from './Daughters';
 import Parent from './Parent';
 
-function Division({ label }) {
-  const division = useDivision(label);
+function Division({ cell }) {
+  const division = useDivision(cell);
 
   return (
     <ArcherContainer>

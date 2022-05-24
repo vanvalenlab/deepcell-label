@@ -18,7 +18,7 @@ function Daughter({ parent, daughter, divisionFrame }) {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center' }}>
       <ArcherElement id={`daughter${daughter}`}>
-        <Cell label={daughter} onClick={onClick} />
+        <Cell cell={daughter} onClick={onClick} />
       </ArcherElement>
       {editing && <DaughterMenu parent={parent} daughter={daughter} />}
     </Box>

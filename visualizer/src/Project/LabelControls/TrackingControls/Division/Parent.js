@@ -38,7 +38,7 @@ function Parent({ division }) {
 
   return (
     <ArcherElement id='parent' relations={relations}>
-      <Cell label={label} onClick={onClick} />
+      <Cell cell={label} onClick={onClick} />
     </ArcherElement>
   );
 }

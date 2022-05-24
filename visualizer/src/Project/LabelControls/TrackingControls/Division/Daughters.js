@@ -14,7 +14,7 @@ function Daughters({ division }) {
       {daughters.map((daughter) => (
         <Daughter parent={label} daughter={daughter} divisionFrame={divisionFrame} key={daughter} />
       ))}
-      {editing && <AddDaughter label={label} />}
+      {editing && <AddDaughter cell={label} />}
     </Box>
   );
 }
