@@ -9,7 +9,7 @@ import {
   useImage,
   useLabeled,
   useOverlaps,
-  useSelect,
+  useSelectedCell,
 } from '../ProjectContext';
 
 const highlightColor = [255, 0, 0];
@@ -41,8 +41,7 @@ export const LabeledCanvas = ({ setCanvases }) => {
   );
   const colormap = useSelector(overlaps, (state) => state.context.colormap);
 
-  const select = useSelect();
-  const selected = useSelector(select, (state) => state.context.selected);
+  const cell = useSelectedCell();
 
   const kernelRef = useRef();
   const kernelCanvas = useAlphaKernelCanvas();
@@ -52,13 +51,13 @@ export const LabeledCanvas = ({ setCanvases }) => {
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
-      `function (labelArray, overlapsMatrix, opacity, colormap, selected, numLabels) {
+      `function (labelArray, overlapsMatrix, opacity, colormap, cell, numLabels) {
         const value = labelArray[this.constants.h - 1 - this.thread.y][this.thread.x];
         let [r, g, b, a] = [0, 0, 0, 1];
         for (let i = 0; i < numLabels; i++) {
           if (overlapsMatrix[value][i] === 1) {
             let [sr, sg, sb] = colormap[i];
-            if (i !== selected) {
+            if (i !== cell) {
               a = a * (1 - opacity[0]);
               sr = opacity[0] * sr / 255;
               sg = opacity[0] * sg / 255;
@@ -94,7 +93,7 @@ export const LabeledCanvas = ({ setCanvases }) => {
     if (labeledArray && overlapsMatrix) {
       const numLabels = overlapsMatrix[0].length;
       // Compute the label image with the kernel
-      kernelRef.current(labeledArray, overlapsMatrix, opacity, colormap, selected, numLabels);
+      kernelRef.current(labeledArray, overlapsMatrix, opacity, colormap, cell, numLabels);
       // Rerender the parent canvas with the kernel output
       setCanvases((canvases) => ({ ...canvases, labeled: kernelCanvas }));
     }
@@ -103,7 +102,7 @@ export const LabeledCanvas = ({ setCanvases }) => {
     overlapsMatrix,
     opacity,
     colormap,
-    selected,
+    cell,
     kernelCanvas,
     setCanvases,
     width,

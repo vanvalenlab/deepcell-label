@@ -14,11 +14,10 @@ import { contrast } from './utils';
 
 function SelectedBox() {
   const select = useSelect();
-  const { send } = select;
-  const selected = useSelector(select, (state) => state.context.selected);
+  const cell = useSelector(select, (state) => state.context.selected);
 
   const colormap = useHexColormap();
-  const color = colormap[selected] ?? '#000000';
+  const color = colormap[cell] ?? '#000000';
 
   useEffect(() => {
     bind('n', () => select.send('SELECT_NEW'));
@@ -80,7 +79,7 @@ function SelectedBox() {
           // background: color,
         }}
       > */}
-      <Cell cell={selected} />
+      <Cell cell={cell} />
       {/* </Box> */}
       {/* <Typography
           sx={{

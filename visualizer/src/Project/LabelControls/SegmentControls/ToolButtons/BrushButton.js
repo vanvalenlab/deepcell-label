@@ -11,15 +11,15 @@ function BrushButton(props) {
   const erase = useSelector(brush, (state) => state.context.erase);
 
   const select = useSelect();
-  const selected = useSelector(select, (state) => state.context.selected);
+  const cell = useSelector(select, (state) => state.context.selected);
 
   const onClick = useCallback(() => {
     segment.send({ type: 'SET_TOOL', tool: 'brush' });
     brush.send({ type: 'SET_ERASE', erase: false });
-    if (selected === 0) {
+    if (cell === 0) {
       select.send('SELECT_NEW');
     }
-  }, [segment, select, selected]);
+  }, [segment, select, cell]);
 
   const tooltipText = (
     <span>

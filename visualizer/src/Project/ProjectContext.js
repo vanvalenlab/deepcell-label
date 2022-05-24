@@ -19,7 +19,7 @@ function useReturnContext(contextType) {
 export function useSelectedCell() {
   // Get selected cell from each labeling mode
   const select = useSelect();
-  const cell = useSelector(select, (state) => state.context.foreground);
+  const cell = useSelector(select, (state) => state.context.selected);
   return cell;
 }
 

@@ -1,13 +1,11 @@
 import { FormLabel } from '@mui/material';
 import { Box } from '@mui/system';
-import { useSelector } from '@xstate/react';
-import { useHoveringCells, useOtherSelectedCell, useSelect } from '../../ProjectContext';
+import { useHoveringCells, useOtherSelectedCell, useSelectedCell } from '../../ProjectContext';
 import CellTimeline from './CellTimeline';
 import FrameSlider from './FrameSlider';
 
 function FrameControls() {
-  const select = useSelect();
-  const cell = useSelector(select, (state) => state.context.selected);
+  const cell = useSelectedCell();
   const hoveringCells = useHoveringCells();
   const otherCell = useOtherSelectedCell();
 

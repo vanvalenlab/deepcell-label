@@ -9,7 +9,7 @@ import {
   useImage,
   useLabeled,
   useOverlaps,
-  useSelect,
+  useSelectedCell,
 } from '../ProjectContext';
 
 const OutlineCanvas = ({ setCanvases }) => {
@@ -17,8 +17,7 @@ const OutlineCanvas = ({ setCanvases }) => {
   const width = useSelector(canvas, (state) => state.context.width);
   const height = useSelector(canvas, (state) => state.context.height);
 
-  const select = useSelect();
-  const selected = useSelector(select, (state) => state.context.selected);
+  const cell = useSelectedCell();
 
   const labeled = useLabeled();
   const opacity = useSelector(labeled, (state) => state.context.outlineOpacity);
@@ -46,7 +45,7 @@ const OutlineCanvas = ({ setCanvases }) => {
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
-      `function (data, overlaps, numLabels, opacity, selected) {
+      `function (data, overlaps, numLabels, opacity, cell) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
         const value = data[y][x];
@@ -71,7 +70,7 @@ const OutlineCanvas = ({ setCanvases }) => {
           if (overlaps[value][i] === 1) {
             if (overlaps[north][i] === 0 || overlaps[south][i] === 0 || overlaps[west][i] === 0 || overlaps[east][i] === 0)
            {
-              if (selected === i) {
+              if (cell === i) {
                 outlineOpacity = outlineOpacity * (1 - opacity[1]);
               } else {
                 outlineOpacity = outlineOpacity * (1 - opacity[0]);
@@ -99,11 +98,11 @@ const OutlineCanvas = ({ setCanvases }) => {
     if (labeledArray && overlapsMatrix) {
       const numLabels = overlapsMatrix[0].length;
       // Compute the outline of the labels with the kernel
-      kernelRef.current(labeledArray, overlapsMatrix, numLabels, opacity, selected);
+      kernelRef.current(labeledArray, overlapsMatrix, numLabels, opacity, cell);
       // Rerender the parent canvas
       setCanvases((canvases) => ({ ...canvases, outline: kernelCanvas }));
     }
-  }, [labeledArray, overlapsMatrix, opacity, selected, setCanvases, kernelCanvas, width, height]);
+  }, [labeledArray, overlapsMatrix, opacity, cell, setCanvases, kernelCanvas, width, height]);
 
   return null;
 };

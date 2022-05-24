@@ -1,15 +1,14 @@
 import { Box, FormLabel } from '@mui/material';
-import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useDivision, useEditing, useLineage } from '../../ProjectContext';
+import { useDivision, useEditing, useSelectedCell } from '../../ProjectContext';
 import Division from './Division';
 import DivisionFootprint from './Division/DivisionFootprint';
 
 function Divisions() {
-  const lineage = useLineage();
-  const label = useSelector(lineage, (state) => state.context.selected);
-  const division = useDivision(label);
+  const cell = useSelectedCell();
+  const division = useDivision(cell);
   const editing = useEditing();
+  console.log('Divisions', { cell, division, editing });
 
   return (
     <Box display='flex'>
@@ -23,7 +22,7 @@ function Divisions() {
         {division.parent ? <Division label={division.parent} /> : <DivisionFootprint />}
         <FormLabel>Daughters</FormLabel>
         {division.daughters.length > 0 || editing ? (
-          <Division label={label} />
+          <Division label={cell} />
         ) : (
           <DivisionFootprint />
         )}
