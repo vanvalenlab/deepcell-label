@@ -2,7 +2,7 @@
 
 import colormap from 'colormap';
 import { assign, Machine, send } from 'xstate';
-import Cells from '../overlaps';
+import Cells from '../cells';
 import { fromEventBus } from './eventBus';
 
 const createCellsMachine = ({ eventBuses }) =>

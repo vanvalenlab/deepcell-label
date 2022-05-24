@@ -3,7 +3,7 @@
 import * as zip from '@zip.js/zip.js';
 import { assign, createMachine, sendParent } from 'xstate';
 import { loadOmeTiff } from '@hms-dbmi/viv';
-import Cells from '../overlaps';
+import Cells from '../cells';
 
 type PropType<TObj, TProp extends keyof TObj> = TObj[TProp];
 type UnboxPromise<T extends Promise<any>> = T extends Promise<infer U> ? U : never;

@@ -1,4 +1,4 @@
-import Cells from './overlaps';
+import Cells from './cells';
 
 test('cell matrix for frame with one cell', () => {
   const cells = new Cells([{ value: 1, cell: 1, z: 0 }]);

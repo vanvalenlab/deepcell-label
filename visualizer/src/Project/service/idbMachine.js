@@ -3,7 +3,7 @@
  */
 import { openDB } from 'idb';
 import { assign, Machine, sendParent } from 'xstate';
-import Cells from '../overlaps';
+import Cells from '../cells';
 import { fromEventBus } from './eventBus';
 
 function createIDBMachine({ projectId, eventBuses }) {
