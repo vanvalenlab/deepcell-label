@@ -1,17 +1,17 @@
 import { Box } from '@mui/material';
 import React from 'react';
 import { ArcherElement } from 'react-archer';
-import { useEditing, useImage, useLineage } from '../../../ProjectContext';
+import { useEditing, useImage, useSelect } from '../../../ProjectContext';
 import Cell from './Cell';
 import DaughterMenu from './DaughterMenu';
 
 function Daughter({ parent, daughter, divisionFrame }) {
-  const lineage = useLineage();
   const image = useImage();
   const editing = useEditing();
+  const select = useSelect();
 
   const onClick = () => {
-    lineage.send({ type: 'SET_CELL', cell: daughter });
+    select.send({ type: 'SET_CELL', cell: daughter });
     image.send({ type: 'SET_FRAME', frame: divisionFrame });
   };
 

@@ -1,7 +1,7 @@
 import { useTheme } from '@mui/material/styles';
 import React from 'react';
 import { ArcherElement } from 'react-archer';
-import { useEditing, useImage, useLineage } from '../../../ProjectContext';
+import { useEditing, useImage, useSelect } from '../../../ProjectContext';
 import Cell from './Cell';
 
 function Parent({ division }) {
@@ -25,11 +25,11 @@ function Parent({ division }) {
     });
   }
 
-  const lineage = useLineage();
+  const select = useSelect();
   const image = useImage();
 
   const onClick = (e) => {
-    lineage.send({ type: 'SET_CELL', cell: label });
+    select.send({ type: 'SET_CELL', cell: label });
     image.send({
       type: 'SET_FRAME',
       frame: divisionFrame ? divisionFrame - 1 : frames[frames.length - 1],

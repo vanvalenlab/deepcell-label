@@ -1,7 +1,7 @@
 import Alert from '@mui/material/Alert';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useImage, useLineage } from '../../../ProjectContext';
+import { useImage, useLineage, useSelect } from '../../../ProjectContext';
 import { oneDaughter } from '../trackingUtils';
 import AlertGroup, { alertStyle } from './AlertGroup';
 
@@ -9,10 +9,10 @@ function OneDaughterAlert({ division }) {
   const { label, daughters, divisionFrame } = division;
 
   const image = useImage();
-  const lineage = useLineage();
+  const select = useSelect();
 
   const onClick = () => {
-    lineage.send({ type: 'SET_CELL', cell: daughters[0] });
+    select.send({ type: 'SET_CELL', cell: daughters[0] });
     image.send({ type: 'SET_FRAME', frame: divisionFrame });
   };
 

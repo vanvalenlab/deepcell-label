@@ -18,20 +18,9 @@ function useReturnContext(contextType) {
 
 export function useSelectedCell() {
   // Get selected cell from each labeling mode
-  const lineage = useLineage();
-  const lineageLabel = useSelector(lineage, (state) => state.context.selected);
   const select = useSelect();
-  const selectLabel = useSelector(select, (state) => state.context.foreground);
-  // Get labeling mode
-  const labelMode = useLabelMode();
-  const mode = useSelector(labelMode, (state) => {
-    return state.matches('segment') ? 0 : state.matches('editLineage') ? 1 : false;
-  });
-  // Switch between selections
-  if (mode === 1 || process.env.REACT_APP_CALIBAN_VISUALIZER === 'true') {
-    return lineageLabel;
-  }
-  return selectLabel;
+  const cell = useSelector(select, (state) => state.context.foreground);
+  return cell;
 }
 
 /** Returns a list of the cells under the cursor. */
