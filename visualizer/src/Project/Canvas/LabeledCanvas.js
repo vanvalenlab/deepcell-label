@@ -46,23 +46,32 @@ export const LabeledCanvas = ({ setCanvases }) => {
   const kernelRef = useRef();
   const kernelCanvas = useAlphaKernelCanvas();
 
-  const color = [255, 0, 0];
-
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
-      `function (labelArray, overlapsMatrix, opacity, colormap, cell, numLabels) {
+      `function (labelArray, overlapsMatrix, opacity, colormap, cell, numLabels, highlight, highlightColor) {
         const value = labelArray[this.constants.h - 1 - this.thread.y][this.thread.x];
         let [r, g, b, a] = [0, 0, 0, 1];
         for (let i = 0; i < numLabels; i++) {
           if (overlapsMatrix[value][i] === 1) {
-            let [sr, sg, sb] = colormap[i];
+            let [sr, sg, sb] = [0, 0, 0];
+            if (i === cell && highlight) {
+              sr = highlightColor[0];
+              sg = highlightColor[1];
+              sb = highlightColor[2];
+            } else {
+              sr = colormap[i][0];
+              sg = colormap[i][1];
+              sb = colormap[i][2];
+            }
+
             if (i !== cell) {
               a = a * (1 - opacity[0]);
               sr = opacity[0] * sr / 255;
               sg = opacity[0] * sg / 255;
               sb = opacity[0] * sb / 255;
             } else {
+
               a = a * (1 - opacity[1]);
               sr = opacity[1] * sr / 255;
               sg = opacity[1] * sg / 255;
@@ -93,7 +102,16 @@ export const LabeledCanvas = ({ setCanvases }) => {
     if (labeledArray && overlapsMatrix) {
       const numLabels = overlapsMatrix[0].length;
       // Compute the label image with the kernel
-      kernelRef.current(labeledArray, overlapsMatrix, opacity, colormap, cell, numLabels);
+      kernelRef.current(
+        labeledArray,
+        overlapsMatrix,
+        opacity,
+        colormap,
+        cell,
+        numLabels,
+        highlight,
+        highlightColor
+      );
       // Rerender the parent canvas with the kernel output
       setCanvases((canvases) => ({ ...canvases, labeled: kernelCanvas }));
     }
@@ -103,6 +121,7 @@ export const LabeledCanvas = ({ setCanvases }) => {
     opacity,
     colormap,
     cell,
+    highlight,
     kernelCanvas,
     setCanvases,
     width,
