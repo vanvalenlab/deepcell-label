@@ -1,4 +1,5 @@
 import { useSelector } from '@xstate/react';
+import equal from 'fast-deep-equal';
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 
 export const Context = createContext();
@@ -31,6 +32,58 @@ export function useSelectedCell() {
     return lineageLabel;
   }
   return selectLabel;
+}
+
+/** Returns a list of the cells under the cursor. */
+export function useHoveringCells() {
+  // get hovering value
+  const canvas = useCanvas();
+  const hovering = useSelector(canvas, (state) => state.context.hovering);
+  // get frame
+  const image = useImage();
+  const frame = useSelector(image, (state) => state.context.frame);
+  // get cells for hovering value from overlaps array
+  const overlaps = useOverlaps();
+  const cells = useSelector(
+    overlaps,
+    (state) => state.context.overlaps?.getCellsForValue(hovering, frame),
+    equal
+  );
+  return cells || [];
+}
+
+/** Returns the other selected cell when using the flood, replace, or swap tools.
+ * When these tools are not in use, returns null instead.
+ */
+export function useOtherSelectedCell() {
+  const segment = useSegment();
+  const segmentTool = useSelector(segment, (state) => state.context.tool);
+
+  const editCells = useEditCells();
+  const cellsTool = useSelector(editCells, (state) => state.context.tool);
+
+  const labelMode = useLabelMode();
+  const mode = useSelector(labelMode, (state) =>
+    state.matches('segment') ? 'segment' : state.matches('editCells') ? 'cells' : false
+  );
+
+  const flood = useFlood();
+  const floodCell = useSelector(flood, (state) => state.context.floodedCell);
+  const replace = useReplace();
+  const replaceCell = useSelector(replace, (state) => state.context.replaceCell);
+  const swap = useSwap();
+  const swapCell = useSelector(swap, (state) => state.context.swapCell);
+
+  if (segmentTool === 'flood' && mode === 'segment') {
+    return floodCell;
+  }
+  if (cellsTool === 'replace' && mode === 'cells') {
+    return replaceCell;
+  }
+  if (cellsTool === 'swap' && mode === 'cells') {
+    return swapCell;
+  }
+  return null;
 }
 
 /**

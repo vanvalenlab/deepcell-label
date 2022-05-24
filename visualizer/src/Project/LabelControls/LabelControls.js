@@ -38,7 +38,7 @@ function LabelControls() {
     <Box
       sx={{
         flex: '0 0 auto',
-        p: 1,
+        px: 1,
       }}
     >
       <UndoRedo />

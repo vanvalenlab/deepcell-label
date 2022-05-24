@@ -1,8 +1,8 @@
-import { FormLabel, Slider, Tooltip } from '@mui/material';
+import { Slider, Tooltip } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import { bind, unbind } from 'mousetrap';
 import React, { useEffect, useState } from 'react';
-import { useImage, useMousetrapRef } from './ProjectContext';
+import { useImage, useMousetrapRef } from '../../ProjectContext';
 
 function FrameSlider() {
   const image = useImage();
@@ -44,24 +44,19 @@ function FrameSlider() {
   }, [frame]);
 
   return (
-    numFrames > 1 && (
-      <>
-        <FormLabel>Frame</FormLabel>
-        <Tooltip title={tooltipText}>
-          <Slider
-            value={frame}
-            valueLabelDisplay={display}
-            step={1}
-            marks
-            min={0}
-            max={numFrames - 1}
-            onChange={handleFrameChange}
-            sx={{ p: 0 }}
-            componentsProps={{ input: { ref: inputRef } }}
-          />
-        </Tooltip>
-      </>
-    )
+    <Tooltip title={tooltipText}>
+      <Slider
+        value={frame}
+        valueLabelDisplay={display}
+        step={1}
+        marks
+        min={0}
+        max={numFrames - 1}
+        onChange={handleFrameChange}
+        sx={{ p: 0 }}
+        componentsProps={{ input: { ref: inputRef } }}
+      />
+    </Tooltip>
   );
 }
 

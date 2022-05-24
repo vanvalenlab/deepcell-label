@@ -1,35 +1,34 @@
-import SquareIcon from '@mui/icons-material/Square';
-import SquareTwoToneIcon from '@mui/icons-material/SquareTwoTone';
+import AutoAwesomeMotionSharpIcon from '@mui/icons-material/AutoAwesomeMotionSharp';
+import SquareSharpIcon from '@mui/icons-material/SquareSharp';
 import { FormLabel, ToggleButton } from '@mui/material';
 import Box from '@mui/material/Box';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import { useSelector } from '@xstate/react';
 import React from 'react';
-
-function FrameStackIcon() {
-  return (
-    <>
-      <SquareTwoToneIcon sx={{ position: 'absolute', right: 0, top: 0, zIndex: 0 }} />
-      <SquareIcon sx={{ position: 'absolute', zIndex: -1, right: 0, top: 0, color: 'white' }} />
-      <SquareTwoToneIcon sx={{ position: 'absolute', right: 3, top: 3, zIndex: -2 }} />
-      <SquareIcon sx={{ position: 'absolute', right: 3, top: 3, zIndex: -3, color: 'white' }} />
-      <SquareTwoToneIcon sx={{ position: 'absolute', right: 6, top: 6, zIndex: -4 }} />
-      <SquareIcon sx={{ position: 'absolute', right: 6, top: 6, zIndex: -5, color: 'white' }} />
-    </>
-  );
-}
+import { useOverlaps } from '../../ProjectContext';
 
 function FrameModeButtons() {
+  const overlaps = useOverlaps();
+  const frameMode = useSelector(overlaps, (state) => state.context.frameMode);
   return (
     <Box display='flex' flexDirection='column'>
       <FormLabel>Frame Mode</FormLabel>
       <ToggleButtonGroup orientation='vertical'>
-        <ToggleButton sx={{ px: 0.5, py: 0 }}>
-          This Frame
-          <SquareTwoToneIcon />
+        <ToggleButton
+          onClick={() => overlaps.send({ type: 'SET_FRAME_MODE', frameMode: 'one' })}
+          selected={frameMode === 'one'}
+          sx={{ px: 0.5, py: 0 }}
+        >
+          One Frame
+          <SquareSharpIcon fontSize='small' />
         </ToggleButton>
-        <ToggleButton sx={{ px: 0.5, py: 0 }}>
+        <ToggleButton
+          onClick={() => overlaps.send({ type: 'SET_FRAME_MODE', frameMode: 'all' })}
+          selected={frameMode === 'all'}
+          sx={{ px: 0.5, py: 0 }}
+        >
           All Frames
-          <FrameStackIcon />
+          <AutoAwesomeMotionSharpIcon />
         </ToggleButton>
       </ToggleButtonGroup>
     </Box>

@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Footer from './Footer';
 import Load from './Load';
 import NavBar from './Navbar';
-import Project from './Project';
+import Label from './Project';
 
 // inspect({
 //   // options
@@ -31,7 +31,7 @@ function App() {
           <Router>
             <Routes>
               <Route path='/' element={<Load />} />
-              <Route path='/project' element={<Project />} />
+              <Route path='/project' element={<Label />} />
             </Routes>
           </Router>
           <Footer />

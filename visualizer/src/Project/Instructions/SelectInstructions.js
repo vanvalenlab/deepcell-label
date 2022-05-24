@@ -1,7 +1,7 @@
 import { Box, Grid } from '@mui/material';
 import Typography from '@mui/material/Typography';
 import React from 'react';
-import SelectedBox from '../LabelControls/SegmentControls/SelectedPalette/SelectedBox';
+import SelectedBox from '../DisplayControls/Cells/Selected/Selected';
 import { Shortcut, Shortcuts } from './Shortcuts';
 
 function SelectShortcuts() {

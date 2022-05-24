@@ -1,3 +1,3 @@
-import Timeline from '../../LabelControls/TrackingControls/Timeline';
+import Divisions from '../../LabelControls/TrackingControls/Divisions';
 
-export default Timeline;
+export default Divisions;

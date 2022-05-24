@@ -37,10 +37,11 @@ function LabelTabs() {
         indicatorColor='primary'
         textColor='primary'
         onChange={handleChange}
+        variant='scrollable'
       >
-        <Tab label='Segment' />
-        <Tab label='Cells' />
-        <Tab label='Lineage' />
+        <Tab sx={{ p: 0.5, minHeight: 0 }} label='Segment' />
+        <Tab sx={{ p: 0.5, minHeight: 0 }} label='Cells' />
+        <Tab sx={{ p: 0.5, minHeight: 0 }} label='Lineage' />
       </Tabs>
     </Paper>
   );

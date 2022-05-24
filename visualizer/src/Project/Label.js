@@ -19,7 +19,7 @@ function isReview(ids) {
   return idList?.every(isProjectId) && idList?.length > 1;
 }
 
-function Project() {
+function Label() {
   const id = new URLSearchParams(window.location.search).get('projectId');
   const review = isReview(id);
   const invalid = !isProjectId(id) && !review;
@@ -35,4 +35,4 @@ function Project() {
   return <LoadProject id={id} />;
 }
 
-export default Project;
+export default Label;
