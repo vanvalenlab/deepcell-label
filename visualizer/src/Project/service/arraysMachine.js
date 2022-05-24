@@ -36,7 +36,7 @@ const createArraysMachine = ({ projectId, eventBuses }) =>
             SET_FRAME: { actions: ['setFrame', 'sendLabeledArray', 'sendRawArray'] },
             SET_FEATURE: { actions: ['setFeature', 'sendLabeledArray'] },
             SET_CHANNEL: { actions: ['setChannel', 'sendRawArray'] },
-            EDITED: { actions: ['updateLabeledArray', 'sendLabeledArray'] },
+            EDITED: { actions: ['setLabeledFrame', 'sendLabeledArray'] },
           },
         },
       },
@@ -49,10 +49,11 @@ const createArraysMachine = ({ projectId, eventBuses }) =>
         setFrame: assign({ frame: (ctx, evt) => evt.frame }),
         setFeature: assign({ feature: (ctx, evt) => evt.feature }),
         setChannel: assign({ channel: (ctx, evt) => evt.channel }),
-        updateLabeledArray: assign({
+        setLabeledFrame: assign({
           labeledArrays: (ctx, evt) => {
             const { frame, feature, labeled } = evt;
             const { labeledArrays } = ctx;
+            // TODO: update immutably
             labeledArrays[feature][frame] = labeled;
             return labeledArrays;
           },

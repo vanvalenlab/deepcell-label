@@ -3,10 +3,12 @@ import { fromEventBus } from './eventBus';
 
 const { pure } = actions;
 
+/** Records a stack of snapshots of an actor's state before each action.
+ * Sends SAVE events to an actor and stores the actor's responses to send back when undoing or redoing actions.
+ */
 const createHistoryMachine = (actor) =>
   Machine(
     {
-      id: 'history',
       context: {
         actor,
         past: [],
@@ -19,27 +21,49 @@ const createHistoryMachine = (actor) =>
             EDIT: 'saving',
             UNDO: 'restoringPast',
             REDO: 'restoringFuture',
-            BACKEND_UNDO: { actions: 'movePastToFuture' },
-            BACKEND_REDO: { actions: 'moveFutureToPast' },
           },
         },
         saving: {
-          entry: 'saveContext',
+          entry: 'getSnapshot',
           on: {
-            RESTORE: { target: 'idle', actions: 'saveRestore' },
+            RESTORE: { target: 'idle', actions: 'saveSnapshotInPast' },
           },
           exit: sendParent('SAVED'),
         },
         restoringPast: {
           entry: 'restorePast',
+          exit: 'movePastToFuture',
           on: {
             RESTORED: { target: 'idle', actions: 'forwardToParent' },
+          },
+          // fallback in case actor does not respond
+          after: {
+            500: {
+              target: 'idle',
+              actions: [
+                sendParent('RESTORED'),
+                // TODO: log what actors are not restoring
+                () => console.log('could not restore actor'),
+              ],
+            },
           },
         },
         restoringFuture: {
           entry: 'restoreFuture',
+          exit: 'moveFutureToPast',
           on: {
             RESTORED: { target: 'idle', actions: 'forwardToParent' },
+          },
+          // fallback in case actor does not respond
+          after: {
+            500: {
+              target: 'idle',
+              actions: [
+                sendParent('RESTORED'),
+                // TODO: log what actors are not restoring
+                () => console.log('could not restore actor'),
+              ],
+            },
           },
         },
       },
@@ -47,8 +71,8 @@ const createHistoryMachine = (actor) =>
     {
       actions: {
         forwardToParent: sendParent((context, event) => event),
-        saveContext: send('SAVE', { to: (context) => context.actor }),
-        saveRestore: assign((context, event) => ({
+        getSnapshot: send('SAVE', { to: (context) => context.actor }),
+        saveSnapshotInPast: assign((context, event) => ({
           past: [...context.past, event],
           future: [],
         })),
@@ -70,16 +94,76 @@ const createHistoryMachine = (actor) =>
     }
   );
 
+/** Records edited labels before and after each action. */
+function createLabelHistoryMachine(actor) {
+  return Machine(
+    {
+      id: 'label-history', // TODO: add actor to ID
+      context: {
+        actor,
+        // TODO: switch from snapshot list to object with action IDs as keys
+        // not every action edits all labels, so use ID to check if there's a snapshot for the undone/redone action
+        past: [],
+        future: [],
+      },
+      entry: send({ type: 'HISTORY_REF' }, { to: actor }),
+      initial: 'idle',
+      states: {
+        idle: {
+          on: {
+            SAVE_LABELS: { actions: [(c, e) => console.log(c, e), 'addSnapshotToPast'] },
+            UNDO: 'undoing',
+            REDO: 'redoing',
+          },
+        },
+        undoing: {
+          entry: 'undo',
+          always: 'idle',
+          exit: 'movePastToFuture',
+        },
+        redoing: {
+          entry: 'redo',
+          always: 'idle',
+          exit: 'moveFutureToPast',
+        },
+      },
+    },
+    {
+      actions: {
+        addSnapshotToPast: assign({
+          past: (ctx, evt) => [...ctx.past, [evt.initialLabels, evt.editedLabels]],
+          future: [],
+        }),
+        undo: send((ctx, evt) => ({ type: 'EDITED', ...ctx.past[ctx.past.length - 1][0] }), {
+          to: (ctx) => ctx.actor,
+        }),
+        redo: send((ctx, evt) => ({ type: 'EDITED', ...ctx.future[ctx.future.length - 1][1] }), {
+          to: (ctx) => ctx.actor,
+        }),
+        movePastToFuture: assign({
+          past: (context) => context.past.slice(0, context.past.length - 1),
+          future: (context) => [...context.future, context.past[context.past.length - 1]],
+        }),
+        moveFutureToPast: assign({
+          past: (context) => [...context.past, context.future[context.future.length - 1]],
+          future: (context) => context.future.slice(0, context.future.length - 1),
+        }),
+      },
+    }
+  );
+}
+
 const createUndoMachine = ({ eventBuses }) =>
   Machine(
     {
       id: 'undo',
       invoke: [
-        { id: 'eventBus', src: fromEventBus('undo', () => eventBuses.undo) },
-        { id: 'api', src: fromEventBus('undo', () => eventBuses.api) },
+        { id: 'eventBus', src: fromEventBus('undo', () => eventBuses.undo) }, // lets undoMachine get ADD_ACTOR and ADD_LABEL_ACTOR events
+        { id: 'api', src: fromEventBus('undo', () => eventBuses.api) }, // listens for EDIT events to know when to take UI snapshots
       ],
       context: {
-        histories: [],
+        histories: [], // UI history
+        labelHistories: [], // labeled data history
         count: 0,
         numHistories: 0,
         action: 0,
@@ -87,6 +171,7 @@ const createUndoMachine = ({ eventBuses }) =>
       },
       on: {
         ADD_ACTOR: { actions: 'addActor' },
+        ADD_LABEL_ACTOR: { actions: 'addLabelActor' },
       },
       initial: 'idle',
       states: {
@@ -99,47 +184,29 @@ const createUndoMachine = ({ eventBuses }) =>
             UNDO: {
               target: 'undoing',
               cond: 'canUndo',
-              actions: 'forwardToHistories',
+              actions: ['decrementAction', 'forwardToHistories'],
             },
             REDO: {
               target: 'redoing',
               cond: 'canRedo',
-              actions: 'forwardToHistories',
-            },
-            BACKEND_UNDO: {
-              actions: ['decrementAction', forwardTo('api'), 'forwardToHistories'],
-            },
-            BACKEND_REDO: {
-              actions: ['incrementAction', forwardTo('api'), 'forwardToHistories'],
+              actions: ['incrementAction', 'forwardToHistories'],
             },
           },
         },
         saving: {
-          entry: 'resetCounts',
+          entry: 'resetCount',
           on: { SAVED: { actions: 'incrementCount' } },
           always: { cond: 'allHistoriesResponded', target: 'idle' },
         },
         undoing: {
-          entry: 'resetCounts',
-          on: {
-            RESTORED: { actions: 'incrementCount' },
-          },
-          always: {
-            cond: 'allHistoriesResponded',
-            target: 'idle',
-            actions: send('BACKEND_UNDO'),
-          },
+          entry: 'resetCount',
+          on: { RESTORED: { actions: 'incrementCount' } },
+          always: { cond: 'allHistoriesResponded', target: 'idle' },
         },
         redoing: {
-          entry: 'resetCounts',
-          on: {
-            RESTORED: { actions: 'incrementCount' },
-          },
-          always: {
-            cond: 'allHistoriesResponded',
-            target: 'idle',
-            actions: send('BACKEND_REDO'),
-          },
+          entry: 'resetCount',
+          on: { RESTORED: { actions: 'incrementCount' } },
+          always: { cond: 'allHistoriesResponded', target: 'idle' },
         },
       },
     },
@@ -156,10 +223,16 @@ const createUndoMachine = ({ eventBuses }) =>
             spawn(createHistoryMachine(actor)),
           ],
         }),
-        forwardToHistories: pure((context) => {
-          return context.histories.map((actor) => forwardTo(actor));
+        addLabelActor: assign({
+          labelHistories: ({ labelHistories }, { actor }) => [
+            ...labelHistories,
+            spawn(createLabelHistoryMachine(actor)),
+          ],
         }),
-        resetCounts: assign({
+        forwardToHistories: pure((ctx, evt) => {
+          return [...ctx.histories.map(forwardTo), ...ctx.labelHistories.map(forwardTo)];
+        }),
+        resetCount: assign({
           count: 0,
           numHistories: (context) => context.histories.length,
         }),

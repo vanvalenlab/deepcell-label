@@ -28,7 +28,7 @@ const createOverlapsMachine = ({ eventBuses }) =>
         idle: {
           entry: 'sendOverlaps',
           on: {
-            EDITED: { actions: ['updateOverlaps', 'sendOverlaps'] },
+            EDITED: { actions: ['setOverlaps', 'sendOverlaps'] },
           },
         },
       },
@@ -37,9 +37,6 @@ const createOverlapsMachine = ({ eventBuses }) =>
       guards: {},
       actions: {
         setOverlaps: assign({ overlaps: (ctx, evt) => evt.overlaps }),
-        updateOverlaps: assign({
-          overlaps: (ctx, evt) => evt.overlaps,
-        }),
         sendOverlaps: send(
           (ctx, evt) => ({
             type: 'OVERLAPS',
