@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'; // testing helpers for imit
 import 'fake-indexeddb/auto';
 import React from 'react'; // so that we can use JSX syntax
 import { interpret } from 'xstate';
-import Display from '../Display';
+import Project from '../Project';
 import ProjectContext from '../ProjectContext';
 import createProjectMachine from '../service/projectMachine';
 import * as testData from './testData';
@@ -26,7 +26,7 @@ function setup(projectData) {
 
   const utils = render(
     <ProjectContext project={project}>
-      <Display />
+      <Project />
     </ProjectContext>
   );
 

@@ -1,5 +1,5 @@
 import { useInterpret, useSelector } from '@xstate/react';
-import Display from './Display';
+import Project from './Project';
 import ProjectContext from './ProjectContext';
 import createProjectMachine from './service/projectMachine';
 
@@ -10,7 +10,7 @@ function Load({ id, spots }) {
 
   return (
     <ProjectContext project={project}>
-      <Display review={false} track={track} />
+      <Project review={false} track={track} />
     </ProjectContext>
   );
 }
