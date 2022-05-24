@@ -49,6 +49,7 @@ const createOverlapsMachine = ({ eventBuses }) =>
             REPLACE: { actions: 'replace', target: 'editedOverlaps' },
             DELETE: { actions: 'delete', target: 'editedOverlaps' },
             SWAP: { actions: 'swap', target: 'editedOverlaps' },
+            NEW: { actions: 'new', target: 'editedOverlaps' },
           },
         },
       },
@@ -185,6 +186,37 @@ const createOverlapsMachine = ({ eventBuses }) =>
                     : o.cell === evt.b
                     ? { ...o, cell: evt.a }
                     : o
+                );
+                break;
+              default:
+                overlaps = ctx.overlaps.overlaps;
+            }
+            return new Overlaps(overlaps);
+          },
+        }),
+        new: assign({
+          overlaps: (ctx, evt) => {
+            let overlaps;
+            const newCell = ctx.overlaps.getNewCell();
+            switch (ctx.frameMode) {
+              case 'one':
+                overlaps = ctx.overlaps.overlaps.map((o) =>
+                  o.cell === evt.cell && o.z === ctx.frame ? { ...o, cell: newCell } : o
+                );
+                break;
+              case 'past':
+                overlaps = ctx.overlaps.overlaps.map((o) =>
+                  o.cell === evt.cell && o.z <= ctx.frame ? { ...o, cell: newCell } : o
+                );
+                break;
+              case 'future':
+                overlaps = ctx.overlaps.overlaps.map((o) =>
+                  o.cell === evt.cell && o.z >= ctx.frame ? { ...o, cell: newCell } : o
+                );
+                break;
+              case 'all':
+                overlaps = ctx.overlaps.overlaps.map((o) =>
+                  o.cell === evt.cell ? { ...o, cell: newCell } : o
                 );
                 break;
               default:

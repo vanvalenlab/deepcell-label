@@ -1,6 +1,7 @@
 import { actions, assign, forwardTo, Machine, send, spawn } from 'xstate';
 import { fromEventBus } from '../eventBus';
 import createDeleteMachine from './editCells/deleteMachine';
+import createNewCellMachine from './editCells/newCellMachine';
 import createReplaceMachine from './editCells/replaceMachine';
 import createSwapMachine from './editCells/swapMachine';
 import createSelectMachine from './segment/selectMachine';
@@ -57,6 +58,7 @@ function createEditCellsMachine({ eventBuses }) {
             swap: spawn(createSwapMachine(context), 'swap'),
             replace: spawn(createReplaceMachine(context), 'replace'),
             delete: spawn(createDeleteMachine(context), 'delete'),
+            new: spawn(createNewCellMachine(context), 'new'),
           }),
         }),
         forwardToTool: forwardTo(({ tool }) => tool),

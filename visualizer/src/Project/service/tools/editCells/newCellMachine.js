@@ -1,7 +1,7 @@
 import { assign, Machine, send } from 'xstate';
 import { fromEventBus } from '../../eventBus';
 
-function createDeleteMachine(context) {
+function createNewCellMachine(context) {
   return Machine(
     {
       invoke: [
@@ -19,7 +19,7 @@ function createDeleteMachine(context) {
         OVERLAP_MATRIX: { actions: 'setOverlapMatrix' },
         mouseup: [
           { cond: 'shift', actions: 'selectCell' },
-          { cond: 'onSelected', actions: 'delete' },
+          { cond: 'onSelected', actions: 'newCell' },
           { actions: 'selectCell' },
         ],
       },
@@ -33,11 +33,11 @@ function createDeleteMachine(context) {
         setSelected: assign({ selected: (_, evt) => evt.selected }),
         setHovering: assign({ hovering: (_, evt) => evt.hovering }),
         setOverlapMatrix: assign({ overlapMatrix: (_, evt) => evt.overlapMatrix }),
-        delete: send((ctx) => ({ type: 'DELETE', cell: ctx.selected }), { to: 'overlaps' }),
+        newCell: send((ctx) => ({ type: 'NEW', cell: ctx.selected }), { to: 'overlaps' }),
         selectCell: send('SELECT', { to: 'select' }),
       },
     }
   );
 }
 
-export default createDeleteMachine;
+export default createNewCellMachine;

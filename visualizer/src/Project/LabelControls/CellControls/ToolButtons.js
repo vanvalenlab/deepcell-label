@@ -41,6 +41,13 @@ function ToolButtons() {
         >
           Swap
         </ToggleButton>
+        <ToggleButton
+          onClick={() => editCells.send({ type: 'SET_TOOL', tool: 'new' })}
+          selected={tool === 'new'}
+          sx={{ px: 0.5, py: 0 }}
+        >
+          New
+        </ToggleButton>
       </ToggleButtonGroup>
     </Box>
   );
