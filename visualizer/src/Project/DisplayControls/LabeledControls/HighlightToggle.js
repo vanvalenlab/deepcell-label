@@ -21,13 +21,6 @@ function HighlightToggle() {
 
   useEffect(() => {
     bind('h', () => labeled.send('TOGGLE_HIGHLIGHT'));
-    // const sendToggleHighlight = e => {
-    //   if (e.key === 'h') {
-    //     labeled.send('TOGGLE_HIGHLIGHT');
-    //   }
-    // };
-    // document.addEventListener('keydown', sendToggleHighlight);
-    // return () => document.removeEventListener('keydown', sendToggleHighlight);
   }, [labeled]);
 
   return (
@@ -42,7 +35,7 @@ function HighlightToggle() {
               inputRef={inputRef}
             />
           }
-          label='Highlight'
+          label='Red Highlight'
           labelPlacement='start'
         />
       </FormGroup>
