@@ -20,7 +20,7 @@ function FrameModeButtons() {
           selected={frameMode === 'one'}
           sx={{ px: 0.5, py: 0 }}
         >
-          One Frame
+          One
           <SquareSharpIcon fontSize='small' />
         </ToggleButton>
         <ToggleButton
@@ -28,21 +28,21 @@ function FrameModeButtons() {
           selected={frameMode === 'past'}
           sx={{ px: 0.5, py: 0 }}
         >
-          Past Frames <ForwardIcon sx={{ transform: 'rotate(180deg)' }} />
+          Past <ForwardIcon sx={{ transform: 'rotate(180deg)' }} />
         </ToggleButton>
         <ToggleButton
           onClick={() => overlaps.send({ type: 'SET_FRAME_MODE', frameMode: 'future' })}
           selected={frameMode === 'future'}
           sx={{ px: 0.5, py: 0 }}
         >
-          Future Frames <ForwardIcon />
+          Future <ForwardIcon />
         </ToggleButton>
         <ToggleButton
           onClick={() => overlaps.send({ type: 'SET_FRAME_MODE', frameMode: 'all' })}
           selected={frameMode === 'all'}
           sx={{ px: 0.5, py: 0 }}
         >
-          All Frames
+          All
           <AutoAwesomeMotionSharpIcon />
         </ToggleButton>
       </ToggleButtonGroup>
