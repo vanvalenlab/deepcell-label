@@ -49,7 +49,7 @@ function createEditCellsMachine({ eventBuses }) {
     {
       actions: {
         setSelected: assign({ selected: (_, { selected }) => selected }),
-        setTool: assign({ tool: (ctx, evt) => evt.tool }),
+        setTool: pure((ctx, evt) => [send('EXIT', { to: ctx.tool }), assign({ tool: evt.tool })]),
         save: respond(({ tool }) => ({ type: 'RESTORE', tool })),
         restore: assign((_, { tool }) => ({ tool })),
         spawnTools: assign({

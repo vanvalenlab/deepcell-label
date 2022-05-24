@@ -10,7 +10,7 @@ function createReplaceMachine(context) {
       ],
       context: {
         selected: context.selected,
-        replaceCell: 0,
+        replaceCell: null,
         hovering: null,
         overlapMatrix: null,
       },
@@ -23,14 +23,17 @@ function createReplaceMachine(context) {
           { cond: 'onReplaceCell', actions: 'replace' },
           { actions: 'setReplaceCell' },
         ],
+        EXIT: { actions: 'resetReplaceCell' },
       },
     },
     {
       guards: {
         shift: (_, evt) => evt.shiftKey,
-        onReplaceCell: (ctx) => ctx.overlapMatrix[ctx.hovering][ctx.replaceCell] === 1,
+        onReplaceCell: (ctx) =>
+          ctx.replaceCell && ctx.overlapMatrix[ctx.hovering][ctx.replaceCell] === 1,
       },
       actions: {
+        resetReplaceCell: assign({ replaceCell: null }),
         setSelected: assign({ selected: (_, evt) => evt.selected }),
         setReplaceCell: assign({
           replaceCell: (ctx) => {

@@ -10,7 +10,7 @@ function createSwapMachine(context) {
       ],
       context: {
         selected: context.selected,
-        swapCell: 0,
+        swapCell: null,
         hovering: null,
         overlapMatrix: null,
       },
@@ -24,12 +24,13 @@ function createSwapMachine(context) {
           { cond: 'onSelected', actions: 'swap' },
           { actions: 'setSwapCell' },
         ],
+        EXIT: { actions: 'resetSwapCell' },
       },
     },
     {
       guards: {
         shift: (_, evt) => evt.shiftKey,
-        onSwapCell: (ctx) => ctx.overlapMatrix[ctx.hovering][ctx.swapCell] === 1,
+        onSwapCell: (ctx) => ctx.swapCell && ctx.overlapMatrix[ctx.hovering][ctx.swapCell] === 1,
         onSelected: (ctx) => ctx.overlapMatrix[ctx.hovering][ctx.selected] === 1,
       },
       actions: {
