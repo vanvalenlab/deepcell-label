@@ -17,8 +17,8 @@ function Hovering() {
     >
       {!!cells &&
         cells.map((cell) => (
-          <Box sx={{ ml: 0.5, mb: 0.5 }}>
-            <Cell cell={cell} key={cell} />
+          <Box sx={{ ml: 0.5, mb: 0.5 }} key={cell}>
+            <Cell cell={cell} />
           </Box>
         ))}
     </Box>
