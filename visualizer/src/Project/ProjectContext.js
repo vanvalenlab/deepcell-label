@@ -379,16 +379,18 @@ export function useAlphaKernelCanvas() {
 
 /** Creates a canvas with the same dimensions as the project. */
 export function usePixelatedCanvas() {
-  const [canvas] = useState(document.createElement('canvas'));
+  const [canvas, setCanvas] = useState(document.createElement('canvas'));
 
   const canvasMachine = useCanvas();
   const width = useSelector(canvasMachine, (state) => state.context.width);
   const height = useSelector(canvasMachine, (state) => state.context.height);
 
   useEffect(() => {
+    const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
-  }, [canvas, height, width]);
+    setCanvas(canvas);
+  }, [height, width]);
 
   return canvas;
 }
