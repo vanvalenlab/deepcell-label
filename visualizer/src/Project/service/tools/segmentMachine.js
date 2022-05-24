@@ -94,9 +94,6 @@ const createSegmentMachine = (context) =>
             // from selected labels event bus
             SELECTED: { actions: 'setSelected' },
 
-            SWAP: { actions: 'swap' },
-            REPLACE: { actions: 'replace' },
-            DELETE: { actions: 'delete' },
             ERODE: { actions: 'erode' },
             DILATE: { actions: 'dilate' },
 
