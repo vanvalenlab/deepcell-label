@@ -145,6 +145,12 @@ export function useApi() {
   return api;
 }
 
+export function useExport() {
+  const project = useProject();
+  const export_ = useSelector(project, (state) => state.context.exportRef);
+  return export_;
+}
+
 export function useUndo() {
   const project = useProject();
   const undo = useSelector(project, (state) => state.context.undoRef);

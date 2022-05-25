@@ -1,5 +1,4 @@
 import * as zip from '@zip.js/zip.js';
-import { flattenDeep } from 'lodash';
 import { assign, forwardTo, Machine, send } from 'xstate';
 import { fromEventBus } from './eventBus';
 
@@ -39,30 +38,6 @@ async function makeEditZip(context, event) {
   return zipBlob;
 }
 
-/** Creates a blob for a zip file with all project data. */
-async function makeExportZip(context) {
-  const { rawArrays, labeledArrays, cells, lineage } = context;
-  const dimensions = {
-    width: rawArrays[0][0][0].length,
-    height: rawArrays[0][0].length,
-    numFrames: rawArrays[0].length,
-    numChannels: rawArrays.length,
-    numFeatures: labeledArrays.length,
-  };
-  console.log(labeledArrays);
-  const zipWriter = new zip.ZipWriter(new zip.BlobWriter('application/zip'));
-  await zipWriter.add('dimensions.json', new zip.TextReader(JSON.stringify(dimensions)));
-  await zipWriter.add('labeled.dat', new zip.BlobReader(new Blob(flattenDeep(labeledArrays))));
-  await zipWriter.add('raw.dat', new zip.BlobReader(new Blob(flattenDeep(rawArrays))));
-  await zipWriter.add('cells.json', new zip.TextReader(JSON.stringify(cells)));
-  if (lineage) {
-    await zipWriter.add('lineage.json', new zip.TextReader(JSON.stringify(lineage)));
-  }
-
-  const zipBlob = await zipWriter.close();
-  return zipBlob;
-}
-
 /** Sends a zip with labels to edit and to the DeepCell Label API for editing the labels in the zip. */
 async function edit(context, event) {
   const form = new FormData();
@@ -79,45 +54,6 @@ async function edit(context, event) {
   return fetch(`${document.location.origin}/api/edit`, options)
     .then(checkResponseCode)
     .then((res) => parseResponseZip(res, width, height));
-}
-
-/** Sends a zip to the DeepCell Label API to be repackaged for upload to an S3 bucket. */
-async function upload(context) {
-  const { projectId, bucket } = context;
-  const form = new FormData();
-  const zipBlob = await makeExportZip(context);
-  form.append('labels', zipBlob, 'labels.zip');
-  form.append('id', projectId);
-  form.append('bucket', bucket);
-
-  const options = {
-    method: 'POST',
-    body: form,
-    'Content-Type': 'multipart/form-data',
-  };
-  return fetch(`${document.location.origin}/api/upload`, options).then(checkResponseCode);
-}
-
-/** Sends a zip to the DeepCell Label API to be repackaged for download by the user.
- * @return {Promise.<URL>} A promise that resolves to an object URL for the repackaged zipfile.
- */
-async function download(context) {
-  const { projectId } = context;
-  const form = new FormData();
-  const zipBlob = await makeExportZip(context);
-  console.log(zipBlob, projectId);
-  form.append('labels', zipBlob, 'labels.zip');
-  form.append('id', projectId);
-
-  const options = {
-    method: 'POST',
-    body: form,
-    'Content-Type': 'multipart/form-data',
-  };
-  return fetch(`${document.location.origin}/api/download`, options)
-    .then(checkResponseCode)
-    .then((response) => response.blob())
-    .then((blob) => URL.createObjectURL(blob));
 }
 
 function checkResponseCode(response) {
@@ -138,7 +74,7 @@ async function parseResponseZip(response, width, height) {
   return { labeled, cells };
 }
 
-const createApiMachine = ({ projectId, eventBuses }) =>
+const createApiMachine = ({ eventBuses }) =>
   Machine(
     {
       id: 'api',
@@ -150,15 +86,10 @@ const createApiMachine = ({ projectId, eventBuses }) =>
         { src: fromEventBus('api', () => eventBuses.labeled) },
       ],
       context: {
-        projectId,
-        bucket:
-          new URLSearchParams(window.location.search).get('bucket') ?? 'deepcell-label-output',
         frame: 0,
         feature: 0,
         labeled: null, // current frame on display (for edit route)
         raw: null, // current frame on display (for edit route)
-        rawArrays: null, // all frames and channels (for upload/download route)
-        labeledArrays: null, // all frames and features (for upload/download route)
         cells: null,
         writeMode: 'overlap',
         initialLabels: null,
@@ -184,8 +115,6 @@ const createApiMachine = ({ projectId, eventBuses }) =>
         idle: {
           on: {
             EDIT: { target: 'editing', actions: 'setInitialLabels' },
-            UPLOAD: 'uploading',
-            DOWNLOAD: 'downloading',
           },
         },
         editing: {
@@ -199,54 +128,10 @@ const createApiMachine = ({ projectId, eventBuses }) =>
             onError: { target: 'idle', actions: (c, e) => console.log(c, e) },
           },
         },
-        uploading: {
-          initial: 'getArrays',
-          states: {
-            getArrays: {
-              entry: 'getArrays',
-              on: { ARRAYS: { target: 'upload', actions: 'setArrays' } },
-            },
-            upload: {
-              invoke: {
-                src: upload,
-                onDone: 'uploaded',
-              },
-            },
-            uploaded: { type: 'final' },
-          },
-          onDone: 'idle',
-        },
-        downloading: {
-          entry: (c, e) => console.log(e),
-          initial: 'getArrays',
-          states: {
-            getArrays: {
-              entry: ['getArrays', (c, e) => console.log(e)],
-              on: { ARRAYS: { target: 'download', actions: 'setArrays' } },
-            },
-            download: {
-              entry: (c, e) => console.log(e),
-              invoke: {
-                src: download,
-                onDone: { target: 'done', actions: [(c, e) => console.log(e), 'download'] },
-                onError: 'done',
-              },
-            },
-            done: { entry: (c, e) => console.log(e), type: 'final' },
-          },
-          onDone: 'idle',
-        },
       },
     },
     {
       actions: {
-        download: (ctx, event) => {
-          const url = event.data;
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `${ctx.projectId}.zip`;
-          link.click();
-        },
         setInitialLabels: assign((ctx) => ({
           initialLabels: {
             frame: ctx.frame,
@@ -265,11 +150,6 @@ const createApiMachine = ({ projectId, eventBuses }) =>
           }),
           { to: 'eventBus' }
         ),
-        getArrays: send('GET_ARRAYS', { to: 'arrays' }),
-        setArrays: assign((ctx, evt) => ({
-          rawArrays: evt.rawArrays,
-          labeledArrays: evt.labeledArrays,
-        })),
         setRaw: assign((_, { raw }) => ({ raw })),
         setLabeled: assign((_, { labeled }) => ({ labeled })),
         setCells: assign((_, { cells }) => ({ cells })),

@@ -3,18 +3,18 @@ import { Button, CircularProgress } from '@mui/material';
 import { green } from '@mui/material/colors';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useApi } from '../../ProjectContext';
+import { useExport } from '../../ProjectContext';
 
 function DownloadButton() {
-  const api = useApi();
-  const downloading = useSelector(api, (state) => state.matches('downloading'));
+  const export_ = useExport();
+  const downloading = useSelector(export_, (state) => state.matches('downloading'));
 
   return (
     <Button
       variant='contained'
       color='primary'
       endIcon={<GetAppIcon />}
-      onClick={() => api.send('DOWNLOAD')}
+      onClick={() => export_.send('DOWNLOAD')}
       disabled={downloading}
       sx={{ position: 'relative' }}
     >

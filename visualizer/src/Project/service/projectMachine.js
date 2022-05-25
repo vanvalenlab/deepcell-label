@@ -8,6 +8,7 @@ import createArraysMachine from './arraysMachine';
 import createCanvasMachine from './canvasMachine';
 import createCellsMachine from './cellsMachine';
 import { EventBus, fromEventBus } from './eventBus';
+import createExportMachine from './exportMachine';
 import createHoveringMachine from './hoveringMachine';
 import createIDBMachine from './idbMachine';
 import createImageMachine from './imageMachine';
@@ -94,6 +95,7 @@ const createProjectMachine = (projectId) =>
           actors.imageRef = spawn(createImageMachine(context), 'image');
           actors.arraysRef = spawn(createArraysMachine(context), 'arrays');
           actors.apiRef = spawn(createApiMachine(context), 'api');
+          actors.exportRef = spawn(createExportMachine(context), 'export');
           actors.selectRef = spawn(createSelectMachine(context), 'select');
           actors.lineageRef = spawn(createLineageMachine(context), 'lineage');
           actors.cellsRef = spawn(createCellsMachine(context), 'cells');
