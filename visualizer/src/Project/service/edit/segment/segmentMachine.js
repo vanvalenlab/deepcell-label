@@ -1,12 +1,12 @@
 import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
-import { fromEventBus } from '../eventBus';
-import createBrushMachine from './segment/brushMachine';
-import createFloodMachine from './segment/floodMachine';
-import createSelectMachine from './segment/selectMachine';
-import createThresholdMachine from './segment/thresholdMachine';
-import createTrimMachine from './segment/trimMachine';
-import createWatershedMachine from './segment/watershedMachine';
+import { fromEventBus } from '../../eventBus';
+import createBrushMachine from './brushMachine';
+import createFloodMachine from './floodMachine';
 import createSegmentApiMachine from './segmentApiMachine';
+import createSelectMachine from './selectMachine';
+import createThresholdMachine from './thresholdMachine';
+import createTrimMachine from './trimMachine';
+import createWatershedMachine from './watershedMachine';
 
 const { pure, respond } = actions;
 
