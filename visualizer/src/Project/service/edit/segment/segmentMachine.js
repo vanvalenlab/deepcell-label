@@ -150,14 +150,6 @@ const createSegmentMachine = (context) =>
           }),
           { to: 'api' }
         ),
-        delete: send(
-          ({ selected }) => ({
-            type: 'EDIT',
-            action: 'replace',
-            args: { a: 0, b: selected },
-          }),
-          { to: 'api' }
-        ),
         autofit: send(
           ({ selected }) => ({
             type: 'EDIT',
