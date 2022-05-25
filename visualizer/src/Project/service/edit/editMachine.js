@@ -8,7 +8,7 @@ import createEditCellsMachine from './editCellsMachine';
 import createEditLineageMachine from './editLineageMachine';
 import createSegmentMachine from './segmentMachine';
 
-const createToolMachine = ({ eventBuses }) =>
+const createEditMachine = ({ eventBuses }) =>
   Machine(
     {
       id: 'tool',
@@ -101,4 +101,4 @@ const createToolMachine = ({ eventBuses }) =>
     }
   );
 
-export default createToolMachine;
+export default createEditMachine;

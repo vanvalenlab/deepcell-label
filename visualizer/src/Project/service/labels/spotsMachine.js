@@ -1,7 +1,7 @@
 /** Manages spots labels. */
 
 import { assign, Machine } from 'xstate';
-import { fromEventBus } from './eventBus';
+import { fromEventBus } from '../eventBus';
 
 function createSpotsMachine({ eventBuses }) {
   return Machine(

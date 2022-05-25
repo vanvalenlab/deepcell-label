@@ -1,7 +1,7 @@
 /** Manages lineage labels. */
 
 import { assign, Machine } from 'xstate';
-import { fromEventBus } from './eventBus';
+import { fromEventBus } from '../eventBus';
 
 function createLineageMachine({ eventBuses }) {
   return Machine(

@@ -2,8 +2,8 @@
 
 import colormap from 'colormap';
 import { assign, Machine, send } from 'xstate';
-import Cells from '../cells';
-import { fromEventBus } from './eventBus';
+import Cells from '../../cells';
+import { fromEventBus } from '../eventBus';
 
 const createCellsMachine = ({ eventBuses }) =>
   Machine(

@@ -2,7 +2,7 @@
 
 import { assign, Machine, send } from 'xstate';
 import { respond } from 'xstate/lib/actions';
-import { fromEventBus } from './eventBus';
+import { fromEventBus } from '../eventBus';
 
 const createArraysMachine = ({ projectId, eventBuses }) =>
   Machine(

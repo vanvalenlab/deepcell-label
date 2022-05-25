@@ -3,9 +3,7 @@
  */
 import { assign, forwardTo, Machine, send, spawn } from 'xstate';
 import { pure } from 'xstate/lib/actions';
-import createArraysMachine from './arraysMachine';
 import createCanvasMachine from './canvasMachine';
-import createCellsMachine from './cellsMachine';
 import createToolMachine from './edit/editMachine';
 import createEditSegmentMachine from './editSegmentMachine';
 import { EventBus, fromEventBus } from './eventBus';
@@ -13,10 +11,12 @@ import createExportMachine from './exportMachine';
 import createHoveringMachine from './hoveringMachine';
 import createIDBMachine from './idbMachine';
 import createImageMachine from './imageMachine';
-import createLineageMachine from './lineageMachine';
+import createArraysMachine from './labels/arraysMachine';
+import createCellsMachine from './labels/cellsMachine';
+import createLineageMachine from './labels/lineageMachine';
+import createSpotsMachine from './labels/spotsMachine';
 import createLoadMachine from './loadMachine';
 import createSelectMachine from './selectMachine';
-import createSpotsMachine from './spotsMachine';
 import createUndoMachine from './undo';
 
 const createProjectMachine = (projectId) =>
