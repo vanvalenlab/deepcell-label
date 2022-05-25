@@ -7,64 +7,51 @@ const creatFloodMachine = (context) =>
       invoke: [
         { id: 'select', src: fromEventBus('flood', () => context.eventBuses.select) },
         { id: 'api', src: fromEventBus('flood', () => context.eventBuses.api) },
-        { src: fromEventBus('flood', () => context.eventBuses.cells) },
-        { src: fromEventBus('flood', () => context.eventBuses.image) },
+        { src: fromEventBus('flood', () => context.eventBuses.hovering) },
       ],
       context: {
         x: null,
         y: null,
-        floodingCell: context.selected,
-        floodedCell: 0,
+        selected: context.selected,
+        floodCell: 0,
         hovering: null,
-        cells: null,
       },
       on: {
         COORDINATES: { actions: 'setCoordinates' },
-        SELECTED: { actions: 'setFloodingCell' },
+        SELECTED: { actions: 'setSelected' },
         HOVERING: { actions: 'setHovering' },
-        CELL_MATRIX: { actions: 'setCellMatrix' },
         mouseup: [
-          { cond: 'shift', actions: 'setFloodedCell' },
-          { cond: 'onFloodedCell', actions: 'flood' },
-          { actions: 'setFloodedCell' },
+          { cond: 'shift', actions: 'setFloodCell' },
+          { cond: 'onFloodCell', actions: 'flood' },
+          { actions: 'setFloodCell' },
         ],
       },
     },
     {
       guards: {
         shift: (_, event) => event.shiftKey,
-        onFloodedCell: ({ floodedCell, hovering, cellMatrix }) =>
-          cellMatrix[hovering][floodedCell] === 1,
+        onFloodCell: (ctx) => ctx.hovering.includes(ctx.floodCell),
       },
       actions: {
-        setFloodingCell: assign({ floodingCell: (_, { selected }) => selected }),
-        setFloodedCell: assign({
-          floodedCell: ({ hovering, cellMatrix, floodedCell }) => {
-            const cells = cellMatrix[hovering];
-            if (cells[floodedCell]) {
-              // Get next cell that hovering value encodes
-              const reordered = cells
-                .slice(floodedCell + 1)
-                .concat(cells.slice(0, floodedCell + 1));
-              const nextCell = (reordered.findIndex((i) => !!i) + floodedCell + 1) % cells.length;
-              return nextCell;
-            }
-            const firstCell = cells.findIndex((i) => i === 1);
-            return firstCell === -1 ? 0 : firstCell;
+        setSelected: assign({ selected: (_, { selected }) => selected }),
+        setFloodCell: assign({
+          floodCell: (ctx) => {
+            const { hovering, floodCell } = ctx;
+            const i = hovering.indexOf(floodCell);
+            return i === -1 || i === hovering.length - 1 ? hovering[0] : hovering[i + 1];
           },
         }),
-        setCoordinates: assign({ x: (_, { x }) => x, y: (_, { y }) => y }),
-        setHovering: assign({ hovering: (_, { hovering }) => hovering }),
-        setCellMatrix: assign({ cellMatrix: (_, { cellMatrix }) => cellMatrix }),
+        setCoordinates: assign({ x: (_, evt) => evt.x, y: (_, evt) => evt.y }),
+        setHovering: assign({ hovering: (_, evt) => evt.hovering }),
         flood: send(
-          ({ floodingCell, floodedCell, x, y }, event) => ({
+          (ctx) => ({
             type: 'EDIT',
             action: 'flood',
             args: {
-              foreground: floodingCell,
-              background: floodedCell,
-              x,
-              y,
+              foreground: ctx.selected,
+              background: ctx.floodCell,
+              x: ctx.x,
+              y: ctx.y,
             },
           }),
           { to: 'api' }

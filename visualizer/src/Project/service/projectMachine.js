@@ -8,6 +8,7 @@ import createArraysMachine from './arraysMachine';
 import createCanvasMachine from './canvasMachine';
 import createCellsMachine from './cellsMachine';
 import { EventBus, fromEventBus } from './eventBus';
+import createHoveringMachine from './hoveringMachine';
 import createIDBMachine from './idbMachine';
 import createImageMachine from './imageMachine';
 import createLineageMachine from './lineageMachine';
@@ -25,6 +26,7 @@ const createProjectMachine = (projectId) =>
         projectId,
         eventBuses: {
           canvas: new EventBus('canvas'),
+          hovering: new EventBus('hovering'),
           image: new EventBus('image'),
           labeled: new EventBus('labeled'),
           raw: new EventBus('raw'),
@@ -88,6 +90,7 @@ const createProjectMachine = (projectId) =>
           const actors = {};
           actors.idbRef = spawn(createIDBMachine(context), 'idb');
           actors.canvasRef = spawn(createCanvasMachine(context), 'canvas');
+          actors.hoveringRef = spawn(createHoveringMachine(context), 'hovering');
           actors.imageRef = spawn(createImageMachine(context), 'image');
           actors.arraysRef = spawn(createArraysMachine(context), 'arrays');
           actors.apiRef = spawn(createApiMachine(context), 'api');

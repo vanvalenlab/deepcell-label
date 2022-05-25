@@ -1,6 +1,5 @@
 // Manages zooming, panning, and interacting with the canvas
-// Interactions sent as HOVERING, COORDINATES, mousedown, and mouseup events to parent
-// HOVERING event sent when the label below the cursor changes
+// Interactions sent as COORDINATES, mousedown, and mouseup events to parent
 // COORDINATES event sent when the pixel below the cursor changes
 
 // Panning interface:
@@ -9,7 +8,7 @@
 // Features that need dragging interactions,
 // like drawing or creating a bounding box, should set panOnDrag to false
 
-import { actions, assign, Machine, send } from 'xstate';
+import { actions, assign, forwardTo, Machine, send } from 'xstate';
 import { fromEventBus } from './eventBus';
 
 const { respond } = actions;
@@ -121,14 +120,10 @@ const createCanvasMachine = ({ eventBuses }) =>
         // how much the canvas has moved in the current pan
         dx: 0,
         dy: 0,
-        // label data
-        labeled: null,
-        hovering: null,
         panOnDrag: true,
       },
       invoke: [
         { id: 'eventBus', src: fromEventBus('canvas', () => eventBuses.canvas) },
-        { src: fromEventBus('canvas', () => eventBuses.arrays) },
         { src: fromEventBus('canvas', () => eventBuses.load) },
         { src: 'listenForMouseUp' },
         { src: 'listenForZoomHotkeys' },
@@ -141,22 +136,17 @@ const createCanvasMachine = ({ eventBuses }) =>
         ZOOM_OUT: { actions: 'zoomOut' },
         AVAILABLE_SPACE: { actions: ['setSpace', 'resize'] },
         SAVE: {
-          actions: respond((context) => ({
+          actions: respond((ctx) => ({
             type: 'RESTORE',
-            sx: context.sx,
-            sy: context.sy,
-            zoom: context.zoom,
+            sx: ctx.sx,
+            sy: ctx.sy,
+            zoom: ctx.zoom,
           })),
         },
         RESTORE: { actions: ['restore', respond('RESTORED')] },
-        LABELED: { actions: ['setLabeled', 'sendHovering'] },
         COORDINATES: {
           cond: 'newCoordinates',
-          actions: ['setCoordinates', 'sendHovering', 'sendToEventBus'],
-        },
-        HOVERING: {
-          cond: 'newHovering',
-          actions: ['setHovering', 'sendToEventBus'],
+          actions: ['setCoordinates', forwardTo('eventBus')],
         },
         'keydown.Space': '.pan.grab',
         'keyup.Space': '.pan.interactive',
@@ -212,44 +202,38 @@ const createCanvasMachine = ({ eventBuses }) =>
         },
       },
       guards: {
-        newCoordinates: (context, event) => context.x !== event.y || context.y !== event.y,
-        newHovering: (context, event) => context.hovering !== event.hovering,
-        moved: ({ dx, dy }) => Math.abs(dx) > 10 || Math.abs(dy) > 10,
-        panOnDrag: ({ panOnDrag }) => panOnDrag,
+        newCoordinates: (ctx, evt) => ctx.x !== evt.x || ctx.y !== evt.y,
+        moved: (ctx) => Math.abs(ctx.dx) > 10 || Math.abs(ctx.dy) > 10,
+        panOnDrag: (ctx) => ctx.panOnDrag,
       },
       actions: {
         setDimensions: assign({
-          width: (context, event) => event.width,
-          height: (context, event) => event.height,
+          width: (ctx, evt) => evt.width,
+          height: (ctx, evt) => evt.height,
         }),
         updateMove: assign({
-          dx: ({ dx }, event) => dx + event.movementX,
-          dy: ({ dy }, event) => dy + event.movementY,
+          dx: (ctx, evt) => ctx.dx + evt.movementX,
+          dy: (ctx, evt) => ctx.dy + evt.movementY,
         }),
         resetMove: assign({ dx: 0, dy: 0 }),
         restore: assign((_, { type, ...savedContext }) => savedContext),
         setCoordinates: assign((_, { x, y }) => ({ x, y })),
-        computeCoordinates: send((context, event) => {
-          const { scale, zoom, width, height, sx, sy } = context;
-          let x = Math.floor(event.nativeEvent.offsetX / scale / zoom + sx);
-          let y = Math.floor(event.nativeEvent.offsetY / scale / zoom + sy);
+        computeCoordinates: send((ctx, evt) => {
+          const { scale, zoom, width, height, sx, sy } = ctx;
+          let x = Math.floor(evt.nativeEvent.offsetX / scale / zoom + sx);
+          let y = Math.floor(evt.nativeEvent.offsetY / scale / zoom + sy);
           x = Math.max(0, Math.min(x, width - 1));
           y = Math.max(0, Math.min(y, height - 1));
           return { type: 'COORDINATES', x, y };
         }),
-        setHovering: assign((_, { hovering }) => ({ hovering })),
-        sendHovering: send(({ labeled, x, y }) => ({
-          type: 'HOVERING',
-          hovering: labeled && x !== null && y !== null ? labeled[y][x] : null,
-        })),
         setSpace: assign({
-          availableWidth: (_, { width }) => width,
-          availableHeight: (_, { height }) => height,
-          padding: (_, { padding }) => padding,
+          availableWidth: (_, evt) => evt.width,
+          availableHeight: (_, evt) => evt.height,
+          padding: (_, evt) => evt.padding,
         }),
         resize: assign({
-          scale: (context) => {
-            const { width, height, availableWidth, availableHeight, padding } = context;
+          scale: (ctx) => {
+            const { width, height, availableWidth, availableHeight, padding } = ctx;
             const scaleX = (availableWidth - 2 * padding) / width;
             const scaleY = (availableHeight - 2 * padding) / height;
             // pick scale that fits both dimensions; can be less than 1
@@ -285,7 +269,8 @@ const createCanvasMachine = ({ eventBuses }) =>
 
           return { type: 'SET_POSITION', zoom: newZoom, sx: newSx, sy: newSy };
         }),
-        zoomIn: send(({ zoom, width, height, sx, sy }) => {
+        zoomIn: send((ctx) => {
+          const { zoom, width, height, sx, sy } = ctx;
           const newZoom = 1.1 * zoom;
           const propX = width / 2;
           const propY = height / 2;
@@ -293,7 +278,8 @@ const createCanvasMachine = ({ eventBuses }) =>
           const newSy = sy + propY * (1 / zoom - 1 / newZoom);
           return { type: 'SET_POSITION', zoom: newZoom, sx: newSx, sy: newSy };
         }),
-        zoomOut: send(({ zoom, width, height, sx, sy }) => {
+        zoomOut: send((ctx) => {
+          const { zoom, width, height, sx, sy } = ctx;
           const newZoom = Math.max(zoom / 1.1, 1);
           const propX = width / 2;
           const propY = height / 2;
@@ -305,9 +291,8 @@ const createCanvasMachine = ({ eventBuses }) =>
           newSy = Math.max(newSy, 0);
           return { type: 'SET_POSITION', zoom: newZoom, sx: newSx, sy: newSy };
         }),
-        setPanOnDrag: assign((_, { panOnDrag }) => ({ panOnDrag })),
-        setLabeled: assign((_, { labeled }) => ({ labeled })),
-        sendToEventBus: send((c, e) => e, { to: 'eventBus' }),
+        setPanOnDrag: assign({ panOnDrag: (_, evt) => evt.panOnDrag }),
+        sendToEventBus: forwardTo('eventBus'),
       },
     }
   );

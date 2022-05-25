@@ -8,6 +8,7 @@ const createEditLineageMachine = ({ eventBuses }) =>
       invoke: [
         { id: 'selectedCells', src: fromEventBus('editLineage', () => eventBuses.select) },
         { src: fromEventBus('editLineage', () => eventBuses.labeled) },
+        { src: fromEventBus('editLineage', () => eventBuses.hovering) },
         { id: 'api', src: fromEventBus('editLineage', () => eventBuses.api) },
       ],
       context: {
@@ -29,14 +30,14 @@ const createEditLineageMachine = ({ eventBuses }) =>
         idle: {
           on: {
             mouseup: { actions: 'select' },
-            ADD_DAUGHTER: { target: 'addingDaughter', actions: 'recordParent' },
+            ADD_DAUGHTER: { target: 'addingDaughter', actions: 'setParent' },
             CREATE_NEW_CELL: { actions: 'createNewCell' },
           },
         },
         addingDaughter: {
           on: {
             mouseup: [
-              { cond: 'onNoLabel' },
+              { cond: 'onNoCell' },
               {
                 target: 'idle',
                 actions: 'addDaughter',
@@ -50,13 +51,13 @@ const createEditLineageMachine = ({ eventBuses }) =>
     {
       services: {},
       guards: {
-        onNoLabel: ({ hovering }) => hovering === 0,
+        onNoCell: (ctx) => ctx.hovering.length === 0,
       },
       actions: {
         select: send('SELECT', { to: 'selectedCells' }),
         setSelected: assign({ selected: (_, { selected }) => selected }),
         setHovering: assign({ hovering: (_, { hovering }) => hovering }),
-        recordParent: assign({ parent: (_, { parent }) => parent }),
+        setParent: assign({ parent: (_, { parent }) => parent }),
         remove: send(
           (_, { daughter }) => ({
             type: 'EDIT',
@@ -73,7 +74,7 @@ const createEditLineageMachine = ({ eventBuses }) =>
             action: 'add_daughter',
             args: {
               parent: parent,
-              daughter: hovering,
+              daughter: hovering[0], // TODO: select daughter before adding
             },
           }),
           { to: 'api' }

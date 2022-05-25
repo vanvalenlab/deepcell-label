@@ -34,7 +34,7 @@ export const LabeledCanvas = ({ setCanvases }) => {
   );
 
   const cells = useCells();
-  const cellsMatrix = useSelector(cells, (state) => state.context.cells?.getMatrix(frame), equal);
+  const cellMatrix = useSelector(cells, (state) => state.context.cells?.getMatrix(frame), equal);
   const colormap = useSelector(cells, (state) => state.context.colormap);
 
   const cell = useSelectedCell();
@@ -45,11 +45,11 @@ export const LabeledCanvas = ({ setCanvases }) => {
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
-      `function (labelArray, cellsMatrix, opacity, colormap, cell, numLabels, highlight, highlightColor) {
+      `function (labelArray, cellMatrix, opacity, colormap, cell, numLabels, highlight, highlightColor) {
         const value = labelArray[this.constants.h - 1 - this.thread.y][this.thread.x];
         let [r, g, b, a] = [0, 0, 0, 1];
         for (let i = 0; i < numLabels; i++) {
-          if (cellsMatrix[value][i] === 1) {
+          if (cellMatrix[value][i] === 1) {
             let [sr, sg, sb] = [0, 0, 0];
             if (i === cell && highlight) {
               sr = highlightColor[0];
@@ -95,12 +95,12 @@ export const LabeledCanvas = ({ setCanvases }) => {
   }, [width, height, kernelCanvas]);
 
   useEffect(() => {
-    if (labeledArray && cellsMatrix) {
-      const numLabels = cellsMatrix[0].length;
+    if (labeledArray && cellMatrix) {
+      const numLabels = cellMatrix[0].length;
       // Compute the label image with the kernel
       kernelRef.current(
         labeledArray,
-        cellsMatrix,
+        cellMatrix,
         opacity,
         colormap,
         cell,
@@ -113,7 +113,7 @@ export const LabeledCanvas = ({ setCanvases }) => {
     }
   }, [
     labeledArray,
-    cellsMatrix,
+    cellMatrix,
     opacity,
     colormap,
     cell,

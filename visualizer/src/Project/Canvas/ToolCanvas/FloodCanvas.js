@@ -4,7 +4,7 @@ import OutlineCellCanvas from './OutlineCellCanvas';
 
 function FloodCanvas({ setCanvases }) {
   const flood = useFlood();
-  const cell = useSelector(flood, (state) => state.context.floodedCell);
+  const cell = useSelector(flood, (state) => state.context.floodCell);
 
   if (!cell) {
     return null;

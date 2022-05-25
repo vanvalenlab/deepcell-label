@@ -7,52 +7,50 @@ const createWatershedMachine = (context) =>
       invoke: [
         { id: 'select', src: fromEventBus('watershed', () => context.eventBuses.select) },
         { id: 'api', src: fromEventBus('watershed', () => context.eventBuses.api) },
-        { src: fromEventBus('watershed', () => context.eventBuses.cells) },
+        { src: fromEventBus('watershed', () => context.eventBuses.hovering) },
       ],
       context: {
         x: 0,
         y: 0,
         hovering: null,
-        label: context.selected,
+        selected: context.selected,
         x1: 0,
         y1: 0,
         x2: 0,
         y2: 0,
-        cellMatrix: null,
       },
       on: {
         COORDINATES: { actions: 'setCoordinates' },
         HOVERING: { actions: 'setHovering' },
-        CELL_MATRIX: { actions: 'setCellMatrix' },
-        SELECTED: { actions: 'setLabel' },
+        SELECTED: { actions: 'setSelected' },
       },
       initial: 'idle',
       states: {
         idle: {
           on: {
             mouseup: [
-              { cond: 'onNoLabel' },
+              { cond: 'onNoCell' },
               {
-                cond: 'onLabel',
+                cond: 'onSelected',
                 target: 'clicked',
-                actions: ['setFirstPoint', 'setLabel'],
+                actions: 'setFirstPoint',
               },
               {
-                target: 'switchLabel',
+                target: 'switchSelected',
                 actions: ['select', 'setFirstPoint'],
               },
             ],
           },
         },
-        switchLabel: {
+        switchSelected: {
           on: {
-            SELECTED: { target: 'clicked', actions: ['setLabel'] },
+            SELECTED: { target: 'clicked', actions: 'setSelected' },
           },
         },
         clicked: {
           on: {
             EXIT: 'idle',
-            SELECTED: { cond: 'differentLabel', actions: 'setLabel', target: 'idle' },
+            SELECTED: { cond: 'differentCell', actions: 'setSelected', target: 'idle' },
             mouseup: [
               {
                 cond: 'validSecondSeed',
@@ -60,8 +58,8 @@ const createWatershedMachine = (context) =>
                 actions: ['setSecondPoint', 'watershed', 'newBackground'],
               },
               {
-                cond: 'notOnLabel',
-                target: 'switchLabel',
+                cond: 'notOnSelected',
+                target: 'switchSelected',
                 actions: ['select', 'setFirstPoint'],
               },
             ],
@@ -79,32 +77,31 @@ const createWatershedMachine = (context) =>
     },
     {
       guards: {
-        validSecondSeed: ({ cellMatrix, hovering, label, x, y, x1, y2 }) =>
-          cellMatrix[hovering][label] === 1 && // same label
-          (x !== x1 || y !== y2), // different point
-        differentLabel: (ctx, evt) => ctx.label !== evt.label,
-        onLabel: ({ hovering, label, cellMatrix }) => cellMatrix[hovering][label] === 1,
-        notOnLabel: ({ hovering, label, cellMatrix }) => cellMatrix[hovering][label] === 0,
-        onNoLabel: ({ hovering }) => hovering === 0,
+        validSecondSeed: (ctx) =>
+          ctx.hovering.includes(ctx.label) && // same label
+          (ctx.x !== ctx.x1 || ctx.y !== ctx.y2), // different point
+        differentCell: (ctx, evt) => ctx.selected !== evt.selected,
+        onSelected: (ctx) => ctx.hovering.includes(ctx.selected),
+        notOnSelected: (ctx) => ctx.hovering.includes(ctx.selected),
+        onNoCell: (ctx) => ctx.hovering.length === 0,
       },
       actions: {
-        setCoordinates: assign({ x: (_, { x }) => x, y: (_, { y }) => y }),
-        setHovering: assign({ hovering: (_, { hovering }) => hovering }),
-        setCellMatrix: assign({ cellMatrix: (_, { cellMatrix }) => cellMatrix }),
-        setFirstPoint: assign({ x1: ({ x }) => x, y1: ({ y }) => y }),
-        setSecondPoint: assign({ x2: ({ x }) => x, y2: ({ y }) => y }),
-        setLabel: assign({ label: ({ selected }) => selected }),
+        setCoordinates: assign({ x: (_, evt) => evt.x, y: (_, evt) => evt.y }),
+        setHovering: assign({ hovering: (_, evt) => evt.hovering }),
+        setFirstPoint: assign({ x1: (ctx) => ctx.x, y1: (ctx) => ctx.y }),
+        setSecondPoint: assign({ x2: (ctx) => ctx.x, y2: (ctx) => ctx.y }),
+        setSelected: assign({ selected: (ctx) => ctx.selected }),
         select: send('SELECT', { to: 'select' }),
         watershed: send(
-          ({ label, x1, y1, x2, y2 }) => ({
+          (ctx) => ({
             type: 'EDIT',
             action: 'watershed',
             args: {
-              label,
-              x1,
-              y1,
-              x2,
-              y2,
+              label: ctx.selected,
+              x1: ctx.x1,
+              y1: ctx.y1,
+              x2: ctx.x2,
+              y2: ctx.y2,
             },
           }),
           { to: 'api' }

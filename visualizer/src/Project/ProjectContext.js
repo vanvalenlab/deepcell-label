@@ -1,5 +1,4 @@
 import { useSelector } from '@xstate/react';
-import equal from 'fast-deep-equal';
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 
 export const Context = createContext();
@@ -24,21 +23,11 @@ export function useSelectedCell() {
 }
 
 /** Returns a list of the cells under the cursor. */
-export function useHoveringCells() {
-  // get hovering value
-  const canvas = useCanvas();
-  const hovering = useSelector(canvas, (state) => state.context.hovering);
-  // get frame
-  const image = useImage();
-  const frame = useSelector(image, (state) => state.context.frame);
-  // get cells for hovering value from cells array
-  const cells = useCells();
-  const hoveringCells = useSelector(
-    cells,
-    (state) => state.context.cells?.getCellsForValue(hovering, frame),
-    equal
-  );
-  return hoveringCells || [];
+export function useHovering() {
+  const project = useProject();
+  const hoveringRef = useSelector(project, (state) => state.context.hoveringRef);
+  const hovering = useSelector(hoveringRef, (state) => state.context.hovering);
+  return hovering;
 }
 
 /** Returns the other selected cell when using the flood, replace, or swap tools.
@@ -57,7 +46,7 @@ export function useOtherSelectedCell() {
   );
 
   const flood = useFlood();
-  const floodCell = useSelector(flood, (state) => state.context.floodedCell);
+  const floodCell = useSelector(flood, (state) => state.context.floodCell);
   const replace = useReplace();
   const replaceCell = useSelector(replace, (state) => state.context.replaceCell);
   const swap = useSwap();

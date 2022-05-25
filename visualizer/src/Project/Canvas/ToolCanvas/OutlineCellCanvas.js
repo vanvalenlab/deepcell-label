@@ -29,7 +29,7 @@ function OutlineCellCanvas({ setCanvases, cell }) {
   );
 
   const cells = useCells();
-  const cellsMatrix = useSelector(cells, (state) => state.context.cells?.getMatrix(frame), equal);
+  const cellMatrix = useSelector(cells, (state) => state.context.cells?.getMatrix(frame), equal);
 
   const kernelRef = useRef();
   const kernelCanvas = useAlphaKernelCanvas();
@@ -78,12 +78,12 @@ function OutlineCellCanvas({ setCanvases, cell }) {
   }, [kernelCanvas, width, height]);
 
   useEffect(() => {
-    if (labeledArray && cellsMatrix) {
-      kernelRef.current(labeledArray, cellsMatrix, cell);
+    if (labeledArray && cellMatrix) {
+      kernelRef.current(labeledArray, cellMatrix, cell);
       // Rerender the parent canvas
       setCanvases((canvases) => ({ ...canvases, tool: kernelCanvas }));
     }
-  }, [labeledArray, cellsMatrix, cell, setCanvases, kernelCanvas, width, height]);
+  }, [labeledArray, cellMatrix, cell, setCanvases, kernelCanvas, width, height]);
 
   useEffect(
     () => () =>

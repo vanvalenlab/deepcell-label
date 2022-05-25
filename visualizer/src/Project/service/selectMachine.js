@@ -12,6 +12,7 @@ const createSelectMachine = ({ eventBuses }) =>
         { src: fromEventBus('select', () => eventBuses.labeled) },
         { src: fromEventBus('select', () => eventBuses.cells) },
         { src: fromEventBus('select', () => eventBuses.image) },
+        { src: fromEventBus('select', () => eventBuses.hovering) },
       ],
       context: {
         selected: 1,
@@ -39,16 +40,15 @@ const createSelectMachine = ({ eventBuses }) =>
     {
       actions: {
         sendSelected: send(({ selected }) => ({ type: 'SELECTED', selected }), { to: 'eventBus' }),
-        select: pure(({ selected, hovering, cells, frame }) => {
-          const hoveringCells = cells.getCellsForValue(hovering, frame);
-          const i = hoveringCells.indexOf(selected);
+        select: pure(({ selected, hovering }) => {
+          const i = hovering.indexOf(selected);
           let newCell;
-          if (hoveringCells.length === 0 || i === cells.length - 1) {
+          if (hovering.length === 0 || i === hovering.length - 1) {
             newCell = 0;
           } else if (i === -1) {
-            newCell = hoveringCells[0];
+            newCell = hovering[0];
           } else {
-            newCell = hoveringCells[i + 1];
+            newCell = hovering[i + 1];
           }
           return send({ type: 'SELECTED', selected: newCell });
         }),

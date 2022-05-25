@@ -1,10 +1,10 @@
 import { Box } from '@mui/material';
 import React from 'react';
-import { useHoveringCells } from '../../ProjectContext';
+import { useHovering } from '../../ProjectContext';
 import Cell from './Cell';
 
 function Hovering() {
-  const cells = useHoveringCells();
+  const cells = useHovering();
 
   return (
     <Box

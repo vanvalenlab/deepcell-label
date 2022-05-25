@@ -70,10 +70,7 @@ const createToolMachine = ({ eventBuses }) =>
       on: {
         SAVE: { actions: 'save' },
         RESTORE: { target: '.checkTool', actions: ['restore', respond('RESTORED')] },
-
-        HOVERING: {
-          actions: [forwardTo('segment'), forwardTo('editLineage'), forwardTo('editCells')],
-        },
+        // from canvas (children can't use canvas event bus directly to avoid mouseup/down from leaking)
         COORDINATES: {
           actions: [forwardTo('segment'), forwardTo('editLineage'), forwardTo('editCells')],
         },

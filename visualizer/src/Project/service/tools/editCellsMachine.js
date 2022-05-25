@@ -37,8 +37,6 @@ function createEditCellsMachine({ eventBuses }) {
             // from canvas event bus (forwarded from parent)
             mousedown: { actions: 'forwardToTool' },
             mouseup: { actions: 'forwardToTool' },
-            HOVERING: { actions: 'forwardToTools' },
-            COORDINATES: { actions: 'forwardToTools' },
             // for undo/redo
             SAVE: { actions: 'save' },
             RESTORE: { actions: ['restore', respond('RESTORED')] },

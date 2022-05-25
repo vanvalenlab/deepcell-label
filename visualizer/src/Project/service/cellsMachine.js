@@ -38,13 +38,13 @@ const createCellsMachine = ({ eventBuses }) =>
           },
         },
         editedCells: {
-          entry: ['setColormap', 'sendCells', 'sendCellMatrix'],
+          entry: ['setColormap', 'sendCells'],
           always: 'idle',
         },
         idle: {
           on: {
             SET_FRAME_MODE: { actions: 'setFrameMode' },
-            SET_FRAME: { actions: ['setFrame', 'sendCellMatrix'] },
+            SET_FRAME: { actions: 'setFrame' },
             EDITED: { actions: 'updateCells', target: 'editedCells' },
             REPLACE: { actions: 'replace', target: 'editedCells' },
             DELETE: { actions: 'delete', target: 'editedCells' },
@@ -71,13 +71,6 @@ const createCellsMachine = ({ eventBuses }) =>
           (ctx, evt) => ({
             type: 'CELLS',
             cells: ctx.cells,
-          }),
-          { to: 'eventBus' }
-        ),
-        sendCellMatrix: send(
-          (ctx, evt) => ({
-            type: 'CELL_MATRIX',
-            cellMatrix: ctx.cells.getMatrix(ctx.frame),
           }),
           { to: 'eventBus' }
         ),

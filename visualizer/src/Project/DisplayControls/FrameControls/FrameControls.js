@@ -1,12 +1,12 @@
 import { FormLabel } from '@mui/material';
 import { Box } from '@mui/system';
-import { useHoveringCells, useOtherSelectedCell, useSelectedCell } from '../../ProjectContext';
+import { useHovering, useOtherSelectedCell, useSelectedCell } from '../../ProjectContext';
 import CellTimeline from './CellTimeline';
 import FrameSlider from './FrameSlider';
 
 function FrameControls() {
   const cell = useSelectedCell();
-  const hoveringCells = useHoveringCells();
+  const hoveringCells = useHovering();
   const otherCell = useOtherSelectedCell();
 
   let numCells = hoveringCells.length + 1;
