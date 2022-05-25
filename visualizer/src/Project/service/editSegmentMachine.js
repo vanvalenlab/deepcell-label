@@ -74,16 +74,16 @@ async function parseResponseZip(response, width, height) {
   return { labeled, cells };
 }
 
-const createApiMachine = ({ eventBuses }) =>
+const createEditSegmentMachine = ({ eventBuses }) =>
   Machine(
     {
-      id: 'api',
+      id: 'editSegment',
       invoke: [
-        { id: 'eventBus', src: fromEventBus('api', () => eventBuses.api) },
-        { id: 'arrays', src: fromEventBus('api', () => eventBuses.arrays) },
-        { id: 'cells', src: fromEventBus('api', () => eventBuses.cells) },
-        { src: fromEventBus('api', () => eventBuses.image) },
-        { src: fromEventBus('api', () => eventBuses.labeled) },
+        { id: 'eventBus', src: fromEventBus('editSegment', () => eventBuses.api) },
+        { id: 'arrays', src: fromEventBus('editSegment', () => eventBuses.arrays) },
+        { id: 'cells', src: fromEventBus('editSegment', () => eventBuses.cells) },
+        { src: fromEventBus('editSegment', () => eventBuses.image) },
+        { src: fromEventBus('editSegment', () => eventBuses.labeled) },
       ],
       context: {
         frame: 0,
@@ -175,4 +175,4 @@ const createApiMachine = ({ eventBuses }) =>
     }
   );
 
-export default createApiMachine;
+export default createEditSegmentMachine;
