@@ -6,6 +6,7 @@ import createSelectMachine from './segment/selectMachine';
 import createThresholdMachine from './segment/thresholdMachine';
 import createTrimMachine from './segment/trimMachine';
 import createWatershedMachine from './segment/watershedMachine';
+import createSegmentApiMachine from './segmentApiMachine';
 
 const { pure, respond } = actions;
 
@@ -59,7 +60,7 @@ const createSegmentMachine = (context) =>
     {
       id: 'segment',
       invoke: [
-        { id: 'api', src: fromEventBus('segment', () => context.eventBuses.api) },
+        { id: 'api', src: createSegmentApiMachine(context) },
         { src: fromEventBus('segment', () => context.eventBuses.raw) },
         { id: 'select', src: fromEventBus('segment', () => context.eventBuses.select) },
       ],

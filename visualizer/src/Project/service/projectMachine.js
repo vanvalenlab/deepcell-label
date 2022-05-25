@@ -5,7 +5,6 @@ import { assign, forwardTo, Machine, send, spawn } from 'xstate';
 import { pure } from 'xstate/lib/actions';
 import createCanvasMachine from './canvasMachine';
 import createToolMachine from './edit/editMachine';
-import createEditSegmentMachine from './editSegmentMachine';
 import { EventBus, fromEventBus } from './eventBus';
 import createExportMachine from './exportMachine';
 import createHoveringMachine from './hoveringMachine';
@@ -33,7 +32,6 @@ const createProjectMachine = (projectId) =>
           raw: new EventBus('raw'),
           select: new EventBus('select'),
           undo: new EventBus('undo'),
-          api: new EventBus('api'),
           arrays: new EventBus('arrays'),
           load: new EventBus('load'),
           cells: new EventBus('cells'),
@@ -94,7 +92,6 @@ const createProjectMachine = (projectId) =>
           actors.hoveringRef = spawn(createHoveringMachine(context), 'hovering');
           actors.imageRef = spawn(createImageMachine(context), 'image');
           actors.arraysRef = spawn(createArraysMachine(context), 'arrays');
-          actors.editSegment = spawn(createEditSegmentMachine(context), 'editSegment');
           actors.exportRef = spawn(createExportMachine(context), 'export');
           actors.selectRef = spawn(createSelectMachine(context), 'select');
           actors.lineageRef = spawn(createLineageMachine(context), 'lineage');
@@ -113,7 +110,6 @@ const createProjectMachine = (projectId) =>
             send({ type: 'ADD_ACTOR', actor: ctx.imageRef }, { to: 'undo' }),
             send({ type: 'ADD_ACTOR', actor: ctx.toolRef }, { to: 'undo' }),
             send({ type: 'ADD_ACTOR', actor: ctx.selectRef }, { to: 'undo' }),
-            send({ type: 'ADD_LABEL_ACTOR', actor: ctx.apiRef }, { to: 'undo' }),
           ];
         }),
         sendDimensions: send(

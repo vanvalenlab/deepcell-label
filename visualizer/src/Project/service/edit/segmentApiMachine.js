@@ -74,7 +74,7 @@ async function parseResponseZip(response, width, height) {
   return { labeled, cells };
 }
 
-const createEditSegmentMachine = ({ eventBuses }) =>
+const createSegmentApiMachine = ({ eventBuses }) =>
   Machine(
     {
       id: 'editSegment',
@@ -175,4 +175,4 @@ const createEditSegmentMachine = ({ eventBuses }) =>
     }
   );
 
-export default createEditSegmentMachine;
+export default createSegmentApiMachine;
