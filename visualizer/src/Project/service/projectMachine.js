@@ -3,10 +3,11 @@
  */
 import { assign, forwardTo, Machine, send, spawn } from 'xstate';
 import { pure } from 'xstate/lib/actions';
-import createApiMachine from './apiMachine';
 import createArraysMachine from './arraysMachine';
 import createCanvasMachine from './canvasMachine';
 import createCellsMachine from './cellsMachine';
+import createToolMachine from './edit/editMachine';
+import createEditSegmentMachine from './editSegmentMachine';
 import { EventBus, fromEventBus } from './eventBus';
 import createExportMachine from './exportMachine';
 import createHoveringMachine from './hoveringMachine';
@@ -16,7 +17,6 @@ import createLineageMachine from './lineageMachine';
 import createLoadMachine from './loadMachine';
 import createSelectMachine from './selectMachine';
 import createSpotsMachine from './spotsMachine';
-import createToolMachine from './tools/toolMachine';
 import createUndoMachine from './undo';
 
 const createProjectMachine = (projectId) =>
@@ -94,7 +94,7 @@ const createProjectMachine = (projectId) =>
           actors.hoveringRef = spawn(createHoveringMachine(context), 'hovering');
           actors.imageRef = spawn(createImageMachine(context), 'image');
           actors.arraysRef = spawn(createArraysMachine(context), 'arrays');
-          actors.apiRef = spawn(createApiMachine(context), 'api');
+          actors.editSegment = spawn(createEditSegmentMachine(context), 'editSegment');
           actors.exportRef = spawn(createExportMachine(context), 'export');
           actors.selectRef = spawn(createSelectMachine(context), 'select');
           actors.lineageRef = spawn(createLineageMachine(context), 'lineage');
