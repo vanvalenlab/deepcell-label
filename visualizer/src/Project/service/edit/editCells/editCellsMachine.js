@@ -1,10 +1,10 @@
 import { actions, assign, forwardTo, Machine, send, spawn } from 'xstate';
-import { fromEventBus } from '../eventBus';
-import createDeleteMachine from './editCells/deleteMachine';
-import createNewCellMachine from './editCells/newCellMachine';
-import createReplaceMachine from './editCells/replaceMachine';
-import createSwapMachine from './editCells/swapMachine';
-import createSelectMachine from './segment/selectMachine';
+import { fromEventBus } from '../../eventBus';
+import createSelectMachine from '../segment/selectMachine';
+import createDeleteMachine from './deleteMachine';
+import createNewCellMachine from './newCellMachine';
+import createReplaceMachine from './replaceMachine';
+import createSwapMachine from './swapMachine';
 
 const { pure, respond } = actions;
 

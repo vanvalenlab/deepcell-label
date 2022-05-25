@@ -4,7 +4,7 @@
 import { assign, forwardTo, Machine, send, spawn } from 'xstate';
 import { respond } from 'xstate/lib/actions';
 import { fromEventBus } from '../eventBus';
-import createEditCellsMachine from './editCellsMachine';
+import createEditCellsMachine from './editCells';
 import createEditLineageMachine from './editLineageMachine';
 import createSegmentMachine from './segment';
 

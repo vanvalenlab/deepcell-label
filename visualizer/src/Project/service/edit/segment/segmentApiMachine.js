@@ -1,6 +1,6 @@
 import * as zip from '@zip.js/zip.js';
 import { assign, forwardTo, Machine, send } from 'xstate';
-import { fromEventBus } from '../eventBus';
+import { fromEventBus } from '../../eventBus';
 
 function splitRows(buffer, width, height) {
   const frame = [];
