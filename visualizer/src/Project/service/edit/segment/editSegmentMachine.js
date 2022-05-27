@@ -103,8 +103,11 @@ const createEditSegmentMachine = (context) =>
       },
       actions: {
         setSelected: assign({ selected: (_, evt) => evt.selected }),
-        setTool: pure((ctx, evt) => [send('EXIT', { to: ctx.tool }), assign({ tool: evt.tool })]),
-        save: respond((ctx) => ({ type: 'RESTORE', tool: ctx.tool })),
+        setTool: pure((ctx, evt) => [
+          send('EXIT', { to: ctx.tools[ctx.tool] }),
+          assign({ tool: evt.tool }),
+        ]),
+        save: respond((ctx) => ({ type: 'RESTORE', tool: ctx.tools[ctx.tool] })),
         restore: assign({ tool: (_, evt) => evt.tool }),
         spawnTools: assign({
           tools: (context) => ({

@@ -30,19 +30,22 @@ function createEditCellsMachine({ eventBuses, undoRef }) {
     },
     {
       actions: {
-        setTool: pure((ctx, evt) => [send('EXIT', { to: ctx.tool }), assign({ tool: evt.tool })]),
-        save: respond((ctx) => ({ type: 'RESTORE', tool: ctx.tool })),
+        setTool: pure((ctx, evt) => [
+          send('EXIT', { to: ctx.tools[ctx.tool] }),
+          assign({ tool: evt.tool }),
+        ]),
+        save: respond((ctx) => ({ type: 'RESTORE', tool: ctx.tools[ctx.tool] })),
         restore: assign({ tool: (_, evt) => evt.tool }),
         spawnTools: assign({
           tools: (ctx) => ({
-            select: spawn(createSelectMachine(ctx), 'select'),
-            swap: spawn(createSwapMachine(ctx), 'swap'),
-            replace: spawn(createReplaceMachine(ctx), 'replace'),
-            delete: spawn(createDeleteMachine(ctx), 'delete'),
-            new: spawn(createNewCellMachine(ctx), 'new'),
+            select: spawn(createSelectMachine(ctx)),
+            swap: spawn(createSwapMachine(ctx)),
+            replace: spawn(createReplaceMachine(ctx)),
+            delete: spawn(createDeleteMachine(ctx)),
+            new: spawn(createNewCellMachine(ctx)),
           }),
         }),
-        forwardToTool: forwardTo((ctx) => ctx.tool),
+        forwardToTool: forwardTo((ctx) => ctx.tools[ctx.tool]),
       },
     }
   );
