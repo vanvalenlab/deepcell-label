@@ -92,7 +92,7 @@ const createUndoMachine = ({ eventBuses }) =>
           ];
         }),
         undo: pure((ctx) => {
-          const undo = { type: 'UNDO', edit: ctx.edit };
+          const undo = { type: 'UNDO', edit: ctx.edit - 1 };
           return [
             assign({ edit: ctx.edit - 1 }),
             ...ctx.uiHistories.map((h) => send(undo, { to: h })),
