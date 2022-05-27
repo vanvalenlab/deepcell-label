@@ -19,7 +19,7 @@ const createHoveringMachine = ({ eventBuses }) =>
         { id: 'eventBus', src: fromEventBus('hovering', () => eventBuses.hovering) }, // broadcast HOVERING
         { id: 'canvas', src: fromEventBus('hovering', () => eventBuses.canvas, 'COORDINATES') },
         { src: fromEventBus('hovering', () => eventBuses.arrays, 'LABELED') },
-        { src: fromEventBus('hovering', () => eventBuses.image, 'FRAME') },
+        { src: fromEventBus('hovering', () => eventBuses.image, 'SET_FRAME') },
         { src: fromEventBus('hovering', () => eventBuses.cells, 'CELLS') },
       ],
       on: {

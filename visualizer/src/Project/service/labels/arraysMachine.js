@@ -13,7 +13,9 @@ const createArraysMachine = (context) =>
       invoke: [
         { id: 'eventBus', src: fromEventBus('arrays', () => context.eventBuses.arrays) },
         { id: 'api', src: createSegmentApiMachine(context) },
-        { id: 'image', src: fromEventBus('arrays', () => context.eventBuses.image, 'FRAME') },
+        { src: fromEventBus('arrays', () => context.eventBuses.image, 'SET_FRAME') },
+        { src: fromEventBus('arrays', () => context.eventBuses.raw, 'SET_FEATURE') },
+        { src: fromEventBus('arrays', () => context.eventBuses.labeled, 'SET_CHANNEL') },
         { src: fromEventBus('arrays', () => context.eventBuses.load, 'LOADED') },
       ],
       context: {
