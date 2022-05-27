@@ -17,10 +17,10 @@ const createHoveringMachine = ({ eventBuses }) =>
       },
       invoke: [
         { id: 'eventBus', src: fromEventBus('hovering', () => eventBuses.hovering) }, // broadcast HOVERING
-        { id: 'canvas', src: fromEventBus('hovering', () => eventBuses.canvas) }, // receive COORDINATES
-        { src: fromEventBus('hovering', () => eventBuses.arrays) }, // receive LABELED
-        { src: fromEventBus('hovering', () => eventBuses.image) }, // receive FRAME
-        { src: fromEventBus('hovering', () => eventBuses.cells) }, // receive CELLS
+        { id: 'canvas', src: fromEventBus('hovering', () => eventBuses.canvas, 'COORDINATES') },
+        { src: fromEventBus('hovering', () => eventBuses.arrays, 'LABELED') },
+        { src: fromEventBus('hovering', () => eventBuses.image, 'FRAME') },
+        { src: fromEventBus('hovering', () => eventBuses.cells, 'CELLS') },
       ],
       on: {
         COORDINATES: { actions: ['setCoordinates', 'updateHovering'] },

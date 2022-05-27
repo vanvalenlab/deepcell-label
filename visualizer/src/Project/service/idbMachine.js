@@ -20,9 +20,9 @@ function createIDBMachine({ projectId, eventBuses }) {
         },
       },
       invoke: [
-        { src: fromEventBus('IDB', () => eventBuses.arrays) }, // Listen for EDITED_SEGMENT
-        { src: fromEventBus('IDB', () => eventBuses.cells) }, // Listen for EDITED_CELLS
-        { src: fromEventBus('IDB', () => eventBuses.load) }, // Listen for LOADED
+        { src: fromEventBus('IDB', () => eventBuses.arrays, 'EDITED_SEGMENT') },
+        { src: fromEventBus('IDB', () => eventBuses.cells, 'EDITED_CELLS') },
+        { src: fromEventBus('IDB', () => eventBuses.load, 'LOADED') },
       ],
       initial: 'openDb',
       states: {

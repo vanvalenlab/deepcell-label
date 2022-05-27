@@ -48,13 +48,26 @@ export class EventBus<TEvent extends EventObject = AnyEventObject> {
  */
 export function fromEventBus<TContext, TEvent extends EventObject = AnyEventObject>(
   id: string,
-  createEventBus: (context: TContext, event: TEvent) => EventBus<TEvent>
+  createEventBus: (context: TContext, event: TEvent) => EventBus<TEvent>,
+  type: TEvent['type'] | TEvent['type'][]
 ): InvokeCreator<TContext, TEvent> {
   return (context, event) => (sendBack, receive) => {
     const bus = createEventBus(context, event);
 
     const subscriber: Subscriber<TEvent> = (event) => {
-      sendBack(event);
+      if (type === undefined) {
+        sendBack(event);
+      } else {
+        if (typeof event === 'string') {
+          if (event === type) {
+            sendBack(event);
+          }
+        } else {
+          if (event.type === type || (Array.isArray(type) && type.includes(event.type))) {
+            sendBack(event);
+          }
+        }
+      }
       //   // if there is no recipient then its a broadcast, so send the event back
       //   // else only send the event if the recipient matches the id
       //   if (event.recipient === undefined || event.recipient === id) {

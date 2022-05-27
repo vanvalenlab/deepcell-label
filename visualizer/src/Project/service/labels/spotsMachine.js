@@ -7,7 +7,7 @@ function createSpotsMachine({ eventBuses }) {
   return Machine(
     {
       id: 'spots',
-      invoke: [{ src: fromEventBus('labeled', () => eventBuses.load) }],
+      invoke: [{ src: fromEventBus('labeled', () => eventBuses.load, 'LOADED') }],
       context: {
         spots: null,
         opacity: 0.7,

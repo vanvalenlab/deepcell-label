@@ -13,91 +13,6 @@ import { fromEventBus } from './eventBus';
 
 const { respond } = actions;
 
-// Pans when dragging
-const panOnDragState = {
-  initial: 'idle',
-  states: {
-    idle: {
-      entry: 'resetMove',
-      on: {
-        mousedown: 'pressed',
-        mousemove: { actions: 'computeCoordinates' },
-      },
-    },
-    // Sends mouseup events when panning < 10 pixels
-    pressed: {
-      on: {
-        mousemove: [
-          { cond: 'moved', target: 'dragged', actions: 'pan' },
-          { actions: ['updateMove', 'pan'] },
-        ],
-        mouseup: { target: 'idle', actions: 'sendToEventBus' },
-      },
-    },
-    dragged: {
-      on: {
-        mouseup: 'idle',
-        mousemove: { actions: 'pan' },
-      },
-    },
-  },
-};
-
-const noPanState = {
-  on: {
-    mousedown: { actions: 'sendToEventBus' },
-    mouseup: { actions: 'sendToEventBus' },
-    mousemove: { actions: 'computeCoordinates' },
-  },
-};
-
-const interactiveState = {
-  initial: 'checkDrag',
-  states: {
-    checkDrag: {
-      always: [{ cond: 'panOnDrag', target: 'panOnDrag' }, 'noPan'],
-    },
-    panOnDrag: panOnDragState,
-    noPan: noPanState,
-  },
-  on: {
-    SET_PAN_ON_DRAG: { target: '.checkDrag', actions: 'setPanOnDrag' },
-  },
-};
-
-const grabState = {
-  initial: 'idle',
-  states: {
-    idle: {
-      on: {
-        mousedown: { target: 'panning' },
-        mousemove: { actions: 'computeCoordinates' },
-      },
-    },
-    panning: {
-      on: {
-        mouseup: 'idle',
-        mousemove: { actions: 'pan' },
-      },
-    },
-  },
-};
-
-const movingState = {
-  initial: 'idle',
-  states: {
-    idle: {},
-    moving: {
-      after: {
-        200: 'idle',
-      },
-    },
-  },
-  on: {
-    SET_POSITION: { target: '.moving', actions: 'setPosition' },
-  },
-};
-
 const createCanvasMachine = ({ undoRef, eventBuses }) =>
   Machine(
     {
@@ -125,7 +40,7 @@ const createCanvasMachine = ({ undoRef, eventBuses }) =>
       },
       invoke: [
         { id: 'eventBus', src: fromEventBus('canvas', () => eventBuses.canvas) },
-        { src: fromEventBus('canvas', () => eventBuses.load) },
+        { src: fromEventBus('canvas', () => eventBuses.load, 'DIMENSIONS') },
         { src: 'listenForMouseUp' },
         { src: 'listenForZoomHotkeys' },
         { src: 'listenForSpace' },
@@ -157,11 +72,86 @@ const createCanvasMachine = ({ undoRef, eventBuses }) =>
         pan: {
           initial: 'interactive',
           states: {
-            interactive: interactiveState,
-            grab: grabState,
+            interactive: {
+              initial: 'checkDrag',
+              states: {
+                checkDrag: {
+                  always: [{ cond: 'panOnDrag', target: 'panOnDrag' }, 'noPan'],
+                },
+                panOnDrag: {
+                  on: {
+                    SET_PAN_ON_DRAG: { target: 'checkDrag', actions: 'setPanOnDrag' },
+                  },
+                  initial: 'idle',
+                  states: {
+                    idle: {
+                      entry: 'resetMove',
+                      on: {
+                        mousedown: 'pressed',
+                        mousemove: { actions: 'computeCoordinates' },
+                      },
+                    },
+                    // Sends mouseup events when panning < 10 pixels
+                    pressed: {
+                      on: {
+                        mousemove: [
+                          { cond: 'moved', target: 'dragged', actions: 'pan' },
+                          { actions: ['updateMove', 'pan'] },
+                        ],
+                        mouseup: { target: 'idle', actions: 'sendToEventBus' },
+                      },
+                    },
+                    dragged: {
+                      on: {
+                        mouseup: 'idle',
+                        mousemove: { actions: 'pan' },
+                      },
+                    },
+                  },
+                },
+                noPan: {
+                  on: {
+                    mousedown: { actions: 'sendToEventBus' },
+                    mouseup: { actions: 'sendToEventBus' },
+                    mousemove: { actions: 'computeCoordinates' },
+                    SET_PAN_ON_DRAG: { target: 'checkDrag', actions: 'setPanOnDrag' },
+                  },
+                },
+              },
+            },
+            grab: {
+              initial: 'idle',
+              states: {
+                idle: {
+                  on: {
+                    mousedown: { target: 'panning' },
+                    mousemove: { actions: 'computeCoordinates' },
+                  },
+                },
+                panning: {
+                  on: {
+                    mouseup: 'idle',
+                    mousemove: { actions: 'pan' },
+                  },
+                },
+              },
+            },
           },
         },
-        moving: movingState,
+        moving: {
+          initial: 'idle',
+          states: {
+            idle: {},
+            moving: {
+              after: {
+                200: 'idle',
+              },
+            },
+          },
+          on: {
+            SET_POSITION: { target: '.moving', actions: 'setPosition' },
+          },
+        },
       },
     },
     {

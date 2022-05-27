@@ -5,15 +5,19 @@ const createWatershedMachine = (context) =>
   Machine(
     {
       invoke: [
-        { id: 'select', src: fromEventBus('watershed', () => context.eventBuses.select) },
-        { id: 'arrays', src: fromEventBus('watershed', () => context.eventBuses.arrays) },
-        { src: fromEventBus('watershed', () => context.eventBuses.hovering) },
+        {
+          id: 'select',
+          src: fromEventBus('watershed', () => context.eventBuses.select, 'SELECTED'),
+        },
+        { src: fromEventBus('watershed', () => context.eventBuses.hovering, 'HOVERING') },
+        { src: fromEventBus('watershed', () => context.eventBuses.canvas, 'COORDINATES') },
+        { id: 'arrays', src: fromEventBus('watershed', () => context.eventBuses.arrays, []) },
       ],
       context: {
         x: 0,
         y: 0,
         hovering: null,
-        selected: context.selected,
+        selected: null,
         x1: 0,
         y1: 0,
         x2: 0,

@@ -5,21 +5,21 @@ function createReplaceMachine(context) {
   return Machine(
     {
       invoke: [
-        { id: 'select', src: fromEventBus('replace', () => context.eventBuses.select) },
-        { id: 'cells', src: fromEventBus('replace', () => context.eventBuses.cells) },
-        { src: fromEventBus('replace', () => context.eventBuses.hovering) },
+        { id: 'select', src: fromEventBus('replace', () => context.eventBuses.select, 'SELECTED') },
+        { src: fromEventBus('replace', () => context.eventBuses.hovering, 'HOVERING') },
       ],
       context: {
-        selected: context.selected,
+        selected: null,
         replaceCell: null,
         hovering: null,
       },
+      entry: send('GET_SELECTED', { to: 'select' }),
       on: {
         SELECTED: { actions: 'setSelected' },
         HOVERING: { actions: 'setHovering' },
         mouseup: [
           { cond: 'shift', actions: 'setReplaceCell' },
-          { cond: 'onReplaceCell', actions: 'replace' },
+          { cond: 'onReplaceCell', actions: [(c, e) => console.log(c, e), 'replace'] },
           { actions: 'setReplaceCell' },
         ],
         EXIT: { actions: 'resetReplaceCell' },

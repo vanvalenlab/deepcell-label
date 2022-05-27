@@ -12,7 +12,7 @@ const createImageMachine = ({ projectId, eventBuses, undoRef }) =>
       entry: [send('REGISTER_UI', { to: undoRef }), 'spawnActors'],
       invoke: [
         { id: 'eventBus', src: fromEventBus('image', () => eventBuses.image) },
-        { src: fromEventBus('labeled', () => eventBuses.load) },
+        { src: fromEventBus('labeled', () => eventBuses.load, 'DIMENSIONS') },
       ],
       context: {
         projectId,

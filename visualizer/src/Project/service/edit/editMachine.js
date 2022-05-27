@@ -21,9 +21,12 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
         editCellsRef: null,
       },
       invoke: [
-        { id: 'canvas', src: fromEventBus('tool', () => eventBuses.canvas) },
-        { src: fromEventBus('tool', () => eventBuses.select) },
-        { src: fromEventBus('tool', () => eventBuses.load) },
+        {
+          id: 'canvas',
+          src: fromEventBus('tool', () => eventBuses.canvas, ['mouseup', 'mousedown']),
+        },
+        { src: fromEventBus('tool', () => eventBuses.select, 'SELECTED') },
+        { src: fromEventBus('tool', () => eventBuses.load, 'LOADED') },
       ],
       initial: 'loading',
       entry: [send('REGISTER_UI', { to: undoRef }), 'spawnTools'],
@@ -71,10 +74,6 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
       on: {
         SAVE: { actions: 'save' },
         RESTORE: { target: '.checkTool', actions: ['restore', respond('RESTORED')] },
-        // from canvas (children can't use canvas event bus directly to avoid mouseup/down from leaking)
-        COORDINATES: {
-          actions: [forwardTo('editSegment'), forwardTo('editLineage'), forwardTo('editCells')],
-        },
 
         EDIT_SEGMENT: 'editSegment',
         EDIT_LINEAGE: 'editLineage',

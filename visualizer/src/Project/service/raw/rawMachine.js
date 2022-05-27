@@ -10,7 +10,7 @@ const createRawMachine = ({ projectId, eventBuses, undoRef }) =>
     {
       invoke: [
         { id: 'eventBus', src: fromEventBus('raw', () => eventBuses.raw) },
-        { src: fromEventBus('raw', () => eventBuses.load) },
+        { src: fromEventBus('raw', () => eventBuses.load, 'DIMENSIONS') },
       ],
       context: {
         projectId,

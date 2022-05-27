@@ -8,8 +8,8 @@ const createSelectMachine = ({ eventBuses, undoRef }) =>
       id: 'select',
       invoke: [
         { id: 'eventBus', src: fromEventBus('select', () => eventBuses.select) },
-        { src: fromEventBus('select', () => eventBuses.cells) }, // CELLS event, needed to get new cell
-        { src: fromEventBus('select', () => eventBuses.hovering) }, // HOVERING event, needed to select cells under the cursor
+        { src: fromEventBus('select', () => eventBuses.cells, 'CELLS') },
+        { src: fromEventBus('select', () => eventBuses.hovering, 'HOVERING') },
       ],
       entry: send('REGISTER_UI', { to: undoRef }),
       context: {

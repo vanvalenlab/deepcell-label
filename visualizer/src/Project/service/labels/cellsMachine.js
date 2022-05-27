@@ -13,10 +13,9 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
       entry: send('REGISTER_LABELS', { to: undoRef }),
       invoke: [
         { id: 'eventBus', src: fromEventBus('cells', () => eventBuses.cells) },
-        { src: fromEventBus('cells', () => eventBuses.arrays) },
-        { src: fromEventBus('cells', () => eventBuses.load) },
-        { src: fromEventBus('cells', () => eventBuses.image) },
-        { id: 'undo', src: fromEventBus('cells', () => eventBuses.undo) },
+        { src: fromEventBus('cells', () => eventBuses.arrays, 'CELLS_FROM_SEGMENT_EDIT') },
+        { src: fromEventBus('cells', () => eventBuses.load, 'LOADED') },
+        { src: fromEventBus('cells', () => eventBuses.image, 'FRAME') },
       ],
       context: {
         cells: null, // Cells object

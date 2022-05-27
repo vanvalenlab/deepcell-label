@@ -86,10 +86,13 @@ const createSegmentApiMachine = ({ eventBuses }) =>
     {
       id: 'editSegment',
       invoke: [
-        { id: 'arrays', src: fromEventBus('editSegment', () => eventBuses.arrays) },
-        { id: 'cells', src: fromEventBus('editSegment', () => eventBuses.cells) },
-        { src: fromEventBus('editSegment', () => eventBuses.image) },
-        { src: fromEventBus('editSegment', () => eventBuses.labeled) },
+        {
+          id: 'arrays',
+          src: fromEventBus('editSegment', () => eventBuses.arrays, ['LABELED', 'RAW']),
+        },
+        { id: 'cells', src: fromEventBus('editSegment', () => eventBuses.cells, 'CELLS') },
+        { src: fromEventBus('editSegment', () => eventBuses.image, 'FRAME') },
+        { src: fromEventBus('editSegment', () => eventBuses.labeled, 'FEATURE') },
       ],
       context: {
         frame: 0,

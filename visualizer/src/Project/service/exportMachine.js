@@ -74,8 +74,8 @@ const createExportMachine = ({ projectId, eventBuses }) =>
     {
       id: 'export',
       invoke: [
-        { id: 'arrays', src: fromEventBus('export', () => eventBuses.arrays) },
-        { id: 'cells', src: fromEventBus('export', () => eventBuses.cells) },
+        { id: 'arrays', src: fromEventBus('export', () => eventBuses.arrays, 'ARRAYS') },
+        { id: 'cells', src: fromEventBus('export', () => eventBuses.cells, 'CELLS') },
       ],
       context: {
         projectId,

@@ -4,7 +4,10 @@ import { fromEventBus } from '../../eventBus';
 const createSelectMachine = (context) =>
   Machine(
     {
-      invoke: [{ id: 'select', src: fromEventBus('select', () => context.eventBuses.select) }],
+      invoke: {
+        id: 'select',
+        src: fromEventBus('select', () => context.eventBuses.select, 'SELECTED'),
+      },
       on: {
         mouseup: { actions: 'select' },
       },

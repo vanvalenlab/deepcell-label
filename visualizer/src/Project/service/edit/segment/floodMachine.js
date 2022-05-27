@@ -5,14 +5,15 @@ const creatFloodMachine = (context) =>
   Machine(
     {
       invoke: [
-        { id: 'select', src: fromEventBus('flood', () => context.eventBuses.select) },
-        { id: 'arrays', src: fromEventBus('flood', () => context.eventBuses.arrays) },
-        { src: fromEventBus('flood', () => context.eventBuses.hovering) },
+        { id: 'select', src: fromEventBus('flood', () => context.eventBuses.select, 'SELECTED') },
+        { src: fromEventBus('flood', () => context.eventBuses.hovering, 'HOVERING') },
+        { src: fromEventBus('watershed', () => context.eventBuses.canvas, 'COORDINATES') },
+        { id: 'arrays', src: fromEventBus('flood', () => context.eventBuses.arrays, []) },
       ],
       context: {
         x: null,
         y: null,
-        selected: context.selected,
+        selected: null,
         floodCell: 0,
         hovering: null,
       },
@@ -29,11 +30,11 @@ const creatFloodMachine = (context) =>
     },
     {
       guards: {
-        shift: (_, event) => event.shiftKey,
+        shift: (_, evt) => evt.shiftKey,
         onFloodCell: (ctx) => ctx.hovering.includes(ctx.floodCell),
       },
       actions: {
-        setSelected: assign({ selected: (_, { selected }) => selected }),
+        setSelected: assign({ selected: (_, evt) => evt.selected }),
         setFloodCell: assign({
           floodCell: (ctx) => {
             const { hovering, floodCell } = ctx;

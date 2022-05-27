@@ -6,13 +6,14 @@ const createThresholdMachine = (context) =>
     {
       initial: 'idle',
       invoke: [
-        { src: fromEventBus('threshold', () => context.eventBuses.select) },
-        { id: 'arrays', src: fromEventBus('threshold', () => context.eventBuses.arrays) },
+        { src: fromEventBus('threshold', () => context.eventBuses.select, 'SELECTED') },
+        { src: fromEventBus('watershed', () => context.eventBuses.canvas, 'COORDINATES') },
+        { id: 'arrays', src: fromEventBus('threshold', () => context.eventBuses.arrays, []) },
       ],
       context: {
         x: null,
         y: null,
-        label: context.selected,
+        selected: null,
         firstPoint: [null, null],
       },
       states: {
@@ -30,25 +31,25 @@ const createThresholdMachine = (context) =>
       },
       on: {
         COORDINATES: { actions: 'setCoordinates' },
-        SELECTED: { actions: 'setLabel' },
+        SELECTED: { actions: 'setSelected' },
       },
     },
     {
       guards: {},
       actions: {
-        setCoordinates: assign({ x: (_, { x }) => x, y: (_, { y }) => y }),
-        setLabel: assign({ label: (_, { selected }) => selected }),
-        setFirstPoint: assign({ firstPoint: ({ x, y }) => [x, y] }),
+        setCoordinates: assign({ x: (_, evt) => evt.x, y: (_, evt) => evt.y }),
+        setSelected: assign({ selected: (_, evt) => evt.selected }),
+        setFirstPoint: assign({ firstPoint: (ctx) => [ctx.x, ctx.y] }),
         threshold: send(
-          ({ label, firstPoint, x, y }, event) => ({
+          (ctx) => ({
             type: 'EDIT',
             action: 'threshold',
             args: {
-              x1: firstPoint[0],
-              y1: firstPoint[1],
-              x2: x,
-              y2: y,
-              label,
+              x1: ctx.firstPoint[0],
+              y1: ctx.firstPoint[1],
+              x2: ctx.x,
+              y2: ctx.y,
+              label: ctx.selected,
             },
           }),
           { to: 'arrays' }

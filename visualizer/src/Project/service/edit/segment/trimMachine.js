@@ -5,9 +5,10 @@ const createTrimMachine = (context) =>
   Machine(
     {
       invoke: [
-        { id: 'select', src: fromEventBus('trim', () => context.eventBuses.select) },
-        { id: 'arrays', src: fromEventBus('trim', () => context.eventBuses.arrays) },
-        { src: fromEventBus('trim', () => context.eventBuses.hovering) },
+        { id: 'select', src: fromEventBus('trim', () => context.eventBuses.select, 'SELECTED') },
+        { src: fromEventBus('trim', () => context.eventBuses.hovering, 'HOVERING') },
+        { src: fromEventBus('watershed', () => context.eventBuses.canvas, 'COORDINATES') },
+        { id: 'arrays', src: fromEventBus('trim', () => context.eventBuses.arrays, []) },
       ],
       context: {
         x: null,

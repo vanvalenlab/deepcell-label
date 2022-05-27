@@ -6,13 +6,14 @@ const createBrushMachine = (context) =>
     {
       invoke: [
         { src: 'listenForBrushHotkeys' },
-        { src: fromEventBus('brush', () => context.eventBuses.select) },
-        { id: 'arrays', src: fromEventBus('brush', () => context.eventBuses.arrays) },
+        { src: fromEventBus('brush', () => context.eventBuses.select, 'SELECTED') },
+        { src: fromEventBus('watershed', () => context.eventBuses.canvas, 'COORDINATES') },
+        { id: 'arrays', src: fromEventBus('brush', () => context.eventBuses.arrays, []) },
       ],
       context: {
         x: 0,
         y: 0,
-        label: context.selected,
+        label: null,
         trace: [],
         brushSize: 5,
         erase: false,

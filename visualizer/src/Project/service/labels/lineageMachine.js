@@ -7,7 +7,7 @@ function createLineageMachine({ eventBuses }) {
   return Machine(
     {
       context: { lineage: null },
-      invoke: [{ src: fromEventBus('lineage', () => eventBuses.load) }],
+      invoke: [{ src: fromEventBus('lineage', () => eventBuses.load, 'LOADED') }],
       id: 'lineage',
       initial: 'loading',
       states: {

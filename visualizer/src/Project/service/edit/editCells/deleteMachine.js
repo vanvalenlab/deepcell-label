@@ -5,14 +5,14 @@ function createDeleteMachine(context) {
   return Machine(
     {
       invoke: [
-        { id: 'select', src: fromEventBus('delete', () => context.eventBuses.select) },
-        { id: 'cells', src: fromEventBus('delete', () => context.eventBuses.cells) },
-        { src: fromEventBus('delete', () => context.eventBuses.hovering) },
+        { id: 'select', src: fromEventBus('delete', () => context.eventBuses.select, 'SELECTED') },
+        { src: fromEventBus('delete', () => context.eventBuses.hovering, 'HOVERING') },
       ],
       context: {
-        selected: context.selected,
+        selected: null,
         hovering: null,
       },
+      entry: send('GET_SELECTED', { to: 'select' }),
       on: {
         SELECTED: { actions: 'setSelected' },
         HOVERING: { actions: 'setHovering' },

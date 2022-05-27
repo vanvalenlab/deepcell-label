@@ -8,7 +8,7 @@ const createLabeledMachine = ({ projectId, eventBuses, undoRef }) =>
     {
       invoke: [
         { id: 'eventBus', src: fromEventBus('labeled', () => eventBuses.labeled) },
-        { src: fromEventBus('labeled', () => eventBuses.load) },
+        { src: fromEventBus('labeled', () => eventBuses.load, 'DIMENSIONS') },
       ],
       entry: send('REGISTER_UI', { to: undoRef }),
       context: {

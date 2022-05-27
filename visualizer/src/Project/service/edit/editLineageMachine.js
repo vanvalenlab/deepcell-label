@@ -6,9 +6,8 @@ const createEditLineageMachine = ({ eventBuses }) =>
     {
       id: 'editLineage',
       invoke: [
-        { id: 'selectedCells', src: fromEventBus('editLineage', () => eventBuses.select) },
-        { src: fromEventBus('editLineage', () => eventBuses.labeled) },
-        { src: fromEventBus('editLineage', () => eventBuses.hovering) },
+        { id: 'select', src: fromEventBus('editLineage', () => eventBuses.select, 'SELECTED') },
+        { src: fromEventBus('editLineage', () => eventBuses.hovering, 'HOVERING') },
         // { id: 'api', src: fromEventBus('editLineage', () => eventBuses.api) },
       ],
       context: {
@@ -54,7 +53,7 @@ const createEditLineageMachine = ({ eventBuses }) =>
         onNoCell: (ctx) => ctx.hovering.length === 0,
       },
       actions: {
-        select: send('SELECT', { to: 'selectedCells' }),
+        select: send('SELECT', { to: 'select' }),
         setSelected: assign({ selected: (_, { selected }) => selected }),
         setHovering: assign({ hovering: (_, { hovering }) => hovering }),
         setParent: assign({ parent: (_, { parent }) => parent }),
