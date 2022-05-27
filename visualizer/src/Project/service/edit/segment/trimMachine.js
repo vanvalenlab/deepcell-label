@@ -20,10 +20,7 @@ const createTrimMachine = (context) =>
         COORDINATES: { actions: 'setCoordinates' },
         HOVERING: { actions: 'setHovering' },
         SELECTED: { actions: 'setLabel' },
-        mouseup: [
-          { cond: 'onLabel', actions: (c, e, m) => console.log('trim', c, e, m) },
-          { actions: 'select' },
-        ],
+        mouseup: [{ cond: 'onLabel', actions: 'trim' }, { actions: 'select' }],
       },
     },
     {
