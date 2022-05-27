@@ -13,10 +13,7 @@ function createLabelHistoryMachine(actor) {
         future: [],
         currentLabels: null,
       },
-      entry: [
-        (c, e) => console.log('creating label history', c, e),
-        send('LABEL_HISTORY', { to: actor }),
-      ],
+      entry: send('LABEL_HISTORY', { to: actor }),
       initial: 'idle',
       states: {
         idle: {

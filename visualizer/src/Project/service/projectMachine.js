@@ -59,7 +59,7 @@ const createProjectMachine = (projectId) =>
             PROJECT_NOT_IN_DB: 'loadFromServer',
             LOADED: {
               target: 'idle',
-              actions: [(c, e) => console.log(c, e), forwardTo('loadEventBus'), 'sendDimensions'],
+              actions: [forwardTo('loadEventBus'), 'sendDimensions'],
             },
           },
         },

@@ -81,7 +81,6 @@ const createArraysMachine = (context) =>
           },
         },
         editing: {
-          entry: (c, e) => console.log(c, e),
           type: 'parallel',
           states: {
             getEdit: {
@@ -89,25 +88,20 @@ const createArraysMachine = (context) =>
               initial: 'idle',
               states: {
                 idle: { on: { SAVE: { target: 'done', actions: 'setEdit' } } },
-                done: { entry: (c, e) => console.log(c, e), type: 'final' },
+                done: { type: 'final' },
               },
             },
             getEdits: {
               initial: 'editing',
               states: {
                 editing: { on: { EDITED_SEGMENT: { target: 'done', actions: 'setEdited' } } },
-                done: { entry: (c, e) => console.log(c, e), type: 'final' },
+                done: { type: 'final' },
               },
             },
           },
           onDone: {
             target: 'idle',
-            actions: [
-              (c, e) => console.log(c, e),
-              'sendSnapshot',
-              'sendEdited',
-              'sendCellsFromSegmentEdit',
-            ],
+            actions: ['sendSnapshot', 'sendEdited', 'sendCellsFromSegmentEdit'],
           },
         },
       },

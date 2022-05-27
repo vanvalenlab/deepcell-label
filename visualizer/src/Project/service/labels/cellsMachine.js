@@ -83,7 +83,6 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
           },
         },
         editing: {
-          entry: (c, e) => console.log(c, e),
           type: 'parallel',
           states: {
             getEdit: {
@@ -91,26 +90,20 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
               initial: 'idle',
               states: {
                 idle: { on: { SAVE: { target: 'done', actions: 'setEdit' } } },
-                done: { entry: (c, e) => console.log(c, e), type: 'final' },
+                done: { type: 'final' },
               },
             },
             getEdits: {
               initial: 'editing',
               states: {
                 editing: { on: { EDITED: { target: 'done', actions: 'setEdited' } } },
-                done: { entry: (c, e) => console.log(c, e), type: 'final' },
+                done: { type: 'final' },
               },
             },
           },
           onDone: {
             target: 'idle',
-            actions: [
-              (c, e) => console.log(c, e),
-              'sendEdited',
-              'sendSnapshot',
-              'setColormap',
-              'sendCells',
-            ],
+            actions: ['sendEdited', 'sendSnapshot', 'setColormap', 'sendCells'],
           },
         },
       },

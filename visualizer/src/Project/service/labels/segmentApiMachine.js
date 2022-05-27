@@ -129,7 +129,7 @@ const createSegmentApiMachine = ({ eventBuses }) =>
             src: edit,
             onDone: {
               target: 'idle',
-              actions: [(c, e) => console.log(c, e), 'sendEdited'],
+              actions: 'sendEdited',
             },
             // TODO: send error message to parent and display in UI
             onError: { target: 'idle', actions: (c, e) => console.log(c, e) },

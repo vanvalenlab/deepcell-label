@@ -21,11 +21,10 @@ const createUndoMachine = ({ eventBuses }) =>
         edit: 0,
         numEdits: 0,
       },
-      entry: [(c, e) => console.log('registering label actor', c, e)],
       on: {
         REGISTER_UI: { actions: 'registerUi' },
         REGISTER_LABELS: {
-          actions: [(c, e) => console.log('registering label actor', c, e), 'registerLabels'],
+          actions: 'registerLabels',
         },
       },
       initial: 'idle',
@@ -86,7 +85,6 @@ const createUndoMachine = ({ eventBuses }) =>
         }),
         save: pure((ctx) => {
           const save = { type: 'SAVE', edit: ctx.edit };
-          console.log(save);
           return [
             respond(save),
             ...ctx.uiHistories.map((h) => send(save, { to: h })),
