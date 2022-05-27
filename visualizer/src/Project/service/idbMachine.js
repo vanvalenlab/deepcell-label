@@ -15,17 +15,15 @@ function createIDBMachine({ projectId, eventBuses }) {
         project: {
           raw: null,
           labeled: null,
-          cells: null, // LOADED events send Cells object, but write list of cells to IDB
+          cells: null, // list of cells, not the Cells object
           lineage: null,
         },
       },
       invoke: [
-        { src: fromEventBus('IDB', () => eventBuses.api) }, // Listen for EDITED
+        { src: fromEventBus('IDB', () => eventBuses.arrays) }, // Listen for EDITED_SEGMENT
+        { src: fromEventBus('IDB', () => eventBuses.cells) }, // Listen for EDITED_CELLS
         { src: fromEventBus('IDB', () => eventBuses.load) }, // Listen for LOADED
       ],
-      on: {
-        EDITED: { target: '.putProject', actions: 'updateProject' },
-      },
       initial: 'openDb',
       states: {
         openDb: {
@@ -57,8 +55,29 @@ function createIDBMachine({ projectId, eventBuses }) {
         },
         putProject: {
           invoke: { src: 'putProject', onDone: 'idle' },
+          on: {
+            EDITED_SEGMENT: {
+              internal: false,
+              actions: 'updateSegment',
+            },
+            EDITED_CELLS: {
+              internal: false,
+              actions: 'updateCells',
+            },
+          },
         },
-        idle: {},
+        idle: {
+          on: {
+            EDITED_SEGMENT: {
+              target: 'putProject',
+              actions: 'updateSegment',
+            },
+            EDITED_CELLS: {
+              target: 'putProject',
+              actions: 'updateCells',
+            },
+          },
+        },
       },
     },
     {
@@ -76,17 +95,17 @@ function createIDBMachine({ projectId, eventBuses }) {
         getProject: (ctx) => ctx.db.get('projects', ctx.projectId),
       },
       actions: {
-        updateProject: assign({
+        updateSegment: assign({
           project: (ctx, evt) => {
-            console.log(ctx, evt);
-            const { frame, feature, labeled } = evt;
-            ctx.project.labeled[feature][frame] = labeled;
-            const cells = [
-              ...ctx.project.cells.filter((o) => o.z !== evt.frame),
-              ...evt.cells.map((o) => ({ ...o, z: evt.frame })),
-            ];
-            return { ...ctx.project, labeled: ctx.project.labeled, cells };
+            const { frame, feature } = evt;
+            const labeled = ctx.project.labeled.map((arr, i) =>
+              i === feature ? arr.map((arr, j) => (j === frame ? evt.labeled : arr)) : arr
+            );
+            return { ...ctx.project, labeled };
           },
+        }),
+        updateCells: assign({
+          project: (ctx, evt) => ({ ...ctx.project, cells: evt.cells.cells }),
         }),
         setDb: assign({ db: (ctx, evt) => evt.data }),
         setProject: assign((ctx, evt) => ({
