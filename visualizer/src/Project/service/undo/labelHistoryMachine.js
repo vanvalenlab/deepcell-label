@@ -11,13 +11,17 @@ function createLabelHistoryMachine(actor) {
         // not every action edits all labels, so use ID to check if there's a snapshot for the undone/redone action
         past: [],
         future: [],
+        currentLabels: null,
       },
-      entry: send({ type: 'HISTORY_REF' }, { to: actor }),
+      entry: [
+        (c, e) => console.log('creating label history', c, e),
+        send('LABEL_HISTORY', { to: actor }),
+      ],
       initial: 'idle',
       states: {
         idle: {
           on: {
-            SAVE_LABELS: { actions: 'addSnapshotToPast' },
+            SNAPSHOT: { actions: 'saveSnapshot' },
             UNDO: 'undoing',
             REDO: 'redoing',
           },
@@ -36,14 +40,14 @@ function createLabelHistoryMachine(actor) {
     },
     {
       actions: {
-        addSnapshotToPast: assign({
-          past: (ctx, evt) => [...ctx.past, [evt.initialLabels, evt.editedLabels]],
+        saveSnapshot: assign({
+          past: (ctx, evt) => [...ctx.past, evt],
           future: [],
         }),
-        undo: send((ctx, evt) => ({ type: 'EDITED', ...ctx.past[ctx.past.length - 1][0] }), {
+        undo: send((ctx, evt) => ctx.past[ctx.past.length - 1].before, {
           to: (ctx) => ctx.actor,
         }),
-        redo: send((ctx, evt) => ({ type: 'EDITED', ...ctx.future[ctx.future.length - 1][1] }), {
+        redo: send((ctx, evt) => ctx.future[ctx.future.length - 1].after, {
           to: (ctx) => ctx.actor,
         }),
         movePastToFuture: assign({

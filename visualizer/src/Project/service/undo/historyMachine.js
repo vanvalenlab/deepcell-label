@@ -17,7 +17,7 @@ function createHistoryMachine(actor) {
       states: {
         idle: {
           on: {
-            EDIT: 'saving',
+            SAVE: 'saving',
             UNDO: 'restoringPast',
             REDO: 'restoringFuture',
           },
@@ -25,7 +25,7 @@ function createHistoryMachine(actor) {
         saving: {
           entry: 'getSnapshot',
           on: {
-            RESTORE: { target: 'idle', actions: 'saveSnapshotInPast' },
+            RESTORE: { target: 'idle', actions: 'saveSnapshot' },
           },
           exit: sendParent('SAVED'),
         },
@@ -69,25 +69,25 @@ function createHistoryMachine(actor) {
     },
     {
       actions: {
-        forwardToParent: sendParent((context, event) => event),
-        getSnapshot: send('SAVE', { to: (context) => context.actor }),
-        saveSnapshotInPast: assign((context, event) => ({
-          past: [...context.past, event],
+        forwardToParent: sendParent((ctx, evt) => evt),
+        getSnapshot: send('SAVE', { to: (ctx) => ctx.actor }),
+        saveSnapshot: assign((ctx, evt) => ({
+          past: [...ctx.past, evt],
           future: [],
         })),
-        restorePast: send((context) => context.past[context.past.length - 1], {
-          to: (context) => context.actor,
+        restorePast: send((ctx) => ctx.past[ctx.past.length - 1], {
+          to: (ctx) => ctx.actor,
         }),
-        restoreFuture: send((context) => context.future[context.future.length - 1], {
-          to: (context) => context.actor,
+        restoreFuture: send((ctx) => ctx.future[ctx.future.length - 1], {
+          to: (ctx) => ctx.actor,
         }),
         movePastToFuture: assign({
-          past: (context) => context.past.slice(0, context.past.length - 1),
-          future: (context) => [...context.future, context.past[context.past.length - 1]],
+          past: (ctx) => ctx.past.slice(0, ctx.past.length - 1),
+          future: (ctx) => [...ctx.future, ctx.past[ctx.past.length - 1]],
         }),
         moveFutureToPast: assign({
-          past: (context) => [...context.past, context.future[context.future.length - 1]],
-          future: (context) => context.future.slice(0, context.future.length - 1),
+          past: (ctx) => [...ctx.past, ctx.future[ctx.future.length - 1]],
+          future: (ctx) => ctx.future.slice(0, ctx.future.length - 1),
         }),
       },
     }

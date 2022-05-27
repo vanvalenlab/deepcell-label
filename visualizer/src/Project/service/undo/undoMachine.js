@@ -1,4 +1,5 @@
-import { actions, assign, forwardTo, Machine, spawn } from 'xstate';
+import { actions, assign, Machine, send, spawn } from 'xstate';
+import { respond } from 'xstate/lib/actions';
 import { fromEventBus } from '../eventBus';
 import createHistoryMachine from './historyMachine';
 import createLabelHistoryMachine from './labelHistoryMachine';
@@ -10,38 +11,40 @@ const createUndoMachine = ({ eventBuses }) =>
     {
       id: 'undo',
       invoke: [
-        { id: 'eventBus', src: fromEventBus('undo', () => eventBuses.undo) }, // lets undoMachine get ADD_ACTOR and ADD_LABEL_ACTOR events
-        { id: 'api', src: fromEventBus('undo', () => eventBuses.api) }, // listens for EDIT events to know when to take UI snapshots
+        { id: 'eventBus', src: fromEventBus('undo', () => eventBuses.undo) }, // lets undoMachine get SAVE events
       ],
       context: {
-        histories: [], // UI history
-        labelHistories: [], // labeled data history
+        uiHistories: [], // records UI state for every edit
+        labelHistories: [], // records state after receiving EDITED event with edit ID
         count: 0,
-        numHistories: 0,
-        action: 0,
-        numActions: 0,
+        numUiHistories: 0,
+        edit: 0,
+        numEdits: 0,
       },
+      entry: [(c, e) => console.log('registering label actor', c, e)],
       on: {
-        ADD_ACTOR: { actions: 'addActor' },
-        ADD_LABEL_ACTOR: { actions: 'addLabelActor' },
+        REGISTER_UI: { actions: 'registerUi' },
+        REGISTER_LABELS: {
+          actions: [(c, e) => console.log('registering label actor', c, e), 'registerLabels'],
+        },
       },
       initial: 'idle',
       states: {
         idle: {
           on: {
-            EDIT: {
+            SAVE: {
               target: 'saving',
-              actions: ['newAction', 'forwardToHistories'],
+              actions: 'save',
             },
             UNDO: {
               target: 'undoing',
               cond: 'canUndo',
-              actions: ['decrementAction', 'forwardToHistories'],
+              actions: 'undo',
             },
             REDO: {
               target: 'redoing',
               cond: 'canRedo',
-              actions: ['incrementAction', 'forwardToHistories'],
+              actions: 'redo',
             },
           },
         },
@@ -64,42 +67,54 @@ const createUndoMachine = ({ eventBuses }) =>
     },
     {
       guards: {
-        allHistoriesResponded: (context) => context.count === context.numHistories,
-        canUndo: (context) => context.action > 0,
-        canRedo: (context) => context.action < context.numActions,
+        allHistoriesResponded: (ctx) => ctx.count === ctx.numHistories,
+        canUndo: (ctx) => ctx.edit > 0,
+        canRedo: (ctx) => ctx.edit < ctx.numEdits,
       },
       actions: {
-        addActor: assign({
-          histories: ({ histories }, { actor }) => [
-            ...histories,
-            spawn(createHistoryMachine(actor)),
+        registerUi: assign({
+          uiHistories: (ctx, evt, meta) => [
+            ...ctx.uiHistories,
+            spawn(createHistoryMachine(meta._event.origin)),
           ],
         }),
-        addLabelActor: assign({
-          labelHistories: ({ labelHistories }, { actor }) => [
-            ...labelHistories,
-            spawn(createLabelHistoryMachine(actor)),
+        registerLabels: assign({
+          labelHistories: (ctx, evt, meta) => [
+            ...ctx.labelHistories,
+            spawn(createLabelHistoryMachine(meta._event.origin)),
           ],
         }),
-        forwardToHistories: pure((ctx, evt) => {
-          return [...ctx.histories.map(forwardTo), ...ctx.labelHistories.map(forwardTo)];
+        save: pure((ctx) => {
+          const save = { type: 'SAVE', edit: ctx.edit };
+          console.log(save);
+          return [
+            respond(save),
+            ...ctx.uiHistories.map((h) => send(save, { to: h })),
+            assign({ edit: ctx.edit + 1, numEdits: ctx.edit + 1 }),
+          ];
+        }),
+        undo: pure((ctx) => {
+          const undo = { type: 'UNDO', edit: ctx.edit };
+          return [
+            assign({ edit: ctx.edit - 1 }),
+            ...ctx.uiHistories.map((h) => send(undo, { to: h })),
+            ...ctx.labelHistories.map((h) => send(undo, { to: h })),
+          ];
+        }),
+        redo: pure((ctx) => {
+          const redo = { type: 'REDO', edit: ctx.edit };
+          return [
+            assign({ edit: ctx.edit + 1 }),
+            ...ctx.uiHistories.map((h) => send(redo, { to: h })),
+            ...ctx.labelHistories.map((h) => send(redo, { to: h })),
+          ];
         }),
         resetCount: assign({
           count: 0,
-          numHistories: (context) => context.histories.length,
+          numHistories: (ctx) => ctx.uiHistories.length,
         }),
         incrementCount: assign({
-          count: (context) => context.count + 1,
-        }),
-        newAction: assign({
-          action: (context) => context.action + 1,
-          numActions: (context) => context.action + 1,
-        }),
-        incrementAction: assign({
-          action: (context) => context.action + 1,
-        }),
-        decrementAction: assign({
-          action: (context) => context.action - 1,
+          count: (ctx) => ctx.count + 1,
         }),
       },
     }

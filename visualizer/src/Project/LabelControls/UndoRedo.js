@@ -8,10 +8,10 @@ import { useUndo } from '../ProjectContext';
 
 export default function UndoRedo() {
   const undo = useUndo();
-  const action = useSelector(undo, (state) => state.context.action);
-  const numActions = useSelector(undo, (state) => state.context.numActions);
-  const cannotUndo = action === 0;
-  const cannotRedo = action === numActions;
+  const edit = useSelector(undo, (state) => state.context.edit);
+  const numEdits = useSelector(undo, (state) => state.context.numEdits);
+  const cannotUndo = edit === 0;
+  const cannotRedo = edit === numEdits;
 
   useEffect(() => {
     bind('mod+z', () => undo.send('UNDO'));
