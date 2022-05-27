@@ -85,7 +85,7 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
           type: 'parallel',
           states: {
             getEdit: {
-              entry: send('SAVE', { to: (ctx) => ctx.undoRef }),
+              entry: [send('SAVE', { to: (ctx) => ctx.undoRef })],
               initial: 'idle',
               states: {
                 idle: { on: { SAVE: { target: 'done', actions: 'setEdit' } } },
@@ -95,14 +95,14 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
             getEdits: {
               initial: 'editing',
               states: {
-                editing: { on: { EDITED: { target: 'done', actions: 'setEdited' } } },
+                editing: { on: { EDITED_CELLS: { target: 'done', actions: 'setEdited' } } },
                 done: { type: 'final' },
               },
             },
           },
           onDone: {
             target: 'idle',
-            actions: ['sendEdited', 'sendSnapshot', 'setColormap', 'sendCells'],
+            actions: ['sendEdited', 'useEditedCells', 'sendSnapshot', 'setColormap', 'sendCells'],
           },
         },
       },
@@ -112,6 +112,7 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
         setHistoryRef: assign({ historyRef: (_, __, meta) => meta._event.origin }),
         setEdit: assign({ edit: (_, evt) => evt.edit }),
         setEdited: assign({ edited: (_, evt) => evt }),
+        useEditedCells: assign({ cells: (ctx) => ctx.edited.cells }),
         sendSnapshot: send(
           (ctx) => ({
             type: 'SNAPSHOT',
@@ -181,7 +182,7 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
             default:
               cells = ctx.cells.cells;
           }
-          return { type: 'EDITED', cells: new Cells(cells) };
+          return { type: 'EDITED_CELLS', cells: new Cells(cells) };
         }),
         delete: send((ctx, evt) => {
           let cells;
@@ -201,7 +202,7 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
             default:
               cells = ctx.cells.cells;
           }
-          return { type: 'EDITED', cells: new Cells(cells) };
+          return { type: 'EDITED_CELLS', cells: new Cells(cells) };
         }),
         swap: send((ctx, evt) => {
           let cells;
@@ -245,7 +246,7 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
             default:
               cells = ctx.cells.cells;
           }
-          return { type: 'EDITED', cells: new Cells(cells) };
+          return { type: 'EDITED_CELLS', cells: new Cells(cells) };
         }),
         new: send((ctx, evt) => {
           let cells;
@@ -274,7 +275,7 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
             default:
               cells = ctx.cells.cells;
           }
-          return { type: 'EDITED', cells: new Cells(cells) };
+          return { type: 'EDITED_CELLS', cells: new Cells(cells) };
         }),
       },
     }
