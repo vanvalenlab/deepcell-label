@@ -14,46 +14,6 @@ const grayscaleTools = ['brush', 'select', 'trim', 'flood', 'threshold', 'waters
 const panTools = ['select', 'trim', 'flood', 'watershed'];
 const noPanTools = ['brush', 'threshold'];
 
-const panState = {
-  initial: 'pan',
-  states: {
-    pan: {
-      entry: sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
-      on: {
-        SET_TOOL: { cond: 'isNoPanTool', target: 'noPan' },
-      },
-    },
-    noPan: {
-      entry: sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: false }),
-      on: {
-        SET_TOOL: { cond: 'isPanTool', target: 'pan' },
-      },
-    },
-  },
-};
-
-const displayState = {
-  initial: 'color',
-  states: {
-    color: {
-      on: {
-        GRAYSCALE: 'grayscale',
-        SET_TOOL: { cond: 'isColorTool', actions: 'setTool' },
-      },
-    },
-    grayscale: {
-      on: {
-        COLOR: [
-          { target: 'color', cond: 'usingColorTool' },
-          { target: 'color', actions: 'useSelect' },
-        ],
-        SET_TOOL: { cond: 'isGrayscaleTool', actions: 'setTool' },
-        AUTOFIT: { actions: 'autofit' },
-      },
-    },
-  },
-};
-
 const createEditSegmentMachine = (context) =>
   Machine(
     {
@@ -64,9 +24,12 @@ const createEditSegmentMachine = (context) =>
         send('GET_SELECTED', { to: 'select' }),
       ],
       invoke: [
-        { id: 'arrays', src: fromEventBus('editSegment', () => context.eventBuses.arrays) },
-        { src: fromEventBus('editSegment', () => context.eventBuses.raw) }, // COLOR & GRAYSCALE events
-        { id: 'select', src: fromEventBus('editSegment', () => context.eventBuses.select) },
+        { id: 'arrays', src: fromEventBus('editSegment', () => context.eventBuses.arrays, []) },
+        { src: fromEventBus('editSegment', () => context.eventBuses.raw, ['COLOR', 'GRAYSCALE']) },
+        {
+          id: 'select',
+          src: fromEventBus('editSegment', () => context.eventBuses.select, 'SELECTED'),
+        },
       ],
       context: {
         selected: null,
@@ -76,14 +39,49 @@ const createEditSegmentMachine = (context) =>
       },
       type: 'parallel',
       states: {
-        display: displayState,
-        pan: panState,
+        display: {
+          initial: 'color',
+          states: {
+            color: {
+              on: {
+                GRAYSCALE: 'grayscale',
+                SET_TOOL: { cond: 'isColorTool', actions: 'setTool' },
+              },
+            },
+            grayscale: {
+              on: {
+                COLOR: [
+                  { target: 'color', cond: 'usingColorTool' },
+                  { target: 'color', actions: 'useSelect' },
+                ],
+                SET_TOOL: { cond: 'isGrayscaleTool', actions: 'setTool' },
+                AUTOFIT: { actions: 'autofit' },
+              },
+            },
+          },
+        },
+        pan: {
+          initial: 'pan',
+          states: {
+            pan: {
+              entry: sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
+              on: {
+                SET_TOOL: { cond: 'isNoPanTool', target: 'noPan' },
+              },
+            },
+            noPan: {
+              entry: sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: false }),
+              on: {
+                SET_TOOL: { cond: 'isPanTool', target: 'pan' },
+              },
+            },
+          },
+        },
       },
       on: {
         // from canvas event bus (forwarded from parent)
         mousedown: { actions: 'forwardToTool' },
-        mouseup: { actions: 'forwardToTool' },
-        COORDINATES: { actions: 'forwardToTools' },
+        mouseup: { actions: [(c, e) => console.log(c, e), 'forwardToTool'] },
         // from selected labels event bus
         SELECTED: { actions: 'setSelected' },
 
@@ -104,23 +102,21 @@ const createEditSegmentMachine = (context) =>
         isPanTool: (_, evt) => panTools.includes(evt.tool),
       },
       actions: {
-        setLabelHistory: assign({ labelHistory: (_, __, meta) => meta._event.origin }),
         setSelected: assign({ selected: (_, evt) => evt.selected }),
         setTool: pure((ctx, evt) => [send('EXIT', { to: ctx.tool }), assign({ tool: evt.tool })]),
         save: respond((ctx) => ({ type: 'RESTORE', tool: ctx.tool })),
         restore: assign({ tool: (_, evt) => evt.tool }),
         spawnTools: assign({
           tools: (context) => ({
-            brush: spawn(createBrushMachine(context), 'brush'),
-            select: spawn(createSelectMachine(context), 'select'),
-            threshold: spawn(createThresholdMachine(context), 'threshold'),
-            trim: spawn(createTrimMachine(context), 'trim'),
-            flood: spawn(createFloodMachine(context), 'flood'),
-            watershed: spawn(createWatershedMachine(context), 'watershed'),
+            select: spawn(createSelectMachine(context)),
+            brush: spawn(createBrushMachine(context)),
+            threshold: spawn(createThresholdMachine(context)),
+            trim: spawn(createTrimMachine(context)),
+            flood: spawn(createFloodMachine(context)),
+            watershed: spawn(createWatershedMachine(context)),
           }),
         }),
-        forwardToTool: forwardTo((ctx) => ctx.tool),
-        forwardToTools: pure((ctx) => Object.values(ctx.tools).map((tool) => forwardTo(tool))),
+        forwardToTool: forwardTo((ctx) => ctx.tools[ctx.tool]),
         erode: send(
           ({ selected }) => ({
             type: 'EDIT',
