@@ -25,7 +25,7 @@ function TabPanel(props) {
 function LabelControls() {
   const labelMode = useLabelMode();
   const value = useSelector(labelMode, (state) => {
-    return state.matches('segment')
+    return state.matches('editSegment')
       ? 0
       : state.matches('editCells')
       ? 1

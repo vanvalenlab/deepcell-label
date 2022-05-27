@@ -6,18 +6,19 @@ import { respond } from 'xstate/lib/actions';
 import { fromEventBus } from '../eventBus';
 import createEditCellsMachine from './editCells';
 import createEditLineageMachine from './editLineageMachine';
-import createSegmentMachine from './segment';
+import createEditSegmentMachine from './segment';
 
-const createEditMachine = ({ eventBuses }) =>
+const createEditMachine = ({ eventBuses, undoRef }) =>
   Machine(
     {
       id: 'tool',
       context: {
-        tool: 'segment',
+        tool: 'editSegment',
         eventBuses,
         segmentRef: null,
+        editSegmentRef: null,
         editLineageRef: null,
-        eventBuses,
+        editCellsRef: null,
       },
       invoke: [
         { id: 'canvas', src: fromEventBus('tool', () => eventBuses.canvas) },
@@ -30,20 +31,21 @@ const createEditMachine = ({ eventBuses }) =>
       states: {
         loading: {
           on: {
-            LOADED: [{ cond: 'hasLineage', target: 'editLineage' }, { target: 'segment' }],
+            LOADED: [{ cond: 'hasLineage', target: 'editLineage' }, { target: 'editCells' }],
           },
         },
         checkTool: {
           always: [
             { cond: ({ tool }) => tool === 'editLineage', target: 'editLineage' },
-            { target: 'segment' },
+            { cond: ({ tool }) => tool === 'editCells', target: 'editCells' },
+            { target: 'editSegment' },
           ],
         },
-        segment: {
-          entry: assign({ tool: 'segment' }),
+        editSegment: {
+          entry: assign({ tool: 'editSegment' }),
           on: {
-            mouseup: { actions: forwardTo('segment') },
-            mousedown: { actions: forwardTo('segment') },
+            mouseup: { actions: forwardTo('editSegment') },
+            mousedown: { actions: forwardTo('editSegment') },
           },
         },
         editLineage: {
@@ -72,10 +74,10 @@ const createEditMachine = ({ eventBuses }) =>
         RESTORE: { target: '.checkTool', actions: ['restore', respond('RESTORED')] },
         // from canvas (children can't use canvas event bus directly to avoid mouseup/down from leaking)
         COORDINATES: {
-          actions: [forwardTo('segment'), forwardTo('editLineage'), forwardTo('editCells')],
+          actions: [forwardTo('editSegment'), forwardTo('editLineage'), forwardTo('editCells')],
         },
 
-        SEGMENT: 'segment',
+        EDIT_SEGMENT: 'editSegment',
         EDIT_LINEAGE: 'editLineage',
         EDIT_CELLS: 'editCells',
 
@@ -90,7 +92,7 @@ const createEditMachine = ({ eventBuses }) =>
         save: respond(({ tool }) => ({ type: 'RESTORE', tool })),
         restore: assign((_, { tool }) => ({ tool })),
         spawnTools: assign((context) => ({
-          segmentRef: spawn(createSegmentMachine(context), 'segment'),
+          editSegmentRef: spawn(createEditSegmentMachine(context), 'editSegment'),
           editLineageRef: spawn(createEditLineageMachine(context), 'editLineage'),
           editCellsRef: spawn(createEditCellsMachine(context), 'editCells'),
         })),

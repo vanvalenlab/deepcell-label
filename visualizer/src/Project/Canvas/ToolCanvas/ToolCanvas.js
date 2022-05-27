@@ -17,7 +17,7 @@ function ToolCanvas({ setCanvases }) {
 
   const labelMode = useLabelMode();
   const mode = useSelector(labelMode, (state) =>
-    state.matches('segment') ? 'segment' : state.matches('editCells') ? 'cells' : false
+    state.matches('editSegment') ? 'segment' : state.matches('editCells') ? 'cells' : false
   );
 
   switch (mode) {

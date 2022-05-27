@@ -5,7 +5,7 @@ import { useLabelMode } from '../ProjectContext';
 function LabelTabs() {
   const labelMode = useLabelMode();
   const value = useSelector(labelMode, (state) => {
-    return state.matches('segment')
+    return state.matches('editSegment')
       ? 0
       : state.matches('editCells')
       ? 1
@@ -16,7 +16,7 @@ function LabelTabs() {
   const handleChange = (event, newValue) => {
     switch (newValue) {
       case 0:
-        labelMode.send('SEGMENT');
+        labelMode.send('EDIT_SEGMENT');
         break;
       case 1:
         labelMode.send('EDIT_CELLS');

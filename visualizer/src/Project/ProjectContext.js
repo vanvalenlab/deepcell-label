@@ -42,7 +42,7 @@ export function useOtherSelectedCell() {
 
   const labelMode = useLabelMode();
   const mode = useSelector(labelMode, (state) =>
-    state.matches('segment') ? 'segment' : state.matches('editCells') ? 'cells' : false
+    state.matches('editSegment') ? 'segment' : state.matches('editCells') ? 'cells' : false
   );
 
   const flood = useFlood();
@@ -260,7 +260,7 @@ export function useSegment() {
   const project = useProject();
   const segment = useSelector(project, (state) => {
     const tool = state.context.toolRef;
-    const segment = tool.state.context.segmentRef;
+    const segment = tool.state.context.editSegmentRef;
     return segment;
   });
   return segment;
@@ -270,7 +270,7 @@ export function useBrush() {
   const project = useProject();
   const tool = useSelector(project, (state) => {
     const labelMode = state.context.toolRef;
-    const segment = labelMode.state.context.segmentRef;
+    const segment = labelMode.state.context.editSegmentRef;
     const tools = segment.state.context.tools;
     return tools.brush;
   });
@@ -281,7 +281,7 @@ export function useThreshold() {
   const project = useProject();
   const tool = useSelector(project, (state) => {
     const labelMode = state.context.toolRef;
-    const segment = labelMode.state.context.segmentRef;
+    const segment = labelMode.state.context.editSegmentRef;
     const tools = segment.state.context.tools;
     return tools.threshold;
   });
@@ -292,7 +292,7 @@ export function useWatershed() {
   const project = useProject();
   const tool = useSelector(project, (state) => {
     const labelMode = state.context.toolRef;
-    const segment = labelMode.state.context.segmentRef;
+    const segment = labelMode.state.context.editSegmentRef;
     const tools = segment.state.context.tools;
     return tools.watershed;
   });
@@ -303,7 +303,7 @@ export function useFlood() {
   const project = useProject();
   const tool = useSelector(project, (state) => {
     const labelMode = state.context.toolRef;
-    const segment = labelMode.state.context.segmentRef;
+    const segment = labelMode.state.context.editSegmentRef;
     const tools = segment.state.context.tools;
     return tools.flood;
   });
