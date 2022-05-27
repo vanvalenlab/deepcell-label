@@ -78,7 +78,12 @@ function OutlineCellCanvas({ setCanvases, cell }) {
   }, [kernelCanvas, width, height]);
 
   useEffect(() => {
-    if (labeledArray && cellMatrix) {
+    if (cell > cellMatrix[0].length) {
+      setCanvases((canvases) => {
+        const { tool, ...rest } = canvases;
+        return rest;
+      });
+    } else if (labeledArray && cellMatrix) {
       kernelRef.current(labeledArray, cellMatrix, cell);
       // Rerender the parent canvas
       setCanvases((canvases) => ({ ...canvases, tool: kernelCanvas }));
