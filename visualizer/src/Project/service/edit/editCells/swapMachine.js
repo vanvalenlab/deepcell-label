@@ -5,8 +5,9 @@ function createSwapMachine(context) {
   return Machine(
     {
       invoke: [
-        { id: 'select', src: fromEventBus('flood', () => context.eventBuses.select, 'SELECTED') },
-        { src: fromEventBus('flood', () => context.eventBuses.hovering, 'HOVERING') },
+        { id: 'select', src: fromEventBus('swap', () => context.eventBuses.select, 'SELECTED') },
+        { src: fromEventBus('swap', () => context.eventBuses.hovering, 'HOVERING') },
+        { id: 'cells', src: fromEventBus('swap', () => context.eventBuses.cells) },
       ],
       entry: send('GET_SELECTED', { to: 'select' }),
       context: {

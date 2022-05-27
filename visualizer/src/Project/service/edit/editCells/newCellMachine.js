@@ -5,8 +5,9 @@ function createNewCellMachine(context) {
   return Machine(
     {
       invoke: [
-        { id: 'select', src: fromEventBus('delete', () => context.eventBuses.select, 'SELECTED') },
-        { src: fromEventBus('delete', () => context.eventBuses.hovering, 'HOVERING') },
+        { id: 'select', src: fromEventBus('newCell', () => context.eventBuses.select, 'SELECTED') },
+        { src: fromEventBus('newCell', () => context.eventBuses.hovering, 'HOVERING') },
+        { id: 'cells', src: fromEventBus('newCell', () => context.eventBuses.cells) },
       ],
       context: {
         selected: null,

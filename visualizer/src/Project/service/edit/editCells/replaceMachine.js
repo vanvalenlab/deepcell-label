@@ -7,6 +7,7 @@ function createReplaceMachine(context) {
       invoke: [
         { id: 'select', src: fromEventBus('replace', () => context.eventBuses.select, 'SELECTED') },
         { src: fromEventBus('replace', () => context.eventBuses.hovering, 'HOVERING') },
+        { id: 'cells', src: fromEventBus('replace', () => context.eventBuses.cells) },
       ],
       context: {
         selected: null,
