@@ -2,7 +2,6 @@ import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xs
 import { fromEventBus } from '../../eventBus';
 import createBrushMachine from './brushMachine';
 import createFloodMachine from './floodMachine';
-import createSegmentApiMachine from './segmentApiMachine';
 import createSelectMachine from './selectMachine';
 import createThresholdMachine from './thresholdMachine';
 import createTrimMachine from './trimMachine';
@@ -55,14 +54,19 @@ const displayState = {
   },
 };
 
-const createSegmentMachine = (context) =>
+const createEditSegmentMachine = (context) =>
   Machine(
     {
-      id: 'segment',
+      id: 'editSegment',
+      entry: [
+        send('REGISTER_UI', { to: context.undoRef }),
+        'spawnTools',
+        send('GET_SELECTED', { to: 'select' }),
+      ],
       invoke: [
-        { id: 'api', src: createSegmentApiMachine(context) },
-        { src: fromEventBus('segment', () => context.eventBuses.raw) },
-        { id: 'select', src: fromEventBus('segment', () => context.eventBuses.select) },
+        { id: 'arrays', src: fromEventBus('editSegment', () => context.eventBuses.arrays) },
+        { src: fromEventBus('editSegment', () => context.eventBuses.raw) }, // COLOR & GRAYSCALE events
+        { id: 'select', src: fromEventBus('editSegment', () => context.eventBuses.select) },
       ],
       context: {
         selected: null,
@@ -70,58 +74,41 @@ const createSegmentMachine = (context) =>
         tools: null,
         eventBuses: context.eventBuses,
       },
-      initial: 'getSelected',
+      type: 'parallel',
       states: {
-        getSelected: {
-          entry: send('GET_SELECTED', { to: 'select' }),
-          on: {
-            SELECTED: { actions: 'setSelected' },
-          },
-          always: { cond: 'have selected labels', target: 'idle' },
-        },
-        idle: {
-          entry: 'spawnTools',
-          type: 'parallel',
-          states: {
-            display: displayState,
-            pan: panState,
-          },
-          on: {
-            // from canvas event bus (forwarded from parent)
-            mousedown: { actions: 'forwardToTool' },
-            mouseup: { actions: 'forwardToTool' },
-            HOVERING: { actions: 'forwardToTools' },
-            COORDINATES: { actions: 'forwardToTools' },
-            // from selected labels event bus
-            SELECTED: { actions: 'setSelected' },
+        display: displayState,
+        pan: panState,
+      },
+      on: {
+        // from canvas event bus (forwarded from parent)
+        mousedown: { actions: 'forwardToTool' },
+        mouseup: { actions: 'forwardToTool' },
+        COORDINATES: { actions: 'forwardToTools' },
+        // from selected labels event bus
+        SELECTED: { actions: 'setSelected' },
 
-            ERODE: { actions: 'erode' },
-            DILATE: { actions: 'dilate' },
+        ERODE: { actions: 'erode' },
+        DILATE: { actions: 'dilate' },
 
-            SAVE: { actions: 'save' },
-            RESTORE: { actions: ['restore', respond('RESTORED')] },
-          },
-        },
+        SAVE: { actions: 'save' },
+        RESTORE: { actions: ['restore', respond('RESTORED')] },
       },
     },
     {
       guards: {
-        usingColorTool: ({ tool }) => colorTools.includes(tool),
-        isColorTool: (_, { tool }) => colorTools.includes(tool),
-        usingGrayscaleTool: ({ tool }) => grayscaleTools.includes(tool),
-        isGrayscaleTool: (_, { tool }) => grayscaleTools.includes(tool),
-        isNoPanTool: (_, { tool }) => noPanTools.includes(tool),
-        isPanTool: (_, { tool }) => panTools.includes(tool),
-        'have selected labels': (context) => context.selected !== null,
+        usingColorTool: (ctx) => colorTools.includes(ctx.tool),
+        usingGrayscaleTool: (ctx) => grayscaleTools.includes(ctx.tool),
+        isColorTool: (_, evt) => colorTools.includes(evt.tool),
+        isGrayscaleTool: (_, evt) => grayscaleTools.includes(evt.tool),
+        isNoPanTool: (_, evt) => noPanTools.includes(evt.tool),
+        isPanTool: (_, evt) => panTools.includes(evt.tool),
       },
       actions: {
-        setSelected: assign({ selected: (_, { selected }) => selected }),
-        setTool: pure((context, event) => [
-          send('EXIT', { to: context.tool }),
-          assign({ tool: event.tool }),
-        ]),
-        save: respond(({ tool }) => ({ type: 'RESTORE', tool })),
-        restore: assign((_, { tool }) => ({ tool })),
+        setLabelHistory: assign({ labelHistory: (_, __, meta) => meta._event.origin }),
+        setSelected: assign({ selected: (_, evt) => evt.selected }),
+        setTool: pure((ctx, evt) => [send('EXIT', { to: ctx.tool }), assign({ tool: evt.tool })]),
+        save: respond((ctx) => ({ type: 'RESTORE', tool: ctx.tool })),
+        restore: assign({ tool: (_, evt) => evt.tool }),
         spawnTools: assign({
           tools: (context) => ({
             brush: spawn(createBrushMachine(context), 'brush'),
@@ -132,15 +119,15 @@ const createSegmentMachine = (context) =>
             watershed: spawn(createWatershedMachine(context), 'watershed'),
           }),
         }),
-        forwardToTool: forwardTo(({ tool }) => tool),
-        forwardToTools: pure(({ tools }) => Object.values(tools).map((tool) => forwardTo(tool))),
+        forwardToTool: forwardTo((ctx) => ctx.tool),
+        forwardToTools: pure((ctx) => Object.values(ctx.tools).map((tool) => forwardTo(tool))),
         erode: send(
           ({ selected }) => ({
             type: 'EDIT',
             action: 'erode',
             args: { label: selected },
           }),
-          { to: 'api' }
+          { to: 'arrays' }
         ),
         dilate: send(
           ({ selected }) => ({
@@ -148,7 +135,7 @@ const createSegmentMachine = (context) =>
             action: 'dilate',
             args: { label: selected },
           }),
-          { to: 'api' }
+          { to: 'arrays' }
         ),
         autofit: send(
           ({ selected }) => ({
@@ -156,10 +143,10 @@ const createSegmentMachine = (context) =>
             action: 'active_contour',
             args: { label: selected },
           }),
-          { to: 'api' }
+          { to: 'arrays' }
         ),
       },
     }
   );
 
-export default createSegmentMachine;
+export default createEditSegmentMachine;

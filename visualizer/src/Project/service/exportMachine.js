@@ -5,18 +5,18 @@ import { fromEventBus } from './eventBus';
 
 /** Creates a blob for a zip file with all project data. */
 async function makeExportZip(context) {
-  const { rawArrays, labeledArrays, cells, lineage } = context;
+  const { raw, labeled, cells, lineage } = context;
   const dimensions = {
-    width: rawArrays[0][0][0].length,
-    height: rawArrays[0][0].length,
-    numFrames: rawArrays[0].length,
-    numChannels: rawArrays.length,
-    numFeatures: labeledArrays.length,
+    width: raw[0][0][0].length,
+    height: raw[0][0].length,
+    numFrames: raw[0].length,
+    numChannels: raw.length,
+    numFeatures: labeled.length,
   };
   const zipWriter = new zip.ZipWriter(new zip.BlobWriter('application/zip'));
   await zipWriter.add('dimensions.json', new zip.TextReader(JSON.stringify(dimensions)));
-  await zipWriter.add('labeled.dat', new zip.BlobReader(new Blob(flattenDeep(labeledArrays))));
-  await zipWriter.add('raw.dat', new zip.BlobReader(new Blob(flattenDeep(rawArrays))));
+  await zipWriter.add('labeled.dat', new zip.BlobReader(new Blob(flattenDeep(labeled))));
+  await zipWriter.add('raw.dat', new zip.BlobReader(new Blob(flattenDeep(raw))));
   await zipWriter.add('cells.json', new zip.TextReader(JSON.stringify(cells)));
   if (lineage) {
     await zipWriter.add('lineage.json', new zip.TextReader(JSON.stringify(lineage)));
@@ -74,15 +74,15 @@ const createExportMachine = ({ projectId, eventBuses }) =>
     {
       id: 'export',
       invoke: [
-        { id: 'arrays', src: fromEventBus('api', () => eventBuses.arrays) },
-        { id: 'cells', src: fromEventBus('api', () => eventBuses.cells) },
+        { id: 'arrays', src: fromEventBus('export', () => eventBuses.arrays) },
+        { id: 'cells', src: fromEventBus('export', () => eventBuses.cells) },
       ],
       context: {
         projectId,
         bucket:
           new URLSearchParams(window.location.search).get('bucket') ?? 'deepcell-label-output',
-        rawArrays: null,
-        labeledArrays: null,
+        raw: null,
+        labeled: null,
         cells: null,
         // lineage: null,
       },
@@ -145,8 +145,8 @@ const createExportMachine = ({ projectId, eventBuses }) =>
         },
         getArrays: send('GET_ARRAYS', { to: 'arrays' }),
         setArrays: assign((ctx, evt) => ({
-          rawArrays: evt.rawArrays,
-          labeledArrays: evt.labeledArrays,
+          raw: evt.raw,
+          labeled: evt.labeled,
         })),
         setCells: assign((_, { cells }) => ({ cells })),
       },

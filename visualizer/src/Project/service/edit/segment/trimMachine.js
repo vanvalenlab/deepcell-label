@@ -6,7 +6,7 @@ const createTrimMachine = (context) =>
     {
       invoke: [
         { id: 'select', src: fromEventBus('trim', () => context.eventBuses.select) },
-        { id: 'api', src: fromEventBus('trim', () => context.eventBuses.api) },
+        { id: 'arrays', src: fromEventBus('trim', () => context.eventBuses.arrays) },
         { src: fromEventBus('trim', () => context.eventBuses.hovering) },
       ],
       context: {
@@ -19,7 +19,10 @@ const createTrimMachine = (context) =>
         COORDINATES: { actions: 'setCoordinates' },
         HOVERING: { actions: 'setHovering' },
         SELECTED: { actions: 'setLabel' },
-        mouseup: [{ cond: 'onLabel', actions: 'trim' }, { actions: 'select' }],
+        mouseup: [
+          { cond: 'onLabel', actions: (c, e, m) => console.log('trim', c, e, m) },
+          { actions: 'select' },
+        ],
       },
     },
     {
@@ -41,7 +44,7 @@ const createTrimMachine = (context) =>
               y: ctx.y,
             },
           }),
-          { to: 'api' }
+          { to: 'arrays' }
         ),
       },
     }

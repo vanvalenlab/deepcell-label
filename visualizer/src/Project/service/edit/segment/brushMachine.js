@@ -7,7 +7,7 @@ const createBrushMachine = (context) =>
       invoke: [
         { src: 'listenForBrushHotkeys' },
         { src: fromEventBus('brush', () => context.eventBuses.select) },
-        { id: 'api', src: fromEventBus('brush', () => context.eventBuses.api) },
+        { id: 'arrays', src: fromEventBus('brush', () => context.eventBuses.arrays) },
       ],
       context: {
         x: 0,
@@ -84,7 +84,7 @@ const createBrushMachine = (context) =>
               erase: context.erase,
             },
           }),
-          { to: 'api' }
+          { to: 'arrays' }
         ),
       },
     }

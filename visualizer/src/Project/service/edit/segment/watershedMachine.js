@@ -6,7 +6,7 @@ const createWatershedMachine = (context) =>
     {
       invoke: [
         { id: 'select', src: fromEventBus('watershed', () => context.eventBuses.select) },
-        { id: 'api', src: fromEventBus('watershed', () => context.eventBuses.api) },
+        { id: 'arrays', src: fromEventBus('watershed', () => context.eventBuses.arrays) },
         { src: fromEventBus('watershed', () => context.eventBuses.hovering) },
       ],
       context: {
@@ -67,7 +67,7 @@ const createWatershedMachine = (context) =>
         },
         waiting: {
           on: {
-            EDITED: 'idle',
+            EDITED_SEGMENT: 'idle',
           },
           after: {
             1000: 'idle',
@@ -104,7 +104,7 @@ const createWatershedMachine = (context) =>
               y2: ctx.y2,
             },
           }),
-          { to: 'api' }
+          { to: 'arrays' }
         ),
       },
     }

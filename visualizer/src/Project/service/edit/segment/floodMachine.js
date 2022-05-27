@@ -6,7 +6,7 @@ const creatFloodMachine = (context) =>
     {
       invoke: [
         { id: 'select', src: fromEventBus('flood', () => context.eventBuses.select) },
-        { id: 'api', src: fromEventBus('flood', () => context.eventBuses.api) },
+        { id: 'arrays', src: fromEventBus('flood', () => context.eventBuses.arrays) },
         { src: fromEventBus('flood', () => context.eventBuses.hovering) },
       ],
       context: {
@@ -54,7 +54,7 @@ const creatFloodMachine = (context) =>
               y: ctx.y,
             },
           }),
-          { to: 'api' }
+          { to: 'arrays' }
         ),
       },
     }

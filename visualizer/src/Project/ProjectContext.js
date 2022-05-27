@@ -139,9 +139,13 @@ export function useEditCells() {
   return editCells;
 }
 
-export function useApi() {
+export function useSegmentApi() {
   const project = useProject();
-  const api = useSelector(project, (state) => state.context.apiRef);
+  const api = useSelector(project, (state) => {
+    const arrays = state.context.arraysRef;
+    const api = arrays.children.get('api');
+    return api;
+  });
   return api;
 }
 

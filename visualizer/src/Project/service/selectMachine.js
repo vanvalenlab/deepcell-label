@@ -2,32 +2,27 @@ import { assign, Machine, send } from 'xstate';
 import { pure, respond } from 'xstate/lib/actions';
 import { fromEventBus } from './eventBus';
 
-const createSelectMachine = ({ eventBuses }) =>
+const createSelectMachine = ({ eventBuses, undoRef }) =>
   Machine(
     {
       id: 'select',
       invoke: [
         { id: 'eventBus', src: fromEventBus('select', () => eventBuses.select) },
-        { src: fromEventBus('select', () => eventBuses.canvas) },
-        { src: fromEventBus('select', () => eventBuses.labeled) },
-        { src: fromEventBus('select', () => eventBuses.cells) },
-        { src: fromEventBus('select', () => eventBuses.image) },
-        { src: fromEventBus('select', () => eventBuses.hovering) },
+        { src: fromEventBus('select', () => eventBuses.cells) }, // CELLS event, needed to get new cell
+        { src: fromEventBus('select', () => eventBuses.hovering) }, // HOVERING event, needed to select cells under the cursor
       ],
+      entry: send('REGISTER_UI', { to: undoRef }),
       context: {
         selected: 1,
         hovering: null,
         cells: null,
-        frame: 0,
       },
       on: {
         GET_SELECTED: { actions: 'sendSelected' },
 
         HOVERING: { actions: 'setHovering' },
-        CELLS: { actions: ['setCells'] },
-        SET_FRAME: { actions: 'setFrame' },
+        CELLS: { actions: 'setCells' },
         SELECTED: { actions: ['setSelected', 'sendToEventBus'] },
-        SET_SELECTED: { actions: send((_, { selected }) => ({ type: 'SELECTED', selected })) },
         SELECT: { actions: 'select' },
         SELECT_NEW: { actions: 'selectNew' },
         RESET: { actions: 'reset' },
@@ -70,7 +65,6 @@ const createSelectMachine = ({ eventBuses }) =>
         setHovering: assign({ hovering: (_, { hovering }) => hovering }),
         setCells: assign({ cells: (_, { cells }) => cells }),
         setSelected: assign({ selected: (_, { selected }) => selected }),
-        setFrame: assign({ frame: (_, { frame }) => frame }),
         save: respond(({ selected }) => ({ type: 'RESTORE', selected })),
         restore: pure((_, { selected }) => [
           respond('RESTORED'),

@@ -1,7 +1,7 @@
 import { fireEvent, render } from '@testing-library/react';
 import { interpret } from 'xstate';
 import createCanvasMachine from '../service/canvasMachine';
-import createSegmentMachine from '../service/edit/segment/segmentMachine';
+import createSegmentMachine from '../service/edit/segment/editSegmentMachine';
 import { EventBus } from '../service/eventBus';
 import createArraysMachine from '../service/labels/arraysMachine';
 import createSelectMachine from '../service/selectMachine';

@@ -1,7 +1,8 @@
 import * as zip from '@zip.js/zip.js';
-import { assign, forwardTo, Machine, send } from 'xstate';
-import { fromEventBus } from '../../eventBus';
+import { assign, Machine, sendParent } from 'xstate';
+import { fromEventBus } from '../eventBus';
 
+/** Splits a 1D Int32Array buffer into a 2D list of Int32Array with height and width. */
 function splitRows(buffer, width, height) {
   const frame = [];
   for (let i = 0; i < height; i++) {
@@ -11,7 +12,7 @@ function splitRows(buffer, width, height) {
   return frame;
 }
 
-/** Creates a blob for a zip file with all project . */
+/** Creates a zip file blob with images and labels to updated by the API. */
 async function makeEditZip(context, event) {
   const { labeled, raw, cells, writeMode, lineage, frame } = context;
   const { action, args } = event;
@@ -38,7 +39,7 @@ async function makeEditZip(context, event) {
   return zipBlob;
 }
 
-/** Sends a zip with labels to edit and to the DeepCell Label API for editing the labels in the zip. */
+/** Sends a label zip to the DeepCell Label API to edit. */
 async function edit(context, event) {
   const form = new FormData();
   const zipBlob = await makeEditZip(context, event);
@@ -60,6 +61,12 @@ function checkResponseCode(response) {
   return response.ok ? response : Promise.reject(response);
 }
 
+/** Parses responses from the DeepCell Label API.
+ * @param {Response} response - The response from the DeepCell Label API.
+ * @param {number} width - The width of the segmentation array.
+ * @param {number} height - The height of the segmentation array
+ * @returns {Promise<{labeled: Int32Array[], cells: Cell[]}>} - The labeled segmentation array and cells from the DeepCell Label API after editing.
+ */
 async function parseResponseZip(response, width, height) {
   const blob = await response.blob();
   const reader = new zip.ZipReader(new zip.BlobReader(blob));
@@ -79,7 +86,6 @@ const createSegmentApiMachine = ({ eventBuses }) =>
     {
       id: 'editSegment',
       invoke: [
-        { id: 'eventBus', src: fromEventBus('editSegment', () => eventBuses.api) },
         { id: 'arrays', src: fromEventBus('editSegment', () => eventBuses.arrays) },
         { id: 'cells', src: fromEventBus('editSegment', () => eventBuses.cells) },
         { src: fromEventBus('editSegment', () => eventBuses.image) },
@@ -88,12 +94,12 @@ const createSegmentApiMachine = ({ eventBuses }) =>
       context: {
         frame: 0,
         feature: 0,
-        labeled: null, // current frame on display (for edit route)
-        raw: null, // current frame on display (for edit route)
+        editFrame: null,
+        editFeature: null,
+        labeled: null, // currently displayed labeled frame (Int32Array[][])
+        raw: null, // current displayed raw frame (Uint8Array[][])
         cells: null,
         writeMode: 'overlap',
-        initialLabels: null,
-        historyRef: null, // to send snapshots for undo/redo history
       },
       initial: 'waitForLabels',
       on: {
@@ -103,10 +109,9 @@ const createSegmentApiMachine = ({ eventBuses }) =>
         SET_FRAME: { actions: 'setFrame' },
         SET_FEATURE: { actions: 'setFeature' },
         SET_WRITE_MODE: { actions: 'setWriteMode' },
-        HISTORY_REF: { actions: 'setHistoryRef' }, // TODO: check that history ref is set before allowing edits
-        EDITED: { actions: forwardTo('eventBus') },
       },
       states: {
+        // TODO: wait for raw and cells as well
         waitForLabels: {
           on: {
             LABELED: { actions: 'setLabeled', target: 'idle' },
@@ -114,17 +119,19 @@ const createSegmentApiMachine = ({ eventBuses }) =>
         },
         idle: {
           on: {
-            EDIT: { target: 'editing', actions: 'setInitialLabels' },
+            EDIT: 'editing',
           },
         },
         editing: {
+          entry: ['setEditFrame', 'setEditFeature'],
           invoke: {
             id: 'labelAPI',
             src: edit,
             onDone: {
               target: 'idle',
-              actions: [(c, e) => console.log(c, e), 'sendEdited', 'sendSnapshot'],
+              actions: [(c, e) => console.log(c, e), 'sendEdited'],
             },
+            // TODO: send error message to parent and display in UI
             onError: { target: 'idle', actions: (c, e) => console.log(c, e) },
           },
         },
@@ -132,45 +139,21 @@ const createSegmentApiMachine = ({ eventBuses }) =>
     },
     {
       actions: {
-        setInitialLabels: assign((ctx) => ({
-          initialLabels: {
-            frame: ctx.frame,
-            feature: ctx.feature,
-            labeled: ctx.labeled,
-            cells: ctx.cells.cells.filter((o) => o.z === ctx.frame),
-          },
+        setEditFrame: assign({ editFrame: (ctx) => ctx.frame }),
+        setEditFeature: assign({ editFeature: (ctx) => ctx.feature }),
+        sendEdited: sendParent((ctx, evt) => ({
+          type: 'EDITED_SEGMENT',
+          labeled: evt.data.labeled,
+          cells: evt.data.cells,
+          frame: ctx.editFrame,
+          feature: ctx.editFeature,
         })),
-        sendEdited: send(
-          (ctx, evt) => ({
-            type: 'EDITED',
-            frame: ctx.initialLabels.frame,
-            feature: ctx.initialLabels.feature,
-            labeled: evt.data.labeled,
-            cells: evt.data.cells,
-          }),
-          { to: 'eventBus' }
-        ),
-        setRaw: assign((_, { raw }) => ({ raw })),
-        setLabeled: assign((_, { labeled }) => ({ labeled })),
-        setCells: assign((_, { cells }) => ({ cells })),
-        setFrame: assign((_, { frame }) => ({ frame })),
-        setFeature: assign((_, { feature }) => ({ feature })),
-        setWriteMode: assign((_, { writeMode }) => ({ writeMode })),
-        // undo redo
-        setHistoryRef: assign({ historyRef: (ctx, evt, meta) => meta._event.origin }),
-        sendSnapshot: send(
-          (ctx, evt) => ({
-            type: 'SAVE_LABELS',
-            initialLabels: ctx.initialLabels,
-            editedLabels: {
-              frame: ctx.initialLabels.frame,
-              feature: ctx.initialLabels.feature,
-              labeled: evt.data.labeled,
-              cells: evt.data.cells,
-            },
-          }),
-          { to: (ctx) => ctx.historyRef }
-        ),
+        setRaw: assign({ raw: (_, evt) => evt.raw }),
+        setLabeled: assign({ labeled: (_, evt) => evt.labeled }),
+        setCells: assign({ cells: (_, evt) => evt.cells }),
+        setFrame: assign({ frame: (_, evt) => evt.frame }),
+        setFeature: assign({ feature: (_, evt) => evt.feature }),
+        setWriteMode: assign({ writeMode: (_, evt) => evt.writeMode }),
       },
     }
   );

@@ -15,19 +15,18 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
       context: {
         tool: 'editSegment',
         eventBuses,
-        segmentRef: null,
+        undoRef,
         editSegmentRef: null,
         editLineageRef: null,
         editCellsRef: null,
       },
       invoke: [
         { id: 'canvas', src: fromEventBus('tool', () => eventBuses.canvas) },
-        { id: 'undo', src: fromEventBus('tool', () => eventBuses.undo) },
         { src: fromEventBus('tool', () => eventBuses.select) },
         { src: fromEventBus('tool', () => eventBuses.load) },
       ],
       initial: 'loading',
-      entry: ['spawnTools', 'addToolsToUndo'],
+      entry: [send('REGISTER_UI', { to: undoRef }), 'spawnTools'],
       states: {
         loading: {
           on: {
@@ -96,9 +95,6 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
           editLineageRef: spawn(createEditLineageMachine(context), 'editLineage'),
           editCellsRef: spawn(createEditCellsMachine(context), 'editCells'),
         })),
-        addToolsToUndo: send(({ segmentRef }) => ({ type: 'ADD_ACTOR', actor: segmentRef }), {
-          to: 'undo',
-        }),
       },
     }
   );

@@ -7,7 +7,7 @@ const createThresholdMachine = (context) =>
       initial: 'idle',
       invoke: [
         { src: fromEventBus('threshold', () => context.eventBuses.select) },
-        { id: 'api', src: fromEventBus('threshold', () => context.eventBuses.api) },
+        { id: 'arrays', src: fromEventBus('threshold', () => context.eventBuses.arrays) },
       ],
       context: {
         x: null,
@@ -51,7 +51,7 @@ const createThresholdMachine = (context) =>
               label,
             },
           }),
-          { to: 'api' }
+          { to: 'arrays' }
         ),
       },
     }

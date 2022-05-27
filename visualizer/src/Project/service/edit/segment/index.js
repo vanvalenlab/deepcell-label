@@ -1,3 +1,3 @@
-import createSegmentMachine from './segmentMachine';
+import createSegmentMachine from './editSegmentMachine';
 
 export default createSegmentMachine;

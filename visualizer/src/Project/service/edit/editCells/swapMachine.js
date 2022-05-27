@@ -34,6 +34,7 @@ function createSwapMachine(context) {
       },
       actions: {
         setSelected: assign({ selected: (_, evt) => evt.selected }),
+        resetSwapCell: assign({ swapCell: null }),
         setSwapCell: assign({
           swapCell: (ctx) => {
             const { hovering, swapCell } = ctx;

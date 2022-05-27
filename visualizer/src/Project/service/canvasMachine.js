@@ -98,10 +98,11 @@ const movingState = {
   },
 };
 
-const createCanvasMachine = ({ eventBuses }) =>
+const createCanvasMachine = ({ undoRef, eventBuses }) =>
   Machine(
     {
       id: 'canvas',
+      entry: send('REGISTER_UI', { to: undoRef }),
       context: {
         // raw dimensions of image
         width: 1,

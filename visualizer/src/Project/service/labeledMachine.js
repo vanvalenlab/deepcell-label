@@ -3,13 +3,14 @@ import { fromEventBus } from './eventBus';
 
 const { respond } = actions;
 
-const createLabeledMachine = ({ projectId, eventBuses }) =>
+const createLabeledMachine = ({ projectId, eventBuses, undoRef }) =>
   Machine(
     {
       invoke: [
         { id: 'eventBus', src: fromEventBus('labeled', () => eventBuses.labeled) },
         { src: fromEventBus('labeled', () => eventBuses.load) },
       ],
+      entry: send('REGISTER_UI', { to: undoRef }),
       context: {
         projectId,
         numFeatures: 1,

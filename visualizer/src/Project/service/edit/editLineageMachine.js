@@ -9,7 +9,7 @@ const createEditLineageMachine = ({ eventBuses }) =>
         { id: 'selectedCells', src: fromEventBus('editLineage', () => eventBuses.select) },
         { src: fromEventBus('editLineage', () => eventBuses.labeled) },
         { src: fromEventBus('editLineage', () => eventBuses.hovering) },
-        { id: 'api', src: fromEventBus('editLineage', () => eventBuses.api) },
+        // { id: 'api', src: fromEventBus('editLineage', () => eventBuses.api) },
       ],
       context: {
         selected: null,
@@ -65,8 +65,8 @@ const createEditLineageMachine = ({ eventBuses }) =>
             args: {
               daughter,
             },
-          }),
-          { to: 'api' }
+          })
+          // { to: 'api' }
         ),
         addDaughter: send(
           ({ parent, hovering }) => ({
@@ -76,8 +76,8 @@ const createEditLineageMachine = ({ eventBuses }) =>
               parent: parent,
               daughter: hovering[0], // TODO: select daughter before adding
             },
-          }),
-          { to: 'api' }
+          })
+          // { to: 'api' }
         ),
         replaceWithParent: send(
           (_, { parent, daughter }) => ({
@@ -86,8 +86,8 @@ const createEditLineageMachine = ({ eventBuses }) =>
             args: {
               daughter: daughter,
             },
-          }),
-          { to: 'api' }
+          })
+          // { to: 'api' }
         ),
         createNewCell: send(
           (_, { label }) => ({
@@ -96,8 +96,8 @@ const createEditLineageMachine = ({ eventBuses }) =>
             args: {
               label: label,
             },
-          }),
-          { to: 'api' }
+          })
+          // { to: 'api' }
         ),
       },
     }

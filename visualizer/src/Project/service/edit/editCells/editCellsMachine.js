@@ -8,14 +8,12 @@ import createSwapMachine from './swapMachine';
 
 const { pure, respond } = actions;
 
-function createEditCellsMachine({ eventBuses }) {
+function createEditCellsMachine({ eventBuses, undoRef }) {
   return Machine(
     {
       id: 'editCells',
-      invoke: [
-        { id: 'api', src: fromEventBus('editCells', () => eventBuses.api) },
-        { id: 'select', src: fromEventBus('editCells', () => eventBuses.select) },
-      ],
+      entry: [send('REGISTER_UI', { to: undoRef })],
+      invoke: [{ id: 'select', src: fromEventBus('editCells', () => eventBuses.select) }],
       context: {
         selected: null,
         tool: 'select',
@@ -48,19 +46,18 @@ function createEditCellsMachine({ eventBuses }) {
       actions: {
         setSelected: assign({ selected: (_, { selected }) => selected }),
         setTool: pure((ctx, evt) => [send('EXIT', { to: ctx.tool }), assign({ tool: evt.tool })]),
-        save: respond(({ tool }) => ({ type: 'RESTORE', tool })),
-        restore: assign((_, { tool }) => ({ tool })),
+        save: respond((ctx) => ({ type: 'RESTORE', tool: ctx.tool })),
+        restore: assign({ tool: (_, evt) => evt.tool }),
         spawnTools: assign({
-          tools: (context) => ({
-            select: spawn(createSelectMachine(context), 'select'),
-            swap: spawn(createSwapMachine(context), 'swap'),
-            replace: spawn(createReplaceMachine(context), 'replace'),
-            delete: spawn(createDeleteMachine(context), 'delete'),
-            new: spawn(createNewCellMachine(context), 'new'),
+          tools: (ctx) => ({
+            select: spawn(createSelectMachine(ctx), 'select'),
+            swap: spawn(createSwapMachine(ctx), 'swap'),
+            replace: spawn(createReplaceMachine(ctx), 'replace'),
+            delete: spawn(createDeleteMachine(ctx), 'delete'),
+            new: spawn(createNewCellMachine(ctx), 'new'),
           }),
         }),
-        forwardToTool: forwardTo(({ tool }) => tool),
-        forwardToTools: pure(({ tools }) => Object.values(tools).map((tool) => forwardTo(tool))),
+        forwardToTool: forwardTo((ctx) => ctx.tool),
       },
     }
   );

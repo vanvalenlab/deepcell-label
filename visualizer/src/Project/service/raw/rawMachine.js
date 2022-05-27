@@ -5,7 +5,7 @@ import createLayerMachine from './layerMachine';
 
 const { pure, respond } = actions;
 
-const createRawMachine = ({ projectId, eventBuses }) =>
+const createRawMachine = ({ projectId, eventBuses, undoRef }) =>
   Machine(
     {
       invoke: [
@@ -21,7 +21,7 @@ const createRawMachine = ({ projectId, eventBuses }) =>
         layers: [],
         isGrayscale: true,
       },
-      entry: ['spawnLayers', 'spawnChannels'],
+      entry: [send('REGISTER_UI', { to: undoRef }), 'spawnLayers', 'spawnChannels'],
       initial: 'checkDisplay',
       states: {
         checkDisplay: {
