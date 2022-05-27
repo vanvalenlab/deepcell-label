@@ -7,10 +7,8 @@ function createLabelHistoryMachine(actor) {
       id: 'label-history', // TODO: add actor to ID
       context: {
         actor,
-        // TODO: switch from snapshot list to object with action IDs as keys
-        // not every action edits all labels, so use ID to check if there's a snapshot for the undone/redone action
-        past: [],
-        future: [],
+        past: {},
+        future: {},
         currentLabels: null,
       },
       entry: send('LABEL_HISTORY', { to: actor }),
@@ -24,12 +22,12 @@ function createLabelHistoryMachine(actor) {
           },
         },
         undoing: {
-          entry: 'undo',
+          entry: ['undo', 'setEdit'],
           always: 'idle',
           exit: 'movePastToFuture',
         },
         redoing: {
-          entry: 'redo',
+          entry: ['redo', 'setEdit'],
           always: 'idle',
           exit: 'moveFutureToPast',
         },
@@ -37,23 +35,26 @@ function createLabelHistoryMachine(actor) {
     },
     {
       actions: {
+        setEdit: assign({ edit: (ctx, evt) => evt.edit }),
         saveSnapshot: assign({
-          past: (ctx, evt) => [...ctx.past, evt],
-          future: [],
+          past: (ctx, evt) => ({ ...ctx.past, [evt.edit]: evt }),
+          future: {},
         }),
-        undo: send((ctx, evt) => ctx.past[ctx.past.length - 1].before, {
+        undo: send((ctx, evt) => ctx.past[evt.edit].before, {
           to: (ctx) => ctx.actor,
         }),
-        redo: send((ctx, evt) => ctx.future[ctx.future.length - 1].after, {
+        redo: send((ctx, evt) => ctx.future[evt.edit].after, {
           to: (ctx) => ctx.actor,
         }),
-        movePastToFuture: assign({
-          past: (context) => context.past.slice(0, context.past.length - 1),
-          future: (context) => [...context.future, context.past[context.past.length - 1]],
+        movePastToFuture: assign((ctx, evt) => {
+          const { [ctx.edit]: snapshot, ...past } = ctx.past;
+          const future = { ...ctx.future, [ctx.edit]: snapshot };
+          return { past, future };
         }),
-        moveFutureToPast: assign({
-          past: (context) => [...context.past, context.future[context.future.length - 1]],
-          future: (context) => context.future.slice(0, context.future.length - 1),
+        moveFutureToPast: assign((ctx, evt) => {
+          const { [ctx.edit]: snapshot, ...future } = ctx.future;
+          const past = { ...ctx.past, [ctx.edit]: snapshot };
+          return { past, future };
         }),
       },
     }

@@ -1,6 +1,4 @@
-import { actions, assign, Machine, send, sendParent } from 'xstate';
-
-const { pure } = actions;
+import { assign, Machine, send, sendParent } from 'xstate';
 
 /** Records a stack of snapshots of an actor's state before each action.
  * Sends SAVE events to an actor and stores the actor's responses to send back when undoing or redoing actions.
