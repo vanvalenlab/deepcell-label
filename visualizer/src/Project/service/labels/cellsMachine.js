@@ -13,7 +13,7 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
       entry: send('REGISTER_LABELS', { to: undoRef }),
       invoke: [
         { id: 'eventBus', src: fromEventBus('cells', () => eventBuses.cells) },
-        { src: fromEventBus('cells', () => eventBuses.arrays, 'CELLS_FROM_SEGMENT_EDIT') },
+        { src: fromEventBus('cells', () => eventBuses.arrays, 'EDITED_SEGMENT') },
         { src: fromEventBus('cells', () => eventBuses.load, 'LOADED') },
         { src: fromEventBus('cells', () => eventBuses.image, 'SET_FRAME') },
       ],
@@ -34,7 +34,9 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
         SET_FRAME: { actions: 'setFrame' },
         // TODO: right now changes to segment & cells are stored together in segment history
         // as we generalize to dependencies between labels, each may want to store its own changes)
-        CELLS_FROM_SEGMENT_EDIT: { actions: ['updateCells', 'setColormap', 'sendCells'] },
+        EDITED_SEGMENT: {
+          actions: [(c, e) => console.log(c, e), 'updateCells'],
+        },
         RESTORE: { actions: ['setCells', 'setColormap', 'sendCells'] },
       },
       initial: 'loading',
@@ -131,13 +133,23 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
             ...ctx.cells.cells.filter((o) => o.z !== evt.frame),
             ...evt.cells.map((o) => ({ ...o, z: evt.frame })),
           ]);
+          const newColormap = [
+            [0, 0, 0, 1],
+            ...colormap({
+              colormap: 'viridis',
+              nshades: Math.max(9, cells.getNewCell() - 1),
+              format: 'rgba',
+            }),
+            [255, 255, 255, 1],
+          ];
           const before = { type: 'RESTORE', cells: ctx.cells };
           const after = { type: 'RESTORE', cells: cells };
           const snapshot = { type: 'SNAPSHOT', before, after, edit: evt.edit };
           return [
-            assign({ cells }),
+            assign({ cells, colormap: newColormap }),
             send({ type: 'EDITED_CELLS', cells, edit: evt.edit }, { to: 'eventBus' }),
             send(snapshot, { to: ctx.historyRef }),
+            send({ type: 'CELLS', cells }, { to: 'eventBus' }),
           ];
         }),
         sendCells: send(

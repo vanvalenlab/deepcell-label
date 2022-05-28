@@ -103,7 +103,7 @@ const createArraysMachine = (context) =>
           },
           onDone: {
             target: 'idle',
-            actions: ['sendSnapshot', 'sendEdited', 'sendCellsFromSegmentEdit'],
+            actions: ['sendSnapshot', 'sendEdited'],
           },
         },
       },
@@ -172,20 +172,6 @@ const createArraysMachine = (context) =>
             };
           },
           { to: (ctx) => ctx.historyRef }
-        ),
-        sendCellsFromSegmentEdit: send(
-          (ctx, evt) => {
-            const { edit } = ctx;
-            const { cells, frame } = ctx.edited;
-            return {
-              type: 'CELLS_FROM_SEGMENT_EDIT',
-              cells,
-              frame,
-              edit,
-            };
-          },
-          // TODO: send directly to cells instead of through event bus
-          { to: 'eventBus' }
         ),
       },
     }
