@@ -153,7 +153,7 @@ const createArraysMachine = (context) =>
         setHistoryRef: assign({ historyRef: (_, __, meta) => meta._event.origin }),
         setEdit: assign({ edit: (_, evt) => evt.edit }),
         setEdited: assign({ edited: (_, evt) => evt }),
-        sendEdited: send((ctx) => ctx.edited),
+        sendEdited: send((ctx) => ({ ...ctx.edited, edit: ctx.edit })),
         sendSnapshot: send(
           (ctx) => {
             const { labeled, frame, feature } = ctx.edited;
