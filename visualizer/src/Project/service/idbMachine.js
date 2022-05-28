@@ -57,11 +57,11 @@ function createIDBMachine({ projectId, eventBuses }) {
           invoke: { src: 'putProject', onDone: 'idle' },
           on: {
             EDITED_SEGMENT: {
-              internal: false,
+              target: 'putProject',
               actions: 'updateSegment',
             },
             EDITED_CELLS: {
-              internal: false,
+              target: 'putProject',
               actions: 'updateCells',
             },
           },
