@@ -14,12 +14,12 @@ const createTrimMachine = (context) =>
         x: null,
         y: null,
         hovering: null,
-        label: context.selected,
+        cell: null,
       },
       on: {
         COORDINATES: { actions: 'setCoordinates' },
         HOVERING: { actions: 'setHovering' },
-        SELECTED: { actions: 'setLabel' },
+        SELECTED: { actions: 'setCell' },
         mouseup: [{ cond: 'onLabel', actions: 'trim' }, { actions: 'select' }],
       },
     },
@@ -30,14 +30,14 @@ const createTrimMachine = (context) =>
       actions: {
         setCoordinates: assign({ x: (_, evt) => evt.x, y: (_, evt) => evt.y }),
         setHovering: assign({ hovering: (_, evt) => evt.hovering }),
-        setLabel: assign({ label: (_, evt) => evt.selected }),
+        setCell: assign({ cell: (_, evt) => evt.selected }),
         select: send({ type: 'SELECT' }, { to: 'select' }),
         trim: send(
           (ctx) => ({
             type: 'EDIT',
             action: 'trim_pixels',
             args: {
-              label: ctx.label,
+              cell: ctx.cell,
               x: ctx.x,
               y: ctx.y,
             },

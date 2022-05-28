@@ -49,7 +49,7 @@ const createThresholdMachine = (context) =>
               y1: ctx.firstPoint[1],
               x2: ctx.x,
               y2: ctx.y,
-              label: ctx.selected,
+              cell: ctx.selected,
             },
           }),
           { to: 'arrays' }

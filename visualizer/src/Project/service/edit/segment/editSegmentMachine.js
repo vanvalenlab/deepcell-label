@@ -110,37 +110,37 @@ const createEditSegmentMachine = (context) =>
         save: respond((ctx) => ({ type: 'RESTORE', tool: ctx.tool })),
         restore: assign({ tool: (_, evt) => evt.tool }),
         spawnTools: assign({
-          tools: (context) => ({
-            select: spawn(createSelectMachine(context)),
-            brush: spawn(createBrushMachine(context)),
-            threshold: spawn(createThresholdMachine(context)),
-            trim: spawn(createTrimMachine(context)),
-            flood: spawn(createFloodMachine(context)),
-            watershed: spawn(createWatershedMachine(context)),
+          tools: (ctx) => ({
+            select: spawn(createSelectMachine(ctx)),
+            brush: spawn(createBrushMachine(ctx)),
+            threshold: spawn(createThresholdMachine(ctx)),
+            trim: spawn(createTrimMachine(ctx)),
+            flood: spawn(createFloodMachine(ctx)),
+            watershed: spawn(createWatershedMachine(ctx)),
           }),
         }),
         forwardToTool: forwardTo((ctx) => ctx.tools[ctx.tool]),
         erode: send(
-          ({ selected }) => ({
+          (ctx) => ({
             type: 'EDIT',
             action: 'erode',
-            args: { label: selected },
+            args: { cell: ctx.selected },
           }),
           { to: 'arrays' }
         ),
         dilate: send(
-          ({ selected }) => ({
+          (ctx) => ({
             type: 'EDIT',
             action: 'dilate',
-            args: { label: selected },
+            args: { cell: ctx.selected },
           }),
           { to: 'arrays' }
         ),
         autofit: send(
-          ({ selected }) => ({
+          (ctx) => ({
             type: 'EDIT',
             action: 'active_contour',
-            args: { label: selected },
+            args: { cell: ctx.selected },
           }),
           { to: 'arrays' }
         ),

@@ -17,7 +17,7 @@ const createWatershedMachine = (context) =>
         x: 0,
         y: 0,
         hovering: null,
-        selected: null,
+        cell: null,
         x1: 0,
         y1: 0,
         x2: 0,
@@ -26,7 +26,7 @@ const createWatershedMachine = (context) =>
       on: {
         COORDINATES: { actions: 'setCoordinates' },
         HOVERING: { actions: 'setHovering' },
-        SELECTED: { actions: 'setSelected' },
+        SELECTED: { actions: 'setCell' },
       },
       initial: 'idle',
       states: {
@@ -35,26 +35,26 @@ const createWatershedMachine = (context) =>
             mouseup: [
               { cond: 'onNoCell' },
               {
-                cond: 'onSelected',
+                cond: 'onCell',
                 target: 'clicked',
                 actions: 'setFirstPoint',
               },
               {
-                target: 'switchSelected',
+                target: 'switchCell',
                 actions: ['select', 'setFirstPoint'],
               },
             ],
           },
         },
-        switchSelected: {
+        switchCell: {
           on: {
-            SELECTED: { target: 'clicked', actions: 'setSelected' },
+            SELECTED: { target: 'clicked', actions: 'setCell' },
           },
         },
         clicked: {
           on: {
             EXIT: 'idle',
-            SELECTED: { cond: 'differentCell', actions: 'setSelected', target: 'idle' },
+            SELECTED: { cond: 'differentCell', actions: 'setCell', target: 'idle' },
             mouseup: [
               {
                 cond: 'validSecondSeed',
@@ -62,8 +62,8 @@ const createWatershedMachine = (context) =>
                 actions: ['setSecondPoint', 'watershed', 'newBackground'],
               },
               {
-                cond: 'notOnSelected',
-                target: 'switchSelected',
+                cond: 'notOnCell',
+                target: 'switchCell',
                 actions: ['select', 'setFirstPoint'],
               },
             ],
@@ -82,11 +82,11 @@ const createWatershedMachine = (context) =>
     {
       guards: {
         validSecondSeed: (ctx) =>
-          ctx.hovering.includes(ctx.label) && // same label
+          ctx.hovering.includes(ctx.cell) && // same cell
           (ctx.x !== ctx.x1 || ctx.y !== ctx.y2), // different point
-        differentCell: (ctx, evt) => ctx.selected !== evt.selected,
-        onSelected: (ctx) => ctx.hovering.includes(ctx.selected),
-        notOnSelected: (ctx) => ctx.hovering.includes(ctx.selected),
+        differentCell: (ctx, evt) => ctx.cell !== evt.selected,
+        onCell: (ctx) => ctx.hovering.includes(ctx.cell),
+        notOnCell: (ctx) => !ctx.hovering.includes(ctx.cell),
         onNoCell: (ctx) => ctx.hovering.length === 0,
       },
       actions: {
@@ -94,14 +94,14 @@ const createWatershedMachine = (context) =>
         setHovering: assign({ hovering: (_, evt) => evt.hovering }),
         setFirstPoint: assign({ x1: (ctx) => ctx.x, y1: (ctx) => ctx.y }),
         setSecondPoint: assign({ x2: (ctx) => ctx.x, y2: (ctx) => ctx.y }),
-        setSelected: assign({ selected: (ctx) => ctx.selected }),
+        setCell: assign({ cell: (_, evt) => evt.selected }),
         select: send('SELECT', { to: 'select' }),
         watershed: send(
           (ctx) => ({
             type: 'EDIT',
             action: 'watershed',
             args: {
-              label: ctx.selected,
+              cell: ctx.cell,
               x1: ctx.x1,
               y1: ctx.y1,
               x2: ctx.x2,

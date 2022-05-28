@@ -168,9 +168,9 @@ class Edit(object):
             new_value = self.get_value(cells)
             self.labels[mask & (self.labels == value)] = new_value
 
-    def clean_label(self, label):
-        """Ensures that a label is a positive integer"""
-        return int(max(0, label))
+    def clean_cell(self, cell):
+        """Ensures that a cell is a positive integer"""
+        return int(max(0, cell))
 
     def dispatch_action(self):
         """
@@ -188,7 +188,7 @@ class Edit(object):
         except AttributeError:
             raise ValueError('Invalid action "{}"'.format(self.action))
 
-    def action_draw(self, trace, brush_size, label, erase=False):
+    def action_draw(self, trace, brush_size, cell, erase=False):
         """
         Use a "brush" to draw in the brush value along trace locations of
         the annotated data.
@@ -196,7 +196,7 @@ class Edit(object):
         Args:
             trace (list): list of (x, y) coordinates where the brush has painted
             brush_size (int): radius of the brush in pixels
-            label (int): label to edit with the brush
+            cell (int): cell to edit with the brush
             erase (bool): whether to add or remove label from brush stroke area
         """
         trace = json.loads(trace)
@@ -209,9 +209,9 @@ class Edit(object):
             brush_mask[disk] = True
 
         if erase:
-            self.remove_mask(brush_mask, label)
+            self.remove_mask(brush_mask, cell)
         else:
-            self.add_mask(brush_mask, label)
+            self.add_mask(brush_mask, cell)
 
     def action_trim_pixels(self, cell, x, y):
         """
@@ -250,16 +250,16 @@ class Edit(object):
             self.remove_mask(flooded, background)
             self.add_mask(flooded, foreground)
 
-    def action_watershed(self, label, x1, y1, x2, y2):
+    def action_watershed(self, cell, x1, y1, x2, y2):
         """Use watershed to segment different objects"""
         new_cell = self.new_cell
         # Create markers for to seed watershed labels
         markers = np.zeros(self.labels.shape)
-        markers[y1, x1] = label
+        markers[y1, x1] = cell
         markers[y2, x2] = new_cell
 
-        # Cut images to label bounding box
-        mask = self.get_mask(label)
+        # Cut images to cell bounding box
+        mask = self.get_mask(cell)
         props = regionprops(mask.astype(np.uint8))
         top, left, bottom, right = props[0].bbox
         raw = np.copy(self.raw[top:bottom, left:right])
@@ -271,24 +271,24 @@ class Edit(object):
         # Apply watershed
         results = watershed(raw, markers, mask=mask)
 
-        # Dilate small labels to prevent "dimmer" label from being eroded by the "brighter" label
+        # Dilate small cells to prevent "dimmer" cell from being eroded by the "brighter" cell
         if np.sum(results == new_cell) < 5:
             dilated = dilation(results == new_cell, disk(3))
             results[dilated] = new_cell
-        if np.sum(results == label) < 5:
-            dilated = dilation(results == label, disk(3))
-            results[dilated] = label
+        if np.sum(results == cell) < 5:
+            dilated = dilation(results == cell, disk(3))
+            results[dilated] = cell
 
-        # Update labels where watershed changed label
+        # Update cells where watershed changed cell
         new_cell_mask = np.zeros(self.labels.shape, dtype=bool)
-        label_mask = np.zeros(self.labels.shape, dtype=bool)
+        cell_mask = np.zeros(self.labels.shape, dtype=bool)
         new_cell_mask[top:bottom, left:right] = results == new_cell
-        label_mask[top:bottom, left:right] = results == label
-        self.remove_mask(self.get_mask(label), label)
-        self.add_mask(label_mask, label)
+        cell_mask[top:bottom, left:right] = results == cell
+        self.remove_mask(self.get_mask(cell), cell)
+        self.add_mask(cell_mask, cell)
         self.add_mask(new_cell_mask, new_cell)
 
-    def action_threshold(self, y1, x1, y2, x2, label):
+    def action_threshold(self, y1, x1, y2, x2, cell):
         """
         Threshold the raw image for annotation prediction within the
         user-determined bounding box.
@@ -298,9 +298,9 @@ class Edit(object):
             x1 (int): first x coordinate to bound threshold area
             y2 (int): second y coordinate to bound threshold area
             x2 (int): second x coordinate to bound threshold area
-            label (int): label drawn in threshold area
+            cell (int): cell drawn in threshold area
         """
-        label = self.clean_label(label)
+        cell = self.clean_cell(cell)
         # Make bounding box from coordinates
         top = min(y1, y2)
         bottom = max(y1, y2) + 1
@@ -316,26 +316,26 @@ class Edit(object):
         thresholded = filters.apply_hysteresis_threshold(image, low, high)
         mask = np.zeros(self.labels.shape, dtype=bool)
         mask[top:bottom, left:right] = thresholded
-        self.add_mask(mask, label)
+        self.add_mask(mask, cell)
 
-    def action_active_contour(self, label, min_pixels=20, iterations=100, dilate=0):
+    def action_active_contour(self, cell, min_pixels=20, iterations=100, dilate=0):
         """
-        Uses active contouring to reshape a label to match the raw image.
+        Uses active contouring to reshape a cell to match the raw image.
         """
-        mask = self.get_mask(label)
-        # Limit contouring to a bounding box twice the size of the label
+        mask = self.get_mask(cell)
+        # Limit contouring to a bounding box twice the size of the cell
         props = regionprops(mask.astype(np.uint8))[0]
         top, left, bottom, right = props.bbox
-        height = bottom - top
-        width = right - left
+        cell_height = bottom - top
+        cell_width = right - left
         # Double size of bounding box
-        labels_height, labels_width = self.labels.shape
+        height, width = self.labels.shape
         top = max(0, top - height // 2)
-        bottom = min(labels_height, bottom + height // 2)
+        bottom = min(height, bottom + cell_height // 2)
         left = max(0, left - width // 2)
-        right = min(labels_width, right + width // 2)
+        right = min(width, right + cell_width // 2)
 
-        # Contour the label
+        # Contour the cell
         init_level_set = mask[top:bottom, left:right]
         image = Normalize()(self.raw)[top:bottom, left:right]
         contoured = morphological_chan_vese(
@@ -354,23 +354,23 @@ class Edit(object):
             mask = np.zeros(self.labels.shape, dtype=bool)
             mask[top:bottom, left:right] = largest_component
 
-        # Throw away small contoured labels
+        # Throw away small contoured cells
         if np.count_nonzero(mask) >= min_pixels:
-            self.remove_mask(~mask, label)
-            self.add_mask(mask, label)
+            self.remove_mask(~mask, cell)
+            self.add_mask(mask, cell)
 
-    def action_erode(self, label):
+    def action_erode(self, cell):
         """
-        Shrink the selected label.
+        Shrink the selected cell.
         """
-        mask = self.get_mask(label)
+        mask = self.get_mask(cell)
         eroded = erosion(mask, square(3))
-        self.remove_mask(mask & ~eroded, label)
+        self.remove_mask(mask & ~eroded, cell)
 
-    def action_dilate(self, label):
+    def action_dilate(self, cell):
         """
-        Expand the selected label.
+        Expand the selected cell.
         """
-        mask = self.get_mask(label)
+        mask = self.get_mask(cell)
         dilated = dilation(mask, square(3))
-        self.add_mask(dilated, label)
+        self.add_mask(dilated, cell)

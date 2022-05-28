@@ -13,7 +13,7 @@ const createBrushMachine = (context) =>
       context: {
         x: 0,
         y: 0,
-        label: null,
+        cell: null,
         trace: [],
         brushSize: 5,
         erase: false,
@@ -43,7 +43,7 @@ const createBrushMachine = (context) =>
         INCREASE_BRUSH_SIZE: { actions: 'increaseBrushSize' },
         DECREASE_BRUSH_SIZE: { actions: 'decreaseBrushSize' },
         COORDINATES: { actions: 'setCoordinates' },
-        SELECTED: { actions: 'setLabel' },
+        SELECTED: { actions: 'setCell' },
       },
     },
     {
@@ -64,25 +64,25 @@ const createBrushMachine = (context) =>
         },
       },
       actions: {
-        setErase: assign({ erase: (ctx, e) => e.erase }),
-        setLabel: assign({ label: (_, { selected }) => selected }),
+        setErase: assign({ erase: (_, evt) => evt.erase }),
+        setCell: assign({ cell: (_, evt) => evt.selected }),
         setCoordinates: assign({ x: (_, { x }) => x, y: (_, { y }) => y }),
         increaseBrushSize: assign({
-          brushSize: ({ brushSize }) => brushSize + 1,
+          brushSize: (ctx) => ctx.brushSize + 1,
         }),
         decreaseBrushSize: assign({
-          brushSize: ({ brushSize }) => Math.max(1, brushSize - 1),
+          brushSize: (ctx) => Math.max(1, ctx.brushSize - 1),
         }),
-        addToTrace: assign({ trace: ({ trace, x, y }) => [...trace, [x, y]] }),
+        addToTrace: assign({ trace: (ctx) => [...ctx.trace, [ctx.x, ctx.y]] }),
         paint: send(
-          (context) => ({
+          (ctx) => ({
             type: 'EDIT',
             action: 'draw',
             args: {
-              trace: JSON.stringify(context.trace),
-              label: context.label,
-              brush_size: context.brushSize,
-              erase: context.erase,
+              trace: JSON.stringify(ctx.trace),
+              cell: ctx.cell,
+              brush_size: ctx.brushSize,
+              erase: ctx.erase,
             },
           }),
           { to: 'arrays' }

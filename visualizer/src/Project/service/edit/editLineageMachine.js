@@ -89,11 +89,11 @@ const createEditLineageMachine = ({ eventBuses }) =>
           // { to: 'api' }
         ),
         createNewCell: send(
-          (_, { label }) => ({
+          (_, { selected }) => ({
             type: 'EDIT',
             action: 'new_track',
             args: {
-              label: label,
+              cell: selected,
             },
           })
           // { to: 'api' }
