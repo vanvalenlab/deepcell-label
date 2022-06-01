@@ -98,10 +98,15 @@ export function useDivisions() {
 export function useParentDivision(cell) {
   const divisionsMachine = useDivisions();
   const divisions = useSelector(divisionsMachine, (state) => state.context.divisions);
+  const editing = useEditing();
+
   for (const division in divisions) {
     if (division.parent === cell) {
       return division;
     }
+  }
+  if (editing) {
+    return { parent: cell, daughters: [], t: null };
   }
 }
 
