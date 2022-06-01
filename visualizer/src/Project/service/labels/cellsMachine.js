@@ -5,6 +5,7 @@ import { assign, Machine, send } from 'xstate';
 import { pure } from 'xstate/lib/actions';
 import Cells from '../../cells';
 import { fromEventBus } from '../eventBus';
+import { combine } from './utils';
 
 const createCellsMachine = ({ eventBuses, undoRef }) =>
   Machine(
@@ -30,13 +31,8 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
         historyRef: null,
       },
       on: {
-        SET_FRAME_MODE: { actions: 'setFrameMode' },
-        SET_FRAME: { actions: 'setFrame' },
-        // TODO: right now changes to segment & cells are stored together in segment history
-        // as we generalize to dependencies between labels, each may want to store its own changes)
-        EDITED_SEGMENT: {
-          actions: [(c, e) => console.log(c, e), 'updateCells'],
-        },
+        SET_FRAME: { actions: 'setT' },
+        EDITED_SEGMENT: { actions: 'updateCells' },
         RESTORE: { actions: ['setCells', 'setColormap', 'sendCells'] },
       },
       initial: 'loading',
@@ -80,10 +76,12 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
             REPLACE: { actions: 'replace', target: 'editing' },
             DELETE: { actions: 'delete', target: 'editing' },
             SWAP: { actions: 'swap', target: 'editing' },
-            NEW: { actions: 'new', target: 'editing' },
+            NEW: { actions: 'new' }, // sends REPLACE event
+            SET_FRAME_MODE: { actions: 'setFrameMode' },
           },
         },
         editing: {
+          entry: 'setEditEvent',
           type: 'parallel',
           states: {
             getEdit: {
@@ -97,14 +95,20 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
             getEdits: {
               initial: 'editing',
               states: {
-                editing: { on: { EDITED_CELLS: { target: 'done', actions: 'setEdited' } } },
+                editing: { on: { EDITED_CELLS: { target: 'done', actions: 'setEditedCells' } } },
                 done: { type: 'final' },
               },
             },
           },
           onDone: {
             target: 'idle',
-            actions: ['sendEdited', 'useEditedCells', 'sendSnapshot', 'setColormap', 'sendCells'],
+            actions: [
+              'useEditedCells',
+              'sendEditedCells',
+              'sendSnapshot',
+              'setColormap',
+              'sendCells',
+            ],
           },
         },
       },
@@ -113,20 +117,39 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
       actions: {
         setHistoryRef: assign({ historyRef: (_, __, meta) => meta._event.origin }),
         setEdit: assign({ edit: (_, evt) => evt.edit }),
-        setEdited: assign({ edited: (_, evt) => evt }),
-        useEditedCells: assign({ cells: (ctx) => ctx.edited.cells }),
+        setEditEvent: assign({ editEvent: (ctx, evt) => ({ ...evt, t: ctx.t }) }),
+        setEditedCells: assign({
+          editedCells: (ctx, evt) => {
+            const cells = ctx.cells.cells;
+            const editedCells = ctx.editedCells.cells;
+            const { t, frameMode } = ctx;
+            const combinedCells = combine(cells, editedCells, t, frameMode);
+            return new Cells(combinedCells);
+          },
+        }),
+        sendEditedCells: send(
+          (ctx) => ({
+            ...ctx.editEvent,
+            edit: ctx.edit,
+            frameMode: ctx.frameMode,
+            cells: ctx.editedCells,
+          }),
+          {
+            to: 'eventBus',
+          }
+        ),
+        useEditedCells: assign({ cells: (ctx) => ctx.editedCells }),
         sendSnapshot: send(
           (ctx) => ({
             type: 'SNAPSHOT',
             before: { type: 'RESTORE', cells: ctx.cells },
-            after: { type: 'RESTORE', cells: ctx.edited.cells },
+            after: { type: 'RESTORE', cells: ctx.editedCells },
             edit: ctx.edit,
           }),
           { to: (ctx) => ctx.historyRef }
         ),
-        sendEdited: send((ctx) => ({ ...ctx.edited, edit: ctx.edit }), { to: 'eventBus' }),
         setFrameMode: assign({ frameMode: (_, evt) => evt.frameMode }),
-        setFrame: assign({ frame: (_, evt) => evt.frame }),
+        setT: assign({ t: (_, evt) => evt.frame }),
         setCells: assign({ cells: (_, evt) => evt.cells }),
         updateCells: pure((ctx, evt) => {
           const cells = new Cells([
@@ -152,13 +175,7 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
             send({ type: 'CELLS', cells }, { to: 'eventBus' }),
           ];
         }),
-        sendCells: send(
-          (ctx, evt) => ({
-            type: 'CELLS',
-            cells: ctx.cells,
-          }),
-          { to: 'eventBus' }
-        ),
+        sendCells: send((ctx, evt) => ({ type: 'CELLS', cells: ctx.cells }), { to: 'eventBus' }),
         setColormap: assign({
           colormap: (ctx, evt) => [
             [0, 0, 0, 1],
@@ -171,124 +188,27 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
           ],
         }),
         replace: send((ctx, evt) => {
-          let cells;
-          switch (ctx.frameMode) {
-            case 'one':
-              cells = ctx.cells.cells.map((o) =>
-                o.cell === evt.b && o.z === ctx.frame ? { ...o, cell: evt.a } : o
-              );
-              break;
-            case 'past':
-              cells = ctx.cells.cells.map((o) =>
-                o.cell === evt.b && o.z <= ctx.frame ? { ...o, cell: evt.a } : o
-              );
-              break;
-            case 'future':
-              cells = ctx.cells.cells.map((o) =>
-                o.cell === evt.b && o.z >= ctx.frame ? { ...o, cell: evt.a } : o
-              );
-              break;
-            case 'all':
-              cells = ctx.cells.cells.map((o) => (o.cell === evt.b ? { ...o, cell: evt.a } : o));
-              break;
-            default:
-              cells = ctx.cells.cells;
-          }
-          return { type: 'EDITED_CELLS', cells: new Cells(cells) };
+          const { a, b } = evt;
+          const cells = new Cells(
+            ctx.cells.cells.map((c) => (c.cell === b ? { ...c, cell: a } : c))
+          );
+          return { type: 'EDITED_CELLS', cells };
         }),
         delete: send((ctx, evt) => {
-          let cells;
-          switch (ctx.frameMode) {
-            case 'one':
-              cells = ctx.cells.cells.filter((o) => o.z !== ctx.frame || o.cell !== evt.cell);
-              break;
-            case 'past':
-              cells = ctx.cells.cells.filter((o) => o.z > ctx.frame || o.cell !== evt.cell);
-              break;
-            case 'future':
-              cells = ctx.cells.cells.filter((o) => o.z < ctx.frame || o.cell !== evt.cell);
-              break;
-            case 'all':
-              cells = ctx.cells.cells.filter((o) => o.cell !== evt.cell);
-              break;
-            default:
-              cells = ctx.cells.cells;
-          }
-          return { type: 'EDITED_CELLS', cells: new Cells(cells) };
+          const { cell } = evt;
+          const cells = new Cells(ctx.cells.cells.filter((c) => c.cell !== cell));
+          return { type: 'EDITED_CELLS', cells };
         }),
         swap: send((ctx, evt) => {
-          let cells;
-          switch (ctx.frameMode) {
-            case 'one':
-              cells = ctx.cells.cells.map((o) =>
-                o.cell === evt.a && o.z === ctx.frame
-                  ? { ...o, cell: evt.b }
-                  : o.cell === evt.b && o.z === ctx.frame
-                  ? { ...o, cell: evt.a }
-                  : o
-              );
-              break;
-            case 'past':
-              cells = ctx.cells.cells.map((o) =>
-                o.cell === evt.a && o.z <= ctx.frame
-                  ? { ...o, cell: evt.b }
-                  : o.cell === evt.b && o.z <= ctx.frame
-                  ? { ...o, cell: evt.a }
-                  : o
-              );
-              break;
-            case 'future':
-              cells = ctx.cells.cells.map((o) =>
-                o.cell === evt.a && o.z >= ctx.frame
-                  ? { ...o, cell: evt.b }
-                  : o.cell === evt.b && o.z >= ctx.frame
-                  ? { ...o, cell: evt.a }
-                  : o
-              );
-              break;
-            case 'all':
-              cells = ctx.cells.cells.map((o) =>
-                o.cell === evt.a
-                  ? { ...o, cell: evt.b }
-                  : o.cell === evt.b
-                  ? { ...o, cell: evt.a }
-                  : o
-              );
-              break;
-            default:
-              cells = ctx.cells.cells;
-          }
-          return { type: 'EDITED_CELLS', cells: new Cells(cells) };
+          const { a, b } = evt;
+          const cells = new Cells(
+            ctx.cells.cells.map((c) =>
+              c.cell === a ? { ...c, cell: b } : c.cell === b ? { ...c, cell: a } : c
+            )
+          );
+          return { type: 'EDITED_CELLS', cells };
         }),
-        new: send((ctx, evt) => {
-          let cells;
-          const newCell = ctx.cells.getNewCell();
-          switch (ctx.frameMode) {
-            case 'one':
-              cells = ctx.cells.cells.map((o) =>
-                o.cell === evt.cell && o.z === ctx.frame ? { ...o, cell: newCell } : o
-              );
-              break;
-            case 'past':
-              cells = ctx.cells.cells.map((o) =>
-                o.cell === evt.cell && o.z <= ctx.frame ? { ...o, cell: newCell } : o
-              );
-              break;
-            case 'future':
-              cells = ctx.cells.cells.map((o) =>
-                o.cell === evt.cell && o.z >= ctx.frame ? { ...o, cell: newCell } : o
-              );
-              break;
-            case 'all':
-              cells = ctx.cells.cells.map((o) =>
-                o.cell === evt.cell ? { ...o, cell: newCell } : o
-              );
-              break;
-            default:
-              cells = ctx.cells.cells;
-          }
-          return { type: 'EDITED_CELLS', cells: new Cells(cells) };
-        }),
+        new: send((ctx, evt) => ({ type: 'REPLACE', a: ctx.cells.getNewCell(), b: evt.cell })),
       },
     }
   );
