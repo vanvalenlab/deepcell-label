@@ -11,7 +11,7 @@ import createIDBMachine from './idbMachine';
 import createImageMachine from './imageMachine';
 import createArraysMachine from './labels/arraysMachine';
 import createCellsMachine from './labels/cellsMachine';
-import createDivisionsMachine from './labels/lineageMachine';
+import createDivisionsMachine from './labels/divisionsMachine';
 import createSpotsMachine from './labels/spotsMachine';
 import createLoadMachine from './loadMachine';
 import createSelectMachine from './selectMachine';

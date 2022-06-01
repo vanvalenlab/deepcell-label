@@ -5,7 +5,7 @@ import { assign, forwardTo, Machine, send, spawn } from 'xstate';
 import { respond } from 'xstate/lib/actions';
 import { fromEventBus } from '../eventBus';
 import createEditCellsMachine from './editCells';
-import createEditDivisionsMachine from './editLineageMachine';
+import createEditDivisionsMachine from './editDivisionsMachine';
 import createEditSegmentMachine from './segment';
 
 const createEditMachine = ({ eventBuses, undoRef }) =>

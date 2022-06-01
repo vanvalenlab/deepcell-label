@@ -3,7 +3,7 @@
 import { assign, Machine } from 'xstate';
 import createArraysMachine from './arraysMachine';
 import createCellsMachine from './cellsMachine';
-import createDivisionsMachine from './lineageMachine';
+import createDivisionsMachine from './divisionsMachine';
 import createSpotsMachine from './spotsMachine';
 
 function createLabelsMachine({ undoRef }) {
