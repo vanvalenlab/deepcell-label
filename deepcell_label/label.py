@@ -31,6 +31,20 @@ class Edit(object):
         self.dispatch_action()
         self.write_response_zip()
 
+    @property
+    def new_value(self):
+        """Returns a value not in the segmentation."""
+        if len(self.cells) == 0:
+            return 1
+        return max(map(lambda c: c['value'], self.cells)) + 1
+
+    @property
+    def new_cell(self):
+        """Returns a cell not in the segmentation."""
+        if len(self.cells) == 0:
+            return 1
+        return max(map(lambda c: c['cell'], self.cells)) + 1
+
     def load(self, labels_zip):
         """
         Load the project data to edit from a zip file.
@@ -70,12 +84,6 @@ class Edit(object):
             raise ValueError('zip must contain cells.json.')
         with zf.open('cells.json') as f:
             self.cells = json.load(f)
-            if len(self.cells) == 0:
-                self.new_value = 1
-                self.new_cell = 1
-            else:
-                self.new_value = max(map(lambda c: c['value'], self.cells)) + 1
-                self.new_cell = max(map(lambda c: c['cell'], self.cells)) + 1
 
         # Load raw image
         if 'raw.dat' in zf.namelist():
@@ -116,6 +124,8 @@ class Edit(object):
         """
         Returns the value that encodes the list of cells
         """
+        if cells == []:
+            return 0
         values = set(map(lambda c: c['value'], self.cells))
         for cell in cells:
             values = values & set(self.get_values(cell))
@@ -123,7 +133,6 @@ class Edit(object):
             value = self.new_value
             for cell in cells:
                 self.cells.append({'value': value, 'cell': cell})
-            self.new_value += 1
             return value
         return values.pop()
 
@@ -184,9 +193,9 @@ class Edit(object):
         attr_name = 'action_{}'.format(self.action)
         try:
             action_fn = getattr(self, attr_name)
-            action_fn(**self.args)
         except AttributeError:
             raise ValueError('Invalid action "{}"'.format(self.action))
+        action_fn(**self.args)
 
     def action_draw(self, trace, brush_size, cell, erase=False):
         """

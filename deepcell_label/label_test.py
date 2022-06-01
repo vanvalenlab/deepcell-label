@@ -21,22 +21,28 @@ class DummyEdit(Edit):
         action=None,
         args=None,
         raw=None,
-        lineage=None,
         write_mode='overlap',
     ):
         self.labels = labels
         self.cells = cells
-        self.new_value = self.cells.shape[0]
-        self.new_label = self.cells.shape[1]
         self.action = action
         self.args = args
         self.raw = raw
-        self.lineage = lineage
         self.write_mode = write_mode
         super().__init__(labels_zip=None)
 
     def load(self, labels_zip):
         pass
+
+
+def cells_equal(a, b):
+    for cell in a:
+        if cell not in b:
+            return False
+    for cell in b:
+        if cell not in a:
+            return False
+    return True
 
 
 class TestEdit:
@@ -53,11 +59,8 @@ class TestEdit:
             [1, 2, 1],
             [0, 1, 0],
         ], dtype=np.int32)
-        cells = np.array([
-            [0, 0, 0],
-            [0, 1, 0],
-            [0, 0, 1]])
         # fmt: on
+        cells = [{'cell': 1, 'value': 1}, {'cell': 2, 'value': 2}]
         action = 'flood'
         args = {'foreground': 2, 'background': 0, 'x': 1, 'y': 1}
 
@@ -79,12 +82,8 @@ class TestEdit:
             [2, 0, 2],
             [0, 2, 0],
         ], dtype=np.int32)
-        cells = np.array([
-            [0, 0, 0],
-            [0, 1, 0],
-            [0, 0, 1]])
         # fmt: on
-
+        cells = [{'cell': 1, 'value': 1}, {'cell': 2, 'value': 2}]
         with app.app_context():
             edit = DummyEdit(
                 labels=labels,
@@ -98,14 +97,14 @@ class TestEdit:
         """Erasing a label with by drawing over it."""
         labels = np.array([[1]], dtype=np.int32)
         expected = np.array([[0]], dtype=np.int32)
-        cells = np.array([[0, 0], [0, 1]])
+        cells = [{'cell': 1, 'value': 1}]
 
         with app.app_context():
             edit = DummyEdit(
                 labels=labels,
                 cells=cells,
                 action='draw',
-                args={'trace': '[[0, 0]]', 'brush_size': 1, 'label': 1, 'erase': True},
+                args={'trace': '[[0, 0]]', 'brush_size': 1, 'cell': 1, 'erase': True},
             )
             np.testing.assert_array_equal(edit.labels, expected)
 
@@ -113,28 +112,14 @@ class TestEdit:
         """Adding a label with by drawing it in."""
         labels = np.array([[0]], dtype=np.int32)
         expected = np.array([[1]], dtype=np.int32)
-        cells = np.array([[0, 0], [0, 1]])
+        cells = [{'cell': 1, 'value': 1}]
 
         with app.app_context():
             edit = DummyEdit(
                 labels=labels,
                 cells=cells,
                 action='draw',
-                args={'trace': '[[0, 0]]', 'brush_size': 1, 'label': 1, 'erase': False},
-            )
-            np.testing.assert_array_equal(edit.labels, expected)
-
-    def test_action_replace(self, app):
-        labels = np.array([[1, 1], [2, 2]], dtype=np.int32)
-        expected = np.array([[1, 1], [1, 1]], dtype=np.int32)
-        cells = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 1]])
-
-        with app.app_context():
-            edit = DummyEdit(
-                labels=labels,
-                cells=cells,
-                action='replace',
-                args={'a': 1, 'b': 2},
+                args={'trace': '[[0, 0]]', 'brush_size': 1, 'cell': 1, 'erase': False},
             )
             np.testing.assert_array_equal(edit.labels, expected)
 
@@ -147,14 +132,14 @@ class TestEdit:
         labels[5:, :] = 2
         initial_labels = labels.copy()
         raw = np.identity(10)
-        cells = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 1]])
+        cells = [{'cell': 1, 'value': 1}, {'cell': 2, 'value': 2}]
 
         with app.app_context():
             edit = DummyEdit(
                 labels=labels,
                 cells=cells,
                 action='active_contour',
-                args={'label': 1},
+                args={'cell': 1},
                 raw=raw,
             )
             np.testing.assert_array_equal(initial_labels == 2, edit.labels == 2)
@@ -168,7 +153,7 @@ class TestEdit:
     #     labels = np.zeros((10, 10), dtype=np.int32)
     #     labels[4:6, 4:6] = 1
     #     raw[2:8, 2:8] = 1
-    #     cells = np.array([[0, 0], [0, 1]])
+    #     cells = [{ 'cell': 1, 'value': 1}]
     #     edit = Edit(labels, raw, cells=cells)
 
     #     with app.app_context():
@@ -186,14 +171,14 @@ class TestEdit:
         labels[0, :] = 0
         labels[-1, :] = 0
         initial_labels = labels.copy()
-        cells = np.array([[0, 0], [0, 1]])
+        cells = [{'cell': 1, 'value': 1}]
 
         with app.app_context():
             edit = DummyEdit(
                 labels=labels,
                 cells=cells,
                 action='active_contour',
-                args={'label': 1, 'min_pixels': 1},
+                args={'cell': 1, 'min_pixels': 1},
                 raw=raw,
             )
             assert int((edit.labels == 1).sum()) < int((initial_labels == 1).sum())
@@ -202,14 +187,14 @@ class TestEdit:
         """Tests that a label is correctly removed when eroding deletes all of its pixels."""
         labels = np.zeros((3, 3), dtype=np.int32)
         labels[1, 1] = 1
-        cells = np.array([[0, 0], [0, 1]])
+        cells = [{'cell': 1, 'value': 1}]
 
         with app.app_context():
             edit = DummyEdit(
                 labels=labels,
                 cells=cells,
                 action='erode',
-                args={'label': 1},
+                args={'cell': 1},
             )
             assert 1 not in edit.labels
 
@@ -217,14 +202,14 @@ class TestEdit:
         """Tests that other labels not affected by eroding a label."""
         labels = np.array([[1, 1], [2, 2]], dtype=np.int32)
         initial_labels = labels.copy()
-        cells = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 1]])
+        cells = [{'cell': 1, 'value': 1}, {'cell': 2, 'value': 2}]
 
         with app.app_context():
             edit = DummyEdit(
                 labels=labels,
                 cells=cells,
                 action='erode',
-                args={'label': 1},
+                args={'cell': 1},
             )
             np.testing.assert_array_equal(initial_labels == 2, edit.labels == 2)
 
@@ -232,32 +217,37 @@ class TestEdit:
         """Dilating a label creates a new overlap value when write_mode is overlap."""
         labels = np.array([[1, 1], [2, 2]], dtype=np.int32)
         expected_labels = np.array([[1, 1], [3, 3]], dtype=np.int32)
-        cells = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 1]])
-        expected_cells = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 1]])
+        cells = [{'cell': 1, 'value': 1}, {'cell': 2, 'value': 2}]
+        expected_cells = [
+            {'cell': 1, 'value': 1},
+            {'cell': 2, 'value': 2},
+            {'cell': 1, 'value': 3},
+            {'cell': 2, 'value': 3},
+        ]
 
         with app.app_context():
             edit = DummyEdit(
                 labels=labels,
                 cells=cells,
                 action='dilate',
-                args={'label': 1},
+                args={'cell': 1},
                 write_mode='overlap',
             )
             np.testing.assert_array_equal(edit.labels, expected_labels)
-            np.testing.assert_array_equal(edit.cells, expected_cells)
+            assert cells_equal(edit.cells, expected_cells)
 
     def test_action_dilate_overwrite(self, app):
         """Dilating a label removes other labels when write_mode is overwrite."""
         labels = np.array([[1, 1], [2, 2]], dtype=np.int32)
         expected_labels = np.array([[1, 1], [1, 1]], dtype=np.int32)
-        cells = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 1]])
+        cells = [{'cell': 1, 'value': 1}, {'cell': 2, 'value': 2}]
 
         with app.app_context():
             edit = DummyEdit(
                 labels=labels,
                 cells=cells,
                 action='dilate',
-                args={'label': 1},
+                args={'cell': 1},
                 write_mode='overwrite',
             )
             np.testing.assert_array_equal(edit.labels, expected_labels)
@@ -266,14 +256,14 @@ class TestEdit:
         """Filated label does not affect other labels when write_mode is exclude."""
         labels = np.array([[1, 1], [2, 2]], dtype=np.int32)
         expected_labels = labels.copy()
-        cells = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 1]])
+        cells = [{'cell': 1, 'value': 1}, {'cell': 2, 'value': 2}]
 
         with app.app_context():
             edit = DummyEdit(
                 labels=labels,
                 cells=cells,
                 action='dilate',
-                args={'label': 1},
+                args={'cell': 1},
                 write_mode='exclude',
             )
             np.testing.assert_array_equal(expected_labels, edit.labels)
