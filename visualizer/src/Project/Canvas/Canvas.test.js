@@ -8,16 +8,15 @@ import createSelectMachine from '../service/selectMachine';
 import Canvas from './Canvas';
 
 const eventBuses = {
+  undo: new EventBus('undo'),
+  load: new EventBus('load'),
   canvas: new EventBus('canvas'),
+  hovering: new EventBus('hovering'),
   image: new EventBus('image'),
   labeled: new EventBus('labeled'),
   raw: new EventBus('raw'),
   select: new EventBus('select'),
-  undo: new EventBus('undo'),
-  api: new EventBus('api'),
   arrays: new EventBus('arrays'),
-  labels: new EventBus('labels'),
-  load: new EventBus('load'),
   cells: new EventBus('cells'),
 };
 const context = {
@@ -52,6 +51,12 @@ jest.mock('./LabeledCanvas', () => () => 'LabeledCanvas');
 jest.mock('./OutlineCanvas', () => () => 'OutlineCanvas');
 jest.mock('./RawCanvas', () => () => 'RawCanvas');
 jest.mock('./ToolCanvas', () => () => 'ToolCanvas');
+
+jest.mock('@zip.js/zip.js', () => ({
+  __esModule: true,
+  default: 'mockedDefaultExport',
+  namedExport: jest.fn(),
+}));
 
 test('canvas sends interaction to actors', () => {
   const eventsSentToCanvas = [];
