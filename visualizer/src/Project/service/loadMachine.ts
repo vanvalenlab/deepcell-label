@@ -13,7 +13,7 @@ type TiffPixelSource = PropType<OmeTiff, 'data'>[number];
 type Spots = number[][];
 type Divisions = { parent: number; daughters: number[]; t: number }[];
 type Files = {
-  [filename: string]: OmeTiff | Spots | Cells | Divisions | Cells;
+  [filename: string]: OmeTiff | Spots | Cells | Divisions;
 };
 
 async function parseZip(response: Response) {
