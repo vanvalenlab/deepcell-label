@@ -14,7 +14,7 @@ function splitRows(buffer, width, height) {
 
 /** Creates a zip file blob with images and labels to updated by the API. */
 async function makeEditZip(context, event) {
-  const { labeled, raw, cells, writeMode, lineage, frame } = context;
+  const { labeled, raw, cells, writeMode, frame } = context;
   const { action, args } = event;
   const edit = { width: labeled[0].length, height: labeled.length, action, args, writeMode };
 
@@ -30,9 +30,6 @@ async function makeEditZip(context, event) {
   const usesRaw = action === 'active_contour' || action === 'threshold' || action === 'watershed';
   if (usesRaw) {
     await zipWriter.add('raw.dat', new zip.BlobReader(new Blob(raw)));
-  }
-  if (lineage) {
-    await zipWriter.add('lineage.json', new zip.TextReader(JSON.stringify(lineage)));
   }
 
   const zipBlob = await zipWriter.close();
