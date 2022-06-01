@@ -2,7 +2,7 @@ import { Paper, Tab, Tabs } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import { useLabelMode } from '../ProjectContext';
 
-function LabelTabs() {
+function EditTabs() {
   const labelMode = useLabelMode();
   const value = useSelector(labelMode, (state) => {
     return state.matches('editSegment')
@@ -47,4 +47,4 @@ function LabelTabs() {
   );
 }
 
-export default LabelTabs;
+export default EditTabs;

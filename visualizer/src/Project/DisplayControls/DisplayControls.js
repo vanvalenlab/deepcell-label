@@ -1,12 +1,12 @@
 import { Box } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import LabelTabs from '../LabelControls/LabelTabs';
+import EditTabs from '../EditControls/EditTabs';
 import { useImage } from '../ProjectContext';
 import Cells from './Cells';
 import ExportButton from './ExportButton';
 import FrameControls from './FrameControls';
-import LabeledControls from './LabeledControls/LabeledControls';
+import LabeledControls from './LabeledControls';
 import RawControls from './RawControls/RawControls';
 import SpotsControls from './SpotsControls';
 import TrackControls from './TrackControls';
@@ -24,7 +24,7 @@ function DisplayControls() {
       }}
     >
       <ExportButton />
-      <LabelTabs />
+      <EditTabs />
       <Cells />
       {numFrames > 1 && <FrameControls />}
       {process.env.REACT_APP_CALIBAN_VISUALIZER === 'true' && <TrackControls />}

@@ -22,7 +22,7 @@ function TabPanel(props) {
   );
 }
 
-function LabelControls() {
+function EditControls() {
   const labelMode = useLabelMode();
   const value = useSelector(labelMode, (state) => {
     return state.matches('editSegment')
@@ -55,4 +55,4 @@ function LabelControls() {
   );
 }
 
-export default LabelControls;
+export default EditControls;
