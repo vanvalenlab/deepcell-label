@@ -1,21 +1,28 @@
-export function oneDaughter(cellInfo) {
-  const { daughters } = cellInfo;
+/** Checks if a division has one daughter. */
+export function oneDaughter(division) {
+  const { daughters } = division;
   return daughters?.length === 1;
 }
 
-export function parentAfterDivision(cellInfo) {
-  const { frames, divisionFrame } = cellInfo;
-  if (!divisionFrame) {
-    return false;
-  }
-  const framesAfterDivision = frames?.filter((frame) => frame >= divisionFrame);
-  return framesAfterDivision?.length > 0;
+/** Checks if a division has a parent that appears after the division. */
+export function parentAfterDivision(division, cells) {
+  const { parent, t } = division;
+  const frames = cells.getFrames(parent);
+  const afterDivision = frames.filter((frame) => frame >= t);
+  return afterDivision.length > 0;
 }
 
-export function daughterBeforeDivision(cellInfo) {
-  const { frames, parentDivisionFrame } = cellInfo;
-  const framesBeforeDivision = frames?.filter((frame) => frame < parentDivisionFrame);
-  return framesBeforeDivision?.length > 0;
+/** Checks if a division has a daughter that before after the division. */
+export function daughterBeforeDivision(division, cells) {
+  const { daughters, t } = division;
+  for (const d of daughters) {
+    const frames = cells.getFrames(d);
+    const beforeDivision = frames.filter((f) => f < t);
+    if (beforeDivision.length > 0) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /** Returns the ranges of consecutive integers in an array. */

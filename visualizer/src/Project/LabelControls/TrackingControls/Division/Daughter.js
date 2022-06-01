@@ -5,14 +5,15 @@ import { useEditing, useImage, useSelect } from '../../../ProjectContext';
 import Cell from './Cell';
 import DaughterMenu from './DaughterMenu';
 
-function Daughter({ parent, daughter, divisionFrame }) {
+function Daughter({ division, daughter }) {
+  const { parent, t } = division;
   const image = useImage();
   const editing = useEditing();
   const select = useSelect();
 
   const onClick = () => {
     select.send({ type: 'SET_CELL', cell: daughter });
-    image.send({ type: 'SET_FRAME', frame: divisionFrame });
+    image.send({ type: 'SET_FRAME', frame: t });
   };
 
   return (

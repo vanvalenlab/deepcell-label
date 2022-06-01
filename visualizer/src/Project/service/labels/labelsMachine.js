@@ -3,7 +3,7 @@
 import { assign, Machine } from 'xstate';
 import createArraysMachine from './arraysMachine';
 import createCellsMachine from './cellsMachine';
-import createLineageMachine from './lineageMachine';
+import createDivisionsMachine from './lineageMachine';
 import createSpotsMachine from './spotsMachine';
 
 function createLabelsMachine({ undoRef }) {
@@ -19,7 +19,7 @@ function createLabelsMachine({ undoRef }) {
           const actors = {};
           actors.arraysRef = spawn(createArraysMachine(context), 'arrays');
           actors.cellsRef = spawn(createCellsMachine(context), 'cells');
-          actors.lineageRef = spawn(createLineageMachine(context), 'lineage');
+          actors.divisionsRef = spawn(createDivisionsMachine(context), 'divisions');
           actors.spotsRef = spawn(createSpotsMachine(context), 'spots');
           return actors;
         }),

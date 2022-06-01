@@ -1,12 +1,12 @@
 import { Typography } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useEditLineage } from '../../ProjectContext';
+import { useEditDivisions } from '../../ProjectContext';
 
 function EditingPrompt() {
-  const editLineage = useEditLineage();
-  const addingDaughter = useSelector(editLineage, (state) => state.matches('addingDaughter'));
-  const parent = useSelector(editLineage, (state) => state.context.parent);
+  const editDivisions = useEditDivisions();
+  const addingDaughter = useSelector(editDivisions, (state) => state.matches('addingDaughter'));
+  const parent = useSelector(editDivisions, (state) => state.context.parent);
 
   if (!addingDaughter) {
     return null;

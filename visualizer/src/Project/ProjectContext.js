@@ -88,25 +88,32 @@ export function useSpots() {
   return spots;
 }
 
-export function useLineage() {
+export function useDivisions() {
   const project = useProject();
-  const lineage = useSelector(project, (state) => state.context.lineageRef);
-  return lineage;
+  const divisions = useSelector(project, (state) => state.context.divisionsRef);
+  return divisions;
 }
 
-const emptyDivision = {
-  parent: null,
-  daughters: [],
-  divisionFrame: null,
-  parentDivisionFrame: null,
-  frames: [],
-};
+/** Returns the division where the cell is a parent if any. */
+export function useParentDivision(cell) {
+  const divisionsMachine = useDivisions();
+  const divisions = useSelector(divisionsMachine, (state) => state.context.divisions);
+  for (const division in divisions) {
+    if (division.parent === cell) {
+      return division;
+    }
+  }
+}
 
-export function useDivision(label) {
-  const lineageMachine = useLineage();
-  const lineage = useSelector(lineageMachine, (state) => state.context.lineage);
-  const division = lineage?.[label] ?? emptyDivision;
-  return division;
+/** Returns the division where the cell is a daughter if any. */
+export function useDaughterDivision(cell) {
+  const divisionsMachine = useDivisions();
+  const divisions = useSelector(divisionsMachine, (state) => state.context.divisions);
+  for (const division in divisions) {
+    if (division.daughters.includes(cell)) {
+      return division;
+    }
+  }
 }
 
 export function useArrays() {
@@ -121,13 +128,13 @@ export function useSelect() {
   return select;
 }
 
-export function useEditLineage() {
+export function useEditDivisions() {
   const project = useProject();
-  const editLineage = useSelector(project, (state) => {
+  const editDivisions = useSelector(project, (state) => {
     const labelMode = state.context.toolRef;
-    return labelMode.state.context.editLineageRef;
+    return labelMode.state.context.editDivisionsRef;
   });
-  return editLineage;
+  return editDivisions;
 }
 
 export function useEditCells() {
@@ -346,8 +353,8 @@ function rgbToHex(rgb) {
 }
 
 export function useHexColormap() {
-  const labels = useCells();
-  const colormap = useSelector(labels, (state) => state.context.colormap);
+  const cells = useCells();
+  const colormap = useSelector(cells, (state) => state.context.colormap);
   return colormap.map(rgbToHex);
 }
 

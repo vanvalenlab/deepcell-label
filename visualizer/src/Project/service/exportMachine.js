@@ -5,7 +5,7 @@ import { fromEventBus } from './eventBus';
 
 /** Creates a blob for a zip file with all project data. */
 async function makeExportZip(context) {
-  const { raw, labeled, cells, lineage } = context;
+  const { raw, labeled, cells, divisions } = context;
   const dimensions = {
     width: raw[0][0][0].length,
     height: raw[0][0].length,
@@ -18,8 +18,8 @@ async function makeExportZip(context) {
   await zipWriter.add('labeled.dat', new zip.BlobReader(new Blob(flattenDeep(labeled))));
   await zipWriter.add('raw.dat', new zip.BlobReader(new Blob(flattenDeep(raw))));
   await zipWriter.add('cells.json', new zip.TextReader(JSON.stringify(cells)));
-  if (lineage) {
-    await zipWriter.add('lineage.json', new zip.TextReader(JSON.stringify(lineage)));
+  if (divisions) {
+    await zipWriter.add('divisions.json', new zip.TextReader(JSON.stringify(divisions)));
   }
 
   const zipBlob = await zipWriter.close();
@@ -84,7 +84,7 @@ const createExportMachine = ({ projectId, eventBuses }) =>
         raw: null,
         labeled: null,
         cells: null,
-        // lineage: null,
+        // divisions: null,
       },
       on: {
         CELLS: { actions: 'setCells' },

@@ -16,7 +16,7 @@ function createIDBMachine({ projectId, eventBuses }) {
           raw: null,
           labeled: null,
           cells: null, // list of cells, not the Cells object
-          lineage: null,
+          divisions: null,
         },
       },
       invoke: [
@@ -113,7 +113,7 @@ function createIDBMachine({ projectId, eventBuses }) {
             raw: evt.data.raw,
             labeled: evt.data.labeled,
             cells: evt.data.cells,
-            lineage: evt.data.lineage,
+            divisions: evt.data.divisions,
           },
         })),
         loadProject: assign((ctx, evt) => ({
@@ -121,7 +121,7 @@ function createIDBMachine({ projectId, eventBuses }) {
             raw: evt.raw,
             labeled: evt.labeled,
             cells: evt.cells.cells, // LOADED sends Cells object, need to get cells list
-            lineage: evt.lineage,
+            divisions: evt.divisions,
           },
         })),
         sendProjectNotInDB: sendParent('PROJECT_NOT_IN_DB'),
@@ -130,7 +130,7 @@ function createIDBMachine({ projectId, eventBuses }) {
           raw: ctx.project.raw,
           labeled: ctx.project.labeled,
           spots: ctx.project.spots, // TODO: include spots in IDB
-          lineage: ctx.project.lineage,
+          divisions: ctx.project.divisions,
           cells: new Cells(ctx.project.cells),
           message: 'from idb machine',
         })),

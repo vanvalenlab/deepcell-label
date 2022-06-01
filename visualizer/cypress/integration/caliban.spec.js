@@ -12,7 +12,7 @@ it('shows loading spinner', () => {
   cy.get('.MuiCircularProgress-svg');
 });
 
-it('shows tracking controls after loading lineage', () => {
+it('shows tracking controls after loading divisions', () => {
   const id = getUniqueId();
   cy.intercept('GET', `/api/project/${id}`, { fixture: 'oneDivision.zip' });
   cy.visit(`/project?projectId=${id}`);

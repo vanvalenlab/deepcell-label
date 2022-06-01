@@ -55,7 +55,7 @@ it('shows loading spinner', () => {
 //     .and('include', 'download=true')
 //   cy.get('.MuiCircularProgress-svg');
 //   cy.get('canvas');
-//   cy.contains('Lineage');
+//   cy.contains('Divisions');
 //   cy.get('.MuiCircularProgress-svg').should('not.exist');
 // });
 

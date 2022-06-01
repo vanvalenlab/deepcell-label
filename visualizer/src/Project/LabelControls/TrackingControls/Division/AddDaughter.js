@@ -8,20 +8,21 @@ import Paper from '@mui/material/Paper';
 import Popper from '@mui/material/Popper';
 import React, { useReducer, useRef } from 'react';
 import { ArcherElement } from 'react-archer';
-import { useEditLineage } from '../../../ProjectContext';
+import { useEditDivisions } from '../../../ProjectContext';
 
-function AddDaughter({ label }) {
-  const editLineage = useEditLineage();
+function AddDaughter({ division }) {
+  const { parent } = division;
+  const editDivisions = useEditDivisions();
 
   const [open, toggle] = useReducer((v) => !v, false);
   const anchorRef = useRef(null);
 
   const handleAddDaughter = () => {
-    editLineage.send({ type: 'ADD_DAUGHTER', parent: label });
+    editDivisions.send({ type: 'ADD_DAUGHTER', parent: parent });
     toggle();
   };
   const handleNewCell = () => {
-    editLineage.send({ type: 'CREATE_NEW_CELL', label });
+    editDivisions.send({ type: 'CREATE_NEW_CELL', cell: parent });
     toggle();
   };
 

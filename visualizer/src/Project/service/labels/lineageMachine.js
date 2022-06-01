@@ -1,19 +1,19 @@
-/** Manages lineage labels. */
+/** Manages division labels. */
 
 import { assign, Machine } from 'xstate';
 import { fromEventBus } from '../eventBus';
 
-function createLineageMachine({ eventBuses }) {
+function createDivisionsMachine({ eventBuses }) {
   return Machine(
     {
-      context: { lineage: null },
-      invoke: [{ src: fromEventBus('lineage', () => eventBuses.load, 'LOADED') }],
-      id: 'lineage',
+      context: { divisions: null },
+      invoke: [{ src: fromEventBus('divisions', () => eventBuses.load, 'LOADED') }],
+      id: 'divisions',
       initial: 'loading',
       states: {
         loading: {
           on: {
-            LOADED: { actions: 'setLineage', target: 'loaded' },
+            LOADED: { actions: 'setDivisions', target: 'loaded' },
           },
         },
         loaded: {
@@ -23,10 +23,10 @@ function createLineageMachine({ eventBuses }) {
     },
     {
       actions: {
-        setLineage: assign({ lineage: (ctx, evt) => evt.lineage }),
+        setDivisions: assign({ divisions: (ctx, evt) => evt.divisions }),
       },
     }
   );
 }
 
-export default createLineageMachine;
+export default createDivisionsMachine;

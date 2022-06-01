@@ -32,8 +32,8 @@ class Cells {
     return matrix;
   }
 
-  /** Returns the frame a cell is present in.
-   * @param cell Cell to get frames for.
+  /** Returns frames the cell is present in.
+   * @param {number} cell Cell to get frames for.
    * @returns List of frames the cell is present in.
    */
   getFrames(cell: number) {
@@ -44,7 +44,7 @@ class Cells {
   }
 
   /** Returns the cells present in a frame.
-   * @param frame Frame to get cells in.
+   * @param {number} z Frame to get cells in.
    * @returns List of cells in the frame
    */
   getCells(z: number) {

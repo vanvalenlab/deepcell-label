@@ -11,19 +11,9 @@ type UnboxPromise<T extends Promise<any>> = T extends Promise<infer U> ? U : nev
 type OmeTiff = UnboxPromise<ReturnType<typeof loadOmeTiff>>;
 type TiffPixelSource = PropType<OmeTiff, 'data'>[number];
 type Spots = number[][];
-type Lineage = {
-  [cell: number]: {
-    label: number;
-    frames: number[];
-    divisionFrame: number | null;
-    parentDivisionFrame: number | null;
-    daughters: number[];
-    capped: boolean;
-    parent: number | null;
-  };
-};
+type Divisions = { parent: number; daughters: number[]; t: number }[];
 type Files = {
-  [filename: string]: OmeTiff | Spots | Cells | Lineage | Cells;
+  [filename: string]: OmeTiff | Spots | Cells | Divisions | Cells;
 };
 
 async function parseZip(response: Response) {
@@ -45,11 +35,11 @@ async function parseZip(response: Response) {
       const spots: Spots = csv.split('\n').map((row: string) => row.split(',').map(Number));
       files[entry.filename] = spots;
     }
-    if (entry.filename === 'lineage.json') {
+    if (entry.filename === 'divisions.json') {
       // @ts-ignore
       const json = await entry.getData(new zip.TextWriter());
-      const lineage: Lineage = JSON.parse(json);
-      files[entry.filename] = lineage;
+      const divisions: Divisions = JSON.parse(json);
+      files[entry.filename] = divisions;
     }
     if (entry.filename === 'cells.json') {
       // @ts-ignore
@@ -138,7 +128,7 @@ interface Context {
   labeled: Int32Array[][][] | null;
   labels: Cells | null;
   spots: Spots | null;
-  lineage: Lineage | null;
+  divisions: Divisions | null;
   cells: Cells | null;
 }
 
@@ -158,7 +148,7 @@ const createLoadMachine = (projectId: string) =>
         labeled: null,
         labels: null,
         spots: null,
-        lineage: null,
+        divisions: null,
         cells: null,
       },
       tsTypes: {} as import('./loadMachine.typegen').Typegen0,
@@ -186,7 +176,7 @@ const createLoadMachine = (projectId: string) =>
             src: 'fetch project zip',
             onDone: {
               target: 'splitArrays',
-              actions: ['set spots', 'set lineage', 'set cells', 'set metadata'],
+              actions: ['set spots', 'set divisions', 'set cells', 'set metadata'],
             },
           },
         },
@@ -212,9 +202,9 @@ const createLoadMachine = (projectId: string) =>
           // @ts-ignore
           spots: (context, event) => event.data.files['spots.csv'] as Spots,
         }),
-        'set lineage': assign({
+        'set divisions': assign({
           // @ts-ignore
-          lineage: (context, event) => event.data.files['lineage.json'] as Lineage,
+          divisions: (context, event) => event.data.files['divisions.json'] as Divisions,
         }),
         'set cells': assign({
           // @ts-ignore
@@ -245,7 +235,7 @@ const createLoadMachine = (projectId: string) =>
           raw: ctx.raw,
           labeled: ctx.labeled,
           spots: ctx.spots,
-          lineage: ctx.lineage,
+          divisions: ctx.divisions,
           cells: ctx.cells,
         })),
       },

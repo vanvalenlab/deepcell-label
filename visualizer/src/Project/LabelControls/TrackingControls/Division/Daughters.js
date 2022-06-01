@@ -5,16 +5,15 @@ import AddDaughter from './AddDaughter';
 import Daughter from './Daughter';
 
 function Daughters({ division }) {
-  const { label, daughters, divisionFrame } = division;
-
   const editing = useEditing();
+  const { daughters } = division;
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-      {daughters.map((daughter) => (
-        <Daughter parent={label} daughter={daughter} divisionFrame={divisionFrame} key={daughter} />
+      {daughters.map((d) => (
+        <Daughter division={division} daughter={d} key={d} />
       ))}
-      {editing && <AddDaughter cell={label} />}
+      {editing && <AddDaughter division={division} />}
     </Box>
   );
 }

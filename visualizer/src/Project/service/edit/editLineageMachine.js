@@ -1,14 +1,14 @@
 import { assign, Machine, send } from 'xstate';
 import { fromEventBus } from '../eventBus';
 
-const createEditLineageMachine = ({ eventBuses }) =>
+const createEditDivisionsMachine = ({ eventBuses }) =>
   Machine(
     {
-      id: 'editLineage',
+      id: 'editDivisions',
       invoke: [
-        { id: 'select', src: fromEventBus('editLineage', () => eventBuses.select, 'SELECTED') },
-        { src: fromEventBus('editLineage', () => eventBuses.hovering, 'HOVERING') },
-        // { id: 'api', src: fromEventBus('editLineage', () => eventBuses.api) },
+        { id: 'select', src: fromEventBus('editDivisions', () => eventBuses.select, 'SELECTED') },
+        { src: fromEventBus('editDivisions', () => eventBuses.hovering, 'HOVERING') },
+        // { id: 'api', src: fromEventBus('editDivisions', () => eventBuses.api) },
       ],
       context: {
         selected: null,
@@ -102,4 +102,4 @@ const createEditLineageMachine = ({ eventBuses }) =>
     }
   );
 
-export default createEditLineageMachine;
+export default createEditDivisionsMachine;

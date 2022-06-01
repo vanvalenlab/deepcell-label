@@ -9,7 +9,7 @@ function LabelTabs() {
       ? 0
       : state.matches('editCells')
       ? 1
-      : state.matches('editLineage')
+      : state.matches('editDivisions')
       ? 2
       : false;
   });
@@ -22,7 +22,7 @@ function LabelTabs() {
         labelMode.send('EDIT_CELLS');
         break;
       case 2:
-        labelMode.send('EDIT_LINEAGE');
+        labelMode.send('EDIT_DIVISIONS');
         break;
       default:
         break;
@@ -41,7 +41,7 @@ function LabelTabs() {
       >
         <Tab sx={{ p: 0.5, minHeight: 0 }} label='Segment' />
         <Tab sx={{ p: 0.5, minHeight: 0 }} label='Cells' />
-        <Tab sx={{ p: 0.5, minHeight: 0 }} label='Lineage' />
+        <Tab sx={{ p: 0.5, minHeight: 0 }} label='Divisions' />
       </Tabs>
     </Paper>
   );

@@ -5,13 +5,9 @@ import Daughters from './Daughters';
 import Parent from './Parent';
 
 const dummyDivision = {
-  label: 1,
-  parent: 2,
-  daughters: [3, 4],
-  frames: [0],
-  capped: true,
-  divisionFrame: 0,
-  parentDivisionFrame: 0,
+  parent: 1,
+  daughters: [2, 3],
+  t: 1,
 };
 
 function DivisionFootprint() {

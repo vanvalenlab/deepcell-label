@@ -29,7 +29,7 @@ function LabelControls() {
       ? 0
       : state.matches('editCells')
       ? 1
-      : state.matches('editLineage')
+      : state.matches('editDivisions')
       ? 2
       : false;
   });

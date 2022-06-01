@@ -1,18 +1,15 @@
 import { Box } from '@mui/material';
 import React from 'react';
 import { ArcherContainer } from 'react-archer';
-import { useDivision } from '../../../ProjectContext';
 import Daughters from './Daughters';
 import Parent from './Parent';
 
-function Division({ cell }) {
-  const division = useDivision(cell);
-
+function Division({ division }) {
   return (
     <ArcherContainer>
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-        {division && <Parent division={division} />}
-        {division && <Daughters division={division} />}
+        <Parent division={division} />
+        <Daughters division={division} />
       </Box>
     </ArcherContainer>
   );

@@ -1,17 +1,21 @@
 import { useTheme } from '@mui/material/styles';
+import { useSelector } from '@xstate/react';
 import React from 'react';
 import { ArcherElement } from 'react-archer';
-import { useEditing, useImage, useSelect } from '../../../ProjectContext';
+import { useCells, useEditing, useImage, useSelect } from '../../../ProjectContext';
 import Cell from './Cell';
 
 function Parent({ division }) {
-  const { label, daughters, divisionFrame, frames } = division;
+  const { parent, daughters, t } = division;
+  const cellsMachine = useCells();
+  const cells = useSelector(cellsMachine, (state) => state.context.cells);
+  const frames = cells.getFrames(parent);
   const theme = useTheme();
   const strokeColor = theme.palette.secondary.main;
   const editing = useEditing();
 
-  const relations = daughters.map((label) => ({
-    targetId: `daughter${label}`,
+  const relations = daughters.map((d) => ({
+    targetId: `daughter${d}`,
     targetAnchor: 'left',
     sourceAnchor: 'right',
     style: { strokeColor, strokeWidth: 1, noCurves: true },
@@ -29,16 +33,16 @@ function Parent({ division }) {
   const image = useImage();
 
   const onClick = (e) => {
-    select.send({ type: 'SET_CELL', cell: label });
+    select.send({ type: 'SET_CELL', cell: parent });
     image.send({
       type: 'SET_FRAME',
-      frame: divisionFrame ? divisionFrame - 1 : frames[frames.length - 1],
+      frame: t ? t - 1 : frames[frames.length - 1],
     });
   };
 
   return (
     <ArcherElement id='parent' relations={relations}>
-      <Cell cell={label} onClick={onClick} />
+      <Cell cell={parent} onClick={onClick} />
     </ArcherElement>
   );
 }

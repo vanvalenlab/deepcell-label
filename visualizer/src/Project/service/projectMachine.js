@@ -11,7 +11,7 @@ import createIDBMachine from './idbMachine';
 import createImageMachine from './imageMachine';
 import createArraysMachine from './labels/arraysMachine';
 import createCellsMachine from './labels/cellsMachine';
-import createLineageMachine from './labels/lineageMachine';
+import createDivisionsMachine from './labels/lineageMachine';
 import createSpotsMachine from './labels/spotsMachine';
 import createLoadMachine from './loadMachine';
 import createSelectMachine from './selectMachine';
@@ -90,7 +90,7 @@ const createProjectMachine = (projectId) =>
           actors.arraysRef = spawn(createArraysMachine(ctx), 'arrays');
           actors.exportRef = spawn(createExportMachine(ctx), 'export');
           actors.selectRef = spawn(createSelectMachine(ctx), 'select');
-          actors.lineageRef = spawn(createLineageMachine(ctx), 'lineage');
+          actors.divisionsRef = spawn(createDivisionsMachine(ctx), 'divisions');
           actors.cellsRef = spawn(createCellsMachine(ctx), 'cells');
           actors.toolRef = spawn(createToolMachine(ctx), 'tool');
           if (process.env.REACT_APP_SPOTS_VISUALIZER === 'true') {
@@ -114,7 +114,7 @@ const createProjectMachine = (projectId) =>
         ),
         // TODO: dynamically add track labels and show UI
         setTrack: assign({
-          track: (ctx, evt) => evt.lineage !== null && evt.lineage !== undefined,
+          track: (ctx, evt) => evt.divisions !== null && evt.divisions !== undefined,
         }),
       },
     }
