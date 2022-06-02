@@ -20,7 +20,7 @@ const createEditDivisionsMachine = ({ eventBuses }) =>
       on: {
         SELECTED: { actions: 'setSelected' },
         HOVERING: { actions: 'setHovering' },
-        REMOVE_DAUGHTER: { actions: 'remove' },
+        REMOVE: { actions: 'remove' },
         SET_T: { actions: 'setT' },
       },
       initial: 'idle',
@@ -28,7 +28,7 @@ const createEditDivisionsMachine = ({ eventBuses }) =>
         idle: {
           on: {
             mouseup: { actions: 'select' },
-            ADD_DAUGHTER: 'addingDaughter',
+            ADD: 'addingDaughter',
           },
         },
         addingDaughter: {
@@ -37,7 +37,7 @@ const createEditDivisionsMachine = ({ eventBuses }) =>
             mouseup: [
               { cond: 'onNoCell' },
               { cond: 'shift', actions: 'setDaughter' },
-              { cond: 'onDaughter', actions: 'addDaughter' },
+              { cond: 'onDaughter', actions: 'addDaughter', target: 'idle' },
               { actions: 'setDaughter' },
             ],
             RESET: { target: 'idle' },

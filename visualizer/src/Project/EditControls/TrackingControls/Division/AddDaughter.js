@@ -18,7 +18,7 @@ function AddDaughter({ division }) {
   const anchorRef = useRef(null);
 
   const handleAddDaughter = () => {
-    editDivisions.send({ type: 'ADD_DAUGHTER', parent: parent });
+    editDivisions.send({ type: 'ADD', parent: parent });
     toggle();
   };
 

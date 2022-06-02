@@ -125,7 +125,7 @@ function createDivisionsMachine({ eventBuses, undoRef }) {
               states: {
                 idle: {
                   on: {
-                    // from UI
+                    // from edit divisions machine
                     REMOVE_DAUGHTER: { actions: 'removeDaughter', target: 'editing' },
                     ADD_DAUGHTER: { actions: 'addDaughter', target: 'editing' },
                   },
