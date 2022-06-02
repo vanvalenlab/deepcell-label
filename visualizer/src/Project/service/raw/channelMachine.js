@@ -40,7 +40,7 @@ const createChannelMachine = (channel) =>
           brightness: 0,
           contrast: 0,
         }),
-        // TODO: update to look across all frames
+        // TODO: update to look across all times
         setAutoRange: assign({
           range: ({ rawImage: img }) => {
             // modified from https://github.com/hms-dbmi/viv

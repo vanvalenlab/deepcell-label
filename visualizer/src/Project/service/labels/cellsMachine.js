@@ -16,7 +16,7 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
         { id: 'eventBus', src: fromEventBus('cells', () => eventBuses.cells) },
         { src: fromEventBus('cells', () => eventBuses.arrays, 'EDITED_SEGMENT') },
         { src: fromEventBus('cells', () => eventBuses.load, 'LOADED') },
-        { src: fromEventBus('cells', () => eventBuses.image, 'SET_FRAME') },
+        { src: fromEventBus('cells', () => eventBuses.image, 'SET_T') },
       ],
       context: {
         cells: null, // Cells object
@@ -31,7 +31,7 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
         historyRef: null,
       },
       on: {
-        SET_FRAME: { actions: 'setT' },
+        SET_T: { actions: 'setT' },
         EDITED_SEGMENT: { actions: 'updateCells' },
         RESTORE: { actions: ['setCells', 'setColormap', 'sendCells'] },
       },
@@ -139,7 +139,7 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
           ];
         }),
         setMode: assign({ mode: (_, evt) => evt.mode }),
-        setT: assign({ t: (_, evt) => evt.frame }),
+        setT: assign({ t: (_, evt) => evt.t }),
         setCells: assign({ cells: (_, evt) => evt.cells }),
         updateCells: pure((ctx, evt) => {
           const cells = new Cells([

@@ -1,4 +1,4 @@
-import { formatFrames, getRanges } from './trackingUtils';
+import { formatTimes, getRanges } from './trackingUtils';
 
 test('empty range', () => {
   expect(getRanges([])).toEqual([]);
@@ -20,22 +20,22 @@ test('two ranges', () => {
   expect(getRanges([0, 1, 2, 4, 5, 6])).toEqual(['0-2', '4-6']);
 });
 
-test('text for single frame', () => {
-  expect(formatFrames([0])).toBe('frame 0');
+test('text for single time', () => {
+  expect(formatTimes([0])).toBe('time 0');
 });
 
-test('text for two frames in a row', () => {
-  expect(formatFrames([0, 1])).toBe('frames 0-1');
+test('text for two times in a row', () => {
+  expect(formatTimes([0, 1])).toBe('times 0-1');
 });
 
-test('text for two separate frames', () => {
-  expect(formatFrames([0, 2])).toBe('frames 0 and 2');
+test('text for two separate times', () => {
+  expect(formatTimes([0, 2])).toBe('times 0 and 2');
 });
 
-test('text for single frame and range', () => {
-  expect(formatFrames([0, 2, 3, 4])).toBe('frames 0 and 2-4');
+test('text for single time and range', () => {
+  expect(formatTimes([0, 2, 3, 4])).toBe('times 0 and 2-4');
 });
 
 test('text for three ranges', () => {
-  expect(formatFrames([0, 1, 2, 4, 5, 6, 8, 9, 10])).toBe('frames 0-2, 4-6 and 8-10');
+  expect(formatTimes([0, 1, 2, 4, 5, 6, 8, 9, 10])).toBe('times 0-2, 4-6 and 8-10');
 });

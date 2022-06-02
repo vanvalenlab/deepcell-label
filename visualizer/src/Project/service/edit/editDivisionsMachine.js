@@ -8,7 +8,7 @@ const createEditDivisionsMachine = ({ eventBuses }) =>
       invoke: [
         { id: 'select', src: fromEventBus('editDivisions', () => eventBuses.select, 'SELECTED') },
         { src: fromEventBus('editDivisions', () => eventBuses.hovering, 'HOVERING') },
-        { src: fromEventBus('editDivisions', () => eventBuses.image, 'SET_FRAME') },
+        { src: fromEventBus('editDivisions', () => eventBuses.image, 'SET_T') },
         { id: 'divisions', src: fromEventBus('editDivisions', () => eventBuses.divisions) },
       ],
       context: {
@@ -21,7 +21,7 @@ const createEditDivisionsMachine = ({ eventBuses }) =>
         SELECTED: { actions: 'setSelected' },
         HOVERING: { actions: 'setHovering' },
         REMOVE_DAUGHTER: { actions: 'remove' },
-        SET_FRAME: { actions: 'setT' },
+        SET_T: { actions: 'setT' },
       },
       initial: 'idle',
       states: {

@@ -5,15 +5,15 @@ import EditTabs from '../EditControls/EditTabs';
 import { useImage } from '../ProjectContext';
 import Cells from './Cells';
 import ExportButton from './ExportButton';
-import FrameControls from './FrameControls';
 import LabeledControls from './LabeledControls';
 import RawControls from './RawControls/RawControls';
 import SpotsControls from './SpotsControls';
+import TimeControls from './TimeControls';
 import TrackControls from './TrackControls';
 
 function DisplayControls() {
   const image = useImage();
-  const numFrames = useSelector(image, (state) => state.context.numFrames);
+  const duration = useSelector(image, (state) => state.context.duration);
 
   return (
     <Box
@@ -26,7 +26,7 @@ function DisplayControls() {
       <ExportButton />
       <EditTabs />
       <Cells />
-      {numFrames > 1 && <FrameControls />}
+      {duration > 1 && <TimeControls />}
       {process.env.REACT_APP_CALIBAN_VISUALIZER === 'true' && <TrackControls />}
       {process.env.REACT_APP_SPOTS_VISUALIZER === 'true' && <SpotsControls />}
       <LabeledControls />

@@ -13,7 +13,7 @@ const createArraysMachine = (context) =>
       invoke: [
         { id: 'eventBus', src: fromEventBus('arrays', () => context.eventBuses.arrays) },
         { id: 'api', src: createSegmentApiMachine(context) },
-        { src: fromEventBus('arrays', () => context.eventBuses.image, 'SET_FRAME') },
+        { src: fromEventBus('arrays', () => context.eventBuses.image, 'SET_T') },
         { src: fromEventBus('arrays', () => context.eventBuses.raw, 'SET_FEATURE') },
         { src: fromEventBus('arrays', () => context.eventBuses.labeled, 'SET_CHANNEL') },
         { src: fromEventBus('arrays', () => context.eventBuses.load, 'LOADED') },
@@ -21,7 +21,7 @@ const createArraysMachine = (context) =>
       context: {
         raw: null,
         labeled: null,
-        frame: 0,
+        t: 0,
         feature: 0,
         channel: 0,
         // editing
@@ -32,7 +32,7 @@ const createArraysMachine = (context) =>
       },
       initial: 'setUp',
       on: {
-        SET_FRAME: { actions: 'setFrame' },
+        SET_T: { actions: 'setT' },
         SET_FEATURE: { actions: 'setFeature' },
         SET_CHANNEL: { actions: 'setChannel' },
       },
@@ -72,7 +72,7 @@ const createArraysMachine = (context) =>
           // TODO: factor out raw and labeled states (and/or machines)
           on: {
             EDIT: { target: 'editing', actions: forwardTo('api') },
-            SET_FRAME: { actions: ['setFrame', 'sendLabeledFrame', 'sendRawFrame'] },
+            SET_T: { actions: ['setT', 'sendLabeledFrame', 'sendRawFrame'] },
             SET_FEATURE: { actions: ['setFeature', 'sendLabeledFrame'] },
             SET_CHANNEL: { actions: ['setChannel', 'sendRawFrame'] },
             GET_ARRAYS: { actions: 'sendArrays' },
@@ -113,28 +113,28 @@ const createArraysMachine = (context) =>
       actions: {
         setRaw: assign({ raw: (ctx, evt) => evt.raw }),
         setLabeled: assign({ labeled: (ctx, evt) => evt.labeled }),
-        setFrame: assign({ frame: (ctx, evt) => evt.frame }),
+        setT: assign({ t: (ctx, evt) => evt.t }),
         setFeature: assign({ feature: (ctx, evt) => evt.feature }),
         setChannel: assign({ channel: (ctx, evt) => evt.channel }),
         setLabeledFrame: assign({
           labeled: (ctx, evt) => {
-            const { frame, feature, labeled } = evt;
+            const { t, feature, labeled } = evt;
             // TODO: update immutably
-            ctx.labeled[feature][frame] = labeled;
+            ctx.labeled[feature][t] = labeled;
             return ctx.labeled;
           },
         }),
         sendLabeledFrame: send(
           (ctx, evt) => ({
             type: 'LABELED',
-            labeled: ctx.labeled[ctx.feature][ctx.frame],
+            labeled: ctx.labeled[ctx.feature][ctx.t],
           }),
           { to: 'eventBus' }
         ),
         sendRawFrame: send(
           (ctx, evt) => ({
             type: 'RAW',
-            raw: ctx.raw[ctx.channel][ctx.frame],
+            raw: ctx.raw[ctx.channel][ctx.t],
           }),
           { to: 'eventBus' }
         ),
@@ -156,14 +156,14 @@ const createArraysMachine = (context) =>
         sendEdited: send((ctx) => ({ ...ctx.edited, edit: ctx.edit })),
         sendSnapshot: send(
           (ctx) => {
-            const { labeled, frame, feature } = ctx.edited;
+            const { labeled, t, feature } = ctx.edited;
             const beforeRestore = {
               type: 'RESTORE',
-              labeled: ctx.labeled[feature][frame],
-              frame,
+              labeled: ctx.labeled[feature][t],
+              t,
               feature,
             };
-            const afterRestore = { type: 'RESTORE', labeled, frame, feature };
+            const afterRestore = { type: 'RESTORE', labeled, t, feature };
             return {
               type: 'SNAPSHOT',
               before: beforeRestore,

@@ -4,27 +4,27 @@ import { bind, unbind } from 'mousetrap';
 import React, { useEffect, useState } from 'react';
 import { useImage, useMousetrapRef } from '../../ProjectContext';
 
-function FrameSlider() {
+function TimeSlider() {
   const image = useImage();
-  const frame = useSelector(image, (state) => state.context.frame);
-  const numFrames = useSelector(image, (state) => state.context.numFrames);
+  const t = useSelector(image, (state) => state.context.t);
+  const duration = useSelector(image, (state) => state.context.duration);
 
   const inputRef = useMousetrapRef();
 
   useEffect(() => {
-    const prevFrame = Math.max(0, frame - 1);
-    const nextFrame = Math.min(frame + 1, numFrames - 1);
-    bind('a', () => image.send({ type: 'SET_FRAME', frame: prevFrame }));
-    bind('d', () => image.send({ type: 'SET_FRAME', frame: nextFrame }));
+    const prevT = Math.max(0, t - 1);
+    const nextT = Math.min(t + 1, duration - 1);
+    bind('a', () => image.send({ type: 'SET_T', t: prevT }));
+    bind('d', () => image.send({ type: 'SET_T', t: nextT }));
     return () => {
       unbind('a');
       unbind('d');
     };
-  }, [frame, image, numFrames]);
+  }, [t, image, duration]);
 
-  const handleFrameChange = (event, newValue) => {
-    if (newValue !== frame) {
-      image.send({ type: 'SET_FRAME', frame: newValue });
+  const handleChange = (event, newValue) => {
+    if (newValue !== t) {
+      image.send({ type: 'SET_T', t: newValue });
     }
   };
 
@@ -41,18 +41,18 @@ function FrameSlider() {
     setDisplay('on');
     const displayTimeout = setTimeout(() => setDisplay('auto'), 1000);
     return () => clearTimeout(displayTimeout);
-  }, [frame]);
+  }, [t]);
 
   return (
     <Tooltip title={tooltipText}>
       <Slider
-        value={frame}
+        value={t}
         valueLabelDisplay={display}
         step={1}
         marks
         min={0}
-        max={numFrames - 1}
-        onChange={handleFrameChange}
+        max={duration - 1}
+        onChange={handleChange}
         sx={{ p: 0 }}
         componentsProps={{ input: { ref: inputRef } }}
       />
@@ -60,4 +60,4 @@ function FrameSlider() {
   );
 }
 
-export default FrameSlider;
+export default TimeSlider;

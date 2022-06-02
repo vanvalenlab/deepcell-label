@@ -97,9 +97,9 @@ function createIDBMachine({ projectId, eventBuses }) {
       actions: {
         updateSegment: assign({
           project: (ctx, evt) => {
-            const { frame, feature } = evt;
+            const { t, feature } = evt;
             const labeled = ctx.project.labeled.map((arr, i) =>
-              i === feature ? arr.map((arr, j) => (j === frame ? evt.labeled : arr)) : arr
+              i === feature ? arr.map((arr, j) => (j === t ? evt.labeled : arr)) : arr
             );
             return { ...ctx.project, labeled };
           },

@@ -24,12 +24,12 @@ export const GrayscaleCanvas = ({ setCanvases }) => {
   const contrast = useSelector(channel, (state) => state.context.contrast);
 
   const image = useImage();
-  const frame = useSelector(image, (state) => state.context.frame);
+  const t = useSelector(image, (state) => state.context.t);
 
   const arrays = useArrays();
   const rawArray = useSelector(
     arrays,
-    (state) => state.context.raw && state.context.raw[channelIndex][frame]
+    (state) => state.context.raw && state.context.raw[channelIndex][t]
   );
 
   const kernelRef = useRef();

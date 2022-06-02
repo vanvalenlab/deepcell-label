@@ -3,17 +3,17 @@ import { useSelector } from '@xstate/react';
 import equal from 'fast-deep-equal';
 import React from 'react';
 import { useCells, useHexColormap, useImage } from '../../ProjectContext';
-import FrameBox from './FrameBox';
+import TimeBox from './TimeBox';
 
 function CellTimeline({ cell }) {
   const image = useImage();
-  const numFrames = useSelector(image, (state) => state.context.numFrames);
+  const duration = useSelector(image, (state) => state.context.duration);
 
   const colors = useHexColormap();
   const color = colors[cell] ?? '#000000';
 
   const cells = useCells();
-  const frames = useSelector(cells, (state) => state.context.cells.getFrames(cell), equal);
+  const times = useSelector(cells, (state) => state.context.cells.getTimes(cell), equal);
 
   return (
     <Box
@@ -25,13 +25,8 @@ function CellTimeline({ cell }) {
         zIndex: -1,
       }}
     >
-      {[...Array(numFrames).keys()].map((frame) => (
-        <FrameBox
-          frame={frame}
-          numFrames={numFrames}
-          color={frames.includes(frame) ? color : '#FFFFFF'}
-          key={frame}
-        />
+      {[...Array(duration).keys()].map((t) => (
+        <TimeBox t={t} duration={duration} color={times.includes(t) ? color : '#FFFFFF'} key={t} />
       ))}
     </Box>
   );

@@ -9,7 +9,7 @@ function Parent({ division }) {
   const { parent, daughters, t } = division;
   const cellsMachine = useCells();
   const cells = useSelector(cellsMachine, (state) => state.context.cells);
-  const frames = cells.getFrames(parent);
+  const times = cells.getTimes(parent);
   const theme = useTheme();
   const strokeColor = theme.palette.secondary.main;
   const editing = useEditing();
@@ -35,8 +35,8 @@ function Parent({ division }) {
   const onClick = (e) => {
     select.send({ type: 'SELECT', cell: parent });
     image.send({
-      type: 'SET_FRAME',
-      frame: t ? t - 1 : frames[frames.length - 1],
+      type: 'SET_T',
+      t: t ? t - 1 : times[times.length - 1],
     });
   };
 

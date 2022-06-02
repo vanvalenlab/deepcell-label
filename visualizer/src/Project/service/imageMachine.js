@@ -16,10 +16,10 @@ const createImageMachine = ({ projectId, eventBuses, undoRef }) =>
       ],
       context: {
         projectId,
-        numFrames: 1,
+        duration: 1,
         numFeatures: 1,
         numChannels: 1,
-        frame: 0,
+        t: 0,
         rawRef: null,
         labeledRef: null,
         eventBuses,
@@ -27,7 +27,7 @@ const createImageMachine = ({ projectId, eventBuses, undoRef }) =>
       },
       on: {
         DIMENSIONS: { actions: 'setDimensions' },
-        SET_FRAME: { actions: ['setFrame', 'sendToEventBus'] },
+        SET_T: { actions: ['setT', 'sendToEventBus'] },
         SAVE: { actions: 'save' },
         RESTORE: { actions: 'restore' },
         // Needed to rerender canvas
@@ -38,19 +38,19 @@ const createImageMachine = ({ projectId, eventBuses, undoRef }) =>
     {
       actions: {
         setDimensions: assign({
-          numFrames: (context, event) => event.numFrames,
+          duration: (context, event) => event.duration,
           numFeatures: (context, event) => event.numFeatures,
           numChannels: (context, event) => event.numChannels,
         }),
-        setFrame: assign({ frame: (_, { frame }) => frame }),
+        setT: assign({ t: (_, { t }) => t }),
         sendToEventBus: send((c, e) => e, { to: 'eventBus' }),
         spawnActors: assign((context) => ({
           rawRef: spawn(createRawMachine(context), 'raw'),
           labeledRef: spawn(createLabeledMachine(context), 'labeled'),
         })),
-        save: respond(({ frame }) => ({ type: 'RESTORE', frame })),
-        restore: pure((_, { frame }) => {
-          return [send({ type: 'SET_FRAME', frame }), respond('RESTORED')];
+        save: respond(({ t }) => ({ type: 'RESTORE', t })),
+        restore: pure((_, { t }) => {
+          return [send({ type: 'SET_T', t }), respond('RESTORED')];
         }),
       },
     }

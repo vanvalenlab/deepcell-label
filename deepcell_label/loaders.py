@@ -284,7 +284,7 @@ def load_zip_tiffs(zf, filename):
     if len(tiffs) > 0:
         # Stack channels on last axis
         y = np.stack(tiffs, axis=-1)
-        # Add frame axis
+        # Add t axis
         if y.ndim == 3:
             y = y[np.newaxis, ...]
         return y
@@ -417,14 +417,14 @@ def load_tiff(f, axes=None):
             X = tiff.asarray(squeeze=False)
         # Reshape array
         if X.ndim == 2:
-            # Add channels and frames
+            # Add C and T axes
             return X[np.newaxis, ..., np.newaxis]
         if X.ndim == 3:
             # TODO: more general axis handling
-            if axes[0] == 'C':  # Move channels to last axis and add frame
+            if axes[0] == 'C':  # Move C to last axis and add T axis
                 X = np.moveaxis(X, 0, -1)
                 return X[np.newaxis, ...]
-            else:  # Add channels
+            else:  # Add C axis
                 return X[..., np.newaxis]
         if X.ndim == 4:
             return X
@@ -454,7 +454,7 @@ def load_png(f):
             # Create three RGB channels
             # Handles RGB, RGBA, P modes
             X = np.array(image.convert('RGB'))
-        # Add frame dimension at start
+        # Add T axis at start
         X = np.expand_dims(X, 0)
         return X
 

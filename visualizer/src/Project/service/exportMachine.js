@@ -9,7 +9,7 @@ async function makeExportZip(context) {
   const dimensions = {
     width: raw[0][0][0].length,
     height: raw[0][0].length,
-    numFrames: raw[0].length,
+    duration: raw[0].length,
     numChannels: raw.length,
     numFeatures: labeled.length,
   };

@@ -10,7 +10,7 @@ const createHoveringMachine = ({ eventBuses }) =>
       context: {
         x: 0,
         y: 0,
-        frame: 0,
+        t: 0,
         labeled: null,
         cells: null,
         hovering: [],
@@ -19,13 +19,13 @@ const createHoveringMachine = ({ eventBuses }) =>
         { id: 'eventBus', src: fromEventBus('hovering', () => eventBuses.hovering) }, // broadcast HOVERING
         { id: 'canvas', src: fromEventBus('hovering', () => eventBuses.canvas, 'COORDINATES') },
         { src: fromEventBus('hovering', () => eventBuses.arrays, 'LABELED') },
-        { src: fromEventBus('hovering', () => eventBuses.image, 'SET_FRAME') },
+        { src: fromEventBus('hovering', () => eventBuses.image, 'SET_T') },
         { src: fromEventBus('hovering', () => eventBuses.cells, 'CELLS') },
       ],
       on: {
         COORDINATES: { actions: ['setCoordinates', 'updateHovering'] },
         LABELED: { actions: ['setLabeled', 'updateHovering'] },
-        SET_FRAME: { actions: ['setFrame', 'updateHovering'] },
+        SET_T: { actions: ['setT', 'updateHovering'] },
         CELLS: { actions: ['setCells', 'updateHovering'] },
       },
     },
@@ -33,13 +33,13 @@ const createHoveringMachine = ({ eventBuses }) =>
       actions: {
         setLabeled: assign({ labeled: (_, evt) => evt.labeled }),
         setCells: assign({ cells: (_, evt) => evt.cells }),
-        setFrame: assign({ frame: (_, evt) => evt.frame }),
+        setT: assign({ t: (_, evt) => evt.t }),
         setCoordinates: assign({ x: (_, evt) => evt.x, y: (_, evt) => evt.y }),
         updateHovering: pure((ctx) => {
-          const { cells, frame, labeled, x, y } = ctx;
+          const { cells, t, labeled, x, y } = ctx;
           if (cells && labeled && x !== null && y !== null) {
             const value = labeled[y][x];
-            const hovering = cells.getCellsForValue(value, frame);
+            const hovering = cells.getCellsForValue(value, t);
             if (!equal(hovering, ctx.hovering)) {
               return [
                 assign({ hovering }),

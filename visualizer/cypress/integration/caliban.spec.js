@@ -21,7 +21,7 @@ it('shows tracking controls after loading divisions', () => {
   cy.contains('Daughters');
   cy.contains('Selected');
   cy.contains('Hovering');
-  cy.contains('Frame');
+  cy.contains('Time');
 });
 
 it('shows division', () => {

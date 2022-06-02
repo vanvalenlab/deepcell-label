@@ -1,8 +1,8 @@
 /** Fetches data from the project storage API, including raw image data, label image data, and labels. */
 
+import { loadOmeTiff } from '@hms-dbmi/viv';
 import * as zip from '@zip.js/zip.js';
 import { assign, createMachine, sendParent } from 'xstate';
-import { loadOmeTiff } from '@hms-dbmi/viv';
 import Cells from '../cells';
 
 type PropType<TObj, TProp extends keyof TObj> = TObj[TProp];
@@ -121,7 +121,7 @@ interface Context {
   // shape: [number, number, number, number] | null;
   width: number | null;
   height: number | null;
-  numFrames: number | null;
+  t: number | null;
   numChannels: number | null;
   numFeatures: number | null;
   raw: Uint8Array[][][] | null;
@@ -141,7 +141,7 @@ const createLoadMachine = (projectId: string) =>
         // shape: null,
         width: null,
         height: null,
-        numFrames: null,
+        t: null,
         numChannels: null,
         numFeatures: null,
         raw: null,
@@ -220,7 +220,7 @@ const createLoadMachine = (projectId: string) =>
           return {
             width: SizeX,
             height: SizeY,
-            numFrames: SizeZ,
+            t: SizeZ,
             // SizeT,
             numChannels: SizeC,
             numFeatures: labelSizeC,

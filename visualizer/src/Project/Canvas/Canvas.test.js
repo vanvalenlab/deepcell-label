@@ -25,7 +25,7 @@ const context = {
   eventBuses,
   numFeatures: 2,
   numChannels: 3,
-  numFrames: 2,
+  duration: 2,
   width: 100,
   height: 100,
 };

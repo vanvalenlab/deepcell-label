@@ -52,7 +52,7 @@ function SpotsCanvas({ setCanvases }) {
   const labeledArray = useSelector(
     arrays,
     (state) =>
-      state.context.labeled && state.context.labeled[state.context.feature][state.context.frame]
+      state.context.labeled && state.context.labeled[state.context.feature][state.context.t]
   );
 
   const spots = useSpots();

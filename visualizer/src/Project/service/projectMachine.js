@@ -29,9 +29,9 @@ const createProjectMachine = (projectId) =>
           // UI state
           canvas: new EventBus('canvas'), // COORDINATES, mouseup, mousedown
           hovering: new EventBus('hovering'), // HOVERING
-          image: new EventBus('image'), // FRAME (and FEATURE and CHANNEL?)
-          labeled: new EventBus('labeled'), // FEATURE (?)
-          raw: new EventBus('raw'), // CHANNEL (?)
+          image: new EventBus('image'), // SET_T (and FEATURE and CHANNEL?)
+          labeled: new EventBus('labeled'), // SET_FEATURE (?)
+          raw: new EventBus('raw'), // SET_CHANNEL (?)
           select: new EventBus('select'), // SELECTED // also receives GET_SELECTED and responds with SELECTED
           // EDIT events and label changes
           // TODO: rename to segment and separate raw arrays
@@ -106,7 +106,7 @@ const createProjectMachine = (projectId) =>
               type: 'DIMENSIONS',
               numChannels: raw.length,
               numFeatures: labeled.length,
-              numFrames: raw[0].length,
+              duration: raw[0].length,
               height: raw[0][0].length,
               width: raw[0][0][0].length,
             };

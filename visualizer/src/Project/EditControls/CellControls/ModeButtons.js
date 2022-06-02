@@ -13,7 +13,7 @@ function ModeButtons() {
   const mode = useSelector(cells, (state) => state.context.mode);
   return (
     <Box display='flex' flexDirection='column'>
-      <FormLabel>Frame Mode</FormLabel>
+      <FormLabel>Mode</FormLabel>
       <ToggleButtonGroup orientation='vertical' value={mode}>
         <ToggleButton
           onClick={() => cells.send({ type: 'SET_MODE', mode: 'one' })}

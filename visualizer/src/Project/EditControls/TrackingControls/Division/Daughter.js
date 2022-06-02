@@ -13,7 +13,7 @@ function Daughter({ division, daughter }) {
 
   const onClick = () => {
     select.send({ type: 'SELECT', cell: daughter });
-    image.send({ type: 'SET_FRAME', frame: t });
+    image.send({ type: 'SET_T', t });
   };
 
   return (

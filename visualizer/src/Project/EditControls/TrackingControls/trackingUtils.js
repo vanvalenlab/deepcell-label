@@ -7,8 +7,8 @@ export function oneDaughter(division) {
 /** Checks if a division has a parent that appears after the division. */
 export function parentAfterDivision(division, cells) {
   const { parent, t } = division;
-  const frames = cells.getFrames(parent);
-  const afterDivision = frames.filter((frame) => frame >= t);
+  const times = cells.getTimes(parent);
+  const afterDivision = times.filter((x) => x >= t);
   return afterDivision.length > 0;
 }
 
@@ -16,8 +16,8 @@ export function parentAfterDivision(division, cells) {
 export function daughterBeforeDivision(division, cells) {
   const { daughters, t } = division;
   for (const d of daughters) {
-    const frames = cells.getFrames(d);
-    const beforeDivision = frames.filter((f) => f < t);
+    const times = cells.getTimes(d);
+    const beforeDivision = times.filter((x) => x < t);
     if (beforeDivision.length > 0) {
       return true;
     }
@@ -41,14 +41,14 @@ export function getRanges(array) {
   return ranges;
 }
 
-/** Formats a list of frames in a readable format. */
-export function formatFrames(frames) {
-  if (frames.length === 1) {
-    return `frame ${frames[0]}`;
+/** Formats a list of times in a readable format. */
+export function formatTimes(times) {
+  if (times.length === 1) {
+    return `time ${times[0]}`;
   }
-  const ranges = getRanges(frames);
+  const ranges = getRanges(times);
   if (ranges.length === 1) {
-    return `frames ${ranges[0]}`;
+    return `times ${ranges[0]}`;
   }
-  return 'frames ' + ranges.slice(0, -1).join(', ') + ' and ' + ranges[ranges.length - 1];
+  return 'times ' + ranges.slice(0, -1).join(', ') + ' and ' + ranges[ranges.length - 1];
 }

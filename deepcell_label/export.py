@@ -29,7 +29,7 @@ class Export:
                 dimensions = json.load(f)
                 self.height = dimensions['height']
                 self.width = dimensions['width']
-                self.num_frames = dimensions['numFrames']
+                self.duration = dimensions['duration']
                 self.num_channels = dimensions['numChannels']
                 self.num_features = dimensions['numFeatures']
 
@@ -40,7 +40,7 @@ class Export:
                 labeled = np.frombuffer(f.read(), np.int32)
                 self.labeled = np.reshape(
                     labeled,
-                    (self.num_features, self.num_frames, self.width, self.height),
+                    (self.num_features, self.duration, self.width, self.height),
                 )
 
     def load_raw(self):
@@ -49,7 +49,7 @@ class Export:
             with zf.open('raw.dat') as f:
                 raw = np.frombuffer(f.read(), np.uint8)
                 self.raw = np.reshape(
-                    raw, (self.num_channels, self.num_frames, self.width, self.height)
+                    raw, (self.num_channels, self.duration, self.width, self.height)
                 )
 
     def write_export_zip(self):

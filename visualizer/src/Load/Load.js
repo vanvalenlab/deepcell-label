@@ -29,9 +29,9 @@ function Introduction() {
       </Typography>
       <Typography variant='body1' sx={{ width: '80%', m: 1, boxSizing: 'border-box' }}>
         Label can work with 2D images, 3D images, and timelapses. 4D images, or 3D timelapse images,
-        are not yet supported. Label expects input images to have frames first and channels last, or
-        a ZYXC (TYXC for timelapses) dimension order. When loading images with a different dimension
-        order, update the dimensions dropdown in the drag-and-drop box below.
+        are not yet supported. Label expects input images to have time (T) first and channels (C)
+        last, or a ZYXC (TYXC for timelapses) dimension order. When loading images with a different
+        dimension order, update the dimensions dropdown in the drag-and-drop box below.
       </Typography>
     </Box>
   );

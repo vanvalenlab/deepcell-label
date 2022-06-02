@@ -2,9 +2,9 @@ import { FormLabel } from '@mui/material';
 import { Box } from '@mui/system';
 import { useHovering, useOtherSelectedCell, useSelectedCell } from '../../ProjectContext';
 import CellTimeline from './CellTimeline';
-import FrameSlider from './FrameSlider';
+import TimeSlider from './TimeSlider';
 
-function FrameControls() {
+function TimeControls() {
   const cell = useSelectedCell();
   const hoveringCells = useHovering();
   const otherCell = useOtherSelectedCell();
@@ -16,8 +16,8 @@ function FrameControls() {
 
   return (
     <Box display='flex' flexDirection='column'>
-      <FormLabel>Frame</FormLabel>
-      <FrameSlider />
+      <FormLabel>Time</FormLabel>
+      <TimeSlider />
       <CellTimeline cell={cell} />
       {hoveringCells.map((c) => (
         <CellTimeline cell={c} key={c} />
@@ -36,4 +36,4 @@ function FrameControls() {
   );
 }
 
-export default FrameControls;
+export default TimeControls;

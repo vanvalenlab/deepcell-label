@@ -32,16 +32,16 @@ const OutlineCanvas = ({ setCanvases }) => {
   const invert = useSelector(channel, (state) => state.context.invert && isGrayscale);
 
   const image = useImage();
-  const frame = useSelector(image, (state) => state.context.frame);
+  const t = useSelector(image, (state) => state.context.t);
 
   const arrays = useArrays();
   const labeledArray = useSelector(
     arrays,
-    (state) => state.context.labeled && state.context.labeled[feature][frame]
+    (state) => state.context.labeled && state.context.labeled[feature][t]
   );
 
   const cells = useCells();
-  const cellMatrix = useSelector(cells, (state) => state.context.cells?.getMatrix(frame), equal);
+  const cellMatrix = useSelector(cells, (state) => state.context.cells?.getMatrix(t), equal);
 
   const kernelRef = useRef();
   const kernelCanvas = useAlphaKernelCanvas();
