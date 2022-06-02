@@ -68,7 +68,7 @@ function Canvas() {
   const [canvases, setCanvases] = useState([]);
 
   const arrays = useArrays();
-  const loading = useSelector(arrays, (state) => state.matches('waiting'));
+  const loading = useSelector(arrays, (state) => state.matches('setUp'));
 
   return (
     <Box
