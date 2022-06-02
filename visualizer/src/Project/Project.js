@@ -1,8 +1,8 @@
 import Box from '@mui/material/Box';
 import Canvas from './Canvas';
 import DisplayControls from './DisplayControls';
-// import Instructions from './Instructions';
 import EditControls from './EditControls';
+import Instructions from './Instructions';
 import { useEditing } from './ProjectContext';
 import ReviewControls from './ReviewControls';
 
@@ -10,7 +10,7 @@ function Project({ review, track }) {
   const editing = useEditing();
   return (
     <>
-      {/* <Instructions /> */}
+      <Instructions />
       <Box
         sx={{
           boxSizing: 'border-box',
