@@ -118,11 +118,11 @@ class Loader:
         """Writes cells to cells.json in the output zip."""
         if self.cells is None:
             cells = []
-            for z in range(self.y.shape[0]):
-                for value in np.unique(self.y[z]):
+            for t in range(self.y.shape[0]):
+                for value in np.unique(self.y[t]):
                     if value != 0:
                         cells.append(
-                            {'cell': int(value), 'value': int(value), 'z': int(z)}
+                            {'cell': int(value), 'value': int(value), 't': int(t)}
                         )
             self.cells = cells
         self.zip.writestr('cells.json', json.dumps(self.cells))

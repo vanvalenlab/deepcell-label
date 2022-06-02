@@ -23,7 +23,7 @@ async function makeEditZip(context, event) {
   await zipWriter.add('edit.json', new zip.TextReader(JSON.stringify(edit)));
   await zipWriter.add(
     'cells.json',
-    new zip.TextReader(JSON.stringify(cells.cells.filter((o) => o.z === frame)))
+    new zip.TextReader(JSON.stringify(cells.cells.filter((c) => c.t === frame)))
   );
   await zipWriter.add('labeled.dat', new zip.BlobReader(new Blob(labeled)));
   // Optional files

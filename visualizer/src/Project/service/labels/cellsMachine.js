@@ -153,8 +153,8 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
         setCells: assign({ cells: (_, evt) => evt.cells }),
         updateCells: pure((ctx, evt) => {
           const cells = new Cells([
-            ...ctx.cells.cells.filter((o) => o.z !== evt.frame),
-            ...evt.cells.map((o) => ({ ...o, z: evt.frame })),
+            ...ctx.cells.cells.filter((cell) => cell.t !== evt.frame),
+            ...evt.cells.map((cell) => ({ ...cell, t: evt.frame })),
           ]);
           const newColormap = [
             [0, 0, 0, 1],

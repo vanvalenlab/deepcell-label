@@ -1,7 +1,7 @@
 import Cells from './cells';
 
 test('cell matrix for frame with one cell', () => {
-  const cells = new Cells([{ value: 1, cell: 1, z: 0 }]);
+  const cells = new Cells([{ value: 1, cell: 1, t: 0 }]);
   expect(cells.getMatrix(0)).toEqual([
     [0, 0],
     [0, 1],
@@ -15,14 +15,14 @@ test('empty cells makes empty matrix', () => {
 });
 
 test('no cells in frame makes empty matrix', () => {
-  const cells = new Cells([{ value: 1, cell: 1, z: 0 }]);
+  const cells = new Cells([{ value: 1, cell: 1, t: 0 }]);
   expect(cells.getMatrix(1)).toEqual([[0]]);
 });
 
 test('cell matrix with two cells in frame', () => {
   const cells = new Cells([
-    { value: 1, cell: 1, z: 0 },
-    { value: 2, cell: 2, z: 0 },
+    { value: 1, cell: 1, t: 0 },
+    { value: 2, cell: 2, t: 0 },
   ]);
   expect(cells.getMatrix(0)).toEqual([
     [0, 0, 0],
@@ -33,8 +33,8 @@ test('cell matrix with two cells in frame', () => {
 
 test('different cell matrix when there are different cells in different frames', () => {
   const cells = new Cells([
-    { value: 1, cell: 1, z: 0 },
-    { value: 2, cell: 2, z: 1 },
+    { value: 1, cell: 1, t: 0 },
+    { value: 2, cell: 2, t: 1 },
   ]);
   expect(cells.getMatrix(0)).toEqual([
     [0, 0],
@@ -49,10 +49,10 @@ test('different cell matrix when there are different cells in different frames',
 
 test('get matrix for frame with overlapping cells', () => {
   const cells = new Cells([
-    { value: 1, cell: 1, z: 0 },
-    { value: 2, cell: 2, z: 0 },
-    { value: 3, cell: 1, z: 0 },
-    { value: 3, cell: 2, z: 0 },
+    { value: 1, cell: 1, t: 0 },
+    { value: 2, cell: 2, t: 0 },
+    { value: 3, cell: 1, t: 0 },
+    { value: 3, cell: 2, t: 0 },
   ]);
   expect(cells.getMatrix(0)).toEqual([
     [0, 0, 0],
@@ -63,7 +63,7 @@ test('get matrix for frame with overlapping cells', () => {
 });
 
 test('get frames for cell in 1 frame', () => {
-  const cells = new Cells([{ value: 1, cell: 1, z: 0 }]);
+  const cells = new Cells([{ value: 1, cell: 1, t: 0 }]);
   expect(cells.getFrames(1)).toEqual([0]);
 });
 
@@ -74,26 +74,26 @@ test('get frames for cell in no frames', () => {
 
 test('get frames for cell in two frames', () => {
   const cells = new Cells([
-    { value: 1, cell: 1, z: 0 },
-    { value: 1, cell: 1, z: 1 },
+    { value: 1, cell: 1, t: 0 },
+    { value: 1, cell: 1, t: 1 },
   ]);
   expect(cells.getFrames(1)).toEqual([0, 1]);
 });
 
 test('get frames for cell in nonconsecutive frames', () => {
   const cells = new Cells([
-    { value: 1, cell: 1, z: 0 },
-    { value: 1, cell: 1, z: 2 },
+    { value: 1, cell: 1, t: 0 },
+    { value: 1, cell: 1, t: 2 },
   ]);
   expect(cells.getFrames(1)).toEqual([0, 2]);
 });
 
 test('get frames for overlapping cell', () => {
   const cells = new Cells([
-    { value: 1, cell: 1, z: 0 },
-    { value: 2, cell: 2, z: 0 },
-    { value: 3, cell: 1, z: 0 },
-    { value: 3, cell: 2, z: 0 },
+    { value: 1, cell: 1, t: 0 },
+    { value: 2, cell: 2, t: 0 },
+    { value: 3, cell: 1, t: 0 },
+    { value: 3, cell: 2, t: 0 },
   ]);
   expect(cells.getFrames(1)).toEqual([0]);
 });
@@ -104,24 +104,24 @@ test('get no cells in frames', () => {
 });
 
 test('get one cell in frames', () => {
-  const cells = new Cells([{ value: 1, cell: 1, z: 0 }]);
+  const cells = new Cells([{ value: 1, cell: 1, t: 0 }]);
   expect(cells.getCells(0)).toEqual([1]);
 });
 
 test('get two cells in frames', () => {
   const cells = new Cells([
-    { value: 1, cell: 1, z: 0 },
-    { value: 2, cell: 2, z: 0 },
+    { value: 1, cell: 1, t: 0 },
+    { value: 2, cell: 2, t: 0 },
   ]);
   expect(cells.getCells(0)).toEqual([1, 2]);
 });
 
 test('get overlapping cells in frames', () => {
   const cells = new Cells([
-    { value: 1, cell: 1, z: 0 },
-    { value: 2, cell: 2, z: 0 },
-    { value: 3, cell: 1, z: 0 },
-    { value: 3, cell: 2, z: 0 },
+    { value: 1, cell: 1, t: 0 },
+    { value: 2, cell: 2, t: 0 },
+    { value: 3, cell: 1, t: 0 },
+    { value: 3, cell: 2, t: 0 },
   ]);
   expect(cells.getCells(0)).toEqual([1, 2]);
 });

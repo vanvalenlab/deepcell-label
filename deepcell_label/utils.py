@@ -21,6 +21,7 @@ def convert_lineage(lineage):
 
     """
     divisions = []
+    lineage = {int(k): v for k, v in lineage.items()}
     for cell, info in lineage.items():
         parent, daughters, frame_div = (
             info['parent'],

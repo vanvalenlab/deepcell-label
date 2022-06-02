@@ -8,7 +8,7 @@
 export function combine(current, edited, t, mode) {
   switch (mode) {
     case 'one':
-      return [...current.filter((c) => c.t == t), ...edited.filter((c) => c.t !== t)];
+      return [...current.filter((c) => c.t === t), ...edited.filter((c) => c.t !== t)];
     case 'past':
       return [...edited.filter((c) => c.t <= t), ...current.filter((c) => c.t > t)];
     case 'future':
