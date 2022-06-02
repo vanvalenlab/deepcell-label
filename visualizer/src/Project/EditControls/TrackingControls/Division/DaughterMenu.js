@@ -15,7 +15,7 @@ function DaughterMenu({ parent, daughter }) {
   const anchorRef = useRef(null);
 
   const handleRemove = () => {
-    editDivisions.send({ type: 'REMOVE', daughter: daughter });
+    editDivisions.send({ type: 'REMOVE_DAUGHTER', daughter: daughter });
     toggleOpen();
   };
 
