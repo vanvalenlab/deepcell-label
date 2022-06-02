@@ -13,15 +13,15 @@ function createIDBMachine({ projectId, eventBuses }) {
         projectId,
         db: null,
         project: {
-          raw: null,
-          labeled: null,
+          raw: null, // Uint8Array[][][]
+          labeled: null, // Int32Array[][][]
           cells: null, // list of cells, not the Cells object
-          divisions: null,
+          divisions: null, // list of divisions
         },
       },
       invoke: [
         { src: fromEventBus('IDB', () => eventBuses.arrays, 'EDITED_SEGMENT') },
-        { src: fromEventBus('IDB', () => eventBuses.cells, 'EDITED_CELLS') },
+        { src: fromEventBus('IDB', () => eventBuses.cells, 'CELLS') },
         { src: fromEventBus('IDB', () => eventBuses.load, 'LOADED') },
       ],
       initial: 'openDb',
@@ -60,7 +60,7 @@ function createIDBMachine({ projectId, eventBuses }) {
               target: 'putProject',
               actions: 'updateSegment',
             },
-            EDITED_CELLS: {
+            CELLS: {
               target: 'putProject',
               actions: 'updateCells',
             },
@@ -72,7 +72,7 @@ function createIDBMachine({ projectId, eventBuses }) {
               target: 'putProject',
               actions: 'updateSegment',
             },
-            EDITED_CELLS: {
+            CELLS: {
               target: 'putProject',
               actions: 'updateCells',
             },
