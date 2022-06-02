@@ -22,6 +22,7 @@ function createIDBMachine({ projectId, eventBuses }) {
       invoke: [
         { src: fromEventBus('IDB', () => eventBuses.arrays, 'EDITED_SEGMENT') },
         { src: fromEventBus('IDB', () => eventBuses.cells, 'CELLS') },
+        { src: fromEventBus('IDB', () => eventBuses.divisions, 'DIVISIONS') },
         { src: fromEventBus('IDB', () => eventBuses.load, 'LOADED') },
       ],
       initial: 'openDb',
@@ -64,6 +65,10 @@ function createIDBMachine({ projectId, eventBuses }) {
               target: 'putProject',
               actions: 'updateCells',
             },
+            DIVISIONS: {
+              target: 'putProject',
+              actions: 'updateDivisions',
+            },
           },
         },
         idle: {
@@ -75,6 +80,10 @@ function createIDBMachine({ projectId, eventBuses }) {
             CELLS: {
               target: 'putProject',
               actions: 'updateCells',
+            },
+            DIVISIONS: {
+              target: 'putProject',
+              actions: 'updateDivisions',
             },
           },
         },
@@ -106,6 +115,9 @@ function createIDBMachine({ projectId, eventBuses }) {
         }),
         updateCells: assign({
           project: (ctx, evt) => ({ ...ctx.project, cells: evt.cells.cells }),
+        }),
+        updateDivisions: assign({
+          project: (ctx, evt) => ({ ...ctx.project, divisions: evt.divisions }),
         }),
         setDb: assign({ db: (ctx, evt) => evt.data }),
         setProject: assign((ctx, evt) => ({

@@ -124,6 +124,7 @@ function createDivisionsMachine({ eventBuses, undoRef }) {
               initial: 'idle',
               states: {
                 idle: {
+                  entry: 'sendDivisions',
                   on: {
                     // from edit divisions machine
                     REMOVE_DAUGHTER: { actions: 'removeDaughter', target: 'editing' },
@@ -164,9 +165,9 @@ function createDivisionsMachine({ eventBuses, undoRef }) {
             update: {
               on: {
                 // from CELLS event bus
-                REPLACE: { actions: 'replace' },
-                DELETE: { actions: 'delete' },
-                SWAP: { actions: 'swap' },
+                REPLACE: { actions: ['replace', 'sendDivisions'] },
+                DELETE: { actions: ['delete', 'sendDivisions'] },
+                SWAP: { actions: ['swap', 'sendDivisions'] },
               },
             },
           },
@@ -181,6 +182,9 @@ function createDivisionsMachine({ eventBuses, undoRef }) {
         startEdit: send('SAVE', { to: (ctx) => ctx.undoRef }),
         setEdit: assign({ edit: (ctx, evt) => evt.edit }),
         setEditedDivisions: assign({ editedDivisions: (ctx, evt) => evt.divisions }),
+        sendDivisions: send((ctx) => ({ type: 'DIVISIONS', divisions: ctx.divisions }), {
+          to: 'eventBus',
+        }),
         finishEditing: pure((ctx) => {
           return [
             assign({ divisions: (ctx) => ctx.editedDivisions }),
