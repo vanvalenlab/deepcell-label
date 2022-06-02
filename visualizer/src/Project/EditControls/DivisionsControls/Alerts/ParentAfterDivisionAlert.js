@@ -37,7 +37,10 @@ function ParentAfterDivisionAlerts() {
     count > 0 && (
       <AlertGroup header={header} severity={'error'}>
         {alerts.map((division) => (
-          <ParentAfterDivisionAlert division={division} />
+          <ParentAfterDivisionAlert
+            division={division}
+            key={`parent${division.parent}daughters${division.daughters}`}
+          />
         ))}
       </AlertGroup>
     )

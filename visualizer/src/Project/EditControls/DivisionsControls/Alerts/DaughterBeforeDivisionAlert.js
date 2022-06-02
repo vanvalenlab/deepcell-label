@@ -43,7 +43,10 @@ function DaughterBeforeDivisionAlerts() {
     count > 0 && (
       <AlertGroup header={header} severity={'error'}>
         {alerts.map((division) => (
-          <DaughterBeforeDivisionAlert division={division} />
+          <DaughterBeforeDivisionAlert
+            division={division}
+            key={`parent${division.parent}daughters${division.daughters}`}
+          />
         ))}
       </AlertGroup>
     )

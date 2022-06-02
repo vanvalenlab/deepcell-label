@@ -44,7 +44,7 @@ function DaughterInMultipleDivisionsAlerts() {
     multiple.length > 0 && (
       <AlertGroup header={header} severity={'error'}>
         {multiple.map((cell) => (
-          <DaughterInMultipleDivisionsAlert cell={cell} />
+          <DaughterInMultipleDivisionsAlert cell={cell} key={cell} />
         ))}
       </AlertGroup>
     )

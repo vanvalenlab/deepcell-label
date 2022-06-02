@@ -37,7 +37,10 @@ function OneDaughterAlerts() {
     count > 0 && (
       <AlertGroup header={header} severity={'warning'}>
         {alerts.map((division) => (
-          <OneDaughterAlert division={division} />
+          <OneDaughterAlert
+            division={division}
+            key={`parent${division.parent}daughters${division.daughters}`}
+          />
         ))}
       </AlertGroup>
     )
