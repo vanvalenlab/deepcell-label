@@ -90,7 +90,7 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
               initial: 'idle',
               states: {
                 idle: { on: { SAVE: { target: 'done', actions: 'setEdit' } } },
-                done: { type: 'final' },
+                done: { entry: 'sendEditEvent', type: 'final' },
               },
             },
             getEdits: {
@@ -113,6 +113,9 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
         setHistoryRef: assign({ historyRef: (_, __, meta) => meta._event.origin }),
         setEdit: assign({ edit: (_, evt) => evt.edit }),
         setEditEvent: assign({ editEvent: (ctx, evt) => ({ ...evt, t: ctx.t }) }),
+        sendEditEvent: send((ctx) => ({ ...ctx.editEvent, edit: ctx.edit, mode: ctx.mode }), {
+          to: 'eventBus',
+        }),
         setEditedCells: assign({
           editedCells: (ctx, evt) => {
             const cells = ctx.cells.cells;
@@ -123,9 +126,8 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
           },
         }),
         finishEditing: pure((ctx, evt) => {
-          const { editEvent, edit, mode, editedCells, cells, historyRef } = ctx;
+          const { edit, editedCells, cells, historyRef } = ctx;
           return [
-            send({ ...editEvent, edit, mode, cells: editedCells }, { to: 'eventBus' }),
             assign({ cells: (ctx) => ctx.editedCells }),
             send(
               {
