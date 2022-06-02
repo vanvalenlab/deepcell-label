@@ -8,39 +8,37 @@ const createEditDivisionsMachine = ({ eventBuses }) =>
       invoke: [
         { id: 'select', src: fromEventBus('editDivisions', () => eventBuses.select, 'SELECTED') },
         { src: fromEventBus('editDivisions', () => eventBuses.hovering, 'HOVERING') },
-        // { id: 'api', src: fromEventBus('editDivisions', () => eventBuses.api) },
+        { src: fromEventBus('editDivisions', () => eventBuses.image, 'SET_FRAME') },
+        { id: 'divisions', src: fromEventBus('editDivisions', () => eventBuses.divisions) },
       ],
       context: {
         selected: null,
         hovering: null,
-        parent: null,
+        daughter: null,
+        t: null,
       },
       on: {
-        SELECTED: {
-          cond: (_, { selected }) => selected !== 0,
-          actions: 'setSelected',
-        },
+        SELECTED: { actions: 'setSelected' },
         HOVERING: { actions: 'setHovering' },
-        REMOVE: { actions: 'remove' },
-        REPLACE_WITH_PARENT: { actions: 'replaceWithParent' },
+        REMOVE_DAUGHTER: { actions: 'remove' },
+        SET_FRAME: { actions: 'setT' },
       },
       initial: 'idle',
       states: {
         idle: {
           on: {
             mouseup: { actions: 'select' },
-            ADD_DAUGHTER: { target: 'addingDaughter', actions: 'setParent' },
-            CREATE_NEW_CELL: { actions: 'createNewCell' },
+            ADD_DAUGHTER: 'addingDaughter',
           },
         },
         addingDaughter: {
+          entry: 'resetDaughter',
           on: {
             mouseup: [
               { cond: 'onNoCell' },
-              {
-                target: 'idle',
-                actions: 'addDaughter',
-              },
+              { cond: 'shift', actions: 'setDaughter' },
+              { cond: 'onDaughter', actions: 'addDaughter' },
+              { actions: 'setDaughter' },
             ],
             RESET: { target: 'idle' },
           },
@@ -51,52 +49,37 @@ const createEditDivisionsMachine = ({ eventBuses }) =>
       services: {},
       guards: {
         onNoCell: (ctx) => ctx.hovering.length === 0,
+        shift: (_, evt) => evt.shiftKey,
+        onDaughter: (ctx) => ctx.hovering.includes(ctx.daughter),
       },
       actions: {
+        setT: assign({ t: (ctx, evt) => evt.t }),
         select: send('SELECT', { to: 'select' }),
-        setSelected: assign({ selected: (_, { selected }) => selected }),
-        setHovering: assign({ hovering: (_, { hovering }) => hovering }),
-        setParent: assign({ parent: (_, { parent }) => parent }),
+        setSelected: assign({ selected: (_, evt) => evt.selected }),
+        setHovering: assign({ hovering: (_, evt) => evt.hovering }),
         remove: send(
-          (_, { daughter }) => ({
-            type: 'EDIT',
-            action: 'remove_daughter',
-            args: {
-              daughter,
-            },
-          })
-          // { to: 'api' }
+          (_, evt) => ({
+            type: 'REMOVE_DAUGHTER',
+            daughter: evt.daughter,
+          }),
+          { to: 'divisions' }
         ),
+        resetDaughter: assign({ daughter: null }),
+        setDaughter: assign({
+          daughter: (ctx) => {
+            const { hovering, daughter } = ctx;
+            const i = hovering.indexOf(daughter);
+            return i === -1 || i === hovering.length - 1 ? hovering[0] : hovering[i + 1];
+          },
+        }),
         addDaughter: send(
-          ({ parent, hovering }) => ({
-            type: 'EDIT',
-            action: 'add_daughter',
-            args: {
-              parent: parent,
-              daughter: hovering[0], // TODO: select daughter before adding
-            },
-          })
-          // { to: 'api' }
-        ),
-        replaceWithParent: send(
-          (_, { parent, daughter }) => ({
-            type: 'EDIT',
-            action: 'replace_with_parent',
-            args: {
-              daughter: daughter,
-            },
-          })
-          // { to: 'api' }
-        ),
-        createNewCell: send(
-          (_, { selected }) => ({
-            type: 'EDIT',
-            action: 'new_track',
-            args: {
-              cell: selected,
-            },
-          })
-          // { to: 'api' }
+          (ctx) => ({
+            type: 'ADD_DAUGHTER',
+            parent: ctx.selected,
+            daughter: ctx.daughter,
+            t: ctx.t,
+          }),
+          { to: 'divisions' }
         ),
       },
     }

@@ -37,6 +37,7 @@ const createProjectMachine = (projectId) =>
           // TODO: rename to segment and separate raw arrays
           arrays: new EventBus('arrays'), // also receives GET_ARRAYS and responds with ARRAYS
           cells: new EventBus('cells'),
+          divisions: new EventBus('divisions'),
         },
         track: false,
       },
