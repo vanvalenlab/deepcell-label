@@ -35,7 +35,7 @@ def test_convert_lineage_with_chained_divisions():
     }
     assert utils.convert_lineage(lineage) == [
         {'parent': 1, 'daughters': [2, 3], 't': 1},
-        {'parent': 2, 'daughters': [4, 5], 't': 3},
+        {'parent': 2, 'daughters': [4, 5], 't': 2},
     ]
 
 
