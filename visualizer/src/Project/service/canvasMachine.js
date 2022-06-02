@@ -1,12 +1,14 @@
-// Manages zooming, panning, and interacting with the canvas
-// Interactions sent as COORDINATES, mousedown, and mouseup events to parent
-// COORDINATES event sent when the pixel below the cursor changes
-
-// Panning interface:
-// Hold space always enables click & drag to pan
-// SET_PAN_ON_DRAG event configures whether click & drag alone pans the canvas
-// Features that need dragging interactions,
-// like drawing or creating a bounding box, should set panOnDrag to false
+/**
+ * Manages zooming, panning, and mouse interactions with the canvas
+ * Interactions sent as COORDINATES, mousedown, and mouseup events to canvas event bus
+ * COORDINATES event sent when the pixel below the cursor changes
+ *
+ * Panning interface:
+ * Hold space enables click & drag to pan
+ * panOnDrag configures whether click & drag without space also pans the canvas
+ * Features with dragging interactions on the canvas (e.g. drawing a brush stroke, creating a bounding box)
+ * should set panOnDrag to false with SET_PAN_ON_DRAG
+ */
 
 import { actions, assign, forwardTo, Machine, send } from 'xstate';
 import { fromEventBus } from './eventBus';
