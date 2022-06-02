@@ -167,7 +167,6 @@ function createDivisionsMachine({ eventBuses, undoRef }) {
                 REPLACE: { actions: [(c, e) => console.log(c, e), 'replace'] },
                 DELETE: { actions: 'delete' },
                 SWAP: { actions: 'swap' },
-                NEW: { actions: 'new' },
               },
             },
           },

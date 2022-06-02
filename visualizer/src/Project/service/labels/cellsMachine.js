@@ -77,7 +77,7 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
             REPLACE: { actions: [(c, e) => console.log(c, e), 'replace'], target: 'editing' },
             DELETE: { actions: 'delete', target: 'editing' },
             SWAP: { actions: 'swap', target: 'editing' },
-            NEW: { actions: 'new' }, // sends REPLACE event
+            NEW_CELL: { actions: 'newCell' }, // sends REPLACE event
             SET_MODE: { actions: 'setMode' },
           },
         },
@@ -167,18 +167,22 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
             send({ type: 'CELLS', cells }, { to: 'eventBus' }),
           ];
         }),
-        sendCells: send((ctx, evt) => ({ type: 'CELLS', cells: ctx.cells }), { to: 'eventBus' }),
-        setColormap: assign({
-          colormap: (ctx, evt) => [
-            [0, 0, 0, 1],
-            ...colormap({
-              colormap: 'viridis',
-              nshades: Math.max(9, ctx.cells.getNewCell() - 1),
-              format: 'rgba',
-            }),
-            [255, 255, 255, 1],
-          ],
-        }),
+        sendCells: send((ctx) => ({ type: 'CELLS', cells: ctx.cells }), { to: 'eventBus' }),
+        // needs to be pure because assign events have priority
+        // NOTE: this is changing in xstate v5, can revert to assign when that's released
+        setColormap: pure((ctx) =>
+          assign({
+            colormap: [
+              [0, 0, 0, 1],
+              ...colormap({
+                colormap: 'viridis',
+                nshades: Math.max(9, ctx.cells.getNewCell() - 1),
+                format: 'rgba',
+              }),
+              [255, 255, 255, 1],
+            ],
+          })
+        ),
         replace: send((ctx, evt) => {
           const { a, b } = evt;
           const cells = new Cells(
@@ -200,7 +204,7 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
           );
           return { type: 'EDITED_CELLS', cells };
         }),
-        new: send((ctx, evt) => ({ type: 'REPLACE', a: ctx.cells.getNewCell(), b: evt.cell })),
+        newCell: send((ctx, evt) => ({ type: 'REPLACE', a: ctx.cells.getNewCell(), b: evt.cell })),
       },
     }
   );
