@@ -2,7 +2,7 @@ import Alert from '@mui/material/Alert';
 import { useSelector } from '@xstate/react';
 import React from 'react';
 import { useDivisions, useImage, useSelect } from '../../../ProjectContext';
-import { oneDaughter } from '../trackingUtils';
+import { oneDaughter } from '../divisionUtils';
 import AlertGroup, { alertStyle } from './AlertGroup';
 
 function OneDaughterAlert({ division }) {

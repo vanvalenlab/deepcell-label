@@ -2,7 +2,7 @@ import Alert from '@mui/material/Alert';
 import { useSelector } from '@xstate/react';
 import React from 'react';
 import { useCells, useDivisions } from '../../../ProjectContext';
-import { formatTimes, parentAfterDivision } from '../trackingUtils';
+import { formatTimes, parentAfterDivision } from '../divisionUtils';
 import AlertGroup, { alertStyle } from './AlertGroup';
 
 function ParentAfterDivisionAlert({ division }) {

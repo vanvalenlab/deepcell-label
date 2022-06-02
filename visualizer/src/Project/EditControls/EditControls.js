@@ -2,8 +2,8 @@ import Box from '@mui/material/Box';
 import { useSelector } from '@xstate/react';
 import { useLabelMode } from '../ProjectContext';
 import CellControls from './CellControls';
+import TrackingControls from './DivisionsControls';
 import SegmentControls from './SegmentControls';
-import TrackingControls from './TrackingControls';
 import UndoRedo from './UndoRedo';
 
 function TabPanel(props) {

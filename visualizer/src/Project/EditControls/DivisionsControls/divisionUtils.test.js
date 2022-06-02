@@ -1,4 +1,4 @@
-import { formatTimes, getRanges } from './trackingUtils';
+import { formatTimes, getRanges } from './divisionUtils';
 
 test('empty range', () => {
   expect(getRanges([])).toEqual([]);
