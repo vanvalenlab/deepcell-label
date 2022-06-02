@@ -34,7 +34,7 @@ function DivisionAlerts() {
         // reset the state of your app so the error doesn't happen again
       }}
     >
-      <Div sx={{ maxHeight: '200px', overflow: 'auto' }}>
+      <Div sx={{ maxHeight: '200px', overflowY: 'auto', overflowX: 'hidden' }}>
         <ParentAfterDivisionAlerts />
         <DaughterBeforeDivisionAlerts />
         <OneDaughterAlerts />

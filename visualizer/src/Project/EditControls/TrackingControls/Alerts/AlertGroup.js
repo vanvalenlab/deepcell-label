@@ -41,7 +41,7 @@ function AlertGroup({ header, severity, children }) {
   return (
     <>
       <Alert
-        sx={{ boxSizing: 'border-box', maxWidth: '20rem', mt: 2 }}
+        sx={{ boxSizing: 'border-box', maxWidth: '20rem', mt: 0.5 }}
         severity={severity}
         onClick={toggle}
         action={action}

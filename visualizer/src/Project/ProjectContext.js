@@ -94,31 +94,20 @@ export function useDivisions() {
   return divisions;
 }
 
-/** Returns the division where the cell is a parent if any. */
-export function useParentDivision(cell) {
+/** Returns the divisions where the cell is a parent if any. */
+export function useParentDivisions(cell) {
   const divisionsMachine = useDivisions();
   const divisions = useSelector(divisionsMachine, (state) => state.context.divisions);
   const editing = useEditing();
 
-  for (const division in divisions) {
-    if (division.parent === cell) {
-      return division;
-    }
-  }
-  if (editing) {
-    return { parent: cell, daughters: [], t: null };
-  }
+  return divisions.filter((d) => d.parent === cell);
 }
 
-/** Returns the division where the cell is a daughter if any. */
-export function useDaughterDivision(cell) {
+/** Returns the divisions where the cell is a daughter if any. */
+export function useDaughterDivisions(cell) {
   const divisionsMachine = useDivisions();
   const divisions = useSelector(divisionsMachine, (state) => state.context.divisions);
-  for (const division in divisions) {
-    if (division.daughters.includes(cell)) {
-      return division;
-    }
-  }
+  return divisions.filter((d) => d.daughters.includes(cell));
 }
 
 export function useArrays() {
