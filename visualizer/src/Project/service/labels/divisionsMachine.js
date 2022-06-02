@@ -8,21 +8,29 @@ import { combine } from './utils';
 // TODO? spawn children for updating divisions (from changes in cells) vs. editing divisions (from user interactions)
 // currently running in two parallel states (update and edit) in loaded
 
+/** Replaces cell b with cell a in the divisions. */
 function replace(divisions, a, b) {
-  return divisions.map((division) => {
-    if (division.parent === b) {
-      return { ...division, parent: a };
-    }
-    if (division.daughters.includes(b)) {
-      const daughters = division.daughters
-        .map((daughter) => (daughter === b ? a : daughter))
-        // remove duplicate daughters
-        .reduce((prev, curr) => (prev.includes(curr) ? prev : [...prev, curr]), []);
-      return { ...division, daughters };
-    }
-  });
+  return (
+    divisions
+      .map((division) => {
+        if (division.parent === b) {
+          return { ...division, parent: a };
+        }
+        if (division.daughters.includes(b)) {
+          const daughters = division.daughters
+            .map((daughter) => (daughter === b ? a : daughter))
+            // remove duplicate daughters
+            .reduce((prev, curr) => (prev.includes(curr) ? prev : [...prev, curr]), []);
+          return { ...division, daughters };
+        }
+        return division;
+      })
+      // remove divisions with same cell as parent and daughters
+      .filter((division) => !division.daughters.includes(division.parent))
+  );
 }
 
+/** Removes cell from the divisions. */
 function remove(divisions, cell) {
   return divisions
     .map((division) => {
@@ -37,21 +45,27 @@ function remove(divisions, cell) {
     .filter((d) => d.parent !== null && d.daughters.length !== 0);
 }
 
+/** Swaps cells a and b in the divisions. */
 function swap(divisions, a, b) {
-  return divisions.map((division) => {
-    let { parent, daughters } = division;
-    if (parent === a) {
-      parent = b;
-    } else if (parent === b) {
-      parent = a;
-    }
-    daughters = daughters
-      .map((d) => (d === a ? b : d === b ? a : d))
-      // remove duplicate daughters
-      .reduce((prev, curr) => (prev.includes(curr) ? prev : [...prev, curr]), []);
+  return (
+    divisions
+      .map((division) => {
+        let { parent, daughters } = division;
+        if (parent === a) {
+          parent = b;
+        } else if (parent === b) {
+          parent = a;
+        }
+        daughters = daughters
+          .map((d) => (d === a ? b : d === b ? a : d))
+          // remove duplicate daughters
+          .reduce((prev, curr) => (prev.includes(curr) ? prev : [...prev, curr]), []);
 
-    return { ...division, parent, daughters };
-  });
+        return { ...division, parent, daughters };
+      })
+      // remove divisions with same cell as parent and daughters
+      .filter((division) => !division.daughters.includes(division.parent))
+  );
 }
 
 function createDivisionsMachine({ eventBuses, undoRef }) {
