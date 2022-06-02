@@ -8,7 +8,7 @@ import EditingPrompt from './EditingPrompt';
 function TrackingControls() {
   const editing = useEditing();
   return (
-    <Box display='flex'>
+    <Box display='flex' flexDirection='column'>
       <DivisionAlerts />
       <Divisions />
       {editing && <EditingPrompt />}
