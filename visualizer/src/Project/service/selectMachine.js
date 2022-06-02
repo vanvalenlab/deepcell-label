@@ -35,7 +35,11 @@ const createSelectMachine = ({ eventBuses, undoRef }) =>
     {
       actions: {
         sendSelected: send(({ selected }) => ({ type: 'SELECTED', selected }), { to: 'eventBus' }),
-        select: pure(({ selected, hovering }) => {
+        select: pure((ctx, evt) => {
+          if (evt.cell) {
+            return send({ type: 'SELECTED', selected: evt.cell });
+          }
+          const { selected, hovering } = ctx;
           const i = hovering.indexOf(selected);
           let newCell;
           if (hovering.length === 0 || i === hovering.length - 1) {

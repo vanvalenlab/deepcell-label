@@ -12,7 +12,7 @@ function OneDaughterAlert({ division }) {
   const select = useSelect();
 
   const onClick = () => {
-    select.send({ type: 'SET_CELL', cell: daughters[0] });
+    select.send({ type: 'SELECT', cell: daughters[0] });
     image.send({ type: 'SET_FRAME', frame: t });
   };
 

@@ -33,7 +33,7 @@ function Parent({ division }) {
   const image = useImage();
 
   const onClick = (e) => {
-    select.send({ type: 'SET_CELL', cell: parent });
+    select.send({ type: 'SELECT', cell: parent });
     image.send({
       type: 'SET_FRAME',
       frame: t ? t - 1 : frames[frames.length - 1],
