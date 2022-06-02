@@ -150,7 +150,7 @@ function createDivisionsMachine({ eventBuses, undoRef }) {
             update: {
               on: {
                 // from CELLS event bus
-                REPLACE: { actions: 'replace' },
+                REPLACE: { actions: [(c, e) => console.log(c, e), 'replace'] },
                 DELETE: { actions: 'delete' },
                 SWAP: { actions: 'swap' },
                 NEW: { actions: 'new' },
@@ -212,21 +212,21 @@ function createDivisionsMachine({ eventBuses, undoRef }) {
         }),
         replace: pure((ctx, evt) => {
           let divisions = replace(ctx.divisions, evt.a, evt.b);
-          divisions = combine(ctx.divisions, divisions, evt.t, evt.frameMode);
+          divisions = combine(ctx.divisions, divisions, evt.t, evt.mode);
           const before = { type: 'RESTORE', divisions: ctx.divisions };
           const after = { type: 'RESTORE', divisions: divisions };
           return [assign({ divisions }), send({ type: 'SNAPSHOT', edit: evt.edit, before, after })];
         }),
         delete: pure((ctx, evt) => {
           let divisions = remove(ctx.divisions, evt.cell);
-          divisions = combine(ctx.divisions, divisions, evt.t, evt.frameMode);
+          divisions = combine(ctx.divisions, divisions, evt.t, evt.mode);
           const before = { type: 'RESTORE', divisions: ctx.divisions };
           const after = { type: 'RESTORE', divisions: divisions };
           return [assign({ divisions }), send({ type: 'SNAPSHOT', edit: evt.edit, before, after })];
         }),
         swap: pure((ctx, evt) => {
           let divisions = swap(ctx.divisions, evt.a, evt.b);
-          divisions = combine(ctx.divisions, divisions, evt.t, evt.frameMode);
+          divisions = combine(ctx.divisions, divisions, evt.t, evt.mode);
           const before = { type: 'RESTORE', divisions: ctx.divisions };
           const after = { type: 'RESTORE', divisions: divisions };
           return [assign({ divisions }), send({ type: 'SNAPSHOT', edit: evt.edit, before, after })];

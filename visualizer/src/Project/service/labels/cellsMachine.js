@@ -20,13 +20,13 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
       ],
       context: {
         cells: null, // Cells object
-        frame: 0,
+        t: 0,
         colormap: [
           [0, 0, 0, 1],
           ...colormap({ colormap: 'viridis', format: 'rgba' }),
           [255, 255, 255, 1],
         ],
-        frameMode: 'one',
+        mode: 'one',
         undoRef,
         historyRef: null,
       },
@@ -72,12 +72,13 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
           onDone: { target: 'idle', actions: ['setColormap', 'sendCells'] },
         },
         idle: {
+          entry: ['setColormap', 'sendCells'],
           on: {
-            REPLACE: { actions: 'replace', target: 'editing' },
+            REPLACE: { actions: [(c, e) => console.log(c, e), 'replace'], target: 'editing' },
             DELETE: { actions: 'delete', target: 'editing' },
             SWAP: { actions: 'swap', target: 'editing' },
             NEW: { actions: 'new' }, // sends REPLACE event
-            SET_FRAME_MODE: { actions: 'setFrameMode' },
+            SET_MODE: { actions: 'setMode' },
           },
         },
         editing: {
@@ -96,19 +97,13 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
               initial: 'editing',
               states: {
                 editing: { on: { EDITED_CELLS: { target: 'done', actions: 'setEditedCells' } } },
-                done: { type: 'final' },
+                done: { entry: (c, e) => console.log(c, e), type: 'final' },
               },
             },
           },
           onDone: {
             target: 'idle',
-            actions: [
-              'useEditedCells',
-              'sendEditedCells',
-              'sendSnapshot',
-              'setColormap',
-              'sendCells',
-            ],
+            actions: 'finishEditing',
           },
         },
       },
@@ -121,40 +116,35 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
         setEditedCells: assign({
           editedCells: (ctx, evt) => {
             const cells = ctx.cells.cells;
-            const editedCells = ctx.editedCells.cells;
-            const { t, frameMode } = ctx;
-            const combinedCells = combine(cells, editedCells, t, frameMode);
+            const editedCells = evt.cells.cells;
+            const { t, mode } = ctx;
+            const combinedCells = combine(cells, editedCells, t, mode);
             return new Cells(combinedCells);
           },
         }),
-        sendEditedCells: send(
-          (ctx) => ({
-            ...ctx.editEvent,
-            edit: ctx.edit,
-            frameMode: ctx.frameMode,
-            cells: ctx.editedCells,
-          }),
-          {
-            to: 'eventBus',
-          }
-        ),
-        useEditedCells: assign({ cells: (ctx) => ctx.editedCells }),
-        sendSnapshot: send(
-          (ctx) => ({
-            type: 'SNAPSHOT',
-            before: { type: 'RESTORE', cells: ctx.cells },
-            after: { type: 'RESTORE', cells: ctx.editedCells },
-            edit: ctx.edit,
-          }),
-          { to: (ctx) => ctx.historyRef }
-        ),
-        setFrameMode: assign({ frameMode: (_, evt) => evt.frameMode }),
+        finishEditing: pure((ctx, evt) => {
+          const { editEvent, edit, mode, editedCells, cells, historyRef } = ctx;
+          return [
+            send({ ...editEvent, edit, mode, cells: editedCells }, { to: 'eventBus' }),
+            assign({ cells: (ctx) => ctx.editedCells }),
+            send(
+              {
+                type: 'SNAPSHOT',
+                before: { type: 'RESTORE', cells },
+                after: { type: 'RESTORE', cells: editedCells },
+                edit,
+              },
+              { to: historyRef }
+            ),
+          ];
+        }),
+        setMode: assign({ mode: (_, evt) => evt.mode }),
         setT: assign({ t: (_, evt) => evt.frame }),
         setCells: assign({ cells: (_, evt) => evt.cells }),
         updateCells: pure((ctx, evt) => {
           const cells = new Cells([
-            ...ctx.cells.cells.filter((cell) => cell.t !== evt.frame),
-            ...evt.cells.map((cell) => ({ ...cell, t: evt.frame })),
+            ...ctx.cells.cells.filter((cell) => cell.t !== evt.t),
+            ...evt.cells.map((cell) => ({ ...cell, t: evt.t })),
           ]);
           const newColormap = [
             [0, 0, 0, 1],

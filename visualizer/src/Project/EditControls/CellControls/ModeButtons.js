@@ -8,15 +8,15 @@ import { useSelector } from '@xstate/react';
 import React from 'react';
 import { useCells } from '../../ProjectContext';
 
-function FrameModeButtons() {
+function ModeButtons() {
   const cells = useCells();
-  const frameMode = useSelector(cells, (state) => state.context.frameMode);
+  const mode = useSelector(cells, (state) => state.context.mode);
   return (
     <Box display='flex' flexDirection='column'>
       <FormLabel>Frame Mode</FormLabel>
-      <ToggleButtonGroup orientation='vertical' value={frameMode}>
+      <ToggleButtonGroup orientation='vertical' value={mode}>
         <ToggleButton
-          onClick={() => cells.send({ type: 'SET_FRAME_MODE', frameMode: 'one' })}
+          onClick={() => cells.send({ type: 'SET_MODE', mode: 'one' })}
           value={'one'}
           sx={{ px: 0.5, py: 0 }}
         >
@@ -24,21 +24,21 @@ function FrameModeButtons() {
           <SquareSharpIcon fontSize='small' />
         </ToggleButton>
         <ToggleButton
-          onClick={() => cells.send({ type: 'SET_FRAME_MODE', frameMode: 'past' })}
+          onClick={() => cells.send({ type: 'SET_MODE', mode: 'past' })}
           value={'past'}
           sx={{ px: 0.5, py: 0 }}
         >
           Past <ForwardIcon sx={{ transform: 'rotate(180deg)' }} />
         </ToggleButton>
         <ToggleButton
-          onClick={() => cells.send({ type: 'SET_FRAME_MODE', frameMode: 'future' })}
+          onClick={() => cells.send({ type: 'SET_MODE', mode: 'future' })}
           value={'future'}
           sx={{ px: 0.5, py: 0 }}
         >
           Future <ForwardIcon />
         </ToggleButton>
         <ToggleButton
-          onClick={() => cells.send({ type: 'SET_FRAME_MODE', frameMode: 'all' })}
+          onClick={() => cells.send({ type: 'SET_MODE', mode: 'all' })}
           value={'all'}
           sx={{ px: 0.5, py: 0 }}
         >
@@ -50,4 +50,4 @@ function FrameModeButtons() {
   );
 }
 
-export default FrameModeButtons;
+export default ModeButtons;

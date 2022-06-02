@@ -1,11 +1,11 @@
 import Box from '@mui/material/Box';
-import FrameModeButtons from './FrameModeButtons';
+import ModeButtons from './ModeButtons';
 import ToolButtons from './ToolButtons';
 
 function CellControls() {
   return (
     <Box display='flex' flexDirection='column'>
-      <FrameModeButtons />
+      <ModeButtons />
       <ToolButtons />
     </Box>
   );
