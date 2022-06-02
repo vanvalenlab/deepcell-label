@@ -81,7 +81,7 @@ const createEditSegmentMachine = (context) =>
       on: {
         // from canvas event bus (forwarded from parent)
         mousedown: { actions: 'forwardToTool' },
-        mouseup: { actions: [(c, e) => console.log(c, e), 'forwardToTool'] },
+        mouseup: { actions: 'forwardToTool' },
         // from selected labels event bus
         SELECTED: { actions: 'setSelected' },
 

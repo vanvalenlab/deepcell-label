@@ -74,7 +74,7 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
         idle: {
           entry: ['setColormap', 'sendCells'],
           on: {
-            REPLACE: { actions: [(c, e) => console.log(c, e), 'replace'], target: 'editing' },
+            REPLACE: { actions: 'replace', target: 'editing' },
             DELETE: { actions: 'delete', target: 'editing' },
             SWAP: { actions: 'swap', target: 'editing' },
             NEW_CELL: { actions: 'newCell' }, // sends REPLACE event
@@ -97,7 +97,7 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
               initial: 'editing',
               states: {
                 editing: { on: { EDITED_CELLS: { target: 'done', actions: 'setEditedCells' } } },
-                done: { entry: (c, e) => console.log(c, e), type: 'final' },
+                done: { type: 'final' },
               },
             },
           },

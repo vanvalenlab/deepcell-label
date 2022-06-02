@@ -20,7 +20,7 @@ function createReplaceMachine(context) {
         HOVERING: { actions: 'setHovering' },
         mouseup: [
           { cond: 'shift', actions: 'setReplaceCell' },
-          { cond: 'onReplaceCell', actions: [(c, e) => console.log(c, e), 'replace'] },
+          { cond: 'onReplaceCell', actions: 'replace' },
           { actions: 'setReplaceCell' },
         ],
         EXIT: { actions: 'resetReplaceCell' },

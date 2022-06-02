@@ -164,7 +164,7 @@ function createDivisionsMachine({ eventBuses, undoRef }) {
             update: {
               on: {
                 // from CELLS event bus
-                REPLACE: { actions: [(c, e) => console.log(c, e), 'replace'] },
+                REPLACE: { actions: 'replace' },
                 DELETE: { actions: 'delete' },
                 SWAP: { actions: 'swap' },
               },
