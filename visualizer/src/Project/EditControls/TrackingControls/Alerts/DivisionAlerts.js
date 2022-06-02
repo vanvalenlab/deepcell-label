@@ -4,8 +4,10 @@ import React from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useDivisions } from '../../../ProjectContext';
 import DaughterBeforeDivisionAlerts from './DaughterBeforeDivisionAlert';
+import DaughterInMultipleDivisionsAlerts from './DaughterInMultipleDivisionsAlert';
 import OneDaughterAlerts from './OneDaughterAlerts';
 import ParentAfterDivisionAlerts from './ParentAfterDivisionAlert';
+import ParentInMultipleDivisionsAlerts from './ParentInMultipleDivisionsAlert';
 
 const Div = styled('div')``;
 
@@ -38,6 +40,8 @@ function DivisionAlerts() {
         <ParentAfterDivisionAlerts />
         <DaughterBeforeDivisionAlerts />
         <OneDaughterAlerts />
+        <ParentInMultipleDivisionsAlerts />
+        <DaughterInMultipleDivisionsAlerts />
       </Div>
     </ErrorBoundary>
   );
