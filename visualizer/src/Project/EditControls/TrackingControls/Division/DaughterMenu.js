@@ -8,7 +8,7 @@ import Popper from '@mui/material/Popper';
 import React, { useReducer, useRef } from 'react';
 import { useEditDivisions } from '../../../ProjectContext';
 
-function DaughterMenu({ parent, daughter }) {
+function DaughterMenu({ daughter }) {
   const editDivisions = useEditDivisions();
 
   const [open, toggleOpen] = useReducer((v) => !v, false);
@@ -16,11 +16,6 @@ function DaughterMenu({ parent, daughter }) {
 
   const handleRemove = () => {
     editDivisions.send({ type: 'REMOVE_DAUGHTER', daughter: daughter });
-    toggleOpen();
-  };
-
-  const handleParent = () => {
-    editDivisions.send({ type: 'REPLACE_WITH_PARENT', parent: parent, daughter: daughter });
     toggleOpen();
   };
 
@@ -34,8 +29,6 @@ function DaughterMenu({ parent, daughter }) {
           <ClickAwayListener onClickAway={toggleOpen}>
             <MenuList id='remove-daughter-menu'>
               <MenuItem onClick={handleRemove}>Remove from Division</MenuItem>
-              {/* <MenuItem onClick={handleNewCell}>Replace with New Cell</MenuItem> */}
-              <MenuItem onClick={handleParent}>Replace with Parent</MenuItem>
             </MenuList>
           </ClickAwayListener>
         </Paper>

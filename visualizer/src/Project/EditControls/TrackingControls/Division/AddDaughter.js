@@ -21,10 +21,6 @@ function AddDaughter({ division }) {
     editDivisions.send({ type: 'ADD_DAUGHTER', parent: parent });
     toggle();
   };
-  const handleNewCell = () => {
-    editDivisions.send({ type: 'CREATE_NEW_CELL', cell: parent });
-    toggle();
-  };
 
   return (
     <Box sx={{ position: 'relative' }}>
@@ -53,7 +49,6 @@ function AddDaughter({ division }) {
           <ClickAwayListener onClickAway={toggle}>
             <MenuList id='add-daughter-menu'>
               <MenuItem onClick={handleAddDaughter}>Add Daughter</MenuItem>
-              <MenuItem onClick={handleNewCell}>Create New Cell</MenuItem>
             </MenuList>
           </ClickAwayListener>
         </Paper>
