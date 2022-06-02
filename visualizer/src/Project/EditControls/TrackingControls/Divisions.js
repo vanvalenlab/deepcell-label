@@ -26,7 +26,7 @@ function Divisions() {
         {parentDivisions.map((d) => (
           <Division division={d} key={`parent${d.parent}daughters${d.daughters}`} />
         ))}
-        {parentDivisions.length === 0 && (
+        {cell !== 0 && parentDivisions.length === 0 && (
           <Division division={{ parent: cell, daughters: [], t: null }} />
         )}
       </Box>
