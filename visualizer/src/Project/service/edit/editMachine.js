@@ -33,7 +33,7 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
       states: {
         loading: {
           on: {
-            LOADED: [{ cond: 'hasDivisions', target: 'editDivisions' }, { target: 'editCells' }],
+            LOADED: 'checkTool',
           },
         },
         checkTool: {
@@ -83,9 +83,6 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
       },
     },
     {
-      guards: {
-        hasDivisions: (ctx, evt) => evt.divisions !== null && evt.divisions !== undefined,
-      },
       actions: {
         save: respond(({ tool }) => ({ type: 'RESTORE', tool })),
         restore: assign((_, { tool }) => ({ tool })),
