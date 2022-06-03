@@ -17,11 +17,9 @@ it('shows tracking controls after loading divisions', () => {
   cy.intercept('GET', `/api/project/${id}`, { fixture: 'oneDivision.zip' });
   cy.visit(`/project?projectId=${id}`);
   cy.get('.MuiCircularProgress-svg').should('not.exist');
+  cy.contains('Divisions').click();
   cy.contains('Parent');
   cy.contains('Daughters');
-  cy.contains('Selected');
-  cy.contains('Hovering');
-  cy.contains('Time');
 });
 
 it('shows division', () => {
@@ -31,6 +29,9 @@ it('shows division', () => {
   // cell 31 divides into 134 and 135 on frame 1
   cy.visit(`/project?projectId=${id}`);
   cy.get('.MuiCircularProgress-svg').should('not.exist');
+  cy.contains('Divisions').click();
+  cy.get('body').type('['); // Should select cell 136 (new cell)
+  cy.contains('136');
   cy.get('body').type('['); // Should select cell 135
   // Parent cell
   cy.contains('31');
