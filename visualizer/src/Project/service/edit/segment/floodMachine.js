@@ -39,7 +39,13 @@ const creatFloodMachine = (context) =>
           floodCell: (ctx) => {
             const { hovering, floodCell } = ctx;
             const i = hovering.indexOf(floodCell);
-            return i === -1 || i === hovering.length - 1 ? hovering[0] : hovering[i + 1];
+            if (i === -1) {
+              return hovering[0];
+            } else if (i === hovering.length - 1) {
+              return 0;
+            } else {
+              return hovering[i + 1];
+            }
           },
         }),
         setCoordinates: assign({ x: (_, evt) => evt.x, y: (_, evt) => evt.y }),
