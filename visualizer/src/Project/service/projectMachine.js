@@ -39,7 +39,6 @@ const createProjectMachine = (projectId) =>
           cells: new EventBus('cells'),
           divisions: new EventBus('divisions'),
         },
-        track: false,
       },
       invoke: {
         id: 'loadEventBus',
@@ -70,9 +69,7 @@ const createProjectMachine = (projectId) =>
             LOADED: { target: 'idle', actions: [forwardTo('loadEventBus'), 'sendDimensions'] },
           },
         },
-        idle: {
-          entry: 'setTrack',
-        },
+        idle: {},
       },
     },
     {
@@ -113,10 +110,6 @@ const createProjectMachine = (projectId) =>
           },
           { to: 'loadEventBus' }
         ),
-        // TODO: dynamically add track labels and show UI
-        setTrack: assign({
-          track: (ctx, evt) => evt.divisions !== null && evt.divisions !== undefined,
-        }),
       },
     }
   );

@@ -6,7 +6,7 @@ import Instructions from './Instructions';
 import { useEditing } from './ProjectContext';
 import ReviewControls from './ReviewControls';
 
-function Project({ review, track }) {
+function Project({ review }) {
   const editing = useEditing();
   return (
     <>

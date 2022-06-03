@@ -1,4 +1,4 @@
-import { useInterpret, useSelector } from '@xstate/react';
+import { useInterpret } from '@xstate/react';
 import { useState } from 'react';
 import Project from './Project';
 import ProjectContext from './ProjectContext';
@@ -8,11 +8,10 @@ function Load({ id }) {
   const [projectMachine] = useState(createProjectMachine(id));
   const project = useInterpret(projectMachine);
   window.dcl = project;
-  const track = useSelector(project, (state) => state.context.track);
 
   return (
     <ProjectContext project={project}>
-      <Project review={false} track={track} />
+      <Project review={false} />
     </ProjectContext>
   );
 }
