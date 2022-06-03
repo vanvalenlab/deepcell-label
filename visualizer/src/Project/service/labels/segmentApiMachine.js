@@ -132,7 +132,7 @@ const createSegmentApiMachine = ({ eventBuses }) =>
               actions: 'sendEdited',
             },
             // TODO: send error message to parent and display in UI
-            onError: { target: 'idle', actions: (c, e) => console.log(c, e) },
+            onError: { target: 'idle', actions: ['sendApiError', (c, e) => console.log(c, e)] },
           },
         },
       },
@@ -148,6 +148,7 @@ const createSegmentApiMachine = ({ eventBuses }) =>
           t: ctx.editT,
           feature: ctx.editFeature,
         })),
+        sendApiError: sendParent('API_ERROR'),
         setRaw: assign({ raw: (_, evt) => evt.raw }),
         setLabeled: assign({ labeled: (_, evt) => evt.labeled }),
         setCells: assign({ cells: (_, evt) => evt.cells }),

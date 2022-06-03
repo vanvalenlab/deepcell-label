@@ -86,7 +86,7 @@ const createArraysMachine = (context) =>
           type: 'parallel',
           states: {
             getEdit: {
-              entry: send('SAVE', { to: (ctx) => ctx.undoRef }),
+              entry: 'save',
               initial: 'idle',
               states: {
                 idle: { on: { SAVE: { target: 'done', actions: 'setEdit' } } },
@@ -96,7 +96,12 @@ const createArraysMachine = (context) =>
             getEdits: {
               initial: 'editing',
               states: {
-                editing: { on: { EDITED_SEGMENT: { target: 'done', actions: 'setEdited' } } },
+                editing: {
+                  on: {
+                    EDITED_SEGMENT: { target: 'done', actions: 'setEdited' },
+                    API_ERROR: { target: '#arrays.idle', actions: 'revertSave' },
+                  },
+                },
                 done: { type: 'final' },
               },
             },
@@ -150,6 +155,10 @@ const createArraysMachine = (context) =>
           }),
           { to: (ctx) => ctx.historyRef }
         ),
+        save: send('SAVE', { to: (ctx) => ctx.undoRef }),
+        revertSave: send((ctx) => ({ type: 'REVERT_SAVE', edit: ctx.edit }), {
+          to: (ctx) => ctx.undoRef,
+        }),
         setHistoryRef: assign({ historyRef: (_, __, meta) => meta._event.origin }),
         setEdit: assign({ edit: (_, evt) => evt.edit }),
         setEdited: assign({ edited: (_, evt) => evt }),

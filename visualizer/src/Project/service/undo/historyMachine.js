@@ -16,6 +16,7 @@ function createHistoryMachine(actor) {
         idle: {
           on: {
             SAVE: 'saving',
+            REVERT_SAVE: { actions: 'revertSave' },
             UNDO: 'restoringPast',
             REDO: 'restoringFuture',
           },
@@ -69,6 +70,7 @@ function createHistoryMachine(actor) {
       actions: {
         forwardToParent: sendParent((ctx, evt) => evt),
         getSnapshot: send('SAVE', { to: (ctx) => ctx.actor }),
+        revertSave: assign({ past: (ctx) => ctx.past.slice(0, ctx.past.length - 1) }),
         saveSnapshot: assign((ctx, evt) => ({
           past: [...ctx.past, evt],
           future: [],

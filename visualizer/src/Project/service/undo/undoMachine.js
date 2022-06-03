@@ -35,6 +35,7 @@ const createUndoMachine = ({ eventBuses }) =>
               target: 'saving',
               actions: 'save',
             },
+            REVERT_SAVE: { actions: 'revertSave' },
             UNDO: {
               target: 'undoing',
               cond: 'canUndo',
@@ -89,6 +90,12 @@ const createUndoMachine = ({ eventBuses }) =>
             respond(save),
             ...ctx.uiHistories.map((h) => send(save, { to: h })),
             assign({ edit: ctx.edit + 1, numEdits: ctx.edit + 1 }),
+          ];
+        }),
+        revertSave: pure((ctx, evt) => {
+          return [
+            ...ctx.uiHistories.map((h) => send(evt, { to: h })),
+            assign({ edit: ctx.edit - 1, numEdits: ctx.edit - 1 }),
           ];
         }),
         undo: pure((ctx) => {
