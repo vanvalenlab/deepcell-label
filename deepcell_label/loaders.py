@@ -201,15 +201,14 @@ def load_divisions(f):
         dict or None if divisions.json not found
     """
     f.seek(0)
-    divisions = None
+    divisions = []
     if zipfile.is_zipfile(f):
         zf = zipfile.ZipFile(f, 'r')
         divisions = load_zip_json(zf, filename='divisions.json')
     elif tarfile.is_tarfile(f.name):
         lineage = load_trk(f, filename='lineage.json')
         divisions = convert_lineage(lineage)
-    if divisions is not None:
-        return divisions
+    return divisions
 
 
 def load_cells(f):
